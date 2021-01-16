@@ -276,7 +276,7 @@ class Save_RenamePlayer(ItemLink):
 
     def Execute(self):
         # get new player name - must not be empty
-        saveInfo = bosh.saveInfos[self.selected[0]]
+        saveInfo = self._first_selected()
         newName = self._askText(
             _(u'Enter new player name. E.g. Conan the Bold'),
             title=_(u'Rename player'), default=saveInfo.header.pcName)

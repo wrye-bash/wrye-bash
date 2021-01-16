@@ -1702,6 +1702,16 @@ class Link(object):
         """
         self._initData(window, selection)
 
+    def iselected_infos(self):
+        return (self.window.data_store[x] for x in self.selected)
+
+    def iselected_pairs(self):
+        return ((x, self.window.data_store[x]) for x in self.selected)
+
+    def _first_selected(self):
+        """Return the first selected info."""
+        return next(self.iselected_infos())
+
     # Wrappers around balt dialogs - used to single out non trivial uses of
     # self->window
     ##: avoid respecifying default params
@@ -1761,11 +1771,6 @@ class Link(object):
                    max=10000):
         return askNumber(self.window, message, prompt, title, value, min, max)
 
-    def _askOpenMulti(self, title=u'', defaultDir=u'', defaultFile=u'',
-                      wildcard=u''):
-        return askOpenMulti(self.window, title, defaultDir, defaultFile,
-                            wildcard)
-
     def _askDirectory(self, message=_(u'Choose a directory.'),
                       defaultPath=u''):
         return askDirectory(self.window, message, defaultPath)
@@ -1813,12 +1818,6 @@ class ItemLink(Link):
         Link.Frame._native_widget.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
         menu.Append(menuItem)
         return menuItem
-
-    def iselected_infos(self):
-        return (self.window.data_store[x] for x in self.selected)
-
-    def iselected_pairs(self):
-        return ((x, self.window.data_store[x]) for x in self.selected)
 
     # Callbacks ---------------------------------------------------------------
     # noinspection PyUnusedLocal
@@ -1986,7 +1985,7 @@ class OneItemLink(EnabledLink):
     @property
     def _selected_item(self): return self.selected[0]
     @property
-    def _selected_info(self): return self.window.data_store[self.selected[0]]
+    def _selected_info(self): return self._first_selected()
 
 class CheckLink(ItemLink):
     kind = wx.ITEM_CHECK

@@ -651,7 +651,7 @@ class _NotObLink(EnabledLink):
 
     def _enable(self):
         return len(self.selected) != 1 or ( # disable on solo Oblivion.esm
-            not bosh.reOblivion.match(self.selected[0].s))
+            not self._first_selected().match_oblivion_re())
 
 class Mod_CreateLOOTReport(_NotObLink):
     """Creates a basic LOOT masterlist entry with ."""
@@ -1295,7 +1295,7 @@ class Mod_RemoveWorldOrphans(_NotObLink):
         if not self._askContinue(message, u'bash.removeWorldOrphans.continue',
                                  _(u'Remove World Orphans')): return
         for index, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
-            if bosh.reOblivion.match(fileName.s):
+            if fileInfo.match_oblivion_re():
                 self._showWarning(_(u'Skipping %s') % fileInfo,
                                   _(u'Remove World Orphans'))
                 continue
@@ -1420,7 +1420,7 @@ class Mod_DecompileAll(_NotObLink):
                                  _(u'Decompile All')): return
         for fileName, fileInfo in self.iselected_pairs():
             file_name_s = fileName.s
-            if bosh.reOblivion.match(file_name_s):
+            if fileInfo.match_oblivion_re():
                 self._showWarning(_(u'Skipping %s') % fileInfo,
                                   _(u'Decompile All'))
                 continue
@@ -1503,7 +1503,7 @@ class Mod_FlipEsm(_Esm_Esl_Flip):
 
     @property
     def _already_flagged(self):
-        return self.window.data_store[self.selected[0]].has_esm_flag()
+        return self._first_selected().has_esm_flag()
 
     def _enable(self):
         """For pre esl games check if all mods are of the same type (esm or
@@ -1537,7 +1537,7 @@ class Mod_FlipEsl(_Esm_Esl_Flip):
 
     @property
     def _already_flagged(self):
-        return self.window.data_store[self.selected[0]].has_esl_flag()
+        return self._first_selected().has_esl_flag()
 
     def _enable(self):
         """Allow if all selected mods have valid extensions, have same esl flag

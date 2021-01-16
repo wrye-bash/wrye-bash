@@ -731,7 +731,7 @@ class Installer(object):
                         self.hasWizard = full
                         skipDirFilesDiscard(file_relative)
                         continue
-                    elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+                    elif fileExt == defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
                         self.hasBCF = full
                         skipDirFilesDiscard(file_relative)
                         continue

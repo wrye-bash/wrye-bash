@@ -2387,12 +2387,10 @@ class InstallersList(balt.UIList):
         selected = self.GetSelected()
         renaming_type = type(self.data_store[selected[0]])
         installables = self.data_store.filterInstallables(selected)
-        validate = partial(self.validate_filename, evt_label,
-                           is_filename=bool(installables))
+        kwargs = {u'is_filename': bool(installables)}
         if renaming_type.is_archive():
-            root, newName, _numStr = validate(ext=self.__ext_group)
-        else:
-            root, newName, _numStr = validate()
+            kwargs[u'ext'] = self.__ext_group
+        root, newName, _numStr = self.validate_filename(evt_label, **kwargs)
         if not root: return EventResult.CANCEL
         #--Rename each installer, keeping the old extension (for archives)
         with BusyCursor():

@@ -93,7 +93,7 @@ class ConvertersData(DataDict):
     #--Converters
     @staticmethod
     def validConverterName(path_name):
-        return path_name.cext in defaultExt and (
+        return path_name.cext == defaultExt and (
             path_name.csbody[-4:] == u'-bcf' or u'-bcf-' in path_name.csbody)
 
     def refreshConverters(self, progress=None, fullRefresh=False):

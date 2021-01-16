@@ -905,6 +905,9 @@ class ModInfo(FileInfo):
             return True, _(u'Contains dirty edits, needs cleaning.')
         return False, u''
 
+    def match_oblivion_re(self):
+        return reOblivion.match(self.name.s)
+
 # Deprecated/Obsolete Bash Tags -----------------------------------------------
 # Tags that have been removed from Wrye Bash and should be dropped from pickle
 # files
@@ -2652,7 +2655,7 @@ class ModInfos(FileInfos):
                 return modName
         return None
 
-    ##: Maybe cache this? Invalidation woud be tough
+    ##: Maybe cache this? Invalidation would be tough
     # TODO(inf): Morrowind does not have attached BSAs, there is instead a
     #  'second load order' of BSAs in the INI
     def get_bsa_lo(self, for_plugins=None):
@@ -2668,7 +2671,7 @@ class ModInfos(FileInfos):
         available_bsas = dict(bsaInfos.iteritems())
         bsa_lo = OrderedDict() # Final load order, -1 means it came from an INI
         bsa_cause = {} # Reason each BSA was loaded
-        def bsas_from_ini(i, k):
+        def _bsas_from_ini(i, k):
             r_bsas = (GPath_no_norm(x.strip()) for x in
                       i.getSetting(u'Archive', k, u'').split(u','))
             return (available_bsas[b] for b in r_bsas if b in available_bsas)
@@ -2677,14 +2680,14 @@ class ModInfos(FileInfos):
         for ini_k in bush.game.Ini.resource_archives_keys:
             for ini_f in self.ini_files():
                 if ini_f.has_setting(u'Archive', ini_k):
-                    for b in bsas_from_ini(ini_f, ini_k):
+                    for b in _bsas_from_ini(ini_f, ini_k):
                         bsa_lo[b] = ini_idx
                         bsa_cause[b] = u'%s (%s)' % (ini_f.abs_path.stail,
                                                      ini_k)
                         ini_idx += 1
                         del available_bsas[b.name]
                     break # The first INI with the key wins ##: Test this
-        # They get overriden by BSAs loaded based on plugin name
+        # They get overridden by BSAs loaded based on plugin name
         for i, p in enumerate(for_plugins):
             for b in self[p].mod_bsas(available_bsas):
                 bsa_lo[b] = i
@@ -2702,7 +2705,7 @@ class ModInfos(FileInfos):
             # Then look if any INIs overwrite them
             for ini_f in self.ini_files():
                 if ini_f.has_setting(u'Archive', res_ov_key):
-                    res_ov_bsas = bsas_from_ini(ini_f, res_ov_key)
+                    res_ov_bsas = _bsas_from_ini(ini_f, res_ov_key)
                     res_ov_cause = u'%s (%s)' % (ini_f.abs_path.stail,
                                                  res_ov_key)
                     break # The first INI with the key wins ##: Test this
