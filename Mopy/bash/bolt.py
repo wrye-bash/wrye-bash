@@ -474,14 +474,6 @@ class Path(object):
         return os.path.normpath(str_or_path)
 
     @staticmethod
-    def __getCase(opt_str):
-        # type: (unicode|str|None) -> unicode|None
-        """Return the normpath+normcase for specified basestring/None object."""
-        if not opt_str: return opt_str if opt_str is None else u''
-        if isinstance(opt_str, str): opt_str = decoder(opt_str)
-        return os.path.normcase(os.path.normpath(opt_str))
-
-    @staticmethod
     def getcwd():
         return Path(os.getcwdu())
 
@@ -930,39 +922,46 @@ class Path(object):
                     pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
-    # directly compare to basestring and Path and will blow for anything else
+    # directly compare to basestring|Path|None and will blow for anything else
     def __hash__(self):
         return hash(self._cs)
     def __eq__(self, other):
         if isinstance(other, Path):
             return self._cs == other._cs
-        else:
-            return self._cs == Path.__getCase(other)
+        # get unicode or None - will blow on most other types - identical below
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs == (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
     def __ne__(self, other):
         if isinstance(other, Path):
             return self._cs != other._cs
-        else:
-            return self._cs != Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs != (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
     def __lt__(self, other):
         if isinstance(other, Path):
             return self._cs < other._cs
-        else:
-            return self._cs < Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs < (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
     def __ge__(self, other):
         if isinstance(other, Path):
             return self._cs >= other._cs
-        else:
-            return self._cs >= Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs >= (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
     def __gt__(self, other):
         if isinstance(other, Path):
             return self._cs > other._cs
-        else:
-            return self._cs > Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs > (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
     def __le__(self, other):
         if isinstance(other, Path):
             return self._cs <= other._cs
-        else:
-            return self._cs <= Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs <= (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
