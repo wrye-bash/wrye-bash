@@ -29,9 +29,10 @@ from itertools import chain
 from .. import getPatchesPath
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, AListPatcher
 from ... import load_order, bush
-from ...bolt import GPath, CsvReader, deprint
+from ...bolt import GPath, deprint
 from ...brec import MreRecord
 from ...exception import AbstractError
+from ...parsers import _HandleAliases
 
 # Patchers 1 ------------------------------------------------------------------
 class ListPatcher(AListPatcher,Patcher): pass
@@ -183,31 +184,25 @@ class MergePatchesPatcher(ListPatcher):
         p_file.set_mergeable_mods(self.srcs)
 
 # TODO move this to a file it's imported after MreRecord.simpleTypes is set
-class ReplaceFormIDsPatcher(ListPatcher):
+class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     patcher_group = u'General'
     patcher_order = 15
 
     def __init__(self, p_name, p_file, p_sources):
-        super(ReplaceFormIDsPatcher, self).__init__(p_name, p_file, p_sources)
+        super(ReplaceFormIDsPatcher, self).__init__(p_file.pfile_aliases)
+        ListPatcher.__init__(self, p_name, p_file, p_sources)
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
 
-    def readFromText(self,textPath):
-        """Reads replacement data from specified text file."""
-        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
-        aliases = self.patchFile.pfile_aliases
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue
-                oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-                oldMod,newMod = map(GPath,(oldMod,newMod))
-                oldId = (GPath(aliases.get(oldMod,oldMod)),int(oldObj,16))
-                newId = (GPath(aliases.get(newMod,newMod)),int(newObj,16))
-                old_new[oldId] = newId
-                old_eid[oldId] = oldEid
-                new_eid[newId] = newEid
+    def _parse_line(self, csv_fields):
+        oldMod, oldObj, oldEid, newEid, newMod, newObj = csv_fields[1:7]
+        oldId = self._coerce_fid(oldMod, oldObj)
+        newId = self._coerce_fid(newMod, newObj)
+        self.old_new[oldId] = newId
+        self.old_eid[oldId] = oldEid
+        self.new_eid[newId] = newEid
 
     def initData(self,progress):
         """Get names from source files."""

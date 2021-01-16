@@ -2011,7 +2011,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         makeNew = self._askYes(message, _(u'Import Scripts'),
                                questionIcon=True)
         scriptText = self._parser()
-        scriptText.readFromText(textDir.s, self._selected_info)
+        scriptText.readFromText(textDir.s)
         changed, added = scriptText.writeToMod(self._selected_info, makeNew)
         #--Log
         if not (len(changed) or len(added)):
@@ -2258,8 +2258,9 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
     _text = _(u'Editor Ids...')
     _help = _(u'Import faction editor ids from text file')
 
-    def _parser(self):
-        return EditorIds()
+    def _parser(self, questionableEidsSet=None, badEidsList=None):
+        return EditorIds(questionableEidsSet=questionableEidsSet,
+                         badEidsList=badEidsList)
 
     def Execute(self):
         if not self._askContinueImport(): return
@@ -2279,9 +2280,9 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         badEidsList = []
         try:
             with balt.Progress(self.__class__.progressTitle) as progress:
-                editorIds = self._parser()
+                editorIds = self._parser(questionableEidsSet, badEidsList)
                 progress(0.1, _(u'Reading') + u' %s.' % textName)
-                editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
+                editorIds.readFromText(textPath)
                 progress(0.2, _(u'Applying to %s.') % self._selected_item)
                 changed = editorIds.writeToMod(self._selected_info)
                 progress(1.0,_(u'Done.'))
