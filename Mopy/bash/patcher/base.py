@@ -29,8 +29,6 @@ from this module outside of the patcher package."""
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
-import copy
-
 from .. import load_order
 from ..exception import AbstractError
 
@@ -113,7 +111,7 @@ class AMultiTweaker(Abstract_Patcher):
     configured through a choice menu."""
     patcher_group = u'Tweakers'
     patcher_order = 30
-    _tweak_classes = [] # override in implementations
+    _tweak_classes = set() # override in implementations
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(AMultiTweaker, self).__init__(p_name, p_file)
@@ -122,9 +120,8 @@ class AMultiTweaker(Abstract_Patcher):
 
     @classmethod
     def tweak_instances(cls):
-        tweak_classes = copy.deepcopy(cls._tweak_classes)
         # Sort alphabetically first for aesthetic reasons
-        tweak_classes.sort(key=lambda c: c.tweak_name)
+        tweak_classes = sorted(cls._tweak_classes, key=lambda c: c.tweak_name)
         # After that, sort to make tweaks instantiate & run in the right order
         tweak_classes.sort(key=lambda c: c.tweak_order)
         return [t() for t in tweak_classes]
@@ -155,24 +152,27 @@ class AMultiTweakItem(object):
     # self.choiceValues[self.chosen]. It is up to each tweak to decide for
     # itself how to best lay these out.
     #
-    # If a label starts with '[' and ends with ']', it is treated as the
-    # default option.
-    # If a label starts with 'Custom' (or the translated equivalent of it), it
-    # is treated as a custom choice. This choice will allow the user to choose
-    # any value they wish.
     # Setting a label to '----' will not add a new choice. Instead, a separator
     # will be added at that point in the dropdown.
     # If only one choice is available, no dropdown will be shown - the tweak
     # can only be toggled on and off.
     #
     # An example:
-    # tweak_choices = [(_(u'One Day', 24), (_(u'[Two Days]'), 48)]
+    # tweak_choices = [(_(u'One Day', 24), (_(u'Two Days'), 48)]
     #
-    # This will show two options to the user, with the 'Two Days' option as the
-    # default one. When retrieving a value via self.choiceValues[self.chosen],
-    # either 24 or 48 will be returned, which the tweak could use to e.g.
-    # change a record attribute controlling how long a quest is delayed.
+    # This will show two options to the user. When retrieving a value via
+    # self.choiceValues[self.chosen][0], the selected value (24 or 48) will be
+    # returned, which the tweak could use to e.g. change a record attribute
+    # controlling how long a quest is delayed.
     tweak_choices = []
+    # The choice label (see tweak_choices above) that should be selected by
+    # default.
+    default_choice = None
+    # If set to a string, adds a new choice to the end of the tweak_choices
+    # list with that label and the default choice's value (see default_choice)
+    # that will open a dialog allowing the user to pick a custom value when
+    # clicked.
+    custom_choice = None
     # The header to log before logging anything else about this tweak.
     # If set to None, defaults to this tweak's name. Automatically gets wtxt
     # formatting prepended.
@@ -202,7 +202,6 @@ class AMultiTweakItem(object):
         self.choiceLabels = []
         self.choiceValues = []
         self.default = None
-        has_custom = False
         # Caught some copy-paste mistakes where I forgot to make a it list,
         # left it in for that reason
         if not isinstance(self.tweak_choices, list):
@@ -211,22 +210,20 @@ class AMultiTweakItem(object):
         for choice_index, choice_tuple in enumerate(self.tweak_choices):
             # See comments above for the syntax definition
             choice_label, choice_items = choice_tuple[0], choice_tuple[1:]
-            # Validate that we have at most one custom value
-            if choice_label.startswith(_(u'Custom')):
-                if has_custom:
-                    self._raise_tweak_syntax_error(u'At most one custom '
-                                                   u'choice may be specified')
-                has_custom = True
+            if choice_label == self.default_choice:
+                choice_label = u'[%s]' % choice_label
+                self.default = choice_index
             self.choiceLabels.append(choice_label)
             self.choiceValues.append(choice_items)
-            if choice_label.startswith(u'[') and choice_label.endswith(u']'):
-                # This is the default item, check for duplicates and mark it
-                if self.default is not None:
-                    self._raise_tweak_syntax_error(u'Tweaks may only have one '
-                                                   u'default item')
-                self.default = choice_index
         if self.default is None:
+            if self.default_choice is not None:
+                self._raise_tweak_syntax_error(u'default_choice is not in '
+                                               u'tweak_choices')
             self.default = 0 # no explicit default item, so default to first
+        # Create the custom choice if a label was specified for it
+        if self.custom_choice is not None:
+            self.choiceLabels.append(self.custom_choice)
+            self.choiceValues.append(self.choiceValues[self.default])
         #--Config
         self.isEnabled = False
         self.chosen = 0
@@ -251,10 +248,9 @@ class AMultiTweakItem(object):
             if value in self.choiceValues:
                 self.chosen = self.choiceValues.index(value)
             else:
-                for choice_label in self.choiceLabels:
-                    if choice_label.startswith(_(u'Custom')):
-                        self.chosen = self.choiceLabels.index(choice_label)
-                        self.choiceValues[self.chosen] = value
+                if self.custom_choice is not None:
+                    self.chosen = len(self.choiceLabels) - 1 # always last
+                    self.choiceValues[self.chosen] = value
         else:
             if self.default:
                 self.chosen = self.default
@@ -316,18 +312,3 @@ class AMultiTweakItem(object):
         ITPOs through! Must be implemented by every PBash tweak that supports
         pooling (see MultiTweakItem.supports_pooling)."""
         raise AbstractError(u'tweak_record not implemented')
-
-# TODO(inf) DEPRECATED! - don't use for new tweaks -> all tweaks should really
-#  be static classes, much more readable
-class DynamicTweak(AMultiTweakItem):
-    """A tweak that has its name, tip, key and choices passed in as init
-    parameters."""
-    def __init__(self, tweak_name, tweak_tip, tweak_key, *tweak_choices):
-        self.tweak_name = tweak_name
-        self.tweak_tip = tweak_tip
-        self.tweak_key = tweak_key
-        self.tweak_choices = list(tweak_choices)
-        super(DynamicTweak, self).__init__()
-
-    def __repr__(self):  return u'%s(%s)' % (
-        self.__class__.__name__, self.tweak_name)

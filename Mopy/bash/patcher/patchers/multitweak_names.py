@@ -229,7 +229,7 @@ _re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 class NamesTweak_Scrolls(_AMgefNamesTweak):
     """Names tweaker for scrolls."""
     tweak_read_classes = b'BOOK',
-    tweak_name = _(u'Notes and Scrolls')
+    tweak_name = _(u'Notes And Scrolls')
     tweak_tip = _(u'Mark notes and scrolls to sort separately from books.')
     tweak_key = u'scrolls'
     tweak_choices = [(_(u'~Fire Ball'),     u'~'),
@@ -526,14 +526,14 @@ class NamesTweak_SecurityToLockpicking(_ATextReplacer):
 #------------------------------------------------------------------------------
 class TweakNamesPatcher(MultiTweaker):
     """Tweaks record full names in various ways."""
-    _tweak_classes = [
+    _tweak_classes = {
         NamesTweak_BodyTags, NamesTweak_Body_Armor, NamesTweak_Body_Clothes,
         NamesTweak_Potions, NamesTweak_Scrolls, NamesTweak_Spells,
         NamesTweak_Weapons, NamesTweak_DwarvenToDwemer,
         NamesTweak_DwarfsToDwarves, NamesTweak_StaffsToStaves,
         NamesTweak_FatigueToStamina, NamesTweak_MarksmanToArchery,
-        NamesTweak_SecurityToLockpicking
-    ]
+        NamesTweak_SecurityToLockpicking,
+    }
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(TweakNamesPatcher, self).__init__(p_name, p_file, enabled_tweaks)

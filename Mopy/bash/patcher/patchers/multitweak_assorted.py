@@ -31,8 +31,8 @@ from ... import bush, load_order
 from ...brec import MreRecord  # yuck, see usage below
 from ...bolt import GPath, deprint, floats_equal
 from ...mod_files import LoadFactory, ModFile  # yuck, see usage below
-from ...patcher.patchers.base import MultiTweakItem
-from ...patcher.patchers.base import MultiTweaker
+from ...patcher.patchers.base import MultiTweakItem, MultiTweaker, \
+    CustomChoiceTweak
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):
@@ -338,7 +338,7 @@ class AssortedTweak_NoLightFlicker(MultiTweakItem):
         record.flags &= ~self._flicker_flags
 
 #------------------------------------------------------------------------------
-class _AWeightTweak(MultiTweakItem):
+class _AWeightTweak(CustomChoiceTweak):
     """Base class for weight tweaks."""
     _log_weight_value = u'OVERRIDE' # avoid pycharm warning
 
@@ -382,7 +382,7 @@ class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
     tweak_tip = _(u'Potion weight will be capped.')
     tweak_key = u'MaximumPotionWeight'
     tweak_choices = [(u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
-                     (u'0.6', 0.6), (_(u'Custom'), 0.0)]
+                     (u'0.6', 0.6)]
     tweak_log_msg = _(u'Potions Reweighed: %(total_changed)d')
     _log_weight_value = _(u'Potions set to maximum weight of %f.')
 
@@ -405,7 +405,7 @@ class AssortedTweak_IngredientWeight(_AWeightTweak_SEFF):
     tweak_tip = _(u'Ingredient weight will be capped.')
     tweak_key = u'MaximumIngredientWeight'
     tweak_choices = [(u'0.1', 0.1), (u'0.2', 0.2), (u'0.4', 0.4),
-                     (u'0.6', 0.6), (_(u'Custom'), 0.0)]
+                     (u'0.6', 0.6)]
     tweak_log_msg = _(u'Ingredients Reweighed: %(total_changed)d')
     _log_weight_value = _(u'Ingredients set to maximum weight of %f.')
 
@@ -418,7 +418,7 @@ class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
                   u'floored.')
     tweak_key = u'MinimumPotionWeight'
     tweak_choices = [(u'0.1', 0.1), (u'0.5', 0.5), (u'1.0', 1.0),
-                     (u'2.0', 2.0), (u'4.0', 4.0), (_(u'Custom'), 0.0)]
+                     (u'2.0', 2.0), (u'4.0', 4.0)]
     tweak_log_msg = _(u'Ingestibles Reweighed: %(total_changed)d')
     tweak_order = 11 # Run after Reweigh: Potions (Maximum) for consistency
     _log_weight_value = _(u'Ingestibles set to minimum weight of %f.')
@@ -436,7 +436,7 @@ class AssortedTweak_StaffWeight(_AWeightTweak):
     tweak_key = u'StaffWeight'
     tweak_choices = [(u'1.0', 1.0), (u'2.0', 2.0), (u'3.0', 3.0),
                      (u'4.0', 4.0), (u'5.0', 5.0), (u'6.0', 6.0),
-                     (u'7.0', 7.0), (u'8.0', 8.0), (_(u'Custom'), 0.0)]
+                     (u'7.0', 7.0), (u'8.0', 8.0)]
     tweak_log_msg = _(u'Staves Reweighed: %(total_changed)d')
     _log_weight_value = _(u'Staves set to maximum weight of %f.')
 
@@ -453,7 +453,7 @@ class AssortedTweak_ArrowWeight(_AWeightTweak):
                   u'will be capped.')
     tweak_key = u'MaximumArrowWeight'
     tweak_choices = [(u'0.0', 0.0), (u'0.1', 0.1), (u'0.2', 0.2),
-                     (u'0.4', 0.4), (u'0.6', 0.6), (_(u'Custom'), 0.0)]
+                     (u'0.4', 0.4), (u'0.6', 0.6)]
     tweak_log_msg = _(u'Ammunition Reweighed: %(total_changed)d')
     _log_weight_value = _(u'Ammunition set to maximum weight of %f.')
 
@@ -490,7 +490,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
         super(AssortedTweak_ScriptEffectSilencer, self).tweak_log(log, {})
 
 #------------------------------------------------------------------------------
-class AssortedTweak_HarvestChance(MultiTweakItem):
+class AssortedTweak_HarvestChance(CustomChoiceTweak):
     """Adjust Harvest Chances."""
     tweak_read_classes = b'FLOR',
     tweak_name = _(u'Harvest Chance')
@@ -499,7 +499,7 @@ class AssortedTweak_HarvestChance(MultiTweakItem):
     tweak_key = u'HarvestChance'
     tweak_choices = [(u'10%', 10), (u'20%', 20), (u'30%', 30), (u'40%', 40),
                      (u'50%', 50), (u'60%', 60), (u'70%', 70), (u'80%', 80),
-                     (u'90%', 90), (u'100%', 100), (_(u'Custom'), 0)]
+                     (u'90%', 90), (u'100%', 100)]
     tweak_log_msg = _(u'Harvest Chances Changed: %(total_changed)d')
     _season_attrs = (u'spring', u'summer', u'fall', u'winter')
 
@@ -550,10 +550,10 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
         record.heightRange = 0.0
 
 #------------------------------------------------------------------------------
-class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
+class AssortedTweak_SetCastWhenUsedEnchantmentCosts(CustomChoiceTweak):
     """Sets Cast When Used Enchantment number of uses."""
     tweak_read_classes = b'ENCH',
-    tweak_name = _(u'Number of Uses For Pre-enchanted Weapons and Staves')
+    tweak_name = _(u'Number Of Uses For Pre-enchanted Weapons And Staves')
     tweak_tip = _(u'The charge amount and cast cost will be edited so that '
                   u'all enchanted weapons and staves have the amount of uses '
                   u'specified. Cost will be rounded up to 1 (unless set to '
@@ -563,7 +563,7 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(MultiTweakItem):
     tweak_choices = [(u'1', 1), (u'5', 5), (u'10', 10), (u'20', 20),
                      (u'30', 30), (u'40', 40), (u'50', 50), (u'80', 80),
                      (u'100', 100), (u'250', 250), (u'500', 500),
-                     (_(u'Unlimited'), 0), (_(u'Custom'), 0)]
+                     (_(u'Unlimited'), 0)]
     tweak_log_header = _(u'Set Enchantment Number of Uses')
     tweak_log_msg = _(u'Enchantments Set: %(total_changed)d')
 
@@ -707,11 +707,11 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
         self._assign_icons(record, d_icons)
 
 #------------------------------------------------------------------------------
-class _AAttenuationTweak(MultiTweakItem):
+class _AAttenuationTweak(CustomChoiceTweak):
     """Shared code of sound attenuation tweaks."""
     tweak_read_classes = bush.game.static_attenuation_rec_type,
     tweak_choices = [(u'0%', 0), (u'5%', 5), (u'10%', 10), (u'20%', 20),
-                     (u'50%', 50), (u'80%', 80), (_(u'Custom'), 0)]
+                     (u'50%', 50), (u'80%', 80)]
     tweak_log_msg = _(u'Sounds Modified: %(total_changed)d')
     _nirnroot_words = {u'nirnroot', u'vynroot', u'vynwurz'}
 
@@ -806,7 +806,7 @@ class AssortedTweak_TextlessLSCRs(MultiTweakItem):
         record.description = u''
 
 #------------------------------------------------------------------------------
-class AssortedTweak_SEFFIcon(MultiTweakItem):
+class AssortedTweak_SEFFIcon(CustomChoiceTweak):
     """Changes the icon for the SEFF (Script Effect) magic effect."""
     tweak_read_classes = b'MGEF',
     tweak_name = _(u'Magic: Script Effect Icon Changer')
@@ -817,8 +817,7 @@ class AssortedTweak_SEFFIcon(MultiTweakItem):
                      (_(u'Unused Darkness Icon'),
                       u'magic\\illusion_icons\\darkness_illusion.dds'),
                      (_(u'Default (Burden)'),
-                      u'magic\\alteration_icons\\burden_alteration.dds'),
-                     (_(u'Custom'), u'path\\to\\icon.dds')]
+                      u'magic\\alteration_icons\\burden_alteration.dds')]
     tweak_log_msg = _(u'Script Effect icon changed.')
 
     @property
@@ -913,4 +912,4 @@ class TweakAssortedPatcher(MultiTweaker):
     # tweakers use this flag to determine which records to target, so they
     # *must* run afterwards or we'll miss some records.
     patcher_order = 29
-    _tweak_classes = [globals()[t] for t in bush.game.assorted_tweaks]
+    _tweak_classes = {globals()[t] for t in bush.game.assorted_tweaks}
