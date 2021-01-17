@@ -122,6 +122,15 @@ class Colors(object):
         for key_ in self._colors:
             yield key_
 
+class _ACFrozen(object):
+    """Helper for _AComponent.pause_drawing."""
+    def __init__(self, wx_parent):
+        self._wx_parent = wx_parent
+    def __enter__(self):
+        self._wx_parent.Freeze()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._wx_parent.Thaw()
+
 # Base Elements ---------------------------------------------------------------
 class _AComponent(object):
     """Abstract base class for all GUI items. Holds a reference to the native
@@ -327,6 +336,11 @@ class _AComponent(object):
         resized one of the sub-components, so that the other sub-components can
         be resized/moved/otherwise updated to account for that."""
         self._native_widget.Layout()
+
+    def pause_drawing(self):
+        """To be used via Python's 'with' statement. Pauses all visual updates
+        to this component while in the with statement."""
+        return _ACFrozen(self._native_widget)
 
 # Events Mixins ---------------------------------------------------------------
 class WithMouseEvents(_AComponent):

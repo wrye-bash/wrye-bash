@@ -123,11 +123,10 @@ class PictureWithCursor(Picture, WithMouseEvents):
 
     def set_bitmap(self, bmp):
         # Don't want the bitmap to resize until we call self.Layout()
-        self._native_widget.Freeze()
-        img = super(PictureWithCursor, self).set_bitmap(bmp)
-        self._native_widget.SetCursor(
-            _wx.Cursor(_wx.CURSOR_MAGNIFIER if img else _wx.CURSOR_ARROW))
-        self._native_widget.Thaw()
+        with self.pause_drawing():
+            img = super(PictureWithCursor, self).set_bitmap(bmp)
+            self._native_widget.SetCursor(
+                _wx.Cursor(_wx.CURSOR_MAGNIFIER if img else _wx.CURSOR_ARROW))
         return img
 
 # Lines -----------------------------------------------------------------------
@@ -417,20 +416,20 @@ class GlobalMenu(_AComponent):
         Link.Frame.set_status_info(u'')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
-        # Clear the menu and repopulate it. Have to do this JIT, since the
-        # checked/enabled/appended state of links will depend on the current
-        # state of WB itself.
-        for old_menu_item in wx_menu.GetMenuItems():
-            wx_menu.Remove(old_menu_item)
-            # Explicitly destroy, remove does not clean up the object otherwise
-            old_menu_item.Destroy()
-        # Need to set this, otherwise help text won't be shown
-        Link.Popup = wx_menu
-        try:
-            self._category_handlers[wx_menu.category_label](wx_menu)
-        except KeyError:
-            raise RuntimeError(u"A GlobalMenu handler is missing for category "
-                               u"'%s'." % wx_menu.category_label)
+        # If we don't pause here, the GUI will flicker like crazy
+        with Link.Frame.global_menu.pause_drawing():
+            # Clear the menu and repopulate it. Have to do this JIT, since the
+            # checked/enabled/appended state of links will depend on the current
+            # state of WB itself.
+            for old_menu_item in wx_menu.GetMenuItems():
+                wx_menu.DestroyItem(old_menu_item)
+            # Need to set this, otherwise help text won't be shown
+            Link.Popup = wx_menu
+            try:
+                self._category_handlers[wx_menu.category_label](wx_menu)
+            except KeyError:
+                raise RuntimeError(u"A GlobalMenu handler is missing for "
+                                   u"category '%s'." % wx_menu.category_label)
 
     def _handle_menu_closed(self, wx_menu):
         """Internal callback, needed to correctly handle help text."""

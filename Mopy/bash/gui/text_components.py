@@ -230,10 +230,9 @@ class Label(_ALabel):
 
         :param max_length: The maximum number of device-independent pixels
             (DIP) a line may be long."""
-        self._native_widget.Freeze()
-        self._native_widget.SetLabel(self._init_text)
-        self._native_widget.Wrap(max_length * csf())
-        self._native_widget.Thaw()
+        with self.pause_drawing():
+            self._native_widget.SetLabel(self._init_text)
+            self._native_widget.Wrap(max_length * csf())
 
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a
