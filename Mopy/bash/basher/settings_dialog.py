@@ -1232,7 +1232,8 @@ class GeneralPage(_AScrollablePage):
     }
     _encodings_reverse = {v: k for k, v in _all_encodings.iteritems()}
     _setting_ids = {u'alt_name_on', u'deprint_on', u'global_menu_on',
-                    u'managed_game', u'plugin_encoding', u'uac_restart'}
+                    u'res_scroll_on', u'managed_game', u'plugin_encoding',
+                    u'uac_restart'}
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
@@ -1265,6 +1266,14 @@ class GeneralPage(_AScrollablePage):
                             u'based on the game it is managing.'),
             checked=bass.settings[u'bash.useAltName'])
         self._alt_name_checkbox.on_checked.subscribe(self._on_alt_name)
+        self._restore_scroll_checkbox = CheckBox(
+            self, _(u'Restore Scroll Positions on Start'),
+            chkbx_tooltip=_(u'Remember where you left off last time and '
+                            u'scroll back down to that plugin/save/etc. on '
+                            u'startup. Can significantly slow down '
+                            u"Wrye Bash's boot process."),
+            checked=bass.settings[u'bash.restore_scroll_positions'])
+        self._restore_scroll_checkbox.on_checked.subscribe(self._on_res_scroll)
         ##: Doesn't really belong here, but couldn't think of a better place
         self._uac_restart_checkbox = CheckBox(self, _(u'Administrator Mode'),
             chkbx_tooltip=_(u'Restart Wrye Bash with administrator '
@@ -1283,7 +1292,8 @@ class GeneralPage(_AScrollablePage):
             ]),
             VBoxedLayout(self, title=_(u'Miscellaneous'), spacing=6, items=[
                 self._deprint_checkbox, self._global_menu_checkbox,
-                self._alt_name_checkbox, self._uac_restart_checkbox,
+                self._alt_name_checkbox, self._restore_scroll_checkbox,
+                self._uac_restart_checkbox,
             ]),
         ]).apply_to(self)
 
@@ -1301,6 +1311,10 @@ class GeneralPage(_AScrollablePage):
     def _on_global_menu(self, checked):
         self._mark_setting_changed(u'global_menu_on',
             checked != bass.settings[u'bash.show_global_menu'])
+
+    def _on_res_scroll(self, checked):
+        self._mark_setting_changed(u'res_scroll_on', checked != bass.settings[
+            u'bash.restore_scroll_positions'])
 
     def _on_managed_game(self, new_game):
         self._mark_setting_changed(u'managed_game',
@@ -1349,6 +1363,10 @@ class GeneralPage(_AScrollablePage):
             new_alt_name = self._alt_name_checkbox.is_checked
             bass.settings[u'bash.useAltName'] = new_alt_name
             Link.Frame.set_bash_frame_title()
+        # Restore Scroll Positions on Start
+        if self._is_changed(u'res_scroll_on'):
+            new_res_scroll = self._restore_scroll_checkbox.is_checked
+            bass.settings[u'bash.restore_scroll_positions'] = new_res_scroll
         # Administrator Mode
         if self._is_changed(u'uac_restart'):
             self._request_restart(_(u'Administrator Mode'), [u'--uac'])

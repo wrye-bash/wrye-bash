@@ -1466,8 +1466,9 @@ class UIList(wx.Panel):
             wx.VERTICAL if isVertical else wx.HORIZONTAL)
 
     def SetScrollPosition(self):
-        self.__gList._native_widget.ScrollLines(
-            _settings.get(self.keyPrefix + u'.scrollPos', 0))
+        if _settings[u'bash.restore_scroll_positions']:
+            self.__gList._native_widget.ScrollLines(
+                _settings.get(self.keyPrefix + u'.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
