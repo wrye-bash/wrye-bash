@@ -47,6 +47,23 @@ from .brec import MreRecord, MelObject, _coerce, genFid, RecHeader
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
+def _key_sort(di, id_eid_=None, keys_dex=(), values_dex=(), by_value=False):
+    """Adapted to current uses"""
+    if id_eid_ is not None: # we passed id_eid in sort by eid
+        key_f=lambda k: id_eid_.get(k, u'unknown').lower()
+        for k in sorted(di, key=key_f):
+            yield k, di[k], id_eid_[k]
+    else:
+        if keys_dex or values_dex: # TODO(ut): drop below when keys are CIStr
+            key_f = lambda k: tuple((u'%s' % k[x]).lower() for x in keys_dex
+                        ) + tuple(di[k][x].lower() for x in values_dex)
+        elif by_value:
+            key_f = lambda k: di[k].lower()
+        else:
+            key_f = None # default
+        for k in sorted(di, key=key_f):
+            yield k, di[k]
+
 class _HandleAliases(object):
     """WIP aliases handling."""
 
@@ -410,16 +427,10 @@ class ActorFactions(_AParser):
                 _(u'Type'),_(u'Actor Eid'),_(u'Actor Mod'),_(u'Actor Object'),
                 _(u'Faction Eid'),_(u'Faction Mod'),_(u'Faction Object'),
                 _(u'Rank')))
-            for type_ in sorted(type_id_factions):
-                id_factions = type_id_factions[type_]
-                tuples = ((a, b, id_eid.get(a, u'Unknown')) for a, b in
-                          id_factions.iteritems())
-                for aid, factions, actorEid in sorted(tuples, key=lambda
-                        (_a, _b, c): c.lower()):
-                    tuples = ((a, b, id_eid.get(a, u'Unknown')) for a, b in
-                              factions.iteritems())
-                    for faction, rank, factionEid in sorted(tuples,
-                            key=lambda (_a, _b, c): c.lower()):
+            for type_, id_factions in _key_sort(type_id_factions):
+                for aid, factions, actorEid in _key_sort(id_factions, id_eid):
+                    for faction, rank, factionEid in _key_sort(factions,
+                                                               id_eid):
                         out.write(rowFormat % (
                             type_, actorEid, aid[0], aid[1], factionEid,
                             faction[0], faction[1], rank))
@@ -498,12 +509,9 @@ class ActorLevels(_HandleAliases):
                 _(u'Old CalcMax')))
             #Sorted based on mod, then editor ID
             obId_levels = self.mod_id_levels[GPath(bush.game.master_file)]
-            for mod, id_levels in sorted(self.mod_id_levels.iteritems(),
-                                         key=lambda (k, v): k):
+            for mod, id_levels in _key_sort(self.mod_id_levels):
                 if mod.s.lower() == bush.game.master_file.lower(): continue
-                sor = sorted(id_levels.iteritems(), # PY3: unpack to list
-                             key=lambda ((fidM, __), (eid_, _1, _2, _3, _4)): (
-                                 (u'%s' % fidM).lower(), eid_.lower()))
+                sor = _key_sort(id_levels, keys_dex=[0], values_dex=[0])
                 for (fidMod, fidObject), (
                         eid, isOffset, offset, calcMin, calcMax) in sor:
                     if isOffset:
@@ -634,10 +642,8 @@ class EditorIds(_HandleAliases):
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(headFormat % (
                 _(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id')))
-            for type_, id_eid in sorted(type_id_eid.iteritems(),
-                                        key=lambda (k, v): k):
-                for id_, eid_ in sorted(id_eid.iteritems(),
-                    key=lambda (__, eid_): eid_.lower()):
+            for type_, id_eid in _key_sort(type_id_eid):
+                for id_, eid_ in _key_sort(id_eid, by_value=True):
                     out.write(rowFormat % (type_, id_[0], id_[1], eid_))
 
 #------------------------------------------------------------------------------
@@ -701,18 +707,13 @@ class FactionRelations(_AParser):
         id_relations, id_eid = self.id_stored_info[b'FACT'], self.id_context
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(bush.game.relations_csv_header)
-            tuples = ((a, b, id_eid.get(a, u'Unknown')) for a, b in
-                      id_relations.iteritems())
-            for main_fid, rel, main_eid in sorted(tuples, key=lambda
-                    (_a, _b, c): c.lower()):
-                tuples = ((a, b, id_eid.get(a, u'Unknown')) for a, b in
-                          rel.iteritems())
-                for other_fid, relation_obj, other_eid in sorted(tuples, # PY3: unpack to list
-                        key=lambda (_a, _b, c): c.lower()):
-                    # I wish py2 allowed star exprs in tuples/lists...
+            for main_fid, rel, main_eid in _key_sort(id_relations,
+                                                     id_eid_=id_eid):
+                for oth_fid, relation_obj, oth_eid in _key_sort(
+                        rel, id_eid_=id_eid):
+                    # PY3: I wish py2 allowed star exprs in tuples/lists...
                     row_vals = (main_eid, main_fid[0], main_fid[1],
-                                other_eid, other_fid[0],
-                                other_fid[1]) + relation_obj
+                                oth_eid, oth_fid[0], oth_fid[1]) + relation_obj
                     out.write(bush.game.relations_csv_row_format % row_vals)
 
 #------------------------------------------------------------------------------
@@ -838,10 +839,9 @@ class FullNames(_HandleAliases):
             out.write(headFormat % (
                 _(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id'),
                 _(u'Name')))
-            for type_ in sorted(type_id_name):
-                id_name = type_id_name[type_]
-                for longid, (eid, rec_name) in sorted(id_name.iteritems(),
-                    key=lambda (lid, (eid_, __)): (lid, eid_.lower())):
+            for type_, id_name in _key_sort(type_id_name):
+                for longid, (eid, rec_name) in _key_sort(id_name,
+                    keys_dex=[0], values_dex=[0]):
                     out.write(rowFormat % (type_, longid[0], longid[1], eid,
                                            rec_name.replace(u'"', u'""')))
 
@@ -1035,8 +1035,9 @@ class ItemStats(_HandleAliases):
                 if not fid_attr_value: continue
                 attrs = self.class_attrs[group]
                 out.write(header)
-                for longid, attr_value in sorted(fid_attr_value.iteritems(),
-                    key=lambda (lid, at_val): (lid, at_val[u'eid'].lower())):
+                for longid in sorted(fid_attr_value, key=lambda lid: (
+                        lid, fid_attr_value[lid][u'eid'].lower())):
+                    attr_value = fid_attr_value[longid]
                     out.write(
                         u'"%s","%s","0x%06X",' % (group,longid[0],longid[1]))
                     write(out, attrs, list(attr_value[a] for a in attrs))
@@ -1061,8 +1062,9 @@ class ScriptText(object):
         num = 0
         r = len(deprefix)
         with Progress(_(u'Export Scripts')) as progress:
-            for eid, (scpt_txt, longid) in sorted(eid_data.iteritems(),
-                key=lambda (eid, (scpt_txt, longid)): (eid, longid)):
+            for eid in sorted(eid_data,
+                              key=lambda eid: (eid, eid_data[eid][1])):
+                (scpt_txt, longid) = eid_data[eid]
                 scpt_txt = decoder(scpt_txt)
                 if skipcomments:
                     tmp = []
@@ -1397,9 +1399,8 @@ class SigilStoneDetails(_UsesEffectsMixin):
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             outWrite = out.write
             outWrite(headFormat % header)
-            for fid in sorted(fid_stats,key=lambda x:fid_stats[x][0].lower()):
-                eid,name_,modpath,modb,iconpath,scriptfid,uses,value,weight,\
-                effects = fid_stats[fid]
+            for fid, (eid, name_, modpath, modb, iconpath, scriptfid, uses,
+                value, weight, effects) in _key_sort(fid_stats,values_dex=[0]):
                 scriptfid = scriptfid or (GPath(u'None'),None)
                 try:
                     output = rowFormat % (
@@ -1466,7 +1467,7 @@ class ItemPrices(_HandleAliases):
             format_,header = csvFormat(u'iss'),(u'"' + u'","'.join((
                 _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
                 _(u'Name'),_(u'Type'))) + u'"\n')
-            for group, fid_stats in sorted(class_fid_stats.iteritems()): ##: key=lambda (k, v): k ?
+            for group, fid_stats in _key_sort(class_fid_stats):
                 if not fid_stats: continue
                 out.write(header)
                 for fid in sorted(fid_stats,key=lambda x:(
