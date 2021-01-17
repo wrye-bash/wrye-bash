@@ -212,7 +212,7 @@ def InitInstallerLinks():
     InstallersList.column_links.append(SeparatorLink())
     InstallersList.column_links.append(Installers_UninstallAllPackages())
     InstallersList.column_links.append(Installers_UninstallAllUnknownFiles())
-    InstallersList.column_links.append(Installers_AutoApplyEmbeddedBCFs())
+    InstallersList.column_links.append(Installers_ApplyEmbeddedBCFs())
     #--Behavior
     InstallersList.column_links.append(SeparatorLink())
     InstallersList.column_links.append(Installers_AvoidOnStart())
@@ -327,6 +327,7 @@ def InitInstallerLinks():
     # Edit Menu
     edit_menu = InstallersList.global_links[_(u'Edit')]
     edit_menu.append(Installers_MonitorInstall())
+    edit_menu.append(Installers_ApplyEmbeddedBCFs())
     edit_menu.append(SeparatorLink())
     edit_menu.append(Installers_AnnealAll())
     edit_menu.append(Installers_UninstallAllUnknownFiles())
@@ -351,7 +352,6 @@ def InitInstallerLinks():
     settings_menu.append(Installers_AutoAnneal())
     if bEnableWizard:
         settings_menu.append(Installers_AutoWizard())
-    settings_menu.append(Installers_AutoApplyEmbeddedBCFs())
     settings_menu.append(Installers_AutoRefreshProjects())
     settings_menu.append(SeparatorLink())
     settings_menu.append(Installers_ConflictsReportShowBSAConflicts())

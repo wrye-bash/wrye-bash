@@ -39,7 +39,7 @@ __all__ = [u'Installers_SortActive', u'Installers_SortProjects',
            u'Installers_Enabled', u'Installers_AutoAnneal',
            u'Installers_AutoWizard', u'Installers_AutoRefreshProjects',
            u'Installers_AutoRefreshBethsoft',
-           u'Installers_AutoApplyEmbeddedBCFs', u'Installers_BsaRedirection',
+           u'Installers_ApplyEmbeddedBCFs', u'Installers_BsaRedirection',
            u'Installers_RemoveEmptyDirs',
            u'Installers_ConflictsReportShowsInactive',
            u'Installers_ConflictsReportShowsLower',
@@ -328,9 +328,9 @@ class Installers_AutoRefreshProjects(BoolLink):
     _help = _(u'Toggles whether or not Wrye Bash will automatically detect '
               u'changes to projects in the installers directory.')
 
-class Installers_AutoApplyEmbeddedBCFs(ItemLink):
+class Installers_ApplyEmbeddedBCFs(ItemLink):
     """Automatically apply Embedded BCFs to archives that have one."""
-    _text = _(u'Auto-Apply Embedded BCFs')
+    _text = _(u'Apply Embedded BCFs')
     _help = _(u'Automatically apply Embedded BCFs to their containing '
               u'archives.')
 
