@@ -71,14 +71,14 @@ class MreTes4(MreHeaderBase):
     melSet = MelSet(
         MelStruct(b'HEDR', u'f2I', (u'version', 1.0), u'numRecords',
             (u'nextObject', 0x001)),
-        MelBase('TNAM', 'tnam_p'),
+        MelBase(b'TNAM', 'tnam_p'),
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelFidList('ONAM','overrides',),
-        MelBase('SCRN', 'screenshot'),
-        MelBase('INTV', 'unknownINTV'),
-        MelBase('INCC', 'unknownINCC'),
+        MelFidList(b'ONAM','overrides',),
+        MelBase(b'SCRN', 'screenshot'),
+        MelBase(b'INTV', 'unknownINTV'),
+        MelBase(b'INCC', 'unknownINCC'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -98,17 +98,17 @@ class MreLvli(MreLeveledList):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8('LVLD', 'chanceNone'),
-        MelUInt8('LVLM', 'maxCount'),
+        MelUInt8(b'LVLD', 'chanceNone'),
+        MelUInt8(b'LVLM', 'maxCount'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelOptFid('LVLG', 'glob'),
+        MelOptFid(b'LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
             MelStruct(b'LLKC', u'2I', (FID, u'keyword'), u'chance'),
         ),
-        MelFid('LVSG', 'epicLootChance'),
-        MelLString('ONAM', 'overrideName')
+        MelFid(b'LVSG', 'epicLootChance'),
+        MelLString(b'ONAM', 'overrideName')
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -123,16 +123,16 @@ class MreLvln(MreLeveledList):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8('LVLD', 'chanceNone'),
-        MelUInt8('LVLM', 'maxCount'),
+        MelUInt8(b'LVLD', 'chanceNone'),
+        MelUInt8(b'LVLM', 'maxCount'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelOptFid('LVLG', 'glob'),
+        MelOptFid(b'LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
             MelStruct(b'LLKC', u'2I', (FID, u'keyword'), u'chance'),
         ),
-        MelString('MODL','model'),
-        MelBase('MODT','modt_p'),
+        MelString(b'MODL','model'),
+        MelBase(b'MODT','modt_p'),
     )
     __slots__ = melSet.getSlotsUsed()

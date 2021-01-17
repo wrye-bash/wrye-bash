@@ -379,11 +379,11 @@ class MelWthrColors(MelStruct):
     """Used in WTHR for PNAM and NAM0 for all games but FNV."""
     def __init__(self, wthr_sub_sig):
         MelStruct.__init__(
-            self, wthr_sub_sig, '3Bs3Bs3Bs3Bs', 'riseRed', 'riseGreen',
-            'riseBlue', ('unused1', null1), 'dayRed', 'dayGreen',
-            'dayBlue', ('unused2', null1), 'setRed', 'setGreen', 'setBlue',
-            ('unused3', null1), 'nightRed', 'nightGreen', 'nightBlue',
-            ('unused4', null1))
+            self, wthr_sub_sig, u'3Bs3Bs3Bs3Bs', u'riseRed', u'riseGreen',
+            u'riseBlue', (u'unused1', null1), u'dayRed', u'dayGreen',
+            u'dayBlue',(u'unused2', null1), u'setRed', u'setGreen', u'setBlue',
+            (u'unused3', null1), u'nightRed', u'nightGreen', u'nightBlue',
+            (u'unused4', null1))
 
 #------------------------------------------------------------------------------
 class MelDropSound(MelFid):
@@ -450,7 +450,7 @@ class MelRaceParts(MelNull):
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         __unpacker=_int_unpacker # PY3: keyword only search for __unpacker
-        if sub_type == 'INDX':
+        if sub_type == b'INDX':
             self._last_indx = ins.unpack(__unpacker, size_, *debug_strs)[0]
         else:
             self._indx_to_loader[self._last_indx].load_mel(
@@ -459,7 +459,8 @@ class MelRaceParts(MelNull):
     def dumpData(self, record, out):
         for part_indx, part_attr in self._indx_to_attr.iteritems():
             if hasattr(record, part_attr): # only dump present parts
-                MelUInt32('INDX', '').packSub(out, struct_pack(u'=I',  part_indx))
+                MelUInt32(b'INDX', u'UNUSED').packSub(
+                    out, struct_pack(u'=I', part_indx))
                 self._indx_to_loader[part_indx].dumpData(record, out)
 
     @property

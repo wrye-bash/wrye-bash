@@ -268,7 +268,7 @@ save_rec_types = {
 #------------------------------------------------------------------------------
 # Leveled Lists
 #------------------------------------------------------------------------------
-listTypes = ('LVLC','LVLI','LVSP',)
+listTypes = (b'LVLC',b'LVLI',b'LVSP',)
 
 #------------------------------------------------------------------------------
 # Import Prices
@@ -281,24 +281,24 @@ namesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
 #------------------------------------------------------------------------------
 # Import Prices
 #------------------------------------------------------------------------------
-pricesTypes = {'ALCH':{},'AMMO':{},'APPA':{},'ARMO':{},'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},'WEAP':{}}
+pricesTypes = {b'ALCH':{},b'AMMO':{},b'APPA':{},b'ARMO':{},b'BOOK':{},b'CLOT':{},b'INGR':{},b'KEYM':{},b'LIGH':{},b'MISC':{},b'SGST':{},b'SLGM':{},b'WEAP':{}}
 #------------------------------------------------------------------------------
 # Import Stats
 #------------------------------------------------------------------------------
 statsTypes = {
-    'ALCH':('eid', 'weight', 'value'),
-    'AMMO':('eid', 'weight', 'value', 'damage', 'speed', 'enchantPoints'),
-    'APPA':('eid', 'weight', 'value', 'quality'),
-    'ARMO':('eid', 'weight', 'value', 'health', 'strength'),
-    'BOOK':('eid', 'weight', 'value', 'enchantPoints'),
-    'CLOT':('eid', 'weight', 'value', 'enchantPoints'),
-    'INGR':('eid', 'weight', 'value'),
-    'KEYM':('eid', 'weight', 'value'),
-    'LIGH':('eid', 'weight', 'value', 'duration'),
-    'MISC':('eid', 'weight', 'value'),
-    'SGST':('eid', 'weight', 'value', 'uses'),
-    'SLGM':('eid', 'weight', 'value'),
-    'WEAP':('eid', 'weight', 'value', 'health', 'damage', 'speed', 'reach', 'enchantPoints'),
+    b'ALCH':(u'eid', u'weight', u'value'),
+    b'AMMO':(u'eid', u'weight', u'value', u'damage', u'speed', u'enchantPoints'),
+    b'APPA':(u'eid', u'weight', u'value', u'quality'),
+    b'ARMO':(u'eid', u'weight', u'value', u'health', u'strength'),
+    b'BOOK':(u'eid', u'weight', u'value', u'enchantPoints'),
+    b'CLOT':(u'eid', u'weight', u'value', u'enchantPoints'),
+    b'INGR':(u'eid', u'weight', u'value'),
+    b'KEYM':(u'eid', u'weight', u'value'),
+    b'LIGH':(u'eid', u'weight', u'value', u'duration'),
+    b'MISC':(u'eid', u'weight', u'value'),
+    b'SGST':(u'eid', u'weight', u'value', u'uses'),
+    b'SLGM':(u'eid', u'weight', u'value'),
+    b'WEAP':(u'eid', u'weight', u'value', u'health', u'damage', u'speed', u'reach', u'enchantPoints'),
 }
 statsHeaders = (
     #--Alch
@@ -360,17 +360,17 @@ statsHeaders = (
 # Import Sounds
 #------------------------------------------------------------------------------
 soundsTypes = {
-    "ACTI": ('sound',),
-    "CONT": ('soundOpen','soundClose',),
-    "CREA": ('footWeight','inheritsSoundsFrom','sounds',),
-    "DOOR": ('soundOpen','soundClose','soundLoop',),
-    "LIGH": ('sound',),
-    "MGEF": ('castingSound','boltSound','hitSound','areaSound',),
-#    "REGN": ('entries.sounds',),
-    "SOUN": ('soundFile', 'minDistance', 'maxDistance', 'freqAdjustment', 'staticAtten',
-             'stopTime', 'startTime',),
-    "WATR": ('sound',),
-    "WTHR": ('sounds',),
+    b'ACTI': (u'sound',),
+    b'CONT': (u'soundOpen', u'soundClose'),
+    b'CREA': (u'footWeight', u'inheritsSoundsFrom', u'sounds'),
+    b'DOOR': (u'soundOpen', u'soundClose', u'soundLoop'),
+    b'LIGH': (u'sound',),
+    b'MGEF': (u'castingSound', u'boltSound', u'hitSound', u'areaSound'),
+#    b'REGN': ('entries.sounds',),
+    b'SOUN': (u'soundFile', u'minDistance', u'maxDistance', u'freqAdjustment',
+              u'staticAtten', u'stopTime', u'startTime'),
+    b'WATR': (u'sound',),
+    b'WTHR': (u'sounds',),
 }
 
 #------------------------------------------------------------------------------
@@ -459,7 +459,7 @@ graphicsModelAttrs = (u'model', u'maleBody', u'maleWorld', u'femaleBody', u'fema
 #------------------------------------------------------------------------------
 # Import Inventory
 #------------------------------------------------------------------------------
-inventoryTypes = ('CREA','NPC_','CONT',)
+inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
 
 #------------------------------------------------------------------------------
 # Race Records
@@ -546,27 +546,27 @@ text_types = {
 # Contents Checker
 #------------------------------------------------------------------------------
 # Entry types used for CONT, CREA, LVLI and NPC_
-_common_entry_types = {'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'CLOT', 'INGR',
-                       'KEYM', 'LIGH', 'LVLI', 'MISC', 'SGST', 'SLGM', 'WEAP'}
+_common_entry_types = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'CLOT', b'INGR',
+                       b'KEYM', b'LIGH', b'LVLI', b'MISC', b'SGST', b'SLGM', b'WEAP'}
 cc_valid_types = {
-    'CONT': _common_entry_types,
-    'CREA': _common_entry_types,
-    'LVLC': {'CREA', 'LVLC', 'NPC_'},
-    'LVLI': _common_entry_types,
-    'LVSP': {'LVSP', 'SPEL'},
-    'NPC_': _common_entry_types,
+    b'CONT': _common_entry_types,
+    b'CREA': _common_entry_types,
+    b'LVLC': {b'CREA', b'LVLC', b'NPC_'},
+    b'LVLI': _common_entry_types,
+    b'LVSP': {b'LVSP', b'SPEL'},
+    b'NPC_': _common_entry_types,
 }
 cc_passes = (
-    (('LVLC', 'LVLI', 'LVSP'), 'entries', 'listId'),
-    (('CONT', 'CREA', 'NPC_'), 'items', 'item'),
+    ((b'LVLC', b'LVLI', b'LVSP'), 'entries', 'listId'),
+    ((b'CONT', b'CREA', b'NPC_'), 'items', 'item'),
 )
 
 #------------------------------------------------------------------------------
 # Import Scripts
 #------------------------------------------------------------------------------
-scripts_types = {'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT',
-                 'CREA', 'DOOR', 'FLOR', 'FURN', 'INGR', 'KEYM', 'LIGH',
-                 'MISC', 'NPC_', 'QUST', 'SGST', 'SLGM', 'WEAP'}
+scripts_types = {b'ACTI', b'ALCH', b'APPA', b'ARMO', b'BOOK', b'CLOT', b'CONT',
+                 b'CREA', b'DOOR', b'FLOR', b'FURN', b'INGR', b'KEYM', b'LIGH',
+                 b'MISC', b'NPC_', b'QUST', b'SGST', b'SLGM', b'WEAP'}
 
 #------------------------------------------------------------------------------
 # Import Actors
@@ -619,7 +619,7 @@ actor_importer_attrs = {
         u'NPC.Race': (u'race',),
     },
 }
-actor_types = ('CREA', 'NPC_')
+actor_types = (b'CREA', b'NPC_')
 
 #------------------------------------------------------------------------------
 # Import Spell Stats

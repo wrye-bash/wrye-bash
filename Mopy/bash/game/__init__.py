@@ -336,7 +336,7 @@ class GameInfo(object):
         # Can create Bashed Patches
         canBash = False
         # Can edit basic info in the main header record - generally has
-        # signature 'TES4'
+        # signature b'TES4'
         canEditHeader = False
         # Valid ESM/ESP header versions. These are the valid 'version' numbers
         # for the game file headers

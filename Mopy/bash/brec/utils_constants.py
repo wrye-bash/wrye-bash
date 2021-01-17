@@ -112,7 +112,7 @@ class BipedFlags(Flags):
 FID = 'FID'
 
 # Null strings (for default empty byte arrays)
-null1 = '\x00'
+null1 = b'\x00'
 null2 = null1 * 2
 null3 = null1 * 3
 null4 = null1 * 4

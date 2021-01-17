@@ -235,11 +235,11 @@ class MreLand(MelRecord):
     rec_sig = b'LAND'
 
     melSet = MelSet(
-        MelBase('DATA', 'unknown'),
-        MelBase('VNML', 'vertex_normals'),
-        MelBase('VHGT', 'vertex_height_map'),
-        MelBase('VCLR', 'vertex_colors'),
-        MelGroups('layers',
+        MelBase(b'DATA', u'unknown'),
+        MelBase(b'VNML', u'vertex_normals'),
+        MelBase(b'VHGT', u'vertex_height_map'),
+        MelBase(b'VCLR', u'vertex_colors'),
+        MelGroups(u'layers',
             # Start a new layer each time we hit one of these
             MelUnion({
                 b'ATXT': MelStruct(b'ATXT', u'IBsh', (FID, u'atxt_texture'),
@@ -253,8 +253,8 @@ class MreLand(MelRecord):
                 False: MelNull(b'VTXT'),
             }, decider=FidNotNullDecider(u'atxt_texture')),
         ),
-        MelArray('vertex_textures',
-            MelFid('VTEX', 'vertex_texture'),
+        MelArray(u'vertex_textures',
+            MelFid(b'VTEX', u'vertex_texture'),
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -277,16 +277,16 @@ class MreLeveledListBase(MelRecord):
           flags
     """
     _flags = bolt.Flags(0,bolt.Flags.getNames(
-        (0, 'calcFromAllLevels'),
-        (1, 'calcForEachItem'),
-        (2, 'useAllSpells'),
-        (3, 'specialLoot'),
+        (0, u'calcFromAllLevels'),
+        (1, u'calcForEachItem'),
+        (2, u'useAllSpells'),
+        (3, u'specialLoot'),
         ))
     top_copy_attrs = ()
     # TODO(inf) Only overriden for FO3/FNV right now - Skyrim/FO4?
-    entry_copy_attrs = ('listId', 'level', 'count')
-    __slots__ = ['mergeOverLast', 'mergeSources', 'items', 'de_records',
-                 're_records']
+    entry_copy_attrs = (u'listId', u'level', u'count')
+    __slots__ = [u'mergeOverLast', u'mergeSources', u'items', u'de_records',
+                 u're_records']
                 # + ['flags', 'entries'] # define those in the subclasses
 
     def __init__(self, header, ins=None, do_unpack=False):
