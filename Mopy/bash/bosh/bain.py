@@ -2700,8 +2700,8 @@ class InstallersData(DataStore):
         return filtered_removes
 
     def clean_data_dir(self, removes,  refresh_ui):
-        destDir = bass.dirs[u'bainData'].join(u'%s Folder Contents (%s)' %
-            bush.game.mods_dir, bolt.timestamp())
+        destDir = bass.dirs[u'bainData'].join(u'%s Folder Contents (%s)' % (
+            bush.game.mods_dir, bolt.timestamp()))
         try:
             from . import modInfos
             emptyDirs, mods = set(), set()
@@ -2718,7 +2718,7 @@ class InstallersData(DataStore):
                     emptyDirs.add(full_path.head)
                 except OSError:
                     #It's not imperative that files get moved, so ignore errors
-                    deprint(u'Clean Data: moving %s to % s failed' % (
+                    deprint(u'Clean Data: moving %s to %s failed' % (
                                 full_path, destDir), traceback=True)
             modInfos.delete_refresh(mods, None, check_existence=False)
             for emptyDir in emptyDirs:

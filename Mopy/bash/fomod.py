@@ -425,10 +425,10 @@ class FomodInstaller(object):
                 u'Game version is {} but {} is required.'.format(
                     game_ver, target_ver))
 
-    def test_conditions(self, conditions):
-        cond_op = conditions.get(u'operator', u'And')
+    def test_conditions(self, fomod_conditions):
+        cond_op = fomod_conditions.get(u'operator', u'And')
         failed_conditions = []
-        all_conditions = conditions.findall(u'*')
+        all_conditions = fomod_conditions.findall(u'*')
         for condition in all_conditions:
             try:
                 test_func = self._condition_tests.get(condition.tag, None)
