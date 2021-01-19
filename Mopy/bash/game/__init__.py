@@ -578,9 +578,9 @@ class GameInfo(object):
     # MGEFs that are considered hostile
     hostile_effects = set()
     # Maps MGEF signatures to certain MGEF properties
-    mgef_basevalue = dict()
-    mgef_name = dict()
-    mgef_school = dict()
+    mgef_basevalue = {}
+    mgef_name = {}
+    mgef_school = {}
 
     # Human-readable names for each actor value
     actor_values = []

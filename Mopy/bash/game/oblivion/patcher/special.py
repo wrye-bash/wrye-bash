@@ -104,8 +104,8 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
             book.full = full
             book.value = value
             book.weight = 0.2
-            book.text = u'<div align="left"><font face=3 color=4444>'
-            book.text += (_(u"Salan's Catalog of %s") + u'\r\n\r\n') % full
+            book.book_text = u'<div align="left"><font face=3 color=4444>'
+            book.book_text += (_(u"Salan's Catalog of %s") + u'\r\n\r\n') % full
             book.iconPath = iconPath
             book.model = book.getDefault(u'model')
             book.model.modPath = modelPath
@@ -127,7 +127,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         for (num,objectId,full,value) in _ingred_alchem:
             book = getBook(objectId, u'cobCatAlchemIngreds%s' % num, full,
                            value, iconPath, modPath, modb_p)
-            with sio(book.text) as buff:
+            with sio(book.book_text) as buff:
                 buff.seek(0,os.SEEK_END)
                 buffWrite = buff.write
                 for eid, full, effects in sorted(id_ingred.values(),
@@ -139,7 +139,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
                             effectName += actorNames[actorValue]
                         buffWrite(u'  '+effectName+u'\r\n')
                     buffWrite(u'\r\n')
-                book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
+                book.book_text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
         effect_ingred = defaultdict(list)
         for _fid,(eid,full,effects) in id_ingred.iteritems():
@@ -154,7 +154,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         for (num, objectId, full, value) in _effect_alchem:
             book = getBook(objectId, u'cobCatAlchemEffects%s' % num, full,
                            value, iconPath, modPath, modb_p)
-            with sio(book.text) as buff:
+            with sio(book.book_text) as buff:
                 buff.seek(0,os.SEEK_END)
                 buffWrite = buff.write
                 for effectName in sorted(effect_ingred):
@@ -167,7 +167,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
                             exSpace = u' ' if index == 0 else u''
                             buffWrite(u' %s%s %s\r\n'%(index + 1,exSpace,full))
                         buffWrite(u'\r\n')
-                book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
+                book.book_text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Log
         log.setHeader(u'= ' + self._patcher_name)
         log(u'* '+_(u'Ingredients Cataloged') + u': %d' % len(id_ingred))
@@ -207,7 +207,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
 
     def readFromText(self, textPath):
         """Imports type_id_name from specified text file."""
-        aliases = self.patchFile.aliases
+        aliases = self.patchFile.pfile_aliases
         id_exhaustion = self.id_exhaustion
         with CsvReader(textPath) as ins:
             for fields in ins:
@@ -253,8 +253,8 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
             if not (duration and record.spellType == 2): continue
             isExhausted = False ##: unused, was it supposed to be used?
             for effect in record.effects:
-                if effect.name == b'SEFF' and effect.scriptEffect.script == \
-                        exhaustId:
+                if effect.effect_sig == b'SEFF' \
+                        and effect.scriptEffect.script == exhaustId:
                     duration = 0
                     break
             if not duration: continue
@@ -262,7 +262,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
             record.full = u'+' + record.full
             record.spellType = 3 #--Lesser power
             effect = record.getDefault(u'effects')
-            effect.name = b'SEFF'
+            effect.effect_sig = b'SEFF'
             effect.duration = duration
             scriptEffect = record.getDefault(u'effects.scriptEffect')
             scriptEffect.full = u'Power Exhaustion'
@@ -298,7 +298,7 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
 
     def readFromText(self, textPath):
         """Imports id_info from specified text file."""
-        aliases = self.patchFile.aliases
+        aliases = self.patchFile.pfile_aliases
         id_info = self.id_info
         with CsvReader(textPath) as ins:
             for fields in ins:

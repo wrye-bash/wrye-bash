@@ -132,7 +132,7 @@ def checkMods(showModList=False, showCRC=False, showVersion=True,
         #--Look for dirty edits
         shouldClean = {}
         scan = []
-        dirty_msgs = [(x, modInfos.getDirtyMessage(x)) for x in active]
+        dirty_msgs = [(x, modInfos[x].getDirtyMessage()) for x in active]
         for x, y in dirty_msgs:
             if y[0]:
                 shouldClean[x] = y[1]
@@ -449,7 +449,7 @@ class ModCleaner(object):
                     except CancelError:
                         raise
                     except:
-                        deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo.name,ins.tell()),traceback=True)
+                        deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo, ins.tell()), traceback=True)
                         udr = itm = fog = None
                 #--Done
             ret.append((udr.values() if udr is not None else None,itm,fog))

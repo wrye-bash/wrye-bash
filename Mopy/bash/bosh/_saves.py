@@ -31,7 +31,7 @@ from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
 from ..bolt import Flags, sio, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
-    structs_cache
+    structs_cache, unpack_str8
 from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
     unpack_header
 from ..exception import ModError, StateError
@@ -62,10 +62,10 @@ class SreNPC(object):
         __slots__ = (u'flags', u'baseSpell', u'fatigue', u'barterGold',
                      u'level', u'calcMin', u'calcMax')
 
-    def __init__(self, sre_flags=0, data=None):
+    def __init__(self, sre_flags=0, data_=None):
         for attr in self.__slots__:
             setattr(self, attr, None)
-        if data: self.load(sre_flags, data)
+        if data_: self.load(sre_flags, data_)
 
     def getDefault(self,attr):
         """Returns a default version. Only supports acbs."""
@@ -76,9 +76,9 @@ class SreNPC(object):
         acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
         return acbs
 
-    def load(self, sr_flags, data):
+    def load(self, sr_flags, data_):
         """Loads variables from data."""
-        with sio(data) as ins:
+        with sio(data_) as ins:
             def _unpack(fmt, fmt_siz):
                 return struct_unpack(fmt, ins.read(fmt_siz))
             sr_flags = SreNPC.sre_flags(sr_flags)
@@ -105,8 +105,7 @@ class SreNPC(object):
                 num, = _unpack('H',2)
                 self.modifiers = list(starmap(_unpack, repeat(('=Bf', 5), num)))
             if sr_flags.full:
-                size, = _unpack('B',1)
-                self.full = ins.read(size)
+                self.full = unpack_str8(ins)
             if sr_flags.skills:
                 self.skills = list(_unpack('21B',21))
         #--Done
@@ -266,9 +265,9 @@ class SaveFile(object):
             self.header = OblivionSaveHeader(self.fileInfo.abs_path,
                                              load_image=True, ins=ins)
             #--Pre-Records copy buffer
-            def insCopy(buff,size,backSize=0):
+            def insCopy(buff, siz, backSize=0):
                 if backSize: ins.seek(-backSize,1)
-                buff.write(ins.read(size+backSize))
+                buff.write(ins.read(siz + backSize))
 
             #--"Globals" block
             fidsPointer,recordsNum = unpack_many(ins, '2I')

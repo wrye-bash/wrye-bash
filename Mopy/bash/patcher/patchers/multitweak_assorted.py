@@ -223,11 +223,11 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
     _re_tag_in_word = re.compile(u'([a-z])<font face=1>', re.M)
 
     def wants_record(self, record):
-        return (record.text and not record.enchantment and
-                record.text != self._darnify(record))
+        return (record.book_text and not record.enchantment and
+                record.book_text != self._darnify(record))
 
     def tweak_record(self, record):
-        record.text = self._darnify(record)
+        record.book_text = self._darnify(record)
 
     def _darnify(self, record):
         """Darnifies the text of the specified record and returns it as a
@@ -236,7 +236,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         # There are some FUNKY quotes that don't translate properly (they are
         # in *latin* encoding, not even cp1252 or something normal but
         # non-unicode). Get rid of those before we blow up.
-        rec_text = record.text.replace(u'\u201d', u'')
+        rec_text = record.book_text.replace(u'\u201d', u'')
         if self._re_head_2.match(rec_text):
             rec_text = self._re_head_2.sub(
                 u'' r'\1<font face=1 color=220000>\2<font face=3 '

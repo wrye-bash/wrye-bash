@@ -293,7 +293,7 @@ condition_function_data = {
     555:  (u'GetSpellUsageNum', 2, 0),
     557:  (u'GetActorsInHigh', 0, 0),
     558:  (u'HasLoaded3D', 0, 0),
-    
+
     # extended by FOSE
     1024: (u'GetFOSEVersion', 0, 0),
     1025: (u'GetFOSERevision', 0, 0),
@@ -577,7 +577,7 @@ inventoryTypes = ('CREA','NPC_','CONT',)
 #------------------------------------------------------------------------------
 text_types = {
     b'AVIF': (u'description',),
-    b'BOOK': (u'text',),
+    b'BOOK': (u'book_text',),
     b'CLAS': (u'description',),
     b'LSCR': (u'description',),
     b'MESG': (u'description',),

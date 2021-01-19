@@ -537,7 +537,7 @@ class MasterList(_ModsUIList):
         elif newName == u'':
             return EventResult.CANCEL
         else:
-            balt.showError(self,_(u'File %s does not exist.') % newName.s)
+            balt.showError(self, _(u'File %s does not exist.') % newName)
             return EventResult.CANCEL
 
     #--GetMasters
@@ -552,10 +552,11 @@ class INIList(balt.UIList):
     context_links = Links()  #--Single item menu
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _shellUI = True
-    _sort_keys = {u'File'     : None,
-                  u'Installer': lambda self, a: bosh.iniInfos.table.getItem(
-                     a, u'installer', u''),
-                 }
+    _sort_keys = {
+        u'File'     : None,
+        u'Installer': lambda self, a: self.data_store[a].get_table_prop(
+            u'installer', u''),
+    }
     def _sortValidFirst(self, items):
         if settings[u'bash.ini.sortValid']:
             items.sort(key=lambda a: self.data_store[a].tweak_status() < 0)
@@ -563,8 +564,8 @@ class INIList(balt.UIList):
     #--Labels
     labels = OrderedDict([
         (u'File',      lambda self, p: p.s),
-        (u'Installer', lambda self, p: self.data_store.table.getItem(
-                                                   p, u'installer', u'')),
+        (u'Installer', lambda self, p: self.data_store[p].get_table_prop(
+            u'installer', u'')),
     ])
     _target_ini = True # pass the target_ini settings on PopulateItem
 
@@ -807,13 +808,15 @@ class ModList(_ModsUIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
-    def _get(self, mod): return partial(self.data_store.table.getItem, mod)
     _sort_keys = {
         u'File'      : None,
         u'Author'    : lambda self, a:self.data_store[a].header.author.lower(),
-        u'Rating'    : lambda self, a: self._get(a)(u'rating', u''),
-        u'Group'     : lambda self, a: self._get(a)(u'group', u''),
-        u'Installer' : lambda self, a: self._get(a)(u'installer', u''),
+        u'Rating'    : lambda self, a: self.data_store[a].get_table_prop(
+                            u'rating', u''),
+        u'Group'     : lambda self, a: self.data_store[a].get_table_prop(
+                            u'group', u''),
+        u'Installer' : lambda self, a: self.data_store[a].get_table_prop(
+                            u'installer', u''),
         u'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
         u'Indices'  : lambda self, a: self.data_store[a].real_index(),
         u'Modified'  : lambda self, a: self.data_store[a].mtime,
@@ -831,9 +834,12 @@ class ModList(_ModsUIList):
         (u'File',       lambda self, p:self.data_store.masterWithVersion(p.s)),
         (u'Load Order', lambda self, p: self.data_store.hexIndexString(p)),
         (u'Indices',    lambda self, p:self.data_store[p].real_index_string()),
-        (u'Rating',     lambda self, p: self._get(p)(u'rating', u'')),
-        (u'Group',      lambda self, p: self._get(p)(u'group', u'')),
-        (u'Installer',  lambda self, p: self._get(p)(u'installer', u'')),
+        (u'Rating',     lambda self, p: self.data_store[p].get_table_prop(
+                            u'rating', u'')),
+        (u'Group',      lambda self, p: self.data_store[p].get_table_prop(
+                            u'group', u'')),
+        (u'Installer',  lambda self, p: self.data_store[p].get_table_prop(
+                            u'installer', u'')),
         (u'Modified',   lambda self, p: format_date(self.data_store[p].mtime)),
         (u'Size',       lambda self, p: round_size(self.data_store[p].size)),
         (u'Author',     lambda self, p: self.data_store[p].header.author if
@@ -983,7 +989,7 @@ class ModList(_ModsUIList):
             item_format.back_key = u'mods.bkgd.size_mismatch'
             mouseText += _(u'Has size-mismatched master(s). ')
         if settings[u'bash.mods.scanDirty']:
-            message = bosh.modInfos.getDirtyMessage(mod_name)
+            message = mod_info.getDirtyMessage()
             mouseText += message[1]
             if message[0]: item_format.underline = True
         self.mouseTexts[mod_name] = mouseText
@@ -1455,9 +1461,9 @@ class ModDetails(_ModsSavesDetails):
         self.gAuthor.on_focus_lost.subscribe(self.OnEditAuthor)
         self.gAuthor.on_text_changed.subscribe(self.OnAuthorEdit)
         #--Modified
-        self.modified = TextField(top, max_length=32)
-        self.modified.on_focus_lost.subscribe(self.OnEditModified)
-        self.modified.on_text_changed.subscribe(self.OnModifiedEdit)
+        self.modified_txt = TextField(top, max_length=32)
+        self.modified_txt.on_focus_lost.subscribe(self.OnEditModified)
+        self.modified_txt.on_text_changed.subscribe(self.OnModifiedEdit)
         # size=(textWidth, -1),
         #--Description
         self._desc_area = TextArea(top, auto_tooltip=False, max_length=511)
@@ -1474,7 +1480,7 @@ class ModDetails(_ModsSavesDetails):
             HLayout(items=[Label(top, _(u'File:')), Stretch(), self.version]),
             self._fname_ctrl,
             Label(top, _(u'Author:')), self.gAuthor,
-            Label(top, _(u'Modified:')), self.modified,
+            Label(top, _(u'Modified:')), self.modified_txt,
             Label(top, _(u'Description:')),
             (self._desc_area, LayoutOptions(expand=True, weight=1))
         ]).apply_to(top)
@@ -1509,7 +1515,7 @@ class ModDetails(_ModsSavesDetails):
         #--Set fields
         self._fname_ctrl.text_content = self.fileStr
         self.gAuthor.text_content = self.authorStr
-        self.modified.text_content = self.modifiedStr
+        self.modified_txt.text_content = self.modifiedStr
         self._desc_area.text_content = self.descriptionStr
         self.version.label_text = self.versionStr
         self.uilist.SetFileInfo(self.modInfo)
@@ -1541,19 +1547,19 @@ class ModDetails(_ModsSavesDetails):
 
     def OnEditModified(self):
         if not self.modInfo: return
-        modifiedStr = self.modified.text_content
+        modifiedStr = self.modified_txt.text_content
         if modifiedStr == self.modifiedStr: return
         try:
             newTimeTup = unformat_date(modifiedStr, '%c')
             time.mktime(newTimeTup)
         except ValueError:
             balt.showError(self,_(u'Unrecognized date: ')+modifiedStr)
-            self.modified.text_content = self.modifiedStr
+            self.modified_txt.text_content = self.modifiedStr
             return
         #--Normalize format
         modifiedStr = time.strftime('%c', newTimeTup)
         self.modifiedStr = modifiedStr
-        self.modified.text_content = modifiedStr #--Normalize format
+        self.modified_txt.text_content = modifiedStr #--Normalize format
         self.SetEdited()
 
     def OnEditDescription(self):
@@ -2132,6 +2138,9 @@ class SaveDetails(_ModsSavesDetails):
             self.playMinutes = saveInfo.header.gameTicks//60000
             self.playerLevel = saveInfo.header.pcLevel
             self.coSaves = saveInfo.get_cosave_tags()
+            note_text = saveInfo.get_table_prop(u'info', u'')
+        else:
+            note_text = u''
         #--Set Fields
         self._fname_ctrl.text_content = self.fileStr
         self._set_player_info_label()
@@ -2148,8 +2157,6 @@ class SaveDetails(_ModsSavesDetails):
         self.picture.set_bitmap(new_save_screen)
         #--Info Box
         self.gInfo.modified = False
-        note_text = bosh.saveInfos.table.getItem(fileName, u'info',
-                                                 u'') if fileName else u''
         self.gInfo.text_content = note_text
         self._update_masters_warning()
 
@@ -2177,7 +2184,7 @@ class SaveDetails(_ModsSavesDetails):
     def OnInfoEdit(self, new_text):
         """Info field was edited."""
         if self.saveInfo and self.gInfo.modified:
-            bosh.saveInfos.table.setItem(self.saveInfo.name, u'info', new_text)
+            self.saveInfo.set_table_prop(u'info', new_text)
 
     def _validate_filename(self, fileStr):
         return self.panel_uilist.validate_filename(fileStr,
@@ -2362,7 +2369,7 @@ class InstallersList(balt.UIList):
             if textNextLower == selectedText:
                 lenNextLower = lenWithExt
             else:
-                lenNextLower = len(textNextLower.s)
+                lenNextLower = len(textNextLower)
             if renaming_type.is_archive():
                 selection_span = (0, lenNextLower)
             elif renaming_type.is_marker():
@@ -2380,12 +2387,10 @@ class InstallersList(balt.UIList):
         selected = self.GetSelected()
         renaming_type = type(self.data_store[selected[0]])
         installables = self.data_store.filterInstallables(selected)
-        validate = partial(self.validate_filename, evt_label,
-                           is_filename=bool(installables))
+        kwargs = {u'is_filename': bool(installables)}
         if renaming_type.is_archive():
-            root, newName, _numStr = validate(ext=self.__ext_group)
-        else:
-            root, newName, _numStr = validate()
+            kwargs[u'ext'] = self.__ext_group
+        root, newName, _numStr = self.validate_filename(evt_label, **kwargs)
         if not root: return EventResult.CANCEL
         #--Rename each installer, keeping the old extension (for archives)
         with BusyCursor():
@@ -3459,20 +3464,19 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             self._bsa_info = bosh.bsaInfos[fileName]
             #--Remember values for edit checks
             self.fileStr = self._bsa_info.name.s
+            self.gInfo.text_content = self._bsa_info.get_table_prop(u'info',
+                _(u'Notes: '))
+        else:
+            self.gInfo.text_content = _(u'Notes: ')
         #--Set Fields
         self._fname_ctrl.text_content = self.fileStr
         #--Info Box
         self.gInfo.modified = False
-        if fileName:
-            self.gInfo.text_content = \
-                bosh.bsaInfos.table.getItem(fileName, u'info', _(u'Notes: '))
-        else:
-            self.gInfo.text_content = _(u'Notes: ')
 
     def OnInfoEdit(self, new_text):
         """Info field was edited."""
         if self._bsa_info and self.gInfo.modified:
-            bosh.bsaInfos.table.setItem(self._bsa_info.name, u'info', new_text)
+            self._bsa_info.set_table_prop(u'info', new_text)
 
     def DoSave(self):
         """Event: Clicked Save button."""
@@ -4147,8 +4151,8 @@ class BashFrame(WindowFrame):
     def CleanSettings():
         """Cleans junk from settings before closing."""
         #--Clean rename dictionary.
-        modNames = set(bosh.modInfos.keys())
-        modNames.update(bosh.modInfos.table.keys())
+        modNames = set(bosh.modInfos)
+        modNames.update(bosh.modInfos.table)
         renames = bass.settings.getChanged(u'bash.mods.renames')
         for key,value in renames.items():
             if value not in modNames:
@@ -4169,12 +4173,12 @@ class BashFrame(WindowFrame):
             settings.setChanged(u'bash.colors')
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
-            goodRoots = {p.root for p in fileInfos.keys()}
+            goodRoots = {p.root for p in fileInfos}
             backupDir = fileInfos.bash_dir.join(u'Backups')
             if not backupDir.isdir(): continue
-            for name in backupDir.list():
-                back_path = backupDir.join(name)
-                if name.root not in goodRoots and back_path.isfile():
+            for back_fname in backupDir.list():
+                back_path = backupDir.join(back_fname)
+                if back_fname.root not in goodRoots and back_path.isfile():
                     back_path.remove()
 
     @staticmethod
@@ -4279,7 +4283,7 @@ class BashApp(wx.App):
         if settings[u'bash.version'] != bass.AppVersion:
             settings[u'bash.version'] = bass.AppVersion
             # rescan mergeability on version upgrade to detect new mergeable
-            bosh.modInfos.rescanMergeable(bosh.modInfos.data, bolt.Progress())
+            bosh.modInfos.rescanMergeable(bosh.modInfos, bolt.Progress())
 
 # Initialization --------------------------------------------------------------
 from .gui_patchers import initPatchers

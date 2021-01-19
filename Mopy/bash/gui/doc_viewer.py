@@ -66,7 +66,7 @@ class ViewerType(object): # PY3: enum
     """The different types of viewers that DocumentViewer can display."""
     HTML = u'html'
     PDF =  u'pdf'
-    TEXT = u'text'
+    TEXT = u'txt'
 
 class WebViewer(_AComponent):
     """Implements an HTML & CSS renderer with JavaScript support. May not be

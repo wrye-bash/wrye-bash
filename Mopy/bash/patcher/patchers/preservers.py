@@ -96,7 +96,7 @@ class _APreserver(ImportPatcher):
         """Parses CSV files. Only called if _csv_parser is set. Override as
         needed and call _process_csv_sources until parser ABC is done."""
         parser_instance = self._csv_parser()
-        parser_instance.aliases = self.patchFile.aliases
+        parser_instance.aliases = self.patchFile.pfile_aliases
         parser_instance.called_from_patcher = True
         for src_path in self.csv_srcs:
             try:

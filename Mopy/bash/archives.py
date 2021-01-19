@@ -34,7 +34,7 @@ pngcrush = u'pngcrush.exe' if os.name == u'nt' else u'pngcrush'
 defaultExt = u'.7z'
 writeExts = {u'.7z': u'7z', u'.zip': u'zip'}
 readExts = {u'.rar', u'.7z.001', u'.001'}
-readExts.update(set(writeExts))
+readExts.update(writeExts)
 noSolidExts = {u'.zip'}
 reSolid = re.compile(u'' r'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(u'' r'Compressing\s+(.+)', re.U).match

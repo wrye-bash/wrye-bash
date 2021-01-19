@@ -79,7 +79,7 @@ class InstallerFomod(WizardDialog):
         if self.is_arch:
             self.archive_path = bass.getTempDir()
         else:
-            self.archive_path = target_installer.ipath
+            self.archive_path = target_installer.abs_path
         # 'dummy' page tricks the wizard into always showing the "Next" button
         class _PageDummy(wiz.WizardPage): pass
         self.fm_dummy = _PageDummy(self._native_widget)

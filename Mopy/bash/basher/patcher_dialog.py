@@ -55,13 +55,13 @@ class PatchDialog(DialogWindow):
     def __init__(self, parent, patchInfo, mods_to_reselect):
         self.mods_to_reselect = mods_to_reselect
         self.parent = parent
-        title = _(u'Update ') + u'%s' % patchInfo.name
-        size = balt.sizes.get(self.__class__.__name__, (500,600))
+        title = _(u'Update ') + u'%s' % patchInfo
         super(PatchDialog, self).__init__(parent, title=title,
-            icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes, size=size)
+            icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes,
+            size=balt.sizes.get(self.__class__.__name__, (500, 600)))
         #--Data
         list_patches_dir() # refresh cached dir
-        patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,u'bash.patch.configs',{})
+        patchConfigs = patchInfo.get_table_prop(u'bash.patch.configs', {})
         if configIsCBash(patchConfigs):
             patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
@@ -155,17 +155,18 @@ class PatchDialog(DialogWindow):
     def PatchExecute(self):
         """Do the patch."""
         self.accept_modal()
-        patchFile = progress = None
+        progress = None
         try:
             patch_name = self.patchInfo.name
             patch_size = self.patchInfo.size
             progress = balt.Progress(patch_name.s,(u' '*60+u'\n'), abort=True)
             timer1 = time.clock()
             #--Save configs
-            self._saveConfig(patch_name)
+            config = self.__config()
+            self.patchInfo.set_table_prop(u'bash.patch.configs', config)
             #--Do it
             log = bolt.LogFile(StringIO.StringIO())
-            patchFile = PatchFile(self.patchInfo)
+            patchFile = PatchFile(self.patchInfo, bosh.modInfos)
             enabled_patchers = [p.get_patcher_instance(patchFile) for p in
                                 self._gui_patchers if p.isEnabled] ##: what happens if empty
             patchFile.init_patchers_data(enabled_patchers, SubProgress(progress, 0, 0.1)) #try to speed this up!
@@ -216,9 +217,9 @@ class PatchDialog(DialogWindow):
             #finally:
             #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             readme = readme.root + u'.html'
-            bosh.modInfos.table.setItem(patch_name, u'doc', readme)
+            self.patchInfo.set_table_prop(u'doc', readme)
             balt.playSound(self.parent, bass.inisettings[u'SoundSuccess'])
-            balt.WryeLog(self.parent, readme, patch_name.s,
+            balt.WryeLog(self.parent, readme, patch_name,
                          log_icons=Resources.bashBlue)
             #--Select?
             if self.mods_to_reselect:
@@ -301,11 +302,6 @@ class PatchDialog(DialogWindow):
         for p in self._gui_patchers: p.saveConfig(config)
         return config
 
-    def _saveConfig(self, patch_name):
-        """Save the configuration"""
-        config = self.__config()
-        bosh.modInfos.table.setItem(patch_name, u'bash.patch.configs', config)
-
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
@@ -362,8 +358,7 @@ class PatchDialog(DialogWindow):
 
     def RevertConfig(self):
         """Revert configuration back to saved"""
-        patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,
-                                                   u'bash.patch.configs', {})
+        patchConfigs = self.patchInfo.get_table_prop(u'bash.patch.configs', {})
         self._load_config(patchConfigs)
 
     def DefaultConfig(self):

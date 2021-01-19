@@ -80,7 +80,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         if len(self.selected) != 1: return False
         else: return next(self.iselected_infos()).is_archive()
 
-    ##: Methods below should be in an "archives.py"
+    ##: Methods below should be in archives.py
     def _promptSolidBlockSize(self, title, value=0):
         return self._askNumber(
             _(u'Use what maximum size for each solid block?') + u'\n' + _(
@@ -809,8 +809,8 @@ class Installer_CopyConflicts(_SingleInstallable):
                 if curConflicts: packConflicts.append(
                     (installer.order, package, curConflicts))
             srcConflicts = { # we need the paths rel to the archive not Data
-                src for src, size, crc in self._selected_info.fileSizeCrcs if
-                (size, crc) in srcConflicts}
+                src for src, siz, crc in self._selected_info.fileSizeCrcs if
+                (siz, crc) in srcConflicts}
             numFiles += len(srcConflicts)
         if not numFiles:
             return _ok(_(u'No conflicts detected for %s'))
@@ -1039,10 +1039,10 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         # Ask the user first to avoid the progress dialog shoving itself over
         # any dialogs we pop up
         to_unpack = []
-        for archive, installer in self.idata.sorted_pairs(self.selected):
-            project = archive.root
+        for iname, installer in self.idata.sorted_pairs(self.selected):
+            project = iname.root
             if self.isSingleArchive():
-                result = self._askText(_(u'Unpack %s to Project:') % archive,
+                result = self._askText(_(u'Unpack %s to Project:') % iname,
                                        default=project.s)
                 if not result: return
                 # Error checking
@@ -1167,13 +1167,13 @@ class InstallerProject_Pack(_SingleProject):
     @balt.conversation
     def Execute(self):
         #--Generate default filename from the project name and the default extension
-        archive = GPath(self._selected_item.s + archives.defaultExt)
+        archive_name = GPath(self._selected_item.s + archives.defaultExt)
         #--Confirm operation
-        archive = self._askFilename(
+        archive_name = self._askFilename(
             message=_(u'Pack %s to Archive:') % self._selected_item,
-            filename=archive.s)
-        if not archive: return
-        self._pack(archive, self._selected_info, self._selected_item,
+            filename=archive_name.s)
+        if not archive_name: return
+        self._pack(archive_name, self._selected_info, self._selected_item,
                    release=self.__class__.release)
 
 #------------------------------------------------------------------------------
@@ -1266,13 +1266,13 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        iname, archive = next(self.iselected_pairs()) # first selected pair
+        iname, inst = next(self.iselected_pairs()) # first selected pair
         #--Ask for an output filename
         dest = self._askFilename(_(u'Output file:'), filename=iname.stail)
         if not dest: return
         with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
             destinations, converted = self.idata.applyEmbeddedBCFs(
-                [archive], [dest], progress)
+                [inst], [dest], progress)
             if not destinations: return # destinations == [dest] if all was ok
         self.window.RefreshUI(detail_item=dest)
 
@@ -1384,7 +1384,7 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
     _text = _(u'Open at')
     def _enable(self):
         return super(InstallerOpenAt_MainMenu, self)._enable() and (
-            self.window.data_store[self.selected[0]].is_archive())
+            self._first_selected().is_archive())
 
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
@@ -1398,7 +1398,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--So, first get all the selected archive CRCs
         selected = self.selected
         idata = self.window.data_store # InstallersData singleton
-        selectedCRCs = {idata[archive].crc for archive in selected}
+        selectedCRCs = set(inst.crc for inst in self.iselected_infos())
         srcCRCs = set(idata.converters_data.srcCRC_converters)
         #--There is no point in testing each converter unless
         #--every selected archive has an associated converter
@@ -1412,7 +1412,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
                    if converter.srcCRCs <= selectedCRCs:
                        linkSet.add(converter)
         #--If the archive is a single archive with an embedded BCF, add that
-        if len(selected) == 1 and idata[selected[0]].hasBCF:
+        if len(selected) == 1 and self._first_selected().hasBCF:
             self.links.append(InstallerConverter_ApplyEmbedded())
         #--Disable the menu if there were no valid converters found
         elif not linkSet:
@@ -1428,7 +1428,4 @@ class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
     _text = _(u'BAIN Conversions')
     def _enable(self):
-        for item in self.selected:
-            if not self.window.data_store[item].is_archive():
-                return False
-        return True
+        return all(inst.is_archive() for inst in self.iselected_infos())

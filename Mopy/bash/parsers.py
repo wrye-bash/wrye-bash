@@ -44,10 +44,29 @@ from .brec import MreRecord, MelObject, _coerce, genFid, RecHeader
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
+class _HandleAliases(object):
+    """WIP aliases handling."""
+
+    def __init__(self, aliases_):
+        # Automatically set in _parse_csv_sources to the patch file's aliases -
+        # used if the Aliases Patcher has been enabled
+        self.aliases = aliases_ or {} # type: dict
+
+    def _get_alias(self, modname):
+        """Encapsulate getting alias for modname returned from CsvReader."""
+        ##: inline once parsers are refactored (and document also the csv format)
+        modname = GPath(modname)
+        return GPath(self.aliases.get(modname, modname)) ##: drop GPath?
+
+    def _coerce_fid(self, modname, hex_fid):
+        """Create a long formid from a unicode modname and a unicode
+        hexadecimal - it will blow with ValueError if hex_fid is not
+        convertible."""
+        return self._get_alias(modname), int(hex_fid, 16)
 
 # TODO(inf) Once refactoring is done, we could easily take in Progress objects
 #  for more accurate progress bars when importing/exporting
-class _AParser(object):
+class _AParser(_HandleAliases):
     """The base class from which all parsers inherit, implements reading and
     writing mods using PBash calls. You will of course still have to
     implement _read_record_fp et al., depending on the passes and behavior
@@ -95,9 +114,7 @@ class _AParser(object):
         # Automatically set to True when called by a patcher - can be used to
         # alter behavior correspondingly
         self.called_from_patcher = False
-        # Automatically set in _parse_sources to the patch file's aliases -
-        # used if the Aliases Patcher has been enabled
-        self.aliases = {}
+        super(_AParser, self).__init__({})
 
     # Plugin-related utilities
     def _mod_has_tag(self, tag_name):
@@ -255,7 +272,7 @@ class _AParser(object):
                     record.setChanged()
                     num_changed_records[rec_type] += 1
         # Check if we've actually changed something, otherwise skip saving
-        if sum(num_changed_records):
+        if num_changed_records:
             loaded_mod.safeSave()
         return num_changed_records
 
@@ -393,15 +410,12 @@ class ActorFactions(_AParser):
     def readFromText(self,textPath):
         """Imports faction data from specified text file."""
         type_id_factions = self.id_stored_info
-        aliases = self.aliases
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 8 or fields[3][:2] != u'0x': continue
                 type_,aed,amod,aobj,fed,fmod,fobj,rank = fields[:9]
-                amod = GPath(amod)
-                fmod = GPath(fmod)
-                aid = (aliases.get(amod,amod),int(aobj[2:],16))
-                fid = (aliases.get(fmod,fmod),int(fobj[2:],16))
+                aid = self._coerce_fid(amod, aobj)
+                fid = self._coerce_fid(fmod, fobj)
                 rank = int(rank)
                 id_factions = type_id_factions[type_]
                 factions = id_factions.get(aid)
@@ -430,16 +444,16 @@ class ActorFactions(_AParser):
                                                        x[0]).lower()):
                         factionEid = id_eid.get(faction,u'Unknown')
                         out.write(rowFormat % (
-                            type_,actorEid,id_[0].s,id_[1],factionEid,
-                            faction[0].s,faction[1],rank))
+                            type_, actorEid, id_[0], id_[1], factionEid,
+                            faction[0], faction[1], rank))
 
 #------------------------------------------------------------------------------
-class ActorLevels(object):
+class ActorLevels(_HandleAliases):
     """Package: Functions for manipulating actor levels."""
 
-    def __init__(self,aliases=None):
-        self.mod_id_levels = {} #--levels = mod_id_levels[mod][longid]
-        self.aliases = aliases or {}
+    def __init__(self, aliases_=None):
+        super(ActorLevels, self).__init__(aliases_)
+        self.mod_id_levels = defaultdict(dict) #--levels = mod_id_levels[mod][longid]
         self.gotLevels = set()
 
     def readFromMod(self,modInfo):
@@ -452,10 +466,9 @@ class ActorLevels(object):
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
             for record in modFile.NPC_.getActiveRecords():
-                id_levels = mod_id_levels.setdefault(modName,{})
-                id_levels[record.fid] = (
-                    record.eid, bool(record.flags.pcLevelOffset),
-                    record.level,record.calcMin,record.calcMax)
+                mod_id_levels[modName][record.fid] = (
+                    record.eid, bool(record.flags.pcLevelOffset), record.level,
+                    record.calcMin, record.calcMax)
             gotLevels.add(modName)
 
     def writeToMod(self,modInfo):
@@ -479,7 +492,6 @@ class ActorLevels(object):
                             level,calcMin,calcMax)
                         record.setChanged()
                         changed += 1
-                    # else: print mod_id_levels
         #--Done
         if changed: modFile.safeSave()
         return changed
@@ -487,10 +499,9 @@ class ActorLevels(object):
     def readFromText(self,textPath):
         """Imports NPC level data from specified text file."""
         mod_id_levels = self.mod_id_levels
-        aliases = self.aliases
         with CsvReader(textPath) as ins:
             for fields in ins:
-                if fields[0][:2] == u'0x': #old format
+                if fields[0][:2] == u'0x': #old format ## TODO(ut) drop?
                     fid,eid,offset,calcMin,calcMax = fields[:5]
                     source = GPath(u'Unknown')
                     fidObject = _coerce(fid[4:], int, 16)
@@ -503,24 +514,17 @@ class ActorLevels(object):
                     if len(fields) < 7 or fields[3][:2] != u'0x': continue
                     source,eid,fidMod,fidObject,offset,calcMin,calcMax = \
                         fields[:7]
-                    source = _coerce(source, unicode)
                     if source.lower() in (u'none', bush.game.master_file.lower()): continue
                     source = GPath(source)
-                    eid = _coerce(eid, unicode)
-                    fidMod = GPath(_coerce(fidMod, unicode))
-                    if fidMod.s.lower() == u'none': continue
-                    fidObject = _coerce(fidObject[2:], int, 16)
-                    if fidObject is None: continue
-                    fid = (aliases.get(fidMod,fidMod),fidObject)
+                    if fidMod.lower() == u'none': continue
+                    fid = self._coerce_fid(fidMod, fidObject)
                     offset = _coerce(offset, int)
                     calcMin = _coerce(calcMin, int)
                     calcMax = _coerce(calcMax, int)
-                id_levels = mod_id_levels.setdefault(source, {})
-                id_levels[fid] = (eid, 1, offset, calcMin, calcMax)
+                mod_id_levels[source][fid] = (eid, 1, offset, calcMin, calcMax)
 
     def writeToText(self,textPath):
         """Export NPC level data to specified text file."""
-        mod_id_levels = self.mod_id_levels
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s",' \
                      u'"%s"\n'
         rowFormat = u'"%s","%s","%s","0x%06X","%d","%d","%d"'
@@ -533,13 +537,13 @@ class ActorLevels(object):
                 _(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),
                 _(u'Old CalcMax')))
             #Sorted based on mod, then editor ID
-            obId_levels = mod_id_levels[GPath(bush.game.master_file)]
-            for mod in sorted(mod_id_levels):
+            obId_levels = self.mod_id_levels[GPath(bush.game.master_file)]
+            for mod, id_levels in sorted(self.mod_id_levels.iteritems(),
+                                         key=lambda (k, v): k):
                 if mod.s.lower() == bush.game.master_file.lower(): continue
-                id_levels = mod_id_levels[mod]
                 sor = sorted(id_levels.iteritems(), # PY3: unpack to list
-                           key=lambda ((fidM, __), (eid_, _1, _2, _3, _4)): (
-                           (u'%s' % fidM).lower(), eid_.lower()))
+                             key=lambda ((fidM, __), (eid_, _1, _2, _3, _4)): (
+                                 (u'%s' % fidM).lower(), eid_.lower()))
                 for (fidMod, fidObject), (
                         eid, isOffset, offset, calcMin, calcMax) in sor:
                     if isOffset:
@@ -556,19 +560,19 @@ class ActorLevels(object):
                             out.write(blankExtendedRow)
 
 #------------------------------------------------------------------------------
-class EditorIds(object):
+class EditorIds(_HandleAliases):
     """Editor ids for records, with functions for importing/exporting
     from/to mod/text file."""
 
-    def __init__(self,types=None,aliases=None):
-        self.type_id_eid = {} #--eid = eids[type][longid]
+    def __init__(self, types=None, aliases_=None):
+        super(EditorIds, self).__init__(aliases_)
+        self.type_id_eid = defaultdict(dict) #--eid = eids[type][longid]
         self.old_new = {}
         if types:
             self.types = types
         else:
             self.types = set(MreRecord.simpleTypes)
             self.types.discard(b'CELL')
-        self.aliases = aliases or {}
 
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
@@ -580,22 +584,19 @@ class EditorIds(object):
         for type_ in types:
             typeBlock = modFile.tops.get(type_)
             if not typeBlock: continue
-            if type_ not in type_id_eid: type_id_eid[type_] = {}
             id_eid = type_id_eid[type_]
             for record in typeBlock.getActiveRecords():
                 if record.eid: id_eid[record.fid] = record.eid
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
-        type_id_eid,types = self.type_id_eid,self.types
-        classes = [MreRecord.type_class[x] for x in types]
-        loadFactory = LoadFactory(True,*classes)
+        loadFactory = LoadFactory(True, *self.types)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = []
-        for type_ in types:
-            id_eid = type_id_eid.get(type_,None)
-            typeBlock = modFile.tops.get(type_,None)
+        for type_ in self.types:
+            id_eid = self.type_id_eid.get(type_, None)
+            typeBlock = modFile.tops.get(type_, None)
             if not id_eid or not typeBlock: continue
             for record in typeBlock.records:
                 newEid = id_eid.get(record.fid)
@@ -654,16 +655,13 @@ class EditorIds(object):
     def readFromText(self,textPath,questionableEidsSet=None,badEidsList=None):
         """Imports eids from specified text file."""
         type_id_eid = self.type_id_eid
-        aliases = self.aliases
         with CsvReader(textPath) as ins:
             reValidEid = re.compile(u'^[a-zA-Z0-9]+$')
             reGoodEid = re.compile(u'^[a-zA-Z]')
             for fields in ins:
                 if len(fields) < 4 or fields[2][:2] != u'0x': continue
-                group,mod,objectIndex,eid = fields[:4]
-                group = _coerce(group,unicode)
-                mod = GPath(_coerce(mod,unicode))
-                longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+                top_grup,mod,objectIndex,eid = fields[:4] ##: debug: top_grup??
+                longid = self._coerce_fid(mod, objectIndex)
                 eid = _coerce(eid,unicode, AllowNone=True)
                 if not reValidEid.match(eid):
                     if badEidsList is not None:
@@ -672,7 +670,7 @@ class EditorIds(object):
                 if questionableEidsSet is not None and not reGoodEid.match(
                         eid):
                     questionableEidsSet.add(eid)
-                id_eid = type_id_eid.setdefault(group, {})
+                id_eid = type_id_eid[top_grup]
                 id_eid[longid] = eid
                 #--Explicit old to new def? (Used for script updating.)
                 if len(fields) > 4:
@@ -686,8 +684,8 @@ class EditorIds(object):
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(headFormat % (
                 _(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),_(u'Editor Id')))
-            for type_ in sorted(type_id_eid):
-                id_eid = type_id_eid[type_]
+            for type_, id_eid in sorted(type_id_eid.iteritems(),
+                                        key=lambda (k, v): k):
                 for id_, eid_ in sorted(id_eid.iteritems(),
                     key=lambda (__, eid_): eid_.lower()):
                     out.write(rowFormat % (type_, id_[0], id_[1], eid_))
@@ -751,15 +749,12 @@ class FactionRelations(_AParser):
     def readFromText(self,textPath):
         """Imports faction relations from specified text file."""
         id_relations = self.id_stored_info[b'FACT']
-        aliases = self.aliases
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x': continue
                 med, mmod, mobj, oed, omod, oobj = fields[:6]
-                mmod = _coerce(mmod, unicode)
-                omod = _coerce(omod, unicode)
-                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj[2:],int,16))
-                oid = (GPath(aliases.get(omod,omod)),_coerce(oobj[2:],int,16))
+                mid = self._coerce_fid(mmod, mobj)
+                oid = self._coerce_fid(omod, oobj)
                 relation_attrs = (oid,) + tuple(fields[6:])
                 relations = id_relations.get(mid)
                 if relations is None:
@@ -790,12 +785,12 @@ class FactionRelations(_AParser):
                     out.write(bush.game.relations_csv_row_format % row_vals)
 
 #------------------------------------------------------------------------------
-class FidReplacer(object):
+class FidReplacer(_HandleAliases):
     """Replaces one set of fids with another."""
 
-    def __init__(self,types=None,aliases=None):
+    def __init__(self, types=None, aliases_=None):
+        super(FidReplacer, self).__init__(aliases_)
         self.types = types or MreRecord.simpleTypes
-        self.aliases = aliases or {} #--For aliasing mod names
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
@@ -803,21 +798,15 @@ class FidReplacer(object):
     def readFromText(self,textPath):
         """Reads replacement data from specified text file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
-        aliases = self.aliases
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
                         or fields[6][:2] != u'0x': continue
                 oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-                oldMod = _coerce(oldMod, unicode)
+                oldId = self._coerce_fid(oldMod, oldObj)
+                newId = self._coerce_fid(newMod, newObj)
                 oldEid = _coerce(oldEid, unicode, AllowNone=True)
                 newEid = _coerce(newEid, unicode, AllowNone=True)
-                newMod = _coerce(newMod, unicode)
-                oldMod,newMod = map(GPath,(oldMod,newMod))
-                oldId = (
-                    GPath(aliases.get(oldMod,oldMod)),_coerce(oldObj,int,16))
-                newId = (
-                    GPath(aliases.get(newMod,newMod)),_coerce(newObj,int,16))
                 old_new[oldId] = newId
                 old_eid[oldId] = oldEid
                 new_eid[newId] = newEid
@@ -868,14 +857,14 @@ class FidReplacer(object):
         return u'\n'.join([u'%3d %s >> %s' % entry for entry in entries])
 
 #------------------------------------------------------------------------------
-class FullNames(object):
+class FullNames(_HandleAliases):
     """Names for records, with functions for importing/exporting from/to
     mod/text file."""
 
-    def __init__(self,types=None,aliases=None):
-        self.type_id_name = {} #--(eid,name) = type_id_name[type][longid]
+    def __init__(self, types=None, aliases_=None):
+        super(FullNames, self).__init__(aliases_)
+        self.type_id_name = {} #--(eid,name) = type_id_name[type][longid] # TODO: defaultdict
         self.types = types or bush.game.namesTypes
-        self.aliases = aliases or {}
 
     def readFromMod(self,modInfo):
         """Imports type_id_name from specified mod."""
@@ -921,20 +910,17 @@ class FullNames(object):
     def readFromText(self,textPath):
         """Imports type_id_name from specified text file."""
         type_id_name = self.type_id_name
-        aliases = self.aliases
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 5 or fields[2][:2] != u'0x': continue
-                group,mod,objectIndex,eid,full = fields[:5]
-                group = _coerce(group, unicode)
-                mod = GPath(_coerce(mod, unicode))
-                longid = (aliases.get(mod,mod),_coerce(objectIndex[2:],int,16))
+                top_grup,mod,objectIndex,eid,full = fields[:5]
+                longid = self._coerce_fid(mod, objectIndex)
                 eid = _coerce(eid, unicode, AllowNone=True)
                 full = _coerce(full, unicode, AllowNone=True)
-                if group in type_id_name:
-                    type_id_name[group][longid] = (eid,full)
+                if top_grup in type_id_name:
+                    type_id_name[top_grup][longid] = (eid,full)
                 else:
-                    type_id_name[group] = {longid:(eid,full)}
+                    type_id_name[top_grup] = {longid:(eid,full)}
 
     def writeToText(self,textPath):
         """Exports type_id_name to specified text file."""
@@ -954,7 +940,7 @@ class FullNames(object):
                                            rec_name.replace(u'"', u'""')))
 
 #------------------------------------------------------------------------------
-class ItemStats(object):
+class ItemStats(_HandleAliases):
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
 
@@ -976,10 +962,10 @@ class ItemStats(object):
         if x == 0: return None
         return x
 
-    def __init__(self,types=None,aliases=None):
+    def __init__(self, types=None, aliases_=None):
+        super(ItemStats, self).__init__(aliases_)
         self.class_attrs = bush.game.statsTypes
         self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
-        self.aliases = aliases or {} #--For aliasing mod names
         if bush.game.fsName in (u'Enderal', u'Skyrim',
                                 u'Skyrim Special Edition'):
             self.attr_type = {u'eid': self.sstr,
@@ -1106,20 +1092,17 @@ class ItemStats(object):
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
-        aliases = self.aliases
         with CsvReader(textPath) as ins:
             attr_type = self.attr_type
             for fields in ins:
                 if len(fields) < 3 or fields[2][:2] != u'0x': continue
-                group,modName,objectStr = fields[0:3]
-                modName = GPath(_coerce(modName,unicode))
-                longid = (GPath(aliases.get(modName,modName)),
-                    _coerce(objectStr,int,16))
-                attrs = self.class_attrs[group]
+                top_grup,modName,objectStr = fields[:3]
+                longid = self._coerce_fid(modName, objectStr)
+                attrs = self.class_attrs[top_grup]
                 attr_value = {}
                 for attr, value in zip(attrs, fields[3:3+len(attrs)]):
                     attr_value[attr] = attr_type[attr](value)
-                self.class_fid_attr_value[group][longid].update(attr_value)
+                self.class_fid_attr_value[top_grup][longid].update(attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -1165,7 +1148,7 @@ class ScriptText(object):
 
     def __init__(self,types=None,aliases=None):
         self.eid_data = {}
-        self.aliases = aliases or {} #--For aliasing mod names
+        self.aliases = aliases or {} #--For aliasing mod names # TODO: unused?
 
     def writeToText(self, skip, folder, deprefix, fileName, skipcomments,
             __win_line_sep=u'\r\n'): # scripts line separator - or so we trust
@@ -1269,31 +1252,27 @@ class ScriptText(object):
         with Progress(_(u'Import Scripts')) as progress:
             for root_dir, dirs, files in textPath.walk():
                 y = len(files)
-                z = 0
-                for name in files:
-                    z += 1
-                    if name.cext != inisettings[u'ScriptFileExt']:
-                        progress(((1/y)*z),_(u'Skipping file %s.') % name.s)
+                for z, f in enumerate(files, 1):
+                    if f.cext != inisettings[u'ScriptFileExt']:
+                        progress(((1 / y) * z), _(u'Skipping file %s.') % f)
                         continue
-                    progress(((1 / y) * z),_(u'Reading file %s.') % name.s)
-                    with root_dir.join(name).open(
-                            u'r', encoding=u'utf-8-sig') as text:
-                        lines = text.readlines()
+                    progress(((1 / y) * z), _(u'Reading file %s.') % f)
+                    with root_dir.join(f).open(
+                            u'r', encoding=u'utf-8-sig') as ins:
+                        lines = ins.readlines()
                     try:
                         modName,FormID,eid = lines[0][1:-2],lines[1][1:-2], \
                                              lines[2][1:-2]
-                    except:
-                        deprint(
-                            _(u'%s has malformed script header lines - was '
-                              u'skipped') % name)
+                    except IndexError:
+                        deprint(u'Skipped %s - malformed script header lines:'
+                                u'\n%s' % (f, u''.join(lines[:3])))
                         continue
                     scriptText = u''.join(lines[3:])
                     eid_data[eid] = (scriptText, FormID)
-        if eid_data: return True
-        return False
+        return bool(eid_data)
 
 #------------------------------------------------------------------------------
-class _UsesEffectsMixin(object):
+class _UsesEffectsMixin(_HandleAliases):
     """Mixin class to support reading/writing effect data to/from csv files"""
     headers = (
         _(u'Effect'),_(u'Name'),_(u'Magnitude'),_(u'Area'),_(u'Duration'),
@@ -1318,16 +1297,16 @@ class _UsesEffectsMixin(object):
                              in schoolTypeNumber_Name.iteritems()
                              if x is not None}
 
-    def readEffects(self,_effects,aliases):
+    def readEffects(self, _effects):
         schoolTypeName_Number = _UsesEffectsMixin.schoolTypeName_Number
         recipientTypeName_Number = _UsesEffectsMixin.recipientTypeName_Number
         actorValueName_Number = _UsesEffectsMixin.actorValueName_Number
         effects = []
         while len(_effects) >= 13:
             _effect,_effects = _effects[1:13],_effects[13:]
-            name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
+            eff_name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
             seschool,sevisual,seflags,sename = tuple(_effect)
-            name = _coerce(name,unicode,AllowNone=True) #OBME not supported
+            eff_name = _coerce(eff_name,unicode,AllowNone=True) #OBME not supported
             # (support requires adding a mod/objectid format to the
             # csv, this assumes all MGEFCodes are raw)
             magnitude = _coerce(magnitude,int,AllowNone=True)
@@ -1341,9 +1320,9 @@ class _UsesEffectsMixin(object):
             if actorvalue:
                 actorvalue = actorValueName_Number.get(actorvalue.lower(),
                                                        _coerce(actorvalue,int))
-            if None in (name,magnitude,area,duration,range_,actorvalue):
+            if None in (eff_name,magnitude,area,duration,range_,actorvalue):
                 continue
-            effect = [name,magnitude,area,duration,range_,actorvalue]
+            effect = [eff_name,magnitude,area,duration,range_,actorvalue]
             semod = _coerce(semod, unicode, AllowNone=True)
             seobj = _coerce(seobj, int, 16, AllowNone=True)
             seschool = _coerce(seschool, unicode, AllowNone=True)
@@ -1366,9 +1345,8 @@ class _UsesEffectsMixin(object):
             if None in (semod,seobj,seschool,sevisual,seflags,sename):
                 effect.append([])
             else:
-                effect.append(
-                    [(GPath(aliases.get(semod,semod)),seobj),seschool,
-                     sevisual,seflags,sename])
+                effect.append([(self._get_alias(semod), seobj),
+                               seschool, sevisual, seflags, sename])
             effects.append(effect)
         return effects
 
@@ -1404,9 +1382,9 @@ class SigilStoneDetails(_UsesEffectsMixin):
     """Details on SigilStones, with functions for importing/exporting
     from/to mod/text file."""
 
-    def __init__(self,types=None,aliases=None):
+    def __init__(self, types=None, aliases_=None):
+        super(SigilStoneDetails, self).__init__(aliases_)
         self.fid_stats = {}
-        self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
@@ -1417,7 +1395,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
         for record in modFile.SGST.getActiveRecords():
             effects = []
             for effect in record.effects:
-                effectlist = [effect.name,effect.magnitude,effect.area,
+                effectlist = [effect.effect_sig,effect.magnitude,effect.area,
                               effect.duration,effect.recipient,
                               effect.actorValue]
                 if effect.scriptEffect:
@@ -1447,7 +1425,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
             if not newStats: continue
             effects = []
             for effect in record.effects:
-                effectlist = [effect.name,effect.magnitude,effect.area,
+                effectlist = [effect.effect_sig,effect.magnitude,effect.area,
                               effect.duration,effect.recipient,
                               effect.actorValue]
                 if effect.scriptEffect:
@@ -1471,7 +1449,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
                 record.effects = []
                 for effect in effects:
                     neweffect = record.getDefault(u'effects')
-                    neweffect.name,neweffect.magnitude,neweffect.area,\
+                    neweffect.effect_sig,neweffect.magnitude,neweffect.area,\
                     neweffect.duration,neweffect.recipient,\
                     neweffect.actorValue,scripteffect = effect
                     if len(scripteffect):
@@ -1489,18 +1467,16 @@ class SigilStoneDetails(_UsesEffectsMixin):
 
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
-        fid_stats,aliases = self.fid_stats,self.aliases
+        fid_stats = self.fid_stats
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 12 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,uses,\
                 value,weight = fields[:12]
-                mmod = _coerce(mmod,unicode)
-                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                mid = self._coerce_fid(mmod, mobj)
                 smod = _coerce(smod,unicode,AllowNone=True)
                 if smod is None: sid = None
-                else: sid = (
-                    GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
+                else: sid = self._coerce_fid(smod, sobj)
                 eid = _coerce(eid,unicode,AllowNone=True)
                 full = _coerce(full,unicode,AllowNone=True)
                 modPath = _coerce(modPath,unicode,AllowNone=True)
@@ -1509,7 +1485,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
                 uses = _coerce(uses,int)
                 value = _coerce(value,int)
                 weight = _coerce(weight,float)
-                effects = self.readEffects(fields[12:],aliases,False)
+                effects = self.readEffects(fields[12:])
                 fid_stats[mid] = [eid,full,modPath,modb,iconPath,sid,uses,
                                   value,weight,effects]
 
@@ -1530,30 +1506,30 @@ class SigilStoneDetails(_UsesEffectsMixin):
             outWrite = out.write
             outWrite(headFormat % header)
             for fid in sorted(fid_stats,key=lambda x:fid_stats[x][0].lower()):
-                eid,name,modpath,modb,iconpath,scriptfid,uses,value,weight,\
+                eid,name_,modpath,modb,iconpath,scriptfid,uses,value,weight,\
                 effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'),None)
                 try:
                     output = rowFormat % (
-                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        fid[0],fid[1],eid,name_,modpath,modb,iconpath,
                         scriptfid[0],scriptfid[1],uses,value,weight)
                 except TypeError:
                     output = altrowFormat % (
-                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        fid[0],fid[1],eid,name_,modpath,modb,iconpath,
                         scriptfid[0],scriptfid[1],uses,value,weight)
-                output += self.writeEffects(effects,False)
+                output += self.writeEffects(effects)
                 output += u'\n'
                 outWrite(output)
 
 #------------------------------------------------------------------------------
-class ItemPrices(object):
+class ItemPrices(_HandleAliases):
     """Function for importing/exporting from/to mod/text file only the
     value, name and eid of records."""
     item_prices_attrs = (u'value', u'eid', u'full')
 
-    def __init__(self,types=None,aliases=None):
+    def __init__(self, types=None, aliases_=None):
+        super(ItemPrices, self).__init__(aliases_)
         self.class_fid_stats = bush.game.pricesTypes
-        self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
         """Reads data from specified mod."""
@@ -1590,18 +1566,17 @@ class ItemPrices(object):
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
-        class_fid_stats, aliases = self.class_fid_stats, self.aliases
+        class_fid_stats = self.class_fid_stats
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 6 or fields[1][:2] != u'0x': continue
-                mmod,mobj,value,eid,name,group = fields[:6]
-                mmod = GPath(_coerce(mmod, unicode))
-                longid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj, int, 16))
+                mmod,mobj,value,eid,itm_name,top_grup = fields[:6]
+                longid = self._coerce_fid(mmod, mobj)
                 value = _coerce(value, int)
                 eid = _coerce(eid, unicode, AllowNone=True)
-                name = _coerce(name, unicode, AllowNone=True)
-                group = _coerce(group, unicode)
-                class_fid_stats[group][longid] = [value,eid,name]
+                itm_name = _coerce(itm_name, unicode, AllowNone=True)
+                top_grup = _coerce(top_grup, unicode)
+                class_fid_stats[top_grup][longid] = [value,eid,itm_name]
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -1610,7 +1585,7 @@ class ItemPrices(object):
             format_,header = csvFormat(u'iss'),(u'"' + u'","'.join((
                 _(u'Mod Name'),_(u'ObjectIndex'),_(u'Value'),_(u'Editor Id'),
                 _(u'Name'),_(u'Type'))) + u'"\n')
-            for group, fid_stats in sorted(class_fid_stats.iteritems()):
+            for group, fid_stats in sorted(class_fid_stats.iteritems()): ##: key=lambda (k, v): k ?
                 if not fid_stats: continue
                 out.write(header)
                 for fid in sorted(fid_stats,key=lambda x:(
@@ -1624,9 +1599,9 @@ class SpellRecords(_UsesEffectsMixin):
     """Statistics for spells, with functions for importing/exporting from/to
     mod/text file."""
 
-    def __init__(self,types=None,aliases=None,detailed=False):
+    def __init__(self, types=None, aliases_=None, detailed=False):
+        super(SpellRecords, self).__init__(aliases_)
         self.fid_stats = {}
-        self.aliases = aliases or {} #--For aliasing mod names
         self.attrs = bush.game.spell_stats_attrs
         self.detailed = detailed
         if detailed:
@@ -1668,7 +1643,7 @@ class SpellRecords(_UsesEffectsMixin):
             if detailed:
                 effects = []
                 for effect in record.effects:
-                    effectlist = [effect.name,effect.magnitude,effect.area,
+                    effectlist = [effect.effect_sig,effect.magnitude,effect.area,
                                   effect.duration,effect.recipient,
                                   effect.actorValue]
                     if effect.scriptEffect:
@@ -1696,7 +1671,7 @@ class SpellRecords(_UsesEffectsMixin):
             if detailed:
                 effects = []
                 for effect in record.effects:
-                    effectlist = [effect.name,effect.magnitude,effect.area,
+                    effectlist = [effect.effect_sig,effect.magnitude,effect.area,
                                   effect.duration,effect.recipient,
                                   effect.actorValue]
                     if effect.scriptEffect:
@@ -1717,7 +1692,7 @@ class SpellRecords(_UsesEffectsMixin):
                     record.effects = []
                     for effect in effects:
                         neweffect = record.getDefault(u'effects')
-                        neweffect.name,neweffect.magnitude,neweffect.area,\
+                        neweffect.effect_sig,neweffect.magnitude,neweffect.area,\
                         neweffect.duration,neweffect.recipient,\
                         neweffect.actorValue,scripteffect = effect
                         if len(scripteffect):
@@ -1735,9 +1710,8 @@ class SpellRecords(_UsesEffectsMixin):
 
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
-        detailed,aliases,spellTypeName_Number,levelTypeName_Number = \
-            self.detailed,self.aliases,self.spellTypeName_Number,\
-            self.levelTypeName_Number
+        detailed, spellTypeName_Number, levelTypeName_Number = \
+            self.detailed, self.spellTypeName_Number, self.levelTypeName_Number
         fid_stats = self.fid_stats
         is_old_format = False
         with CsvReader(textPath) as ins:
@@ -1755,8 +1729,7 @@ class SpellRecords(_UsesEffectsMixin):
                 fields = fields[8:]
                 group = _coerce(group, unicode)
                 if group.lower() != u'spel': continue
-                mmod = _coerce(mmod, unicode)
-                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                mid = self._coerce_fid(mmod, mobj)
                 eid = _coerce(eid, unicode, AllowNone=True)
                 cost = _coerce(cost, int)
                 levelType = _coerce(levelType, unicode)
@@ -1783,7 +1756,7 @@ class SpellRecords(_UsesEffectsMixin):
                 saa = _coerce(saa, bool)
                 daar = _coerce(daar, bool)
                 tewt = _coerce(tewt, bool)
-                effects = self.readEffects(fields, aliases, False)
+                effects = self.readEffects(fields)
                 fid_stats[mid] = [eid, cost, levelType, spellType, spell_flags,
                                   mc, ss, its, aeil, saa, daar, tewt, effects]
 
@@ -1818,7 +1791,7 @@ class SpellRecords(_UsesEffectsMixin):
                     output = rowFormat % (
                     u'SPEL', fid[0], fid[1], eid, cost, levelType, spellType,
                     spell_flags, mc, ss, its, aeil, saa, daar, tewt)
-                    output += self.writeEffects(effects, False)
+                    output += self.writeEffects(effects)
                 else:
                     eid, cost, levelType, spellType, spell_flags = \
                         fid_stats[fid]
@@ -1835,9 +1808,9 @@ class IngredientDetails(_UsesEffectsMixin):
     """Details on Ingredients, with functions for importing/exporting
     from/to mod/text file."""
 
-    def __init__(self,types=None,aliases=None):
+    def __init__(self, types=None, aliases_=None):
+        super(IngredientDetails, self).__init__(aliases_)
         self.fid_stats = {}
-        self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
@@ -1848,7 +1821,7 @@ class IngredientDetails(_UsesEffectsMixin):
         for record in modFile.INGR.getActiveRecords():
             effects = []
             for effect in record.effects:
-                effectlist = [effect.name,effect.magnitude,effect.area,
+                effectlist = [effect.effect_sig,effect.magnitude,effect.area,
                               effect.duration,effect.recipient,
                               effect.actorValue]
                 if effect.scriptEffect:
@@ -1878,7 +1851,7 @@ class IngredientDetails(_UsesEffectsMixin):
             if not newStats: continue
             effects = []
             for effect in record.effects:
-                effectlist = [effect.name,effect.magnitude,effect.area,
+                effectlist = [effect.effect_sig,effect.magnitude,effect.area,
                               effect.duration,effect.recipient,
                               effect.actorValue]
                 if effect.scriptEffect:
@@ -1902,7 +1875,7 @@ class IngredientDetails(_UsesEffectsMixin):
                 record.effects = []
                 for effect in effects:
                     neweffect = record.getDefault(u'effects')
-                    neweffect.name,neweffect.magnitude,neweffect.area,\
+                    neweffect.effect_sig,neweffect.magnitude,neweffect.area,\
                     neweffect.duration,neweffect.recipient,\
                     neweffect.actorValue,scripteffect = effect
                     if len(scripteffect):
@@ -1920,18 +1893,16 @@ class IngredientDetails(_UsesEffectsMixin):
 
     def readFromText(self,textPath):
         """Imports stats from specified text file."""
-        fid_stats,aliases = self.fid_stats, self.aliases
+        fid_stats = self.fid_stats
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 11 or fields[1][:2] != u'0x': continue
                 mmod,mobj,eid,full,modPath,modb,iconPath,smod,sobj,value,\
                 weight = fields[:11]
-                mmod = _coerce(mmod, unicode)
-                mid = (GPath(aliases.get(mmod,mmod)),_coerce(mobj,int,16))
+                mid = self._coerce_fid(mmod, mobj)
                 smod = _coerce(smod, unicode, AllowNone=True)
                 if smod is None: sid = None
-                else: sid = (
-                    GPath(aliases.get(smod,smod)),_coerce(sobj,int,16))
+                else: sid = self._coerce_fid(smod, sobj)
                 eid = _coerce(eid, unicode, AllowNone=True)
                 full = _coerce(full, unicode, AllowNone=True)
                 modPath = _coerce(modPath, unicode, AllowNone=True)
@@ -1939,7 +1910,7 @@ class IngredientDetails(_UsesEffectsMixin):
                 iconPath = _coerce(iconPath, unicode, AllowNone=True)
                 value = _coerce(value, int)
                 weight = _coerce(weight, float)
-                effects = self.readEffects(fields[11:], aliases, False)
+                effects = self.readEffects(fields[11:])
                 fid_stats[mid] = [eid,full,modPath,modb,iconPath,sid,value,
                                   weight,effects]
 
@@ -1959,17 +1930,17 @@ class IngredientDetails(_UsesEffectsMixin):
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(headFormat % header)
             for fid in sorted(fid_stats,key=lambda x:fid_stats[x][0].lower()):
-                eid,name,modpath,modb,iconpath,scriptfid,value,weight,\
+                eid,name_,modpath,modb,iconpath,scriptfid,value,weight,\
                 effects = fid_stats[fid]
                 scriptfid = scriptfid or (GPath(u'None'), None)
                 try:
                     output = rowFormat % (
-                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        fid[0],fid[1],eid,name_,modpath,modb,iconpath,
                         scriptfid[0],scriptfid[1],value,weight)
                 except TypeError:
                     output = altrowFormat % (
-                        fid[0],fid[1],eid,name,modpath,modb,iconpath,
+                        fid[0],fid[1],eid,name_,modpath,modb,iconpath,
                         scriptfid[0],scriptfid[1],value,weight)
-                output += self.writeEffects(effects, False)
+                output += self.writeEffects(effects)
                 output += u'\n'
                 out.write(output)

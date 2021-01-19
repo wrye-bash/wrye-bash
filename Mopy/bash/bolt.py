@@ -130,10 +130,10 @@ def decoder(byte_str, encoding=None, avoidEncodings=()):
     """Decode a byte string to unicode, using heuristics on encoding."""
     if isinstance(byte_str, unicode) or byte_str is None: return byte_str
     # Try the user specified encoding first
-    # TODO(ut) monkey patch
-    if encoding == u'cp65001':
-        encoding = u'utf-8'
     if encoding:
+        # TODO(ut) monkey patch
+        if encoding == u'cp65001':
+            encoding = u'utf-8'
         try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
@@ -465,19 +465,13 @@ class Path(object):
     invalid_chars_re = re.compile(u'' r'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
 
     @staticmethod
-    def getNorm(name):
-        """Return the normpath for specified name/path object."""
-        if isinstance(name,Path): return name._s
-        elif not name: return name
-        elif isinstance(name,str): name = decoder(name)
-        return os.path.normpath(name)
-
-    @staticmethod
-    def __getCase(name):
-        """Return the normpath+normcase for specified name/path object."""
-        if not name: return name
-        if isinstance(name, str): name = decoder(name)
-        return os.path.normcase(os.path.normpath(name))
+    def getNorm(str_or_path):
+        # type: (unicode|str|Path) -> unicode
+        """Return the normpath for specified basename/Path object."""
+        if isinstance(str_or_path, Path): return str_or_path._s
+        elif not str_or_path: return u'' # and not maybe b''
+        elif isinstance(str_or_path, str): str_or_path = decoder(str_or_path)
+        return os.path.normpath(str_or_path)
 
     @staticmethod
     def getcwd():
@@ -499,22 +493,22 @@ class Path(object):
     __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
                  '_cext', '_sbody')
 
-    def __init__(self, name):
-        """Initialize."""
-        if isinstance(name,Path):
-            self.__setstate__(name._s)
-        else:
-            self.__setstate__(name)
+    def __init__(self, norm_str):
+        # type: (unicode) -> None
+        """Initialize with unicode - call only in GPath."""
+        self._s = _s = norm_str # path must be normalized
+        self._cs = _s.lower()
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
         return self._s
 
-    def __setstate__(self,norm):
+    def __setstate__(self, norm):
         """Used by unpickler. Reconstruct _cs."""
         # Older pickle files stored filename in str, not unicode
-        norm = decoder(norm) # decoder will check for unicode
+        norm = decoder(norm)  # decoder will check for unicode
         self._s = norm
+        # Reconstruct _cs, lower() should suffice
         self._cs = os.path.normcase(norm)
 
     def __len__(self):
@@ -723,9 +717,10 @@ class Path(object):
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
     def __add__(self,other):
+        # you can't add to None: ValueError - that's good
         return GPath(self._s + Path.getNorm(other))
     def join(*args):
-        norms = [Path.getNorm(x) for x in args]
+        norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
     def list(self):
@@ -750,7 +745,7 @@ class Path(object):
                        [GPath_no_norm(x) for x in dirs],
                        [GPath_no_norm(x) for x in files])
 
-    def relpath(self,path):
+    def relpath(self,path): # os.path.relpath(p,[s]): AttributeError if s==None
         return GPath(os.path.relpath(self._s,Path.getNorm(path)))
 
     def drive(self):
@@ -927,39 +922,46 @@ class Path(object):
                     pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
-    # directly compare to basestring and Path and will blow for anything else
+    # directly compare to basestring|Path|None and will blow for anything else
     def __hash__(self):
         return hash(self._cs)
     def __eq__(self, other):
         if isinstance(other, Path):
             return self._cs == other._cs
-        else:
-            return self._cs == Path.__getCase(other)
+        # get unicode or None - will blow on most other types - identical below
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs == (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
     def __ne__(self, other):
         if isinstance(other, Path):
             return self._cs != other._cs
-        else:
-            return self._cs != Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs != (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
     def __lt__(self, other):
         if isinstance(other, Path):
             return self._cs < other._cs
-        else:
-            return self._cs < Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs < (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
     def __ge__(self, other):
         if isinstance(other, Path):
             return self._cs >= other._cs
-        else:
-            return self._cs >= Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs >= (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
     def __gt__(self, other):
         if isinstance(other, Path):
             return self._cs > other._cs
-        else:
-            return self._cs > Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs > (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
     def __le__(self, other):
         if isinstance(other, Path):
             return self._cs <= other._cs
-        else:
-            return self._cs <= Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs <= (os.path.normcase(os.path.normpath(dec)) if dec
+            else dec)
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
@@ -1023,11 +1025,11 @@ class Flags(object):
         Names are either strings or (index,name) tuples.
         E.g., Flags.getNames('isQuest','isHidden',None,(4,'isDark'),(7,'hasWater'))"""
         namesDict = {}
-        for index,name in enumerate(names):
-            if isinstance(name,tuple):
-                namesDict[name[1]] = name[0]
-            elif name: #--skip if "name" is 0 or None
-                namesDict[name] = index
+        for index,flg_name in enumerate(names):
+            if isinstance(flg_name,tuple):
+                namesDict[flg_name[1]] = flg_name[0]
+            elif flg_name: #--skip if "name" is 0 or None
+                namesDict[flg_name] = index
         return namesDict
 
     #--Generation
@@ -1093,21 +1095,21 @@ class Flags(object):
         self._field = ((self._field & ~mask) | value)
 
     #--As class
-    def __getattr__(self,name):
+    def __getattr__(self, attr_key):
         """Get value by flag name. E.g. flags.isQuestItem"""
         try:
-            names = object.__getattribute__(self,'_names')
-            index = names[name]
-            return (object.__getattribute__(self,'_field') >> index) & 1 == 1
+            names = object.__getattribute__(self, u'_names')
+            index = names[attr_key]
+            return (object.__getattribute__(self, u'_field') >> index) & 1 == 1
         except KeyError:
-            raise AttributeError(name)
+            raise AttributeError(attr_key)
 
-    def __setattr__(self,name,value):
+    def __setattr__(self, attr_key, value):
         """Set value by flag name. E.g., flags.isQuestItem = False"""
-        if name in ('_field','_names'):
-            object.__setattr__(self,name,value)
+        if attr_key in (u'_field', u'_names'):
+            object.__setattr__(self, attr_key, value)
         else:
-            self.__setitem__(self._names[name],value)
+            self.__setitem__(self._names[attr_key], value)
 
     #--Native operations
     def __eq__( self, other):
@@ -1145,7 +1147,7 @@ class Flags(object):
 
     def getTrueAttrs(self):
         """Returns attributes that are true."""
-        trueNames = [name for name in self._names if getattr(self,name)]
+        trueNames = [flname for flname in self._names if getattr(self, flname)]
         trueNames.sort(key=lambda xxx: self._names[xxx])
         return tuple(trueNames)
 
@@ -1160,32 +1162,30 @@ class DataDict(object):
     dictionary is its 'data' attribute."""
 
     def __contains__(self,key):
-        return key in self.data
+        return key in self._data
     def __getitem__(self,key):
         """Return value for key or raise KeyError if not present."""
-        return self.data[key]
+        return self._data[key]
     def __setitem__(self,key,value):
-        self.data[key] = value
+        self._data[key] = value
     def __delitem__(self,key):
-        del self.data[key]
+        del self._data[key]
     def __len__(self):
-        return len(self.data)
-    def setdefault(self,key,default):
-        return self.data.setdefault(key,default)
-    def keys(self):
-        return self.data.keys()
+        return len(self._data)
+    def __iter__(self):
+        return iter(self._data)
     def values(self):
-        return self.data.values()
+        return self._data.values()
     def items(self):
-        return self.data.items()
+        return self._data.items()
     def get(self,key,default=None):
-        return self.data.get(key,default)
+        return self._data.get(key, default)
     def pop(self,key,default=None):
-        return self.data.pop(key,default)
+        return self._data.pop(key, default)
     def iteritems(self):
-        return self.data.iteritems()
+        return self._data.iteritems()
     def itervalues(self):
-        return self.data.itervalues()
+        return self._data.itervalues()
 
 #------------------------------------------------------------------------------
 class AFile(object):
@@ -1323,7 +1323,7 @@ class PickleDict(object):
         self.backup = pkl_path.backup
         self.readOnly = readOnly
         self.vdata = {}
-        self.data = {}
+        self.pickled_data = {}
 
     def exists(self):
         return self._pkl_path.exists() or self.backup.exists()
@@ -1351,7 +1351,7 @@ class PickleDict(object):
           2: Data read from backup file
         """
         self.vdata.clear()
-        self.data.clear()
+        self.pickled_data.clear()
         cor = cor_name =  None
         for path in (self._pkl_path, self.backup):
             if cor is not None:
@@ -1370,7 +1370,7 @@ class PickleDict(object):
                         continue  # file corrupt - try next file
                     if firstPickle == 'VDATA2':
                         self.vdata.update(pickle.load(ins))
-                        self.data.update(pickle.load(ins))
+                        self.pickled_data.update(pickle.load(ins))
                     else:
                         raise PickleDict.Mold(path)
                 return 1 + (path == self.backup)
@@ -1386,15 +1386,15 @@ class PickleDict(object):
     def save(self):
         """Save to pickle file.
 
-        Three objects are writen - a version string and the vdata and data
-        dictionaries, in this order. Current version string is VDATA2.
-        """
+        Three objects are writen - a version string and the vdata and
+        pickled_data dictionaries, in this order. Current version string is
+        VDATA2."""
         if self.readOnly: return False
         #--Pickle it
         self.vdata['boltPaths'] = True # needed so pre 307 versions don't blow
-        with self._pkl_path.temp.open('wb') as out:
-            for data in ('VDATA2',self.vdata,self.data):
-                pickle.dump(data,out,-1)
+        with self._pkl_path.temp.open(u'wb') as out:
+            for pkl in (b'VDATA2', self.vdata, self.pickled_data):
+                pickle.dump(pkl, out, -1)
         self._pkl_path.untemp(doBackup=True)
         return True
 
@@ -1419,10 +1419,10 @@ class Settings(DataDict):
             res = dictFile.load()
             self.cleanSave = res == 0 # no data read - do not attempt to read on save
             self.vdata = dictFile.vdata.copy()
-            self.data = dictFile.data.copy()
+            self._data = dictFile.pickled_data.copy()
         else:
             self.vdata = {}
-            self.data = {}
+            self._data = {}
         self.defaults = {}
         self.changed = set()
         self.deleted = set()
@@ -1431,8 +1431,8 @@ class Settings(DataDict):
         """Add default settings to dictionary. Will not replace values that are already set."""
         self.defaults = default_settings
         for key in default_settings: # PY3: ChainMap?
-            if key not in self.data:
-                self.data[key] = copy.deepcopy(default_settings[key])
+            if key not in self:
+                self[key] = copy.deepcopy(default_settings[key])
 
     def save(self):
         """Save to pickle file. Only key/values marked as changed are saved."""
@@ -1441,54 +1441,46 @@ class Settings(DataDict):
         # on a clean save ignore BashSettings.dat.bak possibly corrupt
         if not self.cleanSave: dictFile.load()
         dictFile.vdata = self.vdata.copy()
-        for key in self.deleted:
-            dictFile.data.pop(key,None)
-        for key in self.changed:
-            if self.data[key] == self.defaults.get(key,None):
-                dictFile.data.pop(key,None)
+        for del_key in self.deleted:
+            dictFile.pickled_data.pop(del_key, None)
+        for changed_key in self.changed:
+            if self[changed_key] == self.defaults.get(changed_key, None):
+                dictFile.pickled_data.pop(changed_key, None)
             else:
-                dictFile.data[key] = self.data[key]
+                dictFile.pickled_data[changed_key] = self[changed_key]
         dictFile.save()
 
     def setChanged(self,key):
         """Marks given key as having been changed. Use if value is a dictionary, list or other object."""
-        if key not in self.data:
+        if key not in self:
             raise exception.ArgumentError(u'No settings data for ' + key)
         self.changed.add(key)
 
     def getChanged(self,key,default=None):
         """Gets and marks as changed."""
-        if default is not None and key not in self.data:
-            self.data[key] = default
+        if default is not None and key not in self:
+            self[key] = default
         self.setChanged(key)
-        return self.data.get(key)
+        return self.get(key)
 
     #--Dictionary Emulation
     def __setitem__(self,key,value):
         """Dictionary emulation. Marks key as changed."""
         if key in self.deleted: self.deleted.remove(key)
         self.changed.add(key)
-        self.data[key] = value
+        self._data[key] = value
 
     def __delitem__(self,key):
         """Dictionary emulation. Marks key as deleted."""
         if key in self.changed: self.changed.remove(key)
         self.deleted.add(key)
-        del self.data[key]
-
-    def setdefault(self,key,value):
-        """Dictionary emulation. Will not mark as changed."""
-        if key in self.data:
-            return self.data[key]
-        if key in self.deleted: self.deleted.remove(key)
-        self.data[key] = value
-        return value
+        del self._data[key]
 
     def pop(self,key,default=None):
         """Dictionary emulation: extract value and delete from dictionary."""
         if key in self.changed: self.changed.remove(key)
         self.deleted.add(key)
-        return self.data.pop(key,default)
+        return self._data.pop(key, default)
 
 # Structure wrappers ----------------------------------------------------------
 class _StructsCache(dict):
@@ -1587,7 +1579,7 @@ class DataTableColumn(object):
                 column in col_dict)
     def items(self):
         """Dictionary emulation."""
-        tableData = self._table.data
+        tableData = self._table._data
         column = self.column
         return [(key,tableData[key][column]) for key in self]
     def clear(self):
@@ -1599,11 +1591,11 @@ class DataTableColumn(object):
     #--Overloaded
     def __contains__(self,key):
         """Dictionary emulation."""
-        tableData = self._table.data
+        tableData = self._table._data
         return key in tableData and self.column in tableData[key]
     def __getitem__(self,key):
         """Dictionary emulation."""
-        return self._table.data[key][self.column]
+        return self._table._data[key][self.column]
     def __setitem__(self,key,value):
         """Dictionary emulation. Marks key as changed."""
         self._table.setItem(key, self.column, value)
@@ -1614,9 +1606,9 @@ class DataTableColumn(object):
 #------------------------------------------------------------------------------
 class DataTable(DataDict):
     """Simple data table of rows and columns, saved in a pickle file. It is
-    currently used by modInfos to represent properties associated with modfiles,
-    where each modfile is a row, and each property (e.g. modified date or
-    'mtime') is a column.
+    currently used by TableFileInfos to represent properties associated with
+    mod/save/bsa/ini files, where each file is a row, and each property (e.g.
+    modified date or 'mtime') is a column.
 
     The "table" is actually a dictionary of dictionaries. E.g.
         propValue = table['fileName']['propName']
@@ -1628,7 +1620,7 @@ class DataTable(DataDict):
         self.dictFile = dictFile
         dictFile.load()
         self.vdata = dictFile.vdata
-        self.data = dictFile.data
+        self._data = dictFile.pickled_data
         self.hasChanged = False ##: move to PickleDict
 
     def save(self):
@@ -1639,9 +1631,8 @@ class DataTable(DataDict):
 
     def getItem(self,row,column,default=None):
         """Get item from row, column. Return default if row,column doesn't exist."""
-        data = self.data
-        if row in data and column in data[row]:
-            return data[row][column]
+        if row in self._data and column in self._data[row]:
+            return self._data[row][column]
         else:
             return default
 
@@ -1651,69 +1642,53 @@ class DataTable(DataDict):
 
     def setItem(self,row,column,value):
         """Set value for row, column."""
-        data = self.data
-        if row not in data:
-            data[row] = {}
-        data[row][column] = value
+        if row not in self._data:
+            self._data[row] = {}
+        self._data[row][column] = value
         self.hasChanged = True
-
-    def setItemDefault(self,row,column,value):
-        """Set value for row, column."""
-        data = self.data
-        if row not in data:
-            data[row] = {}
-        self.hasChanged = True
-        return data[row].setdefault(column,value)
 
     def delItem(self,row,column):
         """Deletes item in row, column."""
-        data = self.data
-        if row in data and column in data[row]:
-            del data[row][column]
+        if row in self._data and column in self._data[row]:
+            del self._data[row][column]
             self.hasChanged = True
 
     def delRow(self,row):
         """Deletes row."""
-        data = self.data
-        if row in data:
-            del data[row]
+        if row in self._data:
+            del self._data[row]
             self.hasChanged = True
 
     def delColumn(self,column):
         """Deletes column of data."""
-        for rowData in self.data.values():
+        for rowData in self._data.values():
             if column in rowData:
                 del rowData[column]
                 self.hasChanged = True
 
     def moveRow(self,oldRow,newRow):
         """Renames a row of data."""
-        data = self.data
-        if oldRow in data:
-            data[newRow] = data[oldRow]
-            del data[oldRow]
+        if oldRow in self._data:
+            self._data[newRow] = self._data[oldRow]
+            del self._data[oldRow]
             self.hasChanged = True
 
     def copyRow(self,oldRow,newRow):
         """Copies a row of data."""
-        data = self.data
-        if oldRow in data:
-            data[newRow] = data[oldRow].copy()
+        if oldRow in self._data:
+            self._data[newRow] = self._data[oldRow].copy()
             self.hasChanged = True
 
     #--Dictionary emulation
     def __setitem__(self,key,value):
-        self.data[key] = value
+        self._data[key] = value
         self.hasChanged = True
     def __delitem__(self,key):
-        del self.data[key]
+        del self._data[key]
         self.hasChanged = True
-    def setdefault(self,key,default):
-        if key not in self.data: self.hasChanged = True
-        return self.data.setdefault(key,default)
     def pop(self,key,default=None):
         self.hasChanged = True
-        return self.data.pop(key,default)
+        return self._data.pop(key, default)
 
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2631,11 +2606,11 @@ class WryeText(object):
         for line in outLines:
             if reContentsTag.match(line):
                 if contents and not didContents:
-                    baseLevel = min([level for (level,name,text) in contents])
-                    for (level,name,text) in contents:
+                    baseLevel = min([level for (level,name_,text) in contents])
+                    for (level,name_,text) in contents:
                         level = level - baseLevel + 1
                         if level <= addContents:
-                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
+                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name_,text))
                     didContents = True
             else:
                 outWrite(line)

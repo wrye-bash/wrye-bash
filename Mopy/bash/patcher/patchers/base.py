@@ -211,7 +211,7 @@ class ReplaceFormIDsPatcher(ListPatcher):
     def readFromText(self,textPath):
         """Reads replacement data from specified text file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
-        aliases = self.patchFile.aliases
+        aliases = self.patchFile.pfile_aliases
         with CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue

@@ -1460,7 +1460,7 @@ class TrustedBinariesPage(_AFixedPage):
                                               u'"badDlls" statement before '
                                               u'"dll" statement')
                         dll = line.split(u':',1)[1].strip().rstrip(u':')
-                        current.setdefault(dll,[])
+                        if dll not in current: current[dll] = []
                     elif line.startswith(u'version'):
                         if dll is None:
                             raise SyntaxError(u'Missing "dll" statement '

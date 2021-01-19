@@ -216,7 +216,7 @@ class MelEffects(MelGroups):
     """Represents ingredient/potion/enchantment/spell effects."""
     def __init__(self):
         MelGroups.__init__(self, u'effects',
-            MelFid(b'EFID', u'name'), # baseEffect, name
+            MelFid(b'EFID', u'effect_formid'), # baseEffect
             MelStruct(b'EFIT', u'f2I', u'magnitude', u'area', u'duration'),
             MelConditions(),
         )
@@ -797,10 +797,10 @@ class MelVmad(MelBase):
             super(MelVmad.VmadHandlerQUST, self).load_frag(
                 record, ins, vmad_version, obj_format, read_id)
             # Then, load each alias
-            record.aliases = []
+            record.qust_aliases = []
             new_alias = self._alias_loader.make_new
             load_alias = self._alias_loader.load_frag
-            append_alias = record.aliases.append
+            append_alias = record.qust_aliases.append
             for x in xrange(ins.unpack(__unpacker, 2, read_id)[0]):
                 alias = new_alias()
                 load_alias(alias, ins, vmad_version, obj_format, read_id)
@@ -810,21 +810,21 @@ class MelVmad(MelBase):
             # Dump the regular fragments first
             out_data = super(MelVmad.VmadHandlerQUST, self).dump_frag(record)
             # Then, dump each alias
-            out_data += __packer(len(record.aliases))
+            out_data += __packer(len(record.qust_aliases))
             dump_alias = self._alias_loader.dump_frag
-            for alias in record.aliases:
+            for alias in record.qust_aliases:
                 out_data += dump_alias(alias)
             return out_data
 
         def map_fids(self, record, map_function, save=False):
             # No need to call parent, QUST fragments can't contain fids
             map_alias = self._alias_loader.map_fids
-            for alias in record.aliases:
+            for alias in record.qust_aliases:
                 map_alias(alias, map_function, save)
 
         @property
         def used_slots(self):
-            return [u'aliases'] + super(
+            return [u'qust_aliases'] + super(
                 MelVmad.VmadHandlerQUST, self).used_slots
 
     ##: Identical to VmadHandlerINFO + some overrides
@@ -1886,7 +1886,7 @@ class MreColl(MelRecord):
         MelUInt32('BNAM', 'layerID'),
         MelColor('FNAM'),
         MelUInt32Flags(b'GNAM', u'flags', CollisionLayerFlags,),
-        MelString('MNAM','name',),
+        MelString(b'MNAM', u'col_layer_name',),
         MelUInt32('INTV', 'interactablesCount'),
         MelFidList('CNAM','collidesWith',),
     )
@@ -4072,7 +4072,7 @@ class MreQust(MelRecord):
             ),
         ),
         MelBase('ANAM','aliasMarker'),
-        MelGroups('aliases',
+        MelGroups(u'qust_aliases',
             MelUnion({
                 b'ALST': MelUInt32(b'ALST', u'aliasId'),
                 b'ALLS': MelUInt32(b'ALLS', u'aliasId'),
@@ -4143,7 +4143,7 @@ class MreQust(MelRecord):
             b'CTDA|CIS1|CIS2|FNAM|NNAM|QSTA': u'objectives',
         },
         b'ANAM': {
-            b'CTDA|CIS1|CIS2|FNAM': u'aliases',
+            b'CTDA|CIS1|CIS2|FNAM': u'qust_aliases',
             # ANAM is required, so piggyback off of it here to resolve QSTA
             b'QSTA': (u'targets', {
                 b'CTDA|CIS1|CIS2': u'targets',
@@ -4734,7 +4734,8 @@ class MreScen(MelRecord):
         MelUInt32Flags(b'FNAM', u'flags', ScenFlags1),
         MelGroups('phases',
             MelNull('HNAM'),
-            MelString('NAM0','name',),
+            # Phase description. Always present, even if just a null-terminator
+            MelString(b'NAM0', u'phase_desc',),
             MelGroup('startConditions',
                 MelConditions(),
             ),
@@ -4768,7 +4769,7 @@ class MreScen(MelRecord):
         ),
         MelGroups('actions',
             MelUInt16('ANAM', 'actionType'),
-            MelString('NAM0','name',),
+            MelString('NAM0', u'action_desc',),
             MelUInt32('ALID', 'actorID',),
             MelBase('LNAM','lnam_p',),
             MelUInt32('INAM', 'index'),

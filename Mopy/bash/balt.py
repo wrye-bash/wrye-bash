@@ -401,10 +401,12 @@ def askWarning(parent, message, title=_(u'Warning')):
 
 def showOk(parent, message, title=u''):
     """Shows a modal error message."""
+    if isinstance(title, bolt.Path): title = title.s
     return askStyled(parent, message, title, wx.OK)
 
 def showError(parent, message, title=_(u'Error')):
     """Shows a modal error message."""
+    if isinstance(title, bolt.Path): title = title.s
     return askStyled(parent, message, title, wx.OK | wx.ICON_HAND)
 
 def showWarning(parent, message, title=_(u'Warning'), do_center=False):
@@ -424,6 +426,7 @@ class _Log(object):
         #--Sizing
         key__pos_ = self._settings_key + u'.pos'
         key__size_ = self._settings_key + u'.size'
+        if isinstance(title, bolt.Path): title = title.s
         #--DialogWindow or WindowFrame
         if self.asDialog:
             window = DialogWindow(parent, title, sizes_dict=_settings,
@@ -551,7 +554,7 @@ class ListEditorData(object):
     def getInfo(self,item):
         """Returns string info on specified item."""
         return u''
-    def setInfo(self,item,text):
+    def setInfo(self, item, info_text):
         """Sets string info on specified item."""
         raise AbstractError
 
@@ -1068,7 +1071,7 @@ class UIList(wx.Panel):
     def PopulateItems(self):
         """Sort items and populate entire list."""
         self.mouseTexts.clear()
-        items = set(self.data_store.keys())
+        items = set(self.data_store)
         if self.__class__._target_ini:
             # hack for avoiding the syscall in get_ci_settings
             target_setts = self.data_store.ini.get_ci_settings()
@@ -1149,10 +1152,10 @@ class UIList(wx.Panel):
                 self.mouse_index = itemDex
                 if itemDex >= 0:
                     item = self.GetItem(itemDex) # get the item for this index
-                    text = self.mouseTexts.get(item, u'')
-                    if text != self.mouseTextPrev:
-                        Link.Frame.set_status_info(text)
-                        self.mouseTextPrev = text
+                    item_txt = self.mouseTexts.get(item, u'')
+                    if item_txt != self.mouseTextPrev:
+                        Link.Frame.set_status_info(item_txt)
+                        self.mouseTextPrev = item_txt
     def _handle_mouse_leaving(self):
         if self.mouse_index is not None:
             self.mouse_index = None
@@ -1280,8 +1283,8 @@ class UIList(wx.Panel):
 
     def DeleteAll(self): self.__gList.DeleteAll()
 
-    def EnsureVisibleItem(self, name, focus=False):
-        self.EnsureVisibleIndex(self.GetIndex(name), focus=focus)
+    def EnsureVisibleItem(self, itm_name, focus=False):
+        self.EnsureVisibleIndex(self.GetIndex(itm_name), focus=focus)
 
     def EnsureVisibleIndex(self, dex, focus=False):
         self.__gList._native_widget.Focus(dex) if focus else self.__gList._native_widget.EnsureVisible(dex)
@@ -1352,16 +1355,16 @@ class UIList(wx.Panel):
         """Sort and return items by specified column, possibly in reverse
         order.
 
-        If items are not specified, sort self.data_store.keys() and
-        return that. If sortSpecial is False do not apply extra sortings."""
-        items = items if items is not None else self.data_store.keys()
+        If items are not specified, sort self.data_store keys and return that.
+        If sortSpecial is False do not apply extra sortings."""
         def key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
             return bolt.natural_key() if k is None else partial(k, self)
         defaultKey = key(self._default_sort_col)
         defSort = col == self._default_sort_col
         # always apply default sort
-        items.sort(key=defaultKey, reverse=defSort and reverse)
+        items = sorted(self.data_store if items is None else items,
+                       key=defaultKey, reverse=defSort and reverse)
         if not defSort: items.sort(key=key(col), reverse=reverse)
         if sortSpecial:
             for lamda in self._extra_sortings: lamda(self, items)
@@ -1432,11 +1435,11 @@ class UIList(wx.Panel):
                 listCtrl.lc_set_column_width(colDex, colWidth)
             else: # Update an existing column
                 column = listCtrl.lc_get_column(colDex)
-                text = column.GetText() # Py3: unicode?
-                if text == colName:
+                col_text = column.GetText() # Py3: unicode?
+                if col_text == colName:
                     # Don't change it, just make sure the width is correct
                     listCtrl.lc_set_column_width(colDex, colWidth)
-                elif text not in names:
+                elif col_text not in names:
                     # Column that doesn't exist anymore
                     listCtrl.lc_delete_column(colDex)
                     continue # do not increment colDex or update colDict
@@ -1554,17 +1557,20 @@ class UIList(wx.Panel):
             self.data_store.store_dir.makedirs()
         self.data_store.store_dir.start()
 
-    def hide(self, keys):
-        for key in keys:
-            destDir = self.data_store.get_hide_dir(key)
-            if destDir.join(key).exists():
+    def hide(self, items):
+        deletd = []
+        for ci_key, inf in items:
+            destDir = inf.get_hide_dir()
+            if destDir.join(ci_key).exists():
                 message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % key)
+                             u'files directory. Overwrite it?') % ci_key)
                 if not askYes(self, message, _(u'Hide Files')): continue
             #--Do it
-            with BusyCursor(): self.data_store.move_info(key, destDir)
+            with BusyCursor():
+                self.data_store.move_info(ci_key, destDir)
+                deletd.append(ci_key)
         #--Refresh stuff
-        self.data_store.delete_refresh(keys, None, check_existence=True)
+        self.data_store.delete_refresh(deletd, None, check_existence=True)
 
     # Generate unique filenames when duplicating files etc
     @staticmethod
@@ -1696,6 +1702,16 @@ class Link(object):
         """
         self._initData(window, selection)
 
+    def iselected_infos(self):
+        return (self.window.data_store[x] for x in self.selected)
+
+    def iselected_pairs(self):
+        return ((x, self.window.data_store[x]) for x in self.selected)
+
+    def _first_selected(self):
+        """Return the first selected info."""
+        return next(self.iselected_infos())
+
     # Wrappers around balt dialogs - used to single out non trivial uses of
     # self->window
     ##: avoid respecifying default params
@@ -1755,11 +1771,6 @@ class Link(object):
                    max=10000):
         return askNumber(self.window, message, prompt, title, value, min, max)
 
-    def _askOpenMulti(self, title=u'', defaultDir=u'', defaultFile=u'',
-                      wildcard=u''):
-        return askOpenMulti(self.window, title, defaultDir, defaultFile,
-                            wildcard)
-
     def _askDirectory(self, message=_(u'Choose a directory.'),
                       defaultPath=u''):
         return askDirectory(self.window, message, defaultPath)
@@ -1807,12 +1818,6 @@ class ItemLink(Link):
         Link.Frame._native_widget.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
         menu.Append(menuItem)
         return menuItem
-
-    def iselected_infos(self):
-        return (self.window.data_store[x] for x in self.selected)
-
-    def iselected_pairs(self):
-        return ((x, self.window.data_store[x]) for x in self.selected)
 
     # Callbacks ---------------------------------------------------------------
     # noinspection PyUnusedLocal
@@ -1980,7 +1985,7 @@ class OneItemLink(EnabledLink):
     @property
     def _selected_item(self): return self.selected[0]
     @property
-    def _selected_info(self): return self.window.data_store[self.selected[0]]
+    def _selected_info(self): return self._first_selected()
 
 class CheckLink(ItemLink):
     kind = wx.ITEM_CHECK
@@ -2057,14 +2062,14 @@ class UIList_Hide(ItemLink):
                         u'moved to the %(hdir)s directory.') % (
                           {u'hdir': self.window.data_store.hidden_dir})
             if not self._askYes(message, _(u'Hide Files')): return
-        self.window.hide(self.selected)
+        self.window.hide(self.iselected_pairs())
         self.window.RefreshUI(refreshSaves=True)
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-def copyToClipboard(text):
+def copyToClipboard(text_to_copy):
     if wx.TheClipboard.Open():
-        wx.TheClipboard.SetData(wx.TextDataObject(text))
+        wx.TheClipboard.SetData(wx.TextDataObject(text_to_copy))
         wx.TheClipboard.Close()
 
 def copyListToClipboard(selected):

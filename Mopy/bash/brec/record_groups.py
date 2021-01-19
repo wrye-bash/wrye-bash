@@ -289,9 +289,8 @@ class MobObjects(MobBase):
         if self_recs and not self.id_records:
             self.indexRecords()
         record_id = record.fid
-        if record.isKeyedByEid:
-            if record_id == self._null_fid:
-                record_id = record.eid
+        if record.isKeyedByEid and record_id == self._null_fid:
+            record_id = record.eid
         self_id_recs = self.id_records
         # This check fails fairly often, so do this instead of try/except
         if record_id in self_id_recs:
@@ -316,9 +315,9 @@ class MobObjects(MobBase):
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
-        self.records = [record for record in self.records if (record.fid == (
-            record.isKeyedByEid and self._null_fid[0],
-            0) and record.eid in p_keep_ids) or record.fid in p_keep_ids]
+        self.records = [record for record in self.records if (
+                record.isKeyedByEid and record.fid == self._null_fid
+                and record.eid in p_keep_ids) or record.fid in p_keep_ids]
         self.id_records.clear()
         self.setChanged()
 

@@ -405,9 +405,8 @@ class _Mod_Labels(ChoiceLink):
         _self = self
         class _LabelLink(ItemLink):
             def Execute(self):
-                fileLabels = bosh.modInfos.table.getColumn(_self.column)
-                for fileName in self.selected:
-                    fileLabels[fileName] = self._text
+                for fileInfo in self.iselected_infos():
+                    fileInfo.set_table_prop(_self.column, self._text)
                 _self._refresh()
             @property
             def link_help(self): return _(
@@ -441,11 +440,10 @@ class _ModGroups(object):
 
     def writeToModInfos(self,mods=None):
         """Exports mod groups to modInfos."""
-        mods = mods or bosh.modInfos.table.keys()
         mod_group = self.mod_group
         column = bosh.modInfos.table.getColumn(u'group')
         changed = 0
-        for mod in mods:
+        for mod in (mods or bosh.modInfos.table):
             if mod in mod_group and column.get(mod) != mod_group[mod]:
                 column[mod] = mod_group[mod]
                 changed += 1
@@ -607,7 +605,7 @@ class Mod_Details(OneItemLink):
                 for fid,eid in records:
                     buff.write(u'  %08X %s\n' % (fid,eid))
                 buff.write(u'\n')
-            self._showLog(buff.getvalue(), title=self._selected_item.s,
+            self._showLog(buff.getvalue(), title=self._selected_item,
                           fixedFont=True)
             buff.close()
 
@@ -653,7 +651,7 @@ class _NotObLink(EnabledLink):
 
     def _enable(self):
         return len(self.selected) != 1 or ( # disable on solo Oblivion.esm
-            not bosh.reOblivion.match(self.selected[0].s))
+            not self._first_selected().match_oblivion_re())
 
 class Mod_CreateLOOTReport(_NotObLink):
     """Creates a basic LOOT masterlist entry with ."""
@@ -676,10 +674,9 @@ class Mod_CreateLOOTReport(_NotObLink):
                 continue # Skip if it's going to be a useless entry
             # Name of file, plus a link if we can figure it out
             log_txt += u"  - name: '%s'\n" % fileName
-            installer = bosh.modInfos.table.getItem(
-                fileName, u'installer', u'')
-            if installer:
-                log_txt += u"    url: [ '%s' ]\n" % _getUrl(installer)
+            inst = fileInfo.get_table_prop(u'installer', u'')
+            if inst:
+                log_txt += u"    url: [ '%s' ]\n" % _getUrl(inst)
             # Tags applied after the description
             fmt_tags = sorted(added | {u'-%s' % t for t in removed})
             if fmt_tags:
@@ -712,14 +709,14 @@ class Mod_CopyModInfo(ItemLink):
             spoiler = False
         # Create the report
         isFirst = True
-        for i,fileName in enumerate(self.selected):
+        for i, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
             # add a blank line in between mods
             if isFirst: isFirst = False
             else: info_txt += u'\n\n'
             #-- Name of file, plus a link if we can figure it out
-            installer = bosh.modInfos.table.getItem(fileName,u'installer',u'')
-            if not installer: info_txt += fileName.s
-            else: info_txt += _(u'URL: %s') % _getUrl(installer)
+            inst = fileInfo.get_table_prop(u'installer', u'')
+            if not inst: info_txt += fileName.s
+            else: info_txt += _(u'URL: %s') % _getUrl(inst)
             labels = self.window.labels
             for col in self.window.cols:
                 if col == u'File': continue
@@ -812,8 +809,8 @@ class _GhostLink(ItemLink):
         (un)ghosting as needed."""
         files = []
         for fileName, fileInfo in self.iselected_pairs():
-            bosh.modInfos.table.setItem(fileName, u'allowGhosting',
-                                        self.__class__.setAllow(fileName))
+            fileInfo.set_table_prop(u'allowGhosting',
+                                    self.__class__.setAllow(fileName))
             oldGhost = fileInfo.isGhost
             if fileInfo.setGhost(self.__class__.toGhost(fileName)) != oldGhost:
                 files.append(fileName)
@@ -951,8 +948,7 @@ class Mod_Patch_Update(_Mod_BP_Link):
     def _initData(self, window, selection):
         super(Mod_Patch_Update, self)._initData(window, selection)
         # Detect the mode the patch was build in
-        config = bosh.modInfos.table.getItem(self._selected_item,
-                                             u'bash.patch.configs', {})
+        config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
         self._config_is_cbash = configIsCBash(config)
         self.mods_to_reselect = set()
 
@@ -1107,8 +1103,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
 
     def Execute(self):
         #--Config
-        config = bosh.modInfos.table.getItem(self._selected_item,
-                                             u'bash.patch.configs', {})
+        config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
         # Detect and warn about patch mode
         if configIsCBash(config):
             self._showError(_(u'The selected patch was built in CBash mode, '
@@ -1147,20 +1142,19 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
     @balt.conversation
     def Execute(self):
         #--Config
-        config = bosh.modInfos.table.getItem(self._selected_item,
-                                             u'bash.patch.configs', {})
+        config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
         exportConfig(patch_name=self._selected_item.s, config=config,
             win=self.window, outDir=bass.dirs[u'patches'])
 
 # Cleaning submenu ------------------------------------------------------------
 #------------------------------------------------------------------------------
 class _DirtyLink(ItemLink):
-    def _ignoreDirty(self, filename): raise AbstractError
+    def _ignoreDirty(self, fileInfo): raise AbstractError
 
     def Execute(self):
-        for fileName in self.selected:
-            bosh.modInfos.table.setItem(fileName, u'ignoreDirty',
-                                        self._ignoreDirty(fileName))
+        for fileName, fileInfo in self.iselected_pairs():
+            fileInfo.set_table_prop(u'ignoreDirty',
+                                    self._ignoreDirty(fileName))
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
 
 class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
@@ -1175,20 +1169,18 @@ class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
             u"Check against LOOT's dirty mod list")
 
     def _check(self):
-        for fileName in self.selected:
-            if bosh.modInfos.table.getItem(fileName,
-                    u'ignoreDirty', self.skip) != self.skip: return False
-        return True
+        return all(finf.get_table_prop(u'ignoreDirty', self.skip) == self.skip
+                   for finf in self.iselected_infos())
 
-    def _ignoreDirty(self, filename): return self.skip
+    def _ignoreDirty(self, fileInfo): return self.skip
 
 class _Mod_SkipDirtyCheckInvert(_DirtyLink, ItemLink):
     _text = _(u"Invert checking against LOOT's dirty mod list")
     _help = _(
         u"Invert checking against LOOT's dirty mod list for selected mod(s)")
 
-    def _ignoreDirty(self, filename):
-        return not bosh.modInfos.table.getItem(filename, u'ignoreDirty', False)
+    def _ignoreDirty(self, fileInfo):
+        return not fileInfo.get_table_prop(u'ignoreDirty', False)
 
 class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
@@ -1199,9 +1191,9 @@ class Mod_SkipDirtyCheck(TransLink):
                 _text = _(u"Don't check against LOOT's dirty mod list")
                 _help = _(u'Toggles scanning for dirty mods on a per-mod basis')
 
-                def _check(self): return bosh.modInfos.table.getItem(
-                        self.selected[0], u'ignoreDirty', False)
-                def _ignoreDirty(self, filename): return self._check() ^ True
+                def _check(self): return next(self.iselected_infos()
+                    ).get_table_prop(u'ignoreDirty', False)
+                def _ignoreDirty(self, fileInfo): return self._check() ^ True
 
             return _CheckLink()
         else:
@@ -1248,7 +1240,7 @@ class Mod_ScanDirty(ItemLink):
             if modInfo.isBP(): itms = set()
             if udrs or itms:
                 pos = len(dirty)
-                dirty.append(u'* __%s__:\n' % modInfo.name)
+                dirty.append(u'* __%s__:\n' % modInfo)
                 dirty[pos] += u'  * %s: %i\n' % (_(u'UDR'),len(udrs))
                 for udr in sorted(udrs):
                     if udr.parentEid:
@@ -1273,9 +1265,9 @@ class Mod_ScanDirty(ItemLink):
                             strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
                     dirty[pos] += u'    * %s\n' % item
             elif udrs is None or itms is None:
-                error.append(u'* __%s__' % modInfo.name)
+                error.append(u'* __%s__' % modInfo)
             else:
-                clean.append(u'* __%s__' % modInfo.name)
+                clean.append(u'* __%s__' % modInfo)
         #-- Show log
         if dirty:
             log(_(u'Detected %d dirty mods:') % len(dirty))
@@ -1303,8 +1295,8 @@ class Mod_RemoveWorldOrphans(_NotObLink):
         if not self._askContinue(message, u'bash.removeWorldOrphans.continue',
                                  _(u'Remove World Orphans')): return
         for index, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
-            if bosh.reOblivion.match(fileName.s):
-                self._showWarning(_(u'Skipping %s') % fileName,
+            if fileInfo.match_oblivion_re():
+                self._showWarning(_(u'Skipping %s') % fileInfo,
                                   _(u'Remove World Orphans'))
                 continue
             #--Export
@@ -1312,19 +1304,19 @@ class Mod_RemoveWorldOrphans(_NotObLink):
                 loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[
                     b'CELL'], MreRecord.type_class[b'WRLD'])
                 modFile = mod_files.ModFile(fileInfo, loadFactory)
-                progress(0,_(u'Reading') + u' %s.' % fileName)
+                progress(0,_(u'Reading') + u' %s.' % fileInfo)
                 modFile.load(True,SubProgress(progress,0,0.7))
                 orphans = ('WRLD' in modFile.tops) and modFile.WRLD.orphansSkipped
                 if orphans:
-                    progress(0.1, _(u'Saving %s.') % fileName)
+                    progress(0.1, _(u'Saving %s.') % fileInfo)
                     modFile.safeSave()
                 progress(1.0,_(u'Done.'))
             #--Log
             if orphans:
                 self._showOk(_(u'Orphan cell blocks removed: %d.') % orphans,
-                             fileName.s)
+                             fileName)
             else:
-                self._showOk(_(u'No changes required.'), fileName.s)
+                self._showOk(_(u'No changes required.'), fileName)
 
 #------------------------------------------------------------------------------
 class Mod_FogFixer(ItemLink):
@@ -1428,8 +1420,8 @@ class Mod_DecompileAll(_NotObLink):
                                  _(u'Decompile All')): return
         for fileName, fileInfo in self.iselected_pairs():
             file_name_s = fileName.s
-            if bosh.reOblivion.match(file_name_s):
-                self._showWarning(_(u'Skipping %s') % fileName,
+            if fileInfo.match_oblivion_re():
+                self._showWarning(_(u'Skipping %s') % fileInfo,
                                   _(u'Decompile All'))
                 continue
             loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[b'SCPT'])
@@ -1511,7 +1503,7 @@ class Mod_FlipEsm(_Esm_Esl_Flip):
 
     @property
     def _already_flagged(self):
-        return self.window.data_store[self.selected[0]].has_esm_flag()
+        return self._first_selected().has_esm_flag()
 
     def _enable(self):
         """For pre esl games check if all mods are of the same type (esm or
@@ -1545,7 +1537,7 @@ class Mod_FlipEsl(_Esm_Esl_Flip):
 
     @property
     def _already_flagged(self):
-        return self.window.data_store[self.selected[0]].has_esl_flag()
+        return self._first_selected().has_esl_flag()
 
     def _enable(self):
         """Allow if all selected mods have valid extensions, have same esl flag
@@ -1711,8 +1703,7 @@ class Mod_Face_Import(OneItemLink):
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s, ImageWrapper.typesDict[u'jpg'])
         self.window.RefreshUI(refreshSaves=False) # import save to esp
-        self._showOk(_(u'Imported face to: %s') % npc.eid,
-                     self._selected_item.s)
+        self._showOk(_(u'Imported face to: %s') % npc.eid, self._selected_item)
 
 #--Common
 class _Import_Export_Link(AppendableLink):

@@ -257,7 +257,7 @@ class CheckListBox(ListBox, WithCharEvents):
             self.lb_check_at_index(i, v)
 
     ##: Test that the claim below is actually accurate
-    def set_all_items_keep_pos(self, names, values):
+    def set_all_items_keep_pos(self, names, checkmarks):
         """Convenience method for setting a bunch of wxCheckListBox items. The
         main advantage of this is that it doesn't clear the list unless it
         needs to, which is good if you want to preserve the scroll position
@@ -265,16 +265,15 @@ class CheckListBox(ListBox, WithCharEvents):
         set_all_items instead as it is much faster."""
         if not names:
             self.lb_clear()
-        else:
-            for index, (name, value) in enumerate(izip(names, values)):
-                if index >= self.lb_get_items_count():
-                    self.lb_append(name)
-                else:
-                    if index == -1:
-                        deprint(u"index = -1, name = %s, value = %s" % (
-                            name, value))
-                        continue
-                    self.lb_set_label_at_index(index, name)
-                self.lb_check_at_index(index, value)
-            for index in range(self.lb_get_items_count(), len(names), -1):
-                self.lb_delete_at_index(index - 1)
+            return
+        for index, (lab, ch) in enumerate(izip(names, checkmarks)):
+            if index >= self.lb_get_items_count():
+                self.lb_append(lab)
+            else:
+                if index == -1:
+                    deprint(u'index = -1, label = %s, check = %s' % (lab, ch))
+                    continue
+                self.lb_set_label_at_index(index, lab)
+            self.lb_check_at_index(index, ch)
+        for index in range(self.lb_get_items_count(), len(names), -1):
+            self.lb_delete_at_index(index - 1)

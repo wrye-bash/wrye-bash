@@ -140,8 +140,8 @@ class Installer(object):
                             new_sizeCrcDate, progress)
         # drop _asFile
         old_sizeCrcDate.clear()
-        for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
-            old_sizeCrcDate[rpFile] = (size, crc, date)
+        for rpFile, (siz, crc, date, _asFile) in new_sizeCrcDate.iteritems():
+            old_sizeCrcDate[rpFile] = (siz, crc, date)
         return changed
 
     @staticmethod
@@ -154,10 +154,10 @@ class Installer(object):
         # is size 0 - add len(pending) to the progress bar max to ensure we
         # don't hit 100% and cause the progress bar to prematurely disappear
         progress.setFull(pending_size + len(pending))
-        for rpFile, (size, _crc, date, asFile) in iter(sorted(pending.items())):
+        for rpFile, (siz, _crc, date, asFile) in iter(sorted(pending.items())):
             progress(done, progress_msg + rpFile)
-            sub = bolt.SubProgress(progress, done, done + size + 1)
-            sub.setFull(size + 1)
+            sub = bolt.SubProgress(progress, done, done + siz + 1)
+            sub.setFull(siz + 1)
             crc = 0
             try:
                 with open(asFile, u'rb') as ins:
@@ -171,8 +171,8 @@ class Installer(object):
                         traceback=True)
                 continue
             crc &= 0xFFFFFFFF
-            done += size + 1
-            new_sizeCrcDate[rpFile] = (size, crc, date, asFile)
+            done += siz + 1
+            new_sizeCrcDate[rpFile] = (siz, crc, date, asFile)
 
     #--Initialization, etc ----------------------------------------------------
     def initDefault(self):
@@ -325,8 +325,11 @@ class Installer(object):
             self.initDefault()
 
     @property
-    def ipath(self): ##: aka abs_path
+    def abs_path(self):
         return bass.dirs[u'installers'].join(self.archive)
+
+    def get_hide_dir(self): ##: Copy-pasted from InstallersData.hidden_dir!
+        return bass.dirs[u'modsBash'].join(u'Hidden')
 
     def __setstate(self,values):
         self.initDefault() # runs on __init__ called by __reduce__
@@ -338,7 +341,7 @@ class Installer(object):
                 rescan = True
         elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
             rescan = True ##: for people that used my wip branch, drop on 307
-        if not self.ipath.exists():  # pickled installer deleted outside bash
+        if not self.abs_path.exists(): # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
             self.src_sizeCrcDate = bolt.LowerDict(
@@ -728,7 +731,7 @@ class Installer(object):
                         self.hasWizard = full
                         skipDirFilesDiscard(file_relative)
                         continue
-                    elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+                    elif fileExt == defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
                         self.hasBCF = full
                         skipDirFilesDiscard(file_relative)
                         continue
@@ -1093,7 +1096,7 @@ class Installer(object):
             for asDir, sDirs, sFiles in bolt.walkdir(proj_dir.s):
                 if not (sDirs or sFiles): empties.add(GPath(asDir))
             for empty in empties: empty.removedirs()
-            self.ipath.makedirs()  #--In case it just got wiped out.
+            self.abs_path.makedirs()  #--In case it just got wiped out.
         return upt_numb, del_numb
 
     def size_or_mtime_changed(self, apath):
@@ -1204,7 +1207,7 @@ class Installer(object):
             log = bolt.LogFile(out)
             log.setHeader(u'%s ' % self.archive + _(u'Package Structure:'))
             log(u'[spoiler]\n', False)
-            self._list_package(self.ipath, log)
+            self._list_package(self.abs_path, log)
             log(u'[/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
@@ -1231,6 +1234,7 @@ class InstallerMarker(Installer):
     """Represents a marker installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
+    _is_filename = False
 
     @classmethod
     def is_marker(cls): return True
@@ -1295,7 +1299,7 @@ class InstallerArchive(Installer):
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self.size, self.modified = self.ipath.size_mtime() ##: aka _file_size _file_mod_time
+        self.size, self.modified = self.abs_path.size_mtime() ##: aka _file_size _file_mod_time
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
@@ -1314,12 +1318,12 @@ class InstallerArchive(Installer):
                     fileSizeCrcs.append((_li.filepath, _li.size, _li.crc))
                     _li.cumCRC += _li.crc
                 _li.filepath = _li.size = _li.crc = _li.isdir = 0
-        with self.ipath.unicodeSafe() as tempArch:
+        with self.abs_path.unicodeSafe() as tempArch:
             try:
                 list_archive(tempArch, _parse_archive_line)
                 self.crc = _li.cumCRC & 0xFFFFFFFF
             except:
-                archive_msg = u"Unable to read archive '%s'." % self.ipath
+                archive_msg = u"Unable to read archive '%s'." % self.abs_path
                 deprint(archive_msg, traceback=True)
                 raise InstallerArchiveError(archive_msg)
 
@@ -1336,7 +1340,7 @@ class InstallerArchive(Installer):
             out.write(u'\n'.join(fileNames))
         #--Ensure temp dir empty
         bass.rmTempDir()
-        with self.ipath.unicodeSafe() as arch:
+        with self.abs_path.unicodeSafe() as arch:
             if progress:
                 progress.state = 0
                 progress.setFull(len(fileNames))
@@ -1497,7 +1501,7 @@ class InstallerProject(Installer):
         :return: max modification time for files/folders in project directory
         :rtype: int"""
         #--Scan for changed files
-        apRoot = self.ipath
+        apRoot = self.abs_path
         rootName = apRoot.stail
         progress = progress if progress else bolt.Progress()
         progress_msg = rootName + u'\n' + _(u'Scanning...')
@@ -1583,12 +1587,12 @@ class InstallerProject(Installer):
         progress(0, self.archive + u'\n' + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files
-        srcDirJoin = self.ipath.join
+        srcDirJoin = self.abs_path.join
         return self._fs_install(dest_src, srcDirJoin, progress, progressPlus,
                                 None)
 
     def sync_from_data(self, delta_files, progress):
-        return self._do_sync_data(self.ipath, delta_files, progress)
+        return self._do_sync_data(self.abs_path, delta_files, progress)
 
     @staticmethod
     def _list_package(apath, log):
@@ -1607,11 +1611,11 @@ class InstallerProject(Installer):
     def renameInstaller(self, name_new, idata_):
         return self._installer_rename(idata_, name_new)
 
-    def _open_txt_file(self, rel_path): self.ipath.join(rel_path).start()
+    def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
 
-    def wizard_file(self): return self.ipath.join(self.hasWizard)
+    def wizard_file(self): return self.abs_path.join(self.hasWizard)
 
-    def fomod_file(self): return self.ipath.join(self.has_fomod_conf)
+    def fomod_file(self): return self.abs_path.join(self.has_fomod_conf)
 
 def projects_walk_cache(func): ##: HACK ! Profile
     """Decorator to make sure I dont leak self._dir_dirs_files project cache.
@@ -1656,7 +1660,7 @@ class InstallersData(DataStore):
         self.bash_dir.makedirs()
         #--Persistent data
         self.dictFile = bolt.PickleDict(self.bash_dir.join(u'Installers.dat'))
-        self.data = {}
+        self._data = {}
         self.data_sizeCrcDate = bolt.LowerDict()
         from . import converters
         self.converters_data = converters.ConvertersData(bass.dirs[u'bainData'],
@@ -1701,8 +1705,8 @@ class InstallersData(DataStore):
         #--Load Installers.dat if not loaded - will set changed to True
         changed = not self.loaded and self.__load(progress)
         #--Last marker
-        if self.lastKey not in self.data:
-            self.data[self.lastKey] = InstallerMarker(self.lastKey)
+        if self.lastKey not in self:
+            self[self.lastKey] = InstallerMarker(self.lastKey)
         if fullRefresh: # BAIN uses modInfos crc cache
             with gui.BusyCursor(): modInfos.refresh_crcs()
         #--Refresh Other - FIXME(ut): docs
@@ -1723,9 +1727,9 @@ class InstallersData(DataStore):
         progress(0, _(u'Loading Data...'))
         self.dictFile.load()
         self.converters_data.load()
-        data = self.dictFile.data
-        self.data = data.get('installers', {})
-        pickle = data.get('sizeCrcDate', {})
+        pickl_data = self.dictFile.pickled_data
+        self._data = pickl_data.get(u'installers', {}) or pickl_data.get(b'installers', {})
+        pickle = pickl_data.get(u'sizeCrcDate', {}) or pickl_data.get(b'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
         # fixup: all markers had their archive attribute set to u'===='
@@ -1738,11 +1742,11 @@ class InstallersData(DataStore):
     def save(self):
         """Saves to pickle file."""
         if self.hasChanged:
-            self.dictFile.data['installers'] = self.data
-            self.dictFile.data['sizeCrcDate'] = { # FIXME: backwards compat
+            self.dictFile.pickled_data[u'installers'] = self._data
+            self.dictFile.pickled_data[u'sizeCrcDate'] = { # FIXME: backwards compat
                 GPath(x): y for x, y in self.data_sizeCrcDate.iteritems()}
             # for backwards compatibility, drop
-            self.dictFile.data['crc_installer'] = {
+            self.dictFile.pickled_data['crc_installer'] = {
                 x.crc: x for x in self.itervalues() if x.is_archive()}
             self.dictFile.vdata['version'] = 1
             self.dictFile.save()
@@ -1978,11 +1982,11 @@ class InstallersData(DataStore):
         """Refresh installer status."""
         inOrder, pending = [], []
         # not specifying the key below results in double time
-        for archive, installer in sorted(self.iteritems(), key=itemgetter(0)):
+        for iname, installer in sorted(self.iteritems(), key=itemgetter(0)):
             if installer.order >= 0:
-                inOrder.append((archive, installer))
+                inOrder.append((iname, installer))
             else:
-                pending.append((archive, installer))
+                pending.append((iname, installer))
         inOrder.sort(key=lambda x: x[1].order)
         for dex, (key, value) in enumerate(inOrder):
             if self.lastKey == key:
@@ -1991,7 +1995,7 @@ class InstallersData(DataStore):
         else:
             inOrder += pending
         changed = False
-        for order, (archive, installer) in enumerate(inOrder):
+        for order, (iname, installer) in enumerate(inOrder):
             if installer.order != order:
                 installer.order = order
                 changed = True
@@ -2171,11 +2175,11 @@ class InstallersData(DataStore):
         :type dest_paths: set[unicode]"""
         root_files = []
         norm_ghost = Installer.getGhosted()
-        for path in dest_paths:
-            sp = path.rsplit(os.sep, 1) # split into ['rel_path, 'file']
+        for data_path in dest_paths:
+            sp = data_path.rsplit(os.sep, 1) # split into ['rel_path, 'file']
             if len(sp) == 1: # top level file
-                name = norm_ghost.get(path, path)
-                root_files.append((bass.dirs[u'mods'].s, name))
+                data_path = norm_ghost.get(data_path, data_path)
+                root_files.append((bass.dirs[u'mods'].s, data_path))
             else:
                 root_files.append((bass.dirs[u'mods'].join(sp[0]).s, sp[1]))
         root_dirs_files = []
@@ -2264,7 +2268,7 @@ class InstallersData(DataStore):
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):
         """Move specified archives to specified position."""
-        old_ordered = self.sorted_values(set(self.data) - set(moveList))
+        old_ordered = self.sorted_values(set(self) - set(moveList))
         new_ordered = self.sorted_values(moveList)
         if newPos >= len(self): newPos = len(old_ordered)
         for index, installer in enumerate(old_ordered[:newPos]):
@@ -2559,8 +2563,8 @@ class InstallersData(DataStore):
 
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
-        if unArchives == u'ALL': unArchives = self.data
-        unArchives = frozenset(self[x] for x in unArchives)
+        if unArchives == u'ALL': unArchives = frozenset(self.itervalues())
+        else: unArchives = frozenset(self[x] for x in unArchives)
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
@@ -2638,7 +2642,7 @@ class InstallersData(DataStore):
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
-        anPackages = (self[package] for package in (anPackages or self.keys()))
+        anPackages = (self[package] for package in (anPackages or self))
         #--Get remove/refresh files from anPackages
         removes = set()
         for installer in anPackages:
@@ -2729,8 +2733,8 @@ class InstallersData(DataStore):
         return (k for k in active_bsas if k.name.s in inst.ci_dest_sizeCrc)
 
     @staticmethod
-    def _parse_error(bs, reason):
-        deprint(u'Error parsing %s [%s]' % (bs.name, reason), traceback=True)
+    def _parse_error(bsa_inf, reason):
+        deprint(u'Error parsing %s [%s]' % (bsa_inf, reason), traceback=True)
 
     ##: Maybe cache the result? Can take a bit of time to calculate
     def find_conflicts(self, src_installer, active_bsas=None, bsa_cause=None,
@@ -2773,7 +2777,7 @@ class InstallersData(DataStore):
             asset_to_bsa, src_assets = self.find_src_assets(src_installer,
                                                             active_bsas)
             remaining_bsas = copy.copy(active_bsas)
-            def process_bsa_conflicts(b_inf, b_source):
+            def _process_bsa_conflicts(b_inf, b_source):
                 try: # conflicting assets from this installer active bsas
                     curConflicts = b_inf.assets & src_assets
                 except BSAError:
@@ -2810,11 +2814,11 @@ class InstallersData(DataStore):
                         ##: Support for inactive BSA conflicts
                         del remaining_bsas[bsa_info]
                     else:
-                        process_bsa_conflicts(bsa_info, package.s)
+                        _process_bsa_conflicts(bsa_info, package.s)
             # Check all left-over BSAs - they either came from an INI or from a
             # plugin file not managed by BAIN (e.g. a DLC)
             for rem_bsa in remaining_bsas:
-                process_bsa_conflicts(rem_bsa, bsa_cause[rem_bsa])
+                _process_bsa_conflicts(rem_bsa, bsa_cause[rem_bsa])
             def _sort_bsa_conflicts(bsa_conflict):
                 return active_bsas[bsa_conflict[1]]
             lower_bsa.sort(key=_sort_bsa_conflicts)
@@ -2897,17 +2901,17 @@ class InstallersData(DataStore):
                 origin_ini_match = self._ini_origin.match
                 def _print_bsa_conflicts(conflicts, title=_(u'Lower')):
                     buff.write(u'= %s %s\n' % (title, u'=' * 40))
-                    for origin_, bsa_, confl_ in conflicts:
-                        # If the origin is an INI, then active_bsas[bsa_] does
-                        # not contain a meaningful result (will be an extremely
-                        # large/small number)
+                    for origin_, bsa_inf, confl_ in conflicts:
+                        # If the origin is an INI, then active_bsas[bsa_inf]
+                        # does not contain a meaningful result (will be an
+                        # extremely large/small number)
                         ini_ma = origin_ini_match(origin_)
                         if ini_ma:
                             buff.write(u'==%s== %s : %s\n' % (
-                                ini_ma.group(1), ini_ma.group(2), bsa_.name))
+                                ini_ma.group(1), ini_ma.group(2), bsa_inf))
                         else:
                             buff.write(u'==%X== %s : %s\n' % (
-                                active_bsas[bsa_], origin_, bsa_.name))
+                                active_bsas[bsa_inf], origin_, bsa_inf))
                         buff.write(u'\n'.join(confl_) + u'\n\n')
                 if include_lower and lower_bsa:
                     _print_bsa_conflicts(lower_bsa, _(u'Lower'))
