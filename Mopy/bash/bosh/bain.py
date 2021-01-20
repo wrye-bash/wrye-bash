@@ -1150,7 +1150,7 @@ class Installer(object):
         raise AbstractError
 
     def install(self, destFiles, progress=None):
-        """Install specified files to Game\Data directory."""
+        """Install specified files to Data directory."""
         destFiles = set(destFiles)
         dest_src = self.refreshDataSizeCrc(True)
         for k in list(dest_src):
@@ -1267,7 +1267,7 @@ class InstallerMarker(Installer):
         pass
 
     def install(self, destFiles, progress=None):
-        """Install specified files to Oblivion\Data directory."""
+        """Install specified files to Data directory."""
         pass
 
     def renameInstaller(self, name_new, idata_):
@@ -2254,7 +2254,7 @@ class InstallersData(DataStore):
                 changed.add(abspath)
         do_refresh = False
         for apath in changed | deleted:
-            # the Game/Data dir - will give correct relative path for both
+            # the Data dir - will give correct relative path for both
             # Ini tweaks and mods - those are keyed in data by rel path...
             relpath = apath.relpath(bass.dirs[u'mods'])
             # ghosts...

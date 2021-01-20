@@ -743,10 +743,11 @@ class TabDragMixin(object):
             try:
                 self.ReleaseMouse()
             except AssertionError:
-                """PyAssertionError: C++ assertion "GetCapture() == this"
-                failed at ..\..\src\common\wincmn.cpp(2536) in
-                wxWindowBase::ReleaseMouse(): attempt to release mouse,
-                but this window hasn't captured it""" # assertion error...
+                # PyAssertionError: C++ assertion "GetCapture() == this"
+                # failed at ..\..\src\common\wincmn.cpp(2536) in
+                # wxWindowBase::ReleaseMouse(): attempt to release mouse,
+                # but this window hasn't captured it
+                pass
         event.Skip()
 
     def __OnDragging(self, event):
@@ -1493,10 +1494,10 @@ class UIList(wx.Panel):
             else:
                 msg = _(u'Bad extension or file root: ') + newName
                 if ext: # require at least one char before extension
-                    regex = u'^(?=.+\.)(.*?)'
+                    regex = u'' r'^(?=.+\.)(.*?)'
                 else:
                     regex = u'^(.*?)'
-                if has_digits: regex += u'(\d*)'
+                if has_digits: regex += u'' r'(\d*)'
                 regex += ext + u'$'
                 rePattern = re.compile(regex, re.I | re.U)
                 maPattern = rePattern.match(newName)
@@ -1959,7 +1960,7 @@ class AppendableLink(Link):
 class EnabledLink(ItemLink):
     """A menu item that may be disabled.
 
-    The item is by default enabled. Override _enable() to disable\enable
+    The item is by default enabled. Override _enable() to disable/enable
     based on some condition. Subclasses MUST define self.text, preferably as
     a class attribute.
     """

@@ -2428,7 +2428,7 @@ class WryeText(object):
         reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)
         reContentsTag = re.compile(u'' r'\s*{{CONTENTS=?(\d+)}}\s*$', re.U)
         reAnchorHeadersTag = re.compile(u'' r'\s*{{ANCHORHEADERS=(\d+)}}\s*$', re.U)
-        reCssTag = re.compile(u'\s*{{CSS:(.+?)}}\s*$',re.U)
+        reCssTag = re.compile(u'' r'\s*{{CSS:(.+?)}}\s*$',re.U)
         #--Defaults ----------------------------------------------------------
         title = u''
         level = 1
@@ -2627,7 +2627,7 @@ if __name__ == u'__main__' and len(sys.argv) > 1:
     def genHtml(*args,**keywords):
         """Wtxt to html. Just pass through to WryeText.genHtml."""
         if not len(args):
-            args = [u"..\Wrye Bash.txt"]
+            args = [u'..\\Wrye Bash.txt']
         WryeText.genHtml(*args,**keywords)
 
     #--Command Handler --------------------------------------------------------

@@ -92,7 +92,7 @@ except ImportError:
     FO_DELETE = 3
     FO_RENAME = 4
     FOF_NOCONFIRMMKDIR = 512
-    reEnv = _re.compile(u'%(\w+)%', _re.U)
+    reEnv = _re.compile(u'' r'%(\w+)%', _re.U)
     envDefs = _os.environ
 
     def subEnv(match):
@@ -730,7 +730,7 @@ def testUAC(gameDataPath):
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
     with tempFile.open(u'wb'): pass # create the file
-    try: # to move it into the Game/Data/ directory
+    try: # to move it into the Data directory
         shellMove(tempFile, dest, silent=True)
     except AccessDeniedError:
         return True

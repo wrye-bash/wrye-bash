@@ -1880,7 +1880,7 @@ def _lo_cache(lord_func):
 
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
-    """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
+    """Collection of modinfos. Represents mods in the Data directory."""
 
     def __init__(self):
         self.__class__.file_pattern = re.compile(u'(' + u'|'.join(
