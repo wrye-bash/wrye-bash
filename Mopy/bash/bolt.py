@@ -24,9 +24,9 @@
 # Imports ---------------------------------------------------------------------
 #--Standard
 from __future__ import division, print_function
+
 import StringIO
 import cPickle as pickle  # PY3
-import chardet
 import codecs
 import collections
 import copy
@@ -49,14 +49,12 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
+from urllib import quote
+
+import chardet
+
 # Internal
 from . import exception
-
-# PY3
-try:
-    from urllib.parse import quote
-except ImportError:
-    from urllib import quote
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
