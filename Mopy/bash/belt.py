@@ -81,10 +81,10 @@ class InstallerWizard(WizardDialog):
             title=_(u'Installer Wizard'), sizes_dict=bass.settings,
             size_key=u'bash.wizard.size', pos_key=u'bash.wizard.pos')
         #'dummy' page tricks the wizard into always showing the "Next" button,
-        #'next' will be set by the parser
+        # _next_page will be set by the parser
         class _PageDummy(wiz.WizardPage): pass
         self.dummy = _PageDummy(self._native_widget) # todo de-wx!
-        self.next = None # todo rename
+        self._next_page = None
         #True prevents actually moving to the 'next' page.  We use this after the "Next"
         #button is pressed, while the parser is running to return the _actual_ next page
         #'finishing' is to allow the "Next" button to be used when it's name is changed to
@@ -113,9 +113,9 @@ class InstallerWizard(WizardDialog):
                     #Then show the page that the parser returns,
                     #rather than the dummy page
                     evt_page.OnNext()
-                    self.next = self.parser.Continue()
+                    self._next_page = self.parser.Continue()
                     self.blockChange = False
-                    self._native_widget.ShowPage(self.next)
+                    self._native_widget.ShowPage(self._next_page)
                     return EventResult.CANCEL
                 else:
                     self.blockChange = True
@@ -124,9 +124,9 @@ class InstallerWizard(WizardDialog):
             # Previous, pop back to the last state,
             # and resume execution
             self.finishing = False
-            self.next = self.parser.Back()
+            self._next_page = self.parser.Back()
             self.blockChange = False
-            self._native_widget.ShowPage(self.next)
+            self._native_widget.ShowPage(self._next_page)
             return EventResult.CANCEL
 
     def Run(self):
