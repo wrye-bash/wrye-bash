@@ -1482,4 +1482,4 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
 
 # Print helpers
 def _pl(it, legend=u'', joint=u', '):
-    return legend + joint.join(u'%s' % x for x in it) # use Path.__unicode__
+    return legend + joint.join(u'%s' % x for x in it) # use Path.__str__

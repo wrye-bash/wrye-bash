@@ -514,7 +514,7 @@ class Path(object):
     def __repr__(self):
         return u'bolt.Path(%r)' % self._s
 
-    def __unicode__(self):
+    def __str__(self):
         return self._s
 
     #--Properties--------------------------------------------------------

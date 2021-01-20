@@ -407,7 +407,7 @@ class InstallerConverter(object):
             srcFile = srcDir_File[1]
             if isinstance(srcDir, (basestring, Path)):
                 #--either 'BCF-Missing', or crc read from 7z l -slt
-                srcDir = u'%s' % srcDir # Path defines __unicode__()
+                srcDir = u'%s' % srcDir # Path defines __str__()
                 srcFile = tempJoin(srcDir, srcFile)
             else:
                 srcFile = tempJoin(u'%08X' % srcDir, srcFile)

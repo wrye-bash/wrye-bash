@@ -149,7 +149,7 @@ class LoadOrder(object):
         self.__mod_loIndex = {a: i for i, a in enumerate(self._loadOrder)}
         self.__mod_actIndex = {a: i for i, a in enumerate(self._activeOrdered)}
 
-    def __unicode__(self):
+    def __str__(self):
         return u', '.join([((u'*%s' if x in self._active else u'%s') % x)
                            for x in self.loadOrder])
 
