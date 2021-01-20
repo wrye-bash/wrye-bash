@@ -247,14 +247,14 @@ class _APreserver(ImportPatcher):
             keep(rec_fid)
             type_count[top_mod_rec] += 1
 
-    def buildPatch(self, log, progress, types=None):
+    def buildPatch(self, log, progress):
         if not self.isActive: return
         modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
         type_count = Counter()
-        types = filter(modFileTops.__contains__,
-            types if types else (x.rec_sig for x in self.srcClasses))
-        for top_mod_rec in types:
+        for top_mod_class in self.srcClasses:
+            top_mod_rec = top_mod_class.rec_sig
+            if top_mod_rec not in modFileTops: continue
             records = modFileTops[top_mod_rec].iter_filtered_records(
                 self.getReadClasses(), include_ignored=True)
             self._inner_loop(keep, records, top_mod_rec, type_count)
