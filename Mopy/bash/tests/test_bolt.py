@@ -359,7 +359,7 @@ class TestPath(object):
         assert u'' r'c:\random\path.txt' == p
         assert GPath(u'c:/random/path.txt') == p
         assert GPath(u'' r'c:\random\path.txt') == p
-        # paths and str
+        # paths and bytes
         assert b'c:/random/path.txt' == p
         assert b'' r'c:\random\path.txt' == p
         assert GPath(b'c:/random/path.txt') == p
@@ -396,7 +396,7 @@ class TestPath(object):
         assert u'' r'c:\random\path.txt' <= p
         assert GPath(u'c:/random/path.txt') <= p
         assert GPath(u'' r'c:\random\path.txt') <= p
-        # paths and str
+        # paths and bytes
         assert b'c:/random/path.txt' <= p
         assert b'' r'c:\random\path.txt' <= p
         assert GPath(b'c:/random/path.txt') <= p

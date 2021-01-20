@@ -238,7 +238,7 @@ class Installer(object):
 
     @staticmethod
     def number_string(number, marker_string=u''):
-        return str(number)
+        return unicode(number)
 
     def size_string(self, marker_string=u''):
         return round_size(self.size)
@@ -1559,7 +1559,7 @@ class InstallerProject(Installer):
         if self.size != size: return True
         # below is for the fix me - we need to add mtimes_str_crc extra persistent attribute to Installer
         # c.sort() # is this needed or os.walk will return the same order during program run
-        # mtimes_str = '.'.join(map(str, c))
+        # mtimes_str = b'.'.join(map(bytes, c))
         # mtimes_str_crc = crc32(mtimes_str)
         try:
             mtime = max(c)

@@ -193,7 +193,7 @@ class IniFile(AFile):
         """Return a list of the decoded lines in the ini file, if as_unicode
         is True, or the raw bytes in the ini file, if as_unicode is False.
         Note we strip line endings at the end of the line in unicode mode.
-        :rtype: list[unicode]|str"""
+        :rtype: list[unicode]|bytes"""
         try:
             with self.abs_path.open(u'rb') as f:
                 content = f.read()

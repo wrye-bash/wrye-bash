@@ -291,7 +291,7 @@ def unformat_date(date_str):
     """Basically a wrapper around time.strptime. Exists to get around bug in
     strptime for Japanese locale.
 
-    :type date_str: str"""
+    :type date_str: unicode"""
     try:
         return time.strptime(date_str, u'%c')
     except ValueError:

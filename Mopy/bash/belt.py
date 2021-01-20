@@ -1507,7 +1507,7 @@ class WryeParser(ScriptParser.Parser):
                                      bWBOk, wbHave, wbWant)
 
     def _TestVersion_GE(self, want):
-        if isinstance(bush.game.Ge.exe, str):
+        if isinstance(bush.game.Ge.exe, bytes):
             files = [bass.dirs[u'mods'].join(bush.game.Ge.exe)]
         else:
             files = [bass.dirs[u'mods'].join(*x) for x in bush.game.Ge.exe]

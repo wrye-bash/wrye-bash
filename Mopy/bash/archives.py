@@ -71,8 +71,8 @@ def compress7z(command, full_dest, rel_dest, srcDir, progress=None):
     returncode = proc.wait()
     if returncode or errorLine:
         full_dest.temp.remove()
-        raise StateError(u'%s: Compression failed:\n' % rel_dest +
-                u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
+        raise StateError(u'%s: Compression failed:\n7z.exe return value: '
+                         u'%d\n%s' % (rel_dest, returncode, errorLine))
     #--Finalize the file, and cleanup
     full_dest.untemp()
 
@@ -102,8 +102,8 @@ def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
     returncode = proc.wait()
     if returncode or errorLine:
         raise StateError(
-            u'%s: Extraction failed:\n7z.exe return value: %s\n%s' % (
-                src_archive.tail, str(returncode), errorLine))
+            u'%s: Extraction failed:\n7z.exe return value: %d\n%s' % (
+                src_archive.tail, returncode, errorLine))
     return subArchives
 
 def wrapPopenOut(command, wrapper, errorMsg):

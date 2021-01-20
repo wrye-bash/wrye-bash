@@ -39,7 +39,7 @@ class _AListsMerger(ListPatcher):
     # De/Re Tags - None means the patcher does not have such a tag
     _de_tag = None
     _re_tag = None
-    # Maps record type (str) to translated label (unicode)
+    # Maps record type (bytes) to translated label (unicode)
     _type_to_label = {}
     _de_re_header = None
 

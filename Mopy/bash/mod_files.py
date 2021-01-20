@@ -423,7 +423,7 @@ class ModHeaderReader(object):
         every record with that signature. Note that the flags are not processed
         either - if you need that, manually call MreRecord.flags1_() on them.
 
-        :rtype: defaultdict[str, list[RecordHeader]]"""
+        :rtype: defaultdict[bytes, list[RecordHeader]]"""
         ret_headers = defaultdict(list)
         with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd

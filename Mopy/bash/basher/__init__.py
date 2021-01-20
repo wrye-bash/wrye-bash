@@ -3325,7 +3325,7 @@ class ScreensList(balt.UIList):
         selected = self.GetSelected()
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)
-        digits = len(str(num + len(selected)))
+        digits = len(u'%s' % (num + len(selected)))
         if numStr: numStr.zfill(digits)
         with BusyCursor():
             to_select = set()
@@ -4333,7 +4333,7 @@ def InitImages():
     # Setup the colors dictionary
     for key, value in settings[u'bash.colors'].iteritems():
         # Convert any colors that were stored as bytestrings into tuples
-        if isinstance(value, str):
+        if isinstance(value, bytes):
             value = settings[u'bash.colors'][key] = _conv_dict[value]
         colors[key] = value
     #--Images

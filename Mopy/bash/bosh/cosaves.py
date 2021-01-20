@@ -342,7 +342,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
                                    self.element_type)
 
         def entry_length(self):
-            # element_type is B, arvr_key is either d or H + str
+            # element_type is B, arvr_key is either d or H + string
             total_len = 1 + (8 if self._key_type == 1
                              else 2 + len(self.arvr_key))
             if self.element_type == 1:

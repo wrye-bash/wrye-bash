@@ -40,7 +40,7 @@ class DropDown(_AComponent):
     wider than width of control.
 
     Events:
-     - on_combo_select(selected_label: str): Posted when an item on the list is
+     - on_combo_select(selected_label: bytes): Posted when an item on the list is
      selected. The parameter is the new value of selection."""
     _wx_widget_type = _wx.ComboBox
 
@@ -95,7 +95,7 @@ class ColorPicker(_AComponent):
     """A button with a color that launches a color picker dialog.
 
     Events:
-     - on_color_picker_evt(selected_label: str): Posted when the button is
+     - on_color_picker_evt(selected_label: bytes): Posted when the button is
      clicked."""
     _wx_widget_type = _wx.ColourPickerCtrl
 

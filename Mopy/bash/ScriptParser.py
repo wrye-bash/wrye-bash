@@ -399,7 +399,7 @@ class Parser(object):
         def __abs__(self): return abs(self.tkn)
         def __int__(self): return int(self.tkn)
         def __float__(self): return float(self.tkn)
-        def __str__(self): return str(self.tkn)
+        def __str__(self): return unicode(self.tkn)
 
         def __repr__(self): return u'<Token-%s:%s>' % (Types[self.type],self.text)
 

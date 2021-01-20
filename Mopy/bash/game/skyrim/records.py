@@ -675,7 +675,7 @@ class MelVmad(MelBase):
     Note that this code is somewhat heavily optimized for performance, so
     expect lots of inlines and other non-standard or ugly code.
 
-    :type _handler_map: dict[str, type|_AVmadComponent]"""
+    :type _handler_map: dict[bytes, type|_AVmadComponent]"""
     # Fragments ---------------------------------------------------------------
     class FragmentBasic(_AVmadComponent):
         """Implements the following fragments:
@@ -941,7 +941,7 @@ class MelVmad(MelBase):
             # unusual; these are the fastest implementations, at least on py2.
             # In particular, '!= 0' is faster than 'bool()', '[x for x in a]'
             # is slightly faster than 'list(a)' and "repr(c) + 'f'" is faster
-            # than "'%uf' % c" or "str(c) + 'f'".
+            # than "'%uf' % c" or "unicode(c) + 'f'".
             property_type = record.prop_type
             if property_type == 0: # null
                 record.prop_data = None

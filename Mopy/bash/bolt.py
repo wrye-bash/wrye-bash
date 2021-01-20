@@ -149,7 +149,7 @@ def decoder(byte_str, encoding=None, avoidEncodings=()):
 def encode(text_str, encodings=encodingOrder, firstEncoding=None,
            returnEncoding=False):
     """Encode unicode string to byte string, using heuristics on encoding."""
-    if isinstance(text_str, str) or text_str is None:
+    if isinstance(text_str, bytes) or text_str is None:
         if returnEncoding: return text_str, None
         else: return text_str
     # Try user specified encoding
@@ -463,11 +463,11 @@ class Path(object):
 
     @staticmethod
     def getNorm(str_or_path):
-        # type: (unicode|str|Path) -> unicode
+        # type: (unicode|bytes|Path) -> unicode
         """Return the normpath for specified basename/Path object."""
         if isinstance(str_or_path, Path): return str_or_path._s
         elif not str_or_path: return u'' # and not maybe b''
-        elif isinstance(str_or_path, str): str_or_path = decoder(str_or_path)
+        elif isinstance(str_or_path, bytes): str_or_path = decoder(str_or_path)
         return os.path.normpath(str_or_path)
 
     @staticmethod
@@ -502,7 +502,7 @@ class Path(object):
 
     def __setstate__(self, norm):
         """Used by unpickler. Reconstruct _cs."""
-        # Older pickle files stored filename in str, not unicode
+        # Older pickle files stored filename in bytes, not unicode
         norm = decoder(norm)  # decoder will check for unicode
         self._s = norm
         # Reconstruct _cs, lower() should suffice
@@ -2320,7 +2320,7 @@ class WryeText(object):
     def genHtml(ins,out=None,*cssDirs):
         """Reads a wtxt input stream and writes an html output stream."""
         # Path or Stream? -----------------------------------------------
-        if isinstance(ins,(Path,str,unicode)):
+        if isinstance(ins, (Path, unicode)):
             srcPath = GPath(ins)
             outPath = GPath(out) or srcPath.root+u'.html'
             cssDirs = (srcPath.head,) + cssDirs
