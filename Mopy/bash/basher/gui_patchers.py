@@ -684,7 +684,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                                          u"number.") % new,
                                        title=tweak.tweak_name + _(u' - Error'))
                         new = None # invalid float, try again
-            elif isinstance(v, int) or isinstance(v, long): # PY3: int only
+            elif isinstance(v, (int, long)):
                 label = (_(u'Enter the desired custom tweak value.')
                          + key_display)
                 new = balt.askNumber(

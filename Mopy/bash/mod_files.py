@@ -339,7 +339,7 @@ class ModFile(object):
                 return indices[m_name] if obj_id >= 0x800 else 0
         def mapper(fid):
             if fid is None: return None
-            if isinstance(fid, (int, long)): return fid # PY3: just int
+            if isinstance(fid, (int, long)): return fid
             modName, object_id = fid
             return (_master_index(modName, object_id) << 24) | object_id
         return mapper
