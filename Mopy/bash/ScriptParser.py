@@ -393,7 +393,7 @@ class Parser(object):
         def __and__(self, other): return Parser.Token(self.tkn & other.tkn)
         def __xor__(self, other): return Parser.Token(self.tkn ^ other.tkn)
         def __or__(self, other): return Parser.Token(self.tkn | other.tkn)
-        def __bool__(self): return bool(self.tkn)
+        def __nonzero__(self): return bool(self.tkn)
         def __neg__(self): return Parser.Token(-self.tkn)
         def __pos__(self): return Parser.Token(+self.tkn)
         def __abs__(self): return abs(self.tkn)
@@ -405,10 +405,6 @@ class Parser(object):
 
         # Fall through to function/keyword
         def __call__(self, *args, **kwdargs): return self.tkn(*args, **kwdargs)
-
-        # PY3 get rid of this once we port
-        __nonzero__ = __bool__
-
 
     # Now for the Parser class
     def __init__(self,
