@@ -265,17 +265,6 @@ class ModFile(object):
         # Done reading - convert to long FormIDs at the IO boundary
         self._convert_fids(to_long=True)
 
-    def askSave(self,hasChanged=True):
-        """CLI command. If hasSaved, will ask if user wants to save the file,
-        and then save if the answer is yes. If hasSaved == False, then does nothing."""
-        if not hasChanged: return
-        if re.match(u'' r'\s*[yY]', raw_input(
-            u'\nSave changes to %s [y/n]?: ' % self.fileInfo), flags=re.U):
-            self.safeSave()
-            print(u'%s saved.' % self.fileInfo)
-        else:
-            print(u'%s not saved.' % self.fileInfo)
-
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
         self.fileInfo.tempBackup()
