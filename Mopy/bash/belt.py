@@ -28,16 +28,19 @@ from __future__ import division
 import os
 import traceback
 from collections import OrderedDict, defaultdict
+from itertools import izip
 
 import wx.adv as wiz  # wxPython wizard class
-from . import ScriptParser         # generic parser class
+
+from . import ScriptParser  # generic parser class
 from . import balt, bass, bolt, bosh, bush, load_order
-from .ini_files import OBSEIniFile
+from .ScriptParser import error
 from .env import get_file_version
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    WizardDialog, EventResult, ListBox, CheckListBox, ImageWrapper, PictureWithCursor
-from .ScriptParser import error
+    WizardDialog, EventResult, ListBox, CheckListBox, ImageWrapper, \
+    PictureWithCursor
+from .ini_files import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")
@@ -1528,7 +1531,7 @@ class WryeParser(ScriptParser.Parser):
             ver = u'.'.join([unicode(i) for i in have])
             if need == u'None':
                 return [1, ver]
-            for have_part, need_part in zip(have, need):
+            for have_part, need_part in izip(have, need):
                 if have_part > need_part:
                     return [1, ver]
                 elif have_part < need_part:

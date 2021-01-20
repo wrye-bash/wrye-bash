@@ -28,6 +28,7 @@ stores. bush.game must be set, to properly instantiate the data stores."""
 # Imports ---------------------------------------------------------------------
 #--Python
 from __future__ import print_function
+
 import cPickle as pickle  # PY3
 import collections
 import errno
@@ -38,7 +39,8 @@ import time
 import traceback
 from collections import OrderedDict, Iterable
 from functools import wraps, partial
-from itertools import imap
+from itertools import imap, izip
+
 #--Local
 from ._mergeability import isPBashMergeable, is_esl_capable
 from .loot_parser import LOOTParser, libloot_version
@@ -314,7 +316,7 @@ class FileInfo(AFile):
                 # if cosave exists while its backup not, delete it on restoring
                 tup[1].remove()
                 backup_paths.remove(tup)
-        env.shellCopy(*zip(*backup_paths))
+        env.shellCopy(*list(izip(*backup_paths)))
         # do not change load order for timestamp games - rest works ok
         self.setmtime(self._file_mod_time, crc_changed=True)
         self.getFileInfos().new_info(self.name, notify_bain=True)
@@ -1177,8 +1179,8 @@ class SaveInfo(FileInfo):
         # Cosaves - note that we have to use self.header.masters since in
         # FO4/SSE _get_masters() returns the correct interleaved order, but
         # oldMasters has the 'regular first, then ESLs' order
-        master_map = {x.s: y.s for x, y in zip(oldMasters, self.header.masters)
-                      if x != y}
+        master_map = {x.s: y.s for x, y in
+                      izip(oldMasters, self.header.masters) if x != y}
         if master_map:
             for co_file in self._co_saves.values():
                 co_file.remap_plugins(master_map)
@@ -1343,7 +1345,7 @@ class DataStore(DataDict):
         for tup in rename_paths[1:]: # first rename path must always exist
             # if cosaves or backups do not exist shellMove fails!
             if not tup[0].exists(): rename_paths.remove(tup)
-        env.shellMove(*zip(*rename_paths))
+        env.shellMove(*list(izip(*rename_paths)))
 
     def _get_rename_paths(self, oldName, newName):
         """Return possible paths this file's renaming might affect (possibly
@@ -1552,8 +1554,8 @@ class FileInfos(TableFileInfos):
         # all_backup_paths will return the backup paths for this file and its
         # satellites (like cosaves). Passing newName in it returns the rename
         # destinations of the backup paths. Backup paths may not exist.
-        for b_path, new_b_path in zip(info_backup_paths(),
-                                      info_backup_paths(newName)):
+        for b_path, new_b_path in izip(info_backup_paths(),
+                                       info_backup_paths(newName)):
             old_new_paths.append((b_path, new_b_path))
         return old_new_paths
 
@@ -3077,7 +3079,7 @@ class SaveInfos(FileInfos):
         # to unhide and pass that in
         moved = super(SaveInfos, self).move_infos(sources, destinations,
                                                   window, bash_frame)
-        for s, d in zip(sources, destinations):
+        for s, d in izip(sources, destinations):
             if d.tail in moved:
                 self._co_copy_or_move(s, d, pathFunc=Path.moveTo)
         for d in moved:

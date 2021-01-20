@@ -22,6 +22,7 @@
 # =============================================================================
 """This module contains the skyrim record classes."""
 from collections import OrderedDict
+from itertools import izip
 
 from ... import brec, bolt
 from ...bolt import Flags, struct_pack, structs_cache, unpack_str16
@@ -44,6 +45,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelUInt32Flags, MelOptUInt16Flags, MelOwnership, MelDebrData, \
     get_structs, MelOptUInt32Flags
 from ...exception import ModError, ModSizeError, StateError
+
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
 if brec.MelModel is None:
@@ -3019,8 +3021,8 @@ class MreLgtm(MelRecord):
                 unpacked_val = (unpacked_val[:19]
                                 + (unpacked_val[19] + null4 * 2,)
                                 + unpacked_val[20:])
-                for attr, value, action in zip(self.attrs, unpacked_val,
-                                               self.actions):
+                for attr, value, action in izip(self.attrs, unpacked_val,
+                                                self.actions):
                     if action: value = action(value)
                     setattr(record, attr, value)
             else:

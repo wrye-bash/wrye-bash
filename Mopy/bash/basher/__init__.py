@@ -52,6 +52,7 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 from __future__ import division
+
 import StringIO
 import collections
 import os
@@ -59,7 +60,9 @@ import sys
 import time
 from collections import OrderedDict, namedtuple
 from functools import partial, reduce
+from itertools import izip
 from operator import itemgetter
+
 #--wxPython
 import wx
 
@@ -2409,7 +2412,7 @@ class InstallersList(balt.UIList):
                 refreshNeeded = modsRefresh = iniRefresh = False
                 if len(refreshes) > 1:
                     refreshNeeded, modsRefresh, iniRefresh = [
-                        any(grouped) for grouped in zip(*refreshes)]
+                        any(grouped) for grouped in izip(*refreshes)]
             #--Refresh UI
             if refreshNeeded or ex: # refresh the UI in case of an exception
                 if modsRefresh: BashFrame.modList.RefreshUI(refreshSaves=False,

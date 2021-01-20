@@ -35,10 +35,12 @@ import errno
 import os
 import zlib
 from functools import partial
-from itertools import groupby, imap
+from itertools import groupby, imap, izip
 from operator import itemgetter
-import lz4.frame
 from struct import unpack_from as _unpack_from
+
+import lz4.frame
+
 from .dds_files import DDSFile, mk_dxgi_fmt
 from ..bolt import deprint, Progress, struct_unpack, unpack_byte, \
     unpack_string, unpack_int, Flags, AFile, structs_cache, struct_calcsize, \
@@ -183,8 +185,8 @@ class _Header(object):
     bsa_magic = b'BSA\x00'
 
     def load_header(self, ins, bsa_name):
-        for fmt, attr in zip(_Header.formats, _Header.__slots__):
-            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+        for f, a in izip(_Header.formats, _Header.__slots__):
+            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
         # error checking
         if self.file_id != self.__class__.bsa_magic:
             raise BSAError(bsa_name, u'Magic wrong: got %r, expected %r' % (
@@ -212,8 +214,8 @@ class BsaHeader(_Header):
 
     def load_header(self, ins, bsa_name):
         super(BsaHeader, self).load_header(ins, bsa_name)
-        for fmt, attr in zip(BsaHeader.formats, BsaHeader.__slots__):
-            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+        for f, a in izip(BsaHeader.formats, BsaHeader.__slots__):
+            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
         self.archive_flags = self._archive_flags(self.archive_flags)
         # error checking
         if self.folder_records_offset != self.__class__.header_size:
@@ -237,8 +239,8 @@ class Ba2Header(_Header):
 
     def load_header(self, ins, bsa_name):
         super(Ba2Header, self).load_header(ins, bsa_name)
-        for fmt, attr in zip(Ba2Header.formats, Ba2Header.__slots__):
-            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+        for f, a in izip(Ba2Header.formats, Ba2Header.__slots__):
+            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
         # error checking
         if not self.ba2_files_type in self.file_types:
             raise BSAError(bsa_name, u'Unrecognised file type: %r. Should be '
@@ -251,9 +253,9 @@ class MorrowindBsaHeader(_Header):
     bsa_magic = b'\x00\x01\x00\x00'
 
     def load_header(self, ins, bsa_name):
-        for fmt, attr in zip(MorrowindBsaHeader.formats,
-                             MorrowindBsaHeader.__slots__):
-            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+        for f, a in izip(MorrowindBsaHeader.formats,
+                         MorrowindBsaHeader.__slots__):
+            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
         self.version = None # Morrowind BSAs have no version
         # error checking
         if self.file_id != self.__class__.bsa_magic:
@@ -271,13 +273,13 @@ class _HashedRecord(object):
     formats = [(u'Q', struct_calcsize(u'Q'))]
 
     def load_record(self, ins):
-        fmt, fmt_siz = _HashedRecord.formats[0]
-        self.record_hash, = struct_unpack(fmt, ins.read(fmt_siz))
+        f, f_size = _HashedRecord.formats[0]
+        self.record_hash, = struct_unpack(f, ins.read(f_size))
 
     def load_record_from_buffer(self, memview, start):
-        fmt, fmt_siz = _HashedRecord.formats[0]
-        self.record_hash, = _unpack_from(fmt, memview, start)
-        return start + fmt_siz
+        f, f_size = _HashedRecord.formats[0]
+        self.record_hash, = _unpack_from(f, memview, start)
+        return start + f_size
 
     @classmethod
     def total_record_size(cls):
@@ -308,15 +310,15 @@ class _BsaHashedRecord(_HashedRecord):
 
     def load_record(self, ins):
         super(_BsaHashedRecord, self).load_record(ins)
-        for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+        for f, a in izip(self.__class__.formats, self.__class__.__slots__):
+            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
 
     def load_record_from_buffer(self, memview, start):
         start = super(_BsaHashedRecord, self).load_record_from_buffer(memview,
                                                                       start)
-        for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            setattr(self, attr, _unpack_from(fmt[0], memview, start)[0])
-            start += fmt[1]
+        for f, a in izip(self.__class__.formats, self.__class__.__slots__):
+            setattr(self, a, _unpack_from(f[0], memview, start)[0])
+            start += f[1]
         return start
 
     @classmethod
@@ -354,13 +356,13 @@ class BSAMorrowindFileRecord(_HashedRecord):
     formats = [(f, struct_calcsize(f)) for f in (u'I', u'I')]
 
     def load_record(self, ins):
-        for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+        for f, a in izip(self.__class__.formats, self.__class__.__slots__):
+            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
 
     def load_record_from_buffer(self, memview, start):
-        for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            setattr(self, attr, _unpack_from(fmt[0], memview, start)[0])
-            start += fmt[1]
+        for f, a in izip(self.__class__.formats, self.__class__.__slots__):
+            setattr(self, a, _unpack_from(f[0], memview, start)[0])
+            start += f[1]
         return start
 
     def load_name(self, ins, bsa_name):
@@ -443,8 +445,8 @@ class Ba2TexChunk(object):
                                                  u'I')]
 
     def load_chunk(self, ins): ##: Centralize this, copy-pasted everywhere
-        for fmt, attr in zip(Ba2TexChunk.formats, Ba2TexChunk.__slots__):
-            setattr(self, attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+        for f, a in izip(Ba2TexChunk.formats, Ba2TexChunk.__slots__):
+            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
 
     def __repr__(self):
         return u'Ba2TexChunk<mipmaps #%u to #%u>' % (

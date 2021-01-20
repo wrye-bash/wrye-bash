@@ -23,8 +23,10 @@
 """This module houses preservers. A preserver is an import patcher that simply
 carries forward changes from the last tagged plugin. The goal is to eventually
 absorb all of them under the _APreserver base class."""
+
 from collections import defaultdict, Counter
-from itertools import chain
+from itertools import chain, izip
+
 # Internal
 from .base import ImportPatcher
 from .. import getPatchesPath
@@ -391,7 +393,7 @@ class ImportSpellStatsPatcher(_APreserver):
             ImportSpellStatsPatcher, self)._parse_csv_sources(progress)
         # Add attribute names to the values
         self._process_csv_sources(
-            {b'SPEL': {f: {a: v for a, v in zip(self.rec_attrs[b'SPEL'], l)}
+            {b'SPEL': {f: {a: v for a, v in izip(self.rec_attrs[b'SPEL'], l)}
                        for f, l in spel_parser.fid_stats.iteritems()}})
 
 #------------------------------------------------------------------------------

@@ -21,6 +21,8 @@
 #
 # =============================================================================
 import re
+from itertools import izip
+
 from . import SaveInfo
 from ._saves import SreNPC, SaveFile
 from .. import bush, bolt
@@ -65,14 +67,15 @@ class PCFaces(object):
 
         def convertRace(self,fromRace,toRace):
             """Converts face from one race to another while preserving structure, etc."""
-            for attr, fmt in ((u'fggs_p', u'50f'), (u'fgga_p', u'30f'),
-                              (u'fgts_p', u'50f')):
-                sValues = list(struct_unpack(fmt,getattr(self, attr)))
-                fValues = list(struct_unpack(fmt,getattr(fromRace, attr)))
-                tValues = list(struct_unpack(fmt,getattr(toRace, attr)))
-                for index,(sValue,fValue,tValue) in enumerate(zip(sValues,fValues,tValues)):
+            for a, f in ((u'fggs_p', u'50f'), (u'fgga_p', u'30f'),
+                         (u'fgts_p', u'50f')):
+                sValues = list(struct_unpack(f, getattr(self, a)))
+                fValues = list(struct_unpack(f, getattr(fromRace, a)))
+                tValues = list(struct_unpack(f, getattr(toRace, a)))
+                for index, (sValue, fValue, tValue) in list(enumerate(izip(
+                        sValues, fValues, tValues))):
                     sValues[index] = sValue + fValue - tValue
-                setattr(self,attr,struct_pack(fmt, *sValues))
+                setattr(self, a, struct_pack(f, *sValues))
 
     # SAVES -------------------------------------------------------------------
     @staticmethod
@@ -125,12 +128,12 @@ class PCFaces(object):
             npc = record.getTypeCopy()
             face = faces[npc.fid] = PCFaces.PCFace()
             face.face_masters = saveFile._masters
-            for attr in (u'eid', u'race', u'eye', u'hair', u'hairLength',
-                         u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
-                         u'fggs_p', u'fgga_p', u'fgts_p', u'level', u'skills',
-                         u'health', u'unused2', u'baseSpell', u'fatigue',
-                         u'attributes', u'iclass'):
-                setattr(face,attr,getattr(npc,attr))
+            for a in (u'eid', u'race', u'eye', u'hair', u'hairLength',
+                      u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
+                      u'fggs_p', u'fgga_p', u'fgts_p', u'level', u'skills',
+                      u'health', u'unused2', u'baseSpell', u'fatigue',
+                      u'attributes', u'iclass'):
+                setattr(face, a, getattr(npc, a))
             face.gender = (0,1)[npc.flags.female]
             face.pcName = npc.full
             #--Changed NPC Record
@@ -151,10 +154,10 @@ class PCFaces(object):
             face.level = npc.acbs.level
             face.baseSpell = npc.acbs.baseSpell
             face.fatigue = npc.acbs.fatigue
-        for attr in (u'attributes', u'skills', u'health', u'unused2'):
-            value = getattr(npc,attr)
-            if value is not None:
-                setattr(face,attr,value)
+        for a in (u'attributes', u'skills', u'health', u'unused2'):
+            npc_val = getattr(npc, a)
+            if npc_val is not None:
+                setattr(face, a, npc_val)
         #--Iref >> fid
         getFid = saveFile.getFid
         face.spells = [getFid(x) for x in (npc.spells or [])]
@@ -406,15 +409,15 @@ class PCFaces(object):
         for npc in modFile.tops[b'NPC_'].getActiveRecords():
             face = PCFaces.PCFace()
             face.face_masters = modFile.tes4.masters + [modInfo.name]
-            for field in (u'eid', u'race', u'eye', u'hair', u'hairLength',
-                          u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
-                          u'fggs_p', u'fgga_p', u'fgts_p', u'level', u'skills',
-                          u'health', u'unused2', u'baseSpell', u'fatigue',
-                          u'attributes', u'iclass'):
-                npc_val = getattr(npc, field)
+            for a in (u'eid', u'race', u'eye', u'hair', u'hairLength',
+                      u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
+                      u'fggs_p', u'fgga_p', u'fgts_p', u'level', u'skills',
+                      u'health', u'unused2', u'baseSpell', u'fatigue',
+                      u'attributes', u'iclass'):
+                npc_val = getattr(npc, a)
                 if isinstance(npc_val, tuple): # Hacky check for FormIDs
                     npc_val = short_mapper(npc_val)
-                setattr(face, field, npc_val)
+                setattr(face, a, npc_val)
             face.gender = npc.flags.female
             face.pcName = npc.full
             faces[face.eid] = face

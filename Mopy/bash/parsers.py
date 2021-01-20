@@ -30,10 +30,13 @@ However, not all parsers fit this pattern - some have to read mods twice,
 others barely even fit into the pattern at all (e.g. FidReplacer)."""
 
 from __future__ import division, print_function
+
 import ctypes
 import re
 from collections import defaultdict, Counter
+from itertools import izip
 from operator import attrgetter, itemgetter
+
 # Internal
 from . import bush, load_order
 from .balt import Progress
@@ -743,7 +746,7 @@ class FactionRelations(_AParser):
                 target_entry = MelObject()
                 record.relations.append(target_entry)
             # Actually write out the attributes from new_info
-            for rel_attr, rel_val in zip(self.cls_rel_attrs, relation):
+            for rel_attr, rel_val in izip(self.cls_rel_attrs, relation):
                 setattr(target_entry, rel_attr, rel_val)
 
     def readFromText(self,textPath):
@@ -1057,7 +1060,7 @@ class ItemStats(_HandleAliases):
         for top_grup_sig, attrs in self.class_attrs.iteritems():
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 self.class_fid_attr_value[top_grup_sig][record.fid].update(
-                    zip(attrs, [getattr(record, a) for a in attrs]))
+                    izip(attrs, (getattr(record, a) for a in attrs)))
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -1101,7 +1104,7 @@ class ItemStats(_HandleAliases):
                 longid = self._coerce_fid(modName, objectStr)
                 attrs = self.class_attrs[top_grup]
                 attr_value = {}
-                for attr, value in zip(attrs, fields[3:3+len(attrs)]):
+                for attr, value in izip(attrs, fields[3:3+len(attrs)]):
                     attr_value[attr] = attr_type[attr](value)
                 self.class_fid_attr_value[top_grup][longid].update(attr_value)
 
@@ -1686,7 +1689,7 @@ class SpellRecords(_UsesEffectsMixin):
                 oldStats.append(effects)
             if oldStats != newStats:
                 changed.append(oldStats[0]) #eid
-                for attr, value in zip(attrs, newStats):
+                for attr, value in izip(attrs, newStats):
                     setattr_deep(record, attr, value)
                 if detailed and len(newStats) > len(attrs):
                     effects = newStats[-1]

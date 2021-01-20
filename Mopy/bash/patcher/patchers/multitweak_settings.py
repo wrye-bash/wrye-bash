@@ -22,7 +22,10 @@
 # =============================================================================
 """This module contains oblivion multitweak item patcher classes that belong
 to the Settings Multitweaker - as well as the tweaker itself."""
-from ... import bush # for game
+
+from itertools import izip
+
+from ... import bush  # for game
 from ...bolt import floats_equal
 from ...patcher.patchers.base import MultiTweakItem, MultiTweaker, \
     CustomChoiceTweak
@@ -144,7 +147,7 @@ class _AGmstTweak(MultiTweakItem):
     def _find_chosen_value(self, wanted_eid):
         """Returns the value the user chose for the game setting with the
         specified editor ID. Note that wanted_eid must be lower-case!"""
-        for test_eid, test_val in zip(self.chosen_eids, self.chosen_values):
+        for test_eid, test_val in izip(self.chosen_eids, self.chosen_values):
             if wanted_eid == test_eid.lower():
                 return test_val
         return None
@@ -162,7 +165,7 @@ class _AGmstTweak(MultiTweakItem):
             for target_value in chosen_values:
                 if target_value < 0:
                     return _(u"Oblivion GMST values can't be negative")
-        for target_eid, target_value in zip(self.chosen_eids, chosen_values):
+        for target_eid, target_value in izip(self.chosen_eids, chosen_values):
             if target_eid.startswith(u'f') and not isinstance(
                     target_value, float):
                     return _(u"The value chosen for GMST '%s' must be a "

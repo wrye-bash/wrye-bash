@@ -23,6 +23,7 @@
 """BAIN backbone classes."""
 
 from __future__ import print_function
+
 import collections
 import copy
 import errno
@@ -32,7 +33,7 @@ import sys
 import time
 from binascii import crc32
 from functools import partial, wraps
-from itertools import groupby, imap
+from itertools import groupby, imap, izip
 from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, ModInfos
@@ -46,7 +47,7 @@ from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 from ..ini_files import OBSEIniFile
 
-os_sep = unicode(os.path.sep)
+os_sep = unicode(os.path.sep) # PY3: already unicode
 
 class Installer(object):
     """Object representing an installer archive, its user configuration, and
@@ -333,7 +334,8 @@ class Installer(object):
 
     def __setstate(self,values):
         self.initDefault() # runs on __init__ called by __reduce__
-        map(self.__setattr__,self.persistent,values)
+        for a, v in izip(self.persistent, values):
+            setattr(self, a, v)
         rescan = False
         if not isinstance(self.extras_dict, dict):
             self.extras_dict = {}
@@ -668,7 +670,7 @@ class Installer(object):
         hasExtraData = self.hasExtraData
         # exclude u'' from active subpackages
         activeSubs = (
-            {x for x, y in zip(self.subNames[1:], self.subActives[1:]) if y}
+            {x for x, y in izip(self.subNames[1:], self.subActives[1:]) if y}
             if bain_type == 2 else set())
         data_sizeCrc = bolt.LowerDict()
         skipDirFiles = self.skipDirFiles
@@ -966,7 +968,7 @@ class Installer(object):
         #--SubNames, SubActives
         if bain_type == 2:
             self.subNames = sorted(subNameSet,key=unicode.lower)
-            actives = {x for x, y in zip(self.subNames,self.subActives)
+            actives = {x for x, y in izip(self.subNames, self.subActives)
                        if (y or x == u'')}
             if len(self.subNames) == 2: #--If only one subinstall, then make it active.
                 self.subActives = [True,True] # that's a complex/simple package
@@ -1843,7 +1845,7 @@ class InstallersData(DataStore):
             self.pop(deleted)
         pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
-        for subPending, is_project in zip(
+        for subPending, is_project in izip(
                 (pending - projects, pending & projects), (False, True)):
             if not subPending: continue
             progress(0,_(u'Scanning Packages...'))
@@ -1881,8 +1883,8 @@ class InstallersData(DataStore):
                             in installers]
         progress.setFull(len(installers))
         pending = []
-        for i, (installer, destArchive) in enumerate(zip(installers,
-                        destArchives)): # no izip - we may modify installers
+        for i, (installer, destArchive) in list(enumerate(izip(
+                installers, destArchives))): # we may modify installers below
             progress(i, installer.archive)
             #--Extract the embedded BCF and move it to the Converters folder
             unpack_dir = installer.unpackToTemp([installer.hasBCF],

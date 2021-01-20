@@ -25,8 +25,10 @@ Oblivion only . We need this split into cosaves and proper saves module and
 coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
 from __future__ import division, print_function
+
 from collections import Counter, defaultdict
-from itertools import starmap, repeat
+from itertools import izip, starmap, repeat
+
 from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
 from ..bolt import Flags, sio, deprint, encode, SubProgress, unpack_many, \
@@ -541,7 +543,7 @@ class SaveFile(object):
         log.setHeader(_(u'Fids'))
         log(u'  Refed\tChanged\tMI    Mod Name')
         log(u'  %d\t\t     Lost Refs (Fid == 0)' % lostRefs)
-        for modIndex,(irefed,changed) in enumerate(zip(idHist,changeHisto)):
+        for modIndex, (irefed,changed) in enumerate(izip(idHist, changeHisto)):
             if irefed or changed:
                 log(u'  %d\t%d\t%02X   %s' % (irefed,changed,modIndex,getMaster(modIndex)))
         #--Lost Changes

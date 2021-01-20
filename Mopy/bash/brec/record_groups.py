@@ -24,9 +24,11 @@
 
 # Python imports
 from __future__ import division, print_function
+
 from collections import deque
-from itertools import chain
+from itertools import chain, izip
 from operator import itemgetter, attrgetter
+
 # Wrye Bash imports
 from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
 from .utils_constants import group_types
@@ -965,9 +967,9 @@ class MobCell(MobBase):
         u'distant_refs')):
         """Updates any records in 'self' that exist in 'srcBlock'."""
         mergeDiscard = mergeIds.discard
-        self_src_attrs = zip(__attrget(self), __attrget(srcBlock))
-        for attr, (myRecord, record) in zip((u'cell', u'pgrd', u'land'),
-                                          self_src_attrs):
+        self_src_attrs = list(izip(__attrget(self), __attrget(srcBlock)))
+        for attr, (myRecord, record) in izip((u'cell', u'pgrd', u'land'),
+                                             self_src_attrs):
             if myRecord and record:
                 src_rec_fid = record.fid
                 if myRecord.fid != src_rec_fid:
@@ -977,7 +979,7 @@ class MobCell(MobBase):
                     record = record.getTypeCopy()
                     setattr(self, attr, record)
                     mergeDiscard(src_rec_fid)
-        for attr, (self_rec_list, src_rec_list) in zip(
+        for attr, (self_rec_list, src_rec_list) in izip(
                 (u'persistent_refs', u'temp_refs', u'distant_refs'),
                 self_src_attrs[3:]):
             fids = {record.fid: i for i, record in enumerate(self_rec_list)}

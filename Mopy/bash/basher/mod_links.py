@@ -25,11 +25,14 @@
 points to BashFrame.modList singleton."""
 
 from __future__ import print_function
+
 import StringIO
 import collections
 import copy
 import re
 import traceback
+from itertools import izip
+
 # Local
 from . import configIsCBash
 from .constants import settingDefaults
@@ -37,15 +40,15 @@ from .files_links import File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
-from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
+from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
     TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
-from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
-    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
-    ImageWrapper, BusyCursor
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError
+from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
+    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
+    ImageWrapper, BusyCursor
 from ..patcher import exportConfig, patch_files
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
@@ -430,7 +433,7 @@ class _ModGroups(object):
         column = bosh.modInfos.table.getColumn(u'group')
         mods = mods or list(column) # if mods are None read groups for all mods
         groups = tuple(column.get(x) for x in mods)
-        self.mod_group.update((x,y) for x,y in zip(mods,groups) if y)
+        self.mod_group.update((x, y) for x, y in izip(mods, groups) if y)
 
     @staticmethod
     def assignedGroups():

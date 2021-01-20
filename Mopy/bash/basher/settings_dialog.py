@@ -24,6 +24,7 @@ import os
 import subprocess
 import webbrowser
 from collections import defaultdict
+from itertools import izip
 
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
@@ -512,7 +513,7 @@ class LanguagePage(_AScrollablePage):
         localized_langs = [self._internal_to_localized[l.lower()] for l
                            in all_langs]
         active_lang = u'english' # If the user has an unknown language active
-        for internal_name, localized_name in sorted(zip(
+        for internal_name, localized_name in sorted(izip(
                 all_langs, localized_langs), key=lambda l: l[1]):
             if self._is_active_lang(internal_name):
                 active_lang = localized_name

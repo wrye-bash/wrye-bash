@@ -46,7 +46,7 @@ import textwrap
 import traceback
 from binascii import crc32
 from functools import partial
-from itertools import chain
+from itertools import chain, izip
 from keyword import iskeyword
 from operator import attrgetter
 from urllib import quote
@@ -2029,7 +2029,7 @@ def build_esub(esub_str):
             def esub_impl(ma_obj, g=esub_group, s=target_str):
                 wip_str = []
                 wip_append = wip_str.append
-                for t, o in zip(s, ma_obj.group(g)):
+                for t, o in izip(s, ma_obj.group(g)):
                     # Carry forward the target string, but keep the case
                     wip_append(t.upper() if o.isupper() else t.lower())
                 # Add in the rest of the target string unchanged
