@@ -23,49 +23,14 @@
 # =============================================================================
 
 """This script generates taglist.yaml files in 'Mopy/taglists' game
-subdirectories using the LOOT API and masterlists."""
+subdirectories using the LOOT masterlists."""
 
 from __future__ import absolute_import
+
 import argparse
 import logging
 import os
-import shutil
 import sys
-import tempfile
-
-# The loot module is still required here to handle writing out minimal lists
-try:
-    import loot
-except ImportError:
-    if os.name == u'nt':
-        raise ImportError(u'libloot-python is missing')
-    # On Linux, fake out libloot-python
-    class loot(object):
-        class GameType(object): # PY3: enum
-            tes4 = 0
-            tes5 = 1
-            tes5se = 2
-            fo3 = 3
-            fonv = 4
-            fo4 = 5
-        class Version(object):
-            @staticmethod
-            def string(): return u'0.15'
-        class WrapperVersion(object):
-            @staticmethod
-            def string(): return u'0.15'
-        class LOOTDatabase(object):
-            def __init__(self):
-                self.masterlist = None
-            def load_lists(self, ml):
-                self.masterlist = ml
-            def write_minimal_list(self, tl, _b):
-                shutil.copy2(self.masterlist, tl)
-        class GameHandle(object):
-            @staticmethod
-            def get_database(): return loot.LOOTDatabase()
-        @staticmethod
-        def create_game_handle(_a, _b): return loot.GameHandle()
 
 import utils
 
@@ -78,16 +43,16 @@ LOGFILE = os.path.join(SCRIPTS_PATH, u'taglist.log')
 MOPY_PATH = os.path.abspath(os.path.join(SCRIPTS_PATH, u'..', u'Mopy'))
 sys.path.append(MOPY_PATH)
 
-GAME_DATA = [
-    ##: libloot-python has not been updated for MW yet
-    #(u'Morrowind', u'Morrowind.esm', u'morrowind', loot.GameType.tes3),
-    (u'Oblivion', u'Oblivion.esm', u'oblivion', loot.GameType.tes4),
-    (u'Skyrim', u'Skyrim.esm', u'skyrim', loot.GameType.tes5),
-    (u'SkyrimSE', u'Skyrim.esm', u'skyrimse', loot.GameType.tes5se),
-    (u'Fallout3', u'Fallout3.esm', u'fallout3', loot.GameType.fo3),
-    (u'FalloutNV', u'FalloutNV.esm', u'falloutnv', loot.GameType.fonv),
-    (u'Fallout4', u'Fallout4.esm', u'fallout4', loot.GameType.fo4),
-]
+GAME_DATA = {
+    # Maps game name in the Mopy/taglists folder to LOOT repo name
+    u'Morrowind': u'morrowind',
+    u'Oblivion': u'oblivion',
+    u'Skyrim': u'skyrim',
+    u'SkyrimSE': u'skyrimse',
+    u'Fallout3': u'fallout3',
+    u'FalloutNV': u'falloutnv',
+    u'Fallout4': u'fallout4',
+}
 
 def setup_parser(parser):
     parser.add_argument(
@@ -105,12 +70,6 @@ def setup_parser(parser):
              u'[default: {}].'.format(MASTERLIST_VERSION),
     )
 
-def mock_game_install(master_file_name):
-    game_path = tempfile.mkdtemp()
-    os.mkdir(os.path.join(game_path, u'Data'))
-    open(os.path.join(game_path, u'Data', master_file_name), u'a').close()
-    return game_path
-
 def download_masterlist(repository, version, dl_path):
     url = u'https://raw.githubusercontent.com/loot/{}/v{}/masterlist.yaml'
     url = url.format(repository, version)
@@ -121,7 +80,7 @@ def download_masterlist(repository, version, dl_path):
     utils.download_file(url, dl_path)
 
 def all_taglists_present():
-    for game_name, _master_name, _repository, _game_type in GAME_DATA:
+    for game_name, _repository in GAME_DATA.iteritems():
         taglist_path = os.path.join(MOPY_PATH, u'taglists', game_name,
             u'taglist.yaml')
         if not os.path.isfile(taglist_path):
@@ -131,25 +90,13 @@ def all_taglists_present():
 def main(verbosity=logging.INFO, logfile=LOGFILE,
          masterlist_version=MASTERLIST_VERSION):
     utils.setup_log(LOGGER, verbosity=verbosity, logfile=logfile)
-    LOGGER.debug(
-        u'Loaded the LOOT API v{} using wrapper version {}'.format(
-            loot.Version.string(), loot.WrapperVersion.string()
-        )
-    )
-    for game_name, master_name, repository, game_type in GAME_DATA:
-        game_install_path = mock_game_install(master_name)
-        masterlist_path = os.path.join(game_install_path, u'masterlist.yaml')
+    for game_name, repository in GAME_DATA.iteritems():
         game_dir = os.path.join(MOPY_PATH, u'taglists', game_name)
         taglist_path = os.path.join(game_dir, u'taglist.yaml')
         if not os.path.exists(game_dir):
             os.makedirs(game_dir)
-        download_masterlist(repository, masterlist_version, masterlist_path)
-        loot_game = loot.create_game_handle(game_type, game_install_path)
-        loot_db = loot_game.get_database()
-        loot_db.load_lists(masterlist_path)
-        loot_db.write_minimal_list(taglist_path, True)
-        LOGGER.info(u'{} masterlist converted.'.format(game_name))
-        shutil.rmtree(game_install_path)
+        download_masterlist(repository, masterlist_version, taglist_path)
+        LOGGER.info(u'{} masterlist downloaded.'.format(game_name))
 
 if __name__ == u'__main__':
     argparser = argparse.ArgumentParser(
