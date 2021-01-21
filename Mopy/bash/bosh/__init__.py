@@ -32,6 +32,7 @@ from __future__ import print_function
 import cPickle as pickle  # PY3
 import collections
 import errno
+import io
 import os
 import re
 import sys
@@ -48,7 +49,7 @@ from .mods_metadata import get_tags_from_dir
 from .. import bass, bolt, balt, bush, env, load_order, initialization
 from ..archives import readExts
 from ..bass import dirs, inisettings
-from ..bolt import GPath, DataDict, deprint, sio, Path, decoder, AFile, \
+from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
     GPath_no_norm, struct_error
 from ..brec import ModReader, RecordHeader
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
@@ -1093,11 +1094,10 @@ class INIInfo(IniFile):
                     errors.extend(missing_settings)
         if len(errors) == 1:
             errors.append(u' None')
-        with sio() as out:
-            log = bolt.LogFile(out)
-            for line in errors:
-                log(line)
-            return bolt.winNewLines(log.out.getvalue())
+        log = bolt.LogFile(io.StringIO())
+        for line in errors:
+            log(line)
+        return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
 from .save_headers import get_save_header_type, SaveFileHeader
@@ -2350,64 +2350,63 @@ class ModInfos(FileInfos):
         """Returns mod list as text. If fileInfo is provided will show mod list
         for its masters. Otherwise will show currently loaded mods."""
         #--Setup
-        with sio() as out:
-            log = bolt.LogFile(out)
-            head,bul,sMissing,sDelinquent,sImported = (
-                u'=== ',
-                u'* ',
-                _(u'  * __Missing Master:__ '),
-                _(u'  * __Delinquent Master:__ '),
-                u'&bull; &bull;'
-                ) if wtxt else (
-                u'',
-                u'',
-                _(u'----> MISSING MASTER: '),
-                _(u'----> Delinquent MASTER: '),
-                u'**')
-            if fileInfo:
-                masters_set = set(fileInfo.masterNames)
-                missing = sorted(x for x in masters_set if x not in self)
-                log.setHeader(head + _(u'Missing Masters for %s: ') % fileInfo)
-                for mod in missing:
-                    log(bul + u'xx %s' % mod)
-                log.setHeader(head + _(u'Masters for %s: ') % fileInfo)
-                present = {x for x in masters_set if x in self}
-                if fileInfo.name in self: #--In case is bashed patch (cf getSemiActive)
-                    present.add(fileInfo.name)
-                merged,imported = self.getSemiActive(present)
+        log = bolt.LogFile(io.StringIO())
+        head, bul, sMissing, sDelinquent, sImported = (
+            u'=== ',
+            u'* ',
+            _(u'  * __Missing Master:__ '),
+            _(u'  * __Delinquent Master:__ '),
+            u'&bull; &bull;'
+            ) if wtxt else (
+            u'',
+            u'',
+            _(u'----> MISSING MASTER: '),
+            _(u'----> Delinquent MASTER: '),
+            u'**')
+        if fileInfo:
+            masters_set = set(fileInfo.masterNames)
+            missing = sorted(x for x in masters_set if x not in self)
+            log.setHeader(head + _(u'Missing Masters for %s: ') % fileInfo)
+            for mod in missing:
+                log(bul + u'xx %s' % mod)
+            log.setHeader(head + _(u'Masters for %s: ') % fileInfo)
+            present = {x for x in masters_set if x in self}
+            if fileInfo.name in self: #--In case is bashed patch (cf getSemiActive)
+                present.add(fileInfo.name)
+            merged, imported = self.getSemiActive(present)
+        else:
+            log.setHeader(head + _(u'Active Mod Files:'))
+            masters_set = set(load_order.cached_active_tuple())
+            merged, imported = self.merged, self.imported
+        all_mods = (masters_set | merged | imported) & set(self)
+        all_mods = load_order.get_ordered(all_mods)
+        #--List
+        modIndex = 0
+        if not wtxt: log(u'[spoiler]\n', appendNewline=False)
+        for mname in all_mods:
+            if mname in masters_set:
+                prefix = bul + u'%02X' % modIndex
+                modIndex += 1
+            elif mname in merged:
+                prefix = bul + u'++'
             else:
-                log.setHeader(head+_(u'Active Mod Files:'))
-                masters_set = set(load_order.cached_active_tuple())
-                merged,imported = self.merged,self.imported
-            all_mods = (masters_set | merged | imported) & set(self)
-            all_mods = load_order.get_ordered(all_mods)
-            #--List
-            modIndex = 0
-            if not wtxt: log(u'[spoiler]\n', appendNewline=False)
-            for mname in all_mods:
-                if mname in masters_set:
-                    prefix = bul+u'%02X' % modIndex
-                    modIndex += 1
-                elif mname in merged:
-                    prefix = bul+u'++'
-                else:
-                    prefix = bul+sImported
-                log_str = u'%s  %s' % (prefix, mname)
-                if showVersion:
-                    version = self.getVersion(mname)
-                    if version: log_str += _(u'  [Version %s]') % version
-                if showCRC:
-                    log_str += _(u'  [CRC: %s]') % (self[mname].crc_string())
-                log(log_str)
-                if mname in masters_set:
-                    for master2 in self[mname].masterNames:
-                        if master2 not in self:
-                            log(sMissing+master2.s)
-                        elif load_order.get_ordered((mname, master2))[
-                            1] == master2:
-                            log(sDelinquent+master2.s)
-            if not wtxt: log(u'[/spoiler]')
-            return bolt.winNewLines(log.out.getvalue())
+                prefix = bul + sImported
+            log_str = u'%s  %s' % (prefix, mname)
+            if showVersion:
+                version = self.getVersion(mname)
+                if version: log_str += _(u'  [Version %s]') % version
+            if showCRC:
+                log_str += _(u'  [CRC: %s]') % (self[mname].crc_string())
+            log(log_str)
+            if mname in masters_set:
+                for master2 in self[mname].masterNames:
+                    if master2 not in self:
+                        log(sMissing + master2.s)
+                    elif load_order.get_ordered((mname, master2))[
+                        1] == master2:
+                        log(sDelinquent + master2.s)
+        if not wtxt: log(u'[/spoiler]')
+        return bolt.winNewLines(log.out.getvalue())
 
     @staticmethod
     def _tagsies(modInfo, tagList):

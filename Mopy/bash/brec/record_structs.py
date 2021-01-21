@@ -24,7 +24,9 @@
 subrecords in memory."""
 
 from __future__ import division, print_function
+
 import copy
+import io
 import zlib
 from functools import partial
 
@@ -32,7 +34,7 @@ from .basic_elements import SubrecordBlob, unpackSubHeader
 from .mod_io import ModReader
 from .utils_constants import strFid, _int_unpacker
 from .. import bolt, exception
-from ..bolt import decoder, sio, struct_pack
+from ..bolt import decoder, struct_pack
 
 #------------------------------------------------------------------------------
 # Mod Element Sets ------------------------------------------------------------
@@ -416,9 +418,9 @@ class MreRecord(object):
             u'Packing Error: %s %s: Fids in long format.'
             % (self.recType,self.fid))
         #--Pack data and return size.
-        with sio() as out:
-            self.dumpData(out)
-            self.data = out.getvalue()
+        out = io.BytesIO()
+        self.dumpData(out)
+        self.data = out.getvalue()
         if self.flags1.compressed:
             dataLen = len(self.data)
             comp = zlib.compress(self.data,6)
@@ -451,7 +453,7 @@ class MreRecord(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around (decompressed) self.data."""
-        return ModReader(self.inName,sio(self.getDecompressed()))
+        return ModReader(self.inName, io.BytesIO(self.getDecompressed()))
 
     #--Accessing subrecords ---------------------------------------------------
     def getSubString(self, mel_sig_):

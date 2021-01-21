@@ -29,11 +29,13 @@ chunk."""
 __author__ = u'Infernio'
 
 import binascii
+import io
 import re
 import string
 from itertools import imap
+
 from . import bak_file_pattern
-from ..bolt import sio, decoder, encode, struct_unpack, unpack_string, \
+from ..bolt import decoder, encode, struct_unpack, unpack_string, \
     unpack_int, unpack_short, unpack_4s, unpack_byte, unpack_str16, \
     unpack_float, unpack_double, unpack_int_signed, unpack_str32, AFile, \
     unpack_spaced_string, pack_int, pack_short, pack_double, pack_byte, \
@@ -1420,17 +1422,16 @@ class xSECosave(ACosave):
     def write_cosave(self, out_path):
         super(xSECosave, self).write_cosave(out_path)
         prev_mtime = self.abs_path.mtime
-        with sio() as buff:
-            # We have to update the number of chunks in the header here, since
-            # that can't be done automatically
-            my_header = self.cosave_header # type: _xSEHeader
-            my_header.num_plugin_chunks = len(self.cosave_chunks)
-            my_header.write_header(buff)
-            for plugin_ch in self.cosave_chunks: # type: _xSEPluginChunk
-                plugin_ch.write_chunk(buff)
-            final_data = buff.getvalue()
+        buff = io.BytesIO()
+        # We have to update the number of chunks in the header here, since
+        # that can't be done automatically
+        my_header = self.cosave_header # type: _xSEHeader
+        my_header.num_plugin_chunks = len(self.cosave_chunks)
+        my_header.write_header(buff)
+        for plugin_ch in self.cosave_chunks: # type: _xSEPluginChunk
+            plugin_ch.write_chunk(buff)
         with out_path.open(u'wb') as out:
-            out.write(final_data)
+            out.write(buff.getvalue())
         out_path.mtime = prev_mtime
 
     def get_master_list(self):
@@ -1574,9 +1575,9 @@ class PluggyCosave(ACosave):
                     u'Checksum does not match (expected %X, but got '
                     u'%X).' % (expected_crc, actual_crc))
             try:
-                with sio(buffered_data) as ins:
-                    self._read_cosave_header(ins)
-                    self._read_cosave_body(ins, light)
+                ins = io.BytesIO(buffered_data)
+                self._read_cosave_header(ins)
+                self._read_cosave_body(ins, light)
             except struct_error as e:
                 raise CosaveError(self.abs_path.tail,
                     u'Failed to read cosave: %r' % e)
@@ -1605,15 +1606,15 @@ class PluggyCosave(ACosave):
 
     def write_cosave(self, out_path):
         super(PluggyCosave, self).write_cosave(out_path)
-        with sio() as out:
-            self.cosave_header.write_header(out)
-            for pluggy_block in self.cosave_chunks: # type: _PluggyBlock
-                pluggy_block.write_chunk(out)
-            # Write out the 'footer': Savegame Ticks and End Control - Checksum
-            # is written down below
-            pack_int(out, self.save_game_ticks)
-            pack_int(out, out.tell())
-            final_data = out.getvalue()
+        out = io.BytesIO()
+        self.cosave_header.write_header(out)
+        for pluggy_block in self.cosave_chunks: # type: _PluggyBlock
+            pluggy_block.write_chunk(out)
+        # Write out the 'footer': Savegame Ticks and End Control - Checksum
+        # is written down below
+        pack_int(out, self.save_game_ticks)
+        pack_int(out, out.tell())
+        final_data = out.getvalue()
         prev_mtime = self.abs_path.mtime
         with out_path.open(u'wb') as out:
             out.write(final_data)

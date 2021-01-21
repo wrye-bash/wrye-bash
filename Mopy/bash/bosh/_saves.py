@@ -26,12 +26,13 @@ coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
 from __future__ import division, print_function
 
+import io
 from collections import Counter, defaultdict
 from itertools import izip, starmap, repeat
 
 from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
-from ..bolt import Flags, sio, deprint, encode, SubProgress, unpack_many, \
+from ..bolt import Flags, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
     structs_cache, unpack_str8
 from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
@@ -46,7 +47,9 @@ from ..mod_files import ModFile, LoadFactory
 # Save Change Records ---------------------------------------------------------
 class SreNPC(object):
     """NPC change record."""
-    __slots__ = ('form','health','unused2','attributes','acbs','spells','factions','full','ai','skills','modifiers')
+    __slots__ = (u'form', u'health', u'unused2', u'attributes', u'acbs',
+                 u'spells', u'factions', u'full', u'ai', u'skills',
+                 u'modifiers')
     sre_flags = Flags(0, Flags.getNames(
         (0,u'form'),
         (2,u'health'),
@@ -71,7 +74,7 @@ class SreNPC(object):
 
     def getDefault(self,attr):
         """Returns a default version. Only supports acbs."""
-        assert(attr == 'acbs')
+        assert attr == u'acbs'
         acbs = SreNPC.ACBS()
         (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
                 acbs.calcMin, acbs.calcMax) = (0,0,0,0,1,0,0)
@@ -80,37 +83,36 @@ class SreNPC(object):
 
     def load(self, sr_flags, data_):
         """Loads variables from data."""
-        with sio(data_) as ins:
-            def _unpack(fmt, fmt_siz):
-                return struct_unpack(fmt, ins.read(fmt_siz))
-            sr_flags = SreNPC.sre_flags(sr_flags)
-            if sr_flags.form:
-                self.form, = _unpack('I',4)
-            if sr_flags.attributes:
-                self.attributes = list(_unpack('8B',8))
-            if sr_flags.acbs:
-                acbs = self.acbs = SreNPC.ACBS()
-                (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
-                 acbs.level, acbs.calcMin, acbs.calcMax) = _unpack('=I3Hh2H',16)
-                acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
-            if sr_flags.factions:
-                num, = _unpack('H',2)
-                self.factions = list(starmap(_unpack, repeat(('=Ib', 5), num)))
-            if sr_flags.spells:
-                num, = _unpack('H',2)
-                self.spells = list(_unpack('%dI' % num,4*num))
-            if sr_flags.ai:
-                self.ai = ins.read(4)
-            if sr_flags.health:
-                self.health, self.unused2 = _unpack('H2s',4)
-            if sr_flags.modifiers:
-                num, = _unpack('H',2)
-                self.modifiers = list(starmap(_unpack, repeat(('=Bf', 5), num)))
-            if sr_flags.full:
-                self.full = unpack_str8(ins)
-            if sr_flags.skills:
-                self.skills = list(_unpack('21B',21))
-        #--Done
+        ins = io.BytesIO(data_)
+        def _unpack(fmt, fmt_siz):
+            return struct_unpack(fmt, ins.read(fmt_siz))
+        sr_flags = SreNPC.sre_flags(sr_flags)
+        if sr_flags.form:
+            self.form = unpack_int(ins)
+        if sr_flags.attributes:
+            self.attributes = list(_unpack(u'8B', 8))
+        if sr_flags.acbs:
+            acbs = self.acbs = SreNPC.ACBS()
+            (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
+             acbs.level, acbs.calcMin, acbs.calcMax) = _unpack(u'=I3Hh2H', 16)
+            acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
+        if sr_flags.factions:
+            num = unpack_short(ins)
+            self.factions = list(starmap(_unpack, repeat((u'=Ib', 5), num)))
+        if sr_flags.spells:
+            num = unpack_short(ins)
+            self.spells = list(_unpack(u'%dI' % num, 4 * num))
+        if sr_flags.ai:
+            self.ai = ins.read(4)
+        if sr_flags.health:
+            self.health, self.unused2 = _unpack(u'H2s', 4)
+        if sr_flags.modifiers:
+            num = unpack_short(ins)
+            self.modifiers = list(starmap(_unpack, repeat((u'=Bf', 5), num)))
+        if sr_flags.full:
+            self.full = unpack_str8(ins)
+        if sr_flags.skills:
+            self.skills = list(_unpack(u'21B', 21))
 
     def getFlags(self):
         """Returns current flags set."""
@@ -122,50 +124,50 @@ class SreNPC(object):
 
     def getData(self):
         """Returns self.data."""
-        with sio() as out:
-            def _pack(fmt, *args):
-                out.write(structs_cache[fmt].pack(*args))
-            #--Form
-            if self.form is not None:
-                pack_int(out, self.form)
-            #--Attributes
-            if self.attributes is not None:
-                _pack('8B',*self.attributes)
-            #--Acbs
-            if self.acbs is not None:
-                acbs = self.acbs
-                _pack('=I3Hh2H',int(acbs.flags), acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
-                    acbs.calcMin, acbs.calcMax)
-            #--Factions
-            if self.factions is not None:
-                pack_short(out, len(self.factions))
-                for faction in self.factions:
-                    _pack('=Ib',*faction)
-            #--Spells
-            if self.spells is not None:
-                num = len(self.spells)
-                pack_short(out, num)
-                _pack('%dI' % num,*self.spells)
-            #--AI Data
-            if self.ai is not None:
-                out.write(self.ai)
-            #--Health
-            if self.health is not None:
-                _pack('H2s',self.health,self.unused2)
-            #--Modifiers
-            if self.modifiers is not None:
-                pack_short(out, len(self.modifiers))
-                for modifier in self.modifiers:
-                    _pack('=Bf',*modifier)
-            #--Full
-            if self.full is not None:
-                pack_byte(out, len(self.full))
-                out.write(self.full)
-            #--Skills
-            if self.skills is not None:
-                _pack('21B',*self.skills)
-            #--Done
-            return out.getvalue()
+        out = io.BytesIO()
+        def _pack(fmt, *args):
+            out.write(structs_cache[fmt].pack(*args))
+        #--Form
+        if self.form is not None:
+            pack_int(out, self.form)
+        #--Attributes
+        if self.attributes is not None:
+            _pack(u'8B', *self.attributes)
+        #--Acbs
+        if self.acbs is not None:
+            acbs = self.acbs
+            _pack(u'=I3Hh2H',int(acbs.flags), acbs.baseSpell, acbs.fatigue,
+                  acbs.barterGold, acbs.level, acbs.calcMin, acbs.calcMax)
+        #--Factions
+        if self.factions is not None:
+            pack_short(out, len(self.factions))
+            for faction in self.factions:
+                _pack(u'=Ib', *faction)
+        #--Spells
+        if self.spells is not None:
+            num = len(self.spells)
+            pack_short(out, num)
+            _pack(u'%dI' % num, *self.spells)
+        #--AI Data
+        if self.ai is not None:
+            out.write(self.ai)
+        #--Health
+        if self.health is not None:
+            _pack(u'H2s', self.health, self.unused2)
+        #--Modifiers
+        if self.modifiers is not None:
+            pack_short(out, len(self.modifiers))
+            for modifier in self.modifiers:
+                _pack(u'=Bf', *modifier)
+        #--Full
+        if self.full is not None:
+            pack_byte(out, len(self.full))
+            out.write(self.full)
+        #--Skills
+        if self.skills is not None:
+            _pack(u'21B', *self.skills)
+        #--Done
+        return out.getvalue()
 
     def getTuple(self,rec_id,version):
         """Returns record as a change record tuple."""
@@ -173,50 +175,50 @@ class SreNPC(object):
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
-        with sio() as buff:
-            fids = saveFile.fids
-            if self.form is not None:
-                buff.write(u'Form:\n  %d' % self.form)
-            if self.attributes is not None:
-                buff.write(
-                    u'Attributes\n  strength %3d\n  intelligence %3d\n  '
-                    u'willpower %3d\n  agility %3d\n  speed %3d\n  endurance '
-                    u'%3d\n  personality %3d\n  luck %3d\n' % tuple(
-                        self.attributes))
-            if self.acbs is not None:
-                buff.write(u'ACBS:\n')
-                for attr in SreNPC.ACBS.__slots__:
-                    buff.write(u'  %s %s\n' % (attr,getattr(self.acbs,attr)))
-            if self.factions is not None:
-                buff.write(u'Factions:\n')
-                for faction in self.factions:
-                    buff.write(u'  %8X %2X\n' % (fids[faction[0]],faction[1]))
-            if self.spells is not None:
-                buff.write(u'Spells:\n')
-                for spell in self.spells:
-                    buff.write(u'  %8X\n' % fids[spell])
-            if self.ai is not None:
-                buff.write(_(u'AI')+u':\n  ' + self.ai + u'\n')
-            if self.health is not None:
-                buff.write(u'Health\n  %s\n' % self.health)
-                buff.write(u'Unused2\n  %s\n' % self.unused2)
-            if self.modifiers is not None:
-                buff.write(u'Modifiers:\n')
-                for modifier in self.modifiers:
-                    buff.write(u'  %s\n' % modifier)
-            if self.full is not None:
-                buff.write(u'Full:\n  %s\n' % self.full)
-            if self.skills is not None:
-                buff.write(
-                    u'Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n '
-                    u' block %3d\n  blunt %3d\n  handToHand %3d\n  '
-                    u'heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  '
-                    u'conjuration %3d\n  destruction %3d\n  illusion %3d\n  '
-                    u'mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  '
-                    u'lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  '
-                    u'security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(
-                        self.skills))
-            return buff.getvalue()
+        buff = io.StringIO()
+        fids = saveFile.fids
+        if self.form is not None:
+            buff.write(u'Form:\n  %d' % self.form)
+        if self.attributes is not None:
+            buff.write(
+                u'Attributes\n  strength %3d\n  intelligence %3d\n  '
+                u'willpower %3d\n  agility %3d\n  speed %3d\n  endurance '
+                u'%3d\n  personality %3d\n  luck %3d\n' % tuple(
+                    self.attributes))
+        if self.acbs is not None:
+            buff.write(u'ACBS:\n')
+            for attr in SreNPC.ACBS.__slots__:
+                buff.write(u'  %s %s\n' % (attr, getattr(self.acbs, attr)))
+        if self.factions is not None:
+            buff.write(u'Factions:\n')
+            for faction in self.factions:
+                buff.write(u'  %8X %2X\n' % (fids[faction[0]], faction[1]))
+        if self.spells is not None:
+            buff.write(u'Spells:\n')
+            for spell in self.spells:
+                buff.write(u'  %8X\n' % fids[spell])
+        if self.ai is not None:
+            buff.write(_(u'AI')+u':\n  ' + self.ai + u'\n')
+        if self.health is not None:
+            buff.write(u'Health\n  %s\n' % self.health)
+            buff.write(u'Unused2\n  %s\n' % self.unused2)
+        if self.modifiers is not None:
+            buff.write(u'Modifiers:\n')
+            for modifier in self.modifiers:
+                buff.write(u'  %s\n' % modifier)
+        if self.full is not None:
+            buff.write(u'Full:\n  %s\n' % self.full)
+        if self.skills is not None:
+            buff.write(
+                u'Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n '
+                u' block %3d\n  blunt %3d\n  handToHand %3d\n  '
+                u'heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  '
+                u'conjuration %3d\n  destruction %3d\n  illusion %3d\n  '
+                u'mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  '
+                u'lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  '
+                u'security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(
+                    self.skills))
+        return buff.getvalue()
 
 # Save File -------------------------------------------------------------------
 class SaveFile(object):
@@ -273,19 +275,22 @@ class SaveFile(object):
                 buff.write(ins.read(siz + backSize))
 
             #--"Globals" block
-            fidsPointer,recordsNum = unpack_many(ins, '2I')
+            fidsPointer,recordsNum = unpack_many(ins, u'2I')
             #--Pre-globals
             self.preGlobals = ins.read(8*4)
             #--Globals
             globalsNum = unpack_short(ins)
-            self.globals = [unpack_many(ins, 'If') for num in xrange(globalsNum)]
+            self.globals = [unpack_many(ins, u'If')
+                            for _n in xrange(globalsNum)]
             #--Pre-Created (Class, processes, spectator, sky)
-            with sio() as buff:
-                for count in range(4):
-                    siz = unpack_short(ins)
-                    insCopy(buff, siz, 2)
-                insCopy(buff,4) #--Supposedly part of created info, but sticking it here since I don't decode it.
-                self.preCreated = buff.getvalue()
+            buff = io.BytesIO()
+            for x in xrange(4):
+                siz = unpack_short(ins)
+                insCopy(buff, siz, 2)
+            #--Supposedly part of created info, but sticking it here since
+            # I don't decode it.
+            insCopy(buff, 4)
+            self.preCreated = buff.getvalue()
             #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
             modReader = ModReader(self.fileInfo.name,ins)
             createdNum = unpack_int(ins)
@@ -293,11 +298,11 @@ class SaveFile(object):
                 progress(ins.tell(),_(u'Reading created...'))
                 self.created.append(MreRecord(unpack_header(modReader), modReader))
             #--Pre-records: Quickkeys, reticule, interface, regions
-            with sio() as buff:
-                for count in range(4):
-                    siz = unpack_short(ins)
-                    insCopy(buff, siz, 2)
-                self.preRecords = buff.getvalue()
+            buff = io.BytesIO()
+            for x in xrange(4):
+                siz = unpack_short(ins)
+                insCopy(buff, siz, 2)
+            self.preRecords = buff.getvalue()
 
             #--Records
             for count in xrange(recordsNum):
@@ -312,14 +317,14 @@ class SaveFile(object):
             self.tempEffects = ins.read(tmp_effects_size)
             #--Fids
             num = unpack_int(ins)
-            self.fids = array.array('I')
+            self.fids = array.array(u'I')
             self.fids.fromfile(ins,num)
             for iref,fid in enumerate(self.fids):
                 self.irefs[fid] = iref
 
             #--WorldSpaces
             num = unpack_int(ins)
-            self.worldSpaces = array.array('I')
+            self.worldSpaces = array.array(u'I')
             self.worldSpaces.fromfile(ins,num)
         #--Done
         progress(progress.full,_(u'Finished reading.'))
@@ -531,7 +536,7 @@ class SaveFile(object):
                     knownTypes.add(rec_kind)
             #--Obj ref parents
             if rec_kind == 49 and mod == 255 and (rec_flgs & 2):
-                iref, = struct_unpack('I', data[4:8])
+                iref, = struct_unpack(u'I', data[4:8])
                 count,cumSize = objRefBases.get(iref,(0,0))
                 count += 1
                 cumSize += len(data) + 12
@@ -637,7 +642,7 @@ class SaveFile(object):
             if rec_id in uncreated:
                 numUnCreChanged += 1
             elif removeNullRefs and rec_kind == 49 and rec_id >> 24 == 0xFF and (rec_flgs & 2):
-                iref, = struct_unpack('I', data[4:8])
+                iref, = struct_unpack(u'I', data[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     numUnNulled += 1
                 else:
@@ -651,22 +656,22 @@ class SaveFile(object):
     def getAbomb(self):
         """Gets animation slowing counter(?) value."""
         data = self.preCreated
-        tesClassSize, = struct_unpack('H', data[:2])
+        tesClassSize, = struct_unpack(u'H', data[:2])
         abombBytes = data[2+tesClassSize-4:2+tesClassSize]
-        abombCounter, = struct_unpack('I', abombBytes)
-        abombFloat, = struct_unpack('f', abombBytes)
+        abombCounter, = struct_unpack(u'I', abombBytes)
+        abombFloat, = struct_unpack(u'f', abombBytes)
         return tesClassSize,abombCounter,abombFloat
 
     def setAbomb(self,value=0x41000000):
         """Resets abomb counter to specified value."""
         data = self.preCreated
-        tesClassSize, = struct_unpack('H', data[:2])
+        tesClassSize, = struct_unpack(u'H', data[:2])
         if tesClassSize < 4: return
-        with sio() as buff:
-            buff.write(data)
-            buff.seek(2+tesClassSize-4)
-            pack_int(buff, value)
-            self.preCreated = buff.getvalue()
+        buff = io.BytesIO()
+        buff.write(data)
+        buff.seek(2 + tesClassSize - 4)
+        pack_int(buff, value)
+        self.preCreated = buff.getvalue()
 
 #------------------------------------------------------------------------------
 class SaveSpells(object):

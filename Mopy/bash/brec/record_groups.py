@@ -25,6 +25,7 @@
 # Python imports
 from __future__ import division, print_function
 
+import io
 from collections import deque
 from itertools import chain, izip
 from operator import itemgetter, attrgetter
@@ -32,7 +33,7 @@ from operator import itemgetter, attrgetter
 # Wrye Bash imports
 from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
 from .utils_constants import group_types
-from ..bolt import GPath, sio, pack_int, structs_cache
+from ..bolt import GPath, pack_int, structs_cache
 from ..exception import AbstractError, ModError, ModFidMismatchError
 
 class MobBase(object):
@@ -129,7 +130,7 @@ class MobBase(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around self.data."""
-        return ModReader(self.inName,sio(self.data))
+        return ModReader(self.inName, io.BytesIO(self.data))
 
     def iter_filtered_records(self, wanted_sigs, include_ignored=False):
         """Filters iter_records, returning a generator that only yields records

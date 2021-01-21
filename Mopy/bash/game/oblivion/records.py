@@ -21,12 +21,13 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
+import io
 import re
 from collections import OrderedDict
 from itertools import chain
 
 from ... import brec
-from ...bolt import Flags, sio
+from ...bolt import Flags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, \
     MelFids, MreHeaderBase, MelBase, MelFidList, MelStrings, \
@@ -419,26 +420,27 @@ class MreHasEffects(object):
     def getEffectsSummary(self):
         """Return a text description of magic effects."""
         from ... import bush
-        with sio() as buff:
-            avEffects = bush.game.generic_av_effects
-            aValues = bush.game.actor_values
-            buffWrite = buff.write
-            if self.effects:
-                school = self.getSpellSchool()
-                buffWrite(aValues[20+school] + u'\n')
-            for index,effect in enumerate(self.effects):
-                if effect.scriptEffect:
-                    effectName = effect.scriptEffect.full or u'Script Effect'
-                else:
-                    effectName = bush.game.mgef_name[effect.effect_sig]
-                    if effect.effect_sig in avEffects:
-                        effectName = re.sub(_(u'(Attribute|Skill)'),aValues[effect.actorValue],effectName)
-                buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
-                if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)
-                if effect.area: buffWrite(u' %sa'%effect.area)
-                if effect.duration > 1: buffWrite(u' %sd'%effect.duration)
-                buffWrite(u'\n')
-            return buff.getvalue()
+        buff = io.StringIO()
+        avEffects = bush.game.generic_av_effects
+        aValues = bush.game.actor_values
+        buffWrite = buff.write
+        if self.effects:
+            school = self.getSpellSchool()
+            buffWrite(aValues[20 + school] + u'\n')
+        for index, effect in enumerate(self.effects):
+            if effect.scriptEffect:
+                effectName = effect.scriptEffect.full or u'Script Effect'
+            else:
+                effectName = bush.game.mgef_name[effect.effect_sig]
+                if effect.effect_sig in avEffects:
+                    effectName = re.sub(_(u'(Attribute|Skill)'),
+                                        aValues[effect.actorValue], effectName)
+            buffWrite(u'o+*'[effect.recipient] + u' ' + effectName)
+            if effect.magnitude: buffWrite(u' %sm' % effect.magnitude)
+            if effect.area: buffWrite(u' %sa' % effect.area)
+            if effect.duration > 1: buffWrite(u' %sd' % effect.duration)
+            buffWrite(u'\n')
+        return buff.getvalue()
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------

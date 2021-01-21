@@ -25,6 +25,8 @@ now. See #190, its code should be refactored and land in basher and/or gui."""
 
 # Imports ---------------------------------------------------------------------
 from __future__ import division
+
+import io
 import re
 
 from . import bass # for dirs - try to avoid
@@ -507,8 +509,8 @@ class WryeLog(_Log):
 
 def convert_wtext_to_html(logPath, logText):
     cssDir = _settings.get(u'balt.WryeLog.cssDir', GPath(u''))
-    with logPath.open(u'w', encoding=u'utf-8-sig') as out, bolt.sio(
-                    logText + u'\n{{CSS:wtxt_sand_small.css}}') as ins:
+    ins = io.StringIO(logText + u'\n{{CSS:wtxt_sand_small.css}}')
+    with logPath.open(u'w', encoding=u'utf-8-sig') as out:
         bolt.WryeText.genHtml(ins, out, cssDir)
 
 def playSound(parent,sound):

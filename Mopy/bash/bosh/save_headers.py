@@ -30,12 +30,14 @@ from __future__ import division
 
 __author__ = u'Utumno'
 
-import StringIO
 import copy
+import io
 import zlib
 from collections import OrderedDict
 from functools import partial
+
 import lz4.block
+
 from .. import bolt
 from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, \
@@ -371,7 +373,7 @@ class SkyrimSaveHeader(SaveFileHeader):
             raise SaveHeaderError(u'zlib-decompressed header size incorrect - '
                                   u'expected %u, but got %u.' % (
                 decompressed_size, len(decompressed_data)))
-        return StringIO.StringIO(decompressed_data)
+        return io.BytesIO(decompressed_data)
 
     @staticmethod
     def _sse_decompress_lz4(ins, compressed_size, decompressed_size):
@@ -385,7 +387,7 @@ class SkyrimSaveHeader(SaveFileHeader):
             raise SaveHeaderError(u'lz4-decompressed header size incorrect - '
                                   u'expected %u, but got %u.' % (
                 decompressed_size, len(decompressed_data)))
-        return StringIO.StringIO(decompressed_data)
+        return io.BytesIO(decompressed_data)
 
     @staticmethod
     def _sse_light_decompress_lz4(ins, _comp_size, _decomp_size):
@@ -408,7 +410,7 @@ class SkyrimSaveHeader(SaveFileHeader):
                 result += num
                 if num != 255:
                     return result
-        uncompressed = ''
+        uncompressed = b''
         masters_size = None  # type: int
         while True:  # parse and decompress each block here
             token = unpack_byte(ins)
@@ -437,13 +439,13 @@ class SkyrimSaveHeader(SaveFileHeader):
                 start_pos += offset
             # The masters table's size is found in bytes 1-5
             if masters_size is None and len(uncompressed) >= 5:
-                masters_size = struct_unpack('I', uncompressed[1:5])[0]
+                masters_size = struct_unpack(u'I', uncompressed[1:5])[0]
             # Stop when we have the whole masters table
             if masters_size is not None:
                 if len(uncompressed) >= masters_size + 5:
                     break
         # Wrap the decompressed data in a file-like object and return it
-        return StringIO.StringIO(uncompressed)
+        return io.BytesIO(uncompressed)
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds
@@ -463,7 +465,7 @@ class SkyrimSaveHeader(SaveFileHeader):
         compressed_size = unpack_int(ins)
         ins = self._sse_decompress(ins, compressed_size, decompressed_size)
         # Gather the data that will be compressed
-        to_compress = StringIO.StringIO()
+        to_compress = io.BytesIO()
         pack_byte(to_compress, self._formVersion)
         ins.seek(1, 1) # skip the form version
         old_masters = self._write_masters(ins, to_compress)
@@ -492,7 +494,7 @@ class SkyrimSaveHeader(SaveFileHeader):
             for count in xrange(_num_esl_masters):
                 esl_masters.append(unpack_str16(ins))
         # Write out the (potentially altered) masters - note that we have to
-        # encode here, since we may be writing to StringIO instead of a file
+        # encode here, since we may be writing to BytesIO instead of a file
         num_regulars = len(regular_masters)
         pack_byte(out, num_regulars)
         for master in self.masters[:num_regulars]:
@@ -661,7 +663,7 @@ class MorrowindSaveHeader(SaveFileHeader):
             # Read the image data - note that it comes as BGRA, which we
             # need to turn into RGB. Note that we disregard the alpha, seems to
             # make the image 100% black and is therefore unusable.
-            out = StringIO.StringIO()
+            out = io.BytesIO()
             for pxl in save_info.header.screenshot_data:
                 out.write(
                     structs_cache[u'3B'].pack(pxl.red, pxl.green, pxl.blue))

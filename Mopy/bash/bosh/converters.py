@@ -25,6 +25,7 @@
 from __future__ import division
 
 import cPickle as pickle  # PY3
+import io
 import re
 import sys
 from itertools import izip
@@ -32,7 +33,7 @@ from itertools import izip
 from .. import bolt, archives, bass
 from ..archives import defaultExt, readExts, compressionSettings, \
     compressCommand
-from ..bolt import DataDict, PickleDict, GPath, Path, sio, SubProgress
+from ..bolt import DataDict, PickleDict, GPath, Path, SubProgress
 from ..exception import ArgumentError, StateError
 
 converters_dir = None
@@ -292,27 +293,28 @@ class InstallerConverter(object):
         if not self.fullPath.exists(): raise StateError(
                 u"\nLoading %s:\nBCF doesn't exist." % self.fullPath)
         def translate(out):
-            with sio(out) as stream:
-                # translate data types to new hierarchy
-                class _Translator(object):
-                    def __init__(self, streamToWrap):
-                        self._stream = streamToWrap
-                    def read(self, numBytes):
-                        return self._translate(self._stream.read(numBytes))
-                    def readline(self):
-                        return self._translate(self._stream.readline())
-                    @staticmethod
-                    def _translate(s):
-                        return re.sub(u'^(bolt|bosh)$', u'' r'bash.\1', s,
-                                      flags=re.U)
-                translator = _Translator(stream)
-                for a, v in izip(self.persistBCF, pickle.load(translator)):
+            ##: Does this usage (including translator and decode) work?
+            stream = io.BytesIO(out)
+            # translate data types to new hierarchy
+            class _Translator(object):
+                def __init__(self, streamToWrap):
+                    self._stream = streamToWrap
+                def read(self, numBytes):
+                    return self._translate(self._stream.read(numBytes))
+                def readline(self):
+                    return self._translate(self._stream.readline())
+                @staticmethod
+                def _translate(s):
+                    return re.sub(u'^(bolt|bosh)$', u'' r'bash.\1',
+                                  s.decode(u'utf-8'), flags=re.U)
+            translator = _Translator(stream)
+            for a, v in izip(self.persistBCF, pickle.load(translator)):
+                setattr(self, a, v)
+            if fullLoad:
+                for a, v in izip(self._converter_settings + self.volatile +
+                                 self.addedSettings,
+                                 pickle.load(translator)):
                     setattr(self, a, v)
-                if fullLoad:
-                    for a, v in izip(self._converter_settings + self.volatile +
-                                     self.addedSettings,
-                                     pickle.load(translator)):
-                        setattr(self, a, v)
         with self.fullPath.unicodeSafe() as converter_path:
             # Temp rename if its name wont encode correctly
             command = u'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (

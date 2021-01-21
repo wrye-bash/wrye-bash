@@ -53,8 +53,8 @@ has its own data store)."""
 #--Python
 from __future__ import division
 
-import StringIO
 import collections
+import io
 import os
 import sys
 import time
@@ -2893,7 +2893,7 @@ class InstallersDetails(_SashDetailsPanel):
         pageName = gPage.get_component_name()
         def dumpFiles(files, header=u''):
             if files:
-                buff = StringIO.StringIO()
+                buff = io.StringIO()
                 files = bolt.sortFiles(files)
                 if header: buff.write(header+u'\n')
                 for file in files:

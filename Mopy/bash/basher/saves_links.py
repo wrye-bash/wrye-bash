@@ -25,9 +25,11 @@
 attribute points to BashFrame.saveList singleton."""
 
 from __future__ import division
-import StringIO
+
+import io
 import re
 import shutil
+
 from . import BashFrame
 from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, load_order, initialization
@@ -37,8 +39,8 @@ from ..bolt import GPath, SubProgress
 from ..bosh import faces, SaveInfo
 from ..brec import MreRecord
 from ..exception import ArgumentError, BoltError, CancelError, ModError
-from ..mod_files import LoadFactory, MasterMap, ModFile
 from ..gui import BusyCursor, ImageWrapper
+from ..mod_files import LoadFactory, MasterMap, ModFile
 
 __all__ = [u'Saves_Profiles', u'Save_Rename', u'Save_Renumber', u'Save_Move',
            u'Save_LoadMasters', u'Save_DiffMasters', u'Save_Stats',
@@ -425,7 +427,7 @@ class Save_EditCreatedData(balt.ListEditorData):
               b'WEAP': (u'', (u'damage',u'value',u'speed',u'reach',u'weight'))}
     def getInfo(self,item):
         """Returns string info on specified item."""
-        buff = StringIO.StringIO()
+        buff = io.StringIO()
         record_full, records = self.name_nameRecords[item]
         record = records[0]
         #--Armor, clothing, weapons
@@ -448,7 +450,6 @@ class Save_EditCreatedData(balt.ListEditorData):
             buff.write(record.getEffectsSummary())
         #--Done
         ret = buff.getvalue()
-        buff.close()
         return ret
 
     def rename(self,oldName,newName):
@@ -761,7 +762,7 @@ class Save_Stats(OneItemLink):
         saveFile = bosh._saves.SaveFile(self._selected_info)
         with balt.Progress(_(u'Statistics')) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
-            log = bolt.LogFile(StringIO.StringIO())
+            log = bolt.LogFile(io.StringIO())
             progress(0.9,_(u'Calculating statistics.'))
             saveFile.logStats(log)
             progress.Destroy()
@@ -779,8 +780,8 @@ class _Save_StatCosave(AppendableLink, OneItemLink):
         return bool(self._cosave)
 
     def Execute(self):
-        with BusyCursor(), bolt.sio() as out:
-            log = bolt.LogFile(out)
+        with BusyCursor():
+            log = bolt.LogFile(io.StringIO())
             self._cosave.dump_to_log(log, self._selected_info.header.masters)
             logtxt = log.out.getvalue()
         self._showLog(logtxt, title=self._cosave.abs_path.tail,

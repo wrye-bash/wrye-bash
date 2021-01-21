@@ -20,13 +20,15 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
+import io
 import re
 from itertools import izip
 
 from . import SaveInfo
 from ._saves import SreNPC, SaveFile
 from .. import bush, bolt
-from ..bolt import Flags, encode, sio, Path, struct_pack, struct_unpack, \
+from ..bolt import Flags, encode, Path, struct_pack, struct_unpack, \
     pack_int, pack_byte
 from ..brec import getModIndex, MreRecord, genFid, RecHeader, null2
 from ..exception import SaveFileError, StateError
@@ -290,7 +292,7 @@ class PCFaces(object):
 
         #--Player ACHR
         #--Buffer for modified record data
-        buff = sio()
+        buff = io.BytesIO()
         def buffPack(*args):
             buff.write(struct_pack(*args))
         def buffPackRef(oldFid,doPack=True):
@@ -367,9 +369,8 @@ class PCFaces(object):
             #delist('Set PC Spells:',face.spells)
             npc.spells = [saveFile.getIref(x) for x in face.spells]
         npc.full = None
-        saveFile.setRecord(npc.getTuple(fid,version))
         #--Save
-        buff.close()
+        saveFile.setRecord(npc.getTuple(fid,version))
 
     # Save Misc ----------------------------------------------------------------
     @staticmethod

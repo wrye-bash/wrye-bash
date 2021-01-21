@@ -25,7 +25,6 @@
 #--Standard
 from __future__ import division, print_function
 
-import StringIO
 import cPickle as pickle  # PY3
 import codecs
 import collections
@@ -33,6 +32,7 @@ import copy
 import csv
 import datetime
 import errno
+import io
 import os
 import re
 import shutil
@@ -394,15 +394,6 @@ def setattr_deep(obj, attr, value, __attrgetters=attrgetter_cache,
         __split_cache[attr] = parent_attr, leaf_attr
     setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
         leaf_attr, value)
-
-# sio - StringIO wrapper so it uses the 'with' statement, so they can be used
-#  in the same functions that accept files as input/output as well.  Really,
-#  StringIO objects don't need to 'close' ever, since the data is unallocated
-#  once the object is destroyed.
-#------------------------------------------------------------------------------
-class sio(StringIO.StringIO):
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_value, exc_traceback): self.close()
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1752,15 +1743,16 @@ def deprint(*args,**keyargs):
             except UnicodeError:
                 msg += u' %r' % x
     if keyargs.get(u'traceback',False):
-        o = StringIO.StringIO()
-        traceback.print_exc(file=o)
-        value = o.getvalue()
-        try:
-            msg += u'\n%s' % unicode(value, u'utf-8')
-        except UnicodeError:
-            traceback.print_exc()
-            msg += u'\n%r' % value
-        o.close()
+        exc_fmt = traceback.format_exc()
+        # PY3: This should be good to go
+        if isinstance(exc_fmt, bytes):
+            try:
+                msg += u'\n%s' % unicode(exc_fmt, u'utf-8')
+            except UnicodeError:
+                traceback.print_exc()
+                msg += u'\n%r' % exc_fmt
+        else:
+            msg += u'\n%s' % exc_fmt
     try:
         # Should work if stdout/stderr is going to wxPython output
         print(msg)

@@ -27,6 +27,7 @@ from __future__ import print_function
 import collections
 import copy
 import errno
+import io
 import os
 import re
 import sys
@@ -41,7 +42,7 @@ from .. import balt, gui # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
-from ..bolt import Path, deprint, round_size, GPath, sio, SubProgress, CIstr, \
+from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
     LowerDict, AFile
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
@@ -1206,13 +1207,12 @@ class Installer(object):
 
     def listSource(self):
         """Return package structure as text."""
-        with sio() as out:
-            log = bolt.LogFile(out)
-            log.setHeader(u'%s ' % self.archive + _(u'Package Structure:'))
-            log(u'[spoiler]\n', False)
-            self._list_package(self.abs_path, log)
-            log(u'[/spoiler]')
-            return bolt.winNewLines(log.out.getvalue())
+        log = bolt.LogFile(io.StringIO())
+        log.setHeader(u'%s ' % self.archive + _(u'Package Structure:'))
+        log(u'[spoiler]\n', False)
+        self._list_package(self.abs_path, log)
+        log(u'[/spoiler]')
+        return bolt.winNewLines(log.out.getvalue())
 
     @staticmethod
     def _list_package(apath, log): raise AbstractError
@@ -2896,49 +2896,49 @@ class InstallersData(DataStore):
             srcInstaller, active_bsas, bsa_cause, list_overrides,
             include_inactive, include_lower, include_bsas)
         # Generate report
-        with sio() as buff:
-            # Print BSA conflicts
-            if include_bsas:
-                buff.write(u'= %s %s\n\n' % (_(u'Active BSA Conflicts'), u'=' * 40))
-                # Print partitions - bsa loading order NOT installer order
-                origin_ini_match = self._ini_origin.match
-                def _print_bsa_conflicts(conflicts, title=_(u'Lower')):
-                    buff.write(u'= %s %s\n' % (title, u'=' * 40))
-                    for origin_, bsa_inf, confl_ in conflicts:
-                        # If the origin is an INI, then active_bsas[bsa_inf]
-                        # does not contain a meaningful result (will be an
-                        # extremely large/small number)
-                        ini_ma = origin_ini_match(origin_)
-                        if ini_ma:
-                            buff.write(u'==%s== %s : %s\n' % (
-                                ini_ma.group(1), ini_ma.group(2), bsa_inf))
-                        else:
-                            buff.write(u'==%X== %s : %s\n' % (
-                                active_bsas[bsa_inf], origin_, bsa_inf))
-                        buff.write(u'\n'.join(confl_) + u'\n\n')
-                if include_lower and lower_bsa:
-                    _print_bsa_conflicts(lower_bsa, _(u'Lower'))
-                if higher_bsa:
-                    _print_bsa_conflicts(higher_bsa, _(u'Higher'))
-                buff.write(u'= %s %s\n\n' % (_(u'Loose File Conflicts'), u'=' * 36))
-            # Print loose file conflicts
-            def _print_loose_conflicts(conflicts, title=_(u'Lower')):
+        buff = io.StringIO()
+        # Print BSA conflicts
+        if include_bsas:
+            buff.write(u'= %s %s\n\n' % (_(u'Active BSA Conflicts'), u'=' * 40))
+            # Print partitions - bsa loading order NOT installer order
+            origin_ini_match = self._ini_origin.match
+            def _print_bsa_conflicts(conflicts, title=_(u'Lower')):
                 buff.write(u'= %s %s\n' % (title, u'=' * 40))
-                for inst_, package_, confl_ in conflicts:
-                    buff.write(u'==%d== %s\n' % (inst_.order, package_))
-                    for src_file in confl_:
-                        oldName = inst_.getEspmName(src_file)
-                        buff.write(oldName)
-                        if oldName != src_file:
-                            buff.write(u' -> ')
-                            buff.write(src_file)
-                        buff.write(u'\n')
+                for origin_, bsa_inf, confl_ in conflicts:
+                    # If the origin is an INI, then active_bsas[bsa_inf]
+                    # does not contain a meaningful result (will be an
+                    # extremely large/small number)
+                    ini_ma = origin_ini_match(origin_)
+                    if ini_ma:
+                        buff.write(u'==%s== %s : %s\n' % (
+                            ini_ma.group(1), ini_ma.group(2), bsa_inf))
+                    else:
+                        buff.write(u'==%X== %s : %s\n' % (
+                            active_bsas[bsa_inf], origin_, bsa_inf))
+                    buff.write(u'\n'.join(confl_) + u'\n\n')
+            if include_lower and lower_bsa:
+                _print_bsa_conflicts(lower_bsa, _(u'Lower'))
+            if higher_bsa:
+                _print_bsa_conflicts(higher_bsa, _(u'Higher'))
+            buff.write(u'= %s %s\n\n' % (_(u'Loose File Conflicts'), u'=' * 36))
+        # Print loose file conflicts
+        def _print_loose_conflicts(conflicts, title=_(u'Lower')):
+            buff.write(u'= %s %s\n' % (title, u'=' * 40))
+            for inst_, package_, confl_ in conflicts:
+                buff.write(u'==%d== %s\n' % (inst_.order, package_))
+                for src_file in confl_:
+                    oldName = inst_.getEspmName(src_file)
+                    buff.write(oldName)
+                    if oldName != src_file:
+                        buff.write(u' -> ')
+                        buff.write(src_file)
                     buff.write(u'\n')
-            if include_lower and lower_loose:
-                _print_loose_conflicts(lower_loose, _(u'Lower'))
-            if higher_loose:
-                _print_loose_conflicts(higher_loose, _(u'Higher'))
-            report = buff.getvalue()
+                buff.write(u'\n')
+        if include_lower and lower_loose:
+            _print_loose_conflicts(lower_loose, _(u'Lower'))
+        if higher_loose:
+            _print_loose_conflicts(higher_loose, _(u'Higher'))
+        report = buff.getvalue()
         if not list_overrides and not report and not srcInstaller.is_active:
             report = _(u'No Underrides. Mod is not completely un-installed.')
         return report
@@ -2946,23 +2946,22 @@ class InstallersData(DataStore):
     def getPackageList(self,showInactive=True):
         """Returns package list as text."""
         #--Setup
-        with sio() as out:
-            log = bolt.LogFile(out)
-            log.setHeader(_(u'Bain Packages:'))
-            #--List
-            log(u'[spoiler]\n',False)
-            for package, installer in self.sorted_pairs():
-                prefix = u'%03d' % installer.order
-                if installer.is_marker():
-                    log(u'%s - %s' % (prefix, package))
-                elif installer.is_active:
-                    log(u'++ %s - %s (%08X) (Installed)' % (
-                        prefix, package, installer.crc))
-                elif showInactive:
-                    log(u'-- %s - %s (%08X) (Not Installed)' % (
-                        prefix, package, installer.crc))
-            log(u'[/spoiler]')
-            return bolt.winNewLines(log.out.getvalue())
+        log = bolt.LogFile(io.StringIO())
+        log.setHeader(_(u'Bain Packages:'))
+        #--List
+        log(u'[spoiler]\n', False)
+        for package, installer in self.sorted_pairs():
+            prefix = u'%03d' % installer.order
+            if installer.is_marker():
+                log(u'%s - %s' % (prefix, package))
+            elif installer.is_active:
+                log(u'++ %s - %s (%08X) (Installed)' % (
+                    prefix, package, installer.crc))
+            elif showInactive:
+                log(u'-- %s - %s (%08X) (Not Installed)' % (
+                    prefix, package, installer.crc))
+        log(u'[/spoiler]')
+        return bolt.winNewLines(log.out.getvalue())
 
     def filterInstallables(self, installerKeys):
         """Return a sublist of installerKeys that can be installed -
