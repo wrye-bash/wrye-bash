@@ -398,7 +398,7 @@ class InstallerConverter(object):
         progress(0, _(u'Moving files...'))
         progress.setFull(1 + len(self.convertedFiles))
         #--Make a copy of dupeCount
-        dupes = dict(self.dupeCount.iteritems())
+        dupes = dict(self.dupeCount)
         destJoin = destDir.join
         tempJoin = tmpDir.join
 

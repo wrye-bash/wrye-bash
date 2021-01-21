@@ -34,7 +34,7 @@ from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
 from ..bolt import Flags, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
-    structs_cache, unpack_str8
+    structs_cache, unpack_str8, dict_sort
 from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
     unpack_header
 from ..exception import ModError, StateError
@@ -554,15 +554,12 @@ class SaveFile(object):
         #--Lost Changes
         if lostChanges:
             log.setHeader(_(u'LostChanges'))
-            for rec_id, rec_kind in sorted(lostChanges.iteritems(),
-                                           key=lambda t: t[0]):
+            for rec_id, rec_kind in dict_sort(lostChanges):
                 log(hex(rec_id) + rec_type_map.get(rec_kind, u'%s' % rec_kind))
-        for rec_kind, modHisto in sorted(typeModHisto.iteritems(),
-                                         key=lambda t: t[0]):
+        for rec_kind, modHisto in dict_sort(typeModHisto):
             log.setHeader(u'%d %s' % (
                 rec_kind, rec_type_map.get(rec_kind, _(u'Unknown'))))
-            for modIndex,count in sorted(modHisto.iteritems(),
-                                         key=lambda t: t[0]):
+            for modIndex,count in dict_sort(modHisto):
                 log(u'  %d\t%s' % (count,getMaster(modIndex)))
             log(u'  %d\tTotal' % (sum(modHisto.values()),))
         objRefBases = {k: v for k, v in objRefBases.iteritems() if v[0] > 100}

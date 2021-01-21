@@ -42,7 +42,7 @@ from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
     TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
-from ..bolt import GPath, SubProgress
+from ..bolt import GPath, SubProgress, dict_sort
 from ..bosh import faces
 from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError
@@ -112,10 +112,9 @@ class Mod_RecalcRecordCounts(OneItemLink):
         loadFactory = mod_files.LoadFactory(True)
         modFile = mod_files.ModFile(self._selected_info, loadFactory)
         modFile.load(True, do_map_fids=False)
-        for topType, block in sorted(modFile.tops.iteritems(),
-                key=lambda t: t[0]):
+        for top_grup_sig, block in dict_sort(modFile.tops):
             bolt.deprint(u'%s GRUP has %u records' % (
-                topType, block.getNumRecords()))
+                top_grup_sig, block.getNumRecords()))
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py

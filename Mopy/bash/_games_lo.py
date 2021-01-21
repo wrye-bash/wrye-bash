@@ -37,7 +37,7 @@ from itertools import izip
 
 # Local
 from . import bass, bolt, env, exception
-from .bolt import GPath_no_norm
+from .bolt import GPath_no_norm, dict_sort
 from .ini_files import get_ini_type_and_encoding
 from .localize import format_date
 
@@ -655,7 +655,7 @@ class INIGame(Game):
         # unicode (i.e. the mod names)
         section_mapping = cached_ini.get_setting_values(ini_key[1], {})
         # Sort by line number, then convert the values to paths and return
-        section_vals = sorted(section_mapping.items(), key=lambda t: t[1][1])
+        section_vals = dict_sort(section_mapping, values_dex=[1])
         return [GPath_no_norm(x[1][0]) for x in section_vals]
 
     @staticmethod
