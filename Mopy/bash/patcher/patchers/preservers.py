@@ -637,8 +637,8 @@ class ImportGraphicsPatcher(_APreserver):
             if fid not in id_data: continue
             for attr, value in id_data[fid].iteritems():
                 rec_attr = __attrgetters[attr](record)
-                if isinstance(rec_attr,
-                              basestring) and isinstance(value, basestring):
+                if isinstance(rec_attr, unicode) and isinstance(
+                        value, unicode):
                     if rec_attr.lower() != value.lower():
                         break
                     continue

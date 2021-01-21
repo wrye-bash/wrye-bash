@@ -25,7 +25,6 @@ import copy
 import re
 from collections import defaultdict
 from itertools import chain
-from operator import itemgetter
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt, exception
 from ..balt import Links, SeparatorLink, CheckLink
@@ -445,7 +444,7 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def getItemLabel(self,item):
         """Returns label for item to be used in list"""
-        return u'%s' % item # Path or basestring - YAK
+        return u'%s' % item # Path or string - YAK
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
@@ -694,7 +693,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 if new is None: #user hit cancel
                     return
                 value.append(new)
-            elif isinstance(v,basestring):
+            elif isinstance(v, unicode):
                 label = (_(u'Enter the desired custom tweak text.')
                          + key_display)
                 new = balt.askText(
@@ -850,8 +849,8 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
 
     def getItemLabel(self,item):
         """Returns label for item to be used in list"""
-        choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
-        item  = u'%s' % item # Path or basestring - YAK
+        choice = [i[0] for i in self.configChoices.get(item, tuple())]
+        item  = u'%s' % item # Path or string - YAK
         if choice:
             return u'%s [%s]' % (item,u''.join(sorted(choice)))
         else:

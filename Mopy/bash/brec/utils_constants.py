@@ -37,7 +37,7 @@ def _coerce(value, newtype, base=None, AllowNone=False):
             #--Force standard precision
             return round(struct_unpack('f', struct_pack('f', float(value)))[0], 6)
         elif newtype is bool:
-            if isinstance(value,basestring):
+            if isinstance(value, (unicode, bytes)): ##: investigate
                 retValue = value.strip().lower()
                 if AllowNone and retValue == u'none': return None
                 return retValue not in (u'',u'none',u'false',u'no',u'0',u'0.0')

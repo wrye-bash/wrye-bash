@@ -910,7 +910,8 @@ class Path(object):
                     pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
-    # directly compare to basestring|Path|None and will blow for anything else
+    # directly compare to unicode|bytes|Path|None and will blow for anything
+    # else
     def __hash__(self):
         return hash(self._cs)
     def __eq__(self, other):
@@ -1771,7 +1772,8 @@ def getMatch(reMatch,group=0):
 def intArg(arg,default=None):
     """Returns argument as an integer. If argument is a string, then it converts it using int(arg,0)."""
     if arg is None: return default
-    elif isinstance(arg, basestring): return int(arg,0)
+    elif isinstance(arg, (unicode, bytes)): ##: this smells, hunt down
+        return int(arg, 0)
     else: return int(arg)
 
 def winNewLines(inString):

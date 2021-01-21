@@ -570,7 +570,10 @@ class OBSEIniFile(IniFile):
                         # Un-delete/modify it
                         value = ini_settings[section_key][setting]
                         del ini_settings[section_key][setting]
-                        if isinstance(value, basestring) and value[-1:] == u'\n':
+                        if isinstance(value, bytes):
+                            raise RuntimeError(u'Do not pass bytes into '
+                                               u'saveSettings!')
+                        if isinstance(value, unicode) and value[-1:] == u'\n':
                             line = value.rstrip(u'\n\r')
                         else:
                             line = format_string % (setting, value)

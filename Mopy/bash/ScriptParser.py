@@ -343,7 +343,7 @@ class Parser(object):
 
         def GetData(self):
             """:rtype: Parser.Function | Parser.Keyword | Parser.Operator |
-            basestring | int | float
+            unicode | int | float
             """
             if self.parser:
                 if self.type == FUNCTION: return self.parser.functions[self.text]

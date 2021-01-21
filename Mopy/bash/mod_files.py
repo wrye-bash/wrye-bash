@@ -88,7 +88,9 @@ class LoadFactory(object):
     def addClass(self, recClass, __cell_rec_sigs=frozenset([b'WRLD', b'ROAD',
             b'CELL', b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'])):
         """Adds specified class."""
-        if isinstance(recClass,basestring):
+        if isinstance(recClass, unicode):
+            raise RuntimeError(u'Do not pass strings to addClass!')
+        elif isinstance(recClass, bytes):
             recType = recClass
             recClass = MreRecord
         else:

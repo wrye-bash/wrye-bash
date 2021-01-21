@@ -191,7 +191,8 @@ class MelBase(Subrecord):
         string ready to write to an output stream. In some cases another type
         is returned that must be packed by caller (see MelString). Return None
         to skip dumping. It may modify the record before dumping.
-        :rtype: basestring | None"""
+
+        :rtype: bytes | None"""
         return getattr(record, self.attr) # this better be bytes here
 
     def mapFids(self,record,function,save=False):

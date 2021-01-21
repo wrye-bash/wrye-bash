@@ -339,7 +339,9 @@ def vistaDialog(parent, message, title, checkBoxTxt=None,
     if expander:
         dialog.set_expander(expander,False,not footer)
     if checkBoxTxt:
-        if isinstance(checkBoxTxt,basestring):
+        if isinstance(checkBoxTxt, bytes):
+            raise RuntimeError(u'Do not pass bytes to vistaDialog!')
+        elif isinstance(checkBoxTxt, unicode):
             dialog.set_check_box(checkBoxTxt,False)
         else:
             dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
@@ -1388,7 +1390,7 @@ class UIList(wx.Panel):
     #--Item/Index Translation -------------------------------------------------
     def GetItem(self,index):
         """Return item (key in self.data_store) for specified list index.
-        :rtype: bolt.Path | basestring | int
+        :rtype: bolt.Path | unicode | int
         """
         return self.__gList.FindItemAt(index)
 

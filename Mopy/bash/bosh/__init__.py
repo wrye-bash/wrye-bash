@@ -739,7 +739,7 @@ class ModInfo(FileInfo):
         return GPath_no_norm(self._file_key.s[:-3] + u'ini') # ignore .ghost
 
     def _string_files_paths(self, lang):
-        # type: (basestring) -> Iterable[Path]
+        # type: (unicode) -> Iterable[Path]
         sbody, ext = self.name.sbody, self.get_extension()
         for join, format_str in bush.game.Esp.stringsFiles:
             fname = format_str % {u'body': sbody, u'ext': ext, u'language': lang}
@@ -1415,9 +1415,11 @@ class TableFileInfos(DataStore):
     @classmethod
     def rightFileType(cls, fileName):
         """Check if the filetype (extension) is correct for subclass.
-        :type fileName: bolt.Path | basestring
-        :rtype: _sre.SRE_Match | None
-        """
+
+        :type fileName: bolt.Path | unicode | bytes
+        :rtype: _sre.SRE_Match | None"""
+        ##: This shouldn't take bytes, ensure it doesn't (especially wrt. to
+        # pickle-related usages)
         return cls.file_pattern.search(u'%s' % fileName)
 
     #--Delete

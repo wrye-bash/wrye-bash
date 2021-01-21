@@ -75,10 +75,10 @@ class SaveFileError(FileError):
     """Save File Error: File is corrupted."""
     pass
 
-class FileEditError(BoltError):
+class FileEditError(BoltError): ##: never raised?
     """Unable to edit a file"""
     def __init__(self, file_path, message=None):
-        ## type: (Path, basestring) -> None
+        ## type: (Path, unicode) -> None
         message = message or (u'Unable to edit file %s.' % file_path)
         super(FileEditError, self).__init__(message)
         self.filePath = file_path
@@ -91,7 +91,7 @@ class ModError(FileError):
 class ModReadError(ModError):
     """Mod Error: Attempt to read outside of buffer."""
     def __init__(self, in_name, record_sig, try_pos, max_pos):
-        ## type: (Path, basestring, int, int) -> None
+        ## type: (Path, bytes, int, int) -> None
         if try_pos < 0:
             message = (u'%s: Attempted to read before (%s) beginning of '
                        u'file/buffer.' % (record_sig, try_pos))
@@ -106,7 +106,7 @@ class ModSizeError(ModError):
         """Indicates that a record or subrecord has the wrong size.
 
         :type in_name: bolt.Path
-        :type record_sig: basestring
+        :type record_sig: bytes
         :type expected_sizes: tuple[int]
         :type actual_size: int"""
         message_form = (u'%s: Expected one of sizes [%s], but got %u' % (
