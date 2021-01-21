@@ -598,7 +598,7 @@ class Mod_Details(OneItemLink):
             buff = io.StringIO()
             progress(0.7,_(u'Sorting records.'))
             for group in sorted(mod_details.group_records):
-                buff.write(group+u'\n')
+                buff.write(group.decode(u'ascii') + u'\n')
                 if group in (b'CELL',b'WRLD',b'DIAL'):
                     buff.write(u'  '+_(u'(Details not provided for this record type.)')+u'\n\n')
                     continue

@@ -559,7 +559,7 @@ class ModDetails(object):
                 if rtyp == b'GRUP':
                     label = header.label
                     progress(1.0 * ins.tell() / modInfo.size,
-                             _(u'Scanning: %s') % unicode(label))
+                             _(u'Scanning: %s') % label.decode(u'ascii'))
                     records = group_records[label]
                     if label in complex_groups: # skip these groups
                         header.skip_group(ins)
