@@ -2733,7 +2733,7 @@ class InstallersData(DataStore):
     #--Utils
     @staticmethod
     def _filter_installer_bsas(inst, active_bsas):
-        return (k for k in active_bsas if k.name.s in inst.ci_dest_sizeCrc)
+        return [k for k in active_bsas if k.name.s in inst.ci_dest_sizeCrc]
 
     @staticmethod
     def _parse_error(bsa_inf, reason):
@@ -2820,7 +2820,7 @@ class InstallersData(DataStore):
                         _process_bsa_conflicts(bsa_info, package.s)
             # Check all left-over BSAs - they either came from an INI or from a
             # plugin file not managed by BAIN (e.g. a DLC)
-            for rem_bsa in remaining_bsas:
+            for rem_bsa in list(remaining_bsas):
                 _process_bsa_conflicts(rem_bsa, bsa_cause[rem_bsa])
             def _sort_bsa_conflicts(bsa_conflict):
                 return active_bsas[bsa_conflict[1]]
@@ -2854,8 +2854,8 @@ class InstallersData(DataStore):
         :return: An OrderedDict containing a mapping from asset to BSA and the
                  relevant assets from the installer's BSAs in a set."""
         asset_to_bsa, src_assets = collections.OrderedDict(), set()
-        for b in reversed(list(self._filter_installer_bsas(
-                src_installer, active_bsas))):
+        for b in reversed(self._filter_installer_bsas(
+                src_installer, active_bsas)):
             try:
                 b_assets = b.assets - src_assets
             except BSAError:
