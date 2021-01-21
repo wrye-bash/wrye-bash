@@ -2330,9 +2330,13 @@ class DnDStatusBar(wx.StatusBar):
     def OnDragStart(self, event):
         self.dragging = self._getButtonIndex(event)
         if self.dragging != wx.NOT_FOUND:
-            self.dragStart = event.GetPosition()[0]
             button = self.buttons[self.dragging]
-            button._native_widget.CaptureMouse()
+            if not button._native_widget.HasCapture():
+                self.dragStart = event.GetPosition()[0]
+                button._native_widget.CaptureMouse()
+                # Otherwise blows up on py3
+                button._native_widget.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
+                                           lambda e: None)
         event.Skip()
 
     def OnDragEndForced(self, event):
