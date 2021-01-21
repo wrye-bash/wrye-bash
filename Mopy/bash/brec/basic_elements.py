@@ -92,7 +92,7 @@ class Subrecord(object):
                                                               lenData))
         outWrite(binary_data)
 
-def unpackSubHeader(ins, recType='----', expType=None, expSize=0, # PY3: ,*,
+def unpackSubHeader(ins, recType=b'----', expType=None, expSize=0, # PY3: ,*,
                     __unpacker=_int_unpacker, __sr=Subrecord):
     """Unpack a subrecord header. Optionally checks for match with expected
     type and size."""
@@ -110,7 +110,7 @@ def unpackSubHeader(ins, recType='----', expType=None, expSize=0, # PY3: ,*,
             u'but found %s instead.' % (recType, expType, mel_sig))
     #--Match expected size?
     if expSize and expSize != mel_size:
-        raise exception.ModSizeError(ins.inName, recType + '.' + mel_sig,
+        raise exception.ModSizeError(ins.inName, recType + b'.' + mel_sig,
                                      (expSize,), mel_size)
     return mel_sig, mel_size
 

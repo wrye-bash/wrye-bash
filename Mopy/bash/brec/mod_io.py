@@ -284,7 +284,7 @@ class ModReader(object):
         return [decoder(x,bolt.pluginEncoding,avoidEncodings=('utf8','utf-8')) for x in
                 self.read(size,recType).rstrip(null1).split(null1)]
 
-    def unpack(self, struct_unpacker, size, recType='----'):
+    def unpack(self, struct_unpacker, size, recType=b'----'):
         """Read size bytes from the file and unpack according to format of
         struct_unpacker."""
         endPos = self.ins.tell() + size
