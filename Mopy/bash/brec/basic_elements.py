@@ -570,7 +570,7 @@ class MelUnicode(MelString):
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         value = u'\n'.join(decoder(x,self.encoding,avoidEncodings=('utf8','utf-8'))
-                           for x in bolt.cstrip(ins.read(size_, readId)).split('\n'))
+                           for x in bolt.cstrip(ins.read(size_, readId)).split(b'\n'))
         setattr(record, self.attr, value)
 
 #------------------------------------------------------------------------------
