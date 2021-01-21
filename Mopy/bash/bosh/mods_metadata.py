@@ -93,8 +93,8 @@ def diff_tags(plugin_new_tags, plugin_old_tags):
     return plugin_new_tags - plugin_old_tags, plugin_old_tags - plugin_new_tags
 
 #--Mod Checker ----------------------------------------------------------------
-_cleaning_wiki_url = u'[[!https://tes5edit.github.io/docs/5-mod-cleaning' \
-                     u'-and-error-checking.html|Tome of xEdit]]'
+_cleaning_wiki_url = (u'[[!https://tes5edit.github.io/docs/7-mod-cleaning-and'
+                      u'-error-checking.html|Tome of xEdit]]')
 
 def checkMods(showModList=False, showCRC=False, showVersion=True,
               mod_checker=None):
