@@ -164,11 +164,10 @@ class IniFile(AFile):
         reDeleted = self.__class__.reDeletedSetting
         reSetting = self.__class__.reSetting
         #--Read ini file
-        with tweakPath.open(u'r') as iniFile:
+        with tweakPath.open(u'r', encoding=self.ini_encoding) as iniFile:
             sectionSettings = None
             section = None
             for i,line in enumerate(iniFile.readlines()):
-                line = unicode(line, self.ini_encoding)
                 maDeleted = reDeleted.match(line)
                 stripped = reComment.sub(u'',line).strip()
                 maSection = reSection.match(stripped)
