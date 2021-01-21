@@ -214,7 +214,7 @@ class MobObjects(MobBase):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
-        errLabel = expType + u' Top Block'
+        errLabel = u'%s Top Block' % expType
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
         recordsAppend = self.records.append
@@ -601,7 +601,7 @@ class MobDials(MobBase):
         ins_seek = ins.seek
         if not dial_class: ins_seek(endPos) # skip the whole group
         expType = self.label
-        errLabel = expType + u' Top Block'
+        errLabel = u'%s Top Block' % expType
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
         append_dialogue = self.dialogues.append
@@ -1279,7 +1279,7 @@ class MobICells(MobCells):
         recCellClass = self.loadFactory.getRecClass(expType)
         insSeek = ins.seek
         if not recCellClass: insSeek(endPos) # skip the whole group
-        errLabel = expType + u' Top Block'
+        errLabel = u'%s Top Block' % expType
         cell = None
         endBlockPos = endSubblockPos = 0
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks(b'CELL')
@@ -1653,7 +1653,7 @@ class MobWorlds(MobBase):
         recWrldClass = self.loadFactory.getRecClass(expType)
         insSeek = ins.seek
         if not recWrldClass: insSeek(endPos) # skip the whole group
-        errLabel = expType + u' Top Block'
+        errLabel = u'%s Top Block' % expType
         worldBlocks = self.worldBlocks
         world = None
         insAtEnd = ins.atEnd
