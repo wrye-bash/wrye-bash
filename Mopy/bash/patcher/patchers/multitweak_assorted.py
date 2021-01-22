@@ -28,7 +28,6 @@ import random
 import re
 # Internal
 from ... import bush, load_order
-from ...brec import MreRecord  # yuck, see usage below
 from ...bolt import GPath, deprint, floats_equal
 from ...mod_files import LoadFactory, ModFile  # yuck, see usage below
 from ...patcher.patchers.base import MultiTweakItem, MultiTweaker, \
@@ -882,7 +881,7 @@ class AssortedTweak_AbsorbSummonFix(MultiTweakItem):
     def prepare_for_tweaking(self, patch_file):
         ##: Same HACK as in NamesTweak_Scrolls.prepare_for_tweaking
         self._look_up_mgef = id_mgef = {}
-        mgef_factory = LoadFactory(False, MreRecord.type_class[b'MGEF'])
+        mgef_factory = LoadFactory(False, by_sig=[b'MGEF'])
         for pl_path in patch_file.loadMods:
             ench_plugin = ModFile(patch_file.p_file_minfos[pl_path],
                                   mgef_factory)

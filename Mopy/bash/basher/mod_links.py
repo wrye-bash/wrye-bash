@@ -85,9 +85,7 @@ class Mod_FullLoad(OneItemLink):
         with balt.Progress(_(u'Loading:') + u'\n%s'
                 % self._selected_item.stail) as progress:
             print(MreRecord.type_class)
-            readClasses = MreRecord.type_class
-            print(readClasses.values())
-            loadFactory = mod_files.LoadFactory(False, *readClasses.values())
+            loadFactory = mod_files.LoadFactory(False, by_sig=MreRecord.type_class)
             modFile = mod_files.ModFile(self._selected_info, loadFactory)
             try:
                 modFile.load(True, progress, catch_errors=False)
@@ -1301,8 +1299,8 @@ class Mod_RemoveWorldOrphans(_NotObLink):
                 continue
             #--Export
             with balt.Progress(_(u'Remove World Orphans')) as progress:
-                loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[
-                    b'CELL'], MreRecord.type_class[b'WRLD'])
+                loadFactory = mod_files.LoadFactory(True,
+                                                    by_sig=[b'CELL', b'WRLD'])
                 modFile = mod_files.ModFile(fileInfo, loadFactory)
                 progress(0,_(u'Reading') + u' %s.' % fileInfo)
                 modFile.load(True,SubProgress(progress,0,0.7))
@@ -1424,7 +1422,7 @@ class Mod_DecompileAll(_NotObLink):
                 self._showWarning(_(u'Skipping %s') % fileInfo,
                                   _(u'Decompile All'))
                 continue
-            loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[b'SCPT'])
+            loadFactory = mod_files.LoadFactory(True, by_sig=[b'SCPT'])
             modFile = mod_files.ModFile(fileInfo, loadFactory)
             modFile.load(True)
             badGenericLore = False
@@ -1432,7 +1430,7 @@ class Mod_DecompileAll(_NotObLink):
             id_text = {}
             scpt_grp = modFile.tops[b'SCPT']
             if scpt_grp.getNumRecords(includeGroups=False):
-                loadFactory = mod_files.LoadFactory(False, MreRecord.type_class[b'SCPT'])
+                loadFactory = mod_files.LoadFactory(False, by_sig=[b'SCPT'])
                 for master in modFile.tes4.masters:
                     masterFile = mod_files.ModFile(bosh.modInfos[master], loadFactory)
                     masterFile.load(True)

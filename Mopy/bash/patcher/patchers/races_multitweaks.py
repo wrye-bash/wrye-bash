@@ -39,7 +39,7 @@ from itertools import izip
 from .base import MultiTweakItem, ListPatcher
 from ... import bosh, bush
 from ...bolt import GPath, deprint
-from ...brec import MreRecord, MelObject, strFid
+from ...brec import MelObject, strFid
 from ...exception import BoltError
 from ...mod_files import ModFile, LoadFactory
 from ...patcher.base import AMultiTweaker
@@ -345,7 +345,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
             for read_sig in tweak.getReadClasses():
                 t_dict[read_sig][tweak.supports_pooling].append(tweak)
         if not self.isActive or not self.srcs: return
-        loadFactory = LoadFactory(False,MreRecord.type_class[b'RACE'])
+        loadFactory = LoadFactory(False, by_sig=[b'RACE'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         for index,srcMod in enumerate(self.srcs):

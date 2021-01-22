@@ -411,7 +411,7 @@ class SEWorldTestsPatcher(_ExSpecial, Patcher):
         super(SEWorldTestsPatcher, self).__init__(p_name, p_file)
         self.cyrodiilQuests = set()
         if _ob_path in p_file.loadSet:
-            loadFactory = LoadFactory(False, MreRecord.type_class[b'QUST'])
+            loadFactory = LoadFactory(False, by_sig=[b'QUST'])
             modInfo = self.patchFile.p_file_minfos[_ob_path]
             modFile = ModFile(modInfo,loadFactory)
             modFile.load(True)

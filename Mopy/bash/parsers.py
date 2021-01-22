@@ -135,8 +135,7 @@ class _AParser(_HandleAliases):
         :param mod_info: The ModInfo object to read.
         :param target_types: An iterable yielding record signatures to load.
         :return: An object representing the loaded plugin."""
-        mod_file = ModFile(mod_info, LoadFactory(
-            False, *[MreRecord.type_class[t] for t in target_types]))
+        mod_file = ModFile(mod_info, LoadFactory(False, by_sig=target_types))
         mod_file.load(do_unpack=True)
         return mod_file
 
@@ -463,7 +462,7 @@ class ActorLevels(_HandleAliases):
         """Imports actor level data from the specified mod and its masters."""
         from . import bosh
         mod_id_levels, gotLevels = self.mod_id_levels, self.gotLevels
-        loadFactory = LoadFactory(False,MreRecord.type_class[b'NPC_'])
+        loadFactory = LoadFactory(False, by_sig=[b'NPC_'])
         for modName in (modInfo.masterNames + (modInfo.name,)):
             if modName in gotLevels: continue
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
@@ -477,7 +476,7 @@ class ActorLevels(_HandleAliases):
     def writeToMod(self,modInfo):
         """Exports actor levels to specified mod."""
         mod_id_levels = self.mod_id_levels
-        loadFactory = LoadFactory(True,MreRecord.type_class[b'NPC_'])
+        loadFactory = LoadFactory(True, by_sig=[b'NPC_'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = 0
@@ -579,21 +578,20 @@ class EditorIds(_HandleAliases):
 
     def readFromMod(self,modInfo):
         """Imports eids from specified mod."""
-        type_id_eid,types = self.type_id_eid,self.types
-        classes = [MreRecord.type_class[x] for x in types]
-        loadFactory = LoadFactory(False,*classes)
+        type_id_eid = self.type_id_eid
+        loadFactory = LoadFactory(False, by_sig=self.types)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        for type_ in types:
-            typeBlock = modFile.tops.get(type_)
+        for top_grup_sig in self.types:
+            typeBlock = modFile.tops.get(top_grup_sig)
             if not typeBlock: continue
-            id_eid = type_id_eid[type_]
+            id_eid = type_id_eid[top_grup_sig]
             for record in typeBlock.getActiveRecords():
                 if record.eid: id_eid[record.fid] = record.eid
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
-        loadFactory = LoadFactory(True, *self.types)
+        loadFactory = LoadFactory(True, generic=self.types)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = []
@@ -816,9 +814,7 @@ class FidReplacer(_HandleAliases):
 
     def updateMod(self,modInfo,changeBase=False):
         """Updates specified mod file."""
-        types = self.types
-        classes = [MreRecord.type_class[type_] for type_ in types]
-        loadFactory = LoadFactory(True,*classes)
+        loadFactory = LoadFactory(True, by_sig=self.types)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         # Create filtered versions of our mappings
@@ -845,7 +841,7 @@ class FidReplacer(_HandleAliases):
             else:
                 return oldId
         #--Do swap on all records
-        for top_grup_sig in types:
+        for top_grup_sig in self.types:
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 if changeBase: record.fid = swapper(record.fid)
                 record.mapFids(swapper, save=True)
@@ -872,8 +868,7 @@ class FullNames(_HandleAliases):
     def readFromMod(self,modInfo):
         """Imports type_id_name from specified mod."""
         type_id_name,types = self.type_id_name, self.types
-        classes = [MreRecord.type_class[x] for x in self.types]
-        loadFactory = LoadFactory(False,*classes)
+        loadFactory = LoadFactory(False, by_sig=self.types)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         for type_ in types:
@@ -890,8 +885,7 @@ class FullNames(_HandleAliases):
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
         type_id_name,types = self.type_id_name,self.types
-        classes = [MreRecord.type_class[x] for x in self.types]
-        loadFactory = LoadFactory(True,*classes)
+        loadFactory = LoadFactory(True, by_sig=self.types)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = {}
@@ -1053,8 +1047,7 @@ class ItemStats(_HandleAliases):
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
-        typeClasses = [MreRecord.type_class[x] for x in self.class_attrs]
-        loadFactory = LoadFactory(False,*typeClasses)
+        loadFactory = LoadFactory(False, by_sig=self.class_attrs)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         for top_grup_sig, attrs in self.class_attrs.iteritems():
@@ -1064,8 +1057,7 @@ class ItemStats(_HandleAliases):
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        typeClasses = [MreRecord.type_class[x] for x in self.class_attrs]
-        loadFactory = LoadFactory(True,*typeClasses)
+        loadFactory = LoadFactory(True, by_sig=self.class_attrs)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = Counter() #--changed[modName] = numChanged
@@ -1203,7 +1195,7 @@ class ScriptText(object):
     def readFromMod(self, modInfo, file_):
         """Reads stats from specified mod."""
         eid_data = self.eid_data
-        loadFactory = LoadFactory(False,MreRecord.type_class[b'SCPT'])
+        loadFactory = LoadFactory(False, by_sig=[b'SCPT'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         with Progress(_(u'Export Scripts')) as progress:
@@ -1220,7 +1212,7 @@ class ScriptText(object):
         eid_data = self.eid_data
         changed = []
         added = []
-        loadFactory = LoadFactory(True,MreRecord.type_class[b'SCPT'])
+        loadFactory = LoadFactory(True, by_sig=[b'SCPT'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         for record in modFile.tops[b'SCPT'].getActiveRecords():
@@ -1393,7 +1385,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         fid_stats = self.fid_stats
-        loadFactory = LoadFactory(False,MreRecord.type_class[b'SGST'])
+        loadFactory = LoadFactory(False, by_sig=[b'SGST'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         for record in modFile.tops[b'SGST'].getActiveRecords():
@@ -1420,7 +1412,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         fid_stats = self.fid_stats
-        loadFactory = LoadFactory(True,MreRecord.type_class[b'SGST'])
+        loadFactory = LoadFactory(True, by_sig=[b'SGST'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = [] #eids
@@ -1538,8 +1530,7 @@ class ItemPrices(_HandleAliases):
     def readFromMod(self,modInfo):
         """Reads data from specified mod."""
         class_fid_stats = self.class_fid_stats
-        typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
-        loadFactory = LoadFactory(False,*typeClasses)
+        loadFactory = LoadFactory(False, by_sig=self.class_fid_stats)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         attrs = self.item_prices_attrs
@@ -1549,13 +1540,11 @@ class ItemPrices(_HandleAliases):
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        class_fid_stats = self.class_fid_stats
-        typeClasses = [MreRecord.type_class[x] for x in class_fid_stats]
-        loadFactory = LoadFactory(True,*typeClasses)
+        loadFactory = LoadFactory(True, by_sig=self.class_fid_stats)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = Counter() #--changed[modName] = numChanged
-        for top_grup_sig, fid_stats in class_fid_stats.iteritems():
+        for top_grup_sig, fid_stats in self.class_fid_stats.iteritems():
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 longid = record.fid
                 stats = fid_stats.get(longid,None)
@@ -1638,7 +1627,7 @@ class SpellRecords(_UsesEffectsMixin):
         """Reads stats from specified mod."""
         fid_stats, attrs = self.fid_stats, self.attrs
         detailed = self.detailed
-        loadFactory= LoadFactory(False,MreRecord.type_class[b'SPEL'])
+        loadFactory= LoadFactory(False, by_sig=[b'SPEL'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         for record in modFile.tops[b'SPEL'].getActiveRecords():
@@ -1664,7 +1653,7 @@ class SpellRecords(_UsesEffectsMixin):
         """Writes stats to specified mod."""
         fid_stats, attrs = self.fid_stats, self.attrs
         detailed = self.detailed
-        loadFactory= LoadFactory(True,MreRecord.type_class[b'SPEL'])
+        loadFactory= LoadFactory(True, by_sig=[b'SPEL'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = [] #eids
@@ -1819,7 +1808,7 @@ class IngredientDetails(_UsesEffectsMixin):
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         fid_stats = self.fid_stats
-        loadFactory= LoadFactory(False,MreRecord.type_class[b'INGR'])
+        loadFactory= LoadFactory(False, by_sig=[b'INGR'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         for record in modFile.tops[b'INGR'].getActiveRecords():
@@ -1846,7 +1835,7 @@ class IngredientDetails(_UsesEffectsMixin):
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         fid_stats = self.fid_stats
-        loadFactory = LoadFactory(True,MreRecord.type_class[b'INGR'])
+        loadFactory = LoadFactory(True, by_sig=[b'INGR'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         changed = [] #eids

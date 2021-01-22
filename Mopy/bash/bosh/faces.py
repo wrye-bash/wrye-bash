@@ -402,7 +402,7 @@ class PCFaces(object):
     def mod_getFaces(modInfo):
         """Returns an array of PCFaces from a mod file."""
         #--Mod File
-        loadFactory = LoadFactory(False,MreRecord.type_class[b'NPC_'])
+        loadFactory = LoadFactory(False, by_sig=[b'NPC_'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         short_mapper = modFile.getShortMapper()
@@ -428,7 +428,7 @@ class PCFaces(object):
     @staticmethod
     def mod_getRaceFaces(modInfo):
         """Returns an array of Race Faces from a mod file."""
-        loadFactory = LoadFactory(False,MreRecord.type_class[b'RACE'])
+        loadFactory = LoadFactory(False, by_sig=[b'RACE'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         faces = {}
@@ -444,7 +444,7 @@ class PCFaces(object):
     def mod_addFace(modInfo,face):
         """Writes a pcFace to a mod file."""
         #--Mod File
-        loadFactory = LoadFactory(True,MreRecord.type_class[b'NPC_'])
+        loadFactory = LoadFactory(True, by_sig=[b'NPC_'])
         modFile = ModFile(modInfo,loadFactory)
         if modInfo.getPath().exists():
             modFile.load(True)

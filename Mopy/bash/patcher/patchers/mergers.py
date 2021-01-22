@@ -91,15 +91,13 @@ class _AMerger(ImportPatcher):
 
     def initData(self,progress):
         if not self.isActive or not self.srcs: return
-        wanted_sigs = list(self._wanted_subrecord)
-        loadFactory = LoadFactory(False, *[MreRecord.type_class[x]
-                                           for x in wanted_sigs])
+        loadFactory = LoadFactory(False, by_sig=self._wanted_subrecord)
         progress.setFull(len(self.srcs))
         for index,srcMod in enumerate(self.srcs):
             srcInfo = self.patchFile.p_file_minfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
-            for block in wanted_sigs:
+            for block in self._wanted_subrecord:
                 if block not in srcFile.tops: continue
                 self._present_sigs.add(block)
                 for record in srcFile.tops[block].getActiveRecords():
@@ -308,8 +306,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         """Get data from source files."""
         if not self.isActive: return
         target_rec_types = self.target_rec_types
-        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x
-                                           in target_rec_types])
+        loadFactory = LoadFactory(False, by_sig=target_rec_types)
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
@@ -448,8 +445,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         """Get data from source files."""
         if not self.isActive: return
         target_rec_types = self._read_write_records
-        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x
-                                           in target_rec_types])
+        loadFactory = LoadFactory(False, by_sig=target_rec_types)
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted

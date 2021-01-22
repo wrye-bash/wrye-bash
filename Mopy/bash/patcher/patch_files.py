@@ -23,6 +23,7 @@
 from __future__ import print_function
 import time
 from collections import defaultdict, Counter
+from itertools import chain
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bolt # for type hints
@@ -186,17 +187,17 @@ class PatchFile(ModFile):
     def initFactories(self,progress):
         """Gets load factories."""
         progress(0, _(u'Processing.'))
-        readClasses = {x for x in bush.game.readClasses}
-        writeClasses = {x for x in bush.game.writeClasses}
-        for patcher in self._patcher_instances:
-            readClasses.update(
-                MreRecord.type_class[x] for x in patcher.getReadClasses())
-            writeClasses.update(
-                MreRecord.type_class[x] for x in patcher.getWriteClasses())
-        self.readFactory = LoadFactory(False, *readClasses)
-        self.loadFactory = LoadFactory(True, *writeClasses)
+        read_sigs = set(r.rec_sig for r in bush.game.readClasses) | set(
+            chain.from_iterable(
+                p.getReadClasses() for p in self._patcher_instances))
+        self.readFactory = LoadFactory(False, by_sig=read_sigs)
+        write_sigs = set(r.rec_sig for r in bush.game.writeClasses) | set(
+            chain.from_iterable(
+                p.getWriteClasses() for p in self._patcher_instances))
+        self.loadFactory = LoadFactory(True, by_sig=write_sigs)
         #--Merge Factory
-        self.mergeFactory = LoadFactory(False, *bush.game.mergeClasses)
+        self.mergeFactory = LoadFactory(False, by_sig=(r.rec_sig for r in
+                                                       bush.game.mergeClasses))
 
     def scanLoadMods(self,progress):
         """Scans load+merge mods."""

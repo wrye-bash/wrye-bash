@@ -21,7 +21,6 @@
 #
 # =============================================================================
 from .special import _ExSpecial ##: ugh
-from ....brec import MreRecord
 from ....mod_files import ModFile, LoadFactory
 from ....patcher.patchers.base import ImportPatcher
 
@@ -44,8 +43,7 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
     def initData(self,progress):
         """Get cells from source files."""
         if not self.isActive: return
-        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x in
-                                           self._read_write_records])
+        loadFactory = LoadFactory(False, by_sig=self._read_write_records)
         for srcMod in self.srcs:
             if srcMod not in self.patchFile.p_file_minfos: continue
             srcInfo = self.patchFile.p_file_minfos[srcMod]

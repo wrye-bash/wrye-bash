@@ -31,7 +31,6 @@ from collections import OrderedDict
 
 # Internal
 from ...bolt import build_esub, RecPath
-from ...brec import MreRecord  # yuck, see usage below
 from ...exception import AbstractError
 from ...mod_files import LoadFactory, ModFile  # yuck, see usage below
 from ...patcher.patchers.base import MultiTweakItem
@@ -275,7 +274,7 @@ class NamesTweak_Scrolls(_AMgefNamesTweak):
         # record types in some central place (and NOT by forwarding all records
         # into the BP!)
         self._look_up_ench = id_ench = {}
-        ench_factory = LoadFactory(False, MreRecord.type_class[b'ENCH'])
+        ench_factory = LoadFactory(False, by_sig=[b'ENCH'])
         for pl_path in patch_file.loadMods:
             ench_plugin = ModFile(patch_file.p_file_minfos[pl_path],
                                   ench_factory)

@@ -24,9 +24,8 @@
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
 from __future__ import print_function
-
-import re
 from collections import defaultdict
+from itertools import chain
 
 from . import bolt, bush, env, load_order
 from .bolt import deprint, GPath, SubProgress, structs_cache, struct_error
@@ -75,26 +74,35 @@ class MasterMap(object):
 
 class LoadFactory(object):
     """Factory for mod representation objects."""
-    def __init__(self,keepAll,*recClasses):
+    def __init__(self, keepAll, by_sig=(), generic=()): # PY3 keyword args
+        """Pass a collection of signatures to load - either by their
+        respective type or using generic MreRecord.
+        :param by_sig: pass an iterable of top group signatures to load
+        :type by_sig: Iterable[bytes]
+        :param generic: top group signatures to load as generic MreRecord
+        :type generic: Iterable[bytes]
+        """
         self.keepAll = keepAll
         self.recTypes = set()
         self.topTypes = set()
         self.type_class = {}
         self.cellType_class = {}
-        addClass = self.addClass
+        recClasses = chain(generic, (MreRecord.type_class[x] for x in by_sig))
         for recClass in recClasses:
-            addClass(recClass)
+            self.addClass(recClass)
 
     def addClass(self, recClass, __cell_rec_sigs=frozenset([b'WRLD', b'ROAD',
             b'CELL', b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'])):
         """Adds specified class."""
-        if isinstance(recClass, unicode):
-            raise RuntimeError(u'Do not pass strings to addClass!')
-        elif isinstance(recClass, bytes):
+        if type(recClass) is bytes:
             recType = recClass
             recClass = MreRecord
         else:
-            recType = recClass.rec_sig
+            try:
+                recType = recClass.rec_sig
+            except AttributeError:
+                raise ValueError(u'addClass: bytes or MreRecord expected '
+                                 u'- got: %r!' % recClass)
         #--Don't replace complex class with default (MreRecord) class
         if recType in self.type_class and recClass == MreRecord:
             return
@@ -176,7 +184,6 @@ class _RecGroupDict(dict):
                                       self._mod_file.loadFactory)
         self[top_grup_sig].setChanged()
         return self[top_grup_sig]
-
 
 class ModFile(object):
     """Plugin file representation. Will load only the top record types

@@ -79,6 +79,7 @@ class _APreserver(ImportPatcher):
         else:
             def collect_attrs(r, a):
                 return a + self._fid_rec_attrs.get(r, ())
+        ##: TODO: use the sigs as keys below not the classes?
         self.recAttrs_class = {MreRecord.type_class[r]: collect_attrs(r, a)
                                for r, a in self.rec_attrs.iteritems()}
         # Check if we need to use setattr_deep to set attributes
@@ -163,7 +164,8 @@ class _APreserver(ImportPatcher):
     def initData(self, progress, __attrgetters=attrgetter_cache):
         if not self.isActive: return
         id_data = self.id_data
-        loadFactory = LoadFactory(False, *self.recAttrs_class)
+        loadFactory = LoadFactory(False, by_sig=(c.rec_sig for c in
+                                                 self.recAttrs_class))
         progress.setFull(len(self.srcs) + len(self.csv_srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
@@ -487,8 +489,7 @@ class ImportCellsPatcher(ImportPatcher):
                     master_attr = __attrgetters[attr](cellBlock.cell)
                     if tempCellData[rec_fid][attr] != master_attr:
                         cellData[rec_fid][attr] = tempCellData[rec_fid][attr]
-        loadFactory = LoadFactory(False, MreRecord.type_class[b'CELL'],
-                                         MreRecord.type_class[b'WRLD'])
+        loadFactory = LoadFactory(False, by_sig=[b'CELL', b'WRLD'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
