@@ -41,8 +41,7 @@ class Abstract_Patcher(object):
     patcher_group = u'UNDEFINED'
     patcher_order = 10
     iiMode = False
-    # TODO naming (_patcher_top_sigs ?) and unify getTypes/read/writeClasses
-    _read_write_records = () # top group signatures this patcher patches
+    _read_sigs = () # top group signatures this patcher patches ##: type: tuple | set
 
     def getName(self):
         """Return patcher name passed in by the gui, needed for logs."""
@@ -58,13 +57,15 @@ class Patcher(Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
 
+    @property
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return self.__class__._read_write_records if self.isActive else ()
+        return self._read_sigs if self.isActive else ()
 
+    @property
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return self.__class__._read_write_records if self.isActive else ()
+        return self.getReadClasses
 
     def initData(self,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as

@@ -83,11 +83,9 @@ class _AMerger(ImportPatcher):
         subrecord is e.g. just a list of FormIDs)."""
         return subrecord_entry
 
-    def getReadClasses(self):
-        return tuple(self._present_sigs) if self.isActive else ()
-
-    def getWriteClasses(self):
-        return self.getReadClasses()
+    @property
+    def _read_sigs(self):
+        return tuple(self._present_sigs)
 
     def initData(self,progress):
         if not self.isActive or not self.srcs: return
@@ -390,13 +388,9 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                                                         pkg, recordData)
             progress.plus()
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return bush.game.actor_types if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return bush.game.actor_types if self.isActive else ()
+    @property
+    def _read_sigs(self):
+        return bush.game.actor_types
 
     def scanModFile(self, modFile, progress): # scanModFile2: loop, LongTypes..
         """Add record from modFile."""
@@ -439,12 +433,12 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         super(ImportActorsSpellsPatcher, self).__init__(p_name, p_file, p_sources)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
-        self._read_write_records = bush.game.actor_types
+        self._read_sigs = bush.game.actor_types
 
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        target_rec_types = self._read_write_records
+        target_rec_types = self._read_sigs
         loadFactory = LoadFactory(False, by_sig=target_rec_types)
         progress.setFull(len(self.srcs))
         cachedMasters = {}
@@ -551,7 +545,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
     def scanModFile(self, modFile, progress): # scanModFile2
         """Add record from modFile."""
         merged_deleted = self.id_merged_deleted
-        for top_grup_sig in self._read_write_records:
+        for top_grup_sig in self._read_sigs:
             patchBlock = self.patchFile.tops[top_grup_sig]
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 fid = record.fid
@@ -565,7 +559,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
         mod_count = Counter()
-        for top_grup_sig in self._read_write_records:
+        for top_grup_sig in self._read_sigs:
             for record in self.patchFile.tops[top_grup_sig].records:
                 fid = record.fid
                 if fid not in merged_deleted: continue

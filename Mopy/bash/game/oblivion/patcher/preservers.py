@@ -34,7 +34,7 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
     _config_key = u'RoadImporter'
 
     logMsg = u'\n=== ' + _(u'Worlds Patched')
-    _read_write_records = (b'CELL', b'WRLD', b'ROAD')
+    _read_sigs = (b'CELL', b'WRLD', b'ROAD')
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportRoadsPatcher, self).__init__(p_name, p_file, p_sources)
@@ -43,7 +43,7 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
     def initData(self,progress):
         """Get cells from source files."""
         if not self.isActive: return
-        loadFactory = LoadFactory(False, by_sig=self._read_write_records)
+        loadFactory = LoadFactory(False, by_sig=self._read_sigs)
         for srcMod in self.srcs:
             if srcMod not in self.patchFile.p_file_minfos: continue
             srcInfo = self.patchFile.p_file_minfos[srcMod]

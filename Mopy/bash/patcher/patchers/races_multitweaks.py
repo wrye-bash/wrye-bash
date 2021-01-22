@@ -302,7 +302,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
     """Race patcher - we inherit from AMultiTweaker to use tweak_instances."""
     patcher_group = u'Special'
     patcher_order = 40
-    _read_write_records = (b'RACE', b'EYES', b'HAIR', b'NPC_')
+    _read_sigs = (b'RACE', b'EYES', b'HAIR', b'NPC_')
     _tweak_classes = {
         RaceTweaker_BiggerOrcsAndNords, RaceTweaker_MergeSimilarRaceHairs,
         RaceTweaker_MergeSimilarRaceEyes, RaceTweaker_PlayableEyes,
@@ -342,7 +342,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
         # patcher will still run and blow up in scanModFile otherwise
         self._tweak_dict = t_dict = defaultdict(lambda: ([], []))
         for tweak in self.enabled_tweaks: # type: MultiTweakItem
-            for read_sig in tweak.getReadClasses():
+            for read_sig in tweak.tweak_read_classes:
                 t_dict[read_sig][tweak.supports_pooling].append(tweak)
         if not self.isActive or not self.srcs: return
         loadFactory = LoadFactory(False, by_sig=[b'RACE'])

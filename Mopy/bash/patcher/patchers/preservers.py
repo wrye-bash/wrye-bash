@@ -124,12 +124,9 @@ class _APreserver(ImportPatcher):
         for src_data in filtered_dict.itervalues():
             self.id_data.update(src_data)
 
-    def getReadClasses(self):
-        return tuple(
-            x.rec_sig for x in self.srcClasses) if self.isActive else ()
-
-    def getWriteClasses(self):
-        return self.getReadClasses()
+    @property
+    def _read_sigs(self):
+        return tuple(x.rec_sig for x in self.srcClasses)
 
     # noinspection PyDefaultArgument
     def _init_data_loop(self, recClass, srcFile, srcMod, temp_id_data,
@@ -146,7 +143,7 @@ class _APreserver(ImportPatcher):
             fid_attrs = set(chain.from_iterable(
                 attrs for t, attrs in fid_attrs.iteritems() if t in mod_tags))
         for record in srcFile.tops[recClass.rec_sig].iter_filtered_records(
-                self.getReadClasses()):
+                self.getReadClasses):
             # If we have FormID attributes, check those before importing
             if fid_attrs:
                 fid_attr_values = [__attrgetters[a](record) for a in fid_attrs]
@@ -199,7 +196,7 @@ class _APreserver(ImportPatcher):
                     if recClass not in self.classestemp: continue
                     for record in masterFile.tops[
                         recClass.rec_sig].iter_filtered_records(
-                        self.getReadClasses()): # ugh, looks hideous...
+                        self.getReadClasses): # ugh, looks hideous...
                         fid = record.fid
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
@@ -225,7 +222,7 @@ class _APreserver(ImportPatcher):
             # be updated by update_patch_records_from_mod/mergeModFile
             copied_records = patchBlock.id_records
             for record in modFile.tops[recClass.rec_sig].iter_filtered_records(
-                self.getReadClasses()):
+                self.getReadClasses):
                 fid = record.fid
                 # Skip if we've already copied this record or if we're not
                 # interested in it
@@ -260,7 +257,7 @@ class _APreserver(ImportPatcher):
             top_mod_rec = top_mod_class.rec_sig
             if top_mod_rec not in modFileTops: continue
             records = modFileTops[top_mod_rec].iter_filtered_records(
-                self.getReadClasses(), include_ignored=True)
+                self.getReadClasses, include_ignored=True)
             self._inner_loop(keep, records, top_mod_rec, type_count)
         self.id_data.clear() # cleanup to save memory
         # Log
@@ -445,7 +442,7 @@ class ImportWeaponModificationsPatcher(_APreserver):
 # _APreserver
 class ImportCellsPatcher(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
-    _read_write_records = (b'CELL', b'WRLD')
+    _read_sigs = (b'CELL', b'WRLD')
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportCellsPatcher, self).__init__(p_name, p_file, p_sources)

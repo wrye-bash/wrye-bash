@@ -58,7 +58,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         [_(u"Update COBL's catalogs of alchemical ingredients and effects."),
          _(u'Will only run if Cobl Main.esm is loaded.')])
     _config_key = u'AlchemicalCatalogs'
-    _read_write_records = (b'INGR',)
+    _read_sigs = (b'INGR',)
 
     @classmethod
     def gui_cls_vars(cls):
@@ -70,6 +70,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         self.isActive = (_cobl_main in p_file.loadSet)
         self.id_ingred = {}
 
+    @property
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
         return (b'BOOK',) if self.isActive else ()
@@ -193,7 +194,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
          _(u'Will only run if Cobl Main v1.66 (or higher) is active.')])
     _csv_key = u'Exhaust'
     _config_key = u'CoblExhaustion'
-    _read_write_records = (b'SPEL',)
+    _read_sigs = (b'SPEL',)
 
     def __init__(self, p_name, p_file, p_sources):
         super(CoblExhaustionPatcher, self).__init__(p_name, p_file, p_sources)
@@ -289,7 +290,7 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     _csv_key = u'MFact'
     _config_key = u'MFactMarker'
-    _read_write_records = (b'FACT',)
+    _read_sigs = (b'FACT',)
 
     def _pLog(self, log, changed):
         log.setHeader(u'= ' + self._patcher_name)
@@ -400,7 +401,7 @@ class SEWorldTestsPatcher(_ExSpecial, Patcher):
                      u"I.e. re-instates GetPlayerInSEWorld tests as "
                      u"necessary.")
     _config_key = u'SEWorldEnforcer'
-    _read_write_records = (b'QUST',)
+    _read_sigs = (b'QUST',)
 
     @classmethod
     def gui_cls_vars(cls):
