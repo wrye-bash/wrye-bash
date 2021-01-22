@@ -193,7 +193,7 @@ class ModFile(object):
         self.longFids = False
 
     def load(self, do_unpack=False, progress=None, loadStrings=True,
-             catch_errors=True):
+             catch_errors=True, do_map_fids=True):
         """Load file."""
         from . import bosh
         progress = progress or bolt.Progress()
@@ -265,7 +265,7 @@ class ModFile(object):
                         raise
                 subProgress(insTell())
         # Done reading - convert to long FormIDs at the IO boundary
-        self._convert_fids(to_long=True)
+        if do_map_fids: self._convert_fids(to_long=True)
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""

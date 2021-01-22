@@ -885,7 +885,7 @@ class MobCell(MobBase):
     def getBsb(self):
         """Returns tesfile block and sub-block indices for cells in this group.
         For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
-        bsb is ((blockY,blockX),(subblockY,subblockX))."""
+        bsb is ((blockY,blockX),(subblockY,subblockX)). Needs short fids!"""
         cell = self.cell
         #--Interior cell
         if cell.flags.isInterior:
@@ -1123,14 +1123,6 @@ class MobCells(MobBase):
         self.cellBlocks.remove(cell)
         del self.id_cellBlock[cell.fid]
 
-    def getUsedBlocks(self):
-        """Returns a set of blocks that exist in this group."""
-        return {x.getBsb()[0] for x in self.cellBlocks}
-
-    def getUsedSubblocks(self):
-        """Returns a set of block/sub-blocks that exist in this group."""
-        return {x.getBsb() for x in self.cellBlocks}
-
     def getBsbSizes(self):
         """Returns the total size of the block, but also returns a
         dictionary containing the sizes of the individual block,subblocks."""
@@ -1178,8 +1170,9 @@ class MobCells(MobBase):
         """Returns number of records, including self and all children."""
         count = sum(x.getNumRecords(includeGroups) for x in self.cellBlocks)
         if count and includeGroups:
-            count += 1 + len(self.getUsedBlocks()) + len(
-                self.getUsedSubblocks())
+            blocks_bsbs = {x2.getBsb() for x2 in self.cellBlocks} ##: needs short fids !!
+            # 1 GRUP header for every cellBlock and one for each separate (?) subblock
+            count += 1 + len(blocks_bsbs) + len({x1[0] for x1 in blocks_bsbs})
         return count
 
     #--Fid manipulation, record filtering ----------------------------------

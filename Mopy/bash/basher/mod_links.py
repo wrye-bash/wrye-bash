@@ -113,7 +113,7 @@ class Mod_RecalcRecordCounts(OneItemLink):
     def Execute(self):
         loadFactory = mod_files.LoadFactory(True)
         modFile = mod_files.ModFile(self._selected_info, loadFactory)
-        modFile.load(True)
+        modFile.load(True, do_map_fids=False)
         for topType, block in sorted(modFile.tops.iteritems(),
                 key=lambda t: t[0]):
             bolt.deprint(u'%s GRUP has %u records' % (
