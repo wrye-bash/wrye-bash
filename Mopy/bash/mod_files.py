@@ -190,7 +190,7 @@ class ModFile(object):
     specified in its LoadFactory."""
     def __init__(self, fileInfo,loadFactory=None):
         self.fileInfo = fileInfo
-        self.loadFactory = loadFactory or LoadFactory(True)
+        self.loadFactory = loadFactory or LoadFactory(True) ##: trace
         #--Variables to load
         self.tes4 = bush.game.plugin_header_class(RecHeader())
         self.tes4.setChanged()
