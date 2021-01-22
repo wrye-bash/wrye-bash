@@ -33,7 +33,7 @@ from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes
 from uuid import UUID
 
-from .bolt import GPath, deprint, Path, decoder, struct_unpack
+from .bolt import GPath, deprint, Path, decoder, structs_cache
 from .exception import BoltError, CancelError, SkipError, AccessDeniedError, \
     DirectoryFileCollisionError, FileOperationError, NonExistentDriveError
 
@@ -102,17 +102,18 @@ except ImportError:
 
     def _getShellPath(folderKey): ##: mkdirs
         if not winreg:  # Linux HACK
-            home = _os.path.expanduser("~")
-            return {'Personal': home,
-                    'Local AppData': home + u'/.local/share'}[folderKey]
+            home = _os.path.expanduser(u'~')
+            return {u'Personal': home,
+                    u'Local AppData': home + u'/.local/share'}[folderKey]
         regKey = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
                                 r'Software\Microsoft\Windows\CurrentVersion'
                                 r'\Explorer\User Shell Folders')
         try:
             path = winreg.QueryValueEx(regKey, folderKey)[0]
         except WindowsError:
-            raise BoltError(u'Can\'t find user directories in windows registry'
-                    u'.\n>> See "If Bash Won\'t Start" in bash docs for help.')
+            raise BoltError(u"Can't find user directories in windows registry."
+                            u'.\n>> See "If Bash Won\'t Start" in bash docs '
+                            u'for help.')
         regKey.Close()
         path = reEnv.sub(subEnv, path)
         return path
@@ -130,7 +131,7 @@ def get_personal_path():
         personal_path = get_known_path(FOLDERID.Documents)
         error_info = _(u'Folder path retrieved via SHGetKnownFolderPath')
     else:
-        personal_path = _getShellPath('Personal')
+        personal_path = _getShellPath(u'Personal')
         error_info = __get_error_info()
     return GPath(personal_path), error_info
 
@@ -139,7 +140,7 @@ def get_local_app_data_path():
         local_path = get_known_path(FOLDERID.LocalAppData)
         error_info = _(u'Folder path retrieved via SHGetKnownFolderPath')
     else:
-        local_path = _getShellPath('Local AppData')
+        local_path = _getShellPath(u'Local AppData')
         error_info = __get_error_info()
     return GPath(local_path), error_info
 
@@ -185,7 +186,7 @@ def _get_default_app_icon(idex, target):
             icon = _os.path.expandvars(icon)
         if not _os.path.isabs(icon):
             # Get the correct path to the dll
-            for dir_ in _os.environ['PATH'].split(u';'):
+            for dir_ in _os.environ[u'PATH'].split(u';'):
                 test = _os.path.join(dir_, icon)
                 if _os.path.exists(test):
                     icon = test
@@ -205,7 +206,7 @@ def _get_app_links(apps_dir):
     if win32client is None: return {}
     links = {}
     try:
-        sh = win32client.Dispatch('WScript.Shell')
+        sh = win32client.Dispatch(u'WScript.Shell')
         for lnk in apps_dir.list():
             lnk = apps_dir.join(lnk)
             if lnk.cext == u'.lnk' and lnk.isfile():
@@ -429,12 +430,12 @@ def _query_fixed_field_version(file_name, version_prefix):
 def _linux_get_file_version_info(filename):
     """A python replacement for win32api.GetFileVersionInfo that can be used
     on systems where win32api isn't available."""
-    _WORD, _DWORD = (('H', 2), ('I', 4))
-    def _read(fmt, file_obj, offset=0, count=1, absolute=False):
+    _WORD, _DWORD = structs_cache[u'<H'].unpack_from, structs_cache[
+        u'<I'].unpack_from
+    def _read(_struct_unp, file_obj, offset=0, count=1, absolute=False):
         """Read one or more chunks from the file, either a word or dword."""
         file_obj.seek(offset, not absolute)
-        result = [struct_unpack('<' + fmt[0], file_obj.read(fmt[1]))[0]
-                  for x in xrange(count)]
+        result = [_struct_unp(file_obj)[0] for x in xrange(count)] ##: array.fromfile(f, n)
         return result[0] if count == 1 else result
     def _find_version(file_obj, pos, offset):
         """Look through the RT_VERSION and return VS_VERSION_INFO."""
@@ -449,7 +450,7 @@ def _linux_get_file_version_info(filename):
         offset = _pad(file_obj.tell()) - pos
         file_obj.seek(pos + offset)
         if type_ == 0: # binary data
-            if info[:-1] == 'VS_VERSION_INFO':
+            if info[:-1] == u'VS_VERSION_INFO':
                 file_v = _read(_WORD, file_obj, count=4, offset=8)
                 # prod_v = _read(_WORD, f, count=4) # this isn't used
                 return 0, (file_v[1], file_v[0], file_v[3], file_v[2])
@@ -477,7 +478,7 @@ def _linux_get_file_version_info(filename):
         for section_num in xrange(section_count):
             section_pos = section_table_pos + 40 * section_num
             f.seek(section_pos)
-            if f.read(8).rstrip('\x00') != '.rsrc':  # section name_
+            if f.read(8).rstrip(b'\x00') != b'.rsrc':  # section name_
                 continue
             section_va = _read(_DWORD, f, offset=4)
             raw_data_pos = _read(_DWORD, f, offset=4)
@@ -619,8 +620,8 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             # silent - no real effect (we don't show visuals deleting this way)
             if confirm:
                 message = _(u'Are you sure you want to permanently delete '
-                            u'these %(count)d items?') % {'count':len(source)}
-                message += u'\n\n' + '\n'.join([u' * %s' % x for x in source])
+                            u'these %(count)d items?') % {u'count':len(source)}
+                message += u'\n\n' + u'\n'.join([u' * %s' % x for x in source])
                 if not balt.askYes(parent,message,_(u'Delete Multiple Items')):
                     return {}
             # Do deletion
@@ -651,7 +652,7 @@ def shellDeletePass(node, parent=None):
     """Delete tmp dirs/files - ignore errors (but log them)."""
     if node.exists():
         try: shellDelete(node, parent=parent, confirm=False, recycle=False)
-        except OSError: deprint(u"Error deleting %s:" % node, traceback=True)
+        except OSError: deprint(u'Error deleting %s:' % node, traceback=True)
 
 def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
               allowUndo=False, autoRename=False, silent=False):
@@ -673,8 +674,8 @@ def shellMakeDirs(dirs, parent=None):
     #--Check for dirs that are impossible to create (the drive they are
     #  supposed to be on doesn't exist
     def _filterUnixPaths(path):
-        return _os.name != 'posix' and not path.s.startswith(u"\\")\
-               and not path.drive().exists()
+        return (_os.name != u'posix' and not path.s.startswith(u'\\')
+                and not path.drive().exists())
     errorPaths = [d for d in dirs if _filterUnixPaths(d)]
     if errorPaths:
         raise NonExistentDriveError(errorPaths)
@@ -720,9 +721,9 @@ def setUAC(handle, uac=True):
         win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
 def testUAC(gameDataPath):
-    if _os.name != 'nt': # skip this when not in Windows
+    if _os.name != u'nt': # skip this when not in Windows
         return False
-    print('testing UAC')
+    print(u'testing UAC')
     tmpDir = Path.tempDir()
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
@@ -738,22 +739,22 @@ def testUAC(gameDataPath):
 
 def getJava():
     """Locate javaw.exe to launch jars from Bash."""
-    if _os.name == 'posix':
+    if _os.name == u'posix':
         import subprocess
-        java_bin_path = ''
+        java_bin_path = u''
         try:
-            java_bin_path = subprocess.check_output('command -v java',
-                                                    shell=True).rstrip('\n')
+            java_bin_path = subprocess.check_output(u'command -v java',
+                                                    shell=True).rstrip(u'\n')
         except subprocess.CalledProcessError:
             pass # what happens when java doesn't exist?
         return GPath(java_bin_path)
     try:
-        java_home = GPath(_os.environ['JAVA_HOME'])
-        java = java_home.join('bin', u'javaw.exe')
+        java_home = GPath(_os.environ[u'JAVA_HOME'])
+        java = java_home.join(u'bin', u'javaw.exe')
         if java.exists(): return java
     except KeyError: # no JAVA_HOME
         pass
-    win = GPath(_os.environ['SYSTEMROOT'])
+    win = GPath(_os.environ[u'SYSTEMROOT'])
     # Default location: Windows\System32\javaw.exe
     java = win.join(u'system32', u'javaw.exe')
     if not java.exists():
@@ -779,12 +780,13 @@ def getJava():
 # Modifications made for py3 compatibility and to conform to our code style
 # BEGIN MIT-LICENSED PART =====================================================
 # http://msdn.microsoft.com/en-us/library/windows/desktop/aa373931.aspx
+# PY3: Verify that this struct actually needs unicode strings, not bytes
 class GUID(Structure):
     _fields_ = [
-        ("Data1", wintypes.DWORD),
-        ("Data2", wintypes.WORD),
-        ("Data3", wintypes.WORD),
-        ("Data4", wintypes.BYTE * 8)
+        (u'Data1', wintypes.DWORD),
+        (u'Data2', wintypes.WORD),
+        (u'Data3', wintypes.WORD),
+        (u'Data4', wintypes.BYTE * 8)
     ]
 
     def __init__(self, uuid_):
@@ -796,100 +798,100 @@ class GUID(Structure):
 
 # http://msdn.microsoft.com/en-us/library/windows/desktop/dd378457.aspx
 class FOLDERID(object):
-    AccountPictures         = UUID('{008ca0b1-55b4-4c56-b8a8-4de4b299d3be}')
-    AdminTools              = UUID('{724EF170-A42D-4FEF-9F26-B60E846FBA4F}')
-    ApplicationShortcuts    = UUID('{A3918781-E5F2-4890-B3D9-A7E54332328C}')
-    CameraRoll              = UUID('{AB5FB87B-7CE2-4F83-915D-550846C9537B}')
-    CDBurning               = UUID('{9E52AB10-F80D-49DF-ACB8-4330F5687855}')
-    CommonAdminTools        = UUID('{D0384E7D-BAC3-4797-8F14-CBA229B392B5}')
-    CommonOEMLinks          = UUID('{C1BAE2D0-10DF-4334-BEDD-7AA20B227A9D}')
-    CommonPrograms          = UUID('{0139D44E-6AFE-49F2-8690-3DAFCAE6FFB8}')
-    CommonStartMenu         = UUID('{A4115719-D62E-491D-AA7C-E74B8BE3B067}')
-    CommonStartup           = UUID('{82A5EA35-D9CD-47C5-9629-E15D2F714E6E}')
-    CommonTemplates         = UUID('{B94237E7-57AC-4347-9151-B08C6C32D1F7}')
-    Contacts                = UUID('{56784854-C6CB-462b-8169-88E350ACB882}')
-    Cookies                 = UUID('{2B0F765D-C0E9-4171-908E-08A611B84FF6}')
-    Desktop                 = UUID('{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}')
-    DeviceMetadataStore     = UUID('{5CE4A5E9-E4EB-479D-B89F-130C02886155}')
-    Documents               = UUID('{FDD39AD0-238F-46AF-ADB4-6C85480369C7}')
-    DocumentsLibrary        = UUID('{7B0DB17D-9CD2-4A93-9733-46CC89022E7C}')
-    Downloads               = UUID('{374DE290-123F-4565-9164-39C4925E467B}')
-    Favorites               = UUID('{1777F761-68AD-4D8A-87BD-30B759FA33DD}')
-    Fonts                   = UUID('{FD228CB7-AE11-4AE3-864C-16F3910AB8FE}')
-    GameTasks               = UUID('{054FAE61-4DD8-4787-80B6-090220C4B700}')
-    History                 = UUID('{D9DC8A3B-B784-432E-A781-5A1130A75963}')
-    ImplicitAppShortcuts    = UUID('{BCB5256F-79F6-4CEE-B725-DC34E402FD46}')
-    InternetCache           = UUID('{352481E8-33BE-4251-BA85-6007CAEDCF9D}')
-    Libraries               = UUID('{1B3EA5DC-B587-4786-B4EF-BD1DC332AEAE}')
-    Links                   = UUID('{bfb9d5e0-c6a9-404c-b2b2-ae6db6af4968}')
-    LocalAppData            = UUID('{F1B32785-6FBA-4FCF-9D55-7B8E7F157091}')
-    LocalAppDataLow         = UUID('{A520A1A4-1780-4FF6-BD18-167343C5AF16}')
-    LocalizedResourcesDir   = UUID('{2A00375E-224C-49DE-B8D1-440DF7EF3DDC}')
-    Music                   = UUID('{4BD8D571-6D19-48D3-BE97-422220080E43}')
-    MusicLibrary            = UUID('{2112AB0A-C86A-4FFE-A368-0DE96E47012E}')
-    NetHood                 = UUID('{C5ABBF53-E17F-4121-8900-86626FC2C973}')
-    OriginalImages          = UUID('{2C36C0AA-5812-4b87-BFD0-4CD0DFB19B39}')
-    PhotoAlbums             = UUID('{69D2CF90-FC33-4FB7-9A0C-EBB0F0FCB43C}')
-    PicturesLibrary         = UUID('{A990AE9F-A03B-4E80-94BC-9912D7504104}')
-    Pictures                = UUID('{33E28130-4E1E-4676-835A-98395C3BC3BB}')
-    Playlists               = UUID('{DE92C1C7-837F-4F69-A3BB-86E631204A23}')
-    PrintHood               = UUID('{9274BD8D-CFD1-41C3-B35E-B13F55A758F4}')
-    Profile                 = UUID('{5E6C858F-0E22-4760-9AFE-EA3317B67173}')
-    ProgramData             = UUID('{62AB5D82-FDC1-4DC3-A9DD-070D1D495D97}')
-    ProgramFiles            = UUID('{905e63b6-c1bf-494e-b29c-65b732d3d21a}')
-    ProgramFilesX64         = UUID('{6D809377-6AF0-444b-8957-A3773F02200E}')
-    ProgramFilesX86         = UUID('{7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E}')
-    ProgramFilesCommon      = UUID('{F7F1ED05-9F6D-47A2-AAAE-29D317C6F066}')
-    ProgramFilesCommonX64   = UUID('{6365D5A7-0F0D-45E5-87F6-0DA56B6A4F7D}')
-    ProgramFilesCommonX86   = UUID('{DE974D24-D9C6-4D3E-BF91-F4455120B917}')
-    Programs                = UUID('{A77F5D77-2E2B-44C3-A6A2-ABA601054A51}')
-    Public                  = UUID('{DFDF76A2-C82A-4D63-906A-5644AC457385}')
-    PublicDesktop           = UUID('{C4AA340D-F20F-4863-AFEF-F87EF2E6BA25}')
-    PublicDocuments         = UUID('{ED4824AF-DCE4-45A8-81E2-FC7965083634}')
-    PublicDownloads         = UUID('{3D644C9B-1FB8-4f30-9B45-F670235F79C0}')
-    PublicGameTasks         = UUID('{DEBF2536-E1A8-4c59-B6A2-414586476AEA}')
-    PublicLibraries         = UUID('{48DAF80B-E6CF-4F4E-B800-0E69D84EE384}')
-    PublicMusic             = UUID('{3214FAB5-9757-4298-BB61-92A9DEAA44FF}')
-    PublicPictures          = UUID('{B6EBFB86-6907-413C-9AF7-4FC2ABF07CC5}')
-    PublicRingtones         = UUID('{E555AB60-153B-4D17-9F04-A5FE99FC15EC}')
-    PublicUserTiles         = UUID('{0482af6c-08f1-4c34-8c90-e17ec98b1e17}')
-    PublicVideos            = UUID('{2400183A-6185-49FB-A2D8-4A392A602BA3}')
-    QuickLaunch             = UUID('{52a4f021-7b75-48a9-9f6b-4b87a210bc8f}')
-    Recent                  = UUID('{AE50C081-EBD2-438A-8655-8A092E34987A}')
-    RecordedTVLibrary       = UUID('{1A6FDBA2-F42D-4358-A798-B74D745926C5}')
-    ResourceDir             = UUID('{8AD10C31-2ADB-4296-A8F7-E4701232C972}')
-    Ringtones               = UUID('{C870044B-F49E-4126-A9C3-B52A1FF411E8}')
-    RoamingAppData          = UUID('{3EB685DB-65F9-4CF6-A03A-E3EF65729F3D}')
-    RoamedTileImages        = UUID('{AAA8D5A5-F1D6-4259-BAA8-78E7EF60835E}')
-    RoamingTiles            = UUID('{00BCFC5A-ED94-4e48-96A1-3F6217F21990}')
-    SampleMusic             = UUID('{B250C668-F57D-4EE1-A63C-290EE7D1AA1F}')
-    SamplePictures          = UUID('{C4900540-2379-4C75-844B-64E6FAF8716B}')
-    SamplePlaylists         = UUID('{15CA69B3-30EE-49C1-ACE1-6B5EC372AFB5}')
-    SampleVideos            = UUID('{859EAD94-2E85-48AD-A71A-0969CB56A6CD}')
-    SavedGames              = UUID('{4C5C32FF-BB9D-43b0-B5B4-2D72E54EAAA4}')
-    SavedSearches           = UUID('{7d1d3a04-debb-4115-95cf-2f29da2920da}')
-    Screenshots             = UUID('{b7bede81-df94-4682-a7d8-57a52620b86f}')
-    SearchHistory           = UUID('{0D4C3DB6-03A3-462F-A0E6-08924C41B5D4}')
-    SearchTemplates         = UUID('{7E636BFE-DFA9-4D5E-B456-D7B39851D8A9}')
-    SendTo                  = UUID('{8983036C-27C0-404B-8F08-102D10DCFD74}')
-    SidebarDefaultParts     = UUID('{7B396E54-9EC5-4300-BE0A-2482EBAE1A26}')
-    SidebarParts            = UUID('{A75D362E-50FC-4fb7-AC2C-A8BEAA314493}')
-    SkyDrive                = UUID('{A52BBA46-E9E1-435f-B3D9-28DAA648C0F6}')
-    SkyDriveCameraRoll      = UUID('{767E6811-49CB-4273-87C2-20F355E1085B}')
-    SkyDriveDocuments       = UUID('{24D89E24-2F19-4534-9DDE-6A6671FBB8FE}')
-    SkyDrivePictures        = UUID('{339719B5-8C47-4894-94C2-D8F77ADD44A6}')
-    StartMenu               = UUID('{625B53C3-AB48-4EC1-BA1F-A1EF4146FC19}')
-    Startup                 = UUID('{B97D20BB-F46A-4C97-BA10-5E3608430854}')
-    System                  = UUID('{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}')
-    SystemX86               = UUID('{D65231B0-B2F1-4857-A4CE-A8E7C6EA7D27}')
-    Templates               = UUID('{A63293E8-664E-48DB-A079-DF759E0509F7}')
-    UserPinned              = UUID('{9E3995AB-1F9C-4F13-B827-48B24B6C7174}')
-    UserProfiles            = UUID('{0762D272-C50A-4BB0-A382-697DCD729B80}')
-    UserProgramFiles        = UUID('{5CD7AEE2-2219-4A67-B85D-6C9CE15660CB}')
-    UserProgramFilesCommon  = UUID('{BCBD3057-CA5C-4622-B42D-BC56DB0AE516}')
-    Videos                  = UUID('{18989B1D-99B5-455B-841C-AB7C74E4DDFC}')
-    VideosLibrary           = UUID('{491E922F-5643-4AF4-A7EB-4E7A138D8174}')
-    Windows                 = UUID('{F38BF404-1D43-42F2-9305-67DE0B28FC23}')
+    AccountPictures         = UUID(u'{008ca0b1-55b4-4c56-b8a8-4de4b299d3be}')
+    AdminTools              = UUID(u'{724EF170-A42D-4FEF-9F26-B60E846FBA4F}')
+    ApplicationShortcuts    = UUID(u'{A3918781-E5F2-4890-B3D9-A7E54332328C}')
+    CameraRoll              = UUID(u'{AB5FB87B-7CE2-4F83-915D-550846C9537B}')
+    CDBurning               = UUID(u'{9E52AB10-F80D-49DF-ACB8-4330F5687855}')
+    CommonAdminTools        = UUID(u'{D0384E7D-BAC3-4797-8F14-CBA229B392B5}')
+    CommonOEMLinks          = UUID(u'{C1BAE2D0-10DF-4334-BEDD-7AA20B227A9D}')
+    CommonPrograms          = UUID(u'{0139D44E-6AFE-49F2-8690-3DAFCAE6FFB8}')
+    CommonStartMenu         = UUID(u'{A4115719-D62E-491D-AA7C-E74B8BE3B067}')
+    CommonStartup           = UUID(u'{82A5EA35-D9CD-47C5-9629-E15D2F714E6E}')
+    CommonTemplates         = UUID(u'{B94237E7-57AC-4347-9151-B08C6C32D1F7}')
+    Contacts                = UUID(u'{56784854-C6CB-462b-8169-88E350ACB882}')
+    Cookies                 = UUID(u'{2B0F765D-C0E9-4171-908E-08A611B84FF6}')
+    Desktop                 = UUID(u'{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}')
+    DeviceMetadataStore     = UUID(u'{5CE4A5E9-E4EB-479D-B89F-130C02886155}')
+    Documents               = UUID(u'{FDD39AD0-238F-46AF-ADB4-6C85480369C7}')
+    DocumentsLibrary        = UUID(u'{7B0DB17D-9CD2-4A93-9733-46CC89022E7C}')
+    Downloads               = UUID(u'{374DE290-123F-4565-9164-39C4925E467B}')
+    Favorites               = UUID(u'{1777F761-68AD-4D8A-87BD-30B759FA33DD}')
+    Fonts                   = UUID(u'{FD228CB7-AE11-4AE3-864C-16F3910AB8FE}')
+    GameTasks               = UUID(u'{054FAE61-4DD8-4787-80B6-090220C4B700}')
+    History                 = UUID(u'{D9DC8A3B-B784-432E-A781-5A1130A75963}')
+    ImplicitAppShortcuts    = UUID(u'{BCB5256F-79F6-4CEE-B725-DC34E402FD46}')
+    InternetCache           = UUID(u'{352481E8-33BE-4251-BA85-6007CAEDCF9D}')
+    Libraries               = UUID(u'{1B3EA5DC-B587-4786-B4EF-BD1DC332AEAE}')
+    Links                   = UUID(u'{bfb9d5e0-c6a9-404c-b2b2-ae6db6af4968}')
+    LocalAppData            = UUID(u'{F1B32785-6FBA-4FCF-9D55-7B8E7F157091}')
+    LocalAppDataLow         = UUID(u'{A520A1A4-1780-4FF6-BD18-167343C5AF16}')
+    LocalizedResourcesDir   = UUID(u'{2A00375E-224C-49DE-B8D1-440DF7EF3DDC}')
+    Music                   = UUID(u'{4BD8D571-6D19-48D3-BE97-422220080E43}')
+    MusicLibrary            = UUID(u'{2112AB0A-C86A-4FFE-A368-0DE96E47012E}')
+    NetHood                 = UUID(u'{C5ABBF53-E17F-4121-8900-86626FC2C973}')
+    OriginalImages          = UUID(u'{2C36C0AA-5812-4b87-BFD0-4CD0DFB19B39}')
+    PhotoAlbums             = UUID(u'{69D2CF90-FC33-4FB7-9A0C-EBB0F0FCB43C}')
+    PicturesLibrary         = UUID(u'{A990AE9F-A03B-4E80-94BC-9912D7504104}')
+    Pictures                = UUID(u'{33E28130-4E1E-4676-835A-98395C3BC3BB}')
+    Playlists               = UUID(u'{DE92C1C7-837F-4F69-A3BB-86E631204A23}')
+    PrintHood               = UUID(u'{9274BD8D-CFD1-41C3-B35E-B13F55A758F4}')
+    Profile                 = UUID(u'{5E6C858F-0E22-4760-9AFE-EA3317B67173}')
+    ProgramData             = UUID(u'{62AB5D82-FDC1-4DC3-A9DD-070D1D495D97}')
+    ProgramFiles            = UUID(u'{905e63b6-c1bf-494e-b29c-65b732d3d21a}')
+    ProgramFilesX64         = UUID(u'{6D809377-6AF0-444b-8957-A3773F02200E}')
+    ProgramFilesX86         = UUID(u'{7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E}')
+    ProgramFilesCommon      = UUID(u'{F7F1ED05-9F6D-47A2-AAAE-29D317C6F066}')
+    ProgramFilesCommonX64   = UUID(u'{6365D5A7-0F0D-45E5-87F6-0DA56B6A4F7D}')
+    ProgramFilesCommonX86   = UUID(u'{DE974D24-D9C6-4D3E-BF91-F4455120B917}')
+    Programs                = UUID(u'{A77F5D77-2E2B-44C3-A6A2-ABA601054A51}')
+    Public                  = UUID(u'{DFDF76A2-C82A-4D63-906A-5644AC457385}')
+    PublicDesktop           = UUID(u'{C4AA340D-F20F-4863-AFEF-F87EF2E6BA25}')
+    PublicDocuments         = UUID(u'{ED4824AF-DCE4-45A8-81E2-FC7965083634}')
+    PublicDownloads         = UUID(u'{3D644C9B-1FB8-4f30-9B45-F670235F79C0}')
+    PublicGameTasks         = UUID(u'{DEBF2536-E1A8-4c59-B6A2-414586476AEA}')
+    PublicLibraries         = UUID(u'{48DAF80B-E6CF-4F4E-B800-0E69D84EE384}')
+    PublicMusic             = UUID(u'{3214FAB5-9757-4298-BB61-92A9DEAA44FF}')
+    PublicPictures          = UUID(u'{B6EBFB86-6907-413C-9AF7-4FC2ABF07CC5}')
+    PublicRingtones         = UUID(u'{E555AB60-153B-4D17-9F04-A5FE99FC15EC}')
+    PublicUserTiles         = UUID(u'{0482af6c-08f1-4c34-8c90-e17ec98b1e17}')
+    PublicVideos            = UUID(u'{2400183A-6185-49FB-A2D8-4A392A602BA3}')
+    QuickLaunch             = UUID(u'{52a4f021-7b75-48a9-9f6b-4b87a210bc8f}')
+    Recent                  = UUID(u'{AE50C081-EBD2-438A-8655-8A092E34987A}')
+    RecordedTVLibrary       = UUID(u'{1A6FDBA2-F42D-4358-A798-B74D745926C5}')
+    ResourceDir             = UUID(u'{8AD10C31-2ADB-4296-A8F7-E4701232C972}')
+    Ringtones               = UUID(u'{C870044B-F49E-4126-A9C3-B52A1FF411E8}')
+    RoamingAppData          = UUID(u'{3EB685DB-65F9-4CF6-A03A-E3EF65729F3D}')
+    RoamedTileImages        = UUID(u'{AAA8D5A5-F1D6-4259-BAA8-78E7EF60835E}')
+    RoamingTiles            = UUID(u'{00BCFC5A-ED94-4e48-96A1-3F6217F21990}')
+    SampleMusic             = UUID(u'{B250C668-F57D-4EE1-A63C-290EE7D1AA1F}')
+    SamplePictures          = UUID(u'{C4900540-2379-4C75-844B-64E6FAF8716B}')
+    SamplePlaylists         = UUID(u'{15CA69B3-30EE-49C1-ACE1-6B5EC372AFB5}')
+    SampleVideos            = UUID(u'{859EAD94-2E85-48AD-A71A-0969CB56A6CD}')
+    SavedGames              = UUID(u'{4C5C32FF-BB9D-43b0-B5B4-2D72E54EAAA4}')
+    SavedSearches           = UUID(u'{7d1d3a04-debb-4115-95cf-2f29da2920da}')
+    Screenshots             = UUID(u'{b7bede81-df94-4682-a7d8-57a52620b86f}')
+    SearchHistory           = UUID(u'{0D4C3DB6-03A3-462F-A0E6-08924C41B5D4}')
+    SearchTemplates         = UUID(u'{7E636BFE-DFA9-4D5E-B456-D7B39851D8A9}')
+    SendTo                  = UUID(u'{8983036C-27C0-404B-8F08-102D10DCFD74}')
+    SidebarDefaultParts     = UUID(u'{7B396E54-9EC5-4300-BE0A-2482EBAE1A26}')
+    SidebarParts            = UUID(u'{A75D362E-50FC-4fb7-AC2C-A8BEAA314493}')
+    SkyDrive                = UUID(u'{A52BBA46-E9E1-435f-B3D9-28DAA648C0F6}')
+    SkyDriveCameraRoll      = UUID(u'{767E6811-49CB-4273-87C2-20F355E1085B}')
+    SkyDriveDocuments       = UUID(u'{24D89E24-2F19-4534-9DDE-6A6671FBB8FE}')
+    SkyDrivePictures        = UUID(u'{339719B5-8C47-4894-94C2-D8F77ADD44A6}')
+    StartMenu               = UUID(u'{625B53C3-AB48-4EC1-BA1F-A1EF4146FC19}')
+    Startup                 = UUID(u'{B97D20BB-F46A-4C97-BA10-5E3608430854}')
+    System                  = UUID(u'{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}')
+    SystemX86               = UUID(u'{D65231B0-B2F1-4857-A4CE-A8E7C6EA7D27}')
+    Templates               = UUID(u'{A63293E8-664E-48DB-A079-DF759E0509F7}')
+    UserPinned              = UUID(u'{9E3995AB-1F9C-4F13-B827-48B24B6C7174}')
+    UserProfiles            = UUID(u'{0762D272-C50A-4BB0-A382-697DCD729B80}')
+    UserProgramFiles        = UUID(u'{5CD7AEE2-2219-4A67-B85D-6C9CE15660CB}')
+    UserProgramFilesCommon  = UUID(u'{BCBD3057-CA5C-4622-B42D-BC56DB0AE516}')
+    Videos                  = UUID(u'{18989B1D-99B5-455B-841C-AB7C74E4DDFC}')
+    VideosLibrary           = UUID(u'{491E922F-5643-4AF4-A7EB-4E7A138D8174}')
+    Windows                 = UUID(u'{F38BF404-1D43-42F2-9305-67DE0B28FC23}')
 
 # http://msdn.microsoft.com/en-us/library/windows/desktop/bb762188.aspx
 class UserHandle(object):

@@ -703,9 +703,9 @@ def InitSaveLinks():
         SaveList.context_links.append(Save_RenamePlayer())
         SaveList.context_links.append(Save_EditCreatedEnchantmentCosts())
         SaveList.context_links.append(Save_ImportFace())
-        SaveList.context_links.append(Save_EditCreated('ENCH'))
-        SaveList.context_links.append(Save_EditCreated('ALCH'))
-        SaveList.context_links.append(Save_EditCreated('SPEL'))
+        SaveList.context_links.append(Save_EditCreated(b'ENCH'))
+        SaveList.context_links.append(Save_EditCreated(b'ALCH'))
+        SaveList.context_links.append(Save_EditCreated(b'SPEL'))
         SaveList.context_links.append(Save_ReweighPotions())
         SaveList.context_links.append(Save_UpdateNPCLevels())
     #--------------------------------------------

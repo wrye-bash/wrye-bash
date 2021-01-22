@@ -81,7 +81,7 @@ def setup_locale(cli_lang):
         # WB does not support the default language, use English instead
         target_locale = _wx.Locale(_wx.LANGUAGE_ENGLISH)
         bolt.deprint(u"No translation file for language '%s', falling back to "
-                     u"English" % target_name)
+                     u'English' % target_name)
         target_name = target_locale.GetSysName().split(u'_', 1)[0]
     bolt.deprint(u"Set wx locale to '%s' (%s)" % (
         target_name, target_locale.GetCanonicalName()))
@@ -283,22 +283,21 @@ def format_date(secs): # type: (float) -> unicode
         local = time.localtime(secs)
     except ValueError: # local time in windows can't handle negative values
         local = time.gmtime(secs)
-    return bolt.decoder(time.strftime('%c', local),
+    return bolt.decoder(time.strftime(u'%c', local), ##: decoder?
                         locale.getpreferredencoding(do_setlocale=False))
 
 # PY3: Probably drop in py3?
-def unformat_date(date_str, format_str):
+def unformat_date(date_str):
     """Basically a wrapper around time.strptime. Exists to get around bug in
     strptime for Japanese locale.
 
-    :type date_str: str
-    :type format_str: str"""
+    :type date_str: str"""
     try:
-        return time.strptime(date_str, '%c')
+        return time.strptime(date_str, u'%c')
     except ValueError:
-        if format_str == '%c' and bass.active_locale.lower() == u'japanese':
+        if bass.active_locale.lower() == u'japanese':
             date_str = re.sub(u'^([0-9]{4})/([1-9])', r'\1/0\2', date_str,
                               flags=re.U)
-            return time.strptime(date_str, '%c')
+            return time.strptime(date_str, u'%c')
         else:
             raise
