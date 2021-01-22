@@ -1634,7 +1634,7 @@ class Mod_SetVersion(OneItemLink):
 # Import/Export submenus ------------------------------------------------------
 #------------------------------------------------------------------------------
 #--Import only
-from ..parsers import FidReplacer
+from ..parsers import FidReplacer, _AParser
 
 class Mod_Fids_Replace(OneItemLink):
     """Replace fids according to text file."""
@@ -1750,8 +1750,9 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
     noChange = _(u'No changes required.')
     supportedExts = {u'.csv'}
     progressTitle = continueInfo = continueKey = u'OVERRIDE'
+    _parser_class = _AParser
 
-    def _parser(self): raise AbstractError
+    def _parser(self): return self.__class__._parser_class()
     @property
     def _wildcard(self):
         if len(self.supportedExts) == 1: return u'*' + self.__class__.csvFile
@@ -1849,9 +1850,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
         u'file.') + u'\n\n' + _(u'See the Bash help file for more info.')
     continueKey = u'bash.actorLevels.import.continue'
     noChange = _(u'No relevant NPC levels to import.')
-
-    def _parser(self):
-        return ActorLevels()
+    _parser_class = ActorLevels
 
 #------------------------------------------------------------------------------
 from ..parsers import FactionRelations
@@ -1880,9 +1879,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
         u'See the Bash help file for more info.')
     continueKey = u'bash.factionRelations.import.continue'
     noChange = _(u'No relevant faction relations to import.')
-
-    def _parser(self):
-        return FactionRelations()
+    _parser_class = FactionRelations
 
 #------------------------------------------------------------------------------
 from ..parsers import ActorFactions
@@ -1910,9 +1907,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
         u'file.') + u'\n\n' + _(u'See the Bash help file for more info.')
     continueKey = u'bash.factionRanks.import.continue'
     noChange = _(u'No relevant faction ranks to import.')
-
-    def _parser(self):
-        return ActorFactions()
+    _parser_class = ActorFactions
 
     def _log(self, changed, fileName):
         log_out = u'\n'.join(
@@ -1996,9 +1991,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         u'scripts and is not reversible (except by restoring from backup)!')
     continueKey = u'bash.scripts.import.continue'
     progressTitle = _(u'Import Scripts')
-
-    def _parser(self):
-        return ScriptText()
+    _parser_class = ScriptText
 
     def Execute(self):
         if not self._askContinueImport(): return
@@ -2072,9 +2065,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
                      u'existing stats and is not reversible!')
     continueKey = u'bash.stats.import.continue'
     noChange = _(u'No relevant stats to import.')
-
-    def _parser(self):
-        return ItemStats()
+    _parser_class = ItemStats
 
     def _log(self, changed, fileName):
         buff = io.StringIO()
@@ -2108,9 +2099,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
     continueKey = u'bash.prices.import.continue'
     noChange = _(u'No relevant prices to import.')
     supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
-
-    def _parser(self):
-        return ItemPrices()
+    _parser_class = ItemPrices
 
     def _log(self, changed, fileName):
         buff = io.StringIO()
@@ -2146,9 +2135,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
         u'not reversible!')
     continueKey = u'bash.SigilStone.import.continue'
     noChange = _(u'No relevant Sigil Stone details to import.')
-
-    def _parser(self):
-        return SigilStoneDetails()
+    _parser_class = SigilStoneDetails
 
     def _log(self, changed, fileName):
         buff = io.StringIO()
@@ -2236,9 +2223,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
                      u'form ids and is not reversible!')
     continueKey = u'bash.Ingredient.import.continue'
     noChange = _(u'No relevant Ingredient details to import.')
-
-    def _parser(self):
-        return IngredientDetails()
+    _parser_class = IngredientDetails
 
     def _log(self, changed, fileName):
         buff = io.StringIO()

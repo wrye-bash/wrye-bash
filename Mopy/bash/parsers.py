@@ -355,8 +355,8 @@ class _AParser(_HandleAliases):
         :param mod_info: The ModInfo instance to write to.
         :return: A dict mapping record types to the number of changed records
             in them."""
-        return self._do_write_plugin(self._load_plugin(mod_info, keepAll=False,
-            target_types=self.id_stored_info))
+        return self._do_write_plugin(
+            self._load_plugin(mod_info, target_types=self.id_stored_info))
 
     # Other API
     @property
@@ -404,7 +404,7 @@ class ActorFactions(_AParser):
             target_entry.unused1 = b'ODB'
 
     def _parse_line(self, csv_fields):
-        type_, _aed, amod, aobj, _fed, fmod, fobj, rank = csv_fields[:9] # FIXME: 8?
+        type_, _aed, amod, aobj, _fed, fmod, fobj, rank = csv_fields[:8]
         aid = self._coerce_fid(amod, aobj)
         fid = self._coerce_fid(fmod, fobj)
         rank = int(rank)
@@ -466,9 +466,7 @@ class ActorLevels(_HandleAliases):
     def writeToMod(self,modInfo):
         """Exports actor levels to specified mod."""
         mod_id_levels = self.mod_id_levels
-        loadFactory = self._load_factory()
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
+        modFile = self._load_plugin(modInfo)
         changed = 0
         id_levels = mod_id_levels.get(modInfo.name,
                                       mod_id_levels.get(GPath(u'Unknown'),
@@ -578,9 +576,7 @@ class EditorIds(_HandleAliases):
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
-        loadFactory = LoadFactory(True, generic=self.types)
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
+        modFile = self._load_plugin(modInfo)
         changed = []
         for type_ in self.types:
             id_eid = self.type_id_eid.get(type_, None)

@@ -151,8 +151,8 @@ class MobBase(object):
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
         toLong should be True if converting to long format or False if
-        converting to short format."""
-        raise AbstractError(u'convertFids not implemented')
+        converting to short format. Base implementation does nothing as its
+        records are not unpacked."""
 
     def indexRecords(self):
         """Indexes records by fid."""
