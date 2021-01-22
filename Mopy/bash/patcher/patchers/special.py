@@ -190,7 +190,7 @@ class _AListsMerger(ListPatcher):
             patch_block = self.patchFile.tops[list_type_sig]
             stored_lists = self.type_list[list_type_sig]
             for stored_list in sorted(stored_lists.itervalues(),
-                                      key=attrgetter('eid')):
+                                      key=attrgetter(u'eid')):
                 if not stored_list.mergeOverLast: continue
                 list_fid = stored_list.fid
                 keep(list_fid)
@@ -317,16 +317,12 @@ class ContentsCheckerPatcher(Patcher):
     contType_entryTypes = bush.game.cc_valid_types
     contTypes = set(contType_entryTypes)
     entryTypes = set(chain.from_iterable(contType_entryTypes.itervalues()))
+    _read_sigs= tuple(contTypes | entryTypes)
 
     def __init__(self, p_name, p_file):
         super(ContentsCheckerPatcher, self).__init__(p_name, p_file)
         self.fid_to_type = {}
         self.id_eid = {}
-
-    @property
-    def _read_sigs(self):
-        """Returns load factory classes needed for reading."""
-        return tuple(self.contTypes | self.entryTypes)
 
     @property
     def getWriteClasses(self):
