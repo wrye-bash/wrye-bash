@@ -28,9 +28,11 @@ stores. bush.game must be set, to properly instantiate the data stores."""
 # Imports ---------------------------------------------------------------------
 #--Python
 from __future__ import print_function
+
 import cPickle as pickle  # PY3
 import collections
 import errno
+import io
 import os
 import re
 import sys
@@ -38,7 +40,8 @@ import time
 import traceback
 from collections import OrderedDict, Iterable
 from functools import wraps, partial
-from itertools import imap
+from itertools import imap, izip
+
 #--Local
 from ._mergeability import isPBashMergeable, is_esl_capable
 from .loot_parser import LOOTParser, libloot_version
@@ -46,7 +49,7 @@ from .mods_metadata import get_tags_from_dir
 from .. import bass, bolt, balt, bush, env, load_order, initialization
 from ..archives import readExts
 from ..bass import dirs, inisettings
-from ..bolt import GPath, DataDict, deprint, sio, Path, decoder, AFile, \
+from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
     GPath_no_norm, struct_error
 from ..brec import ModReader, RecordHeader
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
@@ -314,7 +317,7 @@ class FileInfo(AFile):
                 # if cosave exists while its backup not, delete it on restoring
                 tup[1].remove()
                 backup_paths.remove(tup)
-        env.shellCopy(*zip(*backup_paths))
+        env.shellCopy(*list(izip(*backup_paths)))
         # do not change load order for timestamp games - rest works ok
         self.setmtime(self._file_mod_time, crc_changed=True)
         self.getFileInfos().new_info(self.name, notify_bain=True)
@@ -736,7 +739,7 @@ class ModInfo(FileInfo):
         return GPath_no_norm(self._file_key.s[:-3] + u'ini') # ignore .ghost
 
     def _string_files_paths(self, lang):
-        # type: (basestring) -> Iterable[Path]
+        # type: (unicode) -> Iterable[Path]
         sbody, ext = self.name.sbody, self.get_extension()
         for join, format_str in bush.game.Esp.stringsFiles:
             fname = format_str % {u'body': sbody, u'ext': ext, u'language': lang}
@@ -1091,11 +1094,10 @@ class INIInfo(IniFile):
                     errors.extend(missing_settings)
         if len(errors) == 1:
             errors.append(u' None')
-        with sio() as out:
-            log = bolt.LogFile(out)
-            for line in errors:
-                log(line)
-            return bolt.winNewLines(log.out.getvalue())
+        log = bolt.LogFile(io.StringIO())
+        for line in errors:
+            log(line)
+        return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
 from .save_headers import get_save_header_type, SaveFileHeader
@@ -1177,8 +1179,8 @@ class SaveInfo(FileInfo):
         # Cosaves - note that we have to use self.header.masters since in
         # FO4/SSE _get_masters() returns the correct interleaved order, but
         # oldMasters has the 'regular first, then ESLs' order
-        master_map = {x.s: y.s for x, y in zip(oldMasters, self.header.masters)
-                      if x != y}
+        master_map = {x.s: y.s for x, y in
+                      izip(oldMasters, self.header.masters) if x != y}
         if master_map:
             for co_file in self._co_saves.values():
                 co_file.remap_plugins(master_map)
@@ -1343,7 +1345,7 @@ class DataStore(DataDict):
         for tup in rename_paths[1:]: # first rename path must always exist
             # if cosaves or backups do not exist shellMove fails!
             if not tup[0].exists(): rename_paths.remove(tup)
-        env.shellMove(*zip(*rename_paths))
+        env.shellMove(*list(izip(*rename_paths)))
 
     def _get_rename_paths(self, oldName, newName):
         """Return possible paths this file's renaming might affect (possibly
@@ -1413,9 +1415,11 @@ class TableFileInfos(DataStore):
     @classmethod
     def rightFileType(cls, fileName):
         """Check if the filetype (extension) is correct for subclass.
-        :type fileName: bolt.Path | basestring
-        :rtype: _sre.SRE_Match | None
-        """
+
+        :type fileName: bolt.Path | unicode | bytes
+        :rtype: _sre.SRE_Match | None"""
+        ##: This shouldn't take bytes, ensure it doesn't (especially wrt. to
+        # pickle-related usages)
         return cls.file_pattern.search(u'%s' % fileName)
 
     #--Delete
@@ -1552,8 +1556,8 @@ class FileInfos(TableFileInfos):
         # all_backup_paths will return the backup paths for this file and its
         # satellites (like cosaves). Passing newName in it returns the rename
         # destinations of the backup paths. Backup paths may not exist.
-        for b_path, new_b_path in zip(info_backup_paths(),
-                                      info_backup_paths(newName)):
+        for b_path, new_b_path in izip(info_backup_paths(),
+                                       info_backup_paths(newName)):
             old_new_paths.append((b_path, new_b_path))
         return old_new_paths
 
@@ -1878,7 +1882,7 @@ def _lo_cache(lord_func):
 
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
-    """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
+    """Collection of modinfos. Represents mods in the Data directory."""
 
     def __init__(self):
         self.__class__.file_pattern = re.compile(u'(' + u'|'.join(
@@ -2348,64 +2352,63 @@ class ModInfos(FileInfos):
         """Returns mod list as text. If fileInfo is provided will show mod list
         for its masters. Otherwise will show currently loaded mods."""
         #--Setup
-        with sio() as out:
-            log = bolt.LogFile(out)
-            head,bul,sMissing,sDelinquent,sImported = (
-                u'=== ',
-                u'* ',
-                _(u'  * __Missing Master:__ '),
-                _(u'  * __Delinquent Master:__ '),
-                u'&bull; &bull;'
-                ) if wtxt else (
-                u'',
-                u'',
-                _(u'----> MISSING MASTER: '),
-                _(u'----> Delinquent MASTER: '),
-                u'**')
-            if fileInfo:
-                masters_set = set(fileInfo.masterNames)
-                missing = sorted(x for x in masters_set if x not in self)
-                log.setHeader(head + _(u'Missing Masters for %s: ') % fileInfo)
-                for mod in missing:
-                    log(bul + u'xx %s' % mod)
-                log.setHeader(head + _(u'Masters for %s: ') % fileInfo)
-                present = {x for x in masters_set if x in self}
-                if fileInfo.name in self: #--In case is bashed patch (cf getSemiActive)
-                    present.add(fileInfo.name)
-                merged,imported = self.getSemiActive(present)
+        log = bolt.LogFile(io.StringIO())
+        head, bul, sMissing, sDelinquent, sImported = (
+            u'=== ',
+            u'* ',
+            _(u'  * __Missing Master:__ '),
+            _(u'  * __Delinquent Master:__ '),
+            u'&bull; &bull;'
+            ) if wtxt else (
+            u'',
+            u'',
+            _(u'----> MISSING MASTER: '),
+            _(u'----> Delinquent MASTER: '),
+            u'**')
+        if fileInfo:
+            masters_set = set(fileInfo.masterNames)
+            missing = sorted(x for x in masters_set if x not in self)
+            log.setHeader(head + _(u'Missing Masters for %s: ') % fileInfo)
+            for mod in missing:
+                log(bul + u'xx %s' % mod)
+            log.setHeader(head + _(u'Masters for %s: ') % fileInfo)
+            present = {x for x in masters_set if x in self}
+            if fileInfo.name in self: #--In case is bashed patch (cf getSemiActive)
+                present.add(fileInfo.name)
+            merged, imported = self.getSemiActive(present)
+        else:
+            log.setHeader(head + _(u'Active Mod Files:'))
+            masters_set = set(load_order.cached_active_tuple())
+            merged, imported = self.merged, self.imported
+        all_mods = (masters_set | merged | imported) & set(self)
+        all_mods = load_order.get_ordered(all_mods)
+        #--List
+        modIndex = 0
+        if not wtxt: log(u'[spoiler]\n', appendNewline=False)
+        for mname in all_mods:
+            if mname in masters_set:
+                prefix = bul + u'%02X' % modIndex
+                modIndex += 1
+            elif mname in merged:
+                prefix = bul + u'++'
             else:
-                log.setHeader(head+_(u'Active Mod Files:'))
-                masters_set = set(load_order.cached_active_tuple())
-                merged,imported = self.merged,self.imported
-            all_mods = (masters_set | merged | imported) & set(self)
-            all_mods = load_order.get_ordered(all_mods)
-            #--List
-            modIndex = 0
-            if not wtxt: log(u'[spoiler]\n', appendNewline=False)
-            for mname in all_mods:
-                if mname in masters_set:
-                    prefix = bul+u'%02X' % modIndex
-                    modIndex += 1
-                elif mname in merged:
-                    prefix = bul+u'++'
-                else:
-                    prefix = bul+sImported
-                log_str = u'%s  %s' % (prefix, mname)
-                if showVersion:
-                    version = self.getVersion(mname)
-                    if version: log_str += _(u'  [Version %s]') % version
-                if showCRC:
-                    log_str += _(u'  [CRC: %s]') % (self[mname].crc_string())
-                log(log_str)
-                if mname in masters_set:
-                    for master2 in self[mname].masterNames:
-                        if master2 not in self:
-                            log(sMissing+master2.s)
-                        elif load_order.get_ordered((mname, master2))[
-                            1] == master2:
-                            log(sDelinquent+master2.s)
-            if not wtxt: log(u'[/spoiler]')
-            return bolt.winNewLines(log.out.getvalue())
+                prefix = bul + sImported
+            log_str = u'%s  %s' % (prefix, mname)
+            if showVersion:
+                version = self.getVersion(mname)
+                if version: log_str += _(u'  [Version %s]') % version
+            if showCRC:
+                log_str += _(u'  [CRC: %s]') % (self[mname].crc_string())
+            log(log_str)
+            if mname in masters_set:
+                for master2 in self[mname].masterNames:
+                    if master2 not in self:
+                        log(sMissing + master2.s)
+                    elif load_order.get_ordered((mname, master2))[
+                        1] == master2:
+                        log(sDelinquent + master2.s)
+        if not wtxt: log(u'[/spoiler]')
+        return bolt.winNewLines(log.out.getvalue())
 
     @staticmethod
     def _tagsies(modInfo, tagList):
@@ -3077,7 +3080,7 @@ class SaveInfos(FileInfos):
         # to unhide and pass that in
         moved = super(SaveInfos, self).move_infos(sources, destinations,
                                                   window, bash_frame)
-        for s, d in zip(sources, destinations):
+        for s, d in izip(sources, destinations):
             if d.tail in moved:
                 self._co_copy_or_move(s, d, pathFunc=Path.moveTo)
         for d in moved:

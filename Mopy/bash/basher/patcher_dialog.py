@@ -22,9 +22,9 @@
 # =============================================================================
 
 """Patch dialog"""
-import StringIO
 import copy
 import errno
+import io
 import re
 import time
 from datetime import timedelta
@@ -165,7 +165,7 @@ class PatchDialog(DialogWindow):
             config = self.__config()
             self.patchInfo.set_table_prop(u'bash.patch.configs', config)
             #--Do it
-            log = bolt.LogFile(StringIO.StringIO())
+            log = bolt.LogFile(io.StringIO())
             patchFile = PatchFile(self.patchInfo, bosh.modInfos)
             enabled_patchers = [p.get_patcher_instance(patchFile) for p in
                                 self._gui_patchers if p.isEnabled] ##: what happens if empty
@@ -193,7 +193,6 @@ class PatchDialog(DialogWindow):
             log.setHeader(None)
             log(u'{{CSS:wtxt_sand_small.css}}')
             logValue = log.out.getvalue()
-            log.out.close()
             timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
             readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.sroot + u'.txt')

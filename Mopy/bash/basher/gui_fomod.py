@@ -132,9 +132,8 @@ class InstallerFomod(WizardDialog):
             first_page = self.fomod_parser.start_fomod()
         except FailedCondition as e:
             fm_warning = _(u'This installer cannot start due to the following '
-                           u'unmet conditions:') + u'\n'
-            for l in str(e).splitlines():
-                fm_warning += u'  {}\n'.format(l)
+                           u'unmet conditions:') + u'\n  ' + u'\n  '.join(
+                (u'%s' % e).splitlines()) + u'\n'
             balt.showWarning(self, fm_warning,
                              title=_(u'Cannot Run Installer'), do_center=True)
             self.fm_ret.canceled = True

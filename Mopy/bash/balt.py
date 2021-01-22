@@ -25,6 +25,8 @@ now. See #190, its code should be refactored and land in basher and/or gui."""
 
 # Imports ---------------------------------------------------------------------
 from __future__ import division
+
+import io
 import re
 
 from . import bass # for dirs - try to avoid
@@ -337,7 +339,9 @@ def vistaDialog(parent, message, title, checkBoxTxt=None,
     if expander:
         dialog.set_expander(expander,False,not footer)
     if checkBoxTxt:
-        if isinstance(checkBoxTxt,basestring):
+        if isinstance(checkBoxTxt, bytes):
+            raise RuntimeError(u'Do not pass bytes to vistaDialog!')
+        elif isinstance(checkBoxTxt, unicode):
             dialog.set_check_box(checkBoxTxt,False)
         else:
             dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
@@ -507,8 +511,8 @@ class WryeLog(_Log):
 
 def convert_wtext_to_html(logPath, logText):
     cssDir = _settings.get(u'balt.WryeLog.cssDir', GPath(u''))
-    with logPath.open(u'w', encoding=u'utf-8-sig') as out, bolt.sio(
-                    logText + u'\n{{CSS:wtxt_sand_small.css}}') as ins:
+    ins = io.StringIO(logText + u'\n{{CSS:wtxt_sand_small.css}}')
+    with logPath.open(u'w', encoding=u'utf-8-sig') as out:
         bolt.WryeText.genHtml(ins, out, cssDir)
 
 def playSound(parent,sound):
@@ -743,10 +747,11 @@ class TabDragMixin(object):
             try:
                 self.ReleaseMouse()
             except AssertionError:
-                """PyAssertionError: C++ assertion "GetCapture() == this"
-                failed at ..\..\src\common\wincmn.cpp(2536) in
-                wxWindowBase::ReleaseMouse(): attempt to release mouse,
-                but this window hasn't captured it""" # assertion error...
+                # PyAssertionError: C++ assertion "GetCapture() == this"
+                # failed at ..\..\src\common\wincmn.cpp(2536) in
+                # wxWindowBase::ReleaseMouse(): attempt to release mouse,
+                # but this window hasn't captured it
+                pass
         event.Skip()
 
     def __OnDragging(self, event):
@@ -1385,7 +1390,7 @@ class UIList(wx.Panel):
     #--Item/Index Translation -------------------------------------------------
     def GetItem(self,index):
         """Return item (key in self.data_store) for specified list index.
-        :rtype: bolt.Path | basestring | int
+        :rtype: bolt.Path | unicode | int
         """
         return self.__gList.FindItemAt(index)
 
@@ -1493,10 +1498,10 @@ class UIList(wx.Panel):
             else:
                 msg = _(u'Bad extension or file root: ') + newName
                 if ext: # require at least one char before extension
-                    regex = u'^(?=.+\.)(.*?)'
+                    regex = u'' r'^(?=.+\.)(.*?)'
                 else:
                     regex = u'^(.*?)'
-                if has_digits: regex += u'(\d*)'
+                if has_digits: regex += u'' r'(\d*)'
                 regex += ext + u'$'
                 rePattern = re.compile(regex, re.I | re.U)
                 maPattern = rePattern.match(newName)
@@ -1959,7 +1964,7 @@ class AppendableLink(Link):
 class EnabledLink(ItemLink):
     """A menu item that may be disabled.
 
-    The item is by default enabled. Override _enable() to disable\enable
+    The item is by default enabled. Override _enable() to disable/enable
     based on some condition. Subclasses MUST define self.text, preferably as
     a class attribute.
     """
@@ -2327,9 +2332,13 @@ class DnDStatusBar(wx.StatusBar):
     def OnDragStart(self, event):
         self.dragging = self._getButtonIndex(event)
         if self.dragging != wx.NOT_FOUND:
-            self.dragStart = event.GetPosition()[0]
             button = self.buttons[self.dragging]
-            button._native_widget.CaptureMouse()
+            if not button._native_widget.HasCapture():
+                self.dragStart = event.GetPosition()[0]
+                button._native_widget.CaptureMouse()
+                # Otherwise blows up on py3
+                button._native_widget.Bind(wx.EVT_MOUSE_CAPTURE_LOST,
+                                           lambda e: None)
         event.Skip()
 
     def OnDragEndForced(self, event):

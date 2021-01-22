@@ -33,6 +33,8 @@ import errno
 import re
 import time
 from collections import defaultdict, OrderedDict
+from itertools import izip
+
 # Local
 from . import bass, bolt, env, exception
 from .bolt import GPath_no_norm
@@ -306,7 +308,7 @@ class Game(object):
                 deleted = prev - new
                 common = prev & new
                 reordered = any(x != y for x, y in
-                                zip((x for x in previous_lord if x in common),
+                                izip((x for x in previous_lord if x in common),
                                     (x for x in lord if x in common)))
                 setting_active = self._must_update_active(deleted, reordered)
             if setting_active: active = list(previous_active) # active was None
@@ -842,7 +844,7 @@ class TimestampGame(Game):
                 older += 60.0
                 info.setmtime(older)
         restamp = []
-        for ordered, mod in zip(lord, current):
+        for ordered, mod in izip(lord, current):
             if ordered == mod: continue
             restamp.append((ordered, self.mod_infos[mod].mtime))
         for ordered, mtime in restamp:
@@ -957,8 +959,9 @@ class TextfileGame(Game):
             active_in_lo = [x for x in lo if x in cached_active_set]
             w = {x: i for i, x in enumerate(lo)}
             while active_in_lo:
-                for i, (ordered, current) in enumerate(
-                        zip(cached_active_copy, active_in_lo)):
+                # Use list(), we may modify cached_active_copy and active_in_lo
+                for i, (ordered, current) in list(enumerate(
+                        izip(cached_active_copy, active_in_lo))):
                     if ordered != current:
                         if ordered not in lo:
                             # Mod is in plugins.txt, but not in loadorder.txt;
@@ -1479,4 +1482,4 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
 
 # Print helpers
 def _pl(it, legend=u'', joint=u', '):
-    return legend + joint.join(u'%s' % x for x in it) # use Path.__unicode__
+    return legend + joint.join(u'%s' % x for x in it) # use Path.__str__

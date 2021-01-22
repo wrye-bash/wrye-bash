@@ -20,7 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-import StringIO
+import io
 
 from .. import get_meta_value, iter_games, iter_resources, \
     resource_to_displayName, set_game
@@ -107,7 +107,7 @@ class ATestACosave(object):
     def test_dump_to_log(self):
         """Tests that dump_to_log is correctly implemented."""
         def _check_dump_to_log(curr_cosave): # type: (xSECosave) -> None
-            test_log = LogFile(StringIO.StringIO())
+            test_log = LogFile(io.StringIO())
             # This wouldn't work on SSE/FO4, but save_masters is only used for
             # ARVR and STVR, which don't exist in SKSE/F4SE
             sv_masters = [GPath(m) for m in curr_cosave.get_master_list()]
@@ -175,12 +175,12 @@ class Test_xSEHeader(object):
             curr_cosave.read_cosave(light=True)
             with curr_cosave.abs_path.open(u'rb') as ins:
                 header_bytes = ins.read(20)
-            a_out = StringIO.StringIO()
+            a_out = io.BytesIO()
             curr_cosave.cosave_header.write_header(a_out)
             assert a_out.getvalue() == header_bytes
             # Check that it works on a roundtrip
-            b_out = StringIO.StringIO()
-            _xSEHeader(StringIO.StringIO(a_out.getvalue()),
+            b_out = io.BytesIO()
+            _xSEHeader(io.BytesIO(a_out.getvalue()),
                        curr_cosave.abs_path).write_header(b_out)
             assert a_out.getvalue() == b_out.getvalue()
         map_xse_cosaves(_check_write_header)

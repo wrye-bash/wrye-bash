@@ -24,6 +24,7 @@
 """WIP module to encapsulate environment access - currently OS dependent stuff.
 """
 from __future__ import print_function
+
 import errno
 import os as _os
 import re as _re
@@ -31,6 +32,7 @@ import shutil as _shutil
 import stat
 from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes
+from itertools import izip
 from uuid import UUID
 
 from .bolt import GPath, deprint, Path, decoder, structs_cache
@@ -90,7 +92,7 @@ except ImportError:
     FO_DELETE = 3
     FO_RENAME = 4
     FOF_NOCONFIRMMKDIR = 512
-    reEnv = _re.compile(u'%(\w+)%', _re.U)
+    reEnv = _re.compile(u'' r'%(\w+)%', _re.U)
     envDefs = _os.environ
 
     def subEnv(match):
@@ -513,7 +515,7 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
     # renameOnCollision - if True auto-rename on moving collision, else ask
     # TODO(241): renameOnCollision NOT IMPLEMENTED
     doIt = _shutil.copytree if operation == FO_COPY else _shutil.move
-    for fileFrom, fileTo in zip(source, target):
+    for fileFrom, fileTo in izip(source, target):
         if fileFrom.isdir():
             dest_dir = fileTo.join(fileFrom.tail)
             if dest_dir.exists():
@@ -545,13 +547,14 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
                    confirm=True, renameOnCollision=False, silent=False,
                    parent=None, __shell=True):
     """Docs WIP
+
     :param operation: one of FO_MOVE, FO_COPY, FO_DELETE, FO_RENAME
-    :param source: a Path, basestring or an iterable of those (yak,
-    only accept iterables)
+    :param source: a Path, string or an iterable of those (yak, only accept
+       iterables)
     :param target: as above, if iterable must have the same length as source
     :param allowUndo: FOF_ALLOWUNDO: "Preserve undo information, if possible"
     :param confirm: the opposite of FOF_NOCONFIRMATION ("Respond with Yes to
-    All for any dialog box that is displayed")
+        All for any dialog box that is displayed")
     :param renameOnCollision: FOF_RENAMEONCOLLISION
     :param silent: FOF_SILENT ("Do not display a progress dialog box")
     :param parent: HWND to the dialog's parent window
@@ -563,13 +566,13 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         return {}
     abspath = _os.path.abspath
     # source may be anything - see SHFILEOPSTRUCT - accepts list or item
-    if isinstance(source, (Path, basestring)):
+    if isinstance(source, (Path, (unicode, bytes))):
         source = [abspath(u'%s' % source)]
     else:
         source = [abspath(u'%s' % x) for x in source]
     # target may be anything ...
     target = target if target else u'' # abspath(u''): cwd (must be Mopy/)
-    if isinstance(target, (Path, basestring)):
+    if isinstance(target, (Path, (unicode, bytes))):
         target = [abspath(u'%s' % target)]
     else:
         target = [abspath(u'%s' % x) for x in target]
@@ -728,7 +731,7 @@ def testUAC(gameDataPath):
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
     with tempFile.open(u'wb'): pass # create the file
-    try: # to move it into the Game/Data/ directory
+    try: # to move it into the Data directory
         shellMove(tempFile, dest, silent=True)
     except AccessDeniedError:
         return True

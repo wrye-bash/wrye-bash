@@ -26,6 +26,8 @@ Wrye Bash. This file handles the evaluation of conditions.
 Recommended reading before working on this file:
 https://loot-api.readthedocs.io/en/latest/metadata/conditions.html."""
 
+__author__ = u'Infernio'
+
 import operator
 import re
 
@@ -34,8 +36,6 @@ from ..bolt import GPath, Path
 from ..env import get_file_version
 from ..exception import AbstractError, ParserError, FileError
 from ..load_order import cached_active_tuple, cached_is_active, in_master_block
-
-__author__ = u'Infernio'
 
 # Conditions
 class _ACondition(object):

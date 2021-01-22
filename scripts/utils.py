@@ -23,6 +23,7 @@
 # =============================================================================
 
 from __future__ import absolute_import, division, print_function
+
 import errno
 import logging
 import math
@@ -30,12 +31,7 @@ import os
 import subprocess
 import sys
 from contextlib import contextmanager
-
-# PY3: from urllib.request import urlopen
-try:
-    from urllib.request import urlopen
-except ImportError:
-    from urllib2 import urlopen
+from urllib2 import urlopen
 
 # verbosity:
 #  quiet (warnings and above)

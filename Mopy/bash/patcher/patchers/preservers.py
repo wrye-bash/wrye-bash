@@ -23,8 +23,10 @@
 """This module houses preservers. A preserver is an import patcher that simply
 carries forward changes from the last tagged plugin. The goal is to eventually
 absorb all of them under the _APreserver base class."""
+
 from collections import defaultdict, Counter
-from itertools import chain
+from itertools import chain, izip
+
 # Internal
 from .base import ImportPatcher
 from .. import getPatchesPath
@@ -247,14 +249,14 @@ class _APreserver(ImportPatcher):
             keep(rec_fid)
             type_count[top_mod_rec] += 1
 
-    def buildPatch(self, log, progress, types=None):
+    def buildPatch(self, log, progress):
         if not self.isActive: return
         modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
         type_count = Counter()
-        types = filter(modFileTops.__contains__,
-            types if types else (x.rec_sig for x in self.srcClasses))
-        for top_mod_rec in types:
+        for top_mod_class in self.srcClasses:
+            top_mod_rec = top_mod_class.rec_sig
+            if top_mod_rec not in modFileTops: continue
             records = modFileTops[top_mod_rec].iter_filtered_records(
                 self.getReadClasses(), include_ignored=True)
             self._inner_loop(keep, records, top_mod_rec, type_count)
@@ -391,7 +393,7 @@ class ImportSpellStatsPatcher(_APreserver):
             ImportSpellStatsPatcher, self)._parse_csv_sources(progress)
         # Add attribute names to the values
         self._process_csv_sources(
-            {b'SPEL': {f: {a: v for a, v in zip(self.rec_attrs[b'SPEL'], l)}
+            {b'SPEL': {f: {a: v for a, v in izip(self.rec_attrs[b'SPEL'], l)}
                        for f, l in spel_parser.fid_stats.iteritems()}})
 
 #------------------------------------------------------------------------------
@@ -635,8 +637,8 @@ class ImportGraphicsPatcher(_APreserver):
             if fid not in id_data: continue
             for attr, value in id_data[fid].iteritems():
                 rec_attr = __attrgetters[attr](record)
-                if isinstance(rec_attr,
-                              basestring) and isinstance(value, basestring):
+                if isinstance(rec_attr, unicode) and isinstance(
+                        value, unicode):
                     if rec_attr.lower() != value.lower():
                         break
                     continue

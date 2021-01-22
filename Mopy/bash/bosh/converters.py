@@ -23,14 +23,17 @@
 """BAIN Converters aka BCFs"""
 
 from __future__ import division
+
 import cPickle as pickle  # PY3
+import io
 import re
 import sys
+from itertools import izip
 
 from .. import bolt, archives, bass
 from ..archives import defaultExt, readExts, compressionSettings, \
     compressCommand
-from ..bolt import DataDict, PickleDict, GPath, Path, sio, SubProgress
+from ..bolt import DataDict, PickleDict, GPath, Path, SubProgress
 from ..exception import ArgumentError, StateError
 
 converters_dir = None
@@ -152,7 +155,7 @@ class ConvertersData(DataDict):
 
     def addConverter(self, converter):
         """Links the new converter to installers"""
-        if isinstance(converter, basestring):
+        if isinstance(converter, (unicode, bytes)): ##: investigate
             #--Adding a new file
             converter = GPath(converter).tail
         if isinstance(converter, InstallerConverter):
@@ -274,8 +277,8 @@ class InstallerConverter(object):
     def __setstate__(self, values):
         """Used by unpickler to recreate object. Used for Converters.dat"""
         self.__init__()
-        for a, v in zip(self.persistBCF + self.persistDAT +
-                        self.addedPersistDAT, values):
+        for a, v in izip(self.persistBCF + self.persistDAT +
+                         self.addedPersistDAT, values):
             setattr(self, a, v)
 
     def __reduce__(self):
@@ -290,27 +293,28 @@ class InstallerConverter(object):
         if not self.fullPath.exists(): raise StateError(
                 u"\nLoading %s:\nBCF doesn't exist." % self.fullPath)
         def translate(out):
-            with sio(out) as stream:
-                # translate data types to new hierarchy
-                class _Translator(object):
-                    def __init__(self, streamToWrap):
-                        self._stream = streamToWrap
-                    def read(self, numBytes):
-                        return self._translate(self._stream.read(numBytes))
-                    def readline(self):
-                        return self._translate(self._stream.readline())
-                    @staticmethod
-                    def _translate(s):
-                        return re.sub(u'^(bolt|bosh)$', u'' r'bash.\1', s,
-                                      flags=re.U)
-                translator = _Translator(stream)
-                for a, v in zip(self.persistBCF, pickle.load(translator)):
+            ##: Does this usage (including translator and decode) work?
+            stream = io.BytesIO(out)
+            # translate data types to new hierarchy
+            class _Translator(object):
+                def __init__(self, streamToWrap):
+                    self._stream = streamToWrap
+                def read(self, numBytes):
+                    return self._translate(self._stream.read(numBytes))
+                def readline(self):
+                    return self._translate(self._stream.readline())
+                @staticmethod
+                def _translate(s):
+                    return re.sub(u'^(bolt|bosh)$', u'' r'bash.\1',
+                                  s.decode(u'utf-8'), flags=re.U)
+            translator = _Translator(stream)
+            for a, v in izip(self.persistBCF, pickle.load(translator)):
+                setattr(self, a, v)
+            if fullLoad:
+                for a, v in izip(self._converter_settings + self.volatile +
+                                 self.addedSettings,
+                                 pickle.load(translator)):
                     setattr(self, a, v)
-                if fullLoad:
-                    for a, v in zip(self._converter_settings + self.volatile +
-                                    self.addedSettings,
-                            pickle.load(translator)):
-                        setattr(self, a, v)
         with self.fullPath.unicodeSafe() as converter_path:
             # Temp rename if its name wont encode correctly
             command = u'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
@@ -353,7 +357,7 @@ class InstallerConverter(object):
         else:
             srcCRCs = realCRCs = self.srcCRCs
         nextStep = step = 0.4 / len(srcCRCs)
-        for srcCRC, realCRC in zip(srcCRCs, realCRCs):
+        for srcCRC, realCRC in izip(srcCRCs, realCRCs):
             srcInstaller = crc_installer[srcCRC]
             files = bolt.sortFiles([x[0] for x in srcInstaller.fileSizeCrcs])
             if not files: continue
@@ -403,9 +407,9 @@ class InstallerConverter(object):
                 self.convertedFiles):
             srcDir = srcDir_File[0]
             srcFile = srcDir_File[1]
-            if isinstance(srcDir, (basestring, Path)):
+            if isinstance(srcDir, (Path, (unicode, bytes))): ##: investigate
                 #--either 'BCF-Missing', or crc read from 7z l -slt
-                srcDir = u'%s' % srcDir # Path defines __unicode__()
+                srcDir = u'%s' % srcDir # Path defines __str__()
                 srcFile = tempJoin(srcDir, srcFile)
             else:
                 srcFile = tempJoin(u'%08X' % srcDir, srcFile)

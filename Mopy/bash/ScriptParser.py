@@ -60,6 +60,8 @@
 #  ExecuteRPN
 #==================================================
 from __future__ import division
+
+import operator
 from string import digits, whitespace
 
 #--------------------------------------------------
@@ -341,7 +343,7 @@ class Parser(object):
 
         def GetData(self):
             """:rtype: Parser.Function | Parser.Keyword | Parser.Operator |
-            basestring | int | float
+            unicode | int | float
             """
             if self.parser:
                 if self.type == FUNCTION: return self.parser.functions[self.text]
@@ -393,22 +395,19 @@ class Parser(object):
         def __and__(self, other): return Parser.Token(self.tkn & other.tkn)
         def __xor__(self, other): return Parser.Token(self.tkn ^ other.tkn)
         def __or__(self, other): return Parser.Token(self.tkn | other.tkn)
-        def __bool__(self): return bool(self.tkn)
+        def __nonzero__(self): return bool(self.tkn)
         def __neg__(self): return Parser.Token(-self.tkn)
         def __pos__(self): return Parser.Token(+self.tkn)
         def __abs__(self): return abs(self.tkn)
         def __int__(self): return int(self.tkn)
+        def __index__(self): return operator.index(self.tkn)
         def __float__(self): return float(self.tkn)
-        def __str__(self): return str(self.tkn)
+        def __str__(self): return unicode(self.tkn)
 
         def __repr__(self): return u'<Token-%s:%s>' % (Types[self.type],self.text)
 
         # Fall through to function/keyword
         def __call__(self, *args, **kwdargs): return self.tkn(*args, **kwdargs)
-
-        # PY3 get rid of this once we port
-        __nonzero__ = __bool__
-
 
     # Now for the Parser class
     def __init__(self,

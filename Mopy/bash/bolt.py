@@ -24,15 +24,15 @@
 # Imports ---------------------------------------------------------------------
 #--Standard
 from __future__ import division, print_function
-import StringIO
+
 import cPickle as pickle  # PY3
-import chardet
 import codecs
 import collections
 import copy
 import csv
 import datetime
 import errno
+import io
 import os
 import re
 import shutil
@@ -46,17 +46,15 @@ import textwrap
 import traceback
 from binascii import crc32
 from functools import partial
-from itertools import chain
+from itertools import chain, izip
 from keyword import iskeyword
 from operator import attrgetter
+from urllib import quote
+
+import chardet
+
 # Internal
 from . import exception
-
-# PY3
-try:
-    from urllib.parse import quote
-except ImportError:
-    from urllib import quote
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
@@ -151,7 +149,7 @@ def decoder(byte_str, encoding=None, avoidEncodings=()):
 def encode(text_str, encodings=encodingOrder, firstEncoding=None,
            returnEncoding=False):
     """Encode unicode string to byte string, using heuristics on encoding."""
-    if isinstance(text_str, str) or text_str is None:
+    if isinstance(text_str, bytes) or text_str is None:
         if returnEncoding: return text_str, None
         else: return text_str
     # Try user specified encoding
@@ -397,15 +395,6 @@ def setattr_deep(obj, attr, value, __attrgetters=attrgetter_cache,
     setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
         leaf_attr, value)
 
-# sio - StringIO wrapper so it uses the 'with' statement, so they can be used
-#  in the same functions that accept files as input/output as well.  Really,
-#  StringIO objects don't need to 'close' ever, since the data is unallocated
-#  once the object is destroyed.
-#------------------------------------------------------------------------------
-class sio(StringIO.StringIO):
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_value, exc_traceback): self.close()
-
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}
@@ -465,11 +454,11 @@ class Path(object):
 
     @staticmethod
     def getNorm(str_or_path):
-        # type: (unicode|str|Path) -> unicode
+        # type: (unicode|bytes|Path) -> unicode
         """Return the normpath for specified basename/Path object."""
         if isinstance(str_or_path, Path): return str_or_path._s
         elif not str_or_path: return u'' # and not maybe b''
-        elif isinstance(str_or_path, str): str_or_path = decoder(str_or_path)
+        elif isinstance(str_or_path, bytes): str_or_path = decoder(str_or_path)
         return os.path.normpath(str_or_path)
 
     @staticmethod
@@ -504,7 +493,7 @@ class Path(object):
 
     def __setstate__(self, norm):
         """Used by unpickler. Reconstruct _cs."""
-        # Older pickle files stored filename in str, not unicode
+        # Older pickle files stored filename in bytes, not unicode
         norm = decoder(norm)  # decoder will check for unicode
         self._s = norm
         # Reconstruct _cs, lower() should suffice
@@ -516,7 +505,7 @@ class Path(object):
     def __repr__(self):
         return u'bolt.Path(%r)' % self._s
 
-    def __unicode__(self):
+    def __str__(self):
         return self._s
 
     #--Properties--------------------------------------------------------
@@ -921,7 +910,8 @@ class Path(object):
                     pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
-    # directly compare to basestring|Path|None and will blow for anything else
+    # directly compare to unicode|bytes|Path|None and will blow for anything
+    # else
     def __hash__(self):
         return hash(self._cs)
     def __eq__(self, other):
@@ -1073,6 +1063,9 @@ class Flags(object):
     #--As int
     def __int__(self):
         """Return as integer value for saving."""
+        return self._field
+    def __index__(self):
+        """Same as __int__, needed for packing in py3."""
         return self._field
     def __getstate__(self): ##: do we even use this?
         """Return values for pickling."""
@@ -1754,15 +1747,16 @@ def deprint(*args,**keyargs):
             except UnicodeError:
                 msg += u' %r' % x
     if keyargs.get(u'traceback',False):
-        o = StringIO.StringIO()
-        traceback.print_exc(file=o)
-        value = o.getvalue()
-        try:
-            msg += u'\n%s' % unicode(value, u'utf-8')
-        except UnicodeError:
-            traceback.print_exc()
-            msg += u'\n%r' % value
-        o.close()
+        exc_fmt = traceback.format_exc()
+        # PY3: This should be good to go
+        if isinstance(exc_fmt, bytes):
+            try:
+                msg += u'\n%s' % unicode(exc_fmt, u'utf-8')
+            except UnicodeError:
+                traceback.print_exc()
+                msg += u'\n%r' % exc_fmt
+        else:
+            msg += u'\n%s' % exc_fmt
     try:
         # Should work if stdout/stderr is going to wxPython output
         print(msg)
@@ -1778,7 +1772,8 @@ def getMatch(reMatch,group=0):
 def intArg(arg,default=None):
     """Returns argument as an integer. If argument is a string, then it converts it using int(arg,0)."""
     if arg is None: return default
-    elif isinstance(arg, basestring): return int(arg,0)
+    elif isinstance(arg, (unicode, bytes)): ##: this smells, hunt down
+        return int(arg, 0)
     else: return int(arg)
 
 def winNewLines(inString):
@@ -2031,7 +2026,7 @@ def build_esub(esub_str):
             def esub_impl(ma_obj, g=esub_group, s=target_str):
                 wip_str = []
                 wip_append = wip_str.append
-                for t, o in zip(s, ma_obj.group(g)):
+                for t, o in izip(s, ma_obj.group(g)):
                     # Carry forward the target string, but keep the case
                     wip_append(t.upper() if o.isupper() else t.lower())
                 # Add in the rest of the target string unchanged
@@ -2322,7 +2317,7 @@ class WryeText(object):
     def genHtml(ins,out=None,*cssDirs):
         """Reads a wtxt input stream and writes an html output stream."""
         # Path or Stream? -----------------------------------------------
-        if isinstance(ins,(Path,str,unicode)):
+        if isinstance(ins, (Path, unicode)):
             srcPath = GPath(ins)
             outPath = GPath(out) or srcPath.root+u'.html'
             cssDirs = (srcPath.head,) + cssDirs
@@ -2430,7 +2425,7 @@ class WryeText(object):
         reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)
         reContentsTag = re.compile(u'' r'\s*{{CONTENTS=?(\d+)}}\s*$', re.U)
         reAnchorHeadersTag = re.compile(u'' r'\s*{{ANCHORHEADERS=(\d+)}}\s*$', re.U)
-        reCssTag = re.compile(u'\s*{{CSS:(.+?)}}\s*$',re.U)
+        reCssTag = re.compile(u'' r'\s*{{CSS:(.+?)}}\s*$',re.U)
         #--Defaults ----------------------------------------------------------
         title = u''
         level = 1
@@ -2629,7 +2624,7 @@ if __name__ == u'__main__' and len(sys.argv) > 1:
     def genHtml(*args,**keywords):
         """Wtxt to html. Just pass through to WryeText.genHtml."""
         if not len(args):
-            args = [u"..\Wrye Bash.txt"]
+            args = [u'..\\Wrye Bash.txt']
         WryeText.genHtml(*args,**keywords)
 
     #--Command Handler --------------------------------------------------------

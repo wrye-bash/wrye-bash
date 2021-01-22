@@ -21,11 +21,13 @@
 #
 # =============================================================================
 import copy
+import io
 import os
 import re
+
 from collections import Counter, defaultdict
 from .... import bush, load_order
-from ....bolt import GPath, sio, CsvReader, deprint
+from ....bolt import GPath, CsvReader, deprint
 from ....brec import MreRecord, RecHeader, null4
 from ....mod_files import ModFile, LoadFactory
 from ....patcher import getPatchesPath
@@ -127,19 +129,19 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         for (num,objectId,full,value) in _ingred_alchem:
             book = getBook(objectId, u'cobCatAlchemIngreds%s' % num, full,
                            value, iconPath, modPath, modb_p)
-            with sio(book.book_text) as buff:
-                buff.seek(0,os.SEEK_END)
-                buffWrite = buff.write
-                for eid, full, effects in sorted(id_ingred.values(),
-                                                 key=lambda a: a[1].lower()):
-                    buffWrite(full+u'\r\n')
-                    for mgef,actorValue in effects[:num]:
-                        effectName = alt_names[mgef]
-                        if mgef in actorEffects:
-                            effectName += actorNames[actorValue]
-                        buffWrite(u'  '+effectName+u'\r\n')
-                    buffWrite(u'\r\n')
-                book.book_text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
+            buff = io.StringIO(book.book_text)
+            buff.seek(0, os.SEEK_END)
+            buffWrite = buff.write
+            for eid, full, effects in sorted(id_ingred.values(),
+                                             key=lambda a: a[1].lower()):
+                buffWrite(full + u'\r\n')
+                for mgef, actorValue in effects[:num]:
+                    effectName = alt_names[mgef]
+                    if mgef in actorEffects:
+                        effectName += actorNames[actorValue]
+                    buffWrite(u'  ' + effectName + u'\r\n')
+                buffWrite(u'\r\n')
+            book.book_text = re.sub(u'\r\n', u'<br>\r\n', buff.getvalue())
         #--Get Ingredients by Effect
         effect_ingred = defaultdict(list)
         for _fid,(eid,full,effects) in id_ingred.iteritems():
@@ -154,20 +156,20 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         for (num, objectId, full, value) in _effect_alchem:
             book = getBook(objectId, u'cobCatAlchemEffects%s' % num, full,
                            value, iconPath, modPath, modb_p)
-            with sio(book.book_text) as buff:
-                buff.seek(0,os.SEEK_END)
-                buffWrite = buff.write
-                for effectName in sorted(effect_ingred):
-                    effects = [indexFull for indexFull in
-                               effect_ingred[effectName] if indexFull[0] < num]
-                    if effects:
-                        buffWrite(effectName + u'\r\n')
-                        for (index, full) in sorted(effects, key=lambda a: a[
-                            1].lower()):
-                            exSpace = u' ' if index == 0 else u''
-                            buffWrite(u' %s%s %s\r\n'%(index + 1,exSpace,full))
-                        buffWrite(u'\r\n')
-                book.book_text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
+            buff = io.StringIO(book.book_text)
+            buff.seek(0, os.SEEK_END)
+            buffWrite = buff.write
+            for effectName in sorted(effect_ingred):
+                effects = [indexFull for indexFull in
+                           effect_ingred[effectName] if indexFull[0] < num]
+                if effects:
+                    buffWrite(effectName + u'\r\n')
+                    for (index, full) in sorted(effects, key=lambda a: a[
+                        1].lower()):
+                        exSpace = u' ' if index == 0 else u''
+                        buffWrite(u' %s%s %s\r\n' % (index + 1, exSpace, full))
+                    buffWrite(u'\r\n')
+            book.book_text = re.sub(u'\r\n', u'<br>\r\n', buff.getvalue())
         #--Log
         log.setHeader(u'= ' + self._patcher_name)
         log(u'* '+_(u'Ingredients Cataloged') + u': %d' % len(id_ingred))

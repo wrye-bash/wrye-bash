@@ -25,11 +25,14 @@
 points to BashFrame.modList singleton."""
 
 from __future__ import print_function
-import StringIO
+
 import collections
 import copy
+import io
 import re
 import traceback
+from itertools import izip
+
 # Local
 from . import configIsCBash
 from .constants import settingDefaults
@@ -37,15 +40,15 @@ from .files_links import File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
-from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
+from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
     TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
-from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
-    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
-    ImageWrapper, BusyCursor
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError
+from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
+    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
+    ImageWrapper, BusyCursor
 from ..patcher import exportConfig, patch_files
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
@@ -430,7 +433,7 @@ class _ModGroups(object):
         column = bosh.modInfos.table.getColumn(u'group')
         mods = mods or list(column) # if mods are None read groups for all mods
         groups = tuple(column.get(x) for x in mods)
-        self.mod_group.update((x,y) for x,y in zip(mods,groups) if y)
+        self.mod_group.update((x, y) for x, y in izip(mods, groups) if y)
 
     @staticmethod
     def assignedGroups():
@@ -592,10 +595,10 @@ class Mod_Details(OneItemLink):
             mod_details = bosh.mods_metadata.ModDetails()
             mod_details.readFromMod(self._selected_info,
                                     SubProgress(progress, 0.1, 0.7))
-            buff = StringIO.StringIO()
+            buff = io.StringIO()
             progress(0.7,_(u'Sorting records.'))
             for group in sorted(mod_details.group_records):
-                buff.write(group+u'\n')
+                buff.write(group.decode(u'ascii') + u'\n')
                 if group in (b'CELL',b'WRLD',b'DIAL'):
                     buff.write(u'  '+_(u'(Details not provided for this record type.)')+u'\n\n')
                     continue
@@ -607,7 +610,6 @@ class Mod_Details(OneItemLink):
                 buff.write(u'\n')
             self._showLog(buff.getvalue(), title=self._selected_item,
                           fixedFont=True)
-            buff.close()
 
 class Mod_ShowReadme(OneItemLink):
     """Open the readme."""
@@ -749,25 +751,24 @@ class Mod_ListDependent(OneItemLink):
         modInfos = self.window.data_store
         merged_, imported_ = modInfos.merged, modInfos.imported
         head, bul = u'=== ', u'* '
-        with bolt.sio() as out:
-            log = bolt.LogFile(out)
-            log(u'[spoiler]')
-            log.setHeader(head + legend + u': ')
-            text_list = u''
-            for mod in load_order.get_ordered(
-                    self._selected_info.get_dependents()):
-                hexIndex = modInfos.hexIndexString(mod)
-                if hexIndex:
-                    prefix = bul + hexIndex
-                elif mod in merged_:
-                    prefix = bul + u'++'
-                else:
-                    prefix = bul + (u'**' if mod in imported_ else u'__')
-                text_list = u'%s  %s' % (prefix, mod)
-                log(text_list)
-            if not text_list:  log(u'None')
-            log(u'[/spoiler]')
-            text_list = bolt.winNewLines(log.out.getvalue())
+        log = bolt.LogFile(io.StringIO())
+        log(u'[spoiler]')
+        log.setHeader(head + legend + u': ')
+        text_list = u''
+        for mod in load_order.get_ordered(
+                self._selected_info.get_dependents()):
+            hexIndex = modInfos.hexIndexString(mod)
+            if hexIndex:
+                prefix = bul + hexIndex
+            elif mod in merged_:
+                prefix = bul + u'++'
+            else:
+                prefix = bul + (u'**' if mod in imported_ else u'__')
+            text_list = u'%s  %s' % (prefix, mod)
+            log(text_list)
+        if not text_list:  log(u'None')
+        log(u'[/spoiler]')
+        text_list = bolt.winNewLines(log.out.getvalue())
         balt.copyToClipboard(text_list)
         self._showLog(text_list, title=legend, fixedFont=False)
 
@@ -1113,10 +1114,11 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             return
         _gui_patchers = [copy.deepcopy(x) for x in all_gui_patchers]
         #--Log & Clipboard text
-        log = bolt.LogFile(StringIO.StringIO())
+        log = bolt.LogFile(io.StringIO())
         log.setHeader(u'= %s %s' % (self._selected_item, _(u'Config')))
-        log(_(u'This is the current configuration of this Bashed Patch.  This report has also been copied into your clipboard.')+u'\n')
-        clip = StringIO.StringIO()
+        log(_(u'This is the current configuration of this Bashed Patch.  This '
+              u'report has also been copied into your clipboard.')+u'\n')
+        clip = io.StringIO()
         clip.write(u'%s %s:\n' % (self._selected_item, _(u'Config')))
         clip.write(u'[spoiler]\n')
         log.setHeader(u'== '+_(u'Patch Mode'))
@@ -1128,9 +1130,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         #-- Show log
         clip.write(u'[/spoiler]')
         balt.copyToClipboard(clip.getvalue())
-        clip.close()
         log_text = log.out.getvalue()
-        log.out.close()
         self._showWryeLog(log_text, title=_(u'Bashed Patch Configuration'))
 
 class Mod_ExportPatchConfig(_Mod_BP_Link):
@@ -1219,9 +1219,10 @@ class Mod_ScanDirty(ItemLink):
                 ret = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress, detailed=True)
         except CancelError:
             return
-        log = bolt.LogFile(StringIO.StringIO())
+        log = bolt.LogFile(io.StringIO())
         log.setHeader(u'= '+_(u'Scan Mods'))
-        log(_(u'This is a report of records that were detected as either Identical To Master (ITM) or a deleted reference (UDR).')
+        log(_(u'This is a report of records that were detected as either '
+              u'Identical To Master (ITM) or a deleted reference (UDR).')
             + u'\n')
         # Change a FID to something more usefull for displaying
         def strFid(form_id):
@@ -1282,7 +1283,6 @@ class Mod_ScanDirty(ItemLink):
             for mod in error: log(mod)
         self._showWryeLog(log.out.getvalue(),
                           title=_(u'Dirty Edit Scan Results'), asDialog=False)
-        log.out.close()
 
 #------------------------------------------------------------------------------
 class Mod_RemoveWorldOrphans(_NotObLink):
@@ -2079,11 +2079,10 @@ class Mod_Stats_Import(_Mod_Import_Link):
         return ItemStats()
 
     def _log(self, changed, fileName):
-        with bolt.sio() as buff:
-            for modName in sorted(changed):
-                buff.write(u'* %03d  %s\n' % (changed[modName], modName))
-            self._showLog(buff.getvalue())
-            buff.close()
+        buff = io.StringIO()
+        for modName in sorted(changed):
+            buff.write(u'* %03d  %s\n' % (changed[modName], modName))
+        self._showLog(buff.getvalue())
 
 #------------------------------------------------------------------------------
 from ..parsers import ItemPrices
@@ -2116,11 +2115,11 @@ class Mod_Prices_Import(_Mod_Import_Link):
         return ItemPrices()
 
     def _log(self, changed, fileName):
-        with bolt.sio() as buff:
-            for modName in sorted(changed):
-                buff.write(_(u'Imported Prices:')
-                           + u'\n* %s: %d\n' % (modName,changed[modName]))
-            self._showLog(buff.getvalue())
+        buff = io.StringIO()
+        for modName in sorted(changed):
+            buff.write(_(u'Imported Prices:')
+                       + u'\n* %s: %d\n' % (modName, changed[modName]))
+        self._showLog(buff.getvalue())
 
 #------------------------------------------------------------------------------
 from ..parsers import SigilStoneDetails
@@ -2154,12 +2153,12 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
         return SigilStoneDetails()
 
     def _log(self, changed, fileName):
-        with bolt.sio() as buff:
-            buff.write((_(u'Imported Sigil Stone details to mod %s:')
-                        +u'\n') % fileName)
-            for eid in sorted(changed):
-                buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue())
+        buff = io.StringIO()
+        buff.write((_(u'Imported Sigil Stone details to mod %s:')
+                    + u'\n') % fileName)
+        for eid in sorted(changed):
+            buff.write(u'* %s\n' % eid)
+        self._showLog(buff.getvalue())
 
 #------------------------------------------------------------------------------
 from ..parsers import SpellRecords
@@ -2206,12 +2205,12 @@ class Mod_SpellRecords_Import(_SpellRecords_Link, _Mod_Import_Link):
     _do_what = _(u'Import flags and effects?')
 
     def _log(self, changed, fileName):
-        with bolt.sio() as buff:
-            buff.write((_(u'Imported Spell details to mod %s:')
-                        +u'\n') % fileName)
-            for eid in sorted(changed):
-                buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue())
+        buff = io.StringIO()
+        buff.write((_(u'Imported Spell details to mod %s:')
+                    + u'\n') % fileName)
+        for eid in sorted(changed):
+            buff.write(u'* %s\n' % eid)
+        self._showLog(buff.getvalue())
 
 #------------------------------------------------------------------------------
 from ..parsers import IngredientDetails
@@ -2244,12 +2243,12 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
         return IngredientDetails()
 
     def _log(self, changed, fileName):
-        with bolt.sio() as buff:
-            buff.write((_(u'Imported Ingredient details to mod %s:')
-                        + u'\n') % fileName)
-            for eid in sorted(changed):
-                buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue())
+        buff = io.StringIO()
+        buff.write((_(u'Imported Ingredient details to mod %s:')
+                    + u'\n') % fileName)
+        for eid in sorted(changed):
+            buff.write(u'* %s\n' % eid)
+        self._showLog(buff.getvalue())
 
 #------------------------------------------------------------------------------
 from ..parsers import EditorIds
@@ -2307,7 +2306,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
             if not changed:
                 self._showOk(self.__class__.noChange)
             else:
-                buff = StringIO.StringIO()
+                buff = io.StringIO()
                 format_ = u"%s'%s' >> '%s'\n"
                 for old,new in sorted(changed):
                     if new in questionableEidsSet:
@@ -2322,7 +2321,6 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                     for badEid in badEidsList:
                         buff.write(u"  '%s'\n" % badEid)
                 log_text = buff.getvalue()
-                buff.close()
                 self._showLog(log_text, title=_(u'Objects Changed'))
         except BoltError as e:
             self._showWarning(u'%r' % e)
@@ -2358,13 +2356,13 @@ class Mod_FullNames_Import(_Mod_Import_Link):
         return FullNames()
 
     def _log(self, changed, fileName):
-        with bolt.sio() as buff:
-            format_ = u'%s:   %s >> %s\n'
-            #buff.write(format_ % (_(u'Editor Id'),_(u'Name')))
-            for eid in sorted(changed):
-                full, newFull = changed[eid]
-                try:
-                    buff.write(format_ % (eid, full, newFull))
-                except:
-                    print(u'unicode error:', (format_, eid, full, newFull))
-            self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
+        buff = io.StringIO()
+        format_ = u'%s:   %s >> %s\n'
+        #buff.write(format_ % (_(u'Editor Id'), _(u'Name')))
+        for eid in sorted(changed):
+            full, newFull = changed[eid]
+            try:
+                buff.write(format_ % (eid, full, newFull))
+            except:
+                print(u'unicode error:', (format_, eid, full, newFull))
+        self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))

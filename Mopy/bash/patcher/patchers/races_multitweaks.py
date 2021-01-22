@@ -29,17 +29,20 @@ RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 """
 
 from __future__ import print_function
+
 import random
 import re
 from collections import defaultdict, Counter
+from itertools import izip
+
 # Internal
+from .base import MultiTweakItem, ListPatcher
 from ... import bosh, bush
 from ...bolt import GPath, deprint
 from ...brec import MreRecord, MelObject, strFid
 from ...exception import BoltError
 from ...mod_files import ModFile, LoadFactory
 from ...patcher.base import AMultiTweaker
-from .base import MultiTweakItem, ListPatcher
 
 # Utilities & Constants -------------------------------------------------------
 def _find_vanilla_eyes():
@@ -150,15 +153,13 @@ class RaceTweaker_BiggerOrcsAndNords(_ARaceTweak):
         rec_full = record.full.lower()
         is_orc = u'orc' in rec_full
         return (u'nord' in rec_full or is_orc) and any(
-            getattr(record, a) != v for a, v in zip(
+            getattr(record, a) != v for a, v in izip(
                 self._tweak_attrs, self.choiceValues[self.chosen][0][is_orc]))
 
-    # This sounds like a good concept, doesn't it? Later in this branch ;)
     def tweak_record(self, record):
         is_orc = u'orc' in record.full.lower()
-        for tweak_attr, tweak_val in zip(
-                self._tweak_attrs,
-                self.choiceValues[self.chosen][0][is_orc]):
+        for tweak_attr, tweak_val in izip(
+                self._tweak_attrs, self.choiceValues[self.chosen][0][is_orc]):
             setattr(record, tweak_attr, tweak_val)
 
 # -----------------------------------------------------------------------------

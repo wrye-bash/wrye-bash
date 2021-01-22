@@ -24,13 +24,16 @@
 
 # Python imports
 from __future__ import division, print_function
+
+import io
 from collections import deque
-from itertools import chain
+from itertools import chain, izip
 from operator import itemgetter, attrgetter
+
 # Wrye Bash imports
 from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
 from .utils_constants import group_types
-from ..bolt import GPath, sio, pack_int, structs_cache
+from ..bolt import GPath, pack_int, structs_cache
 from ..exception import AbstractError, ModError, ModFidMismatchError
 
 class MobBase(object):
@@ -127,7 +130,7 @@ class MobBase(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around self.data."""
-        return ModReader(self.inName,sio(self.data))
+        return ModReader(self.inName, io.BytesIO(self.data))
 
     def iter_filtered_records(self, wanted_sigs, include_ignored=False):
         """Filters iter_records, returning a generator that only yields records
@@ -211,7 +214,7 @@ class MobObjects(MobBase):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
-        errLabel = expType + u' Top Block'
+        errLabel = u'%s Top Block' % expType
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
         recordsAppend = self.records.append
@@ -598,7 +601,7 @@ class MobDials(MobBase):
         ins_seek = ins.seek
         if not dial_class: ins_seek(endPos) # skip the whole group
         expType = self.label
-        errLabel = expType + u' Top Block'
+        errLabel = u'%s Top Block' % expType
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
         append_dialogue = self.dialogues.append
@@ -965,9 +968,9 @@ class MobCell(MobBase):
         u'distant_refs')):
         """Updates any records in 'self' that exist in 'srcBlock'."""
         mergeDiscard = mergeIds.discard
-        self_src_attrs = zip(__attrget(self), __attrget(srcBlock))
-        for attr, (myRecord, record) in zip((u'cell', u'pgrd', u'land'),
-                                          self_src_attrs):
+        self_src_attrs = list(izip(__attrget(self), __attrget(srcBlock)))
+        for attr, (myRecord, record) in izip((u'cell', u'pgrd', u'land'),
+                                             self_src_attrs):
             if myRecord and record:
                 src_rec_fid = record.fid
                 if myRecord.fid != src_rec_fid:
@@ -977,7 +980,7 @@ class MobCell(MobBase):
                     record = record.getTypeCopy()
                     setattr(self, attr, record)
                     mergeDiscard(src_rec_fid)
-        for attr, (self_rec_list, src_rec_list) in zip(
+        for attr, (self_rec_list, src_rec_list) in izip(
                 (u'persistent_refs', u'temp_refs', u'distant_refs'),
                 self_src_attrs[3:]):
             fids = {record.fid: i for i, record in enumerate(self_rec_list)}
@@ -1276,7 +1279,7 @@ class MobICells(MobCells):
         recCellClass = self.loadFactory.getRecClass(expType)
         insSeek = ins.seek
         if not recCellClass: insSeek(endPos) # skip the whole group
-        errLabel = expType + u' Top Block'
+        errLabel = u'%s Top Block' % expType
         cell = None
         endBlockPos = endSubblockPos = 0
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks(b'CELL')
@@ -1650,7 +1653,7 @@ class MobWorlds(MobBase):
         recWrldClass = self.loadFactory.getRecClass(expType)
         insSeek = ins.seek
         if not recWrldClass: insSeek(endPos) # skip the whole group
-        errLabel = expType + u' Top Block'
+        errLabel = u'%s Top Block' % expType
         worldBlocks = self.worldBlocks
         world = None
         insAtEnd = ins.atEnd

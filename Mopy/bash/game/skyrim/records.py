@@ -22,6 +22,7 @@
 # =============================================================================
 """This module contains the skyrim record classes."""
 from collections import OrderedDict
+from itertools import izip
 
 from ... import brec, bolt
 from ...bolt import Flags, struct_pack, structs_cache, unpack_str16
@@ -44,6 +45,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelUInt32Flags, MelOptUInt16Flags, MelOwnership, MelDebrData, \
     get_structs, MelOptUInt32Flags
 from ...exception import ModError, ModSizeError, StateError
+
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
 if brec.MelModel is None:
@@ -673,7 +675,7 @@ class MelVmad(MelBase):
     Note that this code is somewhat heavily optimized for performance, so
     expect lots of inlines and other non-standard or ugly code.
 
-    :type _handler_map: dict[str, type|_AVmadComponent]"""
+    :type _handler_map: dict[bytes, type|_AVmadComponent]"""
     # Fragments ---------------------------------------------------------------
     class FragmentBasic(_AVmadComponent):
         """Implements the following fragments:
@@ -939,7 +941,7 @@ class MelVmad(MelBase):
             # unusual; these are the fastest implementations, at least on py2.
             # In particular, '!= 0' is faster than 'bool()', '[x for x in a]'
             # is slightly faster than 'list(a)' and "repr(c) + 'f'" is faster
-            # than "'%uf' % c" or "str(c) + 'f'".
+            # than "'%uf' % c" or "unicode(c) + 'f'".
             property_type = record.prop_type
             if property_type == 0: # null
                 record.prop_data = None
@@ -3019,8 +3021,8 @@ class MreLgtm(MelRecord):
                 unpacked_val = (unpacked_val[:19]
                                 + (unpacked_val[19] + null4 * 2,)
                                 + unpacked_val[20:])
-                for attr, value, action in zip(self.attrs, unpacked_val,
-                                               self.actions):
+                for attr, value, action in izip(self.attrs, unpacked_val,
+                                                self.actions):
                     if action: value = action(value)
                     setattr(record, attr, value)
             else:

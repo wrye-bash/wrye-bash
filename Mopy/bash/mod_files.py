@@ -23,6 +23,8 @@
 """This module houses the entry point for reading and writing plugin files
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
+from __future__ import print_function
+
 import re
 from collections import defaultdict
 
@@ -86,7 +88,9 @@ class LoadFactory(object):
     def addClass(self, recClass, __cell_rec_sigs=frozenset([b'WRLD', b'ROAD',
             b'CELL', b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'])):
         """Adds specified class."""
-        if isinstance(recClass,basestring):
+        if isinstance(recClass, unicode):
+            raise RuntimeError(u'Do not pass strings to addClass!')
+        elif isinstance(recClass, bytes):
             recType = recClass
             recClass = MreRecord
         else:
@@ -263,17 +267,6 @@ class ModFile(object):
         # Done reading - convert to long FormIDs at the IO boundary
         self._convert_fids(to_long=True)
 
-    def askSave(self,hasChanged=True):
-        """CLI command. If hasSaved, will ask if user wants to save the file,
-        and then save if the answer is yes. If hasSaved == False, then does nothing."""
-        if not hasChanged: return
-        if re.match(u'' r'\s*[yY]', raw_input(
-            u'\nSave changes to %s [y/n]?: ' % self.fileInfo), flags=re.U):
-            self.safeSave()
-            print(u'%s saved.' % self.fileInfo)
-        else:
-            print(u'%s not saved.' % self.fileInfo)
-
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
         self.fileInfo.tempBackup()
@@ -339,7 +332,7 @@ class ModFile(object):
                 return indices[m_name] if obj_id >= 0x800 else 0
         def mapper(fid):
             if fid is None: return None
-            if isinstance(fid, (int, long)): return fid # PY3: just int
+            if isinstance(fid, (int, long)): return fid
             modName, object_id = fid
             return (_master_index(modName, object_id) << 24) | object_id
         return mapper
@@ -432,7 +425,7 @@ class ModHeaderReader(object):
         every record with that signature. Note that the flags are not processed
         either - if you need that, manually call MreRecord.flags1_() on them.
 
-        :rtype: defaultdict[str, list[RecordHeader]]"""
+        :rtype: defaultdict[bytes, list[RecordHeader]]"""
         ret_headers = defaultdict(list)
         with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd

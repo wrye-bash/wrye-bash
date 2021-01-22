@@ -160,7 +160,7 @@ def get_version_info(version):
     """
     production_regex = r'\d{3,}$'
     nightly_regex = r'(\d{3,})\.(\d{12})$'
-    version = str(version)
+    version = unicode(version)
     if re.match(production_regex, version) is not None:
         file_version = u'{}.0.0.0'.format(version)
     else:

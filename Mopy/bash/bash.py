@@ -137,7 +137,6 @@ def _import_deps():
         _close_dialog_windows()
         _show_boot_popup(_(u'The following dependencies could not be located or '
                          u'failed to load:') + u'\n\n' + deps_msg)
-        sys.exit(1)
 
 #------------------------------------------------------------------------------
 def assure_single_instance(instance):
@@ -239,7 +238,11 @@ def _bash_ini_parser(bash_ini_path):
     bash_ini_parser = None
     if bash_ini_path is not None and os.path.exists(bash_ini_path):
         bash_ini_parser = ConfigParser()
-        bash_ini_parser.read(bash_ini_path)
+        # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
+        # English INI is ASCII)
+        # PY3: use read(bash_ini_path, encoding='utf-8') instead
+        with codecs.open(bash_ini_path, encoding=u'utf-8') as bash_ini:
+            bash_ini_parser.readfp(bash_ini)
     return bash_ini_parser
 
 # Main ------------------------------------------------------------------------
@@ -275,7 +278,6 @@ def main(opts):
         ])
         _close_dialog_windows()
         _show_boot_popup(msg)
-        sys.exit(1)
 
 def _main(opts, wx_locale):
     """Run the Wrye Bash main loop.
@@ -353,7 +355,6 @@ def _main(opts, wx_locale):
                           traceback.format_exc()])
         _close_dialog_windows()
         _show_boot_popup(msg)
-        return
     atexit.register(exit_cleanup)
     basher.InitSettings()
     basher.InitLinks()
@@ -514,7 +515,7 @@ def _show_boot_popup(msg, is_critical=True):
         _app = _wx.App(False)
         _app.locale = _wx.Locale(_wx.LANGUAGE_DEFAULT)
         MessageBox.display_dialog(msg)
-        if is_critical: _wx.Exit()
+        if is_critical: sys.exit(1)
     except Exception: ##: tighten these excepts?
         # Instantiating wx.App failed, fallback to tkinter.
         but_kwargs = {u'text': u'QUIT' if is_critical else u'OK',

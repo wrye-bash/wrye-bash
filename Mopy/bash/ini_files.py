@@ -164,11 +164,10 @@ class IniFile(AFile):
         reDeleted = self.__class__.reDeletedSetting
         reSetting = self.__class__.reSetting
         #--Read ini file
-        with tweakPath.open(u'r') as iniFile:
+        with tweakPath.open(u'r', encoding=self.ini_encoding) as iniFile:
             sectionSettings = None
             section = None
             for i,line in enumerate(iniFile.readlines()):
-                line = unicode(line, self.ini_encoding)
                 maDeleted = reDeleted.match(line)
                 stripped = reComment.sub(u'',line).strip()
                 maSection = reSection.match(stripped)
@@ -193,7 +192,7 @@ class IniFile(AFile):
         """Return a list of the decoded lines in the ini file, if as_unicode
         is True, or the raw bytes in the ini file, if as_unicode is False.
         Note we strip line endings at the end of the line in unicode mode.
-        :rtype: list[unicode]|str"""
+        :rtype: list[unicode]|bytes"""
         try:
             with self.abs_path.open(u'rb') as f:
                 content = f.read()
@@ -571,7 +570,10 @@ class OBSEIniFile(IniFile):
                         # Un-delete/modify it
                         value = ini_settings[section_key][setting]
                         del ini_settings[section_key][setting]
-                        if isinstance(value, basestring) and value[-1:] == u'\n':
+                        if isinstance(value, bytes):
+                            raise RuntimeError(u'Do not pass bytes into '
+                                               u'saveSettings!')
+                        if isinstance(value, unicode) and value[-1:] == u'\n':
                             line = value.rstrip(u'\n\r')
                         else:
                             line = format_string % (setting, value)

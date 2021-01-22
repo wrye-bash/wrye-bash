@@ -247,8 +247,8 @@ class Installers_RefreshData(_AInstallers_Refresh):
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
-    files. For safety just moved to Game Mods\Bash Installers\Bash\Data
-    Folder Contents (date/time)\."""
+    files. For safety just moved to Game Mods/Bash Installers/Bash/Data
+    Folder Contents (date/time)."""
     _text = _(u'Clean Data')
     _help = _(u'This will remove all mod files that are not linked to an '
              u'active installer out of the %s folder.') % bush.game.mods_dir

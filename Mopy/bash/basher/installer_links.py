@@ -30,7 +30,7 @@ Installer_Subs_*: Menu items for the Sub-Packages list in the installer tab.
 Their window attribute points to the InstallersPanel singleton.
 """
 
-import StringIO
+import io
 import os
 import re
 import webbrowser
@@ -1352,7 +1352,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             #--Refresh UI
             self.idata.irefresh(what=u'C')
             #--Generate log
-            log = LogFile(StringIO.StringIO())
+            log = LogFile(io.StringIO())
             log.setHeader(u'== '+_(u'Overview')+u'\n')
 ##            log('{{CSS:wtxt_sand_small.css}}')
             log(u'. '+_(u'Name')+u': %s'%BCFArchive)

@@ -25,6 +25,8 @@ higher-level building blocks can be found in common_subrecords.py."""
 
 from __future__ import division, print_function
 
+from itertools import izip
+
 from .utils_constants import FID, null1, _make_hashable, FixedString, \
     _int_unpacker, get_structs
 from .. import bolt, exception
@@ -90,7 +92,7 @@ class Subrecord(object):
                                                               lenData))
         outWrite(binary_data)
 
-def unpackSubHeader(ins, recType='----', expType=None, expSize=0, # PY3: ,*,
+def unpackSubHeader(ins, recType=b'----', expType=None, expSize=0, # PY3: ,*,
                     __unpacker=_int_unpacker, __sr=Subrecord):
     """Unpack a subrecord header. Optionally checks for match with expected
     type and size."""
@@ -108,7 +110,7 @@ def unpackSubHeader(ins, recType='----', expType=None, expSize=0, # PY3: ,*,
             u'but found %s instead.' % (recType, expType, mel_sig))
     #--Match expected size?
     if expSize and expSize != mel_size:
-        raise exception.ModSizeError(ins.inName, recType + '.' + mel_sig,
+        raise exception.ModSizeError(ins.inName, recType + b'.' + mel_sig,
                                      (expSize,), mel_size)
     return mel_sig, mel_size
 
@@ -189,7 +191,8 @@ class MelBase(Subrecord):
         string ready to write to an output stream. In some cases another type
         is returned that must be packed by caller (see MelString). Return None
         to skip dumping. It may modify the record before dumping.
-        :rtype: basestring | None"""
+
+        :rtype: bytes | None"""
         return getattr(record, self.attr) # this better be bytes here
 
     def mapFids(self,record,function,save=False):
@@ -568,7 +571,7 @@ class MelUnicode(MelString):
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         value = u'\n'.join(decoder(x,self.encoding,avoidEncodings=('utf8','utf-8'))
-                           for x in bolt.cstrip(ins.read(size_, readId)).split('\n'))
+                           for x in bolt.cstrip(ins.read(size_, readId)).split(b'\n'))
         setattr(record, self.attr, value)
 
 #------------------------------------------------------------------------------
@@ -639,13 +642,14 @@ class MelStruct(MelBase):
         if self.formAttrs: formElements.add(self)
 
     def setDefault(self,record):
-        for attr,value,action in zip(self.attrs, self.defaults, self.actions):
+        for attr, value, action in izip(self.attrs, self.defaults,
+                                        self.actions):
             if action: value = action(value)
             setattr(record, attr, value)
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         unpacked = ins.unpack(self._unpacker, size_, readId)
-        for attr,value,action in zip(self.attrs,unpacked,self.actions):
+        for attr, value, action in izip(self.attrs, unpacked, self.actions):
             setattr(record, attr, action(value) if action else value)
 
     def pack_subrecord_data(self, record):
@@ -654,7 +658,7 @@ class MelStruct(MelBase):
         # this is just a noop.
         values = [
             action(value).dump() if action else value for value, action in
-            zip([getattr(record, a) for a in self.attrs], self.actions)]
+            izip((getattr(record, a) for a in self.attrs), self.actions)]
         return self._packer(*values)
 
     def mapFids(self,record,function,save=False):
@@ -811,7 +815,7 @@ class MelOptStruct(MelStruct):
         # TODO: Unfortunately, checking if the attribute is None is not
         # really effective.  Checking it to be 0,empty,etc isn't effective either.
         # It really just needs to check it against the default.
-        for attr,default in zip(self.attrs,self.defaults):
+        for attr, default in izip(self.attrs, self.defaults):
             oldValue = getattr(record, attr)
             if oldValue is not None and oldValue != default:
                 return super(MelOptStruct, self).pack_subrecord_data(record)

@@ -37,9 +37,9 @@ except ImportError:
     _PdfViewer = None
 import wx as _wx
 
-import urllib
-import urlparse
 import webbrowser
+from urllib import pathname2url
+from urlparse import urljoin
 
 from .base_components import _AComponent
 from .buttons import BackwardButton, ForwardButton, ReloadButton
@@ -157,7 +157,7 @@ class WebViewer(_AComponent):
         """Opens the specified file by turning it into a 'file:' URL.
 
         :param file_path: The path to the file to open."""
-        file_url = urlparse.urljoin(u'file:', urllib.pathname2url(file_path))
+        file_url = urljoin(u'file:', pathname2url(file_path))
         self.open_url(file_url)
 
     def open_url(self, url): # type: (unicode) -> None

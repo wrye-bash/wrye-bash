@@ -52,14 +52,17 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 from __future__ import division
-import StringIO
+
 import collections
+import io
 import os
 import sys
 import time
 from collections import OrderedDict, namedtuple
 from functools import partial, reduce
+from itertools import izip
 from operator import itemgetter
+
 #--wxPython
 import wx
 
@@ -1263,8 +1266,7 @@ class _DetailsMixin(object):
     # Details panel API
     def SetFile(self, fileName=u'SAME'):
         """Set file to be viewed. Leave fileName empty to reset.
-        :type fileName: basestring | bolt.Path | None
-        """
+        :type fileName: unicode | bolt.Path | None"""
         #--Reset?
         if fileName == u'SAME':
             if self.displayed_item not in self.file_infos:
@@ -2409,7 +2411,7 @@ class InstallersList(balt.UIList):
                 refreshNeeded = modsRefresh = iniRefresh = False
                 if len(refreshes) > 1:
                     refreshNeeded, modsRefresh, iniRefresh = [
-                        any(grouped) for grouped in zip(*refreshes)]
+                        any(grouped) for grouped in izip(*refreshes)]
             #--Refresh UI
             if refreshNeeded or ex: # refresh the UI in case of an exception
                 if modsRefresh: BashFrame.modList.RefreshUI(refreshSaves=False,
@@ -2890,7 +2892,7 @@ class InstallersDetails(_SashDetailsPanel):
         pageName = gPage.get_component_name()
         def dumpFiles(files, header=u''):
             if files:
-                buff = StringIO.StringIO()
+                buff = io.StringIO()
                 files = bolt.sortFiles(files)
                 if header: buff.write(header+u'\n')
                 for file in files:
@@ -3322,7 +3324,7 @@ class ScreensList(balt.UIList):
         selected = self.GetSelected()
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)
-        digits = len(str(num + len(selected)))
+        digits = len(u'%s' % (num + len(selected)))
         if numStr: numStr.zfill(digits)
         with BusyCursor():
             to_select = set()
@@ -4330,7 +4332,7 @@ def InitImages():
     # Setup the colors dictionary
     for key, value in settings[u'bash.colors'].iteritems():
         # Convert any colors that were stored as bytestrings into tuples
-        if isinstance(value, str):
+        if isinstance(value, bytes):
             value = settings[u'bash.colors'][key] = _conv_dict[value]
         colors[key] = value
     #--Images

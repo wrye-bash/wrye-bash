@@ -28,16 +28,19 @@ from __future__ import division
 import os
 import traceback
 from collections import OrderedDict, defaultdict
+from itertools import izip
 
 import wx.adv as wiz  # wxPython wizard class
-from . import ScriptParser         # generic parser class
+
+from . import ScriptParser  # generic parser class
 from . import balt, bass, bolt, bosh, bush, load_order
-from .ini_files import OBSEIniFile
+from .ScriptParser import error
 from .env import get_file_version
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    WizardDialog, EventResult, ListBox, CheckListBox, ImageWrapper, PictureWithCursor
-from .ScriptParser import error
+    WizardDialog, EventResult, ListBox, CheckListBox, ImageWrapper, \
+    PictureWithCursor
+from .ini_files import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")
@@ -81,10 +84,10 @@ class InstallerWizard(WizardDialog):
             title=_(u'Installer Wizard'), sizes_dict=bass.settings,
             size_key=u'bash.wizard.size', pos_key=u'bash.wizard.pos')
         #'dummy' page tricks the wizard into always showing the "Next" button,
-        #'next' will be set by the parser
+        # _next_page will be set by the parser
         class _PageDummy(wiz.WizardPage): pass
         self.dummy = _PageDummy(self._native_widget) # todo de-wx!
-        self.next = None # todo rename
+        self._next_page = None
         #True prevents actually moving to the 'next' page.  We use this after the "Next"
         #button is pressed, while the parser is running to return the _actual_ next page
         #'finishing' is to allow the "Next" button to be used when it's name is changed to
@@ -113,9 +116,9 @@ class InstallerWizard(WizardDialog):
                     #Then show the page that the parser returns,
                     #rather than the dummy page
                     evt_page.OnNext()
-                    self.next = self.parser.Continue()
+                    self._next_page = self.parser.Continue()
                     self.blockChange = False
-                    self._native_widget.ShowPage(self.next)
+                    self._native_widget.ShowPage(self._next_page)
                     return EventResult.CANCEL
                 else:
                     self.blockChange = True
@@ -124,9 +127,9 @@ class InstallerWizard(WizardDialog):
             # Previous, pop back to the last state,
             # and resume execution
             self.finishing = False
-            self.next = self.parser.Back()
+            self._next_page = self.parser.Back()
             self.blockChange = False
-            self._native_widget.ShowPage(self.next)
+            self._native_widget.ShowPage(self._next_page)
             return EventResult.CANCEL
 
     def Run(self):
@@ -855,7 +858,7 @@ class WryeParser(ScriptParser.Parser):
     def opE(self, l, r): return l == r
 
     def opEc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() == r.lower()
         else:
             return l == r
@@ -863,7 +866,7 @@ class WryeParser(ScriptParser.Parser):
     def opNE(self, l, r): return l != r
 
     def opNEc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() != r.lower()
         else:
             return l != r
@@ -871,7 +874,7 @@ class WryeParser(ScriptParser.Parser):
     def opGE(self, l, r): return l >= r
 
     def opGEc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() >= r.lower()
         else:
             return l >= r
@@ -879,7 +882,7 @@ class WryeParser(ScriptParser.Parser):
     def opG(self, l, r): return l > r
 
     def opGc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() > r.lower()
         else:
             return l > r
@@ -887,7 +890,7 @@ class WryeParser(ScriptParser.Parser):
     def opLE(self, l, r): return l <= r
 
     def opLEc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() <= r.lower()
         else:
             return l <= r
@@ -895,7 +898,7 @@ class WryeParser(ScriptParser.Parser):
     def opL(self, l, r): return l < r
 
     def opLc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() < r.lower()
         else:
             return l < r
@@ -904,7 +907,7 @@ class WryeParser(ScriptParser.Parser):
     def opIn(self, l, r): return l in r
 
     def opInCase(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() in r.lower()
         else:
             return l in r
@@ -1065,28 +1068,28 @@ class WryeParser(ScriptParser.Parser):
             return 0
 
     def fnEndsWith(self, String, *args):
-        if not isinstance(String, basestring):
+        if not isinstance(String, unicode):
             error(_(u"Function 'endswith' only operates on string types."))
         return String.endswith(args)
 
     def fnStartsWith(self, String, *args):
-        if not isinstance(String, basestring):
+        if not isinstance(String, unicode):
             error(_(u"Function 'startswith' only operates on string types."))
         return String.startswith(args)
 
     def fnLower(self, String):
-        if not isinstance(String, basestring):
+        if not isinstance(String, unicode):
             error(_(u"Function 'lower' only operates on string types."))
         return String.lower()
 
     def fnFind(self, String, sub, start=0, end=-1):
-        if not isinstance(String, basestring):
+        if not isinstance(String, unicode):
             error(_(u"Function 'find' only operates on string types."))
         if end < 0: end += len(String) + 1
         return String.find(sub, start, end)
 
     def fnRFind(self, String, sub, start=0, end=-1):
-        if not isinstance(String, basestring):
+        if not isinstance(String, unicode):
             error(_(u"Function 'rfind' only operates on string types."))
         if end < 0: end += len(String) + 1
         return String.rfind(sub, start, end)
@@ -1504,7 +1507,7 @@ class WryeParser(ScriptParser.Parser):
                                      bWBOk, wbHave, wbWant)
 
     def _TestVersion_GE(self, want):
-        if isinstance(bush.game.Ge.exe, str):
+        if isinstance(bush.game.Ge.exe, bytes):
             files = [bass.dirs[u'mods'].join(bush.game.Ge.exe)]
         else:
             files = [bass.dirs[u'mods'].join(*x) for x in bush.game.Ge.exe]
@@ -1528,7 +1531,7 @@ class WryeParser(ScriptParser.Parser):
             ver = u'.'.join([unicode(i) for i in have])
             if need == u'None':
                 return [1, ver]
-            for have_part, need_part in zip(have, need):
+            for have_part, need_part in izip(have, need):
                 if have_part > need_part:
                     return [1, ver]
                 elif have_part < need_part:

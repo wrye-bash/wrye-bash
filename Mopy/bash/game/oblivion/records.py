@@ -21,12 +21,13 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
+import io
 import re
 from collections import OrderedDict
 from itertools import chain
 
 from ... import brec
-from ...bolt import Flags, sio
+from ...bolt import Flags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, \
     MelFids, MreHeaderBase, MelBase, MelFidList, MelStrings, \
@@ -419,26 +420,27 @@ class MreHasEffects(object):
     def getEffectsSummary(self):
         """Return a text description of magic effects."""
         from ... import bush
-        with sio() as buff:
-            avEffects = bush.game.generic_av_effects
-            aValues = bush.game.actor_values
-            buffWrite = buff.write
-            if self.effects:
-                school = self.getSpellSchool()
-                buffWrite(aValues[20+school] + u'\n')
-            for index,effect in enumerate(self.effects):
-                if effect.scriptEffect:
-                    effectName = effect.scriptEffect.full or u'Script Effect'
-                else:
-                    effectName = bush.game.mgef_name[effect.effect_sig]
-                    if effect.effect_sig in avEffects:
-                        effectName = re.sub(_(u'(Attribute|Skill)'),aValues[effect.actorValue],effectName)
-                buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
-                if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)
-                if effect.area: buffWrite(u' %sa'%effect.area)
-                if effect.duration > 1: buffWrite(u' %sd'%effect.duration)
-                buffWrite(u'\n')
-            return buff.getvalue()
+        buff = io.StringIO()
+        avEffects = bush.game.generic_av_effects
+        aValues = bush.game.actor_values
+        buffWrite = buff.write
+        if self.effects:
+            school = self.getSpellSchool()
+            buffWrite(aValues[20 + school] + u'\n')
+        for index, effect in enumerate(self.effects):
+            if effect.scriptEffect:
+                effectName = effect.scriptEffect.full or u'Script Effect'
+            else:
+                effectName = bush.game.mgef_name[effect.effect_sig]
+                if effect.effect_sig in avEffects:
+                    effectName = re.sub(_(u'(Attribute|Skill)'),
+                                        aValues[effect.actorValue], effectName)
+            buffWrite(u'o+*'[effect.recipient] + u' ' + effectName)
+            if effect.magnitude: buffWrite(u' %sm' % effect.magnitude)
+            if effect.area: buffWrite(u' %sa' % effect.area)
+            if effect.duration > 1: buffWrite(u' %sd' % effect.duration)
+            buffWrite(u'\n')
+        return buff.getvalue()
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
@@ -1577,46 +1579,46 @@ class MreRace(MelRecord):
                   'femaleSpeed', 'femaleEndurance', 'femalePersonality',
                   'femaleLuck'),
         # Indexed Entries
-        MelBase('NAM0', 'face_data_marker', ''),
+        MelBase(b'NAM0', u'face_data_marker', b''),
         MelRaceParts({
-            0: 'head',
-            1: 'maleEars',
-            2: 'femaleEars',
-            3: 'mouth',
-            4: 'teethLower',
-            5: 'teethUpper',
-            6: 'tongue',
-            7: 'leftEye',
-            8: 'rightEye',
+            0: u'head',
+            1: u'maleEars',
+            2: u'femaleEars',
+            3: u'mouth',
+            4: u'teethLower',
+            5: u'teethUpper',
+            6: u'tongue',
+            7: u'leftEye',
+            8: u'rightEye',
         }, group_loaders=lambda _indx: (
             # TODO(inf) Can't use MelModel here, since some patcher code
             #  directly accesses these - MelModel would put them in a group,
             #  which breaks that. Change this to a MelModel, then hunt down
             #  that code and change it
-            MelString('MODL', 'modPath'),
+            MelString(b'MODL', u'modPath'),
             # None here is on purpose - 0 is a legitimate value
             MelOptFloat(b'MODB', u'modb', None),
             MelBase('MODT', 'modt_p'),
             MelIcon(),
         )),
-        MelBase('NAM1', 'body_data_marker', ''),
-        MelBase('MNAM', 'male_body_data_marker', ''),
+        MelBase(b'NAM1', u'body_data_marker', b''),
+        MelBase(b'MNAM', u'male_body_data_marker', b''),
         MelModel(u'maleTailModel'),
         MelRaceParts({
-            0: 'maleUpperBodyPath',
-            1: 'maleLowerBodyPath',
-            2: 'maleHandPath',
-            3: 'maleFootPath',
-            4: 'maleTailPath',
+            0: u'maleUpperBodyPath',
+            1: u'maleLowerBodyPath',
+            2: u'maleHandPath',
+            3: u'maleFootPath',
+            4: u'maleTailPath',
         }, group_loaders=lambda _indx: (MelIcon(),)),
-        MelBase('FNAM', 'female_body_data_marker', ''),
+        MelBase(b'FNAM', u'female_body_data_marker', b''),
         MelModel(u'femaleTailModel'),
         MelRaceParts({
-            0: 'femaleUpperBodyPath',
-            1: 'femaleLowerBodyPath',
-            2: 'femaleHandPath',
-            3: 'femaleFootPath',
-            4: 'femaleTailPath',
+            0: u'femaleUpperBodyPath',
+            1: u'femaleLowerBodyPath',
+            2: u'femaleHandPath',
+            3: u'femaleFootPath',
+            4: u'femaleTailPath',
         }, group_loaders=lambda _indx: (MelIcon(),)),
         # Normal Entries
         MelFidList('HNAM','hairs'),
