@@ -62,13 +62,12 @@ class _APreserver(ImportPatcher):
         super(_APreserver, self).__init__(p_name, p_file, p_sources)
         #--(attribute-> value) dicts keyed by long fid.
         self.id_data = defaultdict(dict)
-        self.srcClasses = set() #--Record classes actually provided by src
+        self.srcs_sigs = set() #--Record signatures actually provided by src
         # mods/files.
-        self.classestemp = set()
         #--Type Fields
         self._fid_rec_attrs_class = (defaultdict(dict) if self._multi_tag
                                      else defaultdict(tuple))
-        self._fid_rec_attrs_class.update({MreRecord.type_class[r]: a for r, a
+        self._fid_rec_attrs_class.update({r: a for r, a
                                           in self._fid_rec_attrs.iteritems()})
         # We want FormID attrs in the full recAttrs as well. They're only
         # separate for checking before we import
@@ -79,16 +78,15 @@ class _APreserver(ImportPatcher):
         else:
             def collect_attrs(r, a):
                 return a + self._fid_rec_attrs.get(r, ())
-        ##: TODO: use the sigs as keys below not the classes?
-        self.recAttrs_class = {MreRecord.type_class[r]: collect_attrs(r, a)
+        self.rec_type_attrs = {r: collect_attrs(r, a)
                                for r, a in self.rec_attrs.iteritems()}
         # Check if we need to use setattr_deep to set attributes
         if self._multi_tag:
             all_attrs = chain.from_iterable(
-                v for d in self.recAttrs_class.itervalues()
+                v for d in self.rec_type_attrs.itervalues()
                 for v in d.itervalues())
         else:
-            all_attrs = chain.from_iterable(self.recAttrs_class.itervalues())
+            all_attrs = chain.from_iterable(self.rec_type_attrs.itervalues())
         self._deep_attrs = any(u'.' in a for a in all_attrs)
         # Split srcs based on CSV extension ##: move somewhere else?
         self.csv_srcs = [s for s in p_sources if s.cext == u'.csv']
@@ -118,70 +116,72 @@ class _APreserver(ImportPatcher):
         from the CSV sources to this patcher's internal data structures."""
         # Filter out any entries that don't actually have data or don't
         # actually exist (for this game at least)
-        filtered_dict = {k: v for k, v in parsed_sources.iteritems()
-                         if k and k in MreRecord.type_class}
-        self.srcClasses.update(MreRecord.type_class[x] for x in filtered_dict)
+        filtered_dict = {k.encode(u'ascii') if type(k) is unicode else k: v
+                         for k, v in parsed_sources.iteritems()
+                         if k and k in MreRecord.type_class} ##: k and ?
+        self.srcs_sigs.update(filtered_dict)
         for src_data in filtered_dict.itervalues():
             self.id_data.update(src_data)
 
     @property
     def _read_sigs(self):
-        return tuple(x.rec_sig for x in self.srcClasses)
+        return self.srcs_sigs
 
     # noinspection PyDefaultArgument
-    def _init_data_loop(self, recClass, srcFile, srcMod, temp_id_data,
-                        __attrgetters=attrgetter_cache):
-        recAttrs = self.recAttrs_class[recClass]
-        fid_attrs = self._fid_rec_attrs_class[recClass]
-        loaded_mods = self.patchFile.loadSet
+    def _init_data_loop(self, top_grup_sig, srcFile, srcMod, mod_id_data,
+                        mod_tags, loaded_mods, __attrgetters=attrgetter_cache):
+        recAttrs = self.rec_type_attrs[top_grup_sig]
+        fid_attrs = self._fid_rec_attrs_class[top_grup_sig]
         if self._multi_tag:
             # For multi-tag importers, we need to look up the applied bash tags
             # and use those to find all applicable attributes
-            mod_tags = srcFile.fileInfo.getBashTags()
             recAttrs = set(chain.from_iterable(
                 attrs for t, attrs in recAttrs.iteritems() if t in mod_tags))
             fid_attrs = set(chain.from_iterable(
                 attrs for t, attrs in fid_attrs.iteritems() if t in mod_tags))
-        for record in srcFile.tops[recClass.rec_sig].iter_filtered_records(
-                self.getReadClasses):
+        for record in srcFile.tops[top_grup_sig].iter_filtered_records(
+                self.srcs_sigs): # this is srcs_sigs of all mods up till now?
             # If we have FormID attributes, check those before importing
             if fid_attrs:
                 fid_attr_values = [__attrgetters[a](record) for a in fid_attrs]
-                if any(f and (f[0] is None or f[0] not in loaded_mods) for f
-                       in fid_attr_values):
+                if any(f and (f[0] not in loaded_mods) for f in
+                       fid_attr_values):
                     # Ignore the record. Another option would be to just ignore
                     # the fid_attr_values result
                     self.patchFile.patcher_mod_skipcount[
                         self._patcher_name][srcMod] += 1
                     continue
-            temp_id_data[record.fid] = {attr: __attrgetters[attr](record)
-                                        for attr in recAttrs}
+            mod_id_data[record.fid] = {attr: __attrgetters[attr](record)
+                                       for attr in recAttrs}
 
     # noinspection PyDefaultArgument
     def initData(self, progress, __attrgetters=attrgetter_cache):
         if not self.isActive: return
         id_data = self.id_data
-        loadFactory = LoadFactory(False, by_sig=(c.rec_sig for c in
-                                                 self.recAttrs_class))
+        loadFactory = LoadFactory(False, by_sig=self.rec_type_attrs)
         progress.setFull(len(self.srcs) + len(self.csv_srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
+        loaded_mods = self.patchFile.loadSet
         for index,srcMod in enumerate(self.srcs):
-            temp_id_data = {}
+            mod_id_data = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(do_unpack=True)
-            for recClass in self.recAttrs_class:
-                if recClass.rec_sig not in srcFile.tops: continue
-                self.srcClasses.add(recClass)
-                self.classestemp.add(recClass)
-                self._init_data_loop(recClass, srcFile, srcMod, temp_id_data)
+            mod_sigs = set()
+            mod_tags = srcFile.fileInfo.getBashTags() if self._multi_tag else None
+            for rsig in self.rec_type_attrs:
+                if rsig not in srcFile.tops: continue
+                self.srcs_sigs.add(rsig)
+                mod_sigs.add(rsig)
+                self._init_data_loop(rsig, srcFile, srcMod, mod_id_data,
+                                     mod_tags, loaded_mods, __attrgetters)
             if (self._force_full_import_tag and
                     self._force_full_import_tag in srcInfo.getBashTags()):
                 # We want to force-import - copy the temp data without
                 # filtering by masters, then move on to the next mod
-                id_data.update(temp_id_data)
+                id_data.update(mod_id_data)
                 continue
             for master in srcInfo.masterNames:
                 if master not in minfs: continue # or break filter mods
@@ -191,15 +191,14 @@ class _APreserver(ImportPatcher):
                     masterFile = ModFile(minfs[master], loadFactory)
                     masterFile.load(True)
                     cachedMasters[master] = masterFile
-                for recClass in self.recAttrs_class:
-                    if recClass.rec_sig not in masterFile.tops: continue
-                    if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[
-                        recClass.rec_sig].iter_filtered_records(
-                        self.getReadClasses): # ugh, looks hideous...
+                for rsig in self.rec_type_attrs:
+                    if rsig not in masterFile.tops or rsig not in mod_sigs:
+                        continue
+                    for record in masterFile.tops[rsig].iter_filtered_records(
+                            mod_sigs):
                         fid = record.fid
-                        if fid not in temp_id_data: continue
-                        for attr, value in temp_id_data[fid].iteritems():
+                        if fid not in mod_id_data: continue
+                        for attr, value in mod_id_data[fid].iteritems():
                             try:
                                 if value == __attrgetters[attr](record):
                                     continue
@@ -210,19 +209,19 @@ class _APreserver(ImportPatcher):
             progress.plus()
         if self._csv_parser:
             self._parse_csv_sources(progress)
-        self.isActive = bool(self.srcClasses)
+        self.isActive = bool(self.srcs_sigs)
 
     # noinspection PyDefaultArgument
     def scanModFile(self, modFile, progress, __attrgetters=attrgetter_cache):
         id_data = self.id_data
-        for recClass in self.srcClasses:
-            if recClass.rec_sig not in modFile.tops: continue
-            patchBlock = self.patchFile.tops[recClass.rec_sig]
+        for rsig in self.srcs_sigs:
+            if rsig not in modFile.tops: continue
+            patchBlock = self.patchFile.tops[rsig]
             # Records that have been copied into the BP once will automatically
             # be updated by update_patch_records_from_mod/mergeModFile
             copied_records = patchBlock.id_records
-            for record in modFile.tops[recClass.rec_sig].iter_filtered_records(
-                self.getReadClasses):
+            for record in modFile.tops[rsig].iter_filtered_records(
+                    self.srcs_sigs):
                 fid = record.fid
                 # Skip if we've already copied this record or if we're not
                 # interested in it
@@ -253,12 +252,11 @@ class _APreserver(ImportPatcher):
         modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
         type_count = Counter()
-        for top_mod_class in self.srcClasses:
-            top_mod_rec = top_mod_class.rec_sig
-            if top_mod_rec not in modFileTops: continue
-            records = modFileTops[top_mod_rec].iter_filtered_records(
-                self.getReadClasses, include_ignored=True)
-            self._inner_loop(keep, records, top_mod_rec, type_count)
+        for rsig in self.srcs_sigs:
+            if rsig not in modFileTops: continue
+            records = modFileTops[rsig].iter_filtered_records(
+                self.srcs_sigs, include_ignored=True)
+            self._inner_loop(keep, records, rsig, type_count)
         self.id_data.clear() # cleanup to save memory
         # Log
         self._patchLog(log, type_count)
