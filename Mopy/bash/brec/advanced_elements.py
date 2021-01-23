@@ -336,6 +336,7 @@ class MelArray(MelBase):
         super(MelArray, self).__init__(next(iter(element.signatures)),
             array_attr)
         self._element = element
+        self._element_has_fids = False
         # Underscore means internal usage only - e.g. distributor state
         self._element_attrs = [s for s in element.getSlotsUsed() if
                                not s.startswith(u'_')]
@@ -343,6 +344,7 @@ class MelArray(MelBase):
             raise SyntaxError(u'MelArray preludes must have the same '
                               u'signature as the main element')
         self._prelude = prelude
+        self._prelude_has_fids = False
         try:
             self._prelude_size = prelude.static_size if prelude else 0
         except exception.AbstractError:
@@ -353,11 +355,15 @@ class MelArray(MelBase):
         return super(MelArray, self).getSlotsUsed() + slots_ret
 
     def hasFids(self, formElements):
-        temp_elements = set()
+        temp_elements_prelude = set()
+        temp_elements_element = set()
         if self._prelude:
-            self._prelude.hasFids(temp_elements)
-        self._element.hasFids(temp_elements)
-        if temp_elements: formElements.add(self)
+            self._prelude.hasFids(temp_elements_prelude)
+            self._prelude_has_fids = bool(temp_elements_prelude)
+        self._element.hasFids(temp_elements_element)
+        self._element_has_fids = bool(temp_elements_element)
+        if temp_elements_prelude or temp_elements_element:
+            formElements.add(self)
 
     def setDefault(self, record):
         if self._prelude:
@@ -365,13 +371,14 @@ class MelArray(MelBase):
         setattr(record, self.attr, [])
 
     def mapFids(self,record,function,save=False):
-        if self._prelude:
+        if self._prelude_has_fids:
             self._prelude.mapFids(record, function, save)
-        array_val = getattr(record, self.attr)
-        if array_val:
-            map_entry = self._element.mapFids
-            for arr_entry in array_val:
-                map_entry(arr_entry, function, save)
+        if self._element_has_fids:
+            array_val = getattr(record, self.attr)
+            if array_val:
+                map_entry = self._element.mapFids
+                for arr_entry in array_val:
+                    map_entry(arr_entry, function, save)
 
     def load_mel(self, record, ins, sub_type, size_, readId):
         append_entry = getattr(record, self.attr).append
