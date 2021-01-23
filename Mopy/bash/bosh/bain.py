@@ -344,7 +344,6 @@ class Installer(ListInfo):
             self.extras_dict = {}
             if self.fileRootIdex: # need to add 'root_path' key to extras_dict
                 rescan = True
-        self.extras_dict = {unicode(k): v for k, v in self.extras_dict.iteritems()}
         if not self.abs_path.exists(): # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):

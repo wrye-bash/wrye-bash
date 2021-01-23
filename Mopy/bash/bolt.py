@@ -233,6 +233,21 @@ def remove_newlines(s): # type: (unicode) -> unicode
     specified string."""
     return to_unix_newlines(s).replace(u'\n', u'')
 
+def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
+    """Converts an object containing bytestrings to an equivalent object that
+    contains decoded versions of those bytestrings instead. Decoding is done
+    by trying the specified encoding first, then falling back on the regular
+    'guess and try' logic."""
+    if isinstance(o, dict):
+        return type(o)(((conv_obj(k, conv_enc), conv_obj(v, conv_enc))
+                        for k, v in o.iteritems()))
+    elif type(o) in __list_types:
+        return type(o)(conv_obj(e, conv_enc) for e in o)
+    elif isinstance(o, bytes):
+        return decoder(o, encoding=conv_enc)
+    else:
+        return o
+
 def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
 ##: Keep an eye on https://bugs.python.org/issue31749
@@ -1354,11 +1369,15 @@ class PickleDict(object):
         self.vdata.clear()
         self.pickled_data.clear()
         cor = cor_name =  None
+        def _perform_load():
+            self.vdata.update(pickle.load(ins))
+            self.pickled_data.update(pickle.load(ins))
         for path in (self._pkl_path, self.backup):
             if cor is not None:
                 cor.moveTo(cor_name)
                 cor = None
             try:
+                resave = False
                 with path.open(u'rb') as ins:
                     try:
                         firstPickle = pickle.load(ins)
@@ -1369,11 +1388,23 @@ class PickleDict(object):
                         deprint(u'Unable to load %s (will be moved to "%s")' %(
                                 path, cor_name.tail), traceback=True)
                         continue  # file corrupt - try next file
-                    if firstPickle == b'VDATA2':
-                        self.vdata.update(pickle.load(ins))
-                        self.pickled_data.update(pickle.load(ins))
+                    if firstPickle == u'VDATA3':
+                        _perform_load() # new format, simply load
+                    elif firstPickle == b'VDATA2':
+                        # old format, load and convert
+                        _perform_load()
+                        self.vdata = conv_obj(self.vdata)
+                        self.pickled_data = conv_obj(self.pickled_data)
+                        deprint(u'Converted %s to VDATA3 format' % path)
+                        resave = True
                     else:
                         raise PickleDict.Mold(path)
+                # Check if we need to resave the settings after conversion
+                if resave:
+                    # Make a permanent backup copy of the VDATA2 version before
+                    # saving over it
+                    path.copyTo(path.root + u'-vdata2.dat.bak')
+                    self.save()
                 return 1 + (path == self.backup)
             except (OSError, IOError, EOFError, ValueError,
                     pickle.UnpicklingError): #PY3:FileNotFound
@@ -1393,7 +1424,7 @@ class PickleDict(object):
         if self.readOnly: return False
         #--Pickle it
         with self._pkl_path.temp.open(u'wb') as out:
-            for pkl in (b'VDATA2', self.vdata, self.pickled_data):
+            for pkl in (u'VDATA3', self.vdata, self.pickled_data):
                 pickle.dump(pkl, out, -1)
         self._pkl_path.untemp(doBackup=True)
         return True
