@@ -60,19 +60,19 @@ class MreHeaderBase(MelRecord):
             record.masters = []
             record.master_sizes = []
 
-        def load_mel(self, record, ins, sub_type, size_, readId,
-                     __unpacker=structs_cache[u'Q'].unpack):
+        def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+            __unpacker=structs_cache[u'Q'].unpack
             if sub_type == b'MAST':
                 # Don't use ins.readString, because it will try to use
                 # bolt.pluginEncoding for the filename. This is one case where
                 # we want to use automatic encoding detection
-                master_name = decoder(bolt.cstrip(ins.read(size_, readId)),
+                master_name = decoder(bolt.cstrip(ins.read(size_, *debug_strs)),
                                       avoidEncodings=(u'utf8', u'utf-8'))
                 record.masters.append(GPath(master_name))
             else: # sub_type == 'DATA'
                 # DATA is the size for TES3, but unknown/unused for later games
                 record.master_sizes.append(
-                    ins.unpack(__unpacker, size_, readId)[0])
+                    ins.unpack(__unpacker, size_, *debug_strs)[0])
 
         def dumpData(self,record,out):
             # Truncate or pad the sizes with zeroes as needed

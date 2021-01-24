@@ -203,7 +203,8 @@ class _MelDistributor(MelNull):
                     else dist_specifier)
         return to_check == signature
 
-    def _distribute_load(self, dist_specifier, record, ins, size_, readId):
+    def _distribute_load(self, dist_specifier, record, ins, size_,
+                         *debug_strs):
         """Internal helper method that distributes a load_mel call to the
         element loader pointed at by the specified distribution specifier."""
         if isinstance(dist_specifier, tuple):
@@ -212,9 +213,10 @@ class _MelDistributor(MelNull):
         else:
             signature = dist_specifier
             target_loader = self._sig_to_loader[dist_specifier]
-        target_loader.load_mel(record, ins, signature, size_, readId)
+        target_loader.load_mel(record, ins, signature, size_, *debug_strs)
 
-    def _apply_mapping(self, mapped_el, record, ins, signature, size_, readId):
+    def _apply_mapping(self, mapped_el, record, ins, signature, size_,
+                       *debug_strs):
         """Internal helper method that applies a single mapping element
         (mapped_el). This implements the correct loader state manipulations for
         that element and also distributes the load_mel call to the correct
@@ -227,14 +229,14 @@ class _MelDistributor(MelNull):
             # distribute the load by signature. That way we will descend
             # into this scope on the next load_mel call.
             record._loader_state.append(signature)
-            self._distribute_load(signature, record, ins, size_, readId)
+            self._distribute_load(signature, record, ins, size_, *debug_strs)
         elif el_type == tuple:
             # Mixed Scopes ------------------------------------------------
             # A mixed scope - implement it like a simple scope, but
             # distribute the load by attribute name.
             record._loader_state.append(signature)
             self._distribute_load((signature, mapped_el[0]), record, ins,
-                                  size_, readId)
+                                  size_, *debug_strs)
         elif el_type == list:
             # Sequences, Pt. 2 --------------------------------------------
             # A sequence - add the signature to the load state, set the
@@ -243,15 +245,15 @@ class _MelDistributor(MelNull):
             record._loader_state.append(signature)
             record._seq_index = 1 # we'll load the first element right now
             self._distribute_load(mapped_el[0], record, ins, size_,
-                                  readId)
+                                  *debug_strs)
         else: # el_type == unicode, verified in _pre_process
             # Targets -----------------------------------------------------
             # A target - don't add the signature to the load state and
             # distribute the load by attribute name.
             self._distribute_load((signature, mapped_el), record, ins,
-                                  size_, readId)
+                                  size_, *debug_strs)
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         loader_state = record._loader_state
         seq_index = record._seq_index
         # First, descend as far as possible into the mapping. However, also
@@ -275,7 +277,7 @@ class _MelDistributor(MelNull):
                     # We're good to go, call the next loader in the sequence
                     # and increment the sequence index
                     self._distribute_load(dist_specifier, record, ins, size_,
-                                          readId)
+                                          *debug_strs)
                     record._seq_index += 1
                     return
             # The sequence is either over or we prematurely hit a non-matching
@@ -295,13 +297,13 @@ class _MelDistributor(MelNull):
                 record._loader_state = [x[0] for x
                                         in descent_tracker] + [prev_sig]
                 self._apply_mapping(prev_mapping[sub_type], record, ins,
-                                    sub_type, size_, readId)
+                                    sub_type, size_, *debug_strs)
                 return
         # We didn't find anything during backtracking, so it must be in the top
         # scope. Wipe the loader state first and then apply the mapping.
         record._loader_state = []
         self._apply_mapping(self.distributor_config[sub_type], record, ins,
-                            sub_type, size_, readId)
+                            sub_type, size_, *debug_strs)
 
     @property
     def signatures(self):
@@ -380,20 +382,20 @@ class MelArray(MelBase):
                 for arr_entry in array_val:
                     map_entry(arr_entry, function, save)
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         append_entry = getattr(record, self.attr).append
         entry_slots = self._element_attrs
         entry_size = self._element_size
         load_entry = self._element.load_mel
         if self._prelude:
             self._prelude.load_mel(record, ins, sub_type, self._prelude_size,
-                                   readId)
+                                   *debug_strs)
             size_ -= self._prelude_size
         for x in xrange(size_ // entry_size):
             arr_entry = MelObject()
             append_entry(arr_entry)
             arr_entry.__slots__ = entry_slots
-            load_entry(arr_entry, ins, sub_type, entry_size, readId)
+            load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
 
     def pack_subrecord_data(self, record):
         """Collects the actual data that will be dumped out."""
@@ -439,17 +441,17 @@ class MelTruncatedStruct(MelStruct):
         self._all_unpackers[structs_cache[sub_fmt].size] = structs_cache[
             sub_fmt].unpack
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         # Try retrieving the format - if not possible, wrap the error to make
         # it more informative
         try:
             target_unpacker = self._all_unpackers[size_]
         except KeyError:
             raise exception.ModSizeError(
-                ins.inName, readId, tuple(self._all_unpackers), size_)
+                ins.inName, debug_strs, tuple(self._all_unpackers), size_)
         # Actually unpack the struct and pad it with defaults if it's an older,
         # truncated version
-        unpacked_val = ins.unpack(target_unpacker, size_, readId)
+        unpacked_val = ins.unpack(target_unpacker, size_, *debug_strs)
         unpacked_val = self._pre_process_unpacked(unpacked_val)
         # Apply any actions and then set the attributes according to the values
         # we just unpacked
@@ -493,8 +495,8 @@ class MelLists(MelStruct):
     # map attribute names to slices/indexes of the tuple of unpacked elements
     _attr_indexes = OrderedDict() # type: OrderedDict[unicode, slice | int]
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
-        unpacked = list(ins.unpack(self._unpacker, size_, readId))
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        unpacked = list(ins.unpack(self._unpacker, size_, *debug_strs))
         for attr, _slice in self.__class__._attr_indexes.iteritems():
             setattr(record, attr, unpacked[_slice])
 
@@ -659,7 +661,7 @@ class PartialLoadDecider(ADecider):
         # make it to the actual record
         target = copy.deepcopy(record)
         self._loader.load_mel(target, ins, sub_type, self._load_size,
-                              'DECIDER.' + sub_type)
+                              u'DECIDER', sub_type)
         ins.seek(starting_pos)
         # Use the modified record here to make the temporary changes visible to
         # the delegate decider
@@ -850,14 +852,14 @@ class MelUnion(MelBase):
         if element in self.fid_elements:
             element.mapFids(record, function, save)
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         # Ask the decider, and save the result for later - even if the decider
         # can decide at dump-time! Some deciders may want to have this as a
         # backup if they can't deliver a high-quality result.
         decider_ret = self.decider.decide_load(record, ins, sub_type, size_)
         setattr(record, self.decider_result_attr, decider_ret)
         self._get_element(decider_ret).load_mel(record, ins, sub_type, size_,
-                                                readId)
+                                                *debug_strs)
 
     def dumpData(self, record, out):
         self._get_element_from_record(record).dumpData(record, out)

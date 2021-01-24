@@ -110,7 +110,7 @@ class MobBase(object):
             readerAtEnd = reader.atEnd
             readerRecHeader = reader.unpackRecHeader
             readerSeek = reader.seek
-            while not readerAtEnd(reader.size,errLabel):
+            while not readerAtEnd(reader.size, errLabel):
                 header = readerRecHeader()
                 if header.recType != b'GRUP':
                     readerSeek(header.size, 1)

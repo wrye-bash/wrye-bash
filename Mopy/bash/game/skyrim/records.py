@@ -112,22 +112,22 @@ class MelBipedObjectData(MelStruct):
         loaders[b'BOD2'] = self
         loaders[b'BODT'] = self
 
-    def load_mel(self, record, ins, sub_type, size_, readId,
-                 __unpacker2=structs_cache[u'IB3s'].unpack,
-                 __unpacker3=structs_cache[u'IB3sI'].unpack):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        __unpacker2=structs_cache[u'IB3s'].unpack
+        __unpacker3=structs_cache[u'IB3sI'].unpack
         if sub_type == b'BODT':
             # Old record type, use alternate loading routine
             if size_ == 8:
                 # Version 20 of this subrecord is only 8 bytes (armorType
                 # omitted)
                 bp_flags, legacyFlags, _bp_unused = ins.unpack(
-                    __unpacker2, size_, readId)
+                    __unpacker2, size_, *debug_strs)
                 armorFlags = 0
             elif size_ != 12:
-                raise ModSizeError(ins.inName, readId, (12, 8), size_)
+                raise ModSizeError(ins.inName, debug_strs, (12, 8), size_)
             else:
                 bp_flags, legacyFlags, _bp_unused, armorFlags = ins.unpack(
-                    __unpacker3, size_, readId)
+                    __unpacker3, size_, *debug_strs)
             # legacyData is discarded except for non-playable status
             record.biped_flags = MelBipedObjectData._bp_flags(bp_flags)
             record.flags1.isNotPlayable = MelBipedObjectData.LegacyFlags(
@@ -136,7 +136,7 @@ class MelBipedObjectData(MelStruct):
         else:
             # BOD2 - new style, MelStruct can handle it
             super(MelBipedObjectData, self).load_mel(record, ins, sub_type,
-                                                     size_, readId)
+                                                     size_, *debug_strs)
 
 #------------------------------------------------------------------------------
 class MelAttacks(MelGroups):
@@ -450,13 +450,14 @@ class _AVmadComponent(object):
                 out_data += _dump_str16(attr_val)
         return out_data
 
-    def load_frag(self, record, ins, vmad_version, obj_format, read_id):
+    def load_frag(self, record, ins, vmad_version, obj_format, *debug_strs):
         """Loads data for this fragment from the specified input stream and
         attaches it to the specified record. The version of VMAD and the object
         format are also given."""
         for attr, fmt in self.__class__.processors.iteritems():
             if fmt != u'str16':
-                setattr(record, attr, ins.unpack(fmt[0], fmt[2], read_id)[0])
+                setattr(record, attr, ins.unpack(fmt[0], fmt[2],
+                                                 *debug_strs)[0])
             else:
                 setattr(record, attr, _read_str16(ins))
 
@@ -510,10 +511,10 @@ class _AFixedContainer(_AVmadComponent):
     flags_to_children = OrderedDict()
     child_loader = None
 
-    def load_frag(self, record, ins, vmad_version, obj_format, read_id):
+    def load_frag(self, record, ins, vmad_version, obj_format, *debug_strs):
         # Load the regular attributes first
         super(_AFixedContainer, self).load_frag(record, ins, vmad_version,
-                                                obj_format, read_id)
+                                                obj_format, *debug_strs)
         # Then, process the flags and decode them
         child_flags = self.__class__.flags_mapper(
             getattr(record, self.__class__.flags_attr))
@@ -528,7 +529,8 @@ class _AFixedContainer(_AVmadComponent):
             cont_child = None
             if getattr(child_flags, flag_attr):
                 cont_child = new_child()
-                load_child(cont_child, ins, vmad_version, obj_format, read_id)
+                load_child(cont_child, ins, vmad_version, obj_format,
+                           *debug_strs)
             setattr(record, child_attr, cont_child)
 
     def dump_frag(self, record):
@@ -572,10 +574,10 @@ class _AVariableContainer(_AVmadComponent):
     children_attr = u'fragments'
     counter_attr = u'fragment_count'
 
-    def load_frag(self, record, ins, vmad_version, obj_format, read_id):
+    def load_frag(self, record, ins, vmad_version, obj_format, *debug_strs):
         # Load the regular attributes first
         super(_AVariableContainer, self).load_frag(record, ins, vmad_version,
-                                                   obj_format, read_id)
+                                                   obj_format, *debug_strs)
         # Then, load each child
         children = []
         new_child = self.child_loader.make_new
@@ -583,7 +585,7 @@ class _AVariableContainer(_AVmadComponent):
         append_child = children.append
         for x in xrange(getattr(record, self.__class__.counter_attr)):
             cont_child = new_child()
-            load_child(cont_child, ins, vmad_version, obj_format, read_id)
+            load_child(cont_child, ins, vmad_version, obj_format, *debug_strs)
             append_child(cont_child)
         setattr(record, self.__class__.children_attr, children)
 
@@ -635,13 +637,13 @@ class ObjectRef(object):
 
     # Static helper methods
     @classmethod
-    def array_from_file(cls, ins, obj_format, read_id,
-            __unpacker=structs_cache[u'I'].unpack):
+    def array_from_file(cls, ins, obj_format, *debug_strs):
         """Reads an array of ObjectRefs directly from the specified input
         stream. Needs the current object format and a read ID as well."""
+        __unpacker=structs_cache[u'I'].unpack
         make_ref = cls.from_file
-        return [make_ref(ins, obj_format, read_id) for _x in
-                xrange(ins.unpack(__unpacker, 4, read_id)[0])]
+        return [make_ref(ins, obj_format, *debug_strs) for _x in
+                xrange(ins.unpack(__unpacker, 4, *debug_strs)[0])]
 
     @staticmethod
     def dump_array(target_list, __packer=structs_cache[u'I'].pack):
@@ -654,15 +656,15 @@ class ObjectRef(object):
         return out_data
 
     @classmethod
-    def from_file(cls, ins, obj_format, read_id,
-                  __unpacker1=structs_cache[u'IhH'].unpack,
-                  __unpacker2=structs_cache[u'HhI'].unpack):
+    def from_file(cls, ins, obj_format, *debug_strs):
         """Reads an ObjectRef directly from the specified input stream. Needs
         the current object format and a read ID as well."""
+        __unpacker1=structs_cache[u'IhH'].unpack
+        __unpacker2=structs_cache[u'HhI'].unpack
         if obj_format == 1: # object format v1 - fid, aid, unused
-            fid, aid, _unused = ins.unpack(__unpacker1, 8, read_id)
+            fid, aid, _unused = ins.unpack(__unpacker1, 8, *debug_strs)
         else: # object format v2 - unused, aid, fid
-            _unused, aid, fid = ins.unpack(__unpacker2, 8, read_id)
+            _unused, aid, fid = ins.unpack(__unpacker2, 8, *debug_strs)
         return cls(aid, fid)
 
 # Implementation --------------------------------------------------------------
@@ -724,9 +726,10 @@ class MelVmad(MelBase):
         _scen_fragment_phase_flags = Flags(0, Flags.getNames(u'on_start',
             u'on_completion'))
 
-        def load_frag(self, record, ins, vmad_version, obj_format, read_id):
+        def load_frag(self, record, ins, vmad_version, obj_format,
+                      *debug_strs):
             super(MelVmad.FragmentSCENPhase, self).load_frag(
-                record, ins, vmad_version, obj_format, read_id)
+                record, ins, vmad_version, obj_format, *debug_strs)
             # Turn the read byte into flags for easier runtime usage
             record.fragment_phase_flags = self._scen_fragment_phase_flags(
                 record.fragment_phase_flags)
@@ -793,19 +796,20 @@ class MelVmad(MelBase):
             self.child_loader = MelVmad.FragmentQUST()
             self._alias_loader = MelVmad.Alias()
 
-        def load_frag(self, record, ins, vmad_version, obj_format, read_id,
-                       __unpacker=structs_cache[u'H'].unpack):
+        def load_frag(self, record, ins, vmad_version, obj_format,
+                      *debug_strs):
             # Load the regular fragments first
             super(MelVmad.VmadHandlerQUST, self).load_frag(
-                record, ins, vmad_version, obj_format, read_id)
+                record, ins, vmad_version, obj_format, *debug_strs)
             # Then, load each alias
             record.qust_aliases = []
             new_alias = self._alias_loader.make_new
             load_alias = self._alias_loader.load_frag
             append_alias = record.qust_aliases.append
-            for x in xrange(ins.unpack(__unpacker, 2, read_id)[0]):
+            __unpacker=structs_cache[u'H'].unpack
+            for x in xrange(ins.unpack(__unpacker, 2, *debug_strs)[0]):
                 alias = new_alias()
-                load_alias(alias, ins, vmad_version, obj_format, read_id)
+                load_alias(alias, ins, vmad_version, obj_format, *debug_strs)
                 append_alias(alias)
 
         def dump_frag(self, record, __packer=structs_cache[u'H'].pack):
@@ -848,21 +852,22 @@ class MelVmad(MelBase):
             self.child_loader = MelVmad.FragmentBasic()
             self._phase_loader = MelVmad.FragmentSCENPhase()
 
-        def load_frag(self, record, ins, vmad_version, obj_format, read_id,
-                       __unpacker=structs_cache[u'H'].unpack):
+        def load_frag(self, record, ins, vmad_version, obj_format,
+                      *debug_strs):
+            __unpacker=structs_cache[u'H'].unpack
             # First, load the regular attributes and fragments
             super(MelVmad.VmadHandlerSCEN, self).load_frag(
-                record, ins, vmad_version, obj_format, read_id)
+                record, ins, vmad_version, obj_format, *debug_strs)
             # Then, load each phase fragment
             record.phase_fragments = []
-            frag_count = ins.unpack(__unpacker, 2, read_id)[0]
+            frag_count = ins.unpack(__unpacker, 2, *debug_strs)[0]
             new_fragment = self._phase_loader.make_new
             load_fragment = self._phase_loader.load_frag
             append_fragment = record.phase_fragments.append
             for x in xrange(frag_count):
                 phase_fragment = new_fragment()
                 load_fragment(phase_fragment, ins, vmad_version, obj_format,
-                              read_id)
+                              *debug_strs)
                 append_fragment(phase_fragment)
 
         def dump_frag(self, record, __packer=structs_cache[u'H'].pack):
@@ -899,10 +904,11 @@ class MelVmad(MelBase):
             super(MelVmad.Script, self).__init__()
             self.child_loader = MelVmad.Property()
 
-        def load_frag(self, record, ins, vmad_version, obj_format, read_id):
+        def load_frag(self, record, ins, vmad_version, obj_format,
+                      *debug_strs):
             # Load the data, then process the flags
             super(MelVmad.Script, self).load_frag(record, ins, vmad_version,
-                                                  obj_format, read_id)
+                                                  obj_format, *debug_strs)
             record.script_flags = self._script_status_flags(
                 record.script_flags)
 
@@ -923,9 +929,10 @@ class MelVmad(MelBase):
         _property_status_flags = Flags(0, Flags.getNames(u'edited',
             u'removed'))
 
-        def load_frag(self, record, ins, vmad_version, obj_format, read_id,
-                      __unpackers={k: structs_cache[k].unpack for k in
-                                   (u'i', u'f', u'B', u'I',)}):
+        def load_frag(self, record, ins, vmad_version, obj_format,
+                      *debug_strs):
+            __unpackers={k: structs_cache[k].unpack for k in
+                         (u'i', u'f', u'B', u'I',)}
             # Load the three regular attributes first - need to check version
             if vmad_version >= 4:
                 MelVmad.Property.processors = MelVmad.Property._new_processors
@@ -933,7 +940,7 @@ class MelVmad(MelBase):
                 MelVmad.Property.processors = MelVmad.Property._old_processors
                 record.prop_flags = 1
             super(MelVmad.Property, self).load_frag(record, ins, vmad_version,
-                                                    obj_format, read_id)
+                                                    obj_format, *debug_strs)
             record.prop_flags = self._property_status_flags(
                 record.prop_flags)
             # Then, read the data in the format corresponding to the
@@ -947,45 +954,47 @@ class MelVmad(MelBase):
                 record.prop_data = None
             elif property_type == 1: # object
                 record.prop_data = ObjectRef.from_file(
-                    ins, obj_format, read_id)
+                    ins, obj_format, *debug_strs)
             elif property_type == 2: # string
                 record.prop_data = _read_vmad_str16(ins)
             elif property_type == 3: # sint32
-                record.prop_data = ins.unpack(__unpackers[u'i'], 4, read_id)[0]
+                record.prop_data = ins.unpack(__unpackers[u'i'], 4,
+                                              *debug_strs)[0]
             elif property_type == 4: # float
-                record.prop_data = ins.unpack(__unpackers[u'f'], 4, read_id)[0]
+                record.prop_data = ins.unpack(__unpackers[u'f'], 4,
+                                              *debug_strs)[0]
             elif property_type == 5: # bool (stored as uint8)
                 # Faster than bool() and other, similar checks
                 record.prop_data = ins.unpack(
-                    __unpackers[u'B'], 1, read_id) != (0,)
+                    __unpackers[u'B'], 1, *debug_strs) != (0,)
             elif property_type == 11: # object array
                 record.prop_data = ObjectRef.array_from_file(ins, obj_format,
-                                                             read_id)
+                                                             *debug_strs)
             elif property_type == 12: # string array
                 record.prop_data = [_read_vmad_str16(ins) for _x in
                                     xrange(ins.unpack(
-                                        __unpackers[u'I'], 4, read_id)[0])]
+                                        __unpackers[u'I'], 4, *debug_strs)[0])]
             elif property_type == 13: # sint32 array
-                array_len = ins.unpack(__unpackers[u'I'], 4, read_id)[0]
+                array_len = ins.unpack(__unpackers[u'I'], 4, *debug_strs)[0]
                 # Do *not* change without extensive benchmarking! This is
                 # faster than all alternatives, at least on py2.
                 record.prop_data = [x for x in ins.unpack(
                     structs_cache[u'%di' % array_len].unpack, array_len * 4,
-                    read_id)]
+                    *debug_strs)]
             elif property_type == 14: # float array
-                array_len = ins.unpack(__unpackers[u'I'], 4, read_id)[0]
+                array_len = ins.unpack(__unpackers[u'I'], 4, *debug_strs)[0]
                 # Do *not* change without extensive benchmarking! This is
                 # faster than all alternatives, at least on py2.
                 record.prop_data = [x for x in ins.unpack(
                     structs_cache[u'%df' % array_len].unpack, array_len * 4,
-                    read_id)]
+                    *debug_strs)]
             elif property_type == 15: # bool array (stored as uint8 array)
-                array_len = ins.unpack(__unpackers[u'I'], 4, read_id)[0]
+                array_len = ins.unpack(__unpackers[u'I'], 4, *debug_strs)[0]
                 # Do *not* change without extensive benchmarking! This is
                 # faster than all alternatives, at least on py2.
                 record.prop_data = [x != 0 for x in ins.unpack(
                     structs_cache[u'%dB' % array_len].unpack, array_len,
-                    read_id)]
+                    *debug_strs)]
             else:
                 raise ModError(ins.inName, u'Unrecognized VMAD property type: '
                                            u'%u' % property_type)
@@ -1073,33 +1082,36 @@ class MelVmad(MelBase):
             super(MelVmad.Alias, self).__init__()
             self.child_loader = MelVmad.Script()
 
-        def load_frag(self, record, ins, vmad_version, obj_format, read_id,
-                      __unpacker_H=structs_cache[u'H'].unpack,
-                      __unpacker_h=structs_cache[u'h'].unpack):
+        def load_frag(self, record, ins, vmad_version, obj_format,
+                      *debug_strs):
+            __unpacker_H=structs_cache[u'H'].unpack
+            __unpacker_h=structs_cache[u'h'].unpack
             MelVmad.Alias.processors = MelVmad.Alias._load_processors
             # Aliases start with an ObjectRef, skip that for now and unpack
             # the three regular attributes. We need to do this, since one of
             # the attributes is alias_obj_format, which tells us how to unpack
             # the ObjectRef at the start.
-            ins.seek(8, 1, read_id)
-            record.alias_vmad_version = ins.unpack(__unpacker_h, 2, read_id)[0]
-            record.alias_obj_format = ins.unpack(__unpacker_h, 2, read_id)[0]
-            record.script_count = ins.unpack(__unpacker_H, 2, read_id)[0]
+            ins.seek(8, 1, *debug_strs)
+            record.alias_vmad_version = ins.unpack(__unpacker_h, 2,
+                                                   *debug_strs)[0]
+            record.alias_obj_format = ins.unpack(__unpacker_h, 2,
+                                                 *debug_strs)[0]
+            record.script_count = ins.unpack(__unpacker_H, 2, *debug_strs)[0]
             # Change our active VMAD version and object format to the ones we
             # read from this alias
             vmad_version = record.alias_vmad_version
             obj_format = record.alias_obj_format
             # Now we can go back and unpack the ObjectRef - note us passing the
             # (potentially) modified object format
-            ins.seek(-14, 1, read_id)
+            ins.seek(-14, 1, *debug_strs)
             record.alias_ref_obj = ObjectRef.from_file(ins, obj_format,
-                                                       read_id)
+                                                       *debug_strs)
             # Skip back over the three attributes we read at the start
-            ins.seek(6, 1, read_id)
+            ins.seek(6, 1, *debug_strs)
             # Finally, load the scripts attached to this alias - again, note
             # the (potentially) changed VMAD version and object format
             super(MelVmad.Alias, self).load_frag(record, ins, vmad_version,
-                                                 obj_format, read_id)
+                                                 obj_format, *debug_strs)
 
         def dump_frag(self, record):
             MelVmad.Alias.processors = MelVmad.Alias._dump_processors
@@ -1149,8 +1161,8 @@ class MelVmad(MelBase):
             self._handler_map[record_sig] = special_handler = special_handler()
         return special_handler
 
-    def load_mel(self, record, ins, sub_type, size_, readId,
-                 __unpacker=structs_cache[u'=hhH'].unpack):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        __unpacker=structs_cache[u'=hhH'].unpack
         # Remember where this VMAD subrecord ends
         end_of_vmad = ins.tell() + size_
         if self._vmad_class is None:
@@ -1160,7 +1172,7 @@ class MelVmad(MelBase):
         record.vmdata = vmad = self._vmad_class()
         # Begin by unpacking the VMAD header and doing some error checking
         vmad_version, obj_format, script_count = ins.unpack(__unpacker, 6,
-                                                            readId)
+                                                            *debug_strs)
         if vmad_version < 1 or vmad_version > 5:
             raise ModError(ins.inName, u'Unrecognized VMAD version: %u' %
                            vmad_version)
@@ -1174,7 +1186,7 @@ class MelVmad(MelBase):
         append_script = vmad.scripts.append
         for i in xrange(script_count):
             script = new_script()
-            load_script(script, ins, vmad_version, obj_format, readId)
+            load_script(script, ins, vmad_version, obj_format, *debug_strs)
             append_script(script)
         # If the record type is one of the ones that need special handling and
         # we still have something to read, call the appropriate handler
@@ -1182,7 +1194,7 @@ class MelVmad(MelBase):
             special_handler = self._get_special_handler(record.recType)
             vmad.special_data = special_handler.make_new()
             special_handler.load_frag(vmad.special_data, ins, vmad_version,
-                                      obj_format, readId)
+                                      obj_format, *debug_strs)
         else:
             vmad.special_data = None
 
@@ -2050,11 +2062,11 @@ class MreDobj(MelRecord):
                 MelStruct('DNAM', '2I', 'objectUse', (FID, 'objectID')),
             )
 
-        def load_mel(self, record, ins, sub_type, size_, readId):
+        def load_mel(self, record, ins, sub_type, size_, *debug_strs):
             # Load everything but the noise
             start_pos = ins.tell()
             super(MreDobj.MelDobjDnam, self).load_mel(record, ins, sub_type,
-                                                      size_, readId)
+                                                      size_, *debug_strs)
             # Now, read the remainder of the subrecord and store it
             read_size = ins.tell() - start_pos
             record.unknownDNAM = ins.read(size_ - read_size)
@@ -3009,14 +3021,14 @@ class MreLgtm(MelRecord):
     class MelLgtmData(MelStruct):
         """Older format skips 8 bytes in the middle and has the same unpacked
         length, so we can't use MelTruncatedStruct."""
-        def load_mel(self, record, ins, sub_type, size_, readId,
-            __unpacker=structs_cache[u'3Bs3Bs3Bs2f2i3f24s3Bs3f4s'].unpack):
+        def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+            __unpacker=structs_cache[u'3Bs3Bs3Bs2f2i3f24s3Bs3f4s'].unpack
             if size_ == 92:
                 super(MreLgtm.MelLgtmData, self).load_mel(
-                    record, ins, sub_type, size_, readId)
+                    record, ins, sub_type, size_, *debug_strs)
                 return
             elif size_ == 84:
-                unpacked_val = ins.unpack(__unpacker, size_, readId)
+                unpacked_val = ins.unpack(__unpacker, size_, *debug_strs)
                 # Pad it with 8 null bytes in the middle
                 unpacked_val = (unpacked_val[:19]
                                 + (unpacked_val[19] + null4 * 2,)
@@ -3026,7 +3038,7 @@ class MreLgtm(MelRecord):
                     if action: value = action(value)
                     setattr(record, attr, value)
             else:
-                raise ModSizeError(ins.inName, readId, (92, 84), size_)
+                raise ModSizeError(ins.inName, debug_strs, (92, 84), size_)
 
     melSet = MelSet(
         MelEdid(),

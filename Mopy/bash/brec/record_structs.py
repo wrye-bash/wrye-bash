@@ -100,18 +100,15 @@ class MelSet(object):
         # Load each subrecord
         ins_at_end = ins.atEnd
         load_sub_header = partial(unpackSubHeader, ins)
-        read_id_prefix = rec_type + '.'
         while not ins_at_end(endPos, rec_type):
             sub_type, sub_size = load_sub_header(rec_type)
             try:
                 loaders[sub_type].load_mel(record, ins, sub_type, sub_size,
-                                           read_id_prefix + sub_type)
+                                           rec_type, sub_type) # *debug_strs
             except KeyError:
                 # Wrap this error to make it more understandable
-                self._handle_load_error(
-                    exception.ModError(
-                        ins.inName, u'Unexpected subrecord: %s' % (
-                                read_id_prefix + sub_type)),
+                self._handle_load_error(exception.ModError(ins.inName,
+                    u'Unexpected subrecord: %s.%s' % (rec_type, sub_type)),
                     record, ins, sub_type, sub_size)
             except Exception as error:
                 self._handle_load_error(error, record, ins, sub_type, sub_size)
@@ -359,7 +356,7 @@ class MreRecord(object):
         elif ins and not self.flags1.compressed:
             inPos = ins.tell()
             self.data = ins.read(self.size,type)
-            ins.seek(inPos,0,type+'_REWIND') # type+'_REWIND' is just for debug
+            ins.seek(inPos,0,type,b'_REWIND') # type,'_REWIND' is just for debug
             self.loadData(ins,inPos+self.size)
         #--Buffered analysis (subclasses only)
         else:

@@ -1653,10 +1653,10 @@ class MelWthrColorsFnv(MelArray):
             wthr_sub_sig, *struct_definition,
             old_versions={u'3Bs3Bs3Bs3Bs'})
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         if size_ == self._new_sizes[sub_type]:
             super(MelWthrColorsFnv, self).load_mel(record, ins, sub_type,
-                                                   size_, readId)
+                                                   size_, *debug_strs)
         elif size_ == self._old_sizes[sub_type]:
             # Copied and adjusted from MelArray. Yuck. See comment below
             # docstring for some ideas for getting rid of this
@@ -1668,11 +1668,11 @@ class MelWthrColorsFnv(MelArray):
                 arr_entry = MelObject()
                 append_entry(arr_entry)
                 arr_entry.__slots__ = entry_slots
-                load_entry(arr_entry, ins, sub_type, entry_size, readId)
+                load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
         else:
             _expected_sizes = (self._new_sizes[sub_type],
                                self._old_sizes[sub_type])
-            raise ModSizeError(ins.inName, readId, _expected_sizes, size_)
+            raise ModSizeError(ins.inName, debug_strs, _expected_sizes, size_)
 
 class MreWthr(MelRecord):
     """Weather."""

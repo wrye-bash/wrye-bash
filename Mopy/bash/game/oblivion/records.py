@@ -100,7 +100,7 @@ class MelObmeScitGroup(MelGroup):
     for another part of the code that's suffering from this). And we can't
     simply not put this in a group, because a bunch of code relies on a group
     called 'scriptEffect' existing..."""
-    def load_mel(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         target = getattr(record, self.attr)
         if target is None:
             class _MelHackyObject(MelObject):
@@ -116,7 +116,7 @@ class MelObmeScitGroup(MelGroup):
             target.__slots__ = [s for element in self.elements for s in
                                 element.getSlotsUsed()]
             setattr(record, self.attr, target)
-        self.loaders[sub_type].load_mel(target, ins, sub_type, size_, readId)
+        self.loaders[sub_type].load_mel(target, ins, sub_type, size_, *debug_strs)
 
 # TODO(inf) Do we really need to do this? It's an unused test spell
 class MelEffectsScit(MelTruncatedStruct):
@@ -247,11 +247,11 @@ class MelEffects(MelSequential):
         if self._vanilla_form_elements or self._obme_form_elements:
             formElements.add(self)
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         target_loaders = (self._obme_loaders
                           if record.obme_record_version is not None
                           else self._vanilla_loaders)
-        target_loaders[sub_type].load_mel(record, ins, sub_type, size_, readId)
+        target_loaders[sub_type].load_mel(record, ins, sub_type, size_, *debug_strs)
 
     def dumpData(self, record, out):
         target_elements = (self._obme_elements
@@ -310,9 +310,9 @@ class MelLevListLvld(MelUInt8):
     def __init__(self):
         super(MelLevListLvld, self).__init__(b'LVLD', u'chanceNone')
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         super(MelLevListLvld, self).load_mel(record, ins, sub_type, size_,
-                                             readId)
+                                             *debug_strs)
         if record.chanceNone > 127:
             record.flags.calcFromAllLevels = True
             record.chanceNone &= 127
