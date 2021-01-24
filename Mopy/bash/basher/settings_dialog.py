@@ -526,7 +526,7 @@ class LanguagePage(_AScrollablePage):
         is_standalone_warning = Label(self,
             _(u'Note: You are using the standalone version and will not able '
               u'to dump localizations.'))
-        is_standalone_warning.set_foreground_color(colors.RED)
+        is_standalone_warning.set_foreground_color(colors[u'default.warn'])
         is_standalone_warning.visible = bass.is_standalone
         dump_localization_btn = Button(self, _(u'Dump Localization...'),
             btn_tooltip=_(u'Generates an up-to-date version of the '

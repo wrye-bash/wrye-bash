@@ -114,7 +114,6 @@ class WindowFrame(_TopLevelWin):
     _frame_settings_key = None
     _min_size = _def_size = (250, 250)
     _wx_widget_type = _wx.Frame
-    _def_bkg_color = Color(240, 240, 240) # Standard Windows gray
 
     def __init__(self, parent, title, icon_bundle=None, _base_key=None,
                  sizes_dict={}, caption=False, style=_wx.DEFAULT_FRAME_STYLE,
@@ -131,7 +130,7 @@ class WindowFrame(_TopLevelWin):
                                           title=title, style=style, **kwargs)
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
                                              lambda event: [event.GetActive()])
-        self.set_background_color(self._def_bkg_color)
+        self.set_background_color(self._bkg_color())
 
     def show_frame(self): self._native_widget.Show()
 
@@ -140,6 +139,10 @@ class WindowFrame(_TopLevelWin):
     # TODO(inf) de-wx! Menu should become a wrapped component as well
     def show_popup_menu(self, menu):
         self._native_widget.PopupMenu(menu)
+
+    def _bkg_color(self):
+        """Returns the background color to use for this window."""
+        return Color.from_wx(_wx.SystemSettings.GetColour(_wx.SYS_COLOUR_MENU))
 
 class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""

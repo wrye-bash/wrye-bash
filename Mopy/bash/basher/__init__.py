@@ -2181,8 +2181,10 @@ class SaveDetails(_ModsSavesDetails):
               u'without an up-to-date cosave. Please install the latest '
               u'version of %s and create a new save to see the true master '
               u'order.') % bush.game.Se.se_abbrev if show_warning else u'')
-        self._masters_label.set_foreground_color(
-            colors.RED if show_warning else colors.BLACK)
+        if show_warning:
+            self._masters_label.set_foreground_color(colors[u'default.warn'])
+        else:
+            self._masters_label.reset_foreground_color()
 
     def OnInfoEdit(self, new_text):
         """Info field was edited."""
@@ -4300,6 +4302,12 @@ def InitSettings(): # this must run first !
     balt.sizes = bass.settings.getChanged(u'bash.window.sizes', {})
     settings = bass.settings
     settings.loadDefaults(settingDefaults)
+    # The colors dictionary only gets copied into settings if it is missing
+    # entirely, copy new entries if needed
+    for color_key, color_val in settingDefaults[u'bash.colors'].iteritems():
+        if color_key not in settings[u'bash.colors']:
+            settings[u'bash.colors'][color_key] = color_val
+            settings.setChanged(u'bash.colors')
     # Import/Export DLL permissions was broken and stored DLLs with a ':'
     # appended, simply drop those here (worst case some people will have to
     # re-confirm that they want to install a DLL). Note we have to do this here
@@ -4330,11 +4338,12 @@ def InitImages():
         b'WHITE': (255, 255, 255),
     }
     # Setup the colors dictionary
-    for key, value in settings[u'bash.colors'].iteritems():
+    for color_key, color_val in settings[u'bash.colors'].iteritems():
         # Convert any colors that were stored as bytestrings into tuples
-        if isinstance(value, bytes):
-            value = settings[u'bash.colors'][key] = _conv_dict[value]
-        colors[key] = value
+        if isinstance(color_val, bytes):
+            color_val = _conv_dict[color_val]
+            settings[u'bash.colors'][color_key] = color_val
+        colors[color_key] = color_val
     #--Images
     imgDirJn = bass.dirs[u'images'].join
     def _png(fname): return ImageWrapper(imgDirJn(fname))

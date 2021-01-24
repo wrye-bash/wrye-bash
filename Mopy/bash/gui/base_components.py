@@ -99,11 +99,6 @@ class Color(object):
 class Colors(object):
     """Color collection and wrapper for wx.ColourDatabase. Provides
     dictionary syntax access (colors[key]) and predefined colors."""
-    WHITE = Color(255, 255, 255)
-    RED = Color(255, 0, 0)
-    BLACK = Color(0, 0, 0)
-    GRAY = Color(192, 192, 192)
-
     def __init__(self):
         self._colors = {}
 
@@ -256,6 +251,11 @@ class _AComponent(object):
 
         :param new_color: The color to change the foreground color to."""
         self._native_widget.SetForegroundColour(new_color.to_rgba_tuple())
+        self._native_widget.Refresh()
+
+    def reset_foreground_color(self):
+        """Reset the foreground color of this component to the default one."""
+        self._native_widget.SetForegroundColour(_wx.NullColour)
         self._native_widget.Refresh()
 
     @property
