@@ -103,7 +103,7 @@ class SettingsDialog(DialogWindow):
         self._changed_state[requesting_page] = is_changed
         self._apply_btn.enabled = any(self._changed_state.itervalues())
 
-    def _exec_request_restart(self, requesting_setting, restart_params):
+    def _exec_request_restart(self, requesting_setting, restart_params=()):
         """Schedules a restart request from the specified setting."""
         self._requesting_restart.add(requesting_setting)
         self._restart_params.extend(restart_params)
@@ -129,7 +129,7 @@ class SettingsDialog(DialogWindow):
                         u' - %s' % r for r in sorted(self._requesting_restart))
                     + u'\n\n' + _(u'Do you want to restart now?'),
                     title=_(u'Restart Wrye Bash')):
-                Link.Frame.Restart(self._restart_params)
+                Link.Frame.Restart(*self._restart_params)
             else:
                 # User denied the restart, don't bother them again
                 self._requesting_restart.clear()
@@ -438,13 +438,6 @@ class ConfigureEditorDialog(DialogWindow):
         browse_editor_btn.on_clicked.subscribe(self._handle_browse)
         self._params_field = TextField(self,
             init_text=bass.settings[u'bash.l10n.editor.param_fmt'])
-        self._po_rename_box = CheckBox(self, _(u'Rename to .po'),
-            checked=bass.settings[u'bash.l10n.editor.rename_to_po'],
-            chkbx_tooltip=_(u"Some gettext editors will not open Wrye Bash's "
-                            u'.txt localization files. With this ticked, the '
-                            u'file will be renamed to .po before it is opened '
-                            u'by the editor, and renamed back to .txt when '
-                            u'it is closed.'))
         ok_btn = OkButton(self)
         ok_btn.on_clicked.subscribe(self._handle_ok)
         VLayout(border=6, spacing=4, item_expand=True, items=[
@@ -457,7 +450,6 @@ class ConfigureEditorDialog(DialogWindow):
                 (self._params_field, LayoutOptions(expand=True, weight=1)),
                 Label(self, _(u"Note: '%s' will be replaced by the path "
                               u'to the localization file.')),
-                Spacer(4), self._po_rename_box,
             ]),
             Stretch(), HLayout(spacing=5, items=[
                 Stretch(), ok_btn, CancelButton(self),
@@ -479,8 +471,6 @@ class ConfigureEditorDialog(DialogWindow):
             self._editor_location.text_content
         bass.settings[u'bash.l10n.editor.param_fmt'] = \
             self._params_field.text_content
-        bass.settings[u'bash.l10n.editor.rename_to_po'] = \
-            self._po_rename_box.is_checked
 
 ##: Quite a bit of duplicate code with the Backups page here
 class _LangDict(dict):
@@ -490,14 +480,14 @@ class _LangDict(dict):
 class LanguagePage(_AScrollablePage):
     """Change the language that the GUI is displayed in."""
     _internal_to_localized = _LangDict({
-        u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
-        u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁体中文)',
-        u'de': _(u'German') + u' (Deutsch)',
-        u'pt_opt': _(u'Portuguese') + u' (português)',
-        u'italian': _(u'Italian') + u' (italiano)',
-        u'japanese': _(u'Japanese') + u' (日本語)',
-        u'russian': _(u'Russian') + u' (ру́сский язы́к)',
-        u'english': _(u'English') + u' (English)',
+        u'zh_CN': _(u'Chinese (Simplified)') + u' (简体中文)',
+        u'zh_TW': _(u'Chinese (Traditional)') + u' (繁体中文)',
+        u'de_DE': _(u'German') + u' (Deutsch)',
+        u'pt_PT': _(u'Portuguese') + u' (português)',
+        u'it_IT': _(u'Italian') + u' (italiano)',
+        u'ja_JP': _(u'Japanese') + u' (日本語)',
+        u'ru_RU': _(u'Russian') + u' (ру́сский язы́к)',
+        u'en_US': _(u'English') + u' (English)',
     })
     _localized_to_internal = _LangDict(
         {v: k for k, v in _internal_to_localized.iteritems()})
@@ -506,18 +496,22 @@ class LanguagePage(_AScrollablePage):
         super(LanguagePage, self).__init__(parent, page_desc)
         # Gather all localizations in the l10n directory
         all_langs = [f.sbody for f in bass.dirs[u'l10n'].list()
-                     if f.cext == u'.txt' and f.csbody[-3:] != u'new']
+                     if f.cext == u'.po' and f.csbody[-3:] != u'new']
         # Insert English since there's no localization file for that
-        if u'english' not in all_langs:
-            all_langs.append(u'english')
-        localized_langs = [self._internal_to_localized[l.lower()] for l
-                           in all_langs]
-        active_lang = u'english' # If the user has an unknown language active
+        if u'en_US' not in all_langs:
+            all_langs.append(u'en_US')
+        localized_langs = [self._internal_to_localized[l] for l in all_langs]
+        # If the user has an unknown language active
+        active_lang = self._internal_to_localized[u'en_US']
         for internal_name, localized_name in sorted(izip(
                 all_langs, localized_langs), key=lambda l: l[1]):
             if self._is_active_lang(internal_name):
                 active_lang = localized_name
                 break
+        # We can't compare the internal names to mark us as (un)changed since
+        # we may be using a fallback language, so just store this for later
+        # comparisons
+        self._initial_lang = active_lang
         self._lang_dropdown = DropDown(self, value=active_lang,
             choices=localized_langs, auto_tooltip=False)
         self._lang_dropdown.tooltip = _(u'Changes the language that Wrye Bash '
@@ -599,7 +593,6 @@ class LanguagePage(_AScrollablePage):
         """Opens the selected localization file in an editor."""
         chosen_editor = GPath(bass.settings[u'bash.l10n.editor.path'])
         editor_arg_fmt = bass.settings[u'bash.l10n.editor.param_fmt']
-        rename_po = bass.settings[u'bash.l10n.editor.rename_to_po']
         # First, verify that the chosen editor is valid
         if not chosen_editor:
             balt.showError(self, _(u'No localization editor has been chosen. '
@@ -613,35 +606,17 @@ class LanguagePage(_AScrollablePage):
             return
         # Now we can move on to actually opening the editor
         selected_l10n = bass.dirs[u'l10n'].join(self._chosen_l10n)
-        l10n_po_path = selected_l10n.root + u'.po'
-        # This is what we'll actually be opening, changed below if rename_po
-        final_l10n_path = selected_l10n
-        if rename_po:
-            # If we have to rename to .po, do that now
-            selected_l10n.moveTo(l10n_po_path)
-            final_l10n_path = l10n_po_path
         # Construct the final command and pass it to subprocess
-        try:
-            subprocess.Popen([chosen_editor.s] + [
-                (a % final_l10n_path if u'%s' in a else a)
-                for a in editor_arg_fmt.split(u' ')], close_fds=True)
-            # Tell the user that we've launched the editor and wait until they
-            # confirm that they're done using it
-            balt.showOk(self, _(u'Your localization editor has been launched '
-                                u"to edit '%s'. Once you are done with "
-                                u"editing, please close it and click 'OK'.")
-                              % selected_l10n, title=_(u'Editor Launched'))
-        finally:
-            if rename_po:
-                # Always undo the .po rename if we did that
-                l10n_po_path.moveTo(selected_l10n)
+        subprocess.Popen([chosen_editor.s] + [
+            (a % selected_l10n if u'%s' in a else a)
+            for a in editor_arg_fmt.split(u' ')], close_fds=True)
 
     @staticmethod
     def _gather_l10n():
         """Returns a list of all localization files in the l10n directory."""
         all_l10n_files = []
         for f in bass.dirs[u'l10n'].list():
-            if f.cext == u'.txt':
+            if f.cext == u'.po':
                 all_l10n_files.append(f.tail)
         return all_l10n_files
 
@@ -653,8 +628,7 @@ class LanguagePage(_AScrollablePage):
     def _handle_lang_select(self, selected_lang):
         """Internal callback, called when a new language has been selected.
         Marks this page as changed or not."""
-        self._mark_changed(self, not self._is_active_lang(
-            self._localized_to_internal[selected_lang]))
+        self._mark_changed(self, selected_lang != self._initial_lang)
 
     def _handle_select_l10n(self, _lb_dex, _item_text):
         """Internal callback, enables the context buttons once a localization
@@ -664,7 +638,7 @@ class LanguagePage(_AScrollablePage):
     @staticmethod
     def _is_active_lang(internal_name):
         """Returns True if the specified language is currently active."""
-        return bass.active_locale.lower() in internal_name.lower()
+        return bass.active_locale == internal_name
 
     @property
     def _l10n_dir(self):
@@ -674,8 +648,8 @@ class LanguagePage(_AScrollablePage):
     def on_apply(self):
         super(LanguagePage, self).on_apply()
         selected_lang = self._lang_dropdown.get_value()
-        internal_name = self._localized_to_internal[selected_lang]
-        if not self._is_active_lang(internal_name):
+        if selected_lang != self._initial_lang:
+            internal_name = self._localized_to_internal[selected_lang]
             ##: #26, our oldest open issue; This should be a
             # parameterless restart request, with us having saved the
             # new language to some 'early boot' info file

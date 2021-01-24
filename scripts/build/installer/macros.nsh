@@ -589,6 +589,15 @@
         Delete "${Path}\Mopy\bash\images\readme\people-1.png"
         Delete "${Path}\Mopy\bash\images\readme\people-2.png"
         Delete "${Path}\Mopy\bash\images\readme\people-3-menu.png"
+        ; As of 308, translations use the .po extension and were renamed
+        Delete "${Path}\Mopy\bash\l10n\*.txt"
+        Delete "${Path}\Mopy\bash\l10n\Chinese (Simplified).mo"
+        Delete "${Path}\Mopy\bash\l10n\Chinese (Traditional).mo"
+        Delete "${Path}\Mopy\bash\l10n\de.mo"
+        Delete "${Path}\Mopy\bash\l10n\Italian.mo"
+        Delete "${Path}\Mopy\bash\l10n\Japanese.mo"
+        Delete "${Path}\Mopy\bash\l10n\pt_opt.mo"
+        Delete "${Path}\Mopy\bash\l10n\Russian.mo"
     !macroend
 
 
