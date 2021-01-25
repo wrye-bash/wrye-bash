@@ -50,6 +50,8 @@ def get_ini_type_and_encoding(abs_ini_path):
     reportedly must be cp1252). More investigation needed."""
     with open(u'%s' % abs_ini_path, u'rb') as ini_file:
         content = ini_file.read()
+    ##: Add a 'return encoding' param to decoder to avoid the potential double
+    # chardet here!
     detected_encoding, _confidence = getbestencoding(content)
     decoded_content = decoder(content, detected_encoding)
     count = Counter()
@@ -473,14 +475,13 @@ class OBSEIniFile(IniFile):
                 return match, sectionKey, format_string
         return None, None, None
 
-    @classmethod
-    def _get_ci_settings(cls, tweakPath):
+    def _get_ci_settings(self, tweakPath):
         """Get the settings in the ini script."""
         ini_settings = DefaultLowerDict(LowerDict)
         deleted_settings = DefaultLowerDict(LowerDict)
-        reDeleted = cls.reDeleted
-        reComment = cls.reComment
-        with tweakPath.open(u'r') as iniFile:
+        reDeleted = self.reDeleted
+        reComment = self.reComment
+        with tweakPath.open(u'r', encoding=self.ini_encoding) as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
                 if maDeleted:
@@ -489,7 +490,7 @@ class OBSEIniFile(IniFile):
                 else:
                     settings_dict = ini_settings
                 stripped = reComment.sub(u'',line).strip()
-                match, section_key, _fmt = cls._parse_obse_line(stripped)
+                match, section_key, _fmt = self._parse_obse_line(stripped)
                 if match:
                     settings_dict[section_key][match.group(1)] = match.group(
                         2).strip(), i
@@ -567,7 +568,7 @@ class OBSEIniFile(IniFile):
                             raise RuntimeError(u'Do not pass bytes into '
                                                u'saveSettings!')
                         if isinstance(value, unicode) and value[-1:] == u'\n':
-                            line = value.rstrip(u'\n\r')
+                            line = value.rstrip(u'\n\r') # removes just \n too
                         else:
                             line = format_string % (setting, value)
                     elif not maDeleted and section_key in deleted_settings and setting in deleted_settings[section_key]:

@@ -313,7 +313,10 @@ class Installer_Wizard(_Installer_AWizardLink):
             basen = os.path.basename(os.path.splitext(iniFile)[0])
             outFile = bass.dirs[u'ini_tweaks'].join(
                 u'%s - Wizard Tweak [%s].ini' % (installer.archive, basen))
-            with outFile.open(u'w') as out:
+            # Use UTF-8 since this came from a wizard.txt which could have
+            # characters in it that are unencodable in cp1252 - plus this is
+            # just a tweak, won't be read by the game
+            with outFile.open(u'w', encoding=u'utf-8') as out:
                 out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
                 out.write(u'\n')
             bosh.iniInfos.new_info(outFile.tail, owner=installer.archive)

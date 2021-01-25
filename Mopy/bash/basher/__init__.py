@@ -1882,17 +1882,24 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self.ShowPanel(target_changed=True)
         self._ini_panel.uiList.RefreshUI()
 
+    def check_new_target(self):
+        """Checks if the target INI has been changed and, if so, updates
+        bosh.iniInfos.ini to match. Returns whether or not the target INI has
+        changed."""
+        new_target = bosh.iniInfos.ini.abs_path != self.current_ini_path
+        if new_target:
+            bosh.iniInfos.ini = self.current_ini_path
+        return new_target
+
     def ShowPanel(self, target_changed=False, clean_targets=False, **kwargs):
         if self._firstShow:
             super(INIDetailsPanel, self).ShowPanel(**kwargs)
             target_changed = True # to display the target ini
-        new_target = bosh.iniInfos.ini.abs_path != self.current_ini_path
-        if new_target:
-            bosh.iniInfos.ini = self.current_ini_path
+        target_changed |= self.check_new_target()
         self._enable_buttons() # if a game ini was deleted will disable edit
         if clean_targets: self._clean_targets()
         # first refresh_ini_contents as refresh_tweak_contents needs its lines
-        if new_target or target_changed:
+        if target_changed:
             self.iniContents.refresh_ini_contents()
             Link.Frame.warn_game_ini()
         self._inis_combo_box.set_selection(settings[u'bash.ini.choice'])
@@ -1919,11 +1926,16 @@ class INIPanel(BashTab):
     def ShowPanel(self, refresh_infos=False, refresh_target=True,
                   clean_targets=False, focus_list=True, detail_item=u'SAME',
                   **kwargs):
+        # Have to do this first, since IniInfos.refresh will otherwise use the
+        # old INI and report no change, so we won't refresh the INI in the
+        # details panel
+        target_ch = self.detailsPanel.check_new_target()
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
-        super(INIPanel, self).ShowPanel(target_changed=changes and changes[3],
+        target_ch |= changes and changes[3]
+        super(INIPanel, self).ShowPanel(target_changed=target_ch,
                                         clean_targets=clean_targets)
-        if changes: # we need this to be more granular
+        if changes or target_ch: # we need this to be more granular
             self.uiList.RefreshUI(focus_list=focus_list,
                                   detail_item=detail_item)
 

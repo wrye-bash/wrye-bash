@@ -1053,7 +1053,7 @@ class INIInfo(IniFile):
             return _status(10)
 
     def get_table_prop(self, prop, default=None):
-        return iniInfos.table.getItem(self.abs_path.tail.s, prop, default)
+        return iniInfos.table.getItem(self.abs_path.tail, prop, default)
 
     def reset_status(self): self._status = None
 
