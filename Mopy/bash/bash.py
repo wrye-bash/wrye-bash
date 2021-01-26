@@ -29,7 +29,6 @@ loop."""
 from __future__ import print_function
 import atexit
 import codecs
-import ctypes
 import os
 import platform
 import shutil
@@ -37,7 +36,7 @@ import sys
 import traceback
 from ConfigParser import ConfigParser
 # Local
-from . import bass, bolt, env, exception, localize
+from . import bass, bolt, exception
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
@@ -73,11 +72,6 @@ def _early_setup(debug):
             open(os.path.join(os.getcwdu(), u'BashBugDump.log'), u'w'))
         sys.stdout = _bugdump_handle
         sys.stderr = _bugdump_handle
-    # Mark us as High DPI-aware on Windows
-    try:
-        ctypes.windll.shcore.SetProcessDpiAwareness(True)
-    except (AttributeError, WindowsError):
-        pass # Not on Windows or on Windows < 8.1
 
 def _import_wx():
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
@@ -255,10 +249,15 @@ def main(opts):
     _early_setup(opts.debug)
     # wx is needed to initialize locale, so that's first
     _import_wx()
-    # Next, proceed to initialize the locale using wx
-    wx_locale = localize.setup_locale(opts.language)
-    # At this point, we can show a wx error popup, so do it all in a try
     try:
+        # Next, initialize locale so that we can show a translated error
+        # message if WB crashes
+        from . import localize
+        wx_locale = localize.setup_locale(opts.language)
+        # Mark us as high DPI aware before gui/balt are imported
+        # FIXME(inf) test: do we need to do this before _import_wx?
+        from . import env
+        env.mark_high_dpi_aware()
         # Initialize gui, our wrapper above wx (also balt, temp module)
         from . import gui, balt
         # Check for some non-critical dependencies (e.g. lz4) and warn if
@@ -267,14 +266,20 @@ def main(opts):
         # Early setup is done, delegate to the main init method
         _main(opts, wx_locale)
     except Exception:
+        caught_exc = traceback.format_exc()
+        try:
+            # Check if localize succeeded in setting up translations, otherwise
+            # monkey patch in a noop underscore
+            _(u'')
+        except NameError:
+            def _(x): return x
         msg = u'\n'.join([
             _(u'Wrye Bash encountered an error.'),
             _(u'Please post the information below to the official thread at'),
             _(u'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games'),
             _(u'or to the Wrye Bash Discord at'),
             _(u'https://discord.gg/NwWvAFR'),
-            u'',
-            traceback.format_exc()
+            u'', caught_exc,
         ])
         _close_dialog_windows()
         _show_boot_popup(msg)
@@ -346,7 +351,8 @@ def _main(opts, wx_locale):
         # init problems (since we init those in main)
         from . import bosh
         bosh.initBosh(bashIni, game_ini_path)
-        env.isUAC = env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
+        from . import env
+        env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
         global basher # share this instance with _close_dialog_windows
         from . import basher
     except (exception.BoltError, ImportError, OSError, IOError):
@@ -355,6 +361,7 @@ def _main(opts, wx_locale):
                           traceback.format_exc()])
         _close_dialog_windows()
         _show_boot_popup(msg)
+        return # _show_boot_popup calls sys.exit, this gets pycharm to shut up
     atexit.register(exit_cleanup)
     basher.InitSettings()
     basher.InitLinks()

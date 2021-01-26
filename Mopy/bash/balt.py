@@ -315,27 +315,22 @@ def askNumber(parent,message,prompt=u'',title=u'',value=0,min=0,max=10000):
         return dialog.GetValue()
 
 # Message Dialogs -------------------------------------------------------------
-try:
-    from . import windows as _win # only import here !
-    canVista = _win.TASK_DIALOG_AVAILABLE
-except ImportError: # bare linux (in wine it's imported but malfunctions)
-    deprint(u'Importing windows.py failed', traceback=True)
-    _win = None
-    canVista = False
+from .env import TASK_DIALOG_AVAILABLE, TaskDialog, BTN_OK, BTN_CANCEL, \
+    BTN_YES, BTN_NO, GOOD_EXITS
+canVista = TASK_DIALOG_AVAILABLE
 
 def vistaDialog(parent, message, title, checkBoxTxt=None,
                 buttons=None, icon=u'warning', commandLinks=True, footer=u'',
                 expander=[], heading=u''):
     """Always guard with canVista == True"""
     buttons = buttons if buttons is not None else (
-        (_win.BTN_OK, u'ok'), (_win.BTN_CANCEL, u'cancel'))
+        (BTN_OK, u'ok'), (BTN_CANCEL, u'cancel'))
     heading = heading if heading is not None else title
     title = title if heading is not None else u'Wrye Bash'
-    dialog = _win.TaskDialog(title, heading, message,
-                             buttons=[x[1] for x in buttons],
-                             main_icon=icon,
-                             parenthwnd=parent.GetHandle() if parent else None,
-                             footer=footer)
+    dialog = TaskDialog(title, heading, message,
+                        buttons=[x[1] for x in buttons], main_icon=icon,
+                        parenthwnd=parent.GetHandle() if parent else None,
+                        footer=footer)
     if expander:
         dialog.set_expander(expander,False,not footer)
     if checkBoxTxt:
@@ -350,9 +345,9 @@ def vistaDialog(parent, message, title, checkBoxTxt=None,
         if title.startswith(u'+'): title = title[1:]
         if title == button:
             if checkBoxTxt:
-                return id_ in _win.GOOD_EXITS, checkbox
+                return id_ in GOOD_EXITS, checkbox
             else:
-                return id_ in _win.GOOD_EXITS, None
+                return id_ in GOOD_EXITS, None
     return False, checkbox
 
 def askStyled(parent, message, title, style, do_center=False):
@@ -370,12 +365,12 @@ def askStyled(parent, message, title, style, do_center=False):
                 yes = u'Yes'
             elif style & wx.NO_DEFAULT:
                 no = u'No'
-            vista_btn.append((_win.BTN_YES, yes))
-            vista_btn.append((_win.BTN_NO, no))
+            vista_btn.append((BTN_YES, yes))
+            vista_btn.append((BTN_NO, no))
         if style & wx.OK:
-            vista_btn.append((_win.BTN_OK, u'ok'))
+            vista_btn.append((BTN_OK, u'ok'))
         if style & wx.CANCEL:
-            vista_btn.append((_win.BTN_CANCEL, u'cancel'))
+            vista_btn.append((BTN_CANCEL, u'cancel'))
         if style & (wx.ICON_EXCLAMATION|wx.ICON_INFORMATION):
             icon = u'warning'
         if style & wx.ICON_HAND:

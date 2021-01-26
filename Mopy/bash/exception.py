@@ -22,6 +22,7 @@
 # =============================================================================
 """This module contains all custom exceptions for Wrye Bash."""
 
+import platform
 import sys
 import traceback
 # NO LOCAL IMPORTS! This has to be importable from any module/package.
@@ -277,6 +278,13 @@ class MasterMapError(BoltError):
 class SaveHeaderError(Exception): pass
 
 class InstallerArchiveError(BoltError): pass
+
+class EnvError(Exception):
+    """Attempt to use a feature that is not available on this operating
+    system."""
+    def __init__(self, env_feature):
+        super(EnvError, self).__init__(u"'%s' is not available on %s" % (
+            env_feature, platform.system()))
 
 # gui package exceptions ------------------------------------------------------
 class GuiError(Exception):
