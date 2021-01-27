@@ -286,36 +286,46 @@ class FomodInstaller(object):
         self._has_finished = False
 
     def start_fomod(self):
+        # First check if we can even run this wizard
         root_conditions = self.fomod_tree.find(u'moduleDependencies')
         if root_conditions is not None:
             self.test_conditions(root_conditions)
-        first_page = self.fomod_tree.find(u'installSteps/installStep')
-        if first_page is None:
-            return None
-        self._current_page = InstallerPage(self, first_page)
-        return self._current_page
+        return self._do_next_page()
 
     def move_to_next(self, user_selection):
         if self._has_finished or self._current_page is None:
             return None
-        sort_list = [option for grp in self._current_page for option in grp]
-        sorted_selection = sorted(user_selection, key=sort_list.index)
+        # Store the choices made on the current page so we can go back to them
+        all_options = (option for grp in self._current_page for option in grp)
+        sort_map = {o: i for i, o in enumerate(all_options)}
+        sorted_selection = sorted(user_selection, key=sort_map.__getitem__)
         self._previous_pages[self._current_page] = sorted_selection
+        return self._do_next_page()
+
+    def _do_next_page(self):
         ordered_pages = self.order_list(
             self.fomod_tree.findall(u'installSteps/installStep'),
             self.fomod_tree.find(u'installSteps').get(u'order', u'Ascending'))
-        current_index = ordered_pages.index(self._current_page.page_object)
+        if self._current_page is not None:
+            # We already have a page, use the index of the current one
+            current_index = ordered_pages.index(self._current_page.page_object)
+        else:
+            # We're at the start of the wizard, consider the first page too
+            current_index = -1
         for next_page in ordered_pages[current_index + 1:]:
             try:
+                # We have a page, but need to check if it's actually visible
                 page_conditions = next_page.find(u'visible')
                 if page_conditions is not None:
                     self.test_conditions(page_conditions)
             except FailedCondition:
                 pass
             else:
+                # We have a visible page, wrap it and return that
                 self._current_page = InstallerPage(self, next_page)
                 return self._current_page
         else:
+            # We have no visible pages, finish the entire wizard
             self._has_finished = True
             self._current_page = None
         return None
