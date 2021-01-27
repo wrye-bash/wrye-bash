@@ -26,6 +26,7 @@ from __future__ import print_function
 
 import os
 import re
+import sys
 import _winreg as winreg  # PY3
 from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes, WINFUNCTYPE, c_uint, c_long, Union, c_ushort, c_int, \
@@ -750,6 +751,11 @@ def mark_high_dpi_aware():
         windll.shcore.SetProcessDpiAwareness(True)
     except (AttributeError, WindowsError):
         pass  # We are on an unsupported Windows version
+
+def python_tools_dir():
+    """Returns the absolute path to the Tools directory of the currently used
+    Python installation."""
+    return os.path.join(sys.prefix, u'lib', u'Tools') # easy on Windows
 
 # API - Classes ===============================================================
 # The same note about the taskdialog license from above applies to the section

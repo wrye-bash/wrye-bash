@@ -24,6 +24,7 @@
 
 import os
 import subprocess
+import sys
 
 from ..bolt import decoder, deprint, GPath, structs_cache
 from ..exception import EnvError
@@ -189,6 +190,21 @@ def get_file_version(filename):
 
 def mark_high_dpi_aware():
     pass ##: Equivalent on Linux? Not needed?
+
+def python_tools_dir():
+    # This is much more complicated on Linux than on Windows, since sys.prefix
+    # only points to /usr here, so is useless
+    for path_entry in sys.path:
+        tools_path = os.path.join(path_entry, u'Tools')
+        # Actually check for the files we really want
+        try_paths = [os.path.join(tools_path, u'i18n', x)
+                     for x in (u'msgfmt.py', u'pygettext.py')]
+        if all(os.path.isfile(p) for p in try_paths):
+            return tools_path
+    # Fall back on /usr/lib/python*.* - this should never happen
+    deprint(u'Failed to find Python Tools dir on sys.path')
+    return u'/usr/lib/python%d.%d' % (sys.version_info.major,
+                                      sys.version_info.minor)
 
 # API - Classes ===============================================================
 class TaskDialog(object):

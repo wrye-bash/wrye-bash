@@ -35,9 +35,8 @@ import subprocess
 import sys
 import time
 import traceback
-from collections import defaultdict
 
-# Minimal local imports - needs to be imported statically in bash
+# Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
 
 #------------------------------------------------------------------------------
@@ -145,10 +144,9 @@ def setup_locale(cli_lang):
                     sys.argv = old_argv
                 else:
                     # msgfmt is only in Tools, so call it explicitly
-                    m = os.path.join(sys.prefix, u'Tools', u'i18n',
-                                     u'msgfmt.py')
-                    subprocess.call([sys.executable, m, u'-o', mo, po],
-                                    shell=True)
+                    from .env import python_tools_dir
+                    m = os.path.join(python_tools_dir(), u'i18n', u'msgfmt.py')
+                    subprocess.call([sys.executable, m, u'-o', mo, po])
             # We've successfully compiled the translation, read it into memory
             with open(mo,u'rb') as trans_file:
                 trans = gettext.GNUTranslations(trans_file)
