@@ -82,7 +82,31 @@ class UnicodeImporter(object):
 if not hasattr(sys,'frozen'):
     sys.meta_path = [UnicodeImporter()]
 
+
+def install_except_hook():
+    original_hook = sys.excepthook
+    # For now, just use the version string in bass,
+    # if users are using a git repo, they probably
+    # know how to report which commit they're using.
+    # This could be expanded to include other data,
+    # like system information, git commit sha, etc.
+    try:
+        from bash.bass import AppVersion
+    except (ImportError, SyntaxError):
+        AppVersion = u'Could not import bass.'
+    # The exception hook
+    def excepthook(exc_type, exc_value, exc_traceback):
+        print u'Wrye Bash encountered an error.'
+        print u'AppVersion:', AppVersion
+        if original_hook is not None:
+            original_hook(exc_type, exc_value, exc_traceback)
+        else:
+            traceback.print_exception(exc_type, exc_value, exc_traceback)
+    sys.excepthook = excepthook
+
+
 if __name__ == '__main__':
+    install_except_hook()
     from bash import bash, barg
     opts = barg.parse()
     bash.main(opts)
