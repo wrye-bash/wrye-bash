@@ -89,7 +89,7 @@ class _ATextInput(_AComponent):
         if init_text: self._native_widget.SetValue(init_text)
         if max_length:
             ##: multiline + max length is not supported on GTK
-            if _wx.Platform == u'__WXMSW__' or not multiline:
+            if not multiline or _wx.Platform != u'__WXGTK__':
                 self._native_widget.SetMaxLength(max_length)
         # Events
         # Internal use only - used to implement auto_tooltip below

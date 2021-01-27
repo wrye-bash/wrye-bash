@@ -715,7 +715,7 @@ class TabDragMixin(object):
         self.__dragging = wx.NOT_FOUND
         self.__justSwapped = wx.NOT_FOUND
         # TODO(inf) Test in wx3
-        if wx.Platform == u'__WXMSW__': # CaptureMouse() works badly in wxGTK
+        if wx.Platform != u'__WXGTK__': # CaptureMouse() works badly in wxGTK
             self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
             self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
             self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.__OnDragEndForced)
@@ -2303,7 +2303,7 @@ class DnDStatusBar(wx.StatusBar):
             self.buttons.append(gButton)
             # TODO(inf) Test in wx3
             # DnD events (only on windows, CaptureMouse works badly in wxGTK)
-            if wx.Platform == u'__WXMSW__':
+            if wx.Platform != u'__WXGTK__':
                 gButton._native_widget.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
                 gButton._native_widget.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
                 gButton._native_widget.Bind(wx.EVT_MOUSE_CAPTURE_LOST,

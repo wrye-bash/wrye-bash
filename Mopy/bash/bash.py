@@ -508,9 +508,8 @@ def _show_boot_popup(msg, is_critical=True):
                 super(MessageBox, self).__init__(title=popup_title,
                                                  sizes_dict={})
                 self.component_size = (400, 300)
-                msg_text = TextArea(self, editable=False, no_border=True,
-                                    init_text=msg, auto_tooltip=False)
-                msg_text.set_background_color(Color(240, 240, 240))
+                msg_text = TextArea(self, editable=False, init_text=msg,
+                                    auto_tooltip=False)
                 VLayout(item_border=5, items=[
                     (msg_text, LayoutOptions(expand=True, weight=1)),
                     (CancelButton(self, btn_label=_(u'Quit') if is_critical
