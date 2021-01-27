@@ -206,6 +206,9 @@ def python_tools_dir():
     return u'/usr/lib/python%d.%d' % (sys.version_info.major,
                                       sys.version_info.minor)
 
+def convert_separators(p):
+    return p.replace(u'\\', u'/')
+
 # API - Classes ===============================================================
 class TaskDialog(object):
     def __init__(self, _title, _heading, _content, _buttons=(),

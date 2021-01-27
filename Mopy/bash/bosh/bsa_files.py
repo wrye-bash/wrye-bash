@@ -610,9 +610,11 @@ class ABsa(AFile):
         """Set of full paths in the bsa in lowercase.
         :rtype: frozenset[unicode]
         """
+        from ..env import convert_separators
         if self._assets is self.__class__._assets:
             self.__load(names_only=True)
-            self._assets = frozenset(imap(os.path.normcase, self._filenames))
+            self._assets = frozenset(convert_separators(f.lower())
+                                     for f in self._filenames)
             del self._filenames[:]
         return self._assets
 

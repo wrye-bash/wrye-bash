@@ -757,6 +757,10 @@ def python_tools_dir():
     Python installation."""
     return os.path.join(sys.prefix, u'lib', u'Tools') # easy on Windows
 
+def convert_separators(p):
+    """Converts other OS's path separators to separators for this OS."""
+    return p.replace(u'/', u'\\')
+
 # API - Classes ===============================================================
 # The same note about the taskdialog license from above applies to the section
 # below.
