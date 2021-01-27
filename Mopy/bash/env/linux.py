@@ -114,12 +114,13 @@ def getJava(): # PY3: cache this
 def get_file_version(filename):
     """A python replacement for win32api.GetFileVersionInfo that can be used
     on systems where win32api isn't available."""
-    _WORD, _DWORD = structs_cache[u'<H'].unpack_from, structs_cache[
-        u'<I'].unpack_from
-    def _read(_struct_unp, file_obj, offset=0, count=1, absolute=False):
+    _WORD, _DWORD = u'<H', u'<I'
+    def _read(target_fmt, file_obj, offset=0, count=1, absolute=False):
         """Read one or more chunks from the file, either a word or dword."""
+        target_struct = structs_cache[target_fmt]
         file_obj.seek(offset, not absolute)
-        result = [_struct_unp(file_obj)[0] for x in xrange(count)] ##: array.fromfile(f, n)
+        result = [target_struct.unpack(file_obj.read(target_struct.size))[0]
+                  for _x in xrange(count)] ##: array.fromfile(f, n)
         return result[0] if count == 1 else result
     def _find_version(file_obj, pos, offset):
         """Look through the RT_VERSION and return VS_VERSION_INFO."""
