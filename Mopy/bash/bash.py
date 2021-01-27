@@ -255,7 +255,6 @@ def main(opts):
         from . import localize
         wx_locale = localize.setup_locale(opts.language)
         # Mark us as high DPI aware before gui/balt are imported
-        # FIXME(inf) test: do we need to do this before _import_wx?
         from . import env
         env.mark_high_dpi_aware()
         # Initialize gui, our wrapper above wx (also balt, temp module)

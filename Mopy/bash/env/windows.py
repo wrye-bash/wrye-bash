@@ -717,41 +717,32 @@ def setUAC(handle, uac=True):
     if isUAC and win32gui:
         win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
-def getJava():
+def getJava(): # PY3: cache this
     """Locate javaw.exe to launch jars from Bash."""
-    if os.name == u'posix':
-        import subprocess
-        java_bin_path = u''
-        try:
-            java_bin_path = subprocess.check_output(u'command -v java',
-                                                    shell=True).rstrip(u'\n')
-        except subprocess.CalledProcessError:
-            pass # what happens when java doesn't exist?
-        return GPath(java_bin_path)
     try:
         java_home = GPath(os.environ[u'JAVA_HOME'])
-        java = java_home.join(u'bin', u'javaw.exe')
-        if java.exists(): return java
+        java_bin_path = java_home.join(u'bin', u'javaw.exe')
+        if java_bin_path.isfile(): return java_bin_path
     except KeyError: # no JAVA_HOME
         pass
-    win = GPath(os.environ[u'SYSTEMROOT'])
+    sys_root = GPath(os.environ[u'SYSTEMROOT'])
     # Default location: Windows\System32\javaw.exe
-    java = win.join(u'system32', u'javaw.exe')
-    if not java.exists():
+    java_bin_path = sys_root.join(u'system32', u'javaw.exe')
+    if not java_bin_path.isfile():
         # 1st possibility:
         #  - Bash is running as 32-bit
         #  - The only Java installed is 64-bit
         # Because Bash is 32-bit, Windows\System32 redirects to
         # Windows\SysWOW64.  So look in the ACTUAL System32 folder
         # by using Windows\SysNative
-        java = win.join(u'sysnative', u'javaw.exe')
-    if not java.exists():
+        java_bin_path = sys_root.join(u'sysnative', u'javaw.exe')
+    if not java_bin_path.isfile():
         # 2nd possibility
         #  - Bash is running as 64-bit
         #  - The only Java installed is 32-bit
         # So javaw.exe would actually be in Windows\SysWOW64
-        java = win.join(u'syswow64', u'javaw.exe')
-    return java
+        java_bin_path = sys_root.join(u'syswow64', u'javaw.exe')
+    return java_bin_path
 
 def mark_high_dpi_aware():
     """Marks the current process as High DPI-aware."""

@@ -89,8 +89,21 @@ def testUAC(_gameDataPath):
 def setUAC(_handle, _uac=True):
     pass # Noop on Linux
 
-def getJava():
-    raise EnvError(u'getJava')
+def getJava(): # PY3: cache this
+    try:
+        java_home = GPath(os.environ[u'JAVA_HOME'])
+        java_bin_path = java_home.join(u'bin', u'java')
+        if java_bin_path.isfile(): return java_bin_path
+    except KeyError: # no JAVA_HOME
+        pass
+    try:
+        java_bin_path = subprocess.check_output(u'command -v java',
+                                                shell=True).rstrip(u'\n')
+    except subprocess.CalledProcessError:
+        # Fall back to the likely correct path on most distros - but probably
+        # Java is missing entirely if command can't find it
+        java_bin_path = u'/usr/bin/java'
+    return GPath(java_bin_path)
 
 # TODO(inf) This method needs support for string fields and product versions
 def get_file_version(filename):
