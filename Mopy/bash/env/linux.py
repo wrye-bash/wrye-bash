@@ -81,7 +81,12 @@ def get_local_app_data_path():
     return _getShellPath(u'Local AppData'), _get_error_info()
 
 def init_app_links(_apps_dir, _badIcons, _iconList):
-    raise EnvError(u'init_app_links')
+    ##: Rework launchers so that they can work for Linux too
+    # The 'shortcuts' concept is hard for users to grasp anyways (remember how
+    # many people have trouble setting up a shortcut for QACing using xEdit!),
+    # so a better design would be e.g. using our settings dialog to add new
+    # launchers, similar to how MO2 does it
+    return []
 
 def testUAC(_gameDataPath):
     pass # Noop on Linux
