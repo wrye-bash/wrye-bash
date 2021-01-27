@@ -87,7 +87,7 @@ class InstallerPage(_AFomodBase):
         self._group_list = parent_installer.order_list([
             InstallerGroup(parent_installer, xml_group_obj)
             for xml_group_obj in page_object.findall(u'optionalFileGroups/*')
-        ], page_object.get(u'order', u'Ascending'))
+        ], page_object.find(u'optionalFileGroups').get(u'order', u'Ascending'))
 
     def __getitem__(self, k):
         return self._group_list[k]
@@ -114,7 +114,7 @@ class InstallerGroup(_AFomodBase):
         self._option_list = parent_installer.order_list([
             InstallerOption(parent_installer, xml_option_object)
             for xml_option_object in group_object.findall(u'plugins/*')
-        ], group_object.get(u'order', u'Ascending'))
+        ], group_object.find(u'plugins').get(u'order', u'Ascending'))
         self.group_type = group_object.get(u'type')
 
     def __getitem__(self, k):
