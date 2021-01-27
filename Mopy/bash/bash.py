@@ -207,7 +207,7 @@ def dump_environment():
         u'Using Wrye Bash Version %s%s' % (bass.AppVersion,
             u' (Standalone)' if bass.is_standalone else u''),
         u'OS info: %s, running on %s' % (
-            platform.platform(), platform.processor()),
+            platform.platform(), platform.processor() or u'<unknown>'),
         u'Python version: %s' % sys.version,
         u'wxPython version: %s' % _wx.version() if _wx is not None else \
             u'wxPython not found',

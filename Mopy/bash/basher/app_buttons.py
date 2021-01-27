@@ -678,12 +678,7 @@ class App_Help(StatusBar_Button):
     imageKey, _tip = u'help.%s', _(u'Help File')
 
     def Execute(self):
-        readme_html = bass.dirs[u'mopy'].join(
-            u'Docs', u'Wrye Bash General Readme.html')
-        if readme_html.isfile():
-            webbrowser.open(readme_html.s)
-        else:
-            balt.showError(Link.Frame, _(u'Cannot find General Readme file.'))
+        webbrowser.open(balt.readme_url(mopy=bass.dirs[u'mopy']))
 
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):
