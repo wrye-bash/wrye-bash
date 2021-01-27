@@ -37,6 +37,10 @@ colorInfo = {
         _(u'This is the text background color used for list items when no '
           u'other is specified.  For example, an ESM that is not ghosted.'),
     ),
+    u'default.warn': (_(u'Default Warning'),
+        _(u'This is the color used for text that is communicating some sort '
+          u'of warning or error.'),
+    ),
     u'mods.text.esm': (_(u'ESM'),
         _(u'Tabs: Mods, Saves') + u'\n\n' +
         _(u'This is the text color used for ESMs in the Mods Tab, and in the '
@@ -173,6 +177,7 @@ settingDefaults = { # keep current naming format till refactored
         #--Common Colors
         u'default.text':                 (0,   0,   0),   # 'BLACK'
         u'default.bkgd':                 (255, 255, 255), # 'WHITE'
+        u'default.warn':                 (255, 0,   0),
         #--Mods Tab
         u'mods.text.esm':                (0,   0,   255), # 'BLUE'
         u'mods.text.mergeable':          (0,   153, 0),
@@ -204,7 +209,6 @@ settingDefaults = { # keep current naming format till refactored
     # Wrye Bash: Localization
     u'bash.l10n.editor.param_fmt': u'%s',
     u'bash.l10n.editor.path': u'',
-    u'bash.l10n.editor.rename_to_po': False,
     #--Wrye Bash: Load Lists
     u'bash.loadLists.data': {}, ##: to be removed
     # Wrye Bash: Load Order

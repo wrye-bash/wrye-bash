@@ -444,6 +444,7 @@ def GPathPurge():
             del _gpaths[key]
 
 #------------------------------------------------------------------------------
+_conv_seps = None
 class Path(object):
     """Paths are immutable objects that represent file directory paths.
      May be just a directory, filename or full path."""
@@ -497,7 +498,13 @@ class Path(object):
         norm = decoder(norm)  # decoder will check for unicode
         self._s = norm
         # Reconstruct _cs, lower() should suffice
-        self._cs = os.path.normcase(norm)
+        global _conv_seps
+        try:
+            self._cs = _conv_seps(norm.lower())
+        except TypeError:
+            from .env import convert_separators
+            _conv_seps = convert_separators
+            self._cs = _conv_seps(norm.lower())
 
     def __len__(self):
         return len(self._s)
@@ -553,7 +560,7 @@ class Path(object):
     @property
     def csbody(self):
         """For alpha\beta.gamma returns beta as string in normalized case."""
-        return os.path.normcase(self.sbody)
+        return self.sbody.lower()
 
     #--Head, tail
     @property
@@ -592,7 +599,7 @@ class Path(object):
         try:
             return self._cext
         except AttributeError:
-            self._cext = os.path.normcase(self.ext)
+            self._cext = self.ext.lower()
             return self._cext
     @property
     def temp(self):
@@ -919,38 +926,32 @@ class Path(object):
             return self._cs == other._cs
         # get unicode or None - will blow on most other types - identical below
         dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs == (os.path.normcase(os.path.normpath(dec)) if dec
-            else dec)
+        return self._cs == (os.path.normpath(dec).lower() if dec else dec)
     def __ne__(self, other):
         if isinstance(other, Path):
             return self._cs != other._cs
         dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs != (os.path.normcase(os.path.normpath(dec)) if dec
-            else dec)
+        return self._cs != (os.path.normpath(dec).lower() if dec else dec)
     def __lt__(self, other):
         if isinstance(other, Path):
             return self._cs < other._cs
         dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs < (os.path.normcase(os.path.normpath(dec)) if dec
-            else dec)
+        return self._cs < (os.path.normpath(dec).lower() if dec else dec)
     def __ge__(self, other):
         if isinstance(other, Path):
             return self._cs >= other._cs
         dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs >= (os.path.normcase(os.path.normpath(dec)) if dec
-            else dec)
+        return self._cs >= (os.path.normpath(dec).lower() if dec else dec)
     def __gt__(self, other):
         if isinstance(other, Path):
             return self._cs > other._cs
         dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs > (os.path.normcase(os.path.normpath(dec)) if dec
-            else dec)
+        return self._cs > (os.path.normpath(dec).lower() if dec else dec)
     def __le__(self, other):
         if isinstance(other, Path):
             return self._cs <= other._cs
         dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs <= (os.path.normcase(os.path.normpath(dec)) if dec
-            else dec)
+        return self._cs <= (os.path.normpath(dec).lower() if dec else dec)
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""

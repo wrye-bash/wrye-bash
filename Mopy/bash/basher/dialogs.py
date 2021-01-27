@@ -171,11 +171,11 @@ class CreateNewProject(DialogWindow):
         projectName = bolt.GPath(new_text)
         if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
             # PY3: See note in basher/constants.py
-            self.textName.set_background_color(colors.RED)
+            self.textName.set_background_color(colors[u'default.warn'])
             self.textName.tooltip = _(u'There is already a project with that name!')
             self.ok_button.enabled = False
         else:
-            self.textName.set_background_color(colors.WHITE)
+            self.textName.reset_background_color()
             self.textName.tooltip = None
             self.ok_button.enabled = True
 
@@ -289,7 +289,7 @@ class CreateNewPlugin(DialogWindow):
         self._ok_btn = OkButton(self)
         self._ok_btn.on_clicked.subscribe(self._handle_ok)
         self._too_many_masters = Label(self, u'')
-        self._too_many_masters.set_foreground_color(colors.RED)
+        self._too_many_masters.set_foreground_color(colors[u'default.warn'])
         self._too_many_masters.visible = False
         VLayout(border=6, spacing=6, item_expand=True, items=[
             HLayout(spacing=4, items=[

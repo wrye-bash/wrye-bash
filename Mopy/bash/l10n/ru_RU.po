@@ -1,4 +1,4 @@
-# Russian Language File. 
+# Russian Language File.
 # (C) tes.ag.ru
 # DJ_Kovrik, <tesmods@ag.ru>
 #
@@ -10946,4 +10946,3 @@ msgstr ""
 #: bash\cint.py:15425
 msgid "Load Order (%s), Name(%s)"
 msgstr ""
-

@@ -31,13 +31,12 @@ import locale
 import os
 import pkgutil
 import re
-import shutil
 import subprocess
 import sys
 import time
 import traceback
 
-# Minimal local imports - needs to be imported statically in bash
+# Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
 
 #------------------------------------------------------------------------------
@@ -60,47 +59,81 @@ def setup_locale(cli_lang):
     import wx as _wx
     _temp_app = _wx.App(False)
     # Set the wx language - otherwise we will crash when loading any images
-    if cli_lang and _wx.Locale.FindLanguageInfo(cli_lang):
-        # The user specified a language that wx recognizes and WB supports
-        target_language = _wx.Locale.FindLanguageInfo(cli_lang).Language
+    cli_target = cli_lang and _wx.Locale.FindLanguageInfo(cli_lang)
+    if cli_target:
+        # The user specified a language that wx recognizes
+        target_language = cli_target.Language
     else:
         # Fall back on the default language
         target_language = _wx.LANGUAGE_DEFAULT
     # We now have a language that wx supports, but we don't know if WB supports
     # it - so check that next
     target_locale = _wx.Locale(target_language)
-    target_name = target_locale.GetSysName().split(u'_', 1)[0]
-    # Ugly hack, carried forward from bolt.initTranslator
-    if target_name.lower() == u'german':
-        target_name = u'de'
+    target_name = target_locale.GetCanonicalName()
+    trans_path = os.path.join(os.getcwdu(), u'bash', u'l10n')
+    if not os.path.exists(trans_path):
+        # HACK: the CI has to run tests from the top dir, which causes us to
+        # have a non-Mopy working dir here. Real fix is ditching the fake
+        # startup and adding a real headless mode to WB (see #568 and #554)
+        trans_path = os.path.join(os.getcwdu(), u'Mopy', u'bash', u'l10n')
+    supported_l10ns = [l[:-3] for l in os.listdir(trans_path)
+                       if l[-3:] == u'.po']
+    if not any(l == target_name for l in supported_l10ns):
+        # We don't support this exact language. Check if we support any similar
+        # languages (i.e. same prefix)
+        wanted_prefix = target_name.split(u'_', 1)[0]
+        for l in supported_l10ns:
+            if l.split(u'_', 1)[0] == wanted_prefix:
+                bolt.deprint(u"No translation file for language '%s', "
+                             u"using similar language with translation file "
+                             u"'%s' instead" % (target_name, l))
+                target_name = l
+                # Try switching wx to this locale as well
+                lang_info = _wx.Locale.FindLanguageInfo(target_name)
+                if lang_info:
+                    target_locale = _wx.Locale(lang_info.Language)
+                else:
+                    # Didn't work, try the prefix to get a similar language
+                    lang_info = _wx.Locale.FindLanguageInfo(wanted_prefix)
+                    if lang_info:
+                        target_locale = _wx.Locale(lang_info.Language)
+                        bolt.deprint(u"wxPython does not support language "
+                                     u"'%s', using supported language '%s' "
+                                     u"instead" % (
+                            target_name, target_locale.GetCanonicalName()))
+                    else:
+                        # If even that didn't work, all we can do is complain
+                        # about it and fall back to English
+                        bolt.deprint(u"wxPython does not support the language "
+                                     u"family '%s', will fall back to "
+                                     u"English" % wanted_prefix)
+                break
+    po, mo = (os.path.join(trans_path, target_name + ext)
+              for ext in (u'.po', u'.mo'))
     # English is the default, so it doesn't have a translation file
     # For all other languages, check if we have a translation
-    trans_path = os.path.join(os.getcwdu(), u'bash', u'l10n')
-    if target_name.lower() != u'english' and not os.path.exists(os.path.join(
-            trans_path, target_name + u'.txt')):
+    if not target_name.startswith(u'en_') and not os.path.isfile(po):
         # WB does not support the default language, use English instead
         target_locale = _wx.Locale(_wx.LANGUAGE_ENGLISH)
+        fallback_name = target_locale.GetCanonicalName()
         bolt.deprint(u"No translation file for language '%s', falling back to "
-                     u'English' % target_name)
-        target_name = target_locale.GetSysName().split(u'_', 1)[0]
-    bolt.deprint(u"Set wx locale to '%s' (%s)" % (
-        target_name, target_locale.GetCanonicalName()))
+                     u"'%s'" % (target_name, fallback_name))
+        target_name = fallback_name
+    bolt.deprint(u"Set wxPython language to '%s'" %
+                 target_locale.GetCanonicalName())
+    bolt.deprint(u"Set Wrye Bash language to '%s'" % target_name)
     # Next, set the Wrye Bash locale based on the one we grabbed from wx
-    txt, po, mo = (os.path.join(trans_path, target_name + ext)
-                   for ext in (u'.txt', u'.po', u'.mo'))
-    if not os.path.exists(txt) and not os.path.exists(mo):
+    if not os.path.isfile(po) and not os.path.isfile(mo):
         # We're using English or don't have a translation file - either way,
         # prepare the English translation
         trans = gettext.NullTranslations()
-        bolt.deprint(u"Set Wrye Bash locale to 'English'")
     else:
         try:
             # We have a translation file, check if it has to be compiled
-            if not os.path.exists(mo) or (os.path.getmtime(txt) >
+            if not os.path.isfile(mo) or (os.path.getmtime(po) >
                                           os.path.getmtime(mo)):
                 # Try compiling - have to do it differently if we're a
                 # standalone build
-                shutil.copy(txt, po)
                 args = [u'm', u'-o', mo, po]
                 if bass.is_standalone:
                     # Delayed import, since it's only present on standalone
@@ -111,16 +144,12 @@ def setup_locale(cli_lang):
                     sys.argv = old_argv
                 else:
                     # msgfmt is only in Tools, so call it explicitly
-                    m = os.path.join(sys.prefix, u'Tools', u'i18n',
-                                     u'msgfmt.py')
-                    subprocess.call([sys.executable, m, u'-o', mo, po],
-                                    shell=True)
-                # Clean up the temp file we created for compilation
-                os.remove(po)
+                    from .env import python_tools_dir
+                    m = os.path.join(python_tools_dir(), u'i18n', u'msgfmt.py')
+                    subprocess.call([sys.executable, m, u'-o', mo, po])
             # We've successfully compiled the translation, read it into memory
             with open(mo,u'rb') as trans_file:
                 trans = gettext.GNUTranslations(trans_file)
-            bolt.deprint(u"Set Wrye Bash locale to '%s'" % target_name)
         except (UnicodeError, OSError):
             bolt.deprint(u'Error loading translation file:')
             traceback.print_exc()
@@ -166,10 +195,10 @@ def dump_translator(out_path, lang):
         bass.dirs[u'l10n'].
     :param lang: The language to dump a text file for.
     :return: The path to the file that the dump was written to."""
-    new_txt = os.path.join(out_path, u'%sNEW.txt' % lang)
-    tmp_txt = os.path.join(out_path, u'%sNEW.tmp' % lang)
-    old_txt = os.path.join(out_path, u'%s.txt' % lang)
-    gt_args = [u'p', u'-a', u'-o', new_txt]
+    new_po = os.path.join(out_path, u'%sNEW.po' % lang)
+    tmp_po = os.path.join(out_path, u'%sNEW.tmp' % lang)
+    old_po = os.path.join(out_path, u'%s.po' % lang)
+    gt_args = [u'p', u'-a', u'-o', new_po]
     gt_args.extend(_find_all_bash_modules())
     # Need to do this differently on standalone
     if bass.is_standalone:
@@ -195,9 +224,9 @@ def dump_translator(out_path, lang):
             return regex_match.group(1) + r'\"'
         target_enc = None
         # Do all this in binary mode and carefully handle encodings
-        with open(tmp_txt, u'wb') as out:
+        with open(tmp_po, u'wb') as out:
             # Copy old translation file header, and get encoding for strings
-            with open(old_txt, u'rb') as ins:
+            with open(old_po, u'rb') as ins:
                 for old_line in ins:
                     if not target_enc:
                         # Chop off the terminating newline
@@ -212,7 +241,7 @@ def dump_translator(out_path, lang):
                     out.write(old_line)
             # Read through the new translation file, fill in any already
             # translated strings
-            with open(new_txt, u'rb') as ins:
+            with open(new_po, u'rb') as ins:
                 skipped_header = False
                 for new_line in ins:
                     # First, skip the header - we already copied it above
@@ -248,30 +277,30 @@ def dump_translator(out_path, lang):
                                 sub_quote, final_ln)
                             final_ln = final_ln.encode(target_enc)
                             out.write(final_ln)
-                            out.write(b'"\n')
+                            out.write(b'"\r\n')
                         else:
                             # Not translated, write out an empty msgstr
-                            out.write(b'msgstr ""\n')
+                            out.write(b'msgstr ""\r\n')
                     elif new_line.startswith(b'msgstr "'):
-                        # Skip all msgstr lines from new_txt (handled above)
+                        # Skip all msgstr lines from new_po (handled above)
                         continue
                     else:
                         out.write(new_line)
     except (OSError, IOError, UnicodeError):
         bolt.deprint(u'Error while dumping translation file:', traceback=True)
-        try: os.remove(tmp_txt)
+        try: os.remove(tmp_po)
         except OSError: pass
     else:
         # Replace the empty translation file generated by pygettext with the
         # temp one we just created
         try:
-            os.remove(new_txt)
-            os.rename(tmp_txt, new_txt)
+            os.remove(new_po)
+            os.rename(tmp_po, new_po)
         except OSError:
-            if os.path.exists(new_txt):
-                try: os.remove(tmp_txt)
+            if os.path.exists(new_po):
+                try: os.remove(tmp_po)
                 except OSError: pass
-    return new_txt
+    return new_po
 
 #------------------------------------------------------------------------------
 # Formatting
@@ -295,7 +324,7 @@ def unformat_date(date_str):
     try:
         return time.strptime(date_str, u'%c')
     except ValueError:
-        if bass.active_locale.lower() == u'japanese':
+        if bass.active_locale.startswith(u'ja_'):
             date_str = re.sub(u'^([0-9]{4})/([1-9])', r'\1/0\2', date_str,
                               flags=re.U)
             return time.strptime(date_str, u'%c')
