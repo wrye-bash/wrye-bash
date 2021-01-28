@@ -508,13 +508,14 @@ class Installer_SkipRefresh(CheckLink, _SingleProject):
 
 class Installer_Install(_NoMarkerLink):
     """Install selected packages."""
-    mode_title = {u'DEFAULT': _(u'Install Current'),
+    mode_title = {u'DEFAULT': _(u'Install Configured'),
                   u'LAST': _(u'Install Last'),
                   u'MISSING': _(u'Install Missing Files')}
     mode_help = {u'DEFAULT': _(u'Install all configured files from selected '
-                               u'installer(s).'),
+                               u'installer(s), overwriting mismatched files.'),
                  u'LAST': _(u'Install all configured files from selected '
-                            u'installer(s) at the last position.'),
+                            u'installer(s) at the last position, overwriting '
+                            u'mismatched files.'),
                  u'MISSING': _(u'Install all missing files from the selected '
                                u'installer(s).')}
 
@@ -580,7 +581,7 @@ class Installer_InstallSmart(_NoMarkerLink):
             # Next, look for an FOMOD wizard - not quite as good, but at least
             # it's visual
             if self._try_installer(sel_package, inst_fomod): continue
-            # Finally, fall back to the regular 'Install Current' method
+            # Finally, fall back to the regular 'Install Configured' method
             self._try_installer(sel_package, inst_regular)
 
 class Installer_ListStructure(OneItemLink, _InstallerLink):

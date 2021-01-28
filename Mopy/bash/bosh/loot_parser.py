@@ -165,7 +165,7 @@ class LOOTParser(object):
                                     for r, e in masterlist.iteritems()
                                     if is_regex(r)]
             self._cached_merges = {}
-        except (TypeError, yaml.YAMLError):
+        except (re.error, TypeError, yaml.YAMLError):
             if not catch_errors:
                 raise
             deprint(u'Error when parsing LOOT masterlist %s, it likely has '

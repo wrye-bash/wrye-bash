@@ -2244,6 +2244,7 @@ class SaveDetails(_ModsSavesDetails):
         self.panel_uilist.RefreshUI(**kwargs)
 
     def RefreshUIColors(self):
+        self._update_masters_warning()
         self.picture.SetBackground(colors[u'screens.bkgd.image'])
 
 #------------------------------------------------------------------------------
