@@ -104,6 +104,11 @@ class WizardDialog(DialogWindow):
         self._move_next()
         self.show_modal()
 
+    def get_page_size(self):
+        """Returns the width and height that each page in the wizard will
+        have available, in device-independent pixels (DIP)."""
+        return self._curr_page.component_size
+
     # Abstract API
     def _has_next_page(self):
         """Returns True if there is a next page that the wizard can be moved

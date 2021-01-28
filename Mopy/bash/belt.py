@@ -30,16 +30,14 @@ import traceback
 from collections import OrderedDict, defaultdict
 from itertools import izip
 
-import wx.adv as wiz  # wxPython wizard class
-
 from . import ScriptParser  # generic parser class
 from . import balt, bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
 from .env import get_file_version
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    WizardDialog, EventResult, ListBox, CheckListBox, ImageWrapper, \
-    PictureWithCursor
+    ListBox, CheckListBox, ImageWrapper, PictureWithCursor
+from .gui.wizards import WizardDialog, WizardPage ##: drop later in branch
 from .ini_files import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
@@ -83,82 +81,61 @@ class InstallerWizard(WizardDialog):
         super(InstallerWizard, self).__init__(parent,
             title=_(u'Installer Wizard'), sizes_dict=bass.settings,
             size_key=u'bash.wizard.size', pos_key=u'bash.wizard.pos')
-        #'dummy' page tricks the wizard into always showing the "Next" button,
-        # _next_page will be set by the parser
-        class _PageDummy(wiz.WizardPage): pass
-        self.dummy = _PageDummy(self._native_widget) # todo de-wx!
-        self._next_page = None
-        #True prevents actually moving to the 'next' page.  We use this after the "Next"
-        #button is pressed, while the parser is running to return the _actual_ next page
-        #'finishing' is to allow the "Next" button to be used when it's name is changed to
-        #'Finish' on the last page of the wizard
-        self.blockChange = True
-        self.finishing = False
         #parser that will spit out the pages
         self.wizard_file = installer.wizard_file()
         self.parser = WryeParser(self, installer, bAuto)
-        #Intercept the changing event so we can implement 'blockChange'
-        self.on_wiz_page_change.subscribe(self.on_page_change)
         self.ret = WizInstallInfo()
 
-    def save_size(self):
+    def disable_wiz_buttons(self):
+        """Disables all navigation buttons except for Cancel."""
+        for b in (self._back_button, self._next_button, self._finish_button):
+            b.enabled = False
+
+    def enable_forward(self, btn_enabled):
+        """Enables or disables both the next and finish buttons."""
+        self._next_button.enabled = btn_enabled
+        self._finish_button.enabled = btn_enabled
+
+    def save_size(self): ##: needed?
         # Otherwise, regular resize, save the size if we're not maximized
         self.on_closing(destroy=False)
 
-    def on_page_change(self, is_forward, evt_page):
-        # type: (bool, PageInstaller) -> EventResult
-        if is_forward:
-            if not self.finishing:
-                # Next, continue script execution
-                if self.blockChange:
-                    #Tell the current page that next was pressed,
-                    #So the parser can continue parsing,
-                    #Then show the page that the parser returns,
-                    #rather than the dummy page
-                    evt_page.OnNext()
-                    self._next_page = self.parser.Continue()
-                    self.blockChange = False
-                    self._native_widget.ShowPage(self._next_page)
-                    return EventResult.CANCEL
-                else:
-                    self.blockChange = True
-                    return EventResult.FINISH
-        else:
-            # Previous, pop back to the last state,
-            # and resume execution
-            self.finishing = False
-            self._next_page = self.parser.Back()
-            self.blockChange = False
-            self._native_widget.ShowPage(self._next_page)
-            return EventResult.CANCEL
+    def _has_next_page(self):
+        return not self.parser.parser_finished
+
+    def _has_prev_page(self):
+        return self.parser.choiceIdex > 0
+
+    def _get_next_page(self):
+        # If we're still on the dummy page, then we're only changing to the
+        # first page, so skip the OnNext call
+        if self._curr_page != self._dummy_page:
+            self._curr_page.OnNext()
+        return self.parser.Continue()
+
+    def _get_prev_page(self):
+        return self.parser.Back()
+
+    def _cancel_wizard(self):
+        self.ret.canceled = True
 
     def Run(self):
-        page = self.parser.Begin(self.wizard_file)
-        if page:
-            self.ret.canceled = not self._native_widget.RunWizard(page)
+        if not self.parser.Begin(self.wizard_file):
+            self._cancel_wizard() # Wizard could not be read
+        else:
+            self._run_wizard()
         # Clean up temp files
         if self.parser.bArchive:
             bass.rmTempDir()
         return self.ret
 
-class PageInstaller(wiz.WizardPage):
+class PageInstaller(WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple
     simple things here."""
 
     def __init__(self, parent):
         self._wiz_parent = parent
-        super(PageInstaller, self).__init__(parent._native_widget)
-        self._enableForward(True)
-
-    def _enableForward(self, do_enable):
-        self._wiz_parent.enable_forward_btn(do_enable)
-
-    def GetNext(self): return self._wiz_parent.dummy
-
-    def GetPrev(self):
-        if self._wiz_parent.parser.choiceIdex > 0:
-            return self._wiz_parent.dummy
-        return None
+        super(PageInstaller, self).__init__(parent)
 
     def OnNext(self):
         #This is what needs to be implemented by sub-classes,
@@ -171,21 +148,16 @@ class PageError(PageInstaller):
     and cancels any changes made."""
 
     def __init__(self, parent, title, errorMsg):
-        PageInstaller.__init__(self, parent)
-        #Disable the "Finish"/"Next" button
-        self._enableForward(False)
-        #Layout stuff
+        super(PageError, self).__init__(parent)
+        parent.disable_wiz_buttons()
+        # Layout stuff
         VLayout(spacing=5, items=[
             Label(self, title),
             (TextArea(self, editable=False, init_text=errorMsg,
                       auto_tooltip=False),
              LayoutOptions(weight=1, expand=True))
         ]).apply_to(self)
-        self.Layout()
-
-    def GetNext(self): return None
-
-    def GetPrev(self): return None
+        self.update_layout()
 
 class PageSelect(PageInstaller):
     """A page that shows a message up top, with a selection box on the left
@@ -203,13 +175,14 @@ class PageSelect(PageInstaller):
         self.bmp_item = PictureWithCursor(self, 0, 0, background=None)
         kwargs = dict(choices=listItems, isHScroll=True,
                       onSelect=self.OnSelect)
+        self._page_parent = parent
         if bMany:
             self.listOptions = CheckListBox(self, **kwargs)
             for index, default in enumerate(defaultMap):
                 self.listOptions.lb_check_at_index(index, default)
         else:
             self.listOptions = ListBox(self, **kwargs)
-            self._enableForward(False)
+            parent.enable_forward(False)
             for index, default in enumerate(defaultMap):
                 if default:
                     self.listOptions.lb_select_index(index)
@@ -224,7 +197,7 @@ class PageSelect(PageInstaller):
             Label(self, _(u'Description:')),
             (self.textItem, LayoutOptions(weight=1))
         ]).apply_to(self)
-        self.Layout()
+        self.update_layout()
         self.bmp_item.on_mouse_middle_up.subscribe(self._click_on_image)
         self.bmp_item.on_mouse_left_dclick.subscribe(
             lambda selected_index: self._click_on_image())
@@ -242,11 +215,11 @@ class PageSelect(PageInstaller):
                 bolt.deprint(u'Failed to open %s.' % img, traceback=True)
 
     def Selection(self, index):
-        self._enableForward(True)
+        self._page_parent.enable_forward(True)
         self.index = index
         self.textItem.text_content = self.descs[index]
         self.bmp_item.set_bitmap(self.images[index])
-        # self.Layout() # the bitmap would change size and so blurred
+        # self.Layout() # the bitmap would change size and show blurred
 
     def OnNext(self):
         temp_items = []
@@ -341,7 +314,7 @@ class PageFinish(PageInstaller):
         # Apply/install checkboxes
         self.checkApply = CheckBox(self, _(u'Apply these selections'),
                                    checked=bAuto)
-        self.checkApply.on_checked.subscribe(self._enableForward)
+        self.checkApply.on_checked.subscribe(parent.enable_forward)
         auto = bass.settings[u'bash.installers.autoWizard']
         self.checkInstall = CheckBox(self, _(u'Install this package'),
                                      checked=auto)
@@ -372,14 +345,12 @@ class PageFinish(PageInstaller):
             ])
         ])
         layout.apply_to(self)
-        self._enableForward(bAuto)
+        parent.enable_forward(bAuto)
         self._wiz_parent.finishing = True
-        self.Layout()
+        self.update_layout()
 
     def OnCheckInstall(self, is_checked):
         self._wiz_parent.ret.should_install = is_checked
-
-    def GetNext(self): return None
 
     # Undo selecting/deselection of items for UI consistency
     def _on_select_subs(self, lb_selection_dex):
@@ -442,15 +413,15 @@ class PageVersions(PageInstaller):
                                      u'this installer.'))
         text_warning.wrap(parent.get_page_size()[0] - 20)
         self.checkOk = CheckBox(self, _(u'Install anyway.'))
-        self.checkOk.on_checked.subscribe(self._enableForward)
+        self.checkOk.on_checked.subscribe(parent.enable_forward)
         VLayout(items=[
             Stretch(1), (text_warning, LayoutOptions(h_align=CENTER)),
             Stretch(1), (versions_box, LayoutOptions(expand=True, weight=1)),
             Stretch(2),
             (self.checkOk, LayoutOptions(h_align=RIGHT, border=5))
         ]).apply_to(self)
-        self._enableForward(False)
-        self.Layout()
+        parent.enable_forward(False)
+        self.update_layout()
 
 class WryeParser(ScriptParser.Parser):
     """A derived class of Parser, for handling BAIN install wizards."""
@@ -620,6 +591,7 @@ class WryeParser(ScriptParser.Parser):
             self.page = None
             self.choices = []
             self.choiceIdex = -1
+            self.parser_finished = False
             ##: Figure out why BAIN insists on including an empty sub-package
             # everywhere. Broke this part of the code, hence the 'if s' below.
             self.sublist = bolt.LowerDict({
@@ -754,12 +726,12 @@ class WryeParser(ScriptParser.Parser):
                 with file_path.open(encoding=u'utf-8-sig') as script:
                     # Ensure \n line endings for the script parser
                     self.lines = [x.replace(u'\r\n',u'\n') for x in script.readlines()]
-                return self.Continue()
+                return True
             except UnicodeError:
                 balt.showWarning(self._wiz_parent, _(u'Could not read the wizard file.  Please ensure it is encoded in UTF-8 format.'))
-                return
+                return False
         balt.showWarning(self._wiz_parent, _(u'Could not open wizard file'))
-        return None
+        return False
 
     def _reset_vars(self):
         self.variables.clear()
@@ -790,6 +762,7 @@ class WryeParser(ScriptParser.Parser):
                 return self.page
         self.cLine += 1
         self.cLineStart = self.cLine
+        self.parser_finished = True
         return PageFinish(self._wiz_parent, self.sublist, self.plugin_list,
                           self.plugin_renames, self.bAuto, self.notes,
                           self.iniedits)
@@ -799,6 +772,7 @@ class WryeParser(ScriptParser.Parser):
             return
         # Rebegin
         self._reset_vars()
+        self.parser_finished = False
         i = 0
         while self.ExecCount > 0 and i < len(self.lines):
             line = self.lines[i]
