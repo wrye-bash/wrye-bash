@@ -36,8 +36,8 @@ from .ScriptParser import error
 from .env import get_file_version
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    ListBox, CheckListBox, ImageWrapper, PictureWithCursor
-from .gui.wizards import WizardDialog, WizardPage ##: drop later in branch
+    ListBox, CheckListBox, ImageWrapper, PictureWithCursor, WizardDialog, \
+    WizardPage
 from .ini_files import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")

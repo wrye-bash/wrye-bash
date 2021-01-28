@@ -31,9 +31,8 @@ from ..exception import AbstractError
 from ..fomod import FailedCondition, FomodInstaller, InstallerGroup, \
     InstallerOption, InstallerPage
 from ..gui import CENTER, CheckBox, VBoxedLayout, HLayout, Label, \
-    LayoutOptions, TextArea, VLayout, PictureWithCursor, \
-    RadioButton, ScrollableWindow, Stretch, Table, BusyCursor
-from ..gui.wizards import WizardDialog, WizardPage ##: drop later in branch
+    LayoutOptions, TextArea, VLayout, WizardDialog, PictureWithCursor, \
+    RadioButton, ScrollableWindow, Stretch, Table, BusyCursor, WizardPage
 
 class FomodInstallInfo(object):
     __slots__ = (u'canceled', u'install_files', u'should_install')
