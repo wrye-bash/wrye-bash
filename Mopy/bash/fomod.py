@@ -49,6 +49,13 @@ from . import bush
 from .bolt import GPath, Path
 from .load_order import cached_is_active
 
+def _xml_decode(s): # PY3: drop entirely, this is fixed
+    """ElementTree has the same irritating behavior as pyyaml on py2, meaning
+    that it will return unicode for all strings containing non-ASCII
+    characters, but use bytestrings for everything else. This is fixed on py3,
+    where it will decode everything properly."""
+    return s.decode(u'ascii') if isinstance(s, bytes) else s
+
 class FailedCondition(Exception):
     """Exception used to signal when a dependencies check is failed. Message
     passed to it should be human-readable and proper for a user to
@@ -81,13 +88,14 @@ class InstallerPage(_AFomodBase):
 
         :param parent_installer: The parent FomodInstaller.
         :param page_object: The ElementTree element for an 'installStep'."""
-        self.page_name = page_object.get(u'name')
+        self.page_name = _xml_decode(page_object.get(u'name'))
         super(InstallerPage, self).__init__(parent_installer, self.page_name)
         self.page_object = page_object # the original ElementTree element
         self._group_list = parent_installer.order_list([
             InstallerGroup(parent_installer, xml_group_obj)
             for xml_group_obj in page_object.findall(u'optionalFileGroups/*')
-        ], page_object.find(u'optionalFileGroups').get(u'order', u'Ascending'))
+        ], _xml_decode(page_object.find(u'optionalFileGroups').get(
+            u'order', u'Ascending')))
 
     def __getitem__(self, k):
         return self._group_list[k]
@@ -108,14 +116,15 @@ class InstallerGroup(_AFomodBase):
 
         :param parent_installer: The parent FomodInstaller.
         :param group_object: The ElementTree element for a 'group'."""
-        self.group_name = group_object.get(u'name')
+        self.group_name = _xml_decode(group_object.get(u'name'))
         super(InstallerGroup, self).__init__(parent_installer, self.group_name)
         self.group_object = group_object
         self._option_list = parent_installer.order_list([
             InstallerOption(parent_installer, xml_option_object)
             for xml_option_object in group_object.findall(u'plugins/*')
-        ], group_object.find(u'plugins').get(u'order', u'Ascending'))
-        self.group_type = group_object.get(u'type')
+        ], _xml_decode(group_object.find(u'plugins').get(
+            u'order', u'Ascending')))
+        self.group_type = _xml_decode(group_object.get(u'type'))
 
     def __getitem__(self, k):
         return self._option_list[k]
@@ -136,22 +145,23 @@ class InstallerOption(_AFomodBase):
 
         :param parent_installer: The parent FomodInstaller.
         :param option_object: The ElementTree element for a 'plugin'."""
-        self.option_name = option_object.get(u'name')
+        self.option_name = _xml_decode(option_object.get(u'name'))
         super(InstallerOption, self).__init__(parent_installer,
                                               self.option_name)
         self.option_object = option_object
-        self.option_desc = option_object.findtext(u'description', u'').strip()
+        self.option_desc = _xml_decode(option_object.findtext(
+            u'description', u'')).strip()
         xml_img_path = option_object.find(u'image')
         if xml_img_path is not None:
-            self.option_image = xml_img_path.get(u'path')
+            self.option_image = _xml_decode(xml_img_path.get(u'path'))
         else:
             self.option_image = u''
         type_elem = option_object.find(u'typeDescriptor/type')
         if type_elem is not None:
-            self.option_type = type_elem.get(u'name')
+            self.option_type = _xml_decode(type_elem.get(u'name'))
         else:
-            default_type = option_object.find(
-                u'typeDescriptor/dependencyType/defaultType').get(u'name')
+            default_type = _xml_decode(option_object.find(
+                u'typeDescriptor/dependencyType/defaultType').get(u'name'))
             dep_patterns = option_object.findall(
                 u'typeDescriptor/dependencyType/patterns/*')
             for dep_pattern in dep_patterns:
@@ -161,7 +171,8 @@ class InstallerOption(_AFomodBase):
                 except FailedCondition:
                     pass
                 else:
-                    self.option_type = dep_pattern.find(u'type').get(u'name')
+                    self.option_type = _xml_decode(
+                        dep_pattern.find(u'type').get(u'name'))
                     break
             else:
                 self.option_type = default_type
@@ -205,11 +216,11 @@ class _FomodFileInfo(object):
         :param inst_root: The root path to retrieve sources relative to."""
         fm_infos = []
         for file_object in files_elem.findall(u'*'):
-            file_src = inst_root + file_object.get(u'source')
+            file_src = inst_root + _xml_decode(file_object.get(u'source'))
             if file_src.endswith((u'/', u'\\')):
                 file_src = file_src[:-1]
             file_src = GPath(file_src)
-            file_dest = file_object.get(u'destination', None)
+            file_dest = _xml_decode(file_object.get(u'destination', None))
             if file_dest is None:  # omitted destination
                 file_dest = file_src
             elif file_object.tag == u'file' and (
@@ -221,7 +232,7 @@ class _FomodFileInfo(object):
             else:
                 # destination still needs normalizing
                 file_dest = GPath(file_dest)
-            file_prty = int(file_object.get(u'priority', u'0'))
+            file_prty = int(_xml_decode(file_object.get(u'priority', u'0')))
             source_lower = file_src.s.lower()
             # We need to include the path separators when checking, since
             # otherwise we may end up matching e.g. 'Foo - A/bar.esp' to the
@@ -305,7 +316,8 @@ class FomodInstaller(object):
     def _do_next_page(self):
         ordered_pages = self.order_list(
             self.fomod_tree.findall(u'installSteps/installStep'),
-            self.fomod_tree.find(u'installSteps').get(u'order', u'Ascending'))
+            _xml_decode(self.fomod_tree.find(u'installSteps').get(
+                u'order', u'Ascending')))
         if self._current_page is not None:
             # We already have a page, use the index of the current one
             current_index = ordered_pages.index(self._current_page.page_object)
@@ -394,14 +406,14 @@ class FomodInstaller(object):
             if fm_flags is None:
                 continue
             for fm_flag in fm_flags.findall(u'flag'):
-                fm_flag_name = fm_flag.get(u'name')
-                fm_flag_value = fm_flag.text
+                fm_flag_name = _xml_decode(fm_flag.get(u'name'))
+                fm_flag_value = _xml_decode(fm_flag.text)
                 fm_flag_dict[fm_flag_name] = fm_flag_value
         return fm_flag_dict
 
     def _test_file_condition(self, condition):
-        test_file = GPath(condition.get(u'file'))
-        test_type = condition.get(u'state')
+        test_file = GPath(_xml_decode(condition.get(u'file')))
+        test_type = _xml_decode(condition.get(u'state'))
         # Check if it's missing, ghosted or (in)active
         if not self.dst_dir.join(test_file).exists():
             actual_type = u'Missing'
@@ -418,8 +430,8 @@ class FomodInstaller(object):
                     test_file, test_type, actual_type))
 
     def _test_flag_condition(self, condition):
-        fm_flag_name = condition.get(u'flag')
-        fm_flag_value = condition.get(u'value', u'')
+        fm_flag_name = _xml_decode(condition.get(u'flag'))
+        fm_flag_value = _xml_decode(condition.get(u'value', u''))
         actual_flag_value = self._fomod_flags().get(fm_flag_name, u'')
         if actual_flag_value != fm_flag_value:
             raise FailedCondition(
@@ -427,7 +439,7 @@ class FomodInstaller(object):
                     fm_flag_name, fm_flag_value, actual_flag_value))
 
     def _test_version_condition(self, condition):
-        target_ver = condition.get(u'version')
+        target_ver = _xml_decode(condition.get(u'version'))
         game_ver = LooseVersion(self.game_version)
         target_ver = LooseVersion(target_ver)
         if game_ver < target_ver:
@@ -436,7 +448,7 @@ class FomodInstaller(object):
                     game_ver, target_ver))
 
     def test_conditions(self, fomod_conditions):
-        cond_op = fomod_conditions.get(u'operator', u'And')
+        cond_op = _xml_decode(fomod_conditions.get(u'operator', u'And'))
         failed_conditions = []
         all_conditions = fomod_conditions.findall(u'*')
         for condition in all_conditions:
