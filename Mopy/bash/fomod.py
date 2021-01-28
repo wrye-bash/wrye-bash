@@ -296,24 +296,26 @@ class FomodInstaller(object):
         self._previous_pages = OrderedDict()
         self._has_finished = False
 
-    def start_fomod(self):
-        # First check if we can even run this wizard
+    def check_start_conditions(self):
+        """Checks if the FOMOD installer can be started in the first place."""
         root_conditions = self.fomod_tree.find(u'moduleDependencies')
         if root_conditions is not None:
             self.test_conditions(root_conditions)
-        return self._do_next_page()
+
+    def has_next(self):
+        """Returns True if the parser has not yet finished."""
+        return not self._has_finished
 
     def move_to_next(self, user_selection):
-        if self._has_finished or self._current_page is None:
+        if self._has_finished:
             return None
-        # Store the choices made on the current page so we can go back to them
-        all_options = (option for grp in self._current_page for option in grp)
-        sort_map = {o: i for i, o in enumerate(all_options)}
-        sorted_selection = sorted(user_selection, key=sort_map.__getitem__)
-        self._previous_pages[self._current_page] = sorted_selection
-        return self._do_next_page()
-
-    def _do_next_page(self):
+        if user_selection is not None:
+            # Store the choices made on the current page for later retrieval
+            all_options = (option for grp in self._current_page
+                           for option in grp)
+            sort_map = {o: i for i, o in enumerate(all_options)}
+            sorted_selection = sorted(user_selection, key=sort_map.__getitem__)
+            self._previous_pages[self._current_page] = sorted_selection
         ordered_pages = self.order_list(
             self.fomod_tree.findall(u'installSteps/installStep'),
             _xml_decode(self.fomod_tree.find(u'installSteps').get(
@@ -331,7 +333,7 @@ class FomodInstaller(object):
                 if page_conditions is not None:
                     self.test_conditions(page_conditions)
             except FailedCondition:
-                pass
+                continue
             else:
                 # We have a visible page, wrap it and return that
                 self._current_page = InstallerPage(self, next_page)
@@ -340,20 +342,18 @@ class FomodInstaller(object):
             # We have no visible pages, finish the entire wizard
             self._has_finished = True
             self._current_page = None
-        return None
+            return None
+
+    def has_prev(self):
+        """Returns True if the parser has a previous InstallerPage that can be
+        moved to."""
+        return bool(self._previous_pages)
 
     def move_to_prev(self):
         self._has_finished = False
-        try:
-            prev_page, prev_selected = self._previous_pages.popitem(last=True)
-            self._current_page = prev_page
-            return prev_page, prev_selected
-        except KeyError:
-            self._current_page = None
-            return None, None
-
-    def has_prev(self):
-        return bool(self._previous_pages)
+        prev_page, prev_selected = self._previous_pages.popitem(last=True)
+        self._current_page = prev_page
+        return prev_page, prev_selected
 
     def get_fomod_files(self):
         required_files = []

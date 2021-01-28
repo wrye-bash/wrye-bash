@@ -24,7 +24,6 @@
 __author__ = u'Ganda'
 
 from collections import defaultdict
-import wx.adv as wiz
 
 from .. import balt, bass, bolt, bush, env
 from ..balt import EnabledLink, Links, colors
@@ -32,9 +31,9 @@ from ..exception import AbstractError
 from ..fomod import FailedCondition, FomodInstaller, InstallerGroup, \
     InstallerOption, InstallerPage
 from ..gui import CENTER, CheckBox, VBoxedLayout, HLayout, Label, \
-    LayoutOptions, TextArea, VLayout, WizardDialog, EventResult, \
-    PictureWithCursor, RadioButton, ScrollableWindow, Stretch, Table, \
-    BusyCursor
+    LayoutOptions, TextArea, VLayout, PictureWithCursor, \
+    RadioButton, ScrollableWindow, Stretch, Table, BusyCursor
+from ..gui.wizards import WizardDialog, WizardPage ##: drop later in branch
 
 class FomodInstallInfo(object):
     __slots__ = (u'canceled', u'install_files', u'should_install')
@@ -51,13 +50,6 @@ class InstallerFomod(WizardDialog):
     _def_size = (600, 500)
 
     def __init__(self, parent_window, target_installer):
-        # True prevents actually moving to the 'next' page.
-        # We use this after the "Next" button is pressed,
-        # while the parser is running to return the _actual_ next page
-        self.block_change = True
-        # 'finishing' is to allow the "Next" button to be used
-        # when its name is changed to 'Finish' on the last page of the wizard
-        self.finishing = False
         # saving this list allows for faster processing of the files the fomod
         # installer will return.
         self.files_list = [a[0] for a in target_installer.fileSizeCrcs]
@@ -80,67 +72,56 @@ class InstallerFomod(WizardDialog):
             self.archive_path = bass.getTempDir()
         else:
             self.archive_path = target_installer.abs_path
-        # 'dummy' page tricks the wizard into always showing the "Next" button
-        class _PageDummy(wiz.WizardPage): pass
-        self.fm_dummy = _PageDummy(self._native_widget)
-        # Intercept the changing event so we can implement 'block_change'
-        self.on_wiz_page_change.subscribe(self.on_change)
         self.fm_ret = FomodInstallInfo()
         self.first_page = True
 
-    def save_size(self):
+    def save_size(self): ##: needed?
         # Otherwise, regular resize, save the size if we're not maximized
         self.on_closing(destroy=False)
 
-    def on_change(self, is_forward, evt_page):
-        if is_forward:
-            if not self.finishing:
-                # Next, continue script execution
-                if self.block_change:
-                    # Tell the current page that next was pressed,
-                    # So the parser can continue parsing,
-                    # Then show the page that the parser returns,
-                    # rather than the dummy page
-                    sel_opts = evt_page.on_next()
-                    self.block_change = False
-                    next_page = self.fomod_parser.move_to_next(sel_opts)
-                    if next_page is None:
-                        self.finishing = True
-                        self._native_widget.ShowPage(
-                            PageFinish(self))
-                    else:
-                        self.finishing = False
-                        self._native_widget.ShowPage(
-                            PageSelect(self, next_page))
-                    return EventResult.CANCEL
-                else:
-                    self.block_change = True
+    def _has_next_page(self):
+        return self.fomod_parser.has_next()
+
+    def _has_prev_page(self):
+        return self.fomod_parser.has_prev()
+
+    def _get_next_page(self):
+        # If we're still on the dummy page, then we're only changing to the
+        # first page, so skip trying to save user selections
+        if self._curr_page != self._dummy_page:
+            sel_opts = self._curr_page.on_next()
         else:
-            # Previous, pop back to the last state,
-            # and resume execution
-            self.block_change = False
-            self.finishing = False
-            prev_page, prev_selected = self.fomod_parser.move_to_prev()
-            if prev_page: # at the start
-                gui_page = PageSelect(self, prev_page)
-                gui_page.apply_selection(prev_selected)
-                self._native_widget.ShowPage(gui_page)
-            return EventResult.CANCEL
+            sel_opts = None
+        next_page = self.fomod_parser.move_to_next(sel_opts)
+        if next_page is None:
+            return PageFinish(self)
+        else:
+            return PageSelect(self, next_page)
+
+    def _get_prev_page(self):
+        # Pop back to the last state and resume execution
+        prev_page, prev_selected = self.fomod_parser.move_to_prev()
+        if prev_page: # at the start
+            gui_page = PageSelect(self, prev_page)
+            gui_page.apply_selection(prev_selected)
+            return gui_page
+        return None
+
+    def _cancel_wizard(self):
+        self.fm_ret.canceled = True
 
     def run_fomod(self):
         try:
-            first_page = self.fomod_parser.start_fomod()
+            self.fomod_parser.check_start_conditions()
         except FailedCondition as e:
             fm_warning = _(u'This installer cannot start due to the following '
                            u'unmet conditions:') + u'\n  ' + u'\n  '.join(
                 (u'%s' % e).splitlines()) + u'\n'
             balt.showWarning(self, fm_warning,
                              title=_(u'Cannot Run Installer'), do_center=True)
-            self.fm_ret.canceled = True
+            self._cancel_wizard()
         else:
-            if first_page is not None:  # if installer has any gui pages
-                self.fm_ret.canceled = not self._native_widget.RunWizard(
-                    PageSelect(self, first_page))
+            self._run_wizard()
             # Invert keys and values ahead of time here, so that BAIN doesn't
             # have to do it just in time
             self.fm_ret.install_files = bolt.LowerDict({
@@ -151,25 +132,13 @@ class InstallerFomod(WizardDialog):
             bass.rmTempDir()
         return self.fm_ret
 
-class PageInstaller(wiz.WizardPage):
+class PageInstaller(WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple
     simple things here."""
 
     def __init__(self, page_parent):
-        super(PageInstaller, self).__init__(page_parent._native_widget)
+        super(PageInstaller, self).__init__(page_parent)
         self._page_parent = page_parent # type: InstallerFomod
-        self._enable_forward(True)
-
-    def _enable_forward(self, do_enable):
-        self._page_parent.enable_forward_btn(do_enable)
-
-    def GetNext(self):
-        return self._page_parent.fm_dummy
-
-    def GetPrev(self):
-        if self._page_parent.fomod_parser.has_prev():
-            return self._page_parent.fm_dummy
-        return None
 
     def on_next(self):
         """Create flow control objects etc, implemented by sub-classes."""
@@ -321,7 +290,7 @@ class PageSelect(PageInstaller):
                 ]),
             ]), LayoutOptions(weight=1)),
         ]).apply_to(self)
-        self.Layout()
+        self.update_layout()
 
     def _open_image(self, _dclick_ignored=0):
         if self._current_image: # sanity check
@@ -356,7 +325,6 @@ class PageSelect(PageInstaller):
         """Sets the image and description on the right side based on the
         specified checkable."""
         option = self.checkable_to_option[checkable]
-        self._enable_forward(True)
         opt_img = self._page_parent.archive_path.join(
             self._page_parent.installer_root, option.option_image)
         self._current_image = opt_img # To allow opening it via double click
@@ -378,7 +346,7 @@ class PageSelect(PageInstaller):
         else:
             self._option_type_label.reset_foreground_color()
         self._text_item.text_content = option.option_desc
-        self.Layout() # Otherwise the h_align won't work
+        self.update_layout() # Otherwise the h_align won't work
 
     def show_fomod_error(self, fm_error):
         fm_error += u'\n' + _(u'Please ensure the FOMOD files are correct and '
@@ -456,7 +424,7 @@ class PageFinish(PageInstaller):
             (self._output_text, LayoutOptions(weight=1)),
             HLayout(items=[check_install, Stretch(), check_output]),
         ]).apply_to(self)
-        self.Layout()
+        self.update_layout()
 
     def _on_check_install(self, checked):
         self._page_parent.fm_ret.should_install = checked
@@ -469,10 +437,7 @@ class PageFinish(PageInstaller):
         use_table = bass.settings[u'bash.fomod.use_table']
         self._output_table.visible = use_table
         self._output_text.visible = not use_table
-        self.Layout()
-
-    def GetNext(self):
-        return None
+        self.update_layout()
 
     @staticmethod
     def display_files(file_dict):
