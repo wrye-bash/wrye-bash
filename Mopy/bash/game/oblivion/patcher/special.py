@@ -29,11 +29,10 @@ from collections import Counter, defaultdict
 from .... import bush, load_order
 from ....bolt import GPath, deprint
 from ....brec import MreRecord, RecHeader, null4
-from ....mod_files import ModFile, LoadFactory
 from ....parsers import _HandleAliases
 from ....patcher import getPatchesPath
 from ....patcher.base import Patcher, Abstract_Patcher
-from ....patcher.patchers.base import ListPatcher
+from ....patcher.patchers.base import ListPatcher, ModLoader
 
 __all__ = [u'CoblCatalogsPatcher', u'CoblExhaustionPatcher',
            u'MorphFactionsPatcher', u'SEWorldTestsPatcher']
@@ -380,7 +379,7 @@ class MorphFactionsPatcher(_ExSpecialList):
 
 #------------------------------------------------------------------------------
 _ob_path = GPath(bush.game.master_file)
-class SEWorldTestsPatcher(_ExSpecial, Patcher):
+class SEWorldTestsPatcher(_ExSpecial, ModLoader):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     patcher_name = _(u'SEWorld Tests')
     patcher_desc = _(u"Suspends Cyrodiil quests while in Shivering Isles. "
@@ -398,10 +397,8 @@ class SEWorldTestsPatcher(_ExSpecial, Patcher):
         super(SEWorldTestsPatcher, self).__init__(p_name, p_file)
         self.cyrodiilQuests = set()
         if _ob_path in p_file.loadSet:
-            loadFactory = LoadFactory(False, by_sig=[b'QUST'])
             modInfo = self.patchFile.p_file_minfos[_ob_path]
-            modFile = ModFile(modInfo,loadFactory)
-            modFile.load(True)
+            modFile = self._mod_file_read(modInfo) # read Oblivion quests
             for record in modFile.tops[b'QUST'].getActiveRecords():
                 for condition in record.conditions:
                     if condition.ifunc == 365 and condition.compValue == 0:

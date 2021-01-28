@@ -399,12 +399,18 @@ class PCFaces(object):
 
     # MODS --------------------------------------------------------------------
     @staticmethod
+    def _mod_load_fact(modInfo, keepAll=False, by_sig=None):
+        loadFactory = LoadFactory(keepAll=keepAll, by_sig=by_sig)
+        modFile = ModFile(modInfo,loadFactory)
+        if (not keepAll) or modInfo.getPath().exists(): # read -> keepAll=False
+            modFile.load(True)
+        return modFile
+
+    @staticmethod
     def mod_getFaces(modInfo):
         """Returns an array of PCFaces from a mod file."""
         #--Mod File
-        loadFactory = LoadFactory(False, by_sig=[b'NPC_'])
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
+        modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'NPC_'])
         short_mapper = modFile.getShortMapper()
         faces = {}
         for npc in modFile.tops[b'NPC_'].getActiveRecords():
@@ -428,9 +434,7 @@ class PCFaces(object):
     @staticmethod
     def mod_getRaceFaces(modInfo):
         """Returns an array of Race Faces from a mod file."""
-        loadFactory = LoadFactory(False, by_sig=[b'RACE'])
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
+        modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'RACE'])
         faces = {}
         for race in modFile.tops[b'RACE'].getActiveRecords():
             face = PCFaces.PCFace()
@@ -444,10 +448,8 @@ class PCFaces(object):
     def mod_addFace(modInfo,face):
         """Writes a pcFace to a mod file."""
         #--Mod File
-        loadFactory = LoadFactory(True, by_sig=[b'NPC_'])
-        modFile = ModFile(modInfo,loadFactory)
-        if modInfo.getPath().exists():
-            modFile.load(True)
+        modFile = PCFaces._mod_load_fact(modInfo, keepAll=True,
+                                         by_sig=[b'NPC_'])
         #--Tes4
         tes4 = modFile.tes4
         if not tes4.author:

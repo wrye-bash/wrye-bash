@@ -76,31 +76,44 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Mod_FullLoad(OneItemLink):
+class _LoadLink(ItemLink):
+    _load_sigs = ()
+
+    def _load_fact(self, keepAll=True):
+        return mod_files.LoadFactory(keepAll, by_sig=self._load_sigs)
+
+    def _load_mod(self, mod_info, keepAll=True, **kwargs):
+        loadFactory = self._load_fact(keepAll=keepAll)
+        modFile = mod_files.ModFile(mod_info, loadFactory)
+        modFile.load(True, **kwargs)
+        return modFile
+
+class Mod_FullLoad(OneItemLink, _LoadLink):
     """Tests all record definitions against a specific mod"""
     _text = _(u'Test Full Record Definitions...')
     _help = _(u'Tests all record definitions against the selected mod')
+    _load_sigs = tuple(MreRecord.type_class) # all available (decoded) records
 
     def Execute(self):
         with balt.Progress(_(u'Loading:') + u'\n%s'
                 % self._selected_item.stail) as progress:
             print(MreRecord.type_class)
-            loadFactory = mod_files.LoadFactory(False, by_sig=MreRecord.type_class)
-            modFile = mod_files.ModFile(self._selected_info, loadFactory)
             try:
-                modFile.load(True, progress, catch_errors=False)
+                self._load_mod(self._selected_info, keepAll=False,
+                               progress=progress, catch_errors=False)
             except:
                 failed_msg = (_(u'File failed to verify using current record '
                                 u'definitions. The original traceback is '
                                 u'available in the BashBugDump.') + u'\n\n' +
                               traceback.format_exc())
                 self._showError(failed_msg, title=_(u'Verification Failed'))
-                bolt.deprint(u'exception:\n', traceback=True)
+                bolt.deprint(u'Exception loading %s:\n' % self._selected_info,
+                             traceback=True)
                 return
         self._showOk(_(u'File fully verified using current record '
                        u'definitions.'), title=_(u'Verification Succeeded'))
 
-class Mod_RecalcRecordCounts(OneItemLink):
+class Mod_RecalcRecordCounts(OneItemLink, _LoadLink):
     """Useful for debugging if any getNumRecords implementations are broken.
     Simply copy-paste the loop from below into ModFile.save to get output on BP
     save, then compare it to the MobBase-based output from this link."""
@@ -109,16 +122,14 @@ class Mod_RecalcRecordCounts(OneItemLink):
               u'and writes them to the BashBugDump.')
 
     def Execute(self):
-        loadFactory = mod_files.LoadFactory(True)
-        modFile = mod_files.ModFile(self._selected_info, loadFactory)
-        modFile.load(True, do_map_fids=False)
+        modFile = self._load_mod(self._selected_info, do_map_fids=False)
         for top_grup_sig, block in dict_sort(modFile.tops):
             bolt.deprint(u'%s GRUP has %u records' % (
-                top_grup_sig, block.getNumRecords()))
+                top_grup_sig.decode(u'ascii'), block.getNumRecords()))
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py
-class Mod_CreateDummyMasters(OneItemLink):
+class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
     """xEdit tool, makes dummy plugins for each missing master, for use if
     looking at a 'Filter' patch."""
     _text = _(u'Create Dummy Masters...')
@@ -149,7 +160,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             newInfo = bosh.ModInfo(self._selected_info.dir.join(master))
             to_refresh.append((master, newInfo, previous_master))
             previous_master = master
-            newFile = mod_files.ModFile(newInfo, mod_files.LoadFactory(True))
+            newFile = mod_files.ModFile(newInfo, self._load_fact())
             newFile.tes4.author = u'BASHED DUMMY'
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
@@ -1282,10 +1293,11 @@ class Mod_ScanDirty(ItemLink):
                           title=_(u'Dirty Edit Scan Results'), asDialog=False)
 
 #------------------------------------------------------------------------------
-class Mod_RemoveWorldOrphans(_NotObLink):
+class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
     """Remove orphaned cell records."""
     _text = _(u'Remove World Orphans')
     _help = _(u'Remove orphaned cell records')
+    _load_sigs = [b'CELL', b'WRLD']
 
     def Execute(self):
         message = _(u'In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.')
@@ -1298,11 +1310,9 @@ class Mod_RemoveWorldOrphans(_NotObLink):
                 continue
             #--Export
             with balt.Progress(_(u'Remove World Orphans')) as progress:
-                loadFactory = mod_files.LoadFactory(True,
-                                                    by_sig=[b'CELL', b'WRLD'])
-                modFile = mod_files.ModFile(fileInfo, loadFactory)
                 progress(0,_(u'Reading') + u' %s.' % fileInfo)
-                modFile.load(True,SubProgress(progress,0,0.7))
+                modFile = self._load_mod(fileInfo,
+                    progress=SubProgress(progress, 0, 0.7))
                 orphans = (b'WRLD' in modFile.tops) and modFile.tops[b'WRLD'].orphansSkipped
                 if orphans:
                     progress(0.1, _(u'Saving %s.') % fileInfo)
@@ -1406,10 +1416,11 @@ class Mod_CopyToMenu(MenuLink):
             self.append(_CopyToLink(plugin_ext))
 
 #------------------------------------------------------------------------------
-class Mod_DecompileAll(_NotObLink):
+class Mod_DecompileAll(_NotObLink, _LoadLink):
     """Removes effects of a "recompile all" on the mod."""
     _text = _(u'Decompile All')
     _help = _(u'Removes effects of a "recompile all" on the mod')
+    _load_sigs = [b'SCPT']
 
     def Execute(self):
         message = _(u"This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.")
@@ -1421,15 +1432,13 @@ class Mod_DecompileAll(_NotObLink):
                 self._showWarning(_(u'Skipping %s') % fileInfo,
                                   _(u'Decompile All'))
                 continue
-            loadFactory = mod_files.LoadFactory(True, by_sig=[b'SCPT'])
-            modFile = mod_files.ModFile(fileInfo, loadFactory)
-            modFile.load(True)
+            modFile = self._load_mod(fileInfo)
             badGenericLore = False
             removed = []
             id_text = {}
             scpt_grp = modFile.tops[b'SCPT']
             if scpt_grp.getNumRecords(includeGroups=False):
-                loadFactory = mod_files.LoadFactory(False, by_sig=[b'SCPT'])
+                loadFactory = self._load_fact(keepAll=False)
                 for master in modFile.tes4.masters:
                     masterFile = mod_files.ModFile(bosh.modInfos[master], loadFactory)
                     masterFile.load(True)

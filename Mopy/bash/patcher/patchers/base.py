@@ -32,6 +32,7 @@ from ... import load_order, bush
 from ...bolt import GPath, deprint
 from ...brec import MreRecord
 from ...exception import AbstractError
+from ...mod_files import LoadFactory, ModFile
 from ...parsers import _HandleAliases
 
 # Patchers 1 ------------------------------------------------------------------
@@ -363,7 +364,18 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
             log(u'* %s: %d' % (srcMod,count[srcMod]))
 
 # Patchers: 20 ----------------------------------------------------------------
-class ImportPatcher(ListPatcher):
+class ModLoader(Patcher):
+    """Mixin for patchers loading mods"""
+
+    def _patcher_read_fact(self, by_sig=None): # read can have keepAll=False
+        return LoadFactory(keepAll=False, by_sig=by_sig or self._read_sigs)
+
+    def _mod_file_read(self, modInfo):
+        modFile = ModFile(modInfo, self._patcher_read_fact())
+        modFile.load(True)
+        return modFile
+
+class ImportPatcher(ListPatcher, ModLoader):
     """Subclass for patchers in group Importer."""
     patcher_group = u'Importers'
     patcher_order = 20
