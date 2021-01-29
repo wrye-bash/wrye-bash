@@ -1926,7 +1926,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
 #------------------------------------------------------------------------------
 from ..parsers import ScriptText
 
-class Mod_Scripts_Export(_Mod_Export_Link):
+class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
     """Export scripts from mod to text file."""
     _text = _(u'Scripts...')
     _help = _(u'Export scripts from mod to text file')
@@ -1935,8 +1935,8 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         return ScriptText()
 
     def Execute(self): # overrides _Mod_Export_Link
-        fileName, fileInfo = next(self.iselected_pairs()) # first selected pair
-        defaultPath = bass.dirs[u'patches'].join(u'%s Exported Scripts' % fileName)
+        fileInfo = next(self.iselected_infos()) # first selected info
+        defaultPath = bass.dirs[u'patches'].join(u'%s Exported Scripts' % fileInfo)
         def OnOk():
             dialog.accept_modal()
             bass.settings[u'bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
@@ -1981,14 +1981,16 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         #--Export
         #try:
         scriptText = self._parser()
-        scriptText.readFromMod(fileInfo, fileName)
-        exportedScripts = scriptText.writeToText(
-            bass.settings[u'bash.mods.export.skip'], textDir,
-            bass.settings[u'bash.mods.export.deprefix'], fileName,
-            bass.settings[u'bash.mods.export.skipcomments'])
+        scriptText.readFromMod(fileInfo)
+        with balt.Progress(_(u'Export Scripts')) as progress:
+            exportedScripts = scriptText.export_scripts(textDir, progress,
+                bass.settings[u'bash.mods.export.skip'],
+                bass.settings[u'bash.mods.export.deprefix'],
+                bass.settings[u'bash.mods.export.skipcomments'])
         #finally:
-        self._showLog(exportedScripts, title=_(u'Export Scripts'),
-                      asDialog=True)
+        msg = (_(u'Exported %d scripts from %s:') + u'\n%s') % (
+            len(exportedScripts), fileInfo, u'\n'.join(exportedScripts))
+        self._showLog(msg, title=_(u'Export Scripts'), asDialog=True)
 
 class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file."""
@@ -2018,8 +2020,9 @@ class Mod_Scripts_Import(_Mod_Import_Link):
                    )
         makeNew = self._askYes(message, _(u'Import Scripts'),
                                questionIcon=True)
-        scriptText = self._parser()
-        scriptText.readFromText(textDir.s)
+        scriptText = self._parser() # type: ScriptText
+        with balt.Progress(_(u'Import Scripts')) as progress:
+            scriptText.read_script_folder(textDir, progress)
         changed, added = scriptText.writeToMod(self._selected_info, makeNew)
         #--Log
         if not (len(changed) or len(added)):
