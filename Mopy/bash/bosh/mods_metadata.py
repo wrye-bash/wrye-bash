@@ -125,13 +125,11 @@ def checkMods(showModList=False, showCRC=False, showVersion=True,
                 continue # we check .esl extension and ESL flagged mods
             if not is_esl_capable(modinf, modInfos, reasons=None):
                 removeEslFlag.add(m)
-    shouldDeactivateA, shouldDeactivateB = [], []
+    should_deactivate = []
     for x in active:
         tags = modInfos[x].getBashTags()
-        if u'Deactivate' in tags: shouldDeactivateA.append(x)
-        if u'NoMerge' in tags and x in modInfos.mergeable:
-            shouldDeactivateB.append(x)
-    shouldActivateA = [x for x in imported_ if x not in active and
+        if u'Deactivate' in tags: should_deactivate.append(x)
+    should_activate = [x for x in imported_ if x not in active and
                 u'MustBeActiveIfImported' in modInfos[x].getBashTags()]
     #--Mods with invalid TES4 version
     valid_vers = bush.game.Esp.validHeaderVersions
@@ -179,7 +177,7 @@ def checkMods(showModList=False, showCRC=False, showVersion=True,
         else:
             log.setHeader(u'=== ' + _(u'Mergeable'))
             log(_(u'Following mods are active, but could be merged into '
-                  u'the bashed patch.'))
+                  u'the Bashed Patch.'))
         for mod in sorted(shouldMerge):
             log(u'* __%s__' % mod)
     if removeEslFlag:
@@ -189,26 +187,18 @@ def checkMods(showModList=False, showCRC=False, showVersion=True,
               u"change the extension to '.esp' if it is '.esl'."))
         for mod in sorted(removeEslFlag):
             log(u'* __%s__' % mod)
-    if shouldDeactivateB:
-        log.setHeader(u'=== '+_(u'NoMerge Tagged Mods'))
-        log(_(u'Following mods are tagged NoMerge and should be '
-              u'deactivated and imported into the bashed patch but '
-              u'are currently active.'))
-        for mod in sorted(shouldDeactivateB):
-            log(u'* __%s__' % mod)
-    if shouldDeactivateA:
+    if should_deactivate:
         log.setHeader(u'=== '+_(u'Deactivate Tagged Mods'))
         log(_(u'Following mods are tagged Deactivate and should be '
-              u'deactivated and imported into the bashed patch but '
+              u'deactivated and imported into the Bashed Patch but '
               u'are currently active.'))
-        for mod in sorted(shouldDeactivateA):
+        for mod in sorted(should_deactivate):
             log(u'* __%s__' % mod)
-    if shouldActivateA:
+    if should_activate:
         log.setHeader(u'=== '+_(u'MustBeActiveIfImported Tagged Mods'))
-        log(_(u'Following mods to work correctly have to be active as '
-              u'well as imported into the bashed patch but are '
-              u'currently only imported.'))
-        for mod in sorted(shouldActivateA):
+        log(_(u'Following mods have to be active as well as imported into the '
+              u'Bashed Patch but are currently inactive.'))
+        for mod in sorted(should_activate):
             log(u'* __%s__' % mod)
     if shouldClean:
         log.setHeader(

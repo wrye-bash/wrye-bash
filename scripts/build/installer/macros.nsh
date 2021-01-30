@@ -567,15 +567,28 @@
         RMDir /r "${Path}\Mopy\bash\patcher"
         RMDir /r "${Path}\Mopy\redist"
         RMDir /r "${Path}\Mopy\bash\tests"
-        ; As of 307, Wizard Images have been moved to bash/images/Wizard Images
+        ; As of 307, several game icons have new names
+        Delete "${Path}\Mopy\bash\images\fallout316.png"
+        Delete "${Path}\Mopy\bash\images\fallout324.png"
+        Delete "${Path}\Mopy\bash\images\fallout332.png"
+        Delete "${Path}\Mopy\bash\images\fallout4vr16.png"
+        Delete "${Path}\Mopy\bash\images\fallout4vr24.png"
+        Delete "${Path}\Mopy\bash\images\fallout4vr32.png"
+        Delete "${Path}\Mopy\bash\images\fallout416.png"
+        Delete "${Path}\Mopy\bash\images\fallout424.png"
+        Delete "${Path}\Mopy\bash\images\fallout432.png"
+        Delete "${Path}\Mopy\bash\images\falloutnv16.png"
+        Delete "${Path}\Mopy\bash\images\falloutnv24.png"
+        Delete "${Path}\Mopy\bash\images\falloutnv32.png"
+        ; As of 307, Wizard Images now reside in bash/images/Wizard Images
         RMDir /r "${Path}\Mopy\Wizard Images"
         ; As of 308, game settings are no longer injected
         RMDir /r "${Path}\Mopy\bash\db"
-        ; As of 308, CBash was removed
+        ; As of 308, CBash is gone
         Delete "${Path}\Mopy\bash\compiled\CBash.dll"
-        ; As of 308, the license file was renamed to LICENSE.md
+        ; As of 308, the license file is named LICENSE.md
         Delete "${Path}\Mopy\license.txt"
-        ; As of 308, taglists have been moved to Mopy\taglists
+        ; As of 308, taglists now reside in Mopy\taglists
         ; NOTE: If we ever end up using Mopy\Bash Patches outside Oblivion,
         ; change these to 'Delete's similar to Oblivion's
         RMDir /r "${Path}\Mopy\Bash Patches\Fallout3"
@@ -585,11 +598,11 @@
         Delete "${Path}\Mopy\Bash Patches\Oblivion\taglist.yaml"
         RMDir /r "${Path}\Mopy\Bash Patches\Skyrim"
         RMDir /r "${Path}\Mopy\Bash Patches\SkyrimSE"
-        ; As of 308, the People Tab was removed
+        ; As of 308, the People Tab is gone
         Delete "${Path}\Mopy\bash\images\readme\people-1.png"
         Delete "${Path}\Mopy\bash\images\readme\people-2.png"
         Delete "${Path}\Mopy\bash\images\readme\people-3-menu.png"
-        ; As of 308, translations use the .po extension and were renamed
+        ; As of 308, translations use the .po extension and new names
         Delete "${Path}\Mopy\bash\l10n\*.txt"
         Delete "${Path}\Mopy\bash\l10n\Chinese (Simplified).mo"
         Delete "${Path}\Mopy\bash\l10n\Chinese (Traditional).mo"

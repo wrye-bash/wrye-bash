@@ -39,7 +39,7 @@ noSolidExts = {u'.zip'}
 reSolid = re.compile(u'' r'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(u'' r'Compressing\s+(.+)', re.U).match
 regExtractMatch = re.compile(u'- (.+)', re.U).match
-regErrMatch = re.compile(u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',
+regErrMatch = re.compile(u'^(Error:.+|.+ {5}Data Error?|Sub items Errors:.+)',
     re.U).match
 reListArchive = re.compile(
     u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
