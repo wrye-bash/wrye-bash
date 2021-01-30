@@ -2504,29 +2504,12 @@ class InstallersList(balt.UIList):
             else: message = _(u'You have dragged some converters into Wrye '
                             u'Bash.')
             message += u'\n' + _(u'What would you like to do with them?')
-            with DialogWindow(self, _(u'Move or Copy?'),
-                              sizes_dict=balt.sizes) as dialog:
-                gCheckBox = CheckBox(dialog,
-                                     _(u"Don't show this in the future."))
-                move_button = Button(dialog, btn_label=_(u'Move'))
-                move_button.on_clicked.subscribe(lambda: dialog.exit_modal(1))
-                copy_button = Button(dialog, btn_label=_(u'Copy'))
-                copy_button.on_clicked.subscribe(lambda: dialog.exit_modal(2))
-                VLayout(border=6, spacing=6, items=[
-                    HLayout(spacing=6, item_border=6, items=[
-                        (staticBitmap(dialog), LayoutOptions(v_align=TOP)),
-                        (Label(dialog, message), LayoutOptions(expand=True))
-                    ]),
-                    Stretch(), Spacer(10), gCheckBox,
-                    (HLayout(spacing=4, items=[
-                        move_button, copy_button, CancelButton(dialog)
-                    ]), LayoutOptions(h_align=RIGHT))
-                ]).apply_to(dialog)
-                result = dialog.show_modal_raw() # buttons call exit_modal(1/2)
-                if result == 1: action = u'MOVE'
-                elif result == 2: action = u'COPY'
-                if gCheckBox.is_checked:
-                    settings[u'bash.installers.onDropFiles.action'] = action
+            with balt.CopyOrMoveDialog(self, message) as cm_dialog:
+                if cm_dialog.show_modal():
+                    action = cm_dialog.get_action()
+                    if cm_dialog.should_remember():
+                        settings[u'bash.installers.onDropFiles.action'] = \
+                            action
         return action
 
     @balt.conversation
