@@ -316,10 +316,13 @@ class FomodInstaller(object):
             sort_map = {o: i for i, o in enumerate(all_options)}
             sorted_selection = sorted(user_selection, key=sort_map.__getitem__)
             self._previous_pages[self._current_page] = sorted_selection
-        ordered_pages = self.order_list(
-            self.fomod_tree.findall(u'installSteps/installStep'),
-            _xml_decode(self.fomod_tree.find(u'installSteps').get(
-                u'order', u'Ascending')))
+        install_steps = self.fomod_tree.find(u'installSteps')
+        if install_steps is not None:
+            ordered_pages = self.order_list(
+                self.fomod_tree.findall(u'installSteps/installStep'),
+                _xml_decode(install_steps.get(u'order', u'Ascending')))
+        else:
+            ordered_pages = [] # no installSteps -> no pages
         if self._current_page is not None:
             # We already have a page, use the index of the current one
             current_index = ordered_pages.index(self._current_page.page_object)

@@ -222,7 +222,6 @@ class Label(_ALabel):
         :param alignment: The alignment of text in this component."""
         super(Label, self).__init__(parent, label=init_text,
                                     style=_ta_to_wx[alignment])
-        self._init_text = init_text
 
     def wrap(self, max_length): # type: (int) -> None
         """Wraps this label's text so that each line is at most max_length
@@ -230,9 +229,7 @@ class Label(_ALabel):
 
         :param max_length: The maximum number of device-independent pixels
             (DIP) a line may be long."""
-        with self.pause_drawing():
-            self._native_widget.SetLabel(self._init_text)
-            self._native_widget.Wrap(max_length * csf())
+        self._native_widget.Wrap(max_length * csf())
 
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a
