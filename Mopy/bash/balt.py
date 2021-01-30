@@ -48,8 +48,8 @@ import wx.adv
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, ImageWrapper, \
-    BusyCursor, GlobalMenu, WrappingTextMixin
+    Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, \
+    ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -187,11 +187,6 @@ def bell(arg=None):
     wx.Bell()
     return arg
 
-def ok_and_cancel_group(parent, on_ok=None):
-    ok_button = OkButton(parent)
-    ok_button.on_clicked.subscribe(on_ok)
-    return HLayout(spacing=4, items=[ok_button, CancelButton(parent)])
-
 def staticBitmap(parent, bitmap=None, size=(32, 32), special=u'warn'):
     """Tailored to current usages - IAW: do not use."""
     if bitmap is None:
@@ -246,17 +241,22 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
     return False
 
 class _ContinueDialog(DialogWindow):
-    def __init__(self, parent, message, title, checkBoxText):
-        super(_ContinueDialog, parent).__init__(parent, title, sizes_dict=sizes, size=(350, -1))
-        self.gCheckBox = CheckBox(self, checkBoxText)
+    _def_size = _min_size = (360, 150)
+
+    def __init__(self, parent, message, title, checkBoxTxt):
+        super(_ContinueDialog, self).__init__(parent, title, sizes_dict=sizes)
+        self.gCheckBox = CheckBox(self, checkBoxTxt)
         #--Layout
         VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, items=[
                 (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
                 (Label(self, message), LayoutOptions(expand=True, weight=1))]),
              LayoutOptions(weight=1)),
-            self.gCheckBox,
-            ok_and_cancel_group(self)
+            Stretch(),
+            HorizontalLine(self),
+            HLayout(spacing=4, item_expand=True, items=[
+                self.gCheckBox, Stretch(), OkButton(self), CancelButton(self),
+            ]),
         ]).apply_to(self)
 
     def show_modal(self):
