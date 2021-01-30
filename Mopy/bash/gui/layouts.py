@@ -217,6 +217,11 @@ class _ALineLayout(_ALayout):
         """Add a growing space to the layout."""
         self._sizer.AddStretchSpacer(prop=weight * csf())
 
+    def replace_component(self, old_component, new_component):
+        """Replaces one component with another."""
+        self._sizer.Replace(_res_parent(old_component),
+                            _res_parent(new_component))
+
 class HLayout(_ALineLayout):
     """A simple horizontal layout."""
     def __init__(self, *args, **kwargs):

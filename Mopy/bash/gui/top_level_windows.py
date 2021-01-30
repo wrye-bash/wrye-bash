@@ -25,9 +25,9 @@ and the wx.wiz stuff."""
 __author__ = u'Utumno, Infernio'
 
 import wx as _wx
-import wx.adv as _adv     # wxPython wizard class
+import wx.adv as _adv
 
-from .base_components import _AComponent, Color, WithFirstShow, csf
+from .base_components import _AComponent, Color, csf
 
 # Special constant defining a window as having whatever position the underlying
 # GUI implementation picks for it by default.
@@ -212,57 +212,6 @@ class StartupDialog(DialogWindow):
     def __init__(self, *args, **kwargs):
         sd_style = _wx.STAY_ON_TOP | _wx.DIALOG_NO_PARENT
         super(StartupDialog, self).__init__(*args, style=sd_style, **kwargs)
-
-class WizardDialog(DialogWindow, WithFirstShow):
-    """Wrap a wx wizard control.
-
-    Events:
-     - on_wiz_page_change(is_forward: bool, evt_page: PageInstaller):
-     Posted when the user clicks next or previous page. `is_forward` is True
-     for next page. PageInstaller needs to have OnNext() - see uses in belt
-     - _on_wiz_cancel(): Used internally to save size and position
-     - _on_wiz_finished(): Used internally to save size and position
-     - _on_show(): used internally to set page size on first showing the wizard
-     """
-    _wx_widget_type = _adv.Wizard
-
-    def __init__(self, parent, **kwargs):
-        kwargs['style'] = _wx.MAXIMIZE_BOX
-        super(WizardDialog, self).__init__(parent, **kwargs)
-        self.on_wiz_page_change = self._evt_handler(
-            _adv.EVT_WIZARD_PAGE_CHANGING,
-            lambda event: [event.GetDirection(), event.GetPage()])
-        # needed to correctly save size/pos, on_closing seems not enough
-        self._on_wiz_cancel = self._evt_handler(_adv.EVT_WIZARD_CANCEL)
-        self._on_wiz_cancel.subscribe(self.save_size)
-        self._on_wiz_finished = self._evt_handler(_adv.EVT_WIZARD_FINISHED)
-        self._on_wiz_finished.subscribe(self.save_size)
-
-    def _handle_first_show(self):
-        # we have to set initial size here, see WizardDialog._set_pos_size
-        saved_size = self._sizes_dict[self._size_key]
-        # enforce min size
-        self.component_size = (max(saved_size[0], self._def_size[0]),
-                               max(saved_size[1], self._def_size[1]))
-
-    def _set_pos_size(self, kwargs, sizes_dict):
-        # default keys for wizard should exist and return settingDefaults
-        # values. Moreover _wiz.Wizard does not accept a size argument (!)
-        # so this override is needed
-        ##: note wx python expects kwargs as strings - PY3: check
-        wanted_pos = kwargs.get('pos', None) or sizes_dict[self._pos_key]
-        # Resolve the special DEFAULT_POSITION constant to a real value
-        kwargs['pos'] = (self._def_pos if wanted_pos == DEFAULT_POSITION
-                         else wanted_pos)
-
-    def enable_forward_btn(self, do_enable):
-        self._native_widget.FindWindowById(_wx.ID_FORWARD).Enable(do_enable)
-
-    def get_page_size(self):
-        """Returns the width and height that each page in the installer will
-        have available, in device-independent pixels (DIP)."""
-        p_size = self._native_widget.ToDIP(self._native_widget.GetPageSize())
-        return p_size.width, p_size.height
 
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):

@@ -156,6 +156,20 @@ class ApplyButton(Button):
     _id = _wx.ID_APPLY
     _default_label = _(u'Apply')
 
+class BackButton(Button):
+    """A button with the label '< Back'. Moves to a previous element.
+
+    See Button for documentation on button events."""
+    _id = _wx.ID_BACKWARD
+    _default_label = u'< %s' % _(u'Back')
+
+class NextButton(Button):
+    """A button with the label 'Next >'. Moves to a next element.
+
+    See Button for documentation on button events."""
+    _id = _wx.ID_FORWARD
+    _default_label = u'%s >' % _(u'Next')
+
 # TODO(inf) Image API! Need to get rid of all bitmaps passed to this
 class ImageButton(Button):
     """A button that display an image alongside its label.
