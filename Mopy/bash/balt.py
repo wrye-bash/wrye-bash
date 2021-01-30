@@ -474,7 +474,7 @@ class Log(_Log):
             fixedStyle.SetFont(fixedFont)
             # txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
         #--Layout
-        ok_button = OkButton(self.window, default=True)
+        ok_button = OkButton(self.window)
         ok_button.on_clicked.subscribe(self.window.close_win)
         VLayout(border=2, items=[
             (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
@@ -500,7 +500,7 @@ class WryeLog(_Log):
         self._html_ctrl = DocumentViewer(self.window)
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
-        gOkButton = OkButton(self.window, default=True)
+        gOkButton = OkButton(self.window)
         gOkButton.on_clicked.subscribe(self.window.close_win)
         if not asDialog:
             self.window.set_background_color(gOkButton.get_background_color())
@@ -2214,7 +2214,7 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
             layout.add((HBoxedLayout(self, item_expand=True, title=title,
                                      item_weight=1, items=[checksCtrl]),
                         LayoutOptions(expand=True, weight=1)))
-        btns = [OkButton(self, btn_label=bOk, default=True),
+        btns = [OkButton(self, btn_label=bOk),
                 CancelButton(self, btn_label=bCancel) if canCancel else None]
         layout.add((HLayout(spacing=5, items=btns),
                     LayoutOptions(h_align=RIGHT)))

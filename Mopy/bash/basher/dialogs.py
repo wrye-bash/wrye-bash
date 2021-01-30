@@ -28,7 +28,7 @@ from .constants import installercons
 from .. import bass, balt, bosh, bolt, bush, env, load_order
 from ..balt import colors, bell
 from ..bosh import faces, ModInfo
-from ..gui import BOTTOM, Button, CancelButton, CENTER, CheckBox, GridLayout, \
+from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
     VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
     HBoxedLayout, SelectAllButton, DeselectAllButton, VBoxedLayout, \
@@ -69,7 +69,7 @@ class ImportFaceDialog(DialogWindow):
         self.statsText  = Label(self,u'')
         self.classText  = Label(self,u'')
         #--Other
-        importButton = Button(self, btn_label=_(u'Import'), default=True)
+        importButton = OkButton(self, btn_label=_(u'Import'))
         importButton.on_clicked.subscribe(self.DoImport)
         self.picture = Picture(self, 350, 210, scaling=2) ##: unused
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[

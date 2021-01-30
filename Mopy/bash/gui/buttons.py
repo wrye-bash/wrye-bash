@@ -79,11 +79,17 @@ class Button(_AComponent):
 
 class OkButton(Button):
     """A button with the label 'OK'. Applies pending changes and closes the
-    dialog or shows that the user consented to something.
+    dialog or shows that the user consented to something. Note that if you use
+    this button, it will be set as the default as soon as you initialize it. If
+    you want a different button to be the default, initialize that button after
+    this button and pass default=True for it.
 
     See Button for documentation on button events."""
     _id = _wx.ID_OK
     _default_label = _(u'OK')
+
+    def __init__(self, *args, **kwargs):
+        super(OkButton, self).__init__(*args, default=True, **kwargs)
 
 class CancelButton(Button):
     """A button with the label 'Cancel'. Rejects pending changes or aborts a
