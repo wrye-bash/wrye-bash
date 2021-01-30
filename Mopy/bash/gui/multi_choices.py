@@ -68,10 +68,6 @@ class DropDown(_AComponent):
             self._on_size_changed.subscribe(self._set_tooltip)
             self._on_text_changed.subscribe(self._set_tooltip)
 
-    def unsubscribe_handler_(self):
-        # PY3: TODO(inf) needed for wx3, check if needed in Phoenix
-        self._on_size_changed.unsubscribe(self._set_tooltip)
-
     def _set_tooltip(self):
         """Set the tooltip"""
         cb = self._native_widget

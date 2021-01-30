@@ -1222,9 +1222,8 @@ class UIList(wx.Panel):
             if wrapped_evt.is_shift_down: # de-select all
                 self.ClearSelected(clear_details=True)
             else: # select all
+                self.__gList.on_item_selected.unsubscribe(self._handle_select)
                 try:
-                    self.__gList.on_item_selected.unsubscribe(
-                        self._handle_select)
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
                     self.__gList.lc_select_item_at_index(-1) # -1 indicates 'all items'
@@ -1372,8 +1371,8 @@ class UIList(wx.Panel):
 
     def SelectItemsNoCallback(self, items, deselectOthers=False):
         if deselectOthers: self.ClearSelected()
+        self.__gList.on_item_selected.unsubscribe(self._handle_select)
         try:
-            self.__gList.on_item_selected.unsubscribe(self._handle_select)
             for item in items: self.SelectItem(item)
         finally:
             self.__gList.on_item_selected.subscribe(self._handle_select)

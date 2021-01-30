@@ -1922,7 +1922,6 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     def ClosePanel(self, destroy=False):
         super(INIDetailsPanel, self).ClosePanel(destroy)
         settings[u'bash.ini.lastDir'] = self.lastDir
-        if destroy: self._inis_combo_box.unsubscribe_handler_()
 
 class INIPanel(BashTab):
     keyPrefix = u'bash.ini'

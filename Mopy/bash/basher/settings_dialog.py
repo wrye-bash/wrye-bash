@@ -80,11 +80,7 @@ class SettingsDialog(DialogWindow):
                           u'settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)
         ok_btn = OkButton(self)
-        ok_btn.on_clicked.subscribe(self._send_ok)
-        cancel_btn = CancelButton(self)
-        # This will automatically be picked up for the top-right close button
-        # by wxPython, due to us using CancelButton
-        cancel_btn.on_clicked.subscribe(self._send_closing)
+        ok_btn.on_clicked.subscribe(self._send_apply)
         self._apply_btn = ApplyButton(self)
         self._apply_btn.enabled = False
         self._apply_btn.on_clicked.subscribe(self._send_apply)
@@ -93,7 +89,8 @@ class SettingsDialog(DialogWindow):
             (self._tab_tree, LayoutOptions(weight=1)),
             HorizontalLine(self),
             HLayout(spacing=5, items=[
-                help_btn, Stretch(), ok_btn, cancel_btn, self._apply_btn,
+                help_btn, Stretch(), ok_btn, CancelButton(self),
+                self._apply_btn,
             ]),
         ]).apply_to(self)
 
@@ -134,16 +131,6 @@ class SettingsDialog(DialogWindow):
                 # User denied the restart, don't bother them again
                 self._requesting_restart.clear()
                 del self._restart_params[:]
-
-    def _send_closing(self):
-        """Propagates a Cancel button click to all child pages."""
-        for leaf_page in self._tab_tree.get_leaf_pages():
-            leaf_page.on_page_closing()
-
-    def _send_ok(self):
-        """Propagates an OK button click to all child pages."""
-        self._send_closing()
-        self._send_apply()
 
 class _ASettingsPage(WrappingTextMixin, ATreeMixin):
     """Abstract class for all settings pages."""
@@ -199,9 +186,6 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
         for setting_key in self._setting_states:
             self._setting_states[setting_key] = False
         self._mark_changed(self, False)
-
-    def on_page_closing(self):
-        """Called when the settings dialog is about to be closed."""
 
     def _rename_op(self, chosen_file, parent_dir, msg_title, msg):
         new_fname = balt.askText(self, msg, title=msg_title,
@@ -417,9 +401,6 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         newColor = self.picker.get_color()
         self.changes[color_key] = newColor
         self.UpdateUIButtons()
-
-    def on_page_closing(self):
-        self.comboBox.unsubscribe_handler_()
 
 # Languages -------------------------------------------------------------------
 class ConfigureEditorDialog(DialogWindow):

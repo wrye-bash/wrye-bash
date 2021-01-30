@@ -170,7 +170,6 @@ class CreateNewProject(DialogWindow):
     def OnCheckProjectsColorTextCtrl(self, new_text):
         projectName = bolt.GPath(new_text)
         if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
-            # PY3: See note in basher/constants.py
             self.textName.set_background_color(colors[u'default.warn'])
             self.textName.tooltip = _(u'There is already a project with that name!')
             self.ok_button.enabled = False
