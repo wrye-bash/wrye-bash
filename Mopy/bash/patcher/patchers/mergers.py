@@ -30,7 +30,6 @@ from itertools import chain
 from .base import ImportPatcher
 from ... import bush
 from ...exception import ModSigMismatchError
-from ...mod_files import ModFile
 
 #------------------------------------------------------------------------------
 ##: currently relies on the merged subrecord being sorted - fix that
@@ -88,12 +87,12 @@ class _AMerger(ImportPatcher):
 
     def initData(self,progress):
         if not self.isActive or not self.srcs: return
-        loadFactory = self._patcher_read_fact(by_sig=self._wanted_subrecord)
+        # set loadFactory attribute to be used by _mod_file_read
+        self.loadFactory = self._patcher_read_fact(by_sig=self._wanted_subrecord)
         progress.setFull(len(self.srcs))
         for index,srcMod in enumerate(self.srcs):
             srcInfo = self.patchFile.p_file_minfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
+            srcFile = self._mod_file_read(srcInfo)
             for block in self._wanted_subrecord:
                 if block not in srcFile.tops: continue
                 self._present_sigs.add(block)
@@ -303,7 +302,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         """Get data from source files."""
         if not self.isActive: return
         read_sigs = self._read_sigs
-        loadFactory = self._patcher_read_fact()
+        self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
@@ -312,9 +311,8 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
             tempData = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
+            srcFile = self._mod_file_read(srcInfo)
             bashTags = srcInfo.getBashTags()
-            srcFile.load(True)
             for rsig in read_sigs:
                 if rsig not in srcFile.tops: continue
                 for record in srcFile.tops[rsig].getActiveRecords():
@@ -325,8 +323,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                     masterFile = cachedMasters[master]
                 else:
                     masterInfo = minfs[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
+                    masterFile = self._mod_file_read(masterInfo)
                     cachedMasters[master] = masterFile
                 for rsig in read_sigs:
                     if rsig not in srcFile.tops or rsig not in masterFile.tops:
@@ -431,7 +428,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         """Get data from source files."""
         if not self.isActive: return
         read_sigs = self._read_sigs
-        loadFactory = self._patcher_read_fact()
+        self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
@@ -440,9 +437,8 @@ class ImportActorsSpellsPatcher(ImportPatcher):
             tempData = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
+            srcFile = self._mod_file_read(srcInfo)
             bashTags = srcInfo.getBashTags()
-            srcFile.load(True)
             for rsig in read_sigs:
                 if rsig not in srcFile.tops: continue
                 for record in srcFile.tops[rsig].getActiveRecords():
@@ -453,8 +449,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                     masterFile = cachedMasters[master]
                 else:
                     masterInfo = minfs[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
+                    masterFile = self._mod_file_read(masterInfo)
                     cachedMasters[master] = masterFile
                 for rsig in read_sigs:
                     if rsig not in srcFile.tops or rsig not in masterFile.tops:

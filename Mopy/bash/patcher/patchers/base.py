@@ -83,6 +83,19 @@ class MultiTweakItem(AMultiTweakItem):
         np_flag_attr, np_flag_name = bush.game.not_playable_flag
         return getattr(getattr(record, np_flag_attr), np_flag_name)
 
+class IndexingTweak(MultiTweakItem):
+    """See HACK notes in NamesTweak_Scrolls.prepare_for_tweaking."""
+    _index_sigs = []
+
+    def __init__(self):
+        super(IndexingTweak, self).__init__()
+        self.loadFactory = LoadFactory(keepAll=False, by_sig=self._index_sigs)
+
+    def _mod_file_read(self, modInfo):
+        modFile = ModFile(modInfo, self.loadFactory)
+        modFile.load(do_unpack=True)
+        return modFile
+
 class CustomChoiceTweak(MultiTweakItem):
     """Base class for tweaks that have a custom choice with the 'Custom'
     label."""
@@ -366,12 +379,14 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
 # Patchers: 20 ----------------------------------------------------------------
 class ModLoader(Patcher):
     """Mixin for patchers loading mods"""
+    loadFactory = None
 
     def _patcher_read_fact(self, by_sig=None): # read can have keepAll=False
         return LoadFactory(keepAll=False, by_sig=by_sig or self._read_sigs)
 
     def _mod_file_read(self, modInfo):
-        modFile = ModFile(modInfo, self._patcher_read_fact())
+        modFile = ModFile(modInfo,
+                          self.loadFactory or self._patcher_read_fact())
         modFile.load(True)
         return modFile
 

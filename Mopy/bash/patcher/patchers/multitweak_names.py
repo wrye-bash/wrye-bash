@@ -32,8 +32,7 @@ from collections import OrderedDict
 # Internal
 from ...bolt import build_esub, RecPath
 from ...exception import AbstractError
-from ...mod_files import LoadFactory, ModFile  # yuck, see usage below
-from ...patcher.patchers.base import MultiTweakItem
+from ...patcher.patchers.base import MultiTweakItem, IndexingTweak
 from ...patcher.patchers.base import MultiTweaker
 
 _ignored_chars=frozenset(u'+-=.()[]')
@@ -225,7 +224,7 @@ class NamesTweak_Potions(_AMgefNamesTweak):
 #------------------------------------------------------------------------------
 _re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 
-class NamesTweak_Scrolls(_AMgefNamesTweak):
+class NamesTweak_Scrolls(_AMgefNamesTweak, IndexingTweak):
     """Names tweaker for scrolls."""
     tweak_read_classes = b'BOOK',
     tweak_name = _(u'Notes And Scrolls')
@@ -244,6 +243,7 @@ class NamesTweak_Scrolls(_AMgefNamesTweak):
                      (_(u'.(D) Fire Ball'), u'.(%s) ')]
     tweak_log_msg = _(u'Notes and Scrolls Renamed: %(total_changed)d')
     _look_up_ench = None
+    _index_sigs = [b'ENCH']
 
     def _do_exec_rename(self, record, look_up_ench):
         # Magic label
@@ -274,11 +274,8 @@ class NamesTweak_Scrolls(_AMgefNamesTweak):
         # record types in some central place (and NOT by forwarding all records
         # into the BP!)
         self._look_up_ench = id_ench = {}
-        ench_factory = LoadFactory(False, by_sig=[b'ENCH'])
         for pl_path in patch_file.loadMods:
-            ench_plugin = ModFile(patch_file.p_file_minfos[pl_path],
-                                  ench_factory)
-            ench_plugin.load(do_unpack=True)
+            ench_plugin = self._mod_file_read(patch_file.p_file_minfos[pl_path])
             for record in ench_plugin.tops[b'ENCH'].getActiveRecords():
                 id_ench[record.fid] = record
 

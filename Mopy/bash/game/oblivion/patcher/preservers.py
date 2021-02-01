@@ -21,7 +21,6 @@
 #
 # =============================================================================
 from .special import _ExSpecial ##: ugh
-from ....mod_files import ModFile
 from ....patcher.patchers.base import ImportPatcher
 
 __all__ = [u'ImportRoadsPatcher']
@@ -43,12 +42,11 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
     def initData(self,progress):
         """Get cells from source files."""
         if not self.isActive: return
-        loadFactory = self._patcher_read_fact()
+        self.loadFactory = self._patcher_read_fact()
         for srcMod in self.srcs:
             if srcMod not in self.patchFile.p_file_minfos: continue
             srcInfo = self.patchFile.p_file_minfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
+            srcFile = self._mod_file_read(srcInfo)
             for worldBlock in srcFile.tops[b'WRLD'].worldBlocks:
                 if worldBlock.road:
                     worldId = worldBlock.world.fid

@@ -34,7 +34,6 @@ from ... import bush, load_order, parsers
 from ...bolt import attrgetter_cache, deprint, floats_equal, setattr_deep
 from ...brec import MreRecord
 from ...exception import ModSigMismatchError
-from ...mod_files import ModFile
 
 #------------------------------------------------------------------------------
 class _APreserver(ImportPatcher):
@@ -91,6 +90,7 @@ class _APreserver(ImportPatcher):
         # Split srcs based on CSV extension ##: move somewhere else?
         self.csv_srcs = [s for s in p_sources if s.cext == u'.csv']
         self.srcs = [s for s in p_sources if s.cext != u'.csv']
+        self.loadFactory = self._patcher_read_fact(by_sig=self.rec_type_attrs)
 
     # CSV helpers - holding out hope for inf-312-parser-abc
     def _parse_csv_sources(self, progress):
@@ -158,7 +158,6 @@ class _APreserver(ImportPatcher):
     def initData(self, progress, __attrgetters=attrgetter_cache):
         if not self.isActive: return
         id_data = self.id_data
-        loadFactory = self._patcher_read_fact(by_sig=self.rec_type_attrs)
         progress.setFull(len(self.srcs) + len(self.csv_srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
@@ -167,8 +166,7 @@ class _APreserver(ImportPatcher):
             mod_id_data = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(do_unpack=True)
+            srcFile = self._mod_file_read(srcInfo)
             mod_sigs = set()
             mod_tags = srcFile.fileInfo.getBashTags() if self._multi_tag else None
             for rsig in self.rec_type_attrs:
@@ -188,8 +186,7 @@ class _APreserver(ImportPatcher):
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
-                    masterFile = ModFile(minfs[master], loadFactory)
-                    masterFile.load(True)
+                    masterFile = self._mod_file_read(minfs[master])
                     cachedMasters[master] = masterFile
                 for rsig in self.rec_type_attrs:
                     if rsig not in masterFile.tops or rsig not in mod_sigs:
@@ -446,6 +443,7 @@ class ImportCellsPatcher(ImportPatcher):
         super(ImportCellsPatcher, self).__init__(p_name, p_file, p_sources)
         self.cellData = defaultdict(dict)
         self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[unicode]]
+        self.loadFactory = self._patcher_read_fact()
 
     def initData(self, progress, __attrgetters=attrgetter_cache):
         """Get cells from source files."""
@@ -484,7 +482,6 @@ class ImportCellsPatcher(ImportPatcher):
                     master_attr = __attrgetters[attr](cellBlock.cell)
                     if tempCellData[rec_fid][attr] != master_attr:
                         cellData[rec_fid][attr] = tempCellData[rec_fid][attr]
-        loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos
@@ -496,8 +493,7 @@ class ImportCellsPatcher(ImportPatcher):
             # values from the value in any of srcMod's masters.
             tempCellData = defaultdict(dict)
             srcInfo = minfs[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
+            srcFile = self._mod_file_read(srcInfo)
             cachedMasters[srcMod] = srcFile
             bashTags = srcInfo.getBashTags()
             # print bashTags
@@ -521,8 +517,7 @@ class ImportCellsPatcher(ImportPatcher):
                     masterFile = cachedMasters[master]
                 else:
                     masterInfo = minfs[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
+                    masterFile = self._mod_file_read(masterInfo)
                     cachedMasters[master] = masterFile
                 if b'CELL' in masterFile.tops:
                     for cellBlock in masterFile.tops[b'CELL'].cellBlocks:
