@@ -188,6 +188,9 @@ def get_file_version(filename):
             return _find_version(f, version_pos, 0)[1]
         return ()
 
+def fixup_taskbar_icon():
+    pass ##: Probably not needed on Linux, only a Win7+ issue.
+
 def mark_high_dpi_aware():
     pass ##: Equivalent on Linux? Not needed?
 

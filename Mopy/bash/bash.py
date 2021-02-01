@@ -257,6 +257,8 @@ def main(opts):
         # Mark us as high DPI aware before gui/balt are imported
         from . import env
         env.mark_high_dpi_aware()
+        # Call this early before showing any windows if possible
+        env.fixup_taskbar_icon()
         # Initialize gui, our wrapper above wx (also balt, temp module)
         from . import gui, balt
         # Check for some non-critical dependencies (e.g. lz4) and warn if
@@ -565,6 +567,10 @@ def _select_game_popup(game_icons, msgtext):
         TextAlignment, WindowFrame, VLayout
     class GameSelect(WindowFrame):
         def __init__(self, game_icons, callback):
+            # NOTE(lojack): really want to set `icon_bundle=Resources.bashRed`
+            # here so the window has the proper icon, but basher has not yet
+            # been (and might not beable to be) imported yet.
+            # Should decouple that!
             super(GameSelect, self).__init__(None, u'Wrye Bash')
             self.callback = callback
             # Setup the size - we give each button 38 pixels, 32 for the image
