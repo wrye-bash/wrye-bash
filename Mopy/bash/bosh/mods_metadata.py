@@ -484,8 +484,8 @@ class NvidiaFogFixer(object):
         #--Scan/Edit
         with ModReader(self.modInfo.name,minfo_path.open(u'rb')) as ins:
             with minfo_path.temp.open(u'wb') as  out:
-                def copy(size):
-                    buff = ins.read(size)
+                def copy(bsize):
+                    buff = ins.read(bsize)
                     out.write(buff)
                 while not ins.atEnd():
                     progress(ins.tell())

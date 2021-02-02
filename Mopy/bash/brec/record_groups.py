@@ -804,9 +804,9 @@ class MobCell(MobBase):
         groupType = None # guaranteed to compare False to any of them
         while not insAtEnd(endPos, u'Cell Block'):
             header = insRecHeader()
-            recType = header.recType
-            recClass = cellGet(recType)
-            if recType == b'GRUP':
+            _rsig = header.recType
+            recClass = cellGet(_rsig)
+            if _rsig == b'GRUP':
                 groupType = header.groupType
                 if groupType not in (8, 9, 10):
                     raise ModError(self.inName,
@@ -818,20 +818,20 @@ class MobCell(MobBase):
                                    u'group.' % groupType)
                 else:
                     subgroupLoaded[groupType - 8] = True
-            elif recType not in cellType_class:
+            elif _rsig not in cellType_class:
                 raise ModError(self.inName,
                                u'Unexpected %s record in cell children '
-                               u'group.' % recType)
+                               u'group.' % _rsig)
             elif not recClass:
                 insSeek(header.size,1)
-            elif recType in (b'REFR',b'ACHR',b'ACRE'):
+            elif _rsig in (b'REFR',b'ACHR',b'ACRE'):
                 record = recClass(header,ins,True)
                 if   groupType ==  8: persistentAppend(record)
                 elif groupType ==  9: tempAppend(record)
                 elif groupType == 10: distantAppend(record)
-            elif recType == b'LAND':
+            elif _rsig == b'LAND':
                 self.land = recClass(header, ins, True)
-            elif recType == b'PGRD':
+            elif _rsig == b'PGRD':
                 self.pgrd = recClass(header, ins, True)
         self.setChanged()
 
@@ -1296,8 +1296,8 @@ class MobICells(MobCells):
             cellBlocksAppend(cellBlock)
         while not insAtEnd(endPos,errLabel):
             header = insRecHeader()
-            recType = header.recType
-            if recType == expType:
+            _rsig = header.recType
+            if _rsig == expType:
                 if cell:
                     # If we already have a cell lying around, finish it off
                     build_cell_block()
@@ -1307,7 +1307,7 @@ class MobICells(MobCells):
                                    u'Interior cell <%X> %s outside of block '
                                    u'or subblock.' % (
                                        cell.fid,cell.eid))
-            elif recType == b'GRUP':
+            elif _rsig == b'GRUP':
                 size,groupFid,groupType = header.size,header.label, \
                                           header.groupType
                 delta = size - RecordHeader.rec_header_size
@@ -1336,7 +1336,7 @@ class MobICells(MobCells):
             else:
                 raise ModError(self.inName,
                                u'Unexpected %s record in %s group.' % (
-                                   recType,expType))
+                                   _rsig,expType))
         if cell:
             # We have a CELL without children left over, finish it
             build_cell_block()
@@ -1408,13 +1408,13 @@ class MobWorld(MobCells):
                 pass # subblock = None # unused var
             #--Get record info and handle it
             header = insRecHeader()
-            recType,size = header.recType,header.size
+            _rsig,size = header.recType,header.size
             delta = size - RecordHeader.rec_header_size
-            recClass = cellGet(recType)
-            if recType == b'ROAD':
-                if not recClass: insSeek(size,1)
+            recClass = cellGet(_rsig)
+            if _rsig == b'ROAD':
+                if not recClass: insSeek(size,1) ##: delta??
                 else: self.road = recClass(header,ins,True)
-            elif recType == b'CELL':
+            elif _rsig == b'CELL':
                 if cell:
                     # If we already have a cell lying around, finish it off
                     build_cell_block()
@@ -1425,7 +1425,7 @@ class MobWorld(MobCells):
                         raise ModError(self.inName,
                             u'Exterior cell %r after block or subblock.'
                             % cell)
-            elif recType == b'GRUP':
+            elif _rsig == b'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
                     block = __unpacker(__packer(groupFid))
@@ -1458,7 +1458,7 @@ class MobWorld(MobCells):
             else:
                 raise ModError(self.inName,
                                u'Unexpected %s record in world children '
-                               u'group.' % recType)
+                               u'group.' % _rsig)
         if cell:
             # We have a CELL without children left over, finish it
             build_cell_block()
@@ -1664,8 +1664,8 @@ class MobWorlds(MobBase):
             #--Get record info and handle it
             prev_header = header
             header = insRecHeader()
-            recType = header.recType
-            if recType == expType:
+            _rsig = header.recType
+            if _rsig == expType:
                 # FIXME(inf) The getattr here has to go
                 if (prev_header and
                         getattr(prev_header, u'recType', None) == b'WRLD'):
@@ -1674,7 +1674,7 @@ class MobWorlds(MobBase):
                     self.setWorld(world)
                 world = recWrldClass(header,ins,True)
                 if isFallout: worlds[world.fid] = world
-            elif recType == b'GRUP':
+            elif _rsig == b'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType != 1:
                     raise ModError(ins.inName,
@@ -1698,7 +1698,7 @@ class MobWorlds(MobBase):
             else:
                 raise ModError(ins.inName,
                                u'Unexpected %s record in %s group.' % (
-                                   recType,expType))
+                                   _rsig,expType))
         if world:
             # We have a last WRLD without children lying around, finish it
             self.setWorld(world)

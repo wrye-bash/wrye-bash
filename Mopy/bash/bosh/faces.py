@@ -149,7 +149,7 @@ class PCFaces(object):
         changeRecord = saveFile.getRecord(fid)
         if not changeRecord:
             return face
-        fid,recType,recFlags,version,data = changeRecord
+        fid,_recType,recFlags,version,data = changeRecord
         npc = SreNPC(recFlags,data)
         if npc.acbs:
             face.gender = npc.acbs.flags.female
@@ -260,7 +260,7 @@ class PCFaces(object):
         #--Change record?
         changeRecord = saveFile.getRecord(npc.fid)
         if changeRecord is None: return
-        fid,recType,recFlags,version,data = changeRecord
+        fid,_recType,recFlags,version,data = changeRecord
         npc = SreNPC(recFlags,data)
         if not npc.acbs: npc.acbs = npc.getDefault(u'acbs')
         npc.acbs.flags.female = face.gender
@@ -348,7 +348,7 @@ class PCFaces(object):
         saveFile.setRecord(oldRecord[:-1]+(newData,))
 
         #--Player NPC
-        (fid,recType,recFlags,version,data) = saveFile.getRecord(7)
+        (fid,_recType,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
         #--Gender
         if pcf_flags.gender and npc.acbs:

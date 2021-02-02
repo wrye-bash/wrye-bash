@@ -894,10 +894,10 @@ class Save_UpdateNPCLevels(EnabledLink):
                 mapToOrdered = MasterMap(saveFile._masters, ordered)
                 releveledCount = 0
                 #--Loop over change records
-                for recNum in xrange(len(records)):
-                    (recId,recType,recFlags,version,data_) = records[recNum]
+                for recNum, (recId, recType_, recFlags, version, data_) in \
+                        enumerate(records):
                     orderedRecId = mapToOrdered(recId,None)
-                    if recType != 35 or recId == 7 or orderedRecId not in npc_info: continue
+                    if recType_ != 35 or recId == 7 or orderedRecId not in npc_info: continue
                     (eid,level,calcMin,calcMax,pcLevelOffset) = npc_info[orderedRecId]
                     npc = bosh._saves.SreNPC(recFlags, data_)
                     acbs = npc.acbs
@@ -911,8 +911,8 @@ class Save_UpdateNPCLevels(EnabledLink):
                         acbs.level = level
                         acbs.calcMin = calcMin
                         acbs.calcMax = calcMax
-                        (recId,recType,recFlags,version,data_) = saveFile.records[recNum]
-                        records[recNum] = (recId,recType,npc.getFlags(),version,npc.getData())
+                        (recId,recType_,recFlags,version,data_) = saveFile.records[recNum]
+                        records[recNum] = (recId,recType_,npc.getFlags(),version,npc.getData())
                         releveledCount += 1
                         saveFile.records[recNum] = npc.getTuple(recId,version)
                 #--Save changes?

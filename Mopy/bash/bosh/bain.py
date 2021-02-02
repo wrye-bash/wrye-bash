@@ -549,20 +549,20 @@ class Installer(object):
     def _init_executables_skips():
         goodDlls = Installer.goodDlls()
         badDlls = Installer.badDlls()
-        def __skipExecutable(checkOBSE, fileLower, full, archiveRoot, size,
+        def __skipExecutable(checkOBSE, fileLower, full, archiveRoot, dll_size,
                              crc, desc, ext, exeDir, dialogTitle):
             if not fileLower.startswith(exeDir): return True
-            if fileLower in badDlls and [archiveRoot, size, crc] in badDlls[
-                fileLower]: return True
-            if not checkOBSE or fileLower in goodDlls and [
-                archiveRoot, size, crc] in goodDlls[fileLower]: return False
+            if fileLower in badDlls and [archiveRoot, dll_size, crc] in \
+                    badDlls[fileLower]: return True
+            if not checkOBSE or fileLower in goodDlls and [archiveRoot,
+                dll_size, crc] in goodDlls[fileLower]: return False
             message = Installer._dllMsg(fileLower, full, archiveRoot,
                                         desc, ext, badDlls, goodDlls)
             if not balt.askYes(balt.Link.Frame,message, dialogTitle):
-                badDlls[fileLower].append([archiveRoot,size,crc])
+                badDlls[fileLower].append([archiveRoot, dll_size, crc])
                 bass.settings[u'bash.installers.badDlls'] = Installer._badDlls
                 return True
-            goodDlls[fileLower].append([archiveRoot,size,crc])
+            goodDlls[fileLower].append([archiveRoot, dll_size, crc])
             bass.settings[u'bash.installers.goodDlls'] = Installer._goodDlls
             return False
         if bush.game.Se.se_abbrev:

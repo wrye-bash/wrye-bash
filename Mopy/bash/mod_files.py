@@ -95,21 +95,21 @@ class LoadFactory(object):
             b'CELL', b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'])):
         """Adds specified class."""
         if type(recClass) is bytes:
-            recType = recClass
+            class_sig = recClass
             recClass = MreRecord
         else:
             try:
-                recType = recClass.rec_sig
+                class_sig = recClass.rec_sig
             except AttributeError:
                 raise ValueError(u'addClass: bytes or MreRecord expected '
                                  u'- got: %r!' % recClass)
         #--Don't replace complex class with default (MreRecord) class
-        if recType in self.type_class and recClass == MreRecord:
+        if class_sig in self.type_class and recClass == MreRecord:
             return
-        self.recTypes.add(recType)
-        self.type_class[recType] = recClass
+        self.recTypes.add(class_sig)
+        self.type_class[class_sig] = recClass
         #--Top type
-        if recType in __cell_rec_sigs:
+        if class_sig in __cell_rec_sigs:
             self.topTypes.add(b'CELL')
             self.topTypes.add(b'WRLD')
             if self.keepAll:
@@ -117,10 +117,10 @@ class LoadFactory(object):
                     if cell_rec_sig not in self.type_class:
                         self.type_class[cell_rec_sig] = MreRecord
         ##: apart from this and cell stuff above set(type_class) == topTypes
-        elif recType == b'INFO':
+        elif class_sig == b'INFO':
             self.topTypes.add(b'DIAL')
         else:
-            self.topTypes.add(recType)
+            self.topTypes.add(class_sig)
 
     def getRecClass(self,type):
         """Returns class for record type or None."""
