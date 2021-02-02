@@ -37,7 +37,6 @@ from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, UIList_Rename
 from ..bolt import GPath, SubProgress
 from ..bosh import faces, SaveInfo
-from ..brec import MreRecord
 from ..exception import ArgumentError, BoltError, CancelError, ModError
 from ..gui import BusyCursor, ImageWrapper
 from ..mod_files import LoadFactory, MasterMap, ModFile
@@ -862,7 +861,7 @@ class Save_UpdateNPCLevels(EnabledLink):
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
             npc_info = {}
-            loadFactory = LoadFactory(False, MreRecord.type_class[b'NPC_'])
+            loadFactory = LoadFactory(False, by_sig=[b'NPC_'])
             ordered = list(load_order.cached_active_tuple())
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []

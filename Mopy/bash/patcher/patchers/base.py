@@ -29,9 +29,11 @@ from itertools import chain
 from .. import getPatchesPath
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, AListPatcher
 from ... import load_order, bush
-from ...bolt import GPath, CsvReader, deprint
+from ...bolt import GPath, deprint
 from ...brec import MreRecord
 from ...exception import AbstractError
+from ...mod_files import LoadFactory, ModFile
+from ...parsers import _HandleAliases
 
 # Patchers 1 ------------------------------------------------------------------
 class ListPatcher(AListPatcher,Patcher): pass
@@ -44,14 +46,6 @@ class MultiTweakItem(AMultiTweakItem):
     # anything but CELL, DIAL and WRLD). See the wiki page '[dev] Tweak
     # Pooling' for a detailed overview of its implementation.
     supports_pooling = True
-
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return self.__class__.tweak_read_classes
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return self.__class__.tweak_read_classes
 
     def prepare_for_tweaking(self, patch_file):
         """Gives this tweak a chance to use prepare for the phase where it gets
@@ -89,6 +83,19 @@ class MultiTweakItem(AMultiTweakItem):
         np_flag_attr, np_flag_name = bush.game.not_playable_flag
         return getattr(getattr(record, np_flag_attr), np_flag_name)
 
+class IndexingTweak(MultiTweakItem):
+    """See HACK notes in NamesTweak_Scrolls.prepare_for_tweaking."""
+    _index_sigs = []
+
+    def __init__(self):
+        super(IndexingTweak, self).__init__()
+        self.loadFactory = LoadFactory(keepAll=False, by_sig=self._index_sigs)
+
+    def _mod_file_read(self, modInfo):
+        modFile = ModFile(modInfo, self.loadFactory)
+        modFile.load(do_unpack=True)
+        return modFile
+
 class CustomChoiceTweak(MultiTweakItem):
     """Base class for tweaks that have a custom choice with the 'Custom'
     label."""
@@ -101,18 +108,13 @@ class MultiTweaker(AMultiTweaker,Patcher):
         # interested in and whether or not they can be pooled
         self._tweak_dict = t_dict = defaultdict(lambda: ([], []))
         for tweak in self.enabled_tweaks: # type: MultiTweakItem
-            for read_sig in tweak.getReadClasses():
+            for read_sig in tweak.tweak_read_classes:
                 t_dict[read_sig][tweak.supports_pooling].append(tweak)
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return chain.from_iterable(tweak.getReadClasses()
-            for tweak in self.enabled_tweaks) if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return chain.from_iterable(tweak.getWriteClasses()
-            for tweak in self.enabled_tweaks) if self.isActive else ()
+    @property
+    def _read_sigs(self):
+        return set(chain.from_iterable(
+            tweak.tweak_read_classes for tweak in self.enabled_tweaks))
 
     def scanModFile(self,modFile,progress):
         rec_pool = defaultdict(set)
@@ -196,31 +198,25 @@ class MergePatchesPatcher(ListPatcher):
         p_file.set_mergeable_mods(self.srcs)
 
 # TODO move this to a file it's imported after MreRecord.simpleTypes is set
-class ReplaceFormIDsPatcher(ListPatcher):
+class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     patcher_group = u'General'
     patcher_order = 15
 
     def __init__(self, p_name, p_file, p_sources):
-        super(ReplaceFormIDsPatcher, self).__init__(p_name, p_file, p_sources)
+        super(ReplaceFormIDsPatcher, self).__init__(p_file.pfile_aliases)
+        ListPatcher.__init__(self, p_name, p_file, p_sources)
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
 
-    def readFromText(self,textPath):
-        """Reads replacement data from specified text file."""
-        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
-        aliases = self.patchFile.pfile_aliases
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue
-                oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
-                oldMod,newMod = map(GPath,(oldMod,newMod))
-                oldId = (GPath(aliases.get(oldMod,oldMod)),int(oldObj,16))
-                newId = (GPath(aliases.get(newMod,newMod)),int(newObj,16))
-                old_new[oldId] = newId
-                old_eid[oldId] = oldEid
-                new_eid[newId] = newEid
+    def _parse_line(self, csv_fields):
+        oldMod, oldObj, oldEid, newEid, newMod, newObj = csv_fields[1:7]
+        oldId = self._coerce_fid(oldMod, oldObj)
+        newId = self._coerce_fid(newMod, newObj)
+        self.old_new[oldId] = newId
+        self.old_eid[oldId] = oldEid
+        self.new_eid[newId] = newEid
 
     def initData(self,progress):
         """Get names from source files."""
@@ -233,11 +229,8 @@ class ReplaceFormIDsPatcher(ListPatcher):
                 u'%s is no longer in patches set' % srcPath, traceback=True)
             progress.plus()
 
+    @property
     def getReadClasses(self):
-        return tuple(MreRecord.simpleTypes | (
-            {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}))
-
-    def getWriteClasses(self):
         return tuple(MreRecord.simpleTypes | (
             {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}))
 
@@ -384,7 +377,20 @@ class ReplaceFormIDsPatcher(ListPatcher):
             log(u'* %s: %d' % (srcMod,count[srcMod]))
 
 # Patchers: 20 ----------------------------------------------------------------
-class ImportPatcher(ListPatcher):
+class ModLoader(Patcher):
+    """Mixin for patchers loading mods"""
+    loadFactory = None
+
+    def _patcher_read_fact(self, by_sig=None): # read can have keepAll=False
+        return LoadFactory(keepAll=False, by_sig=by_sig or self._read_sigs)
+
+    def _mod_file_read(self, modInfo):
+        modFile = ModFile(modInfo,
+                          self.loadFactory or self._patcher_read_fact())
+        modFile.load(True)
+        return modFile
+
+class ImportPatcher(ListPatcher, ModLoader):
     """Subclass for patchers in group Importer."""
     patcher_group = u'Importers'
     patcher_order = 20

@@ -43,7 +43,7 @@ from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
 from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
-    LowerDict, AFile
+    LowerDict, AFile, dict_sort
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 from ..ini_files import OBSEIniFile
@@ -156,7 +156,7 @@ class Installer(object):
         # is size 0 - add len(pending) to the progress bar max to ensure we
         # don't hit 100% and cause the progress bar to prematurely disappear
         progress.setFull(pending_size + len(pending))
-        for rpFile, (siz, _crc, date, asFile) in iter(sorted(pending.items())):
+        for rpFile, (siz, _crc, date, asFile) in dict_sort(pending):
             progress(done, progress_msg + rpFile)
             sub = bolt.SubProgress(progress, done, done + siz + 1)
             sub.setFull(siz + 1)
@@ -167,7 +167,7 @@ class Installer(object):
                     for block in iter(partial(ins.read, 2097152), b''):
                         crc = crc32(block, crc) # 2MB at a time, probably ok
                         sub(insTell())
-            except IOError:
+            except (OSError, IOError):
                 deprint(u'Failed to calculate crc for %s - please report '
                         u'this, and the following traceback:' % asFile,
                         traceback=True)
@@ -1985,7 +1985,7 @@ class InstallersData(DataStore):
         """Refresh installer status."""
         inOrder, pending = [], []
         # not specifying the key below results in double time
-        for iname, installer in sorted(self.iteritems(), key=itemgetter(0)):
+        for iname, installer in dict_sort(self):
             if installer.order >= 0:
                 inOrder.append((iname, installer))
             else:
@@ -2625,7 +2625,7 @@ class InstallersData(DataStore):
 
     def _restoreFiles(self, restores, refresh_ui, progress):
         installer_destinations = {}
-        restores = sorted(restores.items(), key=itemgetter(1))
+        restores = dict_sort(restores, by_value=True)
         for key, group in groupby(restores, key=itemgetter(1)):
             installer_destinations[key] = {dest for dest, _key in group}
         if not installer_destinations: return

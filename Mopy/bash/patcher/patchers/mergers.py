@@ -29,9 +29,7 @@ from itertools import chain
 # Internal
 from .base import ImportPatcher
 from ... import bush
-from ...brec import MreRecord
 from ...exception import ModSigMismatchError
-from ...mod_files import ModFile, LoadFactory
 
 #------------------------------------------------------------------------------
 ##: currently relies on the merged subrecord being sorted - fix that
@@ -83,23 +81,19 @@ class _AMerger(ImportPatcher):
         subrecord is e.g. just a list of FormIDs)."""
         return subrecord_entry
 
-    def getReadClasses(self):
-        return tuple(self._present_sigs) if self.isActive else ()
-
-    def getWriteClasses(self):
-        return self.getReadClasses()
+    @property
+    def _read_sigs(self):
+        return self._present_sigs
 
     def initData(self,progress):
         if not self.isActive or not self.srcs: return
-        wanted_sigs = list(self._wanted_subrecord)
-        loadFactory = LoadFactory(False, *[MreRecord.type_class[x]
-                                           for x in wanted_sigs])
+        # set loadFactory attribute to be used by _mod_file_read
+        self.loadFactory = self._patcher_read_fact(by_sig=self._wanted_subrecord)
         progress.setFull(len(self.srcs))
         for index,srcMod in enumerate(self.srcs):
             srcInfo = self.patchFile.p_file_minfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
-            for block in wanted_sigs:
+            srcFile = self._mod_file_read(srcInfo)
+            for block in self._wanted_subrecord:
                 if block not in srcFile.tops: continue
                 self._present_sigs.add(block)
                 for record in srcFile.tops[block].getActiveRecords():
@@ -277,7 +271,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         super(ImportActorsAIPackagesPatcher, self).__init__(p_name, p_file, p_sources)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
-        self.target_rec_types = bush.game.actor_types
+        self._read_sigs = bush.game.actor_types
 
     def _insertPackage(self, id_merged_deleted, fi, index, pkg, recordData):
         fi_merged = id_merged_deleted[fi]['merged']
@@ -307,9 +301,8 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        target_rec_types = self.target_rec_types
-        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x
-                                           in target_rec_types])
+        read_sigs = self._read_sigs
+        self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
@@ -318,13 +311,11 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
             tempData = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
+            srcFile = self._mod_file_read(srcInfo)
             bashTags = srcInfo.getBashTags()
-            srcFile.load(True)
-            for recClass in (MreRecord.type_class[x] for x in target_rec_types):
-                if recClass.rec_sig not in srcFile.tops: continue
-                for record in srcFile.tops[
-                    recClass.rec_sig].getActiveRecords():
+            for rsig in read_sigs:
+                if rsig not in srcFile.tops: continue
+                for record in srcFile.tops[rsig].getActiveRecords():
                     tempData[record.fid] = record.aiPackages
             for master in reversed(srcInfo.masterNames):
                 if master not in minfs: continue # or break filter mods
@@ -332,15 +323,12 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                     masterFile = cachedMasters[master]
                 else:
                     masterInfo = minfs[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
+                    masterFile = self._mod_file_read(masterInfo)
                     cachedMasters[master] = masterFile
-                blocks = (MreRecord.type_class[x] for x in target_rec_types)
-                for block in blocks:
-                    if block.rec_sig not in srcFile.tops: continue
-                    if block.rec_sig not in masterFile.tops: continue
-                    for record in masterFile.tops[
-                        block.rec_sig].getActiveRecords():
+                for rsig in read_sigs:
+                    if rsig not in srcFile.tops or rsig not in masterFile.tops:
+                        continue
+                    for record in masterFile.tops[rsig].getActiveRecords():
                         fi = record.fid
                         if fi not in tempData: continue
                         if record.aiPackages == tempData[fi] and not \
@@ -393,18 +381,10 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                                                         pkg, recordData)
             progress.plus()
 
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return bush.game.actor_types if self.isActive else ()
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return bush.game.actor_types if self.isActive else ()
-
     def scanModFile(self, modFile, progress): # scanModFile2: loop, LongTypes..
         """Add record from modFile."""
         merged_deleted = self.id_merged_deleted
-        for top_grup_sig in self.target_rec_types:
+        for top_grup_sig in self._read_sigs:
             patchBlock = self.patchFile.tops[top_grup_sig]
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 fid = record.fid
@@ -418,7 +398,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
         mod_count = Counter()
-        for top_grup_sig in self.target_rec_types:
+        for top_grup_sig in self._read_sigs:
             for record in self.patchFile.tops[top_grup_sig].records:
                 fid = record.fid
                 if fid not in merged_deleted: continue
@@ -442,14 +422,13 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         super(ImportActorsSpellsPatcher, self).__init__(p_name, p_file, p_sources)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
-        self._read_write_records = bush.game.actor_types
+        self._read_sigs = bush.game.actor_types
 
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        target_rec_types = self._read_write_records
-        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x
-                                           in target_rec_types])
+        read_sigs = self._read_sigs
+        self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
@@ -458,12 +437,11 @@ class ImportActorsSpellsPatcher(ImportPatcher):
             tempData = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
+            srcFile = self._mod_file_read(srcInfo)
             bashTags = srcInfo.getBashTags()
-            srcFile.load(True)
-            for recClass in (MreRecord.type_class[x] for x in target_rec_types):
-                if recClass.rec_sig not in srcFile.tops: continue
-                for record in srcFile.tops[recClass.rec_sig].getActiveRecords():
+            for rsig in read_sigs:
+                if rsig not in srcFile.tops: continue
+                for record in srcFile.tops[rsig].getActiveRecords():
                     tempData[record.fid] = record.spells
             for master in reversed(srcInfo.masterNames):
                 if master not in minfs: continue # or break filter mods
@@ -471,13 +449,12 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                     masterFile = cachedMasters[master]
                 else:
                     masterInfo = minfs[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
+                    masterFile = self._mod_file_read(masterInfo)
                     cachedMasters[master] = masterFile
-                for block in (MreRecord.type_class[x] for x in target_rec_types):
-                    if block.rec_sig not in srcFile.tops: continue
-                    if block.rec_sig not in masterFile.tops: continue
-                    for record in masterFile.tops[block.rec_sig].getActiveRecords():
+                for rsig in read_sigs:
+                    if rsig not in srcFile.tops or rsig not in masterFile.tops:
+                        continue
+                    for record in masterFile.tops[rsig].getActiveRecords():
                         fid = record.fid
                         if fid not in tempData: continue
                         if record.spells == tempData[fid] and not u'Actors.SpellsForceAdd' in bashTags:
@@ -555,7 +532,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
     def scanModFile(self, modFile, progress): # scanModFile2
         """Add record from modFile."""
         merged_deleted = self.id_merged_deleted
-        for top_grup_sig in self._read_write_records:
+        for top_grup_sig in self._read_sigs:
             patchBlock = self.patchFile.tops[top_grup_sig]
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 fid = record.fid
@@ -569,7 +546,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
         mod_count = Counter()
-        for top_grup_sig in self._read_write_records:
+        for top_grup_sig in self._read_sigs:
             for record in self.patchFile.tops[top_grup_sig].records:
                 fid = record.fid
                 if fid not in merged_deleted: continue

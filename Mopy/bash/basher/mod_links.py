@@ -42,7 +42,7 @@ from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
     TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
-from ..bolt import GPath, SubProgress
+from ..bolt import GPath, SubProgress, dict_sort
 from ..bosh import faces
 from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError
@@ -76,33 +76,44 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Mod_FullLoad(OneItemLink):
+class _LoadLink(ItemLink):
+    _load_sigs = ()
+
+    def _load_fact(self, keepAll=True):
+        return mod_files.LoadFactory(keepAll, by_sig=self._load_sigs)
+
+    def _load_mod(self, mod_info, keepAll=True, **kwargs):
+        loadFactory = self._load_fact(keepAll=keepAll)
+        modFile = mod_files.ModFile(mod_info, loadFactory)
+        modFile.load(True, **kwargs)
+        return modFile
+
+class Mod_FullLoad(OneItemLink, _LoadLink):
     """Tests all record definitions against a specific mod"""
     _text = _(u'Test Full Record Definitions...')
     _help = _(u'Tests all record definitions against the selected mod')
+    _load_sigs = tuple(MreRecord.type_class) # all available (decoded) records
 
     def Execute(self):
         with balt.Progress(_(u'Loading:') + u'\n%s'
                 % self._selected_item.stail) as progress:
             print(MreRecord.type_class)
-            readClasses = MreRecord.type_class
-            print(readClasses.values())
-            loadFactory = mod_files.LoadFactory(False, *readClasses.values())
-            modFile = mod_files.ModFile(self._selected_info, loadFactory)
             try:
-                modFile.load(True, progress, catch_errors=False)
+                self._load_mod(self._selected_info, keepAll=False,
+                               progress=progress, catch_errors=False)
             except:
                 failed_msg = (_(u'File failed to verify using current record '
                                 u'definitions. The original traceback is '
                                 u'available in the BashBugDump.') + u'\n\n' +
                               traceback.format_exc())
                 self._showError(failed_msg, title=_(u'Verification Failed'))
-                bolt.deprint(u'exception:\n', traceback=True)
+                bolt.deprint(u'Exception loading %s:\n' % self._selected_info,
+                             traceback=True)
                 return
         self._showOk(_(u'File fully verified using current record '
                        u'definitions.'), title=_(u'Verification Succeeded'))
 
-class Mod_RecalcRecordCounts(OneItemLink):
+class Mod_RecalcRecordCounts(OneItemLink, _LoadLink):
     """Useful for debugging if any getNumRecords implementations are broken.
     Simply copy-paste the loop from below into ModFile.save to get output on BP
     save, then compare it to the MobBase-based output from this link."""
@@ -111,17 +122,14 @@ class Mod_RecalcRecordCounts(OneItemLink):
               u'and writes them to the BashBugDump.')
 
     def Execute(self):
-        loadFactory = mod_files.LoadFactory(True)
-        modFile = mod_files.ModFile(self._selected_info, loadFactory)
-        modFile.load(True)
-        for topType, block in sorted(modFile.tops.iteritems(),
-                key=lambda t: t[0]):
+        modFile = self._load_mod(self._selected_info, do_map_fids=False)
+        for top_grup_sig, block in dict_sort(modFile.tops):
             bolt.deprint(u'%s GRUP has %u records' % (
-                topType, block.getNumRecords()))
+                top_grup_sig.decode(u'ascii'), block.getNumRecords()))
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py
-class Mod_CreateDummyMasters(OneItemLink):
+class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
     """xEdit tool, makes dummy plugins for each missing master, for use if
     looking at a 'Filter' patch."""
     _text = _(u'Create Dummy Masters...')
@@ -152,7 +160,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             newInfo = bosh.ModInfo(self._selected_info.dir.join(master))
             to_refresh.append((master, newInfo, previous_master))
             previous_master = master
-            newFile = mod_files.ModFile(newInfo, mod_files.LoadFactory(True))
+            newFile = mod_files.ModFile(newInfo, self._load_fact())
             newFile.tes4.author = u'BASHED DUMMY'
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
@@ -1285,10 +1293,11 @@ class Mod_ScanDirty(ItemLink):
                           title=_(u'Dirty Edit Scan Results'), asDialog=False)
 
 #------------------------------------------------------------------------------
-class Mod_RemoveWorldOrphans(_NotObLink):
+class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
     """Remove orphaned cell records."""
     _text = _(u'Remove World Orphans')
     _help = _(u'Remove orphaned cell records')
+    _load_sigs = [b'CELL', b'WRLD']
 
     def Execute(self):
         message = _(u'In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.')
@@ -1301,11 +1310,9 @@ class Mod_RemoveWorldOrphans(_NotObLink):
                 continue
             #--Export
             with balt.Progress(_(u'Remove World Orphans')) as progress:
-                loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[
-                    b'CELL'], MreRecord.type_class[b'WRLD'])
-                modFile = mod_files.ModFile(fileInfo, loadFactory)
                 progress(0,_(u'Reading') + u' %s.' % fileInfo)
-                modFile.load(True,SubProgress(progress,0,0.7))
+                modFile = self._load_mod(fileInfo,
+                    progress=SubProgress(progress, 0, 0.7))
                 orphans = (b'WRLD' in modFile.tops) and modFile.tops[b'WRLD'].orphansSkipped
                 if orphans:
                     progress(0.1, _(u'Saving %s.') % fileInfo)
@@ -1409,10 +1416,11 @@ class Mod_CopyToMenu(MenuLink):
             self.append(_CopyToLink(plugin_ext))
 
 #------------------------------------------------------------------------------
-class Mod_DecompileAll(_NotObLink):
+class Mod_DecompileAll(_NotObLink, _LoadLink):
     """Removes effects of a "recompile all" on the mod."""
     _text = _(u'Decompile All')
     _help = _(u'Removes effects of a "recompile all" on the mod')
+    _load_sigs = [b'SCPT']
 
     def Execute(self):
         message = _(u"This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.")
@@ -1424,15 +1432,13 @@ class Mod_DecompileAll(_NotObLink):
                 self._showWarning(_(u'Skipping %s') % fileInfo,
                                   _(u'Decompile All'))
                 continue
-            loadFactory = mod_files.LoadFactory(True, MreRecord.type_class[b'SCPT'])
-            modFile = mod_files.ModFile(fileInfo, loadFactory)
-            modFile.load(True)
+            modFile = self._load_mod(fileInfo)
             badGenericLore = False
             removed = []
             id_text = {}
             scpt_grp = modFile.tops[b'SCPT']
-            if scpt_grp.getNumRecords(False):
-                loadFactory = mod_files.LoadFactory(False, MreRecord.type_class[b'SCPT'])
+            if scpt_grp.getNumRecords(includeGroups=False):
+                loadFactory = self._load_fact(keepAll=False)
                 for master in modFile.tes4.masters:
                     masterFile = mod_files.ModFile(bosh.modInfos[master], loadFactory)
                     masterFile.load(True)
@@ -1636,7 +1642,7 @@ class Mod_SetVersion(OneItemLink):
 # Import/Export submenus ------------------------------------------------------
 #------------------------------------------------------------------------------
 #--Import only
-from ..parsers import FidReplacer
+from ..parsers import FidReplacer, _AParser
 
 class Mod_Fids_Replace(OneItemLink):
     """Replace fids according to text file."""
@@ -1752,8 +1758,9 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
     noChange = _(u'No changes required.')
     supportedExts = {u'.csv'}
     progressTitle = continueInfo = continueKey = u'OVERRIDE'
+    _parser_class = _AParser
 
-    def _parser(self): raise AbstractError
+    def _parser(self): return self.__class__._parser_class()
     @property
     def _wildcard(self):
         if len(self.supportedExts) == 1: return u'*' + self.__class__.csvFile
@@ -1851,9 +1858,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
         u'file.') + u'\n\n' + _(u'See the Bash help file for more info.')
     continueKey = u'bash.actorLevels.import.continue'
     noChange = _(u'No relevant NPC levels to import.')
-
-    def _parser(self):
-        return ActorLevels()
+    _parser_class = ActorLevels
 
 #------------------------------------------------------------------------------
 from ..parsers import FactionRelations
@@ -1882,9 +1887,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
         u'See the Bash help file for more info.')
     continueKey = u'bash.factionRelations.import.continue'
     noChange = _(u'No relevant faction relations to import.')
-
-    def _parser(self):
-        return FactionRelations()
+    _parser_class = FactionRelations
 
 #------------------------------------------------------------------------------
 from ..parsers import ActorFactions
@@ -1912,9 +1915,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
         u'file.') + u'\n\n' + _(u'See the Bash help file for more info.')
     continueKey = u'bash.factionRanks.import.continue'
     noChange = _(u'No relevant faction ranks to import.')
-
-    def _parser(self):
-        return ActorFactions()
+    _parser_class = ActorFactions
 
     def _log(self, changed, fileName):
         log_out = u'\n'.join(
@@ -1925,7 +1926,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
 #------------------------------------------------------------------------------
 from ..parsers import ScriptText
 
-class Mod_Scripts_Export(_Mod_Export_Link):
+class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
     """Export scripts from mod to text file."""
     _text = _(u'Scripts...')
     _help = _(u'Export scripts from mod to text file')
@@ -1934,8 +1935,8 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         return ScriptText()
 
     def Execute(self): # overrides _Mod_Export_Link
-        fileName, fileInfo = next(self.iselected_pairs()) # first selected pair
-        defaultPath = bass.dirs[u'patches'].join(u'%s Exported Scripts' % fileName)
+        fileInfo = next(self.iselected_infos()) # first selected info
+        defaultPath = bass.dirs[u'patches'].join(u'%s Exported Scripts' % fileInfo)
         def OnOk():
             dialog.accept_modal()
             bass.settings[u'bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
@@ -1980,14 +1981,16 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         #--Export
         #try:
         scriptText = self._parser()
-        scriptText.readFromMod(fileInfo, fileName)
-        exportedScripts = scriptText.writeToText(
-            bass.settings[u'bash.mods.export.skip'], textDir,
-            bass.settings[u'bash.mods.export.deprefix'], fileName,
-            bass.settings[u'bash.mods.export.skipcomments'])
+        scriptText.readFromMod(fileInfo)
+        with balt.Progress(_(u'Export Scripts')) as progress:
+            exportedScripts = scriptText.export_scripts(textDir, progress,
+                bass.settings[u'bash.mods.export.skip'],
+                bass.settings[u'bash.mods.export.deprefix'],
+                bass.settings[u'bash.mods.export.skipcomments'])
         #finally:
-        self._showLog(exportedScripts, title=_(u'Export Scripts'),
-                      asDialog=True)
+        msg = (_(u'Exported %d scripts from %s:') + u'\n%s') % (
+            len(exportedScripts), fileInfo, u'\n'.join(exportedScripts))
+        self._showLog(msg, title=_(u'Export Scripts'), asDialog=True)
 
 class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file."""
@@ -1998,9 +2001,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         u'scripts and is not reversible (except by restoring from backup)!')
     continueKey = u'bash.scripts.import.continue'
     progressTitle = _(u'Import Scripts')
-
-    def _parser(self):
-        return ScriptText()
+    _parser_class = ScriptText
 
     def Execute(self):
         if not self._askContinueImport(): return
@@ -2019,8 +2020,9 @@ class Mod_Scripts_Import(_Mod_Import_Link):
                    )
         makeNew = self._askYes(message, _(u'Import Scripts'),
                                questionIcon=True)
-        scriptText = self._parser()
-        scriptText.readFromText(textDir.s, self._selected_info)
+        scriptText = self._parser() # type: ScriptText
+        with balt.Progress(_(u'Import Scripts')) as progress:
+            scriptText.read_script_folder(textDir, progress)
         changed, added = scriptText.writeToMod(self._selected_info, makeNew)
         #--Log
         if not (len(changed) or len(added)):
@@ -2074,9 +2076,7 @@ class Mod_Stats_Import(_Mod_Import_Link):
                      u'existing stats and is not reversible!')
     continueKey = u'bash.stats.import.continue'
     noChange = _(u'No relevant stats to import.')
-
-    def _parser(self):
-        return ItemStats()
+    _parser_class = ItemStats
 
     def _log(self, changed, fileName):
         buff = io.StringIO()
@@ -2110,9 +2110,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
     continueKey = u'bash.prices.import.continue'
     noChange = _(u'No relevant prices to import.')
     supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
-
-    def _parser(self):
-        return ItemPrices()
+    _parser_class = ItemPrices
 
     def _log(self, changed, fileName):
         buff = io.StringIO()
@@ -2148,9 +2146,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
         u'not reversible!')
     continueKey = u'bash.SigilStone.import.continue'
     noChange = _(u'No relevant Sigil Stone details to import.')
-
-    def _parser(self):
-        return SigilStoneDetails()
+    _parser_class = SigilStoneDetails
 
     def _log(self, changed, fileName):
         buff = io.StringIO()
@@ -2238,9 +2234,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
                      u'form ids and is not reversible!')
     continueKey = u'bash.Ingredient.import.continue'
     noChange = _(u'No relevant Ingredient details to import.')
-
-    def _parser(self):
-        return IngredientDetails()
+    _parser_class = IngredientDetails
 
     def _log(self, changed, fileName):
         buff = io.StringIO()
@@ -2275,8 +2269,9 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
     _text = _(u'Editor Ids...')
     _help = _(u'Import faction editor ids from text file')
 
-    def _parser(self):
-        return EditorIds()
+    def _parser(self, questionableEidsSet=None, badEidsList=None):
+        return EditorIds(questionableEidsSet=questionableEidsSet,
+                         badEidsList=badEidsList)
 
     def Execute(self):
         if not self._askContinueImport(): return
@@ -2296,9 +2291,9 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         badEidsList = []
         try:
             with balt.Progress(self.__class__.progressTitle) as progress:
-                editorIds = self._parser()
+                editorIds = self._parser(questionableEidsSet, badEidsList)
                 progress(0.1, _(u'Reading') + u' %s.' % textName)
-                editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
+                editorIds.readFromText(textPath)
                 progress(0.2, _(u'Applying to %s.') % self._selected_item)
                 changed = editorIds.writeToMod(self._selected_info)
                 progress(1.0,_(u'Done.'))

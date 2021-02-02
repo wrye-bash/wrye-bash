@@ -3408,7 +3408,7 @@ def initOptions(bashIni):
                 defaultOptions[readKey.lower()] = (defaultKey, settingsDict, valueType)
         unknownSettings = {} ##: print those
         for section in bashIni.sections():
-            # retrieving ini settings is case insensitive - key: lowecase/bytes
+            # retrieving ini settings is case insensitive - key: lowecase
             for key, value in bashIni.items(section):
                 usedKey, usedSettings, settingType = defaultOptions.get(
                     key, (key[1:], unknownSettings, unicode))
@@ -3422,7 +3422,7 @@ def initOptions(bashIni):
                     if value == u'.': continue
                     value = bashIni.getboolean(section,key)
                 else:
-                    value = settingType(value) # py2 decodes using ascii here
+                    value = settingType(value)
                 comp_val = value
                 if settingType is unicode:
                     compDefaultValue = compDefaultValue.lower()

@@ -89,41 +89,51 @@ class ModError(FileError):
     """Mod Error: File is corrupted."""
     pass
 
+def _join_sigs(debug_str):
+    if isinstance(debug_str, (tuple, list)):
+        debug_str = u'.'.join(
+            u'%s' % (s.decode(u'ascii') if type(s) is bytes else s) for s
+            in debug_str)
+    return debug_str
+
 class ModReadError(ModError):
     """Mod Error: Attempt to read outside of buffer."""
-    def __init__(self, in_name, record_sig, try_pos, max_pos):
-        ## type: (Path, bytes, int, int) -> None
+    def __init__(self, in_name, debug_str, try_pos, max_pos):
+        ## type: (Path, unicode|bytes, int, int) -> None
+        debug_str = _join_sigs(debug_str)
         if try_pos < 0:
             message = (u'%s: Attempted to read before (%s) beginning of '
-                       u'file/buffer.' % (record_sig, try_pos))
+                       u'file/buffer.' % (debug_str, try_pos))
         else:
             message = (u'%s: Attempted to read past (%s) end (%s) of '
-                       u'file/buffer.' % (record_sig, try_pos, max_pos))
+                       u'file/buffer.' % (debug_str, try_pos, max_pos))
         super(ModReadError, self).__init__(in_name.s, message)
 
 class ModSizeError(ModError):
     """Mod Error: Record/subrecord has wrong size."""
-    def __init__(self, in_name, record_sig, expected_sizes, actual_size):
+    def __init__(self, in_name, debug_str, expected_sizes, actual_size):
         """Indicates that a record or subrecord has the wrong size.
 
         :type in_name: bolt.Path
-        :type record_sig: bytes
+        :type debug_str: unicode|bytes|tuple[unicode|bytes]
         :type expected_sizes: tuple[int]
         :type actual_size: int"""
+        debug_str = _join_sigs(debug_str)
         message_form = (u'%s: Expected one of sizes [%s], but got %u' % (
-            record_sig, u', '.join([u'%s' % x for x in expected_sizes]),
+            debug_str, u', '.join([u'%s' % x for x in expected_sizes]),
             actual_size))
         super(ModSizeError, self).__init__(in_name.s, message_form)
 
 class ModFidMismatchError(ModError):
     """Mod Error: Two FormIDs that should be equal are not."""
-    def __init__(self, in_name, record_sig, fid_expected, fid_actual):
+    def __init__(self, in_name, debug_str, fid_expected, fid_actual):
+        debug_str = _join_sigs(debug_str)
         message_form = (u'%s: FormIDs do not match - expected %r but got %r'
-                        % (record_sig, fid_expected, fid_actual))
+                        % (debug_str, fid_expected, fid_actual))
         super(ModFidMismatchError, self).__init__(in_name.s, message_form)
 
 class ModSigMismatchError(ModError):
-    """Mod Error: A record is getting overriden by a record with a different
+    """Mod Error: A record is getting overridden by a record with a different
     signature. This is undefined behavior."""
     def __init__(self, in_name, record):
         message_form = (u'%r is likely overriding or being overwritten by a '

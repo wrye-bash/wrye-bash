@@ -35,6 +35,7 @@ from .layouts import HBoxedLayout, HLayout, LayoutOptions, Spacer, Stretch, \
 from .multi_choices import ListBox
 from .text_components import Label, HyperlinkLabel
 from .top_level_windows import _APageComponent, PanelWin
+from ..bolt import dict_sort
 
 class DoubleListBox(PanelWin):
     """A combination of two ListBoxes and left/right buttons to move items
@@ -235,16 +236,15 @@ class TreePanel(_APageComponent):
         :param page_descriptions: A dict mapping page names to descriptions."""
         super(TreePanel, self).__init__(parent)
         self._all_leaf_pages = []
-        for page_name, page_val in sorted(tree_geometry.iteritems(),
-                key=lambda i: i[0]):
+        for page_name, page_val in dict_sort(tree_geometry):
             page_desc = page_descriptions.get(page_name, u'')
             if isinstance(page_val, dict):
                 # This is not a leaf, add a link page and then the subpages
                 link_page = self._LinkPage(self, page_desc, self.select_page,
                                            page_name, page_val)
                 self.add_page(link_page, page_name)
-                for subpage_name, subpage_val in sorted(page_val.iteritems(),
-                        key=lambda (k, v): k):
+                for subpage_name in sorted(page_val):
+                    subpage_val = page_val[subpage_name]
                     if subpage_val.should_appear():
                         new_subpage = subpage_val(self, page_descriptions.get(
                             u'%s/%s' % (page_name, subpage_name), u''))

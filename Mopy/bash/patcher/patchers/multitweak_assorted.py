@@ -28,11 +28,9 @@ import random
 import re
 # Internal
 from ... import bush, load_order
-from ...brec import MreRecord  # yuck, see usage below
 from ...bolt import GPath, deprint, floats_equal
-from ...mod_files import LoadFactory, ModFile  # yuck, see usage below
 from ...patcher.patchers.base import MultiTweakItem, MultiTweaker, \
-    CustomChoiceTweak
+    CustomChoiceTweak, IndexingTweak
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):
@@ -868,7 +866,7 @@ class AssortedTweak_AllWaterDamages(MultiTweakItem):
         record.flags.causesDamage = True
 
 #------------------------------------------------------------------------------
-class AssortedTweak_AbsorbSummonFix(MultiTweakItem):
+class AssortedTweak_AbsorbSummonFix(IndexingTweak,MultiTweakItem):
     """Adds the 'No Absorb/Reflect' flag to summoning spells."""
     tweak_read_classes = b'SPEL',
     tweak_name = _(u'Magic: Summoning Absorption Fix')
@@ -878,15 +876,13 @@ class AssortedTweak_AbsorbSummonFix(MultiTweakItem):
     tweak_log_msg = _(u'Spells fixed: %(total_changed)d')
     default_enabled = True
     _look_up_mgef = None
+    _index_sigs = [b'MGEF']
 
     def prepare_for_tweaking(self, patch_file):
         ##: Same HACK as in NamesTweak_Scrolls.prepare_for_tweaking
         self._look_up_mgef = id_mgef = {}
-        mgef_factory = LoadFactory(False, MreRecord.type_class[b'MGEF'])
         for pl_path in patch_file.loadMods:
-            ench_plugin = ModFile(patch_file.p_file_minfos[pl_path],
-                                  mgef_factory)
-            ench_plugin.load(do_unpack=True)
+            ench_plugin = self._mod_file_read(patch_file.p_file_minfos[pl_path])
             for record in ench_plugin.tops[b'MGEF'].getActiveRecords():
                 id_mgef[record.fid] = record
 

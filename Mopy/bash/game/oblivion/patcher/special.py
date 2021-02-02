@@ -27,12 +27,12 @@ import re
 
 from collections import Counter, defaultdict
 from .... import bush, load_order
-from ....bolt import GPath, CsvReader, deprint
+from ....bolt import GPath, deprint
 from ....brec import MreRecord, RecHeader, null4
-from ....mod_files import ModFile, LoadFactory
+from ....parsers import _HandleAliases
 from ....patcher import getPatchesPath
-from ....patcher.base import Patcher, Abstract_Patcher, AListPatcher
-from ....patcher.patchers.base import ListPatcher
+from ....patcher.base import Patcher, Abstract_Patcher
+from ....patcher.patchers.base import ListPatcher, ModLoader
 
 __all__ = [u'CoblCatalogsPatcher', u'CoblExhaustionPatcher',
            u'MorphFactionsPatcher', u'SEWorldTestsPatcher']
@@ -58,7 +58,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         [_(u"Update COBL's catalogs of alchemical ingredients and effects."),
          _(u'Will only run if Cobl Main.esm is loaded.')])
     _config_key = u'AlchemicalCatalogs'
-    _read_write_records = (b'INGR',)
+    _read_sigs = (b'INGR',)
 
     @classmethod
     def gui_cls_vars(cls):
@@ -70,6 +70,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         self.isActive = (_cobl_main in p_file.loadSet)
         self.id_ingred = {}
 
+    @property
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
         return (b'BOOK',) if self.isActive else ()
@@ -176,7 +177,12 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
 
 #------------------------------------------------------------------------------
-class _ExSpecialList(_ExSpecial, AListPatcher):
+class _ExSpecialList(_HandleAliases, ListPatcher, _ExSpecial):
+
+    def __init__(self, p_name, p_file, p_sources):
+        super(_ExSpecialList, self).__init__(p_file.pfile_aliases)
+        ListPatcher.__init__(self, p_name, p_file, p_sources)
+        self.id_info = {}
 
     @classmethod
     def gui_cls_vars(cls):
@@ -184,7 +190,7 @@ class _ExSpecialList(_ExSpecial, AListPatcher):
         more = {u'canAutoItemCheck': False, u'_csv_key': cls._csv_key}
         return cls_vars.update(more) or cls_vars
 
-class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
+class CoblExhaustionPatcher(_ExSpecialList):
     """Modifies most Greater power to work with Cobl's power exhaustion
     feature."""
     patcher_name = _(u'Cobl Exhaustion')
@@ -193,13 +199,13 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
          _(u'Will only run if Cobl Main v1.66 (or higher) is active.')])
     _csv_key = u'Exhaust'
     _config_key = u'CoblExhaustion'
-    _read_write_records = (b'SPEL',)
+    _read_sigs = (b'SPEL',)
 
     def __init__(self, p_name, p_file, p_sources):
         super(CoblExhaustionPatcher, self).__init__(p_name, p_file, p_sources)
         self.isActive |= (_cobl_main in p_file.loadSet and
             self.patchFile.p_file_minfos.getVersionFloat(_cobl_main) > 1.65)
-        self.id_exhaustion = {}
+        self.id_exhaustion = self.id_info
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
@@ -207,21 +213,9 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
         for srcMod in load_order.get_ordered(count):
             log(u'  * %s: %d' % (srcMod, count[srcMod]))
 
-    def readFromText(self, textPath):
-        """Imports type_id_name from specified text file."""
-        aliases = self.patchFile.pfile_aliases
-        id_exhaustion = self.id_exhaustion
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                try:
-                    if fields[1][:2] != u'0x': # may raise IndexError
-                        continue
-                    mod, objectIndex, eid, time = fields[:4] # may raise VE
-                    mod = GPath(mod)
-                    longid = (aliases.get(mod, mod), int(objectIndex[2:], 16))
-                    id_exhaustion[longid] = int(time)
-                except (IndexError, ValueError):
-                    pass #ValueError: Either we couldn't unpack or int() failed
+    def _parse_line(self, csv_fields): # mod, objectIndex, time
+        self.id_info[self._coerce_fid(csv_fields[0], csv_fields[1])] = int(
+            csv_fields[3])
 
     def initData(self,progress):
         """Get names from source files."""
@@ -233,7 +227,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
                 u'%s is no longer in patches set' % srcFile, traceback=True)
             progress.plus()
 
-    def scanModFile(self,modFile,progress):
+    def scanModFile(self,modFile,progress): # if b'SPEL' not in modFile.tops: return
         patchRecords = self.patchFile.tops[b'SPEL']
         for record in modFile.tops[b'SPEL'].getActiveRecords():
             if not record.spellType == 2: continue
@@ -280,7 +274,7 @@ class CoblExhaustionPatcher(ListPatcher, _ExSpecialList):
         self._pLog(log, count)
 
 #------------------------------------------------------------------------------
-class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
+class MorphFactionsPatcher(_ExSpecialList):
     """Mark factions that player can acquire while morphing."""
     patcher_name = _(u'Morph Factions')
     patcher_desc = u'\n\n'.join(
@@ -289,7 +283,7 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     _csv_key = u'MFact'
     _config_key = u'MFactMarker'
-    _read_write_records = (b'FACT',)
+    _read_sigs = (b'FACT',)
 
     def _pLog(self, log, changed):
         log.setHeader(u'= ' + self._patcher_name)
@@ -298,26 +292,18 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
         for mod in load_order.get_ordered(changed):
             log(u'* %s: %d' % (mod, changed[mod]))
 
-    def readFromText(self, textPath):
-        """Imports id_info from specified text file."""
-        aliases = self.patchFile.pfile_aliases
-        id_info = self.id_info
-        with CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) < 6 or fields[1][:2] != u'0x':
-                    continue
-                mod, objectIndex = fields[:2]
-                mod = GPath(mod)
-                longid = (aliases.get(mod, mod), int(objectIndex, 0))
-                morphName = fields[4].strip()
-                rankName = fields[5].strip()
-                if not morphName: continue
-                if not rankName: rankName = _(u'Member')
-                id_info[longid] = (morphName, rankName)
+    def _parse_line(self, csv_fields):
+        # type: # (list[unicode]) -> tuple[object] | None
+        mod, objectIndex = csv_fields[0], csv_fields[1]
+        morphName = csv_fields[4].strip()
+        if not morphName:
+            return None # caller unpacks -> TypeError (should not happen often)
+        rankName = csv_fields[5].strip() or _(u'Member')
+        self.id_info[self._coerce_fid(mod, objectIndex)] = morphName, rankName
 
     def __init__(self, p_name, p_file, p_sources):
         super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
-        self.id_info = {} #--Morphable factions keyed by fid
+        # self.id_info #--Morphable factions keyed by fid
         self.isActive &= _cobl_main in p_file.loadSet
         self.mFactLong = (_cobl_main, 0x33FB)
 
@@ -393,14 +379,14 @@ class MorphFactionsPatcher(ListPatcher, _ExSpecialList):
 
 #------------------------------------------------------------------------------
 _ob_path = GPath(bush.game.master_file)
-class SEWorldTestsPatcher(_ExSpecial, Patcher):
+class SEWorldTestsPatcher(_ExSpecial, ModLoader):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     patcher_name = _(u'SEWorld Tests')
     patcher_desc = _(u"Suspends Cyrodiil quests while in Shivering Isles. "
                      u"I.e. re-instates GetPlayerInSEWorld tests as "
                      u"necessary.")
     _config_key = u'SEWorldEnforcer'
-    _read_write_records = (b'QUST',)
+    _read_sigs = (b'QUST',)
 
     @classmethod
     def gui_cls_vars(cls):
@@ -411,10 +397,8 @@ class SEWorldTestsPatcher(_ExSpecial, Patcher):
         super(SEWorldTestsPatcher, self).__init__(p_name, p_file)
         self.cyrodiilQuests = set()
         if _ob_path in p_file.loadSet:
-            loadFactory = LoadFactory(False, MreRecord.type_class[b'QUST'])
             modInfo = self.patchFile.p_file_minfos[_ob_path]
-            modFile = ModFile(modInfo,loadFactory)
-            modFile.load(True)
+            modFile = self._mod_file_read(modInfo) # read Oblivion quests
             for record in modFile.tops[b'QUST'].getActiveRecords():
                 for condition in record.conditions:
                     if condition.ifunc == 365 and condition.compValue == 0:

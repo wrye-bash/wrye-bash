@@ -36,12 +36,11 @@ from collections import defaultdict, Counter
 from itertools import izip
 
 # Internal
-from .base import MultiTweakItem, ListPatcher
+from .base import MultiTweakItem, ListPatcher, ModLoader
 from ... import bosh, bush
 from ...bolt import GPath, deprint
-from ...brec import MreRecord, MelObject, strFid
+from ...brec import MelObject, strFid
 from ...exception import BoltError
-from ...mod_files import ModFile, LoadFactory
 from ...patcher.base import AMultiTweaker
 
 # Utilities & Constants -------------------------------------------------------
@@ -298,11 +297,11 @@ class RaceTweaker_SexlessHairs(_ARaceTweak):
 #------------------------------------------------------------------------------
 # Race Records ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
+class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
     """Race patcher - we inherit from AMultiTweaker to use tweak_instances."""
     patcher_group = u'Special'
     patcher_order = 40
-    _read_write_records = (b'RACE', b'EYES', b'HAIR', b'NPC_')
+    _read_sigs = (b'RACE', b'EYES', b'HAIR', b'NPC_')
     _tweak_classes = {
         RaceTweaker_BiggerOrcsAndNords, RaceTweaker_MergeSimilarRaceHairs,
         RaceTweaker_MergeSimilarRaceEyes, RaceTweaker_PlayableEyes,
@@ -342,17 +341,16 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
         # patcher will still run and blow up in scanModFile otherwise
         self._tweak_dict = t_dict = defaultdict(lambda: ([], []))
         for tweak in self.enabled_tweaks: # type: MultiTweakItem
-            for read_sig in tweak.getReadClasses():
+            for read_sig in tweak.tweak_read_classes:
                 t_dict[read_sig][tweak.supports_pooling].append(tweak)
         if not self.isActive or not self.srcs: return
-        loadFactory = LoadFactory(False,MreRecord.type_class[b'RACE'])
+        self.loadFactory = self._patcher_read_fact(by_sig=[b'RACE'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         for index,srcMod in enumerate(self.srcs):
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
+            srcFile = self._mod_file_read(srcInfo)
             bashTags = srcInfo.getBashTags()
             if b'RACE' not in srcFile.tops: continue
             self.tempRaceData = {} #so as not to carry anything over!
@@ -427,8 +425,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher):
                     masterFile = cachedMasters[master]
                 else:
                     masterInfo = bosh.modInfos[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
+                    masterFile = self._mod_file_read(masterInfo)
                     if b'RACE' not in masterFile.tops: continue
                     cachedMasters[master] = masterFile
                 for race in masterFile.tops[b'RACE'].getActiveRecords():

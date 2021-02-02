@@ -24,9 +24,8 @@
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
 from __future__ import print_function
-
-import re
 from collections import defaultdict
+from itertools import chain
 
 from . import bolt, bush, env, load_order
 from .bolt import deprint, GPath, SubProgress, structs_cache, struct_error
@@ -75,26 +74,35 @@ class MasterMap(object):
 
 class LoadFactory(object):
     """Factory for mod representation objects."""
-    def __init__(self,keepAll,*recClasses):
+    def __init__(self, keepAll, by_sig=(), generic=()): # PY3 keyword args
+        """Pass a collection of signatures to load - either by their
+        respective type or using generic MreRecord.
+        :param by_sig: pass an iterable of top group signatures to load
+        :type by_sig: Iterable[bytes]
+        :param generic: top group signatures to load as generic MreRecord
+        :type generic: Iterable[bytes]
+        """
         self.keepAll = keepAll
         self.recTypes = set()
         self.topTypes = set()
         self.type_class = {}
         self.cellType_class = {}
-        addClass = self.addClass
+        recClasses = chain(generic, (MreRecord.type_class[x] for x in by_sig))
         for recClass in recClasses:
-            addClass(recClass)
+            self.addClass(recClass)
 
     def addClass(self, recClass, __cell_rec_sigs=frozenset([b'WRLD', b'ROAD',
             b'CELL', b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'])):
         """Adds specified class."""
-        if isinstance(recClass, unicode):
-            raise RuntimeError(u'Do not pass strings to addClass!')
-        elif isinstance(recClass, bytes):
+        if type(recClass) is bytes:
             recType = recClass
             recClass = MreRecord
         else:
-            recType = recClass.rec_sig
+            try:
+                recType = recClass.rec_sig
+            except AttributeError:
+                raise ValueError(u'addClass: bytes or MreRecord expected '
+                                 u'- got: %r!' % recClass)
         #--Don't replace complex class with default (MreRecord) class
         if recType in self.type_class and recClass == MreRecord:
             return
@@ -177,13 +185,12 @@ class _RecGroupDict(dict):
         self[top_grup_sig].setChanged()
         return self[top_grup_sig]
 
-
 class ModFile(object):
     """Plugin file representation. Will load only the top record types
     specified in its LoadFactory."""
     def __init__(self, fileInfo,loadFactory=None):
         self.fileInfo = fileInfo
-        self.loadFactory = loadFactory or LoadFactory(True)
+        self.loadFactory = loadFactory or LoadFactory(True) ##: trace
         #--Variables to load
         self.tes4 = bush.game.plugin_header_class(RecHeader())
         self.tes4.setChanged()
@@ -193,7 +200,7 @@ class ModFile(object):
         self.longFids = False
 
     def load(self, do_unpack=False, progress=None, loadStrings=True,
-             catch_errors=True):
+             catch_errors=True, do_map_fids=True): # TODO: let it blow?
         """Load file."""
         from . import bosh
         progress = progress or bolt.Progress()
@@ -265,7 +272,7 @@ class ModFile(object):
                         raise
                 subProgress(insTell())
         # Done reading - convert to long FormIDs at the IO boundary
-        self._convert_fids(to_long=True)
+        if do_map_fids: self._convert_fids(to_long=True)
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""

@@ -100,8 +100,8 @@ class NehrimGameInfo(OblivionGameInfo):
             MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, MreGmst,
             MreRefr, MreRoad, MreWrld, MreDial, MreInfo, MreLand, MrePgrd,
         )
-        cls.readClasses = (MreMgef, MreScpt,)
-        cls.writeClasses = (MreMgef,)
+        cls.readClasses = (b'MGEF', b'SCPT')
+        cls.writeClasses = (b'MGEF',)
         # Setting RecordHeader class variables - Oblivion is special
         header_type = brec.RecordHeader
         header_type.rec_header_size = 20

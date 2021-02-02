@@ -21,8 +21,6 @@
 #
 # =============================================================================
 from .special import _ExSpecial ##: ugh
-from ....brec import MreRecord
-from ....mod_files import ModFile, LoadFactory
 from ....patcher.patchers.base import ImportPatcher
 
 __all__ = [u'ImportRoadsPatcher']
@@ -35,7 +33,7 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
     _config_key = u'RoadImporter'
 
     logMsg = u'\n=== ' + _(u'Worlds Patched')
-    _read_write_records = (b'CELL', b'WRLD', b'ROAD')
+    _read_sigs = (b'CELL', b'WRLD', b'ROAD')
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportRoadsPatcher, self).__init__(p_name, p_file, p_sources)
@@ -44,13 +42,11 @@ class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
     def initData(self,progress):
         """Get cells from source files."""
         if not self.isActive: return
-        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x in
-                                           self._read_write_records])
+        self.loadFactory = self._patcher_read_fact()
         for srcMod in self.srcs:
             if srcMod not in self.patchFile.p_file_minfos: continue
             srcInfo = self.patchFile.p_file_minfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
+            srcFile = self._mod_file_read(srcInfo)
             for worldBlock in srcFile.tops[b'WRLD'].worldBlocks:
                 if worldBlock.road:
                     worldId = worldBlock.world.fid

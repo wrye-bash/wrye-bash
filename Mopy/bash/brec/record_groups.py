@@ -55,6 +55,7 @@ class MobBase(object):
             self.label, self.groupType, self.stamp = (
                 header.flags1, header.fid, header.flags2)
         self.debug = False
+        # binary blob of the whole record group minus its GRUP header ##: rename
         self.data = None
         self.changed = False
         self.numRecords = -1
@@ -68,7 +69,7 @@ class MobBase(object):
         #--Read, but don't analyze.
         if not do_unpack:
             self.data = ins.read(self.size - RecordHeader.rec_header_size,
-                                 type(self))
+                                 type(self)) # PY3: bytes?
         #--Analyze ins.
         elif ins is not None:
             self._load_rec_group(ins,
@@ -103,18 +104,19 @@ class MobBase(object):
             return self.numRecords
         else:
             numSubRecords = 0
+            num_groups = 1 # the top level grup itself - not included in data
             reader = self.getReader()
             errLabel = group_types[self.groupType]
             readerAtEnd = reader.atEnd
             readerRecHeader = reader.unpackRecHeader
             readerSeek = reader.seek
-            while not readerAtEnd(reader.size,errLabel):
+            while not readerAtEnd(reader.size, errLabel):
                 header = readerRecHeader()
-                recType,size = header.recType,header.size
-                if recType == 'GRUP': size = 0
-                readerSeek(size,1)
-                numSubRecords += 1
-            self.numRecords = numSubRecords + includeGroups
+                if header.recType != b'GRUP':
+                    readerSeek(header.size, 1)
+                    numSubRecords += 1
+                else: num_groups += 1
+            self.numRecords = numSubRecords + includeGroups * num_groups
             return self.numRecords
 
     def dump(self,out):
@@ -123,7 +125,7 @@ class MobBase(object):
             raise AbstractError
         if self.numRecords == -1:
             self.getNumRecords()
-        if self.numRecords > 0:
+        if self.numRecords > 0: ##: trivially True for MobBase with includeGroups=True
             self.header.size = self.size
             out.write(self.header.pack_head())
             out.write(self.data)
@@ -149,8 +151,8 @@ class MobBase(object):
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
         toLong should be True if converting to long format or False if
-        converting to short format."""
-        raise AbstractError(u'convertFids not implemented')
+        converting to short format. Base implementation does nothing as its
+        records are not unpacked."""
 
     def indexRecords(self):
         """Indexes records by fid."""
@@ -232,7 +234,7 @@ class MobObjects(MobBase):
         return [record for record in self.records if not record.flags1.ignored]
 
     def getNumRecords(self,includeGroups=True):
-        """Returns number of records, including self."""
+        """Returns number of records, including self - if empty return 0."""
         numRecords = len(self.records)
         if numRecords: numRecords += includeGroups #--Count self
         self.numRecords = numRecords
@@ -885,7 +887,7 @@ class MobCell(MobBase):
     def getBsb(self):
         """Returns tesfile block and sub-block indices for cells in this group.
         For interior cell, bsb is (blockNum,subBlockNum). For exterior cell,
-        bsb is ((blockY,blockX),(subblockY,subblockX))."""
+        bsb is ((blockY,blockX),(subblockY,subblockX)). Needs short fids!"""
         cell = self.cell
         #--Interior cell
         if cell.flags.isInterior:
@@ -1123,14 +1125,6 @@ class MobCells(MobBase):
         self.cellBlocks.remove(cell)
         del self.id_cellBlock[cell.fid]
 
-    def getUsedBlocks(self):
-        """Returns a set of blocks that exist in this group."""
-        return {x.getBsb()[0] for x in self.cellBlocks}
-
-    def getUsedSubblocks(self):
-        """Returns a set of block/sub-blocks that exist in this group."""
-        return {x.getBsb() for x in self.cellBlocks}
-
     def getBsbSizes(self):
         """Returns the total size of the block, but also returns a
         dictionary containing the sizes of the individual block,subblocks."""
@@ -1178,8 +1172,9 @@ class MobCells(MobBase):
         """Returns number of records, including self and all children."""
         count = sum(x.getNumRecords(includeGroups) for x in self.cellBlocks)
         if count and includeGroups:
-            count += 1 + len(self.getUsedBlocks()) + len(
-                self.getUsedSubblocks())
+            blocks_bsbs = {x2.getBsb() for x2 in self.cellBlocks} ##: needs short fids !!
+            # 1 GRUP header for every cellBlock and one for each separate (?) subblock
+            count += 1 + len(blocks_bsbs) + len({x1[0] for x1 in blocks_bsbs})
         return count
 
     #--Fid manipulation, record filtering ----------------------------------
@@ -1471,7 +1466,7 @@ class MobWorld(MobCells):
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self and all children."""
         if not self.changed:
-            return super(MobCells, self).getNumRecords() ##: includeGroups?
+            return super(MobCells, self).getNumRecords(includeGroups) ##: TTT?
         count = 1 # self.world, always present
         count += bool(self.road)
         if self.worldCellBlock:

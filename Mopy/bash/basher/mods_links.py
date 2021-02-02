@@ -31,7 +31,7 @@ from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
-from ..bolt import CsvReader, GPath
+from ..bolt import CsvReader, GPath, dict_sort
 from ..gui import BusyCursor
 
 __all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
@@ -386,8 +386,7 @@ class Mods_ExportBashTags(ItemLink):
         plugins_exported = 0
         with exp_path.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(u'"Plugin","Tags"\n')
-            for pl_name, p in sorted(bosh.modInfos.iteritems(),
-                    key=lambda i: i[0]):
+            for pl_name, p in dict_sort(bosh.modInfos):
                 curr_tags = p.getBashTags()
                 if curr_tags:
                     out.write(u'"%s","%s"\n' % (

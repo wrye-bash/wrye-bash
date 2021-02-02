@@ -209,10 +209,10 @@ class MreLeveledList(MreLeveledListBase):
 
     class MelLevListLvld(MelUInt8):
         """Subclass to support alternate format."""
-        def load_mel(self, record, ins, sub_type, size_, readId):
+        def load_mel(self, record, ins, sub_type, size_, *debug_strs):
             super(MreLeveledList.MelLevListLvld, self).load_mel(record, ins,
                                                                 sub_type,
-                                                                size_, readId)
+                                                                size_, *debug_strs)
             if record.chanceNone > 127:
                 record.flags.calcFromAllLevels = True
                 record.chanceNone &= 127
@@ -618,7 +618,7 @@ class MelBptdParts(MelGroups):
     def getSlotsUsed(self):
         return (u'_had_bptn',) + super(MelBptdParts, self).getSlotsUsed()
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         if sub_type == b'BPTN':
             # We hit a BPTN, this is a new body part
             record._had_bptn = True
@@ -633,7 +633,7 @@ class MelBptdParts(MelGroups):
                 self._new_object(record)
         # Finally, delegate to the correct subrecord loader
         super(MelBptdParts, self).load_mel(record, ins, sub_type, size_,
-                                           readId)
+                                           *debug_strs)
 
     def dumpData(self, record, out):
         for bp_target in getattr(record, self.attr):
@@ -2997,15 +2997,15 @@ class MreWatr(MelRecord):
         """Older subrecord consisting of a truncated DNAM with the damage short
         appended at the end. Read it in, but only dump out the damage - let
         DNAM handle the rest via duplicate attrs."""
-        def load_mel(self, record, ins, sub_type, size_, readId,
-                     __unpacker=structs_cache[u'H'].unpack):
+        def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+            __unpacker=structs_cache[u'H'].unpack
             if size_ == 186:
                 super(MreWatr.MelWatrData, self).load_mel(
-                    record, ins, sub_type, size_, readId)
+                    record, ins, sub_type, size_, *debug_strs)
             elif size_ == 2:
-                record.damage = ins.unpack(__unpacker, size_, readId)[0]
+                record.damage = ins.unpack(__unpacker, size_, *debug_strs)[0]
             else:
-                raise ModSizeError(ins.inName, readId, (186, 2), size_)
+                raise ModSizeError(ins.inName, debug_strs, (186, 2), size_)
 
         def pack_subrecord_data(self, record,
                 __packer=structs_cache[u'H'].pack):

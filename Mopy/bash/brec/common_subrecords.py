@@ -157,8 +157,8 @@ class MelCtda(MelUnion):
     # Nesting workarounds -----------------------------------------------------
     # To avoid having to nest MelUnions too deeply - hurts performance even
     # further (see below) plus grows exponentially
-    def load_mel(self, record, ins, sub_type, size_, readId):
-        super(MelCtda, self).load_mel(record, ins, sub_type, size_, readId)
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super(MelCtda, self).load_mel(record, ins, sub_type, size_, *debug_strs)
         # See _build_struct comments above for an explanation of this
         record.compValue = struct_unpack(u'fI'[record.operFlag.use_global],
                                          record.compValue)[0]
@@ -222,8 +222,8 @@ class MelCtdaFo3(MelCtda):
         self._ignore_ifuncs = ({106, 285} if bush.game.fsName == u'FalloutNV'
                                else set()) # 106 == IsFacingUp, 285 == IsLeftUp
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
-        super(MelCtdaFo3, self).load_mel(record, ins, sub_type, size_, readId)
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super(MelCtdaFo3, self).load_mel(record, ins, sub_type, size_, *debug_strs)
         if record.ifunc == self._getvatsvalue_ifunc:
             record.param2 = struct_unpack(self._vats_param2_fmt[record.param1],
                                           record.param2)[0]
@@ -448,13 +448,13 @@ class MelRaceParts(MelNull):
         for element in self._indx_to_loader.itervalues():
             element.setDefault(record)
 
-    def load_mel(self, record, ins, sub_type, size_, readId,
-                 __unpacker=_int_unpacker):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        __unpacker=_int_unpacker # PY3: keyword only search for __unpacker
         if sub_type == 'INDX':
-            self._last_indx = ins.unpack(__unpacker, size_, readId)[0]
+            self._last_indx = ins.unpack(__unpacker, size_, *debug_strs)[0]
         else:
             self._indx_to_loader[self._last_indx].load_mel(
-                record, ins, sub_type, size_, readId)
+                record, ins, sub_type, size_, *debug_strs)
 
     def dumpData(self, record, out):
         for part_indx, part_attr in self._indx_to_attr.iteritems():
@@ -537,17 +537,17 @@ class MelMODS(MelBase):
     def setDefault(self,record):
         setattr(record, self.attr, None)
 
-    def load_mel(self, record, ins, sub_type, size_, readId,
-                 __unpacker=_int_unpacker):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        __unpacker=_int_unpacker
         insUnpack = ins.unpack
         insRead32 = ins.readString32
-        count, = insUnpack(__unpacker, 4, readId)
+        count, = insUnpack(__unpacker, 4, *debug_strs)
         mods_data = []
         dataAppend = mods_data.append
         for x in xrange(count):
-            string = insRead32(readId)
+            string = insRead32(*debug_strs)
             fid = ins.unpackRef()
-            index, = insUnpack(__unpacker, 4, readId)
+            index, = insUnpack(__unpacker, 4, *debug_strs)
             dataAppend((string,fid,index))
         setattr(record, self.attr, mods_data)
 
@@ -647,12 +647,12 @@ class MelDebrData(MelStruct):
         super(MelDebrData, self).__init__(b'DATA', u'', u'percentage',
             (u'modPath', null1), u'flags')
 
-    def load_mel(self, record, ins, sub_type, size_, readId):
-        byte_data = ins.read(size_, readId)
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        byte_data = ins.read(size_, *debug_strs)
         (record.percentage,) = unpack_byte(ins, byte_data[0:1])
         record.modPath = byte_data[1:-2]
         if byte_data[-2] != null1:
-            raise ModError(ins.inName,u'Unexpected subrecord: %s' % readId)
+            raise ModError(ins.inName,u'Unexpected subrecord: %s' % (debug_strs,))
         (record.flags,) = struct_unpack(u'B',byte_data[-1])
 
     def pack_subrecord_data(self, record):

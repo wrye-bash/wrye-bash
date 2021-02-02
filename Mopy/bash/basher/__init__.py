@@ -61,14 +61,14 @@ import time
 from collections import OrderedDict, namedtuple
 from functools import partial, reduce
 from itertools import izip
-from operator import itemgetter
 
 #--wxPython
 import wx
 
 #--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
-from ..bolt import GPath, SubProgress, deprint, round_size, OrderedDefaultDict
+from ..bolt import GPath, SubProgress, deprint, round_size, OrderedDefaultDict, \
+    dict_sort
 from ..bosh import omods
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
@@ -546,8 +546,7 @@ class MasterList(_ModsUIList):
     #--GetMasters
     def GetNewMasters(self):
         """Returns new master list."""
-        return [v.curr_name for k, v in
-                sorted(self.data_store.items(), key=itemgetter(0))]
+        return [v.curr_name for k, v in dict_sort(self.data_store)]
 
 #------------------------------------------------------------------------------
 class INIList(balt.UIList):
@@ -595,7 +594,7 @@ class INIList(balt.UIList):
         """Returns text list of tweaks"""
         tweaklist = _(u'Active Ini Tweaks:') + u'\n'
         tweaklist += u'[spoiler]\n'
-        for tweak, info in sorted(self.data_store.items(), key=itemgetter(0)):
+        for tweak, info in dict_sort(self.data_store):
             if not info.tweak_status() == 20: continue
             tweaklist+= u'%s\n' % tweak
         tweaklist += u'[/spoiler]\n'
