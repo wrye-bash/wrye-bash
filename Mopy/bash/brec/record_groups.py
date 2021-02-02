@@ -139,7 +139,7 @@ class MobBase(object):
         with one of the signatures in wanted_sigs. If include_ignored is True,
         records that have the Ignored flag set will be included. Otherwise,
         they will be ignored as well."""
-        return (r for r in self.iter_records() if r.recType in wanted_sigs and
+        return (r for r in self.iter_records() if r._rec_sig in wanted_sigs and
                 (include_ignored or not r.flags1.ignored)
                 and not r.flags1.deleted) # skip deleted records (ugh)
 
@@ -460,7 +460,7 @@ class MobDial(MobObjects):
                 info.dump(out)
 
     def get_all_signatures(self):
-        return {self.dial.recType} | {i.recType for i in self.records}
+        return {self.dial._rec_sig} | {i._rec_sig for i in self.records}
 
     def convertFids(self, mapper, toLong):
         self.dial.convertFids(mapper, toLong)
@@ -947,12 +947,12 @@ class MobCell(MobBase):
             self.pgrd.convertFids(mapper,toLong)
 
     def get_all_signatures(self):
-        cell_sigs = {self.cell.recType}
-        cell_sigs.update(r.recType for r in self.temp_refs)
-        cell_sigs.update(r.recType for r in self.persistent_refs)
-        cell_sigs.update(r.recType for r in self.distant_refs)
-        if self.land: cell_sigs.add(self.land.recType)
-        if self.pgrd: cell_sigs.add(self.pgrd.recType)
+        cell_sigs = {self.cell._rec_sig}
+        cell_sigs.update(r._rec_sig for r in self.temp_refs)
+        cell_sigs.update(r._rec_sig for r in self.persistent_refs)
+        cell_sigs.update(r._rec_sig for r in self.distant_refs)
+        if self.land: cell_sigs.add(self.land._rec_sig)
+        if self.pgrd: cell_sigs.add(self.pgrd._rec_sig)
         return cell_sigs
 
     def updateMasters(self, masterset_add):
@@ -977,8 +977,8 @@ class MobCell(MobBase):
             if myRecord and record:
                 src_rec_fid = record.fid
                 if myRecord.fid != src_rec_fid:
-                    raise ModFidMismatchError(self.inName, myRecord.recType,
-                        myRecord.fid, src_rec_fid)
+                    raise ModFidMismatchError(self.inName, myRecord.rec_str,
+                                              myRecord.fid, src_rec_fid)
                 if not record.flags1.ignored:
                     record = record.getTypeCopy()
                     setattr(self, attr, record)
@@ -1036,8 +1036,8 @@ class MobCell(MobBase):
                 if iiSkipMerge: continue
                 dest_rec = getattr(self, single_attr)
                 if dest_rec and dest_rec.fid != src_rec.fid:
-                    raise ModFidMismatchError(self.inName, dest_rec.recType,
-                        dest_rec.fid, src_rec.fid)
+                    raise ModFidMismatchError(self.inName, dest_rec.rec_str,
+                                              dest_rec.fid, src_rec.fid)
                 # We're past all hurdles - stick a copy of this record into
                 # ourselves and mark it as merged
                 mergeIdsAdd(src_rec.fid)
@@ -1507,8 +1507,8 @@ class MobWorld(MobCells):
     #--Fid manipulation, record filtering ----------------------------------
     def get_all_signatures(self):
         all_sigs = super(MobWorld, self).get_all_signatures()
-        all_sigs.add(self.world.recType)
-        if self.road: all_sigs.add(self.road.recType)
+        all_sigs.add(self.world._rec_sig)
+        if self.road: all_sigs.add(self.road._rec_sig)
         if self.worldCellBlock:
             all_sigs |= self.worldCellBlock.get_all_signatures()
         return all_sigs
@@ -1541,8 +1541,8 @@ class MobWorld(MobCells):
             if myRecord and record:
                 src_rec_fid = record.fid
                 if myRecord.fid != src_rec_fid:
-                    raise ModFidMismatchError(self.inName, myRecord.recType,
-                        myRecord.fid, src_rec_fid)
+                    raise ModFidMismatchError(self.inName, myRecord.rec_str,
+                                              myRecord.fid, src_rec_fid)
                 if not record.flags1.ignored:
                     record = record.getTypeCopy()
                     setattr(self, attr, record)
@@ -1590,8 +1590,8 @@ class MobWorld(MobCells):
                 if iiSkipMerge: continue
                 dest_rec = getattr(self, single_attr)
                 if dest_rec and dest_rec.fid != src_rec.fid:
-                    raise ModFidMismatchError(self.inName, dest_rec.recType,
-                        dest_rec.fid, src_rec.fid)
+                    raise ModFidMismatchError(self.inName, dest_rec.rec_str,
+                                              dest_rec.fid, src_rec.fid)
                 # We're past all hurdles - stick a copy of this record into
                 # ourselves and mark it as merged
                 mergeIdsAdd(src_rec.fid)

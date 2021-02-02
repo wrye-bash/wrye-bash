@@ -641,7 +641,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
     default_enabled = True
 
     def wants_record(self, record):
-        rsig = record.recType
+        rsig = record._rec_sig
         if (rsig == b'LIGH' and not record.flags.canTake or
                 rsig == b'QUST' and not record.stages or
                 rsig in (b'ARMO', b'CLOT') and
@@ -666,7 +666,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
             raise
 
     def tweak_record(self, record):
-        curr_sig = record.recType
+        curr_sig = record._rec_sig
         d_icons = self._default_icons[curr_sig]
         if isinstance(d_icons, tuple):
             if curr_sig in (b'ARMO', b'CLOT'):

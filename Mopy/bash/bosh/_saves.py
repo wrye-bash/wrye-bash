@@ -495,8 +495,8 @@ class SaveFile(object):
         created_counts = Counter()
         id_created = {}
         for citem in self.created:
-            created_sizes[citem.recType] += citem.size
-            created_counts[citem.recType] += 1
+            created_sizes[citem._rec_sig] += citem.size
+            created_counts[citem._rec_sig] += 1
             id_created[citem.fid] = citem
         for rsig in sorted(created_sizes):
             log(u'  %d\t%d kb\t%s' % (
@@ -532,7 +532,7 @@ class SaveFile(object):
                     print(rec_kind,hex(rec_id),getMaster(mod))
                     knownTypes.add(rec_kind)
                 elif rec_id in id_created:
-                    print(rec_kind, hex(rec_id), id_created[rec_id].recType)
+                    print(rec_kind, hex(rec_id), id_created[rec_id]._rec_sig)
                     knownTypes.add(rec_kind)
             #--Obj ref parents
             if rec_kind == 49 and mod == 255 and (rec_flgs & 2):
@@ -590,7 +590,7 @@ class SaveFile(object):
             else:
                 full = citem.getSubString(b'FULL')
             if full:
-                createdCounts[(citem.recType, full)] += 1
+                createdCounts[(citem._rec_sig, full)] += 1
             progress.plus()
         for k in list(createdCounts):
             minCount = (50,100)[k[0] == b'ALCH']
@@ -623,7 +623,7 @@ class SaveFile(object):
                     full = citem.full
                 else:
                     full = citem.getSubString(b'FULL')
-                if full and (citem.recType,full) in uncreateKeys:
+                if full and (citem._rec_sig, full) in uncreateKeys:
                     uncreated.add(citem.fid)
                     numUncreated += 1
                 else:
@@ -695,7 +695,7 @@ class SaveSpells(object):
         saveName = self.saveInfo.name
         progress(progress.full-1,saveName.s)
         for record in saveFile.created:
-            if record.recType == b'SPEL':
+            if record._rec_sig == b'SPEL':
                 allSpells[(saveName,getObjectIndex(record.fid))] = record.getTypeCopy()
 
     def importMod(self,modInfo):
@@ -774,7 +774,7 @@ class SaveEnchantments(object):
         saveName = self.saveInfo.name
         progress(progress.full-1,saveName.s)
         for index,record in enumerate(saveFile.created):
-            if record.recType == b'ENCH':
+            if record._rec_sig == b'ENCH':
                 record = record.getTypeCopy()
                 record.getSize() #--Since type copy makes it changed.
                 saveFile.created[index] = record

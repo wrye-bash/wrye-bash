@@ -124,7 +124,7 @@ class PCFaces(object):
             saveFile.load()
         faces = {}
         for record in saveFile.created:
-            if record.recType != b'NPC_': continue
+            if record._rec_sig != b'NPC_': continue
             #--Created NPC record
             if targetid and record.fid != targetid: continue
             npc = record.getTypeCopy()
@@ -217,13 +217,15 @@ class PCFaces(object):
         #--Find record
         for index,record in enumerate(saveFile.created):
             if record.fid == targetid:
+                if record._rec_sig != b'NPC_':
+                    raise StateError(u'Record %08X in %s is not an NPC.' % (
+                        targetid, saveFile.fileInfo))
                 npc = record.getTypeCopy()
                 saveFile.created[index] = npc
                 break
         else:
-            raise StateError(u'Record %08X not found in %s.' % (targetid, saveFile.fileInfo))
-        if npc.recType != b'NPC_':
-            raise StateError(u'Record %08X in %s is not an NPC.' % (targetid, saveFile.fileInfo))
+            raise StateError(u'Record %08X not found in %s.' % (
+                targetid, saveFile.fileInfo))
         #--Update masters
         for fid in (face.race, face.eye, face.hair):
             if not fid: continue

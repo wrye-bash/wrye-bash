@@ -34,7 +34,7 @@ from ..exception import ModError, ModReadError, ModSizeError
 
 #------------------------------------------------------------------------------
 # Headers ---------------------------------------------------------------------
-##: Ideally this would sit in mod_structs, but circular imports...
+##: Ideally this would sit in record_structs, but circular imports...
 class RecordHeader(object):
     """Fixed size structure serving as header for the records or fencepost
     for groups of records."""

@@ -1190,8 +1190,8 @@ class MelVmad(MelBase):
             append_script(script)
         # If the record type is one of the ones that need special handling and
         # we still have something to read, call the appropriate handler
-        if record.recType in self._handler_map and ins.tell() < end_of_vmad:
-            special_handler = self._get_special_handler(record.recType)
+        if record._rec_sig in self._handler_map and ins.tell() < end_of_vmad:
+            special_handler = self._get_special_handler(record._rec_sig)
             vmad.special_data = special_handler.make_new()
             special_handler.load_frag(vmad.special_data, ins, vmad_version,
                                       obj_format, *debug_strs)
@@ -1212,8 +1212,8 @@ class MelVmad(MelBase):
             out_data += dump_script(script)
         # If the subrecord has special data attached, ask the appropriate
         # handler to dump that out
-        if vmad.special_data and record.recType in self._handler_map:
-            out_data += self._get_special_handler(record.recType).dump_frag(
+        if vmad.special_data and record._rec_sig in self._handler_map:
+            out_data += self._get_special_handler(record._rec_sig).dump_frag(
                 vmad.special_data)
         # Finally, write out the subrecord header, followed by the dumped data
         return out_data
@@ -1229,8 +1229,8 @@ class MelVmad(MelBase):
         map_script = self._script_loader.map_fids
         for script in vmad.scripts:
             map_script(script, function, save)
-        if vmad.special_data and record.recType in self._handler_map:
-            self._get_special_handler(record.recType).map_fids(
+        if vmad.special_data and record._rec_sig in self._handler_map:
+            self._get_special_handler(record._rec_sig).map_fids(
                 vmad.special_data, function, save)
 
 #------------------------------------------------------------------------------
