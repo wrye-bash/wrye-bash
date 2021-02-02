@@ -85,11 +85,11 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         #
         #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
         # ---------------------------------------------------------------------
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # -- Imported from Skyrim/SkyrimSE
             # Added to records.py
             MreLvli, MreLvln
-        )
+        )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [

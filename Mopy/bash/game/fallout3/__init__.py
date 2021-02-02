@@ -294,7 +294,7 @@ class Fallout3GameInfo(GameInfo):
             MreWatr, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, \
             MreGmst, MreInfo, MreNavi, MreNavm, MrePgre, MrePmis, MreRefr, \
             MreWrld
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreArma, MreArmo,
             MreAspc, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt,
             MreCobj, MreCont, MreCpth, MreCrea, MreCsty, MreDebr, MreDobj,
@@ -307,7 +307,7 @@ class Fallout3GameInfo(GameInfo):
             MreRads, MreRegn, MreRgdl, MreScol, MreScpt, MreSoun, MreSpel,
             MreStat, MreTact,MreTerm, MreTree, MreTxst, MreVtyp, MreWatr,
             MreWeap, MreWthr, MreGmst,
-            )
+        )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
@@ -329,10 +329,10 @@ class Fallout3GameInfo(GameInfo):
                                          b'INFO', b'LAND', b'NAVM', b'PGRE',
                                          b'PMIS', b'REFR'])
         header_type.plugin_form_version = 15
-        brec.MreRecord.type_class = {x.rec_sig: x for x in
-                (cls.mergeClasses + # Not Mergeable
-                (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi,
-                 MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreTes4))}
+        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not Mergeable
+             (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi, MreNavm,
+              MrePgre, MrePmis, MreRefr, MreWrld, MreTes4))}
+        brec.MreRecord.type_class.update(cls.mergeable_sigs)
         brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
             b'TES4', b'ACHR', b'ACRE', b'CELL', b'DIAL', b'INFO', b'LAND',
             b'NAVI', b'NAVM', b'PGRE', b'PMIS', b'REFR', b'WRLD'})

@@ -202,7 +202,6 @@ class ModFile(object):
     def load(self, do_unpack=False, progress=None, loadStrings=True,
              catch_errors=True, do_map_fids=True): # TODO: let it blow?
         """Load file."""
-        from . import bosh
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
         with ModReader(self.fileInfo.name,self.fileInfo.getPath().open(
@@ -211,21 +210,8 @@ class ModFile(object):
             # Main header of the mod file - generally has 'TES4' signature
             header = insRecHeader()
             self.tes4 = bush.game.plugin_header_class(header,ins,True)
-            # Check if we need to handle strings
-            self.strings.clear()
-            if do_unpack and loadStrings and self.tes4.flags1.hasStrings:
-                stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
-                lang = bosh.oblivionIni.get_ini_language()
-                stringsPaths = self.fileInfo.getStringsPaths(lang)
-                stringsProgress.setFull(max(len(stringsPaths),1))
-                for i,path in enumerate(stringsPaths):
-                    self.strings.loadFile(path,SubProgress(stringsProgress,i,i+1),lang)
-                    stringsProgress(i)
-                ins.setStringTable(self.strings)
-                subProgress = SubProgress(progress,0.1,1.0)
-            else:
-                ins.setStringTable(None)
-                subProgress = progress
+            subProgress = self.__load_strs(do_unpack, ins, loadStrings,
+                                           progress)
             #--Raw data read
             subProgress.setFull(ins.size)
             insAtEnd = ins.atEnd
@@ -273,6 +259,29 @@ class ModFile(object):
                 subProgress(insTell())
         # Done reading - convert to long FormIDs at the IO boundary
         if do_map_fids: self._convert_fids(to_long=True)
+
+    def __load_strs(self, do_unpack, ins, loadStrings, progress):
+        # Check if we need to handle strings
+        self.strings.clear()
+        if do_unpack and loadStrings and self.tes4.flags1.hasStrings:
+            from . import bosh
+            stringsProgress = SubProgress(progress, 0,
+                                          0.1)  # Use 10% of progress bar
+            # for strings
+            lang = bosh.oblivionIni.get_ini_language()
+            stringsPaths = self.fileInfo.getStringsPaths(lang)
+            stringsProgress.setFull(max(len(stringsPaths), 1))
+            for i, path in enumerate(stringsPaths):
+                self.strings.loadFile(path,
+                                      SubProgress(stringsProgress, i, i + 1),
+                                      lang)
+                stringsProgress(i)
+            ins.setStringTable(self.strings)
+            subProgress = SubProgress(progress, 0.1, 1.0)
+        else:
+            ins.setStringTable(None)
+            subProgress = progress
+        return subProgress
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""

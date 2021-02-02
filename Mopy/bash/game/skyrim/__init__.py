@@ -288,7 +288,7 @@ class SkyrimGameInfo(GameInfo):
         #
         #       MreAchr, MreDial, MreInfo,
         # ---------------------------------------------------------------------
-        cls.mergeClasses = (# MreAchr, MreDial, MreInfo,
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (# MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
@@ -305,7 +305,7 @@ class SkyrimGameInfo(GameInfo):
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
             MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, MreFact,
             MreRace,
-        )
+        )}
 
         # MreScpt is Oblivion/FO3/FNV Only
         # MreMgef, has not been verified to be used here for Skyrim

@@ -1718,9 +1718,9 @@ class _Import_Export_Link(AppendableLink):
             # Check if all record types required by this parser exist for this
             # game and are supported for loading
             rec_types = MreRecord.type_class
-            return all(t in rec_types
-                       and rec_types[t] in bush.game.mergeClasses
-                       for t in test_parser.all_types)
+            return all(##: is `sig in rec_types` needed??
+                sig in rec_types and sig in bush.game.mergeable_sigs for sig in
+                test_parser.all_types)
         except AttributeError:
             # FIXME(inf) old-style export link, drop once parsers refactored
             return True

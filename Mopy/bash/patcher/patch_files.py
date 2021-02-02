@@ -194,8 +194,7 @@ class PatchFile(ModFile):
             p.active_write_sigs for p in self._patcher_instances))
         self.loadFactory = LoadFactory(True, by_sig=write_sigs)
         #--Merge Factory
-        self.mergeFactory = LoadFactory(False, by_sig=(r.rec_sig for r in
-                                                       bush.game.mergeClasses))
+        self.mergeFactory = LoadFactory(False, by_sig=bush.game.mergeable_sigs)
 
     def scanLoadMods(self,progress):
         """Scans load+merge mods."""

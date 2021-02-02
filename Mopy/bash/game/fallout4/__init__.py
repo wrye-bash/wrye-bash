@@ -147,11 +147,11 @@ class Fallout4GameInfo(GameInfo):
         #
         #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
         # ---------------------------------------------------------------------
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # -- Imported from Skyrim/SkyrimSE
             # Added to records.py
             MreGmst, MreLvli, MreLvln
-        )
+        )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
@@ -183,7 +183,7 @@ class Fallout4GameInfo(GameInfo):
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreTes4, #--Always present
             MreGmst, MreLvli, MreLvln, # Added to records.py
-            )}
+        )}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES4'})
         cls._validate_records()

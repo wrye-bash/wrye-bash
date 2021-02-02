@@ -216,7 +216,8 @@ class MobObjects(MobBase):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
-        errLabel = u'%s Top Block' % expType
+        errLabel = u'%s Top Block' % (
+            expType.decode(u'ascii') if type(expType) is bytes else expType)
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
         recordsAppend = self.records.append
