@@ -67,6 +67,8 @@ def _key_sort(di, id_eid_=None, keys_dex=(), values_dex=(), by_value=False):
 class CsvParser(object):
     """Basic read/write csv functionality - ScriptParser handles script files
     not csvs though."""
+    _csv_header = () # has property overrides
+    _row_fmt_str = u'' # has property overrides
 
     def readFromText(self, csv_path):
         """Reads information from the specified CSV file and stores the result
@@ -90,16 +92,15 @@ class CsvParser(object):
 
     def writeToText(self,textPath):
         """Exports ____ to specified text file."""
-        header, rowFormat = self._header_row_out()
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
-            out.write(header)
-            self._write_rows(out, rowFormat)
+            out.write(self._header_row())
+            self._write_rows(out)
 
-    def _write_rows(self, out, rowFormat):
+    def _write_rows(self, out):
         raise AbstractError
 
-    def _header_row_out(self):
-        raise AbstractError
+    def _header_row(self):
+        return u'"%s"\n' % u'","'.join(self._csv_header)
 
 class _HandleAliases(CsvParser):
     """WIP aliases handling."""
@@ -392,6 +393,10 @@ class ActorFactions(_AParser):
     """Parses factions from NPCs and Creatures (in games that have those). Can
     read and write both plugins and CSV, and uses a single pass if called from
     a patcher, but two passes if called from a link."""
+    _csv_header = (_(u'Type'), _(u'Actor Eid'), _(u'Actor Mod'),
+                   _(u'Actor Object'), _(u'Faction Eid'), _(u'Faction Mod'),
+                   _(u'Faction Object'), _(u'Rank'))
+    _row_fmt_str = u'"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
 
     def __init__(self):
         super(ActorFactions, self).__init__()
@@ -434,28 +439,24 @@ class ActorFactions(_AParser):
         rank = int(rank)
         self.id_stored_info[top_grup.encode(u'ascii')][aid][fid] = rank
 
-    def _header_row_out(self):
-        headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n'
-        rowFormat = u'"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
-        header = headFormat % (
-            _(u'Type'), _(u'Actor Eid'), _(u'Actor Mod'), _(u'Actor Object'),
-            _(u'Faction Eid'), _(u'Faction Mod'), _(u'Faction Object'),
-            _(u'Rank'))
-        return header, rowFormat
-
-    def _write_rows(self, out, rowFormat):
+    def _write_rows(self, out):
         """Exports faction data to specified text file."""
         type_id_factions,id_eid = self.id_stored_info, self.id_context
         for top_grup_sig, id_factions in _key_sort(type_id_factions):
             for aid, factions, actorEid in _key_sort(id_factions, id_eid):
                 for faction, rank, factionEid in _key_sort(factions, id_eid):
-                    out.write(rowFormat % (top_grup_sig.decode(u'ascii'),
+                    out.write(self._row_fmt_str % (top_grup_sig.decode(u'ascii'),
                         actorEid, aid[0], aid[1], factionEid,
                         faction[0], faction[1], rank))
 
 #------------------------------------------------------------------------------
 class ActorLevels(_HandleAliases):
     """Package: Functions for manipulating actor levels."""
+    _csv_header = (_(u'Source Mod'), _(u'Actor Eid'), _(u'Actor Mod'),
+        _(u'Actor Object'), _(u'Offset'), _(u'CalcMin'), _(u'CalcMax'),
+        _(u'Old IsPCLevelOffset'), _(u'Old Offset'), _(u'Old CalcMin'),
+        _(u'Old CalcMax'))
+    _row_fmt_str = u'"%s","%s","%s","0x%06X","%d","%d","%d"'
 
     def __init__(self, aliases_=None):
         super(ActorLevels, self).__init__(aliases_)
@@ -512,18 +513,7 @@ class ActorLevels(_HandleAliases):
         calcMax = _coerce(calcMax, int)
         self.mod_id_levels[source][fid] = (eid, 1, offset, calcMin, calcMax)
 
-    def _header_row_out(self):
-        headFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s",' \
-                     u'"%s"\n'
-        rowFormat = u'"%s","%s","%s","0x%06X","%d","%d","%d"'
-        header = headFormat % (
-            _(u'Source Mod'), _(u'Actor Eid'), _(u'Actor Mod'),
-            _(u'Actor Object'), _(u'Offset'), _(u'CalcMin'), _(u'CalcMax'),
-            _(u'Old IsPCLevelOffset'), _(u'Old Offset'), _(u'Old CalcMin'),
-            _(u'Old CalcMax'))
-        return header, rowFormat
-
-    def _write_rows(self, out, rowFormat):
+    def _write_rows(self, out):
         """Export NPC level data to specified text file."""
         extendedRowFormat = u',"%d","%d","%d","%d"\n'
         blankExtendedRow = u',,,,\n'
@@ -535,7 +525,7 @@ class ActorLevels(_HandleAliases):
             for (fidMod, fidObject), (
                     eid, isOffset, offset, calcMin, calcMax) in sor:
                 if isOffset:
-                    out.write(rowFormat % (
+                    out.write(self._row_fmt_str % (
                         mod, eid, fidMod, fidObject, offset, calcMin,
                         calcMax))
                     oldLevels = obId_levels.get((fidMod, fidObject),None)
@@ -551,6 +541,9 @@ class ActorLevels(_HandleAliases):
 class EditorIds(_HandleAliases):
     """Editor ids for records, with functions for importing/exporting
     from/to mod/text file."""
+    _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
+                   _(u'Editor Id'))
+    _row_fmt_str = u'"%s","%s","0x%06X","%s"\n'
 
     def __init__(self, types=None, aliases_=None, questionableEidsSet=None,
                  badEidsList=None):
@@ -654,17 +647,10 @@ class EditorIds(_HandleAliases):
             self.old_new[_coerce(csv_fields[4], unicode).lower()] = eid
         self.type_id_eid[top_grup.encode(u'ascii')][longid] = eid
 
-    def _header_row_out(self):
-        headFormat = u'"%s","%s","%s","%s"\n'
-        rowFormat = u'"%s","%s","0x%06X","%s"\n'
-        header = headFormat % (
-            _(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'), _(u'Editor Id'))
-        return header, rowFormat
-
-    def _write_rows(self, out, rowFormat):
+    def _write_rows(self, out):
         for top_grup_sig, id_eid in _key_sort(self.type_id_eid):
             for id_, eid_ in _key_sort(id_eid, by_value=True):
-                out.write(rowFormat % (
+                out.write(self._row_fmt_str % (
                     top_grup_sig.decode(u'ascii'), id_[0], id_[1], eid_))
 
 #------------------------------------------------------------------------------
@@ -672,6 +658,8 @@ class FactionRelations(_AParser):
     """Parses the relations between factions. Can read and write both plugins
     and CSV, and uses two passes to do so."""
     cls_rel_attrs = bush.game.relations_attrs
+    _csv_header = bush.game.relations_csv_header
+    _row_fmt_str = bush.game.relations_csv_row_format
 
     def __init__(self):
         super(FactionRelations, self).__init__()
@@ -723,10 +711,7 @@ class FactionRelations(_AParser):
         oid = self._coerce_fid(omod, oobj)
         self.id_stored_info[b'FACT'][mid][oid] = tuple(csv_fields[6:])
 
-    def _header_row_out(self):
-        return bush.game.relations_csv_header, bush.game.relations_csv_row_format
-
-    def _write_rows(self, out, rowFormat):
+    def _write_rows(self, out):
         """Exports faction relations to specified text file."""
         id_relations, id_eid = self.id_stored_info[b'FACT'], self.id_context
         for main_fid, rel, main_eid in _key_sort(id_relations, id_eid_=id_eid):
@@ -735,7 +720,7 @@ class FactionRelations(_AParser):
                 # PY3: I wish py2 allowed star exprs in tuples/lists...
                 row_vals = (main_eid, main_fid[0], main_fid[1],
                             oth_eid, oth_fid[0], oth_fid[1]) + relation_obj
-                out.write(rowFormat % row_vals)
+                out.write(self._row_fmt_str % row_vals)
 
 #------------------------------------------------------------------------------
 class FidReplacer(_HandleAliases):
@@ -803,6 +788,9 @@ class FidReplacer(_HandleAliases):
 class FullNames(_HandleAliases):
     """Names for records, with functions for importing/exporting from/to
     mod/text file."""
+    _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
+                   _(u'Editor Id'), _(u'Name'))
+    _row_fmt_str = u'"%s","%s","0x%06X","%s","%s"\n'
 
     def __init__(self, types=None, aliases_=None):
         super(FullNames, self).__init__(aliases_)
@@ -850,19 +838,12 @@ class FullNames(_HandleAliases):
         full = _coerce(full, unicode, AllowNone=True)
         self.type_id_name[top_grup.encode(u'ascii')][longid] = (eid, full)
 
-    def _header_row_out(self):
-        headFormat = u'"%s","%s","%s","%s","%s"\n'
-        rowFormat = u'"%s","%s","0x%06X","%s","%s"\n'
-        header = headFormat % (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
-                               _(u'Editor Id'), _(u'Name'))
-        return header, rowFormat
-
-    def _write_rows(self, out, rowFormat):
+    def _write_rows(self, out):
         """Exports type_id_name to specified text file."""
         for top_grup_sig, id_name in _key_sort(self.type_id_name):
             for longid, (eid, rec_name) in _key_sort(id_name, keys_dex=[0],
                                                      values_dex=[0]):
-                out.write(rowFormat % (top_grup_sig.decode(u'ascii'),
+                out.write(self._row_fmt_str % (top_grup_sig.decode(u'ascii'),
                     longid[0], longid[1], eid, rec_name.replace(u'"', u'""')))
 
 #------------------------------------------------------------------------------
@@ -1091,7 +1072,9 @@ class ScriptText(CsvParser):
                     fileName = fileName[r:]
                 outpath = dirs[u'patches'].join(folder).join(
                     fileName + inisettings[u'ScriptFileExt'])
-                self.writeToText(outpath, longid, eid, scpt_txt)
+                self.__writting = (scpt_txt, longid, eid)
+                self.writeToText(outpath)
+                del self.__writting
                 exportedScripts.append(eid)
         return exportedScripts
 
@@ -1109,17 +1092,16 @@ class ScriptText(CsvParser):
                 tmp.append(line[:pos])
         return __win_line_sep.join(tmp) if tmp else u''
 
-    def writeToText(self, textPath, longid, eid, scpt_txt): ##: absorb to CsvParser
-        header, _rowFormat = self._header_row_out(longid, eid)
-        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
-            out.write(header)
-            out.write(scpt_txt)
-
-    def _header_row_out(self, longid, eid, __win_line_sep=u'\r\n'):
+    def _header_row(self, __win_line_sep=u'\r\n'):
         # __win_line_sep: scripts line separator - or so we trust
+        __, longid, eid = self.__writting
         header = (__win_line_sep + u';').join(
             (u'%s' % longid[0], u'0x%06X' % longid[1], eid))
-        return u';%s%s' % (header, __win_line_sep), None
+        return u';%s%s' % (header, __win_line_sep)
+
+    def _write_rows(self, out):
+        scpt_txt, __fid, __eid = self.__writting
+        out.write(scpt_txt)
 
     def readFromMod(self, modInfo):
         """Reads stats from specified mod."""
@@ -1202,8 +1184,6 @@ class _UsesEffectsMixin(_HandleAliases):
         _(u'Effect'),_(u'Name'),_(u'Magnitude'),_(u'Area'),_(u'Duration'),
         _(u'Range'),_(u'Actor Value'),_(u'SE Mod Name'),_(u'SE ObjectIndex'),
         _(u'SE school'),_(u'SE visual'),_(u'SE Is Hostile'),_(u'SE Name'))
-    headerFormat = u'"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s",' \
-                   u'"%s","%s"'
     recipientTypeNumber_Name = {None:u'NONE',0:u'Self',1:u'Touch',2:u'Target',}
     recipientTypeName_Number = {y.lower(): x for x, y
                                 in recipientTypeNumber_Name.iteritems()
@@ -1305,6 +1285,14 @@ class _UsesEffectsMixin(_HandleAliases):
 class SigilStoneDetails(_UsesEffectsMixin):
     """Details on SigilStones, with functions for importing/exporting
     from/to mod/text file."""
+    _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Editor Id'),
+                   _(u'Name'), _(u'Model Path'), _(u'Bound Radius'),
+                   _(u'Icon Path'), _(u'Script Mod Name'),
+                   _(u'Script ObjectIndex'), _(u'Uses'), _(u'Value'),
+                   _(u'Weight'),) + _UsesEffectsMixin.headers * 2 + (
+                      _(u'Additional Effects (Same format)'),)
+    _row_fmt_str = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
+                   u'"%d","%d","%f"'
 
     def __init__(self, types=None, aliases_=None):
         super(SigilStoneDetails, self).__init__(aliases_)
@@ -1406,20 +1394,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
         self.fid_stats[mid] = [eid, full, modPath, modb, iconPath, sid, uses,
                                value, weight, effects]
 
-    def _header_row_out(self):
-        header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Editor Id'),
-                  _(u'Name'), _(u'Model Path'), _(u'Bound Radius'),
-                  _(u'Icon Path'), _(u'Script Mod Name'),
-                  _(u'Script ObjectIndex'), _(u'Uses'), _(u'Value'),
-                  _(u'Weight'),) + _UsesEffectsMixin.headers * 2 + (
-                 _(u'Additional Effects (Same format)'),)
-        headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
-        rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
-                    u'"%d","%d","%f"'
-        header = headFormat % header
-        return header, rowFormat
-
-    def _write_rows(self, out, rowFormat):
+    def _write_rows(self, out):
         """Exports stats to specified text file."""
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s",' \
                        u'"%d","%d","%f"'
@@ -1427,9 +1402,9 @@ class SigilStoneDetails(_UsesEffectsMixin):
             value, weight,effects) in _key_sort(self.fid_stats,values_dex=[0]):
             scriptfid = scriptfid or (GPath(u'None'),None)
             try:
-                output = rowFormat % (
-                    fid[0],fid[1],eid,name_,modpath,modb,iconpath,
-                    scriptfid[0],scriptfid[1],uses,value,weight)
+                output = self._row_fmt_str % (
+                    fid[0], fid[1], eid, name_, modpath, modb, iconpath,
+                    scriptfid[0], scriptfid[1], uses, value, weight)
             except TypeError:
                 output = altrowFormat % (
                     fid[0],fid[1],eid,name_,modpath,modb,iconpath,
@@ -1443,6 +1418,9 @@ class ItemPrices(_HandleAliases):
     """Function for importing/exporting from/to mod/text file only the
     value, name and eid of records."""
     item_prices_attrs = (u'value', u'eid', u'full')
+    _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Value'),
+                   _(u'Editor Id'), _(u'Name'), _(u'Type'))
+    _row_fmt_str = u'"%s","0x%06X",' + csvFormat(u'iss') + u',%s\n'
 
     def __init__(self, types=None, aliases_=None):
         super(ItemPrices, self).__init__(aliases_)
@@ -1484,19 +1462,13 @@ class ItemPrices(_HandleAliases):
         self.class_fid_stats[top_grup.encode(u'ascii')][longid] = [value, eid,
                                                                    itm_name]
 
-    def _header_row_out(self):
-        format_, header = csvFormat(u'iss'), (u'"%s"\n' % u'","'.join((
-            _(u'Mod Name'), _(u'ObjectIndex'), _(u'Value'), _(u'Editor Id'),
-            _(u'Name'), _(u'Type'))))
-        return u'"%s","0x%06X",' + format_ + u',%s\n', header
-
-    def _write_rows(self, out, rowFormat):
+    def _write_rows(self, out):
         """Writes item prices to specified text file."""
         for top_grup_sig, fid_stats in _key_sort(self.class_fid_stats):
             if not fid_stats: continue
             for fid in sorted(fid_stats,key=lambda x:(
                     fid_stats[x][1].lower(),fid_stats[x][0])):
-                out.write(rowFormat % ((fid[0], fid[1]) +
+                out.write(self._row_fmt_str % ((fid[0], fid[1]) +
                     tuple(fid_stats[fid]) + (top_grup_sig.decode(u'ascii'),)))
 
 #------------------------------------------------------------------------------
@@ -1662,11 +1634,11 @@ class SpellRecords(_UsesEffectsMixin):
                 fid_stats[mid] = [eid, cost, levelType, spellType, spell_flags,
                                   mc, ss, its, aeil, saa, daar, tewt, effects]
 
-    def _header_row_out(self):
+    @property
+    def _csv_header(self):
         header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
                   _(u'Editor Id'), _(u'Cost'), _(u'Level Type'),
                   _(u'Spell Type'), _(u'Spell Flags'))
-        rowFormat = u'"%s","%s","0x%06X","%s","%d","%s","%s","%d"'
         if self.detailed:
             header = header + (
                 _(u'Manual Cost'), _(u'Start Spell'), _(u'Immune To Silence'),
@@ -1675,44 +1647,52 @@ class SpellRecords(_UsesEffectsMixin):
                     u'Touch Explodes Without Target'),
             ) + _UsesEffectsMixin.headers * 2 + (
                          _(u'Additional Effects (Same format)'),)
-            rowFormat += u',"%s","%s","%s","%s","%s","%s","%s"'
-        headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
-        return headFormat % header, rowFormat
+        return header
 
-    def writeToText(self,textPath):
+    @property
+    def _row_fmt_str(self):
+        return u'"%s","%s","0x%06X","%s","%d","%s","%s","%d"' + (
+            u',"%s","%s","%s","%s","%s","%s","%s"%s\n' if self.detailed else
+            u'\n')
+
+    def _write_rows(self, out):
         """Exports stats to specified text file."""
         detailed,fid_stats,spellTypeNumber_Name,levelTypeNumber_Name = \
-            self.detailed,self.fid_stats,self.spellTypeNumber_Name,\
+            self.detailed,self.fid_stats,self.spellTypeNumber_Name, \
             self.levelTypeNumber_Name
-        header, rowFormat = self._header_row_out()
-        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
-            out.write(header)
-            for fid in sorted(fid_stats,
-                              key=lambda x:(fid_stats[x][0].lower(),x[0])):
-                if detailed:
-                    eid, cost, levelType, spellType, spell_flags, mc, ss, its,\
-                    aeil, saa, daar, tewt, effects = fid_stats[fid]
-                    levelType = levelTypeNumber_Name.get(levelType,levelType)
-                    spellType = spellTypeNumber_Name.get(spellType,spellType)
-                    output = rowFormat % (
+        rowFormat = self._row_fmt_str # cache it's a property!
+        for fid in sorted(fid_stats,
+                          key=lambda x:(fid_stats[x][0].lower(),x[0])):
+            if detailed:
+                eid, cost, levelType, spellType, spell_flags, mc, ss, its, \
+                aeil, saa, daar, tewt, effects = fid_stats[fid]
+                levelType = levelTypeNumber_Name.get(levelType,levelType)
+                spellType = spellTypeNumber_Name.get(spellType,spellType)
+                output = rowFormat % (
                     u'SPEL', fid[0], fid[1], eid, cost, levelType, spellType,
-                    spell_flags, mc, ss, its, aeil, saa, daar, tewt)
-                    output += self.writeEffects(effects)
-                else:
-                    eid, cost, levelType, spellType, spell_flags = \
-                        fid_stats[fid]
-                    levelType = levelTypeNumber_Name.get(levelType,levelType)
-                    spellType = spellTypeNumber_Name.get(spellType,spellType)
-                    output = rowFormat % (
+                    spell_flags, mc, ss, its, aeil, saa, daar, tewt,
+                    self.writeEffects(effects))
+            else:
+                eid, cost, levelType, spellType, spell_flags = \
+                    fid_stats[fid]
+                levelType = levelTypeNumber_Name.get(levelType,levelType)
+                spellType = spellTypeNumber_Name.get(spellType,spellType)
+                output = rowFormat % (
                     u'SPEL', fid[0], fid[1], eid, cost, levelType, spellType,
                     spell_flags)
-                output += u'\n'
-                out.write(output)
+            out.write(output)
 
 #------------------------------------------------------------------------------
 class IngredientDetails(_UsesEffectsMixin):
     """Details on Ingredients, with functions for importing/exporting
     from/to mod/text file."""
+    _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Editor Id'),
+        _(u'Name'), _(u'Model Path'), _(u'Bound Radius'), _(u'Icon Path'),
+        _(u'Script Mod Name'), _(u'Script ObjectIndex'), _(u'Value'),
+        _(u'Weight'),) + _UsesEffectsMixin.headers * 2 + \
+                  (_(u'Additional Effects (Same format)'),)
+    _row_fmt_str = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
+                   u'"%d","%f"'
 
     def __init__(self, types=None, aliases_=None):
         super(IngredientDetails, self).__init__(aliases_)
@@ -1812,20 +1792,7 @@ class IngredientDetails(_UsesEffectsMixin):
         self.fid_stats[mid] = [eid,full, modPath, modb, iconPath, sid, value,
                                weight, effects]
 
-    def _header_row_out(self):
-        header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Editor Id'),
-                  _(u'Name'), _(u'Model Path'), _(u'Bound Radius'),
-                  _(u'Icon Path'), _(u'Script Mod Name'),
-                  _(u'Script ObjectIndex'), _(u'Value'),
-                  _(u'Weight'),) + _UsesEffectsMixin.headers * 2 + (
-                     _(u'Additional Effects (Same format)'),)
-        headFormat = u','.join([u'"%s"'] * len(header)) + u'\n'
-        rowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
-                    u'"%d","%f"'
-        header = headFormat % header
-        return header, rowFormat
-
-    def _write_rows(self, out, rowFormat):
+    def _write_rows(self, out):
         """Exports stats to specified text file."""
         altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s",' \
                        u'"%d","%f"'
@@ -1835,7 +1802,7 @@ class IngredientDetails(_UsesEffectsMixin):
             effects = self.fid_stats[fid]
             scriptfid = scriptfid or (GPath(u'None'), None)
             try:
-                output = rowFormat % (
+                output = self._row_fmt_str % (
                     fid[0],fid[1],eid,name_,modpath,modb,iconpath,
                     scriptfid[0],scriptfid[1],value,weight)
             except TypeError:

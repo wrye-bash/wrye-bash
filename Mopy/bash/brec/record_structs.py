@@ -326,7 +326,7 @@ class MreRecord(object):
         elif ins and not self.flags1.compressed:
             inPos = ins.tell()
             self.data = ins.read(self.size,type)
-            ins.seek(inPos,0,type,b'_REWIND') # type,'_REWIND' is just for debug
+            ins.seek(inPos,0,type,u'_REWIND') # type,'_REWIND' is just for debug
             self.loadData(ins,inPos+self.size)
         #--Buffered analysis (subclasses only)
         else:
