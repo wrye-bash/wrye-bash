@@ -325,8 +325,7 @@ class ContentsCheckerPatcher(Patcher):
         self.id_eid = {}
 
     @property
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
+    def active_write_sigs(self):
         return tuple(self.contTypes) if self.isActive else ()
 
     def scanModFile(self, modFile, progress):

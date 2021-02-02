@@ -58,14 +58,14 @@ class Patcher(Abstract_Patcher):
     be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
 
     @property
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
+    def active_read_sigs(self):
+        """Returns record signatures needed for reading."""
         return self._read_sigs if self.isActive else ()
 
     @property
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return self.getReadClasses
+    def active_write_sigs(self):
+        """Returns record signatures needed for writing."""
+        return self.active_read_sigs
 
     def initData(self,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as

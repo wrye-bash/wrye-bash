@@ -228,7 +228,7 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
             progress.plus()
 
     @property
-    def getReadClasses(self):
+    def active_read_sigs(self):
         return tuple(MreRecord.simpleTypes | (
             {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'}))
 

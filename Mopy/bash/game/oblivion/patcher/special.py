@@ -71,8 +71,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         self.id_ingred = {}
 
     @property
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
+    def active_write_sigs(self):
         return (b'BOOK',) if self.isActive else ()
 
     def scanModFile(self,modFile,progress):
