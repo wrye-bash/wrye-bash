@@ -25,7 +25,7 @@ from collections import defaultdict
 from itertools import chain
 from operator import attrgetter
 # Internal
-from .base import Patcher, ListPatcher
+from ..base import Patcher, ListPatcher
 from ... import bush
 from ...bolt import GPath
 from ...exception import AbstractError

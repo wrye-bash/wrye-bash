@@ -31,8 +31,8 @@ from ....bolt import GPath, deprint
 from ....brec import MreRecord, RecHeader, null4
 from ....parsers import _HandleAliases
 from ....patcher import getPatchesPath
-from ....patcher.base import Patcher, Abstract_Patcher
-from ....patcher.patchers.base import ListPatcher, ModLoader
+from ....patcher.base import Patcher, Abstract_Patcher, ListPatcher
+from ....patcher.patchers.base import ModLoader
 
 __all__ = [u'CoblCatalogsPatcher', u'CoblExhaustionPatcher',
            u'MorphFactionsPatcher', u'SEWorldTestsPatcher']

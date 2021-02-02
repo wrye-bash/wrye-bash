@@ -86,15 +86,15 @@ class Patcher(Abstract_Patcher):
     def buildPatch(self,log,progress):
         """Edits patch file as desired. Should write to log."""
 
-class AListPatcher(Abstract_Patcher):
+class ListPatcher(Patcher):
     """Subclass for patchers that have GUI lists of objects."""
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = u'=== '+ _(u'Source Mods')
 
     def __init__(self, p_name, p_file, p_sources):
         """In addition to super implementation this defines the self.srcs
-        AListPatcher attribute."""
-        super(AListPatcher, self).__init__(p_name, p_file)
+        ListPatcher attribute."""
+        super(ListPatcher, self).__init__(p_name, p_file)
         self.srcs = p_sources
         self.isActive = bool(self.srcs)
 

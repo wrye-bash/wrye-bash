@@ -27,7 +27,7 @@ from collections import Counter, defaultdict
 from itertools import chain
 # Internal
 from .. import getPatchesPath
-from ..base import AMultiTweakItem, AMultiTweaker, Patcher, AListPatcher
+from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher
 from ... import load_order, bush
 from ...bolt import GPath, deprint
 from ...brec import MreRecord
@@ -36,8 +36,6 @@ from ...mod_files import LoadFactory, ModFile
 from ...parsers import _HandleAliases
 
 # Patchers 1 ------------------------------------------------------------------
-class ListPatcher(AListPatcher,Patcher): pass
-
 class MultiTweakItem(AMultiTweakItem):
     # If True, do not call tweak_scan_file and pool the records this tweak
     # wants together with other tweaks so that we can do one big record copy

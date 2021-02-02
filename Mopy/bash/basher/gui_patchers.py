@@ -119,9 +119,9 @@ class _PatcherPanel(object):
     def saveConfig(self, configs):
         """Save config to configs dictionary.
 
-        Most patchers just save their enabled state, except the AListPatcher
-        subclasses - which save their choices - and the AliasModNames that
-        saves the aliases."""
+        Most patchers just save their enabled state, except the
+        _ListPatcherPanel subclasses - which save their choices - and the
+        AliasModNames that saves the aliases."""
         config = configs[self.__class__._config_key] = {}
         config['isEnabled'] = self.isEnabled
         return config # return the config dict for this patcher to further edit
