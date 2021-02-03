@@ -1356,7 +1356,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             log.setHeader(u'== '+_(u'Overview')+u'\n')
 ##            log('{{CSS:wtxt_sand_small.css}}')
             log(u'. '+_(u'Name')+u': %s'%BCFArchive)
-            log(u'. '+_(u'Size')+u': %s'% round_size(converter.fullPath.size))
+            log(u'. ' + _(u'Size') +u': %s' % round_size(converter.fullPath.psize))
             log(u'. ' + _(u'Remapped: %u file(s)') %
                 len(converter.convertedFiles))
             log.setHeader(u'. ' + _(u'Requires: %u file(s)') %

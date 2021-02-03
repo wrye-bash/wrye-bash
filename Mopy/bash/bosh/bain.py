@@ -2265,8 +2265,8 @@ class InstallersData(DataStore):
             if apath in deleted:
                 do_refresh |= bool(self.data_sizeCrcDate.pop(path_key, None))
             else:
-                self.data_sizeCrcDate[path_key] = (apath.size, apath.crc,
-                                                   apath.mtime)
+                s, m = apath.size_mtime()
+                self.data_sizeCrcDate[path_key] = (s, apath.crc, m)
                 do_refresh = True
         return do_refresh # Some tracked files changed, update installers status
 

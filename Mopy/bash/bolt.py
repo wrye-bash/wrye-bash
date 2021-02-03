@@ -641,7 +641,7 @@ class Path(object):
 
     #--size, atime, ctime
     @property
-    def size(self):
+    def psize(self):
         """Size of file or directory."""
         if self.isdir():
             join = os.path.join

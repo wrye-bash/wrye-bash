@@ -1548,7 +1548,7 @@ class PluggyCosave(ACosave):
             # The Pluggy file format requires reading a file twice: once all
             # but the last 12 bytes, which is used for reading the header and
             # chunks, and once all but the last 4 bytes, for a CRC check.
-            total_size = self.abs_path.size
+            total_size = self.abs_path.psize
             with self.abs_path.open(u'rb') as ins:
                 # This is what we'll read the header and chunks from later.
                 buffered_data = ins.read(total_size - 12)

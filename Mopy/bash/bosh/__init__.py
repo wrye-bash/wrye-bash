@@ -671,7 +671,7 @@ class ModInfo(FileInfo):
         #--Merge info
         stored_size, canMerge = self.get_table_prop(u'mergeInfo', (None, None))
         if stored_size is not None:
-            self.set_table_prop(u'mergeInfo', (filePath.size, canMerge))
+            self.set_table_prop(u'mergeInfo', (filePath.psize, canMerge))
 
     def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
