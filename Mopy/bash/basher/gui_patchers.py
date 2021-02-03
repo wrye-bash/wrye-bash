@@ -28,7 +28,7 @@ from itertools import chain
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt, exception
 from ..balt import Links, SeparatorLink, CheckLink
-from ..bolt import GPath, text_wrap
+from ..bolt import GPath, text_wrap, dict_sort
 from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     Spacer, TextArea, TOP, VLayout, EventResult, PanelWin, ListBox, \
     CheckListBox, DeselectAllButton, SelectAllButton
@@ -194,7 +194,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         """Sets alias text according to current aliases."""
         self.gAliases.text_content = u'\n'.join([
             u'%s >> %s' % (alias_target, alias_repl)
-            for alias_target, alias_repl in sorted(self._ci_aliases.items())])
+            for alias_target, alias_repl in dict_sort(self._ci_aliases)])
 
     def OnEditAliases(self):
         aliases_text = self.gAliases.text_content

@@ -2215,7 +2215,7 @@ class ModInfos(FileInfos):
         name_mergeInfo = self.table.getColumn(u'mergeInfo')
         #--Add known/unchanged and esms - we need to scan dependent mods
         # first to account for mergeability of their masters
-        for mpath, modInfo in sorted(self.items(),
+        for mpath, modInfo in sorted(self.items(), ##: dict_sort
                 key=lambda tup: load_order.cached_lo_index(tup[0]),
                                      reverse=True):
             size, canMerge = name_mergeInfo.get(mpath, (None, None))

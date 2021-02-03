@@ -29,7 +29,7 @@ from itertools import chain
 from .. import getPatchesPath
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher
 from ... import load_order, bush
-from ...bolt import GPath, deprint
+from ...bolt import GPath, deprint, dict_sort
 from ...brec import MreRecord
 from ...exception import AbstractError
 from ...mod_files import LoadFactory, ModFile
@@ -403,9 +403,9 @@ class ImportPatcher(ListPatcher, ModLoader):
     def _plog(self,log,type_count):
         """Most common logging pattern - override as needed."""
         log(self.__class__.logMsg)
-        for type_,count in sorted(type_count.iteritems()):
+        for top_grup_sig, count in dict_sort(type_count):
             if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')
-                          % {u'type': type_, u'count': count})
+                % {u'type': top_grup_sig.decode(u'ascii'), u'count': count})
 
     def _plog1(self,log,mod_count): # common logging variation
         log(self.__class__.logMsg % sum(mod_count.values()))
@@ -418,5 +418,5 @@ class ImportPatcher(ListPatcher, ModLoader):
             if not count: continue
             typeName = bush.game.record_type_name[top_rec_type]
             log(u'* %s: %d' % (typeName, count))
-            for modName in sorted(counts):
-                log(u'  * %s: %d' % (modName, counts[modName]))
+            for modName, type_counts in dict_sort(counts):
+                log(u'  * %s: %d' % (modName, type_counts))

@@ -66,8 +66,7 @@ class _APreserver(ImportPatcher):
         #--Type Fields
         self._fid_rec_attrs_class = (defaultdict(dict) if self._multi_tag
                                      else defaultdict(tuple))
-        self._fid_rec_attrs_class.update({r: a for r, a
-                                          in self._fid_rec_attrs.iteritems()})
+        self._fid_rec_attrs_class.update(self._fid_rec_attrs)
         # We want FormID attrs in the full recAttrs as well. They're only
         # separate for checking before we import
         if self._multi_tag: ##: This is hideous

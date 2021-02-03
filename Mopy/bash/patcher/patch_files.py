@@ -31,7 +31,7 @@ from ..balt import readme_url
 from .. import load_order
 from .. import bass
 from ..brec import MreRecord, RecHeader
-from ..bolt import GPath, SubProgress, deprint, Progress
+from ..bolt import GPath, SubProgress, deprint, Progress, dict_sort
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import ModFile, LoadFactory
@@ -126,7 +126,7 @@ class PatchFile(ModFile):
         #--Load Mods and error mods
         if self.pfile_aliases:
             log.setHeader(u'= ' + _(u'Mod Aliases'))
-            for alias_target, alias_repl in sorted(self.pfile_aliases.iteritems()):
+            for alias_target, alias_repl in dict_sort(self.pfile_aliases):
                 log(u'* %s >> %s' % (alias_target, alias_repl))
 
     def init_patchers_data(self, patchers, progress):
