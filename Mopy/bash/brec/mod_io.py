@@ -100,6 +100,16 @@ class RecHeader(RecordHeader):
             pack_args.append(self.extra)
         return struct_pack(*pack_args)
 
+    def skip_blob(self, ins):
+        # type: (ModReader) -> None
+        """Skip the record - ins must be positioned at the beginning of the
+        record data, ie call this immediately after unpacking self."""
+        ins.seek(self.size, 1, self.recType) # aka self.blob_size()
+
+    def blob_size(self):
+        """The size of the blob this header is heading"""
+        return self.size
+
     def __repr__(self):
         return u'<Record Header: [%s:%s] v%u>' % (
             self.recType, strFid(self.fid), self.form_version)
@@ -142,14 +152,17 @@ class GrupHeader(RecordHeader):
             pack_args.append(self.extra)
         return struct_pack(*pack_args)
 
-    def skip_group(self, ins): # won't be called often, no need for inlines
+    def skip_blob(self, ins): # won't be called often, no need for inlines
         # type: (ModReader) -> None
         """Skip the group - ins must be positioned at the beginning of the
         block of group records, ie call this immediately after unpacking self.
         """
-        ins.seek(self.size - self.__class__.rec_header_size, 1,
-            # label is an int for MobDials groupType == 7
-            u'GRUP.%s' % self.label)
+        # label is an int for MobDials groupType == 7
+        ins.seek(self.blob_size(), 1, u'GRUP', self.label)
+
+    def blob_size(self):
+        """The size of the grup blob this header is heading."""
+        return self.size - self.__class__.rec_header_size
 
     def __repr__(self):
         return u'<GRUP Header: %s, %s>' % (
@@ -159,6 +172,10 @@ class TopGrupHeader(GrupHeader):
     """Fixed size structure signaling a top level group of records."""
     __slots__ = ()
     is_top_group_header = True
+
+    def __init__(self, grup_size=0, grup_records_sig=b'', arg3=0, arg4=0):
+        super(TopGrupHeader, self).__init__(grup_size, grup_records_sig, 0,
+                                            arg3, arg4)
 
     def pack_head(self, __rh=RecordHeader):
         pack_args = [__rh.pack_formats[0], b'GRUP', self.size,
@@ -184,6 +201,7 @@ def unpack_header(ins, __rh=RecordHeader):
         if str0 in __rh.top_grup_sigs:
             args = list(args)
             args[2] = str0
+            del args[3]
             return TopGrupHeader(*args[1:])
         else:
             raise ModError(ins.inName, u'Bad Top GRUP type: %r' % str0)

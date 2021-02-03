@@ -180,7 +180,7 @@ class _RecGroupDict(dict):
                 raise ModError(self._mod_file.fileInfo.name,
                u'Failed to retrieve top class for %s; load factory is '
                u'%r' % (top_grup_sig, self._mod_file.loadFactory))
-        self[top_grup_sig] = topClass(TopGrupHeader(0, top_grup_sig, 0, 0),
+        self[top_grup_sig] = topClass(TopGrupHeader(0, top_grup_sig, 0),
                                       self._mod_file.loadFactory)
         self[top_grup_sig].setChanged()
         return self[top_grup_sig]
@@ -247,7 +247,7 @@ class ModFile(object):
                                 set(), False, False)
                     else:
                         self.topsSkipped.add(label)
-                        header.skip_group(ins)
+                        header.skip_blob(ins)
                 except:
                     if catch_errors:
                         deprint(u'Error in %s' % self.fileInfo, traceback=True)
@@ -446,7 +446,6 @@ class ModHeaderReader(object):
         with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
-            ins_seek = ins.seek
             try:
                 while not ins_at_end():
                     header = ins_unpack_rec_header()
@@ -454,7 +453,7 @@ class ModHeaderReader(object):
                     header_rec_sig = header.recType
                     if header_rec_sig != b'GRUP':
                         ret_headers[header_rec_sig].append(header)
-                        ins_seek(header.size, 1)
+                        header.skip_blob(ins)
             except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
                     u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
@@ -472,7 +471,6 @@ class ModHeaderReader(object):
         # We want to read only the children of these, so skip their tops
         interested_sigs = {b'CELL', b'WRLD'}
         tops_to_skip = interested_sigs | {bush.game.Esp.plugin_header_sig}
-        grup_header_size = RecordHeader.rec_header_size
         with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
@@ -486,20 +484,20 @@ class ModHeaderReader(object):
                         # Skip all top-level GRUPs we're not interested in
                         # (group type == 0) and all persistent children and
                         # dialog topics (group type == 7 or 8, respectively).
-                        if ((header_group_type == 0 and
+                        if ((header.is_top_group_header and
                              header.label not in interested_sigs)
                                 or header_group_type in (7, 8)):
                             # Note that GRUP sizes include their own header
                             # size, so we need to subtract that
-                            ins_seek(header.size - grup_header_size, 1)
+                            header.skip_blob(ins)
                     elif header_rec_sig in tops_to_skip:
                         # Skip TES4, CELL and WRLD to get to their contents
-                        ins_seek(header.size, 1)
+                        header.skip_blob(ins)
                     else:
                         # We must be in a temp CELL children group, store the
                         # header and skip the record body
                         ret_headers.append(header)
-                        ins_seek(header.size, 1)
+                        header.skip_blob(ins)
             except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
                     u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))

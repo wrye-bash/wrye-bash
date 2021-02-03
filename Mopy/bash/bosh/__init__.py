@@ -657,7 +657,7 @@ class ModInfo(FileInfo):
                     #--Open original and skip over header
                     reader = ModReader(self.name,ins)
                     tes4_rec_header = self._read_tes4_record(reader)
-                    reader.seek(tes4_rec_header.size,1)
+                    tes4_rec_header.skip_blob(reader)
                     #--Write new header
                     self.header.getSize()
                     self.header.dump(out)
