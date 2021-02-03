@@ -355,9 +355,9 @@ class ModCleaner(object):
             if len(modInfo.masterNames) > 0:
                 subprogress = bolt.SubProgress(progress,i,i+1)
                 if detailed:
-                    subprogress.setFull(max(modInfo.size*2,1))
+                    subprogress.setFull(max(modInfo.fsize * 2, 1))
                 else:
-                    subprogress.setFull(max(modInfo.size,1))
+                    subprogress.setFull(max(modInfo.fsize, 1))
                 #--Scan
                 parentType = None
                 parentFid = None
@@ -426,7 +426,7 @@ class ModCleaner(object):
                         if parents_to_scan:
                             # Detailed info - need to re-scan for CELL and WRLD infomation
                             ins.seek(0)
-                            baseSize = modInfo.size
+                            baseSize = modInfo.fsize
                             while not insAtEnd():
                                 subprogress(baseSize+insTell())
                                 header = insUnpackRecHeader()
@@ -475,7 +475,7 @@ class NvidiaFogFixer(object):
                 __wrld_types=_wrld_types,
                 __packer=structs_cache[u'12s2f2l2f'].pack):
         """Duplicates file, then walks through and edits file as necessary."""
-        progress.setFull(self.modInfo.size)
+        progress.setFull(self.modInfo.fsize)
         fixedCells = self.fixedCells
         fixedCells.clear()
         #--File stream
@@ -557,7 +557,7 @@ class ModDetails(object):
                 _rsig = header.recType
                 if _rsig == b'GRUP':
                     label = header.label
-                    progress(1.0 * ins.tell() / modInfo.size,
+                    progress(1.0 * ins.tell() / modInfo.fsize,
                              _(u'Scanning: %s') % label.decode(u'ascii'))
                     records = group_records[label]
                     if label in complex_groups: # skip these groups

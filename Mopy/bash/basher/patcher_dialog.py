@@ -158,7 +158,7 @@ class PatchDialog(DialogWindow):
         progress = None
         try:
             patch_name = self.patchInfo.name
-            patch_size = self.patchInfo.size
+            patch_size = self.patchInfo.fsize
             progress = balt.Progress(patch_name.s,(u' '*60+u'\n'), abort=True)
             timer1 = time.clock()
             #--Save configs
@@ -242,7 +242,7 @@ class PatchDialog(DialogWindow):
                                    % patch_name)
             # although improbable user has package with bashed patches...
             info = bosh.modInfos.new_info(patch_name, notify_bain=True)
-            if info.size == patch_size:
+            if info.fsize == patch_size:
                 # needed if size remains the same - mtime is set in
                 # parsers.ModFile#safeSave which can't use
                 # setmtime(crc_changed), as no info is there. In this case

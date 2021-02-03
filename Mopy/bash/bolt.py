@@ -1148,7 +1148,7 @@ class DataDict(object):
 class AFile(object):
     """Abstract file, supports caching - beta."""
     _null_stat = (-1, None)
-    __slots__ = (u'_file_key', u'_file_size', u'_file_mod_time')
+    __slots__ = (u'_file_key', u'fsize', u'_file_mod_time')
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
@@ -1191,14 +1191,14 @@ class AFile(object):
         return self._file_changed(self._stat_tuple())
 
     def _file_changed(self, stat_tuple):
-        return (self._file_size, self._file_mod_time) != stat_tuple
+        return (self.fsize, self._file_mod_time) != stat_tuple
 
     def _reset_cache(self, stat_tuple, load_cache):
-        """Reset cache flags (size, mtime,...) and possibly reload the cache.
+        """Reset cache flags (fsize, mtime,...) and possibly reload the cache.
         :param load_cache: if True either load the cache (header in Mod and
         SaveInfo) or reset it so it gets reloaded later
         """
-        self._file_size, self._file_mod_time = stat_tuple
+        self.fsize, self._file_mod_time = stat_tuple
 
     def __repr__(self): return u'%s<%s>' % (self.__class__.__name__,
                                             self.abs_path.stail)

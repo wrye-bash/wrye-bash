@@ -263,7 +263,7 @@ class SaveFile(object):
         with self.fileInfo.abs_path.open(u'rb') as ins:
             #--Progress
             progress = progress or bolt.Progress()
-            progress.setFull(self.fileInfo.size)
+            progress.setFull(self.fileInfo.fsize)
             #--Header
             progress(0,_(u'Reading Header.'))
             del self._masters[:]
@@ -339,7 +339,7 @@ class SaveFile(object):
                 out.write(structs_cache[fmt].pack(*args))
             #--Progress
             progress = progress or bolt.Progress()
-            progress.setFull(self.fileInfo.size)
+            progress.setFull(self.fileInfo.fsize)
             #--Header
             progress(0,_(u'Writing Header.'))
             self.header.dump_header(out)
