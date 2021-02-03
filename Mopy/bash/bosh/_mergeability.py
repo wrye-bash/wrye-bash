@@ -101,10 +101,8 @@ def isPBashMergeable(modInfo, minfos, reasons):
     newblocks = []
     self_name = modInfo.name
     for top_type,block in modFile.tops.iteritems():
-        for record in block.iter_records():
-            if not record.flags1.ignored and record.fid[0] == self_name:
-                # if new records exist but are deleted just skip em.
-                if record.flags1.deleted: continue
+        for record in block.iter_present_records(): # skip deleted/ignored
+            if record.fid[0] == self_name:
                 if not verbose: return False
                 newblocks.append(top_type)
                 break

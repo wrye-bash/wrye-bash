@@ -135,13 +135,17 @@ class MobBase(object):
         return ModReader(self.inName, io.BytesIO(self.data))
 
     def iter_filtered_records(self, wanted_sigs, include_ignored=False):
-        """Filters iter_records, returning a generator that only yields records
-        with one of the signatures in wanted_sigs. If include_ignored is True,
-        records that have the Ignored flag set will be included. Otherwise,
-        they will be ignored as well."""
-        return (r for r in self.iter_records() if r._rec_sig in wanted_sigs and
-                (include_ignored or not r.flags1.ignored)
-                and not r.flags1.deleted) # skip deleted records (ugh)
+        """Filters iter_present_records, returning a generator that only
+        yields records with one of the signatures in wanted_sigs."""
+        ##: TODO(ut): revisit uses - replace with iter_present_records ??
+        return (r for r in self.iter_present_records(include_ignored) if
+                r._rec_sig in wanted_sigs)  # skip deleted records (ugh)
+
+    def iter_present_records(self, include_ignored=False):
+        """Filters iter_records, returning only records that have not set
+        the deleted flag and/or the ignore flag if include_ignored is False."""
+        return (r for r in self.iter_records() if not r.flags1.deleted and (
+                include_ignored or not r.flags1.ignored))
 
     # Abstract methods --------------------------------------------------------
     def get_all_signatures(self):
