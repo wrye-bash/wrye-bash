@@ -31,6 +31,7 @@ others barely even fit into the pattern at all (e.g. FidReplacer)."""
 
 from __future__ import division, print_function
 
+import csv
 import ctypes
 import re
 from collections import defaultdict, Counter
@@ -41,12 +42,71 @@ from operator import attrgetter, itemgetter
 from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
-from .bolt import GPath, decoder, deprint, CsvReader, csvFormat, floats_equal, \
-    setattr_deep, attrgetter_cache
-from .brec import MreRecord, MelObject, _coerce, genFid, RecHeader
+from .bolt import GPath, decoder, deprint, csvFormat, floats_equal, \
+    setattr_deep, attrgetter_cache, struct_unpack, struct_pack
+from .brec import MreRecord, MelObject, genFid, RecHeader
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
+# Utils ##: absorb in CsvParser
+def _coerce(value, newtype, base=None, AllowNone=False):
+    try:
+        if newtype is float:
+            #--Force standard precision
+            return round(struct_unpack('f', struct_pack('f', float(value)))[0], 6)
+        elif newtype is bool:
+            if isinstance(value, (unicode, bytes)): ##: investigate
+                retValue = value.strip().lower()
+                if AllowNone and retValue == u'none': return None
+                return retValue not in (u'',u'none',u'false',u'no',u'0',u'0.0')
+            else: return bool(value)
+        elif base: retValue = newtype(value, base)
+        elif newtype is unicode: retValue = decoder(value)
+        else: retValue = newtype(value)
+        if (AllowNone and
+            (isinstance(retValue,bytes) and retValue.lower() == b'none') or
+            (isinstance(retValue,unicode) and retValue.lower() == u'none')
+            ):
+            return None
+        return retValue
+    except (ValueError,TypeError):
+        if newtype is int: return 0
+        return None
+
+class _CsvReader(object):
+    """For reading csv files. Handles comma, semicolon and tab separated (excel) formats.
+       CSV files must be encoded in UTF-8"""
+    @staticmethod
+    def utf_8_encoder(unicode_csv_data):
+        for line in unicode_csv_data:
+            yield line.encode(u'utf8')
+
+    def __init__(self,path): ##: Py3 Revisit - is Csv reader still bytes?  get rid of BOM?
+        self.ins = GPath(path).open(u'r', encoding=u'utf-8-sig')
+        first_line = self.ins.readline()
+        excel_fmt = b'excel-tab' if u'\t' in first_line else b'excel'
+        self.ins.seek(0)
+        if excel_fmt == b'excel':
+            # TypeError: "delimiter" must be string, not unicode
+            delimiter = b';' if b';' in first_line else b','
+            self.reader = csv.reader(_CsvReader.utf_8_encoder(self.ins),
+                                     excel_fmt, delimiter=delimiter)
+        else:
+            self.reader = csv.reader(_CsvReader.utf_8_encoder(self.ins),
+                                     excel_fmt)
+
+    def __enter__(self): return self
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
+
+    def __iter__(self):
+        for row in self.reader:
+            yield [unicode(x, u'utf8') for x in row]
+
+    def close(self):
+        self.reader = None
+        self.ins.close()
+
+#------------------------------------------------------------------------------
 def _key_sort(di, id_eid_=None, keys_dex=(), values_dex=(), by_value=False):
     """Adapted to current uses"""
     if id_eid_ is not None: # we passed id_eid in sort by eid
@@ -76,7 +136,7 @@ class CsvParser(object):
         work.
 
         :param csv_path: The path to the CSV file that should be read."""
-        with CsvReader(csv_path) as ins:
+        with _CsvReader(csv_path) as ins:
             for fields in ins:
                 try:
                     self._parse_line(fields)
@@ -111,7 +171,7 @@ class _HandleAliases(CsvParser):
         self.aliases = aliases_ or {} # type: dict
 
     def _get_alias(self, modname):
-        """Encapsulate getting alias for modname returned from CsvReader."""
+        """Encapsulate getting alias for modname returned from _CsvReader."""
         ##: inline once parsers are refactored (and document also the csv format)
         modname = GPath(modname)
         return GPath(self.aliases.get(modname, modname)) ##: drop GPath?
@@ -1587,21 +1647,17 @@ class SpellRecords(_UsesEffectsMixin):
         detailed, spellTypeName_Number, levelTypeName_Number = \
             self.detailed, self.spellTypeName_Number, self.levelTypeName_Number
         fid_stats = self.fid_stats
-        is_old_format = False
-        with CsvReader(textPath) as ins:
+        with _CsvReader(textPath) as ins:
             for fields in ins:
                 if len(fields) < 8 or fields[2][:2] != u'0x': continue
                 if isinstance(fields[4], unicode): # Index 4 was FULL
-                    is_old_format = True
-                if is_old_format: # FULL was dropped and flags added
                     group, mmod, mobj, eid, _full, cost, levelType, \
-                    spellType = fields[:8]
+                    spellType = fields[:8]# FULL was dropped and flags added
                     spell_flags = 0
                 else:
                     group, mmod, mobj, eid, cost, levelType, spell_flags = \
                         fields[:8]
                 fields = fields[8:]
-                group = _coerce(group, unicode)
                 if group.lower() != u'spel': continue
                 mid = self._coerce_fid(mmod, mobj)
                 eid = _coerce(eid, unicode, AllowNone=True)

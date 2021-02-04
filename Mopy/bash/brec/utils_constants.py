@@ -26,35 +26,10 @@ almost all other parts of brec."""
 from __future__ import division, print_function
 
 from .. import bolt
-from ..bolt import cstrip, decoder, Flags, struct_pack, struct_unpack, \
-    structs_cache
+from ..bolt import cstrip, decoder, Flags, structs_cache
 # no local imports, imported everywhere in brec
 
 # Random stuff ----------------------------------------------------------------
-def _coerce(value, newtype, base=None, AllowNone=False):
-    try:
-        if newtype is float:
-            #--Force standard precision
-            return round(struct_unpack('f', struct_pack('f', float(value)))[0], 6)
-        elif newtype is bool:
-            if isinstance(value, (unicode, bytes)): ##: investigate
-                retValue = value.strip().lower()
-                if AllowNone and retValue == u'none': return None
-                return retValue not in (u'',u'none',u'false',u'no',u'0',u'0.0')
-            else: return bool(value)
-        elif base: retValue = newtype(value, base)
-        elif newtype is unicode: retValue = decoder(value)
-        else: retValue = newtype(value)
-        if (AllowNone and
-            (isinstance(retValue,bytes) and retValue.lower() == b'none') or
-            (isinstance(retValue,unicode) and retValue.lower() == u'none')
-            ):
-            return None
-        return retValue
-    except (ValueError,TypeError):
-        if newtype is int: return 0
-        return None
-
 _int_unpacker = structs_cache[u'I'].unpack
 
 def _make_hashable(target_obj):

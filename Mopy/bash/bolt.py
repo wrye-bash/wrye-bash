@@ -29,10 +29,8 @@ import cPickle as pickle  # PY3
 import codecs
 import collections
 import copy
-import csv
 import datetime
 import errno
-import io
 import os
 import re
 import shutil
@@ -969,40 +967,6 @@ def body_(string_val):
 reUnixNewLine = re.compile(u'' r'(?<!\r)\n', re.U)
 
 # Util Classes ----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class CsvReader(object):
-    """For reading csv files. Handles comma, semicolon and tab separated (excel) formats.
-       CSV files must be encoded in UTF-8"""
-    @staticmethod
-    def utf_8_encoder(unicode_csv_data):
-        for line in unicode_csv_data:
-            yield line.encode(u'utf8')
-
-    def __init__(self,path): ##: Py3 Revisit - is Csv reader still bytes?  get rid of BOM?
-        self.ins = GPath(path).open(u'r', encoding=u'utf-8-sig')
-        first_line = self.ins.readline()
-        excel_fmt = b'excel-tab' if u'\t' in first_line else b'excel'
-        self.ins.seek(0)
-        if excel_fmt == b'excel':
-            # TypeError: "delimiter" must be string, not unicode
-            delimiter = b';' if b';' in first_line else b','
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),
-                                     excel_fmt, delimiter=delimiter)
-        else:
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),
-                                     excel_fmt)
-
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
-
-    def __iter__(self):
-        for row in self.reader:
-            yield [unicode(x, u'utf8') for x in row]
-
-    def close(self):
-        self.reader = None
-        self.ins.close()
-
 #------------------------------------------------------------------------------
 class Flags(object):
     """Represents a flag field."""
