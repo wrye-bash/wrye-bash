@@ -95,21 +95,21 @@ class LoadFactory(object):
             b'CELL', b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'])):
         """Adds specified class."""
         if type(recClass) is bytes:
-            recType = recClass
+            class_sig = recClass
             recClass = MreRecord
         else:
             try:
-                recType = recClass.rec_sig
+                class_sig = recClass.rec_sig
             except AttributeError:
                 raise ValueError(u'addClass: bytes or MreRecord expected '
                                  u'- got: %r!' % recClass)
         #--Don't replace complex class with default (MreRecord) class
-        if recType in self.type_class and recClass == MreRecord:
+        if class_sig in self.type_class and recClass == MreRecord:
             return
-        self.recTypes.add(recType)
-        self.type_class[recType] = recClass
+        self.recTypes.add(class_sig)
+        self.type_class[class_sig] = recClass
         #--Top type
-        if recType in __cell_rec_sigs:
+        if class_sig in __cell_rec_sigs:
             self.topTypes.add(b'CELL')
             self.topTypes.add(b'WRLD')
             if self.keepAll:
@@ -117,10 +117,10 @@ class LoadFactory(object):
                     if cell_rec_sig not in self.type_class:
                         self.type_class[cell_rec_sig] = MreRecord
         ##: apart from this and cell stuff above set(type_class) == topTypes
-        elif recType == b'INFO':
+        elif class_sig == b'INFO':
             self.topTypes.add(b'DIAL')
         else:
-            self.topTypes.add(recType)
+            self.topTypes.add(class_sig)
 
     def getRecClass(self,type):
         """Returns class for record type or None."""
@@ -180,7 +180,7 @@ class _RecGroupDict(dict):
                 raise ModError(self._mod_file.fileInfo.name,
                u'Failed to retrieve top class for %s; load factory is '
                u'%r' % (top_grup_sig, self._mod_file.loadFactory))
-        self[top_grup_sig] = topClass(TopGrupHeader(0, top_grup_sig, 0, 0),
+        self[top_grup_sig] = topClass(TopGrupHeader(0, top_grup_sig, 0),
                                       self._mod_file.loadFactory)
         self[top_grup_sig].setChanged()
         return self[top_grup_sig]
@@ -202,7 +202,6 @@ class ModFile(object):
     def load(self, do_unpack=False, progress=None, loadStrings=True,
              catch_errors=True, do_map_fids=True): # TODO: let it blow?
         """Load file."""
-        from . import bosh
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
         with ModReader(self.fileInfo.name,self.fileInfo.getPath().open(
@@ -211,21 +210,8 @@ class ModFile(object):
             # Main header of the mod file - generally has 'TES4' signature
             header = insRecHeader()
             self.tes4 = bush.game.plugin_header_class(header,ins,True)
-            # Check if we need to handle strings
-            self.strings.clear()
-            if do_unpack and loadStrings and self.tes4.flags1.hasStrings:
-                stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
-                lang = bosh.oblivionIni.get_ini_language()
-                stringsPaths = self.fileInfo.getStringsPaths(lang)
-                stringsProgress.setFull(max(len(stringsPaths),1))
-                for i,path in enumerate(stringsPaths):
-                    self.strings.loadFile(path,SubProgress(stringsProgress,i,i+1),lang)
-                    stringsProgress(i)
-                ins.setStringTable(self.strings)
-                subProgress = SubProgress(progress,0.1,1.0)
-            else:
-                ins.setStringTable(None)
-                subProgress = progress
+            subProgress = self.__load_strs(do_unpack, ins, loadStrings,
+                                           progress)
             #--Raw data read
             subProgress.setFull(ins.size)
             insAtEnd = ins.atEnd
@@ -261,7 +247,7 @@ class ModFile(object):
                                 set(), False, False)
                     else:
                         self.topsSkipped.add(label)
-                        header.skip_group(ins)
+                        header.skip_blob(ins)
                 except:
                     if catch_errors:
                         deprint(u'Error in %s' % self.fileInfo, traceback=True)
@@ -273,6 +259,29 @@ class ModFile(object):
                 subProgress(insTell())
         # Done reading - convert to long FormIDs at the IO boundary
         if do_map_fids: self._convert_fids(to_long=True)
+
+    def __load_strs(self, do_unpack, ins, loadStrings, progress):
+        # Check if we need to handle strings
+        self.strings.clear()
+        if do_unpack and loadStrings and self.tes4.flags1.hasStrings:
+            from . import bosh
+            stringsProgress = SubProgress(progress, 0,
+                                          0.1)  # Use 10% of progress bar
+            # for strings
+            lang = bosh.oblivionIni.get_ini_language()
+            stringsPaths = self.fileInfo.getStringsPaths(lang)
+            stringsProgress.setFull(max(len(stringsPaths), 1))
+            for i, path in enumerate(stringsPaths):
+                self.strings.loadFile(path,
+                                      SubProgress(stringsProgress, i, i + 1),
+                                      lang)
+                stringsProgress(i)
+            ins.setStringTable(self.strings)
+            subProgress = SubProgress(progress, 0.1, 1.0)
+        else:
+            ins.setStringTable(None)
+            subProgress = progress
+        return subProgress
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
@@ -437,7 +446,6 @@ class ModHeaderReader(object):
         with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
-            ins_seek = ins.seek
             try:
                 while not ins_at_end():
                     header = ins_unpack_rec_header()
@@ -445,7 +453,7 @@ class ModHeaderReader(object):
                     header_rec_sig = header.recType
                     if header_rec_sig != b'GRUP':
                         ret_headers[header_rec_sig].append(header)
-                        ins_seek(header.size, 1)
+                        header.skip_blob(ins)
             except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
                     u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
@@ -463,7 +471,6 @@ class ModHeaderReader(object):
         # We want to read only the children of these, so skip their tops
         interested_sigs = {b'CELL', b'WRLD'}
         tops_to_skip = interested_sigs | {bush.game.Esp.plugin_header_sig}
-        grup_header_size = RecordHeader.rec_header_size
         with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
@@ -477,20 +484,20 @@ class ModHeaderReader(object):
                         # Skip all top-level GRUPs we're not interested in
                         # (group type == 0) and all persistent children and
                         # dialog topics (group type == 7 or 8, respectively).
-                        if ((header_group_type == 0 and
+                        if ((header.is_top_group_header and
                              header.label not in interested_sigs)
                                 or header_group_type in (7, 8)):
                             # Note that GRUP sizes include their own header
                             # size, so we need to subtract that
-                            ins_seek(header.size - grup_header_size, 1)
+                            header.skip_blob(ins)
                     elif header_rec_sig in tops_to_skip:
                         # Skip TES4, CELL and WRLD to get to their contents
-                        ins_seek(header.size, 1)
+                        header.skip_blob(ins)
                     else:
                         # We must be in a temp CELL children group, store the
                         # header and skip the record body
                         ret_headers.append(header)
-                        ins_seek(header.size, 1)
+                        header.skip_blob(ins)
             except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
                     u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))

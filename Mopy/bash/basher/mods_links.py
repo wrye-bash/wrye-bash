@@ -31,8 +31,9 @@ from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
-from ..bolt import CsvReader, GPath, dict_sort
+from ..bolt import GPath, dict_sort
 from ..gui import BusyCursor
+from ..parsers import CsvParser
 
 __all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
            u'Mods_OblivionVersion', u'Mods_CreateBlankBashedPatch',
@@ -373,31 +374,36 @@ class Mods_ModChecker(ItemLink):
         ModChecker.create_or_raise()
 
 #------------------------------------------------------------------------------
-class Mods_ExportBashTags(ItemLink):
+class _Mods_BashTags(ItemLink, CsvParser):
+    pass
+
+class Mods_ExportBashTags(_Mods_BashTags):
     """Writes all currently applied bash tags to a CSV file."""
     _text = _(u'Export Bash Tags...')
     _help = _(u'Exports all currently applied bash tags to a CSV file.')
+    _csv_header = u'Plugin', u'Tags'
 
     def Execute(self):
         exp_path = self._askSave(title=_(u'Export bash tags to CSV file:'),
             defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
             wildcard=u'*.csv')
         if not exp_path: return
-        plugins_exported = 0
-        with exp_path.open(u'w', encoding=u'utf-8-sig') as out:
-            out.write(u'"Plugin","Tags"\n')
-            for pl_name, p in dict_sort(bosh.modInfos):
-                curr_tags = p.getBashTags()
-                if curr_tags:
-                    out.write(u'"%s","%s"\n' % (
-                        pl_name, u', '.join(sorted(curr_tags))))
-                    plugins_exported += 1
+        self.plugins_exported = 0
+        self.writeToText(exp_path)
         self._showOk(_(u'Exported tags for %(exp_num)u plugin(s) to '
-                       u'%(exp_path)s.') % {u'exp_num': plugins_exported,
+                       u'%(exp_path)s.') % {u'exp_num': self.plugins_exported,
                                             u'exp_path': exp_path})
 
+    def _write_rows(self, out):
+        for pl_name, p in dict_sort(bosh.modInfos):
+            curr_tags = p.getBashTags()
+            if curr_tags:
+                out.write(u'"%s","%s"\n' % (
+                    pl_name, u', '.join(sorted(curr_tags))))
+                self.plugins_exported += 1
+
 #------------------------------------------------------------------------------
-class Mods_ImportBashTags(ItemLink):
+class Mods_ImportBashTags(_Mods_BashTags):
     """Reads bash tags from a CSV file and applies them to the current plugins
     (as far as possible)."""
     _text = _(u'Import Bash Tags...')
@@ -414,25 +420,29 @@ class Mods_ImportBashTags(ItemLink):
             defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
             wildcard=u'*.csv')
         if not imp_path: return
-        first_line = True
-        plugins_imported = []
-        with CsvReader(imp_path) as ins:
-            for csv_line in ins:
-                if first_line:
-                    first_line = False
-                    if len(csv_line) != 2 or csv_line != [u'Plugin', u'Tags']:
-                        self._showError(_(u'The selected file is not a valid '
-                                          u'bash tags CSV export.'))
-                        return
-                    continue
-                pl_name, curr_tags = GPath(csv_line[0]), csv_line[1]
-                if pl_name in bosh.modInfos:
-                    plugins_imported.append(pl_name)
-                    bosh.modInfos[pl_name].setBashTags(
-                        {t.strip() for t in curr_tags.split(u',')})
-        self.window.RefreshUI(redraw=plugins_imported, refreshSaves=False)
+        self.first_line = True
+        self.plugins_imported = []
+        try:
+            self.readFromText(imp_path)
+        except exception.BoltError:
+            self._showError(_(u'The selected file is not a valid '
+                              u'bash tags CSV export.'))
+            return
+        self.window.RefreshUI(redraw=self.plugins_imported, refreshSaves=False)
         self._showOk(
-            _(u'Imported tags for %u plugin(s).') % len(plugins_imported))
+            _(u'Imported tags for %u plugin(s).') % len(self.plugins_imported))
+
+    def _parse_line(self, csv_fields):
+        if self.first_line: # header validation
+            self.first_line = False
+            if len(csv_fields) != 2 or csv_fields != [u'Plugin', u'Tags']:
+                raise exception.BoltError(u'Header error: %s' % (csv_fields,))
+            return
+        pl_name, curr_tags = GPath(csv_fields[0]), csv_fields[1]
+        if pl_name in bosh.modInfos:
+            self.plugins_imported.append(pl_name)
+            bosh.modInfos[pl_name].setBashTags(
+                {t.strip() for t in curr_tags.split(u',')})
 
 #------------------------------------------------------------------------------
 class Mods_ClearManualBashTags(ItemLink):

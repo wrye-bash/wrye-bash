@@ -35,6 +35,3 @@ from .mod_io import *
 from .record_groups import *
 from .record_structs import *
 from .utils_constants import *
-
-# HACK for now - _coerce will disappear in parsers ABC merge
-from .utils_constants import _coerce

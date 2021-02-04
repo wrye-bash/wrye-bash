@@ -387,7 +387,7 @@ class GameInfo(object):
 
     # Record information - set in cls.init ------------------------------------
     # Mergeable record types
-    mergeClasses = ()
+    mergeable_sigs = {}
     # Extra read classes: these record types will always be loaded, even if
     # patchers don't need them directly (for example, for MGEF info)
     readClasses = ()

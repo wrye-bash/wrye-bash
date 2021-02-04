@@ -31,8 +31,7 @@ from ....bolt import GPath, deprint
 from ....brec import MreRecord, RecHeader, null4
 from ....parsers import _HandleAliases
 from ....patcher import getPatchesPath
-from ....patcher.base import Patcher, Abstract_Patcher
-from ....patcher.patchers.base import ListPatcher, ModLoader
+from ....patcher.base import Patcher, Abstract_Patcher, ListPatcher, ModLoader
 
 __all__ = [u'CoblCatalogsPatcher', u'CoblExhaustionPatcher',
            u'MorphFactionsPatcher', u'SEWorldTestsPatcher']
@@ -71,8 +70,7 @@ class CoblCatalogsPatcher(Patcher, _ExSpecial):
         self.id_ingred = {}
 
     @property
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
+    def active_write_sigs(self):
         return (b'BOOK',) if self.isActive else ()
 
     def scanModFile(self,modFile,progress):

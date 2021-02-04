@@ -86,7 +86,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
             MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
             MreRace
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
@@ -104,7 +104,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
             MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens, MreQust,
             MrePack, MreFact, MreRace,
-        )
+        )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [

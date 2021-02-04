@@ -252,7 +252,7 @@ class OmodFile(object):
         totalSize = sum(sizes_)
 
         # Extract data stream to an uncompressed stream
-        subprogress = bolt.SubProgress(progress,0,0.3,full=dataPath.size)
+        subprogress = bolt.SubProgress(progress, 0, 0.3, full=dataPath.psize)
         subprogress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
         with dataPath.open(u'rb') as ins:
             done = 0
@@ -270,7 +270,7 @@ class OmodFile(object):
                     subprogress(done)
 
                 # Now copy the data stream
-                while ins.tell() < dataPath.size:
+                while ins.tell() < dataPath.psize:
                     output.write(ins.read(512))
                     done += 512
                     subprogress(done)
@@ -297,7 +297,7 @@ class OmodFile(object):
         crcs = list()
         sizes_ = list()
         with open(crc_file_path.s, u'rb') as crc_file:
-            while crc_file.tell() < crc_file_path.size:
+            while crc_file.tell() < crc_file_path.psize:
                 fileNames.append(_readNetString(crc_file))
                 crcs.append(unpack_int_signed(crc_file))
                 sizes_.append(unpack_int64_signed(crc_file))

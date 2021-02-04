@@ -28,7 +28,7 @@ from itertools import chain
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt, exception
 from ..balt import Links, SeparatorLink, CheckLink
-from ..bolt import GPath, text_wrap
+from ..bolt import GPath, text_wrap, dict_sort
 from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     Spacer, TextArea, TOP, VLayout, EventResult, PanelWin, ListBox, \
     CheckListBox, DeselectAllButton, SelectAllButton
@@ -119,9 +119,9 @@ class _PatcherPanel(object):
     def saveConfig(self, configs):
         """Save config to configs dictionary.
 
-        Most patchers just save their enabled state, except the AListPatcher
-        subclasses - which save their choices - and the AliasModNames that
-        saves the aliases."""
+        Most patchers just save their enabled state, except the
+        _ListPatcherPanel subclasses - which save their choices - and the
+        AliasModNames that saves the aliases."""
         config = configs[self.__class__._config_key] = {}
         config['isEnabled'] = self.isEnabled
         return config # return the config dict for this patcher to further edit
@@ -194,7 +194,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         """Sets alias text according to current aliases."""
         self.gAliases.text_content = u'\n'.join([
             u'%s >> %s' % (alias_target, alias_repl)
-            for alias_target, alias_repl in sorted(self._ci_aliases.items())])
+            for alias_target, alias_repl in dict_sort(self._ci_aliases)])
 
     def OnEditAliases(self):
         aliases_text = self.gAliases.text_content

@@ -34,7 +34,7 @@ from itertools import chain, imap
 from .base_components import _AComponent, Color, WithMouseEvents, \
     ImageWrapper, WithCharEvents
 from .events import EventResult
-from ..bolt import Path
+from ..bolt import Path, dict_sort
 
 class Font(_wx.Font):
     @staticmethod
@@ -224,8 +224,8 @@ class Table(WithCharEvents):
         elif len(sel_cells) == 1:
             # Selection is limited to a single column, format as a
             # newline-separated list
-            sorted_cells = sorted(next(sel_cells.itervalues()).iteritems(),
-                                  key=lambda t: int(t[0]))
+            sorted_cells = dict_sort(next(sel_cells.itervalues()),
+                                     key_f=lambda k: int(k))
             return u'\n'.join(t[1] for t in sorted_cells)
         else:
             # Here is where it gets ugly - we need to format a full table with

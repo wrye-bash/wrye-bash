@@ -50,7 +50,7 @@ from .. import bass, bolt, balt, bush, env, load_order, initialization
 from ..archives import readExts
 from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
-    GPath_no_norm, struct_error
+    GPath_no_norm, struct_error, dict_sort
 from ..brec import ModReader, RecordHeader
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
@@ -181,10 +181,10 @@ class FileInfo(AFile):
         self.masterOrder = tuple() #--Reset to empty for now
 
     def _file_changed(self, stat_tuple):
-        return (self._file_size, self._file_mod_time, self.ctime) != stat_tuple
+        return (self.fsize, self._file_mod_time, self.ctime) != stat_tuple
 
     def _reset_cache(self, stat_tuple, load_cache):
-        self._file_size, self._file_mod_time, self.ctime = stat_tuple
+        self.fsize, self._file_mod_time, self.ctime = stat_tuple
         if load_cache: self.readHeader()
 
     def _mark_unchanged(self):
@@ -194,8 +194,6 @@ class FileInfo(AFile):
     def getPath(self): return self.abs_path
     @property
     def mtime(self): return self._file_mod_time
-    @property
-    def size(self): return self._file_size
     #--------------------------------------------------------------------------
     #--File type tests ##: Belong to ModInfo!
     #--Note that these tests only test extension, not the file data.
@@ -454,8 +452,8 @@ class ModInfo(FileInfo):
         cached_crc = self.get_table_prop(u'crc')
         if not recalculate:
             recalculate = cached_crc is None \
-                or self._file_mod_time != self.get_table_prop(u'crc_mtime') \
-                or self._file_size != self.get_table_prop(u'crc_size')
+                          or self._file_mod_time != self.get_table_prop(u'crc_mtime') \
+                          or self.fsize != self.get_table_prop(u'crc_size')
         path_crc = cached_crc
         if recalculate:
             path_crc = self.abs_path.crc
@@ -463,7 +461,7 @@ class ModInfo(FileInfo):
                 self.set_table_prop(u'crc', path_crc)
                 self.set_table_prop(u'ignoreDirty', False)
             self.set_table_prop(u'crc_mtime', self._file_mod_time)
-            self.set_table_prop(u'crc_size', self._file_size)
+            self.set_table_prop(u'crc_size', self.fsize)
         return path_crc, cached_crc
 
     def cached_mod_crc(self): # be sure it's valid before using it!
@@ -657,7 +655,7 @@ class ModInfo(FileInfo):
                     #--Open original and skip over header
                     reader = ModReader(self.name,ins)
                     tes4_rec_header = self._read_tes4_record(reader)
-                    reader.seek(tes4_rec_header.size,1)
+                    tes4_rec_header.skip_blob(reader)
                     #--Write new header
                     self.header.getSize()
                     self.header.dump(out)
@@ -673,7 +671,7 @@ class ModInfo(FileInfo):
         #--Merge info
         stored_size, canMerge = self.get_table_prop(u'mergeInfo', (None, None))
         if stored_size is not None:
-            self.set_table_prop(u'mergeInfo', (filePath.size, canMerge))
+            self.set_table_prop(u'mergeInfo', (filePath.psize, canMerge))
 
     def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
@@ -2217,16 +2215,15 @@ class ModInfos(FileInfos):
         name_mergeInfo = self.table.getColumn(u'mergeInfo')
         #--Add known/unchanged and esms - we need to scan dependent mods
         # first to account for mergeability of their masters
-        for mpath, modInfo in sorted(self.items(),
-                key=lambda tup: load_order.cached_lo_index(tup[0]),
-                                     reverse=True):
+        for mpath, modInfo in dict_sort(self, key_f=lambda
+                k: load_order.cached_lo_index(k), reverse=True):
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
             # if esm/esl bit was flipped size won't change, so check this first
             if modInfo.is_esl() or modInfo.has_esm_flag():
                 # esl don't mark as esl capable - modInfo must have its header set
-                name_mergeInfo[mpath] = (modInfo.size, False)
+                name_mergeInfo[mpath] = (modInfo.fsize, False)
                 self.mergeable.discard(mpath)
-            elif size == modInfo.size:
+            elif size == modInfo.fsize:
                 if canMerge: self.mergeable.add(mpath)
             else:
                 newMods.append(mpath)
@@ -2277,9 +2274,9 @@ class ModInfos(FileInfos):
                     u'\n.    ' + u'\n.    '.join(reasons))
             if canMerge:
                 self.mergeable.add(fileName)
-                mod_mergeInfo[fileName] = (fileInfo.size,True)
+                mod_mergeInfo[fileName] = (fileInfo.fsize, True)
             else:
-                mod_mergeInfo[fileName] = (fileInfo.size,False)
+                mod_mergeInfo[fileName] = (fileInfo.fsize, False)
                 self.mergeable.discard(fileName)
             reasons = reasons if reasons is None else []
         return result, tagged_no_merge
@@ -2451,8 +2448,7 @@ class ModInfos(FileInfos):
         return (_tags(_(u'Result: '), sorted_tags, tagList)
                 if has_tags_source else tagList + u'    %s\n' % _(u'No tags'))
 
-    @staticmethod
-    def getTagList(mod_list=None):
+    def getTagList(self, mod_list=None):
         """Return the list as wtxt of current bash tags (but don't say which
         ones are applied via a patch) - either for all mods in the data folder
         or if specified for one specific mod."""
@@ -2461,17 +2457,16 @@ class ModInfos(FileInfos):
         tagList += _(u'Note: Sources are processed from top to bottom, '
                      u'meaning that lower-ranking sources override '
                      u'higher-ranking ones.') + u'\n'
-        if mod_list:
-            for modInfo in mod_list:
-                tagList += u'\n* %s\n' % modInfo
-                tagList = ModInfos._tagsies(modInfo, tagList)
-        else:
+        if mod_list is None:
+            mod_list = []
             # sort output by load order
-            lindex = lambda t: load_order.cached_lo_index(t[0])
-            for __mname, modInfo in sorted(modInfos.iteritems(), key=lindex):
+            for __mname, modInfo in dict_sort(self, key_f=(
+                    lambda k: load_order.cached_lo_index(k))):
                 if modInfo.getBashTags():
-                    tagList += u'\n* %s\n' % modInfo
-                    tagList = ModInfos._tagsies(modInfo, tagList)
+                    mod_list.append(modInfo)
+        for modInfo in mod_list:
+            tagList += u'\n* %s\n' % modInfo
+            tagList = ModInfos._tagsies(modInfo, tagList)
         tagList += u'[/spoiler]'
         return tagList
 
@@ -2843,11 +2838,11 @@ class ModInfos(FileInfos):
         self.voAvailable.clear()
         for name,info in self.iteritems():
             maOblivion = reOblivion.match(name.s)
-            if maOblivion and info.size in self.size_voVersion:
-                self.voAvailable.add(self.size_voVersion[info.size])
+            if maOblivion and info.fsize in self.size_voVersion:
+                self.voAvailable.add(self.size_voVersion[info.fsize])
         if self.masterName in self:
             self.voCurrent = self.size_voVersion.get(
-                self[self.masterName].size, None)
+                self[self.masterName].fsize, None)
         else: self.voCurrent = None # just in case
 
     def _retry(self, old, new):
@@ -2866,7 +2861,7 @@ class ModInfos(FileInfos):
     def _get_version_paths(self, newVersion):
         baseName = self.masterName # Oblivion.esm, say it's currently SI one
         newSize = self.version_voSize[newVersion]
-        oldSize = self[baseName].size
+        oldSize = self[baseName].fsize
         if newSize == oldSize: return None, None
         if oldSize not in self.size_voVersion:
             raise StateError(u"Can't match current main ESM to known version.")
@@ -2954,7 +2949,7 @@ class ModInfos(FileInfos):
     def size_mismatch(self, plugin_name, plugin_size):
         """Checks if the specified plugin exists and, if so, if its size
         does not match the specified value (in bytes)."""
-        return plugin_name in self and plugin_size != self[plugin_name].size
+        return plugin_name in self and plugin_size != self[plugin_name].fsize
 
     def _recalc_real_indices(self):
         """Recalculates the real indices cache. See ModInfo.real_index for more

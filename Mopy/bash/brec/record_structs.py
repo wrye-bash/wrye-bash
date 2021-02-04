@@ -39,7 +39,7 @@ from ..bolt import decoder, struct_pack
 #------------------------------------------------------------------------------
 # Mod Element Sets ------------------------------------------------------------
 class MelSet(object):
-    """Set of mod record elments."""
+    """Set of mod record elements."""
 
     def __init__(self,*elements):
         self.elements = elements
@@ -82,12 +82,6 @@ class MelSet(object):
                         curr_rec_sig, repr(duplicate_slots)))
             all_slots.update(element_slots)
 
-    def initRecord(self, record, header, ins, do_unpack):
-        """Initialize record, setting its attributes based on its elements."""
-        for element in self.elements:
-            element.setDefault(record)
-        MreRecord.__init__(record, header, ins, do_unpack)
-
     def getDefault(self,attr):
         """Returns default instance of specified instance. Only useful for
         MelGroup and MelGroups."""
@@ -102,10 +96,10 @@ class MelSet(object):
                 bolt.deprint(u'Error dumping data: ', traceback=True)
                 bolt.deprint(u'Occurred while dumping '
                              u'<%(eid)s[%(signature)s:%(fid)s]>' % {
-                    u'signature': record.recType,
+                    u'signature': record.rec_str,
                     u'fid': strFid(record.fid),
-                    u'eid': (record.eid + u' ' if hasattr(record, 'eid')
-                             and record.eid is not None else u''),
+                    u'eid': (record.eid + u' ') if getattr(record, u'eid',
+                                                           None) else u'',
                 })
                 for attr in record.__slots__:
                     attr1 = getattr(record, attr, None)
@@ -130,7 +124,8 @@ class MelSet(object):
 
     def updateMasters(self, record, masterset_add):
         """Updates set of master names according to masters actually used."""
-        if not record.longFids: raise exception.StateError("Fids not in long format")
+        if not record.longFids: raise exception.StateError(
+            u'Fids not in long format')
         masterset_add(record.fid)
         for element in self.formElements:
             element.mapFids(record, masterset_add)
@@ -258,7 +253,8 @@ class MreRecord(object):
         # MultiBound
         (31,'multiBound'), # {0x80000000}
         ))
-    __slots__ = ['header','recType','fid','flags1','size','flags2','changed','data','inName','longFids',]
+    __slots__ = [u'header', u'_rec_sig', u'fid', u'flags1', u'size', u'flags2',
+                 u'changed', u'data', u'inName', u'longFids']
     #--Set at end of class data definitions.
     type_class = None
     simpleTypes = None
@@ -266,7 +262,7 @@ class MreRecord(object):
 
     def __init__(self, header, ins=None, do_unpack=False):
         self.header = header
-        self.recType = header.recType
+        self._rec_sig = header.recType
         self.fid = header.fid
         self.flags1 = MreRecord.flags1_(header.flags1)
         self.size = header.size
@@ -279,16 +275,16 @@ class MreRecord(object):
 
     def __repr__(self):
         return u'<%(eid)s[%(signature)s:%(fid)s]>' % {
-            u'signature': self.recType,
+            u'signature': self.rec_str,
             u'fid': strFid(self.fid),
-            u'eid': (self.eid + u' ' if hasattr(self, u'eid')
-                                     and self.eid is not None else u''),
+            u'eid': (
+                (self.eid + u' ') if getattr(self, u'eid', None) else u''),
         }
 
     def getTypeCopy(self):
         """Returns a type class copy of self"""
         if self.__class__ == MreRecord:
-            fullClass = MreRecord.type_class[self.recType]
+            fullClass = MreRecord.type_class[self._rec_sig]
             myCopy = fullClass(self.header)
             myCopy.data = self.data
             myCopy.load(do_unpack=True)
@@ -318,20 +314,19 @@ class MreRecord(object):
 
     def load(self, ins=None, do_unpack=False):
         """Load data from ins stream or internal data buffer."""
-        type = self.recType
         #--Read, but don't analyze.
         if not do_unpack:
-            self.data = ins.read(self.size,type)
+            self.data = ins.read(self.size, self._rec_sig)
         #--Unbuffered analysis?
         elif ins and not self.flags1.compressed:
             inPos = ins.tell()
-            self.data = ins.read(self.size,type)
-            ins.seek(inPos,0,type,b'_REWIND') # type,'_REWIND' is just for debug
+            self.data = ins.read(self.size, self._rec_sig)
+            ins.seek(inPos,0,self._rec_sig,u'_REWIND') # _rec_sig,'_REWIND' is just for debug
             self.loadData(ins,inPos+self.size)
         #--Buffered analysis (subclasses only)
         else:
             if ins:
-                self.data = ins.read(self.size,type)
+                self.data = ins.read(self.size,self._rec_sig)
             if not self.__class__ == MreRecord:
                 with self.getReader() as reader:
                     # Check This
@@ -357,7 +352,7 @@ class MreRecord(object):
         :type mel_sigs: set"""
         if not self.data: return
         with self.getReader() as reader:
-            _rec_sig_ = self.recType
+            _rec_sig_ = self._rec_sig
             readAtEnd = reader.atEnd
             while not readAtEnd(reader.size,_rec_sig_):
                 subrec = SubrecordBlob(reader, _rec_sig_, mel_sigs)
@@ -372,7 +367,7 @@ class MreRecord(object):
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
         raise exception.AbstractError(u'updateMasters called on skipped type '
-                                      u'%s' % self.recType)
+                                      u'%s' % self.rec_str)
 
     def setChanged(self,value=True):
         """Sets changed attribute to value. [Default = True.]"""
@@ -383,7 +378,7 @@ class MreRecord(object):
         if not self.changed: return self.size
         if self.longFids: raise exception.StateError(
             u'Packing Error: %s %s: Fids in long format.'
-            % (self.recType,self.fid))
+            % (self.rec_str, self.fid))
         #--Pack data and return size.
         out = io.BytesIO()
         self.dumpData(out)
@@ -401,18 +396,25 @@ class MreRecord(object):
         just calls subrecords to dump to out."""
         if self.data is None:
             raise exception.StateError(u'Dumping empty record. [%s: %s %08X]' %
-                                       (self.inName, self.recType, self.fid))
+                                       (self.inName, self.rec_str, self.fid))
         for subrecord in self.iterate_subrecords():
             subrecord.packSub(out, subrecord.mel_data)
 
+    @property
+    def rec_str(self): # used in exceptions and co - no need to cache
+        return self._rec_sig.decode(u'ascii')
+
     def dump(self,out):
         """Dumps all data to output stream."""
-        if self.changed: raise exception.StateError(u'Data changed: ' + self.recType)
+        if self.changed:
+            raise exception.StateError(
+                u'Data changed: %s' % self.rec_str)
         if not self.data and not self.flags1.deleted and self.size > 0:
-            raise exception.StateError(u'Data undefined: ' + self.recType + u' ' + hex(self.fid))
+            raise exception.StateError(u'Data undefined: %s %s' % (
+                self.rec_str, hex(self.fid)))
         #--Update the header so it 'packs' correctly
         self.header.size = self.size
-        if self.recType != 'GRUP':
+        if self._rec_sig != b'GRUP':
             self.header.flags1 = self.flags1
             self.header.fid = self.fid
         out.write(self.header.pack_head())
@@ -450,7 +452,12 @@ class MelRecord(MreRecord):
     __slots__ = []
 
     def __init__(self, header, ins=None, do_unpack=False):
-        self.__class__.melSet.initRecord(self, header, ins, do_unpack)
+        if self.__class__.rec_sig != header.recType:
+            raise ValueError(u'Initialize %s with header.recType %s' % (
+                type(self), header.recType))
+        for element in self.__class__.melSet.elements:
+            element.setDefault(self)
+        MreRecord.__init__(self, header, ins, do_unpack)
 
     @classmethod
     def validate_record_syntax(cls):
@@ -466,20 +473,20 @@ class MelRecord(MreRecord):
 
     def loadData(self, ins, endPos):
         """Loads data from input stream. Called by load()."""
-        rec_type = self.recType
         loaders = self.__class__.melSet.loaders
         # Load each subrecord
         ins_at_end = ins.atEnd
         load_sub_header = partial(unpackSubHeader, ins)
-        while not ins_at_end(endPos, rec_type):
-            sub_type, sub_size = load_sub_header(rec_type)
+        while not ins_at_end(endPos, self._rec_sig):
+            sub_type, sub_size = load_sub_header(self.rec_str)
             try:
                 loaders[sub_type].load_mel(self, ins, sub_type, sub_size,
-                                           rec_type, sub_type) # *debug_strs
+                    self._rec_sig, sub_type)# *debug_strs
             except KeyError:
                 # Wrap this error to make it more understandable
                 self.handle_load_error(exception.ModError(ins.inName,
-                    u'Unexpected subrecord: %s.%s' % (rec_type, sub_type)),
+                    u'Unexpected subrecord: %s.%s' % (
+                        self.rec_str, sub_type.decode(u'ascii'))),
                     ins, sub_type, sub_size)
             except Exception as error:
                 self.handle_load_error(error, ins, sub_type, sub_size)
@@ -487,7 +494,7 @@ class MelRecord(MreRecord):
     def handle_load_error(self, error, ins, sub_type, sub_size):
         eid = getattr(self, u'eid', u'<<NO EID>>')
         bolt.deprint(u'Error loading %r record and/or subrecord: %08X' %
-                     (self.recType, self.fid))
+                     (self.rec_str, self.fid))
         bolt.deprint(u'  eid = %r' % eid)
         bolt.deprint(u'  subrecord = %r' % sub_type)
         bolt.deprint(u'  subrecord size = %d' % sub_size)

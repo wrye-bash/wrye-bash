@@ -822,7 +822,7 @@ class ModList(_ModsUIList):
         u'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
         u'Indices'  : lambda self, a: self.data_store[a].real_index(),
         u'Modified'  : lambda self, a: self.data_store[a].mtime,
-        u'Size'      : lambda self, a: self.data_store[a].size,
+        u'Size'      : lambda self, a: self.data_store[a].fsize,
         u'Status'    : lambda self, a: self.data_store[a].getStatus(),
         u'Mod Status': lambda self, a: self.data_store[a].txt_status(),
         u'CRC'       : lambda self, a: self.data_store[a].cached_mod_crc(),
@@ -843,7 +843,7 @@ class ModList(_ModsUIList):
         (u'Installer',  lambda self, p: self.data_store[p].get_table_prop(
                             u'installer', u'')),
         (u'Modified',   lambda self, p: format_date(self.data_store[p].mtime)),
-        (u'Size',       lambda self, p: round_size(self.data_store[p].size)),
+        (u'Size',       lambda self, p: round_size(self.data_store[p].fsize)),
         (u'Author',     lambda self, p: self.data_store[p].header.author if
                                        self.data_store[p].header else u'-'),
         (u'CRC',        lambda self, p: self.data_store[p].crc_string()),
@@ -1968,7 +1968,7 @@ class SaveList(balt.UIList):
     _sort_keys = {
         u'File'    : None, # just sort by name
         u'Modified': lambda self, a: self.data_store[a].mtime,
-        u'Size'    : lambda self, a: self.data_store[a].size,
+        u'Size'    : lambda self, a: self.data_store[a].fsize,
         u'PlayTime': lambda self, a: self.data_store[a].header.gameTicks,
         u'Player'  : lambda self, a: self.data_store[a].header.pcName,
         u'Cell'    : lambda self, a: self.data_store[a].header.pcLocation,
@@ -1987,7 +1987,7 @@ class SaveList(balt.UIList):
     labels = OrderedDict([
         (u'File',     lambda self, p: p.s),
         (u'Modified', lambda self, p: format_date(self.data_store[p].mtime)),
-        (u'Size',     lambda self, p: round_size(self.data_store[p].size)),
+        (u'Size',     lambda self, p: round_size(self.data_store[p].fsize)),
         (u'PlayTime', lambda self, p: self._playTime(self.data_store[p])),
         (u'Player',   lambda self, p: self._headInfo(self.data_store[p],
                                                      u'pcName')),
@@ -2268,7 +2268,7 @@ class InstallersList(balt.UIList):
         u'Package' : None,
         u'Order'   : lambda self, x: self.data_store[x].order,
         u'Modified': lambda self, x: self.data_store[x].modified,
-        u'Size'    : lambda self, x: self.data_store[x].size,
+        u'Size'    : lambda self, x: self.data_store[x].fsize,
         u'Files'   : lambda self, x: self.data_store[x].num_of_files,
     }
     #--Special sorters
@@ -2916,7 +2916,7 @@ class InstallersDetails(_SashDetailsPanel):
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
             if installer.is_project():
-                info += _(u'Size:') + u' %s\n' % round_size(installer.size)
+                info += _(u'Size:') + u' %s\n' % round_size(installer.fsize)
             elif installer.is_marker():
                 info += _(u'Size:')+u' N/A\n'
             elif installer.is_archive():
@@ -2930,7 +2930,7 @@ class InstallersDetails(_SashDetailsPanel):
                 else:
                     sSolid = _(u'Non-solid')
                 info += _(u'Size: %s (%s)') % (
-                    round_size(installer.size), sSolid) + u'\n'
+                    round_size(installer.fsize), sSolid) + u'\n'
             else:
                 info += _(u'Size: Unrecognized')+u'\n'
             info += (_(u'Modified:') +u' %s\n' % format_date(installer.modified),
@@ -3299,13 +3299,13 @@ class ScreensList(balt.UIList):
 
     _sort_keys = {u'File'    : None,
                   u'Modified': lambda self, a: self.data_store[a].mtime,
-                  u'Size'    : lambda self, a: self.data_store[a].size,
+                  u'Size'    : lambda self, a: self.data_store[a].fsize,
                  }
     #--Labels
     labels = OrderedDict([
         (u'File',     lambda self, p: p.s),
         (u'Modified', lambda self, p: format_date(self.data_store[p].mtime)),
-        (u'Size',     lambda self, p: round_size(self.data_store[p].size)),
+        (u'Size',     lambda self, p: round_size(self.data_store[p].fsize)),
     ])
 
     #--Events ---------------------------------------------
@@ -3421,13 +3421,13 @@ class BSAList(balt.UIList):
     global_links = OrderedDefaultDict(lambda: Links()) # Global menu
     _sort_keys = {u'File'    : None,
                   u'Modified': lambda self, a: self.data_store[a].mtime,
-                  u'Size'    : lambda self, a: self.data_store[a].size,
+                  u'Size'    : lambda self, a: self.data_store[a].fsize,
                  }
     #--Labels
     labels = OrderedDict([
         (u'File',     lambda self, p: p.s),
         (u'Modified', lambda self, p: format_date(self.data_store[p].mtime)),
-        (u'Size',     lambda self, p: round_size(self.data_store[p].size)),
+        (u'Size',     lambda self, p: round_size(self.data_store[p].fsize)),
     ])
 
 #------------------------------------------------------------------------------

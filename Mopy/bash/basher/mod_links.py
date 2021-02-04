@@ -49,6 +49,7 @@ from ..exception import AbstractError, BoltError, CancelError
 from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
     OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
     ImageWrapper, BusyCursor
+from ..parsers import CsvParser
 from ..patcher import exportConfig, patch_files
 
 __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
@@ -429,9 +430,11 @@ class _Mod_Labels(ChoiceLink):
     def _choices(self): return sorted(self.mod_labels, key=lambda a: a.lower())
 
 #--Groups ---------------------------------------------------------------------
-class _ModGroups(object):
+class _ModGroups(CsvParser):
     """Groups for mods with functions for importing/exporting from/to text
     file."""
+    _csv_header = _(u'Mod'), _(u'Group')
+    _row_fmt_str = u'"%s","%s"\n'
 
     def __init__(self):
         self.mod_group = {}
@@ -460,24 +463,17 @@ class _ModGroups(object):
                 changed += 1
         return changed
 
-    def readFromText(self,textPath):
+    def _parse_line(self, csv_fields):
         """Imports mod groups from specified text file."""
-        mod_group = self.mod_group
-        with bolt.CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) >= 2 and bosh.ModInfos.rightFileType(fields[0]):
-                    mod,group = fields[:2]
-                    mod_group[GPath(mod)] = group
+        if len(csv_fields) >= 2 and bosh.ModInfos.rightFileType(csv_fields[0]):
+            mod, mod_grp = csv_fields[:2]
+            self.mod_group[GPath(mod)] = mod_grp
 
-    def writeToText(self,textPath):
+    def _write_rows(self, out):
         """Exports eids to specified text file."""
-        textPath = GPath(textPath)
-        mod_group = self.mod_group
-        rowFormat = u'"%s","%s"\n'
-        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
-            out.write(rowFormat % (_(u'Mod'), _(u'Group')))
-            for mod in sorted(mod_group):
-                out.write(rowFormat % (mod, mod_group[mod]))
+        rowFormat = self._row_fmt_str
+        for mod, mod_grp in dict_sort(self.mod_group):
+            out.write(rowFormat % (mod, mod_grp))
 
 class _Mod_Groups_Export(ItemLink):
     """Export mod groups to text file."""
@@ -638,8 +634,7 @@ class Mod_ListBashTags(ItemLink):
 
     def Execute(self):
         #--Get masters list
-        modInfos = [x for x in self.iselected_infos()]
-        tags_text = bosh.modInfos.getTagList(modInfos)
+        tags_text = bosh.modInfos.getTagList(list(self.iselected_infos()))
         balt.copyToClipboard(tags_text)
         self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
 
@@ -1722,9 +1717,9 @@ class _Import_Export_Link(AppendableLink):
             # Check if all record types required by this parser exist for this
             # game and are supported for loading
             rec_types = MreRecord.type_class
-            return all(t in rec_types
-                       and rec_types[t] in bush.game.mergeClasses
-                       for t in test_parser.all_types)
+            return all(##: is `sig in rec_types` needed??
+                sig in rec_types and sig in bush.game.mergeable_sigs for sig in
+                test_parser.all_types)
         except AttributeError:
             # FIXME(inf) old-style export link, drop once parsers refactored
             return True

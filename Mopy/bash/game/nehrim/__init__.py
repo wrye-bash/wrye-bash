@@ -89,7 +89,7 @@ class NehrimGameInfo(OblivionGameInfo):
             MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
             MreGmst, MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo, \
             MrePgrd
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
             MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,
             MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGlob, MreGras,
@@ -99,7 +99,7 @@ class NehrimGameInfo(OblivionGameInfo):
             MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex,
             MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, MreGmst,
             MreRefr, MreRoad, MreWrld, MreDial, MreInfo, MreLand, MrePgrd,
-        )
+        )}
         cls.readClasses = (b'MGEF', b'SCPT')
         cls.writeClasses = (b'MGEF',)
         # Setting RecordHeader class variables - Oblivion is special

@@ -397,9 +397,9 @@ class Save_EditCreatedData(balt.ListEditorData):
         self.enchantments = {}
         #--Parse records and get into name_nameRecords
         for index,record in enumerate(saveFile.created):
-            if record.recType == b'ENCH':
+            if record._rec_sig == b'ENCH':
                 self.enchantments[record.fid] = record.getTypeCopy()
-            elif record.recType in types_set:
+            elif record._rec_sig in types_set:
                 record = record.getTypeCopy()
                 if not record.full: continue
                 record.getSize() #--Since type copy makes it changed.
@@ -418,7 +418,7 @@ class Save_EditCreatedData(balt.ListEditorData):
     def getItemList(self):
         """Returns load list keys in alpha order."""
         items = sorted(self.name_nameRecords)
-        items.sort(key=lambda x: self.name_nameRecords[x][1][0].recType)
+        items.sort(key=lambda x: self.name_nameRecords[x][1][0]._rec_sig)
         return items
 
     _attrs = {b'CLOT': (_(u'Clothing') + u'\n' + _(u'Flags: '), ()), b'ARMO': (
@@ -430,7 +430,7 @@ class Save_EditCreatedData(balt.ListEditorData):
         record_full, records = self.name_nameRecords[item]
         record = records[0]
         #--Armor, clothing, weapons
-        rsig = record.recType
+        rsig = record._rec_sig
         if rsig in self._attrs:
             info_str, attrs = self._attrs[rsig]
             if rsig == b'WEAP':
@@ -445,7 +445,7 @@ class Save_EditCreatedData(balt.ListEditorData):
             buff.write(u'\n'+_(u'Enchantment:')+u'\n')
             record = self.enchantments[record.enchantment].getTypeCopy()
         #--Magic effects
-        if record.recType in (b'ALCH', b'SPEL', b'ENCH'):
+        if rsig in (b'ALCH', b'SPEL', b'ENCH'):
             buff.write(record.getEffectsSummary())
         #--Done
         ret = buff.getvalue()
@@ -510,7 +510,7 @@ class Save_EditCreated(OneItemLink):
             saveFile.load(progress)
         #--No custom items?
         types_set = Save_EditCreated.rec_types[self.save_rec_type]
-        records = [rec for rec in saveFile.created if rec.recType in types_set]
+        records = [rec for rec in saveFile.created if rec._rec_sig in types_set]
         if not records:
             self._showOk(_(u'No items to edit.'))
             return
@@ -736,7 +736,7 @@ class Save_ReweighPotions(OneItemLink):
             count = 0
             progress(0.5,_(u'Processing.'))
             for index,record in enumerate(saveFile.created):
-                if record.recType == b'ALCH':
+                if record._rec_sig == b'ALCH':
                     record = record.getTypeCopy()
                     record.weight = newWeight
                     record.getSize()
@@ -894,10 +894,10 @@ class Save_UpdateNPCLevels(EnabledLink):
                 mapToOrdered = MasterMap(saveFile._masters, ordered)
                 releveledCount = 0
                 #--Loop over change records
-                for recNum in xrange(len(records)):
-                    (recId,recType,recFlags,version,data_) = records[recNum]
+                for recNum, (recId, recType_, recFlags, version, data_) in \
+                        enumerate(records):
                     orderedRecId = mapToOrdered(recId,None)
-                    if recType != 35 or recId == 7 or orderedRecId not in npc_info: continue
+                    if recType_ != 35 or recId == 7 or orderedRecId not in npc_info: continue
                     (eid,level,calcMin,calcMax,pcLevelOffset) = npc_info[orderedRecId]
                     npc = bosh._saves.SreNPC(recFlags, data_)
                     acbs = npc.acbs
@@ -911,8 +911,8 @@ class Save_UpdateNPCLevels(EnabledLink):
                         acbs.level = level
                         acbs.calcMin = calcMin
                         acbs.calcMax = calcMax
-                        (recId,recType,recFlags,version,data_) = saveFile.records[recNum]
-                        records[recNum] = (recId,recType,npc.getFlags(),version,npc.getData())
+                        (recId,recType_,recFlags,version,data_) = saveFile.records[recNum]
+                        records[recNum] = (recId,recType_,npc.getFlags(),version,npc.getData())
                         releveledCount += 1
                         saveFile.records[recNum] = npc.getTuple(recId,version)
                 #--Save changes?

@@ -46,8 +46,8 @@ _res_parent = _AComponent._resolve
 
 class Spacer(object):
     """A fixed-size space in a layout."""
-    def __init__(self, size=0):
-        self.size = size
+    def __init__(self, spacer_size=0):
+        self.spacer_size = spacer_size
 
 class Stretch(object):
     """A space that will take up as much space as possible in a layout."""
@@ -191,7 +191,7 @@ class _ALineLayout(_ALayout):
         if isinstance(item, Stretch):
             self._add_stretch(item.weight)
         elif isinstance(item, Spacer):
-            self._add_spacer(item.size)
+            self._add_spacer(item.spacer_size)
         else:
             item, options = self._get_item_options(item)
             if options and self._is_vertical and options.v_align:

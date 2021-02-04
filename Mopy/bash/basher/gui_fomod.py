@@ -407,8 +407,8 @@ class PageFinish(PageInstaller):
             self._output_text = TextArea(
                 self, editable=False, auto_tooltip=False,
                 init_text=self.display_files(installer_output))
-            sorted_output = sorted(installer_output.iteritems(),
-                                   key=lambda t: t[1].lower()) # sort by source
+            sorted_output = bolt.dict_sort(installer_output,
+                key_f=lambda k: installer_output[k].lower())  # sort by source
             output_table_data = {
                 _(u'Source'): [t[1] for t in sorted_output],
                 _(u'Destination'): [t[0] for t in sorted_output],

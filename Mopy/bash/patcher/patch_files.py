@@ -31,7 +31,7 @@ from ..balt import readme_url
 from .. import load_order
 from .. import bass
 from ..brec import MreRecord, RecHeader
-from ..bolt import GPath, SubProgress, deprint, Progress
+from ..bolt import GPath, SubProgress, deprint, Progress, dict_sort
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import ModFile, LoadFactory
@@ -126,12 +126,12 @@ class PatchFile(ModFile):
         #--Load Mods and error mods
         if self.pfile_aliases:
             log.setHeader(u'= ' + _(u'Mod Aliases'))
-            for alias_target, alias_repl in sorted(self.pfile_aliases.iteritems()):
+            for alias_target, alias_repl in dict_sort(self.pfile_aliases):
                 log(u'* %s >> %s' % (alias_target, alias_repl))
 
-    def init_patchers_data(self, patchers, progress):
+    def init_patchers_data(self, patcher_instances, progress):
         """Gives each patcher a chance to get its source data."""
-        self._patcher_instances = [p for p in patchers if p.isActive]
+        self._patcher_instances = [p for p in patcher_instances if p.isActive]
         if not self._patcher_instances: return
         progress = progress.setFull(len(self._patcher_instances))
         for index, patcher in enumerate(self._patcher_instances):
@@ -139,7 +139,7 @@ class PatchFile(ModFile):
             patcher.initData(SubProgress(progress, index))
         progress(progress.full, _(u'Patchers prepared.'))
         # initData may set isActive to zero - TODO(ut) track down
-        self._patcher_instances = [p for p in patchers if p.isActive]
+        self._patcher_instances = [p for p in patcher_instances if p.isActive]
 
     #--Instance
     def __init__(self, modInfo, p_file_minfos):
@@ -188,14 +188,13 @@ class PatchFile(ModFile):
         """Gets load factories."""
         progress(0, _(u'Processing.'))
         read_sigs = set(bush.game.readClasses) | set(chain.from_iterable(
-                p.getReadClasses for p in self._patcher_instances))
+            p.active_read_sigs for p in self._patcher_instances))
         self.readFactory = LoadFactory(False, by_sig=read_sigs)
         write_sigs = set(bush.game.writeClasses) | set(chain.from_iterable(
-                p.getWriteClasses for p in self._patcher_instances))
+            p.active_write_sigs for p in self._patcher_instances))
         self.loadFactory = LoadFactory(True, by_sig=write_sigs)
         #--Merge Factory
-        self.mergeFactory = LoadFactory(False, by_sig=(r.rec_sig for r in
-                                                       bush.game.mergeClasses))
+        self.mergeFactory = LoadFactory(False, by_sig=bush.game.mergeable_sigs)
 
     def scanLoadMods(self,progress):
         """Scans load+merge mods."""

@@ -32,8 +32,7 @@ from collections import OrderedDict
 # Internal
 from ...bolt import build_esub, RecPath
 from ...exception import AbstractError
-from ...patcher.patchers.base import MultiTweakItem, IndexingTweak
-from ...patcher.patchers.base import MultiTweaker
+from .base import MultiTweakItem, IndexingTweak, MultiTweaker
 
 _ignored_chars=frozenset(u'+-=.()[]')
 
@@ -146,7 +145,7 @@ class _ANamesTweak_Body(_ANamesTweak):
     def _get_rename_params(self, record):
         body_flags = record.biped_flags
         return (record, (u'LH'[body_flags.heavyArmor]
-                         if record.recType == b'ARMO' else u''),
+                         if record._rec_sig == b'ARMO' else u''),
                 body_flags.head or body_flags.hair,
                 body_flags.rightRing or body_flags.leftRing, body_flags.amulet,
                 body_flags.upperBody and body_flags.lowerBody,
@@ -338,12 +337,12 @@ class NamesTweak_Weapons(_ANamesTweak):
                      (_(u'(B08) Iron Bow'), u'(%s%02d) ')]
 
     def wants_record(self, record):
-        return (record.full and (record.recType != b'AMMO'
+        return (record.full and (record._rec_sig != b'AMMO'
                                  or record.full[0] not in _ignored_chars)
                 and self._try_renaming(record))
 
     def _do_exec_rename(self, record):
-        weapon_index = record.weaponType if record.recType  == b'WEAP' else 6
+        weapon_index = record.weaponType if record._rec_sig == b'WEAP' else 6
         format_subs = (u'CDEFGBA'[weapon_index],)
         if u'%02d' in self.chosen_format:
             format_subs += (record.damage,)
@@ -409,7 +408,7 @@ class _ATextReplacer(_ANamesTweak):
     def wants_record(self, record):
         def can_change(test_text):
             return any(m.search(test_text) for m in self._re_mapping)
-        record_sig = record.recType
+        record_sig = record._rec_sig
         if record_sig == b'GMST':
             # GMST needs this check which can't be handled by RecPath yet,
             # thankfully it's identical for all games
@@ -422,13 +421,13 @@ class _ATextReplacer(_ANamesTweak):
             return False
 
     def tweak_record(self, record):
+        record_sig = record._rec_sig
         for re_to_match, replacement in self._re_mapping.iteritems():
             replacement_sub = re_to_match.sub
             def exec_replacement(rec_val):
                 if rec_val: # or blow up on re.sub
                     return replacement_sub(replacement, rec_val)
                 return rec_val
-            record_sig = record.recType
             for rp in self._match_replace_rpaths[record_sig]: # type: RecPath
                 if rp.rp_exists(record):
                     rp.rp_map(record, exec_replacement)

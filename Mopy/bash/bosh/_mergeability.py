@@ -79,9 +79,10 @@ def isPBashMergeable(modInfo, minfos, reasons):
     verbose = reasons is not None
     if not _pbash_mergeable_no_load(modInfo, reasons) and not verbose:
         return False  # non verbose mode
-    #--Load test
-    modFile = ModFile(modInfo, LoadFactory(False, generic=(
-        r.rec_sig for r in bush.game.mergeClasses)))
+    #--Load test: use generic MreRecord (without unpacking). ModFile.load will
+    # unpack the header which is enough for record.flags1|fid checks
+    merge_types_fact = LoadFactory(False, generic=bush.game.mergeable_sigs)
+    modFile = ModFile(modInfo, merge_types_fact)
     try:
         modFile.load(True,loadStrings=False)
     except ModError as error:
@@ -90,7 +91,8 @@ def isPBashMergeable(modInfo, minfos, reasons):
     #--Skipped over types?
     if modFile.topsSkipped:
         if not verbose: return False
-        reasons.append(_(u'Unsupported types: ')+u', '.join(sorted(modFile.topsSkipped))+u'.')
+        reasons.append(_(u'Unsupported types: ') + u'%s.' % _join_sigs(
+            modFile.topsSkipped))
     #--Empty mod
     elif not modFile.tops:
         if not verbose: return False
@@ -99,19 +101,21 @@ def isPBashMergeable(modInfo, minfos, reasons):
     newblocks = []
     self_name = modInfo.name
     for top_type,block in modFile.tops.iteritems():
-        for record in block.iter_records():
-            if not record.flags1.ignored and record.fid[0] == self_name:
-                # if new records exist but are deleted just skip em.
-                if record.flags1.deleted: continue
+        for record in block.iter_present_records(): # skip deleted/ignored
+            if record.fid[0] == self_name:
                 if not verbose: return False
                 newblocks.append(top_type)
                 break
-    if newblocks: reasons.append(_(u'New record(s) in block(s): ')+u', '.join(sorted(newblocks))+u'.')
+    if newblocks: reasons.append(
+        _(u'New record(s) in block(s): ') + u'%s.' % _join_sigs(newblocks))
     dependent = _dependent(modInfo, minfos)
     if dependent:
         if not verbose: return False
         reasons.append(_(u'Is a master of non-mergeable mod(s): ')+u', '.join(sorted(dependent))+u'.')
     return False if reasons else True
+
+def _join_sigs(modFile):
+    return u', '.join(x.decode(u'ascii') for x in sorted(modFile))
 
 def _dependent(modInfo, minfos):
     """Get mods for which modInfo is a master mod (excluding BPs and

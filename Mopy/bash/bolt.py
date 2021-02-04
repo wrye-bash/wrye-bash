@@ -29,10 +29,8 @@ import cPickle as pickle  # PY3
 import codecs
 import collections
 import copy
-import csv
 import datetime
 import errno
-import io
 import os
 import re
 import shutil
@@ -643,7 +641,7 @@ class Path(object):
 
     #--size, atime, ctime
     @property
-    def size(self):
+    def psize(self):
         """Size of file or directory."""
         if self.isdir():
             join = os.path.join
@@ -970,40 +968,6 @@ reUnixNewLine = re.compile(u'' r'(?<!\r)\n', re.U)
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class CsvReader(object):
-    """For reading csv files. Handles comma, semicolon and tab separated (excel) formats.
-       CSV files must be encoded in UTF-8"""
-    @staticmethod
-    def utf_8_encoder(unicode_csv_data):
-        for line in unicode_csv_data:
-            yield line.encode(u'utf8')
-
-    def __init__(self,path): ##: Py3 Revisit - is Csv reader still bytes?  get rid of BOM?
-        self.ins = GPath(path).open(u'r', encoding=u'utf-8-sig')
-        first_line = self.ins.readline()
-        excel_fmt = b'excel-tab' if u'\t' in first_line else b'excel'
-        self.ins.seek(0)
-        if excel_fmt == b'excel':
-            # TypeError: "delimiter" must be string, not unicode
-            delimiter = b';' if b';' in first_line else b','
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),
-                                     excel_fmt, delimiter=delimiter)
-        else:
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),
-                                     excel_fmt)
-
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
-
-    def __iter__(self):
-        for row in self.reader:
-            yield [unicode(x, u'utf8') for x in row]
-
-    def close(self):
-        self.reader = None
-        self.ins.close()
-
-#------------------------------------------------------------------------------
 class Flags(object):
     """Represents a flag field."""
     __slots__ = [u'_names', u'_field', u'_unknown_is_unused']
@@ -1184,7 +1148,7 @@ class DataDict(object):
 class AFile(object):
     """Abstract file, supports caching - beta."""
     _null_stat = (-1, None)
-    __slots__ = (u'_file_key', u'_file_size', u'_file_mod_time')
+    __slots__ = (u'_file_key', u'fsize', u'_file_mod_time')
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
@@ -1227,14 +1191,14 @@ class AFile(object):
         return self._file_changed(self._stat_tuple())
 
     def _file_changed(self, stat_tuple):
-        return (self._file_size, self._file_mod_time) != stat_tuple
+        return (self.fsize, self._file_mod_time) != stat_tuple
 
     def _reset_cache(self, stat_tuple, load_cache):
-        """Reset cache flags (size, mtime,...) and possibly reload the cache.
+        """Reset cache flags (fsize, mtime,...) and possibly reload the cache.
         :param load_cache: if True either load the cache (header in Mod and
         SaveInfo) or reset it so it gets reloaded later
         """
-        self._file_size, self._file_mod_time = stat_tuple
+        self.fsize, self._file_mod_time = stat_tuple
 
     def __repr__(self): return u'%s<%s>' % (self.__class__.__name__,
                                             self.abs_path.stail)
@@ -2236,15 +2200,16 @@ def natural_key():
     return lambda curr_str: [_to_cmp(s) for s in
                              _digit_re.split(u'%s' % curr_str)]
 
-def dict_sort(di, values_dex=(), by_value=False):
-    """WIP wrap common dict sorting patterns."""
-    if values_dex:
+def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=True):
+    """WIP wrap common dict sorting patterns - key_f if passed takes
+    precedence."""
+    if key_f is not None:
+        pass
+    elif values_dex:
         key_f = lambda k: tuple(di[k][x] for x in values_dex)
     elif by_value:
         key_f = lambda k: di[k]
-    else:
-        key_f = None # default
-    for k_ in sorted(di, key=key_f):
+    for k_ in sorted(di, key=key_f, reverse=reverse):
         yield k_, di[k_]
 
 # WryeText --------------------------------------------------------------------

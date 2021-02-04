@@ -232,8 +232,7 @@ class IniFile(AFile):
         reSetting = self.reSetting
         #--Read ini file
         section = self.__class__.defaultSection
-        tweak_lines = tweak_file.read_ini_content() # type: list[unicode]
-        for i, line in enumerate(tweak_lines):
+        for i, line in enumerate(tweak_file.read_ini_content()):
             maDeletedSetting = reDeleted.match(line)
             stripped = reComment.sub(u'', line).strip()
             maSection = reSection.match(stripped)
@@ -301,7 +300,6 @@ class IniFile(AFile):
         #--Read init, write temp
         section = None
         sectionSettings = {}
-        ini_lines = self.read_ini_content(as_unicode=True)
         with self._open_for_writing() as tmpFile:
             tmpFileWrite = tmpFile.write
             def _add_remaining_new_items():
@@ -310,7 +308,7 @@ class IniFile(AFile):
                 for sett, val in sectionSettings.iteritems():
                     tmpFileWrite(u'%s=%s\n' % (sett, val))
                 tmpFileWrite(u'\n')
-            for line in ini_lines:
+            for line in self.read_ini_content(as_unicode=True):
                 stripped = reComment.sub(u'', line).strip()
                 maSection = reSection.match(stripped)
                 if maSection:
@@ -374,13 +372,12 @@ class IniFile(AFile):
         still exists after each iteration."""
         re_comment = self.reComment
         re_section = self.reSection
-        ini_lines = self.read_ini_content(as_unicode=True)
         # Tri-State: If None, we haven't hit the section yet. If True, then
         # we've hit it and are actively removing it. If False, then we've fully
         # removed the section already and should ignore further occurences.
         remove_current = None
         with self._open_for_writing() as out:
-            for line in ini_lines:
+            for line in self.read_ini_content(as_unicode=True):
                 stripped = re_comment.sub(u'', line).strip()
                 match_section = re_section.match(stripped)
                 if match_section:
@@ -406,12 +403,11 @@ class DefaultIniFile(IniFile):
         self.lines, current_line = [], 0
         self._ci_settings_cache_linenum = OrderedLowerDict()
         for sect, setts in settings_dict.iteritems():
-            self.lines.append(b'[' + sect.encode(u'ascii') + b']')
+            self.lines.append(u'[%s]' % sect)
             self._ci_settings_cache_linenum[sect] = OrderedLowerDict()
             current_line += 1
             for sett, val in setts.iteritems():
-                self.lines.append(sett.encode(u'ascii') + b'=' +
-                                  val.encode(u'ascii'))
+                self.lines.append(u'%s=%s' % (sett, val))
                 self._ci_settings_cache_linenum[sect][sett] = (
                     val, current_line)
                 current_line += 1
@@ -432,10 +428,9 @@ class DefaultIniFile(IniFile):
         this is wanted and does not harm in this case. Note also, the binary
         instantiation of the default ini is with windows EOL."""
         if as_unicode:
-            return [l.decode(u'ascii') for l in self.lines]
-        else:
-            # Add a newline at the end of the INI
-            return b'\r\n'.join(self.lines) + b'\r\n'
+            return iter(self.lines) # do not modify return value directly
+        # Add a newline at the end of the INI
+        return b'\r\n'.join(l.encode(u'ascii') for l in self.lines) + b'\r\n'
 
     # Abstract for DefaultIniFile, do_update is short-circuit'ed while
     # _get_ci_settings should not be called.
@@ -505,8 +500,7 @@ class OBSEIniFile(IniFile):
         ci_settings, deletedSettings = self.get_ci_settings(with_deleted=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
-        tweak_lines = tweak_file.read_ini_content()  # type: list[unicode]
-        for line in tweak_lines:
+        for line in tweak_file.read_ini_content():
             # Check for deleted lines
             maDeleted = reDeleted.match(line)
             if maDeleted: stripped = maDeleted.group(1)
@@ -550,10 +544,9 @@ class OBSEIniFile(IniFile):
         deleted_settings = _to_lower(deleted_settings)
         reDeleted = self.reDeleted
         reComment = self.reComment
-        ini_lines = self.read_ini_content(as_unicode=True)
         with self._open_for_writing() as tmpFile:
             # Modify/Delete existing lines
-            for line in ini_lines:
+            for line in self.read_ini_content(as_unicode=True):
                 # if not line.rstrip(): continue
                 # Test if line is currently deleted
                 maDeleted = reDeleted.match(line)
@@ -617,13 +610,12 @@ class OBSEIniFile(IniFile):
         # type: (unicode, bool) -> None
         re_comment = self.reComment
         re_section = self.reSection
-        ini_lines = self.read_ini_content(as_unicode=True)
         # Tri-State: If None, we haven't hit the section yet. If True, then
         # we've hit it and are actively removing it. If False, then we've fully
         # removed the section already and should ignore further occurences.
         remove_current = None
         with self._open_for_writing() as out:
-            for line in ini_lines:
+            for line in self.read_ini_content(as_unicode=True):
                 stripped = re_comment.sub(u'', line).strip()
                 # Try checking if it's an OBSE line first
                 _match, section, _fmt = self._parse_obse_line(stripped)

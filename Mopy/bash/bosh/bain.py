@@ -54,16 +54,18 @@ class Installer(object):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
     #--Member data
-    persistent = ('archive', 'order', 'group', 'modified', 'size', 'crc',
-        'fileSizeCrcs', 'type', 'is_active', 'subNames', 'subActives',
-        'dirty_sizeCrc', 'comments', 'extras_dict', 'packageDoc', 'packagePic',
-        'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
-        'blockSize', 'overrideSkips', 'remaps', 'skipRefresh', 'fileRootIdex')
-    volatile = ('ci_dest_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
-        'missingFiles', 'mismatchedFiles', 'project_refreshed',
-        'mismatchedEspms', 'unSize', 'espms', 'underrides', 'hasWizard',
-        'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles', '_dir_dirs_files',
-        'has_fomod_conf')
+    persistent = (u'archive', u'order', u'group', u'modified', u'fsize',
+        u'crc', u'fileSizeCrcs', u'type', u'is_active', u'subNames',
+        u'subActives', u'dirty_sizeCrc', u'comments', u'extras_dict',
+        u'packageDoc', u'packagePic', u'src_sizeCrcDate', u'hasExtraData',
+        u'skipVoices', u'espmNots', u'isSolid', u'blockSize', u'overrideSkips',
+        u'remaps', u'skipRefresh', u'fileRootIdex')
+    volatile = (u'ci_dest_sizeCrc', u'skipExtFiles', u'skipDirFiles',
+        u'status', u'missingFiles', u'mismatchedFiles', u'project_refreshed',
+        u'mismatchedEspms', u'unSize', u'espms', u'underrides', u'hasWizard',
+        u'espmMap', u'hasReadme', u'hasBCF', u'hasBethFiles',
+        u'_dir_dirs_files', u'has_fomod_conf')
+
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     type_string = _(u'Unrecognized')
@@ -182,7 +184,7 @@ class Installer(object):
         self.archive = u''
         #--Persistent: set by _refreshSource called by refreshBasic
         self.modified = 0 #--Modified date
-        self.size = -1 #--size of archive file
+        self.fsize = -1 #--size of archive file
         self.crc = 0 #--crc of archive
         self.isSolid = False #--package only - solid 7z archive
         self.blockSize = None #--package only - set here and there
@@ -242,7 +244,7 @@ class Installer(object):
         return unicode(number)
 
     def size_string(self, marker_string=u''):
-        return round_size(self.size)
+        return round_size(self.fsize)
 
     def structure_string(self):
         if self.type == 1:
@@ -549,20 +551,20 @@ class Installer(object):
     def _init_executables_skips():
         goodDlls = Installer.goodDlls()
         badDlls = Installer.badDlls()
-        def __skipExecutable(checkOBSE, fileLower, full, archiveRoot, size,
+        def __skipExecutable(checkOBSE, fileLower, full, archiveRoot, dll_size,
                              crc, desc, ext, exeDir, dialogTitle):
             if not fileLower.startswith(exeDir): return True
-            if fileLower in badDlls and [archiveRoot, size, crc] in badDlls[
-                fileLower]: return True
-            if not checkOBSE or fileLower in goodDlls and [
-                archiveRoot, size, crc] in goodDlls[fileLower]: return False
+            if fileLower in badDlls and [archiveRoot, dll_size, crc] in \
+                    badDlls[fileLower]: return True
+            if not checkOBSE or fileLower in goodDlls and [archiveRoot,
+                dll_size, crc] in goodDlls[fileLower]: return False
             message = Installer._dllMsg(fileLower, full, archiveRoot,
                                         desc, ext, badDlls, goodDlls)
             if not balt.askYes(balt.Link.Frame,message, dialogTitle):
-                badDlls[fileLower].append([archiveRoot,size,crc])
+                badDlls[fileLower].append([archiveRoot, dll_size, crc])
                 bass.settings[u'bash.installers.badDlls'] = Installer._badDlls
                 return True
-            goodDlls[fileLower].append([archiveRoot,size,crc])
+            goodDlls[fileLower].append([archiveRoot, dll_size, crc])
             bass.settings[u'bash.installers.goodDlls'] = Installer._goodDlls
             return False
         if bush.game.Se.se_abbrev:
@@ -1104,7 +1106,7 @@ class Installer(object):
         return upt_numb, del_numb
 
     def size_or_mtime_changed(self, apath):
-        return (self.size, self.modified) != apath.size_mtime()
+        return (self.fsize, self.modified) != apath.size_mtime()
 
     def _installer_rename(self, idata_, newName):
         """Rename package or project."""
@@ -1302,7 +1304,7 @@ class InstallerArchive(Installer):
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self.size, self.modified = self.abs_path.size_mtime() ##: aka _file_size _file_mod_time
+        self.size, self.modified = self.abs_path.size_mtime() ##: aka fsize _file_mod_time
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
@@ -2116,7 +2118,7 @@ class InstallersData(DataStore):
                     if top_level_espm: # modInfos MUST BE UPDATED
                         try:
                             modInfo = modInfos[GPath(rpFile)]
-                            new_sizeCrcDate[rpFile] = (modInfo.size,
+                            new_sizeCrcDate[rpFile] = (modInfo.fsize,
                                modInfo.cached_mod_crc(), modInfo.mtime, asFile)
                             continue
                         except KeyError:
@@ -2263,8 +2265,8 @@ class InstallersData(DataStore):
             if apath in deleted:
                 do_refresh |= bool(self.data_sizeCrcDate.pop(path_key, None))
             else:
-                self.data_sizeCrcDate[path_key] = (apath.size, apath.crc,
-                                                   apath.mtime)
+                s, m = apath.size_mtime()
+                self.data_sizeCrcDate[path_key] = (s, apath.crc, m)
                 do_refresh = True
         return do_refresh # Some tracked files changed, update installers status
 
@@ -2438,9 +2440,10 @@ class InstallersData(DataStore):
         :type package_keys: None | collections.Iterable[Path]
         :rtype: list[(Path, Installer)]
         """
-        if package_keys is None: pairs = self.items()
-        else: pairs = [(k, self[k]) for k in package_keys]
-        return sorted(pairs, key=lambda tup: tup[1].order, reverse=reverse)
+        pairs = self if package_keys is None else {k: self[k] for k in
+                                                   package_keys}
+        return dict_sort(pairs, key_f=lambda k: pairs[k].order,
+                         reverse=reverse)
 
     def sorted_values(self, package_keys=None, reverse=False):
         """Return installers for package_keys in self, sorted by install order.
@@ -2629,9 +2632,9 @@ class InstallersData(DataStore):
         for key, group in groupby(restores, key=itemgetter(1)):
             installer_destinations[key] = {dest for dest, _key in group}
         if not installer_destinations: return
-        installer_destinations = sorted(installer_destinations.items(),
-            key=lambda item: self[item[0]].order)
         progress.setFull(len(installer_destinations))
+        installer_destinations = dict_sort(installer_destinations,
+                                           key_f=lambda k: self[k].order)
         for index, (archive, destFiles) in enumerate(installer_destinations):
             progress(index, archive.s)
             if destFiles:

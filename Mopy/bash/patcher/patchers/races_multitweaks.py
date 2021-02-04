@@ -36,7 +36,8 @@ from collections import defaultdict, Counter
 from itertools import izip
 
 # Internal
-from .base import MultiTweakItem, ListPatcher, ModLoader
+from .base import MultiTweakItem
+from ..base import ListPatcher, ModLoader
 from ... import bosh, bush
 from ...bolt import GPath, deprint
 from ...brec import MelObject, strFid
