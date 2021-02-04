@@ -498,9 +498,9 @@ class SaveFile(object):
             created_sizes[citem._rec_sig] += citem.size
             created_counts[citem._rec_sig] += 1
             id_created[citem.fid] = citem
-        for rsig in sorted(created_sizes):
+        for rsig, csize in dict_sort(created_sizes):
             log(u'  %d\t%d kb\t%s' % (
-                created_counts[rsig], created_sizes[rsig] // 1024, rsig))
+                created_counts[rsig], csize // 1024, rsig.decode(u'ascii')))
         #--Fids
         lostRefs = 0
         idHist = [0]*256
@@ -568,8 +568,7 @@ class SaveFile(object):
             log(u' Null Bases: %s' % objRefNullBases)
         if objRefBases:
             log(_(u' Count IRef     BaseId'))
-            for iref in sorted(objRefBases):
-                count,cumSize = objRefBases[iref]
+            for iref, (count, cumSize) in dict_sort(objRefBases):
                 if iref >> 24 == 255:
                     parentid = iref
                 else:

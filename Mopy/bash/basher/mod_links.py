@@ -634,8 +634,7 @@ class Mod_ListBashTags(ItemLink):
 
     def Execute(self):
         #--Get masters list
-        modInfos = [x for x in self.iselected_infos()]
-        tags_text = bosh.modInfos.getTagList(modInfos)
+        tags_text = bosh.modInfos.getTagList(list(self.iselected_infos()))
         balt.copyToClipboard(tags_text)
         self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
 

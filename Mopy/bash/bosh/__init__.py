@@ -50,7 +50,7 @@ from .. import bass, bolt, balt, bush, env, load_order, initialization
 from ..archives import readExts
 from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
-    GPath_no_norm, struct_error
+    GPath_no_norm, struct_error, dict_sort
 from ..brec import ModReader, RecordHeader
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
@@ -2215,9 +2215,8 @@ class ModInfos(FileInfos):
         name_mergeInfo = self.table.getColumn(u'mergeInfo')
         #--Add known/unchanged and esms - we need to scan dependent mods
         # first to account for mergeability of their masters
-        for mpath, modInfo in sorted(self.items(), ##: dict_sort
-                key=lambda tup: load_order.cached_lo_index(tup[0]),
-                                     reverse=True):
+        for mpath, modInfo in dict_sort(self, key_f=lambda
+                k: load_order.cached_lo_index(k), reverse=True):
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
             # if esm/esl bit was flipped size won't change, so check this first
             if modInfo.is_esl() or modInfo.has_esm_flag():
@@ -2449,8 +2448,7 @@ class ModInfos(FileInfos):
         return (_tags(_(u'Result: '), sorted_tags, tagList)
                 if has_tags_source else tagList + u'    %s\n' % _(u'No tags'))
 
-    @staticmethod
-    def getTagList(mod_list=None):
+    def getTagList(self, mod_list=None):
         """Return the list as wtxt of current bash tags (but don't say which
         ones are applied via a patch) - either for all mods in the data folder
         or if specified for one specific mod."""
@@ -2459,17 +2457,16 @@ class ModInfos(FileInfos):
         tagList += _(u'Note: Sources are processed from top to bottom, '
                      u'meaning that lower-ranking sources override '
                      u'higher-ranking ones.') + u'\n'
-        if mod_list:
-            for modInfo in mod_list:
-                tagList += u'\n* %s\n' % modInfo
-                tagList = ModInfos._tagsies(modInfo, tagList)
-        else:
+        if mod_list is None:
+            mod_list = []
             # sort output by load order
-            lindex = lambda t: load_order.cached_lo_index(t[0])
-            for __mname, modInfo in sorted(modInfos.iteritems(), key=lindex):
+            for __mname, modInfo in dict_sort(self, key_f=(
+                    lambda k: load_order.cached_lo_index(k))):
                 if modInfo.getBashTags():
-                    tagList += u'\n* %s\n' % modInfo
-                    tagList = ModInfos._tagsies(modInfo, tagList)
+                    mod_list.append(modInfo)
+        for modInfo in mod_list:
+            tagList += u'\n* %s\n' % modInfo
+            tagList = ModInfos._tagsies(modInfo, tagList)
         tagList += u'[/spoiler]'
         return tagList
 

@@ -2200,15 +2200,16 @@ def natural_key():
     return lambda curr_str: [_to_cmp(s) for s in
                              _digit_re.split(u'%s' % curr_str)]
 
-def dict_sort(di, values_dex=(), by_value=False):
-    """WIP wrap common dict sorting patterns."""
-    if values_dex:
+def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=True):
+    """WIP wrap common dict sorting patterns - key_f if passed takes
+    precedence."""
+    if key_f is not None:
+        pass
+    elif values_dex:
         key_f = lambda k: tuple(di[k][x] for x in values_dex)
     elif by_value:
         key_f = lambda k: di[k]
-    else:
-        key_f = None # default
-    for k_ in sorted(di, key=key_f):
+    for k_ in sorted(di, key=key_f, reverse=reverse):
         yield k_, di[k_]
 
 # WryeText --------------------------------------------------------------------

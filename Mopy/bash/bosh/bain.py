@@ -2440,9 +2440,10 @@ class InstallersData(DataStore):
         :type package_keys: None | collections.Iterable[Path]
         :rtype: list[(Path, Installer)]
         """
-        if package_keys is None: pairs = self.items()
-        else: pairs = [(k, self[k]) for k in package_keys]
-        return sorted(pairs, key=lambda tup: tup[1].order, reverse=reverse)
+        pairs = self if package_keys is None else {k: self[k] for k in
+                                                   package_keys}
+        return dict_sort(pairs, key_f=lambda k: pairs[k].order,
+                         reverse=reverse)
 
     def sorted_values(self, package_keys=None, reverse=False):
         """Return installers for package_keys in self, sorted by install order.
@@ -2631,9 +2632,9 @@ class InstallersData(DataStore):
         for key, group in groupby(restores, key=itemgetter(1)):
             installer_destinations[key] = {dest for dest, _key in group}
         if not installer_destinations: return
-        installer_destinations = sorted(installer_destinations.items(),
-            key=lambda item: self[item[0]].order)
         progress.setFull(len(installer_destinations))
+        installer_destinations = dict_sort(installer_destinations,
+                                           key_f=lambda k: self[k].order)
         for index, (archive, destFiles) in enumerate(installer_destinations):
             progress(index, archive.s)
             if destFiles:
