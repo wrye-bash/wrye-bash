@@ -31,7 +31,7 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
     MelOptStruct, MelCounter, MelRefScale, MelRef3D, \
-    MelOptUInt32, MelIcons, MelFloat, MelSInt32, \
+    MelIcons, MelFloat, MelSInt32, \
     MelFixedString, FixedString, AutoFixedString, MreGmstBase, \
     MreLeveledListBase, MelUInt16, SizeDecider, MelLists, \
     MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags
@@ -200,9 +200,9 @@ class MelReference(MelSequential):
             ##: INTV should have a decider - uint32 or float, depending on
             # object type
             MelBase(b'INTV', u'remaining_usage'),
-            MelOptUInt32(b'NAM9', u'gold_value'),
+            MelUInt32(b'NAM9', u'gold_value'),
             MelDestinations(),
-            MelOptUInt32(b'FLTV', u'lock_level'),
+            MelUInt32(b'FLTV', u'lock_level'),
             MelString(b'KNAM', u'key_name'),
             MelString(b'TNAM', u'trap_name'),
             MelBase(b'ZNAM', u'ref_disabled_marker'),
@@ -706,7 +706,7 @@ class MreInfo(MelRecord):
         MelMWId(),
         MelGroups(u'conditions',
             MelString(b'SCVR', u'condition_string'),
-            MelOptUInt32(b'INTV', u'comparison_int'),
+            MelUInt32(b'INTV', u'comparison_int'),
             MelFloat(b'FLTV', u'comparison_float'),
         ),
         MelString(b'BNAM', u'result_text'),

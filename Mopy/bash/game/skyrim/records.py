@@ -33,7 +33,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt16, MelUInt32, \
-    MelActionFlags, MelOptUInt32, MelOptFid, MelCounter, \
+    MelActionFlags, MelOptFid, MelCounter, \
     MelPartialCounter, MelBounds, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelPickupSound, MelDropSound, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, \
-    get_structs, MelOptUInt32Flags
+    get_structs
 from ...exception import ModError, ModSizeError, StateError
 
 # Set MelModel in brec but only if unset, otherwise we are being imported from
@@ -391,7 +391,7 @@ class MelWaterVelocities(MelSequential):
         super(MelWaterVelocities, self).__init__(
             # Old version of XWCN - replace with XWCN upon dumping
             MelReadOnly(MelUInt32(b'XWCS', u'water_velocities_count')),
-            MelCounter(MelOptUInt32(b'XWCN', u'water_velocities_count'),
+            MelCounter(MelUInt32(b'XWCN', u'water_velocities_count'),
                        counts=u'water_velocities'),
             MelArray(u'water_velocities',
                 MelStruct(b'XWCU', [u'4f'], u'x_offset', u'y_offset',
@@ -3450,7 +3450,7 @@ class MreMust(MelRecord):
         MelEdid(),
         MelUInt32(b'CNAM', 'trackType'),
         MelFloat(b'FLTV', 'duration'),
-        MelOptUInt32(b'DNAM', 'fadeOut'),
+        MelUInt32(b'DNAM', 'fadeOut'),
         MelString(b'ANAM','trackFilename'),
         MelString(b'BNAM','finaleFilename'),
         MelArray('points',
@@ -4311,7 +4311,7 @@ class MreRace(MelRecord):
                          u'override_back_run', u'override_rotate_walk',
                          u'override_rotate_run', u'unknown1'),
         ),
-        MelOptUInt32Flags(b'VNAM', u'equip_type_flags', _equip_type_flags),
+        MelUInt32Flags(b'VNAM', u'equip_type_flags', _equip_type_flags),
         MelGroups(u'equip_slots',
             MelFid(b'QNAM', u'equip_slot'),
         ),
@@ -4533,7 +4533,7 @@ class MreRefr(MelRecord):
         MelFid(b'XLIB','leveledItemBaseObject'),
         MelSInt32(b'XLCM', 'levelModifier'),
         MelFid(b'XLCN','persistentLocation',),
-        MelOptUInt32(b'XTRI', 'collisionLayer'),
+        MelUInt32(b'XTRI', 'collisionLayer'),
         # {>>Lock Tab for REFR when 'Locked' is Unchecked this record is not present <<<}
         MelTruncatedStruct(b'XLOC', [u'B', u'3s', u'I', u'B', u'3s', u'8s'], 'lockLevel', 'unused1',
                            (FID, 'lockKey'), (_lockFlags, 'lockFlags'),
@@ -4934,7 +4934,7 @@ class MreSmqn(MelRecord):
         MelConditions(),
         MelSMFlags(with_quest_flags=True),
         MelUInt32(b'XNAM', u'max_concurrent_quests'),
-        MelOptUInt32(b'MNAM', u'num_quests_to_run'),
+        MelUInt32(b'MNAM', u'num_quests_to_run'),
         MelCounter(MelUInt32(b'QNAM', u'quest_count'), counts=u'sm_quests'),
         MelGroups(u'sm_quests',
             MelFid(b'NNAM', u'sm_quest'),

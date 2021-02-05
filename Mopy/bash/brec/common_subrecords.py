@@ -31,14 +31,14 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelFloat, MelOptFid, MelReadOnly, MelFids, MelOptUInt32Flags, \
+    MelFloat, MelOptFid, MelReadOnly, MelFids, MelUInt32Flags, \
     MelUInt8Flags, MelSInt32
 from .utils_constants import _int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
 from ..exception import ModError
 
 #------------------------------------------------------------------------------
-class MelActionFlags(MelOptUInt32Flags):
+class MelActionFlags(MelUInt32Flags):
     """XACT (Action Flags) subrecord for REFR records."""
     _act_flags = Flags(0, Flags.getNames(u'act_use_default', u'act_activate',
         u'act_open', u'act_open_by_default'))
