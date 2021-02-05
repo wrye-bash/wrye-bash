@@ -138,8 +138,7 @@ class _APreserver(ImportPatcher):
                 attrs for t, attrs in recAttrs.iteritems() if t in mod_tags))
             fid_attrs = set(chain.from_iterable(
                 attrs for t, attrs in fid_attrs.iteritems() if t in mod_tags))
-        for record in srcFile.tops[top_grup_sig].iter_filtered_records(
-                self.srcs_sigs): # this is srcs_sigs of all mods up till now?
+        for record in srcFile.tops[top_grup_sig].iter_present_records():
             # If we have FormID attributes, check those before importing
             if fid_attrs:
                 fid_attr_values = [__attrgetters[a](record) for a in fid_attrs]
@@ -190,8 +189,7 @@ class _APreserver(ImportPatcher):
                 for rsig in self.rec_type_attrs:
                     if rsig not in masterFile.tops or rsig not in mod_sigs:
                         continue
-                    for record in masterFile.tops[rsig].iter_filtered_records(
-                            mod_sigs):
+                    for record in masterFile.tops[rsig].iter_present_records():
                         fid = record.fid
                         if fid not in mod_id_data: continue
                         for attr, value in mod_id_data[fid].iteritems():
@@ -216,8 +214,7 @@ class _APreserver(ImportPatcher):
             # Records that have been copied into the BP once will automatically
             # be updated by update_patch_records_from_mod/mergeModFile
             copied_records = patchBlock.id_records
-            for record in modFile.tops[rsig].iter_filtered_records(
-                    self.srcs_sigs):
+            for record in modFile.tops[rsig].iter_present_records():
                 fid = record.fid
                 # Skip if we've already copied this record or if we're not
                 # interested in it
@@ -250,8 +247,8 @@ class _APreserver(ImportPatcher):
         type_count = Counter()
         for rsig in self.srcs_sigs:
             if rsig not in modFileTops: continue
-            records = modFileTops[rsig].iter_filtered_records(
-                self.srcs_sigs, include_ignored=True)
+            records = modFileTops[rsig].iter_present_records(
+                include_ignored=True) ##: why include_ignored?
             self._inner_loop(keep, records, rsig, type_count)
         self.id_data.clear() # cleanup to save memory
         # Log

@@ -131,13 +131,6 @@ class MobBase(object):
         """Returns a ModReader wrapped around self.data."""
         return ModReader(self.inName, io.BytesIO(self.data))
 
-    def iter_filtered_records(self, wanted_sigs, include_ignored=False):
-        """Filters iter_present_records, returning a generator that only
-        yields records with one of the signatures in wanted_sigs."""
-        ##: TODO(ut): revisit uses - replace with iter_present_records ??
-        return (r for r in self.iter_present_records(include_ignored) if
-                r._rec_sig in wanted_sigs)  # skip deleted records (ugh)
-
     def iter_present_records(self, include_ignored=False):
         """Filters iter_records, returning only records that have not set
         the deleted flag and/or the ignore flag if include_ignored is False."""

@@ -2200,7 +2200,7 @@ def natural_key():
     return lambda curr_str: [_to_cmp(s) for s in
                              _digit_re.split(u'%s' % curr_str)]
 
-def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=True):
+def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
     """WIP wrap common dict sorting patterns - key_f if passed takes
     precedence."""
     if key_f is not None:

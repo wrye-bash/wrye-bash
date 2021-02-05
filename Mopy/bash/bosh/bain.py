@@ -1304,7 +1304,7 @@ class InstallerArchive(Installer):
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self.size, self.modified = self.abs_path.size_mtime() ##: aka fsize _file_mod_time
+        self.fsize, self.modified = self.abs_path.size_mtime() ##: aka _file_mod_time
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
@@ -1549,16 +1549,16 @@ class InstallerProject(Installer):
         # has 3/25/2020 8:02:00 AM modification time if unpacked and no
         # amount of internal shuffling won't change its apath.getmtime(True)
         getM, join = os.path.getmtime, os.path.join
-        c, size = [], 0
+        c, proj_size = [], 0
         cExtend, cAppend = c.extend, c.append
         self._dir_dirs_files = []
         for root, d, files in bolt.walkdir(apath.s):
             cAppend(getM(root))
             lstats = [_lstat(join(root, f)) for f in files]
             cExtend(ls.st_mtime for ls in lstats)
-            size += sum(ls.st_size for ls in lstats)
+            proj_size += sum(ls.st_size for ls in lstats)
             self._dir_dirs_files.append((root, [], files)) # dirs is unused
-        if self.size != size: return True
+        if self.fsize != proj_size: return True
         # below is for the fix me - we need to add mtimes_str_crc extra persistent attribute to Installer
         # c.sort() # is this needed or os.walk will return the same order during program run
         # mtimes_str = b'.'.join(map(bytes, c))
@@ -1583,7 +1583,7 @@ class InstallerProject(Installer):
 ##            cumDate = max(date,cumDate)
             cumCRC += crc
             cumSize += size
-        self.size = cumSize
+        self.fsize = cumSize
         self.crc = cumCRC & 0xFFFFFFFF
         self.project_refreshed = True
 

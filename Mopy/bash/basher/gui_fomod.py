@@ -409,9 +409,14 @@ class PageFinish(PageInstaller):
                 init_text=self.display_files(installer_output))
             sorted_output = bolt.dict_sort(installer_output,
                 key_f=lambda k: installer_output[k].lower())  # sort by source
+            sorted_src = []
+            sorted_dst = []
+            for d, s in sorted_output:
+                sorted_src.append(s)
+                sorted_dst.append(d)
             output_table_data = {
-                _(u'Source'): [t[1] for t in sorted_output],
-                _(u'Destination'): [t[0] for t in sorted_output],
+                _(u'Source'): sorted_src,
+                _(u'Destination'): sorted_dst,
             }
             self._output_table = Table(self, output_table_data, editable=False)
         # Choose which output view to use, then create the layout
