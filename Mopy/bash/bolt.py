@@ -1656,7 +1656,11 @@ def cmp_(x, y):
 
 def isclose_(a, b, rel_tol=1e-09, abs_tol=0.0):
     """Inexact float comparison. PY3: drop in favor of math.isclose."""
-    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+    try:
+        return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+    except TypeError:
+        if a is b is None: return True
+        return False
 
 def floats_equal(a, b):
     """Checks if the two floats are equal to the sixth place (relatively) or to

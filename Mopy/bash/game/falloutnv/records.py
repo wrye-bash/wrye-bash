@@ -32,7 +32,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, \
     MelFidList, MreGmstBase, MreHeaderBase, MelColorInterpolator, \
     MelValueInterpolator, MelRegnEntrySubrecord, MelFloat, MelSInt8, \
-    MelSInt16, MelSInt32, MelUInt8, MelUInt32, MelOptFid, MelOptFloat, \
+    MelSInt16, MelSInt32, MelUInt8, MelUInt32, MelOptFid, \
     MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, MelBounds, null1, \
     MelTruncatedStruct, MelReadOnly, MelSkipInterior, \
     MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
@@ -404,10 +404,7 @@ class MreCell(MelRecord):
         MelBase(b'IMPF','footstepMaterials'), #--todo rewrite specific class.
         MelFid(b'LTMP','lightTemplate'),
         MelOptUInt32Flags(b'LNAM', u'lightInheritFlags', inheritFlags),
-        # GECK default for water is -2147483648, but by setting default here to
-        # -2147483649, we force the Bashed Patch to retain the value of the
-        # last mod.
-        MelOptFloat(b'XCLW', u'waterHeight', -2147483649),
+        MelFloat(b'XCLW', u'waterHeight'),
         MelString(b'XNAM','waterNoiseTexture'),
         MelFidList(b'XCLR','regions'),
         MelOptUInt8(b'XCMT', 'xcmt_p'),
@@ -662,7 +659,7 @@ class MreFact(MelRecord):
                            (_general_flags, u'general_flags'),
                            (_general_flags_2, u'general_flags_2'),
                            u'unused1', old_versions={u'2B', u'B'}),
-        MelOptFloat(b'CNAM', u'cnam_unused'), # leftover from Oblivion
+        MelFloat(b'CNAM', u'cnam_unused'), # leftover from Oblivion
         MelGroups(u'ranks',
             MelSInt32(b'RNAM', u'rank_level'),
             MelString(b'MNAM', u'male_title'),
@@ -928,8 +925,7 @@ class MreLigh(MelRecord):
         MelStruct(b'DATA', [u'i', u'I', u'3B', u's', u'I', u'2f', u'I', u'f'],'duration','radius','red','green','blue',
                   'unused1',(_flags, u'flags'),'falloff','fov','value',
                   'weight'),
-        # None here is on purpose! See AssortedTweak_LightFadeValueFix
-        MelOptFloat(b'FNAM', u'fade', None),
+        MelFloat(b'FNAM', u'fade'),
         MelFid(b'SNAM','sound'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1272,10 +1268,10 @@ class MreRefr(MelRecord):
             'unused3', 'unused4', is_optional=True,
             old_versions={'B3sI4s'}),
         MelOptSInt32(b'XCNT', 'count'),
-        MelOptFloat(b'XRDS', 'radius'),
-        MelOptFloat(b'XHLP', 'health'),
-        MelOptFloat(b'XRAD', 'radiation'),
-        MelOptFloat(b'XCHG', u'charge'),
+        MelFloat(b'XRDS', 'radius'),
+        MelFloat(b'XHLP', 'health'),
+        MelFloat(b'XRAD', 'radiation'),
+        MelFloat(b'XCHG', u'charge'),
         MelGroup('ammo',
             MelFid(b'XAMT','type'),
             MelUInt32(b'XAMC', 'count'),

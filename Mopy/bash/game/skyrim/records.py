@@ -32,7 +32,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MreGmstBase, MelLString, MelMODS, MelColorInterpolator, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
-    MelUInt16, MelUInt32, MelOptFloat, MelOptSInt16, MelOptSInt32, \
+    MelUInt16, MelUInt32, MelOptSInt16, MelOptSInt32, \
     MelActionFlags, MelOptUInt16, MelOptUInt32, MelOptFid, MelCounter, \
     MelPartialCounter, MelBounds, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
@@ -1792,7 +1792,7 @@ class MreCell(MelRecord):
         # leftover flags, they are now in XCLC
         MelBase(b'LNAM','unknown_LNAM'),
         # Drop in interior cells for Skyrim, see #302 for discussion on this
-        MelSkipInterior(MelOptFloat(b'XCLW', u'waterHeight', -2147483649)),
+        MelSkipInterior(MelFloat(b'XCLW', u'waterHeight')),
         MelString(b'XNAM','waterNoiseTexture'),
         MelFidList(b'XCLR','regions'),
         MelFid(b'XLCN','location',),
@@ -3098,8 +3098,7 @@ class MreLigh(MelRecord):
                   'unknown',(LighTypeFlags, u'flags'),'falloffExponent','fov',
                   'nearClip','fePeriod','feIntensityAmplitude',
                   'feMovementAmplitude','value','weight',),
-        # None here is on purpose! See AssortedTweak_LightFadeValueFix
-        MelOptFloat(b'FNAM', u'fade', None),
+        MelFloat(b'FNAM', u'fade'),
         MelFid(b'SNAM','sound'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3450,7 +3449,7 @@ class MreMust(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelUInt32(b'CNAM', 'trackType'),
-        MelOptFloat(b'FLTV', 'duration'),
+        MelFloat(b'FLTV', 'duration'),
         MelOptUInt32(b'DNAM', 'fadeOut'),
         MelString(b'ANAM','trackFilename'),
         MelString(b'BNAM','finaleFilename'),
@@ -4180,7 +4179,7 @@ class _MelTintMasks(MelGroups):
             ),
             MelGroups(u'tint_presets',
                 MelFid(b'TINC', u'preset_color'),
-                MelOptFloat(b'TINV', u'preset_default'),
+                MelFloat(b'TINV', u'preset_default'),
                 MelOptUInt16(b'TIRS', u'preset_index'),
             ),
         )
@@ -4510,7 +4509,7 @@ class MreRefr(MelRecord):
         MelBase(b'XMBP','multiboundPrimitiveMarker'),
         MelBase(b'XRGD','ragdollData'),
         MelBase(b'XRGB','ragdollBipedData'),
-        MelOptFloat(b'XRDS', 'radius'),
+        MelFloat(b'XRDS', 'radius'),
         MelGroups('reflectedByWaters',
             MelStruct(b'XPWR', [u'2I'], (FID, 'reference'),
                       (reflectFlags, 'reflection_type')),
@@ -4550,7 +4549,7 @@ class MreRefr(MelRecord):
         MelNull(b'XIS2',),
         MelOwnership(),
         MelOptSInt32(b'XCNT', 'count'),
-        MelOptFloat(b'XCHG', u'charge'),
+        MelFloat(b'XCHG', u'charge'),
         MelFid(b'XLRL','locationReference'),
         MelEnableParent(),
         MelGroups('linkedReference',
@@ -4565,8 +4564,8 @@ class MreRefr(MelRecord):
             MelTopicData('topic_data'),
         ),
         MelActionFlags(),
-        MelOptFloat(b'XHTW', 'headTrackingWeight'),
-        MelOptFloat(b'XFVC', 'favorCost'),
+        MelFloat(b'XHTW', 'headTrackingWeight'),
+        MelFloat(b'XFVC', 'favorCost'),
         MelBase(b'ONAM','onam_p'),
         MelMapMarker(),
         MelFid(b'XATR', 'attachRef'),
@@ -4943,7 +4942,7 @@ class MreSmqn(MelRecord):
         MelGroups(u'sm_quests',
             MelFid(b'NNAM', u'sm_quest'),
             MelUInt32(b'FNAM', u'sm_quest_flags'), # all unknown
-            MelOptFloat(b'RNAM', u'hours_until_reset'),
+            MelFloat(b'RNAM', u'hours_until_reset'),
         )
     )
     __slots__ = melSet.getSlotsUsed()
@@ -5443,7 +5442,7 @@ class MreWrld(MelRecord):
         MelFid(b'CNAM','climate',),
         MelFid(b'NAM2','water',),
         MelFid(b'NAM3','lODWaterType',),
-        MelOptFloat(b'NAM4', u'lODWaterHeight'),
+        MelFloat(b'NAM4', u'lODWaterHeight'),
         MelOptStruct(b'DNAM', [u'2f'],'defaultLandHeight',
                      'defaultWaterHeight',),
         MelIcon(u'mapImage'),

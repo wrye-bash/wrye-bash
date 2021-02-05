@@ -857,6 +857,12 @@ class MelUnion(MelBase):
         for element in self.element_mapping.itervalues():
             element.setDefault(record)
         if self.fallback: self.fallback.setDefault(record)
+        # This is somewhat hacky. We let all FormID elements set their defaults
+        # afterwards so that records have integers if possible, otherwise
+        # mapFids will blow up on unions that haven't been loaded, but contain
+        # FormIDs and other types in other union alternatives
+        for element in self.fid_elements:
+            element.setDefault(record)
 
     def mapFids(self, record, function, save=False):
         element = self._get_element_from_record(record)

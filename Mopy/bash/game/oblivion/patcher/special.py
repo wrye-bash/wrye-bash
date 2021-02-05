@@ -342,8 +342,8 @@ class MorphFactionsPatcher(_ExSpecialList):
             mFactable.append(rec_fid)
             #--Update record if it doesn't have an existing relation with
             # mFactLong
-            if mFactLong not in [relation.faction for relation in
-                                 record.relations]:
+            if not any(mFactLong == relation.faction for relation in
+                       record.relations):
                 record.general_flags.hidden_from_pc = False
                 relation = record.getDefault(u'relations')
                 relation.faction = mFactLong
@@ -359,7 +359,8 @@ class MorphFactionsPatcher(_ExSpecialList):
                     if not rank.insignia_path:
                         rank.insignia_path = (
                                 u'Menus\\Stats\\Cobl\\generic%02d.dds' %
-                                rank.rank_level)
+                                # if rank_level was not present it will be None
+                                (rank.rank_level or 0))
                 keep(rec_fid)
                 changed[rec_fid[0]] += 1
         #--MFact record

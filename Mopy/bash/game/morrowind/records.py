@@ -31,7 +31,7 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
     MelOptStruct, MelCounter, MelRefScale, MelOptSInt32, MelRef3D, \
-    MelOptFloat, MelOptUInt32, MelIcons, MelFloat, MelSInt32, \
+    MelOptUInt32, MelIcons, MelFloat, MelSInt32, \
     MelFixedString, FixedString, AutoFixedString, MreGmstBase, MelOptUInt8, \
     MreLeveledListBase, MelUInt16, SizeDecider, MelLists, \
     MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags
@@ -196,7 +196,7 @@ class MelReference(MelSequential):
             MelString(b'CNAM', u'ref_faction'),
             MelOptSInt32(b'INDX', u'ref_faction_rank'),
             MelString(b'XSOL', u'ref_soul'),
-            MelOptFloat(b'XCHG', u'enchantment_charge'),
+            MelFloat(b'XCHG', u'enchantment_charge'),
             ##: INTV should have a decider - uint32 or float, depending on
             # object type
             MelBase(b'INTV', u'remaining_usage'),
@@ -409,7 +409,7 @@ class MreCell(MelRecord):
             u'cell_y'),
         MelString(b'RGNN', u'region_name'),
         MelColorO(b'NAM5'),
-        MelOptFloat(b'WHGT', u'water_height'),
+        MelFloat(b'WHGT', u'water_height'),
         MelOptStruct(b'AMBI', [u'12B', u'f'], u'ambient_red', u'ambient_blue',
             u'ambient_green', u'unused_alpha1', u'sunlight_red',
             u'sunlight_blue', u'sunlight_green', u'unused_alpha2', u'fog_red',
@@ -706,10 +706,8 @@ class MreInfo(MelRecord):
         MelMWId(),
         MelGroups(u'conditions',
             MelString(b'SCVR', u'condition_string'),
-            # None here are on purpose - 0 is a valid value, but only certain
-            # conditions need these subrecords to be present
-            MelOptUInt32(b'INTV', u'comparison_int', None),
-            MelOptFloat(b'FLTV', u'comparison_float', None),
+            MelOptUInt32(b'INTV', u'comparison_int'),
+            MelFloat(b'FLTV', u'comparison_float'),
         ),
         MelString(b'BNAM', u'result_text'),
         MelOptUInt8(b'QSTN', u'quest_name'),

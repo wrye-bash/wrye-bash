@@ -33,7 +33,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelFids, MreHeaderBase, MelBase, MelFidList, MelStrings, \
     MreGmstBase, MelReferences, MelRegnEntrySubrecord, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelOptFloat, MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
+    MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
     MelRaceParts, MelRaceVoices, null1, null2, MelScriptVars, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
     MelTruncatedStruct, MelSkipInterior, MelIcon, MelIco2, MelEdid, MelFull, \
@@ -56,8 +56,7 @@ if brec.MelModel is None:
             types = self.__class__.typeSets[index - 1 if index > 1 else 0]
             super(_MelModel, self).__init__(attr,
                 MelString(types[0], u'modPath'),
-                # None here is on purpose - 0 is a legitimate value
-                MelOptFloat(types[1], u'modb', None),
+                MelFloat(types[1], u'modb'),
                 # Texture File Hashes
                 MelBase(types[2], u'modt_p')
             )
@@ -661,10 +660,7 @@ class MreCell(MelRecord):
             u'directionalZ', (u'directionalFade', 1.0), u'fogClip'),
         MelFidList(b'XCLR', u'regions'),
         MelOptUInt8(b'XCMT', u'music'),
-        # CS default for water is -2147483648, but by setting default here
-        # to -2147483649, we force the bashed patch to retain the value of
-        # the last mod.
-        MelOptFloat(b'XCLW', u'waterHeight', -2147483649),
+        MelFloat(b'XCLW', u'waterHeight'),
         MelFid(b'XCCM', u'climate'),
         MelFid(b'XCWT', u'water'),
         MelOwnershipTes4(),
@@ -1019,8 +1015,7 @@ class MreFact(MelRecord):
             MelStruct(b'XNAM', [u'I', u'i'], (FID, u'faction'), u'mod'),
         ),
         MelUInt8Flags(b'DATA', u'general_flags', _general_flags),
-        # None here is on purpose! See AssortedTweak_FactioncrimeGoldMultiplier
-        MelOptFloat(b'CNAM', u'crime_gold_multiplier', None),
+        MelFloat(b'CNAM', u'crime_gold_multiplier'),
         MelGroups(u'ranks',
             MelSInt32(b'RNAM', u'rank_level'),
             MelString(b'MNAM', u'male_title'),
@@ -1184,12 +1179,12 @@ class MreLigh(MelRecord):
         MelScript(),
         MelFull(),
         MelIcon(),
-        MelTruncatedStruct(b'DATA', [u'i', u'I', u'3B', u's', u'I', u'f', u'f', u'I', u'f'], 'duration', 'radius', 'red',
-                           'green', 'blue', 'unused1',
-                           (_flags, u'flags'), 'falloff', 'fov', 'value',
-                           'weight', old_versions={'iI3BsI2f'}),
-        # None here is on purpose! See AssortedTweak_LightFadeValueFix
-        MelOptFloat(b'FNAM', u'fade', None),
+        MelTruncatedStruct(b'DATA',
+            [u'i', u'I', u'3B', u's', u'I', u'f', u'f', u'I', u'f'],
+            'duration', 'radius', 'red', 'green', 'blue', 'unused1',
+            (_flags, u'flags'), 'falloff', 'fov', 'value', 'weight',
+            old_versions={'iI3BsI2f'}),
+        MelFloat(b'FNAM', u'fade'),
         MelFid(b'SNAM','sound'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1405,8 +1400,7 @@ class MreNpc(MreActorBase):
                    (u'skills', [0 for _x in xrange(21)]), u'health',
                    u'unused2', (u'attributes', [0 for _y in xrange(8)])),
         MelFid(b'HNAM','hair'),
-        # None here is on purpose, for race patcher
-        MelOptFloat(b'LNAM', u'hairLength', None),
+        MelFloat(b'LNAM', u'hairLength'),
         MelFid(b'ENAM','eye'), ####fid Array
         MelStruct(b'HCLR', [u'3B', u's'], 'hairRed', 'hairBlue', 'hairGreen',
                   'unused3'),
@@ -1569,8 +1563,8 @@ class MreRace(MelRecord):
                      (FID, u'defaultHairFemale')),
         # Corresponds to GMST sHairColorNN
         MelUInt8(b'CNAM', 'defaultHairColor'),
-        MelOptFloat(b'PNAM', 'mainClamp'),
-        MelOptFloat(b'UNAM', 'faceClamp'),
+        MelFloat(b'PNAM', 'mainClamp'),
+        MelFloat(b'UNAM', 'faceClamp'),
         MelStruct(b'ATTR', [u'16B'], 'maleStrength', 'maleIntelligence',
                   'maleWillpower', 'maleAgility', 'maleSpeed', 'maleEndurance',
                   'malePersonality', 'maleLuck', 'femaleStrength',
@@ -1595,8 +1589,7 @@ class MreRace(MelRecord):
             #  which breaks that. Change this to a MelModel, then hunt down
             #  that code and change it
             MelString(b'MODL', u'modPath'),
-            # None here is on purpose - 0 is a legitimate value
-            MelOptFloat(b'MODB', u'modb', None),
+            MelFloat(b'MODB', u'modb'),
             MelBase(b'MODT', 'modt_p'),
             MelIcon(),
         )),
@@ -1673,7 +1666,7 @@ class MreRefr(MelRecord):
         # the list of seed values in the TREE record
         ####if it's 4 byte it's the seed value directly.
         MelXlod(),
-        MelOptFloat(b'XCHG', u'charge'),
+        MelFloat(b'XCHG', u'charge'),
         MelOptSInt32(b'XHLT', u'health'),
         MelNull(b'XPCI'), # These two are unused
         MelReadOnly(MelFull()), # Can't use MelNull, we need to distribute

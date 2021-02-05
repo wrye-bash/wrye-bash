@@ -25,7 +25,7 @@ imported from skyrim, but only after setting MelModel to the FO4 format."""
 from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelFidList, MreLeveledListBase, MelFid, \
-    FID, MelLString, MelUInt8, MelOptFid, MelOptFloat, MelBounds, MelEdid, \
+    FID, MelLString, MelUInt8, MelOptFid, MelFloat, MelBounds, MelEdid, \
     MelArray, MreGmstBase, MelUInt8Flags
 
 # Set brec.MelModel to the Fallout 4 one - do not import from skyrim.records yet
@@ -52,7 +52,7 @@ if brec.MelModel is None:
                 # Ignore texture hashes - they're only an optimization, plenty
                 # of records in Skyrim.esm are missing them
                 MelNull(types[1]),
-                MelOptFloat(types[2], u'colorRemappingIndex'),
+                MelFloat(types[2], u'colorRemappingIndex'),
                 MelOptFid(types[3], u'materialSwap'),
                 MelBase(types[3], u'modf_p')
             )

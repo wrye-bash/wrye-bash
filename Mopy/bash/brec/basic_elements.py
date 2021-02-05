@@ -224,15 +224,14 @@ class _MelNum(MelBase):
     _unpacker, _packer, static_size = get_structs(u'I')
     __slots__ = ()
 
-    def __init__(self, mel_sig, attr, default=0): # set default to zero
-        super(_MelNum, self).__init__(mel_sig, attr, default)
-
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         setattr(record, self.attr, ins.unpack(self._unpacker, size_,
                                               *debug_strs)[0])
 
     def pack_subrecord_data(self, record):
-        return self._packer(getattr(record, self.attr))
+        """Will only be dumped if set by load_mel."""
+        attr = getattr(record, self.attr)
+        return None if attr is None else self._packer(attr)
 
 #------------------------------------------------------------------------------
 class MelCounter(MelBase):
@@ -790,7 +789,8 @@ class _MelFlags(_MelNum):
             self._unpacker, size_, *debug_strs)[0]))
 
     def pack_subrecord_data(self, record):
-        return self._packer(getattr(record, self.attr).dump())
+        attr = getattr(record, self.attr)
+        return self._packer(attr.dump()) if attr is not None else None
 
 class MelUInt8Flags(MelUInt8, _MelFlags): pass
 class MelUInt16Flags(MelUInt16, _MelFlags): pass
@@ -813,22 +813,9 @@ class MelXXXX(MelUInt32):
 #------------------------------------------------------------------------------
 class MelFid(MelUInt32):
     """Represents a mod record fid element."""
-    def __init__(self, mel_sig, attr):
-        super(MelFid, self).__init__(mel_sig, attr, None) ##: aaand reset default to None
 
     def hasFids(self,formElements):
         formElements.add(self)
-
-    def pack_subrecord_data(self,record):
-        try:
-            return super(MelFid, self).pack_subrecord_data( # pack an u'=I'
-                record)
-        except (AttributeError, struct_error):
-            ##: struct.error raised when trying to pack None (so the default,
-            # meaning the subrecord was not present) - AttributeError should
-            # never be raised due to brec.record_structs.MelSet.initRecord
-            # calling setDefault on the record
-            return None
 
     def mapFids(self,record,function,save=False):
         attr = self.attr
@@ -859,20 +846,6 @@ class MelOptStruct(MelStruct):
 class MelOptNum(_MelNum):
     """Represents an optional field that is only dumped if at least one
     value is not equal to the default."""
-
-    def pack_subrecord_data(self, record):
-        oldValue = getattr(record, self.attr)
-        if oldValue is not None and oldValue != self.default:
-            return super(MelOptNum, self).pack_subrecord_data(record)
-        return None
-
-class MelOptFloat(MelOptNum, MelFloat):
-    """Optional float."""
-
-class MelOptSInt8(MelOptNum, MelSInt8):
-    """Optional signed 8-bit integer."""
-    # Unused right now - keeping around for completeness' sake and to make
-    # future usage simpler.
 
 class MelOptSInt16(MelOptNum, MelSInt16):
     """Optional signed 16-bit integer."""
