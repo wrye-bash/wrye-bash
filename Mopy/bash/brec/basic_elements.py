@@ -847,12 +847,6 @@ class MelOptNum(_MelNum):
     """Represents an optional field that is only dumped if at least one
     value is not equal to the default."""
 
-class MelOptSInt16(MelOptNum, MelSInt16):
-    """Optional signed 16-bit integer."""
-
-class MelOptSInt32(MelOptNum, MelSInt32):
-    """Optional signed 32-bit integer."""
-
 class MelOptUInt8(MelOptNum, MelUInt8):
     """Optional unsigned 8-bit integer."""
 

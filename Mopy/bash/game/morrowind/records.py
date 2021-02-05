@@ -30,7 +30,7 @@ from ...bolt import Flags
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
-    MelOptStruct, MelCounter, MelRefScale, MelOptSInt32, MelRef3D, \
+    MelOptStruct, MelCounter, MelRefScale, MelRef3D, \
     MelOptUInt32, MelIcons, MelFloat, MelSInt32, \
     MelFixedString, FixedString, AutoFixedString, MreGmstBase, MelOptUInt8, \
     MreLeveledListBase, MelUInt16, SizeDecider, MelLists, \
@@ -194,7 +194,7 @@ class MelReference(MelSequential):
             MelString(b'ANAM', u'ref_owner'),
             MelString(b'BNAM', u'global_variable'),
             MelString(b'CNAM', u'ref_faction'),
-            MelOptSInt32(b'INDX', u'ref_faction_rank'),
+            MelSInt32(b'INDX', u'ref_faction_rank'),
             MelString(b'XSOL', u'ref_soul'),
             MelFloat(b'XCHG', u'enchantment_charge'),
             ##: INTV should have a decider - uint32 or float, depending on

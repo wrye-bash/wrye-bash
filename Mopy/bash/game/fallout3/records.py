@@ -33,7 +33,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelReferences, MelColorInterpolator, MelValueInterpolator, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelOptFid, MelOptSInt16, MelOptSInt32, MelOptUInt8, \
+    MelOptFid, MelOptUInt8, \
     MelOptUInt16, MelOptUInt32, MelPartialCounter, MelRaceParts, \
     MelRaceVoices, MelBounds, null1, null2, MelScriptVars, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
@@ -403,7 +403,7 @@ class MreAddn(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelOptSInt32(b'DATA', 'nodeIndex'),
+        MelSInt32(b'DATA', 'nodeIndex'),
         MelOptFid(b'SNAM', u'ambientSound'),
         MelStruct(b'DNAM', [u'H', u'2s'],'mastPartSysCap','unknown',),
     )
@@ -1882,7 +1882,7 @@ class MreNavm(MelRecord):
             MelStruct(b'NVTR', [u'6h', u'I'], 'vertex0', 'vertex1', 'vertex2',
                       'triangle0', 'triangle1', 'triangle2', 'flags'),
         ),
-        MelOptSInt16(b'NVCA', 'nvca_p'),
+        MelSInt16(b'NVCA', 'nvca_p'),
         MelArray('doors',
             MelStruct(b'NVDP', [u'I', u'H', u'2s'], (FID, 'doorReference'), 'door_triangle',
                       'doorUnknown'),
@@ -2598,7 +2598,7 @@ class MreRefr(MelRecord):
             'destinationPosZ','destinationRotX','destinationRotY','destinationRotZ',(_destinationFlags,'destinationFlags')),
         MelMapMarker(),
         MelFid(b'XTRG','targetId'),
-        MelOptSInt32(b'XLCM', u'levelMod'),
+        MelSInt32(b'XLCM', u'levelMod'),
         MelGroup('patrolData',
             MelFloat(b'XPRD', 'idleTime'),
             MelBase(b'XPPA','patrolScriptMarker'),
@@ -2615,7 +2615,7 @@ class MreRefr(MelRecord):
             (FID, 'lockKey'), 'unused2', (_lockFlags, 'lockFlags'),
             'unused3', 'unused4', is_optional=True,
             old_versions={'B3sI4s'}),
-        MelOptSInt32(b'XCNT', 'count'),
+        MelSInt32(b'XCNT', 'count'),
         MelFloat(b'XRDS', 'radius'),
         MelFloat(b'XHLP', 'health'),
         MelFloat(b'XRAD', 'radiation'),

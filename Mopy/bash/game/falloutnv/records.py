@@ -33,7 +33,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelFidList, MreGmstBase, MreHeaderBase, MelColorInterpolator, \
     MelValueInterpolator, MelRegnEntrySubrecord, MelFloat, MelSInt8, \
     MelSInt16, MelSInt32, MelUInt8, MelUInt32, MelOptFid, \
-    MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, MelBounds, null1, \
+    MelSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, MelBounds, null1, \
     MelTruncatedStruct, MelReadOnly, MelSkipInterior, \
     MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, MelArray, \
     MelObject, MreWithItems, MelRef3D, MelXlod, MelNull, MelEnableParent, \
@@ -1250,7 +1250,7 @@ class MreRefr(MelRecord):
         MelBase(b'XSRF','xsrf_p'),
         MelBase(b'XSRD','xsrd_p'),
         MelFid(b'XTRG','targetId'),
-        MelOptSInt32(b'XLCM', u'levelMod'),
+        MelSInt32(b'XLCM', u'levelMod'),
         MelGroup('patrolData',
             MelFloat(b'XPRD', 'idleTime'),
             MelBase(b'XPPA','patrolScriptMarker'),
@@ -1267,7 +1267,7 @@ class MreRefr(MelRecord):
             (FID, 'lockKey'), 'unused2', (_lockFlags, 'lockFlags'),
             'unused3', 'unused4', is_optional=True,
             old_versions={'B3sI4s'}),
-        MelOptSInt32(b'XCNT', 'count'),
+        MelSInt32(b'XCNT', 'count'),
         MelFloat(b'XRDS', 'radius'),
         MelFloat(b'XHLP', 'health'),
         MelFloat(b'XRAD', 'radiation'),

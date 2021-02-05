@@ -33,7 +33,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelFids, MreHeaderBase, MelBase, MelFidList, MelStrings, \
     MreGmstBase, MelReferences, MelRegnEntrySubrecord, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelOptSInt32, MelOptUInt8, MelOptUInt16, MelOptUInt32, \
+    MelOptUInt8, MelOptUInt16, MelOptUInt32, \
     MelRaceParts, MelRaceVoices, null1, null2, MelScriptVars, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
     MelTruncatedStruct, MelSkipInterior, MelIcon, MelIco2, MelEdid, MelFull, \
@@ -374,9 +374,7 @@ class MelOwnershipTes4(brec.MelOwnership):
     def __init__(self, attr=u'ownership'):
         super(brec.MelOwnership, self).__init__(attr,
             MelFid(b'XOWN', u'owner'),
-            # None here is on purpose - rank == 0 is a valid value, but XRNK
-            # does not have to be present
-            MelOptSInt32(b'XRNK', u'rank', None),
+            MelSInt32(b'XRNK', u'rank'),
             MelFid(b'XGLB', u'global'),
         )
 
@@ -1667,13 +1665,13 @@ class MreRefr(MelRecord):
         ####if it's 4 byte it's the seed value directly.
         MelXlod(),
         MelFloat(b'XCHG', u'charge'),
-        MelOptSInt32(b'XHLT', u'health'),
+        MelSInt32(b'XHLT', u'health'),
         MelNull(b'XPCI'), # These two are unused
         MelReadOnly(MelFull()), # Can't use MelNull, we need to distribute
-        MelOptSInt32(b'XLCM', u'levelMod'),
+        MelSInt32(b'XLCM', u'levelMod'),
         MelFid(b'XRTM', u'teleport_ref'),
         MelActionFlags(),
-        MelOptSInt32(b'XCNT', u'count'),
+        MelSInt32(b'XCNT', u'count'),
         MelMapMarker(),
         MelBase(b'ONAM', u'open_by_default'),
         MelBase(b'XRGD', u'xrgd_p'), # Ragdoll Data, bytearray

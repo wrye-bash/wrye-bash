@@ -32,7 +32,7 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelOptFid, MelReadOnly, MelFids, MelOptUInt32Flags, \
-    MelUInt8Flags, MelOptUInt8Flags, MelOptSInt32
+    MelUInt8Flags, MelOptUInt8Flags
 from .utils_constants import _int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
 from ..exception import ModError
@@ -635,9 +635,7 @@ class MelOwnership(MelGroup):
     def __init__(self, attr=u'ownership'):
         MelGroup.__init__(self, attr,
             MelOptFid(b'XOWN', u'owner'),
-            # None here is on purpose - rank == 0 is a valid value, but XRNK
-            # does not have to be present
-            MelOptSInt32(b'XRNK', u'rank', None),
+            MelSInt32(b'XRNK', u'rank'),
         )
 
     def dumpData(self,record,out):
