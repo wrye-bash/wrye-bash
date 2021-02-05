@@ -32,7 +32,7 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
     MelOptStruct, MelCounter, MelRefScale, MelRef3D, \
     MelOptUInt32, MelIcons, MelFloat, MelSInt32, \
-    MelFixedString, FixedString, AutoFixedString, MreGmstBase, MelOptUInt8, \
+    MelFixedString, FixedString, AutoFixedString, MreGmstBase, \
     MreLeveledListBase, MelUInt16, SizeDecider, MelLists, \
     MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags
 if brec.MelModel is None:
@@ -710,9 +710,9 @@ class MreInfo(MelRecord):
             MelFloat(b'FLTV', u'comparison_float'),
         ),
         MelString(b'BNAM', u'result_text'),
-        MelOptUInt8(b'QSTN', u'quest_name'),
-        MelOptUInt8(b'QSTF', u'quest_finished'),
-        MelOptUInt8(b'QSTR', u'quest_restart'),
+        MelUInt8(b'QSTN', u'quest_name'),
+        MelUInt8(b'QSTF', u'quest_finished'),
+        MelUInt8(b'QSTR', u'quest_restart'),
     )
     __slots__ = melSet.getSlotsUsed()
 

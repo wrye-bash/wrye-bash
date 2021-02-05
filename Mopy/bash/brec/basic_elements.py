@@ -778,7 +778,7 @@ class _MelFlags(_MelNum):
     __slots__ = (u'_flag_type',)
 
     def __init__(self, mel_sig, attr, flags_type):
-        super(_MelFlags, self).__init__(mel_sig, attr, default=flags_type(0))
+        super(_MelFlags, self).__init__(mel_sig, attr)
         self._flag_type = flags_type
 
     def setDefault(self, record):
@@ -847,12 +847,6 @@ class MelOptNum(_MelNum):
     """Represents an optional field that is only dumped if at least one
     value is not equal to the default."""
 
-class MelOptUInt8(MelOptNum, MelUInt8):
-    """Optional unsigned 8-bit integer."""
-
-class MelOptUInt16(MelOptNum, MelUInt16):
-    """Optional unsigned 16-bit integer."""
-
 class MelOptUInt32(MelOptNum, MelUInt32):
     """Optional unsigned 32-bit integer."""
 
@@ -862,6 +856,4 @@ class MelOptFid(MelFid, MelOptUInt32):  # TODO(ut): as it stands it could be
     """Optional FormID. Wrapper around MelOptUInt32 to avoid having to
     constantly specify the format."""
 
-class MelOptUInt8Flags(MelOptUInt8, _MelFlags): pass
-class MelOptUInt16Flags(MelOptUInt16, _MelFlags): pass
 class MelOptUInt32Flags(MelOptUInt32, _MelFlags): pass

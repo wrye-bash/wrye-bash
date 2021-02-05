@@ -32,7 +32,7 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelOptFid, MelReadOnly, MelFids, MelOptUInt32Flags, \
-    MelUInt8Flags, MelOptUInt8Flags
+    MelUInt8Flags, MelSInt32
 from .utils_constants import _int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
 from ..exception import ModError
@@ -523,7 +523,7 @@ class MelMapMarker(MelGroup):
     def __init__(self, with_reputation=False):
         group_elems = [
             MelBase(b'XMRK', u'marker_data'),
-            MelOptUInt8Flags(b'FNAM', u'marker_flags', self._marker_flags),
+            MelUInt8Flags(b'FNAM', u'marker_flags', self._marker_flags),
             MelFull(),
             MelOptStruct(b'TNAM', [u'B', u's'], u'marker_type', u'unused1'),
         ]

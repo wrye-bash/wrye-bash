@@ -33,7 +33,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt16, MelUInt32, \
-    MelActionFlags, MelOptUInt16, MelOptUInt32, MelOptFid, MelCounter, \
+    MelActionFlags, MelOptUInt32, MelOptFid, MelCounter, \
     MelPartialCounter, MelBounds, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
@@ -42,7 +42,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelPickupSound, MelDropSound, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOptUInt16Flags, MelOwnership, MelDebrData, \
+    MelUInt32Flags, MelOwnership, MelDebrData, \
     get_structs, MelOptUInt32Flags
 from ...exception import ModError, ModSizeError, StateError
 
@@ -1340,7 +1340,7 @@ class MreActi(MelRecord):
         MelOptFid(b'VNAM', u'soundActivation'),
         MelOptFid(b'WNAM', 'water'),
         MelLString(b'RNAM', 'activate_text_override'),
-        MelOptUInt16Flags(b'FNAM', u'flags', ActivatorFlags),
+        MelUInt16Flags(b'FNAM', u'flags', ActivatorFlags),
         MelOptFid(b'KNAM', 'keyword'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -4171,13 +4171,13 @@ class _MelTintMasks(MelGroups):
             MelGroups(u'tint_textures',
                 MelUInt16(b'TINI', u'tint_index'),
                 MelString(b'TINT', u'tint_file'),
-                MelOptUInt16(b'TINP', u'tint_mask_type'),
+                MelUInt16(b'TINP', u'tint_mask_type'),
                 MelOptFid(b'TIND', u'tint_preset_default'),
             ),
             MelGroups(u'tint_presets',
                 MelFid(b'TINC', u'preset_color'),
                 MelFloat(b'TINV', u'preset_default'),
-                MelOptUInt16(b'TIRS', u'preset_index'),
+                MelUInt16(b'TIRS', u'preset_index'),
             ),
         )
         self._init_sigs = {b'TINI'}
@@ -4269,7 +4269,7 @@ class MreRace(MelRecord):
                      (FID, u'female_default_hair_color')),
         ##: Needs to be updated for total tint count, but not even xEdit can do
         # that right now
-        MelOptUInt16(b'TINL', u'tint_count'),
+        MelUInt16(b'TINL', u'tint_count'),
         MelFloat(b'PNAM', u'facegen_main_clamp'), # required
         MelFloat(b'UNAM', u'facegen_face_clamp'), # required
         MelOptFid(b'ATKR', u'attack_race'),
@@ -5333,7 +5333,7 @@ class MreWeap(MelRecord):
         MelModel(u'model1', b'MODL'),
         MelIcons(),
         MelEnchantment(),
-        MelOptUInt16(b'EAMT', 'enchantPoints'),
+        MelUInt16(b'EAMT', 'enchantPoints'),
         MelDestructible(),
         MelEquipmentType(),
         MelFid(b'BIDS','blockBashImpactDataSet',),
