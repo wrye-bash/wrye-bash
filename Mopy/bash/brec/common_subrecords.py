@@ -31,7 +31,7 @@ from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelFloat, MelOptFid, MelReadOnly, MelFids, MelUInt32Flags, \
+    MelFloat, MelReadOnly, MelFids, MelUInt32Flags, \
     MelUInt8Flags, MelSInt32
 from .utils_constants import _int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
@@ -395,7 +395,7 @@ class MelDropSound(MelFid):
         super(MelDropSound, self).__init__(b'ZNAM', u'dropSound')
 
 #------------------------------------------------------------------------------
-class MelEnchantment(MelOptFid):
+class MelEnchantment(MelFid):
     """Represents the common enchantment/object effect subrecord."""
     ##: Would be better renamed to object_effect, but used in tons of places
     # that need renaming/reworking first
@@ -482,7 +482,7 @@ class MelRaceVoices(MelStruct):
         return None
 
 #------------------------------------------------------------------------------
-class MelScript(MelFid): # TODO(ut) : MelOptFid ??
+class MelScript(MelFid):
     """Represents the common script subrecord in TES4/FO3/FNV."""
     def __init__(self):
         super(MelScript, self).__init__(b'SCRI', u'script')
@@ -634,7 +634,7 @@ class MelOwnership(MelGroup):
 
     def __init__(self, attr=u'ownership'):
         MelGroup.__init__(self, attr,
-            MelOptFid(b'XOWN', u'owner'),
+            MelFid(b'XOWN', u'owner'),
             MelSInt32(b'XRNK', u'rank'),
         )
 

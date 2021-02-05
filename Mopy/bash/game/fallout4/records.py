@@ -25,7 +25,7 @@ imported from skyrim, but only after setting MelModel to the FO4 format."""
 from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelFidList, MreLeveledListBase, MelFid, \
-    FID, MelLString, MelUInt8, MelOptFid, MelFloat, MelBounds, MelEdid, \
+    FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, \
     MelArray, MreGmstBase, MelUInt8Flags
 
 # Set brec.MelModel to the Fallout 4 one - do not import from skyrim.records yet
@@ -53,7 +53,7 @@ if brec.MelModel is None:
                 # of records in Skyrim.esm are missing them
                 MelNull(types[1]),
                 MelFloat(types[2], u'colorRemappingIndex'),
-                MelOptFid(types[3], u'materialSwap'),
+                MelFid(types[3], u'materialSwap'),
                 MelBase(types[3], u'modf_p')
             )
 
@@ -101,7 +101,7 @@ class MreLvli(MreLeveledList):
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8(b'LVLM', 'maxCount'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelOptFid(b'LVLG', 'glob'),
+        MelFid(b'LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
@@ -126,7 +126,7 @@ class MreLvln(MreLeveledList):
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8(b'LVLM', 'maxCount'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelOptFid(b'LVLG', 'glob'),
+        MelFid(b'LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',

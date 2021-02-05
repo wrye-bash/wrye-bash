@@ -33,7 +33,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt16, MelUInt32, \
-    MelActionFlags, MelOptFid, MelCounter, \
+    MelActionFlags, MelCounter, \
     MelPartialCounter, MelBounds, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
@@ -224,7 +224,7 @@ class MelEffects(MelGroups):
         )
 
 #------------------------------------------------------------------------------
-class MelEquipmentType(MelOptFid):
+class MelEquipmentType(MelFid):
     """Handles the common ETYP subrecord."""
     def __init__(self):
         super(MelEquipmentType, self).__init__(b'ETYP', u'equipment_type')
@@ -1309,7 +1309,7 @@ class MreAchr(MelRecord):
         MelFloat(b'XFVC', u'favor_cost'),
         MelEnableParent(),
         MelOwnership(),
-        MelOptFid(b'XEMI', u'ref_emittance'),
+        MelFid(b'XEMI', u'ref_emittance'),
         MelFid(b'XMBR', u'multi_bound_reference'),
         MelBase(b'XIBS', u'ignored_by_sandbox_1'),
         MelRefScale(),
@@ -1336,12 +1336,12 @@ class MreActi(MelRecord):
         MelDestructible(),
         MelKeywords(),
         MelColor(b'PNAM'),
-        MelOptFid(b'SNAM', u'soundLooping'),
-        MelOptFid(b'VNAM', u'soundActivation'),
-        MelOptFid(b'WNAM', 'water'),
+        MelFid(b'SNAM', u'soundLooping'),
+        MelFid(b'VNAM', u'soundActivation'),
+        MelFid(b'WNAM', 'water'),
         MelLString(b'RNAM', 'activate_text_override'),
         MelUInt16Flags(b'FNAM', u'flags', ActivatorFlags),
-        MelOptFid(b'KNAM', 'keyword'),
+        MelFid(b'KNAM', 'keyword'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1359,7 +1359,7 @@ class MreAddn(MelRecord):
         MelBounds(),
         MelModel(),
         MelSInt32(b'DATA', 'node_index'),
-        MelOptFid(b'SNAM', 'ambientSound'),
+        MelFid(b'SNAM', 'ambientSound'),
         MelStruct(b'DNAM', [u'2H'], 'master_particle_system_cap',
                   (_AddnFlags, 'addon_flags')),
     )
@@ -1484,13 +1484,13 @@ class MreArma(MelRecord):
         MelModel(u'female_model', b'MOD3'),
         MelModel(u'male_model_1st', b'MOD4'),
         MelModel(u'female_model_1st', b'MOD5'),
-        MelOptFid(b'NAM0', 'skin0'),
-        MelOptFid(b'NAM1', 'skin1'),
-        MelOptFid(b'NAM2', 'skin2'),
-        MelOptFid(b'NAM3', 'skin3'),
+        MelFid(b'NAM0', 'skin0'),
+        MelFid(b'NAM1', 'skin1'),
+        MelFid(b'NAM2', 'skin2'),
+        MelFid(b'NAM3', 'skin3'),
         MelFids(b'MODL','races'),
-        MelOptFid(b'SNDD', 'footstepSound'),
-        MelOptFid(b'ONAM', 'art_object'),
+        MelFid(b'SNDD', 'footstepSound'),
+        MelFid(b'ONAM', 'art_object'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1516,9 +1516,9 @@ class MreArmo(MelRecord):
         MelDropSound(),
         MelString(b'BMCT', 'ragdollTemplatePath'), #Ragdoll Constraint Template
         MelEquipmentType(),
-        MelOptFid(b'BIDS', 'bashImpact'),
-        MelOptFid(b'BAMT', 'material'),
-        MelOptFid(b'RNAM', 'race'),
+        MelFid(b'BIDS', 'bashImpact'),
+        MelFid(b'BAMT', 'material'),
+        MelFid(b'RNAM', 'race'),
         MelKeywords(),
         MelDescription(),
         MelFids(b'MODL','addons'),
@@ -1554,9 +1554,9 @@ class MreAspc(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelOptFid(b'SNAM', 'ambientSound'),
-        MelOptFid(b'RDAT', 'regionData'),
-        MelOptFid(b'BNAM', 'reverb'),
+        MelFid(b'SNAM', 'ambientSound'),
+        MelFid(b'RDAT', 'regionData'),
+        MelFid(b'BNAM', 'reverb'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3173,7 +3173,7 @@ class MreLvli(MreLeveledList):
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelOptFid(b'LVLG', 'glob'),
+        MelFid(b'LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
     )
@@ -3190,7 +3190,7 @@ class MreLvln(MreLeveledList):
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelOptFid(b'LVLG', 'glob'),
+        MelFid(b'LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelString(b'MODL','model'),
@@ -3350,7 +3350,7 @@ class MreMgef(MelRecord):
             u'script_effect_ai_score', u'script_effect_ai_delay_time'),
             counter=u'counter_effect_count', counts=u'counter_effects'),
         MelGroups(u'counter_effects',
-            MelOptFid(b'ESCE', u'counter_effect_code'),
+            MelFid(b'ESCE', u'counter_effect_code'),
         ),
         MelArray(u'sounds',
             MelStruct(b'SNDD', [u'2I'], u'soundType', (FID, u'sound')),
@@ -3605,21 +3605,21 @@ class MreNpc(MreActorBase):
             MelStruct(b'SNAM', [u'I', u'B', u'3s'], (FID, u'faction'), u'rank',
                       (u'unused1', b'ODB')),
         ),
-        MelOptFid(b'INAM', 'deathItem'),
-        MelOptFid(b'VTCK', 'voice'),
-        MelOptFid(b'TPLT', 'template'),
+        MelFid(b'INAM', 'deathItem'),
+        MelFid(b'VTCK', 'voice'),
+        MelFid(b'TPLT', 'template'),
         MelFid(b'RNAM','race'),
         MelSpellCounter(),
         MelSpells(),
         MelDestructible(),
-        MelOptFid(b'WNAM', 'wornArmor'),
-        MelOptFid(b'ANAM', 'farawaymodel'),
-        MelOptFid(b'ATKR', 'attackRace'),
+        MelFid(b'WNAM', 'wornArmor'),
+        MelFid(b'ANAM', 'farawaymodel'),
+        MelFid(b'ATKR', 'attackRace'),
         MelAttacks(),
-        MelOptFid(b'SPOR', 'spectator'),
-        MelOptFid(b'OCOR', 'observe'),
-        MelOptFid(b'GWOR', 'guardWarn'),
-        MelOptFid(b'ECOR', 'combat'),
+        MelFid(b'SPOR', 'spectator'),
+        MelFid(b'OCOR', 'observe'),
+        MelFid(b'GWOR', 'guardWarn'),
+        MelFid(b'ECOR', 'combat'),
         MelCounter(MelUInt32(b'PRKZ', 'perk_count'), counts='perks'),
         MelGroups('perks',
             MelOptStruct(b'PRKR', [u'I', u'B', u'3s'],(FID, 'perk'),'rank','prkrUnused'),
@@ -3648,9 +3648,9 @@ class MreNpc(MreActorBase):
             'health','magicka','stamina','dnamUnused1',
             'farawaymodeldistance','gearedupweapons','dnamUnused2'),
         MelFids(b'PNAM', 'head_part_addons',),
-        MelOptFid(b'HCLF', u'hair_color'),
-        MelOptFid(b'ZNAM', u'combatStyle'),
-        MelOptFid(b'GNAM', u'gifts'),
+        MelFid(b'HCLF', u'hair_color'),
+        MelFid(b'ZNAM', u'combatStyle'),
+        MelFid(b'GNAM', u'gifts'),
         MelBase(b'NAM5', u'nam5_p'),
         MelFloat(b'NAM6', u'height'),
         MelFloat(b'NAM7', u'weight'),
@@ -3662,12 +3662,12 @@ class MreNpc(MreActorBase):
                 MelUInt8(b'CSDC', u'chance')
             ),
         ),
-        MelOptFid(b'CSCR', u'audio_template'),
-        MelOptFid(b'DOFT', u'default_outfit'),
-        MelOptFid(b'SOFT', u'sleep_outfit'),
-        MelOptFid(b'DPLT', u'default_package'),
-        MelOptFid(b'CRIF', u'crime_faction'),
-        MelOptFid(b'FTST', u'face_texture'),
+        MelFid(b'CSCR', u'audio_template'),
+        MelFid(b'DOFT', u'default_outfit'),
+        MelFid(b'SOFT', u'sleep_outfit'),
+        MelFid(b'DPLT', u'default_package'),
+        MelFid(b'CRIF', u'crime_faction'),
+        MelFid(b'FTST', u'face_texture'),
         MelOptStruct(b'QNAM', [u'3f'], u'skin_tone_r', u'skin_tone_g',
             u'skin_tone_b'),
         MelOptStruct(b'NAM9', [u'19f'], u'nose_long', u'nose_up', u'jaw_up',
@@ -4172,7 +4172,7 @@ class _MelTintMasks(MelGroups):
                 MelUInt16(b'TINI', u'tint_index'),
                 MelString(b'TINT', u'tint_file'),
                 MelUInt16(b'TINP', u'tint_mask_type'),
-                MelOptFid(b'TIND', u'tint_preset_default'),
+                MelFid(b'TIND', u'tint_preset_default'),
             ),
             MelGroups(u'tint_presets',
                 MelFid(b'TINC', u'preset_color'),
@@ -4225,7 +4225,7 @@ class MreRace(MelRecord):
         MelDescription(), # required
         MelSpellCounter(),
         MelSpells(),
-        MelOptFid(b'WNAM', u'race_skin'),
+        MelFid(b'WNAM', u'race_skin'),
         MelBipedObjectData(), # required
         MelKeywords(),
         MelTruncatedStruct( # required
@@ -4272,7 +4272,7 @@ class MreRace(MelRecord):
         MelUInt16(b'TINL', u'tint_count'),
         MelFloat(b'PNAM', u'facegen_main_clamp'), # required
         MelFloat(b'UNAM', u'facegen_face_clamp'), # required
-        MelOptFid(b'ATKR', u'attack_race'),
+        MelFid(b'ATKR', u'attack_race'),
         MelAttacks(),
         MelBase(b'NAM1', u'body_data_marker', b''), # required
         MelBase(b'MNAM', u'male_data_marker', b''), # required
@@ -4294,11 +4294,11 @@ class MreRace(MelRecord):
         MelModel(u'male_behavior_graph'),
         MelBase(b'FNAM', u'female_graph_marker', b''), # required
         MelModel(u'female_behavior_graph'),
-        MelOptFid(b'NAM4', u'material_type'),
-        MelOptFid(b'NAM5', u'impact_data_set'),
-        MelOptFid(b'NAM7', u'decapitation_fx'),
-        MelOptFid(b'ONAM', u'open_loot_sound'),
-        MelOptFid(b'LNAM', u'close_loot_sound'),
+        MelFid(b'NAM4', u'material_type'),
+        MelFid(b'NAM5', u'impact_data_set'),
+        MelFid(b'NAM7', u'decapitation_fx'),
+        MelFid(b'ONAM', u'open_loot_sound'),
+        MelFid(b'LNAM', u'close_loot_sound'),
         MelGroups(u'biped_object_names', ##: required, len should always be 32!
             MelString(b'NAME', u'bo_name'),
         ),
@@ -4315,7 +4315,7 @@ class MreRace(MelRecord):
         MelGroups(u'equip_slots',
             MelFid(b'QNAM', u'equip_slot'),
         ),
-        MelOptFid(b'UNES', u'unarmed_equip_slot'),
+        MelFid(b'UNES', u'unarmed_equip_slot'),
         MelGroups(u'phoneme_target_names',
             MelString(b'PHTN', u'pt_name'),
         ),
@@ -4328,17 +4328,17 @@ class MreRace(MelRecord):
                 u'k_weight', u'n_weight', u'oh_weight', u'oohq_weight',
                 u'r_weight', u'th_weight', u'w_weight', old_versions={u'8f'}),
         ),
-        MelOptFid(b'WKMV', u'base_movement_default_walk'),
-        MelOptFid(b'RNMV', u'base_movement_default_run'),
-        MelOptFid(b'SWMV', u'base_movement_default_swim'),
-        MelOptFid(b'FLMV', u'base_movement_default_fly'),
-        MelOptFid(b'SNMV', u'base_movement_default_sneak'),
-        MelOptFid(b'SPMV', u'base_movement_default_sprint'),
+        MelFid(b'WKMV', u'base_movement_default_walk'),
+        MelFid(b'RNMV', u'base_movement_default_run'),
+        MelFid(b'SWMV', u'base_movement_default_swim'),
+        MelFid(b'FLMV', u'base_movement_default_fly'),
+        MelFid(b'SNMV', u'base_movement_default_sneak'),
+        MelFid(b'SPMV', u'base_movement_default_sprint'),
         MelBase(b'NAM0', u'male_head_data_marker'),
         MelBase(b'MNAM', u'male_head_parts_marker'),
         MelGroups(u'male_head_parts',
             MelUInt32(b'INDX', u'head_part_number'),
-            MelOptFid(b'HEAD', u'head_part'),
+            MelFid(b'HEAD', u'head_part'),
         ),
         # The MPAVs are semi-decoded in xEdit, but including them seems wholly
         # unnecessary (too complex to edit, tons of flags, many unknowns)
@@ -4359,14 +4359,14 @@ class MreRace(MelRecord):
         MelGroups(u'male_face_texture_sets',
             MelFid(b'FTSM', u'face_texture_set'),
         ),
-        MelOptFid(b'DFTM', u'male_default_face_texture'),
+        MelFid(b'DFTM', u'male_default_face_texture'),
         _MelTintMasks(u'male_tint_masks'),
         MelModel(u'male_head_model'),
         MelBase(b'NAM0', u'female_head_data_marker'),
         MelBase(b'FNAM', u'female_head_parts_marker'),
         MelGroups(u'female_head_parts',
             MelUInt32(b'INDX', u'head_part_number'),
-            MelOptFid(b'HEAD', u'head_part'),
+            MelFid(b'HEAD', u'head_part'),
         ),
         # The MPAVs are semi-decoded in xEdit, but including them seems wholly
         # unnecessary (too complex to edit, tons of flags, many unknowns)
@@ -4387,11 +4387,11 @@ class MreRace(MelRecord):
         MelGroups(u'female_face_texture_sets',
             MelFid(b'FTSF', u'face_texture_set'),
         ),
-        MelOptFid(b'DFTF', u'female_default_face_texture'),
+        MelFid(b'DFTF', u'female_default_face_texture'),
         _MelTintMasks(u'female_tint_masks'),
         MelModel(u'female_head_model'),
-        MelOptFid(b'NAM8', u'morph_race'),
-        MelOptFid(b'RNAM', u'armor_race'),
+        MelFid(b'NAM8', u'morph_race'),
+        MelFid(b'RNAM', u'armor_race'),
     ).with_distributor({
         b'DATA': {
             b'MNAM': (u'male_marker', {
@@ -4512,7 +4512,7 @@ class MreRefr(MelRecord):
                       (reflectFlags, 'reflection_type')),
         ),
         MelFids(b'XLTW','litWaters'),
-        MelOptFid(b'XEMI', 'emittance'),
+        MelFid(b'XEMI', 'emittance'),
         MelOptStruct(b'XLIG', [u'4f', u'4s'], u'fov90Delta', u'fadeDelta',
             u'end_distance_cap', u'shadowDepthBias', u'unknown2'),
         MelOptStruct(b'XALP', [u'B', u'B'],'cutoffAlpha','baseAlpha',),
@@ -5111,9 +5111,9 @@ class MreTact(MelRecord):
         MelDestructible(),
         MelKeywords(),
         MelBase(b'PNAM','pnam_p'),
-        MelOptFid(b'SNAM', 'soundLoop'),
+        MelFid(b'SNAM', 'soundLoop'),
         MelBase(b'FNAM','fnam_p'),
-        MelOptFid(b'VNAM', 'voiceType'),
+        MelFid(b'VNAM', 'voiceType'),
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -840,15 +840,3 @@ class MelOptStruct(MelStruct):
             if oldValue is not None and oldValue != default:
                 return super(MelOptStruct, self).pack_subrecord_data(record)
         return None
-
-#------------------------------------------------------------------------------
-# 'Opt' versions of the type wrappers above
-class MelOptNum(_MelNum):
-    """Represents an optional field that is only dumped if at least one
-    value is not equal to the default."""
-
-class MelOptFid(MelFid):  # TODO(ut): as it stands it could be
-    #   MelOptFid(MelFid) -> that's because MelFid is also used for optional
-    #   fids all over the place
-    """Optional FormID. Wrapper around MelOptUInt32 to avoid having to
-    constantly specify the format."""
