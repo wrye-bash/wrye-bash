@@ -2786,26 +2786,26 @@ class MreRace(MelRecord):
         ##: Needs to be updated for total tint count, but not even xEdit can do
         # that right now
         MelUInt16(b'TINL', u'tint_count'),
-        MelFloat(b'PNAM', u'facegen_main_clamp'), # required
-        MelFloat(b'UNAM', u'facegen_face_clamp'), # required
+        MelFloat(b'PNAM', u'facegen_main_clamp', set_default=0), # required
+        MelFloat(b'UNAM', u'facegen_face_clamp', set_default=0), # required
         MelFid(b'ATKR', u'attack_race'),
         MelAttacks(),
         MelBaseR(b'NAM1', 'body_data_marker'), # required
         MelBaseR(b'MNAM', 'male_data_marker'), # required
         MelSorted(MelGroups(u'male_body_data',
-            MelUInt32(b'INDX', u'body_part_index'), # required
+            MelUInt32(b'INDX', u'body_part_index', set_default=0), # required
             MelModel(),
         ), sort_by_attrs='body_part_index'),
         MelBaseR(b'FNAM', 'female_data_marker'), # required
         MelSorted(MelGroups(u'female_body_data',
-            MelUInt32(b'INDX', u'body_part_index'), # required
+            MelUInt32(b'INDX', u'body_part_index', set_default=0), # required
             MelModel(),
         ), sort_by_attrs='body_part_index'),
         # These seem like unused leftovers from TES4/FO3, never occur in
         # vanilla or in any of the ~400 mod plugins I checked
         MelSorted(MelSimpleArray('hairs', MelFid(b'HNAM'))),
         MelSorted(MelSimpleArray('eyes', MelFid(b'ENAM'))),
-        MelFid(b'GNAM', u'body_part_data'), # required
+        MelFid(b'GNAM', u'body_part_data', set_default=0), # required
         MelBase(b'NAM2', u'marker_nam2_2'),
         MelBaseR(b'NAM3', 'behavior_graph_marker'), # required
         MelBaseR(b'MNAM', 'male_graph_marker'), # required
