@@ -61,25 +61,16 @@ class Resources(object):
     #--Icon Bundles
     bashRed = None
     bashBlue = None
-    bashDocBrowser = None
-    bashMonkey = None
 
 def load_app_icons():
     """Called early in boot, sets up the icon bundles we use as app icons."""
     _temp_app = wx.App(False) # throwaway, needed for the calls below to work
-    get_ico = bass.dirs[u'images'].join
-    Resources.bashRed = ImageBundle()
-    Resources.bashRed.Add(get_ico(u'bash_32-2.ico'))
-    Resources.bashRed = Resources.bashRed.GetIconBundle()
-    Resources.bashBlue = ImageBundle()
-    Resources.bashBlue.Add(get_ico(u'bash_blue.svg-2.ico'))
-    Resources.bashBlue = Resources.bashBlue.GetIconBundle()
-    Resources.bashDocBrowser = ImageBundle()
-    Resources.bashDocBrowser.Add(get_ico(u'docbrowser32.ico'))
-    Resources.bashDocBrowser = Resources.bashDocBrowser.GetIconBundle()
-    Resources.bashMonkey = ImageBundle()
-    Resources.bashMonkey.Add(get_ico(u'wrye_monkey_87_sharp.ico'))
-    Resources.bashMonkey = Resources.bashMonkey.GetIconBundle()
+    red_bundle = ImageBundle()
+    red_bundle.Add(bass.dirs[u'images'].join(u'bash_32-2.ico'))
+    Resources.bashRed = red_bundle.GetIconBundle()
+    blue_bundle = ImageBundle()
+    blue_bundle.Add(bass.dirs[u'images'].join(u'bash_blue.svg-2.ico'))
+    Resources.bashBlue = blue_bundle.GetIconBundle()
     del _temp_app
 
 # Settings --------------------------------------------------------------------

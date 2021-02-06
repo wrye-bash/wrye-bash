@@ -55,7 +55,7 @@ class DocBrowser(WindowFrame):
         Link.Frame.docBrowser = self
         # Window
         super(DocBrowser, self).__init__(Link.Frame, title=_(u'Doc Browser'),
-                                         icon_bundle=Resources.bashDocBrowser,
+                                         icon_bundle=Resources.bashBlue,
                                          sizes_dict=bass.settings)
         # Base UI components
         root_window = Splitter(self)

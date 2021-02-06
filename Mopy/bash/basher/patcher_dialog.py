@@ -57,7 +57,7 @@ class PatchDialog(DialogWindow):
         self.parent = parent
         title = _(u'Update ') + u'%s' % patchInfo
         super(PatchDialog, self).__init__(parent, title=title,
-            icon_bundle=Resources.bashMonkey, sizes_dict=balt.sizes,
+            icon_bundle=Resources.bashBlue, sizes_dict=balt.sizes,
             size=balt.sizes.get(self.__class__.__name__, (500, 600)))
         #--Data
         list_patches_dir() # refresh cached dir

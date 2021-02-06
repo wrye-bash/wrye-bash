@@ -611,6 +611,9 @@
         Delete "${Path}\Mopy\bash\l10n\Japanese.mo"
         Delete "${Path}\Mopy\bash\l10n\pt_opt.mo"
         Delete "${Path}\Mopy\bash\l10n\Russian.mo"
+        ; As of 308, only the red and blue icon sets are used
+        Delete "${Path}\Mopy\bash\images\docbrowser32.ico"
+        Delete "${Path}\Mopy\bash\images\wrye_monkey_87_sharp.ico"
     !macroend
 
 
