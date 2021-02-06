@@ -4240,8 +4240,6 @@ class BashApp(wx.App):
                 if bass.dirs[u'images'].join(u'wryesplash.png').isfile():
                     splash_screen = CenteredSplash(
                         bass.dirs[u'images'].join(u'wryesplash.png').s)
-            #--Constants
-            self.InitResources()
             #--Init Data
             progress(0.2, _(u'Initializing Data'))
             self.InitData(progress)
@@ -4262,14 +4260,6 @@ class BashApp(wx.App):
         frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
                             frame.notebook.OnShowPage)
         return frame
-
-    @staticmethod
-    def InitResources():
-        """Init application resources."""
-        Resources.bashBlue = Resources.bashBlue.GetIconBundle()
-        Resources.bashRed = Resources.bashRed.GetIconBundle()
-        Resources.bashDocBrowser = Resources.bashDocBrowser.GetIconBundle()
-        Resources.bashMonkey = Resources.bashMonkey.GetIconBundle()
 
     @staticmethod
     def InitData(progress):
@@ -4403,16 +4393,5 @@ def InitImages():
     images[u'pickle.16'] = _png(u'pickle16.png')
     images[u'pickle.24'] = _png(u'pickle24.png')
     images[u'pickle.32'] = _png(u'pickle32.png')
-    #--Applications Icons
-    Resources.bashRed = balt.ImageBundle()
-    Resources.bashRed.Add(imgDirJn(u'bash_32-2.ico'))
-    #--Application Subwindow Icons
-    Resources.bashBlue = balt.ImageBundle()
-    Resources.bashBlue.Add(imgDirJn(u'bash_blue.svg-2.ico'))
-    Resources.bashDocBrowser = balt.ImageBundle()
-    Resources.bashDocBrowser.Add(imgDirJn(u'docbrowser32.ico'))
-    #--Bash Patch Dialogue icon
-    Resources.bashMonkey = balt.ImageBundle()
-    Resources.bashMonkey.Add(imgDirJn(u'wrye_monkey_87_sharp.ico'))
 
 from .links_init import InitLinks

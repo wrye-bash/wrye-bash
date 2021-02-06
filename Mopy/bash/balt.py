@@ -64,6 +64,24 @@ class Resources(object):
     bashDocBrowser = None
     bashMonkey = None
 
+def load_app_icons():
+    """Called early in boot, sets up the icon bundles we use as app icons."""
+    _temp_app = wx.App(False) # throwaway, needed for the calls below to work
+    get_ico = bass.dirs[u'images'].join
+    Resources.bashRed = ImageBundle()
+    Resources.bashRed.Add(get_ico(u'bash_32-2.ico'))
+    Resources.bashRed = Resources.bashRed.GetIconBundle()
+    Resources.bashBlue = ImageBundle()
+    Resources.bashBlue.Add(get_ico(u'bash_blue.svg-2.ico'))
+    Resources.bashBlue = Resources.bashBlue.GetIconBundle()
+    Resources.bashDocBrowser = ImageBundle()
+    Resources.bashDocBrowser.Add(get_ico(u'docbrowser32.ico'))
+    Resources.bashDocBrowser = Resources.bashDocBrowser.GetIconBundle()
+    Resources.bashMonkey = ImageBundle()
+    Resources.bashMonkey.Add(get_ico(u'wrye_monkey_87_sharp.ico'))
+    Resources.bashMonkey = Resources.bashMonkey.GetIconBundle()
+    del _temp_app
+
 # Settings --------------------------------------------------------------------
 __unset = bolt.Settings(dictFile=None) # type information
 _settings = __unset # must be bound to bosh.settings - smelly, see #174

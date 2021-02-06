@@ -42,9 +42,6 @@ basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
 _bugdump_handle = None
 
-##: Would be nice to move balt.Resources earlier in boot to add the WB icon to
-# the game select/error popups
-
 def _early_setup(debug):
     """Executes (very) early setup by changing working directory and debug
     mode.
@@ -254,16 +251,14 @@ def main(opts):
         # message if WB crashes
         from . import localize
         wx_locale = localize.setup_locale(opts.language)
-        # Mark us as high DPI aware before gui/balt are imported
+        # Both of these must come early, before we begin showing wx-based GUI
         from . import env
         env.mark_high_dpi_aware()
-        # Call this early before showing any windows if possible
         env.fixup_taskbar_icon()
-        # Initialize gui, our wrapper above wx (also balt, temp module)
-        from . import gui, balt
-        # Check for some non-critical dependencies (e.g. lz4) and warn if
-        # they're missing
-        _import_deps()
+        # The rest of boot relies on Mopy-based directories being set, so those
+        # come next
+        from . import initialization
+        initialization.init_dirs_mopy()
         # Early setup is done, delegate to the main init method
         _main(opts, wx_locale)
     except Exception:
@@ -271,6 +266,7 @@ def main(opts):
         try:
             # Check if localize succeeded in setting up translations, otherwise
             # monkey patch in a noop underscore
+            # noinspection PyUnboundLocalVariable
             _(u'')
         except NameError:
             def _(x): return x
@@ -293,18 +289,22 @@ def _main(opts, wx_locale):
 
     :param opts: command line arguments
     :param wx_locale: The wx.Locale object that we ended up using."""
-    import wx as _wx
-    # barg is fine and balt/gui were initialized in main() already
-    from . import barg, balt, gui
+    # Initialize gui, our wrapper above wx (also balt, temp module) and
+    # load the window icon resources
+    from . import gui, balt
+    balt.load_app_icons()
+    # Check for some non-critical dependencies (e.g. lz4) and warn if
+    # they're missing now that we can show nice app icons
+    _import_deps()
+    # barg doesn't import anything else, so can be imported whenever we want
+    from . import barg
     bass.sys_argv = barg.convert_to_long_options(sys.argv)
     if opts.debug:
         dump_environment()
     # Check if there are other instances of Wrye Bash running
+    import wx as _wx
     instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
     assure_single_instance(instance)
-    #--Bash installation directories, set on boot, not likely to change
-    from . import initialization
-    initialization.init_dirs_mopy()
     # if HTML file generation was requested, just do it and quit
     if opts.genHtml is not None:
         ##: See if the encodes are actually necessary
@@ -499,6 +499,7 @@ def _show_boot_popup(msg, is_critical=True):
     and gui is imported."""
     try:
         import wx as _wx
+        from .balt import Resources
         from .gui import CancelButton, Color, LayoutOptions, \
             StartupDialog, TextArea, VLayout, CENTER
         class MessageBox(StartupDialog):
@@ -507,8 +508,11 @@ def _show_boot_popup(msg, is_critical=True):
                                _(u'Wrye Bash Warning'))
                 ##: Resizing is just discarded, maybe we could save it in
                 # an early-boot file (see also #26)
+                # Using Resources.bashRed here is fine - at worst it's None,
+                # which will fall back to the default icon
                 super(MessageBox, self).__init__(title=popup_title,
-                                                 sizes_dict={})
+                                                 sizes_dict={},
+                                                 icon_bundle=Resources.bashRed)
                 self.component_size = (400, 300)
                 msg_text = TextArea(self, editable=False, init_text=msg,
                                     auto_tooltip=False)
@@ -563,15 +567,13 @@ class _AppReturnCode(object):
 
 def _select_game_popup(game_icons, msgtext):
     import wx as _wx
+    from .balt import Resources
     from .gui import CancelImageButton, ImageButton, Label, ScrollableWindow, \
         TextAlignment, WindowFrame, VLayout
     class GameSelect(WindowFrame):
         def __init__(self, game_icons, callback):
-            # NOTE(lojack): really want to set `icon_bundle=Resources.bashRed`
-            # here so the window has the proper icon, but basher has not yet
-            # been (and might not beable to be) imported yet.
-            # Should decouple that!
-            super(GameSelect, self).__init__(None, u'Wrye Bash')
+            super(GameSelect, self).__init__(None, u'Wrye Bash',
+                                             icon_bundle=Resources.bashRed)
             self.callback = callback
             # Setup the size - we give each button 38 pixels, 32 for the image
             # plus 6 for the borders. However, we limit the total size of the
