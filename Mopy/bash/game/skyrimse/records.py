@@ -73,7 +73,7 @@ class MreLens(MelRecord):
             MelString(b'FNAM','texture'),
             MelStruct(b'LFSD', 'f8I', 'tintRed', 'tintGreen', 'tintBlue',
                 'width', 'height', 'position', 'angularFade', 'opacity',
-                (LensFlareFlags, 'lensFlags', 0), ),
+                (LensFlareFlags, u'lensFlags'), ),
         )
     ).with_distributor({
         b'DNAM': u'fadeDistanceRadiusScale',

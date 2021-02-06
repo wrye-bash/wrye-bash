@@ -178,7 +178,7 @@ class MelEmbeddedScript(MelSequential):
         super(MelEmbeddedScript, self).__init__(
             MelStruct(b'SCHR', u'4s3I2H', (u'unused1', null4), u'num_refs',
                       u'compiled_size', u'last_index', u'script_type',
-                      (self._script_header_flags, u'schr_flags', 0)),
+                      (self._script_header_flags, u'schr_flags')),
             MelBase(b'SCDA', u'compiled_script'),
             MelString(b'SCTX', u'script_source'),
             MelScriptVars(),
@@ -451,7 +451,7 @@ class MreAmmo(MelRecord):
         MelDestructible(),
         MelPickupSound(),
         MelDropSound(),
-        MelStruct(b'DATA','fB3siB','speed',(_flags,'flags',0),('ammoData1',null3),
+        MelStruct(b'DATA','fB3siB','speed',(_flags, u'flags'),('ammoData1',null3),
                   'value','clipRounds'),
         MelString(b'ONAM','shortName'),
     )
@@ -490,7 +490,7 @@ class MreArma(MelRecord):
         MelIcons2(),
         MelEquipmentType(),
         MelStruct(b'DATA','IIf','value','health','weight'),
-        MelStruct(b'DNAM','hH','ar',(_dnamFlags,'dnamFlags',0),),
+        MelStruct(b'DNAM','hH','ar',(_dnamFlags, u'dnamFlags')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -522,7 +522,7 @@ class MreArmo(MelRecord):
         MelPickupSound(),
         MelDropSound(),
         MelStruct(b'DATA','=2if','value','health','weight'),
-        MelStruct(b'DNAM','=hH','ar',(_dnamFlags,'dnamFlags',0),),
+        MelStruct(b'DNAM','=hH','ar',(_dnamFlags, u'dnamFlags')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -572,7 +572,7 @@ class MreBook(MelRecord):
         MelDestructible(),
         MelPickupSound(),
         MelDropSound(),
-        MelStruct(b'DATA', '=BbIf',(_flags,'flags',0),('teaches',-1),'value','weight'),
+        MelStruct(b'DATA', '=BbIf',(_flags, u'flags'),('teaches',-1),'value','weight'),
     )
     __slots__ = melSet.getSlotsUsed() + ['modb']
 
@@ -673,7 +673,7 @@ class MreCams(MelRecord):
         MelEdid(),
         MelModel(),
         MelStruct(b'DATA','4I6f','action','location','target',
-                  (CamsFlagsFlags,'flags',0),'timeMultPlayer',
+                  (CamsFlagsFlags, u'flags'),'timeMultPlayer',
                   'timeMultTarget','timeMultGlobal','maxTime','minTime',
                   'targetPctBetweenActors',),
         MelFid(b'MNAM','imageSpaceModifier',),
@@ -771,7 +771,7 @@ class MreClas(MelRecord):
         (13,'potions'),
         (14,'training'),
         (16,'recharge'),
-        (17,'repair'),))
+        (17,'repair')))
 
     melSet = MelSet(
         MelEdid(),
@@ -779,7 +779,7 @@ class MreClas(MelRecord):
         MelDescription(),
         MelIcon(),
         MelStruct(b'DATA','4i2IbB2s','tagSkill1','tagSkill2','tagSkill3',
-            'tagSkill4',(_flags,'flags',0),(aiService,'services',0),
+            'tagSkill4',(_flags, u'flags'),(aiService, u'services'),
             ('trainSkill',-1),'trainLevel',('clasData1',null2)),
         MelStruct(b'ATTR', '7B', 'strength', 'perception', 'endurance',
                   'charisma', 'intelligence', 'agility', 'luck'),
@@ -838,7 +838,7 @@ class MreCont(MreWithItems):
         MelScript(),
         MelItems(),
         MelDestructible(),
-        MelStruct(b'DATA','=Bf',(_flags,'flags',0),'weight'),
+        MelStruct(b'DATA','=Bf',(_flags, u'flags'),'weight'),
         MelFid(b'SNAM','soundOpen'),
         MelFid(b'QNAM','soundClose'),
     )
@@ -891,7 +891,7 @@ class MreCrea(MreActor):
         (28,'allowPickpocket'),
         (29,'isGhost'),
         (30,'noRotatingHeadTrack'),
-        (31,'invulnerable'),))
+        (31,'invulnerable')))
     aiService = Flags(0, Flags.getNames(
         (0,'weapons'),
         (1,'armor'),
@@ -905,7 +905,7 @@ class MreCrea(MreActor):
         (13,'potions'),
         (14,'training'),
         (16,'recharge'),
-        (17,'repair'),))
+        (17,'repair')))
     aggroflags = Flags(0, Flags.getNames('aggroRadiusBehavior',))
 
     melSet = MelSet(
@@ -918,10 +918,10 @@ class MreCrea(MreActor):
         MelUInt16(b'EAMT', 'eamt'),
         MelStrings(b'NIFZ','bodyParts'),
         MelBase(b'NIFT','nift_p'), # Texture File Hashes
-        MelStruct(b'ACBS','=I2Hh3HfhH',(_flags,'flags',0),'fatigue',
+        MelStruct(b'ACBS','=I2Hh3HfhH',(_flags, u'flags'),'fatigue',
             'barterGold',('level',1),'calcMin','calcMax','speedMultiplier',
             'karma', 'dispositionBase',
-            (MreActor.TemplateFlags, 'templateFlags', 0)),
+            (MreActor.TemplateFlags, 'templateFlags')),
         MelGroups(u'factions',
             MelStruct(b'SNAM', u'IB3s', (FID, u'faction'), u'rank',
                       (u'unused1', b'IFZ')),
@@ -934,9 +934,9 @@ class MreCrea(MreActor):
         MelItems(),
         MelStruct(b'AIDT','=5B3sIbBbBi', 'aggression', ('confidence', 2),
                   ('energyLevel', 50), ('responsibility', 50), 'mood',
-                  ('unused_aidt', null3), (aiService, 'services', 0),
+                  ('unused_aidt', null3), (aiService, u'services'),
                   ('trainSkill', -1), 'trainLevel', 'assistance',
-                  (aggroflags, 'aggroRadiusBehavior', 0), 'aggroRadius'),
+                  (aggroflags, u'aggroRadiusBehavior'), 'aggroRadius'),
         MelFids(b'PKID','aiPackages'),
         MelStrings(b'KFFZ','animations'),
         MelStruct(b'DATA','=4Bh2sh7B','creatureType','combatSkill','magicSkill',
@@ -989,7 +989,7 @@ class MreCsty(MelRecord):
                     'pAtkNormal','pAtkFor','pAtkBack','pAtkL','pAtkR',
                     ('unused4',null3),'holdTimerMin','holdTimerMax',
                     (_flagsA,'flagsA'),('unused5',null2),'acroDodge',
-                    ('rushChance',25),('unused6',null3),('rushMult',1.0),),
+                    ('rushChance',25),('unused6',null3),('rushMult',1.0)),
         MelOptStruct(b'CSAD', '21f', 'dodgeFMult', 'dodgeFBase', 'encSBase', 'encSMult',
                      'dodgeAtkMult', 'dodgeNAtkMult', 'dodgeBAtkMult', 'dodgeBNAtkMult',
                      'dodgeFAtkMult', 'dodgeFNAtkMult', 'blockMult', 'blockBase',
@@ -1034,7 +1034,7 @@ class MreDial(MelRecord):
         MelFull(),
         MelFloat(b'PNAM', 'priority'),
         MelTruncatedStruct(b'DATA', '2B', 'dialType',
-                           (_DialFlags, 'dialFlags', 0), old_versions={'B'}),
+                           (_DialFlags, u'dialFlags'), old_versions={'B'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1050,7 +1050,7 @@ class MreDobj(MelRecord):
             (FID,'mysteriousStrangerFaction'),(FID,'defaultMusic'),(FID,'battleMusic'),(FID,'deathMusic'),
             (FID,'successMusic'),(FID,'levelUpMusic'),(FID,'playerVoiceMale'),(FID,'playerVoiceMaleChild'),
             (FID,'playerVoiceFemale'),(FID,'playerVoiceFemaleChild'),(FID,'eatPackageDefaultFood'),
-            (FID,'everyActorAbility'),(FID,'drugWearsOffImageSpace'),),
+            (FID,'everyActorAbility'),(FID,'drugWearsOffImageSpace')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1162,7 +1162,7 @@ class MreEnch(MelRecord):
         MelEdid(),
         MelFull(),
         MelStruct(b'ENIT','3IB3s','itemType','chargeAmount','enchantCost',
-                  (_flags,'flags',0),('unused1',null3)),
+                  (_flags, u'flags'),('unused1',null3)),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1373,7 +1373,7 @@ class MreImad(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DNAM', 'If49I2f8I', (_ImadAnimatableFlags, 'aniFlags', 0),
+        MelStruct(b'DNAM', 'If49I2f8I', (_ImadAnimatableFlags, u'aniFlags'),
                   'duration', 'eyeAdaptSpeedMult', 'eyeAdaptSpeedAdd',
                   'bloomBlurRadiusMult', 'bloomBlurRadiusAdd',
                   'bloomThresholdMult', 'bloomThresholdAdd', 'bloomScaleMult',
@@ -1391,9 +1391,9 @@ class MreImad(MelRecord):
                   'unknown14Mult', 'unknown54Add',
                   'tintColor', 'blurRadius', 'doubleVisionStrength',
                   'radialBlurStrength', 'radialBlurRampUp', 'radialBlurStart',
-                  (_ImadRadialBlurFlags, 'radialBlurFlags', 0),
+                  (_ImadRadialBlurFlags, u'radialBlurFlags'),
                   'radialBlurCenterX', 'radialBlurCenterY', 'dofStrength',
-                  'dofDistance', 'dofRange', (_ImadDofFlags, 'dofFlags', 0),
+                  'dofDistance', 'dofRange', (_ImadDofFlags, u'dofFlags'),
                   'radialBlurRampDown', 'radialBlurDownStart', 'fadeColor',
                   'motionBlurStrength'),
         MelValueInterpolator(b'BNAM', 'blurRadiusInterp'),
@@ -1565,7 +1565,7 @@ class MreIngr(MelRecord):
         MelScript(),
         MelEquipmentType(),
         MelFloat(b'DATA', 'weight'),
-        MelStruct(b'ENIT','iB3s','value',(_flags,'flags',0),('unused1',null3)),
+        MelStruct(b'ENIT','iB3s','value',(_flags, u'flags'),('unused1',null3)),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1656,7 +1656,7 @@ class MreLigh(MelRecord):
         MelFull(),
         MelIcon(),
         MelStruct(b'DATA','iI3BsI2fIf','duration','radius','red','green','blue',
-                  ('unused1',null1),(_flags,'flags',0),'falloff','fov','value',
+                  ('unused1',null1),(_flags, u'flags'),'falloff','fov','value',
                   'weight'),
         # None here is on purpose! See AssortedTweak_LightFadeValueFix
         MelOptFloat(b'FNAM', u'fade', None),
@@ -1775,7 +1775,7 @@ class MreMgef(MelRecord):
         (24, u'useAV'),
         (25, u'sprayType'),
         (26, u'boltType'),
-        (27, u'noHitEffect'),))
+        (27, u'noHitEffect')))
 
     melSet = MelSet(
         MelEdid(),
@@ -1955,7 +1955,7 @@ class MreNpc(MreActor):
         (23,'autocalcService'), # FNV Only
         (26,'noKnockDown'),
         (27,'notPushable'),
-        (30,'noRotatingHeadTrack'),))
+        (30,'noRotatingHeadTrack')))
     aiService = Flags(0, Flags.getNames(
         (0,'weapons'),
         (1,'armor'),
@@ -1969,7 +1969,7 @@ class MreNpc(MreActor):
         (13,'potions'),
         (14,'training'),
         (16,'recharge'),
-        (17,'repair'),))
+        (17,'repair')))
     aggroflags = Flags(0, Flags.getNames('aggroRadiusBehavior',))
 
     class MelNpcDnam(MelLists):
@@ -1983,9 +1983,9 @@ class MreNpc(MreActor):
         MelFull(),
         MelModel(),
         MelStruct(b'ACBS','=I2Hh3Hf2H',
-            (_flags,'flags',0),'fatigue','barterGold',
+            (_flags, u'flags'),'fatigue','barterGold',
             ('level',1),'calcMin','calcMax','speedMultiplier','karma',
-            'dispositionBase', (MreActor.TemplateFlags, 'templateFlags', 0)),
+            'dispositionBase', (MreActor.TemplateFlags, u'templateFlags')),
         MelGroups('factions',
             MelStruct(b'SNAM', u'IB3s', (FID, u'faction'), u'rank',
                       (u'unused1', b'ODB')),
@@ -2002,9 +2002,9 @@ class MreNpc(MreActor):
         MelItems(),
         MelStruct(b'AIDT','=5B3sIbBbBi', 'aggression', ('confidence',2),
                   ('energyLevel', 50),('responsibility', 50), 'mood',
-                  ('unused_aidt', null3),(aiService, 'services', 0),
+                  ('unused_aidt', null3),(aiService, u'services'),
                   ('trainSkill', -1), 'trainLevel', 'assistance',
-                  (aggroflags, 'aggroRadiusBehavior', 0), 'aggroRadius'),
+                  (aggroflags, u'aggroRadiusBehavior'), 'aggroRadius'),
         MelFids(b'PKID','aiPackages'),
         MelStrings(b'KFFZ','animations'),
         MelFid(b'CNAM','iclass'),
@@ -2267,7 +2267,7 @@ class MrePgre(MelRecord):
         MelFloat(b'XRDS', 'radius'),
         MelFloat(b'XHLP', 'health'),
         MelGroups('reflectedRefractedBy',
-            MelStruct(b'XPWR','2I',(FID,'waterReference'),(_watertypeFlags,'waterFlags',0),),
+            MelStruct(b'XPWR','2I',(FID,'waterReference'),(_watertypeFlags, u'waterFlags')),
         ),
         MelGroups('linkedDecals',
             MelStruct(b'XDCR', '2I', (FID, 'reference'), 'unknown'),
@@ -2310,7 +2310,7 @@ class MrePmis(MelRecord):
         MelFloat(b'XRDS', 'radius'),
         MelFloat(b'XHLP', 'health'),
         MelGroups('reflectedRefractedBy',
-            MelStruct(b'XPWR','2I',(FID,'waterReference'),(_watertypeFlags,'waterFlags',0),),
+            MelStruct(b'XPWR','2I',(FID,'waterReference'),(_watertypeFlags, u'waterFlags')),
         ),
         MelGroups('linkedDecals',
             MelStruct(b'XDCR', '2I', (FID, 'reference'), 'unknown'),
@@ -2359,7 +2359,7 @@ class MreProj(MelRecord):
                   (FID, u'explosion'),(FID, u'sound'),'muzzleFlashDuration',
                   'fadeDuration','impactForce',
                   (FID, u'soundCountDown'),(FID, u'soundDisable'),
-                  (FID, u'defaultWeaponSource'),),
+                  (FID, u'defaultWeaponSource')),
         MelString(b'NAM1','muzzleFlashPath'),
         MelBase(b'NAM2','_nam2'),
         MelUInt32(b'VNAM', 'soundLevel'),
@@ -2414,7 +2414,7 @@ class MreQust(MelRecord):
         MelScript(),
         MelFull(),
         MelIcon(),
-        MelTruncatedStruct(b'DATA', '2B2sf', (_questFlags, 'questFlags', 0),
+        MelTruncatedStruct(b'DATA', '2B2sf', (_questFlags, u'questFlags'),
                            'priority', ('unused2', null2),
                            'questDelay', old_versions={'2B'}),
         MelConditions(),
@@ -2478,7 +2478,7 @@ class MreRace(MelRecord):
         MelStruct(b'DATA','14b2s4fI','skill1','skill1Boost','skill2','skill2Boost',
                   'skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost',
                   'skill6','skill6Boost','skill7','skill7Boost',('unused1',null2),
-                  'maleHeight','femaleHeight','maleWeight','femaleWeight',(_flags,'flags',0)),
+                  'maleHeight','femaleHeight','maleWeight','femaleWeight',(_flags, u'flags')),
         MelFid(b'ONAM','Older'),
         MelFid(b'YNAM','Younger'),
         MelBase(b'NAM2','_nam2',b''),
@@ -2682,14 +2682,14 @@ class MreRegn(MelRecord):
         ( 4,'deltaY'),
         ( 5,'deltaZ'),
         ( 6,'Tree'),
-        ( 7,'hugeRock'),))
+        ( 7,'hugeRock')))
     sdflags = Flags(0, Flags.getNames(
         ( 0,'pleasant'),
         ( 1,'cloudy'),
         ( 2,'rainy'),
-        ( 3,'snowy'),))
+        ( 3,'snowy')))
     rdatFlags = Flags(0, Flags.getNames(
-        ( 0,'Override'),))
+        ( 0,'Override')))
 
     melSet = MelSet(
         MelEdid(),
@@ -2856,7 +2856,7 @@ class MreSpel(MelRecord):
         MelEdid(),
         MelFull(),
         MelStruct(b'SPIT', '3IB3s', 'spellType', 'cost', 'level',
-                  (_SpellFlags, 'flags', 0), ('unused1', null3)),
+                  (_SpellFlags, u'flags'), ('unused1', null3)),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3019,6 +3019,30 @@ class MreWatr(MelRecord):
             return super(MreWatr.MelWatrDnam, self)._pre_process_unpacked(
                 unpacked_val)
 
+    _els = [('windVelocity', 0.1), ('windDirection', 90), ('waveAmp', 0.5),
+        ('waveFreq', 1), ('sunPower', 50), ('reflectAmt', 0.5),
+        ('fresnelAmt', 0.025), 'unknown1', ('fogNear', 27852.8),
+        ('fogFar', 163840), 'shallowRed', ('shallowGreen', 128),
+        ('shallowBlue', 128), ('unused1', null1), 'deepRed', 'deepGreen',
+        ('deepBlue', 25), ('unused2', null1), ('reflRed', 255),
+        ('reflGreen', 255), ('reflBlue', 255), ('unused3', null1), 'unknown2',
+        ('rainForce', 0.1), ('rainVelocity', 0.6), ('rainFalloff', 0.9850),
+        ('rainDampner', 2), ('rainSize', 0.01), ('dispForce', 0.4),
+        ('dispVelocity', 0.6), ('dispFalloff', 0.9850), ('dispDampner', 10),
+        ('dispSize', 0.05), ('noiseNormalsScale', 1.8),
+        'noiseLayer1WindDirection',
+        ('noiseLayer2WindDirection', -431602080.05),
+        ('noiseLayer3WindDirection', -431602080.05), 'noiseLayer1WindVelocity',
+        ('noiseLayer2WindVelocity', -431602080.05),
+        ('noiseLayer3WindVelocity', -431602080.05),
+        'noiseNormalsDepthFalloffStart', ('noiseNormalsDepthFalloffEnd', 0.10),
+        ('fogAboveWaterAmount', 1), ('noiseNormalsUvScale', 500),
+        ('fogUnderWaterAmount', 1), 'fogUnderWaterNear',
+        ('fogUnderWaterFar', 1000), ('distortionAmount', 250),
+        ('shininess', 100), ('reflectHdrMult', 1), ('lightRadius', 10000),
+        ('lightBrightness', 1), ('noiseLayer1UvScale', 100),
+        ('noiseLayer2UvScale', 100), ('noiseLayer3UvScale', 100)]
+
     melSet = MelSet(
         MelEdid(),
         MelFull(),
@@ -3028,45 +3052,10 @@ class MreWatr(MelRecord):
         MelString(b'MNAM','material'),
         MelFid(b'SNAM','sound',),
         MelFid(b'XNAM','effect'),
-        MelWatrData(b'DATA','10f3Bs3Bs3BsI32fH',('windVelocity',0.100),('windDirection',90.0),
-            ('waveAmp',0.5),('waveFreq',1.0),('sunPower',50.0),('reflectAmt',0.5),
-            ('fresnelAmt',0.0250),'unknown1',('fogNear',27852.8),('fogFar',163840.0),
-            'shallowRed',('shallowGreen',128),('shallowBlue',128),('unused1',null1),
-            'deepRed','deepGreen',('deepBlue',25),('unused2',null1),
-            ('reflRed',255),('reflGreen',255),('reflBlue',255),('unused3',null1),
-            'unknown2',
-            ('rainForce',0.1000),('rainVelocity',0.6000),('rainFalloff',0.9850),('rainDampner',2.0000),('rainSize',0.0100),
-            ('dispForce',0.4000),('dispVelocity', 0.6000),('dispFalloff',0.9850),('dispDampner',10.0000),('dispSize',0.0500),
-            ('noiseNormalsScale',1.8000),'noiseLayer1WindDirection',('noiseLayer2WindDirection',-431602080.0500),
-            ('noiseLayer3WindDirection',-431602080.0500),'noiseLayer1WindVelocity',
-            ('noiseLayer2WindVelocity',-431602080.0500),('noiseLayer3WindVelocity',-431602080.0500),
-            'noiseNormalsDepthFalloffStart',('noiseNormalsDepthFalloffEnd',0.10000),
-            ('fogAboveWaterAmount',1.00000),('noiseNormalsUvScale',500.00000),
-            ('fogUnderWaterAmount',1.00000),'fogUnderWaterNear',('fogUnderWaterFar',1000.00000),
-            ('distortionAmount',250.00000),('shininess',100.00000),('reflectHdrMult',1.00000),
-            ('lightRadius',10000.00000),('lightBrightness',1.00000),
-            ('noiseLayer1UvScale',100.00000),('noiseLayer2UvScale',100.00000),('noiseLayer3UvScale',100.00000),
-            'damage'),
-        MelWatrDnam(b'DNAM','10f3Bs3Bs3BsI35f',('windVelocity',0.100),('windDirection',90.0),
-            ('waveAmp',0.5),('waveFreq',1.0),('sunPower',50.0),('reflectAmt',0.5),
-            ('fresnelAmt',0.0250),'unknown1',('fogNear',27852.8),('fogFar',163840.0),
-            'shallowRed',('shallowGreen',128),('shallowBlue',128),('unused1',null1),
-            'deepRed','deepGreen',('deepBlue',25),('unused2',null1),
-            ('reflRed',255),('reflGreen',255),('reflBlue',255),('unused3',null1),
-            'unknown2',
-            ('rainForce',0.1000),('rainVelocity',0.6000),('rainFalloff',0.9850),('rainDampner',2.0000),('rainSize',0.0100),
-            ('dispForce',0.4000),('dispVelocity', 0.6000),('dispFalloff',0.9850),('dispDampner',10.0000),('dispSize',0.0500),
-            ('noiseNormalsScale',1.8000),'noiseLayer1WindDirection',('noiseLayer2WindDirection',-431602080.0500),
-            ('noiseLayer3WindDirection',-431602080.0500),'noiseLayer1WindVelocity',
-            ('noiseLayer2WindVelocity',-431602080.0500),('noiseLayer3WindVelocity',-431602080.0500),
-            'noiseNormalsDepthFalloffStart',('noiseNormalsDepthFalloffEnd',0.10000),
-            ('fogAboveWaterAmount',1.00000),('noiseNormalsUvScale',500.00000),
-            ('fogUnderWaterAmount',1.00000),'fogUnderWaterNear',('fogUnderWaterFar',1000.00000),
-            ('distortionAmount',250.00000),('shininess',100.00000),('reflectHdrMult',1.00000),
-            ('lightRadius',10000.00000),('lightBrightness',1.00000),
-            ('noiseLayer1UvScale',100.00000),('noiseLayer2UvScale',100.00000),('noiseLayer3UvScale',100.00000),
-            'noiseLayer1Amp','noiseLayer2Amp','noiseLayer3Amp',
-            old_versions={'10f3Bs3Bs3BsI32f'}),
+        MelWatrData(b'DATA','10f3Bs3Bs3BsI32fH', *(_els + ['damage'])),
+        MelWatrDnam(b'DNAM', '10f3Bs3Bs3BsI35f', *(
+                _els + ['noiseLayer1Amp', 'noiseLayer2Amp', 'noiseLayer3Amp']),
+                    old_versions={'10f3Bs3Bs3BsI32f'}),
         MelFidList(b'GNAM','relatedWaters'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3141,11 +3130,11 @@ class MreWeap(MelRecord):
         MelStruct(b'DATA','2IfHB','value','health','weight','damage','clipsize'),
         MelTruncatedStruct(b'DNAM', 'I2f4B5fI4B2f2I11fiI2fi3f',
                     'animationType','animationMultiplier','reach',
-                    (_dflags1,'dnamFlags1',0),('gripAnimation',255),'ammoUse',
+                    (_dflags1, u'dnamFlags1'),('gripAnimation',255),'ammoUse',
                     'reloadAnimation','minSpread','spread','weapDnam1','sightFov',
                     'weapDnam2',(FID, u'projectile'),'baseVatsToHitChance',
                     ('attackAnimation',255),'projectileCount','embeddedWeaponActorValue',
-                    'minRange','maxRange','onHit',(_dflags2,'dnamFlags2',0),
+                    'minRange','maxRange','onHit',(_dflags2, u'dnamFlags2'),
                     'animationAttackMultiplier','fireRate','overrideActionPoint',
                     'rumbleLeftMotorStrength','rumbleRightMotorStrength',
                     'rumbleDuration','overrideDamageToWeaponMult','attackShotsPerSec',
@@ -3156,7 +3145,7 @@ class MreWeap(MelRecord):
                     old_versions={'I2f4B5fI4B2f2I11fiI2fi',
                                   'I2f4B5fI4B2f2I11fiI2f'}),
         MelOptStruct(b'CRDT','H2sfB3sI','criticalDamage',('weapCrdt1', null2),
-                     'criticalMultiplier',(_cflags,'criticalFlags', 0),
+                     'criticalMultiplier',(_cflags, u'criticalFlags'),
                      ('weapCrdt2', null3),(FID, u'criticalEffect')),
         MelBase(b'VNAM','soundLevel'),
     )
@@ -3184,7 +3173,7 @@ class MreWrld(MelRecord):
         MelFull(),
         MelFid(b'XEZN','encounterZone'),
         MelFid(b'WNAM','parent'),
-        MelOptStruct(b'PNAM','BB',(pnamFlags,'parentFlags',0),('unknownff',0xff)),
+        MelOptStruct(b'PNAM','BB',(pnamFlags, u'parentFlags'),('unknownff',0xff)),
         MelFid(b'CNAM','climate'),
         MelFid(b'NAM2','water'),
         MelFid(b'NAM3','waterType'),

@@ -493,7 +493,7 @@ class MelScriptVars(MelGroups):
         super(MelScriptVars, self).__init__(u'script_vars',
             MelStruct(b'SLSD', u'I12sB7s', u'var_index',
                       (u'unused1', null4 + null4 + null4),
-                      (self._var_flags, u'var_flags', 0),
+                      (self._var_flags, u'var_flags'),
                       (u'unused2', null4 + null3)),
             MelString(b'SCVR', u'var_name'),
         )
