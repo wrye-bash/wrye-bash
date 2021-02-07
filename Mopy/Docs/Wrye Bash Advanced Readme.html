@@ -1099,6 +1099,9 @@ tab. The directories skipped are:
             <tr><td colspan="2">Order By Name</td><td>Set the load order of the selected plugins starting at the lowest ordered mod, sorting them alphabetically.</td></tr>
             <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
             <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
+            <tr><td colspan="2">List Dependent...<td>Displays and copies to the clipboard a list of mods that have the currently selected
+                mod as master. Active mods are prefixed with their load order while merged, imported and inactive mods are prefixed with
+                <code>++</code>, <code>**</code> and <code>__</code> respectively.
             <tr><td colspan="2">Readme...<td>Attempts to open the selected plugin's associated readme in the <a href="#tools-docs">Doc Browser</a>.
             <tr><td colspan="2">List Bash Tags...<td>Outputs a BBCode-formatted list of all the Bash Tags applied to the selected plugin, and where/how the Bash Tags was specified. It can be useful for debugging a broken load order.
             <tr>
@@ -1109,9 +1112,6 @@ tab. The directories skipped are:
                     it was installed from.</td>
             </tr>
             <tr><td colspan="2" id="modsCopyModInfo">Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
-            <tr><td colspan="2">List Dependencies<td>Displays and copies to the clipboard a list of mods that have the currently selected
-                mod as master. Active mods are prefixed with their load order while merged, imported and inactive mods are prefixed with
-                <code>++</code>, <code>**</code> and <code>__</code> respectively.
             <tr><td colspan="2">Jump to Installer<td>Jump to the installer of the selected mod, if the Installers tab is displayed and enabled and the
                 plugin has an installer. You can Alt-Click on the mod to the same effect.
             <tr><td colspan="2" id="modsDontGhost">Disallow Ghosting</td><td>Don't ghost the selected plugins when they are inactive, even if Auto-Ghost

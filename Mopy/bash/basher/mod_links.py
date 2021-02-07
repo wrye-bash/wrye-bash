@@ -738,7 +738,7 @@ class Mod_CopyModInfo(ItemLink):
 
 class Mod_ListDependent(OneItemLink):
     """Copies list of masters to clipboard."""
-    _text = _(u'List Dependencies')
+    _text = _(u'List Dependent...')
 
     @property
     def link_help(self):

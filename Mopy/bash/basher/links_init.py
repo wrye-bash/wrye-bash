@@ -489,12 +489,12 @@ def InitModLinks():
     if bush.game.Esp.canBash:
         ModList.context_links.append(Mod_Details())
     ModList.context_links.append(File_ListMasters())
+    ModList.context_links.append(Mod_ListDependent())
     ModList.context_links.append(Mod_ShowReadme())
     if bush.game.allTags:
         ModList.context_links.append(Mod_ListBashTags())
         ModList.context_links.append(Mod_CreateLOOTReport())
     ModList.context_links.append(Mod_CopyModInfo())
-    ModList.context_links.append(Mod_ListDependent())
     ModList.context_links.append(Mod_JumpToInstaller())
     #--------------------------------------------
     ModList.context_links.append(SeparatorLink())
