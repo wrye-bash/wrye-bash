@@ -55,7 +55,8 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         full_name = u'FO4VREdit'
         xe_key_prefix = u'fo4vrView'
 
-    skip_bain_refresh = {u'fo4vredit backups', u'fo4vredit cache'}
+    class Bain(Fallout4GameInfo.Bain):
+        skip_bain_refresh = {u'fo4vredit backups', u'fo4vredit cache'}
 
     class Esp(Fallout4GameInfo.Esp):
         validHeaderVersions = (0.95,)

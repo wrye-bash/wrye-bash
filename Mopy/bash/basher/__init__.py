@@ -4321,7 +4321,6 @@ def InitSettings(): # this must run first !
     for color_key, color_val in settingDefaults[u'bash.colors'].iteritems():
         if color_key not in settings[u'bash.colors']:
             settings[u'bash.colors'][color_key] = color_val
-            settings.setChanged(u'bash.colors')
     # Import/Export DLL permissions was broken and stored DLLs with a ':'
     # appended, simply drop those here (worst case some people will have to
     # re-confirm that they want to install a DLL). Note we have to do this here

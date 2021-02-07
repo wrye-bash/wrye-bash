@@ -48,11 +48,12 @@ class EnderalGameInfo(SkyrimGameInfo):
         full_name = u'EnderalEdit'
         xe_key_prefix = u'enderalView'
 
+    class Bain(SkyrimGameInfo.Bain):
+        skip_bain_refresh = {u'enderaledit backups', u'enderaledit cache'}
+
     nexusUrl = u'https://www.nexusmods.com/enderal/'
     nexusName = u'Enderal Nexus'
     nexusKey = u'bash.installers.openEnderalNexus.continue'
-
-    skip_bain_refresh = {u'enderaledit backups', u'enderaledit cache'}
 
     raceNames = {
         0x13741 : _(u'Half Kilénian'),

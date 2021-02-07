@@ -58,7 +58,8 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
         full_name = u'TES5VREdit'
         xe_key_prefix = u'tes5vrview'
 
-    skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
+    class Bain(SkyrimSEGameInfo.Bain):
+        skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
 
     allTags = SkyrimSEGameInfo.allTags | {u'NoMerge'}
     patchers = SkyrimSEGameInfo.patchers | {u'MergePatches'}

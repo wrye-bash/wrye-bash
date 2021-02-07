@@ -29,7 +29,6 @@ from ...brec import MreFlst, MreGlob
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
     fsName = u'Skyrim Special Edition'
-    altName = u'Wrye Smash'
     bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
     launch_exe = u'SkyrimSE.exe'
     game_detect_file = u'SkyrimSE.exe'
@@ -118,25 +117,28 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
-            b'GMST', b'KYWD', b'LCRT', b'AACT', b'TXST', b'GLOB', b'CLAS', b'FACT',
-            b'HDPT', b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC', b'MGEF', b'SCPT',
-            b'LTEX', b'ENCH', b'SPEL', b'SCRL', b'ACTI', b'TACT', b'ARMO', b'BOOK',
-            b'CONT', b'DOOR', b'INGR', b'LIGH', b'MISC', b'APPA', b'STAT', b'SCOL',
-            b'MSTT', b'PWAT', b'GRAS', b'TREE', b'CLDC', b'FLOR', b'FURN', b'WEAP',
-            b'AMMO', b'NPC_', b'LVLN', b'KEYM', b'ALCH', b'IDLM', b'COBJ', b'PROJ',
-            b'HAZD', b'SLGM', b'LVLI', b'WTHR', b'CLMT', b'SPGD', b'RFCT', b'REGN',
-            b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE', b'PACK', b'CSTY',
-            b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH', b'EXPL', b'DEBR', b'IMGS',
-            b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN', b'AVIF', b'CAMS', b'CPTH',
-            b'VTYP', b'MATT', b'IPCT', b'IPDS', b'ARMA', b'ECZN', b'LCTN', b'MESG',
-            b'RGDL', b'DOBJ', b'LGTM', b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN',
-            b'SMEN', b'DLBR', b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA',
-            b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
+            b'GMST', b'KYWD', b'LCRT', b'AACT', b'TXST', b'GLOB', b'CLAS',
+            b'FACT', b'HDPT', b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC',
+            b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL', b'SCRL', b'ACTI',
+            b'TACT', b'ARMO', b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH',
+            b'MISC', b'APPA', b'STAT', b'SCOL', b'MSTT', b'PWAT', b'GRAS',
+            b'TREE', b'CLDC', b'FLOR', b'FURN', b'WEAP', b'AMMO', b'NPC_',
+            b'LVLN', b'KEYM', b'ALCH', b'IDLM', b'COBJ', b'PROJ', b'HAZD',
+            b'SLGM', b'LVLI', b'WTHR', b'CLMT', b'SPGD', b'RFCT', b'REGN',
+            b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE', b'PACK',
+            b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH', b'EXPL',
+            b'DEBR', b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN',
+            b'AVIF', b'CAMS', b'CPTH', b'VTYP', b'MATT', b'IPCT', b'IPDS',
+            b'ARMA', b'ECZN', b'LCTN', b'MESG', b'RGDL', b'DOBJ', b'LGTM',
+            b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN', b'SMEN', b'DLBR',
+            b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA', b'SCEN',
+            b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
             b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS', b'VOLI']
         #-> this needs updating for Skyrim
         header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR', b'ACRE',
-                                    b'LAND', b'INFO', b'NAVM', b'PHZD', b'PGRE'])
+            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
+                                         b'ACRE', b'LAND', b'INFO', b'NAVM',
+                                         b'PHZD', b'PGRE'])
         header_type.plugin_form_version = 44
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,
@@ -159,8 +161,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             # MreNavm, MreNavi
         )}
         brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL', b'DIAL',
-                                              b'INFO', b'WRLD'})
+            set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',
+                                              b'DIAL', b'INFO', b'WRLD'})
         cls._validate_records()
 
 GAME_TYPE = SkyrimSEGameInfo
