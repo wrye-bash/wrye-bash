@@ -142,9 +142,9 @@ class BackupSettings(object):
               u'they are overwritten?')]))
 
     @staticmethod
-    def backup_filename(fsName_):
+    def backup_filename(displayName_):
         return u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
-            fsName_, bolt.timestamp(), bass.settings[u'bash.version'],
+            displayName_, bolt.timestamp(), bass.settings[u'bash.version'],
             AppVersion)
 
     @staticmethod

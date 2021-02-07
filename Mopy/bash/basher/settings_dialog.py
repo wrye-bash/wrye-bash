@@ -898,7 +898,7 @@ class BackupsPage(_AFixedPage):
         settings_file = balt.askSave(self,
             title=_(u'Backup Bash Settings'), defaultDir=self._backup_dir,
             wildcard=u'*.7z', defaultFile=barb.BackupSettings.backup_filename(
-                bush.game.fsName))
+                bush.game.displayName))
         if not settings_file: return
         with BusyCursor():
             backup = barb.BackupSettings(settings_file, bush.game.fsName,

@@ -411,12 +411,10 @@ def _main(opts, wx_locale):
         base_dir = bass.settings[u'bash.backupPath'] or bass.dirs[u'modsBash']
         settings_file = (opts.backup and opts.filename) or None
         if not settings_file:
-            settings_file = balt.askSave(frame,
-                                         title=_(u'Backup Bash Settings'),
-                                         defaultDir=base_dir,
-                                         wildcard=u'*.7z',
-                                         defaultFile=barb.BackupSettings.
-                                         backup_filename(bush_game.fsName))
+            bak_f = barb.BackupSettings.backup_filename(bush_game.displayName)
+            settings_file = balt.askSave(
+                frame, title=_(u'Backup Bash Settings'), defaultDir=base_dir,
+                wildcard=u'*.7z', defaultFile=bak_f)
         if settings_file:
             with gui.BusyCursor():
                 backup = barb.BackupSettings(settings_file, bush_game.fsName,

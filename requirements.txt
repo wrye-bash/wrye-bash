@@ -2,7 +2,7 @@
 chardet==4.0.0
 lz4==2.2.1
 pywin32==224
-PyYAML==5.4
+PyYAML==5.4.1
 wxPython==4.1.0
 # Runtime, recommended
 scandir==1.10.0
