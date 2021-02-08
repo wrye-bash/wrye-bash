@@ -474,6 +474,9 @@ class ActorFactions(_AParser):
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ActorFactions, self).__init__(aliases_, called_from_patcher)
+        if called_from_patcher:
+            self.id_stored_info = defaultdict(
+                lambda: defaultdict(lambda: {u'factions': []}))
         a_types = bush.game.actor_types
         # We don't need the first pass if we're used by the parser
         self._fp_types = (a_types + (b'FACT',) if not called_from_patcher
@@ -511,7 +514,14 @@ class ActorFactions(_AParser):
         aid = self._coerce_fid(amod, aobj)
         fid = self._coerce_fid(fmod, fobj)
         rank = int(rank)
-        self.id_stored_info[top_grup.encode(u'ascii')][aid][fid] = rank
+        top_grup_sig = top_grup.encode(u'ascii')
+        if self.called_from_patcher:
+            ret_obj = MreRecord.type_class[top_grup_sig].getDefault(u'factions')
+            ret_obj.faction = fid
+            ret_obj.rank = rank
+            self.id_stored_info[top_grup_sig][aid][u'factions'].append(ret_obj)
+        else:
+            self.id_stored_info[top_grup_sig][aid][fid] = rank
 
     def _write_rows(self, out):
         """Exports faction data to specified text file."""
@@ -890,7 +900,9 @@ class FullNames(_HandleAliases):
         longid = self._coerce_fid(mod, objectIndex)
         eid = str_or_none(eid)
         full = str_or_none(full)
-        self.id_stored_data[top_grup.encode(u'ascii')][longid] = (eid, full)
+        self.id_stored_data[top_grup.encode(u'ascii')][longid] = {
+            # Discard the Editor ID and turn the tuples into dictionaries
+            u'full': full} if self.called_from_patcher else (eid, full)
 
     def _write_rows(self, out):
         """Exports id_stored_data to specified text file."""

@@ -310,17 +310,7 @@ class ImportActorsFactionsPatcher(APreserver):
     def _parse_csv_sources(self, progress):
         fact_parser = super(
             ImportActorsFactionsPatcher, self)._parse_csv_sources(progress)
-        # Turn the faction lists into lists of MelObjects
-        def make_obj(csv_rsig, csv_obj):
-            obj_faction, obj_rank = csv_obj
-            ret_obj = MreRecord.type_class[csv_rsig].getDefault(u'factions')
-            ret_obj.faction = obj_faction
-            ret_obj.rank = obj_rank
-            return ret_obj
-        self._process_csv_sources(
-            {r: {f: {u'factions': [make_obj(r, o) for o in a.iteritems()]}
-                 for f, a in d.iteritems()}
-             for r, d in fact_parser.id_stored_info.iteritems()})
+        self._process_csv_sources(fact_parser.id_stored_info)
 
 #------------------------------------------------------------------------------
 class ImportDestructiblePatcher(APreserver):
@@ -352,10 +342,7 @@ class ImportNamesPatcher(APreserver):
     def _parse_csv_sources(self, progress):
         full_parser = super(
             ImportNamesPatcher, self)._parse_csv_sources(progress)
-        # Discard the Editor ID and turn the tuples into dictionaries
-        self._process_csv_sources(
-            {r: {f: {u'full': a[1]} for f, a in d.iteritems()}
-             for r, d in full_parser.id_stored_data.iteritems()})
+        self._process_csv_sources(full_parser.id_stored_data)
 
 #------------------------------------------------------------------------------
 class ImportObjectBoundsPatcher(APreserver):
