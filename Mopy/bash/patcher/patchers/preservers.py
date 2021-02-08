@@ -355,7 +355,7 @@ class ImportNamesPatcher(APreserver):
         # Discard the Editor ID and turn the tuples into dictionaries
         self._process_csv_sources(
             {r: {f: {u'full': a[1]} for f, a in d.iteritems()}
-             for r, d in full_parser.type_id_name.iteritems()})
+             for r, d in full_parser.id_stored_data.iteritems()})
 
 #------------------------------------------------------------------------------
 class ImportObjectBoundsPatcher(APreserver):

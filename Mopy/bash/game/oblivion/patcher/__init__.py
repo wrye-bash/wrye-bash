@@ -265,7 +265,8 @@ namesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
 #------------------------------------------------------------------------------
 # Import Prices
 #------------------------------------------------------------------------------
-pricesTypes = {b'ALCH':{},b'AMMO':{},b'APPA':{},b'ARMO':{},b'BOOK':{},b'CLOT':{},b'INGR':{},b'KEYM':{},b'LIGH':{},b'MISC':{},b'SGST':{},b'SLGM':{},b'WEAP':{}}
+pricesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'CLOT', b'INGR',
+               b'KEYM', b'LIGH', b'MISC', b'SGST', b'SLGM', b'WEAP'}
 
 #------------------------------------------------------------------------------
 # Import Stats

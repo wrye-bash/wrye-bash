@@ -198,6 +198,19 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
     def _load_factory(self, keepAll=True, target_types=None):
         return LoadFactory(keepAll, by_sig=target_types or self.types)
 
+    def readFromMod(self, modInfo):
+        """Hasty readFromMod implementation."""
+        modFile = self._load_plugin(modInfo, keepAll=False)
+        for top_grup_sig in self.types:
+            typeBlock = modFile.tops.get(top_grup_sig)
+            if not typeBlock: continue
+            id_data = self.id_stored_data[top_grup_sig]
+            for record in typeBlock.getActiveRecords():
+                self._read_record(record, id_data)
+
+    def _read_record(self, record, id_data):
+        raise AbstractError
+
 # TODO(inf) Once refactoring is done, we could easily take in Progress objects
 #  for more accurate progress bars when importing/exporting
 class _AParser(_HandleAliases):
@@ -611,7 +624,7 @@ class EditorIds(_HandleAliases):
         super(EditorIds, self).__init__(aliases_)
         self.badEidsList = badEidsList
         self.questionableEidsSet = questionableEidsSet
-        self.type_id_eid = defaultdict(dict) #--eid = eids[type][longid]
+        self.id_stored_data = defaultdict(dict) #--eid = eids[type][longid]
         self.old_new = {}
         if types:
             self.types = types
@@ -619,22 +632,15 @@ class EditorIds(_HandleAliases):
             self.types = set(MreRecord.simpleTypes)
             self.types.discard(b'CELL')
 
-    def readFromMod(self,modInfo):
-        """Imports eids from specified mod."""
-        modFile = self._load_plugin(modInfo, keepAll=False)
-        for top_grup_sig in self.types:
-            typeBlock = modFile.tops.get(top_grup_sig)
-            if not typeBlock: continue
-            id_eid = self.type_id_eid[top_grup_sig]
-            for record in typeBlock.getActiveRecords():
-                if record.eid: id_eid[record.fid] = record.eid
+    def _read_record(self, record, id_data):
+        if record.eid: id_data[record.fid] = record.eid
 
     def writeToMod(self,modInfo):
         """Exports eids to specified mod."""
         modFile = self._load_plugin(modInfo)
         changed = []
         for type_ in self.types:
-            id_eid = self.type_id_eid.get(type_, None)
+            id_eid = self.id_stored_data.get(type_, None)
             typeBlock = modFile.tops.get(type_, None)
             if not id_eid or not typeBlock: continue
             for record in typeBlock.records:
@@ -706,10 +712,10 @@ class EditorIds(_HandleAliases):
         #--Explicit old to new def? (Used for script updating.)
         if len(csv_fields) > 4:
             self.old_new[_coerce(csv_fields[4], unicode).lower()] = eid
-        self.type_id_eid[top_grup.encode(u'ascii')][longid] = eid
+        self.id_stored_data[top_grup.encode(u'ascii')][longid] = eid
 
     def _write_rows(self, out):
-        for top_grup_sig, id_eid in _key_sort(self.type_id_eid):
+        for top_grup_sig, id_eid in _key_sort(self.id_stored_data):
             for id_, eid_ in _key_sort(id_eid, by_value=True):
                 out.write(self._row_fmt_str % (
                     top_grup_sig.decode(u'ascii'), id_[0], id_[1], eid_))
@@ -855,30 +861,21 @@ class FullNames(_HandleAliases):
 
     def __init__(self, types=None, aliases_=None):
         super(FullNames, self).__init__(aliases_)
-        #--(eid,name) = type_id_name[type][longid]
-        self.type_id_name = defaultdict(dict)
+        #--id_stored_data[top_grup_sig][longid] = (eid,name)
+        self.id_stored_data = defaultdict(dict)
         self.types = types or bush.game.namesTypes
 
-    def readFromMod(self,modInfo):
-        """Imports type_id_name from specified mod."""
-        type_id_name= self.type_id_name
-        modFile = self._load_plugin(modInfo, keepAll=False)
-        for type_ in self.types:
-            typeBlock = modFile.tops.get(type_,None)
-            if not typeBlock: continue
-            id_name = type_id_name[type_]
-            for record in typeBlock.getActiveRecords():
-                longid = record.fid
-                full = record.full or (type_ == b'LIGH' and u'NO NAME')
-                if record.eid and full:
-                    id_name[longid] = (record.eid,full)
+    def _read_record(self, record, id_data):
+        full = record.full or (record.rec_sig == b'LIGH' and u'NO NAME')
+        if record.eid and full:
+            id_data[record.fid] = (record.eid, full)
 
     def writeToMod(self,modInfo):
-        """Exports type_id_name to specified mod."""
+        """Exports id_stored_data to specified mod."""
         modFile = self._load_plugin(modInfo)
         changed = {}
         for type_ in self.types:
-            id_name = self.type_id_name.get(type_, None)
+            id_name = self.id_stored_data.get(type_, None)
             typeBlock = modFile.tops.get(type_,None)
             if not id_name or not typeBlock: continue
             for record in typeBlock.records:
@@ -897,11 +894,11 @@ class FullNames(_HandleAliases):
         longid = self._coerce_fid(mod, objectIndex)
         eid = str_or_none(eid)
         full = str_or_none(full)
-        self.type_id_name[top_grup.encode(u'ascii')][longid] = (eid, full)
+        self.id_stored_data[top_grup.encode(u'ascii')][longid] = (eid, full)
 
     def _write_rows(self, out):
-        """Exports type_id_name to specified text file."""
-        for top_grup_sig, id_name in _key_sort(self.type_id_name):
+        """Exports id_stored_data to specified text file."""
+        for top_grup_sig, id_name in _key_sort(self.id_stored_data):
             for longid, (eid, rec_name) in _key_sort(id_name, keys_dex=[0],
                                                      values_dex=[0]):
                 out.write(self._row_fmt_str % (top_grup_sig.decode(u'ascii'),
@@ -1381,22 +1378,18 @@ class ItemPrices(_HandleAliases):
 
     def __init__(self, types=None, aliases_=None):
         super(ItemPrices, self).__init__(aliases_)
-        self.class_fid_stats = bush.game.pricesTypes
-        self.types = set(self.class_fid_stats)
+        self.id_stored_data = defaultdict(dict)
+        self.types = set(bush.game.pricesTypes)
 
-    def readFromMod(self,modInfo):
-        """Reads data from specified mod."""
-        modFile = self._load_plugin(modInfo, keepAll=False)
-        attrs = self.item_prices_attrs
-        for top_grup_sig, fid_stats in self.class_fid_stats.iteritems():
-            for record in modFile.tops[top_grup_sig].getActiveRecords():
-                fid_stats[record.fid] = [getattr(record, a) for a in attrs]
+    def _read_record(self, record, id_data):
+        id_data[record.fid] = [getattr(record, a) for a in
+                               self.item_prices_attrs]
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         modFile = self._load_plugin(modInfo)
         changed = Counter() #--changed[modName] = numChanged
-        for top_grup_sig, fid_stats in self.class_fid_stats.iteritems():
+        for top_grup_sig, fid_stats in self.id_stored_data.iteritems():
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 longid = record.fid
                 stats = fid_stats.get(longid,None)
@@ -1415,17 +1408,18 @@ class ItemPrices(_HandleAliases):
         value = _coerce(value, int)
         eid = str_or_none(eid)
         itm_name = str_or_none(itm_name)
-        self.class_fid_stats[top_grup.encode(u'ascii')][longid] = [value, eid,
-                                                                   itm_name]
+        self.id_stored_data[top_grup.encode(u'ascii')][longid] = [value, eid,
+                                                                  itm_name]
 
     def _write_rows(self, out):
         """Writes item prices to specified text file."""
-        for top_grup_sig, fid_stats in _key_sort(self.class_fid_stats):
+        for top_grup_sig, fid_stats in _key_sort(self.id_stored_data):
             if not fid_stats: continue
+            top_grup = top_grup_sig.decode(u'ascii')
             for fid in sorted(fid_stats,key=lambda x:(
                     fid_stats[x][1].lower(),fid_stats[x][0])):
                 out.write(self._row_fmt_str % ((fid[0], fid[1]) +
-                    tuple(fid_stats[fid]) + (top_grup_sig.decode(u'ascii'),)))
+                    tuple(fid_stats[fid]) + (top_grup,)))
 
 #------------------------------------------------------------------------------
 _to_bool = lambda x: _coerce(x, bool)

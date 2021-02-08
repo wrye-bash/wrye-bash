@@ -300,8 +300,8 @@ namesTypes = {
 #------------------------------------------------------------------------------
 # Import Prices
 #------------------------------------------------------------------------------
-pricesTypes = {b'ALCH': {}, b'AMMO': {}, b'ARMO': {}, b'ARMA': {}, b'BOOK': {},
-               b'INGR': {}, b'KEYM': {}, b'LIGH': {}, b'MISC': {}, b'WEAP': {}}
+pricesTypes = {b'ALCH', b'AMMO', b'ARMA', b'ARMO', b'BOOK', b'INGR', b'KEYM',
+               b'LIGH', b'MISC', b'WEAP'}
 
 #------------------------------------------------------------------------------
 # Import Stats
