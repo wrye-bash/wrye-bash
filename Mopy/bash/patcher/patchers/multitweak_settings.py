@@ -1390,13 +1390,12 @@ class GmstTweak_Arrow_MaxArrowsAttachedToNPC(_AGmstCCTweak):
     default_choice = u'3'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_AIProjectileDodgeFix(_AGmstTweak):
-    tweak_name = _(u'Combat: AI Projectile Dodge Fix')
-    tweak_tip = _(u'Removes the uncanny ability of NPCs to dodge projectiles '
-                  u'being launched at them from range.')
+class GmstTweak_Combat_DisableProjectileDodging(_AGmstTweak):
+    tweak_name = _(u'Combat: Disable Projectile Dodging')
+    tweak_tip = _(u'Removes the ability of NPCs to dodge projectiles being '
+                  u'launched at them from range.')
     tweak_key = (u'fCombatDodgeChanceMax',)
     tweak_choices = [(_(u'Enabled'), 0.0)]
-    default_enabled = True
 
 #------------------------------------------------------------------------------
 class GmstTweak_Actor_MerchantRestockTime(_AGmstTweak):

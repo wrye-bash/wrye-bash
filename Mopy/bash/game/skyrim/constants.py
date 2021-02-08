@@ -938,7 +938,7 @@ settings_tweaks = {
     u'GmstTweak_Warning_ExteriorDistanceToHostiles',
     u'GmstTweak_Combat_MaximumArmorRating_Tes5',
     u'GmstTweak_Arrow_MaxArrowsAttachedToNPC',
-    u'GmstTweak_Combat_AIProjectileDodgeFix',
+    u'GmstTweak_Combat_DisableProjectileDodging',
     u'GmstTweak_Combat_MaxAllyHits_Tes5',
     u'GmstTweak_Actor_MerchantRestockTime',
     u'GmstTweak_Player_FallDamageThreshold',
