@@ -578,9 +578,11 @@ class Installer_InstallSmart(_NoMarkerLink):
         for sel_package in list(self.iselected_infos()):
             # Look for a BAIN wizard first, best integration with BAIN (duh)
             if self._try_installer(sel_package, inst_wiz): continue
-            # Next, look for an FOMOD wizard - not quite as good, but at least
-            # it's visual
-            if self._try_installer(sel_package, inst_fomod): continue
+            # Skip FOMODs here if the Ignore FOMODs option is checked
+            if not bass.settings[u'bash.installers.ignore_fomods']:
+                # Next, look for an FOMOD wizard - not quite as good, but at
+                # least it's visual
+                if self._try_installer(sel_package, inst_fomod): continue
             # Finally, fall back to the regular 'Install Configured' method
             self._try_installer(sel_package, inst_regular)
 

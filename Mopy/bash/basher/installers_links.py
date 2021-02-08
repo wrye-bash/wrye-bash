@@ -45,7 +45,8 @@ __all__ = [u'Installers_SortActive', u'Installers_SortProjects',
            u'Installers_ConflictsReportShowsLower',
            u'Installers_ConflictsReportShowBSAConflicts',
            u'Installers_WizardOverlay', u'Installers_GlobalSkips',
-           u'Installers_GlobalRedirects', u'Installers_FullRefresh']
+           u'Installers_GlobalRedirects', u'Installers_FullRefresh',
+           u'Installers_IgnoreFomod']
 
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
@@ -327,6 +328,13 @@ class Installers_AutoRefreshProjects(BoolLink):
     _bl_key = u'bash.installers.autoRefreshProjects'
     _help = _(u'Toggles whether or not Wrye Bash will automatically detect '
               u'changes to projects in the installers directory.')
+
+class Installers_IgnoreFomod(BoolLink):
+    _text = _(u'Ignore FOMODs')
+    _bl_key = u'bash.installers.ignore_fomods'
+    _help = _(u'Ignores FOMODs when using the "Install..." option. If this is '
+              u'checked, FOMODs will only be used when you specifically run '
+              u'them via "FOMOD Installer...".')
 
 class Installers_ApplyEmbeddedBCFs(ItemLink):
     """Automatically apply Embedded BCFs to archives that have one."""

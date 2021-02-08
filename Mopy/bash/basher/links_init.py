@@ -222,6 +222,7 @@ def InitInstallerLinks():
     if bEnableWizard:
         InstallersList.column_links.append(Installers_AutoWizard())
     InstallersList.column_links.append(Installers_AutoRefreshProjects())
+    InstallersList.column_links.append(Installers_IgnoreFomod())
     InstallersList.column_links.append(Installers_AutoRefreshBethsoft())
     InstallersList.column_links.append(Installers_BsaRedirection())
     InstallersList.column_links.append(Installers_RemoveEmptyDirs())
@@ -353,6 +354,7 @@ def InitInstallerLinks():
     if bEnableWizard:
         settings_menu.append(Installers_AutoWizard())
     settings_menu.append(Installers_AutoRefreshProjects())
+    settings_menu.append(Installers_IgnoreFomod())
     settings_menu.append(SeparatorLink())
     settings_menu.append(Installers_ConflictsReportShowBSAConflicts())
     settings_menu.append(Installers_ConflictsReportShowsInactive())

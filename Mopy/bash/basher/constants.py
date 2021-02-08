@@ -300,6 +300,7 @@ settingDefaults = { # keep current naming format till refactored
     u'bash.installers.fastStart': True,
     u'bash.installers.autoRefreshBethsoft': False,
     u'bash.installers.autoRefreshProjects': True,
+    u'bash.installers.ignore_fomods': False,
     u'bash.installers.removeEmptyDirs': True,
     u'bash.installers.skipScreenshots': False,
     u'bash.installers.skipScriptSources': False,
