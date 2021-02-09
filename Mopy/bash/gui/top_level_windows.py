@@ -103,7 +103,7 @@ class _TopLevelWin(_AComponent):
         """Ensure that frame is displayed."""
         if _wx.Display.GetFromWindow(self._native_widget) == -1:
             topLeft = _wx.Display(0).GetGeometry().GetTopLeft()
-            self._native_widget.MoveXY(topLeft.x + x, topLeft.y + y)
+            self._native_widget.Move(topLeft.x + x, topLeft.y + y)
 
 class WindowFrame(_TopLevelWin):
     """Wraps a wx.Frame - saves size/position on closing.
