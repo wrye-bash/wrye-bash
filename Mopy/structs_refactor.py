@@ -62,13 +62,14 @@ class _Lines(object):
             digit = u''
             ret = []
             for c in match.group(3):
+                if c == '=': continue
                 if str.isdigit(c):
-                    digit += c
+                    digit += '%s' % c
                 elif digit:
                     ret.append(digit + c)
                     digit = u''
                 else:
-                    ret.append(c)
+                    ret.append(u'%s' % c)
             return u"Mel%sStruct%s %s" % (
                 match.group(1) or u'', match.group(2), ret)
         for i, module_path in enumerate(modules):
