@@ -425,6 +425,8 @@ def InitModLinks():
             files_menu.links.append(SeparatorLink())
             files_menu.links.append(Mods_CreateBlankBashedPatch())
             files_menu.links.append(Mods_CreateBlank())
+        files_menu.links.append(SeparatorLink())
+        files_menu.links.append(Mods_OpenLOFileMenu())
         ModList.column_links.append(files_menu)
     ModList.column_links.append(SeparatorLink())
     if True: #--Load
@@ -594,6 +596,8 @@ def InitModLinks():
         file_menu.append(SeparatorLink())
         file_menu.append(Mods_CreateBlankBashedPatch())
         file_menu.append(Mods_CreateBlank())
+    file_menu.append(SeparatorLink())
+    file_menu.append(Mods_OpenLOFileMenu())
     # Edit Menu
     edit_menu = ModList.global_links[_(u'Edit')]
     am_submenu = MenuLink(_(u'Active Mods'))

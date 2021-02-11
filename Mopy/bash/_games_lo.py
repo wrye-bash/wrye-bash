@@ -427,6 +427,16 @@ class Game(object):
         self.size_plugins_txt, self.mtime_plugins_txt = \
             self.plugins_txt_path.size_mtime()
 
+    def get_acti_file(self):
+        """Returns the path of the file used by this game for storing active
+        plugins."""
+        return None # base case
+
+    def get_lo_file(self):
+        """Returns the path of the file used by this game for storing load
+        order."""
+        return None # base case
+
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord, fix_lo):
         """Fix inconsistencies between given loadorder and actually installed
@@ -773,6 +783,16 @@ class INIGame(Game):
             _do_swap(self._cached_ini_lo, self.ini_key_lo)
         super(INIGame, self).swap(old_path, new_path)
 
+    def get_acti_file(self):
+        if self._handles_actives:
+            return self._cached_ini_actives.abs_path
+        return super(INIGame, self).get_acti_file()
+
+    def get_lo_file(self):
+        if self._handles_lo:
+            return self._cached_ini_lo.abs_path
+        return super(INIGame, self).get_lo_file()
+
 class TimestampGame(Game):
     """Oblivion and other games where load order is set using modification
     times.
@@ -804,6 +824,9 @@ class TimestampGame(Game):
                 return start_time
             start_time += self._get_free_time_step
         return max(all_mtimes) + self._get_free_time_step
+
+    def get_acti_file(self):
+        return self.plugins_txt_path
 
     # Abstract overrides ------------------------------------------------------
     def __calculate_mtime_order(self, mods=None): # excludes corrupt mods
@@ -882,8 +905,9 @@ class Morrowind(INIGame, TimestampGame):
     has_plugins_txt = False
     ini_key_actives = (u'Morrowind.ini', u'Game Files', u'GameFile%(lo_idx)s')
 
+    ##: This is wrong, but works for now. We need game-specific record headers
+    # to parse the ESM flag for MW correctly - #480!
     def in_master_block(self, minf):
-        """For Morrowind, extension seems to be the only thing that matters."""
         return minf.get_extension() == u'.esm'
 
 class TextfileGame(Game):
@@ -922,6 +946,12 @@ class TextfileGame(Game):
         if move.exists():
             move.copyTo(self.loadorder_txt_path)
             self.loadorder_txt_path.mtime = time.time() # update mtime to trigger refresh
+
+    def get_acti_file(self):
+        return self.plugins_txt_path
+
+    def get_lo_file(self):
+        return self.loadorder_txt_path
 
     # Abstract overrides ------------------------------------------------------
     def _backup_active_plugins(self):
@@ -1059,6 +1089,12 @@ class AsteriskGame(Game):
 
     @classmethod
     def _must_update_active(cls, deleted, reordered): return True
+
+    def get_acti_file(self):
+        return self.plugins_txt_path
+
+    def get_lo_file(self):
+        return self.plugins_txt_path
 
     # Abstract overrides ------------------------------------------------------
     def _backup_active_plugins(self):

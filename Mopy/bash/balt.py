@@ -1677,7 +1677,7 @@ class Link(object):
     # Menu label (may depend on UI state when the menu is shown)
     _text = u''
 
-    def __init__(self, _text=None):
+    def __init__(self, _text=None): ##: is the _text param even used anymore?
         """Initialize a Link instance.
 
         Parameter _text underscored cause its use should be avoided - prefer to
@@ -1963,6 +1963,18 @@ class AppendableLink(Link):
         if not self._append(window): return
         return super(AppendableLink, self).AppendToMenu(menu, window,
                                                         selection)
+
+class MultiLink(Link):
+    """A link that resolves to several links when appended."""
+    def _links(self):
+        """Returns the list of links that this link resolves to."""
+        raise AbstractError(u'_links not implemented')
+
+    def AppendToMenu(self, menu, window, selection):
+        last_ret = None
+        for m_link in self._links():
+            last_ret = m_link.AppendToMenu(menu, window, selection)
+        return last_ret
 
 # ItemLink subclasses ---------------------------------------------------------
 class EnabledLink(ItemLink):

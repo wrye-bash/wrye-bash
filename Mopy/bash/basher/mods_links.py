@@ -30,7 +30,7 @@ from .. import bass, bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
-    SeparatorLink, Link
+    SeparatorLink, Link, MultiLink
 from ..bolt import GPath, dict_sort
 from ..gui import BusyCursor
 from ..parsers import CsvParser
@@ -42,7 +42,7 @@ __all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
            u'Mods_ScanDirty', u'Mods_CrcRefresh', u'Mods_AutoESLFlagBP',
            u'Mods_LockActivePlugins', u'Mods_ModChecker',
            u'Mods_ExportBashTags', u'Mods_ImportBashTags',
-           u'Mods_ClearManualBashTags']
+           u'Mods_ClearManualBashTags', u'Mods_OpenLOFileMenu']
 
 # "Load" submenu --------------------------------------------------------------
 class _Mods_LoadListData(balt.ListEditorData):
@@ -466,3 +466,22 @@ class Mods_ClearManualBashTags(ItemLink):
                 p.reloadBashTags()
         self.window.RefreshUI(redraw=pl_reset, refreshSaves=False)
         self._showOk(_(u'Cleared tags from %u plugin(s).') % len(pl_reset))
+
+#------------------------------------------------------------------------------
+class _Mods_OpenLOFile(ItemLink):
+    """Opens a load order file in the system's default text editor."""
+    def __init__(self, lo_file_path):
+        super(_Mods_OpenLOFile, self).__init__()
+        self._lo_file_path = lo_file_path
+        lo_file_name = lo_file_path.stail
+        self._text = _(u'Open %s') % lo_file_name
+        self._help = _(u'Opens the load order management file "%s" in a text '
+                       u'editor.') % lo_file_name
+
+    def Execute(self):
+        self._lo_file_path.start()
+
+class Mods_OpenLOFileMenu(MultiLink):
+    """Shows one or more links for opening LO management files."""
+    def _links(self):
+        return [_Mods_OpenLOFile(lo_f) for lo_f in load_order.get_lo_files()]
