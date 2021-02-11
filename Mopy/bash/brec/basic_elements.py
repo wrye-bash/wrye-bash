@@ -605,22 +605,34 @@ class MelStrings(MelString):
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    def __init__(self, mel_sig, struct_format, *elements):
+    @staticmethod
+    def _format_list(li):
+        digit = u''
+        ret = []
+        for c in li:
+            if c == '=': continue
+            if (str if type(c) is bytes else unicode).isdigit(c):
+                digit += '%s' % c
+            elif digit:
+                ret.append(digit + c)
+                digit = u''
+            else:
+                ret.append(u'%s' % c)
+        return ret
+    def __init__(self, mel_sig, struct_formats, *elements):
         """:type mel_sig: bytes
-        :type struct_format: unicode"""
+        :type struct_formats: list[unicode]"""
+        if isinstance(struct_formats, basestring):
+            struct_formats = self._format_list(struct_formats)
         # Sometimes subrecords have to preserve non-aligned sizes, check that
         # we don't accidentally pad those to alignment
-        if (not struct_format.startswith(u'=') and
-                struct_calcsize(struct_format) != struct_calcsize(
-                    u'=' + struct_format)):
-            raise SyntaxError(
-                u"Automatic padding inserted for struct format '%s', this is "
-                u"almost certainly not what you want. Prepend '=' to preserve "
-                u"the unaligned size or manually pad with 'x' to avoid this "
-                u"error." % struct_format)
+        struct_format = u''.join(struct_formats)
+        if (struct_calcsize(struct_format) != struct_calcsize(
+                u'=' + struct_format)):
+            struct_format = u'=%s' % struct_format
         self.mel_sig = mel_sig
         self.attrs, self.defaults, self.actions, self.formAttrs = \
-            parseElements(*elements)
+            self.parseElements(struct_formats, *elements)
         # Check for duplicate attrs - can't rely on MelSet.getSlotsUsed only,
         # since we may end up in a MelUnion which has to use a set to collect
         # its slots
@@ -670,46 +682,67 @@ class MelStruct(MelBase):
     def static_size(self):
         return self._static_size
 
-def parseElements(*elements):
-    """Parses elements and returns attrs,defaults,actions,formAttrs where:
-    * attrs is tuple of attributes (names)
-    * formAttrs is set of attributes that have fids,
-    * defaults is tuple of default values for attributes
-    * actions is tuple of callables to be used when loading data
-    Note that each element of defaults and actions matches corresponding attr element.
-    Used by MelStruct and _MelField.
+    def parseElements(self, struct_formats, *elements):
+        """Parses elements and returns attrs,defaults,actions,formAttrs where:
+        * attrs is tuple of attributes (names)
+        * formAttrs is set of attributes that have fids,
+        * defaults is tuple of default values for attributes
+        * actions is tuple of callables to be used when loading data
+        Note that each element of defaults and actions matches corresponding attr element.
+        Used by MelStruct and _MelField.
 
-    Example call:
-    parseElements('level', ('unused1', null2), (FID, 'listId', None),
-                  ('count', 1), ('unused2', null2))
+        Example call:
+        parseElements('level', ('unused1', null2), (FID, 'listId', None),
+                      ('count', 1), ('unused2', null2))
 
-    :type elements: (list[None|unicode|tuple])"""
-    formAttrs = set()
-    lenEls = len(elements)
-    attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls
-    for index,element in enumerate(elements):
-        if not isinstance(element,tuple):
-            attrs[index] = element
-        else:
-            el_0 = element[0]
-            attrIndex = el_0 == 0
-            if el_0 == FID:
-                formAttrs.add(element[1])
-                attrIndex = 1
-            elif callable(el_0):
-                actions[index] = el_0
-                attrIndex = 1
-            attrs[index] = element[attrIndex]
-            if len(element) - attrIndex == 2:
-                defaults[index] = element[-1] # else leave to 0
-    return tuple(attrs), tuple(defaults), tuple(actions), formAttrs
+        :type elements: (list[None|unicode|tuple])"""
+        formAttrs = set()
+        lenEls = len(elements)
+        attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls
+        expanded_fmts = self._expand_formats(elements, struct_formats)
+        for index, (element, fmt_str) in enumerate(izip(elements, expanded_fmts)):
+            if not isinstance(element,tuple):
+                attrs[index] = element
+                if type(fmt_str) is int and fmt_str: # 0 for weird subclasses
+                    defaults[index] = fmt_str * null1
+            else:
+                el_0 = element[0]
+                attrIndex = el_0 == 0
+                if el_0 == FID:
+                    formAttrs.add(element[1])
+                    attrIndex = 1
+                elif callable(el_0):
+                    actions[index] = el_0
+                    attrIndex = 1
+                attrs[index] = element[attrIndex]
+                if len(element) - attrIndex == 2:
+                    defaults[index] = element[-1] # else leave to 0
+                elif type(fmt_str) is int and fmt_str: # 0 for weird subclasses
+                    defaults[index] = fmt_str * null1
+        return tuple(attrs), tuple(defaults), tuple(actions), formAttrs
+
+    @staticmethod
+    def _expand_formats(elements, struct_formats):
+        """Expand struct_formats to match the elements - overrides point to
+        a new class (MelStructured?)"""
+        expanded_fmts = []
+        for f in struct_formats:
+            if f[-1] != u's':
+                expanded_fmts.extend([f[-1]] * int(f[:-1] or 1))
+            else:
+                expanded_fmts.append(int(f[:-1] or 1))
+        if len(expanded_fmts) != len(elements):
+            raise SyntaxError(
+                u"Format specifiers (%s) do not match elements (%s)" % (
+                expanded_fmts, elements))
+        return expanded_fmts
 
 #------------------------------------------------------------------------------
 class MelFixedString(MelStruct):
     """Subrecord that stores a string of a constant length. Just a wrapper
     around a struct with a single FixedString element."""
     def __init__(self, signature, attr, str_length, default=b''):
-        super(MelFixedString, self).__init__(signature, u'%us' % str_length,
+        super(MelFixedString, self).__init__(signature, [u'%us' % str_length],
             (FixedString(str_length, default), attr))
 
 # Simple primitive type wrappers ----------------------------------------------

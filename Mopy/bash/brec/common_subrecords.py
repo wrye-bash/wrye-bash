@@ -57,7 +57,7 @@ class MelActivateParents(MelGroup):
         super(MelActivateParents, self).__init__(u'activate_parents',
             MelUInt8Flags(b'XAPD', u'activate_parent_flags', self._ap_flags),
             MelGroups(u'activate_parent_refs',
-                MelStruct(b'XAPR', u'If', (FID, u'ap_reference'), u'ap_delay'),
+                MelStruct(b'XAPR', [u'I', u'f'], (FID, u'ap_reference'), u'ap_delay'),
             ),
         )
 
@@ -67,7 +67,7 @@ class MelBounds(MelGroup):
     Bounds. Uses MelGroup to avoid merging them when importing."""
     def __init__(self):
         super(MelBounds, self).__init__(u'bounds',
-            MelStruct(b'OBND', u'=6h', u'boundX1', u'boundY1', u'boundZ1',
+            MelStruct(b'OBND', [u'6h'], u'boundX1', u'boundY1', u'boundZ1',
                       u'boundX2', u'boundY2', u'boundZ2')
         )
 
@@ -111,7 +111,7 @@ class MelCtda(MelUnion):
         }, decider=PartialLoadDecider(
             # Skip everything up to the function index in one go, we'll be
             # discarding this once we rewind anyways.
-            loader=MelStruct(ctda_sub_sig, u'8sH', u'ctda_ignored', u'ifunc'),
+            loader=MelStruct(ctda_sub_sig, [u'8s', u'H'], u'ctda_ignored', u'ifunc'),
             decider=AttrValDecider(u'ifunc'),
         ))
         self._ctda_mel = next(self.element_mapping.itervalues()) # type: MelStruct
@@ -254,7 +254,8 @@ class MelDecalData(MelOptStruct):
     ), unknown_is_unused=True)
 
     def __init__(self):
-        super(MelDecalData, self).__init__(b'DODT', u'7fBB2s3Bs', u'minWidth',
+        super(MelDecalData, self).__init__(b'DODT',
+            [u'7f', u'B', u'B', u'2s', u'3B', u's'], u'minWidth',
             u'maxWidth', u'minHeight', u'maxHeight', u'depth', u'shininess',
             u'parallaxScale', u'parallaxPasses',
             (self._decal_data_flags, u'decalFlags'), (u'unusedDecal1', null2),
@@ -286,7 +287,7 @@ class MelColorInterpolator(MelArray):
     axis."""
     def __init__(self, sub_type, attr):
         super(MelColorInterpolator, self).__init__(attr,
-            MelStruct(sub_type, u'5f', u'time', u'red', u'green', u'blue',
+            MelStruct(sub_type, [u'5f'], u'time', u'red', u'green', u'blue',
                 u'alpha'),
         )
 
@@ -299,20 +300,20 @@ class MelValueInterpolator(MelArray):
     with 'time' as the X axis and 'value' as the Y axis."""
     def __init__(self, sub_type, attr):
         super(MelValueInterpolator, self).__init__(attr,
-            MelStruct(sub_type, u'2f', u'time', u'value'),
+            MelStruct(sub_type, [u'2f'], u'time', u'value'),
         )
 
 #------------------------------------------------------------------------------
 class MelColor(MelStruct):
     """Required Color."""
     def __init__(self, color_sig=b'CNAM'):
-        super(MelColor, self).__init__(color_sig, u'4B', u'red', u'green',
+        super(MelColor, self).__init__(color_sig, [u'4B'], u'red', u'green',
             u'blue', u'unused_alpha')
 
 class MelColorO(MelOptStruct):
     """Optional Color."""
     def __init__(self, color_sig=b'CNAM'):
-        super(MelColorO, self).__init__(color_sig, u'4B', u'red', u'green',
+        super(MelColorO, self).__init__(color_sig, [u'4B'], u'red', u'green',
             u'blue', u'unused_alpha')
 
 #------------------------------------------------------------------------------
@@ -379,7 +380,9 @@ class MelWthrColors(MelStruct):
     """Used in WTHR for PNAM and NAM0 for all games but FNV."""
     def __init__(self, wthr_sub_sig):
         MelStruct.__init__(
-            self, wthr_sub_sig, u'3Bs3Bs3Bs3Bs', u'riseRed', u'riseGreen',
+            self, wthr_sub_sig,
+            [u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's'], u'riseRed',
+            u'riseGreen',
             u'riseBlue', (u'unused1', null1), u'dayRed', u'dayGreen',
             u'dayBlue',(u'unused2', null1), u'setRed', u'setGreen', u'setBlue',
             (u'unused3', null1), u'nightRed', u'nightGreen', u'nightBlue',
@@ -491,7 +494,7 @@ class MelScriptVars(MelGroups):
 
     def __init__(self):
         super(MelScriptVars, self).__init__(u'script_vars',
-            MelStruct(b'SLSD', u'I12sB7s', u'var_index',
+            MelStruct(b'SLSD', [u'I', u'12s', u'B', u'7s'], u'var_index',
                       (u'unused1', null4 + null4 + null4),
                       (self._var_flags, u'var_flags'),
                       (u'unused2', null4 + null3)),
@@ -507,7 +510,7 @@ class MelEnableParent(MelOptStruct):
 
     def __init__(self):
         super(MelEnableParent, self).__init__(
-            b'XESP', u'IB3s', (FID, u'ep_reference'),
+            b'XESP', [u'I', u'B', u'3s'], (FID, u'ep_reference'),
             (self._parent_flags, u'parent_flags'), (u'xesp_unused', null3)),
 
 #------------------------------------------------------------------------------
@@ -523,7 +526,7 @@ class MelMapMarker(MelGroup):
             MelBase(b'XMRK', u'marker_data'),
             MelOptUInt8Flags(b'FNAM', u'marker_flags', self._marker_flags),
             MelFull(),
-            MelOptStruct(b'TNAM', u'Bs', u'marker_type', u'unused1'),
+            MelOptStruct(b'TNAM', [u'B', u's'], u'marker_type', u'unused1'),
         ]
         if with_reputation:
             group_elems.append(MelFid(b'WMI1', u'marker_reputation'))
@@ -593,7 +596,7 @@ class MelRef3D(MelOptStruct):
     """3D position and rotation for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
         super(MelRef3D, self).__init__(
-            b'DATA', u'6f', u'ref_pos_x', u'ref_pos_y', u'ref_pos_z',
+            b'DATA', [u'6f'], u'ref_pos_x', u'ref_pos_y', u'ref_pos_z',
             u'ref_rot_x', u'ref_rot_y', u'ref_rot_z'),
 
 #------------------------------------------------------------------------------
@@ -613,9 +616,9 @@ class MelWorldBounds(MelSequential):
     """Worlspace (WRLD) bounds."""
     def __init__(self):
         super(MelWorldBounds, self).__init__(
-            MelStruct(b'NAM0', u'2f', u'object_bounds_min_x',
+            MelStruct(b'NAM0', [u'2f'], u'object_bounds_min_x',
                 u'object_bounds_min_y'),
-            MelStruct(b'NAM9', u'2f', u'object_bounds_max_x',
+            MelStruct(b'NAM9', [u'2f'], u'object_bounds_max_x',
                 u'object_bounds_max_y'),
         )
 
@@ -623,7 +626,7 @@ class MelWorldBounds(MelSequential):
 class MelXlod(MelOptStruct):
     """Distant LOD Data."""
     def __init__(self):
-        super(MelXlod, self).__init__(b'XLOD', u'3f', u'lod1', u'lod2',
+        super(MelXlod, self).__init__(b'XLOD', [u'3f'], u'lod1', u'lod2',
                                       u'lod3')
 
 #------------------------------------------------------------------------------
@@ -647,6 +650,10 @@ class MelDebrData(MelStruct):
         # Format doesn't matter, struct.Struct(u'') works! ##: MelStructured
         super(MelDebrData, self).__init__(b'DATA', u'', u'percentage',
             (u'modPath', null1), u'flags')
+
+    @staticmethod
+    def _expand_formats(elements, struct_formats):
+        return [0] * len(elements)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         byte_data = ins.read(size_, *debug_strs)

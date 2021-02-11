@@ -438,8 +438,7 @@ class MelTruncatedStruct(MelStruct):
         self._all_unpackers = {
             structs_cache[alt_fmt].size: structs_cache[alt_fmt].unpack for
             alt_fmt in old_versions}
-        self._all_unpackers[structs_cache[sub_fmt].size] = structs_cache[
-            sub_fmt].unpack
+        self._all_unpackers[self._static_size] = self._unpacker
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         # Try retrieving the format - if not possible, wrap the error to make
@@ -478,8 +477,7 @@ class MelTruncatedStruct(MelStruct):
                     break
             else:
                 return None
-        return super(MelTruncatedStruct, self).pack_subrecord_data(
-            record)
+        return super(MelTruncatedStruct, self).pack_subrecord_data(record)
 
     @property
     def static_size(self):
@@ -494,6 +492,19 @@ class MelLists(MelStruct):
     'actions' is discarded"""
     # map attribute names to slices/indexes of the tuple of unpacked elements
     _attr_indexes = OrderedDict() # type: OrderedDict[unicode, slice | int]
+
+    def __init__(self, mel_sig, struct_formats, *elements):
+        if len(struct_formats) != len(elements):
+            raise SyntaxError(u'MelLists: struct_formats (%r) do not match '
+                              u'elements (%r)' % (struct_formats, elements))
+        super(MelLists, self).__init__(mel_sig, struct_formats, *elements)
+
+    @staticmethod
+    def _expand_formats(elements, expanded_fmts):
+        # This is fine because we enforce the precondition
+        # len(struct_formats) == len(elements) in MelLists.__init__
+        return [int(f[:-1] or 1) if f[-1] == u's' else 0
+                for f in expanded_fmts]
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         unpacked = list(ins.unpack(self._unpacker, size_, *debug_strs))

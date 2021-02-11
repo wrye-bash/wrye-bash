@@ -69,7 +69,7 @@ class MreTes4(MreHeaderBase):
     rec_sig = b'TES4'
 
     melSet = MelSet(
-        MelStruct(b'HEDR', u'f2I', (u'version', 1.0), u'numRecords',
+        MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',
             (u'nextObject', 0x001)),
         MelBase(b'TNAM', 'tnam_p'),
         MreHeaderBase.MelAuthor(),
@@ -105,7 +105,7 @@ class MreLvli(MreLeveledList):
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
-            MelStruct(b'LLKC', u'2I', (FID, u'keyword'), u'chance'),
+            MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
         ),
         MelFid(b'LVSG', 'epicLootChance'),
         MelLString(b'ONAM', 'overrideName')
@@ -130,7 +130,7 @@ class MreLvln(MreLeveledList):
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
-            MelStruct(b'LLKC', u'2I', (FID, u'keyword'), u'chance'),
+            MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
         ),
         MelString(b'MODL','model'),
         MelBase(b'MODT','modt_p'),
