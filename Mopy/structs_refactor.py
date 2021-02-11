@@ -35,6 +35,15 @@ def _findAllBashModules(files=[], bashPath=None, cwd=None,
     return files
 
 _re_str = re.compile(u'' r"Mel(Opt|Truncated)?Struct(\(b'[^']+',) ?u?'([^']+)'")
+_re_str = re.compile(
+    u'' r"(MelStruct|MelBipedObjectData|MelSMFlags|MelSpit|MelLgtmData"
+    r"|MelFixedString|MelOptStruct|MelCoed|MelDecalData|MelColorO"
+    r"|MelEnableParent|MelRef3D|MelXlod|MelObme|MelAIAccompanyPackage"
+    r"|MelTruncatedStruct|MelWeapCrdt|MelEffectsScit|MelLevListLvlo"
+    r"|MelRefrXloc|MelWatrData|MelLevListLvlo|MelWatrDnam|MelLists"
+    r"|MelNpcData|MelNpcData|_MelNpcData|MelNpcDnam|MelColor|MelWthrColors"
+    r"|MelRaceVoices|MelDebrData|MelAIData|MelBipedData|MelWatrData"
+    r"|)\.__init__(\(b'[^']+',) ?u?'([^']+)'")
 # noinspection PyDefaultArgument
 class _Lines(object):
 
@@ -63,7 +72,7 @@ class _Lines(object):
             ret = []
             for c in match.group(3):
                 if c == '=': continue
-                if str.isdigit(c):
+                if (str if type(c) is bytes else unicode).isdigit(c):
                     digit += '%s' % c
                 elif digit:
                     ret.append(digit + c)
