@@ -692,8 +692,8 @@ class MelStruct(MelBase):
         Used by MelStruct and _MelField.
 
         Example call:
-        parseElements('level', ('unused1', null2), (FID, 'listId', None),
-                      ('count', 1), ('unused2', null2))
+        parseElements('level', 'unused1', (FID, 'listId', None),
+                      ('count', 1), 'unused2')
 
         :type elements: (list[None|unicode|tuple])"""
         formAttrs = set()

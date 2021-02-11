@@ -31,9 +31,9 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
     MelOptStruct, MelCounter, MelRefScale, MelOptSInt32, MelRef3D, \
-    MelOptFloat, MelOptUInt32, MelIcons, MelFloat, null1, null3, MelSInt32, \
+    MelOptFloat, MelOptUInt32, MelIcons, MelFloat, MelSInt32, \
     MelFixedString, FixedString, AutoFixedString, MreGmstBase, MelOptUInt8, \
-    MreLeveledListBase, MelUInt16, null4, SizeDecider, MelLists, null2, \
+    MreLeveledListBase, MelUInt16, SizeDecider, MelLists, \
     MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags
 if brec.MelModel is None:
 
@@ -84,7 +84,7 @@ class MelAIAccompanyPackage(MelOptStruct):
         super(MelAIAccompanyPackage, self).__init__(ai_package_sig,
             [u'3f', u'H', u'32s', u'B', u's'], u'dest_x', u'dest_y', u'dest_z', u'package_duration',
             (FixedString(32), u'package_id'), (u'unknown_marker', 1),
-            (u'unused1', null1))
+            u'unused1')
 
 class MelAIPackages(MelGroups):
     """Handles the AI_* and CNDT subrecords, which have the additional
@@ -98,7 +98,7 @@ class MelAIPackages(MelGroups):
                 b'AI_E': MelAIAccompanyPackage(b'AI_E'),
                 b'AI_F': MelAIAccompanyPackage(b'AI_F'),
                 b'AI_T': MelStruct(b'AI_T', [u'3f', u'B', u'3s'], u'dest_x', u'dest_y',
-                    u'dest_z', (u'unknown_marker', 1), (u'unused1', null1)),
+                    u'dest_z', (u'unknown_marker', 1), u'unused1'),
                 b'AI_W': MelStruct(b'AI_W', [u'2H', u'10B'], u'wanter_distance',
                     u'wanter_duration', u'time_of_day', u'idle_1', u'idle_2',
                     u'idle_3', u'idle_4', u'idle_5', u'idle_6', u'idle_7',
@@ -693,9 +693,9 @@ class MreInfo(MelRecord):
         MelString(b'INAM', u'info_name_string'),
         MelString(b'PNAM', u'prev_info_name'),
         MelString(b'NNAM', u'next_info_name'),
-        MelStruct(b'DATA', [u'B', u'3s', u'I', u'B', u'b', u'B', u's'], u'dialogue_type', (u'unused1', null3),
+        MelStruct(b'DATA', [u'B', u'3s', u'I', u'B', u'b', u'B', u's'], u'dialogue_type', u'unused1',
             u'disposition', u'dialogue_rank', u'speaker_gender', u'pc_rank',
-            (u'unused2', null1)),
+            u'unused2'),
         MelString(b'ONAM', u'actor_name'),
         MelString(b'RNAM', u'race_name'),
         MelString(b'CNAM', u'class_name'),
@@ -876,7 +876,7 @@ class MreMisc(MelRecord):
         MelModel(),
         MelMWFull(),
         MelStruct(b'MCDT', [u'f', u'I', u'4s'], u'misc_weight', u'misc_value',
-            (u'unknown1', null4)),
+            u'unknown1'),
         MelScriptId(),
         MelMWIcon(),
     )
@@ -927,13 +927,13 @@ class MreNpc(MelRecord):
         MelScriptId(),
         MelUnion({
             12: MelStruct(b'NPDT', [u'H', u'3B', u'3s', u'B'], u'npc_level', u'npc_disposition',
-                u'npc_reputation', u'npc_rank', (u'unknown1', null3),
+                u'npc_reputation', u'npc_rank', u'unknown1',
                 u'npc_gold'),
             52: MelNpcData(b'NPDT', [u'H', u'8B', u'27B', u's', u'H', u'H', u'H', u'B', u'B', u'B', u's', u'I'], u'npc_level',
                 (u'attributes', [0] * 8), (u'skills', [0] * 27),
-                (u'unknown2', null1), u'npc_health', u'npc_spell_points',
+                u'unknown2', u'npc_health', u'npc_spell_points',
                 u'npc_fatigue', u'npc_disposition', u'npc_reputation',
-                u'npc_rank', (u'unknown3', null1), u'npc_gold'),
+                u'npc_rank', u'unknown3', u'npc_gold'),
         }, decider=NpcDataDecider()),
         MelUInt32Flags(b'FLAG', u'npc_flags', _npc_flags),
         MelItems(),
@@ -951,7 +951,7 @@ class MrePgrd(MelRecord):
 
     melSet = MelSet(
         MelStruct(b'DATA', [u'2I', u'2s', u'H'], u'pgrd_x', u'pgrd_y',
-            (u'unknown1', null2), u'point_count'),
+            u'unknown1', u'point_count'),
         MelMWId(),
         # Could be loaded via MelArray, but are very big and not very useful
         MelBase(b'PGRP', u'point_array'),

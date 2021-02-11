@@ -35,7 +35,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelOptFid, MelOptFloat, MelOptSInt16, MelOptSInt32, MelOptUInt8, \
     MelOptUInt16, MelOptUInt32, MelPartialCounter, MelRaceParts, \
-    MelRaceVoices, MelBounds, null1, null2, null3, null4, MelScriptVars, \
+    MelRaceVoices, MelBounds, null1, null2, MelScriptVars, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelSkipInterior, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
@@ -176,7 +176,7 @@ class MelEmbeddedScript(MelSequential):
 
     def __init__(self):
         super(MelEmbeddedScript, self).__init__(
-            MelStruct(b'SCHR', [u'4s', u'3I', u'2H'], (u'unused1', null4), u'num_refs',
+            MelStruct(b'SCHR', [u'4s', u'3I', u'2H'], u'unused1', u'num_refs',
                       u'compiled_size', u'last_index', u'script_type',
                       (self._script_header_flags, u'schr_flags')),
             MelBase(b'SCDA', u'compiled_script'),
@@ -235,9 +235,8 @@ class MreLeveledList(MreLeveledListBase):
         MelFid(b'LVLG', u'glob'),
         MelGroups(u'entries',
             MelLevListLvlo(b'LVLO', [u'h', u'2s', u'I', u'h', u'2s'], u'level',
-                           (u'unused1', null2),
-                           (FID, u'listId'), (u'count', 1),
-                           (u'unused2', null2), old_versions={u'iI'}),
+                           u'unused1', (FID, u'listId'), (u'count', 1),
+                           u'unused2', old_versions={u'iI'}),
             MelOptStruct(b'COED', [u'2I', u'f'], (FID, u'owner'), (FID, u'glob'),
                          (u'condition', 1.0)),
         ),
@@ -324,8 +323,8 @@ class MreAchr(MelRecord):
             MelStruct(b'XDCR', [u'2I'], (FID, 'reference'), 'unknown'),
         ),
         MelOptFid(b'XLKR', u'linkedReference'),
-        MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
-                     'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
+        MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue','linkColorUnused1',
+                     'linkEndColorRed','linkEndColorGreen','linkEndColorBlue','linkColorUnused2'),
         MelActivateParents(),
         MelEnableParent(),
         MelOptFid(b'XEMI', u'emittance'),
@@ -364,8 +363,8 @@ class MreAcre(MelRecord):
             MelStruct(b'XDCR', [u'2I'], (FID, 'reference'), 'unknown'),
         ),
         MelOptFid(b'XLKR', u'linkedReference'),
-        MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
-                     'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
+        MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue','linkColorUnused1',
+                     'linkEndColorRed','linkEndColorGreen','linkEndColorBlue','linkColorUnused2'),
         MelActivateParents(),
         MelEnableParent(),
         MelOptFid(b'XEMI', u'emittance'),
@@ -430,7 +429,7 @@ class MreAlch(MelRecord):
         MelEquipmentType(),
         MelFloat(b'DATA', 'weight'),
         MelStruct(b'ENIT', [u'i', u'B', u'3s', u'I', u'f', u'I'], u'value', (_flags, u'flags'),
-                  (u'unused1', null3), (FID, u'withdrawalEffect'),
+                  u'unused1', (FID, u'withdrawalEffect'),
                   u'addictionChance', (FID, u'soundConsume')),
         MelEffects(),
     )
@@ -452,7 +451,7 @@ class MreAmmo(MelRecord):
         MelDestructible(),
         MelPickupSound(),
         MelDropSound(),
-        MelStruct(b'DATA', [u'f', u'B', u'3s', u'i', u'B'],'speed',(_flags, u'flags'),('ammoData1',null3),
+        MelStruct(b'DATA', [u'f', u'B', u'3s', u'i', u'B'],'speed',(_flags, u'flags'),'ammoData1',
                   'value','clipRounds'),
         MelString(b'ONAM','shortName'),
     )
@@ -605,7 +604,7 @@ class MelBptdParts(MelGroups):
                 u'goreEffectPosRotY', u'goreEffectPosRotZ',
                 (FID, u'severableImpactDataSet'),
                 (FID, u'explodableImpactDataSet'), u'severableDecalCount',
-                u'explodableDecalCount', (u'unused', null2),
+                u'explodableDecalCount', u'unused',
                 u'limbReplacementScale'),
             MelString(b'NAM1', u'limbReplacementModel'),
             MelString(b'NAM4', u'goreEffectsTargetBone'),
@@ -721,10 +720,10 @@ class MreCell(MelRecord):
             (u'posY', None), (_land_flags, u'land_flags'), is_optional=True,
             old_versions={u'2i'})),
         MelTruncatedStruct(b'XCLL', [u'3B', u's', u'3B', u's', u'3B', u's', u'2f', u'2i', u'3f'], 'ambientRed',
-                           'ambientGreen', 'ambientBlue', ('unused1', null1),
+                           'ambientGreen', 'ambientBlue', 'unused1',
                            'directionalRed', 'directionalGreen',
-                           'directionalBlue', ('unused2', null1), 'fogRed',
-                           'fogGreen', 'fogBlue', ('unused3', null1),
+                           'directionalBlue', 'unused2', 'fogRed',
+                           'fogGreen', 'fogBlue', 'unused3',
                            'fogNear', 'fogFar', 'directionalXY',
                            'directionalZ', 'directionalFade', 'fogClip',
                            'fogPower', is_optional=True,
@@ -781,7 +780,7 @@ class MreClas(MelRecord):
         MelIcon(),
         MelStruct(b'DATA', [u'4i', u'2I', u'b', u'B', u'2s'],'tagSkill1','tagSkill2','tagSkill3',
             'tagSkill4',(_flags, u'flags'),(aiService, u'services'),
-            ('trainSkill',-1),'trainLevel',('clasData1',null2)),
+            ('trainSkill',-1),'trainLevel','clasData1'),
         MelStruct(b'ATTR', [u'7B'], 'strength', 'perception', 'endurance',
                   'charisma', 'intelligence', 'agility', 'luck'),
     )
@@ -935,13 +934,13 @@ class MreCrea(MreActor):
         MelItems(),
         MelStruct(b'AIDT', [u'5B', u'3s', u'I', u'b', u'B', u'b', u'B', u'i'], 'aggression', ('confidence', 2),
                   ('energyLevel', 50), ('responsibility', 50), 'mood',
-                  ('unused_aidt', null3), (aiService, u'services'),
+                  'unused_aidt', (aiService, u'services'),
                   ('trainSkill', -1), 'trainLevel', 'assistance',
                   (aggroflags, u'aggroRadiusBehavior'), 'aggroRadius'),
         MelFids(b'PKID','aiPackages'),
         MelStrings(b'KFFZ','animations'),
         MelStruct(b'DATA', [u'4B', u'h', u'2s', u'h', u'7B'],'creatureType','combatSkill','magicSkill',
-            'stealthSkill','health',('unused2',null2),'damage','strength',
+            'stealthSkill','health','unused2','damage','strength',
             'perception','endurance','charisma','intelligence','agility',
             'luck'),
         MelUInt8(b'RNAM', 'attackReach'),
@@ -982,15 +981,15 @@ class MreCsty(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelOptStruct(b'CSTD', [u'2B', u'2s', u'8f', u'2B', u'2s', u'3f', u'B', u'3s', u'2f', u'5B', u'3s', u'2f', u'H', u'2s', u'2B', u'2s', u'f'],'dodgeChance',
-                    'lrChance',('unused1',null2),'lrTimerMin','lrTimerMax',
+                    'lrChance','unused1','lrTimerMin','lrTimerMax',
                     'forTimerMin','forTimerMax','backTimerMin','backTimerMax',
                     'idleTimerMin','idleTimerMax','blkChance','atkChance',
-                    ('unused2',null2),'atkBRecoil','atkBunc','atkBh2h',
-                    'pAtkChance',('unused3',null3),'pAtkBRecoil','pAtkBUnc',
+                    'unused2','atkBRecoil','atkBunc','atkBh2h',
+                    'pAtkChance','unused3','pAtkBRecoil','pAtkBUnc',
                     'pAtkNormal','pAtkFor','pAtkBack','pAtkL','pAtkR',
-                    ('unused4',null3),'holdTimerMin','holdTimerMax',
-                    (_flagsA,'flagsA'),('unused5',null2),'acroDodge',
-                    ('rushChance',25),('unused6',null3),('rushMult',1.0)),
+                    'unused4','holdTimerMin','holdTimerMax',
+                    (_flagsA,'flagsA'),'unused5','acroDodge',
+                    ('rushChance',25),'unused6',('rushMult',1.0)),
         MelOptStruct(b'CSAD', [u'21f'], 'dodgeFMult', 'dodgeFBase', 'encSBase', 'encSMult',
                      'dodgeAtkMult', 'dodgeNAtkMult', 'dodgeBAtkMult', 'dodgeBNAtkMult',
                      'dodgeFAtkMult', 'dodgeFNAtkMult', 'blockMult', 'blockBase',
@@ -1091,7 +1090,7 @@ class MreEczn(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelStruct(b'DATA', [u'I', u'2b', u'B', u's'], (FID, u'owner'), u'rank', u'minimumLevel',
-                  (_flags, u'flags'), (u'unused1', null1)),
+                  (_flags, u'flags'), u'unused1'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1114,12 +1113,12 @@ class MreEfsh(MelRecord):
         MelString(b'NAM7', u'holesTexture'),
         MelTruncatedStruct(b'DATA',
             u'B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f', (_flags, u'flags'),
-            (u'unused1', null3), (u'memSBlend', 5), (u'memBlendOp', 1),
+            u'unused1', (u'memSBlend', 5), (u'memBlendOp', 1),
             (u'memZFunc', 3), u'fillRed', u'fillGreen', u'fillBlue',
-            (u'unused2', null1), u'fillAIn', u'fillAFull', u'fillAOut',
+            u'unused2', u'fillAIn', u'fillAFull', u'fillAOut',
             u'fillAPRatio', u'fillAAmp', u'fillAFreq', u'fillAnimSpdU',
             u'fillAnimSpdV', u'edgeOff', u'edgeRed', u'edgeGreen', u'edgeBlue',
-            (u'unused3', null1), u'edgeAIn', u'edgeAFull', u'edgeAOut',
+            u'unused3', u'edgeAIn', u'edgeAFull', u'edgeAOut',
             u'edgeAPRatio', u'edgeAAmp', u'edgeAFreq', u'fillAFRatio',
             u'edgeAFRatio', (u'memDBlend', 6), (u'partSBlend', 5),
             (u'partBlendOp', 1), (u'partZFunc', 4), (u'partDBlend', 6),
@@ -1129,16 +1128,16 @@ class MreEfsh(MelRecord):
             u'partAcc1', u'partAcc2', u'partAcc3', (u'partKey1', 1.0),
             (u'partKey2', 1.0), u'partKey1Time', (u'partKey2Time', 1.0),
             (u'key1Red', 255), (u'key1Green', 255), (u'key1Blue', 255),
-            (u'unused4', null1), (u'key2Red', 255), (u'key2Green', 255),
-            (u'key2Blue', 255), (u'unused5', null1), (u'key3Red', 255),
-            (u'key3Green', 255), (u'key3Blue', 255), (u'unused6', null1),
+            u'unused4', (u'key2Red', 255), (u'key2Green', 255),
+            (u'key2Blue', 255), u'unused5', (u'key3Red', 255),
+            (u'key3Green', 255), (u'key3Blue', 255), u'unused6',
             (u'key1A', 1.0), (u'key2A', 1.0), (u'key3A', 1.0), u'key1Time',
             (u'key2Time', 0.5), (u'key3Time', 1.0), u'partNSpdDelta',
             u'partRot', u'partRotDelta', u'partRotSpeed', u'partRotSpeedDelta',
             (FID, u'addonModels'), u'holesStartTime', u'holesEndTime',
             u'holesStartVal', u'holesEndVal', u'edgeWidth',
             (u'edge_color_red', 255), (u'edge_color_green', 255),
-            (u'edge_color_blue', 255), (u'unused7', null1),
+            (u'edge_color_blue', 255), u'unused7',
             u'explosionWindSpeed', (u'textureCountU', 1),
             (u'textureCountV', 1), (u'addonModelsFadeInTime', 1.0),
             (u'addonModelsFadeOutTime', 1.0), (u'addonModelsScaleStart', 1.0),
@@ -1163,7 +1162,7 @@ class MreEnch(MelRecord):
         MelEdid(),
         MelFull(),
         MelStruct(b'ENIT', [u'3I', u'B', u'3s'],'itemType','chargeAmount','enchantCost',
-                  (_flags, u'flags'),('unused1',null3)),
+                  (_flags, u'flags'),'unused1'),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1236,7 +1235,7 @@ class MreFact(MelRecord):
         MelTruncatedStruct(b'DATA', [u'2B', u'2s'],
                            (_general_flags, u'general_flags'),
                            (_general_flags_2, u'general_flags_2'),
-                           (u'unused1', null2), old_versions={u'2B', u'B'}),
+                           u'unused1', old_versions={u'2B', u'B'}),
         MelOptFloat(b'CNAM', u'cnam_unused'), # leftover from Oblivion
         MelGroups(u'ranks',
             MelSInt32(b'RNAM', u'rank_level'),
@@ -1283,9 +1282,9 @@ class MreGras(MelRecord):
         MelBounds(),
         MelModel(),
         MelStruct(b'DATA', [u'3B', u's', u'H', u'2s', u'I', u'4f', u'B', u'3s'],'density','minSlope',
-                  'maxSlope',('unused1',null1),'waterDistance',('unused2',null2),
+                  'maxSlope','unused1','waterDistance','unused2',
                   'waterOp','posRange','heightRange','colorRange',
-                  'wavePeriod',(_flags,'flags'),('unused3',null3)),
+                  'wavePeriod',(_flags,'flags'),'unused3'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1332,8 +1331,8 @@ class MreIdle(MelRecord):
         MelConditions(),
         MelStruct(b'ANAM', [u'I', u'I'],(FID,'parent'),(FID,'prevId')),
         MelTruncatedStruct(b'DATA', [u'3B', u's', u'h', u'B', u's'], 'group', 'loopMin', 'loopMax',
-                           ('unknown1', null1), 'delay', 'flags',
-                           ('unknown2', null1), old_versions={'3Bsh'}),
+                           'unknown1', 'delay', 'flags',
+                           'unknown2', old_versions={'3Bsh'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1349,7 +1348,7 @@ class MreIdlm(MelRecord):
         MelBounds(),
         MelUInt8Flags(b'IDLF', u'flags', _flags),
         MelPartialCounter(MelTruncatedStruct(
-            b'IDLC', 'B3s', 'animation_count', ('unused', null3),
+            b'IDLC', 'B3s', 'animation_count', 'unused',
             old_versions={'B'}),
             counter='animation_count', counts='animations'),
         MelFloat(b'IDLT', 'idleTimerSetting'),
@@ -1490,14 +1489,13 @@ class MreImgs(MelRecord):
         MelUnion({
             152: MelStruct(
                 b'DNAM', u'33f4s4s4s4sB3s', *(_dnam_common + [
-                    (u'unused1', null4), (u'unused2', null4),
-                    (u'unused3', null4), (u'unused4', null4),
-                    (_dnam_flags, u'dnam_flags'), (u'unused5', null3),
+                    u'unused1', u'unused2', u'unused3', u'unused4',
+                    (_dnam_flags, u'dnam_flags'), u'unused5',
                 ])),
             148: MelStruct(
                 b'DNAM', u'33f4s4s4s4s', *(_dnam_common + [
-                    (u'unused1', null4), (u'unused2', null4),
-                    (u'unused3', null4), (u'unused4', null4),
+                    u'unused1', u'unused2',
+                    u'unused3', u'unused4',
                 ])),
             132: MelStruct(b'DNAM', [u'33f'], *_dnam_common),
         }, decider=SizeDecider()),
@@ -1524,7 +1522,7 @@ class MreInfo(MelRecord):
         MelFid(b'PNAM','prevInfo'),
         MelFids(b'NAME','addTopics'),
         MelGroups('responses',
-            MelStruct(b'TRDT', [u'I', u'i', u'4s', u'B', u'3s', u'I', u'B', u'3s'],'emotionType','emotionValue',('unused1',null4),'responseNum',('unused2',b'\xcd\xcd\xcd'),
+            MelStruct(b'TRDT', [u'I', u'i', u'4s', u'B', u'3s', u'I', u'B', u'3s'],'emotionType','emotionValue','unused1','responseNum',('unused2',b'\xcd\xcd\xcd'),
                       (FID,'sound'),'flags',('unused3',b'\xcd\xcd\xcd')),
             MelString(b'NAM1','responseText'),
             MelString(b'NAM2','actorNotes'),
@@ -1566,7 +1564,7 @@ class MreIngr(MelRecord):
         MelScript(),
         MelEquipmentType(),
         MelFloat(b'DATA', 'weight'),
-        MelStruct(b'ENIT', [u'i', u'B', u'3s'],'value',(_flags, u'flags'),('unused1',null3)),
+        MelStruct(b'ENIT', [u'i', u'B', u'3s'],'value',(_flags, u'flags'),'unused1'),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1657,7 +1655,7 @@ class MreLigh(MelRecord):
         MelFull(),
         MelIcon(),
         MelStruct(b'DATA', [u'i', u'I', u'3B', u's', u'I', u'2f', u'I', u'f'],'duration','radius','red','green','blue',
-                  ('unused1',null1),(_flags, u'flags'),'falloff','fov','value',
+                  'unused1',(_flags, u'flags'),'falloff','fov','value',
                   'weight'),
         # None here is on purpose! See AssortedTweak_LightFadeValueFix
         MelOptFloat(b'FNAM', u'fade', None),
@@ -1675,8 +1673,7 @@ class MreLscr(MelRecord):
         MelIcon(),
         MelDescription(),
         MelGroups('locations',
-            MelStruct(b'LNAM', [u'I', u'8s'], (FID, 'cell'),
-                      ('unused1', null4 + null4)),
+                  MelStruct(b'LNAM', [u'I', u'8s'], (FID, 'cell'), 'unused1'),
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1787,7 +1784,7 @@ class MreMgef(MelRecord):
         MelPartialCounter(MelStruct(
             b'DATA', u'IfI2iH2sIf6I2fIi', (_flags, u'flags'), u'base_cost',
             (FID, u'associated_item'), u'school', u'resist_value',
-            u'counter_effect_count', (u'unused1', null2),
+            u'counter_effect_count', u'unused1',
             (FID, u'light'), u'projectileSpeed', (FID, u'effectShader'),
             (FID, u'enchantEffect'), (FID, u'castingSound'),
             (FID, u'boltSound'), (FID, u'hitSound'), (FID, u'areaSound'),
@@ -2003,7 +2000,7 @@ class MreNpc(MreActor):
         MelItems(),
         MelStruct(b'AIDT', [u'5B', u'3s', u'I', u'b', u'B', u'b', u'B', u'i'], 'aggression', ('confidence',2),
                   ('energyLevel', 50),('responsibility', 50), 'mood',
-                  ('unused_aidt', null3),(aiService, u'services'),
+                  'unused_aidt',(aiService, u'services'),
                   ('trainSkill', -1), 'trainLevel', 'assistance',
                   (aggroflags, u'aggroRadiusBehavior'), 'aggroRadius'),
         MelFids(b'PKID','aiPackages'),
@@ -2020,7 +2017,7 @@ class MreNpc(MreActor):
         # None here is on purpose, for race patcher
         MelOptFloat(b'LNAM', u'hairLength', None),
         MelFid(b'ENAM','eye'), ####fid Array
-        MelStruct(b'HCLR', [u'3B', u's'],'hairRed','hairBlue','hairGreen',('unused3',null1)),
+        MelStruct(b'HCLR', [u'3B', u's'],'hairRed','hairBlue','hairGreen','unused3'),
         MelFid(b'ZNAM','combatStyle'),
         MelUInt32(b'NAM4', u'impactMaterialType'),
         MelBase(b'FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
@@ -2274,8 +2271,8 @@ class MrePgre(MelRecord):
             MelStruct(b'XDCR', [u'2I'], (FID, 'reference'), 'unknown'),
         ),
         MelFid(b'XLKR','linkedReference'),
-        MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
-                     'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
+        MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue','linkColorUnused1',
+                     'linkEndColorRed','linkEndColorGreen','linkEndColorBlue','linkColorUnused2'),
         MelActivateParents(),
         MelEnableParent(),
         MelOptFid(b'XEMI', u'emittance'),
@@ -2317,8 +2314,8 @@ class MrePmis(MelRecord):
             MelStruct(b'XDCR', [u'2I'], (FID, 'reference'), 'unknown'),
         ),
         MelFid(b'XLKR','linkedReference'),
-        MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
-                     'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
+        MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue','linkColorUnused1',
+                     'linkEndColorRed','linkEndColorGreen','linkEndColorBlue','linkColorUnused2'),
         MelActivateParents(),
         MelEnableParent(),
         MelOptFid(b'XEMI', u'emittance'),
@@ -2416,7 +2413,7 @@ class MreQust(MelRecord):
         MelFull(),
         MelIcon(),
         MelTruncatedStruct(b'DATA', [u'2B', u'2s', u'f'], (_questFlags, u'questFlags'),
-                           'priority', ('unused2', null2),
+                           'priority', 'unused2',
                            'questDelay', old_versions={'2B'}),
         MelConditions(),
         MelGroups('stages',
@@ -2433,7 +2430,7 @@ class MreQust(MelRecord):
             MelSInt32(b'QOBJ', 'index'),
             MelString(b'NNAM','description'),
             MelGroups('targets',
-                MelStruct(b'QSTA', [u'I', u'B', u'3s'],(FID,'targetId'),(targetFlags,'flags'),('unused1',null3)),
+                MelStruct(b'QSTA', [u'I', u'B', u'3s'],(FID,'targetId'),(targetFlags,'flags'),'unused1'),
                 MelConditions(),
             ),
         ),
@@ -2460,7 +2457,7 @@ class MelRaceFaceGen(MelGroup):
             MelBase(b'FGGS', u'fggs_p'), # FaceGen Geometry - Symmetric
             MelBase(b'FGGA', u'fgga_p'), # FaceGen Geometry - Asymmetric
             MelBase(b'FGTS', u'fgts_p'), # FaceGen Texture  - Symmetric
-            MelStruct(b'SNAM', [u'2s'], (u'snam_p', null2)))
+            MelStruct(b'SNAM', [u'2s'], u'snam_p'))
 
 class MreRace(MelRecord):
     """Race."""
@@ -2478,7 +2475,7 @@ class MreRace(MelRecord):
         ),
         MelStruct(b'DATA', [u'14b', u'2s', u'4f', u'I'],'skill1','skill1Boost','skill2','skill2Boost',
                   'skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost',
-                  'skill6','skill6Boost','skill7','skill7Boost',('unused1',null2),
+                  'skill6','skill6Boost','skill7','skill7Boost','unused1',
                   'maleHeight','femaleHeight','maleWeight','femaleWeight',(_flags, u'flags')),
         MelFid(b'ONAM','Older'),
         MelFid(b'YNAM','Younger'),
@@ -2589,8 +2586,8 @@ class MreRefr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelOptStruct(b'RCLR', [u'8B'],'referenceStartColorRed','referenceStartColorGreen','referenceStartColorBlue',('referenceColorUnused1',null1),
-                     'referenceEndColorRed','referenceEndColorGreen','referenceEndColorBlue',('referenceColorUnused2',null1)),
+        MelOptStruct(b'RCLR', [u'8B'],'referenceStartColorRed','referenceStartColorGreen','referenceStartColorBlue','referenceColorUnused1',
+                     'referenceEndColorRed','referenceEndColorGreen','referenceEndColorBlue','referenceColorUnused2'),
         MelFid(b'NAME','base'),
         MelFid(b'XEZN','encounterZone'),
         MelBase(b'XRGD','ragdollData'),
@@ -2619,9 +2616,9 @@ class MreRefr(MelRecord):
         ##: I dropped special handling here, looks like a regular truncated
         # record to me - but no way to test since we don't load this yet
         MelTruncatedStruct(
-            b'XLOC', 'B3sI4sB3s4s', 'lockLevel', ('unused1',null3),
-            (FID, 'lockKey'), ('unused2', null4), (_lockFlags, 'lockFlags'),
-            ('unused3', null3), ('unused4', null4), is_optional=True,
+            b'XLOC', 'B3sI4sB3s4s', 'lockLevel', 'unused1',
+            (FID, 'lockKey'), 'unused2', (_lockFlags, 'lockFlags'),
+            'unused3', 'unused4', is_optional=True,
             old_versions={'B3sI4s'}),
         MelOptSInt32(b'XCNT', 'count'),
         MelOptFloat(b'XRDS', 'radius'),
@@ -2641,8 +2638,8 @@ class MreRefr(MelRecord):
             MelStruct(b'XDCR', [u'2I'], (FID, 'reference'), 'unknown'),
         ),
         MelFid(b'XLKR','linkedReference'),
-        MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue',('linkColorUnused1',null1),
-                     'linkEndColorRed','linkEndColorGreen','linkEndColorBlue',('linkColorUnused2',null1)),
+        MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue','linkColorUnused1',
+                     'linkEndColorRed','linkEndColorGreen','linkEndColorBlue','linkColorUnused2'),
         MelActivateParents(),
         MelEnableParent(),
         MelOptFid(b'XEMI', u'emittance'),
@@ -2695,7 +2692,7 @@ class MreRegn(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelIcons(),
-        MelStruct(b'RCLR', [u'3B', u's'],'mapRed','mapBlue','mapGreen',('unused1',null1)),
+        MelStruct(b'RCLR', [u'3B', u's'],'mapRed','mapBlue','mapGreen','unused1'),
         MelFid(b'WNAM','worldspace'),
         MelGroups('areas',
             MelUInt32(b'RPLI', 'edgeFalloff'),
@@ -2705,19 +2702,19 @@ class MreRegn(MelRecord):
         ),
         MelGroups('entries',
             MelStruct(b'RDAT', [u'I', u'2B', u'2s'], 'entryType', (rdatFlags, 'flags'),
-                      'priority', ('unused1', null2)),
+                      'priority', 'unused1'),
             MelRegnEntrySubrecord(2, MelArray('objects',
                 MelStruct(
                     b'RDOT', 'IH2sf4B2H5f3H2s4s', (FID, 'objectId'),
-                    'parentIndex', ('unk1', null2), 'density', 'clustering',
+                    'parentIndex', 'unk1', 'density', 'clustering',
                     'minSlope', 'maxSlope', (obflags, 'flags'),
                     'radiusWRTParent', 'radius', 'minHeight', 'maxHeight',
                     'sink', 'sinkVar', 'sizeVar', 'angleVarX', 'angleVarY',
-                    'angleVarZ', ('unk2', null2), ('unk3', null4)),
+                    'angleVarZ', 'unk2', 'unk3'),
             )),
             MelRegnEntrySubrecord(4, MelString(b'RDMP', 'mapName')),
             MelRegnEntrySubrecord(6, MelArray('grasses',
-                MelStruct(b'RDGS', [u'I', u'4s'], (FID, 'grass'), ('unknown', null4)),
+                MelStruct(b'RDGS', [u'I', u'4s'], (FID, 'grass'), 'unknown'),
             )),
             MelRegnEntrySubrecord(7, MelOptUInt32(b'RDMD', 'musicType')),
             MelRegnEntrySubrecord(7, MelFid(b'RDMO', 'music')),
@@ -2820,13 +2817,13 @@ class MreSoun(MelRecord):
         MelBounds(),
         MelString(b'FNAM','soundFile'),
         MelStruct(b'SNDD', [u'2B', u'b', u's', u'I', u'h', u'2B', u'6h', u'3i'], 'minDist', 'maxDist', 'freqAdj',
-                  ('unusedSndd', null1), (_flags, 'flags'), 'staticAtten',
+                  'unusedSndd', (_flags, 'flags'), 'staticAtten',
                   'stopTime', 'startTime', 'point0', 'point1', 'point2',
                   'point3', 'point4', 'reverb', 'priority', 'xLoc', 'yLoc'),
         # These are the older format - read them, but only write out SNDD
         MelReadOnly(
             MelStruct(b'SNDX', [u'2B', u'b', u's', u'I', u'h', u'2B'], 'minDist', 'maxDist', 'freqAdj',
-                      ('unusedSndd', null1), (_flags, 'flags'), 'staticAtten',
+                      'unusedSndd', (_flags, 'flags'), 'staticAtten',
                       'stopTime', 'startTime'),
             MelStruct(b'ANAM', [u'5h'], 'point0', 'point1', 'point2', 'point3',
                       'point4'),
@@ -2857,7 +2854,7 @@ class MreSpel(MelRecord):
         MelEdid(),
         MelFull(),
         MelStruct(b'SPIT', [u'3I', u'B', u'3s'], 'spellType', 'cost', 'level',
-                  (_SpellFlags, u'flags'), ('unused1', null3)),
+                  (_SpellFlags, u'flags'), 'unused1'),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3024,9 +3021,9 @@ class MreWatr(MelRecord):
         ('waveFreq', 1), ('sunPower', 50), ('reflectAmt', 0.5),
         ('fresnelAmt', 0.025), 'unknown1', ('fogNear', 27852.8),
         ('fogFar', 163840), 'shallowRed', ('shallowGreen', 128),
-        ('shallowBlue', 128), ('unused1', null1), 'deepRed', 'deepGreen',
-        ('deepBlue', 25), ('unused2', null1), ('reflRed', 255),
-        ('reflGreen', 255), ('reflBlue', 255), ('unused3', null1), 'unknown2',
+        ('shallowBlue', 128), 'unused1', 'deepRed', 'deepGreen',
+        ('deepBlue', 25), 'unused2', ('reflRed', 255),
+        ('reflGreen', 255), ('reflBlue', 255), 'unused3', 'unknown2',
         ('rainForce', 0.1), ('rainVelocity', 0.6), ('rainFalloff', 0.9850),
         ('rainDampner', 2), ('rainSize', 0.01), ('dispForce', 0.4),
         ('dispVelocity', 0.6), ('dispFalloff', 0.9850), ('dispDampner', 10),
@@ -3145,9 +3142,9 @@ class MreWeap(MelRecord):
                     'semiAutomaticFireDelayMax',
                     old_versions={'I2f4B5fI4B2f2I11fiI2fi',
                                   'I2f4B5fI4B2f2I11fiI2f'}),
-        MelOptStruct(b'CRDT', [u'H', u'2s', u'f', u'B', u'3s', u'I'],'criticalDamage',('weapCrdt1', null2),
+        MelOptStruct(b'CRDT', [u'H', u'2s', u'f', u'B', u'3s', u'I'],'criticalDamage','weapCrdt1',
                      'criticalMultiplier',(_cflags, u'criticalFlags'),
-                     ('weapCrdt2', null3),(FID, u'criticalEffect')),
+                     'weapCrdt2',(FID, u'criticalEffect')),
         MelBase(b'VNAM','soundLevel'),
     )
     __slots__ = melSet.getSlotsUsed()

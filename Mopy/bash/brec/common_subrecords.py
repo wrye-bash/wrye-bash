@@ -33,7 +33,7 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelOptFloat, MelOptFid, MelReadOnly, MelFids, MelOptUInt32Flags, \
     MelUInt8Flags, MelOptUInt8Flags, MelOptSInt32
-from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
+from .utils_constants import _int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
 from ..exception import ModError
 
@@ -127,8 +127,8 @@ class MelCtda(MelUnion):
         # cause exponential growth and bring PBash down to a crawl.
         prefix_fmt = u'B3s4sH2s' + (u'%s' * len(func_data[1:]))
         prefix_elements = [(self._ctda_type_flags, u'operFlag'),
-                           (u'unused1', null3), u'compValue',
-                           u'ifunc', (u'unused2', null2)]
+                           u'unused1', u'compValue',
+                           u'ifunc', u'unused2']
         # Builds an argument tuple to use for formatting the struct format
         # string from above plus the suffix we got passed in
         fmt_list = tuple([self._param_types[func_param]
@@ -258,8 +258,8 @@ class MelDecalData(MelOptStruct):
             [u'7f', u'B', u'B', u'2s', u'3B', u's'], u'minWidth',
             u'maxWidth', u'minHeight', u'maxHeight', u'depth', u'shininess',
             u'parallaxScale', u'parallaxPasses',
-            (self._decal_data_flags, u'decalFlags'), (u'unusedDecal1', null2),
-            u'redDecal', u'greenDecal', u'blueDecal', (u'unusedDecal2', null1))
+            (self._decal_data_flags, u'decalFlags'), u'unusedDecal1',
+            u'redDecal', u'greenDecal', u'blueDecal', u'unusedDecal2')
 
 #------------------------------------------------------------------------------
 class MelReferences(MelGroups):
@@ -383,10 +383,10 @@ class MelWthrColors(MelStruct):
             self, wthr_sub_sig,
             [u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's'], u'riseRed',
             u'riseGreen',
-            u'riseBlue', (u'unused1', null1), u'dayRed', u'dayGreen',
-            u'dayBlue',(u'unused2', null1), u'setRed', u'setGreen', u'setBlue',
-            (u'unused3', null1), u'nightRed', u'nightGreen', u'nightBlue',
-            (u'unused4', null1))
+            u'riseBlue', u'unused1', u'dayRed', u'dayGreen',
+            u'dayBlue',u'unused2', u'setRed', u'setGreen', u'setBlue',
+            u'unused3', u'nightRed', u'nightGreen', u'nightBlue',
+            u'unused4')
 
 #------------------------------------------------------------------------------
 class MelDropSound(MelFid):
@@ -495,9 +495,8 @@ class MelScriptVars(MelGroups):
     def __init__(self):
         super(MelScriptVars, self).__init__(u'script_vars',
             MelStruct(b'SLSD', [u'I', u'12s', u'B', u'7s'], u'var_index',
-                      (u'unused1', null4 + null4 + null4),
-                      (self._var_flags, u'var_flags'),
-                      (u'unused2', null4 + null3)),
+                      u'unused1', (self._var_flags, u'var_flags'),
+                      u'unused2'),
             MelString(b'SCVR', u'var_name'),
         )
 
@@ -511,7 +510,7 @@ class MelEnableParent(MelOptStruct):
     def __init__(self):
         super(MelEnableParent, self).__init__(
             b'XESP', [u'I', u'B', u'3s'], (FID, u'ep_reference'),
-            (self._parent_flags, u'parent_flags'), (u'xesp_unused', null3)),
+            (self._parent_flags, u'parent_flags'), u'xesp_unused'),
 
 #------------------------------------------------------------------------------
 class MelMapMarker(MelGroup):
