@@ -723,6 +723,12 @@ settings_tweaks = {
     u'GmstTweak_Actor_MaxJumpHeight_Tes4',
     u'GmstTweak_Bounty_Murder',
     u'GmstTweak_Bounty_Jailbreak',
+    u'GmstTweak_Prompt_Activate_Tes4',
+    u'GmstTweak_Prompt_Open_Tes4',
+    u'GmstTweak_Prompt_Read_Tes4',
+    u'GmstTweak_Prompt_Sit_Tes4',
+    u'GmstTweak_Prompt_Take_Tes4',
+    u'GmstTweak_Prompt_Talk_Tes4',
 }
 
 #------------------------------------------------------------------------------

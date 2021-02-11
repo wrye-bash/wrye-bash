@@ -763,6 +763,12 @@ settings_tweaks = {
     u'GmstTweak_Visuals_ShellLitterCount',
     u'GmstTweak_Hacking_TerminalSpeedAdjustment',
     u'GmstTweak_Player_MaxDraggableWeight',
+    u'GmstTweak_Prompt_Activate_Tes4',
+    u'GmstTweak_Prompt_Open_Tes4',
+    u'GmstTweak_Prompt_Read_Tes4',
+    u'GmstTweak_Prompt_Sit_Tes4',
+    u'GmstTweak_Prompt_Take_Tes4',
+    u'GmstTweak_Prompt_Talk_Tes4',
 }
 
 #------------------------------------------------------------------------------

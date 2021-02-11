@@ -1644,6 +1644,72 @@ class GmstTweak_SoulTrap_GrandSoulLevel(_ASoulTrapTweak):
     default_choice = u'38'
 
 #------------------------------------------------------------------------------
+class GmstTweak_Prompt_Activate(_AGmstCCTweak):
+    tweak_name = _(u'Prompt: Activate')
+    tweak_tip = _(u"Changes the text on the 'Activate' prompt shown when "
+                  u'interacting with objects.')
+    tweak_key = (u'sActivate',)
+    tweak_choices = [(_(u'Interact'), _(u'Interact'))]
+
+class GmstTweak_Prompt_Activate_Tes4(GmstTweak_Prompt_Activate):
+    tweak_key = (u'sTargetTypeActivate',)
+
+#------------------------------------------------------------------------------
+class GmstTweak_Prompt_Open(_AGmstCCTweak):
+    tweak_name = _(u'Prompt: Open')
+    tweak_tip = _(u"Changes the text on the 'Open' prompt shown when trying "
+                  u'to open a door.')
+    tweak_key = (u'sOpen',)
+    tweak_choices = [(_(u'Enter'), _(u'Enter'))]
+
+class GmstTweak_Prompt_Open_Tes4(GmstTweak_Prompt_Open):
+    tweak_key = (u'sTargetTypeOpenDoor',)
+
+#------------------------------------------------------------------------------
+class GmstTweak_Prompt_Read(_AGmstCCTweak):
+    tweak_name = _(u'Prompt: Read')
+    tweak_tip = _(u"Changes the text on the 'Read' prompt shown when "
+                  u'interacting with books.')
+    tweak_key = (u'sRead',)
+    tweak_choices = [(_(u'View'), _(u'View'))]
+
+class GmstTweak_Prompt_Read_Tes4(GmstTweak_Prompt_Read):
+    tweak_key = (u'sTargetTypeRead',)
+
+#------------------------------------------------------------------------------
+class GmstTweak_Prompt_Sit(_AGmstCCTweak):
+    tweak_name = _(u'Prompt: Sit')
+    tweak_tip = _(u"Changes the text on the 'Sit' prompt shown when "
+                  u'interacting with chairs.')
+    tweak_key = (u'sSit',)
+    tweak_choices = [(_(u'Sit Down'), _(u'Sit Down'))]
+
+class GmstTweak_Prompt_Sit_Tes4(GmstTweak_Prompt_Sit):
+    tweak_key = (u'sTargetTypeSit',)
+
+#------------------------------------------------------------------------------
+class GmstTweak_Prompt_Take(_AGmstCCTweak):
+    tweak_name = _(u'Prompt: Take')
+    tweak_tip = _(u"Changes the text on the 'Take' prompt shown when taking "
+                  u'items.')
+    tweak_key = (u'sTake',)
+    tweak_choices = [(_(u'Grab'), _(u'Grab'))]
+
+class GmstTweak_Prompt_Take_Tes4(GmstTweak_Prompt_Take):
+    tweak_key = (u'sTargetTypeTake',)
+
+#------------------------------------------------------------------------------
+class GmstTweak_Prompt_Talk(_AGmstCCTweak):
+    tweak_name = _(u'Prompt: Talk')
+    tweak_tip = _(u"Changes the text on the 'Talk' prompt shown when "
+                  u'interacting with people.')
+    tweak_key = (u'sTalk',)
+    tweak_choices = [(_(u'Speak'), _(u'Speak'))]
+
+class GmstTweak_Prompt_Talk_Tes4(GmstTweak_Prompt_Talk):
+    tweak_key = (u'sTargetTypeTalk',)
+
+#------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):
     """Tweaks GLOB and GMST records in various ways."""
     _tweak_classes = {globals()[t] for t in bush.game.settings_tweaks}

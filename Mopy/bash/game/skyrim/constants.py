@@ -973,6 +973,12 @@ settings_tweaks = {
     u'GmstTweak_AI_ConversationChance_Interior',
     u'GmstTweak_AI_MaxDeadActors',
     u'GmstTweak_Bounty_Theft',
+    u'GmstTweak_Prompt_Activate',
+    u'GmstTweak_Prompt_Open',
+    u'GmstTweak_Prompt_Read',
+    u'GmstTweak_Prompt_Sit',
+    u'GmstTweak_Prompt_Take',
+    u'GmstTweak_Prompt_Talk',
 }
 
 #------------------------------------------------------------------------------
