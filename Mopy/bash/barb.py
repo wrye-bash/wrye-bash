@@ -139,7 +139,7 @@ class BackupSettings(object):
             _(u'Previous Version: ') + (u'%s' % previous_bash_version),
             _(u'Current Version: ') + (u'%s' % AppVersion),
             _(u'Do you want to create a backup of your Bash settings before '
-              u'they are overwritten?')]))
+              u'they are overwritten?')]), title=_(u'Create backup?'))
 
     @staticmethod
     def backup_filename(displayName_):
