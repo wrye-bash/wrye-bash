@@ -323,7 +323,6 @@ class _ListPatcherPanel(_PatcherPanel):
         patcherBold = False
         for index,item in enumerate(items):
             itemLabel = self.getItemLabel(item)
-            itemLabel = itemLabel.replace(u'&', u'&&') # escape & - thanks wx
             self.gList.lb_insert(itemLabel, index)
             if forceItemCheck:
                 if self.configChecks.get(item) is None:
@@ -444,7 +443,8 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def getItemLabel(self,item):
         """Returns label for item to be used in list"""
-        return u'%s' % item # Path or string - YAK
+        ret_label = u'%s' % item # Path or string - YAK
+        return ret_label.replace(u'&', u'&&') # escape & - thanks wx
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
@@ -848,13 +848,13 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         return config_choice
 
     def getItemLabel(self,item):
-        """Returns label for item to be used in list"""
+        # Note that we do *not* want to escape the & here - that puts *two*
+        # ampersands in the resulting ListBox for some reason
         choice = [i[0] for i in self.configChoices.get(item, tuple())]
-        item  = u'%s' % item # Path or string - YAK
         if choice:
-            return u'%s [%s]' % (item,u''.join(sorted(choice)))
+            return u'%s [%s]' % (item, u''.join(sorted(choice)))
         else:
-            return item
+            return u'%s' % item # Path or string - YAK
 
     def GetConfigPanel(self, parent, config_layout, gTipText):
         if self.gConfigPanel: return self.gConfigPanel
