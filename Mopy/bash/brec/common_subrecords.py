@@ -85,7 +85,7 @@ class MelCtda(MelUnion):
         u'do_or', u'use_aliases', u'use_global', u'use_packa_data',
         u'swap_subject_and_target'))
 
-    def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=u'',
+    def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=[],
                  suffix_elements=None, old_suffix_fmts=None):
         """Creates a new MelCtda instance with the specified properties.
 
@@ -125,22 +125,23 @@ class MelCtda(MelUnion):
         # The '4s' here can actually be a float or a FormID. We do *not* want
         # to handle this via MelUnion, because the deep nesting is going to
         # cause exponential growth and bring PBash down to a crawl.
-        prefix_fmt = u'B3s4sH2s' + (u'%s' * len(func_data[1:]))
+        prefix_fmt = [u'B', u'3s', u'4s', u'H', u'2s']
         prefix_elements = [(self._ctda_type_flags, u'operFlag'),
                            u'unused1', u'compValue',
                            u'ifunc', u'unused2']
         # Builds an argument tuple to use for formatting the struct format
         # string from above plus the suffix we got passed in
-        fmt_list = tuple([self._param_types[func_param]
-                          for func_param in func_data[1:]])
-        shared_params = ([ctda_sub_sig, (prefix_fmt + suffix_fmt) % fmt_list] +
+        fmt_list = [self._param_types[func_param] for func_param in
+                    func_data[1:]]
+        shared_params = ([ctda_sub_sig, (prefix_fmt + fmt_list + suffix_fmt)] +
                          self._build_params(func_data, prefix_elements,
                                             suffix_elements))
         # Only use MelTruncatedStruct if we have old versions, save the
         # overhead otherwise
         if old_suffix_fmts:
-            full_old_versions = {(prefix_fmt + f) % fmt_list
-                                 for f in old_suffix_fmts}
+            full_old_versions = {
+                u''.join(prefix_fmt + fmt_list + [f] if f else []) for f in
+                old_suffix_fmts}
             return MelTruncatedStruct(*shared_params,
                                       old_versions=full_old_versions)
         return MelStruct(*shared_params)
@@ -645,7 +646,7 @@ class MelOwnership(MelGroup):
 class MelDebrData(MelStruct):
     def __init__(self):
         # Format doesn't matter, struct.Struct(u'') works! ##: MelStructured
-        super(MelDebrData, self).__init__(b'DATA', u'', u'percentage',
+        super(MelDebrData, self).__init__(b'DATA', [], u'percentage',
             (u'modPath', null1), u'flags')
 
     @staticmethod

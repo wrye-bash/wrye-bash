@@ -71,10 +71,10 @@ class MelConditions(MelGroups):
     will be upgraded on dump."""
     def __init__(self):
         super(MelConditions, self).__init__(u'conditions', MelUnion({
-            b'CTDA': MelCtda(suffix_fmt=u'4s',
+            b'CTDA': MelCtda(suffix_fmt=[u'4s'],
                 suffix_elements=[u'unused3']),
             # The old (CTDT) format is length 20 and has no suffix
-            b'CTDT': MelReadOnly(MelCtda(b'CTDT', suffix_fmt=u'4s',
+            b'CTDT': MelReadOnly(MelCtda(b'CTDT', suffix_fmt=[u'4s'],
                 suffix_elements=[u'unused3'], old_suffix_fmts={u''})),
             }),
         )
@@ -146,7 +146,7 @@ class MelEffects(MelSequential):
                           u'magnitude', u'area', u'duration', u'recipient',
                           u'actorValue'),
                 MelGroup(u'scriptEffect',
-                    MelEffectsScit(b'SCIT', u'2I4sB3s', (FID, u'script'),
+                    MelEffectsScit(b'SCIT', [u'2I', u'4s', u'B', u'3s'], (FID, u'script'),
                         u'school', u'visual', (MelEffects._se_flags, u'flags'),
                         u'unused1', old_versions={u'2I4s', u'I'}),
                     MelFull(),
@@ -156,7 +156,7 @@ class MelEffects(MelSequential):
         # OBME Elements -------------------------------------------------------
         self._obme_elements = [
             MelGroups(u'effects',
-                MelObme(b'EFME', extra_format=u'2B',
+                MelObme(b'EFME', extra_format=[u'2B'],
                         extra_contents=[u'efit_param_info',
                                         u'efix_param_info'],
                         reserved_byte_count=10),
@@ -347,8 +347,8 @@ class MelObme(MelOptStruct):
     """Oblivion Magic Extender subrecord. Prefixed every attribute with obme_
     both for easy grouping in debugger views and to differentiate them from
     vanilla attrs."""
-    def __init__(self, struct_sig=b'OBME', extra_format=u'',
-            extra_contents=None, reserved_byte_count=28):
+    def __init__(self, struct_sig=b'OBME', extra_format=[],
+                 extra_contents=None, reserved_byte_count=28):
         """Initializes a MelObme instance. Supports customization for the
         variations that exist for effects subrecords and MGEF records."""
         # Always begins with record version and OBME version - None here is on
@@ -363,9 +363,8 @@ class MelObme(MelOptStruct):
         struct_contents += extra_contents
         # Always ends with a statically sized reserved byte array
         struct_contents += [(u'obme_unused', null1 * reserved_byte_count)]
-        super(MelObme, self).__init__(
-            struct_sig, u'4B{}{}s'.format(extra_format, reserved_byte_count),
-            *struct_contents)
+        str_fmts =[ u'4B'] + extra_format +  [u'%ds' % reserved_byte_count]
+        super(MelObme, self).__init__(struct_sig, str_fmts, *struct_contents)
 
 #------------------------------------------------------------------------------
 class MelOwnershipTes4(brec.MelOwnership):
@@ -864,8 +863,10 @@ class MreCsty(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelTruncatedStruct(
-            b'CSTD', '2B2s8f2B2s3fB3s2f5B3s2f2B2s7fB3sfI', 'dodgeChance',
+        MelTruncatedStruct(b'CSTD',
+            [u'2B', u'2s', u'8f', u'2B', u'2s', u'3f', u'B', u'3s', u'2f',
+             u'5B', u'3s', u'2f', u'2B', u'2s', u'7f', u'B', u'3s', u'f',
+             u'I'], 'dodgeChance',
             'lrChance', 'unused1', 'lrTimerMin', 'lrTimerMax',
             'forTimerMin', 'forTimerMax', 'backTimerMin', 'backTimerMax',
             'idleTimerMin', 'idleTimerMax', 'blkChance', 'atkChance',
@@ -1288,7 +1289,7 @@ class MreMgef(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelObme(extra_format=u'2B2s4sI4s', extra_contents=[
+        MelObme(extra_format=[u'2B', u'2s', u'4s', u'I', u'4s'], extra_contents=[
             u'obme_param_a_info', u'obme_param_b_info', u'obme_unused_mgef',
             u'obme_handler', (_obme_flag_overrides, u'obme_flag_overrides'),
             u'obme_param_b']),
@@ -1300,8 +1301,9 @@ class MreMgef(MelRecord):
         MelString(b'DESC', u'text'),
         MelIcon(),
         MelModel(),
-        MelPartialCounter(MelTruncatedStruct(
-            b'DATA', u'IfIiiH2sIf6I2f', (_flags, u'flags'), u'base_cost',
+        MelPartialCounter(MelTruncatedStruct(b'DATA',
+            [u'I', u'f', u'I', u'i', u'i', u'H', u'2s', u'I', u'f', u'6I',
+             u'2f'], (_flags, u'flags'), u'base_cost',
             (FID, u'associated_item'), u'school', u'resist_value',
             u'counter_effect_count', u'unused1',
             (FID, u'light'), u'projectileSpeed', (FID, u'effectShader'),
@@ -1652,7 +1654,8 @@ class MreRefr(MelRecord):
         MelOptStruct(b'XTEL', [u'I', u'6f'], (FID, u'destinationFid'),
             u'destinationPosX', u'destinationPosY', u'destinationPosZ',
             u'destinationRotX', u'destinationRotY', u'destinationRotZ'),
-        MelRefrXloc(b'XLOC', u'B3sI4sB3s', u'lockLevel', u'unused1',
+        MelRefrXloc(b'XLOC',
+            [u'B', u'3s', u'I', u'4s', u'B', u'3s'], u'lockLevel', u'unused1',
             (FID, u'lockKey'), u'unused2', (_lockFlags, u'lockFlags'),
             u'unused3', is_optional=True, old_versions={u'B3sIB3s'}),
         MelOwnershipTes4(),
@@ -1928,8 +1931,9 @@ class MreWatr(MelRecord):
         MelUInt8Flags(b'FNAM', u'flags', _flags),
         MelString(b'MNAM','material'),
         MelFid(b'SNAM','sound'),
-        MelWatrData(
-            b'DATA', '11f3Bs3Bs3BsB3s10fH', ('windVelocity', 0.100),
+        MelWatrData(b'DATA',
+            [u'11f', u'3B', u's', u'3B', u's', u'3B', u's', u'B', u'3s',
+             u'10f', u'H'], ('windVelocity', 0.100),
             ('windDirection', 90.0), ('waveAmp', 0.5), ('waveFreq', 1.0),
             ('sunPower', 50.0), ('reflectAmt', 0.5), ('fresnelAmt', 0.0250),
             'xSpeed', 'ySpeed', ('fogNear', 27852.8),

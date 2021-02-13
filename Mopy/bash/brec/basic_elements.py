@@ -604,25 +604,11 @@ class MelStrings(MelString):
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    @staticmethod
-    def _format_list(li):
-        digit = u''
-        ret = []
-        for c in li:
-            if c == '=': continue
-            if (str if type(c) is bytes else unicode).isdigit(c):
-                digit += '%s' % c
-            elif digit:
-                ret.append(digit + c)
-                digit = u''
-            else:
-                ret.append(u'%s' % c)
-        return ret
     def __init__(self, mel_sig, struct_formats, *elements):
         """:type mel_sig: bytes
         :type struct_formats: list[unicode]"""
-        if isinstance(struct_formats, basestring):
-            struct_formats = self._format_list(struct_formats)
+        if not isinstance(struct_formats, list):
+            raise SyntaxError(u'Expected a list got "%s"' % struct_formats)
         # Sometimes subrecords have to preserve non-aligned sizes, check that
         # we don't accidentally pad those to alignment
         struct_format = u''.join(struct_formats)
