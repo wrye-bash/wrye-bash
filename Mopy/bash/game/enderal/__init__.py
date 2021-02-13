@@ -37,6 +37,7 @@ class EnderalGameInfo(SkyrimGameInfo):
     # This isn't exact (currently 1.5.0 when it should be 1.5.7), but it's the
     # closest we're going to get
     version_detect_file = u'Enderal Launcher.exe'
+    taglist_dir = u'Enderal'
     regInstallKeys = (u'SureAI\\Enderal', u'Install_Path')
 
     class Ini(SkyrimGameInfo.Ini):

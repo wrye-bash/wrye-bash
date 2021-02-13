@@ -45,13 +45,14 @@ sys.path.append(MOPY_PATH)
 
 GAME_DATA = {
     # Maps game name in the Mopy/taglists folder to LOOT repo name
+    u'Enderal': u'enderal',
+    u'Fallout3': u'fallout3',
+    u'FalloutNV': u'falloutnv',
+    u'Fallout4': u'fallout4',
     u'Morrowind': u'morrowind',
     u'Oblivion': u'oblivion',
     u'Skyrim': u'skyrim',
     u'SkyrimSE': u'skyrimse',
-    u'Fallout3': u'fallout3',
-    u'FalloutNV': u'falloutnv',
-    u'Fallout4': u'fallout4',
 }
 
 def setup_parser(parser):
