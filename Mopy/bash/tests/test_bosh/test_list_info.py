@@ -28,37 +28,37 @@ from ...bosh.bain import InstallerProject, InstallerArchive, InstallerMarker
 class TestListInfo(object):
     def test_validate_filename_str(self):
         li_val = ListInfo.validate_filename_str
-        str_, rt, __ = li_val(u'?', allowed_exts={})
+        str_, rt = li_val(u'?', allowed_exts={})
         assert rt is None
-        str_, rt, __ = li_val(u'78.exe', allowed_exts={u'exe'})
+        str_, rt = li_val(u'78.exe', allowed_exts={u'exe'})
         assert rt is None
-        str_, rt, __ = li_val(u'78.exe', allowed_exts={u'.exe'})
+        str_, rt = li_val(u'78.exe', allowed_exts={u'.exe'})
         assert rt == u'78'
         mi_val = ModInfo.validate_filename_str
         for fname_ in (u'78.%s' % s for s in (u'esp', u'esm')):
-            str_, rt, __ = mi_val(fname_)
+            str_, rt = mi_val(fname_)
             assert rt == u'78'
-        str_, rt, __ = mi_val(u'78.exe')
+        str_, rt = mi_val(u'78.exe')
         assert rt is None
         inst_arch_val = InstallerArchive.validate_filename_str
         for fname_ in (u'78%s' % s for s in archives.writeExts):
-            str_, rt, __ = inst_arch_val(fname_)
+            str_, rt = inst_arch_val(fname_)
             assert str_ == fname_
             assert rt is u''
         for fname_, e in ((u'78%s' % s, s) for s in [u'.rar', u'.exe']):
-            str_, rt, __ = inst_arch_val(fname_)
+            str_, rt = inst_arch_val(fname_)
             assert rt is None
-            str_, rt, __ = inst_arch_val(fname_, use_default_ext=True)
+            str_, rt = inst_arch_val(fname_, use_default_ext=True)
             assert str_ == u'78.7z'
             assert rt == _(
                 u'The %s extension is unsupported. Using .7z instead.') % e
         inst_mark_val = InstallerMarker.validate_filename_str
         for fname_ in (u'?.invalid' , u'.valid-note-dot'):
-            str_, rt, __ = inst_mark_val(fname_)
+            str_, rt = inst_mark_val(fname_)
             assert str_ == fname_
         inst_proj_val = InstallerProject.validate_filename_str
-        str_, rt, __ = inst_proj_val(u'?.invalid')
+        str_, rt = inst_proj_val(u'?.invalid')
         assert rt is None
-        str_, rt, __ = inst_proj_val(u'.valid-note-dot')
+        str_, rt = inst_proj_val(u'.valid-note-dot')
         assert str_ == fname_
 

@@ -104,35 +104,44 @@ class ListInfo(object):
     __slots__ = ()
     _valid_exts_re = u''
     _is_filename = True
+    _has_digits = False
 
     @classmethod
-    def validate_filename_str(cls, name_str, has_digits=False,
-                              allowed_exts=frozenset()):
+    def validate_filename_str(cls, name_str, allowed_exts=frozenset()):
         """Basic validation of list item name - those are usually filenames so
         they should contain valid chars. We also optionally check for match
-        with an extension group (apart from projects and markers).
+        with an extension group (apart from projects and markers). Returns
+        a tuple - if the second element is None validation failed and the first
+        element is the message to show - if not the meaning varies per override
 
-        :type name_str: unicode
-        """
+        :type name_str: unicode"""
         if not name_str:
-            return _(u'Empty name !'), None, None
+            return _(u'Empty name !'), None
         char = cls._is_filename and bolt.Path.has_invalid_chars(name_str)
         if char:
             return _(u'%(new_name)s contains invalid character (%(char)s)') % {
-                u'new_name': name_str, u'char': char}, None, None
+                u'new_name': name_str, u'char': char}, None
+        rePattern = cls._name_re(allowed_exts)
+        maPattern = rePattern.match(name_str)
+        if maPattern:
+            root = maPattern.groups(u'')[0]
+            num_str = maPattern.groups(u'')[1] if cls._has_digits else None
+            if not (root or num_str):
+                pass # will return the error message at the end
+            elif cls._has_digits: return root, num_str
+            else: return GPath(name_str), root # default u''
+        return (_(u'Bad extension or file root: ') + name_str), None
+
+    @classmethod
+    def _name_re(cls, allowed_exts):
         exts_re = cls._valid_exts_re if not allowed_exts else \
             u'' r'(\.(' + u'|'.join(ext[1:] for ext in allowed_exts) + u')+)'
         # require at least one char before extension
         regex = u'^%s(.*?)' % (u'' r'(?=.+\.)' if exts_re else u'')
-        if has_digits: regex += u'' r'(\d*)'
+        if cls._has_digits: regex += u'' r'(\d*)'
         regex += exts_re + u'$'
         rePattern = re.compile(regex, re.I | re.U) ##: re.U?
-        maPattern = rePattern.match(name_str)
-        if maPattern:
-            num_str = maPattern.groups()[1] if has_digits else None
-        if not maPattern or not (maPattern.groups()[0] or num_str):
-            return (_(u'Bad extension or file root: ') + name_str), None, None
-        return GPath(name_str), maPattern.groups(u'')[0], num_str # default u''
+        return rePattern
 
     # Generate unique filenames when duplicating files etc
     @staticmethod
@@ -429,10 +438,10 @@ class FileInfo(AFile, ListInfo):
         check_ext = name_str and self.__class__._valid_exts_re
         if check_ext and not name_str.lower().endswith(self._file_key.cext):
             return _(u'%s: Incorrect file extension (must be %s)') % (
-                name_str, self._file_key.ext), None, None
+                name_str, self._file_key.ext), None
         #--Else file exists?
         if self.dir.join(name_str).exists(): ##: check using file_infos?
-            return _(u'File %s already exists.') % name_str, None, None
+            return _(u'File %s already exists.') % name_str, None
         return self.__class__.validate_filename_str(name_str)
 
 #------------------------------------------------------------------------------
@@ -1199,7 +1208,7 @@ class SaveInfo(FileInfo):
     def validate_name(self, name_str):
         # TODO: renaming bak would drop this override
         if bak_file_pattern.match(self.name.s):
-            return _(u'Renaming bak files is not supported.'), None, None
+            return _(u'Renaming bak files is not supported.'), None
         return super(SaveInfo, self).validate_name(name_str)
 
     @classmethod
@@ -1362,6 +1371,7 @@ class ScreenInfo(FileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
     _valid_exts_re = u'' r'(\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')+)'
+    _has_digits = True
 
     def __init__(self, fullpath, load_cache=False):
         self.cached_bitmap = None

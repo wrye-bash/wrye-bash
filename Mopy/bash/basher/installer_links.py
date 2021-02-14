@@ -121,7 +121,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
                                default=filename)
         if not result: return
         #--Error checking
-        archive_path, msg, _numStr = inst_type.validate_filename_str(result,
+        archive_path, msg = inst_type.validate_filename_str(result,
             allowed_exts=allowed_exts, use_default_ext=use_default_ext)
         if msg is None:
             self._showError(archive_path) # it's an error message in this case

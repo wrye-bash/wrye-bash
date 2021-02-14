@@ -1367,7 +1367,7 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         fileStr = self._fname_ctrl.text_content
         if fileStr == self.fileStr: return
         #--Validate the filename
-        name_path, root, _numStr = self.file_info.validate_name(fileStr)
+        name_path, root = self.file_info.validate_name(fileStr)
         if root is None:
             balt.showError(self, name_path) # it's an error message in this case
             self._fname_ctrl.text_content = self.fileStr
@@ -2026,7 +2026,7 @@ class SaveList(balt.UIList):
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Savegame renamed."""
         if is_edit_cancelled: return EventResult.FINISH # todo CANCEL?
-        newName, root, _numStr = \
+        newName, root = \
             self.panel.detailsPanel.file_info.validate_filename_str(evt_label)
         if not root:
             balt.showError(self, newName)
@@ -2388,7 +2388,7 @@ class InstallersList(balt.UIList):
         selected = self.GetSelectedInfos()
         # all selected have common type! enforced in OnBeginEditLabel
         renaming_type = type(selected[0])
-        newName, root, _numStr = renaming_type.validate_filename_str(evt_label,
+        newName, root = renaming_type.validate_filename_str(evt_label,
             allowed_exts=archives.readExts)
         if root is None:
             balt.showError(self, newName)
@@ -3296,11 +3296,10 @@ class ScreensList(balt.UIList):
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Rename selected screenshots."""
         if is_edit_cancelled: return EventResult.CANCEL
-        newName, root, numStr = \
-            self.panel.detailsPanel.file_info.validate_filename_str(
-                evt_label, has_digits=True)
-        if not (root or numStr): # allow for number only names
-            balt.showError(self, newName)
+        root, numStr = self.panel.detailsPanel.file_info.validate_filename_str(
+            evt_label)
+        if numStr is None: # allow for number only names
+            balt.showError(self, root)
             return EventResult.CANCEL
         selected = self.GetSelected()
         #--Rename each screenshot, keeping the old extension
