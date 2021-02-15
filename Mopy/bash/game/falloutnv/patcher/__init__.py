@@ -26,13 +26,6 @@ contains the data structures that are dynamically set on a per game basis in
 bush."""
 from ...fallout3.patcher import *
 
-from . import preservers
-
-game_specific_import_patchers = {
-    u'ImportWeaponMods': preservers.WeaponModsPatcher,
-}
-del preservers # not in _constants_members
-
 # Function Info ---------------------------------------------------------------
 # 0: no param; 1: int param; 2: formid param; 3: float param
 condition_function_data.update({ # new & changed functions in FNV

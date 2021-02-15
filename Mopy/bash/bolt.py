@@ -1241,15 +1241,15 @@ class MainFunctions(object):
         """Main function. Call this in __main__ handler."""
         #--Get func
         args = sys.argv[1:]
-        attrs = args.pop(0).split(u'.')
-        func_key = attrs.pop(0)
+        attrs_ = args.pop(0).split(u'.')
+        func_key = attrs_.pop(0)
         func = self.funcs.get(func_key)
         if not func:
             msg = _(u'Unknown function/object: %s') % func_key
             try: print(msg)
             except UnicodeError: print(msg.encode(u'mbcs'))
             return
-        for attr in attrs:
+        for attr in attrs_:
             func = getattr(func,attr)
         #--Separate out keywords args
         keywords = {}
@@ -1677,11 +1677,6 @@ def floats_equal(a, b):
     etc. Note that these parameters were picked fairly arbitrarily, so feel
     free to tweak them if they turn out to be a problem."""
     return isclose_(a, b, rel_tol=1e-06, abs_tol=1e-12)
-
-def copyattrs(source,dest,attrs):
-    """Copies specified attrbutes from source object to dest object."""
-    for attr in attrs:
-        setattr(dest,attr,getattr(source,attr))
 
 def cstrip(inString): # TODO(ut): hunt down and deprecate - it's O(n)+
     """Convert c-string (null-terminated string) to python string."""

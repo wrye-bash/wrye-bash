@@ -723,9 +723,9 @@ class WryeParser(ScriptParser.Parser):
         self.reversing = 0
         self.ExecCount = 0
         try:
-            with file_path.open(encoding=u'utf-8-sig') as script:
+            with file_path.open(encoding=u'utf-8-sig') as wiz_script:
                 # Ensure \n line endings for the script parser
-                self.lines = [x.replace(u'\r\n', u'\n') for x in script.readlines()]
+                self.lines = [x.replace(u'\r\n', u'\n') for x in wiz_script.readlines()]
             return None
         except UnicodeError:
             return _(u'Could not read the wizard file.  Please ensure it is '

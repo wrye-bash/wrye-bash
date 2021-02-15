@@ -70,7 +70,7 @@ def _coerce(value, newtype, base=None, AllowNone=False):
             return None
         return retValue
     except (ValueError,TypeError):
-        if newtype is int: return 0
+        if newtype is int and not AllowNone: return 0
         return None
 
 class _CsvReader(object):
@@ -162,7 +162,7 @@ class CsvParser(object):
     def _header_row(self):
         return u'"%s"\n' % u'","'.join(self._csv_header)
 
-class _HandleAliases(CsvParser):
+class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
     """WIP aliases handling."""
 
     def __init__(self, aliases_):
@@ -180,7 +180,7 @@ class _HandleAliases(CsvParser):
         """Create a long formid from a unicode modname and a unicode
         hexadecimal - it will blow with ValueError if hex_fid is not
         convertible."""
-        if not hex_fid.startswith(u'0x'): raise ValueError
+        if not hex_fid.startswith(u'0x'): raise ValueError # exit _parse_line
         return self._get_alias(modname), int(hex_fid, 0)
 
     def _load_plugin(self, mod_info, keepAll=True, target_types=None):
@@ -523,6 +523,7 @@ class ActorLevels(_HandleAliases):
         self.mod_id_levels = defaultdict(dict) #--levels = mod_id_levels[mod][longid]
         self.gotLevels = set()
         self.types = [b'NPC_']
+        self._skip_mods = {u'none', bush.game.master_file.lower()}
 
     def readFromMod(self,modInfo):
         """Imports actor level data from the specified mod and its masters."""
@@ -564,9 +565,8 @@ class ActorLevels(_HandleAliases):
 
     def _parse_line(self, csv_fields):
         source, eid, fidMod, fidObject, offset, calcMin, calcMax = csv_fields[:7]
-        if source.lower() in (u'none', bush.game.master_file.lower()): # yak!!
-            raise TypeError
-        if fidMod.lower() == u'none': raise TypeError
+        if (source.lower() in self._skip_mods) or fidMod.lower() == u'none':
+            return
         fid = self._coerce_fid(fidMod, fidObject)
         offset = _coerce(offset, int)
         calcMin = _coerce(calcMin, int)
@@ -664,15 +664,15 @@ class EditorIds(_HandleAliases):
             else:
                 return newWord
         #--Scripts
-        for script in sorted(modFile.tops[b'SCPT'].records, key=attrgetter(u'eid')):
-            if not script.script_source: continue
-            newText = reWord.sub(subWord,script.script_source)
-            if newText != script.script_source:
-                # header = u'\r\n\r\n; %s %s\r\n' % (script.eid,u'-' * (77 -
-                # len(script.eid))) # unused - bug ?
-                script.script_source = newText
-                script.setChanged()
-                changed.append((_(u'Script'),script.eid))
+        for script_rec in sorted(modFile.tops[b'SCPT'].records, key=attrgetter(u'eid')):
+            if not script_rec.script_source: continue
+            newText = reWord.sub(subWord,script_rec.script_source)
+            if newText != script_rec.script_source:
+                # header = u'\r\n\r\n; %s %s\r\n' % (script_rec.eid,u'-' * (77 -
+                # len(script_rec.eid))) # unused - bug ?
+                script_rec.script_source = newText
+                script_rec.setChanged()
+                changed.append((_(u'Script'),script_rec.eid))
         #--Quest Scripts
         for quest in sorted(modFile.tops[b'QUST'].records, key=attrgetter(u'eid')):
             questChanged = False
@@ -699,7 +699,7 @@ class EditorIds(_HandleAliases):
         if not __reValidEid.match(eid):
             if self.badEidsList is not None:
                 self.badEidsList.append(eid)
-            raise ValueError
+            return
         if self.questionableEidsSet is not None and not __reGoodEid.match(eid):
             self.questionableEidsSet.add(eid)
         #--Explicit old to new def? (Used for script updating.)

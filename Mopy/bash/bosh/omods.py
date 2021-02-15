@@ -90,7 +90,7 @@ class OmodFile(object):
             else:
                 self.build = -1
 
-    def writeInfo(self, dest_path, filename, readme, script):
+    def writeInfo(self, dest_path, filename, readme, scr_exists):
         with dest_path.open(u'wb') as out:
             out.write(encode(filename))
             out.write(b'\n\n[basic info]\n')
@@ -109,7 +109,7 @@ class OmodFile(object):
             #fTime = time.gmtime(self.ftime) #-error
             #file.write(b'Date this omod was compiled: %s-%s-%s %s:%s:%s\n' % (fTime.tm_mon, fTime.tm_mday, fTime.tm_year, fTime.tm_hour, fTime.tm_min, fTime.tm_sec))
             out.write(b'Contains readme: %s\n' % (b'yes' if readme else b'no'))
-            out.write(b'Contains script: %s\n' % (b'yes' if readme else b'no'))
+            out.write(b'Contains script: %s\n' % (b'yes' if scr_exists else b'no'))
             # Skip the reset that OBMM puts in
 
     def getOmodContents(self):

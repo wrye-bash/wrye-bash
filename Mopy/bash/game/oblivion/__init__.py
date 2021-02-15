@@ -273,6 +273,20 @@ class OblivionGameInfo(PatchGame):
     }
 
     @classmethod
+    def _dynamic_import_modules(cls, package_name):
+        super(OblivionGameInfo, cls)._dynamic_import_modules(package_name)
+        # Do the imports *after setting the _constants_members*
+        from .patcher import checkers, preservers
+        cls.gameSpecificPatchers = {
+            u'CoblCatalogs': checkers.CoblCatalogsPatcher,
+            u'SEWorldTests': checkers.SEWorldTestsPatcher, }
+        cls.gameSpecificListPatchers = {
+            u'CoblExhaustion': preservers.CoblExhaustionPatcher,
+            u'MorphFactions': preservers.MorphFactionsPatcher, }
+        cls.game_specific_import_patchers = {
+            u'ImportRoads': preservers.ImportRoadsPatcher, }
+
+    @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
         from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, \

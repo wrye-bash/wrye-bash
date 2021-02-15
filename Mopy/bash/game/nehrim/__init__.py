@@ -89,6 +89,16 @@ class NehrimGameInfo(OblivionGameInfo):
     }
 
     nirnroots = _(u'Vynroots')
+
+    @classmethod
+    def _dynamic_import_modules(cls, package_name):
+        # bypass setting the patchers in super class
+        super(OblivionGameInfo, cls)._dynamic_import_modules(package_name)
+        # Only Import Roads is of any interest
+        from ..oblivion.patcher import preservers
+        cls.game_specific_import_patchers = {
+            u'ImportRoads': preservers.ImportRoadsPatcher, }
+
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

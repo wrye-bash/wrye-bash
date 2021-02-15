@@ -24,20 +24,7 @@
 """This package contains the Oblivion specific patchers. This module
 contains the data structures that are dynamically set on a per game basis in
 bush."""
-from . import checkers, preservers
-
-gameSpecificPatchers = {
-    u'CoblCatalogs': checkers.CoblCatalogsPatcher,
-    u'SEWorldTests': checkers.SEWorldTestsPatcher,
-}
-gameSpecificListPatchers = {
-    u'CoblExhaustion': preservers.CoblExhaustionPatcher,
-    u'MorphFactions': preservers.MorphFactionsPatcher,
-}
-game_specific_import_patchers = {
-    u'ImportRoads': preservers.ImportRoadsPatcher,
-}
-del checkers, preservers # not in _constants_members
+# ***no imports!***
 
 # Function Info ---------------------------------------------------------------
 # 0: no param; 1: int param; 2: formid param; 3: float param

@@ -21,7 +21,6 @@
 #
 # =============================================================================
 """GameInfo override for Fallout NV."""
-
 from collections import defaultdict
 
 from ..fallout3 import Fallout3GameInfo
@@ -116,6 +115,13 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         u'lonesomeroad - main.bsa',
         u'lonesomeroad - sounds.bsa',
     }
+
+    @classmethod
+    def _dynamic_import_modules(cls, package_name):
+        super(FalloutNVGameInfo, cls)._dynamic_import_modules(package_name)
+        from .patcher import preservers
+        cls.game_specific_import_patchers = {
+            u'ImportWeaponMods': preservers.WeaponModsPatcher, }
 
     @classmethod
     def init(cls):

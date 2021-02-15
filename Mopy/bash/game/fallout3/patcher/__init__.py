@@ -23,6 +23,7 @@
 """This package contains the Fallout 3 specific patchers. This module
 contains the data structures that are dynamically set on a per game basis in
 bush."""
+# ***no imports!***
 
 # Function Info ---------------------------------------------------------------
 # Needs to be public so we can import it for FNV

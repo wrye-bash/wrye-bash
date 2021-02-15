@@ -1170,9 +1170,9 @@ class MelVmad(MelBase):
         load_script = self._script_loader.load_frag
         append_script = vmad.scripts.append
         for i in xrange(script_count):
-            script = new_script()
-            load_script(script, ins, vmad_version, obj_format, *debug_strs)
-            append_script(script)
+            script_ = new_script()
+            load_script(script_, ins, vmad_version, obj_format, *debug_strs)
+            append_script(script_)
         # If the record type is one of the ones that need special handling and
         # we still have something to read, call the appropriate handler
         if record._rec_sig in self._handler_map and ins.tell() < end_of_vmad:
@@ -1193,8 +1193,8 @@ class MelVmad(MelBase):
         # Next, dump out all attached scripts
         out_data += __packer2(len(vmad.scripts))
         dump_script = self._script_loader.dump_frag
-        for script in vmad.scripts:
-            out_data += dump_script(script)
+        for vmad_script in vmad.scripts:
+            out_data += dump_script(vmad_script)
         # If the subrecord has special data attached, ask the appropriate
         # handler to dump that out
         if vmad.special_data and record._rec_sig in self._handler_map:
@@ -1212,8 +1212,8 @@ class MelVmad(MelBase):
         vmad = getattr(record, self.attr)
         if vmad is None: return
         map_script = self._script_loader.map_fids
-        for script in vmad.scripts:
-            map_script(script, function, save)
+        for vmad_script in vmad.scripts:
+            map_script(vmad_script, function, save)
         if vmad.special_data and record._rec_sig in self._handler_map:
             self._get_special_handler(record._rec_sig).map_fids(
                 vmad.special_data, function, save)

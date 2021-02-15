@@ -41,7 +41,7 @@ class PatchGame(GameInfo):
     # name, see gui_patchers.py for their definitions).
     patchers = set()
 
-    # Set in game/*/patcher.py used in Mopy/bash/basher/gui_patchers.py
+    # Set in _dynamic_import_modules used in Mopy/bash/basher/gui_patchers.py
     gameSpecificPatchers = {}
     gameSpecificListPatchers = {}
     game_specific_import_patchers = {}
@@ -77,9 +77,6 @@ class PatchGame(GameInfo):
 
     # Dynamic importer --------------------------------------------------------
     _constants_members = {
-        # gui patchers
-        u'gameSpecificPatchers', u'gameSpecificListPatchers',
-        u'game_specific_import_patchers',
         # patcher and tweaks constants
         u'actor_importer_attrs', u'actor_tweaks', u'actor_types',
         u'actor_values', u'assorted_tweaks', u'body_tags', u'cc_passes',
@@ -102,14 +99,11 @@ class PatchGame(GameInfo):
         u'text_types',
     }
 
-    _morrowind = object() # morrowind has no patcher
     _patcher_package = u'' # read the patcher of another (parent) game
     @classmethod
     def _dynamic_import_modules(cls, package_name):
         """Dynamically import the patcher module."""
         super(PatchGame, cls)._dynamic_import_modules(package_name)
-        if cls._patcher_package is cls._morrowind:
-            return
         package_name = cls._patcher_package or package_name
         patchers_module = importlib.import_module(u'.patcher',
             package=package_name)

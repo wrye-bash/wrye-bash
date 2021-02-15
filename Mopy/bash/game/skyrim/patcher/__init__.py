@@ -24,6 +24,7 @@
 """This package contains the Skyrim specific patchers. This module
 contains the data structures that are dynamically set on a per game basis in
 bush."""
+# ***no imports!***
 
 # Function Info ---------------------------------------------------------------
 # 0: no param; 1: int param; 2: formid param; 3: float param

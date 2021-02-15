@@ -26,10 +26,6 @@ contains the data structures that are dynamically set on a per game basis in
 bush."""
 from ...oblivion.patcher import *
 
-# Only Import Roads is of any interest
-gameSpecificPatchers = {}
-gameSpecificListPatchers = {}
-
 #------------------------------------------------------------------------------
 # NPC Checker
 #------------------------------------------------------------------------------
