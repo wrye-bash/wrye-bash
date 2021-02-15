@@ -117,7 +117,7 @@ class APreserver(ImportPatcher):
         # actually exist (for this game at least)
         filtered_dict = {k.encode(u'ascii') if type(k) is unicode else k: v
                          for k, v in parsed_sources.iteritems()
-                         if k and k in MreRecord.type_class} ##: k and ?
+                         if v and k in MreRecord.type_class}
         self.srcs_sigs.update(filtered_dict)
         for src_data in filtered_dict.itervalues():
             self.id_data.update(src_data)
