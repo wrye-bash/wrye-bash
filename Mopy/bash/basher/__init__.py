@@ -108,11 +108,10 @@ settings = None # type: Optional[bolt.Settings]
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-##: DEPRECATED: Tank link mixins to access the Tank data. They should be
-# replaced by self.window.method but I keep them till encapsulation reduces
-# their use to a minimum
 class Installers_Link(ItemLink):
     """InstallersData mixin"""
+    _dialog_title: str
+
     @property
     def idata(self):
         """:rtype: bosh.InstallersData"""
@@ -121,6 +120,39 @@ class Installers_Link(ItemLink):
     def iPanel(self):
         """:rtype: InstallersPanel"""
         return self.window.panel
+
+    def _askFilename(self, message, filename, inst_type=bosh.InstallerArchive,
+                     disallow_overwrite=False, no_dir=True, base_dir=None,
+                     allowed_exts=archives.writeExts, use_default_ext=True,
+                     check_exists=True, no_file=False):
+        """:rtype: bolt.Path"""
+        result = self._askText(message, title=self._dialog_title,
+                               default=f'{filename}') # accept Path and str
+        if not result: return
+        #--Error checking
+        archive_path, msg = inst_type.validate_filename_str(result,
+            allowed_exts=allowed_exts, use_default_ext=use_default_ext)
+        if msg is None:
+            self._showError(archive_path) # it's an error message in this case
+            return
+        if isinstance(msg, tuple):
+            _root, msg = msg
+            self._showWarning(msg) # warn on extension change
+        base_dir = base_dir or self.idata.store_dir
+        if no_dir and base_dir.join(archive_path).is_dir():
+            self._showError(_(u'%s is a directory.') % archive_path)
+            return
+        if no_file and base_dir.join(archive_path).is_file():
+            self._showError(_(u'%s is a file.') % archive_path)
+            return
+        if check_exists and base_dir.join(archive_path).exists():
+            if disallow_overwrite:
+                self._showError(_(u'%s already exists.') % archive_path)
+                return
+            if not self._askYes(
+                    _(u'%s already exists. Overwrite it?') % archive_path,
+                    title=self._dialog_title, default=False): return
+        return archive_path
 
 #--Information about the various Tabs
 tabInfo = {

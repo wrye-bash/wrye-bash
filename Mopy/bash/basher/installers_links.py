@@ -65,7 +65,7 @@ class Installers_AddMarker(ItemLink):
 
 class Installers_MonitorInstall(Installers_Link):
     """Monitors Data folder for external installation."""
-    _text = _(u'Monitor External Installation...')
+    _text = _dialog_title = _(u'Monitor External Installation...')
     _help = _(u'Monitors the %s folder during installation via manual install '
               u'or 3rd party tools.') % bush.game.mods_dir
 
@@ -140,8 +140,7 @@ class Installers_MonitorInstall(Installers_Link):
                 u'These files were deleted.  BAIN does not have the '
                 u'capability to remove files when installing.'), ]
             group.extend(sorted(delFiles))
-        lists= ListBoxes.display_dialog(self.window,
-            _(u'External Installation'),
+        lists= ListBoxes.display_dialog(self.window, self._dialog_title,
             _(u'The following changes were detected in the %s directory.'
               ) % bush.game.mods_dir,
             checklists, bOk=_(u'Create Project'), get_checked=[(
@@ -150,8 +149,9 @@ class Installers_MonitorInstall(Installers_Link):
         include = set(chain.from_iterable(lists))
         if not include: return
         # Create Project
-        projectName = self._askText(_(u'Project Name'),
-                                    _(u'External Installation'))
+        projectName = self._askFilename(_(u'Project Name'), u'', ##: some default here?
+            inst_type=bosh.InstallerProject,
+            check_exists=False) # we will use unique name
         if not projectName:
             return
         pr_path = bosh.InstallerProject.unique_name(projectName)
@@ -377,11 +377,11 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
         self.window.rescanInstallers(toRefresh, abort=False,
                                      update_from_data=False, shallow=True)
 
-class Installers_Enabled(BoolLink):
+class Installers_Enabled(BoolLink, Installers_Link):
     """Flips installer state."""
     _text, _bl_key, _help = _(u'Enabled'), u'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
-    dialogTitle = _(u'Enable Installers')
+    _dialog_title = _(u'Enable Installers')
     message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
         u'If you do, Bash will first need to initialize some data. This can '
         u'take on the order of five minutes if there are many mods installed.')
@@ -391,7 +391,7 @@ class Installers_Enabled(BoolLink):
         """Enable/Disable the installers tab."""
         enabled = bass.settings[self._bl_key]
         if not enabled and not self._askYes(self.message,
-                                            title=self.dialogTitle): return
+                                            title=self._dialog_title): return
         enabled = bass.settings[self._bl_key] = not enabled
         if enabled:
             self.window.panel.ShowPanel(scan_data_dir=True)

@@ -109,34 +109,6 @@ class _InstallerLink(Installers_Link, EnabledLink):
             iArchive.blockSize = blockSize
         self.window.RefreshUI(detail_item=archive_path)
 
-    def _askFilename(self, message, filename, inst_type=bosh.InstallerArchive,
-                     disallow_overwrite=False, no_dir=True,
-                     allowed_exts=archives.writeExts, use_default_ext=True):
-        """:rtype: bolt.Path"""
-        result = self._askText(message, title=self.dialogTitle,
-                               default=filename)
-        if not result: return
-        #--Error checking
-        archive_path, msg = inst_type.validate_filename_str(result,
-            allowed_exts=allowed_exts, use_default_ext=use_default_ext)
-        if msg is None:
-            self._showError(archive_path) # it's an error message in this case
-            return
-        if isinstance(msg, tuple):
-            _root, msg = msg
-            self._showWarning(msg) # warn on extension change
-        if no_dir and self.idata.store_dir.join(archive_path).is_dir():
-            self._showError(_(u'%s is a directory.') % archive_path)
-            return
-        if archive_path in self.idata:
-            if disallow_overwrite:
-                self._showError(_(u'%s already exists.') % archive_path)
-                return
-            if not self._askYes(
-                    _(u'%s already exists. Overwrite it?') % archive_path,
-                    title=self.dialogTitle, default=False): return
-        return archive_path
-
 class _SingleInstallable(OneItemLink, _InstallerLink):
 
     def _enable(self):
@@ -395,8 +367,7 @@ class Installer_Anneal(_NoMarkerLink):
 
 class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
-    _text = _(u'Duplicate...')
-    dialogTitle = _text
+    _text = _dialog_title = _(u'Duplicate...')
 
     @property
     def link_help(self):
@@ -1024,7 +995,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
 #------------------------------------------------------------------------------
 class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     """Unpack installer package(s) to Project(s)."""
-    _text = _(u'Unpack to Project(s)...')
+    _text = _dialog_title = _(u'Unpack to Project(s)...')
     _help = _(u'Unpack installer package(s) to Project(s)')
 
     def _append(self, window):
@@ -1040,19 +1011,10 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         for iname, installer in self.idata.sorted_pairs(self.selected):
             project = iname.root
             if len(self.selected) == 1:
-                result = self._askText(_(u'Unpack %s to Project:') % iname,
-                                       default=project.s)
-                if not result: return
-                # Error checking
-                project = GPath(result).tail
-                if not project.s or project.cext in archives.readExts:
-                    self._showWarning(_(u'%s is not a valid project name.') %
-                                      result)
-                    return
-                if self.idata.store_dir.join(project).is_file():
-                    self._showWarning(_(u'%s is a file.') % project)
-                    return
-            if project in self.idata and not self._askYes(
+                project = self._askFilename(_('Unpack %s to Project:') % iname,
+                    project, inst_type=bosh.InstallerProject, no_file=True)
+                if not project: return
+            elif project in self.idata and not self._askYes( #only needed check
                     _(u'%s already exists. Overwrite it?') % project,
                     default=False):
                 continue
@@ -1160,7 +1122,7 @@ class Installer_SyncFromData(_SingleInstallable):
 #------------------------------------------------------------------------------
 class InstallerProject_Pack(_SingleProject):
     """Pack project to an archive."""
-    _text = dialogTitle = _(u'Pack to Archive...')
+    _text = _dialog_title = _(u'Pack to Archive...')
     _help = _(u'Pack project to an archive')
     release = False
 
@@ -1209,15 +1171,18 @@ class _InstallerConverter_Link(_InstallerLink):
 
 class InstallerConverter_Apply(_InstallerConverter_Link):
     """Apply a Bain Conversion File."""
-    dialogTitle = _(u'Apply BCF...') # title used in dialog
+    _dialog_title = _(u'Apply BCF...')
 
     def __init__(self,converter,selected):
         super(InstallerConverter_Apply, self).__init__()
         self.converter = converter
         #--Add asterisks to indicate the number of unselected archives that the BCF uses
         self.dispName = self.converter.fullPath.sbody
-        self._text = self.dispName
         self._selected = selected
+
+    @property
+    def link_text(self):
+        return self.dispName
 
     @property
     def link_help(self):
@@ -1261,7 +1226,7 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
     _text = _(u'Embedded BCF')
     _help = _(u'Applies the BAIN converter files (BCFs) embedded in the '
               u'selected installer(s).')
-    dialogTitle = _(u'Apply BCF...')
+    _dialog_title = _(u'Apply BCF...')
 
     @balt.conversation
     def Execute(self):
@@ -1277,9 +1242,9 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
 
 class InstallerConverter_Create(_InstallerConverter_Link):
     """Create BAIN conversion file."""
-    dialogTitle = _(u'Create BCF...') # title used in dialog
     _text = _(u'Create...')
     _help = _(u'Creates a new BAIN conversion file (BCF).')
+    _dialog_title = _(u'Create BCF...')
 
     def Execute(self):
         if self._check_identical_content(
@@ -1309,25 +1274,14 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             u'(%08X) - %s' % (v.crc, k.s) for k, v in self.iselected_pairs()))
         message += (u'\n\n'+_(u'To:')+u'\n* (%08X) - %s') % (self.idata[destArchive].crc,destArchive) + u'\n'
         #--Confirm operation
-        result = self._askText(message, title=self.dialogTitle,
-                               default=BCFArchive.s)
-        if not result: return
+        BCFArchive = self._askFilename(message, BCFArchive.s,
+                                       base_dir=bass.dirs[u'converters'],
+                                       allowed_exts={archives.defaultExt})
+        if not BCFArchive: return
         #--Error checking
-        BCFArchive = GPath(result).tail
-        if not BCFArchive.s:
-            self._showWarning(_(u'%s is not a valid archive name.') % result)
-            return
         if BCFArchive.csbody[-4:] != u'-bcf':
             BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + BCFArchive.cext).tail
-        if BCFArchive.cext != archives.defaultExt:
-            self._showWarning(_(u"BCF's only support %s. The %s extension will"
-                      u' be discarded.') % (
-                              archives.defaultExt, BCFArchive.cext))
-            BCFArchive = GPath(BCFArchive.sbody + archives.defaultExt).tail
         if (conv_path := bass.dirs[u'converters'].join(BCFArchive)).exists():
-            if not self._askYes(_(
-                    u'%s already exists. Overwrite it?') % BCFArchive,
-                                title=self.dialogTitle, default=False): return
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.
             self.idata.converters_data.removeConverter(conv_path)
@@ -1335,7 +1289,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         blockSize = None
         if destInstaller.isSolid:
             blockSize = self._promptSolidBlockSize(
-                title=self.dialogTitle, value=destInstaller.blockSize or 0)
+                title=self._dialog_title, value=destInstaller.blockSize or 0)
         with balt.Progress(_(u'Creating %s...') % BCFArchive,u'\n'+u' '*60) as progress:
             #--Create the converter
             converter = bosh.converters.InstallerConverter(self.selected,
