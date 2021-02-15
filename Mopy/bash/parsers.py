@@ -164,6 +164,7 @@ class CsvParser(object):
 
 class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
     """WIP aliases handling."""
+    _parser_sigs = [] # record signatures this parser recognises
 
     def __init__(self, aliases_):
         # Automatically set in _parse_csv_sources to the patch file's aliases -
@@ -195,12 +196,12 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
         return mod_file
 
     def _load_factory(self, keepAll=True, target_types=None):
-        return LoadFactory(keepAll, by_sig=target_types or self.types)
+        return LoadFactory(keepAll, by_sig=target_types or self._parser_sigs)
 
     def readFromMod(self, modInfo):
         """Hasty readFromMod implementation."""
         modFile = self._load_plugin(modInfo, keepAll=False)
-        for top_grup_sig in self.types:
+        for top_grup_sig in self._parser_sigs:
             typeBlock = modFile.tops.get(top_grup_sig)
             if not typeBlock: continue
             id_data = self.id_stored_data[top_grup_sig]
@@ -530,12 +531,12 @@ class ActorLevels(_HandleAliases):
         _(u'Old IsPCLevelOffset'), _(u'Old Offset'), _(u'Old CalcMin'),
         _(u'Old CalcMax'))
     _row_fmt_str = u'"%s","%s","%s","0x%06X","%d","%d","%d"'
+    _parser_sigs = [b'NPC_']
 
     def __init__(self, aliases_=None):
         super(ActorLevels, self).__init__(aliases_)
         self.mod_id_levels = defaultdict(dict) #--levels = mod_id_levels[mod][longid]
         self.gotLevels = set()
-        self.types = [b'NPC_']
         self._skip_mods = {u'none', bush.game.master_file.lower()}
 
     def readFromMod(self,modInfo):
@@ -603,7 +604,7 @@ class ActorLevels(_HandleAliases):
                         calcMax))
                     oldLevels = obId_levels.get((fidMod, fidObject),None)
                     if oldLevels:
-                        oldEid,wasOffset,oldOffset,oldCalcMin,oldCalcMax\
+                        oldEid,wasOffset,oldOffset,oldCalcMin,oldCalcMax \
                             = oldLevels
                         out.write(extendedRowFormat % (
                             wasOffset,oldOffset,oldCalcMin,oldCalcMax))
@@ -618,18 +619,14 @@ class EditorIds(_HandleAliases):
                    _(u'Editor Id'))
     _row_fmt_str = u'"%s","%s","0x%06X","%s"\n'
 
-    def __init__(self, types=None, aliases_=None, questionableEidsSet=None,
+    def __init__(self, aliases_=None, questionableEidsSet=None,
                  badEidsList=None):
         super(EditorIds, self).__init__(aliases_)
         self.badEidsList = badEidsList
         self.questionableEidsSet = questionableEidsSet
         self.id_stored_data = defaultdict(dict) #--eid = eids[type][longid]
         self.old_new = {}
-        if types:
-            self.types = types
-        else:
-            self.types = set(MreRecord.simpleTypes)
-            self.types.discard(b'CELL')
+        self._parser_sigs = set(MreRecord.simpleTypes) - {b'CELL'}
 
     def _read_record(self, record, id_data):
         if record.eid: id_data[record.fid] = record.eid
@@ -638,7 +635,7 @@ class EditorIds(_HandleAliases):
         """Exports eids to specified mod."""
         modFile = self._load_plugin(modInfo)
         changed = []
-        for type_ in self.types:
+        for type_ in self._parser_sigs:
             id_eid = self.id_stored_data.get(type_, None)
             typeBlock = modFile.tops.get(type_, None)
             if not id_eid or not typeBlock: continue
@@ -792,9 +789,9 @@ class FactionRelations(_AParser):
 class FidReplacer(_HandleAliases):
     """Replaces one set of fids with another."""
 
-    def __init__(self, types=None, aliases_=None):
+    def __init__(self, aliases_=None):
         super(FidReplacer, self).__init__(aliases_)
-        self.types = types or MreRecord.simpleTypes
+        self._parser_sigs = MreRecord.simpleTypes
         self.old_new = {} #--Maps old fid to new fid
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id
@@ -836,7 +833,7 @@ class FidReplacer(_HandleAliases):
             else:
                 return oldId
         #--Do swap on all records
-        for top_grup_sig in self.types:
+        for top_grup_sig in self._parser_sigs:
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 if changeBase: record.fid = swapper(record.fid)
                 record.mapFids(swapper, save=True)
@@ -858,11 +855,11 @@ class FullNames(_HandleAliases):
                    _(u'Editor Id'), _(u'Name'))
     _row_fmt_str = u'"%s","%s","0x%06X","%s","%s"\n'
 
-    def __init__(self, types=None, aliases_=None):
+    def __init__(self, aliases_=None):
         super(FullNames, self).__init__(aliases_)
         #--id_stored_data[top_grup_sig][longid] = (eid,name)
         self.id_stored_data = defaultdict(dict)
-        self.types = types or bush.game.namesTypes
+        self._parser_sigs = bush.game.namesTypes
 
     def _read_record(self, record, id_data):
         full = record.full or (record.rec_sig == b'LIGH' and u'NO NAME')
@@ -873,7 +870,7 @@ class FullNames(_HandleAliases):
         """Exports id_stored_data to specified mod."""
         modFile = self._load_plugin(modInfo)
         changed = {}
-        for type_ in self.types:
+        for type_ in self._parser_sigs:
             id_name = self.id_stored_data.get(type_, None)
             typeBlock = modFile.tops.get(type_,None)
             if not id_name or not typeBlock: continue
@@ -909,11 +906,11 @@ class ItemStats(_HandleAliases):
     importing/exporting from/to mod/text file."""
     _row_fmt_str = u'"%s","%s","0x%06X",%s\n'
 
-    def __init__(self, types=None, aliases_=None):
+    def __init__(self, aliases_=None):
         super(ItemStats, self).__init__(aliases_)
         self.sig_stats_attrs = bush.game.statsTypes
         self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
-        self.types = set(self.sig_stats_attrs)
+        self._parser_sigs = set(self.sig_stats_attrs)
         # Populate _attr_serializer per attribute
         def _create_lambda(k):
             stype = nonzero_or_none if k == u'enchantPoints' else \
@@ -982,8 +979,7 @@ class ItemStats(_HandleAliases):
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             for top_grup_sig, fid_attr_value in class_fid_attr_value.iteritems():
                 if not fid_attr_value: continue
-                serializers = self._attr_serializer
-                sers = [serializers[x] for x in
+                sers = [self._attr_serializer[x] for x in
                         self.sig_stats_attrs[top_grup_sig]]
                 out.write(u'"%s"\n' % u'","'.join( # Py3: unpack
                     (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex')) + tuple(
@@ -1158,7 +1154,7 @@ class _UsesEffectsMixin(_HandleAliases):
     def __init__(self, aliases_):
         super(_UsesEffectsMixin, self).__init__(aliases_)
         self.fid_stats = {}
-        self.id_stored_data = {self.types[0]: self.fid_stats}
+        self.id_stored_data = {self._parser_sigs[0]: self.fid_stats}
 
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
         id_data[record.fid] = {att: __attrgetters[att](record) for att in
@@ -1190,7 +1186,7 @@ class _UsesEffectsMixin(_HandleAliases):
                                                        _coerce(actorvalue,int))
             if None in (eff_name,magnitude,area,duration,range_,actorvalue):
                 continue
-            rec_type = MreRecord.type_class[self.types[0]]
+            rec_type = MreRecord.type_class[self._parser_sigs[0]]
             eff = rec_type.getDefault(u'effects')
             eff.effect_sig = eff_name.encode(u'ascii')
             eff.magnitude = magnitude
@@ -1269,7 +1265,7 @@ class _UsesEffectsMixin(_HandleAliases):
         fid_stats = self.fid_stats
         modFile = self._load_plugin(modInfo)
         changed = [] #eids
-        for record in modFile.tops[self.types[0]].getActiveRecords():
+        for record in modFile.tops[self._parser_sigs[0]].getActiveRecords():
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
             oldStats = {att: __attrgetters[att](record) for att in self.attrs}
@@ -1295,9 +1291,9 @@ class SigilStoneDetails(_UsesEffectsMixin):
                       _(u'Additional Effects (Same format)'),)
     _row_fmt_str = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
                    u'"%d","%d","%f"'
+    _parser_sigs = [b'SGST']
 
-    def __init__(self, types=None, aliases_=None):
-        self.types = [b'SGST']
+    def __init__(self, aliases_=None):
         self.attrs = [u'eid', u'full', u'model.modPath', u'model.modb',
                       u'iconPath', u'script', u'uses', u'value', u'weight',
                       u'effects']
@@ -1354,10 +1350,10 @@ class ItemPrices(_HandleAliases):
                    _(u'Editor Id'), _(u'Name'), _(u'Type'))
     _row_fmt_str = u'"%s","0x%06X",' + csvFormat(u'iss') + u',%s\n'
 
-    def __init__(self, types=None, aliases_=None):
+    def __init__(self, aliases_=None):
         super(ItemPrices, self).__init__(aliases_)
         self.id_stored_data = defaultdict(dict)
-        self.types = set(bush.game.pricesTypes)
+        self._parser_sigs = set(bush.game.pricesTypes)
 
     def _read_record(self, record, id_data):
         id_data[record.fid] = [getattr(record, a) for a in
@@ -1409,8 +1405,9 @@ class SpellRecords(_UsesEffectsMixin):
         u'flags.scriptEffectAlwaysApplies', u'flags.disallowAbsorbReflect',
         u'flags.touchExplodesWOTarget', u'effects')
     _csv_attrs = (u'eid', u'cost', u'level', u'spellType', u'flags')
+    _parser_sigs = [b'SPEL']
 
-    def __init__(self, types=None, aliases_=None, detailed=False):
+    def __init__(self, aliases_=None, detailed=False):
         self.attrs = bush.game.spell_stats_attrs
         self.detailed = detailed
         if detailed:
@@ -1434,7 +1431,6 @@ class SpellRecords(_UsesEffectsMixin):
         self.levelTypeName_Number = {y.lower(): x for x, y
                                      in self.levelTypeNumber_Name.iteritems()
                                      if x is not None}
-        self.types = [b'SPEL']
         self._round_attrs = []
         super(SpellRecords, self).__init__(aliases_)
 
@@ -1526,9 +1522,9 @@ class IngredientDetails(_UsesEffectsMixin):
                   (_(u'Additional Effects (Same format)'),)
     _row_fmt_str = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
                    u'"%d","%f"'
+    _parser_sigs = [b'INGR']
 
-    def __init__(self, types=None, aliases_=None):
-        self.types = [b'INGR']
+    def __init__(self, aliases_=None):
         # same as for the SGST apart from 'uses'
         self.attrs = [u'eid', u'full', u'model.modPath', u'model.modb',
                       u'iconPath', u'script', u'value', u'weight', u'effects']
