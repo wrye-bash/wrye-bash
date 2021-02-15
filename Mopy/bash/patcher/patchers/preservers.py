@@ -25,11 +25,11 @@ carries forward changes from the last tagged plugin. The goal is to eventually
 absorb all of them under the _APreserver base class."""
 
 from collections import defaultdict, Counter
-from itertools import chain, izip
+from itertools import chain
 
 # Internal
-from ..base import ImportPatcher
 from .. import getPatchesPath
+from ..base import ImportPatcher
 from ... import bush, load_order, parsers
 from ...bolt import attrgetter_cache, deprint, floats_equal, setattr_deep
 from ...brec import MreRecord
@@ -381,10 +381,7 @@ class ImportSpellStatsPatcher(APreserver):
     def _parse_csv_sources(self, progress):
         spel_parser = super(
             ImportSpellStatsPatcher, self)._parse_csv_sources(progress)
-        # Add attribute names to the values
-        self._process_csv_sources(
-            {b'SPEL': {f: {a: v for a, v in izip(self.rec_attrs[b'SPEL'], l)}
-                       for f, l in spel_parser.fid_stats.iteritems()}})
+        self._process_csv_sources(spel_parser.id_stored_data)
 
 #------------------------------------------------------------------------------
 class ImportStatsPatcher(APreserver):
