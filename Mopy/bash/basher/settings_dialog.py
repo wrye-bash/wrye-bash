@@ -460,7 +460,8 @@ class ConfigureEditorDialog(DialogWindow):
         """Opens a file dialog to choose the editor."""
         # Don't use mustExist, we want to show an error message for that below
         chosen_editor = balt.askOpen(self, title=_(u'Choose Editor'),
-            defaultDir=os.environ.get(u'ProgramFiles', u''), wildcard=u'*.exe',
+            defaultDir=env.get_env_var(u'ProgramFiles', u''),
+            wildcard=u'*.exe',
             mustExist=True)
         if chosen_editor:
             self._editor_location.text_content = chosen_editor.s

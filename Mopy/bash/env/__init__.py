@@ -25,21 +25,24 @@ central import point, always import directly from here to get the right
 implementations for the current OS."""
 
 import errno
-import os
 import platform
 import shutil
-import stat
 from itertools import izip
 
+# First import the shared API
+from .common import *
+
 # Then check which OS we are running on and import *only* from there
-if os.name == u'nt':
+if platform.system() == u'Windows':
     from .windows import *
-elif platform.system() == u'Darwin':
-    raise ImportError(u'Wrye Bash does not support macOS yet.')
-else:
+elif platform.system() == u'Linux':
     from .linux import *
+else:
+    raise ImportError(u'Wrye Bash does not support %s yet' % platform.system())
 
 ##: Internals that could not easily be split between windows.py and linux.py
+##: due to dependencies on constants that only exist in windows, but we
+##: use as values for our generic versions.
 try:
     from win32com.shell import shell, shellcon
 except ImportError:
@@ -189,9 +192,6 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
                             parent)
 
 # Higher level APIs implemented by using the imported OS-specific ones above
-def clear_read_only(filepath): # copied from bolt
-    os.chmod(u'%s' % filepath, stat.S_IWUSR | stat.S_IWOTH)
-
 def shellDelete(files, parent=None, confirm=False, recycle=False):
     try:
         return _fileOperation(FO_DELETE, files, target=None, allowUndo=recycle,

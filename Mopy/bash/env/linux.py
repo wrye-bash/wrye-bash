@@ -26,8 +26,9 @@ import os
 import subprocess
 import sys
 
-from ..bolt import decoder, deprint, GPath, structs_cache
+from ..bolt import deprint, GPath, structs_cache
 from ..exception import EnvError
+from .common import get_env_var, iter_env_vars
 
 # API - Constants =============================================================
 isUAC = False # Not a thing on Linux
@@ -58,14 +59,8 @@ def _getShellPath(folderKey): ##: mkdirs
                   u'Local AppData': home + u'/.local/share'}[folderKey])
 
 def _get_error_info():
-    try:
-        sErrorInfo = u'\n'.join(u'  %s: %s' % (key, os.environ[key])
-                                for key in sorted(os.environ))
-    except UnicodeDecodeError:
-        deprint(u'Error decoding os.environ', traceback=True)
-        sErrorInfo = u'\n'.join(u'  %s: %s' % (key, decoder(os.environ[key]))
-                                for key in sorted(os.environ))
-    return sErrorInfo
+    return u'\n'.join(u'  %s: %s' % (key, get_env_var(key))
+                      for key in sorted(iter_env_vars()))
 
 # API - Functions =============================================================
 ##: Several of these should probably raise instead
@@ -97,7 +92,7 @@ def setUAC(_handle, _uac=True):
 
 def getJava(): # PY3: cache this
     try:
-        java_home = GPath(os.environ[u'JAVA_HOME'])
+        java_home = GPath(get_env_var(u'JAVA_HOME'))
         java_bin_path = java_home.join(u'bin', u'java')
         if java_bin_path.isfile(): return java_bin_path
     except KeyError: # no JAVA_HOME
