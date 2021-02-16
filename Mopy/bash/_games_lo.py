@@ -329,6 +329,8 @@ class Game(object):
                                      previous_lord)
         return lord, active # return what was set or was previously set
 
+    def _active_entries_to_remove(self): return {self.master_path}
+
     def pinned_mods(self): return {self.master_path}
 
     # Conflicts - only for timestamp games
@@ -422,6 +424,30 @@ class Game(object):
     def _write_plugins_txt(self, lord, active):
         self._write_modfile(self.plugins_txt_path, lord, active)
         self.__update_plugins_txt_cache_info()
+
+    def _filter_actives(self, active):
+        """Removes entries that are not supposed to be in the actives file."""
+        rem_from_acti = self._active_entries_to_remove()
+        return [x for x in active if x not in rem_from_acti]
+
+    def _clean_actives(self, active, _lord): # LO matters only for AsteriskGame
+        """Removes all plugins from the actives file that should not be there,
+        then returns the actives order with such plugins in the right spot."""
+        active_filtered = self._filter_actives(active)
+        active_dropped = set(active) - set(active_filtered)
+        if active_dropped:
+            bolt.deprint(u'Removed %s from %s' % (
+                u', '.join(u'%s' % s for s in sorted(active_dropped)),
+                self.get_acti_file()))
+            # We removed plugins that don't belong here, back up first
+            self._backup_active_plugins()
+            self._persist_active_plugins(active_filtered, active_filtered)
+        # Prepend all fixed-order plugins that can't be in the actives plugins
+        # list to the actives
+        rem_from_acti = self._active_entries_to_remove()
+        sorted_rem = [x for x in self._fixed_order_plugins()
+                      if x in rem_from_acti]
+        return sorted_rem + active_filtered, _lord
 
     def __update_plugins_txt_cache_info(self):
         self.size_plugins_txt, self.mtime_plugins_txt = \
@@ -562,7 +588,22 @@ class Game(object):
     def check_active_limit(self, acti_filtered):
         return set(acti_filtered[self.max_espms:]), set()
 
-    def _order_fixed(self, lord): return False
+    def _fixed_order_plugins(self):
+        """Return existing fixed plugins in their fixed load order."""
+        fixed_ord = [x for x in self.must_be_active_if_present
+                     if x in self.mod_infos]
+        return [self.master_path] + fixed_ord
+
+    def _order_fixed(self, lord):
+        fixed_order = self._fixed_order_plugins()
+        if not fixed_order: return False # nothing to do
+        fixed_order_set = set(fixed_order)
+        filtered_lo = [x for x in lord if x not in fixed_order_set]
+        lo_with_fixed = fixed_order + filtered_lo
+        if lord != lo_with_fixed:
+            lord[:] = lo_with_fixed
+            return True
+        return False
 
     @staticmethod
     def _check_active_order(acti, lord):
@@ -700,16 +741,14 @@ class INIGame(Game):
     # Reading from INI
     def _fetch_active_plugins(self):
         if self._handles_actives:
-            actives = self._read_ini(self._cached_ini_actives,
-                                     self.__class__.ini_key_actives)
-            return actives
+            return self._read_ini(self._cached_ini_actives,
+                                  self.__class__.ini_key_actives)
         return super(INIGame, self)._fetch_active_plugins()
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         if self._handles_lo:
-            lo = self._read_ini(self._cached_ini_lo,
-                                self.__class__.ini_key_lo)
-            return lo
+            return self._read_ini(self._cached_ini_lo,
+                                  self.__class__.ini_key_lo)
         return super(INIGame, self)._fetch_load_order(cached_load_order,
                                                       cached_active)
 
@@ -807,6 +846,9 @@ class TimestampGame(Game):
     @classmethod
     def _must_update_active(cls, deleted, reordered): return deleted
 
+    # Timestamp games write everything into plugins.txt, including game master
+    def _active_entries_to_remove(self): return set()
+
     def has_load_order_conflict(self, mod_name):
         mtime = int(self.mod_infos[mod_name].mtime)
         return mtime in self._mtime_mods and len(self._mtime_mods[mtime]) > 1
@@ -890,6 +932,7 @@ class TimestampGame(Game):
         if previous_active is None or set(previous_active) != set(active):
             self._persist_active_plugins(active, lord)
 
+    # Other overrides ---------------------------------------------------------
     def _fix_load_order(self, lord, fix_lo):
         super(TimestampGame, self)._fix_load_order(lord, fix_lo)
         if fix_lo is not None and fix_lo.lo_added:
@@ -921,6 +964,12 @@ class TextfileGame(Game):
     def pinned_mods(self):
         return super(TextfileGame, self).pinned_mods() | set(
             self.must_be_active_if_present)
+
+    def _active_entries_to_remove(self):
+        # Starting with Skyrim LE, the Update.esm file needs to be removed from
+        # plugins.txt too
+        return super(TextfileGame, self)._active_entries_to_remove() | {
+            GPath_no_norm(u'Update.esm')}
 
     def load_order_changed(self):
         # if active changed externally refetch load order to check for desync
@@ -971,10 +1020,11 @@ class TextfileGame(Game):
         :type cached_active: tuple[bolt.Path] | list[bolt.Path]"""
         if not self.loadorder_txt_path.exists():
             mods = cached_active or []
-            if cached_active is not None and not self.plugins_txt_path.exists():
+            if (cached_active is not None
+                    and not self.plugins_txt_path.exists()):
                 self._write_plugins_txt(cached_active, cached_active)
-                bolt.deprint(
-                    u'Created %s based on cached info' % self.plugins_txt_path)
+                bolt.deprint(u'Created %s based on cached '
+                             u'info' % self.plugins_txt_path)
             elif cached_active is None and self.plugins_txt_path.exists():
                 mods = self._fetch_active_plugins() # will add Skyrim.esm
             self._persist_load_order(mods, mods)
@@ -1025,21 +1075,16 @@ class TextfileGame(Game):
         return lo
 
     def _fetch_active_plugins(self):
-        acti, _lo = self._parse_plugins_txt()
-        if self.master_path in acti:
-            acti.remove(self.master_path)
-            self._write_plugins_txt(acti, acti)
-            bolt.deprint(u'Removed %s from %s' % (
-                self.master_path, self.plugins_txt_path))
-        acti.insert(0, self.master_path)
+        acti, _lo = self._clean_actives(*self._parse_plugins_txt())
         return acti
 
     def _persist_load_order(self, lord, active):
         _write_plugins_txt_(self.loadorder_txt_path, lord, lord, _star=False)
         self.__update_lo_cache_info()
 
-    def _persist_active_plugins(self, active, lord): # must chop off Skyrim.esm
-        self._write_plugins_txt(active[1:], active[1:])
+    def _persist_active_plugins(self, active, lord):
+        active_filtered = self._filter_actives(active)
+        self._write_plugins_txt(active_filtered, active_filtered)
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
@@ -1070,9 +1115,7 @@ class AsteriskGame(Game):
     _ccc_fallback = ()
     _star = True
 
-    def plugins_txt_entries_to_remove(self): return set()
-
-    def pinned_mods(self): return self.plugins_txt_entries_to_remove()
+    def pinned_mods(self): return self._active_entries_to_remove()
 
     def load_order_changed(self): return self._plugins_txt_modified()
 
@@ -1108,37 +1151,19 @@ class AsteriskGame(Game):
         create it. Discards information read if cached is passed in."""
         exists = self.plugins_txt_path.exists()
         active, lo = self._parse_modfile(self.plugins_txt_path) # empty if not exists
-        lo, active = (lo if cached_load_order is None else cached_load_order,
-                      active if cached_active is None else cached_active)
-        to_drop = []
-        # Use sets to avoid O(n) lookups
-        active_set = set(active)
-        lo_set = set(lo)
-        for rem in self.plugins_txt_entries_to_remove():
-            if rem in active_set or rem in lo_set:
-                to_drop.append(rem)
-        lo, active = self._readd_in_lists(lo, active)
-        msg = u''
+        active = active if cached_active is None else cached_active
+        lo = lo if cached_load_order is None else cached_load_order
+        active, lo = self._clean_actives(active, lo)
         if not exists:
             # Create it if it doesn't exist
-            msg = u'Created %s'
-        if to_drop:
-            # If we need to drop some mods, then make a backup first
-            self._backup_load_order()
-            msg = (u'Removed ' + u' ,'.join(map(unicode, to_drop)) +
-                   u' from %s')
-        if not exists or to_drop:
-            # In either case, write out the LO and deprint it
             self._persist_load_order(lo, active)
-            bolt.deprint(msg % self.plugins_txt_path)
+            bolt.deprint(u'Created %s' % self.plugins_txt_path)
         return lo, active
 
     def _persist_load_order(self, lord, active):
         assert active # must at least contain the master esm for these games
-        rem_from_lo = self.plugins_txt_entries_to_remove()
-        lord = [x for x in lord if x not in rem_from_lo]
-        active = [x for x in active if x not in rem_from_lo]
-        self._write_plugins_txt(lord, active)
+        self._write_plugins_txt(self._filter_actives(lord),
+                                self._filter_actives(active))
 
     def _persist_active_plugins(self, active, lord):
         self._persist_load_order(lord, active)
@@ -1156,15 +1181,6 @@ class AsteriskGame(Game):
             self._persist_load_order(lord, active)
 
     # Validation overrides ----------------------------------------------------
-    def _order_fixed(self, lord):
-        rem_from_lo = self.plugins_txt_entries_to_remove()
-        lo = [x for x in lord if x not in rem_from_lo]
-        add = self._fixed_order_plugins()
-        if add + lo != lord:
-            lord[:] = add + lo
-            return True
-        return False
-
     def check_active_limit(self, acti_filtered):
         acti_filtered_espm = []
         append_espm = acti_filtered_espm.append
@@ -1176,22 +1192,25 @@ class AsteriskGame(Game):
         return set(acti_filtered_espm[self.max_espms:]) , set(
             acti_filtered_esl[self.max_esls:])
 
-    # Asterisk game specific: plugins with fixed load order -------------------
-    def _readd_in_lists(self, lo, active):
-        # add the plugins that should not be in plugins.txt in the lists,
-        # assuming they should also be active
-        add = self._fixed_order_plugins()
-        rem_from_lo = self.plugins_txt_entries_to_remove()
-        lo = [x for x in lo if x not in rem_from_lo]
-        active = [x for x in active if x not in rem_from_lo]
-        return add + lo, add + active
-
-    def _fixed_order_plugins(self):
-        """Return existing fixed plugins in their fixed load order."""
-        add = [self.master_path]
-        add.extend(
-            x for x in self.must_be_active_if_present if x in self.mod_infos)
-        return add
+    def _clean_actives(self, active, lord):
+        """Override since we need to worry about LO here as well."""
+        active_filtered = self._filter_actives(active)
+        lord_filtered = self._filter_actives(lord)
+        any_dropped = set(active) - set(active_filtered)
+        any_dropped |= set(lord) - set(lord_filtered)
+        if any_dropped:
+            bolt.deprint(u'Removed %s from %s' % (
+                u', '.join(u'%s' % s for s in sorted(any_dropped)),
+                self.get_acti_file()))
+            # We removed plugins that don't belong here, back up first
+            self._backup_active_plugins()
+            self._persist_active_plugins(active_filtered, lord_filtered)
+        # Prepend all fixed-order plugins that can't be in the actives plugins
+        # list to the actives
+        rem_from_acti = self._active_entries_to_remove()
+        sorted_rem = [x for x in self._fixed_order_plugins()
+                      if x in rem_from_acti]
+        return sorted_rem + active_filtered, sorted_rem + lord_filtered
 
     @classmethod
     def parse_ccc_file(cls):
@@ -1387,7 +1406,7 @@ class Fallout4(AsteriskGame):
         u'ccCRSFO4001-PipCoA.esl',
     ))
 
-    def plugins_txt_entries_to_remove(self):
+    def _active_entries_to_remove(self):
         return {GPath_no_norm(u'Fallout4.esm')} | set(
             self.must_be_active_if_present)
 
@@ -1463,7 +1482,7 @@ class SkyrimSE(AsteriskGame):
         u'ccEEJSSE004-Hall.esl',
     ))
 
-    def plugins_txt_entries_to_remove(self):
+    def _active_entries_to_remove(self):
         return {GPath_no_norm(u'Skyrim.esm')} | set(
             self.must_be_active_if_present)
 
