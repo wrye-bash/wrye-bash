@@ -1426,6 +1426,7 @@ class DataStore(DataDict):
             # if cosaves or backups do not exist shellMove fails!
             if not tup[0].exists(): rename_paths.remove(tup)
         env.shellMove(*list(izip(*rename_paths)))
+        return True
 
     def _get_rename_paths(self, oldName, newName):
         """Return possible paths this file's renaming might affect (possibly
@@ -1651,7 +1652,7 @@ class FileInfos(TableFileInfos):
         #--Update references
         fileInfo = self[oldName]
         #--File system
-        super(FileInfos, self)._rename_operation(oldName, newName)
+        res = super(FileInfos, self)._rename_operation(oldName, newName)
         #--FileInfo
         fileInfo.name = newName
         fileInfo.abs_path = self.store_dir.join(newName)
@@ -1660,6 +1661,7 @@ class FileInfos(TableFileInfos):
         del self[oldName]
         self.table.moveRow(oldName,newName)
         # self[newName]._mark_unchanged() # not needed with shellMove !
+        return res
 
     #--Move
     def move_info(self, fileName, destDir):
@@ -2831,7 +2833,7 @@ class ModInfos(FileInfos):
         isSelected = load_order.cached_is_active(oldName)
         if isSelected:
             self.lo_deactivate(oldName, doSave=False) # will save later
-        super(ModInfos, self)._rename_operation(oldName, newName)
+        res = super(ModInfos, self)._rename_operation(oldName, newName)
         # rename in load order caches
         oldIndex = self._lo_wip.index(oldName)
         self._lo_caches_remove_mods([oldName])
@@ -2839,6 +2841,7 @@ class ModInfos(FileInfos):
         if isSelected: self.lo_activate(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
+        return res
 
     def _get_rename_paths(self, oldName, newName):
         old_new_paths = super(
@@ -3113,9 +3116,10 @@ class SaveInfos(FileInfos):
     def _rename_operation(self, oldName, newName):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
-        super(SaveInfos, self)._rename_operation(oldName, newName)
+        res = super(SaveInfos, self)._rename_operation(oldName, newName)
         for co_type, co_file in self[newName]._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
+        return res
 
     def _additional_deletes(self, fileInfo, toDelete):
         # type: (SaveInfo, list) -> None
