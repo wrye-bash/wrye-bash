@@ -1258,7 +1258,7 @@ class SaveInfo(FileInfo):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
-            self.header = get_save_header_type(bush.game.fsName)(self.abs_path)
+            self.header = get_save_header_type(bush.game.fsName)(self)
         except SaveHeaderError as e:
             raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
         self._reset_masters()
@@ -1455,7 +1455,10 @@ class DataStore(DataDict):
         rename_paths = member_info.get_rename_paths(newName)
         for tup in rename_paths[1:]: # first rename path must always exist
             # if cosaves or backups do not exist shellMove fails!
-            if not tup[0].exists(): rename_paths.remove(tup)
+            # if filenames are the same (for instance cosaves in disabling
+            # saves) shellMove will offer to skip and raise SkipError
+            if tup[0] == tup[1] or not tup[0].exists():
+                rename_paths.remove(tup)
         env.shellMove(*list(izip(*rename_paths)))
         return rename_paths[0][0].tail
 

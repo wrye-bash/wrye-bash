@@ -58,13 +58,13 @@ class SaveFileHeader(object):
     # turned image to a property)
     __slots__ = (u'header_size', u'pcName', u'pcLevel', u'pcLocation',
                  u'gameDays', u'gameTicks', u'ssWidth', u'ssHeight', u'ssData',
-                 u'masters', u'_save_path', u'_mastersStart')
+                 u'masters', u'_save_info', u'_mastersStart')
     # map slots to (seek position, unpacker) - seek position negative means
     # seek relative to ins.tell(), otherwise to the beginning of the file
     unpackers = OrderedDict()
 
-    def __init__(self, save_path, load_image=False, ins=None):
-        self._save_path = save_path
+    def __init__(self, save_inf, load_image=False, ins=None):
+        self._save_info = save_inf
         self.ssData = None # lazily loaded at runtime
         self.read_save_header(load_image, ins)
 
@@ -73,16 +73,15 @@ class SaveFileHeader(object):
         well."""
         try:
             if ins is None:
-                with self._save_path.open(u'rb') as ins:
+                with self._save_info.abs_path.open(u'rb') as ins:
                     self.load_header(ins, load_image)
             else:
                 self.load_header(ins, load_image)
         #--Errors
-        except (OSError, struct_error, OverflowError):
-            bolt.deprint(u'Failed to read %s' % self._save_path,
-                traceback=True)
-            raise_bolt_error(u'Failed to read %s' % self._save_path,
-                SaveHeaderError)
+        except (OSError, IOError, struct_error, OverflowError):
+            err_msg = u'Failed to read %s' % self._save_info.abs_path
+            bolt.deprint(err_msg, traceback=True)
+            raise_bolt_error(err_msg, SaveHeaderError)
 
     def load_header(self, ins, load_image=False):
         save_magic = unpack_string(ins, len(self.__class__.save_magic))
@@ -649,7 +648,7 @@ class MorrowindSaveHeader(SaveFileHeader):
     def load_header(self, ins, load_image=False):
         # TODO(inf) A bit ugly, this is not a mod - maybe move readHeader out?
         from . import ModInfo
-        save_info = ModInfo(self._save_path, load_cache=True)
+        save_info = ModInfo(self._save_info.abs_path, load_cache=True)
         ##: Figure out where some more of these are (e.g. level)
         self.header_size = save_info.header.size
         self.pcName = save_info.header.pc_name

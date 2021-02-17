@@ -2072,8 +2072,8 @@ class SaveList(balt.UIList):
 
     #--Events ---------------------------------------------
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
-        """Enables file by changing extension to 'ess' (True) or 'esr' (False).
-        """
+        """Disable save by changing its extension so it's not loaded by the
+        game."""
         #--Pass Event onward
         hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
         if not hitItem or re.match(u'(autosave|quicksave)', hitItem.s,
