@@ -180,6 +180,11 @@ class ListInfo(object):
     def get_store(cls):
         raise AbstractError(u'%s does not provide a data store' % type(cls))
 
+    def get_rename_paths(self, newName):
+        """Return possible paths this file's renaming might affect (possibly
+        omitting some that do not exist)."""
+        return [(self.abs_path, self.get_store().store_dir.join(newName))]
+
 class MasterInfo(object):
     """Slight abstraction over ModInfo that allows us to represent masters that
     are missing an active mod counterpart."""
@@ -443,6 +448,17 @@ class FileInfo(AFile, ListInfo):
         if self.dir.join(name_str).exists(): ##: check using file_infos?
             return _(u'File %s already exists.') % name_str, None
         return self.__class__.validate_filename_str(name_str)
+
+    def get_rename_paths(self, newName):
+        old_new_paths = super(FileInfo, self).get_rename_paths(newName)
+        info_backup_paths = self.all_backup_paths
+        # all_backup_paths will return the backup paths for this file and its
+        # satellites (like cosaves). Passing newName in it returns the rename
+        # destinations of the backup paths. Backup paths may not exist.
+        for b_path, new_b_path in izip(info_backup_paths(),
+                                       info_backup_paths(newName)):
+            old_new_paths.append((b_path, new_b_path))
+        return old_new_paths
 
 #------------------------------------------------------------------------------
 reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
@@ -998,6 +1014,12 @@ class ModInfo(FileInfo):
     def match_oblivion_re(self):
         return reOblivion.match(self.name.s)
 
+    def get_rename_paths(self, newName):
+        old_new_paths = super(ModInfo, self).get_rename_paths(newName)
+        if self.isGhost:
+            old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + u'.ghost')
+        return old_new_paths
+
 # Deprecated/Obsolete Bash Tags -----------------------------------------------
 # Tags that have been removed from Wrye Bash and should be dropped from pickle
 # files
@@ -1370,6 +1392,16 @@ class SaveInfo(FileInfo):
             self.has_inaccurate_masters = xse_cosave is None or \
                 not xse_cosave.has_accurate_master_list(True)
 
+    def get_rename_paths(self, newName):
+        old_new_paths = super(SaveInfo, self).get_rename_paths(newName)
+        # super call added the backup paths but not the actual rename cosave
+        # paths inside the store_dir - add those only if they exist
+        old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
+        for co_type, co_file in self._co_saves.items():
+            old_new_paths.append((co_file.abs_path,
+                                  co_type.get_cosave_path(new)))
+        return old_new_paths
+
 #------------------------------------------------------------------------------
 class ScreenInfo(FileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
@@ -1420,18 +1452,13 @@ class DataStore(DataDict):
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
 
-    def _rename_operation(self, oldName, newName):
-        rename_paths = self._get_rename_paths(oldName, newName)
+    def _rename_operation(self, member_info, newName):
+        rename_paths = member_info.get_rename_paths(newName)
         for tup in rename_paths[1:]: # first rename path must always exist
             # if cosaves or backups do not exist shellMove fails!
             if not tup[0].exists(): rename_paths.remove(tup)
         env.shellMove(*list(izip(*rename_paths)))
-        return True
-
-    def _get_rename_paths(self, oldName, newName):
-        """Return possible paths this file's renaming might affect (possibly
-        omitting some that do not exist)."""
-        return [(self.store_dir.join(oldName), self.store_dir.join(newName))]
+        return rename_paths[0][0].tail
 
     @property
     def bash_dir(self):
@@ -1556,11 +1583,10 @@ class TableFileInfos(DataStore):
             del self.table[deleted]
         self.table.save()
 
-    def _rename_operation(self, oldName, newName):
+    def _rename_operation(self, member_info, newName):
         # Override to allow us to notify BAIN if necessary
-        self._notify_bain(renamed=dict(
-            self._get_rename_paths(oldName, newName)))
-        return super(TableFileInfos, self)._rename_operation(oldName, newName)
+        self._notify_bain(renamed=dict(member_info.get_rename_paths(newName)))
+        return super(TableFileInfos, self)._rename_operation(member_info, newName)
 
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
@@ -1630,38 +1656,26 @@ class FileInfos(TableFileInfos):
             self.table.pop(name, None)
         return deleted
 
-    def _get_rename_paths(self, oldName, newName):
-        old_new_paths = super(
-            FileInfos, self)._get_rename_paths(oldName, newName)
-        info_backup_paths = self[oldName].all_backup_paths
-        # all_backup_paths will return the backup paths for this file and its
-        # satellites (like cosaves). Passing newName in it returns the rename
-        # destinations of the backup paths. Backup paths may not exist.
-        for b_path, new_b_path in izip(info_backup_paths(),
-                                       info_backup_paths(newName)):
-            old_new_paths.append((b_path, new_b_path))
-        return old_new_paths
-
     def _additional_deletes(self, fileInfo, toDelete):
         #--Backups
         toDelete.extend(fileInfo.all_backup_paths()) # will include cosave ones
 
     #--Rename
-    def _rename_operation(self, oldName, newName):
+    def _rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName."""
         #--Update references
-        fileInfo = self[oldName]
         #--File system
-        res = super(FileInfos, self)._rename_operation(oldName, newName)
+        super(FileInfos, self)._rename_operation(member_info, newName)
+        old_key = member_info.name
         #--FileInfo
-        fileInfo.name = newName
-        fileInfo.abs_path = self.store_dir.join(newName)
+        member_info.name = newName
+        member_info.abs_path = self.store_dir.join(newName)
         #--FileInfos
-        self[newName] = self[oldName]
-        del self[oldName]
-        self.table.moveRow(oldName,newName)
+        self[newName] = member_info
+        del self[old_key]
+        self.table.moveRow(old_key, newName)
         # self[newName]._mark_unchanged() # not needed with shellMove !
-        return res
+        return old_key
 
     #--Move
     def move_info(self, fileName, destDir):
@@ -2828,28 +2842,20 @@ class ModInfos(FileInfos):
         self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
         self._active_wip  = [x for x in self._active_wip if x not in to_remove]
 
-    def _rename_operation(self, oldName, newName):
+    def _rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName."""
-        isSelected = load_order.cached_is_active(oldName)
+        isSelected = load_order.cached_is_active(member_info.name)
         if isSelected:
-            self.lo_deactivate(oldName, doSave=False) # will save later
-        res = super(ModInfos, self)._rename_operation(oldName, newName)
+            self.lo_deactivate(member_info, doSave=False) # will save later
+        res = super(ModInfos, self)._rename_operation(member_info, newName)
         # rename in load order caches
-        oldIndex = self._lo_wip.index(oldName)
-        self._lo_caches_remove_mods([oldName])
+        oldIndex = self._lo_wip.index(res)
+        self._lo_caches_remove_mods([res])
         self._lo_wip.insert(oldIndex, newName)
         if isSelected: self.lo_activate(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
         return res
-
-    def _get_rename_paths(self, oldName, newName):
-        old_new_paths = super(
-            ModInfos, self)._get_rename_paths(oldName, newName)
-        if self[oldName].isGhost:
-            old_new_paths[0] = (self[oldName].abs_path,
-                                old_new_paths[0][1] + u'.ghost')
-        return old_new_paths
 
     #--Delete
     def files_to_delete(self, filenames, **kwargs):
@@ -2975,7 +2981,7 @@ class ModInfos(FileInfos):
         rename_operation = super(ModInfos, self)._rename_operation
         while True:
             try:
-                rename_operation(self.masterName, oldName)
+                rename_operation(baseInfo, oldName)
                 break
             except OSError as werr: # can only occur if SHFileOperation
                 # isn't called, yak - file operation API badly needed
@@ -2987,7 +2993,7 @@ class ModInfos(FileInfos):
                 return
         while True:
             try:
-                rename_operation(newName, self.masterName)
+                rename_operation(newInfo, self.masterName)
                 break
             except OSError as werr:
                 if werr.errno == errno.EACCES and self._retry(
@@ -3113,10 +3119,10 @@ class SaveInfos(FileInfos):
         if not booting: self._refreshLocalSave() # otherwise we just did this
         return refresh_infos and FileInfos.refresh(self, booting=booting)
 
-    def _rename_operation(self, oldName, newName):
+    def _rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
-        res = super(SaveInfos, self)._rename_operation(oldName, newName)
+        res = super(SaveInfos, self)._rename_operation(member_info, newName)
         for co_type, co_file in self[newName]._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
         return res
@@ -3127,17 +3133,6 @@ class SaveInfos(FileInfos):
             x.abs_path for x in fileInfo._co_saves.values())
         # now add backups and cosaves backups
         super(SaveInfos, self)._additional_deletes(fileInfo, toDelete)
-
-    def _get_rename_paths(self, oldName, newName):
-        old_new_paths = super(
-            SaveInfos, self)._get_rename_paths(oldName, newName)
-        # super call added the backup paths but not the actual rename cosave
-        # paths inside the store_dir - add those only if they exist
-        old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
-        for co_type, co_file in self[oldName]._co_saves.items():
-            old_new_paths.append((co_file.abs_path,
-                                  co_type.get_cosave_path(new)))
-        return old_new_paths
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated cosaves file(s)."""

@@ -1250,7 +1250,7 @@ class UIList(wx.Panel):
         if not newPath.exists():
             key = GPath(u'%s' % info) # fixme hack cause Installers and File infos have different attrs
             try:
-                result = self.data_store._rename_operation(key, newFileName)
+                result = self.data_store._rename_operation(info, newFileName)
                 if to_select: to_select.add(newFileName)
                 if to_del: to_del.add(key)
                 if item_edited and key == item_edited[0]:
@@ -1264,8 +1264,7 @@ class UIList(wx.Panel):
                 # With shellMove I mostly get CancelError so below not needed -
                 # except if a save is locked and user presses Skip - so cosaves are
                 # renamed! Error handling is still a WIP
-                for old, new in self.data_store._get_rename_paths(key,
-                                                                  newFileName):
+                for old, new in info.get_rename_paths(newFileName):
                     if old == new: continue
                     if new.exists() and not old.exists():
                         # some cosave move failed, restore files

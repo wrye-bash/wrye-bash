@@ -1301,7 +1301,7 @@ class InstallerMarker(Installer):
 
     def renameInstaller(self, name_new, idata_):
         archive = GPath(self.archive)
-        if name_new == archive:
+        if name_new == archive: # TODO disallows case sensitive renames ??
             return False, False, False
         #--Add the marker to Bash and remove old one
         self.archive = name_new.s
@@ -1809,8 +1809,8 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def _rename_operation(self, oldName, newName):
-        return self[oldName].renameInstaller(newName, self)
+    def _rename_operation(self, member_info, newName):
+        return member_info.renameInstaller(newName, self)
 
     #--Dict Functions ---------------------------------------------------------
     def files_to_delete(self, filenames, **kwargs):
