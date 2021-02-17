@@ -101,6 +101,8 @@ class Installer(ListInfo):
     # Extensions of strings files - automatically built from game constants
     _strings_extensions = {os.path.splitext(x[1].lower())[1]
                            for x in bush.game.Esp.stringsFiles}
+    # InstallersData singleton - consider this tmp
+    instData = None # type: InstallersData
 
     @classmethod
     def is_archive(cls): return False
@@ -108,6 +110,9 @@ class Installer(ListInfo):
     def is_project(cls): return False
     @classmethod
     def is_marker(cls): return False
+
+    @classmethod
+    def get_store(cls): return cls.instData
 
     @staticmethod
     def init_bain_dirs():

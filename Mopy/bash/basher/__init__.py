@@ -3106,7 +3106,7 @@ class InstallersPanel(BashTab):
     def __init__(self,parent):
         """Initialize."""
         BashFrame.iPanel = self
-        self.listData = bosh.bain.InstallersData()
+        self.listData = bosh.bain.Installer.instData = bosh.bain.InstallersData()
         super(InstallersPanel, self).__init__(parent)
         #--Refreshing
         self._data_dir_scanned = False

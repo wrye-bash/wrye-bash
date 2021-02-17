@@ -131,6 +131,10 @@ class ListInfo(object):
             return (_(u'Bad extension or file root: ') + name_str), None, None
         return GPath(name_str), maPattern.groups(u'')[0], num_str # default u''
 
+    @classmethod
+    def get_store(cls):
+        raise AbstractError(u'%s does not provide a data store' % type(cls))
+
 class MasterInfo(object):
     """Slight abstraction over ModInfo that allows us to represent masters that
     are missing an active mod counterpart."""
@@ -281,32 +285,27 @@ class FileInfo(AFile, ListInfo):
         raise AbstractError()
 
     # Backup stuff - beta, see #292 -------------------------------------------
-    def getFileInfos(self): # Py3: cached property
-        """Return one of the FileInfos singletons depending on fileInfo type.
-        :rtype: FileInfos"""
-        raise AbstractError
-
     def get_table_prop(self, prop, default=None):
-        return self.getFileInfos().table.getItem(self.name, prop, default)
+        return self.get_store().table.getItem(self.name, prop, default)
 
     def set_table_prop(self, prop, val):
-        return self.getFileInfos().table.setItem(self.name, prop, val)
+        return self.get_store().table.setItem(self.name, prop, val)
 
     def get_hide_dir(self):
-        return self.getFileInfos().hidden_dir
+        return self.get_store().hidden_dir
 
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
         #--Skip backup?
-        if not self in self.getFileInfos().values(): return
+        if not self in self.get_store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        self.getFileInfos().copy_info(self.name, backupDir)
+        self.get_store().copy_info(self.name, backupDir)
         #--First backup
         firstBackup = backupDir.join(self.name) + u'f'
         if not firstBackup.exists():
-            self.getFileInfos().copy_info(self.name, backupDir,
-                                          firstBackup.tail)
+            self.get_store().copy_info(self.name, backupDir,
+                                       firstBackup.tail)
 
     def tempBackup(self, forceBackup=True):
         """Creates backup(s) of file.  Uses temporary directory to avoid UAC issues."""
@@ -326,7 +325,7 @@ class FileInfo(AFile, ListInfo):
         for fname mapped to its restore location in data_store.store_dir
         :rtype: list[tuple]
         """
-        restore_path = (fname and self.getFileInfos().store_dir.join(
+        restore_path = (fname and self.get_store().store_dir.join(
             fname)) or self.getPath()
         fname = fname or self.name
         return [(self.backup_dir.join(fname) + (u'f' if first else u''),
@@ -350,7 +349,7 @@ class FileInfo(AFile, ListInfo):
         env.shellCopy(*list(izip(*backup_paths)))
         # do not change load order for timestamp games - rest works ok
         self.setmtime(self._file_mod_time, crc_changed=True)
-        self.getFileInfos().new_info(self.name, notify_bain=True)
+        self.get_store().new_info(self.name, notify_bain=True)
 
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
@@ -383,11 +382,11 @@ class FileInfo(AFile, ListInfo):
 
     @property
     def backup_dir(self):
-        return self.getFileInfos().bash_dir.join(u'Backups')
+        return self.get_store().bash_dir.join(u'Backups')
 
     @property
     def snapshot_dir(self):
-        return self.getFileInfos().bash_dir.join(u'Snapshots')
+        return self.get_store().bash_dir.join(u'Snapshots')
 
     def validate_name(self, name_str):
         # disallow extension change but not if no-extension info type
@@ -418,7 +417,7 @@ class ModInfo(FileInfo):
         super(ModInfo, self).__init__(fullpath, load_cache)
 
     def get_hide_dir(self):
-        dest_dir = self.getFileInfos().hidden_dir
+        dest_dir = self.get_store().hidden_dir
         #--Use author subdirectory instead?
         mod_author = self.header.author
         if mod_author:
@@ -441,7 +440,8 @@ class ModInfo(FileInfo):
             if bush.game.has_esl: self._recalc_esl()
             self._recalc_esm()
 
-    def getFileInfos(self): return modInfos
+    @classmethod
+    def get_store(cls): return modInfos
 
     def get_extension(self):
         """Returns the file extension of this mod."""
@@ -946,7 +946,7 @@ class ModInfo(FileInfo):
         """Returns a dirty message from LOOT."""
         if self.get_table_prop(u'ignoreDirty', False):
             return False, u''
-        if lootDb.is_plugin_dirty(self.name, self.getFileInfos()): ##: modInfos
+        if lootDb.is_plugin_dirty(self.name, modInfos):
             return True, _(u'Contains dirty edits, needs cleaning.')
         return False, u''
 
@@ -1166,7 +1166,8 @@ class SaveInfo(FileInfo):
             return _(u'Renaming bak files is not supported.'), None, None
         return super(SaveInfo, self).validate_name(name_str)
 
-    def getFileInfos(self): return saveInfos
+    @classmethod
+    def get_store(cls): return saveInfos
 
     def getStatus(self):
         status = FileInfo.getStatus(self)
@@ -1334,8 +1335,8 @@ class ScreenInfo(FileInfo):
         self.cached_bitmap = None # Lazily reloaded
         super(ScreenInfo, self)._reset_cache(stat_tuple, load_cache)
 
-    def getFileInfos(self):
-        return screen_infos
+    @classmethod
+    def get_store(cls): return screen_infos
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
@@ -3221,8 +3222,8 @@ class BSAInfos(FileInfos):
                         sys.exc_info()[2]
                 self._reset_bsa_mtime()
 
-            def getFileInfos(self):
-                return bsaInfos
+            @classmethod
+            def get_store(cls): return bsaInfos
 
             def do_update(self, raise_on_error=False):
                 changed = super(BSAInfo, self).do_update(raise_on_error)
