@@ -1230,6 +1230,10 @@ class SaveInfo(FileInfo):
         else:
             return -10
 
+    def is_save_enabled(self):
+        """True if I am enabled."""
+        return self.abs_path.cext == bush.game.Ess.ext
+
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
@@ -1415,30 +1419,6 @@ class DataStore(DataDict):
 
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
-
-    # Renaming - note the @conversation, this needs to be atomic.
-    ##: Not really the right place for it though -> comes back to our core
-    # move/copy operations, which need rethinking
-    @balt.conversation
-    def rename_info(self, oldName, newName):
-        try:
-            return self._rename_operation(oldName, newName)
-        except (CancelError, OSError, IOError):
-            deprint(u'Renaming %s to %s failed' % (oldName, newName),
-                    traceback=True)
-            # When using moveTo I would get "WindowsError:[Error 32]The process
-            # cannot access ..." -  the code below was reverting the changes.
-            # With shellMove I mostly get CancelError so below not needed -
-            # except if a save is locked and user presses Skip - so cosaves are
-            # renamed! Error handling is still a WIP
-            for old, new in self._get_rename_paths(oldName, newName):
-                if new.exists() and not old.exists():
-                    # some cosave move failed, restore files
-                    new.moveTo(old)
-                if new.exists() and old.exists():
-                    # move copies then deletes, so the delete part failed
-                    new.remove()
-            raise
 
     def _rename_operation(self, oldName, newName):
         rename_paths = self._get_rename_paths(oldName, newName)
@@ -3213,26 +3193,6 @@ class SaveInfos(FileInfos):
                                 value=localSave + u'\\')
         self._initDB(dirs[u'saveBase'].join(self.localSave))
         if refreshSaveInfos: self.refresh()
-
-    #--Enabled ----------------------------------------------------------------
-    @staticmethod
-    def is_save_enabled(fileName):
-        """True if fileName is enabled."""
-        return fileName.cext == bush.game.Ess.ext
-
-    def enable(self,fileName,value=True):
-        """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
-        enabled = self.is_save_enabled(fileName)
-        if value == enabled or re.match(u'(autosave|quicksave)', fileName.s,
-                                          re.I | re.U):
-            return fileName
-        newName = fileName.root + (
-            bush.game.Ess.ext if value else fileName.ext[:-1] + u'r')
-        try:
-            self.rename_info(fileName, newName)
-            return newName
-        except (CancelError, OSError, IOError):
-            return fileName
 
 #------------------------------------------------------------------------------
 from . import bsa_files

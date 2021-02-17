@@ -1246,13 +1246,35 @@ class UIList(wx.Panel):
         newPath = self.data_store.store_dir.join(newFileName)
         if not newPath.exists():
             try:
-                self.data_store.rename_info(key, newFileName)
+                self.rename_info(key, newFileName)
                 to_select.add(newFileName)
                 if item_edited and key == item_edited[0]:
                     item_edited[0] = newFileName
             except (CancelError, OSError, IOError):
                 return False # break
         return True # continue
+
+    # Renaming - note the @conversation, this needs to be atomic.
+    @conversation
+    def rename_info(self, oldName, newName):
+        try:
+            return self.data_store._rename_operation(oldName, newName)
+        except (CancelError, OSError, IOError):
+            deprint(u'Renaming %s to %s failed' % (oldName, newName),
+                    traceback=True)
+            # When using moveTo I would get "WindowsError:[Error 32]The process
+            # cannot access ..." -  the code below was reverting the changes.
+            # With shellMove I mostly get CancelError so below not needed -
+            # except if a save is locked and user presses Skip - so cosaves are
+            # renamed! Error handling is still a WIP
+            for old, new in self.data_store._get_rename_paths(oldName, newName):
+                if new.exists() and not old.exists():
+                    # some cosave move failed, restore files
+                    new.moveTo(old)
+                if new.exists() and old.exists():
+                    # move copies then deletes, so the delete part failed
+                    new.remove()
+            raise
 
     def _getItemClicked(self, lb_dex_and_flags, on_icon=False):
         (hitItem, hitFlag) = lb_dex_and_flags

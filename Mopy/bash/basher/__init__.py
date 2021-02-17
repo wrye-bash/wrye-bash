@@ -56,6 +56,7 @@ from __future__ import division
 import collections
 import io
 import os
+import re
 import sys
 import time
 from collections import OrderedDict, namedtuple
@@ -1653,7 +1654,7 @@ class ModDetails(_ModsSavesDetails):
                 return
             settings.getChanged(u'bash.mods.renames')[oldName] = newName
             try:
-                bosh.modInfos.rename_info(oldName, newName)
+                self.panel_uilist.rename_info(oldName, newName)
             except (CancelError, OSError, IOError):
                 pass
         #--Change hedr/masters?
@@ -2059,24 +2060,31 @@ class SaveList(balt.UIList):
         save_info = self.data_store[fileName]
         #--Image
         status = save_info.getStatus()
-        on = bosh.SaveInfos.is_save_enabled(save_info.getPath()) # yak
-        item_format.icon_key = status, on
+        item_format.icon_key = status, save_info.is_save_enabled()
 
     #--Events ---------------------------------------------
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
+        """Enables file by changing extension to 'ess' (True) or 'esr' (False).
+        """
         #--Pass Event onward
         hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
-        if not hitItem: return
+        if not hitItem or re.match(u'(autosave|quicksave)', hitItem.s,
+                                   re.I | re.U): return
         msg = _(u'Clicking on a save icon will disable/enable the save '
                 u'by changing its extension to %(ess)s (enabled) or .esr '
                 u'(disabled). Autosaves and quicksaves will be left alone.'
                 % {u'ess': bush.game.Ess.ext})
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
-        newEnabled = not bosh.SaveInfos.is_save_enabled(hitItem)
-        newName = self.data_store.enable(hitItem, newEnabled)
-        if newName != hitItem: self.RefreshUI(redraw=[newName],
-                                              to_del=[hitItem])
+        sinf = self.data_store[hitItem]
+        do_enable = not sinf.is_save_enabled()
+        newName = hitItem.root + (
+            bush.game.Ess.ext if do_enable else hitItem.ext[:-1] + u'r')
+        try:
+            self.rename_info(hitItem, newName)
+            self.RefreshUI(redraw=[newName], to_del=[hitItem])
+        except (CancelError, OSError, IOError):
+            pass
 
     # Save profiles
     def set_local_save(self, new_saves, refreshSaveInfos):
@@ -2220,7 +2228,7 @@ class SaveDetails(_ModsSavesDetails):
         if changeName:
             (oldName,newName) = (saveInfo.name,GPath(self.fileStr.strip()))
             try:
-                bosh.saveInfos.rename_info(oldName, newName)
+                self.panel_uilist.rename_info(oldName, newName)
                 to_del = [oldName]
             except (CancelError, OSError, IOError):
                 pass
@@ -2401,7 +2409,7 @@ class InstallersList(balt.UIList):
                 for package in self.GetSelected():
                     name_new = renaming_type.unique_name(newName)
                     refreshes.append(
-                        self.data_store.rename_info(package, name_new))
+                        self.rename_info(package, name_new))
                     if refreshes[-1][0]: newselected.append(name_new)
             except (CancelError, OSError, IOError) as ex:
                 pass
@@ -3460,7 +3468,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         if changeName:
             (oldName, newName) = (
                 self._bsa_info.name, GPath(self.fileStr.strip()))
-            bosh.bsaInfos.rename_info(oldName, newName)
+            self.panel_uilist.rename_info(oldName, newName)
         self.panel_uilist.RefreshUI(detail_item=self.file_info.name)
 
 #------------------------------------------------------------------------------

@@ -377,7 +377,7 @@ class Save_Renumber(EnabledLink):
             if newFileName != old_file_path.s:
                 new_file_path = GPath(newFileName)
                 try:
-                    bosh.saveInfos.rename_info(old_file_path, new_file_path)
+                    self.window.rename_info(old_file_path, new_file_path)
                 except (CancelError, OSError, IOError):
                     break
                 newNumber += 1
