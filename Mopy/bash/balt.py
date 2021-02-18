@@ -1250,7 +1250,7 @@ class UIList(wx.Panel):
     @conversation
     def _try_rename(self, info, newFileName):
         try:
-            return self.data_store._rename_operation(info, newFileName)
+            return self.data_store.rename_operation(info, newFileName)
         except (CancelError, OSError, IOError):
             deprint(u'Renaming %s to %s failed' % (info, newFileName),
                     traceback=True)

@@ -451,12 +451,11 @@ class FileInfo(AFile, ListInfo):
 
     def get_rename_paths(self, newName):
         old_new_paths = super(FileInfo, self).get_rename_paths(newName)
-        info_backup_paths = self.all_backup_paths
         # all_backup_paths will return the backup paths for this file and its
         # satellites (like cosaves). Passing newName in it returns the rename
         # destinations of the backup paths. Backup paths may not exist.
-        for b_path, new_b_path in izip(info_backup_paths(),
-                                       info_backup_paths(newName)):
+        for b_path, new_b_path in izip(self.all_backup_paths(),
+                                       self.all_backup_paths(newName)):
             old_new_paths.append((b_path, new_b_path))
         return old_new_paths
 
@@ -1452,7 +1451,7 @@ class DataStore(DataDict):
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
 
-    def _rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName):
         rename_paths = member_info.get_rename_paths(newName)
         for tup in rename_paths[1:]: # first rename path must always exist
             # if cosaves or backups do not exist shellMove fails!
@@ -1583,10 +1582,10 @@ class TableFileInfos(DataStore):
             del self.table[deleted]
         self.table.save()
 
-    def _rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName):
         # Override to allow us to notify BAIN if necessary
         self._notify_bain(renamed=dict(member_info.get_rename_paths(newName)))
-        return super(TableFileInfos, self)._rename_operation(member_info, newName)
+        return super(TableFileInfos, self).rename_operation(member_info, newName)
 
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
@@ -1661,11 +1660,11 @@ class FileInfos(TableFileInfos):
         toDelete.extend(fileInfo.all_backup_paths()) # will include cosave ones
 
     #--Rename
-    def _rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName."""
         #--Update references
         #--File system
-        super(FileInfos, self)._rename_operation(member_info, newName)
+        super(FileInfos, self).rename_operation(member_info, newName)
         old_key = member_info.name
         #--FileInfo
         member_info.name = newName
@@ -2842,20 +2841,20 @@ class ModInfos(FileInfos):
         self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
         self._active_wip  = [x for x in self._active_wip if x not in to_remove]
 
-    def _rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName."""
         isSelected = load_order.cached_is_active(member_info.name)
         if isSelected:
             self.lo_deactivate(member_info, doSave=False) # will save later
-        res = super(ModInfos, self)._rename_operation(member_info, newName)
+        old_key = super(ModInfos, self).rename_operation(member_info, newName)
         # rename in load order caches
-        oldIndex = self._lo_wip.index(res)
-        self._lo_caches_remove_mods([res])
+        oldIndex = self._lo_wip.index(old_key)
+        self._lo_caches_remove_mods([old_key])
         self._lo_wip.insert(oldIndex, newName)
         if isSelected: self.lo_activate(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
-        return res
+        return old_key
 
     #--Delete
     def files_to_delete(self, filenames, **kwargs):
@@ -2978,7 +2977,7 @@ class ModInfos(FileInfos):
         is_master_active = load_order.cached_is_active(self.masterName)
         is_new_info_active = load_order.cached_is_active(newName)
         # can't use ModInfos rename cause it will mess up the load order
-        rename_operation = super(ModInfos, self)._rename_operation
+        rename_operation = super(ModInfos, self).rename_operation
         while True:
             try:
                 rename_operation(baseInfo, oldName)
@@ -3119,13 +3118,13 @@ class SaveInfos(FileInfos):
         if not booting: self._refreshLocalSave() # otherwise we just did this
         return refresh_infos and FileInfos.refresh(self, booting=booting)
 
-    def _rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
-        res = super(SaveInfos, self)._rename_operation(member_info, newName)
+        old_key = super(SaveInfos, self).rename_operation(member_info, newName)
         for co_type, co_file in self[newName]._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
-        return res
+        return old_key
 
     def _additional_deletes(self, fileInfo, toDelete):
         # type: (SaveInfo, list) -> None

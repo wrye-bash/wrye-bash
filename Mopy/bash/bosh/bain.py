@@ -1216,9 +1216,10 @@ class Installer(ListInfo):
         otherwise we will overwrite! Currently only called in rename_operation
         from InstallersList.try_rename - this passes a unique name in.
         :rtype: tuple"""
-        super(InstallersData, idata_)._rename_operation(self, name_new)
+        super(InstallersData, idata_).rename_operation(self, name_new)
         #--Update the iniInfos & modInfos for 'installer'
         from . import modInfos, iniInfos
+        ##: self.archive still the old value (should be set in super but no "name" attr)
         mfiles = [x for x in modInfos.table.getColumn(u'installer') if
                   modInfos.table[x][u'installer'] == self.archive]
         ifiles = [x for x in iniInfos.table.getColumn(u'installer') if
@@ -1783,7 +1784,7 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def _rename_operation(self, member_info, newName):
+    def rename_operation(self, member_info, newName):
         g_path = GPath(member_info.archive)
         if newName == g_path: # TODO disallows case sensitive renames ??
             return False, False, False
