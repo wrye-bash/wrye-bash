@@ -1651,7 +1651,7 @@ class ModDetails(_ModsSavesDetails):
                                      % (newName,bush.game.displayName),
                                      u'bash.rename.isBadFileName.continue')
                 ):
-                return
+                return ##: cancels all other changes - move to validate_filename (without the balt part)
             settings.getChanged(u'bash.mods.renames')[oldName] = newName
             changeName = self.panel_uilist.try_rename(modInfo, newName)
         #--Change hedr/masters?
@@ -2035,15 +2035,27 @@ class SaveList(balt.UIList):
         to_select = set()
         to_del = set()
         for saveInfo in self.GetSelectedInfos(selected):
-            newFileName = SaveInfo.unique_name(newName)
-            if not self.try_rename(saveInfo, newFileName, to_select, to_del,
-                                   item_edited): break
+            rename_res = self.try_rename(saveInfo, newName, to_select, to_del,
+                                         item_edited)
+            if not rename_res: break
+            newName = rename_res[-1] # might have changed
         if to_select:
             self.RefreshUI(redraw=to_select, to_del=to_del, # to_add
                            detail_item=item_edited[0])
             #--Reselect the renamed items
             self.SelectItemsNoCallback(to_select)
         return EventResult.CANCEL # needed ! clears new name from label on exception
+
+    def try_rename(self, saveinf, newFileName, to_select=None, to_del=None,
+                   item_edited=None):
+        newFileName = saveinf.unique_name(newFileName)
+        oldName = self._try_rename(saveinf, newFileName)
+        if oldName:
+            if to_select is not None: to_select.add(newFileName)
+            if to_del is not None: to_del.add(oldName)
+            if item_edited and oldName == item_edited[0]:
+                item_edited[0] = newFileName
+            return oldName, newFileName # continue
 
     @staticmethod
     def _unhide_wildcard():
@@ -2076,8 +2088,9 @@ class SaveList(balt.UIList):
         do_enable = not sinf.is_save_enabled()
         newName = hitItem.root + (
             bush.game.Ess.ext if do_enable else hitItem.ext[:-1] + u'r')
-        if self.try_rename(sinf, newName):
-            self.RefreshUI(redraw=[newName], to_del=[hitItem])
+        rename_res = self.try_rename(sinf, newName)
+        if rename_res:
+            self.RefreshUI(redraw=[rename_res[1]], to_del=[hitItem])
 
     # Save profiles
     def set_local_save(self, new_saves, refreshSaveInfos):
@@ -2220,6 +2233,11 @@ class SaveDetails(_ModsSavesDetails):
         to_del = set()
         if changeName:
             newName = GPath(self.fileStr.strip())
+            # if you were wondering: OnFileEdited checked if file existed,
+            # and yes we recheck below, in Mod/BsaDetails we don't - filesystem
+            # APIs might warn user (with a dialog hopefully) for an overwrite,
+            # otherwise we can have a race whatever we try here - an extra
+            # check can't harm nor makes a (any) difference
             self.panel_uilist.try_rename(saveInfo, newName, to_del=to_del)
         #--Change masters?
         if changeMasters:
@@ -2384,8 +2402,7 @@ class InstallersList(balt.UIList):
         if is_edit_cancelled: return EventResult.FINISH ##: previous behavior todo TTT
         selected = self.GetSelectedInfos()
         # all selected have common type! enforced in OnBeginEditLabel
-        renaming_type = type(selected[0])
-        newName, root = renaming_type.validate_filename_str(evt_label,
+        newName, root = selected[0].validate_filename_str(evt_label,
             allowed_exts=archives.readExts)
         if root is None:
             balt.showError(self, newName)
@@ -2395,14 +2412,12 @@ class InstallersList(balt.UIList):
             refreshes, ex = [(False, False, False)], None
             newselected = []
             try:
-                for package in self.GetSelected():
-                    name_new = renaming_type.unique_name(newName)
-                    result = self.try_rename(package, name_new)
-                    if not result:
+                for package in selected:
+                    newName = self.try_rename(package, newName, refreshes,
+                                              newselected)
+                    if not newName:
                         ex = True
                         break
-                    refreshes.append(result)
-                    if refreshes[-1][0]: newselected.append(name_new)
             finally:
                 refreshNeeded = modsRefresh = iniRefresh = False
                 if len(refreshes) > 1:
@@ -2420,6 +2435,14 @@ class InstallersList(balt.UIList):
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(newselected)
             return EventResult.CANCEL
+
+    def try_rename(self, info, newFileName, refreshes=None, newselected=None):
+        newFileName = info.unique_name(newFileName)
+        result = self._try_rename(info, newFileName)
+        if result:
+            refreshes.append(result)
+            if result[0]: newselected.append(newFileName)
+            return newFileName # continue
 
     @staticmethod
     def _unhide_wildcard():
@@ -3303,14 +3326,13 @@ class ScreensList(balt.UIList):
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)
         digits = len(u'%s' % (num + len(selected) - 1))
-        if numStr: numStr = numStr.zfill(digits)
+        numStr = numStr.zfill(digits) if numStr else u''
         with BusyCursor():
             to_select = set()
             to_del = set()
             item_edited = [self.panel.detailsPanel.displayed_item]
             for scrinf in selected:
-                newName = GPath(root + numStr + scrinf.abs_path.ext)
-                if not self.try_rename(scrinf, newName, to_select, to_del,
+                if not self.try_rename(scrinf, root, numStr, to_select, to_del,
                                        item_edited): break
                 num += 1
                 numStr = unicode(num).zfill(digits)
@@ -3320,6 +3342,19 @@ class ScreensList(balt.UIList):
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(to_select)
             return EventResult.CANCEL
+
+    def try_rename(self, scrinf, root, numStr, to_select=None, to_del=None,
+                   item_edited=None):
+        newName = GPath(root + numStr + scrinf.abs_path.ext) # TODO: refactor ScreenInfo.unique_name()
+        if scrinf.get_store().store_dir.join(newName).exists():
+            return None # break
+        oldName = self._try_rename(scrinf, newName)
+        if oldName:
+            if to_select is not None: to_select.add(newName)
+            if to_del is not None: to_del.add(oldName)
+            if item_edited and oldName == item_edited[0]:
+                item_edited[0] = newName
+            return oldName, newName # continue
 
     def OnChar(self, wrapped_evt):
         # Enter: Open selected screens

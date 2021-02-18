@@ -1242,38 +1242,32 @@ class UIList(wx.Panel):
         # should only be subscribed if _editLabels==True and overridden
         raise AbstractError
 
-    # Renaming - note the @conversation, this needs to be atomic.
+    def try_rename(self, info, newFileName): # Mods/BSAs
+        return self._try_rename(info, newFileName)
+
+    # Renaming - note the @conversation, this needs to be atomic with respect
+    # to refreshes and ideally atomic short
     @conversation
-    def try_rename(self, info, newFileName, to_select=None, to_del=None,
-                   item_edited=None):
-        newPath = self.data_store.store_dir.join(newFileName)
-        if not newPath.exists():
-            key = GPath(u'%s' % info) # fixme hack cause Installers and File infos have different attrs
-            try:
-                result = self.data_store._rename_operation(info, newFileName)
-                if to_select: to_select.add(newFileName)
-                if to_del: to_del.add(key)
-                if item_edited and key == item_edited[0]:
-                    item_edited[0] = newFileName
-                return result # continue
-            except (CancelError, OSError, IOError):
-                deprint(u'Renaming %s to %s failed' % (key, newFileName),
-                        traceback=True)
-                # When using moveTo I would get "WindowsError:[Error 32]The process
-                # cannot access ..." -  the code below was reverting the changes.
-                # With shellMove I mostly get CancelError so below not needed -
-                # except if a save is locked and user presses Skip - so cosaves are
-                # renamed! Error handling is still a WIP
-                for old, new in info.get_rename_paths(newFileName):
-                    if old == new: continue
-                    if new.exists() and not old.exists():
-                        # some cosave move failed, restore files
-                        new.moveTo(old)
-                    elif new.exists() and old.exists():
-                        # move copies then deletes, so the delete part failed
-                        new.remove()
-                return None # break
-        return True # continue
+    def _try_rename(self, info, newFileName):
+        try:
+            return self.data_store._rename_operation(info, newFileName)
+        except (CancelError, OSError, IOError):
+            deprint(u'Renaming %s to %s failed' % (info, newFileName),
+                    traceback=True)
+            # When using moveTo I would get "WindowsError:[Error 32]The process
+            # cannot access ..." -  the code below was reverting the changes.
+            # With shellMove I mostly get CancelError so below not needed -
+            # except if a save is locked and user presses Skip - so cosaves are
+            # renamed! Error handling is still a WIP
+            for old, new in info.get_rename_paths(newFileName):
+                if old == new: continue
+                if new.exists() and not old.exists():
+                    # some cosave move failed, restore files
+                    new.moveTo(old)
+                elif new.exists() and old.exists():
+                    # move copies then deletes, so the delete part failed
+                    new.remove()  # return None # break
+            return None # maybe a msg if really really needed
 
     def _getItemClicked(self, lb_dex_and_flags, on_icon=False):
         (hitItem, hitFlag) = lb_dex_and_flags
