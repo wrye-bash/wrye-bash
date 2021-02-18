@@ -98,7 +98,7 @@ class Mod_FullLoad(OneItemLink, _LoadLink):
     def Execute(self):
         with balt.Progress(_(u'Loading:') + u'\n%s'
                 % self._selected_item.stail) as progress:
-            print(MreRecord.type_class)
+            bolt.deprint(MreRecord.type_class)
             try:
                 self._load_mod(self._selected_info, keepAll=False,
                                progress=progress, catch_errors=False)

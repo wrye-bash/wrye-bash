@@ -66,7 +66,8 @@ def _early_setup(debug):
         global _bugdump_handle
         # _bugdump_handle = io.open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w',encoding=u'utf-8')
         _bugdump_handle = codecs.getwriter(u'utf-8')(
-            open(os.path.join(os.getcwdu(), u'BashBugDump.log'), u'w'))
+            open(os.path.join(os.getcwdu(), u'BashBugDump.log'), u'w',
+                 buffering=0))
         sys.stdout = _bugdump_handle
         sys.stderr = _bugdump_handle
 
@@ -87,7 +88,6 @@ def _import_wx():
         msg = u'\n'.join([dump_environment(), u'', u'Unable to load wx:',
                           traceback.format_exc(), u'Exiting.'])
         _tkinter_error_dial(msg, but_kwargs)
-        sys.exit(1)
 
 def _import_deps():
     """Import other required dependencies or show an error if they're
@@ -544,6 +544,7 @@ def _tkinter_error_dial(msg, but_kwargs):
     w.config(state=tkinter.DISABLED)
     w.pack()
     root_widget.mainloop()
+    sys.exit(1)
 
 def _close_dialog_windows():
     """Close any additional windows opened by wrye bash (e.g Splash, Dialogs).
