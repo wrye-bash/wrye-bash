@@ -1120,30 +1120,6 @@ class Installer(ListInfo):
     def size_or_mtime_changed(self, apath):
         return (self.fsize, self.modified) != apath.size_mtime()
 
-    def _installer_rename(self, idata_, newName):
-        """Rename package or project."""
-        g_path = GPath(self.archive)
-        if newName != g_path:
-            newPath = bass.dirs[u'installers'].join(newName)
-            if not newPath.exists():
-                DataStore._rename_operation(idata_, g_path, newName)
-                #--Add the new archive to Bash and remove old one
-                idata_[newName] = self
-                del idata_[g_path]
-                #--Update the iniInfos & modInfos for 'installer'
-                from . import modInfos, iniInfos
-                mfiles = [x for x in modInfos.table.getColumn(u'installer') if
-                          modInfos.table[x][u'installer'] == self.archive]
-                ifiles = [x for x in iniInfos.table.getColumn(u'installer') if
-                          iniInfos.table[x][u'installer'] == self.archive]
-                self.archive = newName.s # don't forget to rename !
-                for i in mfiles:
-                    modInfos.table[i][u'installer'] = self.archive
-                for i in ifiles:
-                    iniInfos.table[i][u'installer'] = self.archive
-                return True, bool(mfiles), bool(ifiles)
-        return False, False, False
-
     def open_readme(self): self._open_txt_file(self.hasReadme)
     def open_wizard(self): self._open_txt_file(self.hasWizard)
     def _open_txt_file(self, rel_path): raise AbstractError
@@ -1236,10 +1212,22 @@ class Installer(ListInfo):
 
     def renameInstaller(self, name_new, idata_):
         """Rename installer and return a three tuple specifying if a refresh in
-        mods and ini lists is needed.
-        :rtype: tuple
-        """
-        raise AbstractError
+        mods and ini lists is needed. name_new must be tested (via unique name)
+        otherwise we will overwrite! Currently only called in rename_operation
+        from InstallersList.try_rename - this passes a unique name in.
+        :rtype: tuple"""
+        super(InstallersData, idata_)._rename_operation(self, name_new)
+        #--Update the iniInfos & modInfos for 'installer'
+        from . import modInfos, iniInfos
+        mfiles = [x for x in modInfos.table.getColumn(u'installer') if
+                  modInfos.table[x][u'installer'] == self.archive]
+        ifiles = [x for x in iniInfos.table.getColumn(u'installer') if
+                  iniInfos.table[x][u'installer'] == self.archive]
+        for i in mfiles:
+            modInfos.table[i][u'installer'] = name_new.s
+        for i in ifiles:
+            iniInfos.table[i][u'installer'] = name_new.s
+        return True, bool(mfiles), bool(ifiles)
 
     def sync_from_data(self, delta_files, progress):
         """Updates this installer according to the specified files in the Data
@@ -1300,13 +1288,6 @@ class InstallerMarker(Installer):
         pass
 
     def renameInstaller(self, name_new, idata_):
-        archive = GPath(self.archive)
-        if name_new == archive: # TODO disallows case sensitive renames ??
-            return False, False, False
-        #--Add the marker to Bash and remove old one
-        self.archive = name_new.s
-        idata_[name_new] = self
-        del idata_[archive]
         return True, False, False
 
     def refreshBasic(self, progress, recalculate_project_crc=True):
@@ -1464,10 +1445,6 @@ class InstallerArchive(Installer):
         for node, isdir in list_text:
             log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
                 os.sep if isdir else u''))
-
-    def renameInstaller(self, name_new, idata_):
-        return self._installer_rename(idata_,
-                                      name_new.root + GPath(self.archive).ext)
 
     def _open_txt_file(self, rel_path):
         with gui.BusyCursor():
@@ -1664,9 +1641,6 @@ class InstallerProject(Installer):
                     log(u' ' * depth + entry)
         walkPath(apath.s, 0)
 
-    def renameInstaller(self, name_new, idata_):
-        return self._installer_rename(idata_, name_new)
-
     def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
 
     def wizard_file(self): return self.abs_path.join(self.hasWizard)
@@ -1810,7 +1784,15 @@ class InstallersData(DataStore):
             self.hasChanged = False
 
     def _rename_operation(self, member_info, newName):
-        return member_info.renameInstaller(newName, self)
+        g_path = GPath(member_info.archive)
+        if newName == g_path: # TODO disallows case sensitive renames ??
+            return False, False, False
+        rename_tuple = member_info.renameInstaller(newName, self)
+        if rename_tuple:
+            member_info.archive = newName.s
+            self[newName] = member_info
+            del self[g_path]
+        return rename_tuple
 
     #--Dict Functions ---------------------------------------------------------
     def files_to_delete(self, filenames, **kwargs):

@@ -2436,9 +2436,14 @@ class InstallersList(balt.UIList):
                 self.SelectItemsNoCallback(newselected)
             return EventResult.CANCEL
 
-    def try_rename(self, info, newFileName, refreshes=None, newselected=None):
-        newFileName = info.unique_name(newFileName)
-        result = self._try_rename(info, newFileName)
+    def try_rename(self, inst_info, newFileName, refreshes, newselected):
+        # preserve extension for installers - ##: we need an instance method here for unique_name / or pass the root?
+        newFileName = (newFileName.root + inst_info.abs_path.ext) \
+            if inst_info.is_archive() else newFileName
+        if newFileName == inst_info.archive: # just changed extension - continue
+            return False, False, False
+        newFileName = inst_info.unique_name(newFileName)
+        result = self._try_rename(inst_info, newFileName)
         if result:
             refreshes.append(result)
             if result[0]: newselected.append(newFileName)
