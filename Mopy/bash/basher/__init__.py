@@ -3334,12 +3334,13 @@ class ScreensList(balt.UIList):
         if is_edit_cancelled: return EventResult.CANCEL
         root, _newName, numStr = self.validate_filename(evt_label, has_digits=True,
                                                         ext=self.__ext_group)
-        if not (root or numStr): return # allow for number only names
+        if not (root or numStr): # allow for number only names
+            return EventResult.CANCEL
         selected = self.GetSelected()
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)
-        digits = len(u'%s' % (num + len(selected)))
-        if numStr: numStr.zfill(digits)
+        digits = len(u'%s' % (num + len(selected) - 1))
+        if numStr: numStr = numStr.zfill(digits)
         with BusyCursor():
             to_select = set()
             to_del = set()
