@@ -224,15 +224,14 @@ class _MelNum(MelBase):
     _unpacker, _packer, static_size = get_structs(u'I')
     __slots__ = ()
 
-    def __init__(self, mel_sig, attr, default=0): # set default to zero
-        super(_MelNum, self).__init__(mel_sig, attr, default)
-
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         setattr(record, self.attr, ins.unpack(self._unpacker, size_,
                                               *debug_strs)[0])
 
     def pack_subrecord_data(self, record):
-        return self._packer(getattr(record, self.attr))
+        """Will only be dumped if set by load_mel."""
+        attr = getattr(record, self.attr)
+        return None if attr is None else self._packer(attr)
 
 #------------------------------------------------------------------------------
 class MelCounter(MelBase):
@@ -605,22 +604,20 @@ class MelStrings(MelString):
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    def __init__(self, mel_sig, struct_format, *elements):
+    def __init__(self, mel_sig, struct_formats, *elements):
         """:type mel_sig: bytes
-        :type struct_format: unicode"""
+        :type struct_formats: list[unicode]"""
+        if not isinstance(struct_formats, list):
+            raise SyntaxError(u'Expected a list got "%s"' % struct_formats)
         # Sometimes subrecords have to preserve non-aligned sizes, check that
         # we don't accidentally pad those to alignment
-        if (not struct_format.startswith(u'=') and
-                struct_calcsize(struct_format) != struct_calcsize(
-                    u'=' + struct_format)):
-            raise SyntaxError(
-                u"Automatic padding inserted for struct format '%s', this is "
-                u"almost certainly not what you want. Prepend '=' to preserve "
-                u"the unaligned size or manually pad with 'x' to avoid this "
-                u"error." % struct_format)
+        struct_format = u''.join(struct_formats)
+        if (struct_calcsize(struct_format) != struct_calcsize(
+                u'=' + struct_format)):
+            struct_format = u'=%s' % struct_format
         self.mel_sig = mel_sig
         self.attrs, self.defaults, self.actions, self.formAttrs = \
-            parseElements(*elements)
+            self.parseElements(struct_formats, *elements)
         # Check for duplicate attrs - can't rely on MelSet.getSlotsUsed only,
         # since we may end up in a MelUnion which has to use a set to collect
         # its slots
@@ -670,46 +667,67 @@ class MelStruct(MelBase):
     def static_size(self):
         return self._static_size
 
-def parseElements(*elements):
-    """Parses elements and returns attrs,defaults,actions,formAttrs where:
-    * attrs is tuple of attributes (names)
-    * formAttrs is set of attributes that have fids,
-    * defaults is tuple of default values for attributes
-    * actions is tuple of callables to be used when loading data
-    Note that each element of defaults and actions matches corresponding attr element.
-    Used by MelStruct and _MelField.
+    def parseElements(self, struct_formats, *elements):
+        """Parses elements and returns attrs,defaults,actions,formAttrs where:
+        * attrs is tuple of attributes (names)
+        * formAttrs is set of attributes that have fids,
+        * defaults is tuple of default values for attributes
+        * actions is tuple of callables to be used when loading data
+        Note that each element of defaults and actions matches corresponding attr element.
+        Used by MelStruct and _MelField.
 
-    Example call:
-    parseElements('level', ('unused1', null2), (FID, 'listId', None),
-                  ('count', 1), ('unused2', null2))
+        Example call:
+        parseElements('level', 'unused1', (FID, 'listId', None),
+                      ('count', 1), 'unused2')
 
-    :type elements: (list[None|unicode|tuple])"""
-    formAttrs = set()
-    lenEls = len(elements)
-    attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls
-    for index,element in enumerate(elements):
-        if not isinstance(element,tuple):
-            attrs[index] = element
-        else:
-            el_0 = element[0]
-            attrIndex = el_0 == 0
-            if el_0 == FID:
-                formAttrs.add(element[1])
-                attrIndex = 1
-            elif callable(el_0):
-                actions[index] = el_0
-                attrIndex = 1
-            attrs[index] = element[attrIndex]
-            if len(element) - attrIndex == 2:
-                defaults[index] = element[-1] # else leave to 0
-    return tuple(attrs), tuple(defaults), tuple(actions), formAttrs
+        :type elements: (list[None|unicode|tuple])"""
+        formAttrs = set()
+        lenEls = len(elements)
+        attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls
+        expanded_fmts = self._expand_formats(elements, struct_formats)
+        for index, (element, fmt_str) in enumerate(izip(elements, expanded_fmts)):
+            if not isinstance(element,tuple):
+                attrs[index] = element
+                if type(fmt_str) is int and fmt_str: # 0 for weird subclasses
+                    defaults[index] = fmt_str * null1
+            else:
+                el_0 = element[0]
+                attrIndex = el_0 == 0
+                if el_0 == FID:
+                    formAttrs.add(element[1])
+                    attrIndex = 1
+                elif callable(el_0):
+                    actions[index] = el_0
+                    attrIndex = 1
+                attrs[index] = element[attrIndex]
+                if len(element) - attrIndex == 2:
+                    defaults[index] = element[-1] # else leave to 0
+                elif type(fmt_str) is int and fmt_str: # 0 for weird subclasses
+                    defaults[index] = fmt_str * null1
+        return tuple(attrs), tuple(defaults), tuple(actions), formAttrs
+
+    @staticmethod
+    def _expand_formats(elements, struct_formats):
+        """Expand struct_formats to match the elements - overrides point to
+        a new class (MelStructured?)"""
+        expanded_fmts = []
+        for f in struct_formats:
+            if f[-1] != u's':
+                expanded_fmts.extend([f[-1]] * int(f[:-1] or 1))
+            else:
+                expanded_fmts.append(int(f[:-1] or 1))
+        if len(expanded_fmts) != len(elements):
+            raise SyntaxError(
+                u"Format specifiers (%s) do not match elements (%s)" % (
+                expanded_fmts, elements))
+        return expanded_fmts
 
 #------------------------------------------------------------------------------
 class MelFixedString(MelStruct):
     """Subrecord that stores a string of a constant length. Just a wrapper
     around a struct with a single FixedString element."""
     def __init__(self, signature, attr, str_length, default=b''):
-        super(MelFixedString, self).__init__(signature, u'%us' % str_length,
+        super(MelFixedString, self).__init__(signature, [u'%us' % str_length],
             (FixedString(str_length, default), attr))
 
 # Simple primitive type wrappers ----------------------------------------------
@@ -746,7 +764,7 @@ class _MelFlags(_MelNum):
     __slots__ = (u'_flag_type',)
 
     def __init__(self, mel_sig, attr, flags_type):
-        super(_MelFlags, self).__init__(mel_sig, attr, default=flags_type(0))
+        super(_MelFlags, self).__init__(mel_sig, attr)
         self._flag_type = flags_type
 
     def setDefault(self, record):
@@ -757,7 +775,8 @@ class _MelFlags(_MelNum):
             self._unpacker, size_, *debug_strs)[0]))
 
     def pack_subrecord_data(self, record):
-        return self._packer(getattr(record, self.attr).dump())
+        attr = getattr(record, self.attr)
+        return self._packer(attr.dump()) if attr is not None else None
 
 class MelUInt8Flags(MelUInt8, _MelFlags): pass
 class MelUInt16Flags(MelUInt16, _MelFlags): pass
@@ -780,22 +799,9 @@ class MelXXXX(MelUInt32):
 #------------------------------------------------------------------------------
 class MelFid(MelUInt32):
     """Represents a mod record fid element."""
-    def __init__(self, mel_sig, attr):
-        super(MelFid, self).__init__(mel_sig, attr, None) ##: aaand reset default to None
 
     def hasFids(self,formElements):
         formElements.add(self)
-
-    def pack_subrecord_data(self,record):
-        try:
-            return super(MelFid, self).pack_subrecord_data( # pack an u'=I'
-                record)
-        except (AttributeError, struct_error):
-            ##: struct.error raised when trying to pack None (so the default,
-            # meaning the subrecord was not present) - AttributeError should
-            # never be raised due to brec.record_structs.MelSet.initRecord
-            # calling setDefault on the record
-            return None
 
     def mapFids(self,record,function,save=False):
         attr = self.attr
@@ -820,48 +826,3 @@ class MelOptStruct(MelStruct):
             if oldValue is not None and oldValue != default:
                 return super(MelOptStruct, self).pack_subrecord_data(record)
         return None
-
-#------------------------------------------------------------------------------
-# 'Opt' versions of the type wrappers above
-class MelOptNum(_MelNum):
-    """Represents an optional field that is only dumped if at least one
-    value is not equal to the default."""
-
-    def pack_subrecord_data(self, record):
-        oldValue = getattr(record, self.attr)
-        if oldValue is not None and oldValue != self.default:
-            return super(MelOptNum, self).pack_subrecord_data(record)
-        return None
-
-class MelOptFloat(MelOptNum, MelFloat):
-    """Optional float."""
-
-class MelOptSInt8(MelOptNum, MelSInt8):
-    """Optional signed 8-bit integer."""
-    # Unused right now - keeping around for completeness' sake and to make
-    # future usage simpler.
-
-class MelOptSInt16(MelOptNum, MelSInt16):
-    """Optional signed 16-bit integer."""
-
-class MelOptSInt32(MelOptNum, MelSInt32):
-    """Optional signed 32-bit integer."""
-
-class MelOptUInt8(MelOptNum, MelUInt8):
-    """Optional unsigned 8-bit integer."""
-
-class MelOptUInt16(MelOptNum, MelUInt16):
-    """Optional unsigned 16-bit integer."""
-
-class MelOptUInt32(MelOptNum, MelUInt32):
-    """Optional unsigned 32-bit integer."""
-
-class MelOptFid(MelFid, MelOptUInt32):  # TODO(ut): as it stands it could be
-    #   MelOptFid(MelFid) -> that's because MelFid is also used for optional
-    #   fids all over the place
-    """Optional FormID. Wrapper around MelOptUInt32 to avoid having to
-    constantly specify the format."""
-
-class MelOptUInt8Flags(MelOptUInt8, _MelFlags): pass
-class MelOptUInt16Flags(MelOptUInt16, _MelFlags): pass
-class MelOptUInt32Flags(MelOptUInt32, _MelFlags): pass

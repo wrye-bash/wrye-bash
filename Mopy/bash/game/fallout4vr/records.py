@@ -33,7 +33,7 @@ class MreTes4(MreHeaderBase):
     rec_sig = b'TES4'
 
     melSet = MelSet(
-        MelStruct(b'HEDR', u'f2I', (u'version', 0.95), u'numRecords',
+        MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 0.95), u'numRecords',
                   (u'nextObject', 0x800)),
         MelBase(b'TNAM', u'tnam_p'),
         MreHeaderBase.MelAuthor(),

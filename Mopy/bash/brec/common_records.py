@@ -242,9 +242,9 @@ class MreLand(MelRecord):
         MelGroups(u'layers',
             # Start a new layer each time we hit one of these
             MelUnion({
-                b'ATXT': MelStruct(b'ATXT', u'IBsh', (FID, u'atxt_texture'),
+                b'ATXT': MelStruct(b'ATXT', [u'I', u'B', u's', u'h'], (FID, u'atxt_texture'),
                     u'quadrant', u'unknown', u'layer'),
-                b'BTXT': MelStruct(b'BTXT', u'IBsh', (FID, u'btxt_texture'),
+                b'BTXT': MelStruct(b'BTXT', [u'I', u'B', u's', u'h'], (FID, u'btxt_texture'),
                     u'quadrant', u'unknown', u'layer'),
             }),
             # VTXT only exists for ATXT layers, i.e. if ATXT's FormID is valid

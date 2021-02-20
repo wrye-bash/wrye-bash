@@ -25,7 +25,7 @@ imported from skyrim, but only after setting MelModel to the FO4 format."""
 from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelFidList, MreLeveledListBase, MelFid, \
-    FID, MelLString, MelUInt8, MelOptFid, MelOptFloat, MelBounds, MelEdid, \
+    FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, \
     MelArray, MreGmstBase, MelUInt8Flags
 
 # Set brec.MelModel to the Fallout 4 one - do not import from skyrim.records yet
@@ -52,8 +52,8 @@ if brec.MelModel is None:
                 # Ignore texture hashes - they're only an optimization, plenty
                 # of records in Skyrim.esm are missing them
                 MelNull(types[1]),
-                MelOptFloat(types[2], u'colorRemappingIndex'),
-                MelOptFid(types[3], u'materialSwap'),
+                MelFloat(types[2], u'colorRemappingIndex'),
+                MelFid(types[3], u'materialSwap'),
                 MelBase(types[3], u'modf_p')
             )
 
@@ -69,7 +69,7 @@ class MreTes4(MreHeaderBase):
     rec_sig = b'TES4'
 
     melSet = MelSet(
-        MelStruct(b'HEDR', u'f2I', (u'version', 1.0), u'numRecords',
+        MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',
             (u'nextObject', 0x001)),
         MelBase(b'TNAM', 'tnam_p'),
         MreHeaderBase.MelAuthor(),
@@ -101,11 +101,11 @@ class MreLvli(MreLeveledList):
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8(b'LVLM', 'maxCount'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelOptFid(b'LVLG', 'glob'),
+        MelFid(b'LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
-            MelStruct(b'LLKC', u'2I', (FID, u'keyword'), u'chance'),
+            MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
         ),
         MelFid(b'LVSG', 'epicLootChance'),
         MelLString(b'ONAM', 'overrideName')
@@ -126,11 +126,11 @@ class MreLvln(MreLeveledList):
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8(b'LVLM', 'maxCount'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelOptFid(b'LVLG', 'glob'),
+        MelFid(b'LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
-            MelStruct(b'LLKC', u'2I', (FID, u'keyword'), u'chance'),
+            MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
         ),
         MelString(b'MODL','model'),
         MelBase(b'MODT','modt_p'),
