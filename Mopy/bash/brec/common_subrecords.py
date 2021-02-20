@@ -140,7 +140,7 @@ class MelCtda(MelUnion):
         # overhead otherwise
         if old_suffix_fmts:
             full_old_versions = {
-                u''.join(prefix_fmt + fmt_list + [f] if f else []) for f in
+                u''.join(prefix_fmt + fmt_list + ([f] if f else [])) for f in
                 old_suffix_fmts}
             return MelTruncatedStruct(*shared_params,
                                       old_versions=full_old_versions)

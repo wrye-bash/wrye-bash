@@ -549,7 +549,7 @@ class ADecider(object):
         :param record: The record instance we're reading attributes from.
         :return: Any value this decider deems fitting for the parameters it is
             given."""
-        if self.__class__.can_decide_at_dump:
+        if self.can_decide_at_dump:
             raise exception.AbstractError()
 
 class ACommonDecider(ADecider):

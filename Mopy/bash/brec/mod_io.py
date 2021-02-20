@@ -270,7 +270,8 @@ class ModReader(object):
         """Read from file."""
         endPos = self.ins.tell() + size
         if endPos > self.size:
-            raise ModSizeError(self.inName, debug_strs, (endPos,), self.size)
+            target_size = size - (endPos - self.size)
+            raise ModSizeError(self.inName, debug_strs, (target_size,), size)
         return self.ins.read(size)
 
     def readLString(self, size, *debug_strs):
