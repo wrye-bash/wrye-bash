@@ -39,7 +39,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
-    MelDescription, BipedFlags, MelSpells, MelUInt8Flags, MelUInt32Flags
+    MelDescription, BipedFlags, MelSpells, MelUInt8Flags, MelUInt32Flags, \
+    SignatureDecider
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -66,6 +67,13 @@ from ...brec import MelModel, MelLists
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
 #------------------------------------------------------------------------------
+class _CtdaDecider(SignatureDecider):
+    """Loads based on signature, but always dumps out the newer CTDA format."""
+    can_decide_at_dump = True
+
+    def decide_dump(self, record):
+        return b'CTDA'
+
 class MelConditions(MelGroups):
     """A list of conditions. Can contain the old CTDT format as well, which
     will be upgraded on dump."""
@@ -76,7 +84,7 @@ class MelConditions(MelGroups):
             # The old (CTDT) format is length 20 and has no suffix
             b'CTDT': MelReadOnly(MelCtda(b'CTDT', suffix_fmt=[u'4s'],
                 suffix_elements=[u'unused3'], old_suffix_fmts={u''})),
-            }),
+            }, decider=_CtdaDecider()),
         )
 
 #------------------------------------------------------------------------------
