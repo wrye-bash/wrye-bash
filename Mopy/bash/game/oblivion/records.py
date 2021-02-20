@@ -1338,7 +1338,7 @@ class MreMisc(MelRecord):
         MelUnion({
             False: MelStruct(b'DATA', [u'i', u'f'], u'value', u'weight'),
             True: MelStruct(b'DATA', [u'2I'], (FID, u'value'), u'weight'),
-        }, decider=FlagDecider(u'flags1', u'borderRegion', u'turnFireOff')),
+        }, decider=FlagDecider(u'flags1', [u'borderRegion', u'turnFireOff'])),
     )
     __slots__ = melSet.getSlotsUsed()
 

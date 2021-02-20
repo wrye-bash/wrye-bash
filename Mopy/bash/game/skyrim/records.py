@@ -1644,7 +1644,7 @@ class MreBook(MelRecord):
                 u'weight'),
         }, decider=PartialLoadDecider(
             loader=MelUInt8Flags(b'DATA', u'book_flags', _book_type_flags),
-            decider=FlagDecider(u'book_flags', u'teaches_spell'),
+            decider=FlagDecider(u'book_flags', [u'teaches_spell']),
         )),
         MelFid(b'INAM','inventoryArt'),
         MelLString(b'CNAM','description'),

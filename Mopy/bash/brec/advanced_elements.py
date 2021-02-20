@@ -623,7 +623,7 @@ class AttrValDecider(ACommonDecider):
 
 class FlagDecider(ACommonDecider):
     """Decider that checks if certain flags are set."""
-    def __init__(self, flags_attr, *required_flags):
+    def __init__(self, flags_attr, required_flags):
         """Creates a new FlagDecider with the specified flag attribute and
         required flag names.
 

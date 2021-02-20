@@ -278,7 +278,7 @@ class MelSkipInterior(MelUnion):
         super(MelSkipInterior, self).__init__({
             True: MelReadOnly(element),
             False: element,
-        }, decider=FlagDecider(u'flags', u'isInterior'))
+        }, decider=FlagDecider(u'flags', [u'isInterior']))
 
 #------------------------------------------------------------------------------
 class MelColorInterpolator(MelArray):
