@@ -178,9 +178,11 @@ class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
 
     @property
     def link_help(self):
-        if not self._enable(): return self.__class__._help + u'.  ' + _(
-                u'You must first allow editing from the column menu')
-        else: return self.__class__._help
+        full_help = self.__class__._help
+        if not self._enable():
+            full_help += u' ' + _(u'You must first allow editing from the '
+                                  u'column menu.')
+        return full_help
 
 class Master_ChangeTo(_Master_EditList):
     """Rename/replace master through file dialog."""
@@ -212,20 +214,29 @@ class Master_ChangeTo(_Master_EditList):
         self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
-##: This seems really dangerous and should probably go
 class Master_Disable(AppendableLink, _Master_EditList):
-    """Rename/replace master through file dialog."""
+    """Disable an ESM master."""
     _text = _(u'Disable')
-    _help = _(u'Disable master')
+    _help = _(u'Renames the selected ESM to a non-existent ESP so it will get '
+              u'removed when you next load and save the game.')
 
-    def _append(self, window): #--Saves only
-        return isinstance(window.detailsPanel, SaveDetails)
+    def _append(self, window):
+        # Only allow doing this for saves and only for games where removing a
+        # master from an existing save is safe
+        return bush.game.Ess.can_safely_remove_masters and isinstance(
+            window.detailsPanel, SaveDetails)
+
+    def _enable(self):
+        if not super(Master_Disable, self)._enable(): return False
+        # Only allow for .esm files, pointless on anything else
+        return self._selected_info.curr_name.cext == u'.esm'
 
     def Execute(self):
-        masterInfo = self._selected_info
-        newName = GPath(re.sub(u'[mM]$', 'p', u'XX' + masterInfo.curr_name.s))
-        #--Save Name
-        masterInfo.set_name(newName)
+        master_info = self._selected_info
+        ##: We could simplify this down to just unique_key if we had a ModInfo
+        # instance and could pass the new extension in directly
+        esp_name = GPath(u'XX%s.esp' % master_info.curr_name.sroot)
+        master_info.set_name(bosh.ModInfo.unique_name(esp_name))
         self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------

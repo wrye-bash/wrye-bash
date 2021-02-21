@@ -82,6 +82,7 @@ class Fallout3GameInfo(GameInfo):
 
     class Ess(GameInfo.Ess):
         ext = u'.fos'
+        can_safely_remove_masters = True
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True

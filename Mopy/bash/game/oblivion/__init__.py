@@ -90,6 +90,7 @@ class OblivionGameInfo(GameInfo):
 
     class Ess(GameInfo.Ess):
         canEditMore = True
+        can_safely_remove_masters = True
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True

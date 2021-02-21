@@ -252,6 +252,10 @@ class GameInfo(object):
         canEditMore = False
         # Save file extension
         ext = u'.ess'
+        # If True, then this game will reliably and safely remove a missing
+        # master from an existing save if you just load the game without that
+        # master
+        can_safely_remove_masters = False
 
     class Bsa(object):
         """Information about the BSAs (Bethesda Archives) used by this game."""
