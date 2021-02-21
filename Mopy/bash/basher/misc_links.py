@@ -35,7 +35,7 @@ __all__ = [u'ColumnsMenu', u'Master_ChangeTo', u'Master_Disable',
            u'Screens_NextScreenShot', u'Screens_JpgQuality',
            u'Screens_JpgQualityCustom', u'Screen_Rename', u'Screen_ConvertTo',
            u'Master_AllowEdit', u'Master_ClearRenames', u'SortByMenu',
-           u'Misc_SettingsDialog']
+           u'Misc_SettingsDialog', u'Master_JumpTo']
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -157,7 +157,7 @@ class Screen_Rename(UIList_Rename):
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Master_AllowEdit(CheckLink, EnabledLink):
-    _text, _help = _(u'Allow edit'), _(u'Allow editing the masters list')
+    _text, _help = _(u'Allow Editing'), _(u'Allow editing the masters list.')
 
     def _enable(self): return self.window.panel.detailsPanel.allowDetailsEdit
     def _check(self): return self.window.allowEdit
@@ -165,7 +165,8 @@ class Master_AllowEdit(CheckLink, EnabledLink):
 
 class Master_ClearRenames(ItemLink):
     _text = _(u'Clear Renames')
-    _help = _(u'Clear internal Bash renames dictionary')
+    _help = _(u'Clear the renames dictionary, causing Wrye Bash to no longer '
+              u'automatically apply the renames stored within.')
 
     def Execute(self):
         bass.settings[u'bash.mods.renames'].clear()
@@ -184,7 +185,7 @@ class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
 class Master_ChangeTo(_Master_EditList):
     """Rename/replace master through file dialog."""
     _text = _(u'Change to...')
-    _help = _(u'Rename/replace master through file dialog')
+    _help = _(u'Rename or replace the selected master through a file dialog.')
 
     @balt.conversation
     def Execute(self):
@@ -211,6 +212,7 @@ class Master_ChangeTo(_Master_EditList):
         self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
+##: This seems really dangerous and should probably go
 class Master_Disable(AppendableLink, _Master_EditList):
     """Rename/replace master through file dialog."""
     _text = _(u'Disable')
@@ -225,6 +227,21 @@ class Master_Disable(AppendableLink, _Master_EditList):
         #--Save Name
         masterInfo.set_name(newName)
         self.window.SetMasterlistEdited(repopulate=True)
+
+#------------------------------------------------------------------------------
+class Master_JumpTo(OneItemLink):
+    """Jump to the selected master."""
+    _text = _(u'Jump to Master')
+    _help = _(u'Jumps to the currently selected master. You can double-click '
+              u'on the master to the same effect.')
+
+    def _enable(self):
+        if not super(Master_JumpTo, self)._enable(): return False
+        self._sel_master = self._selected_info.curr_name
+        return self._sel_master in bosh.modInfos
+
+    def Execute(self):
+        balt.Link.Frame.notebook.SelectPage(u'Mods', self._sel_master)
 
 # Column menu -----------------------------------------------------------------
 #------------------------------------------------------------------------------

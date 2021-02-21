@@ -180,6 +180,8 @@ def InitMasterLinks():
     #--MasterList: Item Links
     MasterList.context_links.append(Master_ChangeTo())
     MasterList.context_links.append(Master_Disable())
+    MasterList.context_links.append(SeparatorLink())
+    MasterList.context_links.append(Master_JumpTo())
 
 #------------------------------------------------------------------------------
 def InitInstallerLinks():
