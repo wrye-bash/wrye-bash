@@ -66,7 +66,7 @@ else:
 
     def _warn(msg):
         warnings.warn(msg, UnicodeWarning, stacklevel=2)
-    
+
     def set_env_var(env_key, env_value):
         # Check for proper usage for the future Python 3:
         if isinstance(env_key, bytes):

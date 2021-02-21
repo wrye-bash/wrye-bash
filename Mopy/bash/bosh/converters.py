@@ -361,8 +361,7 @@ class InstallerConverter(object):
             srcInstaller = crc_installer[srcCRC]
             files = bolt.sortFiles([x[0] for x in srcInstaller.fileSizeCrcs])
             if not files: continue
-            progress(0,
-                     srcInstaller.archive + u'\n' + _(u'Extracting files...'))
+            progress(0, (u'%s\n' % srcInstaller) + _(u'Extracting files...'))
             tempCRC = srcInstaller.crc
             srcInstaller.crc = realCRC
             self._unpack(srcInstaller, files,
@@ -591,11 +590,10 @@ class InstallerConverter(object):
         if isinstance(srcInstaller, Path):
             apath = srcInstaller
         elif srcInstaller.is_archive():
-            srcInstaller = srcInstaller.archive
-            apath = installers_dir.join(srcInstaller)
+            apath = srcInstaller.abs_path
         subTempDir = tmpDir.join(u'%08X' % installerCRC)
         if progress:
-            progress(0, u'%s\n' % srcInstaller + _(u'Extracting files...'))
+            progress(0, u'%s\n' % apath + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))
         #--Extract files
         with apath.unicodeSafe() as arch:

@@ -402,8 +402,8 @@ class MelWaterVelocities(MelSequential):
 #------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapters
 def _dump_str16(str_val, __packer=structs_cache[u'H'].pack):
-    """Encodes the specified string using UTF-8 and returns data for both its
-    length (as a 16-bit integer) and its encoded value."""
+    """Encodes the specified string using the plugin encoding and returns data
+    for both its length (as a 16-bit integer) and its encoded value."""
     encoded_str = bolt.encode(str_val, firstEncoding=bolt.pluginEncoding)
     return __packer(len(encoded_str)) + encoded_str
 
@@ -1036,7 +1036,7 @@ class MelVmad(MelBase):
                     u'=' + repr(array_len) + u'i', *property_data)
             elif property_type == 14: # float array
                 array_len = len(property_data)
-                out_data += __packers[u'U'](array_len)
+                out_data += __packers[u'I'](array_len)
                 return out_data + struct_pack(
                     u'=' + repr(array_len) + u'f', *property_data)
             elif property_type == 15: # bool array (stored as uint8 array)

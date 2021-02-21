@@ -1141,6 +1141,9 @@ class Installer(object):
     def __repr__(self):
         return u'%s<%r>' % (self.__class__.__name__, self.archive)
 
+    def __str__(self):
+        return self.archive
+
     #--ABSTRACT ---------------------------------------------------------------
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, and modified from source
@@ -1210,7 +1213,7 @@ class Installer(object):
     def listSource(self):
         """Return package structure as text."""
         log = bolt.LogFile(io.StringIO())
-        log.setHeader(u'%s ' % self.archive + _(u'Package Structure:'))
+        log.setHeader(u'%s ' % self + _(u'Package Structure:'))
         log(u'[spoiler]\n', False)
         self._list_package(self.abs_path, log)
         log(u'[/spoiler]')
@@ -1337,8 +1340,8 @@ class InstallerArchive(Installer):
         from archive to self.tempDir. progress will be zeroed so pass a
         SubProgress in.
         fileNames: File names (not paths)."""
-        if not fileNames: raise ArgumentError(
-            u'No files to extract for %s.' % self.archive)
+        if not fileNames:
+            raise ArgumentError(u'No files to extract for %s.' % self)
         # expand wildcards in fileNames to get actual count of files to extract
         #--Dump file list
         with self.tempList.open(u'w', encoding=u'utf8') as out:
@@ -1362,11 +1365,11 @@ class InstallerArchive(Installer):
 
     def _install(self, dest_src, progress):
         #--Extract
-        progress(0, self.archive + u'\n' + _(u'Extracting files...'))
+        progress(0, (u'%s\n' % self) + _(u'Extracting files...'))
         unpackDir = self.unpackToTemp(dest_src.values(),
                                       SubProgress(progress, 0, 0.9))
         #--Rearrange files
-        progress(0.9, self.archive + u'\n' + _(u'Organizing files...'))
+        progress(0.9, (u'%s\n' % self) + _(u'Organizing files...'))
         srcDirJoin = unpackDir.join
         subprogress = SubProgress(progress,0.9,1.0)
         subprogress.setFull(len(dest_src))
@@ -1589,7 +1592,7 @@ class InstallerProject(Installer):
 
     def _install(self, dest_src, progress):
         progress.setFull(len(dest_src))
-        progress(0, self.archive + u'\n' + _(u'Moving files...'))
+        progress(0, (u'%s\n' % self) + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files
         srcDirJoin = self.abs_path.join
@@ -1847,14 +1850,14 @@ class InstallersData(DataStore):
             self.pop(deleted)
         pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
-        for subPending, is_project in izip(
+        for subPending, is_project_type in izip(
                 (pending - projects, pending & projects), (False, True)):
             if not subPending: continue
             progress(0,_(u'Scanning Packages...'))
             progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
                 progress(index, _(u'Scanning Packages...') + u'\n%s' % package)
-                self.refresh_installer(package, is_project, progress,
+                self.refresh_installer(package, is_project_type, progress,
                                        _index=index, _fullRefresh=fullRefresh)
         return changed
 
@@ -1881,7 +1884,7 @@ class InstallersData(DataStore):
                           x.is_archive() and x.hasBCF]
         if not installers: return [], []
         if not destArchives:
-            destArchives = [GPath(u'[Auto applied BCF] %s' % x.archive) for x
+            destArchives = [GPath(u'[Auto applied BCF] %s' % x) for x
                             in installers]
         progress.setFull(len(installers))
         pending = []
@@ -1973,8 +1976,7 @@ class InstallersData(DataStore):
                     apath):
                 pending.add(item)
             else: installers.add(item)
-        deleted = {x for x, y in self.iteritems()
-                   if not y.is_marker()} - installers - pending
+        deleted = set(self.ipackages(self)) - installers - pending
         refresh_info = self._RefreshInfo(deleted, pending, projects)
         return refresh_info
 
@@ -2972,18 +2974,16 @@ class InstallersData(DataStore):
         :param installerKeys: an iterable of bolt.Path
         :return: a list of installable packages/projects bolt.Path
         """
-        def installable(x): # type -> 0: unset/invalid; 1: simple; 2: complex
-            return self[x].type in (1, 2) and (
-                        self[x].is_archive() or self[x].is_project())
-        return filter(installable, installerKeys)
+        # type -> 0: unset/invalid; 1: simple; 2: complex
+        return [k for k in self.ipackages(installerKeys) if
+                self[k].type in (1, 2)]
 
-    def filterPackages(self, installerKeys):
+    def ipackages(self, installerKeys):
         """Remove markers from installerKeys.
         :type installerKeys: collections.Iterable[bolt.Path]
         :rtype: list[bolt.Path]
         """
-        return [x for x in installerKeys
-                if self[x].is_archive() or self[x].is_project()]
+        return (x for x in installerKeys if not self[x].is_marker())
 
     def createFromData(self, projectPath, ci_files, progress):
         if not ci_files: return

@@ -2308,7 +2308,7 @@ class InstallersList(balt.UIList):
     #--Labels
     labels = OrderedDict([
         (u'Package',  lambda self, p: p.s),
-        (u'Order',    lambda self, p: unicode(self.data_store[p].order)),
+        (u'Order',    lambda self, p: u'%d' % self.data_store[p].order),
         (u'Modified', lambda self, p: format_date(self.data_store[p].modified)),
         (u'Size',     lambda self, p: self.data_store[p].size_string()),
         (u'Files',    lambda self, p: self.data_store[p].number_string(
@@ -2355,20 +2355,20 @@ class InstallersList(balt.UIList):
 
     def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming installers"""
-        to_rename = self.GetSelected()
+        to_rename = self.GetSelectedInfos()
         if not to_rename:
             # We somehow got here but have nothing selected, abort
             return EventResult.CANCEL
         #--Only rename multiple items of the same type
-        renaming_type = type(self.data_store[to_rename[0]])
-        last_marker = GPath(u'==Last==')
+        renaming_type = type(to_rename[0])
+        last_marker = u'==last=='
         for item in to_rename:
-            if not isinstance(self.data_store[item], renaming_type):
+            if not type(item) is renaming_type:
                 balt.showError(self, _(
                     u"Bash can't rename mixed installers types"))
                 return EventResult.CANCEL
             #--Also, don't allow renaming the 'Last' marker
-            elif item == last_marker:
+            elif item.archive.lower() == last_marker:
                 return EventResult.CANCEL
         uilist_ctrl.ec_set_on_char_handler(self._OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
@@ -2699,7 +2699,7 @@ class InstallersList(balt.UIList):
         modified/deleted (BAIN only scans Data/ once or boot). If 'shallow' is
         True (only the configurations of the installers changed) it will run
         refreshDataSizeCrc of the installers, otherwise a full refreshBasic."""
-        toRefresh = self.data_store.filterPackages(toRefresh)
+        toRefresh = list(self.data_store.ipackages(toRefresh))
         if not toRefresh: return
         try:
             with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,
@@ -2708,8 +2708,8 @@ class InstallersList(balt.UIList):
                 dest = set() # installer's destination paths rel to Data/
                 for index, installer in enumerate(
                         self.data_store.sorted_values(toRefresh)):
-                    progress(index, _(u'Refreshing Packages...') + u'\n' +
-                             installer.archive)
+                    progress(index, _(u'Refreshing Packages...') + u'\n%s' %
+                             installer)
                     if shallow:
                         op = installer.refreshDataSizeCrc
                     else:

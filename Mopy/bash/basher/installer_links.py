@@ -314,7 +314,7 @@ class Installer_Wizard(_Installer_AWizardLink):
         for iniFile, wizardEdits in ret.ini_edits.iteritems():
             basen = os.path.basename(os.path.splitext(iniFile)[0])
             outFile = bass.dirs[u'ini_tweaks'].join(
-                u'%s - Wizard Tweak [%s].ini' % (installer.archive, basen))
+                u'%s - Wizard Tweak [%s].ini' % (installer, basen))
             # Use UTF-8 since this came from a wizard.txt which could have
             # characters in it that are unencodable in cp1252 - plus this is
             # just a tweak, won't be read by the game
@@ -745,7 +745,8 @@ class Installer_Refresh(_InstallerLink):
             self._help = Installer_Refresh._help + u'.  ' + _(
                 u'Will not recalculate cached crcs of files in a project')
 
-    def _enable(self): return bool(self.idata.filterPackages(self.selected))
+    def _enable(self):
+        return bool(list(self.idata.ipackages(self.selected)))
 
     @balt.conversation
     def Execute(self):
@@ -948,8 +949,7 @@ class Installer_Espm_List(_Installer_Details_Link):
               u'sub-packages (and copies it to the system clipboard).')
 
     def Execute(self):
-        subs = (_(u'Plugin List for %s:') % self._installer.archive +
-                u'\n[spoiler]\n')
+        subs = _(u'Plugin List for %s:') % self._installer + u'\n[spoiler]\n'
         espm_list = self.window.gEspmList
         for index in range(espm_list.lb_get_items_count()):
             subs += [u'   ',u'** '][espm_list.lb_is_checked_at_index(index)] + \
@@ -1023,7 +1023,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
               u'copies it to the system clipboard).')
 
     def Execute(self):
-        subs = _(u'Sub-Packages List for %s:') % self._installer.archive
+        subs = _(u'Sub-Packages List for %s:') % self._installer
         subs += u'\n[spoiler]\n'
         for index in xrange(self.window.gSubList.lb_get_items_count()):
             subs += [u'   ', u'** '][self.window.gSubList.lb_is_checked_at_index(
@@ -1149,14 +1149,15 @@ class Installer_SyncFromData(_SingleInstallable):
                 progress=SubProgress(progress, 0.1, 0.7))
             if (actual_del != len(sel_missing)
                     or actual_upd != len(sel_mismatched)):
-                self._showWarning(
-                    _(u'Something went wrong when updating "%s" installer.') %
-                    self._selected_info.archive + u'\n' +
+                msg = u'\n'.join([
+                    _(u'Something went wrong when updating "%s" installer.'
+                      ) % self._selected_info,
                     _(u'Deleted %s. Expected to delete %s file(s).') % (
-                        actual_del, len(sel_missing)) + u'\n' +
+                        actual_del, len(sel_missing)),
                     _(u'Updated %s. Expected to update %s file(s).') % (
-                        actual_upd, len(sel_mismatched))  + u'\n' +
-                    _(u'Check the integrity of the installer.'))
+                        actual_upd, len(sel_mismatched)),
+                    _(u'Check the integrity of the installer.')])
+                self._showWarning(msg)
             self._selected_info.refreshBasic(SubProgress(progress, 0.7, 0.8))
             if was_rar:
                 final_package = self._selected_info.writable_archive_name()
@@ -1251,7 +1252,7 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
             .defaultExt
         #--List source archives
         message = _(u'Using:') + u'\n* ' + u'\n* '.join(sorted(
-            u'(%08X) - %s' % (x, crc_installer[x].archive) for x in
+            u'(%08X) - %s' % (x, crc_installer[x]) for x in
             self.converter.srcCRCs)) + u'\n'
         #--Ask for an output filename
         destArchive = self._askFilename(message, filename=defaultFilename)
@@ -1369,7 +1370,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
                 len(converter.convertedFiles))
             log.setHeader(u'. ' + _(u'Requires: %u file(s)') %
                           len(converter.srcCRCs))
-            log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, crc_installer[x].archive) for x in converter.srcCRCs if x in crc_installer)))
+            log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, crc_installer[x]) for x in converter.srcCRCs if x in crc_installer)))
             log.setHeader(u'. '+_(u'Options:'))
             log(u'  * '+_(u'Skip Voices')+u'   = %s'%bool(converter.skipVoices))
             log(u'  * '+_(u'Solid Archive')+u' = %s'%bool(converter.isSolid))
