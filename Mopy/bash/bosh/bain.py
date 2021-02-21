@@ -44,7 +44,7 @@ from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
 from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
-    LowerDict, AFile, dict_sort
+    LowerDict, AFile, dict_sort, GPath_no_norm
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 from ..ini_files import OBSEIniFile
@@ -1221,7 +1221,7 @@ class Installer(ListInfo):
         from . import modInfos, iniInfos
         ##: self.archive still the old value (should be set in super but no "name" attr)
         mfiles = [x for x in modInfos.table.getColumn(u'installer') if
-                  modInfos.table[x][u'installer'] == self.archive]
+                  modInfos.table[x][u'installer'] == self.archive] ##: ci comparison!
         ifiles = [x for x in iniInfos.table.getColumn(u'installer') if
                   iniInfos.table[x][u'installer'] == self.archive]
         for i in mfiles:
@@ -1246,9 +1246,15 @@ class InstallerMarker(Installer):
     _is_filename = False
 
     @staticmethod
-    def _new_name(base_name, count, add_copy=False):
+    def _new_name(base_name, count):
         cnt_str = (u' (%d)' % count) if count else u''
-        return GPath(u'==' + base_name.s.strip(u'=') + cnt_str + u'==')
+        return GPath_no_norm(u'==' + base_name.s.strip(u'=') + cnt_str + u'==')
+
+    def unique_key(self, new_root, ext=u'', add_copy=False):
+        new_name = GPath_no_norm(new_root + (_(u' Copy') if add_copy else u''))
+        if new_name.s == self.ci_key.s: # allow change of case
+            return None
+        return self.unique_name(new_name)
 
     @classmethod
     def is_marker(cls): return True
@@ -1318,9 +1324,12 @@ class InstallerArchive(Installer):
             name_str, e = r + __7z, __7z
         else: msg = u''
         name_path, root = super(Installer, cls).validate_filename_str(name_str,
-            {e})
-        # propagate the msg for extension change
-        return name_path, None if root is None else msg
+                                                                      {e})
+        if root is None:
+            return name_path, None
+        if msg: # propagate the msg for extension change
+            return name_path, (root, msg)
+        return name_path, root
 
     def __reduce__(self):
         from . import InstallerArchive as boshInstallerArchive
@@ -1515,9 +1524,8 @@ class InstallerProject(Installer):
     def is_project(cls): return True
 
     @staticmethod
-    def _new_name(base_name, count, add_copy=False):
-        return base_name + ((_(u' Copy') if add_copy else u'') + (
-                u' (%d)' % count) if count else u'')
+    def _new_name(base_name, count):
+        return base_name + ((u' (%d)' % count) if count else u'')
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
@@ -1785,14 +1793,11 @@ class InstallersData(DataStore):
             self.hasChanged = False
 
     def rename_operation(self, member_info, newName):
-        g_path = GPath(member_info.archive)
-        if newName == g_path: # TODO disallows case sensitive renames ??
-            return False, False, False
         rename_tuple = member_info.renameInstaller(newName, self)
         if rename_tuple:
+            del self[member_info.ci_key]
             member_info.archive = newName.s
             self[newName] = member_info
-            del self[g_path]
         return rename_tuple
 
     #--Dict Functions ---------------------------------------------------------

@@ -123,16 +123,16 @@ class File_Duplicate(ItemLink):
             #--Continue copy
             if bosh.bak_file_pattern.match(to_duplicate.s):
                 continue #YAK!
-            (destDir, wildcard) = (fileInfo.dir, u'*' + to_duplicate.ext)
-            destName = ListInfo.new_path(to_duplicate, destDir)
-            destDir.makedirs()
+            r, e = to_duplicate.root, to_duplicate.ext
+            destName = fileInfo.unique_key(r, e, add_copy=True)
+            destDir = fileInfo.dir
             if len(self.selected) == 1:
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
-                    defaultFile=destName.s, wildcard=wildcard)
+                    defaultFile=destName.s, wildcard=u'*%s' %e)
                 if not destPath: return
                 destDir, destName = destPath.headTail
-                if destDir == fileInfo.dir:
+                if destDir == fileInfo.dir: # FIXME validate (or ask save does that)?
                     if destName == to_duplicate:
                         self._showError(
                             _(u'Files cannot be duplicated to themselves!'))

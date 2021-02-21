@@ -145,27 +145,19 @@ class ListInfo(object):
 
     # Generate unique filenames when duplicating files etc
     @staticmethod
-    def _new_name(base_name, count, add_copy=False):
+    def _new_name(base_name, count):
         r, e = base_name.sroot, base_name.ext
         if not count:
-            return GPath(r + (_(u' Copy') if add_copy else u'') + e)
+            return GPath(r + e)
         return GPath(r + (u' (%d)' % count) + e)
 
     @classmethod
-    def unique_name(cls, name_str, add_copy=False): # Py3: kwargs
-        base_name, count = cls._new_name(GPath(name_str), 0, add_copy), 0
+    def unique_name(cls, name_str):
+        base_name, count = cls._new_name(GPath(name_str), 0), 0
         while GPath(name_str) in cls.get_store():
             count += 1
-            name_str= cls._new_name(base_name, count, add_copy)
-        return GPath(name_str) # gpath markers and projects
-
-    @classmethod
-    def new_path(cls, name_str, dest_dir):
-        base_name, count = cls._new_name(name_str, 0, True), 0
-        while dest_dir.join(name_str).exists() and count < 1000:
-            count += 1
             name_str= cls._new_name(base_name, count)
-        return name_str
+        return GPath(name_str) # gpath markers and projects
 
     # Gui renaming stuff ------------------------------------------------------
     @classmethod
@@ -180,10 +172,24 @@ class ListInfo(object):
     def get_store(cls):
         raise AbstractError(u'%s does not provide a data store' % type(cls))
 
+    # Instance methods --------------------------------------------------------
     def get_rename_paths(self, newName):
         """Return possible paths this file's renaming might affect (possibly
         omitting some that do not exist)."""
         return [(self.abs_path, self.get_store().store_dir.join(newName))]
+
+    @property
+    def ci_key(self):
+        return GPath_no_norm(u'%s' % self)
+
+    def unique_key(self, new_root, ext=u'', add_copy=False):
+        if self.__class__._valid_exts_re and not ext:
+            ext = self.ci_key.ext
+        new_name = GPath_no_norm(
+            new_root + (_(u' Copy') if add_copy else u'') + ext)
+        if new_name == self.ci_key: # new and old names are ci-same
+            return None
+        return self.unique_name(new_name)
 
 class MasterInfo(object):
     """Slight abstraction over ModInfo that allows us to represent masters that

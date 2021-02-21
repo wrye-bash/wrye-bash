@@ -126,7 +126,9 @@ class _InstallerLink(Installers_Link, EnabledLink):
         if msg is None:
             self._showError(archive_path) # it's an error message in this case
             return
-        if msg: self._showWarning(msg) # warn on extension change
+        if isinstance(msg, tuple):
+            _root, msg = msg
+            self._showWarning(msg) # warn on extension change
         if no_dir and self.idata.store_dir.join(archive_path).isdir():
             self._showError(_(u'%s is a directory.') % archive_path)
             return
@@ -414,8 +416,8 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     @balt.conversation
     def Execute(self):
         """Duplicate selected Installer."""
-        newName = self._selected_info.unique_name(self._selected_item,
-                                                  add_copy=True)
+        newName = self._selected_info.unique_key(self._selected_item.root,
+                                                 add_copy=True)
         allowed_exts = {} if not self._selected_info.is_archive() else {
             self._selected_item.ext}
         result = self._askFilename(

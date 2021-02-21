@@ -2035,10 +2035,9 @@ class SaveList(balt.UIList):
         to_select = set()
         to_del = set()
         for saveInfo in self.GetSelectedInfos(selected):
-            rename_res = self.try_rename(saveInfo, newName, to_select, to_del,
+            rename_res = self.try_rename(saveInfo, root, to_select, to_del,
                                          item_edited)
             if not rename_res: break
-            newName = rename_res[-1] # might have changed
         if to_select:
             self.RefreshUI(redraw=to_select, to_del=to_del, # to_add
                            detail_item=item_edited[0])
@@ -2046,9 +2045,9 @@ class SaveList(balt.UIList):
             self.SelectItemsNoCallback(to_select)
         return EventResult.CANCEL # needed ! clears new name from label on exception
 
-    def try_rename(self, saveinf, newFileName, to_select=None, to_del=None,
-                   item_edited=None):
-        newFileName = saveinf.unique_name(newFileName)
+    def try_rename(self, saveinf, new_root, to_select=None, to_del=None,
+                   item_edited=None, ext=u''):
+        newFileName = saveinf.unique_key(new_root, ext)
         oldName = self._try_rename(saveinf, newFileName)
         if oldName:
             if to_select is not None: to_select.add(newFileName)
@@ -2086,9 +2085,8 @@ class SaveList(balt.UIList):
             return
         sinf = self.data_store[hitItem]
         do_enable = not sinf.is_save_enabled()
-        newName = hitItem.root + (
-            bush.game.Ess.ext if do_enable else hitItem.ext[:-1] + u'r')
-        rename_res = self.try_rename(sinf, newName)
+        extension = bush.game.Ess.ext if do_enable else hitItem.ext[:-1] + u'r'
+        rename_res = self.try_rename(sinf, hitItem.root, ext=extension)
         if rename_res:
             self.RefreshUI(redraw=[rename_res[1]], to_del=[hitItem])
 
@@ -2232,7 +2230,7 @@ class SaveDetails(_ModsSavesDetails):
         #--Change Name?
         to_del = set()
         if changeName:
-            newName = GPath(self.fileStr.strip())
+            newName = GPath(self.fileStr.strip()).root
             # if you were wondering: OnFileEdited checked if file existed,
             # and yes we recheck below, in Mod/BsaDetails we don't - filesystem
             # APIs might warn user (with a dialog hopefully) for an overwrite,
@@ -2366,16 +2364,15 @@ class InstallersList(balt.UIList):
         #--Only rename multiple items of the same type
         renaming_type = super(InstallersList, self)._rename_type()
         if renaming_type is None: return None
-        last_marker = u'==last=='
         for item in self.GetSelectedInfos():
             if not type(item) is renaming_type:
                 balt.showError(self, _(
                     u"Bash can't rename mixed installers types"))
                 return None
             #--Also, don't allow renaming the 'Last' marker
-            elif item.archive.lower() == last_marker: ##: we should drop that - create a singleton last marker
+            elif item.archive == self.data_store.lastKey:
                 balt.showError(self, _(
-                    u'Renaming %s is not allowed' % u'==Last=='))
+                    u'Renaming %s is not allowed' % self.data_store.lastKey))
                 return None
         return renaming_type
 
@@ -2408,14 +2405,15 @@ class InstallersList(balt.UIList):
             balt.showError(self, newName)
             return EventResult.CANCEL
         #--Rename each installer, keeping the old extension (for archives)
+        if isinstance(root, tuple):
+            root = root[0]
         with BusyCursor():
             refreshes, ex = [(False, False, False)], None
             newselected = []
             try:
                 for package in selected:
-                    newName = self.try_rename(package, newName, refreshes,
-                                              newselected)
-                    if not newName:
+                    if not self.try_rename(package, root, refreshes,
+                                           newselected):
                         ex = True
                         break
             finally:
@@ -2436,13 +2434,10 @@ class InstallersList(balt.UIList):
                 self.SelectItemsNoCallback(newselected)
             return EventResult.CANCEL
 
-    def try_rename(self, inst_info, newFileName, refreshes, newselected):
-        # preserve extension for installers - ##: we need an instance method here for unique_name / or pass the root?
-        newFileName = (newFileName.root + inst_info.abs_path.ext) \
-            if inst_info.is_archive() else newFileName
-        if newFileName == inst_info.archive: # just changed extension - continue
+    def try_rename(self, inst_info, new_root, refreshes, newselected):
+        newFileName = inst_info.unique_key(new_root) # preserve extension for installers
+        if newFileName is None: # just changed extension - continue
             return False, False, False
-        newFileName = inst_info.unique_name(newFileName)
         result = self._try_rename(inst_info, newFileName)
         if result:
             refreshes.append(result)
@@ -3350,7 +3345,7 @@ class ScreensList(balt.UIList):
 
     def try_rename(self, scrinf, root, numStr, to_select=None, to_del=None,
                    item_edited=None):
-        newName = GPath(root + numStr + scrinf.abs_path.ext) # TODO: refactor ScreenInfo.unique_name()
+        newName = GPath(root + numStr + scrinf.abs_path.ext) # TODO: refactor ScreenInfo.unique_key()
         if scrinf.get_store().store_dir.join(newName).exists():
             return None # break
         oldName = self._try_rename(scrinf, newName)
