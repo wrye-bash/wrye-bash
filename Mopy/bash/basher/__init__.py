@@ -339,6 +339,13 @@ class MasterList(_ModsUIList):
     _do_size_checks = False
 
     @property
+    def esmsFirst(self):
+        # Flip the default for masters, we want to show the order in the save
+        # so as to not make renamed/disabled masters 'jump around'
+        return (settings.get(self.keyPrefix + u'.esmsFirst', False) or
+                self.sort_column in self._esmsFirstCols)
+
+    @property
     def cols(self):
         # using self.__class__.keyPrefix for common saves/mods masters settings
         return settings.getChanged(self.__class__.keyPrefix + u'.cols')
