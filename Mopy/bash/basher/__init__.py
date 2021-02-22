@@ -1146,8 +1146,8 @@ class ModList(_ModsUIList):
         # the lowest-loading one that was (un)checked as well since their
         # load order/index columns will change. A full refresh is complete
         # overkill for this, but alas... -> #353
-        if len(impacted_plugins) == 1:
-            lowest_impacted = next(iter(impacted_plugins)) # fast path
+        if len(ui_impacted) == 1:
+            lowest_impacted = next(iter(ui_impacted)) # fast path
         else:
             lowest_impacted = min(ui_impacted,
                                   key=load_order.cached_lo_index_or_max)

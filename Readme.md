@@ -66,7 +66,7 @@ Once you have those, install the required packages by running:
 path/to/python.exe -m pip install -r requirements.txt
 ```
 
-Refer to the readmes for [detailed instructions][12]. In short:
+Refer to the readmes linked above for detailed instructions. In short:
 
 1. Install one of the supported games (Oblivion, Skyrim, Fallout).
 1. Install Python and plugins above.

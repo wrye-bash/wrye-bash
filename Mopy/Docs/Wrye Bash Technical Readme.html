@@ -57,7 +57,9 @@
                         <li><a href="#wizards-dialog">Dialogues</a></li>
                         <li><a href="#wizards-language">Language Structure</a></li>
                         <li><a href="#wizards-functions">Functions</a></li>
+                        <li><a href="#wizards-deprecated-functions">Deprecated Functions</a></li>
                         <li><a href="#wizards-keywords">Keywords</a></li>
+                        <li><a href="#wizards-deprecated-keywords">Deprecated Keywords</a></li>
                         <li><a href="#wizards-operators">Operators</a></li>
                         <li><a href="#wizards-constants">Standard Constants</a></li>
                         <li><a href="#wizards-escape">Escape Sequences</a></li>
@@ -148,7 +150,6 @@
 
 
 <h3 id="wizards-functions">Functions</h3>
-<p><dfn id="CompareObVersion">CompareObVersion</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsCompareGameVersion">CompareGameVersion</a> instead.
 <p><dfn id="wizardsCompareGameVersion">CompareGameVersion</dfn> - Used to test the installed version of the game Wrye Bash is running for against the version you specify.
 <code class="box">CompareGameVersion(version_string)</code>
 <ul>
@@ -160,7 +161,6 @@
     <li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
     <li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
 </ul>
-<p><dfn id="wizardsCompareOBSEVersion">CompareOBSEVersion</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsCompareSEVersion">CompareSEVersion</a> instead.
 <p><dfn id="wizardsCompareSEVersion">CompareSEVersion</dfn> - Used to test the installed version of the Script Extender of the game that Wrye Bash is running for against the one you specify.
 <code class="box">CompareSEVersion(version_string)</code>
 <ul>
@@ -172,7 +172,6 @@
     <li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
     <li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>, or there is no Script Extender available for the game.
 </ul>
-<p><dfn id="wizardsCompareOBGEVersion">CompareOBGEVersion</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsCompareGEVersion">CompareGEVersion</a> instead.
 <p><dfn id="wizardsCompareGEVersion">CompareGEVersion</dfn> - Used to test the installed version of the Graphics Extender of the game that Wrye Bash is running for against the one you specify.
 <code class="box">CompareGEVersion(version_string)</code>
 <ul>
@@ -229,7 +228,6 @@
     <li><var>fallback_val</var> - If the plugin has no load order index.</li>
     <li>Otherwise, a positive integer corresponding to the plugin's load order index.</li>
 </ul>
-<p><dfn id="wizardsGetEspmStatus">GetEspmStatus</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsGetPluginStatus">GetPluginStatus</a> instead.</p>
 <p><dfn id="wizardsGetPluginStatus">GetPluginStatus</dfn> - Tests the current status of a plugin in the Data directory. Takes ghosting into account when testing the status.</p>
 <code class="box">GetPluginStatus(file_name)</code>
 <ul>
@@ -387,6 +385,12 @@
     <li>An empty string if <var>path_string</var> does not contain a folder, or is not a path.
 </ul>
 
+<h3 id="wizards-deprecated-functions">Deprecated Functions</h3>
+<p><dfn id="wizardsCompareObVersion">CompareObVersion</dfn> - Use <a href="#wizardsCompareGameVersion">CompareGameVersion</a> instead.</p>
+<p><dfn id="wizardsCompareOBSEVersion">CompareOBSEVersion</dfn> - Use <a href="#wizardsCompareSEVersion">CompareSEVersion</a> instead.</p>
+<p><dfn id="wizardsCompareOBGEVersion">CompareOBGEVersion</dfn> - Use <a href="#wizardsCompareGEVersion">CompareGEVersion</a> instead.</p>
+<p><dfn id="wizardsGetEspmStatus">GetEspmStatus</dfn> - Use <a href="#wizardsGetPluginStatus">GetPluginStatus</a> instead.</p>
+
 <h3 id="wizards-keywords">Keywords</h3>
 <p>Keywords are like functions, but don't require brackets around their arguments, and are used for controlling the flow of a wizard or performing special tasks.
 <p><dfn id="wizardsSelectSubPackage">SelectSubPackage</dfn> - Cause the specified sub-package to be selected for installation. This is equivalent to checking the sub-package and all the plugins in that subpackage in the BAIN window.</p>
@@ -399,13 +403,11 @@
 <ul>
     <li><code>name</code> - A string or variable holding the name of the sub-package to de-select.
 </ul>
-<p><dfn>SelectEspm</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsSelectPlugin">SelectPlugin</a> instead.</p>
 <p><dfn id="wizardsSelectPlugin">SelectPlugin</dfn> - Cause the specified plugin to be selected for installation. This is equivalent to checking the plugin in the Plugin Filter of the BAIN window.</p>
 <code class="box">SelectPlugin plugin_name</code>
 <ul>
     <li><var>plugin_name</var> - A string or variable holding the name of the plugin to select.</li>
 </ul>
-<p><dfn>DeSelectEspm</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsDeSelectPlugin">DeSelectPlugin</a> instead.</p>
 <p><dfn id="wizardsDeSelectPlugin">DeSelectPlugin</dfn> - Cause the specified plugin to be deselected from installation. This is equivalent to un-checking the plugin in the Plugin Filter of the BAIN window.</p>
 <code class="box">DeSelectPlugin plugin_name</code>
 <ul>
@@ -415,26 +417,21 @@
 <code class="box">SelectAll</code>
 <p><dfn>DeSelectAll</dfn> - Cause all sub-packages and plugins to be de-selected from installation. This is equivalent to first un-checking all plugins in the Plugin Filter of the BAIN window, then un-checking all sub-packages in the BAIN window.</p>
 <code class="box">DeSelectAll</code>
-<p><dfn>SelectAllEspms</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsSelectAllPlugins"> SelectAllPlugins</a> instead.</p>
 <p><dfn id="wizardsSelectAllPlugins">SelectAllPlugins</dfn> - Cause all plugins to be selected for installation. This is equivalent to checking all plugins in the Plugin Filter of the BAIN window.</p>
 <code class="box">SelectAllPlugins</code>
-<p><dfn>DeSelectAllEspms</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsDeSelectAllPlugins">DeSelectAllPlugins</a> instead.</p>
 <p><dfn id="wizardsDeSelectAllPlugins">DeSelectAllPlugins</dfn> - Cause all plugins to be de-selected from installation. This is equivalent to un-checking all plugins in the Plugin Filter of the BAIN window.</p>
 <code class="box">DeSelectAllPlugins</code>
-<p><dfn id="wizardsRenameEspm">RenameEspm</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsRenamePlugin">RenamePlugin</a> instead.</p>
 <p><dfn id="wizardsRenamePlugin">RenamePlugin</dfn> - Change the installed name of a plugin. Note that the file extension must stay the same.</p>
 <code class="box">RenamePlugin original_name, new_name</code>
 <ul>
     <li><var>original_name</var> - The name of the plugin, as it appears in the BAIN package.</li>
     <li><var>new_name</var> - The new name you want to have the plugin installed as.</li>
 </ul>
-<p><dfn>ResetEspmName</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsResetPluginName">ResetPluginName</a> instead.</p>
 <p><dfn id="wizardsResetPluginName">ResetPluginName</dfn> - Resets the name of a plugin back to its default name.</p>
 <code class="box">ResetPluginName original_name</code>
 <ul>
     <li><var>original_name</var> - The name of the plugin, as it appears in the BAIN package.</li>
 </ul>
-<p><dfn>ResetAllEspmNames</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsResetAllPluginNames">ResetAllPluginNames</a> instead.</p>
 <p><dfn id="wizardsResetAllPluginNames">ResetAllPluginNames</dfn> - Resets the names of all plugins back to their default names.</p>
 <code class="box">ResetAllPluginNames</code>
 <p><dfn>Note</dfn> - Add a note to the user to be displayed at the end of the wizard, on the finish page. The <code>'- '</code> will be added automatically.
@@ -591,6 +588,15 @@ Case 'option n'
     lines
     Break
 EndSelect</code>
+
+<h3 id="wizards-deprecated-keywords">Deprecated Keywords</h3>
+<p><dfn>SelectEspm</dfn> - Use <a href="#wizardsSelectPlugin">SelectPlugin</a> instead.</p>
+<p><dfn>DeSelectEspm</dfn> - Use <a href="#wizardsDeSelectPlugin">DeSelectPlugin</a> instead.</p>
+<p><dfn>SelectAllEspms</dfn> - Use <a href="#wizardsSelectAllPlugins"> SelectAllPlugins</a> instead.</p>
+<p><dfn>DeSelectAllEspms</dfn> - Use <a href="#wizardsDeSelectAllPlugins">DeSelectAllPlugins</a> instead.</p>
+<p><dfn>RenameEspm</dfn> - Use <a href="#wizardsRenamePlugin">RenamePlugin</a> instead.</p>
+<p><dfn>ResetEspmName</dfn> - Use <a href="#wizardsResetPluginName">ResetPluginName</a> instead.</p>
+<p><dfn>ResetAllEspmNames</dfn> - Use <a href="#wizardsResetAllPluginNames">ResetAllPluginNames</a> instead.</p>
 
 <h3 id="wizards-operators">Operators</h3>
 <h4>Mathematical Operators</h4>
