@@ -97,15 +97,16 @@ class DocBrowser(WindowFrame):
                          self._next_btn, self._reload_btn]
         #--Mod list
         VLayout(spacing=4, item_expand=True, items=[
-            self._mod_name_box, (self._mod_list, LayoutOptions(weight=1))
+            self._mod_name_box, (self._mod_list, LayoutOptions(weight=1)),
         ]).apply_to(mod_list_window)
         #--Text field and buttons
         VLayout(spacing=4, item_expand=True, items=[
             HLayout(item_expand=True, items=self._buttons),
-            self._doc_name_box, (self._doc_ctrl, LayoutOptions(weight=3))
+            self._doc_name_box, (self._doc_ctrl, LayoutOptions(weight=3)),
         ]).apply_to(main_window)
-        VLayout(item_expand=1, item_border=4, item_weight=1,
-                items=[root_window])
+        VLayout(item_expand=1, item_border=4, item_weight=1, items=[
+            root_window,
+        ]).apply_to(self)
         for btn in self._buttons:
             btn.enabled = False
 
