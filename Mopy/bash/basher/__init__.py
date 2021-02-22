@@ -2030,11 +2030,9 @@ class SaveList(balt.UIList):
             balt.showError(self, newName)
             return EventResult.CANCEL # validate_filename would Veto
         item_edited = [self.panel.detailsPanel.displayed_item]
-        selected = [s for s in self.GetSelected() if
-                    not bosh.bak_file_pattern.match(s.s)] # YAK !
         to_select = set()
         to_del = set()
-        for saveInfo in self.GetSelectedInfos(selected):
+        for saveInfo in self.GetSelectedInfos():
             rename_res = self.try_rename(saveInfo, root, to_select, to_del,
                                          item_edited)
             if not rename_res: break

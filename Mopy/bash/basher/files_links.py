@@ -121,8 +121,6 @@ class File_Duplicate(ItemLink):
             #--Mod with resources? Warn on rename if file has bsa and/or dialog
             if not self._askResourcesOk(fileInfo): continue
             #--Continue copy
-            if bosh.bak_file_pattern.match(to_duplicate.s):
-                continue #YAK!
             r, e = to_duplicate.root, to_duplicate.ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
             destDir = fileInfo.dir

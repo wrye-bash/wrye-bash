@@ -699,7 +699,7 @@ class Installer(ListInfo):
         #--Scan over fileSizeCrcs
         root_path = self.extras_dict.get(u'root_path', u'')
         rootIdex = len(root_path)
-        # For backwards compatibility - drop in 308
+        # For backwards compatibility - drop on VDATA3
         self._fixme_drop__fomod_backwards_compat()
         fm_active = self.extras_dict.get(u'fomod_active', False)
         fm_dict = self.extras_dict.get(u'fomod_dict', {})
@@ -1305,8 +1305,8 @@ class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Archive')
-    _valid_exts_re = u'' r'(\.(' + u'|'.join(
-        ext[1:] for ext in archives.readExts) + u')+)'
+    _valid_exts_re = u'' r'(\.(?:' + u'|'.join(
+        ext[1:] for ext in archives.readExts) + u'))'
 
     @classmethod
     def is_archive(cls): return True

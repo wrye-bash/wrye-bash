@@ -60,11 +60,8 @@ from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
 from ..mod_files import ModFile, ModHeaderReader
 
 # Singletons, Constants -------------------------------------------------------
-reOblivion = re.compile(
-    u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI|_GBR SI).esm$', re.U)
-# quick or auto save.bak(.bak...)
-bak_file_pattern = re.compile(u'' r'(quick|auto)(save)(\.bak)+(f?)$',
-                              re.I | re.U)
+reOblivion = re.compile(u'' r'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|'
+                        r'_GOTY non-SI|_GBR SI)\.esm$', re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 empty_path = GPath(u'') # evaluates to False in boolean expressions
@@ -124,8 +121,9 @@ class ListInfo(object):
         rePattern = cls._name_re(allowed_exts)
         maPattern = rePattern.match(name_str)
         if maPattern:
-            root = maPattern.groups(u'')[0]
-            num_str = maPattern.groups(u'')[1] if cls._has_digits else None
+            ma_groups = maPattern.groups(default=u'')
+            root = ma_groups[0]
+            num_str = ma_groups[1] if cls._has_digits else None
             if not (root or num_str):
                 pass # will return the error message at the end
             elif cls._has_digits: return root, num_str
@@ -135,13 +133,13 @@ class ListInfo(object):
     @classmethod
     def _name_re(cls, allowed_exts):
         exts_re = cls._valid_exts_re if not allowed_exts else \
-            u'' r'(\.(' + u'|'.join(ext[1:] for ext in allowed_exts) + u')+)'
-        # require at least one char before extension
-        regex = u'^%s(.*?)' % (u'' r'(?=.+\.)' if exts_re else u'')
-        if cls._has_digits: regex += u'' r'(\d*)'
-        regex += exts_re + u'$'
-        rePattern = re.compile(regex, re.I | re.U) ##: re.U?
-        return rePattern
+            u'' r'(\.(?:' + u'|'.join(ext[1:] for ext in allowed_exts) + u'))'
+        # The reason we do the regex like this is to support names like
+        # foo.ess.ess.ess etc.
+        final_regex = u'^%s(.*?)' % (u'' r'(?=.+\.)' if exts_re else u'')
+        if cls._has_digits: final_regex += u'' r'(\d*)'
+        final_regex += exts_re + u'$'
+        return re.compile(final_regex, re.I | re.U)
 
     # Generate unique filenames when duplicating files etc
     @staticmethod
@@ -471,8 +469,8 @@ reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
     _has_esm_flag = _is_esl = False # Cached, since we need it so often
-    _valid_exts_re = u'' r'(\.(' + u'|'.join(
-        x[1:] for x in bush.game.espm_extensions) + u')+)'
+    _valid_exts_re = u'' r'(\.(?:' + u'|'.join(
+        x[1:] for x in bush.game.espm_extensions) + u'))'
 
     def __init__(self, fullpath, load_cache=False):
         self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
@@ -1222,8 +1220,9 @@ from . import cosaves
 class SaveInfo(FileInfo):
     cosave_types = () # cosave types for this game - set once in SaveInfos
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
-    _valid_exts_re = u'' r'(\.(' + bush.game.Ess.ext[1:] + u'|' + \
-                     bush.game.Ess.ext[1:-1] + u'r' + u'))' # add bak !!!
+    _valid_exts_re = u'' r'(\.(?:' + u'|'.join([bush.game.Ess.ext[1:],
+                                                bush.game.Ess.ext[1:-1] + u'r',
+                                                u'bak']) + u'))'
 
     def __init__(self, fullpath, load_cache=False):
         # Dict of cosaves that may come with this save file. Need to get this
@@ -1231,12 +1230,6 @@ class SaveInfo(FileInfo):
         # for SSE and FO4
         self._co_saves = self.get_cosaves_for_path(fullpath)
         super(SaveInfo, self).__init__(fullpath, load_cache)
-
-    def validate_name(self, name_str):
-        # TODO: renaming bak would drop this override
-        if bak_file_pattern.match(self.name.s):
-            return _(u'Renaming bak files is not supported.'), None
-        return super(SaveInfo, self).validate_name(name_str)
 
     @classmethod
     def get_store(cls): return saveInfos
@@ -1411,7 +1404,8 @@ class SaveInfo(FileInfo):
 class ScreenInfo(FileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
-    _valid_exts_re = u'' r'(\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')+)'
+    _valid_exts_re = (u'' r'(\.(?:' + u'|'.join(ext[1:] for ext in imageExts)
+                      + u'))')
     _has_digits = True
 
     def __init__(self, fullpath, load_cache=False):
@@ -1593,6 +1587,8 @@ class TableFileInfos(DataStore):
 
     def rename_operation(self, member_info, newName):
         # Override to allow us to notify BAIN if necessary
+        ##: This is *very* inelegant/inefficient, we calculate these paths
+        # twice (once here and once in super)
         self._notify_bain(renamed=dict(member_info.get_rename_paths(newName)))
         return super(TableFileInfos, self).rename_operation(member_info, newName)
 
@@ -3082,6 +3078,10 @@ class ModInfos(FileInfos):
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = False
+    # Enabled and disabled saves, no .bak files ##: needed?
+    file_pattern = re.compile(u'(%s)(f?)$' % u'|'.join(
+        u'' r'\.%s' % s for s in [bush.game.Ess.ext[1:],
+                                  bush.game.Ess.ext[1:-1] + u'r']),re.I | re.U)
 
     def _setLocalSaveFromIni(self):
         """Read the current save profile from the oblivion.ini file and set
@@ -3095,9 +3095,6 @@ class SaveInfos(FileInfos):
         self.localSave = decoder(self.localSave) # encoding = u'cp1252' ?
 
     def __init__(self):
-        _ext = re.escape(bush.game.Ess.ext)
-        patt = u'(%s|%sr)(f?)$' % (_ext, _ext[:-1]) # enabled/disabled save
-        self.__class__.file_pattern = re.compile(patt, re.I | re.U)
         self.localSave = bush.game.Ini.save_prefix
         self._setLocalSaveFromIni()
         super(SaveInfos, self).__init__(dirs[u'saveBase'].join(self.localSave),
@@ -3110,15 +3107,45 @@ class SaveInfos(FileInfos):
             if row.endswith(u'\\'):
                 self.profiles.moveRow(row, row[:-1])
         SaveInfo.cosave_types = cosaves.get_cosave_types(
-            bush.game.fsName, self.__class__.file_pattern,
+            bush.game.fsName, self._parse_save_path,
             bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
 
     @classmethod
     def rightFileType(cls, fileName):
-        """Saves come into quick/auto bak format and regular ones that might be
-        disabled"""
-        return cls.file_pattern.search(
-            u'%s' % fileName) or bak_file_pattern.match(u'%s' % fileName)
+        return all(cls._parse_save_path(u'%s' % fileName))
+
+    @classmethod
+    def valid_save_exts(cls):
+        """Returns a cached version of the valid extensions that a save may
+        have."""
+        try:
+            return cls._valid_save_exts
+        except AttributeError:
+            std_save_ext = bush.game.Ess.ext[1:]
+            accepted_exts = {std_save_ext, std_save_ext[:-1] + u'r', u'bak'}
+            # Add 'first backup' versions of the extensions too
+            for e in accepted_exts.copy():
+                accepted_exts.add(e + u'f')
+            cls._valid_save_exts = accepted_exts
+            return accepted_exts
+
+    @classmethod
+    def _parse_save_path(cls, save_name):
+        """Parses the specified save path into root and extension, returning
+        them as a tuple. If the save path does not point to a valid save,
+        returns two Nones instead."""
+        accepted_exts = cls.valid_save_exts()
+        save_root, save_ext = os.path.splitext(save_name)
+        save_ext_trunc = save_ext[1:]
+        if save_ext_trunc.lower() not in accepted_exts:
+            # Can't be a valid save, doesn't end in ess/esr/bak
+            return None, None
+        cs_ext = bush.game.Se.cosave_ext[1:]
+        if any(s.lower() == cs_ext for s in save_root.split(u'.')):
+            # Almost certainly not a valid save, had the cosave extension
+            # in one of its root parts
+            return None, None
+        return save_root, save_ext
 
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
@@ -3222,8 +3249,8 @@ class BSAInfos(FileInfos):
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
 
         class BSAInfo(FileInfo, _bsa_type):
-            _valid_exts_re = u'' r'(\.(' + bush.game.Bsa.bsa_extension[
-                                           1:] + u')+)'
+            _valid_exts_re = (u'' r'(\.' + bush.game.Bsa.bsa_extension[1:]
+                              + u')')
             def __init__(self, fullpath, load_cache=False):
                 try:  # Never load_cache for memory reasons - let it be
                     # loaded as needed
