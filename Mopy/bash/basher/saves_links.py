@@ -363,6 +363,7 @@ class Save_Renumber(EnabledLink):
                 self._matches.append((u'%s' % sinf, save_match, sinf))
         return bool(self._matches)
 
+    @balt.conversation
     def Execute(self):
         newNumber = self._askNumber(
             _(u'Enter new number to start numbering the selected saves at.'),

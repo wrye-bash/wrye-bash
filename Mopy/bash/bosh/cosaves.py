@@ -1395,7 +1395,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
             final_cs_path = sa_root + cls.cosave_ext
             # Handle backups that end with 'f' - we just need to append that
             # again at the extension of the final path
-            ends_with_f = sa_ext.endswith(u'f')
+            ends_with_f = (sa_ext[-1] == u'f')
             if ends_with_f:
                 sa_ext = sa_ext[:-1]
             # The cosave naming differs for baks: instead of <save>.**se, it's

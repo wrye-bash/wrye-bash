@@ -44,14 +44,14 @@ class TestListInfo(object):
         for fname_ in (u'78%s' % s for s in archives.writeExts):
             str_, rt = inst_arch_val(fname_)
             assert str_ == fname_
-            assert rt is u''
+            assert rt == u'78'
         for fname_, e in ((u'78%s' % s, s) for s in [u'.rar', u'.exe']):
             str_, rt = inst_arch_val(fname_)
             assert rt is None
             str_, rt = inst_arch_val(fname_, use_default_ext=True)
             assert str_ == u'78.7z'
-            assert rt == _(
-                u'The %s extension is unsupported. Using .7z instead.') % e
+            assert rt == (u'78',
+                u'The %s extension is unsupported. Using .7z instead.' % e)
         inst_mark_val = InstallerMarker.validate_filename_str
         for fname_ in (u'?.invalid' , u'.valid-note-dot'):
             str_, rt = inst_mark_val(fname_)
@@ -61,4 +61,3 @@ class TestListInfo(object):
         assert rt is None
         str_, rt = inst_proj_val(u'.valid-note-dot')
         assert str_ == fname_
-

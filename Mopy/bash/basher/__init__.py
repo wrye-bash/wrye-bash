@@ -1619,6 +1619,7 @@ class ModDetails(_ModsSavesDetails):
                            self.descriptionStr == modInfo.header.description):
             self.DoCancel()
 
+    @balt.conversation
     def DoSave(self):
         modInfo = self.modInfo
         #--Change Tests
@@ -2021,6 +2022,7 @@ class SaveList(balt.UIList):
                                                      u'pcLocation')),
     ])
 
+    @balt.conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Savegame renamed."""
         if is_edit_cancelled: return EventResult.FINISH # todo CANCEL?
@@ -2068,6 +2070,7 @@ class SaveList(balt.UIList):
         item_format.icon_key = status, save_info.is_save_enabled()
 
     #--Events ---------------------------------------------
+    @balt.conversation
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
         """Disable save by changing its extension so it's not loaded by the
         game."""
@@ -2216,6 +2219,7 @@ class SaveDetails(_ModsSavesDetails):
         if not saveInfo or self.fileStr == saveInfo.name:
             self.DoCancel()
 
+    @balt.conversation
     def DoSave(self):
         """Event: Clicked Save button."""
         saveInfo = self.saveInfo
@@ -2365,6 +2369,7 @@ class InstallersList(balt.UIList):
                 return None
         return renaming_type
 
+    @balt.conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Renamed some installers"""
         if is_edit_cancelled: return EventResult.FINISH ##: previous behavior todo TTT
@@ -3285,6 +3290,7 @@ class ScreensList(balt.UIList):
             self.OpenSelected(selected=[hitItem])
         return EventResult.FINISH
 
+    @balt.conversation
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Rename selected screenshots."""
         if is_edit_cancelled: return EventResult.CANCEL
@@ -3455,6 +3461,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         if self._bsa_info and self.gInfo.modified:
             self._bsa_info.set_table_prop(u'info', new_text)
 
+    @balt.conversation
     def DoSave(self):
         """Event: Clicked Save button."""
         #--Change Tests
