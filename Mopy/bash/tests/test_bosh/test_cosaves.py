@@ -99,7 +99,8 @@ class ATestACosave(object):
         """Tests if has_accurate_master_list is correctly implemented."""
         def _check_has_accurate_master_list(curr_cosave):
             # type: (xSECosave) -> None
-            assert (curr_cosave.has_accurate_master_list(bush.game.has_esl) ==
+            assert (not bush.game.has_esl or
+                    curr_cosave.has_accurate_master_list() ==
                     get_meta_value(curr_cosave.abs_path, u'cosave_body')[
                         u'masters_are_accurate'])
         self._do_map_cosaves(_check_has_accurate_master_list)

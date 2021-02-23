@@ -1358,14 +1358,12 @@ class ACosave(_Dumpable, _Remappable, AFile):
 
         :return: A list of the masters stored in this cosave."""
 
-    def has_accurate_master_list(self, has_esl):
+    def has_accurate_master_list(self):
         """Checks whether or not this cosave contains an accurate master list -
         i.e. one that correctly represents the order of plugins as they were at
         the time that the save was taken. This is used to determine whether or
         not to use get_master_list for saves in SSE / FO4.
 
-        :param has_esl: Whether or not the current game has ESL support. This
-            should be set to the value of bush.game.has_esl.
         :return: True if the master list retrieved by get_master_list will be
             accurate."""
 
@@ -1452,17 +1450,12 @@ class xSECosave(ACosave):
         raise InvalidCosaveError(self.abs_path.tail,
             u'First chunk was not PLGN or MODS chunk.')
 
-    def has_accurate_master_list(self, has_esl):
-        if not has_esl:
-            # On games without ESL support, we always have the MODS chunk,
-            # which is accurate
-            return True
-        else:
-            # Check the first chunk's signature. If and only if that signature
-            # is PLGN can we accurately return a master list.
-            self.read_cosave(light=True)
-            first_ch = self._get_xse_plugin().chunks[0] # type: _xSEChunk
-            return first_ch.chunk_type == u'PLGN'
+    def has_accurate_master_list(self):
+        # Check the first chunk's signature. If and only if that signature
+        # is PLGN can we accurately return a master list.
+        self.read_cosave(light=True)
+        first_ch = self._get_xse_plugin().chunks[0] # type: _xSEChunk
+        return first_ch.chunk_type == u'PLGN'
 
     def dump_to_log(self, log, save_masters):
         super(xSECosave, self).dump_to_log(log, save_masters)
@@ -1634,7 +1627,7 @@ class PluggyCosave(ACosave):
                 u'First Pluggy block is not the plugin block.')
         return [plugin.plugin_name for plugin in first_block.plugins]
 
-    def has_accurate_master_list(self, has_esl):
+    def has_accurate_master_list(self):
         # Pluggy cosaves always have an accurate list since they only exist for
         # Oblivion, which does not have ESLs.
         return True

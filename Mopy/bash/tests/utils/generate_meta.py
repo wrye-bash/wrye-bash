@@ -71,8 +71,10 @@ def generate_meta_cosave_xse(target_file):
         for m in test_cosave.get_master_list():
             out.write(u'    "%s",\n' % m)
         out.write(u']\n')
-        out.write(u'masters_are_accurate = %s\n' % unicode(
-            test_cosave.has_accurate_master_list(bush.game.has_esl)).lower())
+        accurate_masters = (not bush.game.has_esl or
+                            test_cosave.has_accurate_master_list())
+        out.write(u'masters_are_accurate = %s\n' %
+                  unicode(accurate_masters).lower())
     ##: Once all are implemented, move to process_file
     print(u"Metadata successfully generated and written to '%s'" % (
             target_file + u'.meta'))

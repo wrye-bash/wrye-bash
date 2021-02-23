@@ -1375,7 +1375,7 @@ class SaveInfo(FileInfo):
             xse_cosave = self.get_xse_cosave()
             if xse_cosave is not None: # the cached cosave should be valid
                 # Make sure the cosave's masters are actually useful
-                if xse_cosave.has_accurate_master_list(has_esl=True):
+                if xse_cosave.has_accurate_master_list():
                     return [GPath_no_norm(master) for master in
                             xse_cosave.get_master_list()]
         # Fall back on the regular masters - either the cosave is unnecessary,
@@ -1389,7 +1389,7 @@ class SaveInfo(FileInfo):
         if bush.game.has_esl and self.header.has_esl_masters:
             xse_cosave = self.get_xse_cosave()
             self.has_inaccurate_masters = xse_cosave is None or \
-                not xse_cosave.has_accurate_master_list(True)
+                not xse_cosave.has_accurate_master_list()
 
     def get_rename_paths(self, newName):
         old_new_paths = super(SaveInfo, self).get_rename_paths(newName)
