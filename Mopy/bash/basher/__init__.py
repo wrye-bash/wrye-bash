@@ -2351,15 +2351,6 @@ class InstallersList(balt.UIList):
         #--TODO: add mouse  mouse tips
         self.mouseTexts[item] = mouse_text
 
-    def OnBeginEditLabel(self, evt_label, uilist_ctrl):
-        """Start renaming installers"""
-        if not self._rename_type():
-            # Can't rename mixed installer types or last marker
-            return EventResult.CANCEL
-        uilist_ctrl.ec_set_on_char_handler(self._OnEditLabelChar)
-        return super(InstallersList, self).OnBeginEditLabel(evt_label,
-                                                            uilist_ctrl)
-
     def _rename_type(self):
         #--Only rename multiple items of the same type
         renaming_type = super(InstallersList, self)._rename_type()
@@ -2370,29 +2361,11 @@ class InstallersList(balt.UIList):
                     u"Bash can't rename mixed installers types"))
                 return None
             #--Also, don't allow renaming the 'Last' marker
-            elif item.archive == self.data_store.lastKey:
+            elif item is self.data_store[self.data_store.lastKey]:
                 balt.showError(self, _(
                     u'Renaming %s is not allowed' % self.data_store.lastKey))
                 return None
         return renaming_type
-
-    def _OnEditLabelChar(self, is_f2_down, ec_value, uilist_ctrl):
-        """For pressing F2 on the edit box for renaming"""
-        if is_f2_down:
-            to_rename = self.GetSelectedInfos()
-            renaming_type = type(to_rename[0])
-            start, stop = uilist_ctrl.ec_get_selection()
-            if start == stop: # if start==stop there is no selection
-                selection_span = 0, len(ec_value)
-            else:
-                sel_start, _sel_stop = renaming_type.rename_area_idxs(
-                    ec_value, start, stop)
-                if (sel_start, _sel_stop) == (start, stop):
-                    selection_span = 0, len(ec_value)  # rewind selection
-                else:
-                    selection_span = sel_start, _sel_stop
-            uilist_ctrl.ec_set_selection(*selection_span)
-            return EventResult.FINISH  ##: needed?
 
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         """Renamed some installers"""

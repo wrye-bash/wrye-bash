@@ -1236,11 +1236,33 @@ class UIList(wx.Panel):
     def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming: deselect the extension."""
         rename_type = self._rename_type()
+        if not rename_type:
+            # Nothing selected / rename mixed installer types / last marker
+            return EventResult.CANCEL
         uilist_ctrl.ec_set_selection(*rename_type.rename_area_idxs(evt_label))
+        uilist_ctrl.ec_set_on_char_handler(self._on_f2_handler)
         return EventResult.FINISH  ##: needed?
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         # should only be subscribed if _editLabels==True and overridden
         raise AbstractError
+
+    def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
+        """For pressing F2 on the edit box for renaming"""
+        if is_f2_down:
+            to_rename = self.GetSelectedInfos()
+            renaming_type = type(to_rename[0])
+            start, stop = uilist_ctrl.ec_get_selection()
+            if start == stop: # if start==stop there is no selection
+                selection_span = 0, len(ec_value)
+            else:
+                sel_start, _sel_stop = renaming_type.rename_area_idxs(
+                    ec_value, start, stop)
+                if (sel_start, _sel_stop) == (start, stop):
+                    selection_span = 0, len(ec_value)  # rewind selection
+                else:
+                    selection_span = sel_start, _sel_stop
+            uilist_ctrl.ec_set_selection(*selection_span)
+            return EventResult.FINISH  ##: needed?
 
     def try_rename(self, info, newFileName): # Mods/BSAs
         return self._try_rename(info, newFileName)
