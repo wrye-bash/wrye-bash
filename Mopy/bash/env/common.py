@@ -25,19 +25,17 @@
 import os
 import stat
 import sys
-
+import warnings
 
 def clear_read_only(filepath): # copied from bolt
     os.chmod(u'%s' % filepath, stat.S_IWUSR | stat.S_IWOTH)
 
-
 # PY3: Remove, automatically done for us in the stdlib
 _sentinel = object()
 if sys.version_info >= (3,0):
-    warnings.warn(u'Wrye Bash is running on Python 3, ' \
-        '`set_env_var`, `get_env_var`, and `iter_env_vars` ' \
-        'are no longer needed',
-        DeprecationWarning)
+    warnings.warn(u'Wrye Bash is running on Python 3, '
+                  u'`set_env_var`, `get_env_var`, and `iter_env_vars` '
+                  u'are no longer needed', DeprecationWarning)
 
     def _warn(deprecated_name, replacement_name):
         msg = u'Call to deprecated `%s`.  Use `%s` instead.' \
@@ -55,10 +53,11 @@ if sys.version_info >= (3,0):
             _warn(u'get_env_var', u'os.environ[key]')
             return os.environ[env_key]
         else:
-            _warn(u'get_env_vars', u'os.environ.get')
+            _warn(u'get_env_var', u'os.environ.get')
             return os.environ.get(env_key, default)
 
     def iter_env_vars():
+        _warn(u'iter_env_vars', u'os.environ')
         return os.environ
 else:
     # Python 2 version, encode/decode values, but warn if using bytes
@@ -79,7 +78,7 @@ else:
             _warn(u'Environment variable values should be unicode.')
         elif isinstance(env_value, unicode):
             # Expceted, but os.environ uses bytes
-            env_value = env_value.decode(_fsencoding)
+            env_value = env_value.encode(_fsencoding)
         os.environ[env_key] = env_value
 
     def get_env_var(env_key, default=_sentinel):
