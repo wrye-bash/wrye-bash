@@ -318,9 +318,13 @@ class FomodInstaller(object):
             self._previous_pages[self._current_page] = sorted_selection
         install_steps = self.fomod_tree.find(u'installSteps')
         if install_steps is not None:
+            # Order the pages by name - note that almost all ModuleConfigs in
+            # the wild use 'Explicit' ordering here (for obvious reasons, you
+            # generally want the installation steps to be in a fixed order)
             ordered_pages = self.order_list(
                 self.fomod_tree.findall(u'installSteps/installStep'),
-                _xml_decode(install_steps.get(u'order', u'Ascending')))
+                _xml_decode(install_steps.get(u'order', u'Ascending')),
+                ol_key_f=lambda e: _xml_decode(e.get(u'name')))
         else:
             ordered_pages = [] # no installSteps -> no pages
         if self._current_page is not None:
@@ -471,13 +475,16 @@ class FomodInstaller(object):
                         u'gameDependency': _test_version_condition,
                         u'dependencies': test_conditions, }
 
-    @staticmethod
-    def order_list(unordered_list, order_str, _valid_values=frozenset(
-        (u'Explicit', u'Ascending', u'Descending'))):
+    # Valid values for 'order' attributes
+    _valid_values = {u'Explicit', u'Ascending', u'Descending'}
+
+    @classmethod
+    def order_list(cls, unordered_list, order_str,
+                   ol_key_f=lambda x: x.sort_key):
         if order_str == u'Explicit':
             return unordered_list
-        if order_str not in _valid_values:
-            raise ValueError(u'Arguments are incorrect: {}, {}'.format(
-                unordered_list, order_str))
-        return sorted(unordered_list, key=lambda x: x.sort_key,
+        if order_str not in cls._valid_values:
+            raise ValueError(u'Unknown order type %s - expected one of [%s]'
+                             % (order_str, u', '.join(cls._valid_values)))
+        return sorted(unordered_list, key=ol_key_f,
                       reverse=order_str == u'Descending')
