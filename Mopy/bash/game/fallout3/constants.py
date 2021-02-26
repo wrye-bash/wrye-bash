@@ -787,6 +787,7 @@ assorted_tweaks = {
     u'AssortedTweak_PotionWeightMinimum',
     u'AssortedTweak_UniformGroundcover',
     u'AssortedTweak_GunsUseISAnimation',
+    u'AssortedTweak_BookWeight',
 }
 ##: Taken from valda's version, investigate
 nonplayable_biped_flags = {u'pipboy'}

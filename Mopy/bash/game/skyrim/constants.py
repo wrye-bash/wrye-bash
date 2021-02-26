@@ -894,6 +894,7 @@ assorted_tweaks = {
     u'AssortedTweak_TextlessLSCRs',
     u'AssortedTweak_AllWaterDamages',
     u'AssortedTweak_AbsorbSummonFix',
+    u'AssortedTweak_BookWeight',
 }
 staff_condition = (u'animationType', 8)
 

@@ -455,6 +455,17 @@ class AssortedTweak_ArrowWeight(_AWeightTweak):
     _log_weight_value = _(u'Ammunition set to maximum weight of %f.')
 
 #------------------------------------------------------------------------------
+class AssortedTweak_BookWeight(_AWeightTweak):
+    tweak_read_classes = b'BOOK',
+    tweak_name = _(u'Reweigh: Books')
+    tweak_tip = _(u'The weight of books will be capped.')
+    tweak_key = u'reweigh_books'
+    tweak_choices = [(u'0.0', 0.0), (u'0.3', 0.3), (u'0.5', 0.5),
+                     (u'0.75', 0.75), (u'1.0', 1.0)]
+    tweak_log_msg = _(u'Books Reweighed: %(total_changed)d')
+    _log_weight_value = _(u'Books set to maximum weight of %f.')
+
+#------------------------------------------------------------------------------
 class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     """Silences the script magic effect and gives it an extremely high
     speed."""
