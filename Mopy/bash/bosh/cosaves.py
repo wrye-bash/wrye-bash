@@ -37,7 +37,8 @@ from ..bolt import decoder, encode, struct_unpack, unpack_string, \
     unpack_int, unpack_short, unpack_4s, unpack_byte, unpack_str16, \
     unpack_float, unpack_double, unpack_int_signed, unpack_str32, AFile, \
     unpack_spaced_string, pack_int, pack_short, pack_double, pack_byte, \
-    pack_int_signed, pack_float, pack_4s, struct_error, GPath
+    pack_int_signed, pack_float, pack_4s, struct_error, GPath, struct_pack, \
+    deprint
 from ..exception import AbstractError, BoltError, CosaveError, \
     InvalidCosaveError, UnsupportedCosaveError
 
@@ -252,6 +253,10 @@ class _xSEChunk(_AChunk):
         # but enforcing your API is good practice
         if self.fully_decoded: raise AbstractError()
         return len(self.chunk_data)
+
+    def __repr__(self):
+        return u'%s chunk: v%d, %d bytes' % (
+            self.chunk_type, self.chunk_version, self.data_len)
 
 class _xSEModListChunk(_xSEChunk, _Dumpable, _Remappable):
     """An abstract class for chunks that contain a list of mods (e.g. MODS or
@@ -703,30 +708,51 @@ class _xSEChunkSTVR(_xSEChunk, _Dumpable):
         log(_(u'   ID  : %u') % self.string_id)
         log(_(u'   Data: %s') % self.string_data)
 
-# Maps all decoded xSE chunk types to the classes that implement them
-_xse_class_dict = {
+# Maps all decoded xSE chunk types implemented by xSE itself to the classes
+# that read/write them
+_xse_chunk_dict = {
     u'ARVR': _xSEChunkARVR,
-    u'DATA': _xSEChunkDATA,
     u'LIMD': _xSEChunkLIMD,
     u'LMOD': _xSEChunkLMOD,
     u'MODS': _xSEChunkMODS,
     u'PLGN': _xSEChunkPLGN,
     u'STVR': _xSEChunkSTVR,
 }
+# Maps plugin chunk signatures to dicts that map decoded xSE chunk types
+# implemented by that plugin to the classes that read/write them
+_xse_plugin_chunk_dict = {
+    0x534F53: { # SOS
+        u'DATA': _xSEChunkDATA,
+    },
+}
 
-def _get_xse_chunk(ins):
+def _get_xse_chunk(parent_sig, ins):
     """Read a 4-byte string from the specified input stream and return an
     instance of a matching xSE chunk class for that string. If no matching
     class is found, an instance of the generic _xSEChunk class is returned
     instead.
 
+    :param parent_sig: The plugin signature (as an integer) of the plugin chunk
+        that houses the chunk.
     :param ins: The input stream to read from.
     :return: A instance of a matching chunk class, or the generic one if no
         matching class was found."""
     # The chunk type strings are reversed in the cosaves
     ch_type = _cosave_decode(unpack_4s(ins))[::-1]
-    ch_class = _xse_class_dict.get(ch_type, _xSEChunk)
-    return ch_class(ins, ch_type)
+    ch_offset = ins.tell()
+    try:
+        # Look for a special override for this particular plugin chunk first
+        if parent_sig in _xse_plugin_chunk_dict:
+            pchunk_dict = _xse_plugin_chunk_dict[parent_sig]
+            if ch_type in pchunk_dict:
+                return pchunk_dict[ch_type](ins, ch_type)
+        # Otherwise, fall back to the global xSE dictionary
+        ch_class = _xse_chunk_dict.get(ch_type, _xSEChunk)
+        return ch_class(ins, ch_type)
+    except Exception:
+        deprint(u'Error while reading cosave chunk %s at offset %d' % (
+            ch_type, ch_offset))
+        raise
 
 class _xSEPluginChunk(_AChunk, _Remappable):
     """A single xSE chunk, composed of _xSEChunk objects."""
@@ -751,7 +777,7 @@ class _xSEPluginChunk(_AChunk, _Remappable):
         self.remappable_chunks.
 
         :param ins: The input stream to read from."""
-        new_chunk = _get_xse_chunk(ins)
+        new_chunk = _get_xse_chunk(self.plugin_signature, ins)
         self.chunks.append(new_chunk)
         if isinstance(new_chunk, _Remappable):
             self.remappable_chunks.append(new_chunk)
@@ -775,6 +801,21 @@ class _xSEPluginChunk(_AChunk, _Remappable):
     def remap_plugins(self, plugin_renames):
         for xse_chunk in self.remappable_chunks:
             xse_chunk.remap_plugins(plugin_renames)
+
+    def __repr__(self):
+        ##: Extremely hacky, the proper method is _get_plugin_signature - but
+        # that's in xSECosave and relies on the header...
+        if self.plugin_signature in (0, 0x1400):
+            from .. import bush
+            decoded_psig = bush.game.Se.cosave_tag
+        else:
+            try:
+                decoded_psig = struct_pack(
+                    u'I', self.plugin_signature).decode(u'ascii')[::-1]
+            except UnicodeDecodeError:
+                decoded_psig = self.plugin_signature # Fall back to int display
+        return u'%s chunk: %d chunks, %d bytes' % (
+            decoded_psig, len(self.chunks), self.orig_size)
 
 #------------------------------------------------------------------------------
 # Pluggy Chunks
