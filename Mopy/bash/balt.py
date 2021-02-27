@@ -1228,25 +1228,68 @@ class UIList(wx.Panel):
     def OnDClick(self, lb_dex_and_flags): pass
     def OnChar(self, wrapped_evt): pass
     #--Edit labels - only registered if _editLabels != False
+    def _rename_type(self):
+        """Check if the operation is allowed and return the item type of the
+        selected labels to be renamed."""
+        to_rename = self.GetSelectedInfos()
+        return (to_rename and type(to_rename[0])) or None
     def OnBeginEditLabel(self, evt_label, uilist_ctrl):
         """Start renaming: deselect the extension."""
-        to = len(GPath(evt_label).sbody)
-        uilist_ctrl.ec_set_selection(0, to)
+        rename_type = self._rename_type()
+        if not rename_type:
+            # Nothing selected / rename mixed installer types / last marker
+            return EventResult.CANCEL
+        uilist_ctrl.ec_set_selection(*rename_type.rename_area_idxs(evt_label))
+        uilist_ctrl.ec_set_on_char_handler(self._on_f2_handler)
+        return EventResult.FINISH  ##: needed?
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         # should only be subscribed if _editLabels==True and overridden
         raise AbstractError
 
-    def _try_rename(self, key, newFileName, to_select, item_edited=None):
-        newPath = self.data_store.store_dir.join(newFileName)
-        if not newPath.exists():
-            try:
-                self.data_store.rename_info(key, newFileName)
-                to_select.add(newFileName)
-                if item_edited and key == item_edited[0]:
-                    item_edited[0] = newFileName
-            except (CancelError, OSError, IOError):
-                return False # break
-        return True # continue
+    def _on_f2_handler(self, is_f2_down, ec_value, uilist_ctrl):
+        """For pressing F2 on the edit box for renaming"""
+        if is_f2_down:
+            to_rename = self.GetSelectedInfos()
+            renaming_type = type(to_rename[0])
+            start, stop = uilist_ctrl.ec_get_selection()
+            if start == stop: # if start==stop there is no selection
+                selection_span = 0, len(ec_value)
+            else:
+                sel_start, _sel_stop = renaming_type.rename_area_idxs(
+                    ec_value, start, stop)
+                if (sel_start, _sel_stop) == (start, stop):
+                    selection_span = 0, len(ec_value)  # rewind selection
+                else:
+                    selection_span = sel_start, _sel_stop
+            uilist_ctrl.ec_set_selection(*selection_span)
+            return EventResult.FINISH  ##: needed?
+
+    def try_rename(self, info, newFileName): # Mods/BSAs
+        return self._try_rename(info, newFileName)
+
+    # Renaming - note the @conversation, this needs to be atomic with respect
+    # to refreshes and ideally atomic short
+    @conversation
+    def _try_rename(self, info, newFileName):
+        try:
+            return self.data_store.rename_operation(info, newFileName)
+        except (CancelError, OSError, IOError):
+            deprint(u'Renaming %s to %s failed' % (info, newFileName),
+                    traceback=True)
+            # When using moveTo I would get "WindowsError:[Error 32]The process
+            # cannot access ..." -  the code below was reverting the changes.
+            # With shellMove I mostly get CancelError so below not needed -
+            # except if a save is locked and user presses Skip - so cosaves are
+            # renamed! Error handling is still a WIP
+            for old, new in info.get_rename_paths(newFileName):
+                if old == new: continue
+                if new.exists() and not old.exists():
+                    # some cosave move failed, restore files
+                    new.moveTo(old)
+                elif new.exists() and old.exists():
+                    # move copies then deletes, so the delete part failed
+                    new.remove()  # return None # break
+            return None # maybe a msg if really really needed
 
     def _getItemClicked(self, lb_dex_and_flags, on_icon=False):
         (hitItem, hitFlag) = lb_dex_and_flags
@@ -1497,35 +1540,6 @@ class UIList(wx.Panel):
             if index != -1:
                 self.__gList._native_widget.EditLabel(index)
 
-    def validate_filename(self, name_new, has_digits=False, ext=u'',
-            is_filename=True):
-        newName = name_new
-        if not newName:
-            msg = _(u'Empty name !')
-            maPattern = None
-        else:
-            char = is_filename and bolt.Path.has_invalid_chars(newName)
-            if char:
-                msg = _(u'%(new_name)s contains invalid character (%(char)s)'
-                        ) % {u'new_name': newName, u'char': char}
-                maPattern = None
-            else:
-                msg = _(u'Bad extension or file root: ') + newName
-                if ext: # require at least one char before extension
-                    regex = u'' r'^(?=.+\.)(.*?)'
-                else:
-                    regex = u'^(.*?)'
-                if has_digits: regex += u'' r'(\d*)'
-                regex += ext + u'$'
-                rePattern = re.compile(regex, re.I | re.U)
-                maPattern = rePattern.match(newName)
-        if maPattern:
-            num_str = maPattern.groups()[1] if has_digits else None
-        if not maPattern or not (maPattern.groups()[0] or num_str):
-            showError(self, msg)
-            return None, None, None
-        return maPattern.groups()[0], GPath(newName), num_str
-
     @conversation
     def DeleteItems(self, wrapped_evt=None, items=None,
                     dialogTitle=_(u'Delete Items'), order=True):
@@ -1591,27 +1605,6 @@ class UIList(wx.Panel):
                 deletd.append(ci_key)
         #--Refresh stuff
         self.data_store.delete_refresh(deletd, None, check_existence=True)
-
-    # Generate unique filenames when duplicating files etc
-    @staticmethod
-    def _new_name(new_name, count):
-        count += 1
-        new_name = GPath(new_name.root + (u' (%d)' % count) + new_name.ext)
-        return new_name, count
-
-    def new_name(self, new_name):
-        new_name = GPath(new_name)
-        base_name, count = new_name, 0
-        while new_name in self.data_store:
-            new_name, count = self._new_name(base_name, count)
-        return new_name
-
-    @staticmethod
-    def new_path(new_name, dest_dir):
-        base_name, count = new_name, 0
-        while dest_dir.join(new_name).exists() and count < 1000:
-            new_name, count = UIList._new_name(base_name, count)
-        return new_name
 
     @staticmethod
     def _unhide_wildcard(): raise AbstractError

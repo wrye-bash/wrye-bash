@@ -30,16 +30,14 @@ __author__ = u'Infernio'
 
 import binascii
 import io
-import re
 import string
 from itertools import imap
 
-from . import bak_file_pattern
 from ..bolt import decoder, encode, struct_unpack, unpack_string, \
     unpack_int, unpack_short, unpack_4s, unpack_byte, unpack_str16, \
     unpack_float, unpack_double, unpack_int_signed, unpack_str32, AFile, \
     unpack_spaced_string, pack_int, pack_short, pack_double, pack_byte, \
-    pack_int_signed, pack_float, pack_4s, struct_error
+    pack_int_signed, pack_float, pack_4s, struct_error, GPath
 from ..exception import AbstractError, BoltError, CosaveError, \
     InvalidCosaveError, UnsupportedCosaveError
 
@@ -1258,7 +1256,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
     """The abstract base class for all cosave files."""
     _header_type = _AHeader
     cosave_ext = u''
-    re_save = re.compile(u'') # parse savename to extract root component
+    parse_save_path = None # set in factory
     __slots__ = ('cosave_header', 'cosave_chunks', 'remappable_chunks',
                  'loading_state',)
     # loading_state is one of (0, 1, 2), where:
@@ -1392,15 +1390,21 @@ class ACosave(_Dumpable, _Remappable, AFile):
             to.
         :return: The path at which the cosave could exist.
         :rtype: bolt.Path"""
-        maSave = cls.re_save.search(save_path.s)
-        if maSave:
-            first = maSave.group(2) or u''
-            return save_path.root + cls.cosave_ext + first
-        ma_bak = bak_file_pattern.search(save_path.s)
-        if ma_bak:
-            first = ma_bak.group(4) or u''
-            return save_path.head.join(ma_bak.group(1) + ma_bak.group(
-                2) + cls.cosave_ext + ma_bak.group(3) + first)
+        sa_root, sa_ext = cls.parse_save_path(u'%s' % save_path)
+        if sa_root and sa_ext:
+            final_cs_path = sa_root + cls.cosave_ext
+            # Handle backups that end with 'f' - we just need to append that
+            # again at the extension of the final path
+            ends_with_f = sa_ext.endswith(u'f')
+            if ends_with_f:
+                sa_ext = sa_ext[:-1]
+            # The cosave naming differs for baks: instead of <save>.**se, it's
+            # <save>.**se.bak (or .bakf)
+            if sa_ext == u'.bak':
+                final_cs_path += sa_ext
+            if ends_with_f:
+                final_cs_path += u'f'
+            return GPath(final_cs_path)
         raise BoltError(u'Invalid save path %s' % save_path)
 
 class xSECosave(ACosave):
@@ -1643,12 +1647,13 @@ class PluggyCosave(ACosave):
             pluggy_block.dump_to_log(log, save_masters)
 
 # Factory
-def get_cosave_types(game_fsName, save_regex, cosave_tag, cosave_ext):
+def get_cosave_types(game_fsName, parse_save_path, cosave_tag, cosave_ext):
     """Factory method for retrieving the cosave types for the current game.
     Also sets up some class variables for xSE and Pluggy signatures.
 
     :param game_fsName: bush.game.fsName, the name of the current game.
-    :param save_regex: SaveInfos.file_pattern.
+    :param parse_save_path: A function to parse valid save paths into root and
+        extension.
     :param cosave_tag: bush.game.Se.cosave_tag, the magic tag used to mark the
         cosave. Empty string if this game doesn't have cosaves.
     :param cosave_ext: bush.game.Se.cosave_ext, the extension for cosaves.
@@ -1659,7 +1664,7 @@ def get_cosave_types(game_fsName, save_regex, cosave_tag, cosave_ext):
     # Assign things that concern all games with script extenders
     _xSEHeader.savefile_tag = cosave_tag
     xSECosave.cosave_ext = cosave_ext
-    ACosave.re_save = save_regex
+    ACosave.parse_save_path = parse_save_path
     cosave_types = [xSECosave]
     # Handle game-specific special cases
     if game_fsName == u'Oblivion':

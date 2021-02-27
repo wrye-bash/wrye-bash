@@ -37,20 +37,21 @@ from functools import partial, wraps
 from itertools import groupby, imap, izip
 from operator import itemgetter, attrgetter
 
-from . import imageExts, DataStore, BestIniFile, InstallerConverter, ModInfos
+from . import imageExts, DataStore, BestIniFile, InstallerConverter, \
+    ModInfos, ListInfo
 from .. import balt, gui # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
 from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
-    LowerDict, AFile, dict_sort
+    LowerDict, AFile, dict_sort, GPath_no_norm
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 from ..ini_files import OBSEIniFile
 
 os_sep = unicode(os.path.sep) # PY3: already unicode
 
-class Installer(object):
+class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
     #--Member data
@@ -100,6 +101,8 @@ class Installer(object):
     # Extensions of strings files - automatically built from game constants
     _strings_extensions = {os.path.splitext(x[1].lower())[1]
                            for x in bush.game.Esp.stringsFiles}
+    # InstallersData singleton - consider this tmp
+    instData = None # type: InstallersData
 
     @classmethod
     def is_archive(cls): return False
@@ -107,6 +110,15 @@ class Installer(object):
     def is_project(cls): return False
     @classmethod
     def is_marker(cls): return False
+
+    @classmethod
+    def validate_filename_str(cls, name_str, allowed_exts=frozenset(),
+                              use_default_ext=False):
+        return super(Installer, cls).validate_filename_str(name_str,
+            frozenset()) # block extension check
+
+    @classmethod
+    def get_store(cls): return cls.instData
 
     @staticmethod
     def init_bain_dirs():
@@ -687,7 +699,7 @@ class Installer(object):
         #--Scan over fileSizeCrcs
         root_path = self.extras_dict.get(u'root_path', u'')
         rootIdex = len(root_path)
-        # For backwards compatibility - drop in 308
+        # For backwards compatibility - drop on VDATA3
         self._fixme_drop__fomod_backwards_compat()
         fm_active = self.extras_dict.get(u'fomod_active', False)
         fm_dict = self.extras_dict.get(u'fomod_dict', {})
@@ -1108,30 +1120,6 @@ class Installer(object):
     def size_or_mtime_changed(self, apath):
         return (self.fsize, self.modified) != apath.size_mtime()
 
-    def _installer_rename(self, idata_, newName):
-        """Rename package or project."""
-        g_path = GPath(self.archive)
-        if newName != g_path:
-            newPath = bass.dirs[u'installers'].join(newName)
-            if not newPath.exists():
-                DataStore._rename_operation(idata_, g_path, newName)
-                #--Add the new archive to Bash and remove old one
-                idata_[newName] = self
-                del idata_[g_path]
-                #--Update the iniInfos & modInfos for 'installer'
-                from . import modInfos, iniInfos
-                mfiles = [x for x in modInfos.table.getColumn(u'installer') if
-                          modInfos.table[x][u'installer'] == self.archive]
-                ifiles = [x for x in iniInfos.table.getColumn(u'installer') if
-                          iniInfos.table[x][u'installer'] == self.archive]
-                self.archive = newName.s # don't forget to rename !
-                for i in mfiles:
-                    modInfos.table[i][u'installer'] = self.archive
-                for i in ifiles:
-                    iniInfos.table[i][u'installer'] = self.archive
-                return True, bool(mfiles), bool(ifiles)
-        return False, False, False
-
     def open_readme(self): self._open_txt_file(self.hasReadme)
     def open_wizard(self): self._open_txt_file(self.hasWizard)
     def _open_txt_file(self, rel_path): raise AbstractError
@@ -1224,10 +1212,23 @@ class Installer(object):
 
     def renameInstaller(self, name_new, idata_):
         """Rename installer and return a three tuple specifying if a refresh in
-        mods and ini lists is needed.
-        :rtype: tuple
-        """
-        raise AbstractError
+        mods and ini lists is needed. name_new must be tested (via unique name)
+        otherwise we will overwrite! Currently only called in rename_operation
+        from InstallersList.try_rename - this passes a unique name in.
+        :rtype: tuple"""
+        super(InstallersData, idata_).rename_operation(self, name_new)
+        #--Update the iniInfos & modInfos for 'installer'
+        from . import modInfos, iniInfos
+        ##: self.archive still the old value (should be set in super but no "name" attr)
+        mfiles = [x for x in modInfos.table.getColumn(u'installer') if
+                  modInfos.table[x][u'installer'] == self.archive] ##: ci comparison!
+        ifiles = [x for x in iniInfos.table.getColumn(u'installer') if
+                  iniInfos.table[x][u'installer'] == self.archive]
+        for i in mfiles:
+            modInfos.table[i][u'installer'] = name_new.s
+        for i in ifiles:
+            iniInfos.table[i][u'installer'] = name_new.s
+        return True, bool(mfiles), bool(ifiles)
 
     def sync_from_data(self, delta_files, progress):
         """Updates this installer according to the specified files in the Data
@@ -1244,8 +1245,26 @@ class InstallerMarker(Installer):
     type_string = _(u'Marker')
     _is_filename = False
 
+    @staticmethod
+    def _new_name(base_name, count):
+        cnt_str = (u' (%d)' % count) if count else u''
+        return GPath_no_norm(u'==' + base_name.s.strip(u'=') + cnt_str + u'==')
+
+    def unique_key(self, new_root, ext=u'', add_copy=False):
+        new_name = GPath_no_norm(new_root + (_(u' Copy') if add_copy else u''))
+        if new_name.s == self.ci_key.s: # allow change of case
+            return None
+        return self.unique_name(new_name)
+
     @classmethod
     def is_marker(cls): return True
+
+    @classmethod
+    def rename_area_idxs(cls, text_str, start=0, stop=None):
+        """Markers, change the selection to not include the '=='."""
+        if text_str[:2] == text_str[-2:] == u'==':
+            return 2, len(text_str) - 2
+        return 0, len(text_str)
 
     def __init__(self,archive):
         Installer.__init__(self,archive)
@@ -1276,13 +1295,6 @@ class InstallerMarker(Installer):
         pass
 
     def renameInstaller(self, name_new, idata_):
-        archive = GPath(self.archive)
-        if name_new == archive:
-            return False, False, False
-        #--Add the marker to Bash and remove old one
-        self.archive = name_new.s
-        idata_[name_new] = self
-        del idata_[archive]
         return True, False, False
 
     def refreshBasic(self, progress, recalculate_project_crc=True):
@@ -1293,9 +1305,31 @@ class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Archive')
+    _valid_exts_re = u'' r'(\.(?:' + u'|'.join(
+        ext[1:] for ext in archives.readExts) + u'))'
 
     @classmethod
     def is_archive(cls): return True
+
+    @classmethod
+    def validate_filename_str(cls, name_str, allowed_exts=archives.writeExts,
+                              use_default_ext=False, __7z=archives.defaultExt):
+        r, e = os.path.splitext(name_str)
+        if allowed_exts and e.lower() not in allowed_exts:
+            if not use_default_ext:
+                return _(u'%s does not have correct extension (%s).') % (
+                    name_str, u', '.join(allowed_exts)), None
+            msg = _(u'The %s extension is unsupported. Using %s instead.') % (
+                e, __7z)
+            name_str, e = r + __7z, __7z
+        else: msg = u''
+        name_path, root = super(Installer, cls).validate_filename_str(name_str,
+                                                                      {e})
+        if root is None:
+            return name_path, None
+        if msg: # propagate the msg for extension change
+            return name_path, (root, msg)
+        return name_path, root
 
     def __reduce__(self):
         from . import InstallerArchive as boshInstallerArchive
@@ -1422,10 +1456,6 @@ class InstallerArchive(Installer):
             log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
                 os.sep if isdir else u''))
 
-    def renameInstaller(self, name_new, idata_):
-        return self._installer_rename(idata_,
-                                      name_new.root + GPath(self.archive).ext)
-
     def _open_txt_file(self, rel_path):
         with gui.BusyCursor():
             # This is going to leave junk temp files behind...
@@ -1492,6 +1522,10 @@ class InstallerProject(Installer):
 
     @classmethod
     def is_project(cls): return True
+
+    @staticmethod
+    def _new_name(base_name, count):
+        return base_name + ((u' (%d)' % count) if count else u'')
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
@@ -1615,9 +1649,6 @@ class InstallerProject(Installer):
                 else:
                     log(u' ' * depth + entry)
         walkPath(apath.s, 0)
-
-    def renameInstaller(self, name_new, idata_):
-        return self._installer_rename(idata_, name_new)
 
     def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
 
@@ -1761,8 +1792,13 @@ class InstallersData(DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def _rename_operation(self, oldName, newName):
-        return self[oldName].renameInstaller(newName, self)
+    def rename_operation(self, member_info, newName):
+        rename_tuple = member_info.renameInstaller(newName, self)
+        if rename_tuple:
+            del self[member_info.ci_key]
+            member_info.archive = newName.s
+            self[newName] = member_info
+        return rename_tuple
 
     #--Dict Functions ---------------------------------------------------------
     def files_to_delete(self, filenames, **kwargs):

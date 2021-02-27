@@ -357,9 +357,10 @@ class Save_Renumber(EnabledLink):
 
     def _enable(self):
         self._matches = []
-        for save_path in self.selected:
-            save_match = self._re_numbered_save.match(save_path.s)
-            if save_match: self._matches.append((save_path, save_match))
+        for sinf in self.window.GetSelectedInfos(self.selected):
+            save_match = self._re_numbered_save.match(u'%s' % sinf)
+            if save_match:
+                self._matches.append((u'%s' % sinf, save_match, sinf))
         return bool(self._matches)
 
     def Execute(self):
@@ -368,21 +369,18 @@ class Save_Renumber(EnabledLink):
             prompt=_(u'Save Number'), title=_(u'Re-number Saves'), value=1,
             min=1, max=10000)
         if not newNumber: return
-        old_names = []
-        new_names = []
-        for old_file_path, maPattern in self._matches:
+        old_names = set()
+        new_names = set()
+        for old_file_path, maPattern, sinf in self._matches:
             s_groups = maPattern.groups()
             if not s_groups[1]: continue
             newFileName = u'%s%d%s' % (s_groups[0], newNumber, s_groups[2])
-            if newFileName != old_file_path.s:
+            if newFileName != old_file_path: # FIXME ci comp
                 new_file_path = GPath(newFileName)
-                try:
-                    bosh.saveInfos.rename_info(old_file_path, new_file_path)
-                except (CancelError, OSError, IOError):
+                if self.window.try_rename(sinf, new_file_path, new_names,
+                                          old_names):
                     break
                 newNumber += 1
-                old_names.append(old_file_path)
-                new_names.append(new_file_path)
         if new_names:
             self.window.RefreshUI(redraw=new_names, to_del=old_names)
             self.window.SelectItemsNoCallback(new_names)

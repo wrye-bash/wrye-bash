@@ -24,8 +24,8 @@
 import re
 import time
 from .. import balt, bosh, bush, bolt, exception
+from ..bosh import ListInfo
 from ..balt import ItemLink, ChoiceLink, OneItemLink
-from ..bolt import GPath
 from ..gui import BusyCursor
 from ..localize import format_date, unformat_date
 
@@ -121,19 +121,16 @@ class File_Duplicate(ItemLink):
             #--Mod with resources? Warn on rename if file has bsa and/or dialog
             if not self._askResourcesOk(fileInfo): continue
             #--Continue copy
-            if bosh.bak_file_pattern.match(to_duplicate.s):
-                continue #YAK!
-            (destDir, wildcard) = (fileInfo.dir, u'*' + to_duplicate.ext)
-            destName = self.window.new_path(
-                GPath(to_duplicate.root + u' Copy' + to_duplicate.ext), destDir)
-            destDir.makedirs()
+            r, e = to_duplicate.root, to_duplicate.ext
+            destName = fileInfo.unique_key(r, e, add_copy=True)
+            destDir = fileInfo.dir
             if len(self.selected) == 1:
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
-                    defaultFile=destName.s, wildcard=wildcard)
+                    defaultFile=destName.s, wildcard=u'*%s' %e)
                 if not destPath: return
                 destDir, destName = destPath.headTail
-                if destDir == fileInfo.dir:
+                if destDir == fileInfo.dir: # FIXME validate (or ask save does that)?
                     if destName == to_duplicate:
                         self._showError(
                             _(u'Files cannot be duplicated to themselves!'))

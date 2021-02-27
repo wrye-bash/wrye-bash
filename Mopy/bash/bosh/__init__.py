@@ -60,11 +60,8 @@ from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
 from ..mod_files import ModFile, ModHeaderReader
 
 # Singletons, Constants -------------------------------------------------------
-reOblivion = re.compile(
-    u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI|_GBR SI).esm$', re.U)
-# quick or auto save.bak(.bak...)
-bak_file_pattern = re.compile(u'' r'(quick|auto)(save)(\.bak)+(f?)$',
-                              re.I | re.U)
+reOblivion = re.compile(u'' r'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|'
+                        r'_GOTY non-SI|_GBR SI)\.esm$', re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 empty_path = GPath(u'') # evaluates to False in boolean expressions
@@ -99,6 +96,99 @@ imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
 #------------------------------------------------------------------------------
+class ListInfo(object):
+    """Info object displayed in Wrye Bash list."""
+    __slots__ = ()
+    _valid_exts_re = u''
+    _is_filename = True
+    _has_digits = False
+
+    @classmethod
+    def validate_filename_str(cls, name_str, allowed_exts=frozenset()):
+        """Basic validation of list item name - those are usually filenames so
+        they should contain valid chars. We also optionally check for match
+        with an extension group (apart from projects and markers). Returns
+        a tuple - if the second element is None validation failed and the first
+        element is the message to show - if not the meaning varies per override
+
+        :type name_str: unicode"""
+        if not name_str:
+            return _(u'Empty name !'), None
+        char = cls._is_filename and bolt.Path.has_invalid_chars(name_str)
+        if char:
+            return _(u'%(new_name)s contains invalid character (%(char)s)') % {
+                u'new_name': name_str, u'char': char}, None
+        rePattern = cls._name_re(allowed_exts)
+        maPattern = rePattern.match(name_str)
+        if maPattern:
+            ma_groups = maPattern.groups(default=u'')
+            root = ma_groups[0]
+            num_str = ma_groups[1] if cls._has_digits else None
+            if not (root or num_str):
+                pass # will return the error message at the end
+            elif cls._has_digits: return root, num_str
+            else: return GPath(name_str), root # default u''
+        return (_(u'Bad extension or file root: ') + name_str), None
+
+    @classmethod
+    def _name_re(cls, allowed_exts):
+        exts_re = cls._valid_exts_re if not allowed_exts else \
+            u'' r'(\.(?:' + u'|'.join(ext[1:] for ext in allowed_exts) + u'))'
+        # The reason we do the regex like this is to support names like
+        # foo.ess.ess.ess etc.
+        final_regex = u'^%s(.*?)' % (u'' r'(?=.+\.)' if exts_re else u'')
+        if cls._has_digits: final_regex += u'' r'(\d*)'
+        final_regex += exts_re + u'$'
+        return re.compile(final_regex, re.I | re.U)
+
+    # Generate unique filenames when duplicating files etc
+    @staticmethod
+    def _new_name(base_name, count):
+        r, e = base_name.sroot, base_name.ext
+        if not count:
+            return GPath(r + e)
+        return GPath(r + (u' (%d)' % count) + e)
+
+    @classmethod
+    def unique_name(cls, name_str):
+        base_name, count = cls._new_name(GPath(name_str), 0), 0
+        while GPath(name_str) in cls.get_store():
+            count += 1
+            name_str= cls._new_name(base_name, count)
+        return GPath(name_str) # gpath markers and projects
+
+    # Gui renaming stuff ------------------------------------------------------
+    @classmethod
+    def rename_area_idxs(cls, text_str, start=0, stop=None):
+        """Return the selection span of item being renamed - usually to
+        exclude the extension."""
+        if cls._valid_exts_re and not start: # start == 0
+            return 0, len(GPath(text_str[:stop]).sbody)
+        return 0, len(text_str) # if selection not at start reset
+
+    @classmethod
+    def get_store(cls):
+        raise AbstractError(u'%s does not provide a data store' % type(cls))
+
+    # Instance methods --------------------------------------------------------
+    def get_rename_paths(self, newName):
+        """Return possible paths this file's renaming might affect (possibly
+        omitting some that do not exist)."""
+        return [(self.abs_path, self.get_store().store_dir.join(newName))]
+
+    @property
+    def ci_key(self):
+        return GPath_no_norm(u'%s' % self)
+
+    def unique_key(self, new_root, ext=u'', add_copy=False):
+        if self.__class__._valid_exts_re and not ext:
+            ext = self.ci_key.ext
+        new_name = GPath_no_norm(
+            new_root + (_(u' Copy') if add_copy else u'') + ext)
+        if new_name == self.ci_key: # new and old names are ci-same
+            return None
+        return self.unique_name(new_name)
+
 class MasterInfo(object):
     """Slight abstraction over ModInfo that allows us to represent masters that
     are missing an active mod counterpart."""
@@ -151,7 +241,7 @@ class MasterInfo(object):
         return u'%s<%r>' % (self.__class__.__name__, self.curr_name)
 
 #------------------------------------------------------------------------------
-class FileInfo(AFile):
+class FileInfo(AFile, ListInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
     _null_stat = (-1, None, None)
 
@@ -249,32 +339,27 @@ class FileInfo(AFile):
         raise AbstractError()
 
     # Backup stuff - beta, see #292 -------------------------------------------
-    def getFileInfos(self): # Py3: cached property
-        """Return one of the FileInfos singletons depending on fileInfo type.
-        :rtype: FileInfos"""
-        raise AbstractError
-
     def get_table_prop(self, prop, default=None):
-        return self.getFileInfos().table.getItem(self.name, prop, default)
+        return self.get_store().table.getItem(self.name, prop, default)
 
     def set_table_prop(self, prop, val):
-        return self.getFileInfos().table.setItem(self.name, prop, val)
+        return self.get_store().table.setItem(self.name, prop, val)
 
     def get_hide_dir(self):
-        return self.getFileInfos().hidden_dir
+        return self.get_store().hidden_dir
 
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
         #--Skip backup?
-        if not self in self.getFileInfos().values(): return
+        if not self in self.get_store().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
-        self.getFileInfos().copy_info(self.name, backupDir)
+        self.get_store().copy_info(self.name, backupDir)
         #--First backup
         firstBackup = backupDir.join(self.name) + u'f'
         if not firstBackup.exists():
-            self.getFileInfos().copy_info(self.name, backupDir,
-                                          firstBackup.tail)
+            self.get_store().copy_info(self.name, backupDir,
+                                       firstBackup.tail)
 
     def tempBackup(self, forceBackup=True):
         """Creates backup(s) of file.  Uses temporary directory to avoid UAC issues."""
@@ -294,7 +379,7 @@ class FileInfo(AFile):
         for fname mapped to its restore location in data_store.store_dir
         :rtype: list[tuple]
         """
-        restore_path = (fname and self.getFileInfos().store_dir.join(
+        restore_path = (fname and self.get_store().store_dir.join(
             fname)) or self.getPath()
         fname = fname or self.name
         return [(self.backup_dir.join(fname) + (u'f' if first else u''),
@@ -318,7 +403,7 @@ class FileInfo(AFile):
         env.shellCopy(*list(izip(*backup_paths)))
         # do not change load order for timestamp games - rest works ok
         self.setmtime(self._file_mod_time, crc_changed=True)
-        self.getFileInfos().new_info(self.name, notify_bain=True)
+        self.get_store().new_info(self.name, notify_bain=True)
 
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
@@ -351,11 +436,32 @@ class FileInfo(AFile):
 
     @property
     def backup_dir(self):
-        return self.getFileInfos().bash_dir.join(u'Backups')
+        return self.get_store().bash_dir.join(u'Backups')
 
     @property
     def snapshot_dir(self):
-        return self.getFileInfos().bash_dir.join(u'Snapshots')
+        return self.get_store().bash_dir.join(u'Snapshots')
+
+    def validate_name(self, name_str):
+        # disallow extension change but not if no-extension info type
+        check_ext = name_str and self.__class__._valid_exts_re
+        if check_ext and not name_str.lower().endswith(self._file_key.cext):
+            return _(u'%s: Incorrect file extension (must be %s)') % (
+                name_str, self._file_key.ext), None
+        #--Else file exists?
+        if self.dir.join(name_str).exists(): ##: check using file_infos?
+            return _(u'File %s already exists.') % name_str, None
+        return self.__class__.validate_filename_str(name_str)
+
+    def get_rename_paths(self, newName):
+        old_new_paths = super(FileInfo, self).get_rename_paths(newName)
+        # all_backup_paths will return the backup paths for this file and its
+        # satellites (like cosaves). Passing newName in it returns the rename
+        # destinations of the backup paths. Backup paths may not exist.
+        for b_path, new_b_path in izip(self.all_backup_paths(),
+                                       self.all_backup_paths(newName)):
+            old_new_paths.append((b_path, new_b_path))
+        return old_new_paths
 
 #------------------------------------------------------------------------------
 reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
@@ -363,6 +469,8 @@ reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm, .esl and .esu files."""
     _has_esm_flag = _is_esl = False # Cached, since we need it so often
+    _valid_exts_re = u'' r'(\.(?:' + u'|'.join(
+        x[1:] for x in bush.game.espm_extensions) + u'))'
 
     def __init__(self, fullpath, load_cache=False):
         self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
@@ -373,7 +481,7 @@ class ModInfo(FileInfo):
         super(ModInfo, self).__init__(fullpath, load_cache)
 
     def get_hide_dir(self):
-        dest_dir = self.getFileInfos().hidden_dir
+        dest_dir = self.get_store().hidden_dir
         #--Use author subdirectory instead?
         mod_author = self.header.author
         if mod_author:
@@ -396,7 +504,8 @@ class ModInfo(FileInfo):
             if bush.game.has_esl: self._recalc_esl()
             self._recalc_esm()
 
-    def getFileInfos(self): return modInfos
+    @classmethod
+    def get_store(cls): return modInfos
 
     def get_extension(self):
         """Returns the file extension of this mod."""
@@ -901,12 +1010,18 @@ class ModInfo(FileInfo):
         """Returns a dirty message from LOOT."""
         if self.get_table_prop(u'ignoreDirty', False):
             return False, u''
-        if lootDb.is_plugin_dirty(self.name, self.getFileInfos()): ##: modInfos
+        if lootDb.is_plugin_dirty(self.name, modInfos):
             return True, _(u'Contains dirty edits, needs cleaning.')
         return False, u''
 
     def match_oblivion_re(self):
         return reOblivion.match(self.name.s)
+
+    def get_rename_paths(self, newName):
+        old_new_paths = super(ModInfo, self).get_rename_paths(newName)
+        if self.isGhost:
+            old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + u'.ghost')
+        return old_new_paths
 
 # Deprecated/Obsolete Bash Tags -----------------------------------------------
 # Tags that have been removed from Wrye Bash and should be dropped from pickle
@@ -1105,6 +1220,9 @@ from . import cosaves
 class SaveInfo(FileInfo):
     cosave_types = () # cosave types for this game - set once in SaveInfos
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
+    _valid_exts_re = u'' r'(\.(?:' + u'|'.join([bush.game.Ess.ext[1:],
+                                                bush.game.Ess.ext[1:-1] + u'r',
+                                                u'bak']) + u'))'
 
     def __init__(self, fullpath, load_cache=False):
         # Dict of cosaves that may come with this save file. Need to get this
@@ -1113,7 +1231,8 @@ class SaveInfo(FileInfo):
         self._co_saves = self.get_cosaves_for_path(fullpath)
         super(SaveInfo, self).__init__(fullpath, load_cache)
 
-    def getFileInfos(self): return saveInfos
+    @classmethod
+    def get_store(cls): return saveInfos
 
     def getStatus(self):
         status = FileInfo.getStatus(self)
@@ -1131,10 +1250,14 @@ class SaveInfo(FileInfo):
         else:
             return -10
 
+    def is_save_enabled(self):
+        """True if I am enabled."""
+        return self.abs_path.cext == bush.game.Ess.ext
+
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
-            self.header = get_save_header_type(bush.game.fsName)(self.abs_path)
+            self.header = get_save_header_type(bush.game.fsName)(self)
         except SaveHeaderError as e:
             raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
         self._reset_masters()
@@ -1267,10 +1390,24 @@ class SaveInfo(FileInfo):
             self.has_inaccurate_masters = xse_cosave is None or \
                 not xse_cosave.has_accurate_master_list(True)
 
+    def get_rename_paths(self, newName):
+        old_new_paths = super(SaveInfo, self).get_rename_paths(newName)
+        # super call added the backup paths but not the actual rename cosave
+        # paths inside the store_dir - add those only if they exist
+        old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
+        for co_type, co_file in self._co_saves.items():
+            old_new_paths.append((co_file.abs_path,
+                                  co_type.get_cosave_path(new)))
+        return old_new_paths
+
 #------------------------------------------------------------------------------
 class ScreenInfo(FileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
+    _valid_exts_re = (u'' r'(\.(?:' + u'|'.join(ext[1:] for ext in imageExts)
+                      + u'))')
+    _has_digits = True
+
     def __init__(self, fullpath, load_cache=False):
         self.cached_bitmap = None
         super(ScreenInfo, self).__init__(fullpath, load_cache)
@@ -1279,8 +1416,8 @@ class ScreenInfo(FileInfo):
         self.cached_bitmap = None # Lazily reloaded
         super(ScreenInfo, self)._reset_cache(stat_tuple, load_cache)
 
-    def getFileInfos(self):
-        return screen_infos
+    @classmethod
+    def get_store(cls): return screen_infos
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
@@ -1314,41 +1451,16 @@ class DataStore(DataDict):
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
 
-    # Renaming - note the @conversation, this needs to be atomic.
-    ##: Not really the right place for it though -> comes back to our core
-    # move/copy operations, which need rethinking
-    @balt.conversation
-    def rename_info(self, oldName, newName):
-        try:
-            return self._rename_operation(oldName, newName)
-        except (CancelError, OSError, IOError):
-            deprint(u'Renaming %s to %s failed' % (oldName, newName),
-                    traceback=True)
-            # When using moveTo I would get "WindowsError:[Error 32]The process
-            # cannot access ..." -  the code below was reverting the changes.
-            # With shellMove I mostly get CancelError so below not needed -
-            # except if a save is locked and user presses Skip - so cosaves are
-            # renamed! Error handling is still a WIP
-            for old, new in self._get_rename_paths(oldName, newName):
-                if new.exists() and not old.exists():
-                    # some cosave move failed, restore files
-                    new.moveTo(old)
-                if new.exists() and old.exists():
-                    # move copies then deletes, so the delete part failed
-                    new.remove()
-            raise
-
-    def _rename_operation(self, oldName, newName):
-        rename_paths = self._get_rename_paths(oldName, newName)
+    def rename_operation(self, member_info, newName):
+        rename_paths = member_info.get_rename_paths(newName)
         for tup in rename_paths[1:]: # first rename path must always exist
             # if cosaves or backups do not exist shellMove fails!
-            if not tup[0].exists(): rename_paths.remove(tup)
+            # if filenames are the same (for instance cosaves in disabling
+            # saves) shellMove will offer to skip and raise SkipError
+            if tup[0] == tup[1] or not tup[0].exists():
+                rename_paths.remove(tup)
         env.shellMove(*list(izip(*rename_paths)))
-
-    def _get_rename_paths(self, oldName, newName):
-        """Return possible paths this file's renaming might affect (possibly
-        omitting some that do not exist)."""
-        return [(self.store_dir.join(oldName), self.store_dir.join(newName))]
+        return rename_paths[0][0].tail
 
     @property
     def bash_dir(self):
@@ -1473,11 +1585,12 @@ class TableFileInfos(DataStore):
             del self.table[deleted]
         self.table.save()
 
-    def _rename_operation(self, oldName, newName):
+    def rename_operation(self, member_info, newName):
         # Override to allow us to notify BAIN if necessary
-        self._notify_bain(renamed=dict(
-            self._get_rename_paths(oldName, newName)))
-        return super(TableFileInfos, self)._rename_operation(oldName, newName)
+        ##: This is *very* inelegant/inefficient, we calculate these paths
+        # twice (once here and once in super)
+        self._notify_bain(renamed=dict(member_info.get_rename_paths(newName)))
+        return super(TableFileInfos, self).rename_operation(member_info, newName)
 
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
@@ -1547,37 +1660,26 @@ class FileInfos(TableFileInfos):
             self.table.pop(name, None)
         return deleted
 
-    def _get_rename_paths(self, oldName, newName):
-        old_new_paths = super(
-            FileInfos, self)._get_rename_paths(oldName, newName)
-        info_backup_paths = self[oldName].all_backup_paths
-        # all_backup_paths will return the backup paths for this file and its
-        # satellites (like cosaves). Passing newName in it returns the rename
-        # destinations of the backup paths. Backup paths may not exist.
-        for b_path, new_b_path in izip(info_backup_paths(),
-                                       info_backup_paths(newName)):
-            old_new_paths.append((b_path, new_b_path))
-        return old_new_paths
-
     def _additional_deletes(self, fileInfo, toDelete):
         #--Backups
         toDelete.extend(fileInfo.all_backup_paths()) # will include cosave ones
 
     #--Rename
-    def _rename_operation(self, oldName, newName):
+    def rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName."""
         #--Update references
-        fileInfo = self[oldName]
         #--File system
-        super(FileInfos, self)._rename_operation(oldName, newName)
+        super(FileInfos, self).rename_operation(member_info, newName)
+        old_key = member_info.name
         #--FileInfo
-        fileInfo.name = newName
-        fileInfo.abs_path = self.store_dir.join(newName)
+        member_info.name = newName
+        member_info.abs_path = self.store_dir.join(newName)
         #--FileInfos
-        self[newName] = self[oldName]
-        del self[oldName]
-        self.table.moveRow(oldName,newName)
+        self[newName] = member_info
+        del self[old_key]
+        self.table.moveRow(old_key, newName)
         # self[newName]._mark_unchanged() # not needed with shellMove !
+        return old_key
 
     #--Move
     def move_info(self, fileName, destDir):
@@ -2744,27 +2846,20 @@ class ModInfos(FileInfos):
         self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
         self._active_wip  = [x for x in self._active_wip if x not in to_remove]
 
-    def _rename_operation(self, oldName, newName):
+    def rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName."""
-        isSelected = load_order.cached_is_active(oldName)
+        isSelected = load_order.cached_is_active(member_info.name)
         if isSelected:
-            self.lo_deactivate(oldName, doSave=False) # will save later
-        super(ModInfos, self)._rename_operation(oldName, newName)
+            self.lo_deactivate(member_info, doSave=False) # will save later
+        old_key = super(ModInfos, self).rename_operation(member_info, newName)
         # rename in load order caches
-        oldIndex = self._lo_wip.index(oldName)
-        self._lo_caches_remove_mods([oldName])
+        oldIndex = self._lo_wip.index(old_key)
+        self._lo_caches_remove_mods([old_key])
         self._lo_wip.insert(oldIndex, newName)
         if isSelected: self.lo_activate(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
-
-    def _get_rename_paths(self, oldName, newName):
-        old_new_paths = super(
-            ModInfos, self)._get_rename_paths(oldName, newName)
-        if self[oldName].isGhost:
-            old_new_paths[0] = (self[oldName].abs_path,
-                                old_new_paths[0][1] + u'.ghost')
-        return old_new_paths
+        return old_key
 
     #--Delete
     def files_to_delete(self, filenames, **kwargs):
@@ -2887,10 +2982,10 @@ class ModInfos(FileInfos):
         is_master_active = load_order.cached_is_active(self.masterName)
         is_new_info_active = load_order.cached_is_active(newName)
         # can't use ModInfos rename cause it will mess up the load order
-        rename_operation = super(ModInfos, self)._rename_operation
+        rename_operation = super(ModInfos, self).rename_operation
         while True:
             try:
-                rename_operation(self.masterName, oldName)
+                rename_operation(baseInfo, oldName)
                 break
             except OSError as werr: # can only occur if SHFileOperation
                 # isn't called, yak - file operation API badly needed
@@ -2902,7 +2997,7 @@ class ModInfos(FileInfos):
                 return
         while True:
             try:
-                rename_operation(newName, self.masterName)
+                rename_operation(newInfo, self.masterName)
                 break
             except OSError as werr:
                 if werr.errno == errno.EACCES and self._retry(
@@ -2983,6 +3078,10 @@ class ModInfos(FileInfos):
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = False
+    # Enabled and disabled saves, no .bak files ##: needed?
+    file_pattern = re.compile(u'(%s)(f?)$' % u'|'.join(
+        u'' r'\.%s' % s for s in [bush.game.Ess.ext[1:],
+                                  bush.game.Ess.ext[1:-1] + u'r']),re.I | re.U)
 
     def _setLocalSaveFromIni(self):
         """Read the current save profile from the oblivion.ini file and set
@@ -2996,9 +3095,6 @@ class SaveInfos(FileInfos):
         self.localSave = decoder(self.localSave) # encoding = u'cp1252' ?
 
     def __init__(self):
-        _ext = re.escape(bush.game.Ess.ext)
-        patt = u'(%s|%sr)(f?)$' % (_ext, _ext[:-1]) # enabled/disabled save
-        self.__class__.file_pattern = re.compile(patt, re.I | re.U)
         self.localSave = bush.game.Ini.save_prefix
         self._setLocalSaveFromIni()
         super(SaveInfos, self).__init__(dirs[u'saveBase'].join(self.localSave),
@@ -3011,15 +3107,45 @@ class SaveInfos(FileInfos):
             if row.endswith(u'\\'):
                 self.profiles.moveRow(row, row[:-1])
         SaveInfo.cosave_types = cosaves.get_cosave_types(
-            bush.game.fsName, self.__class__.file_pattern,
+            bush.game.fsName, self._parse_save_path,
             bush.game.Se.cosave_tag, bush.game.Se.cosave_ext)
 
     @classmethod
     def rightFileType(cls, fileName):
-        """Saves come into quick/auto bak format and regular ones that might be
-        disabled"""
-        return cls.file_pattern.search(
-            u'%s' % fileName) or bak_file_pattern.match(u'%s' % fileName)
+        return all(cls._parse_save_path(u'%s' % fileName))
+
+    @classmethod
+    def valid_save_exts(cls):
+        """Returns a cached version of the valid extensions that a save may
+        have."""
+        try:
+            return cls._valid_save_exts
+        except AttributeError:
+            std_save_ext = bush.game.Ess.ext[1:]
+            accepted_exts = {std_save_ext, std_save_ext[:-1] + u'r', u'bak'}
+            # Add 'first backup' versions of the extensions too
+            for e in accepted_exts.copy():
+                accepted_exts.add(e + u'f')
+            cls._valid_save_exts = accepted_exts
+            return accepted_exts
+
+    @classmethod
+    def _parse_save_path(cls, save_name):
+        """Parses the specified save path into root and extension, returning
+        them as a tuple. If the save path does not point to a valid save,
+        returns two Nones instead."""
+        accepted_exts = cls.valid_save_exts()
+        save_root, save_ext = os.path.splitext(save_name)
+        save_ext_trunc = save_ext[1:]
+        if save_ext_trunc.lower() not in accepted_exts:
+            # Can't be a valid save, doesn't end in ess/esr/bak
+            return None, None
+        cs_ext = bush.game.Se.cosave_ext[1:]
+        if any(s.lower() == cs_ext for s in save_root.split(u'.')):
+            # Almost certainly not a valid save, had the cosave extension
+            # in one of its root parts
+            return None, None
+        return save_root, save_ext
 
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
@@ -3028,12 +3154,13 @@ class SaveInfos(FileInfos):
         if not booting: self._refreshLocalSave() # otherwise we just did this
         return refresh_infos and FileInfos.refresh(self, booting=booting)
 
-    def _rename_operation(self, oldName, newName):
+    def rename_operation(self, member_info, newName):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
-        super(SaveInfos, self)._rename_operation(oldName, newName)
+        old_key = super(SaveInfos, self).rename_operation(member_info, newName)
         for co_type, co_file in self[newName]._co_saves.items():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
+        return old_key
 
     def _additional_deletes(self, fileInfo, toDelete):
         # type: (SaveInfo, list) -> None
@@ -3041,17 +3168,6 @@ class SaveInfos(FileInfos):
             x.abs_path for x in fileInfo._co_saves.values())
         # now add backups and cosaves backups
         super(SaveInfos, self)._additional_deletes(fileInfo, toDelete)
-
-    def _get_rename_paths(self, oldName, newName):
-        old_new_paths = super(
-            SaveInfos, self)._get_rename_paths(oldName, newName)
-        # super call added the backup paths but not the actual rename cosave
-        # paths inside the store_dir - add those only if they exist
-        old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
-        for co_type, co_file in self[oldName]._co_saves.items():
-            old_new_paths.append((co_file.abs_path,
-                                  co_type.get_cosave_path(new)))
-        return old_new_paths
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated cosaves file(s)."""
@@ -3112,26 +3228,6 @@ class SaveInfos(FileInfos):
         self._initDB(dirs[u'saveBase'].join(self.localSave))
         if refreshSaveInfos: self.refresh()
 
-    #--Enabled ----------------------------------------------------------------
-    @staticmethod
-    def is_save_enabled(fileName):
-        """True if fileName is enabled."""
-        return fileName.cext == bush.game.Ess.ext
-
-    def enable(self,fileName,value=True):
-        """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
-        enabled = self.is_save_enabled(fileName)
-        if value == enabled or re.match(u'(autosave|quicksave)', fileName.s,
-                                          re.I | re.U):
-            return fileName
-        newName = fileName.root + (
-            bush.game.Ess.ext if value else fileName.ext[:-1] + u'r')
-        try:
-            self.rename_info(fileName, newName)
-            return newName
-        except (CancelError, OSError, IOError):
-            return fileName
-
 #------------------------------------------------------------------------------
 from . import bsa_files
 
@@ -3153,6 +3249,8 @@ class BSAInfos(FileInfos):
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
 
         class BSAInfo(FileInfo, _bsa_type):
+            _valid_exts_re = (u'' r'(\.' + bush.game.Bsa.bsa_extension[1:]
+                              + u')')
             def __init__(self, fullpath, load_cache=False):
                 try:  # Never load_cache for memory reasons - let it be
                     # loaded as needed
@@ -3164,8 +3262,8 @@ class BSAInfos(FileInfos):
                         sys.exc_info()[2]
                 self._reset_bsa_mtime()
 
-            def getFileInfos(self):
-                return bsaInfos
+            @classmethod
+            def get_store(cls): return bsaInfos
 
             def do_update(self, raise_on_error=False):
                 changed = super(BSAInfo, self).do_update(raise_on_error)

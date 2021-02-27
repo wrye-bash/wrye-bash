@@ -154,7 +154,7 @@ class Installers_MonitorInstall(Installers_Link):
                                     _(u'External Installation'))
         if not projectName:
             return
-        pr_path = self.window.new_name(projectName)
+        pr_path = bosh.InstallerProject.unique_name(projectName)
         # Copy Files
         with balt.Progress(_(u'Creating Project...'), u'\n' + u' '*60) as prog:
             self.idata.createFromData(pr_path, include, prog) # will order last
