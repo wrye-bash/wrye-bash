@@ -2076,12 +2076,14 @@ class SaveList(balt.UIList):
         game."""
         #--Pass Event onward
         hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
-        if not hitItem or re.match(u'(autosave|quicksave)', hitItem.s,
-                                   re.I | re.U): return
+        if not hitItem: return
+        # Don't allow enabling backups, the game won't read them either way
+        if hitItem.cext == u'.bak':
+            balt.showError(self, _(u'You cannot enable save backups.'))
+            return
         msg = _(u'Clicking on a save icon will disable/enable the save '
                 u'by changing its extension to %(ess)s (enabled) or .esr '
-                u'(disabled). Autosaves and quicksaves will be left alone.'
-                % {u'ess': bush.game.Ess.ext})
+                u'(disabled).' % {u'ess': bush.game.Ess.ext})
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
         sinf = self.data_store[hitItem]
