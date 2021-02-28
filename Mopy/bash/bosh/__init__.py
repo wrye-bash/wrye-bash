@@ -249,6 +249,7 @@ class FileInfo(AFile, ListInfo):
     def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
 
     def __init__(self, fullpath, load_cache=False):
+        ##: We GPath this three times - not slow, but very inelegant
         g_path = GPath(fullpath)
         self.dir = g_path.head
         self.name = g_path.tail # ghost must be lopped off
@@ -475,10 +476,10 @@ class ModInfo(FileInfo):
 
     def __init__(self, fullpath, load_cache=False):
         self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
-        if endsInGhost: fullpath = GPath(fullpath.s[:-6])
+        if endsInGhost: fullpath = GPath_no_norm(fullpath.s[:-6])
         else: # new_info() path
-            self.isGhost = \
-                not fullpath.exists() and (fullpath + u'.ghost').exists()
+            self.isGhost = not fullpath.isfile() and os.path.isfile(
+                fullpath.s + u'.ghost')
         super(ModInfo, self).__init__(fullpath, load_cache)
 
     def get_hide_dir(self):
@@ -1519,8 +1520,14 @@ class TableFileInfos(DataStore):
         return info
 
     def _names(self): # performance intensive
+        # Simple addition is safe because both store_dir and files will have
+        # been normpath'd
+        store_dir_prefix = self.store_dir.s + os.path.sep
+        file_in_store = os.path.isfile
+        file_matches_store = self.rightFileType
         return {x for x in self.store_dir.list() if
-                self.store_dir.join(x).isfile() and self.rightFileType(x)}
+                file_in_store(store_dir_prefix + x.s)
+                and file_matches_store(x)}
 
     #--Right File Type?
     @classmethod

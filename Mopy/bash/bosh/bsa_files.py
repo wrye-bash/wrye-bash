@@ -660,11 +660,18 @@ class BSA(ABsa):
                                    folders=path_folder_record)
         file_names = self._read_bsa_file(folder_records, read_file_record)
         names_record_index = 0
+        filenames_append = _filenames.append
+        path_sep_join = path_sep.join
         for folder_path, folder_record in path_folder_record.iteritems():
             for __ in xrange(folder_record.files_count):
-                filename = _decode_path(
-                    file_names[names_record_index], self.bsa_name)
-                _filenames.append(path_sep.join((folder_path, filename)))
+                try:
+                    # Inlined from _decode_path for startup performance
+                    filename = unicode(file_names[names_record_index],
+                                       encoding=_bsa_encoding)
+                except UnicodeDecodeError:
+                    raise BSADecodingError(self.bsa_name,
+                                           file_names[names_record_index])
+                filenames_append(path_sep_join((folder_path, filename)))
                 names_record_index += 1
         self._filenames = _filenames
 

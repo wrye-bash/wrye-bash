@@ -28,7 +28,6 @@ from __future__ import division, print_function
 import copy
 import io
 import zlib
-from functools import partial
 
 from .basic_elements import SubrecordBlob, unpackSubHeader
 from .mod_io import ModReader
@@ -477,9 +476,8 @@ class MelRecord(MreRecord):
         loaders = self.__class__.melSet.loaders
         # Load each subrecord
         ins_at_end = ins.atEnd
-        load_sub_header = partial(unpackSubHeader, ins)
         while not ins_at_end(endPos, self._rec_sig):
-            sub_type, sub_size = load_sub_header(self._rec_sig)
+            sub_type, sub_size = unpackSubHeader(ins, self._rec_sig)
             try:
                 loaders[sub_type].load_mel(self, ins, sub_type, sub_size,
                     self._rec_sig, sub_type)# *debug_strs
