@@ -49,14 +49,23 @@ class MelObject(object):
 
     def __repr__(self):
         """Carefully try to show as much info about ourselves as possible."""
+        from .. import bush
+        cond_val_data = bush.game.condition_function_data
         to_show = []
         if hasattr(self, u'__slots__'):
             for obj_attr in self.__slots__:
                 # attrs starting with _ are internal - union types,
                 # distributor states, etc.
                 if not obj_attr.startswith(u'_') and hasattr(self, obj_attr):
-                    to_show.append(
-                        u'%s: %r' % (obj_attr, getattr(self, obj_attr)))
+                    obj_val = getattr(self, obj_attr)
+                    # Show the CK names for condition functions, their numeric
+                    # representation is really hard to work with
+                    if obj_attr == u'ifunc':
+                        to_show.append(u'%s: %d (%s)' % (
+                            obj_attr, obj_val,
+                            cond_val_data.get(obj_val, [u'Unknown'])[0]))
+                    else:
+                        to_show.append(u'%s: %r' % (obj_attr, obj_val))
         return u'<%s>' % u', '.join(sorted(to_show)) # is sorted() needed here?
 
 class Subrecord(object):

@@ -431,6 +431,10 @@ class SEWorldTestsPatcher(_ExSpecial, ModLoader):
             else:
                 condition = record.getDefault(u'conditions')
                 condition.ifunc = 365
+                # Set parameters etc. needed for this function (no parameters
+                # and a float comparison value)
+                condition.param2 = condition.param1 = b'\x00' * 4
+                condition.compValue = 0.0
                 record.conditions.insert(0,condition)
                 keep(rec_fid)
                 patched.append(record.eid)
