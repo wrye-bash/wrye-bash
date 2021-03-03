@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,6 +24,8 @@
 through a list, a dropdown, or even a color picker."""
 
 __author__ = u'nycz, Utumno'
+
+from itertools import izip
 
 import wx as _wx
 
@@ -39,7 +40,7 @@ class DropDown(_AComponent):
     wider than width of control.
 
     Events:
-     - on_combo_select(selected_label: str): Posted when an item on the list is
+     - on_combo_select(selected_label: bytes): Posted when an item on the list is
      selected. The parameter is the new value of selection."""
     _wx_widget_type = _wx.ComboBox
 
@@ -94,7 +95,7 @@ class ColorPicker(_AComponent):
     """A button with a color that launches a color picker dialog.
 
     Events:
-     - on_color_picker_evt(selected_label: str): Posted when the button is
+     - on_color_picker_evt(selected_label: bytes): Posted when the button is
      clicked."""
     _wx_widget_type = _wx.ColourPickerCtrl
 
@@ -205,7 +206,7 @@ class CheckListBox(ListBox, WithCharEvents):
     """A list of checkboxes, of which one or more can be selected.
 
     Events:
-      - on_check_list_box(index: int): Posted when user checks an item from
+      - on_box_checked(index: int): Posted when user checks an item from the
         list. The default arg processor extracts the index of the event.
       - on_context(lb_instance: CheckListBox): Posted when this CheckListBox is
         right-clicked.
@@ -216,15 +217,13 @@ class CheckListBox(ListBox, WithCharEvents):
     bind_mouse_leaving = bind_lclick_double = True
     _wx_widget_type = _wx.CheckListBox
 
+    # note isSingle=False by default
     def __init__(self, parent, choices=None, isSingle=False, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None,
-                 onCheck=None): # note isSingle=False by default
+                 isHScroll=False, isExtended=False, onSelect=None):
         super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
                                            isHScroll, isExtended, onSelect)
-        if onCheck:
-            self.on_check_list_box = self._evt_handler(
-                _wx.EVT_CHECKLISTBOX, lambda event: [event.GetSelection()])
-            self.on_check_list_box.subscribe(onCheck)
+        self.on_box_checked = self._evt_handler(_wx.EVT_CHECKLISTBOX,
+            lambda event: [event.GetSelection()])
         self.on_context = self._evt_handler(_wx.EVT_CONTEXT_MENU,
                                             lambda event: [self])
 
@@ -233,27 +232,6 @@ class CheckListBox(ListBox, WithCharEvents):
 
     def lb_is_checked_at_index(self, lb_selection_dex):
         return self._native_widget.IsChecked(lb_selection_dex)
-
-    def setCheckListItems(self, names, values):
-        """Convenience method for setting a bunch of wxCheckListBox items. The
-        main advantage of this is that it doesn't clear the list unless it
-        needs to. Which is good if you want to preserve the scroll position
-        of the list. """
-        if not names:
-            self.lb_clear()
-        else:
-            for index, (name, value) in enumerate(zip(names, values)):
-                if index >= self.lb_get_items_count():
-                    self.lb_append(name)
-                else:
-                    if index == -1:
-                        deprint(u"index = -1, name = %s, value = %s" % (
-                            name, value))
-                        continue
-                    self.lb_set_label_at_index(index, name)
-                self.lb_check_at_index(index, value)
-            for index in range(self.lb_get_items_count(), len(names), -1):
-                self.lb_delete_at_index(index - 1)
 
     def toggle_checked_at_index(self, lb_selection_dex):
         do_check = not self.lb_is_checked_at_index(lb_selection_dex)
@@ -264,3 +242,38 @@ class CheckListBox(ListBox, WithCharEvents):
         unchecked if False."""
         for i in xrange(self.lb_get_items_count()):
             self.lb_check_at_index(i, checked)
+
+    def get_checked_strings(self):
+        """Returns a list of string representations of all checked items."""
+        return self._native_widget.GetCheckedStrings()
+
+    def set_all_items(self, all_keys, all_values):
+        """Completely clears the list and repopulates it using the specified
+        key and value lists. Much faster than set_all_items_keep_pos, but
+        discards the current scroll position."""
+        self.lb_clear()
+        for i, (k, v) in enumerate(izip(all_keys, all_values)):
+            self.lb_append(k)
+            self.lb_check_at_index(i, v)
+
+    ##: Test that the claim below is actually accurate
+    def set_all_items_keep_pos(self, names, checkmarks):
+        """Convenience method for setting a bunch of wxCheckListBox items. The
+        main advantage of this is that it doesn't clear the list unless it
+        needs to, which is good if you want to preserve the scroll position
+        of the list. If you do not need that behavior, however, use
+        set_all_items instead as it is much faster."""
+        if not names:
+            self.lb_clear()
+            return
+        for index, (lab, ch) in enumerate(izip(names, checkmarks)):
+            if index >= self.lb_get_items_count():
+                self.lb_append(lab)
+            else:
+                if index == -1:
+                    deprint(u'index = -1, label = %s, check = %s' % (lab, ch))
+                    continue
+                self.lb_set_label_at_index(index, lab)
+            self.lb_check_at_index(index, ch)
+        for index in xrange(self.lb_get_items_count(), len(names), -1):
+            self.lb_delete_at_index(index - 1)

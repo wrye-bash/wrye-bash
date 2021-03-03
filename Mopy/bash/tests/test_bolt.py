@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,16 +14,18 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 from collections import OrderedDict
-from ..bolt import LowerDict, DefaultLowerDict, OrderedLowerDict, decode, \
-    encode, getbestencoding
+
+import pytest
+
+from ..bolt import LowerDict, DefaultLowerDict, OrderedLowerDict, decoder, \
+    encode, getbestencoding, GPath, Path
 
 def test_getbestencoding():
     """Tests getbestencoding. Keep this one small, we don't want to test
@@ -40,95 +42,95 @@ def test_getbestencoding():
     assert getbestencoding(b'\xc2\xed\xe8\xec\xe0\xed\xe8'
                            b'\xe5')[0] == u'MacCyrillic'
 
-class TestDecode(object):
-    def test_decode_basics(self):
+class TestDecoder(object):
+    def test_decoder_basics(self):
         """Tests basic decoding in various languages and encodings."""
         # Chinese & Japanese (UTF-8)
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a') == u'警告'
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a') == u'警告'
         # Chinese (GBK), but gets autodetected as ISO-8859-1
-        assert decode(b'\xbe\xaf\xb8\xe6') != u'警告'
+        assert decoder(b'\xbe\xaf\xb8\xe6') != u'警告'
         # Japanese (Windows-932), but chardet isn't confident enough to tell,
         # so we run through our encodingOrder and GBK happens to not error
-        assert decode(b'\x8cx\x8d\x90') == u'寈崘'
+        assert decoder(b'\x8cx\x8d\x90') == u'寈崘'
         # English (ASCII)
-        assert decode(b'Warning') == u'Warning'
+        assert decoder(b'Warning') == u'Warning'
         # German (ASCII)
-        assert decode(b'Warnung') == u'Warnung'
+        assert decoder(b'Warnung') == u'Warnung'
         # German (Windows-1252)
-        assert decode(b'\xc4pfel') == u'Äpfel'
+        assert decoder(b'\xc4pfel') == u'Äpfel'
         # Portuguese (UTF-8)
-        assert decode(b'Aten\xc3\xa7\xc3\xa3o') == u'Atenção'
+        assert decoder(b'Aten\xc3\xa7\xc3\xa3o') == u'Atenção'
         # Russian (UTF-8)
-        assert decode(b'\xd0\x92\xd0\xbd\xd0\xb8\xd0\xbc\xd0\xb0\xd0\xbd\xd0'
+        assert decoder(b'\xd0\x92\xd0\xbd\xd0\xb8\xd0\xbc\xd0\xb0\xd0\xbd\xd0'
                       b'\xb8\xd0\xb5') == u'Внимание'
         # Russian (Windows-1251), but gets autodetected as MacCyrillic
-        assert decode(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5') != u'Внимание'
+        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5') != u'Внимание'
 
-    def test_decode_encoding(self):
-        """Tests the 'encoding' parameter of decode."""
+    def test_decoder_encoding(self):
+        """Tests the 'encoding' parameter of decoder."""
         # UTF-8-encoded 'Warning' in Chinese, fed to various encodings
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       encoding=u'ascii') == u'警告'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       encoding=u'gbk') == u'璀﹀憡'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       encoding=u'cp932') == u'警告'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       encoding=u'cp949') == u'警告'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       encoding=u'cp1252') == u'è\xad¦å‘Š'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       encoding=u'utf8') == u'警告'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       encoding=u'cp500') == u'YÝwVj«'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       encoding=u'UTF-16LE') == u'귨誑'
         # Bad detections from above, with the correct encoding
-        assert decode(b'\xbe\xaf\xb8\xe6', encoding=u'gbk') == u'警告'
-        assert decode(b'\x8cx\x8d\x90', encoding=u'cp932') == u'警告'
-        assert decode(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
+        assert decoder(b'\xbe\xaf\xb8\xe6', encoding=u'gbk') == u'警告'
+        assert decoder(b'\x8cx\x8d\x90', encoding=u'cp932') == u'警告'
+        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
                       encoding=u'cp1251') == u'Внимание'
 
-    def test_decode_avoidEncodings(self):
+    def test_decoder_avoidEncodings(self):
         """Tests the 'avoidEncodings' parameter of avoidEncodings."""
         # UTF-8-encoded 'Warning' in Chinese, fed to various encodings
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       avoidEncodings=(u'ascii',)) == u'警告'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       avoidEncodings=(u'gbk',)) == u'警告'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       avoidEncodings=(u'cp932',)) == u'警告'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       avoidEncodings=(u'cp949',)) == u'警告'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       avoidEncodings=(u'cp1252',)) == u'警告'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       avoidEncodings=(u'utf8',)) == u'璀﹀憡'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       avoidEncodings=(u'cp500',)) == u'警告'
-        assert decode(b'\xe8\xad\xa6\xe5\x91\x8a',
+        assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
                       avoidEncodings=(u'UTF-16LE',)) == u'警告'
         # Bad detections from above - this one works now...
-        assert decode(b'\xbe\xaf\xb8\xe6',
+        assert decoder(b'\xbe\xaf\xb8\xe6',
                       avoidEncodings=(u'ISO-8859-1',)) == u'警告'
         # But this one still fails because GBK is next in line and happens to
         # not error when given those bytes. Even avoiding GBK does not help
         # because the only thing the 'avoidEncodings' parameter does is avoid
         # bad chardet detections.
-        assert decode(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
+        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
                       avoidEncodings=(u'MacCyrillic',)) != u'Внимание'
-        assert decode(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
+        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
                       avoidEncodings=(u'MacCyrillic', u'gbk')) != u'Внимание'
 
     def decode_already_decoded(self):
         """Tests if passing in a unicode string doesn't try any decoding."""
-        assert decode(u'警告') == u'警告' # Chinese & Japanese
-        assert decode(u'Warning') == u'Warning' # English
-        assert decode(u'Warnung') == u'Warnung' # German
-        assert decode(u'Attenzione') == u'Attenzione' # Italian
-        assert decode(u'Atenção') == u'Atenção' # Portuguese
-        assert decode(u'Внимание') == u'Внимание' # Russian
-        assert decode(None) == None
+        assert decoder(u'警告') == u'警告' # Chinese & Japanese
+        assert decoder(u'Warning') == u'Warning' # English
+        assert decoder(u'Warnung') == u'Warnung' # German
+        assert decoder(u'Attenzione') == u'Attenzione' # Italian
+        assert decoder(u'Atenção') == u'Atenção' # Portuguese
+        assert decoder(u'Внимание') == u'Внимание' # Russian
+        assert decoder(None) is None
 
 class TestEncode(object):
     def test_encode_basics(self):
@@ -167,11 +169,11 @@ class TestEncode(object):
         assert encode(u'Внимание', firstEncoding=u'cp1251') == (
             b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5')
 
-def test_decode_encode_roundtrip():
+def test_decoder_encode_roundtrip():
     """Tests that de/encode preserves roundtrip de/encoding."""
     for s in (u'警告', u'Warning', u'Warnung', u'Äpfel', u'Attenzione',
               u'Atenção', u'Внимание'):
-        assert decode(encode(s)) == s
+        assert decoder(encode(s)) == s
 
 class TestLowerDict(object):
     dict_type = LowerDict
@@ -337,4 +339,91 @@ class TestOrderedLowerDict(TestLowerDict):
     def test_keys(self):
         a = self.dict_type([(u'sape', 4139), (u'guido', 4127),
                             (u'jack', 4098)])
-        assert a.keys() == [u'sape', u'guido', u'jack']
+        assert list(a) == [u'sape', u'guido', u'jack']
+
+class TestPath(object):
+    """Path's odds and ends."""
+
+    def test__eq__(self):
+        # reminder
+        assert u'' == b'' # Py3 False!
+        assert u'123' == b'123' # Py3 False!
+        assert not (u'' == [])
+        assert not (u'' == [1])
+        assert not (u'' == None)
+        assert not (u'' == True)
+        assert not (u'' == 55)
+        # paths and unicode
+        p = GPath(u'c:/random/path.txt')
+        assert u'c:/random/path.txt' == p
+        assert u'' r'c:\random\path.txt' == p
+        assert GPath(u'c:/random/path.txt') == p
+        assert GPath(u'' r'c:\random\path.txt') == p
+        # paths and bytes
+        assert b'c:/random/path.txt' == p
+        assert b'' r'c:\random\path.txt' == p
+        assert GPath(b'c:/random/path.txt') == p
+        assert GPath(b'' r'c:\random\path.txt') == p
+        # paths and None
+        assert not (None == p)
+        # test comp with Falsy - previously assertions passed
+        with pytest.raises(TypeError): assert not (p == [])
+        with pytest.raises(TypeError): assert not (p == False)
+        with pytest.raises(TypeError): assert not (p == [1])
+        # Falsy and "empty" Path
+        empty = GPath(u'')
+        assert empty == Path(u'')
+        assert empty == u''
+        assert empty == b''
+        assert not (None == empty)
+        with pytest.raises(TypeError): assert empty == []
+        with pytest.raises(TypeError): assert empty == False
+        with pytest.raises(TypeError): assert not (empty == [1])
+
+    def test__le__(self):
+        # reminder
+        assert u'' <= b'' # Py3 False!
+        assert u'123' <= b'123' # Py3 False!
+        assert  (None <= u'') ## !
+        assert not (u'' <= [])
+        assert not (u'' <= [1])
+        assert not (u'' <= None)
+        assert not (u'' <= True)
+        assert not (u'' <= 55)
+        # paths and unicode
+        p = GPath(u'c:/random/path.txt')
+        assert u'c:/random/path.txt' <= p
+        assert u'' r'c:\random\path.txt' <= p
+        assert GPath(u'c:/random/path.txt') <= p
+        assert GPath(u'' r'c:\random\path.txt') <= p
+        # paths and bytes
+        assert b'c:/random/path.txt' <= p
+        assert b'' r'c:\random\path.txt' <= p
+        assert GPath(b'c:/random/path.txt') <= p
+        assert GPath(b'' r'c:\random\path.txt') <= p
+        # test comp with None
+        assert (None <= p)
+        # unrelated types - previously assertions passed
+        with pytest.raises(TypeError): assert not (p <= [])
+        with pytest.raises(TypeError): assert not (p <= False)
+        with pytest.raises(TypeError): assert not (p <= [1])
+        # Falsy and "empty" Path
+        empty = GPath(u'')
+        assert empty <= Path(u'')
+        assert empty <= u''
+        assert empty <= b''
+        assert (None <= p)  ## !
+        assert not (p <= None)
+        with pytest.raises(TypeError): assert empty <= []
+        with pytest.raises(TypeError): assert empty <= False
+        with pytest.raises(TypeError): assert not (empty <= [1])
+
+    def test_dict_keys(self):
+        d = {GPath(u'c:/random/path.txt'): 1}
+        assert not (u'c:/random/path.txt' in d) ## oops
+        assert u'' r'c:\random\path.txt' in d
+        assert GPath(u'c:/random/path.txt') in d
+        assert GPath(u'' r'c:\random\path.txt') in d
+        dd = {u'c:/random/path.txt': 1}
+        assert not GPath(u'c:/random/path.txt') in dd
+        assert not GPath(u'' r'c:\random\path.txt') in dd

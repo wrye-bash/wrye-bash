@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,7 +24,6 @@
 """Save files - beta - TODOs:
 - that's the headers code only - write save classes (per game)
 - rework encoding/decoding
-- use the alpha data from the image
 """
 
 from __future__ import division
@@ -33,72 +31,78 @@ from __future__ import division
 __author__ = u'Utumno'
 
 import copy
-import itertools
-import lz4.block
-import StringIO
-import struct
+import io
 import zlib
 from collections import OrderedDict
 from functools import partial
+
+import lz4.block
+
 from .. import bolt
-from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
-    unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
-    unpack_str_int_delim, unpack_str16_delim_null, unpack_str_byte_delim, \
-    unpack_many, encode, struct_unpack
-from ..exception import SaveHeaderError, raise_bolt_error
+from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
+    unpack_short, unpack_float, unpack_str16, unpack_byte, \
+    unpack_str_int_delim, unpack_str16_delim, unpack_str_byte_delim, \
+    unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short, \
+    pack_float, pack_string, pack_str8, pack_bzstr8, structs_cache, \
+    struct_error
+from ..exception import SaveHeaderError, raise_bolt_error, AbstractError
 
 # Utilities -------------------------------------------------------------------
-def _pack(out, fmt, pack_arg): out.write(struct_pack(fmt, pack_arg))
+def _pack_c(out, value, __pack=structs_cache[u'=c'].pack):
+    out.write(__pack(value))
+unpack_fstr16 = partial(unpack_string, string_len=16)
 
 class SaveFileHeader(object):
-    save_magic = 'OVERRIDE'
+    save_magic = b'OVERRIDE'
     # common slots Bash code expects from SaveHeader (added header_size and
     # turned image to a property)
     __slots__ = (u'header_size', u'pcName', u'pcLevel', u'pcLocation',
                  u'gameDays', u'gameTicks', u'ssWidth', u'ssHeight', u'ssData',
-                 u'masters', u'_save_path', u'_mastersStart')
+                 u'masters', u'_save_info', u'_mastersStart')
     # map slots to (seek position, unpacker) - seek position negative means
     # seek relative to ins.tell(), otherwise to the beginning of the file
     unpackers = OrderedDict()
 
-    def __init__(self, save_path):
-        self._save_path = save_path
+    def __init__(self, save_inf, load_image=False, ins=None):
+        self._save_info = save_inf
         self.ssData = None # lazily loaded at runtime
-        self.read_save_header()
+        self.read_save_header(load_image, ins)
 
-    def read_save_header(self, load_image=False):
+    def read_save_header(self, load_image=False, ins=None):
         """Fully reads this save header, optionally loading the image as
         well."""
         try:
-            with self._save_path.open(u'rb') as ins:
+            if ins is None:
+                with self._save_info.abs_path.open(u'rb') as ins:
+                    self.load_header(ins, load_image)
+            else:
                 self.load_header(ins, load_image)
         #--Errors
-        except (OSError, struct.error, OverflowError):
-            bolt.deprint(u'Failed to read %s' % self._save_path,
-                traceback=True)
-            raise_bolt_error(u'Failed to read %s' % self._save_path,
-                SaveHeaderError)
+        except (OSError, IOError, struct_error, OverflowError):
+            err_msg = u'Failed to read %s' % self._save_info.abs_path
+            bolt.deprint(err_msg, traceback=True)
+            raise_bolt_error(err_msg, SaveHeaderError)
 
     def load_header(self, ins, load_image=False):
         save_magic = unpack_string(ins, len(self.__class__.save_magic))
         if save_magic != self.__class__.save_magic:
             raise SaveHeaderError(u'Magic wrong: %r (expected %r)' % (
                 save_magic, self.__class__.save_magic))
-        for attr, unp in self.__class__.unpackers.iteritems():
-            if unp[0]:
-                if unp[0] > 0: ins.seek(unp[0])
-                else: ins.seek(ins.tell() - unp[0])
-            self.__setattr__(attr, unp[1](ins))
+        for attr, (__pack, _unpack) in self.__class__.unpackers.iteritems():
+            setattr(self, attr, _unpack(ins))
         self.load_image_data(ins, load_image)
         self.load_masters(ins)
         # additional calculations - TODO(ut): rework decoding
         self.calc_time()
-        self.pcName = decode(cstrip(self.pcName))
-        self.pcLocation = decode(cstrip(self.pcLocation), bolt.pluginEncoding,
+        self.pcName = decoder(cstrip(self.pcName))
+        self.pcLocation = decoder(cstrip(self.pcLocation), bolt.pluginEncoding,
                                  avoidEncodings=(u'utf8', u'utf-8'))
-        self.masters = [bolt.GPath_no_norm(decode(
+        self.masters = [bolt.GPath_no_norm(decoder(
             x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
             for x in self.masters]
+
+    def dump_header(self, out):
+        raise AbstractError
 
     def load_image_data(self, ins, load_image=False):
         bpp = (4 if self.has_alpha else 3)
@@ -136,13 +140,13 @@ class SaveFileHeader(object):
         out.write(ins.read(self._mastersStart))
         oldMasters = self._write_masters(ins, out)
         #--Copy the rest
-        for block in iter(partial(ins.read, 0x5000000), ''):
+        for block in iter(partial(ins.read, 0x5000000), b''):
             out.write(block)
         return oldMasters
 
     def _write_masters(self, ins, out):
         ins.seek(4, 1) # Discard oldSize
-        _pack(out, '=I', self._master_block_size())
+        pack_int(out, self._master_block_size())
         #--Skip old masters
         numMasters = unpack_byte(ins)
         oldMasters = self._dump_masters(ins, numMasters, out)
@@ -154,7 +158,7 @@ class SaveFileHeader(object):
             # globalDataTable1Offset, globalDataTable2Offset,
             # changeFormsOffset, globalDataTable3Offset
             oldOffset = unpack_int(ins)
-            _pack(out, '=I', oldOffset + offset)
+            pack_int(out, oldOffset + offset)
         return oldMasters
 
     def _dump_masters(self, ins, numMasters, out):
@@ -162,10 +166,10 @@ class SaveFileHeader(object):
         for x in xrange(numMasters):
             oldMasters.append(unpack_str16(ins))
         #--Write new masters
-        _pack(out, '=B', len(self.masters))
+        pack_byte(out, len(self.masters))
         for master in self.masters:
-            _pack(out, '=H', len(master))
-            out.write(master.s)
+            pack_short(out, len(master))
+            out.write(encode(master.s))
         return oldMasters
 
     def _master_block_size(self):
@@ -177,20 +181,33 @@ class SaveFileHeader(object):
         be read and displayed, but the Save/Cancel buttons will be disabled."""
         return True
 
+def _pack_str8_1(out, val): # TODO: val = val.reencode(...)
+    val = encode(val)
+    pack_bzstr8(out, val)
+    return len(val) + 2
 class OblivionSaveHeader(SaveFileHeader):
-    save_magic = 'TES4SAVEGAME'
-    __slots__ = ('gameTime', 'ssSize')
+    save_magic = b'TES4SAVEGAME'
+    __slots__ = (u'major_version', u'minor_version', u'exe_time',
+                 u'header_version', u'saveNum', u'gameTime', u'ssSize')
+
+    ##: exe_time and gameTime are SYSTEMTIME structs, as described here:
+    # https://docs.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-systemtime
     unpackers = OrderedDict([
-        ('header_size', (34, unpack_int)),
-        ('pcName',      (42, unpack_str8)),
-        ('pcLevel',     (00, unpack_short)),
-        ('pcLocation',  (00, unpack_str8)),
-        ('gameDays',    (00, unpack_float)),
-        ('gameTicks',   (00, unpack_int)),
-        ('gameTime',    (00, lambda ins: unpack_string(ins, 16))),
-        ('ssSize',      (00, unpack_int)),
-        ('ssWidth',     (00, unpack_int)),
-        ('ssHeight',    (00, unpack_int)),
+        (u'major_version',  (pack_byte, unpack_byte)),
+        (u'minor_version',  (pack_byte, unpack_byte)),
+        (u'exe_time',       (pack_string, unpack_fstr16)),
+        (u'header_version', (pack_int, unpack_int)),
+        (u'header_size',    (pack_int, unpack_int)),
+        (u'saveNum',        (pack_int, unpack_int)),
+        (u'pcName',         (_pack_str8_1, unpack_str8)),
+        (u'pcLevel',        (pack_short, unpack_short)),
+        (u'pcLocation',     (_pack_str8_1, unpack_str8)),
+        (u'gameDays',       (pack_float, unpack_float)),
+        (u'gameTicks',      (pack_int, unpack_int)),
+        (u'gameTime',       (pack_string, unpack_fstr16)),
+        (u'ssSize',         (pack_int, unpack_int)),
+        (u'ssWidth',        (pack_int, unpack_int)),
+        (u'ssHeight',       (pack_int, unpack_int)),
     ])
 
     def _write_masters(self, ins, out):
@@ -200,19 +217,41 @@ class OblivionSaveHeader(SaveFileHeader):
         for x in xrange(numMasters):
             oldMasters.append(unpack_str8(ins))
         #--Write new masters
-        _pack(out, '=B', len(self.masters))
-        for master in self.masters:
-            _pack(out, '=B', len(master))
-            out.write(master.s)
+        self.__write_masters_ob(out)
         #--Fids Address
         offset = out.tell() - ins.tell()
         fidsAddress = unpack_int(ins)
-        _pack(out, '=I', fidsAddress + offset)
+        pack_int(out, fidsAddress + offset)
         return oldMasters
+
+    def __write_masters_ob(self, out):
+        pack_byte(out, len(self.masters))
+        for master in self.masters:
+            pack_str8(out, encode(master.s))
+
+    def dump_header(self, out):
+        out.write(self.__class__.save_magic)
+        var_fields_size = 0
+        for attr, (_pack, __unpack) in self.unpackers.iteritems():
+            ret = _pack(out, getattr(self, attr))
+            if ret is not None:
+                var_fields_size += ret
+        # Update the header size before writing it out. Note that all fields
+        # before saveNum do not count towards this
+        # TODO(inf) We need a nicer way to do this (query size before dump) -
+        #  ut: we need the binary string size here, header size must be
+        #  updated when var fields change (like pcName)
+        self.header_size = var_fields_size + 42 + len(self.ssData)
+        self._mastersStart = out.tell()
+        out.seek(34)
+        self.unpackers[u'header_size'][0](out, self.header_size)
+        out.seek(self._mastersStart)
+        out.write(self.ssData)
+        self.__write_masters_ob(out)
 
 class SkyrimSaveHeader(SaveFileHeader):
     """Valid Save Game Versions 8, 9, 12 (?)"""
-    save_magic = 'TESV_SAVEGAME'
+    save_magic = b'TESV_SAVEGAME'
     # extra slots - only version is really used, gameDate used once (calc_time)
     # _formVersion distinguish between old and new save formats
     # _compressType of Skyrim SE saves - used to decide how to read/write them
@@ -221,20 +260,20 @@ class SkyrimSaveHeader(SaveFileHeader):
                  u'_compressType', u'_sse_start', u'has_esl_masters')
 
     unpackers = OrderedDict([
-        ('header_size', (00, unpack_int)),
-        ('version',     (00, unpack_int)),
-        ('saveNumber',  (00, unpack_int)),
-        ('pcName',      (00, unpack_str16)),
-        ('pcLevel',     (00, unpack_int)),
-        ('pcLocation',  (00, unpack_str16)),
-        ('gameDate',    (00, unpack_str16)),
-        ('raceEid',     (00, unpack_str16)), # pcRace
-        ('pcSex',       (00, unpack_short)),
-        ('pcExp',       (00, unpack_float)),
-        ('pcLvlExp',    (00, unpack_float)),
-        ('filetime',    (00, lambda ins: unpack_string(ins, 8))),
-        ('ssWidth',     (00, unpack_int)),
-        ('ssHeight',    (00, unpack_int)),
+        (u'header_size', (00, unpack_int)),
+        (u'version',     (00, unpack_int)),
+        (u'saveNumber',  (00, unpack_int)),
+        (u'pcName',      (00, unpack_str16)),
+        (u'pcLevel',     (00, unpack_int)),
+        (u'pcLocation',  (00, unpack_str16)),
+        (u'gameDate',    (00, unpack_str16)),
+        (u'raceEid',     (00, unpack_str16)), # pcRace
+        (u'pcSex',       (00, unpack_short)),
+        (u'pcExp',       (00, unpack_float)),
+        (u'pcLvlExp',    (00, unpack_float)),
+        (u'filetime',    (00, lambda ins: unpack_string(ins, 8))),
+        (u'ssWidth',     (00, unpack_int)),
+        (u'ssHeight',    (00, unpack_int)),
     ])
 
     def __is_sse(self): return self.version == 12
@@ -333,7 +372,7 @@ class SkyrimSaveHeader(SaveFileHeader):
             raise SaveHeaderError(u'zlib-decompressed header size incorrect - '
                                   u'expected %u, but got %u.' % (
                 decompressed_size, len(decompressed_data)))
-        return StringIO.StringIO(decompressed_data)
+        return io.BytesIO(decompressed_data)
 
     @staticmethod
     def _sse_decompress_lz4(ins, compressed_size, decompressed_size):
@@ -347,7 +386,7 @@ class SkyrimSaveHeader(SaveFileHeader):
             raise SaveHeaderError(u'lz4-decompressed header size incorrect - '
                                   u'expected %u, but got %u.' % (
                 decompressed_size, len(decompressed_data)))
-        return StringIO.StringIO(decompressed_data)
+        return io.BytesIO(decompressed_data)
 
     @staticmethod
     def _sse_light_decompress_lz4(ins, _comp_size, _decomp_size):
@@ -370,7 +409,7 @@ class SkyrimSaveHeader(SaveFileHeader):
                 result += num
                 if num != 255:
                     return result
-        uncompressed = ''
+        uncompressed = b''
         masters_size = None  # type: int
         while True:  # parse and decompress each block here
             token = unpack_byte(ins)
@@ -399,13 +438,13 @@ class SkyrimSaveHeader(SaveFileHeader):
                 start_pos += offset
             # The masters table's size is found in bytes 1-5
             if masters_size is None and len(uncompressed) >= 5:
-                masters_size = struct_unpack('I', uncompressed[1:5])[0]
+                masters_size = struct_unpack(u'I', uncompressed[1:5])[0]
             # Stop when we have the whole masters table
             if masters_size is not None:
                 if len(uncompressed) >= masters_size + 5:
                     break
         # Wrap the decompressed data in a file-like object and return it
-        return StringIO.StringIO(uncompressed)
+        return io.BytesIO(uncompressed)
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds
@@ -425,8 +464,8 @@ class SkyrimSaveHeader(SaveFileHeader):
         compressed_size = unpack_int(ins)
         ins = self._sse_decompress(ins, compressed_size, decompressed_size)
         # Gather the data that will be compressed
-        to_compress = StringIO.StringIO()
-        to_compress.write(struct_pack(u'=B', self._formVersion))
+        to_compress = io.BytesIO()
+        pack_byte(to_compress, self._formVersion)
         ins.seek(1, 1) # skip the form version
         old_masters = self._write_masters(ins, to_compress)
         for block in iter(partial(ins.read, 0x5000000), b''):
@@ -434,8 +473,8 @@ class SkyrimSaveHeader(SaveFileHeader):
         # Compress the gathered data, write out the sizes and finally write out
         # the actual compressed data
         compressed_data = self._sse_compress(to_compress)
-        _pack(out, u'=I', to_compress.tell())   # decompressed_size
-        _pack(out, u'=I', len(compressed_data)) # compressed_size
+        pack_int(out, to_compress.tell())   # decompressed_size
+        pack_int(out, len(compressed_data)) # compressed_size
         out.write(compressed_data)
         return old_masters
 
@@ -454,16 +493,16 @@ class SkyrimSaveHeader(SaveFileHeader):
             for count in xrange(_num_esl_masters):
                 esl_masters.append(unpack_str16(ins))
         # Write out the (potentially altered) masters - note that we have to
-        # encode here, since we may be writing to StringIO instead of a file
+        # encode here, since we may be writing to BytesIO instead of a file
         num_regulars = len(regular_masters)
-        _pack(out, '=B', num_regulars)
+        pack_byte(out, num_regulars)
         for master in self.masters[:num_regulars]:
-            _pack(out, '=H', len(master))
+            pack_short(out, len(master))
             out.write(encode(master.s))
         if has_esl_block:
-            _pack(out, '=H', len(esl_masters))
+            pack_short(out, len(esl_masters))
             for master in self.masters[num_regulars:]:
-                _pack(out, '=H', len(master))
+                pack_short(out, len(master))
                 out.write(encode(master.s))
         return regular_masters + esl_masters
 
@@ -473,8 +512,7 @@ class SkyrimSaveHeader(SaveFileHeader):
 
 class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     """Valid Save Game Versions 11, 12, 13, 15 (?)"""
-    save_magic = 'FO4_SAVEGAME'
-
+    save_magic = b'FO4_SAVEGAME'
     __slots__ = ()
 
     def _esl_block(self): return self.version == 15 and self._formVersion >= 68
@@ -521,21 +559,22 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         super(SkyrimSaveHeader, self).writeMasters(ins, out)
 
 class FalloutNVSaveHeader(SaveFileHeader):
-    save_magic = 'FO3SAVEGAME'
-    __slots__ = ('language', 'ssDepth', 'pcNick', '_unknown', 'gameDate')
+    save_magic = b'FO3SAVEGAME'
+    __slots__ = (u'language', u'save_number', u'pcNick', u'version',
+                 u'gameDate')
     _masters_unknown_byte = 0x1B
     unpackers = OrderedDict([
-        ('header_size', (00, unpack_int)),
-        ('_unknown',    (00, unpack_str_int_delim)),
-        ('language',    (00, lambda ins: unpack_many(ins, '64sc')[0])),
-        ('ssWidth',     (00, unpack_str_int_delim)),
-        ('ssHeight',    (00, unpack_str_int_delim)),
-        ('ssDepth',     (00, unpack_str_int_delim)),
-        ('pcName',      (00, unpack_str16_delim_null)),
-        ('pcNick',      (00, unpack_str16_delim_null)),
-        ('pcLevel',     (00, unpack_str_int_delim)),
-        ('pcLocation',  (00, unpack_str16_delim_null)),
-        ('gameDate',    (00, unpack_str16_delim_null)),
+        (u'header_size', (00, unpack_int)),
+        (u'version',     (00, unpack_str_int_delim)),
+        (u'language',    (00, lambda ins: unpack_many(ins, u'64sc')[0])),
+        (u'ssWidth',     (00, unpack_str_int_delim)),
+        (u'ssHeight',    (00, unpack_str_int_delim)),
+        (u'save_number', (00, unpack_str_int_delim)),
+        (u'pcName',      (00, unpack_str16_delim)),
+        (u'pcNick',      (00, unpack_str16_delim)),
+        (u'pcLevel',     (00, unpack_str_int_delim)),
+        (u'pcLocation',  (00, unpack_str16_delim)),
+        (u'gameDate',    (00, unpack_str16_delim)),
     ])
 
     def load_masters(self, ins):
@@ -544,7 +583,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
         self.masters = []
         numMasters = unpack_str_byte_delim(ins)
         for count in xrange(numMasters):
-            self.masters.append(unpack_str16_delim_null(ins))
+            self.masters.append(unpack_str16_delim(ins))
 
     def _master_list_size(self, ins):
         formVersion, masterListSize = unpack_many(ins, '=BI')
@@ -555,8 +594,8 @@ class FalloutNVSaveHeader(SaveFileHeader):
 
     def _write_masters(self, ins, out):
         self._master_list_size(ins) # discard old size
-        _pack(out, '=B', self._masters_unknown_byte)
-        _pack(out, '=I', self._master_block_size())
+        pack_byte(out, self._masters_unknown_byte)
+        pack_int(out, self._master_block_size())
         #--Skip old masters
         numMasters = unpack_str_byte_delim(ins) # get me the Byte
         oldMasters = self._dump_masters(ins, numMasters, out)
@@ -566,21 +605,21 @@ class FalloutNVSaveHeader(SaveFileHeader):
         for i in xrange(5):
             # formIdArrayCount offset and 5 others
             oldOffset = unpack_int(ins)
-            _pack(out, '=I', oldOffset + offset)
+            pack_int(out, oldOffset + offset)
         return oldMasters
 
     def _dump_masters(self, ins, numMasters, out):
         oldMasters = []
         for count in xrange(numMasters):
-            oldMasters.append(unpack_str16_delim_null(ins))
+            oldMasters.append(unpack_str16_delim(ins))
         # Write new masters - note the silly delimiters
-        _pack(out, '=B', len(self.masters))
-        _pack(out, '=c', '|')
+        pack_byte(out, len(self.masters))
+        _pack_c(out, b'|')
         for master in self.masters:
-            _pack(out, '=H', len(master))
-            _pack(out, '=c', '|')
-            out.write(master.s)
-            _pack(out, '=c', '|')
+            pack_short(out, len(master))
+            _pack_c(out, b'|')
+            out.write(encode(master.s))
+            _pack_c(out, b'|')
         return oldMasters
 
     def _master_block_size(self):
@@ -594,29 +633,27 @@ class FalloutNVSaveHeader(SaveFileHeader):
         self.gameTicks = playSeconds * 1000
 
 class Fallout3SaveHeader(FalloutNVSaveHeader):
-    save_magic = 'FO3SAVEGAME'
+    save_magic = b'FO3SAVEGAME'
     __slots__ = ()
     _masters_unknown_byte = 0x15
     unpackers = copy.copy(FalloutNVSaveHeader.unpackers)
-    del unpackers['language']
+    del unpackers[u'language']
 
 class MorrowindSaveHeader(SaveFileHeader):
     """Morrowind saves are identical in format to record definitions.
     Accordingly, we delegate loading the header to our existing mod API."""
-    save_magic = 'TES3'
-    __slots__ = ('pc_curr_health', 'pc_max_health')
+    save_magic = b'TES3'
+    __slots__ = (u'pc_curr_health', u'pc_max_health')
 
     def load_header(self, ins, load_image=False):
         # TODO(inf) A bit ugly, this is not a mod - maybe move readHeader out?
         from . import ModInfo
-        save_info = ModInfo(self._save_path, load_cache=True)
+        save_info = ModInfo(self._save_info.abs_path, load_cache=True)
         ##: Figure out where some more of these are (e.g. level)
         self.header_size = save_info.header.size
-        self.pcName = decode(cstrip(save_info.header.pc_name))
+        self.pcName = save_info.header.pc_name
         self.pcLevel = 0
-        self.pcLocation = decode(cstrip(save_info.header.curr_cell),
-                                 bolt.pluginEncoding,
-                                 avoidEncodings=(u'utf8', u'utf-8'))
+        self.pcLocation = save_info.header.curr_cell
         self.gameDays = self.gameTicks = 0
         self.masters = save_info.masterNames[:]
         self.pc_curr_health = save_info.header.pc_curr_health
@@ -625,9 +662,10 @@ class MorrowindSaveHeader(SaveFileHeader):
             # Read the image data - note that it comes as BGRA, which we
             # need to turn into RGB. Note that we disregard the alpha, seems to
             # make the image 100% black and is therefore unusable.
-            out = StringIO.StringIO()
+            out = io.BytesIO()
             for pxl in save_info.header.screenshot_data:
-                out.write(struct_pack(u'3B', pxl.red, pxl.green, pxl.blue))
+                out.write(
+                    structs_cache[u'3B'].pack(pxl.red, pxl.green, pxl.blue))
             self.ssData = out.getvalue()
         self.ssHeight = self.ssWidth = 128 # fixed size for Morrowind
 

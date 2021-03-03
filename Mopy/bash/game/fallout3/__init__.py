@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,15 +14,15 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """GameInfo override for Fallout 3."""
 
+from collections import defaultdict
 from os.path import join as _j
 
 from .. import GameInfo
@@ -38,12 +38,11 @@ class Fallout3GameInfo(GameInfo):
     game_detect_file = u'Fallout3.exe'
     version_detect_file = u'Fallout3.exe'
     master_file = u'Fallout3.esm'
-    pklfile = u'Fallout3_ids.pkl'
-    masterlist_dir = u'Fallout3'
+    taglist_dir = u'Fallout3'
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout3/'
     nexusName = u'Fallout 3 Nexus'
-    nexusKey = u'bash.installers.openFallout3Nexus'
+    nexusKey = u'bash.installers.openFallout3Nexus.continue'
 
     using_txt_file = False
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
@@ -72,6 +71,7 @@ class Fallout3GameInfo(GameInfo):
         cosave_ext = u'.fose'
         url = u'http://fose.silverlock.org/'
         url_tip = u'http://fose.silverlock.org/'
+        limit_fixer_plugins = [u'mod_limit_fix.dll']
 
     class Ini(GameInfo.Ini):
         allow_new_lines = False
@@ -82,9 +82,18 @@ class Fallout3GameInfo(GameInfo):
 
     class Ess(GameInfo.Ess):
         ext = u'.fos'
+        can_safely_remove_masters = True
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
+        redate_dict = defaultdict(lambda: u'2006-01-01', {
+            u'Fallout - MenuVoices.bsa': u'2005-01-01',
+            u'Fallout - Meshes.bsa': u'2005-01-02',
+            u'Fallout - Misc.bsa': u'2005-01-03',
+            u'Fallout - Sound.bsa': u'2005-01-04',
+            u'Fallout - Textures.bsa': u'2005-01-05',
+            u'Fallout - Voices.bsa': u'2005-01-06',
+        })
         # ArchiveInvalidation Invalidated, which we shipped unmodified for a
         # long time, uses an Oblivion BSA with version 0x67, so we have to
         # accept those here as well
@@ -119,6 +128,12 @@ class Fallout3GameInfo(GameInfo):
         validHeaderVersions = (0.85, 0.94)
         stringsFiles = []
         generate_temp_child_onam = True
+        biped_flag_names = (u'head', u'hair', u'upperBody', u'leftHand',
+                            u'rightHand', u'weapon', u'pipboy', u'backpack',
+                            u'necklace', u'headband', u'hat', u'eyeGlasses',
+                            u'noseRing', u'earrings', u'mask', u'choker',
+                            u'mouthObject', u'bodyAddOn1', u'bodyAddOn2',
+                            u'bodyAddOn3')
 
     # Remaining to add:
     # 'Body-F', 'Body-M', 'Body-Size-F', 'Body-Size-M', 'Eyes', 'Hair',
@@ -130,32 +145,32 @@ class Fallout3GameInfo(GameInfo):
         u'Actors.DeathItem', u'Actors.RecordFlags', u'Actors.Skeleton',
         u'Actors.Spells', u'Actors.SpellsForceAdd', u'Actors.Stats',
         u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ForceHideLand',
-        u'C.ImageSpace', u'C.Light', u'C.Music', u'C.Name', u'C.Owner',
-        u'C.RecordFlags', u'C.Regions', u'C.Water', u'Creatures.Blood',
-        u'Creatures.Type', u'Deactivate', u'Deflst', u'Delev', u'Destructible',
-        u'EffectStats', u'EnchantmentStats', u'Factions', u'Filter',
-        u'Graphics', u'Invent.Add', u'Invent.Change', u'Invent.Remove',
-        u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
-        u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
+        u'C.ImageSpace', u'C.Light', u'C.MiscFlags', u'C.Music', u'C.Name',
+        u'C.Owner', u'C.RecordFlags', u'C.Regions', u'C.Water',
+        u'Creatures.Blood', u'Creatures.Type', u'Deactivate', u'Deflst',
+        u'Delev', u'Destructible', u'EffectStats', u'EnchantmentStats',
+        u'Factions', u'Filter', u'Graphics', u'Invent.Add', u'Invent.Change',
+        u'Invent.Remove', u'MustBeActiveIfImported', u'Names', u'NoMerge',
+        u'NPC.Class', u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
         u'NpcFacesForceFullImport', u'ObjectBounds', u'Relations.Add',
         u'Relations.Change', u'Relations.Remove', u'Relev', u'Scripts',
         u'Sound', u'SpellStats', u'Stats', u'Text',
     }
 
     # Remaining to add:
-    #  AssortedTweaker, NamesTweaker, RacePatcher, UpdateReferences
-    patchers = (
-        u'PatchMerger', # PatchMerger must come first!
-        u'ActorImporter', u'AliasesPatcher', u'CellImporter',
-        u'ContentsChecker', u'DeathItemPatcher', u'DestructiblePatcher',
-        u'FidListsMerger', u'GmstTweaker', u'GraphicsPatcher',
-        u'ImportActorsSpells', u'ImportEffectsStats', u'ImportEnchantmentStats',
-        u'ImportFactions', u'ImportInventory', u'ImportRelations',
-        u'ImportScripts', u'KFFZPatcher', u'ListsMerger', u'NamesPatcher',
-        u'NPCAIPackagePatcher', u'NpcFacePatcher', u'ObjectBoundsImporter',
-        u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
-        u'TweakActors',
-    )
+    #  TweakNames, RaceRecords, ReplaceFormIDs
+    patchers = {
+        u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
+        u'ImportActorsAIPackages', u'ImportActorsAnimations',
+        u'ImportActorsDeathItems', u'ImportActorsFaces',
+        u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
+        u'ImportDestructible', u'ImportEffectsStats',
+        u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
+        u'ImportNames', u'ImportObjectBounds', u'ImportRelations',
+        u'ImportScripts', u'ImportSounds', u'ImportSpellStats', u'ImportStats',
+        u'ImportText', u'LeveledLists', u'MergePatches', u'TweakActors',
+        u'TweakAssorted', u'TweakSettings',
+    }
 
     weaponTypes = (
         _(u'Big gun'),
@@ -280,7 +295,7 @@ class Fallout3GameInfo(GameInfo):
             MreWatr, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, \
             MreGmst, MreInfo, MreNavi, MreNavm, MrePgre, MrePmis, MreRefr, \
             MreWrld
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreArma, MreArmo,
             MreAspc, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt,
             MreCobj, MreCont, MreCpth, MreCrea, MreCsty, MreDebr, MreDobj,
@@ -293,7 +308,7 @@ class Fallout3GameInfo(GameInfo):
             MreRads, MreRegn, MreRgdl, MreScol, MreScpt, MreSoun, MreSpel,
             MreStat, MreTact,MreTerm, MreTree, MreTxst, MreVtyp, MreWatr,
             MreWeap, MreWthr, MreGmst,
-            )
+        )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
@@ -315,10 +330,10 @@ class Fallout3GameInfo(GameInfo):
                                          b'INFO', b'LAND', b'NAVM', b'PGRE',
                                          b'PMIS', b'REFR'])
         header_type.plugin_form_version = 15
-        brec.MreRecord.type_class = {x.rec_sig: x for x in
-                (cls.mergeClasses + # Not Mergeable
-                (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi,
-                 MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreTes4))}
+        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not Mergeable
+             (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi, MreNavm,
+              MrePgre, MrePmis, MreRefr, MreWrld, MreTes4))}
+        brec.MreRecord.type_class.update(cls.mergeable_sigs)
         brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
             b'TES4', b'ACHR', b'ACRE', b'CELL', b'DIAL', b'INFO', b'LAND',
             b'NAVI', b'NAVM', b'PGRE', b'PMIS', b'REFR', b'WRLD'})

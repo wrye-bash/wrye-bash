@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,13 +24,13 @@
 """Backup/restore Bash settings. Settings paths are defined in
 _init_settings_files().
 
-Re: bass.AppVersion, bass.settings['bash.version']
+Re: bass.AppVersion, bass.settings[u'bash.version']
 
 The latter is read from the settings - so on upgrading Bash it's the version of
 the previous Bash install, whereupon is based the backup-on-upgrade routine.
-Later on, in basher.BashApp#InitVersion, bass.settings['bash.version'] is
+Later on, in basher.BashApp#InitVersion, bass.settings[u'bash.version'] is
 set to bass.AppVersion. We save both in the settings we backup:
-- bass.settings['bash.version'] is saved first and corresponds to the version
+- bass.settings[u'bash.version'] is saved first and corresponds to the version
 the settings were created with
 - bass.AppVersion, saved second, is the version of Bash currently executing
 the backup
@@ -77,8 +76,7 @@ def _init_settings_files(fsName_, root_prefix, mods_folder):
          jo(root_prefix + u' Mods', u'Bash Installers', u'Bash')): {
            u'Converters.dat', u'Installers.dat', },
         (dirs[u'saveBase'], jo(u'My Games', fsName_)): {
-            u'BashProfiles.dat', u'BashSettings.dat', u'BashLoadOrders.dat',
-            u'People.dat', },
+            u'BashProfiles.dat', u'BashSettings.dat', u'BashLoadOrders.dat'},
         # backup all files in Mopy\bash\l10n, Data\Bash Patches\,
         # Data\BashTags\ and Data\INI Tweaks\
         (dirs[u'l10n'], jo(fsName_, u'Mopy', u'bash', u'l10n')): {},
@@ -99,11 +97,11 @@ def _init_settings_files(fsName_, root_prefix, mods_folder):
 class BackupSettings(object):
     """Create a 7z backup file with the settings files used by Bash. We need
     bass.dirs initialized and also bass.settings - to get the version of the
-    settings we backup (bass.settings['bash.version']). Creates a backup.dat
+    settings we backup (bass.settings[u'bash.version']). Creates a backup.dat
     file that stores those versions."""
 
-    def __init__(self, settings_file, fsName,  root_prefix, mods_folder):
-        self._backup_dest_file = settings_file # absolute path to dest 7z file
+    def __init__(self, settings_file, fsName, root_prefix, mods_folder):
+        self._backup_dest_file = GPath(settings_file) # absolute path to dest 7z file
         self.files = {}
         for (bash_dir, tmpdir), setting_files in _init_settings_files(
                 fsName, root_prefix, mods_folder).iteritems():
@@ -124,9 +122,9 @@ class BackupSettings(object):
                 tpath = savedir.join(*txt)
                 fpath = dirs[u'saveBase'].join(*txt)
                 if fpath.exists(): self.files[tpath] = fpath
-            table = (u'Saves', profile, u'Bash', u'Table.dat')
-            tpath = savedir.join(*table)
-            fpath = dirs[u'saveBase'].join(*table)
+            prof_table = (u'Saves', profile, u'Bash', u'Table.dat')
+            tpath = savedir.join(*prof_table)
+            fpath = dirs[u'saveBase'].join(*prof_table)
             if fpath.exists(): self.files[tpath] = fpath
             if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
 
@@ -141,12 +139,12 @@ class BackupSettings(object):
             _(u'Previous Version: ') + (u'%s' % previous_bash_version),
             _(u'Current Version: ') + (u'%s' % AppVersion),
             _(u'Do you want to create a backup of your Bash settings before '
-              u'they are overwritten?')]))
+              u'they are overwritten?')]), title=_(u'Create backup?'))
 
     @staticmethod
-    def backup_filename(fsName_):
+    def backup_filename(displayName_):
         return u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
-            fsName_, bolt.timestamp(), bass.settings['bash.version'],
+            displayName_, bolt.timestamp(), bass.settings[u'bash.version'],
             AppVersion)
 
     @staticmethod
@@ -169,13 +167,13 @@ class BackupSettings(object):
     def _backup_settings(self, temp_dir):
         # copy all files to ~tmp backup dir
         for tpath, fpath in self.files.iteritems():
-            deprint(tpath.s + u' <-- ' + fpath.s)
+            deprint(u'%s <-- %s' % (tpath, fpath))
             fpath.copyTo(temp_dir.join(tpath))
         # dump the version info and file listing
-        with temp_dir.join(u'backup.dat').open('wb') as out:
+        with temp_dir.join(u'backup.dat').open(u'wb') as out:
             # Bash version the settings were saved with, if this is newer
             # than the installed settings version, do not allow restore
-            pickle.dump(bass.settings['bash.version'], out, -1)
+            pickle.dump(bass.settings[u'bash.version'], out, -1)
             # app version, if this doesn't match the installed settings
             # version, warn the user on restore
             pickle.dump(AppVersion, out, -1)
@@ -185,7 +183,7 @@ class BackupSettings(object):
         with backup_dir.join(dest7z).unicodeSafe() as safe_dest:
             command = archives.compressCommand(safe_dest, backup_dir, temp_dir)
             archives.compress7z(command, safe_dest, dest7z, temp_dir)
-        bass.settings['bash.backupPath'] = backup_dir
+        bass.settings[u'bash.backupPath'] = backup_dir
 
     def _backup_success(self, balt_):
         if balt_ is None: return
@@ -275,8 +273,8 @@ class RestoreSettings(object):
             self._timestamped_old = None
         # restore all the settings files
         def _restore_file(dest_dir_, back_path_, *end_path):
-            deprint(back_path_.join(*end_path).s + u' --> ' + dest_dir_.join(
-                *end_path).s)
+            deprint(u'%s --> %s' % (back_path_.join(*end_path), dest_dir_.join(
+                *end_path)))
             full_back_path.join(*end_path).copyTo(dest_dir_.join(*end_path))
         restore_paths = list(_init_settings_files(fsName, root_prefix,
             mods_folder))
@@ -292,7 +290,7 @@ class RestoreSettings(object):
         if full_back_path.exists():
             for root_dir, folders, files_ in full_back_path.walk(True, None,
                                                                  True):
-                root_dir = GPath(u'.'+root_dir.s)
+                root_dir = GPath(u'.%s' % root_dir)
                 for fname in files_:
                     _restore_file(saves_dir, back_path, root_dir, fname)
 
@@ -300,13 +298,13 @@ class RestoreSettings(object):
     def incompatible_backup_error(self, current_game):
         saved_settings_version, settings_saved_with = \
             self._get_settings_versions()
-        if saved_settings_version > bass.settings['bash.version']:
+        if saved_settings_version > bass.settings[u'bash.version']:
             # Disallow restoring settings saved on a newer version of bash # TODO(ut) drop?
             return u'\n'.join([
                 _(u'The data format of the selected backup file is newer than '
                   u'the current Bash version!'),
                 _(u'Backup v%s is not compatible with v%s') % (
-                    saved_settings_version, bass.settings['bash.version']),
+                    saved_settings_version, bass.settings[u'bash.version']),
                 u'', _(u'You cannot use this backup with this version of '
                        u'Bash.')]), _(
                 u'Error: Settings are from newer Bash version')
@@ -323,12 +321,12 @@ class RestoreSettings(object):
     def incompatible_backup_warn(self):
         saved_settings_version, settings_saved_with = \
             self._get_settings_versions()
-        if settings_saved_with != bass.settings['bash.version']:
+        if settings_saved_with != bass.settings[u'bash.version']:
             return u'\n'.join(
                 [_(u'The version of Bash used to create the selected backup '
                    u'file does not match the current Bash version!'),
                  _(u'Backup v%s does not match v%s') % (
-                     settings_saved_with, bass.settings['bash.version']), u'',
+                     settings_saved_with, bass.settings[u'bash.version']), u'',
                  _(u'Do you want to restore this backup anyway?')]), _(
                 u'Warning: Version Mismatch!')
         return u'', u''
@@ -340,7 +338,7 @@ class RestoreSettings(object):
         if self._saved_settings_version is None:
             backup_dat = self._extract_dir.join(u'backup.dat')
             try:
-                with backup_dat.open('rb') as ins:
+                with backup_dat.open(u'rb') as ins:
                     # version of Bash that created the backed up settings
                     self._saved_settings_version = pickle.load(ins)
                     # version of Bash that created the backup

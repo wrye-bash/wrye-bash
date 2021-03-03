@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -52,25 +51,19 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         dropdown_inis = Fallout4GameInfo.Ini.dropdown_inis + [
             u'Fallout4VrCustom.ini'] ##: why is this here?
 
-    class Bsa(Fallout4GameInfo.Bsa):
-        vanilla_string_bsas = Fallout4GameInfo.Bsa.vanilla_string_bsas.copy()
-        vanilla_string_bsas.update({
-            u'fallout4_vr.esm': [u'Fallout4_VR - Main.ba2'],
-        })
-
     class Xe(Fallout4GameInfo.Xe):
         full_name = u'FO4VREdit'
         xe_key_prefix = u'fo4vrView'
 
-    skip_bain_refresh = {u'fo4vredit backups', u'fo4vredit cache'}
+    class Bain(Fallout4GameInfo.Bain):
+        skip_bain_refresh = {u'fo4vredit backups', u'fo4vredit cache'}
 
     class Esp(Fallout4GameInfo.Esp):
         validHeaderVersions = (0.95,)
         expanded_plugin_range = False
 
     allTags = Fallout4GameInfo.allTags | {u'NoMerge'}
-    # PatchMerger must come first!
-    patchers = (u'PatchMerger',) + Fallout4GameInfo.patchers
+    patchers = Fallout4GameInfo.patchers | {u'MergePatches'}
 
     # ---------------------------------------------------------------------
     # --Imported - MreGlob is special import, not in records.py
@@ -93,11 +86,11 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         #
         #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
         # ---------------------------------------------------------------------
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # -- Imported from Skyrim/SkyrimSE
             # Added to records.py
             MreLvli, MreLvln
-        )
+        )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [

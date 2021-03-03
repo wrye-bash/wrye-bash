@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,7 +29,7 @@ __author__ = u'nycz'
 
 import wx as _wx
 
-from .base_components import _AComponent
+from .base_components import _AComponent, csf
 
 CENTER, LEFT, RIGHT, TOP, BOTTOM = (u'center', u'left', u'right', u'top',
                                     u'bottom')
@@ -47,8 +46,8 @@ _res_parent = _AComponent._resolve
 
 class Spacer(object):
     """A fixed-size space in a layout."""
-    def __init__(self, size=0):
-        self.size = size
+    def __init__(self, spacer_size=0):
+        self.spacer_size = spacer_size
 
 class Stretch(object):
     """A space that will take up as much space as possible in a layout."""
@@ -137,7 +136,8 @@ class _ALayout(object):
         if border > 0:
             self._border_wrapper = _wx.BoxSizer(_wx.VERTICAL)
             self._border_wrapper.Add(self._sizer, proportion=1,
-                                     flag=_wx.ALL | _wx.EXPAND, border=border)
+                                     flag=_wx.ALL | _wx.EXPAND,
+                                     border=border * csf())
         else:
             self._border_wrapper = None
         self._default_item_loptions = LayoutOptions(item_border, item_expand,
@@ -191,7 +191,7 @@ class _ALineLayout(_ALayout):
         if isinstance(item, Stretch):
             self._add_stretch(item.weight)
         elif isinstance(item, Spacer):
-            self._add_spacer(item.size)
+            self._add_spacer(item.spacer_size)
         else:
             item, options = self._get_item_options(item)
             if options and self._is_vertical and options.v_align:
@@ -205,26 +205,22 @@ class _ALineLayout(_ALayout):
                 self._add_spacer(self.spacing)
             lt_flags = options.layout_flags(use_horizontal=self._is_vertical,
                                             use_vertical=not self._is_vertical)
-            self._sizer.Add(item, proportion=options.weight, flag=lt_flags,
-                            border=options.border)
+            self._sizer.Add(item, proportion=options.weight * csf(),
+                            flag=lt_flags, border=options.border * csf())
             self._sizer.SetItemMinSize(item, -1, -1)
 
     def _add_spacer(self, length=4):
         """Add a fixed space to the layout."""
-        self._sizer.AddSpacer(length)
+        self._sizer.AddSpacer(length * csf())
 
     def _add_stretch(self, weight=1):
         """Add a growing space to the layout."""
-        self._sizer.AddStretchSpacer(prop=weight)
+        self._sizer.AddStretchSpacer(prop=weight * csf())
 
-##: Quite a few usages do HBoxedLayout(items=[VLayout()]). Those could be
-# refactored with a VBoxedLayout
-class HBoxedLayout(_ALineLayout):
-    """A horizontal layout with a border around it and an optional title."""
-    def __init__(self, parent, title=u'', **kwargs):
-        sizer = _wx.StaticBoxSizer(
-            _wx.StaticBox(_res_parent(parent), label=title), _wx.HORIZONTAL)
-        super(HBoxedLayout, self).__init__(sizer, **kwargs)
+    def replace_component(self, old_component, new_component):
+        """Replaces one component with another."""
+        self._sizer.Replace(_res_parent(old_component),
+                            _res_parent(new_component))
 
 class HLayout(_ALineLayout):
     """A simple horizontal layout."""
@@ -239,6 +235,22 @@ class VLayout(_ALineLayout):
     def __init__(self, *args, **kwargs):
         super(VLayout, self).__init__(_wx.BoxSizer(_wx.VERTICAL), *args,
                                       **kwargs)
+
+class HBoxedLayout(_ALineLayout):
+    """A horizontal layout with a border around it and an optional title."""
+    def __init__(self, parent, title=u'', **kwargs):
+        sizer = _wx.StaticBoxSizer(_wx.StaticBox(_res_parent(parent),
+            label=title), _wx.HORIZONTAL)
+        super(HBoxedLayout, self).__init__(sizer, **kwargs)
+
+class VBoxedLayout(_ALineLayout):
+    """A vertical layout with a border around it and an optional title."""
+    _is_vertical = True
+
+    def __init__(self, parent, title=u'', **kwargs):
+        sizer = _wx.StaticBoxSizer(_wx.StaticBox(_res_parent(parent),
+            label=title), _wx.VERTICAL)
+        super(VBoxedLayout, self).__init__(sizer, **kwargs)
 
 class GridLayout(_ALayout):
     """A flexible grid layout.
@@ -259,8 +271,8 @@ class GridLayout(_ALayout):
             grow and fill available space
         :param items: Items or (item, options) pairs to add directly.
         """
-        super(GridLayout, self).__init__(
-            _wx.GridBagSizer(hgap=h_spacing, vgap=v_spacing), **kwargs)
+        super(GridLayout, self).__init__(_wx.GridBagSizer(
+            hgap=h_spacing * csf(), vgap=v_spacing * csf()), **kwargs)
         self._default_item_loptions.row_span = 1
         self._default_item_loptions.col_span = 1
         if items:
@@ -276,9 +288,10 @@ class GridLayout(_ALayout):
         If item is None, nothing will be added."""
         item, options = self._get_item_options(item)
         if item is None: return
-        self._sizer.Add(item, (row, col),
-                        span=(options.row_span, options.col_span),
-                        flag=options.layout_flags(), border=options.border)
+        self._sizer.Add(item, (row, col), span=(options.row_span,
+                                                options.col_span),
+                        flag=options.layout_flags(),
+                        border=options.border * csf())
         self._sizer.SetItemMinSize(item, -1, -1)
 
     def append_row(self, items):

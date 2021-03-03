@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -38,15 +37,16 @@ except ImportError:
     _PdfViewer = None
 import wx as _wx
 
-import urllib
-import urlparse
 import webbrowser
+from urllib import pathname2url
+from urlparse import urljoin
 
 from .base_components import _AComponent
 from .buttons import BackwardButton, ForwardButton, ReloadButton
 from .text_components import TextArea
 from .layouts import VLayout
-from ..bolt import decode
+from .. import bass ##: drop this
+from ..bolt import decoder
 from ..exception import StateError
 
 def web_viewer_available():
@@ -66,7 +66,7 @@ class ViewerType(object): # PY3: enum
     """The different types of viewers that DocumentViewer can display."""
     HTML = u'html'
     PDF =  u'pdf'
-    TEXT = u'text'
+    TEXT = u'txt'
 
 class WebViewer(_AComponent):
     """Implements an HTML & CSS renderer with JavaScript support. May not be
@@ -79,11 +79,12 @@ class WebViewer(_AComponent):
     reloading the current page."""
     _wx_widget_type = _wx_html2.WebView.New # type: _wx_html2.WebView
 
-    def __init__(self, parent, buttons_parent=None):
+    def __init__(self, parent, reload_ico, buttons_parent=None):
         """Creates a new WebViewer with the specified parent.
 
         :param parent: The object that this web viewer belongs to. May be a wx
                        object or a component.
+        :param reload_ico: a _wx.Bitmap to use for the reload button
         :param buttons_parent: The object that the navigation buttons belong
                                to. If None, the same parent will be used."""
         if buttons_parent is None: buttons_parent = parent
@@ -92,7 +93,7 @@ class WebViewer(_AComponent):
         self._back_button.on_clicked.subscribe(self.go_back)
         self._forward_button = ForwardButton(buttons_parent)
         self._forward_button.on_clicked.subscribe(self.go_forward)
-        self._reload_button = ReloadButton(buttons_parent)
+        self._reload_button = ReloadButton(buttons_parent, reload_ico)
         self._reload_button.on_clicked.subscribe(self.reload)
         # Events - internal use only for now, expose if needed
         self._on_new_window = self._evt_handler(
@@ -156,7 +157,7 @@ class WebViewer(_AComponent):
         """Opens the specified file by turning it into a 'file:' URL.
 
         :param file_path: The path to the file to open."""
-        file_url = urlparse.urljoin(u'file:', urllib.pathname2url(file_path))
+        file_url = urljoin(u'file:', pathname2url(file_path))
         self.open_url(file_url)
 
     def open_url(self, url): # type: (unicode) -> None
@@ -218,9 +219,11 @@ class DocumentViewer(_AComponent):
         # init the fallback/plaintext widget
         self._text_ctrl = TextArea(self, editable=False, auto_tooltip=False)
         items = [self._text_ctrl]
+        reload_ico = _wx.Bitmap(bass.dirs[u'images'].join(u'reload16.png').s,
+                                _wx.BITMAP_TYPE_PNG)
         if web_viewer_available():
             # We can render HTML, create the WebViewer and use its buttons
-            self._html_ctrl = WebViewer(self, buttons_parent=parent)
+            self._html_ctrl = WebViewer(self, reload_ico, parent)
             self._prev_button, self._next_button, self._reload_button = \
                 self._html_ctrl.get_navigation_buttons()
             items.append(self._html_ctrl)
@@ -229,7 +232,7 @@ class DocumentViewer(_AComponent):
             # Emulate the buttons WebViewer would normally provide
             self._prev_button = BackwardButton(parent)
             self._next_button = ForwardButton(parent)
-            self._reload_button = ReloadButton(parent)
+            self._reload_button = ReloadButton(parent, reload_ico)
         if pdf_viewer_available():
             self._pdf_ctrl = PDFViewer(self)
             items.append(self._pdf_ctrl)
@@ -290,19 +293,19 @@ class DocumentViewer(_AComponent):
         is available."""
         if not web_viewer_available(): return
         self._update_views(viewer_type=ViewerType.HTML)
-        self._native_widget.Layout()
+        self.update_layout()
 
     def switch_to_pdf(self):
         """Disables the other viewers and switches to PDF mode, if PDFViewer is
         available."""
         if not pdf_viewer_available(): return
         self._update_views(viewer_type=ViewerType.PDF)
-        self._native_widget.Layout()
+        self.update_layout()
 
     def switch_to_text(self):
         """Disables the other viewers and switches to raw text mode."""
         self._update_views(viewer_type=ViewerType.TEXT)
-        self._native_widget.Layout()
+        self.update_layout()
 
     def get_buttons(self):
         """Returns the three navigation buttons as a tuple."""
@@ -337,4 +340,4 @@ class DocumentViewer(_AComponent):
         # Morrowind are cp1252. However, it most likely is UTF-8 or
         # UTF-8-compatible (ASCII), so try that first.
         with file_path.open(u'rb') as ins:
-            self.load_text(decode(ins.read(), u'utf-8'))
+            self.load_text(decoder(ins.read(), u'utf-8'))

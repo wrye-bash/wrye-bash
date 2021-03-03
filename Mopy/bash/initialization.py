@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,16 +14,16 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Functions for initializing Bash data structures on boot. For now exports
 functions to initialize bass.dirs that need be initialized high up into the
 boot sequence to be able to backup/restore settings."""
+import os
 from ConfigParser import ConfigParser, MissingSectionHeaderError
 # Local - don't import anything else
 from . import env
@@ -37,19 +37,19 @@ mopy_dirs_initialized = bash_dirs_initialized = False
 def get_path_from_ini(bash_ini_, option_key, section_key=u'General'):
     get_value = get_ini_option(bash_ini_, option_key, section_key)
     get_value = (get_value and get_value.strip()) or u'.'
-    return GPath(get_value) if get_value != u'.' else None
+    return GPath(get_value) if get_value != u'.' else None # Py3: add decoding!
 
 def getPersonalPath(bash_ini_, my_docs_path):
     #--Determine User folders from Personal and Local Application Data directories
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
     if my_docs_path:
         my_docs_path = GPath(my_docs_path)
-        sErrorInfo = _(u"Folder path specified on command line (-p)")
+        sErrorInfo = _(u'Folder path specified on command line (-p)')
     else:
-        my_docs_path = get_path_from_ini(bash_ini_, 'sPersonalPath')
+        my_docs_path = get_path_from_ini(bash_ini_, u'sPersonalPath')
         if my_docs_path:
             sErrorInfo = _(
-                u"Folder path specified in bash.ini (%s)") % u'sPersonalPath'
+                u'Folder path specified in bash.ini (%s)') % u'sPersonalPath'
         else:
             my_docs_path, sErrorInfo = get_personal_path()
     #  If path is relative, make absolute
@@ -57,9 +57,9 @@ def getPersonalPath(bash_ini_, my_docs_path):
         my_docs_path = dirs[u'app'].join(my_docs_path)
     #  Error check
     if not my_docs_path.exists():
-        raise BoltError(u"Personal folder does not exist.\n"
-                        u"Personal folder: %s\nAdditional info:\n%s"
-                        % (my_docs_path.s, sErrorInfo))
+        raise BoltError(u'Personal folder does not exist.\n'
+                        u'Personal folder: %s\nAdditional info:\n%s'
+                        % (my_docs_path, sErrorInfo))
     return my_docs_path
 
 def getLocalAppDataPath(bash_ini_, app_data_local_path):
@@ -67,12 +67,12 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
     if app_data_local_path:
         app_data_local_path = GPath(app_data_local_path)
-        sErrorInfo = _(u"Folder path specified on command line (-l)")
+        sErrorInfo = _(u'Folder path specified on command line (-l)')
     else:
         app_data_local_path = get_path_from_ini(bash_ini_,
                                                 u'sLocalAppDataPath')
         if app_data_local_path:
-            sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sLocalAppDataPath'
+            sErrorInfo = _(u'Folder path specified in bash.ini (%s)') % u'sLocalAppDataPath'
         else:
             app_data_local_path, sErrorInfo = get_local_app_data_path()
     #  If path is relative, make absolute
@@ -80,8 +80,10 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
         app_data_local_path = dirs[u'app'].join(app_data_local_path)
     #  Error check
     if not app_data_local_path.exists():
-        raise BoltError(u"Local AppData folder does not exist.\nLocal AppData folder: %s\nAdditional info:\n%s"
-                        % (app_data_local_path.s, sErrorInfo))
+        raise BoltError(
+            u'Local AppData folder does not exist.\nLocal AppData folder: '
+            u'%s\nAdditional info:\n%s'
+            % (app_data_local_path, sErrorInfo))
     return app_data_local_path
 
 def getOblivionModsPath(bash_ini_, game_info):
@@ -138,7 +140,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     #--Oblivion (Application) Directories
     dirs[u'app'] = game_info.gamePath
     dirs[u'defaultPatches'] = dirs[u'mopy'].join(u'Bash Patches',
-                                                 game_info.masterlist_dir)
+        game_info.fsName)
+    dirs[u'taglists'] = dirs[u'mopy'].join(u'taglists', game_info.taglist_dir)
     #  Personal
     if game_info.uses_personal_folders:
         personal = getPersonalPath(bashIni_, personal)
@@ -181,7 +184,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
                   u'appear to be a valid game INI. It might come from an '
                   u'incorrectly installed third party tool. Consider '
                   u'deleting it and validating your game files.') %
-                data_oblivion_ini.s)
+                data_oblivion_ini)
         # is bUseMyGamesDirectory set to 0?
         if get_ini_option(oblivionIni, u'bUseMyGamesDirectory') == u'0':
             game_ini_path = data_oblivion_ini
@@ -229,15 +232,15 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         relativePathError = []
         if u'modsBash' in badKeys:
             if isinstance(modsBashSrc, list):
-                msg += (u' '.join(modsBashSrc) + u'\n    '
-                        + dirs[u'modsBash'].s + u'\n')
+                msg += (u' '.join(modsBashSrc) + u'\n    %s\n' % dirs[
+                    u'modsBash'])
             else:
                 relativePathError.append(dirs[u'modsBash'])
         if {u'installers', u'converters', u'dupeBCFs', u'corruptBCFs'} & badKeys:
             # All derived from oblivionMods -> getOblivionModsPath
             if isinstance(oblivionModsSrc, list):
-                msg += (u' '.join(oblivionModsSrc) + u'\n    '
-                        + oblivionMods.s + u'\n')
+                msg += (u' '.join(oblivionModsSrc) + u'\n    %s\n' %
+                        oblivionMods)
             else:
                 relativePathError.append(oblivionMods)
         if {u'bainData', u'bsaCache'} & badKeys:
@@ -246,8 +249,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
             # So check to be sure we haven't already added a message about that
             if bainDataSrc != oblivionModsSrc:
                 if isinstance(bainDataSrc, list):
-                    msg += (u' '.join(bainDataSrc) + u'\n    '
-                            + dirs[u'bainData'].s + u'\n')
+                    msg += (u' '.join(bainDataSrc) + u'\n    %s\n' % dirs[
+                        u'bainData'])
                 else:
                     relativePathError.append(dirs[u'bainData'])
         if relativePathError:
@@ -270,6 +273,10 @@ def init_dirs_mopy():
     dirs[u'db'] = dirs[u'bash'].join(u'db')
     dirs[u'templates'] = dirs[u'mopy'].join(u'templates')
     dirs[u'images'] = dirs[u'bash'].join(u'images')
+    from . import archives
+    if os.name == u'nt': # don't add local directory to binaries on linux
+        archives.exe7z = dirs[u'compiled'].join(archives.exe7z).s
+        archives.pngcrush = dirs[u'compiled'].join(archives.pngcrush).s
     global mopy_dirs_initialized
     mopy_dirs_initialized = True
 
@@ -284,9 +291,8 @@ def getLocalSaveDirs():
     bad = set()
     for folder in localSaveDirs:
         try:
-            folder.s.encode('cp1252')
+            folder.s.encode(u'cp1252')
         except UnicodeEncodeError:
             bad.add(folder)
-    localSaveDirs = [x for x in localSaveDirs if x not in bad]
-    localSaveDirs.sort()
+    localSaveDirs = sorted(x for x in localSaveDirs if x not in bad)
     return localSaveDirs

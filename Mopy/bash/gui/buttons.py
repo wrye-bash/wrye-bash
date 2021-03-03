@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -32,7 +31,7 @@ from .base_components import _AComponent
 
 class Button(_AComponent):
     """Represents a generic button that can be pressed, triggering an action.
-    You probably want one of the more specialized versions of this class
+    When appropriate, use one of the more specialized versions of this class
     (e.g. OkButton or CancelButton).
 
     Events:
@@ -157,6 +156,20 @@ class ApplyButton(Button):
     _id = _wx.ID_APPLY
     _default_label = _(u'Apply')
 
+class BackButton(Button):
+    """A button with the label '< Back'. Moves to a previous element.
+
+    See Button for documentation on button events."""
+    _id = _wx.ID_BACKWARD
+    _default_label = u'< %s' % _(u'Back')
+
+class NextButton(Button):
+    """A button with the label 'Next >'. Moves to a next element.
+
+    See Button for documentation on button events."""
+    _id = _wx.ID_FORWARD
+    _default_label = u'%s >' % _(u'Next')
+
 # TODO(inf) Image API! Need to get rid of all bitmaps passed to this
 class ImageButton(Button):
     """A button that display an image alongside its label.
@@ -164,13 +177,14 @@ class ImageButton(Button):
     See Button for documentation on button events. Note: this implementation
     locks us into wx 2.9+, since wx 2.8 can't do bitmaps with a regular button.
     """
-    def __init__(self, parent, image, btn_label=u'', btn_tooltip=None,
-                 default=False, exact_fit=False, no_border=False):
+    def __init__(self, parent, init_image=None, btn_label=u'',
+                 btn_tooltip=None, default=False, exact_fit=False,
+                 no_border=False):
         """Creates a new _AImageButton with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
-        :param image: The image shown on this button.
+        :param init_image: The image shown on this button.
         :param btn_label: The text shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
                             button.
@@ -185,7 +199,8 @@ class ImageButton(Button):
                                           btn_tooltip=btn_tooltip,
                                           default=default, exact_fit=exact_fit,
                                           no_border=no_border)
-        self.image = image
+        if init_image:
+            self.image = init_image
 
     @property
     def image(self): # type: () -> _wx.Bitmap
@@ -204,52 +219,57 @@ class ImageButton(Button):
         # Changing bitmap may change the 'best size', so resize it
         self._native_widget.SetInitialSize()
 
-class BackwardButton(ImageButton):
+class _StdImageButton(ImageButton): ##: deprecate? makes us wx dependent
+    """Base class for ImageButtons that come with a standard wx-supplied
+    image."""
+    _wx_icon = None
+    _dip_size = (16, 16)
+
+    def __init__(self, parent, **kwargs):
+        super(_StdImageButton, self).__init__(parent, **kwargs)
+        self.image = _wx.ArtProvider.GetBitmap(
+            self._wx_icon, _wx.ART_HELP_BROWSER,
+            self._native_widget.FromDIP(self._dip_size))
+
+
+class BackwardButton(_StdImageButton):
     """An image button with no text that displays an arrow pointing to the
     right. Used for navigation, e.g. in a browser.
 
     See Button for documentation on button events."""
+    _wx_icon = _wx.ART_GO_BACK
+
     def __init__(self, parent):
-        """Creates a new BackwardButton with the specified parent.
+        super(BackwardButton, self).__init__(parent, exact_fit=True,
+                                             btn_tooltip=_(u'Go Back'))
 
-        :param parent: The object that this button belongs to. May be a wx
-                       object or a component."""
-        backward_image = _wx.ArtProvider.GetBitmap(
-            _wx.ART_GO_BACK, _wx.ART_HELP_BROWSER, (16, 16))
-        super(BackwardButton, self).__init__(parent, backward_image,
-                                             btn_tooltip=_(u'Go Back'),
-                                             exact_fit=True)
+class CancelImageButton(_StdImageButton):
+    """Version of CancelButton with a"""
+    _id = _wx.ID_CANCEL
+    _wx_icon = _wx.ART_ERROR
+    _dip_size = (32, 32)
 
-class ForwardButton(ImageButton):
+class ForwardButton(_StdImageButton):
     """An image button with no text that displays an arrow pointing to the
     right. Used for navigation, e.g. in a browser.
 
     See Button for documentation on button events."""
-    def __init__(self, parent):
-        """Creates a new ForwardButton with the specified parent.
+    _wx_icon = _wx.ART_GO_FORWARD
 
-        :param parent: The object that this button belongs to. May be a wx
-                       object or a component."""
-        forward_image = _wx.ArtProvider.GetBitmap(
-            _wx.ART_GO_FORWARD, _wx.ART_HELP_BROWSER, (16, 16))
-        super(ForwardButton, self).__init__(parent, forward_image,
-                                            btn_tooltip=_(u'Go Forwards'),
-                                            exact_fit=True)
+    def __init__(self, parent):
+        super(ForwardButton, self).__init__(parent, exact_fit=True,
+                                            btn_tooltip=_(u'Go Forwards'))
 
 class ReloadButton(ImageButton):
     """An image button with no text that displays two arrows in a circle. Used
     for reloading documents, websites, etc.
 
     See Button for documentation on button events."""
-    def __init__(self, parent):
+    def __init__(self, parent, reload_icon):
         """Creates a new ReloadButton with the specified parent.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component."""
-        # TODO(inf) Image API! This is really, really ugly
-        from .. import bass
-        reload_icon = _wx.Bitmap(bass.dirs[u'images'].join(u'reload16.png').s,
-                                 _wx.BITMAP_TYPE_PNG)
         super(ReloadButton, self).__init__(parent, reload_icon,
                                            btn_tooltip=_(u'Reload'),
                                            exact_fit=True)

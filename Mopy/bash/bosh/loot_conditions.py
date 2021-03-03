@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,6 +26,8 @@ Wrye Bash. This file handles the evaluation of conditions.
 Recommended reading before working on this file:
 https://loot-api.readthedocs.io/en/latest/metadata/conditions.html."""
 
+__author__ = u'Infernio'
+
 import operator
 import re
 
@@ -35,8 +36,6 @@ from ..bolt import GPath, Path
 from ..env import get_file_version
 from ..exception import AbstractError, ParserError, FileError
 from ..load_order import cached_active_tuple, cached_is_active, in_master_block
-
-__author__ = u'Infernio'
 
 # Conditions
 class _ACondition(object):
@@ -320,7 +319,7 @@ def _process_path(file_path):
             if parents_done:
                 raise ParserError(
                     u"Illegal file path: Unexpected '..' (may only be at the "
-                    u"start of the path).", file_path)
+                    u'start of the path).', file_path)
             parents += 1
         else:
             # Remember that we're done parsing any parent specifiers

@@ -47,3 +47,7 @@ Mopy/bash/l10n/*NEW.txt
 # pytest-cov
 .coverage
 .cov_html/
+
+# Minimal LOOT masterlists - stored locally & updated manually
+Mopy/taglists/
+scripts/taginfo.txt

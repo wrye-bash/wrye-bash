@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,26 +14,24 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module houses the entry point for reading and writing plugin files
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
-import re
-import struct
+from __future__ import print_function
 from collections import defaultdict
+from itertools import chain
 
 from . import bolt, bush, env, load_order
-from .bass import dirs
-from .bolt import deprint, GPath, SubProgress
-from .brec import MreRecord, ModReader, ModWriter, RecordHeader, RecHeader, \
+from .bolt import deprint, GPath, SubProgress, structs_cache, struct_error
+from .brec import MreRecord, ModReader, RecordHeader, RecHeader, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds
-from .exception import ArgumentError, MasterMapError, ModError, StateError
+from .exception import MasterMapError, ModError, StateError
 
 class MasterSet(set):
     """Set of master names."""
@@ -52,21 +50,21 @@ class MasterMap(object):
     """Serves as a map between two sets of masters."""
     def __init__(self,inMasters,outMasters):
         """Initiation."""
-        map = {}
+        mast_map = {}
         outMastersIndex = outMasters.index
         for index,master in enumerate(inMasters):
             if master in outMasters:
-                map[index] = outMastersIndex(master)
+                mast_map[index] = outMastersIndex(master)
             else:
-                map[index] = -1
-        self.map = map
+                mast_map[index] = -1
+        self._mast_map = mast_map
 
     def __call__(self,fid,default=-1):
         """Maps a fid from first set of masters to second. If no mapping
         is possible, then either returns default (if defined) or raises MasterMapError."""
         if not fid: return fid
         inIndex = int(fid >> 24)
-        outIndex = self.map.get(inIndex,-2)
+        outIndex = self._mast_map.get(inIndex, -2)
         if outIndex >= 0:
             return (int(outIndex) << 24 ) | (fid & 0xFFFFFF)
         elif default != -1:
@@ -76,40 +74,53 @@ class MasterMap(object):
 
 class LoadFactory(object):
     """Factory for mod representation objects."""
-    def __init__(self,keepAll,*recClasses):
+    def __init__(self, keepAll, by_sig=(), generic=()): # PY3 keyword args
+        """Pass a collection of signatures to load - either by their
+        respective type or using generic MreRecord.
+        :param by_sig: pass an iterable of top group signatures to load
+        :type by_sig: Iterable[bytes]
+        :param generic: top group signatures to load as generic MreRecord
+        :type generic: Iterable[bytes]
+        """
         self.keepAll = keepAll
         self.recTypes = set()
         self.topTypes = set()
         self.type_class = {}
         self.cellType_class = {}
-        addClass = self.addClass
+        recClasses = chain(generic, (MreRecord.type_class[x] for x in by_sig))
         for recClass in recClasses:
-            addClass(recClass)
+            self.addClass(recClass)
 
     def addClass(self, recClass, __cell_rec_sigs=frozenset([b'WRLD', b'ROAD',
             b'CELL', b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'])):
         """Adds specified class."""
-        if isinstance(recClass,basestring):
-            recType = recClass
+        if type(recClass) is bytes:
+            class_sig = recClass
             recClass = MreRecord
         else:
-            recType = recClass.rec_sig
+            try:
+                class_sig = recClass.rec_sig
+            except AttributeError:
+                raise ValueError(u'addClass: bytes or MreRecord expected '
+                                 u'- got: %r!' % recClass)
         #--Don't replace complex class with default (MreRecord) class
-        if recType in self.type_class and recClass == MreRecord:
+        if class_sig in self.type_class and recClass == MreRecord:
             return
-        self.recTypes.add(recType)
-        self.type_class[recType] = recClass
+        self.recTypes.add(class_sig)
+        self.type_class[class_sig] = recClass
         #--Top type
-        if recType in __cell_rec_sigs:
+        if class_sig in __cell_rec_sigs:
             self.topTypes.add(b'CELL')
             self.topTypes.add(b'WRLD')
             if self.keepAll:
                 for cell_rec_sig in __cell_rec_sigs:
-                    self.type_class.setdefault(cell_rec_sig, MreRecord)
-        elif recType == b'INFO': ##: apart from this set(type_class) == topTypes
+                    if cell_rec_sig not in self.type_class:
+                        self.type_class[cell_rec_sig] = MreRecord
+        ##: apart from this and cell stuff above set(type_class) == topTypes
+        elif class_sig == b'INFO':
             self.topTypes.add(b'DIAL')
         else:
-            self.topTypes.add(recType)
+            self.topTypes.add(class_sig)
 
     def getRecClass(self,type):
         """Returns class for record type or None."""
@@ -151,46 +162,46 @@ class LoadFactory(object):
             u'keep' if self.keepAll else u'discard',
         )
 
+class _RecGroupDict(dict):
+    """dict subclass holding ModFile's collection of top groups key'd by sig"""
+    __slots__ = (u'_mod_file',)
+
+    def __init__(self, mod_file, *args, **kwargs):
+        super(_RecGroupDict, self).__init__(*args, **kwargs)
+        self._mod_file = mod_file
+
+    def __missing__(self, top_grup_sig, __rh=RecordHeader):
+        """Return top block of specified topType, creating it, if necessary.
+        :raise ModError KeyError"""
+        if top_grup_sig not in __rh.top_grup_sigs:
+            raise KeyError(u'Invalid top group type: ' + top_grup_sig)
+        topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
+        if topClass is None:
+                raise ModError(self._mod_file.fileInfo.name,
+               u'Failed to retrieve top class for %s; load factory is '
+               u'%r' % (top_grup_sig, self._mod_file.loadFactory))
+        self[top_grup_sig] = topClass(TopGrupHeader(0, top_grup_sig, 0),
+                                      self._mod_file.loadFactory)
+        self[top_grup_sig].setChanged()
+        return self[top_grup_sig]
+
 class ModFile(object):
-    """Plugin file representation. **Overrides `__getattr__`** to return its
-    collection of records for a top record type. Will load only the top
-    record types specified in its LoadFactory."""
+    """Plugin file representation. Will load only the top record types
+    specified in its LoadFactory."""
     def __init__(self, fileInfo,loadFactory=None):
         self.fileInfo = fileInfo
-        self.loadFactory = loadFactory or LoadFactory(True)
+        self.loadFactory = loadFactory or LoadFactory(True) ##: trace
         #--Variables to load
         self.tes4 = bush.game.plugin_header_class(RecHeader())
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
-        self.tops = {} #--Top groups.
+        self.tops = _RecGroupDict(self) #--Top groups.
         self.topsSkipped = set() #--Types skipped
         self.longFids = False
 
-    def __getattr__(self, topType, __rh=RecordHeader):
-        """Returns top block of specified topType, creating it, if necessary."""
-        if topType in self.tops:
-            return self.tops[topType]
-        elif topType in __rh.top_grup_sigs:
-            topClass = self.loadFactory.getTopClass(topType)
-            try:
-                self.tops[topType] = topClass(TopGrupHeader(0, topType, 0, 0),
-                                              self.loadFactory)
-            except TypeError:
-                raise ModError(
-                    self.fileInfo.name,
-                    u'Failed to retrieve top class for %s; load factory is '
-                    u'%r' % (topType, self.loadFactory))
-            self.tops[topType].setChanged()
-            return self.tops[topType]
-        elif topType == u'__repr__' or topType.startswith(u'cached_'):
-            raise AttributeError
-        else:
-            raise ArgumentError(u'Invalid top group type: '+topType)
-
     def load(self, do_unpack=False, progress=None, loadStrings=True,
-             catch_errors=True):
+             catch_errors=True, do_map_fids=True): # TODO: let it blow?
         """Load file."""
-        from . import bosh
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
         with ModReader(self.fileInfo.name,self.fileInfo.getPath().open(
@@ -199,21 +210,8 @@ class ModFile(object):
             # Main header of the mod file - generally has 'TES4' signature
             header = insRecHeader()
             self.tes4 = bush.game.plugin_header_class(header,ins,True)
-            # Check if we need to handle strings
-            self.strings.clear()
-            if do_unpack and self.tes4.flags1.hasStrings and loadStrings:
-                stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
-                lang = bosh.oblivionIni.get_ini_language()
-                stringsPaths = self.fileInfo.getStringsPaths(lang)
-                stringsProgress.setFull(max(len(stringsPaths),1))
-                for i,path in enumerate(stringsPaths):
-                    self.strings.loadFile(path,SubProgress(stringsProgress,i,i+1),lang)
-                    stringsProgress(i)
-                ins.setStringTable(self.strings)
-                subProgress = SubProgress(progress,0.1,1.0)
-            else:
-                ins.setStringTable(None)
-                subProgress = progress
+            subProgress = self.__load_strs(do_unpack, ins, loadStrings,
+                                           progress)
             #--Raw data read
             subProgress.setFull(ins.size)
             insAtEnd = ins.atEnd
@@ -223,13 +221,13 @@ class ModFile(object):
                 header = insRecHeader()
                 if not header.is_top_group_header:
                     raise ModError(self.fileInfo.name,u'Improperly grouped file.')
-                label,size = header.label,header.size
+                label = header.label
                 topClass = self.loadFactory.getTopClass(label)
                 try:
                     if topClass:
                         new_top = topClass(header, self.loadFactory)
                         load_fully = do_unpack and (topClass != MobBase)
-                        new_top.load(ins, load_fully)
+                        new_top.load_rec_group(ins, load_fully)
                         # Starting with FO4, some of Bethesda's official files
                         # have duplicate top-level groups
                         if label not in self.tops:
@@ -244,35 +242,46 @@ class ModFile(object):
                         else:
                             # Duplicate top-level group and we can merge
                             deprint(u'%s: Duplicate top-level %s group, '
-                                    u'merging' % (
-                                self.fileInfo.name, label))
+                                    u'merging' % (self.fileInfo, label))
                             self.tops[label].merge_records(new_top, set(),
                                 set(), False, False)
                     else:
                         self.topsSkipped.add(label)
-                        header.skip_group(ins)
+                        header.skip_blob(ins)
                 except:
                     if catch_errors:
-                        deprint(u'Error in %s' % self.fileInfo.name.s,
-                                traceback=True)
+                        deprint(u'Error in %s' % self.fileInfo, traceback=True)
                         break
                     else:
                         # Useful for implementing custom error behavior, see
                         # e.g. Mod_FullLoad
                         raise
                 subProgress(insTell())
-        #--Done Reading
+        # Done reading - convert to long FormIDs at the IO boundary
+        if do_map_fids: self._convert_fids(to_long=True)
 
-    def askSave(self,hasChanged=True):
-        """CLI command. If hasSaved, will ask if user wants to save the file,
-        and then save if the answer is yes. If hasSaved == False, then does nothing."""
-        if not hasChanged: return
-        fileName = self.fileInfo.name
-        if re.match(u'' r'\s*[yY]', raw_input(u'\nSave changes to '+fileName.s+u' [y/n]?: '), flags=re.U):
-            self.safeSave()
-            print(fileName.s,u'saved.')
+    def __load_strs(self, do_unpack, ins, loadStrings, progress):
+        # Check if we need to handle strings
+        self.strings.clear()
+        if do_unpack and loadStrings and self.tes4.flags1.hasStrings:
+            from . import bosh
+            stringsProgress = SubProgress(progress, 0,
+                                          0.1)  # Use 10% of progress bar
+            # for strings
+            lang = bosh.oblivionIni.get_ini_language()
+            stringsPaths = self.fileInfo.getStringsPaths(lang)
+            stringsProgress.setFull(max(len(stringsPaths), 1))
+            for i, path in enumerate(stringsPaths):
+                self.strings.loadFile(path,
+                                      SubProgress(stringsProgress, i, i + 1),
+                                      lang)
+                stringsProgress(i)
+            ins.setStringTable(self.strings)
+            subProgress = SubProgress(progress, 0.1, 1.0)
         else:
-            print(fileName.s,u'not saved.')
+            ins.setStringTable(None)
+            subProgress = progress
+        return subProgress
 
     def safeSave(self):
         """Save data to file safely.  Works under UAC."""
@@ -290,13 +299,16 @@ class ModFile(object):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
         if not self.loadFactory.keepAll: raise StateError(u"Insufficient data to write file.")
+        # Convert back to short FormIDs at the IO boundary
+        self._convert_fids(to_long=False)
         outPath = outPath or self.fileInfo.getPath()
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
-        if len(self.tes4.masters) > 255:
+        if self.tes4.num_masters > bush.game.Esp.master_limit:
             raise ModError(self.fileInfo.name,
-                u'Attempting to write a file with too many masters (>255).')
-        with ModWriter(outPath.open(u'wb')) as out:
+                u'Attempting to write a file with too many masters (>%u).'
+                % bush.game.Esp.master_limit)
+        with outPath.open(u'wb') as out:
             #--Mod Record
             self.tes4.setChanged()
             self.tes4.numRecords = sum(block.getNumRecords() for block in self.tops.values())
@@ -304,32 +316,31 @@ class ModFile(object):
             self.tes4.dump(out)
             #--Blocks
             selfTops = self.tops
-            for rec_type in RecordHeader.top_grup_sigs:
-                if rec_type in selfTops:
-                    selfTops[rec_type].dump(out)
+            for rsig in RecordHeader.top_grup_sigs:
+                if rsig in selfTops:
+                    selfTops[rsig].dump(out)
 
     def getLongMapper(self):
         """Returns a mapping function to map short fids to long fids."""
-        masters = self.tes4.masters+[self.fileInfo.name]
-        maxMaster = len(masters)-1
+        masters_list = self.tes4.masters+[self.fileInfo.name]
+        maxMaster = len(masters_list)-1
         def mapper(fid):
             if fid is None: return None
-            if isinstance(fid,tuple): return fid
+            if isinstance(fid, tuple): return fid
             mod,object = int(fid >> 24),int(fid & 0xFFFFFF)
-            return masters[min(mod,maxMaster)],object
+            return masters_list[min(mod, maxMaster)], object # clamp HITMEs
         return mapper
 
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
-        masters = self.tes4.masters + [self.fileInfo.name]
-        indices = {name: index for index, name in enumerate(masters)}
-        gLong = self.getLongMapper()
+        masters_list = self.tes4.masters + [self.fileInfo.name]
+        indices = {mname: index for index, mname in enumerate(masters_list)}
         has_expanded_range = bush.game.Esp.expanded_plugin_range
-        if (has_expanded_range and len(masters) > 1
+        if (has_expanded_range and len(masters_list) > 1
                 and self.tes4.version >= 1.0):
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range
-            def _master_index(m_name, obj_id):
+            def _master_index(m_name, _obj_id):
                 return indices[m_name]
         else:
             # 0x000-0x800 are reserved for hardcoded (engine) records
@@ -337,40 +348,18 @@ class ModFile(object):
                 return indices[m_name] if obj_id >= 0x800 else 0
         def mapper(fid):
             if fid is None: return None
-            ##: #312: drop this once convertToLongFids is auto-applied
-            if isinstance(fid, (int, long)): # PY3: just int here
-                fid = gLong(fid)
+            if isinstance(fid, (int, long)): return fid
             modName, object_id = fid
             return (_master_index(modName, object_id) << 24) | object_id
         return mapper
 
-    ##: Ideally we'd encapsulate all the long/short fid handling in load/save
-    def _convert_fids(self, target_types, mapper, to_long):
-        """Convert fids using the target mapper and the specified format - long
-        FormIDs if to_long is True, short FormIDs otherwise."""
-        if target_types is None:
-            target_types = self.tops.keys()
-        else:
-            assert isinstance(target_types, (list, tuple, set))
-        for target_type in target_types:
-            if target_type in self.tops:
-                self.tops[target_type].convertFids(mapper, to_long)
+    def _convert_fids(self, to_long):
+        """Convert fids to the specified format - long FormIDs if to_long is
+        True, short FormIDs otherwise."""
+        mapper = self.getLongMapper() if to_long else self.getShortMapper()
+        for target_top in self.tops.itervalues():
+            target_top.convertFids(mapper, to_long)
         self.longFids = to_long
-
-    def convertToLongFids(self, target_types=None):
-        """Convert fids to long format (mod name, object index).
-
-        :type target_types: list[str] | tuple[str] | set[str]"""
-        self._convert_fids(target_types, self.getLongMapper(), to_long=True)
-
-    def convertToShortFids(self):
-        """Convert fids to short (numeric) format. Has no types parameter,
-        since this function is only needed when writing out - so the IO
-        operations would dwarf any performance improvement gained from the
-        types parameter.
-
-        :type target_types: list[str] | tuple[str] | set[str]"""
-        self._convert_fids(None, self.getShortMapper(), to_long=False)
 
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""
@@ -378,6 +367,8 @@ class ModFile(object):
         masters_set = MasterSet([GPath(bush.game.master_file)])
         for block in self.tops.values():
             block.updateMasters(masters_set.add)
+        # The file itself is always implicitly available, so discard it here
+        masters_set.discard(self.fileInfo.name)
         return masters_set.getOrdered()
 
     def _index_mgefs(self):
@@ -389,15 +380,15 @@ class ModFile(object):
         m_names = bush.game.mgef_name.copy()
         hostile_recs = set()
         nonhostile_recs = set()
-        unpack_eid = struct.Struct(u'I').unpack
+        unpack_eid = structs_cache[u'I'].unpack
         if b'MGEF' in self.tops:
-            for record in self.MGEF.getActiveRecords():
+            for record in self.tops[b'MGEF'].getActiveRecords():
                 m_school[record.eid] = record.school
                 target_set = (hostile_recs if record.flags.hostile
                               else nonhostile_recs)
                 target_set.add(record.eid)
                 target_set.add(unpack_eid(record.eid.encode(u'ascii'))[0])
-                m_names[record.eid] = record.full
+                m_names[record.eid] = record.full or u'' # could this be None?
         self.cached_mgef_school = m_school
         self.cached_mgef_hostiles = m_hostiles - nonhostile_recs | hostile_recs
         self.cached_mgef_names = m_names
@@ -437,7 +428,7 @@ class ModFile(object):
             return self.cached_mgef_names
 
     def __repr__(self):
-        return u'ModFile<%s>' % self.fileInfo.name.s
+        return u'ModFile<%s>' % self.fileInfo
 
 # TODO(inf) Use this for a bunch of stuff in mods_metadata.py (e.g. UDRs)
 class ModHeaderReader(object):
@@ -450,12 +441,11 @@ class ModHeaderReader(object):
         every record with that signature. Note that the flags are not processed
         either - if you need that, manually call MreRecord.flags1_() on them.
 
-        :rtype: defaultdict[str, list[RecordHeader]]"""
+        :rtype: defaultdict[bytes, list[RecordHeader]]"""
         ret_headers = defaultdict(list)
         with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
-            ins_seek = ins.seek
             try:
                 while not ins_at_end():
                     header = ins_unpack_rec_header()
@@ -463,11 +453,10 @@ class ModHeaderReader(object):
                     header_rec_sig = header.recType
                     if header_rec_sig != b'GRUP':
                         ret_headers[header_rec_sig].append(header)
-                        ins_seek(header.size, 1)
-            except (OSError, struct.error) as e:
+                        header.skip_blob(ins)
+            except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
-                                           u"pos: %i\nCaused by: '%r'" % (
-                    mod_info.name.s, ins.tell(), e))
+                    u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
         return ret_headers
 
     ##: The method above has to be very fast, but this one can afford to be
@@ -482,7 +471,6 @@ class ModHeaderReader(object):
         # We want to read only the children of these, so skip their tops
         interested_sigs = {b'CELL', b'WRLD'}
         tops_to_skip = interested_sigs | {bush.game.Esp.plugin_header_sig}
-        grup_header_size = RecordHeader.rec_header_size
         with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
@@ -496,22 +484,21 @@ class ModHeaderReader(object):
                         # Skip all top-level GRUPs we're not interested in
                         # (group type == 0) and all persistent children and
                         # dialog topics (group type == 7 or 8, respectively).
-                        if ((header_group_type == 0 and
+                        if ((header.is_top_group_header and
                              header.label not in interested_sigs)
                                 or header_group_type in (7, 8)):
                             # Note that GRUP sizes include their own header
                             # size, so we need to subtract that
-                            ins_seek(header.size - grup_header_size, 1)
+                            header.skip_blob(ins)
                     elif header_rec_sig in tops_to_skip:
                         # Skip TES4, CELL and WRLD to get to their contents
-                        ins_seek(header.size, 1)
+                        header.skip_blob(ins)
                     else:
                         # We must be in a temp CELL children group, store the
                         # header and skip the record body
                         ret_headers.append(header)
-                        ins_seek(header.size, 1)
-            except (OSError, struct.error) as e:
+                        header.skip_blob(ins)
+            except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
-                                           u"pos: %i\nCaused by: '%r'" % (
-                    mod_info.name.s, ins.tell(), e))
+                    u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
         return ret_headers

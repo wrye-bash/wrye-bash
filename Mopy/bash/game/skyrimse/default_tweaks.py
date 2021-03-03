@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -42,6 +41,12 @@ default_tweaks.update({
         [(u'Archive', OrderedDict([(u'bInvalidateOlderFiles', u'1')]))]),
     u'Invalidate, Disallow loose files ~Default [Skyrim].ini': OrderedDict(
         [(u'Archive', OrderedDict([(u'bInvalidateOlderFiles', u'0')]))]),
+    u'Save Game Compression, LZ4 ~Default [Skyrim].ini': OrderedDict(
+        [(u'SaveGame', OrderedDict([(u'uiCompression', u'2')]))]),
+    u'Save Game Compression, zlib [Skyrim].ini': OrderedDict(
+        [(u'SaveGame', OrderedDict([(u'uiCompression', u'1')]))]),
+    u'Save Game Compression, Off [Skyrim].ini': OrderedDict(
+        [(u'SaveGame', OrderedDict([(u'uiCompression', u'0')]))]),
     u'Depth Of Field, Off [SkyrimPrefs].ini': OrderedDict(
         [(u'Imagespace', OrderedDict([(u'bDoDepthOfField', u'0')]))]),
     u'Depth Of Field, On ~Default [SkyrimPrefs].ini': OrderedDict(

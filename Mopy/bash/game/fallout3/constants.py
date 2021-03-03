@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -294,7 +293,7 @@ condition_function_data = {
     555:  (u'GetSpellUsageNum', 2, 0),
     557:  (u'GetActorsInHigh', 0, 0),
     558:  (u'HasLoaded3D', 0, 0),
-    
+
     # extended by FOSE
     1024: (u'GetFOSEVersion', 0, 0),
     1025: (u'GetFOSERevision', 0, 0),
@@ -306,355 +305,13 @@ condition_function_data = {
 }
 getvatsvalue_index = 408
 
-#--List of GMST's in the main plugin (Fallout3.esm) that have 0x00000000
-#  as the form id.  Any GMST as such needs its Editor Id listed here.
-gmstEids = [
-    'fPlayerDeathReloadTime', 'iMapMarkerVisibleDistance',
-    'fVanityModeWheelMax', 'fChase3rdPersonZUnitsPerSecond',
-    'fAutoAimMaxDegreesMiss', 'iHoursToRespawnCell', 'fEssentialDeathTime',
-    'fJumpHeightMin', 'fPlayerPipBoyLightTimer', 'iAINumberActorsComplexScene',
-    'iHackingMaxWords', 'fGunShellLifetime', 'fGunShellCameraDistance',
-    'fGunDecalCameraDistance', 'iDebrisMaxCount', 'iHackingDumpRate',
-    'iHackingInputRate', 'iHackingOutputRate', 'iHackingFlashOffDuration',
-    'iHackingFlashOnDuration', 'iComputersDisplayRateMenus',
-    'iComputersDisplayRateNotes', 'iInventoryAskQuantityAt',
-    'iNumberActorsInCombatPlayer', 'iNumberActorsAllowedToFollowPlayer',
-    'iRemoveExcessDeadCount', 'iRemoveExcessDeadTotalActorCount',
-    'iRemoveExcessDeadComplexTotalActorCount', 'iRemoveExcessDeadComplexCount',
-    'fRemoveExcessDeadTime', 'fRemoveExcessComplexDeadTime',
-    'iLevItemLevelDifferenceMax', 'fMoveWeightMax',
-]
-
-GlobalsTweaks = [
-    (_(u'World: Timescale'),_(u'Timescale will be set to:'),
-        u'timescale',
-        (u'1',         1),
-        (u'8',         8),
-        (u'10',        10),
-        (u'12',        12),
-        (u'20',        20),
-        (u'24',        24),
-        (u'[30]',      30),
-        (u'40',        40),
-        (_(u'Custom'), 30),
-        ),
-    ]
-
-GmstTweaks = [
-    (_(u'Camera: Chase Distance'),
-     _(u'Distance camera can be moved away from PC using mouse wheel.'),
-        (u'fVanityModeWheelMax', u'fChase3rdPersonZUnitsPerSecond'),
-        (u'x 1.5',     600.0*1.5, 800.0*1.5),
-        (u'x 2',       600.0*2.0, 800.0*2),
-        (u'x 3',       600.0*3.0, 800.0*3),
-        (u'x 5',       600.0*5.0, 800.0*5),
-        (u'x 10',      600.0*10,  5000),
-        (_(u'Custom'), 600,       800),
-        ),
-    (_(u'Compass: Recognition Distance'),
-     _(u'Distance at which markers (dungeons, towns etc.) begin to show on '
-       u'the compass.'),
-     (u'iMapMarkerVisibleDistance',),
-        (_(u'75% Shorter'), 3125),
-        (_(u'50% Shorter'), 6250),
-        (_(u'25% Shorter'), 9375),
-        (_(u'[Default]'),   12500),
-        (_(u'25% Further'), 15625),
-        (_(u'50% Further'), 18750),
-        (_(u'75% Further'), 21875),
-        (_(u'Custom'),      12500),
-        ),
-    (_(u'Actor: Unconsciousness Duration'),
-     _(u'Time which essential NPCs stay unconscious.'),
-        (u'fEssentialDeathTime',),
-        (_(u'[10 Seconds]'),        10.0),
-        (_(u'20 Seconds'),          20.0),
-        (_(u'30 Seconds'),          30.0),
-        (_(u'1 Minute'),            60.0),
-        (_(u'1 1/2 Minutes'),       1.5*60.0),
-        (_(u'2 Minutes'),           2*60.0),
-        (_(u'3 Minutes'),           3*60.0),
-        (_(u'5 Minutes'),           5*60.0),
-        (_(u'Custom (in seconds)'), 10.0),
-        ),
-    (_(u'Actor: Max Jump Height'),
-     _(u'Increases the height to which you can jump.'),
-        (u'fJumpHeightMin',),
-        (u'0.5x',      38.0),
-        (u'[1x]',      76.0),
-        (u'2x',        152.0),
-        (u'3x',        228.0),
-        (u'4x',        304.0),
-        (_(u'Custom'), 76.0),
-        ),
-    (_(u'Camera: PC Death Time'),
-     _(u"Time after player's death before reload menu appears."),
-        (u'fPlayerDeathReloadTime',),
-        (_(u'15 Seconds'), 15.0),
-        (_(u'30 Seconds'), 30.0),
-        (_(u'1 Minute'),   60.0),
-        (_(u'5 Minute'),   300.0),
-        (_(u'Unlimited'),  9999999.0),
-        (_(u'Custom'),     15.0),
-        ),
-    (_(u'World: Cell Respawn Time'),
-     _(u'Time before unvisited cell respawns. But longer times increase save '
-       u'sizes.'),
-        (u'iHoursToRespawnCell',),
-        (_(u'1 Day'),             24*1),
-        (_(u'[3 Days]'),          24*3),
-        (_(u'5 Days'),            24*5),
-        (_(u'10 Days'),           24*10),
-        (_(u'20 Days'),           24*20),
-        (_(u'1 Month'),           24*30),
-        (_(u'6 Months'),          24*182),
-        (_(u'1 Year'),            24*365),
-        (_(u'Custom (in hours)'), 72),
-        ),
-    (_(u'Cost Multiplier: Repair'), _(u'Cost factor for repairing items.'),
-        (u'fItemRepairCostMult',),
-        (u'1.0',       1.0),
-        (u'1.25',      1.25),
-        (u'1.5',       1.5),
-        (u'1.75',      1.75),
-        (u'[2.0]',     2.0),
-        (u'2.5',       2.5),
-        (u'3.0',       3.0),
-        (_(u'Custom'), 2.0),
-        ),
-    (_(u'Combat: Max Actors'),
-     _(u'Maximum number of actors that can actively be in combat with the '
-       u'player.'),
-        (u'iNumberActorsInCombatPlayer',),
-        (u'[10]',      10),
-        (u'15',        15),
-        (u'20',        20),
-        (u'30',        30),
-        (u'40',        40),
-        (u'50',        50),
-        (u'80',        80),
-        (_(u'Custom'), 10),
-        ),
-    (_(u'AI: Max Active Actors'),
-     _(u'Maximum actors whose AI can be active. Must be higher than Combat: '
-       u'Max Actors.'),
-        (u'iAINumberActorsComplexScene',),
-        (u'20',        20),
-        (u'[25]',      25),
-        (u'30',        30),
-        (u'35',        35),
-        (u'40',        40),
-        (u'50',        50),
-        (u'60',        60),
-        (u'100',       100),
-        (_(u'Custom'), 20),
-        ),
-    (_(u'Actor: Max Companions'),
-     _(u'Maximum number of actors following the player.'),
-        (u'iNumberActorsAllowedToFollowPlayer',),
-        (u'2',         2),
-        (u'4',         4),
-        (u'[6]',       6),
-        (u'8',         8),
-        (u'10',        10),
-        (_(u'Custom'), 6),
-        ),
-    (_(u'AI: Max Dead Actors'),
-     _(u"Maximum number of dead actors allowed before they're removed."),
-        (u'iRemoveExcessDeadCount', u'iRemoveExcessDeadTotalActorCount',
-         u'iRemoveExcessDeadComplexTotalActorCount',
-         u'iRemoveExcessDeadComplexCount', u'fRemoveExcessDeadTime',
-         u'fRemoveExcessComplexDeadTime'),
-        (u'[x 1]',     int(15*1)  , int(20*1)  , int(20*1)  , int(3*1), 10.0*1.0, 2.5*1.0),
-        (u'x 1.5',     int(15*1.5), int(20*1.5), int(20*1.5), int(3*2), 10.0*3.0, 2.5*3.0),
-        (u'x 2',       int(15*2)  , int(20*2)  , int(20*2)  , int(3*3), 10.0*5.0, 2.5*5.0),
-        (u'x 2.5',     int(15*2.5), int(20*2.5), int(20*2.5), int(3*4), 10.0*7.0, 2.5*7.0),
-        (u'x 3',       int(15*3)  , int(20*3)  , int(20*3)  , int(3*5), 10.0*9.0, 2.5*9.0),
-        (u'x 3.5',     int(15*3.5), int(20*3.5), int(20*3.5), int(3*6), 10.0*11.0, 2.5*11.0),
-        (u'x 4',       int(15*4)  , int(20*4)  , int(20*4)  , int(3*7), 10.0*13.0, 2.5*13.0),
-        (_(u'Custom'), 15, 20, 20, 3, 10, 2.5),
-        ),
-    (_(u'Player: Inventory Quantity Prompt'),
-     _(u'Number of items in a stack at which point the game prompts for a '
-       u'quantity.'),
-        (u'iInventoryAskQuantityAt',),
-        (_(u'Always Prompt'), 1),
-        (u'2',                2),
-        (u'3',                3),
-        (u'4',                4),
-        (u'[5]',              5),
-        (u'10',               10),
-        (u'20',               20),
-        (_(u'Never Prompt'),  99999),
-        (_(u'Custom'),        5),
-        ),
-    (_(u'Gore: Combat Dismember Part Chance'),
-     _(u'The chance that body parts will be dismembered.'),
-        (u'iCombatDismemberPartChance',),
-        (u'0',         0),
-        (u'25',        25),
-        (u'[50]',      50),
-        (u'80',        80),
-        (u'100',       100),
-        (_(u'Custom'), 50),
-        ),
-    (_(u'Gore: Combat Explode Part Chance'),
-     _(u'The chance that body parts will explode.'),
-        (u'iCombatExplodePartChance',),
-        (u'0',         0),
-        (u'25',        25),
-        (u'50',        50),
-        (u'[75]',      75),
-        (u'100',       100),
-        (_(u'Custom'), 75),
-        ),
-    (_(u'Leveled Item Max level difference'),
-     _(u'Maximum difference to player level for leveled items.'),
-        (u'iLevItemLevelDifferenceMax',),
-        (u'1',            1),
-        (u'5',            5),
-        (u'[8]',          8),
-        (u'10',           10),
-        (u'20',           20),
-        (_(u'Unlimited'), 9999),
-        (_(u'Custom'),    8),
-        ),
-    (_(u'Movement: Base Speed'), _(u'Changes base movement speed.'),
-        (u'fMoveBaseSpeed',),
-        (u'[77.0]',    77.0),
-        (u'90.0',      90.0),
-        (_(u'Custom'), 77.0),
-        ),
-    (_(u'Movement: Sneak Multiplier'),
-     _(u'Movement speed is multiplied by this when the actor is sneaking.'),
-        (u'fMoveSneakMult',),
-        (u'[0.57]',    0.57),
-        (u'0.66',      0.66),
-        (_(u'Custom'), 0.57),
-        ),
-    (_(u'Combat: VATS Player Damage Multiplier'),
-     _(u'Multiplier of damage that player receives in VATS.'),
-        (u'fVATSPlayerDamageMult',),
-        (u'0.10',      0.1),
-        (u'0.25',      0.25),
-        (u'0.50',      0.5),
-        (u'[0.75]',    0.75),
-        (u'1.00',      1.0),
-        (_(u'Custom'), 0.75),
-        ),
-    (_(u'Combat: Auto Aim Fix'),
-     _(u'Increase Auto Aim settings to a level at which snipers can benefit '
-       u'from them.'),
-        (u'fAutoAimMaxDistance', u'fAutoAimScreenPercentage',
-         u'fAutoAimMaxDegrees', u'fAutoAimMissRatioLow',
-         u'fAutoAimMissRatioHigh', u'fAutoAimMaxDegreesMiss'),
-        (_(u'Harder'), 50000.0, -180.0, 1.1, 1.0, 1.3, 3.0),
-        ),
-    (_(u'Player: PipBoy Light Keypress Delay'),
-     _(u'Seconds of delay until the PipBoy light switches on.'),
-        (u'fPlayerPipBoyLightTimer',),
-        (u'0.3',       0.3),
-        (u'0.4',       0.4),
-        (u'0.5',       0.5),
-        (u'0.6',       0.6),
-        (u'0.7',       0.7),
-        (u'[0.8]',     0.8),
-        (u'1.0',       1.0),
-        (_(u'Custom'), 0.8),
-        ),
-    (_(u'Combat: VATS Playback Delay'),
-     _(u'Seconds of delay after the VATS Camera finished playback.'),
-        (u'fVATSPlaybackDelay',),
-        (u'0.01',      0.01),
-        (u'0.05',      0.05),
-        (u'0.10',      0.1),
-        (u'[0.17]',    0.17),
-        (u'0.25',      0.25),
-        (_(u'Custom'), 0.17),
-        ),
-    (_(u'Combat: NPC Death XP Threshold'),
-     _(u'Percentage of total damage you have to inflict in order to get XP.'),
-        (u'iXPDeathRewardHealthThreshold',),
-        (u'0%',        0),
-        (u'25%',       25),
-        (u'[40%]',     40),
-        (u'50%',       50),
-        (u'75%',       75),
-        (_(u'Custom'), 40),
-        ),
-    (_(u'Hacking: Maximum Number of Words'),
-     _(u'The maximum number of words appearing in the terminal hacking '
-       u'mini-game.'),
-        (u'iHackingMaxWords',),
-        (u'1',         1),
-        (u'4',         4),
-        (u'8',         8),
-        (u'12',        12),
-        (u'16',        16),
-        (u'[20]',      20),
-        (_(u'Custom'), 20),
-        ),
-    (_(u'Visuals: Shell Camera Distance'),
-     _(u'Maximum distance at which gun arisings (shell case, particle, decal) '
-       u'show from camera.'),
-        (u'fGunParticleCameraDistance', u'fGunShellCameraDistance',
-         u'fGunDecalCameraDistance'),
-        (u'x 1.5',     2048.0*1.5, 512.0*1.5, 2048.0*1.5),
-        (u'x 2',       2048.0*2.0, 512.0*2.0, 2048.0*2.0),
-        (u'x 3',       2048.0*3.0, 512.0*3.0, 2048.0*3.0),
-        (u'x 4',       2048.0*4.0, 512.0*4.0, 2048.0*4.0),
-        (u'x 5',       2048.0*5.0, 512.0*5.0, 2048.0*5.0),
-        (_(u'Custom'), 2048.0*1.0, 512.0*1.0, 2048.0*1.0),
-        ),
-    (_(u'Visuals: Shell Litter Time'),
-     _(u'Time before shell cases fade away from cells.'),
-        (u'fGunShellLifetime',),
-        (_(u'[10 Seconds]'),        10),
-        (_(u'20 Seconds'),          20),
-        (_(u'30 Seconds'),          30),
-        (_(u'1 Minute'),            60),
-        (_(u'3 Minutes'),           60*3),
-        (_(u'5 Minutes'),           60*5),
-        (_(u'Custom (in seconds)'), 10),
-        ),
-    (_(u'Visuals: Shell Litter Count'),
-     _(u'Maximum number of debris (shell case, etc) allowed in cell.'),
-        (u'iDebrisMaxCount',),
-        (u'[50]',      50),
-        (u'100',       100),
-        (u'500',       500),
-        (u'1000',      1000),
-        (u'3000',      3000),
-        (_(u'Custom'), 50),
-        ),
-    (_(u'Hacking: Terminal Speed Adjustment'),
-     _(u'The display speed at the time of terminal hacking.'),
-        (u'iHackingDumpRate', u'iHackingInputRate', u'iHackingOutputRate',
-         u'iHackingFlashOffDuration', u'iHackingFlashOnDuration',
-         u'iComputersDisplayRateMenus', u'iComputersDisplayRateNotes'),
-        (u'x 2',       1000, 40,  134, 250, 375, 300, 300),
-        (u'x 4',       2000, 80,  268, 125, 188, 600, 600),
-        (u'[x 6]',     3000, 120, 402, 83,  126, 900, 900),
-        (_(u'Custom'), 3000, 120, 402, 83,  126, 900, 900),
-        ),
-    (_(u'Player: Max Draggable Weight'),
-     _(u'Maximum weight to be able move things with the drag key.'),
-        (u'fMoveWeightMax',),
-        (u'115',        115.0),
-        (u'[150]',      150.0),
-        (u'250',        250.0),
-        (u'500',        500.0),
-        (u'1500',       1500.0),
-        (_(u'Custom'),  115.0),
-        ),
-    ]
 #------------------------------------------------------------------------------
-# ListsMerger
+# Leveled Lists
 #------------------------------------------------------------------------------
-listTypes = ('LVLC','LVLI','LVLN')
+listTypes = (b'LVLC',b'LVLI',b'LVLN')
 
 #------------------------------------------------------------------------------
-# NamesPatcher
+# Import Names
 #------------------------------------------------------------------------------
 namesTypes = {
     b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS', b'COBJ',
@@ -664,37 +321,40 @@ namesTypes = {
 }
 
 #------------------------------------------------------------------------------
-# ItemPrices Patcher
+# Import Prices
 #------------------------------------------------------------------------------
-pricesTypes = {'ALCH': {}, 'AMMO': {}, 'ARMO': {}, 'ARMA': {}, 'BOOK': {},
-               'INGR': {}, 'KEYM': {}, 'LIGH': {}, 'MISC': {}, 'WEAP': {}}
+pricesTypes = {b'ALCH': {}, b'AMMO': {}, b'ARMO': {}, b'ARMA': {}, b'BOOK': {},
+               b'INGR': {}, b'KEYM': {}, b'LIGH': {}, b'MISC': {}, b'WEAP': {}}
 
 #------------------------------------------------------------------------------
-# StatsImporter
+# Import Stats
 #------------------------------------------------------------------------------
 statsTypes = {
-    'ALCH': ('eid', 'weight', 'value'),
-    'AMMO': ('eid', 'value', 'speed', 'clipRounds'),
-    'ARMA': ('eid', 'weight', 'value', 'health', 'ar'),
-    'ARMO': ('eid', 'weight', 'value', 'health', 'ar'),
-    'BOOK': ('eid', 'weight', 'value'),
-    'INGR': ('eid', 'weight', 'value'),
-    'KEYM': ('eid', 'weight', 'value'),
-    'LIGH': ('eid', 'weight', 'value', 'duration'),
-    'MISC': ('eid', 'weight', 'value'),
-    'WEAP': ('eid', 'weight', 'value', 'health', 'damage','clipsize',
-             'animationMultiplier','reach','ammoUse','minSpread','spread',
-             'sightFov','baseVatsToHitChance','projectileCount','minRange',
-             'maxRange','animationAttackMultiplier','fireRate',
-             'overrideActionPoint','rumbleLeftMotorStrength',
-             'rumbleRightMotorStrength','rumbleDuration',
-             'overrideDamageToWeaponMult','attackShotsPerSec','reloadTime',
-             'jamTime','aimArc','rambleWavelangth','limbDmgMult',
-             'sightUsage','semiAutomaticFireDelayMin',
-             'semiAutomaticFireDelayMax','criticalDamage',
-             'criticalMultiplier'),
+    b'ALCH': (u'eid', u'weight', u'value'),
+    b'AMMO': (u'eid', u'value', u'speed', u'clipRounds'),
+    b'ARMA': (u'eid', u'weight', u'value', u'health', u'ar'),
+    b'ARMO': (u'eid', u'weight', u'value', u'health', u'ar'),
+    b'BOOK': (u'eid', u'weight', u'value'),
+    b'INGR': (u'eid', u'weight', u'value'),
+    b'KEYM': (u'eid', u'weight', u'value'),
+    b'LIGH': (u'eid', u'weight', u'value', u'duration'),
+    b'MISC': (u'eid', u'weight', u'value'),
+    b'WEAP': (
+        u'eid', u'weight', u'value', u'health', u'damage', u'clipsize',
+        u'animationMultiplier', u'reach', u'ammoUse', u'minSpread', u'spread',
+        u'sightFov', u'baseVatsToHitChance', u'projectileCount', u'minRange',
+        u'maxRange', u'animationAttackMultiplier', u'fireRate',
+        u'overrideActionPoint', u'rumbleLeftMotorStrength',
+        u'rumbleRightMotorStrength', u'rumbleDuration',
+        u'overrideDamageToWeaponMult', u'attackShotsPerSec', u'reloadTime',
+        u'jamTime', u'aimArc', u'rambleWavelangth', u'limbDmgMult',
+        u'sightUsage', u'semiAutomaticFireDelayMin',
+        u'semiAutomaticFireDelayMax', u'criticalDamage',
+        u'criticalMultiplier'),
 }
 
+# TODO(lojack): the record signatures seem to be only used by CSV reading/
+# writing.  Make sure there's no broken interaction there.
 statsHeaders = (
     #--Alch
     (u'ALCH',
@@ -750,83 +410,67 @@ statsHeaders = (
 )
 
 #------------------------------------------------------------------------------
-# SoundPatcher
+# Import Sounds
 #------------------------------------------------------------------------------
-# Needs longs in SoundPatcher
-soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'ASPC', 'COBJ', 'CONT', 'CREA',
-                    'DOOR', 'EXPL', 'IPCT', 'LIGH', 'MGEF', 'PROJ', 'SOUN',
-                    'TACT', 'WATR', 'WEAP', 'WTHR'}
 soundsTypes = {
-    "ACTI": ('soundLooping','soundActivation',),
-    "ADDN": ('ambientSound',),
-    "ALCH": ('dropSound','pickupSound','soundConsume',),
-    "ASPC": ('soundLooping','useSoundFromRegion',),
-    "COBJ": ('pickupSound','dropSound',),
-    "CONT": ('soundOpen','soundClose',),
-    "CREA": ('footWeight','inheritsSoundsFrom','sounds'),
-    "DOOR": ('soundOpen','soundClose','soundLoop',),
-    "EXPL": ('soundLevel','sound1','sound2',),
-    "IPCT": ('soundLevel','sound1','sound2',),
-    "LIGH": ('sound',),
-    "MGEF": ('castingSound','boltSound','hitSound','areaSound',),
-    "PROJ": ('sound','soundCountDown','soundDisable','soundLevel',),
-#    "REGN": ('entries.sounds',),
-    "SOUN": ('soundFile','minDist','maxDist','freqAdj','flags','staticAtten',
-             'stopTime','startTime','point0','point1','point2','point3',
-             'point4','reverb','priority','xLoc','yLoc',),
-    "TACT": ('sound',),
-    "WATR": ('sound',),
-    "WEAP": ('pickupSound','dropSound','soundGunShot3D','soundGunShot2D',
-             'soundGunShot3DLooping','soundMeleeSwingGunNoAmmo','soundBlock','idleSound',
-             'equipSound','unequipSound','soundLevel',),
-    "WTHR": ('sounds',),
+    b'ACTI': (u'soundLooping', u'soundActivation'),
+    b'ADDN': (u'ambientSound',),
+    b'ALCH': (u'dropSound', u'pickupSound', u'soundConsume'),
+    b'ASPC': (u'soundLooping', u'useSoundFromRegion'),
+    b'COBJ': (u'pickupSound', u'dropSound'),
+    b'CONT': (u'soundOpen', u'soundClose'),
+    b'CREA': (u'footWeight', u'inheritsSoundsFrom', u'sounds'),
+    b'DOOR': (u'soundOpen', u'soundClose', u'soundLoop'),
+    b'EXPL': (u'soundLevel', u'sound1', u'sound2'),
+    b'IPCT': (u'soundLevel', u'sound1', u'sound2'),
+    b'LIGH': (u'sound',),
+    b'MGEF': (u'castingSound', u'boltSound', u'hitSound', u'areaSound'),
+    b'PROJ': (u'sound', u'soundCountDown', u'soundDisable', u'soundLevel'),
+#    b'REGN': ('entries.sounds',),
+    b'SOUN': (u'soundFile', u'minDist', u'maxDist', u'freqAdj', u'flags',
+              u'staticAtten', u'stopTime', u'startTime', u'point0', u'point1',
+              u'point2', u'point3', u'point4', u'reverb', u'priority', u'xLoc',
+              u'yLoc'),
+    b'TACT': (u'sound',),
+    b'WATR': (u'sound',),
+    b'WEAP': (u'pickupSound', u'dropSound', u'soundGunShot3D',
+              u'soundGunShot2D', u'soundGunShot3DLooping',
+              u'soundMeleeSwingGunNoAmmo', u'soundBlock', u'idleSound',
+              u'equipSound', u'unequipSound', u'soundLevel'),
+    b'WTHR': (u'sounds',),
 }
 
 #------------------------------------------------------------------------------
-# CellImporter
+# Import Cells
 #------------------------------------------------------------------------------
-cellAutoKeys = {u'C.Acoustic', u'C.Climate', u'C.Encounter',
-                u'C.ForceHideLand', u'C.ImageSpace', u'C.Light', u'C.Music',
-                u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions',
-                u'C.Water'}
 cellRecAttrs = {
-    u'C.Acoustic': ('acousticSpace',),
-    u'C.Climate': ('climate',),
-    u'C.Encounter': ('encounterZone',),
+    u'C.Acoustic': (u'acousticSpace',),
+    u'C.Climate': (u'climate', u'flags.behaveLikeExterior'),
+    u'C.Encounter': (u'encounterZone',),
     u'C.ForceHideLand': (u'land_flags',),
-    u'C.ImageSpace': ('imageSpace',),
-    u'C.Light': ('ambientRed', 'ambientGreen', 'ambientBlue', 'unused1',
-                 'directionalRed', 'directionalGreen', 'directionalBlue',
-                 'unused2', 'fogRed', 'fogGreen', 'fogBlue', 'unused3',
-                 'fogNear', 'fogFar', 'directionalXY', 'directionalZ',
-                 'directionalFade', 'fogClip', 'fogPower',
-                 'lightTemplate', 'lightInheritFlags'),
-    u'C.Music': ('music',),
-    u'C.Name': ('full',),
-    u'C.Owner': ('ownership',),
-    u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
-    u'C.Regions': ('regions',),
-    u'C.Water': ('water','waterHeight','waterNoiseTexture',),
-}
-cellRecFlags = {
-    u'C.Acoustic': '',
-    u'C.Climate': 'behaveLikeExterior',
-    u'C.Encounter': '',
-    u'C.ForceHideLand': '',
-    u'C.ImageSpace': '',
-    u'C.Light': '',
-    u'C.Music': '',
-    u'C.Name': '',
-    u'C.Owner': 'publicPlace',
-    u'C.RecordFlags': '',
-    u'C.Regions': '',
-    u'C.Water': 'hasWater',
+    u'C.ImageSpace': (u'imageSpace',),
+    ##: Patches unuseds?
+    u'C.Light': (u'ambientRed', u'ambientGreen', u'ambientBlue', u'unused1',
+                 u'directionalRed', u'directionalGreen', u'directionalBlue',
+                 u'unused2', u'fogRed', u'fogGreen', u'fogBlue', u'unused3',
+                 u'fogNear', u'fogFar', u'directionalXY', u'directionalZ',
+                 u'directionalFade', u'fogClip', u'fogPower',
+                 u'lightTemplate', u'lightInheritFlags'),
+    u'C.MiscFlags': (u'flags.isInterior', u'flags.invertFastTravel',
+                     u'flags.noLODWater', u'flags.handChanged'),
+    u'C.Music': (u'music',),
+    u'C.Name': (u'full',),
+    u'C.Owner': (u'ownership', u'flags.publicPlace'),
+    u'C.RecordFlags': (u'flags1',), # Yes seems funky but thats the way it is
+    u'C.Regions': (u'regions',),
+    u'C.Water': (u'water', u'waterHeight', u'waterNoiseTexture',
+                 u'flags.hasWater'),
 }
 cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
                     u'fogPower', u'waterHeight'}
 
 #------------------------------------------------------------------------------
-# GraphicsPatcher
+# Import Graphics
 #------------------------------------------------------------------------------
 graphicsTypes = {
     b'ACTI': (u'model',),
@@ -843,6 +487,7 @@ graphicsTypes = {
     b'BPTD': (u'model',),
     b'CLAS': (u'iconPath',),
     b'COBJ': (u'iconPath', u'smallIconPath', u'model'),
+    b'CONT': (u'model',),
     b'CREA': (u'model', u'bodyParts', u'nift_p'),
     b'DOOR': (u'model',),
     b'EFSH': (u'flags', u'particleTexture', u'fillTexture', u'holesTexture',
@@ -928,19 +573,18 @@ graphicsModelAttrs = (u'model', u'shellCasingModel', u'scopeModel',
                       u'femaleWorld')
 
 #------------------------------------------------------------------------------
-# Inventory Patcher
+# Import Inventory
 #------------------------------------------------------------------------------
-inventoryTypes = ('CREA','NPC_','CONT',)
+inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
 
 #------------------------------------------------------------------------------
-# Text Patcher
+# Import Text
 #------------------------------------------------------------------------------
-text_long_types = {'NOTE',}
 text_types = {
     b'AVIF': (u'description',),
-    b'BOOK': (u'text',),
+    b'BOOK': (u'book_text',),
     b'CLAS': (u'description',),
-    b'LSCR': (u'text',),
+    b'LSCR': (u'description',),
     b'MESG': (u'description',),
     b'MGEF': (u'text',),
     b'NOTE': (u'textTopic',),
@@ -950,58 +594,58 @@ text_types = {
 }
 
 #------------------------------------------------------------------------------
-# Object Bounds Patcher
+# Import Object Bounds
 #------------------------------------------------------------------------------
-object_bounds_types = {'ACTI', 'ADDN', 'ALCH', 'AMMO', 'ARMA', 'ARMO', 'ASPC',
-                       'BOOK', 'COBJ', 'CONT', 'CREA', 'DOOR', 'EXPL', 'FURN',
-                       'GRAS', 'IDLM', 'INGR', 'KEYM', 'LIGH', 'LVLC', 'LVLI',
-                       'LVLN', 'MISC', 'MSTT', 'NOTE', 'NPC_', 'PROJ', 'PWAT',
-                       'SCOL', 'SOUN', 'STAT', 'TACT', 'TERM', 'TREE', 'TXST',
-                       'WEAP'}
+object_bounds_types = {b'ACTI', b'ADDN', b'ALCH', b'AMMO', b'ARMA', b'ARMO',
+                       b'ASPC', b'BOOK', b'COBJ', b'CONT', b'CREA', b'DOOR',
+                       b'EXPL', b'FURN', b'GRAS', b'IDLM', b'INGR', b'KEYM',
+                       b'LIGH', b'LVLC', b'LVLI', b'LVLN', b'MISC', b'MSTT',
+                       b'NOTE', b'NPC_', b'PROJ', b'PWAT', b'SCOL', b'SOUN',
+                       b'STAT', b'TACT', b'TERM', b'TREE', b'TXST', b'WEAP'}
 
 #------------------------------------------------------------------------------
 # Contents Checker
 #------------------------------------------------------------------------------
 # Entry types used for CONT, CREA, LVLI and NPC_
-_common_entry_types = {'ALCH', 'AMMO', 'ARMO', 'BOOK', 'KEYM', 'LVLI', 'MISC',
-                       'NOTE', 'WEAP'}
+_common_entry_types = {b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'KEYM', b'LVLI',
+                       b'MISC', b'NOTE', b'WEAP'}
 # These are marked as {?} in xEdit for FO3, absent for FO3's LVLI, and
 # completely commented out in xEdit for FNV. Included for now just to be safe.
-_common_entry_types |= {'MSTT', 'STAT'}
+_common_entry_types |= {b'MSTT', b'STAT'}
 cc_valid_types = {
-    'CONT': _common_entry_types,
-    'CREA': _common_entry_types,
-    'LVLC': {'CREA', 'LVLC'},
-    'LVLN': {'LVLN', 'NPC_'},
-    'LVLI': _common_entry_types - {'MSTT', 'STAT'},
-    'NPC_': _common_entry_types,
+    b'CONT': _common_entry_types,
+    b'CREA': _common_entry_types,
+    b'LVLC': {b'CREA', b'LVLC'},
+    b'LVLN': {b'LVLN', b'NPC_'},
+    b'LVLI': _common_entry_types - {b'MSTT', b'STAT'},
+    b'NPC_': _common_entry_types,
 }
 cc_passes = (
-    (('LVLC', 'LVLN', 'LVLI'), 'entries', 'listId'),
-    (('CONT', 'CREA', 'NPC_'), 'items', 'item'),
+    ((b'LVLC', b'LVLN', b'LVLI'), 'entries', 'listId'),
+    ((b'CONT', b'CREA', b'NPC_'), 'items', 'item'),
 )
 
 #------------------------------------------------------------------------------
-# Scripts Patcher
+# Import Scripts
 #------------------------------------------------------------------------------
 # In valda's version: 'WEAP', 'ACTI', 'ALCH', 'ARMO', 'BOOK', 'CONT', 'CREA',
 #                     'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
 #                     'QUST', 'TERM', 'TACT'
 # In valda's FNV version, only 'CCRD' got added
 # INGR and COBJ are unused - still including them, see e.g. APPA in Skyrim
-scripts_types = {'ACTI', 'ALCH', 'ARMO', 'BOOK', 'COBJ', 'CONT', 'CREA',
-                 'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
-                 'QUST', 'TACT', 'TERM', 'WEAP'}
+scripts_types = {b'ACTI', b'ALCH', b'ARMO', b'BOOK', b'COBJ', b'CONT', b'CREA',
+                 b'DOOR', b'FURN', b'INGR', b'KEYM', b'LIGH', b'MISC', b'NPC_',
+                 b'QUST', b'TACT', b'TERM', b'WEAP'}
 
 #------------------------------------------------------------------------------
-# Destructible Patcher
+# Import Destructible
 #------------------------------------------------------------------------------
-destructible_types = {'ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CONT', 'CREA',
-                      'DOOR', 'FURN', 'KEYM', 'LIGH', 'MISC', 'MSTT', 'NPC_',
-                      'PROJ', 'TACT', 'TERM', 'WEAP'}
+destructible_types = {b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CONT',
+                      b'CREA', b'DOOR', b'FURN', b'KEYM', b'LIGH', b'MISC',
+                      b'MSTT', b'NPC_', b'PROJ', b'TACT', b'TERM', b'WEAP'}
 
 #------------------------------------------------------------------------------
-# Actor Patchers
+# Import Actors
 #------------------------------------------------------------------------------
 actor_importer_attrs = {
     b'CREA': {
@@ -1066,15 +710,15 @@ actor_importer_attrs = {
         u'NPC.Race': (u'race',),
     },
 }
-actor_types = ('CREA', 'NPC_')
+actor_types = (b'CREA', b'NPC_')
 
 #------------------------------------------------------------------------------
-# Spell Stats Patcher
+# Import Spell Stats
 #------------------------------------------------------------------------------
-spell_stats_attrs = ('eid', 'full', 'cost', 'level', 'spellType',)
+spell_stats_attrs = (u'eid', u'cost', u'level', u'spellType', u'flags')
 
 #------------------------------------------------------------------------------
-# Actor Tweaker
+# Tweak Actors
 #------------------------------------------------------------------------------
 actor_tweaks = {
     u'QuietFeetPatcher',
@@ -1082,27 +726,91 @@ actor_tweaks = {
 }
 
 #------------------------------------------------------------------------------
-# Names Tweaker
+# Tweak Names
 #------------------------------------------------------------------------------
 body_tags = u'HAGPBFE'
 
 #------------------------------------------------------------------------------
-# Relations Patcher
+# Tweak Settings
+#------------------------------------------------------------------------------
+settings_tweaks = {
+    u'GlobalsTweak_Timescale',
+    u'GmstTweak_Camera_ChaseDistance_Fo3',
+    u'GmstTweak_Compass_RecognitionDistance',
+    u'GmstTweak_Actor_UnconsciousnessDuration',
+    u'GmstTweak_Actor_MaxJumpHeight',
+    u'GmstTweak_Camera_PCDeathTime',
+    u'GmstTweak_World_CellRespawnTime',
+    u'GmstTweak_CostMultiplier_Repair_Fo3',
+    u'GmstTweak_Combat_MaxActors',
+    u'GmstTweak_AI_MaxActiveActors',
+    u'GmstTweak_Actor_MaxCompanions',
+    u'GmstTweak_AI_MaxDeadActors',
+    u'GmstTweak_Player_InventoryQuantityPrompt',
+    u'GmstTweak_Gore_CombatDismemberPartChance',
+    u'GmstTweak_Gore_CombatExplodePartChance',
+    u'GmstTweak_LevelDifference_ItemMax',
+    u'GmstTweak_Movement_BaseSpeed',
+    u'GmstTweak_Movement_SneakMultiplier',
+    u'GmstTweak_Combat_VATSPlayerDamageMultiplier',
+    u'GmstTweak_Combat_AutoAimFix',
+    u'GmstTweak_Player_PipBoyLightKeypressDelay',
+    u'GmstTweak_Combat_VATSPlaybackDelay',
+    u'GmstTweak_Combat_NPCDeathXPThreshold',
+    u'GmstTweak_Hacking_MaximumNumberOfWords',
+    u'GmstTweak_Visuals_ShellCameraDistance',
+    u'GmstTweak_Visuals_ShellLitterTime',
+    u'GmstTweak_Visuals_ShellLitterCount',
+    u'GmstTweak_Hacking_TerminalSpeedAdjustment',
+    u'GmstTweak_Player_MaxDraggableWeight',
+    u'GmstTweak_Prompt_Activate_Tes4',
+    u'GmstTweak_Prompt_Open_Tes4',
+    u'GmstTweak_Prompt_Read_Tes4',
+    u'GmstTweak_Prompt_Sit_Tes4',
+    u'GmstTweak_Prompt_Take_Tes4',
+    u'GmstTweak_Prompt_Talk_Tes4',
+}
+
+#------------------------------------------------------------------------------
+# Tweak Assorted
+#------------------------------------------------------------------------------
+##: Mostly mirrored from valda's version - some of these seem to make no sense
+# (e.g. I can't find anything regarding FO3/FNV suffering from the fog bug).
+assorted_tweaks = {
+    u'AssortedTweak_ArmorPlayable',
+    u'AssortedTweak_FogFix',
+    u'AssortedTweak_NoLightFlicker',
+    u'AssortedTweak_WindSpeed',
+    u'AssortedTweak_SetSoundAttenuationLevels',
+    u'AssortedTweak_LightFadeValueFix',
+    u'AssortedTweak_TextlessLSCRs',
+    u'AssortedTweak_PotionWeightMinimum',
+    u'AssortedTweak_UniformGroundcover',
+    u'AssortedTweak_GunsUseISAnimation',
+    u'AssortedTweak_BookWeight',
+}
+##: Taken from valda's version, investigate
+nonplayable_biped_flags = {u'pipboy'}
+not_playable_flag = (u'generalFlags', u'notPlayable')
+static_attenuation_rec_type = b'SOUN'
+
+#------------------------------------------------------------------------------
+# Import Relations
 #------------------------------------------------------------------------------
 relations_attrs = (u'faction', u'mod', u'group_combat_reaction')
-relations_csv_header = u'"%s","%s","%s","%s","%s","%s","%s","%s"\n' % (
+relations_csv_header = (
     _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
     _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'),
     _(u'Group Combat Reaction'))
 relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
 
 #------------------------------------------------------------------------------
-# Enchantment Stats Patcher
+# Import Enchantment Stats
 #------------------------------------------------------------------------------
 ench_stats_attrs = (u'itemType', u'chargeAmount', u'enchantCost', u'flags')
 
 #--------------------------------------------------------------------------
-# Effect Stats Patcher
+# Import Effect Stats
 #--------------------------------------------------------------------------
 mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
                     u'resist_value', u'projectileSpeed', u'cef_enchantment',
@@ -1110,14 +818,14 @@ mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
 
 # Record type to name dictionary
 record_type_name = {
-    'ALCH':_(u'Potions'),
-    'AMMO':_(u'Ammo'),
-    'ARMA':_(u'Armature'),
-    'ARMO':_(u'Armors'),
-    'BOOK':_(u'Books'),
-    'INGR':_(u'Ingredients'),
-    'KEYM':_(u'Keys'),
-    'LIGH':_(u'Lights'),
-    'MISC':_(u'Misc'),
-    'WEAP':_(u'Weapons'),
+    b'ALCH': _(u'Ingestibles'),
+    b'AMMO': _(u'Ammo'),
+    b'ARMA': _(u'Armature'),
+    b'ARMO': _(u'Armors'),
+    b'BOOK': _(u'Books'),
+    b'INGR': _(u'Ingredients'),
+    b'KEYM': _(u'Keys'),
+    b'LIGH': _(u'Lights'),
+    b'MISC': _(u'Misc'),
+    b'WEAP': _(u'Weapons'),
 }

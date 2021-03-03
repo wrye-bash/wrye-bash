@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,13 +24,11 @@
 # Imports ---------------------------------------------------------------------
 #--Standard
 from __future__ import division, print_function
-import StringIO
+
 import cPickle as pickle  # PY3
-import chardet
 import codecs
 import collections
 import copy
-import csv
 import datetime
 import errno
 import os
@@ -47,19 +44,21 @@ import textwrap
 import traceback
 from binascii import crc32
 from functools import partial
-from itertools import chain
+from itertools import chain, izip
+from keyword import iskeyword
+from operator import attrgetter
+from urllib import quote
+
+import chardet
+
 # Internal
 from . import exception
-
-# PY3
-try:
-    from urllib.parse import quote
-except ImportError:
-    from urllib import quote
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
 struct_unpack = struct.unpack
+struct_error = struct.error
+struct_calcsize = struct.calcsize
 
 #-- To make commands executed with Popen hidden
 startupinfo = None
@@ -80,29 +79,29 @@ except ImportError:
 #  This is only useful when reading fields from mods, as the encoding is not
 #  known.  For normal filesystem interaction, these functions are not needed
 encodingOrder = (
-    'ascii',    # Plain old ASCII (0-127)
-    'gbk',      # GBK (simplified Chinese + some)
-    'cp932',    # Japanese
-    'cp949',    # Korean
-    'cp1252',   # English (extended ASCII)
-    'utf8',
-    'cp500',
-    'UTF-16LE',
-    )
+    u'ascii',    # Plain old ASCII (0-127)
+    u'gbk',      # GBK (simplified Chinese + some)
+    u'cp932',    # Japanese
+    u'cp949',    # Korean
+    u'cp1252',   # English (extended ASCII)
+    u'utf8',
+    u'cp500',
+    u'UTF-16LE',
+)
 if os.name == u'nt':
-    encodingOrder += ('mbcs',)
+    encodingOrder += (u'mbcs',)
 
 _encodingSwap = {
     # The encoding detector reports back some encodings that
     # are subsets of others.  Use the better encoding when
     # given the option
     # 'reported encoding':'actual encoding to use',
-    'GB2312': 'gbk',        # Simplified Chinese
-    'SHIFT_JIS': 'cp932',   # Japanese
-    'windows-1252': 'cp1252',
-    'windows-1251': 'cp1251',
-    'utf-8': 'utf8',
-    }
+    u'GB2312': u'gbk',        # Simplified Chinese
+    u'SHIFT_JIS': u'cp932',   # Japanese
+    u'windows-1252': u'cp1252',
+    u'windows-1251': u'cp1251',
+    u'utf-8': u'utf8',
+}
 
 # Preferred encoding to use when decoding/encoding strings in plugin files
 # None = auto
@@ -116,25 +115,24 @@ def getbestencoding(bitstream):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heuristics)"""
     result = chardet.detect(bitstream)
-    encoding_,confidence = result['encoding'],result['confidence']
+    encoding_, confidence = result[u'encoding'], result[u'confidence']
     encoding_ = _encodingSwap.get(encoding_,encoding_)
     ## Debug: uncomment the following to output stats on encoding detection
-    #print
-    #print '%s: %s (%s)' % (repr(bitstream),encoding,confidence)
+    #print('%s: %s (%s)' % (repr(bitstream),encoding,confidence))
     return encoding_,confidence
 
-def decode(byte_str, encoding=None, avoidEncodings=()):
+def decoder(byte_str, encoding=None, avoidEncodings=()):
     """Decode a byte string to unicode, using heuristics on encoding."""
     if isinstance(byte_str, unicode) or byte_str is None: return byte_str
     # Try the user specified encoding first
-    # TODO(ut) monkey patch
-    if encoding == 'cp65001':
-        encoding = 'utf-8'
     if encoding:
+        # TODO(ut) monkey patch
+        if encoding == u'cp65001':
+            encoding = u'utf-8'
         try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
-    encoding,confidence = getbestencoding(byte_str)
+    encoding, confidence = getbestencoding(byte_str)
     if encoding and confidence >= 0.55 and (
             encoding not in avoidEncodings or confidence == 1.0) and (
             encoding not in _blocked_encodings):
@@ -149,7 +147,7 @@ def decode(byte_str, encoding=None, avoidEncodings=()):
 def encode(text_str, encodings=encodingOrder, firstEncoding=None,
            returnEncoding=False):
     """Encode unicode string to byte string, using heuristics on encoding."""
-    if isinstance(text_str, str) or text_str is None:
+    if isinstance(text_str, bytes) or text_str is None:
         if returnEncoding: return text_str, None
         else: return text_str
     # Try user specified encoding
@@ -244,10 +242,7 @@ def round_size(size_bytes):
 # Helpers ---------------------------------------------------------------------
 def sortFiles(files, __split=os.path.split):
     """Utility function. Sorts files by directory, then file name."""
-    sort_keys_dict = dict((x, __split(x.lower())) for x in files)
-    return sorted(files, key=sort_keys_dict.__getitem__)
-
-CBash = 0
+    return sorted(files, key=lambda x: __split(x.lower()))
 
 # PY3: Dicts are ordered by default on py3.7, so drop this in favor of just
 # collections.defaultdict
@@ -293,10 +288,6 @@ class CIstr(unicode):
     def __repr__(self):
         return u'%s(%s)' % (type(self).__name__, super(CIstr, self).__repr__())
 
-def _ci_str(maybe_str):
-    """dict keys can be any hashable object - only call CIstr if str"""
-    return CIstr(maybe_str) if isinstance(maybe_str, basestring) else maybe_str
-
 class LowerDict(dict):
     """Dictionary that transforms its keys to CIstr instances.
     See: https://stackoverflow.com/a/43457369/281545
@@ -305,49 +296,62 @@ class LowerDict(dict):
 
     @staticmethod # because this doesn't make sense as a global function.
     def _process_args(mapping=(), **kwargs):
-        if hasattr(mapping, 'iteritems'):
-            mapping = getattr(mapping, 'iteritems')()
-        return ((_ci_str(k), v) for k, v in
-                chain(mapping, getattr(kwargs, 'iteritems')()))
+        if hasattr(mapping, u'iteritems'): # PY3: items
+            mapping = getattr(mapping, u'iteritems')()
+        # PY3: fix mess below - kwargs keys are bytes im py2
+        return ((CIstr(k) if type(k) is unicode else k, v) for k, v in chain(
+            ((k.decode(u'ascii') if type(k) is bytes else k, v) for k, v in
+             mapping),
+            ((k.decode(u'ascii') if type(k) is bytes else k, v) for k, v in
+             getattr(kwargs, u'iteritems')())))
 
     def __init__(self, mapping=(), **kwargs):
         # dicts take a mapping or iterable as their optional first argument
         super(LowerDict, self).__init__(self._process_args(mapping, **kwargs))
 
     def __getitem__(self, k):
-        return super(LowerDict, self).__getitem__(_ci_str(k))
+        return super(LowerDict, self).__getitem__(
+            CIstr(k) if type(k) is unicode else k)
 
     def __setitem__(self, k, v):
-        return super(LowerDict, self).__setitem__(_ci_str(k), v)
+        return super(LowerDict, self).__setitem__(
+            CIstr(k) if type(k) is unicode else k, v)
 
     def __delitem__(self, k):
-        return super(LowerDict, self).__delitem__(_ci_str(k))
+        return super(LowerDict, self).__delitem__(
+            CIstr(k) if type(k) is unicode else k)
 
     def copy(self): # don't delegate w/ super - dict.copy() -> dict :(
         return type(self)(self)
 
     def get(self, k, default=None):
-        return super(LowerDict, self).get(_ci_str(k), default)
+        return super(LowerDict, self).get(
+            CIstr(k) if type(k) is unicode else k, default)
 
     def setdefault(self, k, default=None):
-        return super(LowerDict, self).setdefault(_ci_str(k), default)
+        return super(LowerDict, self).setdefault(
+            CIstr(k) if type(k) is unicode else k, default)
 
     __no_default = object()
     def pop(self, k, v=__no_default):
         if v is LowerDict.__no_default:
             # super will raise KeyError if no default and key does not exist
-            return super(LowerDict, self).pop(_ci_str(k))
-        return super(LowerDict, self).pop(_ci_str(k), v)
+            return super(LowerDict, self).pop(
+                CIstr(k) if type(k) is unicode else k)
+        return super(LowerDict, self).pop(
+            CIstr(k) if type(k) is unicode else k, v)
 
     def update(self, mapping=(), **kwargs):
         super(LowerDict, self).update(self._process_args(mapping, **kwargs))
 
     def __contains__(self, k):
-        return super(LowerDict, self).__contains__(_ci_str(k))
+        return super(LowerDict, self).__contains__(
+            CIstr(k) if type(k) is unicode else k)
 
     @classmethod
     def fromkeys(cls, keys, v=None):
-        return super(LowerDict, cls).fromkeys((_ci_str(k) for k in keys), v)
+        return super(LowerDict, cls).fromkeys((CIstr(k) if type(
+            k) is unicode else k for k in keys), v)
 
     def __repr__(self):
         return u'%s(%s)' % (
@@ -373,14 +377,30 @@ class OrderedLowerDict(LowerDict, collections.OrderedDict):
     """LowerDict that inherits from OrdererdDict."""
     __slots__ = () # no __dict__ - that would be redundant
 
-# sio - StringIO wrapper so it uses the 'with' statement, so they can be used
-#  in the same functions that accept files as input/output as well.  Really,
-#  StringIO objects don't need to 'close' ever, since the data is unallocated
-#  once the object is destroyed.
 #------------------------------------------------------------------------------
-class sio(StringIO.StringIO):
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_value, exc_traceback): self.close()
+# cache attrgetter objects
+class _AttrGettersCache(dict):
+    def __missing__(self, attr_name):
+        return self.setdefault(attr_name, attrgetter(attr_name))
+
+attrgetter_cache = _AttrGettersCache()
+
+# noinspection PyDefaultArgument
+def setattr_deep(obj, attr, value, __attrgetters=attrgetter_cache,
+        __split_cache={}):
+    try:
+        parent_attr, leaf_attr = __split_cache[attr]
+    except KeyError:
+        dot_dex = attr.rfind(u'.')
+        if dot_dex > 0:
+            parent_attr = attr[:dot_dex]
+            leaf_attr = attr[dot_dex + 1:]
+        else:
+            parent_attr = u''
+            leaf_attr = attr
+        __split_cache[attr] = parent_attr, leaf_attr
+    setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
+        leaf_attr, value)
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -422,8 +442,8 @@ def GPathPurge():
         2) Prior to building a bashed patch
         3) Prior to saving settings files
     """
-    for key in _gpaths.keys():
-        # Using .keys() allows use to modify the dictionary while iterating
+    for key in list(_gpaths):
+        # Using list() allows us to modify the dictionary while iterating
         if sys.getrefcount(_gpaths[key]) == 2:
             # 1 for the reference in the _gpaths dictionary,
             # 1 for the temp reference passed to sys.getrefcount
@@ -431,28 +451,23 @@ def GPathPurge():
             del _gpaths[key]
 
 #------------------------------------------------------------------------------
+_conv_seps = None
 class Path(object):
     """Paths are immutable objects that represent file directory paths.
      May be just a directory, filename or full path."""
 
     #--Class Vars/Methods -------------------------------------------
-    sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
+    sys_fs_enc = sys.getfilesystemencoding() or u'mbcs'
     invalid_chars_re = re.compile(u'' r'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
 
     @staticmethod
-    def getNorm(name):
-        """Return the normpath for specified name/path object."""
-        if isinstance(name,Path): return name._s
-        elif not name: return name
-        elif isinstance(name,str): name = decode(name)
-        return os.path.normpath(name)
-
-    @staticmethod
-    def __getCase(name):
-        """Return the normpath+normcase for specified name/path object."""
-        if not name: return name
-        if isinstance(name, str): name = decode(name)
-        return os.path.normcase(os.path.normpath(name))
+    def getNorm(str_or_path):
+        # type: (unicode|bytes|Path) -> unicode
+        """Return the normpath for specified basename/Path object."""
+        if isinstance(str_or_path, Path): return str_or_path._s
+        elif not str_or_path: return u'' # and not maybe b''
+        elif isinstance(str_or_path, bytes): str_or_path = decoder(str_or_path)
+        return os.path.normpath(str_or_path)
 
     @staticmethod
     def getcwd():
@@ -471,26 +486,32 @@ class Path(object):
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
-    __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
-                 '_cext', '_sbody')
+    __slots__ = (u'_s', u'_cs', u'_sroot', u'_shead', u'_stail', u'_ext',
+                 u'_cext', u'_sbody')
 
-    def __init__(self, name):
-        """Initialize."""
-        if isinstance(name,Path):
-            self.__setstate__(name._s)
-        else:
-            self.__setstate__(name)
+    def __init__(self, norm_str):
+        # type: (unicode) -> None
+        """Initialize with unicode - call only in GPath."""
+        self._s = _s = norm_str # path must be normalized
+        self._cs = _s.lower()
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
         return self._s
 
-    def __setstate__(self,norm):
+    def __setstate__(self, norm):
         """Used by unpickler. Reconstruct _cs."""
-        # Older pickle files stored filename in str, not unicode
-        if not isinstance(norm,unicode): norm = decode(norm)
+        # Older pickle files stored filename in bytes, not unicode
+        norm = decoder(norm)  # decoder will check for unicode
         self._s = norm
-        self._cs = os.path.normcase(self._s)
+        # Reconstruct _cs, lower() should suffice
+        global _conv_seps
+        try:
+            self._cs = _conv_seps(norm.lower())
+        except TypeError:
+            from .env import convert_separators
+            _conv_seps = convert_separators
+            self._cs = _conv_seps(norm.lower())
 
     def __len__(self):
         return len(self._s)
@@ -498,7 +519,7 @@ class Path(object):
     def __repr__(self):
         return u'bolt.Path(%r)' % self._s
 
-    def __unicode__(self):
+    def __str__(self):
         return self._s
 
     #--Properties--------------------------------------------------------
@@ -546,13 +567,13 @@ class Path(object):
     @property
     def csbody(self):
         """For alpha\beta.gamma returns beta as string in normalized case."""
-        return os.path.normcase(self.sbody)
+        return self.sbody.lower()
 
     #--Head, tail
     @property
     def headTail(self):
         """For alpha\beta.gamma returns (alpha,beta.gamma)"""
-        return map(GPath,(self.shead,self.stail))
+        return [GPath(self.shead), GPath(self.stail)]
     @property
     def head(self):
         """For alpha\beta.gamma, returns alpha."""
@@ -585,7 +606,7 @@ class Path(object):
         try:
             return self._cext
         except AttributeError:
-            self._cext = os.path.normcase(self.ext)
+            self._cext = self.ext.lower()
             return self._cext
     @property
     def temp(self):
@@ -603,20 +624,20 @@ class Path(object):
         except UnicodeDecodeError:
             try:
                 traceback.print_exc()
-                print('Trying to pass temp dir in...')
+                print(u'Trying to pass temp dir in...')
                 tempdir = unicode(tempfile.gettempdir(), Path.sys_fs_enc)
                 return GPath(tempfile.mkdtemp(prefix=prefix, dir=tempdir))
             except UnicodeDecodeError:
                 try:
                     traceback.print_exc()
-                    print('Trying to encode temp dir prefix...')
+                    print(u'Trying to encode temp dir prefix...')
                     return GPath(tempfile.mkdtemp(
                         prefix=prefix.encode(Path.sys_fs_enc)).decode(
                         Path.sys_fs_enc))
                 except:
                     traceback.print_exc()
-                    print('Failed to create tmp dir, Bash will not function ' \
-                          'correctly.')
+                    print(u'Failed to create tmp dir, Bash will not function '
+                          u'correctly.')
 
     @staticmethod
     def baseTempDir():
@@ -629,13 +650,14 @@ class Path(object):
 
     #--size, atime, ctime
     @property
-    def size(self):
+    def psize(self):
         """Size of file or directory."""
         if self.isdir():
             join = os.path.join
             op_size = os.path.getsize
             try:
-                return sum([sum(map(op_size,map(lambda z: join(x,z),files))) for x,y,files in _walk(self._s)])
+                return sum(sum(op_size(join(x, f)) for f in files)
+                           for x, _y, files in _walk(self._s))
             except ValueError:
                 return 0
         else:
@@ -651,18 +673,18 @@ class Path(object):
     #--Mtime
     def _getmtime(self):
         """Return mtime for path."""
-        return int(os.path.getmtime(self._s))
+        return os.path.getmtime(self._s)
     def _setmtime(self, mtime):
-        os.utime(self._s, (self.atime, int(mtime)))
-    mtime = property(_getmtime, _setmtime, doc="Time file was last modified.")
+        os.utime(self._s, (self.atime, mtime))
+    mtime = property(_getmtime, _setmtime, doc=u'Time file was last modified.')
 
     def size_mtime(self):
         lstat = os.lstat(self._s)
-        return lstat.st_size, int(lstat.st_mtime)
+        return lstat.st_size, lstat.st_mtime
 
     def size_mtime_ctime(self):
         lstat = os.lstat(self._s)
-        return lstat.st_size, int(lstat.st_mtime), lstat.st_ctime
+        return lstat.st_size, lstat.st_mtime, lstat.st_ctime
 
     @property
     def stat(self):
@@ -690,23 +712,27 @@ class Path(object):
     def crc(self):
         """Calculates and returns crc value for self."""
         crc = 0
-        with self.open('rb') as ins:
-            for block in iter(partial(ins.read, 2097152), ''):
+        with self.open(u'rb') as ins:
+            for block in iter(partial(ins.read, 2097152), b''):
                 crc = crc32(block, crc) # 2MB at a time, probably ok
         return crc & 0xffffffff
 
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
     def __add__(self,other):
+        # you can't add to None: ValueError - that's good
         return GPath(self._s + Path.getNorm(other))
     def join(*args):
-        norms = [Path.getNorm(x) for x in args]
+        norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
     def list(self):
         """For directory: Returns list of files."""
-        if not os.path.exists(self._s): return []
-        return [GPath_no_norm(x) for x in os.listdir(self._s)]
+        try:
+            return [GPath_no_norm(x) for x in os.listdir(self._s)]
+        except OSError as e:
+            if e.errno != errno.ENOENT: raise
+            return []
 
     def walk(self,topdown=True,onerror=None,relative=False):
         """Like os.walk."""
@@ -722,22 +748,7 @@ class Path(object):
                        [GPath_no_norm(x) for x in dirs],
                        [GPath_no_norm(x) for x in files])
 
-    def split(self):
-        """Splits the path into each of it's sub parts.  IE: C:\Program Files\Bethesda Softworks
-           would return ['C:','Program Files','Bethesda Softworks']"""
-        dirs = []
-        drive, path = os.path.splitdrive(self.s)
-        path = path.strip(os.path.sep)
-        l,r = os.path.split(path)
-        while l != u'':
-            dirs.append(r)
-            l,r = os.path.split(l)
-        dirs.append(r)
-        if drive != u'':
-            dirs.append(drive)
-        dirs.reverse()
-        return dirs
-    def relpath(self,path):
+    def relpath(self,path): # os.path.relpath(p,[s]): AttributeError if s==None
         return GPath(os.path.relpath(self._s,Path.getNorm(path)))
 
     def drive(self):
@@ -784,10 +795,10 @@ class Path(object):
                         try: chmod(rootJoin(filename),stat_flags)
                         except: pass
 
-    def open(self,*args,**kwdargs):
+    def open(self,*args,**kwdargs): # PY3: drop - open() accepts encoding now
         if self.shead and not os.path.exists(self.shead):
             os.makedirs(self.shead)
-        if 'encoding' in kwdargs:
+        if u'encoding' in kwdargs:
             return codecs.open(self._s,*args,**kwdargs)
         else:
             return open(self._s,*args,**kwdargs)
@@ -809,7 +820,7 @@ class Path(object):
         except OSError:
             self.clearRO()
             os.removedirs(self._s)
-    def rmtree(self,safety='PART OF DIRECTORY NAME'):
+    def rmtree(self,safety=u'PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
         if self.isdir() and safety and safety.lower() in self._cs:
             shutil.rmtree(self._s,onerror=Path._onerror)
@@ -819,9 +830,9 @@ class Path(object):
         """Starts file as if it had been doubleclicked in file explorer."""
         if self.cext == u'.exe':
             if not exeArgs:
-                subprocess.Popen([self.s], close_fds=True)
+                subprocess.Popen([self._s], close_fds=True)
             else:
-                subprocess.Popen(exeArgs, executable=self.s, close_fds=True)
+                subprocess.Popen(exeArgs, executable=self._s, close_fds=True)
         else:
             os.startfile(self._s)
     def copyTo(self,destName):
@@ -868,9 +879,9 @@ class Path(object):
         try:
             self._s.encode(u'ascii')
             class _noop_file(object):
-                def __init__(self,path):
-                    self.path = path
-                def __enter__(self): return self.path
+                def __init__(self, _fpath):
+                    self._fpath = _fpath
+                def __enter__(self): return self._fpath
                 def __exit__(self, exc_type, exc_value, exc_traceback): pass
             return _noop_file(self)
         except UnicodeEncodeError:
@@ -914,44 +925,52 @@ class Path(object):
                     pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
-    # directly compare to basestring and Path and will blow for anything else
+    # directly compare to unicode|bytes|Path|None and will blow for anything
+    # else
     def __hash__(self):
         return hash(self._cs)
     def __eq__(self, other):
         if isinstance(other, Path):
             return self._cs == other._cs
-        else:
-            return self._cs == Path.__getCase(other)
+        # get unicode or None - will blow on most other types - identical below
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs == (os.path.normpath(dec).lower() if dec else dec)
     def __ne__(self, other):
         if isinstance(other, Path):
             return self._cs != other._cs
-        else:
-            return self._cs != Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs != (os.path.normpath(dec).lower() if dec else dec)
     def __lt__(self, other):
         if isinstance(other, Path):
             return self._cs < other._cs
-        else:
-            return self._cs < Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs < (os.path.normpath(dec).lower() if dec else dec)
     def __ge__(self, other):
         if isinstance(other, Path):
             return self._cs >= other._cs
-        else:
-            return self._cs >= Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs >= (os.path.normpath(dec).lower() if dec else dec)
     def __gt__(self, other):
         if isinstance(other, Path):
             return self._cs > other._cs
-        else:
-            return self._cs > Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs > (os.path.normpath(dec).lower() if dec else dec)
     def __le__(self, other):
         if isinstance(other, Path):
             return self._cs <= other._cs
-        else:
-            return self._cs <= Path.__getCase(other)
+        dec = other if isinstance(other, unicode) else decoder(other)
+        return self._cs <= (os.path.normpath(dec).lower() if dec else dec)
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
-    cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath.s
+    cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath
     subprocess.call(cmd, startupinfo=startupinfo)
+
+# TMP functions to deprecate Paths functionality for simple filenames - SLOW!
+def cext_(string_val):
+    return os.path.splitext(string_val)[-1].lower()
+def body_(string_val):
+    return os.path.basename(os.path.splitext(string_val)[0])
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
@@ -959,40 +978,9 @@ reUnixNewLine = re.compile(u'' r'(?<!\r)\n', re.U)
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class CsvReader(object):
-    """For reading csv files. Handles comma, semicolon and tab separated (excel) formats.
-       CSV files must be encoded in UTF-8"""
-    @staticmethod
-    def utf_8_encoder(unicode_csv_data):
-        for line in unicode_csv_data:
-            yield line.encode('utf8')
-
-    def __init__(self,path):
-        self.ins = path.open('rb',encoding='utf-8-sig')
-        excel_fmt = ('excel','excel-tab')[u'\t' in self.ins.readline()]
-        if excel_fmt == 'excel':
-            delimiter = (',',';')[u';' in self.ins.readline()]
-            self.ins.seek(0)
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),excel_fmt,delimiter=delimiter)
-        else:
-            self.ins.seek(0)
-            self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),excel_fmt)
-
-    def __enter__(self): return self
-    def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
-
-    def __iter__(self):
-        for iter in self.reader:
-            yield [unicode(x,'utf8') for x in iter]
-
-    def close(self):
-        self.reader = None
-        self.ins.close()
-
-#------------------------------------------------------------------------------
 class Flags(object):
     """Represents a flag field."""
-    __slots__ = ['_names','_field']
+    __slots__ = [u'_names', u'_field', u'_unknown_is_unused']
 
     @staticmethod
     def getNames(*names):
@@ -1001,30 +989,42 @@ class Flags(object):
         Names are either strings or (index,name) tuples.
         E.g., Flags.getNames('isQuest','isHidden',None,(4,'isDark'),(7,'hasWater'))"""
         namesDict = {}
-        for index,name in enumerate(names):
-            if isinstance(name,tuple):
-                namesDict[name[1]] = name[0]
-            elif name: #--skip if "name" is 0 or None
-                namesDict[name] = index
+        for index,flg_name in enumerate(names):
+            if isinstance(flg_name,tuple):
+                namesDict[flg_name[1]] = flg_name[0]
+            elif flg_name: #--skip if "name" is 0 or None
+                namesDict[flg_name] = index
         return namesDict
 
     #--Generation
-    def __init__(self,value=0,names=None):
-        """Initialize. Attrs, if present, is mapping of attribute names to indices. See getAttrs()"""
-        object.__setattr__(self,'_field',int(value))
-        object.__setattr__(self,'_names',names or {})
+    def __init__(self, value=0, names=None, unknown_is_unused=False):
+        """Initialize. Attrs, if present, is mapping of attribute names to
+        indices. unknown_is_unused will discard unknown flags."""
+        object.__setattr__(self, u'_names', names or {})
+        object.__setattr__(self, u'_field', int(value))
+        object.__setattr__(self, u'_unknown_is_unused', unknown_is_unused)
+        self._clean_unused_flags()
 
     def __call__(self,newValue=None):
         """Returns a clone of self, optionally with new value."""
         if newValue is not None:
-            return Flags(int(newValue),self._names)
+            return Flags(int(newValue), self._names, self._unknown_is_unused)
         else:
-            return Flags(self._field,self._names)
+            return Flags(self._field, self._names, self._unknown_is_unused)
 
-    def __deepcopy__(self,memo={}):
-        newFlags=Flags(self._field,self._names)
-        memo[id(self)] = newFlags
+    def __deepcopy__(self, memo):
+        newFlags = Flags(self._field, self._names, self._unknown_is_unused)
+        memo[id(self)] = newFlags ##: huh?
         return newFlags
+
+    def _clean_unused_flags(self):
+        """Removes all unknown flags if that option was set in __init__."""
+        if self._unknown_is_unused:
+            final_flags = 0
+            for flg_name, flg_idx in self._names.iteritems():
+                if getattr(self, flg_name):
+                    final_flags |= 1 << flg_idx
+            self._field = final_flags
 
     #--As hex string
     def hex(self):
@@ -1032,13 +1032,17 @@ class Flags(object):
         return u'%08X' % (self._field,)
     def dump(self):
         """Returns value for packing"""
+        self._clean_unused_flags()
         return self._field
 
     #--As int
     def __int__(self):
         """Return as integer value for saving."""
         return self._field
-    def __getstate__(self):
+    def __index__(self):
+        """Same as __int__, needed for packing in py3."""
+        return self._field
+    def __getstate__(self): ##: do we even use this?
         """Return values for pickling."""
         return self._field, self._names
     def __setstate__(self,fields):
@@ -1058,21 +1062,21 @@ class Flags(object):
         self._field = ((self._field & ~mask) | value)
 
     #--As class
-    def __getattr__(self,name):
+    def __getattr__(self, attr_key):
         """Get value by flag name. E.g. flags.isQuestItem"""
         try:
-            names = object.__getattribute__(self,'_names')
-            index = names[name]
-            return (object.__getattribute__(self,'_field') >> index) & 1 == 1
+            names = object.__getattribute__(self, u'_names')
+            index = names[attr_key]
+            return (object.__getattribute__(self, u'_field') >> index) & 1 == 1
         except KeyError:
-            raise AttributeError(name)
+            raise AttributeError(attr_key)
 
-    def __setattr__(self,name,value):
+    def __setattr__(self, attr_key, value):
         """Set value by flag name. E.g., flags.isQuestItem = False"""
-        if name in ('_field','_names'):
-            object.__setattr__(self,name,value)
+        if attr_key in (u'_field', u'_names'):
+            object.__setattr__(self, attr_key, value)
         else:
-            self.__setitem__(self._names[name],value)
+            self.__setitem__(self._names[attr_key], value)
 
     #--Native operations
     def __eq__( self, other):
@@ -1110,8 +1114,8 @@ class Flags(object):
 
     def getTrueAttrs(self):
         """Returns attributes that are true."""
-        trueNames = [name for name in self._names if getattr(self,name)]
-        trueNames.sort(key = lambda xxx: self._names[xxx])
+        trueNames = [flname for flname in self._names if getattr(self, flname)]
+        trueNames.sort(key=lambda xxx: self._names[xxx])
         return tuple(trueNames)
 
     def __repr__(self):
@@ -1125,40 +1129,36 @@ class DataDict(object):
     dictionary is its 'data' attribute."""
 
     def __contains__(self,key):
-        return key in self.data
+        return key in self._data
     def __getitem__(self,key):
         """Return value for key or raise KeyError if not present."""
-        return self.data[key]
+        return self._data[key]
     def __setitem__(self,key,value):
-        self.data[key] = value
+        self._data[key] = value
     def __delitem__(self,key):
-        del self.data[key]
+        del self._data[key]
     def __len__(self):
-        return len(self.data)
-    def setdefault(self,key,default):
-        return self.data.setdefault(key,default)
-    def keys(self):
-        return self.data.keys()
+        return len(self._data)
+    def __iter__(self):
+        return iter(self._data)
     def values(self):
-        return self.data.values()
+        return self._data.values()
     def items(self):
-        return self.data.items()
+        return self._data.items()
     def get(self,key,default=None):
-        return self.data.get(key,default)
+        return self._data.get(key, default)
     def pop(self,key,default=None):
-        return self.data.pop(key,default)
+        return self._data.pop(key, default)
     def iteritems(self):
-        return self.data.iteritems()
-    def iterkeys(self):
-        return self.data.iterkeys()
+        return self._data.iteritems()
     def itervalues(self):
-        return self.data.itervalues()
+        return self._data.itervalues()
 
 #------------------------------------------------------------------------------
 class AFile(object):
     """Abstract file, supports caching - beta."""
     _null_stat = (-1, None)
-    __slots__ = (u'_file_key', u'_file_size', u'_file_mod_time')
+    __slots__ = (u'_file_key', u'fsize', u'_file_mod_time')
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
@@ -1167,7 +1167,7 @@ class AFile(object):
         #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
             self._reset_cache(self._stat_tuple(), load_cache)
-        except OSError:
+        except (OSError, IOError):
             if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
 
@@ -1177,13 +1177,19 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self):
-        """Check cache, reset it if needed. Return True if reset else False."""
+    def do_update(self, raise_on_error=False):
+        """Check cache, reset it if needed. Return True if reset else False.
+        If the stat call fails and this instance was previously stat'ed we
+        consider the file deleted and return True except if raise_on_error is
+        True, whereupon raise the OSError we got in stat(). If raise_on_error
+        is False user must check if file exists."""
         try:
             stat_tuple = self._stat_tuple()
-        except OSError:
+        except (OSError, IOError): # PY3: FileNotFoundError case?
+            file_was_stated = self._file_changed(self._null_stat)
             self._reset_cache(self._null_stat, load_cache=False)
-            return False # we should not call do_update on deleted files
+            if raise_on_error: raise
+            return file_was_stated # file previously existed, we need to update
         if self._file_changed(stat_tuple):
             self._reset_cache(stat_tuple, load_cache=True)
             return True
@@ -1195,143 +1201,17 @@ class AFile(object):
         return self._file_changed(self._stat_tuple())
 
     def _file_changed(self, stat_tuple):
-        return (self._file_size, self._file_mod_time) != stat_tuple
+        return (self.fsize, self._file_mod_time) != stat_tuple
 
     def _reset_cache(self, stat_tuple, load_cache):
-        """Reset cache flags (size, mtime,...) and possibly reload the cache.
+        """Reset cache flags (fsize, mtime,...) and possibly reload the cache.
         :param load_cache: if True either load the cache (header in Mod and
         SaveInfo) or reset it so it gets reloaded later
         """
-        self._file_size, self._file_mod_time = stat_tuple
+        self.fsize, self._file_mod_time = stat_tuple
 
     def __repr__(self): return u'%s<%s>' % (self.__class__.__name__,
                                             self.abs_path.stail)
-
-#------------------------------------------------------------------------------
-from collections import MutableSet
-class OrderedSet(list, MutableSet):
-    """A set like object, that remembers the order items were added to it.
-       Since it has order, a few list functions were added as well:
-        - index(value)
-        - __getitem__(index)
-        - __call__ -> to enable 'enumerate'
-       If an item is discarded, then later readded, it will be added
-       to the end of the set.
-    """
-    def update(self, *args, **kwdargs):
-        if kwdargs: raise TypeError(u'update() takes no keyword arguments')
-        for s in args:
-            for e in s:
-                self.add(e)
-
-    def add(self, elem):
-        if elem not in self:
-            self.append(elem)
-    def discard(self, elem):
-        try:
-            self.remove(elem)
-        except ValueError:
-            pass # We want to discard, don't care about missing values
-    def __or__(self,other):
-        left = OrderedSet(self)
-        left.update(other)
-        return left
-    def __repr__(self): return u'OrderedSet%s' % unicode(list(self))[1:-1]
-    def __unicode__(self): return u'{%s}' % unicode(list(self))[1:-1]
-
-#------------------------------------------------------------------------------
-class MemorySet(object):
-    """Specialization of the OrderedSet, where it remembers the order of items
-       event if they're removed.  Also, combining and comparing to other MemorySet's
-       takes this into account:
-        a|b -> returns union of a and b, but keeps the ordering of b where possible.
-               if an item in a was also in b, but deleted, it will be added to the
-               deleted location.
-        a&b -> same as a|b, but only items 'not-deleted' in both a and b are marked
-               as 'not-deleted'
-        a^b -> same as a|b, but only items 'not-deleted' in a but not b, or b but not
-               a are marked as 'not-deleted'
-        a-b -> same as a|b, but any 'not-deleted' items in b are marked as deleted
-
-        a==b -> compares the 'not-deleted' items of the MemorySets.  If both are the same,
-                and in the same order, then they are equal.
-        a!=b -> oposite of a==b
-    """
-    def __init__(self, *args, **kwdargs):
-        self.items = OrderedSet(*args, **kwdargs)
-        self.mask = [True] * len(self.items)
-
-    def add(self,elem):
-        if elem in self.items: self.mask[self.items.index(elem)] = True
-        else:
-            self.items.add(elem)
-            self.mask.append(True)
-    def discard(self,elem):
-        if elem in self.items: self.mask[self.items.index(elem)] = False
-    discarded = property(lambda self: OrderedSet([x for i,x in enumerate(self.items) if not self.mask[i]]))
-
-    def __len__(self): return sum(self.mask)
-    def __iter__(self):
-        for i,elem in enumerate(self.items):
-            if self.mask[i]: yield self.items[i]
-    def __str__(self): return u'{%s}' % (','.join(map(repr,self._items())))
-    def __repr__(self): return u'MemorySet([%s])' % (','.join(map(repr,self._items())))
-    def forget(self, elem):
-        # Permanently remove an item from the list.  Don't remember its order
-        if elem in self.items:
-            idex = self.items.index(elem)
-            self.items.discard(elem)
-            del self.mask[idex]
-
-    def _items(self): return OrderedSet([x for x in self])
-
-    def __or__(self,other):
-        """Return items in self or in other"""
-        discards = (self.discarded-other._items())|(other.discarded-self._items())
-        right = list(other.items)
-        left = list(self.items)
-
-        for idex,elem in enumerate(left):
-            # elem is already in the other one, skip
-            if elem in right: continue
-
-            # Figure out best place to put it
-            if idex == 0:
-                # put it in front
-                right.insert(0,elem)
-            elif idex == len(left)-1:
-                # put in in back
-                right.append(elem)
-            else:
-                # Find out what item it comes after
-                afterIdex = idex-1
-                while afterIdex > 0 and left[afterIdex] not in right:
-                    afterIdex -= 1
-                insertIdex = right.index(left[afterIdex])+1
-                right.insert(insertIdex,elem)
-        ret = MemorySet(right)
-        ret.mask = [x not in discards for x in right]
-        return ret
-    def __and__(self,other):
-        items = self.items & other.items
-        discards = self.discarded | other.discarded
-        ret = MemorySet(items)
-        ret.mask = [x not in discards for x in items]
-        return ret
-    def __sub__(self,other):
-        discards = self.discarded | other._items()
-        ret = MemorySet(self.items)
-        ret.mask = [x not in discards for x in self.items]
-        return ret
-    def __xor__(self,other):
-        items = (self|other).items
-        discards = items - (self._items()^other._items())
-        ret = MemorySet(items)
-        ret.mask = [x not in discards for x in items]
-        return ret
-
-    def __eq__(self,other): return list(self) == list(other)
-    def __ne__(self,other): return list(self) != list(other)
 
 #------------------------------------------------------------------------------
 class MainFunctions(object):
@@ -1347,13 +1227,14 @@ class MainFunctions(object):
         """Initialization."""
         self.funcs = {}
 
-    def add(self,func,key=None):
+    def add(self, func, func_key=None):
         """Add a callable object.
         func - A function or class instance.
-        key - Command line invocation for object (defaults to name of func).
+        func_key - Command line invocation for object (defaults to name of
+        func).
         """
-        key = key or func.__name__
-        self.funcs[key] = func
+        func_key = func_key or func.__name__
+        self.funcs[func_key] = func
         return func
 
     def main(self):
@@ -1361,12 +1242,12 @@ class MainFunctions(object):
         #--Get func
         args = sys.argv[1:]
         attrs = args.pop(0).split(u'.')
-        key = attrs.pop(0)
-        func = self.funcs.get(key)
+        func_key = attrs.pop(0)
+        func = self.funcs.get(func_key)
         if not func:
-            msg = _(u"Unknown function/object: %s") % key
+            msg = _(u'Unknown function/object: %s') % func_key
             try: print(msg)
-            except UnicodeError: print(msg.encode('mbcs'))
+            except UnicodeError: print(msg.encode(u'mbcs'))
             return
         for attr in attrs:
             func = getattr(func,attr)
@@ -1403,16 +1284,16 @@ def mainfunc(func):
 class PickleDict(object):
     """Dictionary saved in a pickle file.
     Note: self.vdata and self.data are not reassigned! (Useful for some clients.)"""
-    def __init__(self,path,readOnly=False):
+    def __init__(self, pkl_path, readOnly=False):
         """Initialize."""
-        self.path = path
-        self.backup = path.backup
+        self._pkl_path = pkl_path
+        self.backup = pkl_path.backup
         self.readOnly = readOnly
         self.vdata = {}
-        self.data = {}
+        self.pickled_data = {}
 
     def exists(self):
-        return self.path.exists() or self.backup.exists()
+        return self._pkl_path.exists() or self.backup.exists()
 
     class Mold(Exception):
         def __init__(self, moldedFile):
@@ -1437,48 +1318,50 @@ class PickleDict(object):
           2: Data read from backup file
         """
         self.vdata.clear()
-        self.data.clear()
+        self.pickled_data.clear()
         cor = cor_name =  None
-        for path in (self.path,self.backup):
+        for path in (self._pkl_path, self.backup):
             if cor is not None:
                 cor.moveTo(cor_name)
                 cor = None
-            if path.exists():
-                try:
-                    with path.open('rb') as ins:
-                        try:
-                            firstPickle = pickle.load(ins)
-                        except ValueError:
-                            cor = path
-                            cor_name = GPath(path.s + u' (%s)' % timestamp() +
-                                    u'.corrupted')
-                            deprint(u'Unable to load %s (moved to "%s")' % (
+            try:
+                with path.open(u'rb') as ins:
+                    try:
+                        firstPickle = pickle.load(ins)
+                    except ValueError:
+                        cor = path
+                        cor_name = GPath(
+                            u'%s (%s).corrupted' % (path, timestamp()))
+                        deprint(u'Unable to load %s (will be moved to "%s")' %(
                                 path, cor_name.tail), traceback=True)
-                            continue # file corrupt - try next file
-                        if firstPickle == 'VDATA2':
-                            self.vdata.update(pickle.load(ins))
-                            self.data.update(pickle.load(ins))
-                        else:
-                            raise PickleDict.Mold(path)
-                    return 1 + (path == self.backup)
-                except (EOFError, ValueError):
-                    pass
+                        continue  # file corrupt - try next file
+                    if firstPickle == b'VDATA2':
+                        self.vdata.update(pickle.load(ins))
+                        self.pickled_data.update(pickle.load(ins))
+                    else:
+                        raise PickleDict.Mold(path)
+                return 1 + (path == self.backup)
+            except (OSError, IOError, EOFError, ValueError,
+                    pickle.UnpicklingError): #PY3:FileNotFound
+                pass
+        else:
+            if cor is not None:
+                cor.moveTo(cor_name)
         #--No files and/or files are corrupt
         return 0
 
     def save(self):
         """Save to pickle file.
 
-        Three objects are writen - a version string and the vdata and data
-        dictionaries, in this order. Current version string is VDATA2.
-        """
+        Three objects are writen - a version string and the vdata and
+        pickled_data dictionaries, in this order. Current version string is
+        VDATA2."""
         if self.readOnly: return False
         #--Pickle it
-        self.vdata['boltPaths'] = True # needed so pre 307 versions don't blow
-        with self.path.temp.open('wb') as out:
-            for data in ('VDATA2',self.vdata,self.data):
-                pickle.dump(data,out,-1)
-        self.path.untemp(doBackup=True)
+        with self._pkl_path.temp.open(u'wb') as out:
+            for pkl in (b'VDATA2', self.vdata, self.pickled_data):
+                pickle.dump(pkl, out, -1)
+        self._pkl_path.untemp(doBackup=True)
         return True
 
 #------------------------------------------------------------------------------
@@ -1502,10 +1385,10 @@ class Settings(DataDict):
             res = dictFile.load()
             self.cleanSave = res == 0 # no data read - do not attempt to read on save
             self.vdata = dictFile.vdata.copy()
-            self.data = dictFile.data.copy()
+            self._data = dictFile.pickled_data.copy()
         else:
             self.vdata = {}
-            self.data = {}
+            self._data = {}
         self.defaults = {}
         self.changed = set()
         self.deleted = set()
@@ -1513,9 +1396,9 @@ class Settings(DataDict):
     def loadDefaults(self, default_settings):
         """Add default settings to dictionary. Will not replace values that are already set."""
         self.defaults = default_settings
-        for key in default_settings.keys():
-            if key not in self.data:
-                self.data[key] = copy.deepcopy(default_settings[key])
+        for key in default_settings: # PY3: ChainMap?
+            if key not in self:
+                self[key] = copy.deepcopy(default_settings[key])
 
     def save(self):
         """Save to pickle file. Only key/values marked as changed are saved."""
@@ -1524,89 +1407,115 @@ class Settings(DataDict):
         # on a clean save ignore BashSettings.dat.bak possibly corrupt
         if not self.cleanSave: dictFile.load()
         dictFile.vdata = self.vdata.copy()
-        for key in self.deleted:
-            dictFile.data.pop(key,None)
-        for key in self.changed:
-            if self.data[key] == self.defaults.get(key,None):
-                dictFile.data.pop(key,None)
+        for del_key in self.deleted:
+            dictFile.pickled_data.pop(del_key, None)
+        for changed_key in self.changed:
+            if self[changed_key] == self.defaults.get(changed_key, None):
+                dictFile.pickled_data.pop(changed_key, None)
             else:
-                dictFile.data[key] = self.data[key]
+                dictFile.pickled_data[changed_key] = self[changed_key]
         dictFile.save()
 
     def setChanged(self,key):
         """Marks given key as having been changed. Use if value is a dictionary, list or other object."""
-        if key not in self.data:
+        if key not in self:
             raise exception.ArgumentError(u'No settings data for ' + key)
         self.changed.add(key)
 
     def getChanged(self,key,default=None):
         """Gets and marks as changed."""
-        if default is not None and key not in self.data:
-            self.data[key] = default
+        if default is not None and key not in self:
+            self[key] = default
         self.setChanged(key)
-        return self.data.get(key)
+        return self.get(key)
 
     #--Dictionary Emulation
     def __setitem__(self,key,value):
         """Dictionary emulation. Marks key as changed."""
         if key in self.deleted: self.deleted.remove(key)
         self.changed.add(key)
-        self.data[key] = value
+        self._data[key] = value
 
     def __delitem__(self,key):
         """Dictionary emulation. Marks key as deleted."""
         if key in self.changed: self.changed.remove(key)
         self.deleted.add(key)
-        del self.data[key]
-
-    def setdefault(self,key,value):
-        """Dictionary emulation. Will not mark as changed."""
-        if key in self.data:
-            return self.data[key]
-        if key in self.deleted: self.deleted.remove(key)
-        self.data[key] = value
-        return value
+        del self._data[key]
 
     def pop(self,key,default=None):
         """Dictionary emulation: extract value and delete from dictionary."""
         if key in self.changed: self.changed.remove(key)
         self.deleted.add(key)
-        return self.data.pop(key,default)
+        return self._data.pop(key, default)
 
 # Structure wrappers ----------------------------------------------------------
-def unpack_str8(ins, __unpack=struct.Struct(u'B').unpack):
-    return ins.read(__unpack(ins.read(1))[0])
-def unpack_str16(ins, __unpack=struct.Struct(u'H').unpack):
-    return ins.read(__unpack(ins.read(2))[0])
-def unpack_str32(ins, __unpack=struct.Struct(u'I').unpack):
-    return ins.read(__unpack(ins.read(4))[0])
-def unpack_int(ins, __unpack=struct.Struct(u'I').unpack):
-    return __unpack(ins.read(4))[0]
-def unpack_short(ins, __unpack=struct.Struct(u'H').unpack):
-    return __unpack(ins.read(2))[0]
-def unpack_float(ins, __unpack=struct.Struct(u'f').unpack):
-    return __unpack(ins.read(4))[0]
-def unpack_double(ins, __unpack=struct.Struct(u'd').unpack):
-    return __unpack(ins.read(8))[0]
-def unpack_byte(ins, __unpack=struct.Struct(u'B').unpack):
-    return __unpack(ins.read(1))[0]
-def unpack_int_signed(ins, __unpack=struct.Struct(u'i').unpack):
-    return __unpack(ins.read(4))[0]
-def unpack_int64_signed(ins, __unpack=struct.Struct(u'q').unpack):
-    return __unpack(ins.read(8))[0]
-def unpack_4s(ins, __unpack=struct.Struct(u'4s').unpack):
-    return __unpack(ins.read(4))[0]
-def unpack_str16_delim_null(ins, __unpack=struct.Struct(u'Hc').unpack):
-    str_value = ins.read(__unpack(ins.read(3))[0])
-    ins.seek(1, 1) # discard null string terminator
-    return str_value
-def unpack_str_int_delim(ins, __unpack=struct.Struct(u'Ic').unpack):
-    return __unpack(ins.read(5))[0]
-def unpack_str_byte_delim(ins, __unpack=struct.Struct(u'Bc').unpack):
-    return __unpack(ins.read(2))[0]
+class _StructsCache(dict):
+    __slots__ = ()
+    def __missing__(self, key):
+        return self.setdefault(key, struct.Struct(key))
 
+structs_cache = _StructsCache()
+def unpack_str16(ins, __unpack=structs_cache[u'H'].unpack):
+    return ins.read(__unpack(ins.read(2))[0])
+def unpack_str32(ins, __unpack=structs_cache[u'I'].unpack):
+    return ins.read(__unpack(ins.read(4))[0])
+def unpack_int(ins, __unpack=structs_cache[u'I'].unpack):
+    return __unpack(ins.read(4))[0]
+def pack_int(out, value, __pack=structs_cache[u'=I'].pack):
+    out.write(__pack(value))
+def unpack_short(ins, __unpack=structs_cache[u'H'].unpack):
+    return __unpack(ins.read(2))[0]
+def pack_short(out, val, __pack=structs_cache[u'=H'].pack):
+    out.write(__pack(val))
+def unpack_float(ins, __unpack=structs_cache[u'f'].unpack):
+    return __unpack(ins.read(4))[0]
+def pack_float(out, val, __pack=structs_cache[u'=f'].pack):
+    out.write(__pack(val))
+def unpack_double(ins, __unpack=structs_cache[u'd'].unpack):
+    return __unpack(ins.read(8))[0]
+def pack_double(out, val, __pack=structs_cache[u'=d'].pack):
+    out.write(__pack(val))
+def unpack_byte(ins, __unpack=structs_cache[u'B'].unpack):
+    return __unpack(ins.read(1))[0]
+def pack_byte(out, val, __pack=structs_cache[u'=B'].pack):
+    out.write(__pack(val))
+def unpack_int_signed(ins, __unpack=structs_cache[u'i'].unpack):
+    return __unpack(ins.read(4))[0]
+def pack_int_signed(out, val, __pack=structs_cache[u'=i'].pack):
+    out.write(__pack(val))
+def unpack_int64_signed(ins, __unpack=structs_cache[u'q'].unpack):
+    return __unpack(ins.read(8))[0]
+def unpack_4s(ins, __unpack=structs_cache[u'4s'].unpack):
+    return __unpack(ins.read(4))[0]
+def pack_4s(out, val, __pack=structs_cache[u'=4s'].pack):
+    out.write(__pack(val))
+def unpack_str16_delim(ins, __unpack=structs_cache[u'Hc'].unpack):
+    str_len = __unpack(ins.read(3))[0]
+    # The actual string (including terminator) isn't stored for empty strings
+    if not str_len: return b''
+    str_value = ins.read(str_len)
+    ins.seek(1, 1) # discard string terminator
+    return str_value
+def unpack_str_int_delim(ins, __unpack=structs_cache[u'Ic'].unpack):
+    return __unpack(ins.read(5))[0]
+def unpack_str_byte_delim(ins, __unpack=structs_cache[u'Bc'].unpack):
+    return __unpack(ins.read(2))[0]
+def unpack_str8(ins, __unpack=structs_cache[u'B'].unpack):
+    return ins.read(__unpack(ins.read(1))[0])
+def pack_str8(out, val, __pack=structs_cache[u'=B'].pack):
+    pack_byte(out, len(val))
+    out.write(val)
+def pack_bzstr8(out, val, __pack=structs_cache[u'=B'].pack):
+    pack_byte(out, len(val) + 1)
+    out.write(val)
+    out.write(b'\x00')
 def unpack_string(ins, string_len):
     return struct_unpack(u'%ds' % string_len, ins.read(string_len))[0]
+def pack_string(out, val):
+    out.write(val)
+
+def pack_byte_signed(out, value, __pack=structs_cache[u'b'].pack):
+    out.write(__pack(value))
 
 def unpack_many(ins, fmt):
     return struct_unpack(fmt, ins.read(struct.calcsize(fmt)))
@@ -1625,49 +1534,47 @@ def unpack_spaced_string(ins, replacement_char=b'\x07'):
 #------------------------------------------------------------------------------
 class DataTableColumn(object):
     """DataTable accessor that presents table column as a dictionary."""
-    def __init__(self,table,column):
-        self.table = table
+    def __init__(self, table, column):
+        self._table = table # type: DataTable
         self.column = column
     #--Dictionary Emulation
     def __iter__(self):
         """Dictionary emulation."""
-        tableData = self.table.data
         column = self.column
-        return (key for key in tableData.keys() if (column in tableData[key]))
-    def keys(self):
-        return list(self.__iter__())
+        return (key for key, col_dict in self._table.iteritems() if
+                column in col_dict)
     def items(self):
         """Dictionary emulation."""
-        tableData = self.table.data
+        tableData = self._table._data
         column = self.column
         return [(key,tableData[key][column]) for key in self]
     def clear(self):
         """Dictionary emulation."""
-        self.table.delColumn(self.column)
+        self._table.delColumn(self.column)
     def get(self,key,default=None):
         """Dictionary emulation."""
-        return self.table.getItem(key,self.column,default)
+        return self._table.getItem(key, self.column, default)
     #--Overloaded
     def __contains__(self,key):
         """Dictionary emulation."""
-        tableData = self.table.data
+        tableData = self._table._data
         return key in tableData and self.column in tableData[key]
     def __getitem__(self,key):
         """Dictionary emulation."""
-        return self.table.data[key][self.column]
+        return self._table._data[key][self.column]
     def __setitem__(self,key,value):
         """Dictionary emulation. Marks key as changed."""
-        self.table.setItem(key,self.column,value)
+        self._table.setItem(key, self.column, value)
     def __delitem__(self,key):
         """Dictionary emulation. Marks key as deleted."""
-        self.table.delItem(key,self.column)
+        self._table.delItem(key, self.column)
 
 #------------------------------------------------------------------------------
 class DataTable(DataDict):
     """Simple data table of rows and columns, saved in a pickle file. It is
-    currently used by modInfos to represent properties associated with modfiles,
-    where each modfile is a row, and each property (e.g. modified date or
-    'mtime') is a column.
+    currently used by TableFileInfos to represent properties associated with
+    mod/save/bsa/ini files, where each file is a row, and each property (e.g.
+    modified date or 'mtime') is a column.
 
     The "table" is actually a dictionary of dictionaries. E.g.
         propValue = table['fileName']['propName']
@@ -1679,7 +1586,7 @@ class DataTable(DataDict):
         self.dictFile = dictFile
         dictFile.load()
         self.vdata = dictFile.vdata
-        self.data = dictFile.data
+        self._data = dictFile.pickled_data
         self.hasChanged = False ##: move to PickleDict
 
     def save(self):
@@ -1690,9 +1597,8 @@ class DataTable(DataDict):
 
     def getItem(self,row,column,default=None):
         """Get item from row, column. Return default if row,column doesn't exist."""
-        data = self.data
-        if row in data and column in data[row]:
-            return data[row][column]
+        if row in self._data and column in self._data[row]:
+            return self._data[row][column]
         else:
             return default
 
@@ -1702,70 +1608,53 @@ class DataTable(DataDict):
 
     def setItem(self,row,column,value):
         """Set value for row, column."""
-        data = self.data
-        if row not in data:
-            data[row] = {}
-        data[row][column] = value
+        if row not in self._data:
+            self._data[row] = {}
+        self._data[row][column] = value
         self.hasChanged = True
-
-    def setItemDefault(self,row,column,value):
-        """Set value for row, column."""
-        data = self.data
-        if row not in data:
-            data[row] = {}
-        self.hasChanged = True
-        return data[row].setdefault(column,value)
 
     def delItem(self,row,column):
         """Deletes item in row, column."""
-        data = self.data
-        if row in data and column in data[row]:
-            del data[row][column]
+        if row in self._data and column in self._data[row]:
+            del self._data[row][column]
             self.hasChanged = True
 
     def delRow(self,row):
         """Deletes row."""
-        data = self.data
-        if row in data:
-            del data[row]
+        if row in self._data:
+            del self._data[row]
             self.hasChanged = True
 
     def delColumn(self,column):
         """Deletes column of data."""
-        data = self.data
-        for rowData in data.values():
+        for rowData in self._data.values():
             if column in rowData:
                 del rowData[column]
                 self.hasChanged = True
 
     def moveRow(self,oldRow,newRow):
         """Renames a row of data."""
-        data = self.data
-        if oldRow in data:
-            data[newRow] = data[oldRow]
-            del data[oldRow]
+        if oldRow in self._data:
+            self._data[newRow] = self._data[oldRow]
+            del self._data[oldRow]
             self.hasChanged = True
 
     def copyRow(self,oldRow,newRow):
         """Copies a row of data."""
-        data = self.data
-        if oldRow in data:
-            data[newRow] = data[oldRow].copy()
+        if oldRow in self._data:
+            self._data[newRow] = self._data[oldRow].copy()
             self.hasChanged = True
 
     #--Dictionary emulation
     def __setitem__(self,key,value):
-        self.data[key] = value
+        self._data[key] = value
         self.hasChanged = True
     def __delitem__(self,key):
-        del self.data[key]
+        del self._data[key]
         self.hasChanged = True
-    def setdefault(self,key,default):
-        if key not in self.data: self.hasChanged = True
-        return self.data.setdefault(key,default)
     def pop(self,key,default=None):
         self.hasChanged = True
-        return self.data.pop(key,default)
+        return self._data.pop(key, default)
 
 # Util Functions --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1776,7 +1665,11 @@ def cmp_(x, y):
 
 def isclose_(a, b, rel_tol=1e-09, abs_tol=0.0):
     """Inexact float comparison. PY3: drop in favor of math.isclose."""
-    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+    try:
+        return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+    except TypeError:
+        if a is b is None: return True
+        return False
 
 def floats_equal(a, b):
     """Checks if the two floats are equal to the sixth place (relatively) or to
@@ -1792,7 +1685,7 @@ def copyattrs(source,dest,attrs):
 
 def cstrip(inString): # TODO(ut): hunt down and deprecate - it's O(n)+
     """Convert c-string (null-terminated string) to python string."""
-    zeroDex = inString.find('\x00')
+    zeroDex = inString.find(b'\x00')
     if zeroDex == -1:
         return inString
     else:
@@ -1814,15 +1707,13 @@ deprintOn = False
 import inspect
 def deprint(*args,**keyargs):
     """Prints message along with file and line location."""
-    if not deprintOn and not keyargs.get('on'): return
-
-    if keyargs.get('trace', True):
+    if not deprintOn and not keyargs.get(u'on'): return
+    if keyargs.get(u'trace', True):
         stack = inspect.stack()
         file_, line, function = stack[1][1:4]
-        msg = u'%s %4d %s: ' % (GPath(file_).tail.s, line, function)
+        msg = u'%s %4d %s: ' % (GPath(file_).tail, line, function)
     else:
         msg = u''
-
     try:
         msg += u' '.join([u'%s'%x for x in args]) # OK, even with unicode args
     except UnicodeError:
@@ -1833,17 +1724,17 @@ def deprint(*args,**keyargs):
                 msg += u' %s' % x
             except UnicodeError:
                 msg += u' %r' % x
-
-    if keyargs.get('traceback',False):
-        o = StringIO.StringIO()
-        traceback.print_exc(file=o)
-        value = o.getvalue()
-        try:
-            msg += u'\n%s' % unicode(value, 'utf-8')
-        except UnicodeError:
-            traceback.print_exc()
-            msg += u'\n%r' % value
-        o.close()
+    if keyargs.get(u'traceback',False):
+        exc_fmt = traceback.format_exc()
+        # PY3: This should be good to go
+        if isinstance(exc_fmt, bytes):
+            try:
+                msg += u'\n%s' % unicode(exc_fmt, u'utf-8')
+            except UnicodeError:
+                traceback.print_exc()
+                msg += u'\n%r' % exc_fmt
+        else:
+            msg += u'\n%s' % exc_fmt
     try:
         # Should work if stdout/stderr is going to wxPython output
         print(msg)
@@ -1859,7 +1750,8 @@ def getMatch(reMatch,group=0):
 def intArg(arg,default=None):
     """Returns argument as an integer. If argument is a string, then it converts it using int(arg,0)."""
     if arg is None: return default
-    elif isinstance(arg, basestring): return int(arg,0)
+    elif isinstance(arg, (unicode, bytes)): ##: this smells, hunt down
+        return int(arg, 0)
     else: return int(arg)
 
 def winNewLines(inString):
@@ -1951,7 +1843,7 @@ class Progress(object):
         """Increments progress by 1."""
         self.__call__(self.state+increment)
 
-    def __call__(self,state,message=''):
+    def __call__(self,state,message=u''):
         """Update progress with current state. Progress is state/full."""
         if (1.0*self.full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
         if message: self.message = message
@@ -1969,7 +1861,7 @@ class Progress(object):
 #------------------------------------------------------------------------------
 class SubProgress(Progress):
     """Sub progress goes from base to ceiling."""
-    def __init__(self,parent,baseFrom=0.0,baseTo='+1',full=1.0,silent=False):
+    def __init__(self,parent,baseFrom=0.0,baseTo=u'+1',full=1.0,silent=False):
         """For creating a subprogress of another progress meter.
         progress: parent (base) progress meter
         baseFrom: Base progress when this progress == 0.
@@ -1977,7 +1869,7 @@ class SubProgress(Progress):
           Usually a number. But string '+1' sets it to baseFrom + 1
         full: Full meter by this progress' scale."""
         Progress.__init__(self,full)
-        if baseTo == '+1': baseTo = baseFrom + 1
+        if baseTo == u'+1': baseTo = baseFrom + 1
         if baseFrom < 0 or baseFrom >= baseTo:
             raise exception.ArgumentError(u'BaseFrom must be >= 0 and BaseTo must be > BaseFrom')
         self.parent = parent
@@ -1995,13 +1887,13 @@ class SubProgress(Progress):
 def readCString(ins, file_path):
     """Read null terminated string, dropping the final null byte."""
     byte_list = []
-    for b in iter(partial(ins.read, 1), ''):
-        if b == '\0': break
+    for b in iter(partial(ins.read, 1), b''):
+        if b == b'\0': break
         byte_list.append(b)
     else:
         raise exception.FileError(file_path,
                                   u'Reached end of file while expecting null')
-    return ''.join(byte_list)
+    return b''.join(byte_list)
 
 class StringTable(dict):
     """For reading .STRINGS, .DLSTRINGS, .ILSTRINGS files."""
@@ -2009,8 +1901,8 @@ class StringTable(dict):
         # Encoding to fall back to if UTF-8 fails, based on language
         # Default is 1252 (Western European), so only list languages
         # different than that
-        u'russian': 'cp1251',
-        }
+        u'russian': u'cp1251',
+    }
 
     def load(self, modFilePath, lang=u'English', progress=Progress()):
         baseName = modFilePath.tail.body
@@ -2026,7 +1918,7 @@ class StringTable(dict):
 
     def loadFile(self, path, progress, lang=u'english'):
         formatted = path.cext != u'.strings'
-        backupEncoding = self.encodings.get(lang.lower(), 'cp1252')
+        backupEncoding = self.encodings.get(lang.lower(), u'cp1252')
         try:
             with open(path.s, u'rb') as ins:
                 insSeek = ins.seek
@@ -2037,18 +1929,18 @@ class StringTable(dict):
                 insSeek(0)
                 if eof < 8:
                     deprint(u"Warning: Strings file '%s' file size (%d) is "
-                            u"less than 8 bytes.  8 bytes are the minimum "
-                            u"required by the expected format, assuming the "
-                            u"Strings file is empty." % (path, eof))
+                            u'less than 8 bytes.  8 bytes are the minimum '
+                            u'required by the expected format, assuming the '
+                            u'Strings file is empty.' % (path, eof))
                     return
 
-                numIds,dataSize = unpack_many(ins, '=2I')
+                numIds,dataSize = unpack_many(ins, u'=2I')
                 progress.setFull(max(numIds,1))
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
                     deprint(u"Warning: Strings file '%s' dataSize element "
-                            u"(%d) results in a string start location of %d, "
-                            u"but the expected location is %d"
+                            u'(%d) results in a string start location of %d, '
+                            u'but the expected location is %d'
                             % (path, dataSize, eof-dataSize, stringsStart))
 
                 id_ = -1
@@ -2056,7 +1948,7 @@ class StringTable(dict):
                 for x in xrange(numIds):
                     try:
                         progress(x)
-                        id_,offset = unpack_many(ins, '=2I')
+                        id_,offset = unpack_many(ins, u'=2I')
                         pos = insTell()
                         insSeek(stringsStart+offset)
                         if formatted:
@@ -2066,7 +1958,7 @@ class StringTable(dict):
                         else:
                             value = readCString(ins, path) #drops the null byte
                         try:
-                            value = unicode(value,'utf-8')
+                            value = unicode(value, u'utf-8')
                         except UnicodeDecodeError:
                             value = unicode(value,backupEncoding)
                         insSeek(pos)
@@ -2082,6 +1974,232 @@ class StringTable(dict):
             return
 
 #------------------------------------------------------------------------------
+_esub_component = re.compile(u'' r'\$(\d+)\(([^)]+)\)')
+_rsub_component = re.compile(u'' r'\\(\d+)')
+_plain_component = re.compile(u'' r'[^\\\$]+', re.U)
+
+def build_esub(esub_str):
+    """Builds an esub (enhanced substitution) callable and returns it. These
+    expand normal re.sub syntax to allow the case of a match to be preserved,
+    even while the letters change.
+
+    The syntax looks like this:
+        my_sub = build_sub('$1(s)tamina')
+        print(re.sub(r'\b(f|F)atigue\b', my_sub, u'Fatigue'))
+        # prints 'Stamina'
+
+    The $1(s) part is what's important. The $2 identifies which regex group to
+    target. The part in parentheses will be what the case of the group gets
+    applied to."""
+    # Callables we'll chain together at the end
+    final_components = []
+    i = 0
+    while i < len(esub_str):
+        esub_match = _esub_component.match(esub_str, i)
+        if esub_match:
+            # esub substitution - return the target string, with the case of
+            # the wanted group's contents
+            esub_group = int(esub_match.group(1))
+            target_str = esub_match.group(2)
+            def esub_impl(ma_obj, g=esub_group, s=target_str):
+                wip_str = []
+                wip_append = wip_str.append
+                for t, o in izip(s, ma_obj.group(g)):
+                    # Carry forward the target string, but keep the case
+                    wip_append(t.upper() if o.isupper() else t.lower())
+                # Add in the rest of the target string unchanged
+                return u''.join(wip_str + list(s[len(wip_str):]))
+            final_components.append(esub_impl)
+            i = esub_match.end(0)
+            continue # skip the other match attempts
+        rsub_match = _rsub_component.match(esub_str, i)
+        if rsub_match:
+            # Regular substitution - return the wanted group's contents
+            rsub_group = int(rsub_match.group(1))
+            def rsub_impl(ma_obj, g=rsub_group):
+                return ma_obj.group(g)
+            final_components.append(rsub_impl)
+            i = rsub_match.end(0)
+            continue # skip the plain match attempt
+        plain_match = _plain_component.match(esub_str, i)
+        if plain_match:
+            # Plain component, just return it unaltered (and make sure to
+            # capture the value of group(0) so that plain_match can get GC'd)
+            plain_contents = plain_match.group(0)
+            final_components.append(lambda _ma_obj, p=plain_contents: p)
+            i = plain_match.end(0)
+            continue # skip the error check
+        raise SyntaxError(u'Could not parse esub string %r' % esub_str)
+    def final_impl(ma_obj):
+        return u''.join(c(ma_obj) for c in final_components)
+    return final_impl
+
+#------------------------------------------------------------------------------
+# no re.U, we want our record attrs to be ASCII
+_valid_rpath_attr = re.compile(u'' r'^[^\d\W]\w*\Z')
+
+class _ARP_Subpath(object):
+    """Abstract base class for all subpaths of a larger record path."""
+    __slots__ = (u'_subpath_attr', u'_next_subpath',)
+
+    def __init__(self, sub_rpath, rest_rpath):
+        # type: (unicode, unicode) -> None
+        if not _valid_rpath_attr.match(sub_rpath):
+            raise SyntaxError(u"'%s' is not a valid subpath. Your record path "
+                              u'likely contains a typo.' % sub_rpath)
+        elif iskeyword(sub_rpath):
+            raise SyntaxError(u'Record path subpaths may not be Python '
+                              u"keywords (was '%s')." % sub_rpath)
+        self._subpath_attr = sub_rpath
+        self._next_subpath = _parse_rpath(rest_rpath)
+
+    # See RecPath for documentation of these methods
+    def rp_eval(self, record):
+        """:rtype: list"""
+        raise exception.AbstractError(u'rp_eval not implemented')
+
+    def rp_exists(self, record):
+        """:rtype: bool"""
+        raise exception.AbstractError(u'rp_exists not implemented')
+
+    def rp_map(self, record, func):
+        raise exception.AbstractError(u'rp_map not implemented')
+
+class _RP_Subpath(_ARP_Subpath):
+    """A simple, intermediate subpath. Simply forwards all calls to the next
+    part of the record path."""
+    def rp_eval(self, record):
+        return self._next_subpath.rp_eval(getattr(record, self._subpath_attr))
+
+    def rp_exists(self, record):
+        try:
+            return self._next_subpath.rp_exists(getattr(
+                record, self._subpath_attr))
+        except AttributeError:
+            return False
+
+    def rp_map(self, record, func):
+        self._next_subpath.rp_map(getattr(record, self._subpath_attr), func)
+
+    def __repr__(self):
+        return u'%s.%r' % (self._subpath_attr, self._next_subpath)
+
+class _RP_LeafSubpath(_ARP_Subpath):
+    """The final part of a record path. This the part that actually gets and
+    sets values."""
+    def rp_eval(self, record):
+        return [getattr(record, self._subpath_attr)]
+
+    def rp_exists(self, record):
+        return hasattr(record, self._subpath_attr)
+
+    def rp_map(self, record, func):
+        s_attr = self._subpath_attr
+        setattr(record, s_attr, func(getattr(record, s_attr)))
+
+    def __repr__(self):
+        return self._subpath_attr
+
+class _RP_IteratedSubpath(_ARP_Subpath):
+    """An iterated part of a record path. A record path can't resolve to more
+    than one value unless it involves at least one of these."""
+    def __init__(self, sub_rpath, rest_rpath):
+        if not rest_rpath: raise SyntaxError(u'A RecPath may not end with an '
+                                             u'iterated subpath.')
+        super(_RP_IteratedSubpath, self).__init__(sub_rpath, rest_rpath)
+
+    def rp_eval(self, record):
+        eval_next = self._next_subpath.rp_eval
+        return chain.from_iterable(eval_next(iter_attr) for iter_attr
+                                   in getattr(record, self._subpath_attr))
+
+    def rp_exists(self, record):
+        num_iterated = 0
+        next_exists = self._next_subpath.rp_exists
+        for iter_attr in getattr(record, self._subpath_attr):
+            if not next_exists(iter_attr):
+                return False # short-circuit
+            num_iterated += 1
+        return num_iterated > 0 # faster than bool()
+
+    def rp_map(self, record, func):
+        map_next = self._next_subpath.rp_map
+        for iter_attr in getattr(record, self._subpath_attr):
+            map_next(iter_attr, func)
+
+    def __repr__(self):
+        return u'%s[i].%r' % (self._subpath_attr, self._next_subpath)
+
+class _RP_OptionalSubpath(_RP_Subpath):
+    """An optional part of a record path. If it doesn't exist, mapping and
+    evaluating will simply not continue past this part."""
+    def __init__(self, sub_rpath, rest_rpath):
+        if not rest_rpath: raise SyntaxError(u'A RecPath may not end with an '
+                                             u'optional subpath.')
+        super(_RP_OptionalSubpath, self).__init__(sub_rpath, rest_rpath)
+
+    def rp_eval(self, record):
+        try:
+            return super(_RP_OptionalSubpath, self).rp_eval(record)
+        except AttributeError:
+            return [] # Attribute did not exist, rest of the path evals to []
+
+    def rp_map(self, record, func):
+        try:
+            super(_RP_OptionalSubpath, self).rp_map(record, func)
+        except AttributeError:
+            pass # Attribute did not exist, can't map any further
+
+    def __repr__(self):
+        return u'%s?.%r' % (self._subpath_attr, self._next_subpath)
+
+class RecPath(object):
+    """Record paths (or 'rpaths' for short) provide a way to get and set
+    attributes from a record, even if the way to those attributes is very
+    complex (e.g. contains repeated or optional attributes). Does quite a bit
+    of validation and preprocessing, making it much faster and safer than a
+    'naive' solution. See the wiki page '[dev] Record Paths' for a full
+    overview of syntax and usage."""
+    __slots__ = (u'_root_subpath',)
+
+    def __init__(self, rpath_str): # type: (unicode) -> None
+        self._root_subpath = _parse_rpath(rpath_str)
+
+    def rp_eval(self, record):
+        """Evaluates this record path for the specified record, returning a
+        list of all attribute values that it resolved to."""
+        return self._root_subpath.rp_eval(record)
+
+    def rp_exists(self, record):
+        """Returns True if this record path will resolve to a non-empty list
+        for the specified record."""
+        return self._root_subpath.rp_exists(record)
+
+    def rp_map(self, record, func):
+        """Maps the specified function over all the values that this record
+        path points to and assigns the altered values to the corresponding
+        attributes on the specified record."""
+        self._root_subpath.rp_map(record, func)
+
+    def __repr__(self):
+        return repr(self._root_subpath)
+
+def _parse_rpath(rpath_str): # type: (unicode) -> _ARP_Subpath
+    """Parses the given unicode string as an RPath subpath."""
+    if not rpath_str: return None
+    sub_rpath, rest_rpath = (rpath_str.split(u'.', 1) if u'.' in rpath_str
+                             else (rpath_str, None))
+    # Iterated subpath
+    if sub_rpath.endswith(u'[i]'):
+        return _RP_IteratedSubpath(sub_rpath[:-3], rest_rpath)
+    # Optional subpath
+    elif sub_rpath.endswith(u'?'):
+        return _RP_OptionalSubpath(sub_rpath[:-1], rest_rpath)
+    else:
+        return (_RP_Subpath if rest_rpath else
+                _RP_LeafSubpath)(sub_rpath, rest_rpath)
+
+#------------------------------------------------------------------------------
 _digit_re = re.compile(u'([0-9]+)')
 
 def natural_key():
@@ -2095,6 +2213,18 @@ def natural_key():
     return lambda curr_str: [_to_cmp(s) for s in
                              _digit_re.split(u'%s' % curr_str)]
 
+def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
+    """WIP wrap common dict sorting patterns - key_f if passed takes
+    precedence."""
+    if key_f is not None:
+        pass
+    elif values_dex:
+        key_f = lambda k: tuple(di[k][x] for x in values_dex)
+    elif by_value:
+        key_f = lambda k: di[k]
+    for k_ in sorted(di, key=key_f, reverse=reverse):
+        yield k_, di[k_]
+
 # WryeText --------------------------------------------------------------------
 codebox = None
 class WryeText(object):
@@ -2102,10 +2232,10 @@ class WryeText(object):
     files.
 
     Headings:
-    = XXXX >> H1 "XXX"
-    == XXXX >> H2 "XXX"
-    === XXXX >> H3 "XXX"
-    ==== XXXX >> H4 "XXX"
+    = HHHH >> H1 "HHHH"
+    == HHHH >> H2 "HHHH"
+    === HHHH >> H3 "HHHH"
+    ==== HHHH >> H4 "HHHH"
     Notes:
     * These must start at first character of line.
     * The XXX text is compressed to form an anchor. E.g == Foo Bar gets anchored as" FooBar".
@@ -2177,23 +2307,23 @@ class WryeText(object):
     def genHtml(ins,out=None,*cssDirs):
         """Reads a wtxt input stream and writes an html output stream."""
         # Path or Stream? -----------------------------------------------
-        if isinstance(ins,(Path,str,unicode)):
+        if isinstance(ins, (Path, unicode)):
             srcPath = GPath(ins)
             outPath = GPath(out) or srcPath.root+u'.html'
             cssDirs = (srcPath.head,) + cssDirs
-            ins = srcPath.open(encoding='utf-8-sig')
-            out = outPath.open('w',encoding='utf-8-sig')
+            ins = srcPath.open(encoding=u'utf-8-sig')
+            out = outPath.open(u'w',encoding=u'utf-8-sig')
         else:
             srcPath = outPath = None
         # Setup
         outWrite = out.write
 
-        cssDirs = map(GPath,cssDirs)
+        cssDirs = (GPath(d) for d in cssDirs)
         # Setup ---------------------------------------------------------
         #--Headers
         reHead = re.compile(u'(=+) *(.+)',re.U)
         headFormat = u"<h%d><a id='%s'>%s</a></h%d>\n"
-        headFormatNA = u"<h%d>%s</h%d>\n"
+        headFormatNA = u'<h%d>%s</h%d>\n'
         #--List
         reWryeList = re.compile(u'( *)([-x!?.+*o])(.*)',re.U)
         #--Code
@@ -2223,7 +2353,8 @@ class WryeText(object):
             # urllib will automatically take any unicode characters and escape them, so to
             # convert back to unicode for purposes of storing the string, everything will
             # be in cp1252, due to the escapings.
-            anchor = unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+            anchor = unicode(quote(reWd.sub(u'', text).encode(u'utf8')),
+                             u'cp1252')
             count = 0
             if re.match(u'' r'\d', anchor):
                 anchor = u'_' + anchor
@@ -2239,15 +2370,15 @@ class WryeText(object):
         reBold = re.compile(u'__',re.U)
         reItalic = re.compile(u'~~',re.U)
         reBoldItalic = re.compile(u'' r'\*\*',re.U)
-        states = {'bold':False,'italic':False,'boldItalic':False,'code':0}
+        states = {u'bold':False,u'italic':False,u'boldItalic':False,u'code':0}
         def subBold(match):
-            state = states['bold'] = not states['bold']
+            state = states[u'bold'] = not states[u'bold']
             return u'<b>' if state else u'</b>'
         def subItalic(match):
-            state = states['italic'] = not states['italic']
+            state = states[u'italic'] = not states[u'italic']
             return u'<i>' if state else u'</i>'
         def subBoldItalic(match):
-            state = states['boldItalic'] = not states['boldItalic']
+            state = states[u'boldItalic'] = not states[u'boldItalic']
             return u'<i><b>' if state else u'</b></i>'
         #--Preformatting
         #--Links
@@ -2267,7 +2398,8 @@ class WryeText(object):
             address = text = match.group(1).strip()
             if u'|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split(u'|',1)]
-                if address == u'#': address += unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+                if address == u'#': address += unicode(quote(reWd.sub(
+                    u'', text).encode(u'utf8')), u'cp1252')
             if address.startswith(u'!'):
                 newWindow = u' target="_blank"'
                 if address == text:
@@ -2283,7 +2415,7 @@ class WryeText(object):
         reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)
         reContentsTag = re.compile(u'' r'\s*{{CONTENTS=?(\d+)}}\s*$', re.U)
         reAnchorHeadersTag = re.compile(u'' r'\s*{{ANCHORHEADERS=(\d+)}}\s*$', re.U)
-        reCssTag = re.compile(u'\s*{{CSS:(.+?)}}\s*$',re.U)
+        reCssTag = re.compile(u'' r'\s*{{CSS:(.+?)}}\s*$',re.U)
         #--Defaults ----------------------------------------------------------
         title = u''
         level = 1
@@ -2299,7 +2431,7 @@ class WryeText(object):
         anchorHeaders = True
         #--Read source file --------------------------------------------------
         for line in ins:
-            line = line.replace('\r\n','\n')
+            line = line.replace(u'\r\n',u'\n')
             #--Codebox -----------------------------------
             if codebox:
                 if codeboxLines is not None:
@@ -2387,8 +2519,9 @@ class WryeText(object):
             #--Headers
             elif maHead:
                 lead,text = maHead.group(1,2)
-                text = re.sub(u' *=*#?$','',text.strip())
-                anchor = unicode(quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
+                text = re.sub(u' *=*#?$', u'', text.strip())
+                anchor = unicode(quote(reWd.sub(u'', text).encode(u'utf8')),
+                                 u'cp1252')
                 level = len(lead)
                 if anchorHeaders:
                     if re.match(u'' r'\d', anchor):
@@ -2408,7 +2541,7 @@ class WryeText(object):
                 #--Title?
                 if not title and level <= 2: title = text
             #--Paragraph
-            elif maPar and not states['code']:
+            elif maPar and not states[u'code']:
                 line = u'<p>'+line+u'</p>\n'
             #--List item
             elif maList:
@@ -2444,27 +2577,27 @@ class WryeText(object):
             css = WryeText.defaultCss
         else:
             if cssName.ext != u'.css':
-                raise exception.BoltError(u'Invalid Css file: ' + cssName.s)
+                raise exception.BoltError(u'Invalid Css file: %s' % cssName)
             for css_dir in cssDirs:
                 cssPath = GPath(css_dir).join(cssName)
                 if cssPath.exists(): break
             else:
-                raise exception.BoltError(u'Css file not found: ' + cssName.s)
-            with cssPath.open('r',encoding='utf-8-sig') as cssIns:
+                raise exception.BoltError(u'Css file not found: %s' % cssName)
+            with cssPath.open(u'r', encoding=u'utf-8-sig') as cssIns:
                 css = u''.join(cssIns.readlines())
             if u'<' in css:
-                raise exception.BoltError(u'Non css tag in ' + cssPath.s)
+                raise exception.BoltError(u'Non css tag in %s' % cssPath)
         #--Write Output ------------------------------------------------------
         outWrite(WryeText.htmlHead % (title,css))
         didContents = False
         for line in outLines:
             if reContentsTag.match(line):
                 if contents and not didContents:
-                    baseLevel = min([level for (level,name,text) in contents])
-                    for (level,name,text) in contents:
+                    baseLevel = min([level for (level,name_,text) in contents])
+                    for (level,name_,text) in contents:
                         level = level - baseLevel + 1
                         if level <= addContents:
-                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name,text))
+                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name_,text))
                     didContents = True
             else:
                 outWrite(line)
@@ -2475,13 +2608,13 @@ class WryeText(object):
             out.close()
 
 # Main -------------------------------------------------------------------------
-if __name__ == '__main__' and len(sys.argv) > 1:
+if __name__ == u'__main__' and len(sys.argv) > 1:
     #--Commands----------------------------------------------------------------
     @mainfunc
     def genHtml(*args,**keywords):
         """Wtxt to html. Just pass through to WryeText.genHtml."""
         if not len(args):
-            args = [u"..\Wrye Bash.txt"]
+            args = [u'..\\Wrye Bash.txt']
         WryeText.genHtml(*args,**keywords)
 
     #--Command Handler --------------------------------------------------------

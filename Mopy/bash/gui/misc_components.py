@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -33,14 +32,15 @@ from collections import defaultdict
 from itertools import chain, imap
 
 from .base_components import _AComponent, Color, WithMouseEvents, \
-    Image, WithCharEvents
+    ImageWrapper, WithCharEvents
 from .events import EventResult
-from ..bolt import Path
+from ..bolt import Path, dict_sort
 
 class Font(_wx.Font):
     @staticmethod
     def Style(font_, bold=False, slant=False, underline=False):
         if bold: font_.SetWeight(_wx.FONTWEIGHT_BOLD)
+        else: font_.SetWeight(_wx.FONTWEIGHT_NORMAL)
         if slant: font_.SetStyle(_wx.FONTSTYLE_SLANT)
         else: font_.SetStyle(_wx.FONTSTYLE_NORMAL)
         font_.SetUnderlined(underline)
@@ -85,15 +85,15 @@ class Picture(_AComponent):
         """Set the bitmap on the native_widget and return the wx object for
         caching"""
         if isinstance(bmp, Path):
-            bmp = (bmp.isfile() and Image(bmp.s).GetBitmap()) or None
+            bmp = (bmp.isfile() and ImageWrapper(bmp).GetBitmap()) or None
         elif isinstance(bmp, tuple):
-            bmp = Image.GetImage(*bmp).ConvertToBitmap()
+            bmp = ImageWrapper.GetImage(*bmp).ConvertToBitmap()
         self.bitmap = bmp
         self._handle_resize()
         return self.bitmap
 
     def _handle_resize(self): ##: is all these wx.Bitmap calls needed? One right way?
-        x, y = self.component_size
+        x, y = self.scaled_size()
         if x <= 0 or y <= 0: return
         self.buffer = _wx.Bitmap(x,y)
         dc = _wx.MemoryDC()
@@ -124,11 +124,10 @@ class PictureWithCursor(Picture, WithMouseEvents):
 
     def set_bitmap(self, bmp):
         # Don't want the bitmap to resize until we call self.Layout()
-        self._native_widget.Freeze()
-        img = super(PictureWithCursor, self).set_bitmap(bmp)
-        self._native_widget.SetCursor(
-            _wx.Cursor(_wx.CURSOR_MAGNIFIER if img else _wx.CURSOR_ARROW))
-        self._native_widget.Thaw()
+        with self.pause_drawing():
+            img = super(PictureWithCursor, self).set_bitmap(bmp)
+            self._native_widget.SetCursor(
+                _wx.Cursor(_wx.CURSOR_MAGNIFIER if img else _wx.CURSOR_ARROW))
         return img
 
 # Lines -----------------------------------------------------------------------
@@ -185,9 +184,9 @@ class Table(WithCharEvents):
             for r, cell_label in enumerate(table_data[column_label]):
                 self._native_widget.SetCellValue(r, c, cell_label)
         self._native_widget.AutoSize()
-        self.on_key_up.subscribe(self._handle_key_up)
+        self.on_key_up.subscribe(self._on_table_key_up)
 
-    def _handle_key_up(self, wrapped_evt):
+    def _on_table_key_up(self, wrapped_evt):
         """Internal handler, implements copy and paste, select all, etc."""
         kcode = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down:
@@ -226,16 +225,16 @@ class Table(WithCharEvents):
         elif len(sel_cells) == 1:
             # Selection is limited to a single column, format as a
             # newline-separated list
-            sorted_cells = sorted(next(sel_cells.itervalues()).iteritems(),
-                                  key=lambda t: int(t[0]))
+            sorted_cells = dict_sort(next(sel_cells.itervalues()),
+                                     key_f=lambda k: int(k))
             return u'\n'.join(t[1] for t in sorted_cells)
         else:
             # Here is where it gets ugly - we need to format a full table with
             # row/column separators, proper spacing and labels
             clip_text = []
             row_labels = set(chain.from_iterable(
-                r.iterkeys() for r in sel_cells.itervalues()))
-            col_labels = sel_cells.keys()
+                r for r in sel_cells.itervalues()))
+            col_labels = list(sel_cells) ##: do we need the list here?
             # First calculate the maximum label lengths we'll have to pad to
             max_row_length = max(imap(len, row_labels))
             max_col_lengths = {}
@@ -418,20 +417,20 @@ class GlobalMenu(_AComponent):
         Link.Frame.set_status_info(u'')
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
-        # Clear the menu and repopulate it. Have to do this JIT, since the
-        # checked/enabled/appended state of links will depend on the current
-        # state of WB itself.
-        for old_menu_item in wx_menu.GetMenuItems():
-            wx_menu.Remove(old_menu_item)
-            # Explicitly destroy, remove does not clean up the object otherwise
-            old_menu_item.Destroy()
-        # Need to set this, otherwise help text won't be shown
-        Link.Popup = wx_menu
-        try:
-            self._category_handlers[wx_menu.category_label](wx_menu)
-        except KeyError:
-            raise RuntimeError(u"A GlobalMenu handler is missing for category "
-                               u"'%s'." % wx_menu.category_label)
+        # If we don't pause here, the GUI will flicker like crazy
+        with Link.Frame.global_menu.pause_drawing():
+            # Clear the menu and repopulate it. Have to do this JIT, since the
+            # checked/enabled/appended state of links will depend on the current
+            # state of WB itself.
+            for old_menu_item in wx_menu.GetMenuItems():
+                wx_menu.DestroyItem(old_menu_item)
+            # Need to set this, otherwise help text won't be shown
+            Link.Popup = wx_menu
+            try:
+                self._category_handlers[wx_menu.category_label](wx_menu)
+            except KeyError:
+                raise RuntimeError(u"A GlobalMenu handler is missing for "
+                                   u"category '%s'." % wx_menu.category_label)
 
     def _handle_menu_closed(self, wx_menu):
         """Internal callback, needed to correctly handle help text."""

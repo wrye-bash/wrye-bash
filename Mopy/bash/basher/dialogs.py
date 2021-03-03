@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,21 +14,25 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from collections import OrderedDict
+from itertools import izip
+
 from . import bEnableWizard, BashFrame
 from .constants import installercons
-from .. import bass, balt, bosh, bolt, bush, env
+from .. import bass, balt, bosh, bolt, bush, env, load_order
 from ..balt import colors, bell
-from ..bosh import faces
+from ..bosh import faces, ModInfo
 from ..gui import BOTTOM, Button, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
-    VLayout, DialogWindow, ListBox, Picture
+    VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
+    HBoxedLayout, SelectAllButton, DeselectAllButton, VBoxedLayout, \
+    TextAlignment, SearchBar
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -37,11 +41,12 @@ class ImportFaceDialog(DialogWindow):
     def __init__(self, parent, title, fileInfo, faces):
         #--Data
         self.fileInfo = fileInfo
-        if faces and isinstance(faces.keys()[0], (int, long)): # PY3: just int
-            self.data = dict((u'%08X %s' % (key,face.pcName),face) for key,face in faces.items())
+        if faces and isinstance(next(iter(faces)), (int, long)):
+            self.fdata = {u'%08X %s' % (key, face.pcName): face for key, face
+                          in faces.iteritems()}
         else:
-            self.data = faces
-        self.list_items = sorted(self.data.keys(),key=unicode.lower)
+            self.fdata = faces
+        self.list_items = sorted(self.fdata, key=unicode.lower)
         #--GUI
         super(ImportFaceDialog, self).__init__(parent, title=title,
                                                sizes_dict=balt.sizes)
@@ -51,8 +56,8 @@ class ImportFaceDialog(DialogWindow):
         self.listBox.set_min_size(175, 150)
         #--Name,Race,Gender Checkboxes
         fi_flgs = bosh.faces.PCFaces.pcf_flags(
-            bass.settings.get('bash.faceImport.flags', 0x4))
-        self.nameCheck = CheckBox(self, _(u'Name'), checked=fi_flgs.name)
+            bass.settings.get(u'bash.faceImport.flags', 0x4))
+        self.nameCheck = CheckBox(self, _(u'Name'), checked=fi_flgs.pcf_name)
         self.raceCheck = CheckBox(self, _(u'Race'), checked=fi_flgs.race)
         self.genderCheck = CheckBox(self, _(u'Gender'), checked=fi_flgs.gender)
         self.statsCheck = CheckBox(self, _(u'Stats'), checked=fi_flgs.stats)
@@ -86,12 +91,13 @@ class ImportFaceDialog(DialogWindow):
     def EvtListBox(self, lb_selection_dex, lb_selection_str):
         """Responds to listbox selection."""
         item = self.list_items[lb_selection_dex]
-        face = self.data[item]
+        face = self.fdata[item]
         self.nameText.label_text = face.pcName
         self.raceText.label_text = face.getRaceName()
         self.genderText.label_text = face.getGenderName()
         self.statsText.label_text = _(u'Health ') + unicode(face.health)
-        itemImagePath = bass.dirs[u'mods'].join(u'Docs', u'Images', '%s.jpg' % item)
+        itemImagePath = bass.dirs[u'mods'].join(u'Docs', u'Images',
+                                                u'%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         self.picture.set_bitmap(itemImagePath)
         self.listBox.lb_select_index(lb_selection_dex)
@@ -107,15 +113,16 @@ class ImportFaceDialog(DialogWindow):
         #--Do import
         pc_flags = bosh.faces.PCFaces.pcf_flags() # make a copy of PCFaces flags
         pc_flags.hair = pc_flags.eye = True
-        pc_flags.name = self.nameCheck.is_checked
+        pc_flags.pcf_name = self.nameCheck.is_checked
         pc_flags.race = self.raceCheck.is_checked
         pc_flags.gender = self.genderCheck.is_checked
         pc_flags.stats = self.statsCheck.is_checked
         pc_flags.iclass = self.classCheck.is_checked
         #deprint(flags.getTrueAttrs())
-        bass.settings['bash.faceImport.flags'] = int(pc_flags)
-        bosh.faces.PCFaces.save_setFace(self.fileInfo,self.data[item],pc_flags)
-        balt.showOk(self, _(u'Face imported.'), self.fileInfo.name.s)
+        bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
+        bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],
+                                        pc_flags)
+        balt.showOk(self, _(u'Face imported.'), self.fileInfo.name)
         self.accept_modal()
 
 #------------------------------------------------------------------------------
@@ -123,10 +130,10 @@ class CreateNewProject(DialogWindow):
     title = _(u'New Project')
     def __init__(self,parent=None):
         super(CreateNewProject, self).__init__(parent)
-        #--Build a list of existing directories
-        #  The text control will use this to change background color when name collisions occur
-        self.existingProjects = set(x for x in bass.dirs[u'installers'].list()
-            if bass.dirs[u'installers'].join(x).isdir())
+        # Build a list of existing directories. The text control will use this
+        # to change background color when name collisions occur.
+        self.existingProjects = {x for x in bass.dirs[u'installers'].list()
+                                 if bass.dirs[u'installers'].join(x).isdir()}
         #--Attributes
         self.textName = TextField(self, _(u'New Project Name-#####'))
         self.textName.on_text_changed.subscribe(
@@ -156,7 +163,7 @@ class CreateNewProject(DialogWindow):
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self, fit=True)
         # Dialog Icon Handlers
-        self.set_icon(installercons.get_image('off.white.dir').GetIcon())
+        self.set_icon(installercons.get_image(u'off.white.dir').GetIcon())
         self.OnCheckBoxChange()
         self.OnCheckProjectsColorTextCtrl(self.textName.text_content)
 
@@ -164,11 +171,11 @@ class CreateNewProject(DialogWindow):
         projectName = bolt.GPath(new_text)
         if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
             # PY3: See note in basher/constants.py
-            self.textName.set_background_color(colors.RED)
+            self.textName.set_background_color(colors[u'default.warn'])
             self.textName.tooltip = _(u'There is already a project with that name!')
             self.ok_button.enabled = False
         else:
-            self.textName.set_background_color(colors.WHITE)
+            self.textName.reset_background_color()
             self.textName.tooltip = None
             self.ok_button.enabled = True
 
@@ -178,12 +185,12 @@ class CreateNewProject(DialogWindow):
         if self.checkEsp.is_checked or self.checkEspMasterless.is_checked:
             if self.checkWizard.is_checked:
                 self.set_icon(
-                    installercons.get_image('off.white.dir.wiz').GetIcon())
+                    installercons.get_image(u'off.white.dir.wiz').GetIcon())
             else:
                 self.set_icon(
-                    installercons.get_image('off.white.dir').GetIcon())
+                    installercons.get_image(u'off.white.dir').GetIcon())
         else:
-            self.set_icon(installercons.get_image('off.grey.dir').GetIcon())
+            self.set_icon(installercons.get_image(u'off.grey.dir').GetIcon())
 
     def OnClose(self):
         """ Create the New Project and add user specified extras. """
@@ -206,11 +213,11 @@ class CreateNewProject(DialogWindow):
         if self.checkEspMasterless.is_checked:
             fileName = u'Blank, %s (masterless).esp' % bush.game.fsName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject,
-                                         masterless=True)
+                                         wanted_masters=[])
         if self.checkWizard.is_checked:
             # Create empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')
-            with wizardPath.open('w',encoding='utf-8') as out:
+            with wizardPath.open(u'w', encoding=u'utf-8') as out:
                 out.write(u'; %s BAIN Wizard Installation Script\n' % projectName)
         if self.checkWizardImages.is_checked:
             # Create 'Wizard Images' directory
@@ -229,3 +236,159 @@ class CreateNewProject(DialogWindow):
         tmpDir.rmtree(tmpDir.s)
         if not has_files:
             projectDir.join(u'temp_hack').rmtree(safety=u'temp_hack')
+
+#------------------------------------------------------------------------------
+class CreateNewPlugin(DialogWindow):
+    """Dialog for creating a new plugin, allowing the user to select extension,
+    name and flags."""
+    title = _(u'New Plugin')
+    _def_size = (400, 500)
+
+    def __init__(self, parent):
+        super(CreateNewPlugin, self).__init__(parent, sizes_dict=balt.sizes)
+        self._parent_window = parent
+        default_ext = u'.esp'
+        self._plugin_ext = DropDown(self, value=default_ext,
+            choices=sorted(bush.game.espm_extensions), auto_tooltip=False)
+        self._plugin_ext.tooltip = _(u'Select which extension the plugin will '
+                                     u'have.')
+        self._plugin_ext.on_combo_select.subscribe(self._handle_plugin_ext)
+        self._plugin_name = TextField(self, _(u'New Plugin'),
+            alignment=TextAlignment.RIGHT)
+        self._esm_flag = CheckBox(self, _(u'ESM Flag'),
+            chkbx_tooltip=_(u'Whether or not the the resulting plugin will be '
+                            u'a master, i.e. have the ESM flag.'))
+        # Completely hide the ESL checkbox for non-ESL games, but check it by
+        # default for ESL games, since one of the most common use cases for
+        # this command on those games is to create BSA-loading dummies.
+        self._esl_flag = CheckBox(self, _(u'ESL Flag'),
+            chkbx_tooltip=_(u'Whether or not the resulting plugin will be '
+                            u'light, i.e have the ESL flag.'),
+            checked=bush.game.has_esl)
+        self._esl_flag.visible = bush.game.has_esl
+        self._master_search = SearchBar(self)
+        self._master_search.on_text_changed.subscribe(self._handle_search)
+        self._masters_box = CheckListBox(self)
+        # Initially populate the masters list, checking only the game master
+        m_keys = [m.s for m in load_order.cached_lo_tuple()]
+        m_values = [m == bush.game.master_file for m in m_keys]
+        self._masters_box.set_all_items(m_keys, m_values)
+        self._masters_dict = OrderedDict(izip(m_keys, m_values))
+        # Only once that's done do we subscribe - avoid all the initial events
+        self._masters_box.on_box_checked.subscribe(self._handle_master_checked)
+        select_all_btn = SelectAllButton(self,
+            btn_tooltip=_(u'Select all plugins that are visible with the '
+                          u'current search term.'))
+        select_all_btn.on_clicked.subscribe(
+            lambda: self._handle_mass_select(mark_active=True))
+        deselect_all_btn = DeselectAllButton(self,
+            btn_tooltip=_(u'Deselect all plugins that are visible with the '
+                          u'current search term.'))
+        deselect_all_btn.on_clicked.subscribe(
+            lambda: self._handle_mass_select(mark_active=False))
+        self._ok_btn = OkButton(self)
+        self._ok_btn.on_clicked.subscribe(self._handle_ok)
+        self._too_many_masters = Label(self, u'')
+        self._too_many_masters.set_foreground_color(colors[u'default.warn'])
+        self._too_many_masters.visible = False
+        VLayout(border=6, spacing=6, item_expand=True, items=[
+            HLayout(spacing=4, items=[
+                (self._plugin_name, LayoutOptions(weight=1)),
+                self._plugin_ext,
+            ]),
+            VBoxedLayout(self, title=_(u'Flags'), spacing=4, items=[
+                self._esm_flag, self._esl_flag,
+            ]),
+            (HBoxedLayout(self, title=_(u'Masters'), spacing=4,
+                item_expand=True, items=[
+                    (VLayout(item_expand=True, spacing=4, items=[
+                        self._master_search,
+                        (self._masters_box, LayoutOptions(weight=1)),
+                    ]), LayoutOptions(weight=1)),
+                    VLayout(spacing=4, items=[
+                        select_all_btn, deselect_all_btn,
+                    ]),
+            ]), LayoutOptions(weight=1)),
+            VLayout(item_expand=True, items=[
+                self._too_many_masters,
+                HLayout(spacing=5, item_expand=True, items=[
+                    Stretch(), self._ok_btn, CancelButton(self)
+                ]),
+            ]),
+        ]).apply_to(self)
+
+    @property
+    def _chosen_masters(self):
+        """Returns a generator yielding all checked masters."""
+        return (k for k, v in self._masters_dict.iteritems() if v)
+
+    def _check_master_limit(self):
+        """Checks if the current selection of masters exceeds the game's master
+        limit and, if so, disables the OK button and shows a warning
+        message."""
+        count_checked = len(list(self._chosen_masters))
+        count_limit = bush.game.Esp.master_limit
+        limit_exceeded = count_checked > count_limit
+        self._ok_btn.enabled = not limit_exceeded
+        self._too_many_masters.label_text = _(
+            u'Too many masters: %u checked, but only %u are allowed by the '
+            u'game.') % (count_checked, count_limit)
+        self._too_many_masters.visible = limit_exceeded
+        self.update_layout()
+
+    def _handle_plugin_ext(self, new_p_ext):
+        """Internal callback to handle a change in extension."""
+        # Enable the flags by default, but don't mess with their checked state
+        self._esl_flag.enabled = True
+        self._esm_flag.enabled = True
+        if new_p_ext == u'.esl':
+            # For .esl files, force-check the ESL flag
+            self._esl_flag.enabled = False
+            self._esl_flag.is_checked = True
+        if new_p_ext in (u'.esm', u'.esl'):
+            # For .esm and .esl files, force-check the ESM flag
+            self._esm_flag.enabled = False
+            self._esm_flag.is_checked = True
+
+    def _handle_mass_select(self, mark_active):
+        """Internal callback to handle the Select/Deselect All buttons."""
+        self._masters_box.set_all_checkmarks(checked=mark_active)
+        for m in self._masters_box.lb_get_str_items():
+            self._masters_dict[m] = mark_active # update only visible items!
+        self._check_master_limit()
+
+    def _handle_master_checked(self, master_index):
+        """Internal callback to update the dict we use to track state,
+        independent of the contents of the masters box."""
+        mast_name = self._masters_box.lb_get_str_item_at_index(master_index)
+        mast_checked = self._masters_box.lb_is_checked_at_index(master_index)
+        self._masters_dict[mast_name] = mast_checked
+        self._check_master_limit()
+
+    def _handle_search(self, search_str):
+        """Internal callback used to repopulate the masters box whenever the
+        text in the search bar changes."""
+        lower_search_str = search_str.lower()
+        new_m_keys, new_m_values = [], []
+        # Case-insensitively filter based on the keys, then update the box
+        for k, v in self._masters_dict.iteritems():
+            if lower_search_str in k.lower():
+                new_m_keys.append(k)
+                new_m_values.append(v)
+        self._masters_box.set_all_items(new_m_keys, new_m_values)
+
+    def _handle_ok(self):
+        """Internal callback to handle the OK button."""
+        pw = self._parent_window
+        chosen_name = ModInfo.unique_name(
+            self._plugin_name.text_content + self._plugin_ext.get_value())
+        windowSelected = pw.GetSelected()
+        pw.data_store.create_new_mod(chosen_name, windowSelected,
+            esm_flag=self._esm_flag.is_checked,
+            esl_flag=self._esl_flag.is_checked,
+            wanted_masters=[bolt.GPath(m) for m in self._chosen_masters])
+        if windowSelected:  # assign it the group of the first selected mod
+            mod_group = pw.data_store.table.getColumn(u'group')
+            mod_group[chosen_name] = mod_group.get(windowSelected[0], u'')
+        pw.ClearSelected(clear_details=True)
+        pw.RefreshUI(redraw=[chosen_name], refreshSaves=False)

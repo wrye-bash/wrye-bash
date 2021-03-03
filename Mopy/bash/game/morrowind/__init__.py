@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,15 +14,14 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """GameInfo override for TES III: Morrowind."""
-import struct
+import struct as _struct
 from collections import defaultdict
 
 from .. import GameInfo
@@ -39,8 +38,7 @@ class MorrowindGameInfo(GameInfo):
     version_detect_file = u'Morrowind.exe'
     master_file = u'Morrowind.esm'
     mods_dir = u'Data Files'
-    pklfile = u'Morrowind_ids.pkl'
-    masterlist_dir = u'Morrowind'
+    taglist_dir = u'Morrowind'
     # This is according to xEdit's sources, but it doesn't make that key for me
     regInstallKeys = (u'Bethesda Softworks\\Morrowind', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/morrowind/'
@@ -69,8 +67,6 @@ class MorrowindGameInfo(GameInfo):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
-        # Make Bethesda's files load before all mod BSAs, and all BSAs before
-        # all loose assets (real solution is BSA tab - #233)
         redate_dict = defaultdict(lambda: u'2003-06-04', {
             u'Morrowind.bsa': u'2002-05-01',
             u'Tribunal.bsa': u'2002-11-06',
@@ -99,26 +95,34 @@ class MorrowindGameInfo(GameInfo):
         wrye_bash_data_dirs = GameInfo.Bain.wrye_bash_data_dirs | {u'Mash'}
 
     class Esp(GameInfo.Esp):
-        validHeaderVersions = (1.2, 1.3)
-        stringsFiles = []
-        plugin_header_sig = b'TES3'
         check_master_sizes = True
+        max_lvl_list_size = 2 ** 32 - 1
+        plugin_header_sig = b'TES3'
+        stringsFiles = []
+        validHeaderVersions = (1.2, 1.3)
 
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from .records import MreTes3
+        from .records import MreActi, MreAlch, MreAppa, MreArmo, MreBody, \
+            MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont, MreCrea, \
+            MreDial, MreDoor, MreEnch, MreFact, MreGmst, MreGlob, MreInfo, \
+            MreIngr, MreLand, MreLevc, MreLevi, MreLigh, MreLock, MreLtex, \
+            MreMgef, MreMisc, MreNpc,  MrePgrd, MreProb, MreRace, MreRegn, \
+            MreRepa, MreScpt, MreSkil, MreSndg, MreSoun, MreSpel, MreSscr, \
+            MreStat, MreTes3, MreWeap
         # Setting RecordHeader class variables - Morrowind is special
         header_type = brec.RecordHeader
         header_type.rec_header_size = 16
         header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I']
         header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
-        header_type.header_unpack = struct.Struct(
+        header_type.header_unpack = _struct.Struct(
             header_type.rec_pack_format_str).unpack
-        header_type.sub_header_fmt = u'=4sI'
-        header_type.sub_header_unpack = struct.Struct(
-            header_type.sub_header_fmt).unpack
-        header_type.sub_header_size = 8
+        from ...brec import Subrecord
+        Subrecord.sub_header_fmt = u'=4sI'
+        Subrecord.sub_header_unpack = _struct.Struct(
+            Subrecord.sub_header_fmt).unpack
+        Subrecord.sub_header_size = 8
         header_type.top_grup_sigs = [
             b'GMST', b'GLOB', b'CLAS', b'FACT', b'RACE', b'SOUN', b'SKIL',
             b'MGEF', b'SCPT', b'REGN', b'SSCR', b'BSGN', b'LTEX', b'STAT',
@@ -126,18 +130,19 @@ class MorrowindGameInfo(GameInfo):
             b'LIGH', b'ENCH', b'NPC_', b'ARMO', b'CLOT', b'REPA', b'ACTI',
             b'APPA', b'LOCK', b'PROB', b'INGR', b'BOOK', b'ALCH', b'LEVI',
             b'LEVC', b'CELL', b'LAND', b'PGRD', b'SNDG', b'DIAL', b'INFO']
-            # +SSCR? in xEdit: to be confirmed
-        # TODO(inf) Everything up to this TODO correct, the rest may not be yet
-        header_type.pack_formats = {0: u'=4sI4s2I'}
-        header_type.pack_formats.update(
-            {x: u'=4s4I' for x in {1, 6, 7, 8, 9, 10}})
-        header_type.pack_formats.update({x: u'=4sIi2I' for x in {2, 3}})
-        header_type.pack_formats.update({x: u'=4sIhh2I' for x in {4, 5}})
         header_type.valid_header_sigs = set(
             header_type.top_grup_sigs + [b'TES3'])
-        brec.MreRecord.type_class = {x.rec_sig: x for x in (MreTes3,)}
+        brec.MreRecord.type_class = {x.rec_sig: x for x in (
+            MreActi, MreAlch, MreAppa, MreArmo, MreBody, MreBook, MreBsgn,
+            MreCell, MreClas, MreClot, MreCont, MreCrea, MreDial, MreDoor,
+            MreEnch, MreFact, MreGmst, MreGlob, MreInfo, MreIngr, MreLand,
+            MreLevc, MreLevi, MreLigh, MreLock, MreLtex, MreMgef, MreMisc,
+            MreNpc,  MrePgrd, MreProb, MreRace, MreRegn, MreRepa, MreScpt,
+            MreSkil, MreSndg, MreSoun, MreSpel, MreSscr, MreStat, MreTes3,
+            MreWeap,
+        )}
         brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {b'TES3'})
+            set(brec.MreRecord.type_class) - {b'TES3', b'CELL', b'DIAL'})
         cls._validate_records()
 
 GAME_TYPE = MorrowindGameInfo

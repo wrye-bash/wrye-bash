@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,15 +14,15 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
-import struct
+import struct as _struct
+from collections import defaultdict
 from os.path import join as _j
 
 from ..oblivion import OblivionGameInfo
@@ -34,20 +34,26 @@ class NehrimGameInfo(OblivionGameInfo):
     bash_root_prefix = u'Nehrim'
     game_detect_file = _j(u'Data', u'Nehrim.esm')
     master_file = u'Nehrim.esm'
-#    pklfile = u'Nehrim_ids.pkl' # TODO new pickle
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
     nexusName = u'Nehrim Nexus'
     nexusKey = u'bash.installers.openNehrimNexus.continue'
 
+    class Bsa(OblivionGameInfo.Bsa):
+        redate_dict = defaultdict(lambda: u'2006-01-01', {
+            u'N - Textures1.bsa': u'2005-01-01',
+            u'N - Textures2.bsa': u'2005-01-02',
+            u'L - Voices.bsa': u'2005-01-03',
+            u'N - Meshes.bsa': u'2005-01-04',
+            u'N - Sounds.bsa': u'2005-01-05',
+            u'L - Misc.bsa': u'2005-01-06',
+            u'N - Misc.bsa': u'2005-01-07',
+        })
+
     # Oblivion minus Oblivion-specific patchers (Cobl Catalogs, Cobl
     # Exhaustion, Morph Factions and SEWorld Tests)
-    patchers = tuple(p for p in OblivionGameInfo.patchers if p not in
-                     (u'AlchemicalCatalogs', u'CoblExhaustion', u'MFactMarker',
-                      u'SEWorldEnforcer'))
-    CBash_patchers = tuple(
-        p for p in OblivionGameInfo.CBash_patchers if p not in
-         (u'CBash_AlchemicalCatalogs', u'CBash_CoblExhaustion',
-          u'CBash_MFactMarker', u'CBash_SEWorldEnforcer'))
+    patchers = {p for p in OblivionGameInfo.patchers if p not in
+                (u'CoblCatalogs', u'CoblExhaustion', u'MorphFactions',
+                 u'SEWorldTests')}
 
     raceNames = {
         0x224fc:  _(u'Alemanne'),
@@ -83,7 +89,7 @@ class NehrimGameInfo(OblivionGameInfo):
             MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
             MreGmst, MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo, \
             MrePgrd
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
             MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,
             MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGlob, MreGras,
@@ -93,15 +99,15 @@ class NehrimGameInfo(OblivionGameInfo):
             MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex,
             MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, MreGmst,
             MreRefr, MreRoad, MreWrld, MreDial, MreInfo, MreLand, MrePgrd,
-        )
-        cls.readClasses = (MreMgef, MreScpt,)
-        cls.writeClasses = (MreMgef,)
+        )}
+        cls.readClasses = (b'MGEF', b'SCPT')
+        cls.writeClasses = (b'MGEF',)
         # Setting RecordHeader class variables - Oblivion is special
         header_type = brec.RecordHeader
         header_type.rec_header_size = 20
         header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I']
         header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
-        header_type.header_unpack = struct.Struct(
+        header_type.header_unpack = _struct.Struct(
             header_type.rec_pack_format_str).unpack
         header_type.pack_formats = {0: u'=4sI4s2I'}
         header_type.pack_formats.update(

@@ -181,7 +181,7 @@
 <p><strong>Windows Vista, 7, 8 &amp; 10 users:</strong> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Installation:
 <ol>
-    <li>Download and install the <a href="https://download.microsoft.com/download/5/B/C/5BC5DBB3-652D-4DCE-B14A-475AB85EEF6E/vcredist_x86.exe">MSVC 2010 Redistributable (x86)</a>.
+    <li>Download and install the <a href="https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe">MSVC 2010 Redistributable (x64)</a>.
     <li>You now have a choice:</li>
     <ul>
         <li>Extract the downloaded Wrye Bash archive into any folder.</li>
@@ -238,10 +238,10 @@
 <figcaption class="bain-overview-figcap">Wrye Bash's Installers tab.</figcaption>
 </figure>
 
-<p>Wrye Bash mod installer are known as <strong><abbr title="Bash Installers">BAIN</abbr></strong> (<strong>BA</strong>sh <strong>IN</strong>stallers), and are presented on the Installers Tab. The first time the Installers tab is opened, a dialog will appear asking if BAIN should be initialized. If you click <q>Yes</q>, BAIN will be initialised, which can take some time. After that, the information refresh performed when the Installers tab is opened is much faster.</p>
-    Tab. The first time the Installers tab is opened, a dialog will appear asking if BAIN should be initialized. If you click <q>Yes</q>,
-    BAIN will be initialised, which can take some time. After that, the information refresh performed when the Installers tab is opened is
-    much faster.
+<p>Wrye Bash mod installer are known as <strong><abbr title="Bash Installers">BAIN</abbr></strong> (<strong>BA</strong>sh <strong>IN</strong>stallers), and are presented on the Installers Tab.
+The first time the Installers tab is opened, a dialog will appear asking if BAIN should be initialized.
+If you click <q>Yes</q>, BAIN will be initialised, which can take some time.
+After that, the information refresh performed when the Installers tab is opened is much faster.</p>
 <p>BAIN's primary function is to install mod packages. <strong>BAIN Packages</strong> can be <code>.zip</code>,
     <code>.7z</code> or <code>.rar</code> archives or uncompressed directories. Uncompressed directories are called <strong>Projects</strong> while archives are usually called
     <strong>packages</strong>, abusing terminology. When we refer to projects and packages together we will be also using the collective term <strong>installers</strong>.
@@ -385,7 +385,7 @@ with a text editor, then it may be desired to uninstall the Mismatched
 deleted from the data folder manually, but there is an easy way to do
 this through BAIN. Before uninstalling the mod, first select the
 package and right click on it, then select
-<a href="#bainInstallCurrent">Install Current</a>. This will overwrite any
+<a href="#bainInstallConfigured">Install Configured</a>. This will overwrite any
 Mismatched files with the version of the file contained in the package, making
 them Matched. Now select <a href="#bainUninstall">Uninstall</a> and BAIN
 will uninstall all installed files associated with this package.
@@ -523,7 +523,7 @@ from other packages previously overridden by the uninstalled package's
         <tr><td colspan="3" id="bainInstall">Install...</td><td>Installs the selected package, preferring a
             BAIN or FOMOD wizard if those are available (see options below).</td></tr>
         <tr><td rowspan="3">Advanced Installation..</td>
-            <td colspan="2" id="bainInstallCurrent">Install Current</td> <td>Fully installs the package as configured
+            <td colspan="2" id="bainInstallConfigured">Install Configured</td> <td>Fully installs the package as configured
             except for files that would be overridden by later packages.</td></tr>
             <tr><td rowspan="2">Wizard Installer..</td>
                 <td id="bainWizard">Manual Wizard...</td><td>Runs the Wizard for the package, if it has
@@ -624,13 +624,13 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <p>Bash features a sophisticated undo/redo load order feature, comprising both load order changes <em>of active <strong>or</strong> inactive
     plugins</em> and activating/de-activating plugins. Whether you activate a plugin, drag and drop it in another position, deactivate a
     plugin (having its children deactivated too) etc, you can always hit <code>Ctrl+Z</code> <em>while the list of mods has focus</em> to undo
-    the operation or <code>Ctrl+Y</code> to redo it. Bash keeps the load orders (meaning total load order of <em>all</em> installed plugins
+    the operation or <code>Ctrl+Y</code>/<code>Ctrl+Shift+Z</code> to redo it. Bash keeps the load orders (meaning total load order of <em>all</em> installed plugins
     and active state of the plugins) in its internal structures and will persist those on disc on shutting down,
     in <code>My Games\&lt;Game&gt;\BashLoadOrders.dat</code>, so you can undo/redo on restarting Bash.
 <p>The undo/redo feature will try to preserve as many load orders as possible - so unlike undo/redo in other applications if you have an
     initial load order state A then change it to B, then hit undo (so you are back on state A), then change it to C Bash will keep in its
     internal structures the load order states A C B while most other applications would end up with A C. Undo/redo load order state is a
-    relatively new feature (available in 307 beta) so it may have rough edges.</p>
+    relatively new feature (available since 307) so it may have rough edges.</p>
 
 <h3 id="load-symbols">What Symbols &amp; Colours Mean <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Like in the Installers tab, Wrye Bash uses colour-coding and other formatting effects to convey information about the state of plugins.
@@ -716,15 +716,12 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>Creates LOOT masterlist entries based on the tags you have
                 applied to the selected plugin(s). Also tries to figure out the
                 URL that the plugin came from based on the BAIN package it was
-                installed from. In <strong>Oblivion &amp; Nehrim&colon; At
-                Fate's Edge only</strong>, CBash will also be used to check for
-                ITMs and deleted references.</td>
+                installed from.</td>
         </tr>
         <tr><td>Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
         <tr><td>Don't Ghost<td>Don't ghost this plugin when it is inactive, even if <a href="#modsAutoGhost">Auto-Ghost</a> is enabled.
         <tr><td>Ghost<td>Ghost this plugin when it is inactive even if <a href="#modsAutoGhost">Auto-Ghost</a> is disabled.
         <tr><td id="modsRebuildPatch">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
-        <tr><td id="modsRebuildPatchCBash">Rebuild Patch (CBash *deprecated*)...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Rebuild the selected Bashed Patch using the CBash patcher.
 </table>
 
 
@@ -748,10 +745,9 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 </div>
 </div>
 <h3 id="patch-configuration">Bash Configuration <a class="back2top" href="#contents">Back to top</a></h3>
-<p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><strong>Bashed Patch, 0.esp</strong></q>. It is configured using the plugin context menu commands <a href="#modsRebuildPatch">Rebuild Patch...</a> or <a href="#modsRebuildPatchCBash">Rebuild Patch (CBash *deprecated*)...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
+<p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><strong>Bashed Patch, 0.esp</strong></q>. It is configured using the plugin context menu command <a href="#modsRebuildPatch">Rebuild Patch...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
 <p>The configuration dialog consists of a list of major sections to the left, and the contents of the selected section to the right, with the build and save buttons at the bottom. The sections and their items have checkboxes: checking a section will include all its checked items in the Bashed Patch. Unchecked sections and items will not be included. Some sections don't have any items, and so just need the section checkbox checked.
 <p>A short description of each section and some items is displayed near the bottom of the window if the section/item is hovered over. Bolded items are new since the last time the Bashed Patch was built. Wrye Bash will try to auto-configure most sections, but some will still need tweaking.
-<p><strong>Note:</strong> There are currently two methods of building a Bashed Patch. One uses Python, and the other uses CBash, which is a software library written to speed up the reading of plugins. Both methods offer the same options. The CBash method is faster and allows more types of plugin to be merged, but contains some bugs as CBash is still a work in progress. CBash will become the default in the near future, once its bugs have been fixed. For now, it is probably safer to use the Python method.
 <table>
     <thead>
         <tr><th colspan="2">Bashed Patch Configuration Buttons
@@ -788,12 +784,12 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <tr><td>Import Actors: Animations</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Merges the changes made to actor animations by all the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td>Import Actors: Death Items</td><td><em>All but Fallout 4.</em> Preserves the changes made to the items added to an actor when it dies by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td id="patchImportActorsFaces">Import Actors: Faces</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves the changes made to NPC faces by the mods selected.</td><td>The decision is entirely based on user preference. Choose whichever mods' NPC faces you prefer.</td>
+        <tr><td id="patchImportActorsFactions">Import Actors: Factions</td><td><em>All but Fallout 4.</em> Preserves the changes made to the factions an actor belongs to by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td id="patchImportActorsSpells">Import Actors: Spells</td><td><em>All but Fallout 4.</em> Preserves the changes made to the spells actors have by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td id="patchImportCells">Import Cells<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to cell settings such as lighting, climate, music, name, owner, water and more.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td>Import Destructible</td><td><em>All but Oblivion, Nehrim&colon; At Fate's Edge &amp; Fallout 4.</em> Preserves the changes made to the ability to destroy certain parts of the environment.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td>Import Effect Stats</td><td><em>All but Fallout 4.</em> Preserves the changes made to the stats of magic / base effects.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td>Import Enchantment Stats</td><td><em>All but Fallout 4.</em> Preserves the changes made to the effect data of enchantments / object effects.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Factions</td><td><em>All but Fallout 4.</em> Preserves the changes made to the factions an actor belongs to by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
         <tr><td id="patchImportGraphics">Import Graphics<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various textures and models throughout the game.<td>The decision is entirely based on user preference. Choose whichever mods' graphics you prefer.
         <tr><td id="patchImportInventory">Import Inventory<td><em>All but Fallout 4.</em> Merges the changes made to the items in an actor's inventory by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td>Import Keywords</td><td><em>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only.</em> Preserves the changes made to the keywords attached to various things throughout the game by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
@@ -816,7 +812,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     <thead><tr><th>Section<th>Description<th>When You Should Use It
     <tbody>
         <tr><td id="patchTweakActors">Tweak Actors</td><td><em>All but Fallout 4.</em> Allows you to change a number of the game's settings relating to actors (i.e. NPCs).</td><td>The decision is entirely based on user preference.</td></tr>
-        <tr><td id="patchTweakAssorted">Tweak Assorted<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Contains a set of miscellaneous tweaks to the game.<td>The <strong>Bow Reach Fix</strong> and <strong>Nvidia Fog Fix</strong> are recommended for all users, as they fix bugs that may be uncovered by mods. The <strong>DarNified Books</strong> option is recommended for users of DarNified UI. Other than those, the decision is entirely based on user preference.
+        <tr><td id="patchTweakAssorted">Tweak Assorted</td><td><em>All but Fallout 4.</em> Contains a set of miscellaneous tweaks to the game.</td><td>In Oblivion, the <strong>Bow Reach Fix</strong> and <strong>Nvidia Fog Fix</strong> are recommended for all users, as they fix bugs that may be uncovered by mods. Also in Oblivion, the <strong>DarNified Books</strong> option is recommended for users of DarNified UI. Beyond that, the decision is entirely based on user preference.</td></tr>
         <tr><td id="patchTweakClothes">Tweak Clothes<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Contains a set of tweaks that changes settings relating to the game's clothing.<td>The decision is entirely based on user preference.
         <tr><td id="patchTweakNames">Tweak Names<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Contains a set of tweaks that changes the names of things in the game. Most change the names to change how they are sorted in your inventory.<td>The decision is entirely based on user preference.
         <tr><td id="patchTweakSettings">Tweak Settings<td><em>All but Fallout 4.</em> Contains a set of tweaks that changes various global and non-global game settings. <td>In Oblivion, the <strong>UOP Vampire Aging and Face Fix.esp</strong> tweak is recommended for all users. Beyond that, the decision is entirely based on user preference.
@@ -1331,138 +1327,117 @@ Respect developer's time - keep discussions there short, sweet and technical. No
         <tr><td>Can't Find User Directory<td>The PyWin32 Python module is not installed correctly.<td>Install the Wrye Python package correctly.
         <tr><td>Can't Find wxversion<td>Unknown<td>Uninstall then reinstall Python and wxPython (in that order).
         <tr><td>No module named wx<td>You haven't installed wxPython successfully or you haven't installed it in the right place.<td>Install the Wrye Python package correctly.
-        <tr><td>The NTVDM CPU has encountered an illegal instruction.<td>This is a Python issue that causes the installation of PyWin32 (part of the Wrye Python bundle) to fail.<td> One workaround is to use the Standalone version of Wrye Bash. The alternative is to <a href="https://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py2.7.exe/download">download PyWin32 separately</a> and install it after installing Wrye Bash.
-        <tr><td>Memory Error. This causes a debug output like the following to appear.
-            <code class="box">Traceback (most recent call last):
-File "F:\Bethesda Softworks\Oblivion\Mopy\bash\basher.py", line 5349, in OnCloseWindow
-    self.SaveSettings()
-File "F:\Bethesda Softworks\Oblivion\Mopy\bash\basher.py", line 5361, in SaveSettings
-    self.notebook.GetPage(index).OnCloseWindow()
-File "F:\Bethesda Softworks\Oblivion\Mopy\bash\basher.py", line 2554, in OnCloseWindow
-    bosh.modInfos.table.save()
-File "F:\Bethesda Softworks\Oblivion\Mopy\bash\bolt.py", line 2158, in save
-    self.hasChanged = not dictFile.save()
-File "F:\Bethesda Softworks\Oblivion\Mopy\bash\bosh.py", line 315, in save
-    saved = bolt.PickleDict.save(self)
-File "F:\Bethesda Softworks\Oblivion\Mopy\bash\bolt.py", line 1910, in save
-    cPickle.dump(data,out,-1)
-MemoryError</code>
-            <td>This is Wrye Bash running out of memory while trying to save its settings. Usually this will occur when a user has a very large BAIN setup, and it will happen after rebuilding the Bashed Patch. Saving Wrye Bash's settings involves some memory overhead, so usually happens while saving settings.
-            <td>If you start seeing this error, it means you have enough information in BAIN to push Wrye Bash to the 2GB limit of memory for 32-bit applications.  Either:
-            <ul>
-                <li>Avoid rebuilding the Bashed Patch after using BAIN.  Instead, restart Wrye Bash, then rebuild the Bashed Patch.
-                <li>If running the Python source, try enabling the LAA flag on python.exe and pythonw.exe.  For 64-bit OS users, this may allow Wrye Bash up to almost 4GB of memory before crashing.
-                <li>If running the Standalone executable, try enabling the LAA flag on Wrye Bash.exe.
-                <li>If you do not need access to CBash, you can setup your Python environment using 64-bit Python.
-            </ul>
+        <tr><td>The NTVDM CPU has encountered an illegal instruction.<td>This is a Python issue that causes the installation of PyWin32 (part of the Wrye Python bundle) to fail.<td> One workaround is to use the Standalone version of Wrye Bash. The alternative is to <a href="https://pypi.org/project/pywin32/">install it seperately</a>, after installing Wrye Bash.
         <tr><td>Wrye Bash will not start, and no Bug Dump can be generated<td>Wrye Bash is installed in a directory with unicode characters, and the Python interpreter has problems importing files in such directories.<td>Reinstall Wrye Bash to a directory without unicode characters.
         <tr><td>File not found errors<td>Mapped paths and junction links can confuse Wrye Bash, leading to file not found errors.<td>Avoid using mapped paths and junction links for your game install.
 </table>
 
 
 <h2 id="credits">Credits <a class="back2top" href="#contents">Back to top</a></h2>
-<h3>Creator <a class="back2top" href="#contents">Back to top</a></h3>
+<h3>Original Creator <a class="back2top" href="#contents">Back to top</a></h3>
 <ul class="nodot">
-  <li><img alt="Monkey God's Icon" class="monkeygod" src="../bash/images/wrye_monkey_64.jpg" width="64" height="64"><span><a href="http://wryemusings.com"><strong>Wrye</strong>:</a> Monkey God of Modding!</span></li>
+  <li><img class="monkeygod" alt="Monkey God's Icon" src="../bash/images/wrye_monkey_64.jpg"><span><a href="http://wryemusings.com"><strong>Wrye</strong>:</a> Monkey God of Modding!</span></li>
 </ul>
-<h3>Current Maintainer <a class="back2top" href="#contents">Back to top</a></h3>
+<h3>Current Maintainers <a class="back2top" href="#contents">Back to top</a></h3>
 <ul class="nodot">
-  <li><img alt="Utumno's Icon" class="bigcred" src="../bash/images/people/utmnavi32.jpg" width="32" height="32"><span><a href="https://github.com/Utumno">Utumno:</a> Complete refactoring of the codebase, performance.</span></li>
+  <li><img class="bigcred" alt="Utumno's Icon" src="../bash/images/people/utmnavi48.png"><span><a href="https://github.com/Utumno">Utumno:</a> Maintainer since 304.4</span></li>
+  <li><img class="bigcred" alt="Infernio's Icon" src="../bash/images/people/ifniavi48.png"><span><a href="https://github.com/Infernio">Infernio:</a> Maintainer since 307</span></li>
 </ul>
 <h3>Authors and Contributors <a class="back2top" href="#contents">Back to top</a></h3>
 <ul class="nodot">
-  <li><img alt="Badhair's Icon" src="../bash/images/people/gencavi32.png"><span><a href="https://github.com/Badhair">Badhair:</a> OBSE cofile reading code, various optimizations etc.</span></li>
-  <li><img alt="BeermotorWB's Icon" src="../bash/images/people/brmtavi32.png"><span><a href="https://github.com/BeermotorWB">BeermotorWB:</a> Installer directory refinement, new settings tweaks</span></li>
-  <li><img alt="Daidalos' Icon" src="../bash/images/people/dlosavi32.png"><span><a href="https://github.com/D4id4los">Daidalos:</a> LOOT API updates, obscure crash and typo corrections</span></li>
-  <li><img alt="DianaNites' Icon" src="../bash/images/people/dianavi32.png"><span><a href="https://github.com/DianaNites">DianaNites:</a> Refactoring Export/Import links and argument parsing</span></li>
-  <li><img alt="Ethatron's Icon" src="../bash/images/people/ethaavi32.jpg"><span><a href="https://github.com/Ethatron">Ethatron:</a> CBash updates</span></li>
-  <li><img alt="FelesNoctis' Icon" src="../bash/images/people/flsnavi32.jpg"><span><a href="https://github.com/FelesNoctis">FelesNoctis:</a> Documentation editor for v307+, image updates</span></li>
-  <li><img alt="Fireundubh's Icon" src="../bash/images/people/fireavi32.png"><span><a href="https://github.com/fireundubh">fireundubh:</a> Installer improvements and fixes</span></li>
-  <li><img alt="GandaG's Icon" src="../bash/images/people/gndaavi32.jpg"><span><a href="https://github.com/GandaG">GandaG:</a> FOMOD support, Refactoring, build script reworks</span></li>
-  <li><img alt="Haama's Icon" src="../bash/images/people/genravi32.png"><span><a href="https://github.com/Haama">Haama:</a> OBSE cofile definitions, various fixes, improvements etc</span></li>
-  <li><img alt="Infernio's Icon" src="../bash/images/people/ifniavi32.png"><span><a href="https://github.com/Infernio">Infernio:</a> Extensive refactoring of cosaves, records, gui, etc.; Enderal support, Skyrim patcher porting</span></li>
-  <li><img alt="Jfpelland's Icon" src="../bash/images/people/genbavi32.png"><span><a href="https://github.com/jfpelland">jfpelland:</a> Patcher updates, bug fixes, corrected GMST checks</span></li>
-  <li><img alt="Leandor's Icon" src="../bash/images/people/lndravi32.jpg"><span><a href="https://github.com/leandor">Leandor:</a> CBash and CBashAPI updates</span></li>
-  <li><img alt="Lojack's Icon" src="../bash/images/people/lojkavi32.png"><span><a href="https://github.com/lojack5">Lojack:</a> Wizard based install system, Ini tab, general maintenance, etc.</span></li>
-  <li><img alt="Luna Nova's Icon" src="../bash/images/people/nalravi32.png"><span><a href="https://github.com/nallar">Luna Nova:</a> Initial Skyrim VR support.</span></li>
-  <li><img alt="MacSplody's Icon" src="../bash/images/people/mcspavi32.png"><span><a href="https://github.com/MacSplody">MacSplody:</a> Patcher refinement, updating LOOT integration, cell handling</span></li>
-  <li><img alt="Myktaylor's Icon" src="../bash/images/people/myk2avi32.png"><span><a href="https://github.com/myk002">myktaylor:</a> Project management, Asynchronous installer tab, etc</span></li>
-  <li><img alt="Nephatrine's Icon" src="../bash/images/people/nephavi32.png"></img><a href="https://github.com/nephatrine">nephatrine:</a> Initial Fallout 4 VR support.</li>
-  <li><img alt="Nycz's Icon" src="../bash/images/people/nyczavi32.jpg"><span><a href="https://github.com/nycz">nycz:</a> Initial de-wx'ing, LZ4 and SSE save handling, exception refactoring</span></li>
-  <li><img alt="Ortham's Icon" src="../bash/images/people/orthavi32.png"><span><a href="https://github.com/Ortham">Ortham:</a> Refactoring, initial integrations and updates of LOOT API, documentation, libloadorder and libbsa, and the rewritten documentation included in v297 to v306</span></li>
-  <li><img alt="Pacific Morrowind's Icon" src="../bash/images/people/pcmwavi32.jpg"><span><a href="https://github.com/NickWilde1990">Pacific Morrowind:</a> New imports, exports, tweaks, general maintenance, etc.</span></li>
-  <li><img alt="Ralgor's Icon" src="../bash/images/people/genpavi32.png"><span><a href="https://github.com/Ralgor">Ralgor:</a> Cell support and Import Cells</span></li>
-  <li><img alt="Raziel23x's Icon" src="../bash/images/people/raziavi32.png"><span><a href="https://github.com/Raziel23x">Raziel23x:</a> new tweaks etc.</span></li>
-  <li><img alt="Sharlikran's Icon" src="../bash/images/people/sharavi32.jpg"><span><a href="https://github.com/Sharlikran">Sharlikran:</a> Fallout 3/NV support, initial ESL support, save game/module header restructuring, form version recognition, patcher updates, heavyweight contender of the community</span></li>
-  <li><img alt="Warmfrost85's Icon" src="../bash/images/people/wrmfavi32.jpg"><span><a href="https://github.com/warmfrost85">Warmfrost85:</a> Improvements to Clean Data &amp; Sync From Data</span></li>
-  <li><img alt="Waruddar's Icon" src="../bash/images/people/waruavi32.gif"><span><a href="https://www.nexusmods.com/users/456936">Waruddar:</a> Extensive additions/improvements/fixes, primary author of CBash</span></li>
-  <li><img alt="Valda's Icon" src="../bash/images/people/vldaavi32.png"><span><a href="https://github.com/valda">Valda:</a> Assisted with Fallout 3/New Vegas support, including new patchers</span></li>
+  <li><img class="smallcred" alt="Badhair's Icon" src="../bash/images/people/gencavi32.png"><span><a href="https://github.com/Badhair">Badhair:</a> OBSE cofile reading code, various optimizations etc.</span></li>
+  <li><img class="smallcred" alt="BeermotorWB's Icon" src="../bash/images/people/brmtavi32.png"><span><a href="https://github.com/BeermotorWB">BeermotorWB:</a> Installer directory refinement, new settings tweaks</span></li>
+  <li><img class="smallcred" alt="Daidalos' Icon" src="../bash/images/people/dlosavi32.png"><span><a href="https://github.com/D4id4los">Daidalos:</a> LOOT API updates, boot process refactoring</span></li>
+  <li><img class="smallcred" alt="DianaNites' Icon" src="../bash/images/people/dianavi32.png"><span><a href="https://github.com/DianaNites">DianaNites:</a> Refactoring Export/Import links and argument parsing</span></li>
+  <li><img class="smallcred" alt="Ethatron's Icon" src="../bash/images/people/ethaavi32.jpg"><span><a href="https://github.com/Ethatron">Ethatron:</a> CBash updates</span></li>
+  <li><img class="smallcred" alt="FelesNoctis' Icon" src="../bash/images/people/flsnavi32.jpg"><span><a href="https://github.com/FelesNoctis">FelesNoctis:</a> Documentation editor for 307+, image updates</span></li>
+  <li><img class="smallcred" alt="Fireundubh's Icon" src="../bash/images/people/fireavi32.png"><span><a href="https://github.com/fireundubh">fireundubh:</a> Installer improvements and fixes</span></li>
+  <li><img class="smallcred" alt="GandaG's Icon" src="../bash/images/people/gndaavi32.jpg"><span><a href="https://github.com/GandaG">GandaG:</a> FOMOD support, Refactoring, build script reworks</span></li>
+  <li><img class="smallcred" alt="Haama's Icon" src="../bash/images/people/genravi32.png"><span><a href="https://github.com/Haama">Haama:</a> OBSE/Pluggy cosave definitions, various fixes &amp; improvements</span></li>
+  <li><img class="smallcred" alt="Jfpelland's Icon" src="../bash/images/people/genbavi32.png"><span><a href="https://github.com/jfpelland">jfpelland:</a> Patcher updates, bug fixes, corrected GMST checks</span></li>
+  <li><img class="smallcred" alt="Kenneth M. Glassey's Icon" src="../bash/images/people/kmglavi32.png"><span><a href="https://github.com/Gavvers/">Kenneth M. Glassey:</a> Several FOMOD fixes</span></li>
+  <li><img class="smallcred" alt="Leandor's Icon" src="../bash/images/people/lndravi32.jpg"><span><a href="https://github.com/leandor">Leandor:</a> CBash and CBashAPI updates</span></li>
+  <li><img class="smallcred" alt="Lord Nyriox's Icon" src="../bash/images/people/lonyavi32.png"><span><a href="https://github.com/LordNyriox">Lord Nyriox:</a> Expanded Oblivion.esm swapping support</span></li>
+  <li><img class="smallcred" alt="Lojack's Icon" src="../bash/images/people/lojkavi32.png"><span><a href="https://github.com/lojack5">Lojack:</a> Maintainer from 278-305: BAIN Wizards, Ini Edits tab, etc.</span></li>
+  <li><img class="smallcred" alt="Luna Nova's Icon" src="../bash/images/people/nalravi32.png"><span><a href="https://github.com/TransLunarInjection">Luna Nova:</a> Initial Skyrim VR support.</span></li>
+  <li><img class="smallcred" alt="MacSplody's Icon" src="../bash/images/people/mcspavi32.png"><span><a href="https://github.com/MacSplody">MacSplody:</a> Patcher refinement, updating LOOT integration, cell handling</span></li>
+  <li><img class="smallcred" alt="Myktaylor's Icon" src="../bash/images/people/myk2avi32.png"><span><a href="https://github.com/myk002">myktaylor:</a> Project management, Asynchronous installer tab, etc</span></li>
+  <li><img class="smallcred" alt="Nephatrine's Icon" src="../bash/images/people/nephavi32.png"></img><a href="https://github.com/nephatrine">nephatrine:</a> Initial Fallout 4 VR support.</li>
+  <li><img class="smallcred" alt="Nycz's Icon" src="../bash/images/people/nyczavi32.jpg"><span><a href="https://github.com/nycz">nycz:</a> Initial de-wx'ing, LZ4 and SSE save handling, exception refactoring</span></li>
+  <li><img class="smallcred" alt="Ortham's Icon" src="../bash/images/people/orthavi32.png"><span><a href="https://github.com/Ortham">Ortham:</a> Refactoring, initial integrations and updates of LOOT API, documentation, libloadorder and libbsa, and the rewritten documentation included in v297 to v306</span></li>
+  <li><img class="smallcred" alt="Pacific Morrowind's Icon" src="../bash/images/people/pcmwavi32.jpg"><span><a href="https://github.com/NickWilde1990">Pacific Morrowind:</a> Maintainer from 268-296: New patchers, tags and export/import links, etc.</span></li>
+  <li><img class="smallcred" alt="Ralgor's Icon" src="../bash/images/people/genpavi32.png"><span><a href="https://github.com/Ralgor">Ralgor:</a> Cell support and Import Cells</span></li>
+  <li><img class="smallcred" alt="Raziel23x's Icon" src="../bash/images/people/raziavi32.png"><span><a href="https://github.com/Raziel23x">Raziel23x:</a> new tweaks etc.</span></li>
+  <li><img class="smallcred" alt="Sharlikran's Icon" src="../bash/images/people/sharavi32.jpg"><span><a href="https://github.com/Sharlikran">Sharlikran:</a> Fallout 3/NV support, initial ESL support, save game/module header restructuring, form version recognition, patcher updates, heavyweight contender of the community</span></li>
+  <li><img class="smallcred" alt="Warmfrost85's Icon" src="../bash/images/people/wrmfavi32.jpg"><span><a href="https://github.com/warmfrost85">Warmfrost85:</a> Improvements to Clean Data &amp; Sync From Data</span></li>
+  <li><img class="smallcred" alt="Waruddar's Icon" src="../bash/images/people/waruavi32.gif"><span><a href="https://www.nexusmods.com/users/456936">Waruddar:</a> Maintainer from 261-296: CBash, Bain Conversion Files (BCFs), etc.</span></li>
+  <li><img class="smallcred" alt="Valda's Icon" src="../bash/images/people/vldaavi32.png"><span><a href="https://github.com/valda">Valda:</a> Assisted with Fallout 3/New Vegas support, including new patchers</span></li>
 </ul>
 <h3>Additional Credits <a class="back2top" href="#contents">Back to top</a></h3>
 <ul class="nodot">
   <li>
     <strong>Translators</strong>
     <ul>
-      <li><img alt="Flag of Germany" src="../bash/images/Flag_of_Germany_32.png"><span>German:</span><img alt="DWS's Icon" src="../bash/images/bash_32_2.png"><span><a href="http://mw.modhistory.com/search-au-DWS">DWS</a></span></li>
-      <li><img alt="Flag of Italy" src="../bash/images/Flag_of_Italy_32.png"><span>Italian:</span><img alt="Abot's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/users/38047">Abot</a></span></li>
-      <li><img alt="Flag of Portugal" src="../bash/images/Flag_of_Brazil_32.png"><span>Portuguese:</span><img alt="Hadoki's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/users/323588">Hadoki</a></span></li>
-      <li><img alt="Flag of Russia" src="../bash/images/Flag_of_Russia_32.png"><span>Russian:</span><img alt="DJ Kovrik's Icon" src="../bash/images/people/djkvavi32.jpg"><span><a href="https://www.nexusmods.com/users/100354">DJ_Kovrik</a></span></li>
+      <li><img class="smallcred" alt="Flag of Germany" src="../bash/images/Flag_of_Germany_32.png"><span>German:</span><img class="smallcred" alt="DWS's Icon" src="../bash/images/bash_32_2.png"><span><a href="http://mw.modhistory.com/search-au-DWS">DWS</a></span></li>
+      <li><img class="smallcred" alt="Flag of Italy" src="../bash/images/Flag_of_Italy_32.png"><span>Italian:</span><img class="smallcred" alt="Abot's Icon" src="../bash/images/people/abotavi32.png"><span><a href="https://www.nexusmods.com/users/38047">Abot</a></span></li>
+      <li><img class="smallcred" alt="Flag of Portugal" src="../bash/images/Flag_of_Brazil_32.png"><span>Portuguese:</span><img class="smallcred" alt="Hadoki's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/users/323588">Hadoki</a></span></li>
+      <li><img class="smallcred" alt="Flag of Russia" src="../bash/images/Flag_of_Russia_32.png"><span>Russian:</span><img class="smallcred" alt="DJ Kovrik's Icon" src="../bash/images/people/djkvavi32.jpg"><span><a href="https://www.nexusmods.com/users/100354">DJ_Kovrik</a></span></li>
     </ul>
   </li>
   <li>
     <strong>Mod and Save File Gurus</strong>
     <ul>
-      <li><img alt="Dave Humphrey's Icon" src="../bash/images/people/uespavi32.png"><span><a href="https://en.uesp.net/wiki/User:Daveh">Dave Humphrey</a></span></li>
-      <li><img alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterAU</a></span></li>
-      <li><img alt="GhostWheel's Icon" src="../bash/images/people/uespavi32.png"><span><a href="http://mw.modhistory.com/search-au-Ghostwheel">GhostWheel</a></span></li>
-      <li><img alt="Resetgun's Icon" src="../bash/images/people/uespavi32.png"><span><a href="https://www.nexusmods.com/users/99351">Resetgun</a>, aka mpuonti</span></li>
-      <li><img alt="Rick's Icon" src="../bash/images/people/uespavi32.png"><span><a href="https://en.uesp.net/wiki/User:Rick">Rick</a></span></li>
-      <li><img alt="Scripter Ron's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/users/123768">ScripterRon</a></span></li>
-      <li><img alt="Monkey God's Icon" src="../bash/images/wrye_monkey_64.jpg"><span><a href="http://wryemusings.com"><strong>Wrye</strong></a></span></li>
+      <li><img class="smallcred" alt="Dave Humphrey's Icon" src="../bash/images/people/uespavi32.png"><span><a href="https://en.uesp.net/wiki/User:Daveh">Dave Humphrey</a></span></li>
+      <li><img class="smallcred" alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterAU</a></span></li>
+      <li><img class="smallcred" alt="GhostWheel's Icon" src="../bash/images/people/uespavi32.png"><span><a href="http://mw.modhistory.com/search-au-Ghostwheel">GhostWheel</a></span></li>
+      <li><img class="smallcred" alt="Resetgun's Icon" src="../bash/images/people/uespavi32.png"><span><a href="https://www.nexusmods.com/users/99351">Resetgun</a>, aka mpuonti</span></li>
+      <li><img class="smallcred" alt="Rick's Icon" src="../bash/images/people/rickavi32.png"><span><a href="https://github.com/gibbed">Rick</a></span></li>
+      <li><img class="smallcred" alt="Scripter Ron's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/users/123768">ScripterRon</a></span></li>
+      <li><img class="smallcred" alt="Monkey God's Icon" src="../bash/images/wrye_monkey_64.jpg"><span><a href="http://wryemusings.com"><strong>Wrye</strong></a></span></li>
     </ul>
   </li>
   <li>
     <strong>Python Kings</strong>
     <ul>
-      <li><img alt="Python Kings' Icon" src="../bash/images/bash_32_2.png"><span>Guido van Rossum and many, many others.</span></li>
+      <li><img class="smallcred" alt="Python Kings' Icon" src="../bash/images/bash_32_2.png"><span>Guido van Rossum and many, many others.</span></li>
     </ul>
   </li>
   <li>
     <strong>Special Thanks</strong>
     <ul>
-      <li><img alt="Breeze582000's Icon" src="../bash/images/people/brezavi32.gif"><span><a href="https://www.nexusmods.com/users/245234">Breeze582000:</a> brzMonitor, which inspired Bashmon</span></li>
-      <li><img alt="dev_akm's Icon" src="../bash/images/people/dakmavi32.jpg"><span><a href="http://devakm.urikslargda.com">dev_akm:</a> Archive Invalidation, etc.</span></li>
-      <li><img alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterAU:</a> <a href="https://tes5edit.github.io/">xEdit</a> etc. Crucial for adding/checking new record types.</span></li>
-      <li><img alt="Polemos' Icon" src="../bash/images/people/polemosavi32.png"><span><a href="https://github.com/polemion">Polemos:</a></span> <a href="https://github.com/polemion/Wrye-Mash-Polemos">Wrye Mash: Polemos' Fork</a></li>
-      <li><img alt="Quarn's Icon" src="../bash/images/people/qurnavi32.png"><span><a href="https://www.nexusmods.com/users/75927">Quarn:</a> BSA-Redirection, Black Screen Fix</span></li>
-      <li><img alt="Timeslip's Icon" src="../bash/images/people/tslpavi32.png"><span><a href="http://timeslip.chorrol.com">Timeslip:</a> BSA editing code, OBMM integration, etc.</span></li>
-      <li><img alt="Veritas Secreto's Icon" src="../bash/images/bash_32_2.png"><span>Veritas_Secreto: <a href="https://www.nexusmods.com/oblivion/mods/39872">Tamriel NPCs Revamped</a></span></li>
-      <li><img alt="Yabocy's Icon" src="../bash/images/people/yacobyavi32.png"><span><a href="https://github.com/Yacoby">Yacoby:</a> <a href="https://github.com/Yacoby/Wrye-Mash">Wrye Mash: Yacoby's Fork</a></span></li>
+      <li><img class="smallcred" alt="Breeze582000's Icon" src="../bash/images/people/brezavi32.gif"><span><a href="https://www.nexusmods.com/users/245234">Breeze582000:</a> brzMonitor, which inspired Bashmon</span></li>
+      <li><img class="smallcred" alt="dev_akm's Icon" src="../bash/images/people/dakmavi32.jpg"><span><a href="http://devakm.urikslargda.com">dev_akm:</a> Archive Invalidation, etc.</span></li>
+      <li><img class="smallcred" alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterAU:</a> <a href="https://tes5edit.github.io/">xEdit</a> etc. Crucial for adding/checking new record types.</span></li>
+      <li><img class="smallcred" alt="Polemos' Icon" src="../bash/images/people/polemosavi32.png"><span><a href="https://github.com/polemion">Polemos:</a></span> <a href="https://github.com/polemion/Wrye-Mash-Polemos">Wrye Mash: Polemos' Fork</a></li>
+      <li><img class="smallcred" alt="Quarn's Icon" src="../bash/images/people/qurnavi32.png"><span><a href="https://www.nexusmods.com/users/75927">Quarn:</a> BSA-Redirection, Black Screen Fix</span></li>
+      <li><img class="smallcred" alt="Timeslip's Icon" src="../bash/images/people/tslpavi32.png"><span><a href="http://timeslip.chorrol.com">Timeslip:</a> BSA editing code, OBMM integration, etc.</span></li>
+      <li><img class="smallcred" alt="Veritas Secreto's Icon" src="../bash/images/people/vsecavi32.png"><span><a href="https://twitter.com/veritassecreto">Veritas_Secreto:</a> <a href="https://www.nexusmods.com/oblivion/mods/39872">Tamriel NPCs Revamped</a></span></li>
+      <li><img class="smallcred" alt="Yabocy's Icon" src="../bash/images/people/yacobyavi32.png"><span><a href="https://github.com/Yacoby">Yacoby:</a> <a href="https://github.com/Yacoby/Wrye-Mash">Wrye Mash: Yacoby's Fork</a></span></li>
     </ul>
   </li>
   <li>
     <strong>Additional Thanks</strong>
     <ul>
-      <li><img alt="Alternity's Icon" src="../bash/images/people/altyavi32.gif"><span><a href="https://afkmods.com/index.php?/profile/1652-alt3rn1ty/">Alt3rn1ty:</a> For Wrye Bash screenshot / UI images used in the documentation, corrections and suggestions, many INI tweaks for Skyrim, Fallout4 and Skyrim&colon; Special Edition, and being an all-round bon oeuf.</span></li>
-      <li><img alt="Arthmoor's Icon" src="../bash/images/people/armravi32.png"><span><a href="https://github.com/Arthmoor">Arthmoor:</a> All-round support of the project including pushing code snippets from anonymous contributors, assisting with issue tracking, and generally high activity in and around the project.</span></li>
-      <li><img alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterAU:</a> Bug catching, technical suggestions.</span></li>
-      <li><img alt="Kmacg94's Icon" src="../bash/images/bash_32_2.png"><span>Kmacg94: Additional power exhaustion coverage.</span></li>
-      <li><img alt="Llde's Icon" src="../bash/images/people/lldeavi32.png"><span><a href="https://github.com/llde">llde:</a> Fixup for parsing archives that have attribute-less files.</span></li>
-      <li><img alt="Mator's Icon" src="../bash/images/people/matravi32.jpg"><span><a href="https://github.com/matortheeternal">MatorTheEternal:</a> Assisted with porting xEdit definitions in a format usable for Wrye Bash.</span></li>
-      <li><img alt="Metallicow's Icon" src="../bash/images/people/mcowavi32.png"><span><a href="https://github.com/Metallicow">Metallicow:</a> Shiny new tool launcher icons, Graphics, Mooo, &amp; the WizBAIN Editor.</span></li>
-      <li><img alt="Preacui's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://sourceforge.net/u/preacui/profile/">preacui:</a> <a href="https://3d.xkcd.com/353/">Existed.</a></span></li>
-      <li><img alt="Sativarg's Icon" src="../bash/images/people/genyavi32.png"><span><a href="https://github.com/Sativarg">Sativarg:</a> Proofreading.</span></li>
-      <li><img alt="Saebel's Icon" src="../bash/images/people/genoavi32.png"><span><a href="https://github.com/saebel">saebel:</a> Caught and added a missing OBSE INI setting.</span></li>
-      <li><img alt="Tom Suprgan's Icon" src="../bash/images/bash_32_2.png"><span>Tom Suprgan: Several well researched suggestions.</span></li>
-      <li><img alt="Testers' Icon" src="../bash/images/bash_32_2.png"><span>To the testers/bug finders/helpful people on the forum when others have trouble: Arthmoor, Corepc, Daemondarque, TommyH, Surazal and many others.</span></li>
-      <li><img alt="Helpers' Icon" src="../bash/images/bash_32_2.png"><span>To those members of the community that contributed to the upkeep of Wrye Bash while its developers were absent (May/June 2012): Alt3rn1ty, Arthmoor, Daidalos, Ortham, Trira, and many others.</span></li>
+      <li><img class="smallcred" alt="Alternity's Icon" src="../bash/images/people/altyavi32.gif"><span><a href="https://afkmods.com/index.php?/profile/1652-alt3rn1ty/">Alt3rn1ty:</a> For Wrye Bash screenshot / UI images used in the documentation, corrections and suggestions, many INI tweaks for Skyrim, Fallout4 and Skyrim&colon; Special Edition, and being an all-round bon oeuf.</span></li>
+      <li><img class="smallcred" alt="Arthmoor's Icon" src="../bash/images/people/armravi32.png"><span><a href="https://github.com/Arthmoor">Arthmoor:</a> All-round support of the project including pushing code snippets from anonymous contributors, assisting with issue tracking, and generally high activity in and around the project.</span></li>
+      <li><img class="smallcred" alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterAU:</a> Bug catching, technical suggestions.</span></li>
+      <li><img class="smallcred" alt="Kmacg94's Icon" src="../bash/images/bash_32_2.png"><span>Kmacg94: Additional power exhaustion coverage.</span></li>
+      <li><img class="smallcred" alt="Llde's Icon" src="../bash/images/people/lldeavi32.png"><span><a href="https://github.com/llde">llde:</a> Fixup for parsing archives that have attribute-less files.</span></li>
+      <li><img class="smallcred" alt="Mator's Icon" src="../bash/images/people/matravi32.jpg"><span><a href="https://github.com/matortheeternal">MatorTheEternal:</a> Assisted with porting xEdit definitions in a format usable for Wrye Bash.</span></li>
+      <li><img class="smallcred" alt="Metallicow's Icon" src="../bash/images/people/mcowavi32.png"><span><a href="https://github.com/Metallicow">Metallicow:</a> Shiny new tool launcher icons, Graphics, Mooo, &amp; the WizBAIN Editor.</span></li>
+      <li><img class="smallcred" alt="Preacui's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://sourceforge.net/u/preacui/profile/">preacui:</a> <a href="https://3d.xkcd.com/353/">Existed.</a></span></li>
+      <li><img class="smallcred" alt="Sativarg's Icon" src="../bash/images/people/genyavi32.png"><span><a href="https://github.com/Sativarg">Sativarg:</a> Proofreading.</span></li>
+      <li><img class="smallcred" alt="Saebel's Icon" src="../bash/images/people/saebavi32.png"><span><a href="https://www.nexusmods.com/users/813052">saebel:</a> Caught and added a missing OBSE INI setting.</span></li>
+      <li><img class="smallcred" alt="Tom Supergan's Icon" src="../bash/images/people/tomsavi32.png"><span><a href="https://www.nexusmods.com/users/77237">Tom Supergan:</a> Several well researched suggestions.</span></li>
+      <li><img class="smallcred" alt="Testers' Icon" src="../bash/images/bash_32_2.png"><span>To the testers/bug finders/helpful people on the forum when others have trouble: Arthmoor, Corepc, Daemondarque, TommyH, Surazal and many others.</span></li>
+      <li><img class="smallcred" alt="Helpers' Icon" src="../bash/images/bash_32_2.png"><span>To those members of the community that contributed to the upkeep of Wrye Bash while its developers were absent (May/June 2012): Alt3rn1ty, Arthmoor, Daidalos, Ortham, Trira, and many others.</span></li>
     </ul>
   </li>
   <li>
     <strong>Misc. Resources</strong>
     <ul>
-      <li><img alt="FamFamFam's Icon" src="../bash/images/people/fffmavi32.png"><span><a href="http://www.famfamfam.com/lab/icons/silk/">FamFamFam Icons</a></span></li>
-      <li><img alt="Blue Bison in Rapids' Icon" src="../bash/images/people/blbiavi32.png"><span><a href="http://www.bluebison.net/">Python and Chameleon images</a></span></li>
+      <li><img class="smallcred" alt="FamFamFam's Icon" src="../bash/images/people/fffmavi32.png"><span><a href="http://www.famfamfam.com/lab/icons/silk/">FamFamFam Icons</a></span></li>
+      <li><img class="smallcred" alt="Blue Bison in Rapids' Icon" src="../bash/images/people/blbiavi32.png"><span><a href="http://www.bluebison.net/">Python and Chameleon images</a></span></li>
     </ul>
   </li>
 </ul>
@@ -1472,31 +1447,32 @@ MemoryError</code>
   <li>
     <strong>Names Files</strong>
     <ul>
-      <li><img alt="Flak's Icon" src="../bash/images/bash_32_2.png"><span>Flak: <a href="https://www.nexusmods.com/oblivion/mods/2326">Flak's Complete Names Project</a></span></li>
+      <li><img class="smallcred" alt="Flak's Icon" src="../bash/images/bash_32_2.png"><span>Flak: <a href="https://www.nexusmods.com/oblivion/mods/2326">Flak's Complete Names Project</a></span></li>
     </ul>
   </li>
   <li>
     <strong>Bash Features</strong>
     <ul>
-      <li><img alt="Crypton's Icon" src="../bash/images/people/crypavi32.png"><span>No Light Flicker: <a href="https://www.nexusmods.com/oblivion/mods/6150">No Light Flicker</a> (<a href="https://www.nexusmods.com/users/23266">Crypton</a>)</span></li>
-      <li><img alt="Kyorisu's Icon" src="../bash/images/bash_32_2.png"><span>Save Profiles: <a href="https://www.nexusmods.com/oblivion/mods/2342">Tes IV Save Manager</a> (Kyorisu)</span></li>
+      <li><img class="smallcred" alt="Crypton's Icon" src="../bash/images/people/crypavi32.png"><span>No Light Flicker: <a href="https://www.nexusmods.com/oblivion/mods/6150">No Light Flicker</a> (<a href="https://www.nexusmods.com/users/23266">Crypton</a>)</span></li>
+      <li><img class="smallcred" alt="Kyorisu's Icon" src="../bash/images/bash_32_2.png"><span>Save Profiles: <a href="https://www.nexusmods.com/oblivion/mods/2342">Tes IV Save Manager</a> (<a href="https://www.nexusmods.com/users/102992">Kyorisu</a>)</span></li>
     </ul>
   </li>
   <li>
-    <strong>GMST Tweaks</strong>
+    <strong>Tweaks</strong>
     <ul>
-      <li><img alt="Showler's Icon" src="../bash/images/bash_32_2.png"><span>AI: Max Dead Actors (<a href="https://www.nexusmods.com/users/38829">showler</a>)</span></li>
-      <li><img alt="Aelius's Icon" src="../bash/images/bash_32_2.png"><span>Arrow Litter, Essential NPC Unconsciousness (Aelius)</span></li>
-      <li><img alt="Demuerte's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/2411">Chameleon: No Refraction</a> (demuerte)</span></li>
-      <li><img alt="Woodman's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/1840">Chase Camera</a> (<a href="https://www.nexusmods.com/users/85866">Woodman</a>)</span></li>
-      <li><img alt="Tom Supergan's Icon" src="../bash/images/people/tomsavi32.png"><span>Chase Camera Distance (<a href="https://www.nexusmods.com/users/77237">Tom Supergan</a>)</span></li>
-      <li><img alt="Compass Disable Icon" src="../bash/images/bash_32_2.png"><span>Compass Disable (??)</span></li>
-      <li><img alt="Compass Recognition Distance Icon" src="../bash/images/bash_32_2.png"><span>Compass Recognition Distance (??)</span></li>
-      <li><img alt="Ravida's Icon" src="../bash/images/bash_32_2.png"><span>Movement: Fatigue from Running/Encumbrance (Ravida)</span></li>
-      <li><img alt="Horse Turning Speed Icon" src="../bash/images/bash_32_2.png"><span>Horse Turning Speed (Acleacius, dbolivar)</span></li>
-      <li><img alt="David Moyer's Icon" src="../bash/images/bash_32_2.png"><span>PC Death Camera (David Moyer)</span></li>
-      <li><img alt="KseAli's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/4882">POI Visibility</a> (<a href="https://www.nexusmods.com/users/114786">KseAli</a>)</span></li>
-      <li><img alt="Timmypod's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/2246">Unlimited Amulets and Rings</a> (timmypod)</span></li>
+      <li><img class="smallcred" alt="Showler's Icon" src="../bash/images/bash_32_2.png"><span>AI: Max Dead Actors (<a href="https://www.nexusmods.com/users/38829">showler</a>)</span></li>
+      <li><img class="smallcred" alt="Aelius's Icon" src="../bash/images/bash_32_2.png"><span>Arrow Litter, Essential NPC Unconsciousness (Aelius)</span></li>
+      <li><img class="smallcred" alt="Demuerte's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/2411">Chameleon: No Refraction</a> (demuerte)</span></li>
+      <li><img class="smallcred" alt="Woodman's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/1840">Chase Camera</a> (<a href="https://www.nexusmods.com/users/85866">Woodman</a>)</span></li>
+      <li><img class="smallcred" alt="Tom Supergan's Icon" src="../bash/images/people/tomsavi32.png"><span>Chase Camera Distance (<a href="https://www.nexusmods.com/users/77237">Tom Supergan</a>)</span></li>
+      <li><img class="smallcred" alt="Compass Disable Icon" src="../bash/images/bash_32_2.png"><span>Compass Disable (??)</span></li>
+      <li><img class="smallcred" alt="Compass Recognition Distance Icon" src="../bash/images/bash_32_2.png"><span>Compass Recognition Distance (??)</span></li>
+      <li><img class="smallcred" alt="Ravida's Icon" src="../bash/images/bash_32_2.png"><span>Movement: Fatigue from Running/Encumbrance (Ravida)</span></li>
+      <li><img class="smallcred" alt="Horse Turning Speed Icon" src="../bash/images/bash_32_2.png"><span>Horse Turning Speed (Acleacius, dbolivar)</span></li>
+      <li><img class="smallcred" alt="5133p39's Icon" src="../bash/images/bash_32_2.png"><span>Opposite Gender Anims: Female (<a href="https://www.nexusmods.com/users/277511">5133p39</a>)</span></li>
+      <li><img class="smallcred" alt="David Moyer's Icon" src="../bash/images/bash_32_2.png"><span>PC Death Camera (David Moyer)</span></li>
+      <li><img class="smallcred" alt="KseAli's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/4882">POI Visibility</a> (<a href="https://www.nexusmods.com/users/114786">KseAli</a>)</span></li>
+      <li><img class="smallcred" alt="Timmypod's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/2246">Unlimited Amulets and Rings</a> (timmypod)</span></li>
     </ul>
   </li>
 </ul>
@@ -1507,24 +1483,11 @@ MemoryError</code>
 
 
 <h2 id="license">License <a class="back2top" href="#contents">Back to top</a></h2>
-<p>Wrye Bash is released under Version 2 of the GNU General Public License. See enclosed <a href="license.txt">license.txt</a> file for license details, or visit the <a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU Website</a> for information on all their licenses.</p>
+<p>Wrye Bash is released under Version 3 of the GNU General Public License or later. See the enclosed <a href="../LICENSE.md" type="text/plain">LICENSE.md</a> file for license details, or visit the <a href="https://www.gnu.org/licenses/gpl-3.0.en.html">GNU Website</a> for information on all their licenses.</p>
 
 <h3>Packaged Programs <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Additionally, Wrye Bash comes packaged with the following programs:
 <ul>
-    <li>CBash
-    <ul>
-        <li>Website: <a href="https://github.com/wrye-bash/CBash">GITHUB</a>
-        <li>License: Triple-license <a href="https://www.mozilla.org/en-US/MPL/1.1/">MPL 1.1</a>/<a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GPL 2.0</a>/<a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html">LGPL 2.1</a>
-        <li>Details:
-        <ul>
-            <li>cint.py - For v0.7.0, cint.py is in sync between Wrye Bash vs CBash repos, at the time of writing this.
-            <li>C/C++ Source Code: Version 0.7.x of CBash is built off directly from the GITHUB source code, which can be found in the CBash github repository, <a href="https://github.com/wrye-bash/CBash">here</a>.
-            <li>The code is for all intents and purposes the same as the old v0.6.x CBash version, just with a few minor fixes and an updated runtime dependence on <a href="https://www.microsoft.com/en-us/download/details.aspx?id=48234">Microsoft's Universal C Runtime</a> which should be already installed on any Windows 7 PC that's normally updated through the Windows Update system.</li>
-            <li>Original CBash project was hosted in <a href="https://sourceforge.net/projects/cbash/">SourceForge</a>, but now the code that is present there is for the old v0.6.x version, minus some changes contributed by <a href="https://github.com/Ethatron/CBash">Ethathron</a>, and later forked by <a href="https://github.com/lojack5/CBash">Lojack5</a> (which, in turn, was the ancestor of the <a href="https://github.com/wrye-bash/CBash">current development repository</a>.)</li>
-            <li>The state of that old SourceForge repository was imported to <a href="https://github.com/leandor/CBashSF.git">this</a> GITHUB read-only mirror, for easier sharing and branching, and history keeping reasons.</li>
-        </ul>
-    </ul>
     <li>7zip:
     <ul>
         <li>Website: <a href="https://www.7-zip.org/">7zip.org</a>
@@ -1595,7 +1558,7 @@ MemoryError</code>
 </div>
 
 <div id="footer">
-	<div id="version">Wrye Bash v307</div>
+	<div id="version">Wrye Bash v308</div>
     General&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

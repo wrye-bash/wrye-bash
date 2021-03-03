@@ -34,15 +34,7 @@ FOR /F "skip=%SKIPVAL% usebackq tokens=%TOKENS%*" %%i in (`%REGCMD%`) do IF x"%%
 
 
 :: get python path from registry
-SET REGCMD=reg query HKLM\SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath /ve
-%REGCMD% >NUL 2>&1 && FOR /F "skip=%SKIPVAL% usebackq tokens=%TOKENS%*" %%i in (`%REGCMD%`) do SET PYPATH=%%j
-IF NOT x"%PYPATH%"==x"" GOTO FOUND
-
 SET REGCMD=reg query HKLM\SOFTWARE\Python\PythonCore\2.7\InstallPath /ve
-%REGCMD% >NUL 2>&1 && FOR /F "skip=%SKIPVAL% usebackq tokens=%TOKENS%*" %%i in (`%REGCMD%`) do SET PYPATH=%%j
-IF NOT x"%PYPATH%"==x"" GOTO FOUND
-
-SET REGCMD=reg query HKCU\SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath /ve
 %REGCMD% >NUL 2>&1 && FOR /F "skip=%SKIPVAL% usebackq tokens=%TOKENS%*" %%i in (`%REGCMD%`) do SET PYPATH=%%j
 IF NOT x"%PYPATH%"==x"" GOTO FOUND
 
@@ -72,8 +64,8 @@ SET PYTHON=%PYPATH%pythonw.exe
 :FOUNDPYTHON
 ECHO Found Python at '%PYTHON%'
 ECHO Found Python at '%PYTHON%' >%OUTFILE%
-ECHO Launching Wrye Bash 307 in debug mode
-ECHO Launching Wrye Bash 307 in debug mode >>%OUTFILE%
+ECHO Launching Wrye Bash 308 in debug mode
+ECHO Launching Wrye Bash 308 in debug mode >>%OUTFILE%
 :: Line below won't do due to us redirecting stdout/err inside bash.py
 SET PYTHONIOENCODING=UTF8
 :: The following line checks if %OUTFILE% is writeable to determine if there is

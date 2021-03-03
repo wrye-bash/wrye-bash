@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,18 +29,17 @@ from ...brec import MreFlst, MreGlob
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
     fsName = u'Skyrim Special Edition'
-    altName = u'Wrye Smash'
     bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
     launch_exe = u'SkyrimSE.exe'
     game_detect_file = u'SkyrimSE.exe'
     version_detect_file = u'SkyrimSE.exe'
-    masterlist_dir = u'SkyrimSE'
+    taglist_dir = u'SkyrimSE'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',
                       u'Installed Path')
 
     nexusUrl = u'https://www.nexusmods.com/skyrimspecialedition/'
     nexusName = u'Skyrim SE Nexus'
-    nexusKey = 'bash.installers.openSkyrimSeNexus.continue'
+    nexusKey = u'bash.installers.openSkyrimSeNexus.continue'
 
     espm_extensions = SkyrimGameInfo.espm_extensions | {u'.esl'}
     has_achlist = True
@@ -63,16 +61,6 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         # Skyrim SE accepts the base name and ' - Textures'
         attachment_regex = r'(?: \- Textures)?'
         valid_versions = {0x69}
-        vanilla_string_bsas = {
-            u'skyrim.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
-            u'update.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
-            u'dawnguard.esm': [u'Skyrim - Patch.bsa',
-                               u'Skyrim - Interface.bsa'],
-            u'hearthfires.esm': [u'Skyrim - Patch.bsa',
-                                 u'Skyrim - Interface.bsa'],
-            u'dragonborn.esm': [u'Skyrim - Patch.bsa',
-                                u'Skyrim - Interface.bsa'],
-        }
 
     class Xe(SkyrimGameInfo.Xe):
         full_name = u'SSEEdit'
@@ -82,8 +70,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         skip_bain_refresh = {u'sseedit backups', u'sseedit cache'}
 
     allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
-    # PatchMerger must come first if enabled - so skip it here
-    patchers = SkyrimGameInfo.patchers[1:]
+    patchers = SkyrimGameInfo.patchers - {u'MergePatches'}
 
     @classmethod
     def init(cls):
@@ -106,8 +93,9 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
             MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
-            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr
-        cls.mergeClasses = (
+            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
+            MreRace
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
@@ -124,30 +112,33 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
             MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens, MreQust,
-            MrePack, MreFact,
-        )
+            MrePack, MreFact, MreRace,
+        )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
-            'GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT',
-            'HDPT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT',
-            'LTEX', 'ENCH', 'SPEL', 'SCRL', 'ACTI', 'TACT', 'ARMO', 'BOOK',
-            'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC', 'APPA', 'STAT', 'SCOL',
-            'MSTT', 'PWAT', 'GRAS', 'TREE', 'CLDC', 'FLOR', 'FURN', 'WEAP',
-            'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH', 'IDLM', 'COBJ', 'PROJ',
-            'HAZD', 'SLGM', 'LVLI', 'WTHR', 'CLMT', 'SPGD', 'RFCT', 'REGN',
-            'NAVI', 'CELL', 'WRLD', 'DIAL', 'QUST', 'IDLE', 'PACK', 'CSTY',
-            'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH', 'EXPL', 'DEBR', 'IMGS',
-            'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'CAMS', 'CPTH',
-            'VTYP', 'MATT', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN', 'MESG',
-            'RGDL', 'DOBJ', 'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN',
-            'SMEN', 'DLBR', 'MUST', 'DLVW', 'WOOP', 'SHOU', 'EQUP', 'RELA',
-            'SCEN', 'ASTP', 'OTFT', 'ARTO', 'MATO', 'MOVT', 'SNDR', 'DUAL',
-            'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB', 'LENS', 'VOLI']
+            b'GMST', b'KYWD', b'LCRT', b'AACT', b'TXST', b'GLOB', b'CLAS',
+            b'FACT', b'HDPT', b'HAIR', b'EYES', b'RACE', b'SOUN', b'ASPC',
+            b'MGEF', b'SCPT', b'LTEX', b'ENCH', b'SPEL', b'SCRL', b'ACTI',
+            b'TACT', b'ARMO', b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH',
+            b'MISC', b'APPA', b'STAT', b'SCOL', b'MSTT', b'PWAT', b'GRAS',
+            b'TREE', b'CLDC', b'FLOR', b'FURN', b'WEAP', b'AMMO', b'NPC_',
+            b'LVLN', b'KEYM', b'ALCH', b'IDLM', b'COBJ', b'PROJ', b'HAZD',
+            b'SLGM', b'LVLI', b'WTHR', b'CLMT', b'SPGD', b'RFCT', b'REGN',
+            b'NAVI', b'CELL', b'WRLD', b'DIAL', b'QUST', b'IDLE', b'PACK',
+            b'CSTY', b'LSCR', b'LVSP', b'ANIO', b'WATR', b'EFSH', b'EXPL',
+            b'DEBR', b'IMGS', b'IMAD', b'FLST', b'PERK', b'BPTD', b'ADDN',
+            b'AVIF', b'CAMS', b'CPTH', b'VTYP', b'MATT', b'IPCT', b'IPDS',
+            b'ARMA', b'ECZN', b'LCTN', b'MESG', b'RGDL', b'DOBJ', b'LGTM',
+            b'MUSC', b'FSTP', b'FSTS', b'SMBN', b'SMQN', b'SMEN', b'DLBR',
+            b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA', b'SCEN',
+            b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
+            b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS', b'VOLI']
         #-> this needs updating for Skyrim
         header_type.valid_header_sigs = set(
-            header_type.top_grup_sigs + ['GRUP', 'TES4', 'REFR', 'ACHR', 'ACRE',
-                                    'LAND', 'INFO', 'NAVM', 'PHZD', 'PGRE'])
+            header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
+                                         b'ACRE', b'LAND', b'INFO', b'NAVM',
+                                         b'PHZD', b'PGRE'])
         header_type.plugin_form_version = 44
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,
@@ -166,12 +157,12 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
             MreWthr, MreCell, MreWrld, MreVoli, MreLens, MreQust, MreTes4,
-            MrePack,
+            MrePack, MreRace,
             # MreNavm, MreNavi
         )}
         brec.MreRecord.simpleTypes = (
-            set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'CELL', 'DIAL',
-                                              'INFO', 'WRLD'})
+            set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',
+                                              b'DIAL', b'INFO', b'WRLD'})
         cls._validate_records()
 
 GAME_TYPE = SkyrimSEGameInfo

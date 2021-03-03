@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -47,22 +46,23 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
         exe = u'sksevr_loader.exe'
         ver_files = [u'sksevr_loader.exe', u'sksevr_steam_loader.dll']
 
+    class Ini(SkyrimSEGameInfo.Ini):
+        default_ini_file = u'Skyrim.ini' # yes, that's the default one
+        dropdown_inis = [u'SkyrimVR.ini', u'SkyrimPrefs.ini']
+        resource_override_key = u'sVrResourceArchiveList'
+
     class Bsa(SkyrimSEGameInfo.Bsa):
-        vanilla_string_bsas = SkyrimSEGameInfo.Bsa.vanilla_string_bsas.copy()
-        vanilla_string_bsas.update({
-            u'skyrimvr.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa',
-                              u'Skyrim_VR - Main.bsa'],
-        })
+        resource_override_defaults = [u'Skyrim_VR - Main.bsa']
 
     class Xe(SkyrimSEGameInfo.Xe):
         full_name = u'TES5VREdit'
         xe_key_prefix = u'tes5vrview'
 
-    skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
+    class Bain(SkyrimSEGameInfo.Bain):
+        skip_bain_refresh = {u'tes5vredit backups', u'tes5vredit cache'}
 
     allTags = SkyrimSEGameInfo.allTags | {u'NoMerge'}
-    # PatchMerger must come first!
-    patchers = (u'PatchMerger',) + SkyrimSEGameInfo.patchers
+    patchers = SkyrimSEGameInfo.patchers | {u'MergePatches'}
 
     @classmethod
     def init(cls):
@@ -85,9 +85,10 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
             MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
-            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr
-        cls.mergeClasses = (
-            # MreAchr, MreDial, MreInfo, MreFact,
+            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
+            MreRace
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
+            # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
@@ -103,8 +104,8 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
             MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens, MreQust,
-            MrePack,
-        )
+            MrePack, MreFact, MreRace,
+        )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
@@ -149,7 +150,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
             MreWthr, MreCell, MreWrld, MreVoli, MreLens, MreQust, MreTes4,
-            MrePack,
+            MrePack, MreRace,
             # MreNavm, MreNavi
         )}
         brec.MreRecord.simpleTypes = (

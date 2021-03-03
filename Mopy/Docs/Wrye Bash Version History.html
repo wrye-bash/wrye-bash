@@ -35,6 +35,27 @@
 
 <p class="history-veranc">All versions by Wrye unless otherwise noted.
 
+<h3>308 Python 3 preparation [2021/03/03] [Infernio, Utumno]</h3>
+<ul>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/566">#566</a>: Don&#x27;t restore scroll positions by default [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/565">#565</a>: Add &#x27;Magic: Summoning Absorption Fix&#x27; assorted tweak [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/564">#564</a>: Add &#x27;Mark All Water As Damaging&#x27; assorted tweak [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/563">#563</a>: Improve performance of various load order operations [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/558">#558</a>: Warn about hash collisions from BA2 filenames [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/555">#555</a>: High DPI Support [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/551">#551</a>: Allow interactive installers to handle multiple packages [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/550">#550</a>: More useful &#x27;New Mod&#x27; menu [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/548">#548</a>: Removing the People Tab [Utumno]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/546">#546</a>: Show conflicts with INI-specified BSAs in BAIN [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/534">#534</a>: Correctly handle sVrResourceArchiveList BSAs in Skyrim VR [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/531">#531</a>: Changing license to GPLv3 (or later) [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/530">#530</a>: Removing CBash [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/481">#481</a>: 64bit Upgrade [GandaG, Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/376">#376</a>: Drop backwards compatibility of BAIN settings with 306 [Utumno]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/226">#226</a>: Tweak Settings: Use as few masters as possible [Infernio]</li>
+<li><a href="https://github.com/wrye-bash/wrye-bash/issues/45">#45</a>: Add SEFF icon tweak [Infernio]</li>
+</ul>
+
 <h3>307 Refactoring, new features &amp; games [2020/09/16] [Various community members]</h3>
 <ul>
 <li><a href="https://github.com/wrye-bash/wrye-bash/issues/528">#528</a>: Import Enchantment Stats &amp; Import Effect Stats [Infernio]</li>
@@ -594,7 +615,7 @@
 		<li><a href="Wrye%20Bash%20General%20Readme.html#bain">BAIN</a>:
 		<ul>
 			<li>Wizard.txt and readmes will no longer show up as 'Skipped' if it's in an odd directory.
-			<li>New "Embedded BCFs" - If an archive contains a BCF, Wrye Bash can apply that BCF directly to the containing archive.  If the BAIN option 'Auto-Apply Embedded BCFs' is selected, BAIN will do this automatically.
+            <li>New "Embedded BCFs" - If an archive contains a BCF, Wrye Bash can apply that BCF directly to the containing archive.  If the BAIN option <a href="Wrye%20Bash%20Advanced%20Readme.html#bainApplyEmbeddedBCFs">Auto-Apply Embedded BCFs</a> is selected, BAIN will do this automatically.
 			<li>The Open At Skyrim Nexus and Open At TES Nexus commands will detect files with File IDs less than 4 digits now.
 		</ul>
 		<li><a href="Wrye%20Bash%20General%20Readme.html#ini">INI Edits</a>:
@@ -611,7 +632,7 @@
 		<li>Better support for Mac Command button.
 		<li><a href="Wrye%20Bash%20Advanced%20Readme.html#patch">Bashed Patch</a>:
 		<ul>
-			<li>New <a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Assorted Tweaker</a>: No Description Loading Screens (requested by hellwing).
+			<li>New <a href="Wrye%20Bash%20General%20Readme.html#patchTweakAssorted">Tweak Assorted</a>: No Description Loading Screens (requested by hellwing).
 		</ul>
 		<li>Wrye Bash will ask to backup your settings on <em>every</em> update now, instead of just a major version update (like from 294 to 295).
 		<li>Quickly switching between games can be accomplished via the <a href="Wrye%20Bash%20Advanced%20Readme.html#settings">Settings Menu</a>.
@@ -856,7 +877,7 @@
 <ul>
     <li>Added a whole bunch of tweaks:
 <ul>
-      <li>Drag: Max Moveable Weight tweak.
+      <li>Player: Max Draggable Weight.
       <li>Msg: Auto Saving.
       <li>Msg: Harvest Failure.
       <li>Msg: Harvest Success.
@@ -1057,7 +1078,7 @@
 <ul>
       <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsSelectOne">SelectOne</a>
       <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsSelectMany">SelectMany</a>
-      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsRenameEspm">RenameEspm</a>
+      <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsRenamePlugin">RenamePlugin</a>
       <li><a href="Wrye%20Bash%20Technical%20Readme.html#wizardsRequireVersions">RequireVersions</a>
       <li>This enables the use of expressions as arguments to Keywords.  For example, previously the following was impossible:
 <ul>
@@ -1303,7 +1324,7 @@
     <li>'Harvest Chance' tweaker added
     <li>'No Wind' tweaker added
     <li>Weigh adjusting tweakers adjusted
-    <li>'Reweigh: Arrows' tweaker added
+    <li>'Reweigh: Ammunition' tweaker added
     <li>'Reweigh: ingredients' tweaker added
 </ul>
   <li>'<a href="Wrye%20Bash%20General%20Readme.html#patchTweakActors">Tweak Actors</a>':
@@ -1546,7 +1567,7 @@
 <ul>
   <li>Actors.DeathItems moved (back) to separate patcher for better Warcry &amp; FCOM ease of use (and similar issues). (with fixes in the full release - reported by baphometal)
   <li>New Patcher: Import Spells - Actors.Spells and spellsOnly tags added for it, basically invent for spells.
-  <li>RacePatcher changes:
+  <li>Race Records changes:
 <ul>
     <li>Left eye import fix (contributed by Valda68k)
     <li>R.Ears tag added; imports ears
@@ -2587,7 +2608,7 @@
 
 <h3>193 [2008/07/16]</h3>
 <ul>
-<li>Added <a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportFactions">Export Factions</a> and <a href="Wrye%20Bash%20General%20Readme.html#patchImportFactions">Import Factions</a>
+<li>Added <a href="Wrye%20Bash%20Advanced%20Readme.html#modsExportFactions">Export Factions</a> and <a href="Wrye%20Bash%20General%20Readme.html#patchImportActorsFactions">Import Factions</a>
 <li>Expanded Bash_MFact.csv: should be pretty complete now.
 </ul>
 
@@ -3570,7 +3591,7 @@
 <ul>
 <li>Disable Import: TNR Faces command. (Use Bash Face patcher instead.)
 <li>Disabled old ability to disable/uncheck savegames. (Use profiles instead.)
-<li>Fix bug with "Change To" command.
+<li>Fix bug with "Change to" command.
 <li>Warn on Oblivion.ini corruption
 <li>Updated Russian translation (by DJ_Kovrik).
 <li>Added Fbomb counter to savegame <a href="Wrye%20Bash%20Advanced%20Readme.html#savesStatistics">Statistics</a>.
@@ -4268,7 +4289,7 @@
 </div>
 
 <div id="footer">
-	<div id="version">Wrye Bash v307</div>
+	<div id="version">Wrye Bash v308</div>
 	<a href="Wrye Bash General Readme.html">General</a>&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;Versions
 	<div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

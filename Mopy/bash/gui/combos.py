@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -36,6 +35,7 @@ from .layouts import HBoxedLayout, HLayout, LayoutOptions, Spacer, Stretch, \
 from .multi_choices import ListBox
 from .text_components import Label, HyperlinkLabel
 from .top_level_windows import _APageComponent, PanelWin
+from ..bolt import dict_sort
 
 class DoubleListBox(PanelWin):
     """A combination of two ListBoxes and left/right buttons to move items
@@ -236,16 +236,15 @@ class TreePanel(_APageComponent):
         :param page_descriptions: A dict mapping page names to descriptions."""
         super(TreePanel, self).__init__(parent)
         self._all_leaf_pages = []
-        for page_name, page_val in sorted(tree_geometry.iteritems(),
-                key=lambda i: i[0]):
+        for page_name, page_val in dict_sort(tree_geometry):
             page_desc = page_descriptions.get(page_name, u'')
             if isinstance(page_val, dict):
                 # This is not a leaf, add a link page and then the subpages
-                link_page = self._LinkPage(self,
-                    page_desc, self.select_page, page_name, page_val.keys())
+                link_page = self._LinkPage(self, page_desc, self.select_page,
+                                           page_name, page_val)
                 self.add_page(link_page, page_name)
-                for subpage_name, subpage_val in sorted(page_val.iteritems(),
-                        key=lambda i: i[0]):
+                for subpage_name in sorted(page_val):
+                    subpage_val = page_val[subpage_name]
                     if subpage_val.should_appear():
                         new_subpage = subpage_val(self, page_descriptions.get(
                             u'%s/%s' % (page_name, subpage_name), u''))
@@ -297,6 +296,37 @@ class TreePanel(_APageComponent):
             curr_child, cookie = tree_ctrl.GetNextChild(root_item, cookie)
         # Need to return FINISH, otherwise the browser would try to open it
         return EventResult.FINISH
+
+    def get_selected_page_path(self):
+        """Returns the path to the currently selected page. E.g. if there's a
+        page 'Bar' which is a child of the page 'Foo' and 'Bar' is currently
+        selected, this would return 'Foo/Bar'."""
+        ##: If you still don't believe me about the terrible API, look how
+        # similar this mess is to the other method up there.
+        tree_ctrl = self._native_widget.GetTreeCtrl()
+        root_item = tree_ctrl.GetRootItem()
+        # The root does not actually exist, so look at its first child. The
+        # cookie value is only needed by wx to keep track of the current
+        # iteration, it has no meaning outside of that
+        curr_child, cookie = tree_ctrl.GetFirstChild(root_item)
+        while curr_child.IsOk():
+            child_name = tree_ctrl.GetItemText(curr_child)
+            if tree_ctrl.IsSelected(curr_child):
+                # It's a top-level page, just return the name
+                return child_name
+            # Otherwise, look at all *its* children
+            curr_subchild, sub_cookie = tree_ctrl.GetFirstChild(curr_child)
+            while curr_subchild.IsOk():
+                subchild_name = tree_ctrl.GetItemText(curr_subchild)
+                if tree_ctrl.IsSelected(curr_subchild):
+                    # Found it as a subchild, separate them with a slash
+                    return u'%s/%s' % (child_name, subchild_name)
+                curr_subchild, sub_cookie = tree_ctrl.GetNextChild(
+                    curr_child, sub_cookie)
+            # None of the subchildren of this child are selected, move on to
+            # the next child
+            curr_child, cookie = tree_ctrl.GetNextChild(root_item, cookie)
+        return None
 
 class ATreeMixin(_AComponent):
     """A mixin for all leaf pages in a TreePanel."""

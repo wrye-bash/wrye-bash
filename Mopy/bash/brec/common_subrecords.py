@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,33 +25,50 @@ definitions for some commonly needed subrecords."""
 
 from __future__ import division, print_function
 from collections import defaultdict
+from itertools import chain
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion, PartialLoadDecider
+    MelUnion, PartialLoadDecider, FlagDecider
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelOptFloat, MelOptUInt8, MelOptUInt32, MelOptFid
-from .utils_constants import _int_unpacker, FID, null1, null2, null3, null4
-from ..bolt import Flags, encode, struct_pack, struct_unpack
+    MelFloat, MelReadOnly, MelFids, MelUInt32Flags, \
+    MelUInt8Flags, MelSInt32
+from .utils_constants import _int_unpacker, FID, null1
+from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
+from ..exception import ModError
 
 #------------------------------------------------------------------------------
-class MelActionFlags(MelOptUInt32):
+class MelActionFlags(MelUInt32Flags):
     """XACT (Action Flags) subrecord for REFR records."""
     _act_flags = Flags(0, Flags.getNames(u'act_use_default', u'act_activate',
         u'act_open', u'act_open_by_default'))
 
     def __init__(self):
-        super(MelActionFlags, self).__init__(
-            b'XACT', (self._act_flags, u'action_flags'))
+        super(MelActionFlags, self).__init__(b'XACT', u'action_flags',
+                                             self._act_flags)
+
+#------------------------------------------------------------------------------
+class MelActivateParents(MelGroup):
+    """XAPD/XAPR (Activate Parents) subrecords for REFR records."""
+    _ap_flags = Flags(0, Flags.getNames(u'parent_activate_only'),
+        unknown_is_unused=True)
+
+    def __init__(self):
+        super(MelActivateParents, self).__init__(u'activate_parents',
+            MelUInt8Flags(b'XAPD', u'activate_parent_flags', self._ap_flags),
+            MelGroups(u'activate_parent_refs',
+                MelStruct(b'XAPR', [u'I', u'f'], (FID, u'ap_reference'), u'ap_delay'),
+            ),
+        )
 
 #------------------------------------------------------------------------------
 class MelBounds(MelGroup):
     """Wrapper around MelGroup for the common task of defining OBND - Object
     Bounds. Uses MelGroup to avoid merging them when importing."""
     def __init__(self):
-        MelGroup.__init__(self, 'bounds',
-            MelStruct('OBND', '=6h', 'boundX1', 'boundY1', 'boundZ1',
-                      'boundX2', 'boundY2', 'boundZ2')
+        super(MelBounds, self).__init__(u'bounds',
+            MelStruct(b'OBND', [u'6h'], u'boundX1', u'boundY1', u'boundZ1',
+                      u'boundX2', u'boundY2', u'boundZ2')
         )
 
 #------------------------------------------------------------------------------
@@ -62,15 +78,15 @@ class MelCtda(MelUnion):
     amounts to a decision tree using MelUnions."""
     # 0 = Unknown/Ignored, 1 = Int, 2 = FormID, 3 = Float
     _param_types = {0: u'4s', 1: u'i', 2: u'I', 3: u'f'}
-    # This technically a lot more complex (the highest three bits also encode
-    # the comparison operator), but we only care about use_global, so we can
-    # treat the rest as unknown flags and just carry them forward
+    # This is technically a lot more complex (the highest three bits also
+    # encode the comparison operator), but we only care about use_global, so we
+    # can treat the rest as unknown flags and just carry them forward
     _ctda_type_flags = Flags(0, Flags.getNames(
         u'do_or', u'use_aliases', u'use_global', u'use_packa_data',
         u'swap_subject_and_target'))
 
-    def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=u'',
-                 suffix_elements=[], old_suffix_fmts=set()):
+    def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=[],
+                 suffix_elements=None, old_suffix_fmts=None):
         """Creates a new MelCtda instance with the specified properties.
 
         :param ctda_sub_sig: The signature of this subrecord. Probably
@@ -83,6 +99,8 @@ class MelCtda(MelUnion):
             MelTruncatedStruct. Must conform to the same syntax as suffix_fmt.
             May be empty.
         :type old_suffix_fmts: set[unicode]"""
+        if old_suffix_fmts is None: old_suffix_fmts = set()
+        if suffix_elements is None: suffix_elements = []
         from .. import bush
         super(MelCtda, self).__init__({
             # Build a (potentially truncated) struct for each function index
@@ -93,9 +111,10 @@ class MelCtda(MelUnion):
         }, decider=PartialLoadDecider(
             # Skip everything up to the function index in one go, we'll be
             # discarding this once we rewind anyways.
-            loader=MelStruct(ctda_sub_sig, u'8sH', u'ctda_ignored', u'ifunc'),
+            loader=MelStruct(ctda_sub_sig, [u'8s', u'H'], u'ctda_ignored', u'ifunc'),
             decider=AttrValDecider(u'ifunc'),
         ))
+        self._ctda_mel = next(self.element_mapping.itervalues()) # type: MelStruct
 
     # Helper methods - Note that we skip func_data[0]; the first element is
     # the function name, which is only needed for puny human brains
@@ -106,27 +125,29 @@ class MelCtda(MelUnion):
         # The '4s' here can actually be a float or a FormID. We do *not* want
         # to handle this via MelUnion, because the deep nesting is going to
         # cause exponential growth and bring PBash down to a crawl.
-        prefix_fmt = u'B3s4sH2s' + (u'%s' * len(func_data[1:]))
+        prefix_fmt = [u'B', u'3s', u'4s', u'H', u'2s']
         prefix_elements = [(self._ctda_type_flags, u'operFlag'),
-                           (u'unused1', null3), u'compValue',
-                           u'ifunc', (u'unused2', null2)]
+                           u'unused1', u'compValue',
+                           u'ifunc', u'unused2']
         # Builds an argument tuple to use for formatting the struct format
         # string from above plus the suffix we got passed in
-        fmt_list = tuple([self._param_types[func_param]
-                          for func_param in func_data[1:]])
-        full_old_versions = {(prefix_fmt + f) % fmt_list
-                             for f in old_suffix_fmts}
-        shared_params = ([ctda_sub_sig, (prefix_fmt + suffix_fmt) % fmt_list] +
+        fmt_list = [self._param_types[func_param] for func_param in
+                    func_data[1:]]
+        shared_params = ([ctda_sub_sig, (prefix_fmt + fmt_list + suffix_fmt)] +
                          self._build_params(func_data, prefix_elements,
                                             suffix_elements))
         # Only use MelTruncatedStruct if we have old versions, save the
         # overhead otherwise
         if old_suffix_fmts:
+            full_old_versions = {
+                u''.join(prefix_fmt + fmt_list + ([f] if f else [])) for f in
+                old_suffix_fmts}
             return MelTruncatedStruct(*shared_params,
                                       old_versions=full_old_versions)
         return MelStruct(*shared_params)
 
-    def _build_params(self, func_data, prefix_elements, suffix_elements):
+    @staticmethod
+    def _build_params(func_data, prefix_elements, suffix_elements):
         """Builds a list of struct elements to pass to MelTruncatedStruct."""
         # First, build up a list of the parameter elemnts to use
         func_elements = [
@@ -136,10 +157,10 @@ class MelCtda(MelUnion):
         return prefix_elements + func_elements + suffix_elements
 
     # Nesting workarounds -----------------------------------------------------
-    # To avoid having to test MelUnions too deply - hurts performance even
+    # To avoid having to nest MelUnions too deeply - hurts performance even
     # further (see below) plus grows exponentially
-    def loadData(self, record, ins, sub_type, size_, readId):
-        super(MelCtda, self).loadData(record, ins, sub_type, size_, readId)
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super(MelCtda, self).load_mel(record, ins, sub_type, size_, *debug_strs)
         # See _build_struct comments above for an explanation of this
         record.compValue = struct_unpack(u'fI'[record.operFlag.use_global],
                                          record.compValue)[0]
@@ -164,11 +185,10 @@ class MelCtda(MelUnion):
         formElements.add(self)
 
     def getLoaders(self, loaders):
-        loaders[next(self.element_mapping.itervalues()).subType] = self
+        loaders[self._ctda_mel.mel_sig] = self
 
-    def getSlotsUsed(self):
-        return (self.decider_result_attr,) + next(
-            self.element_mapping.itervalues()).getSlotsUsed()
+    def getSlotsUsed(self): # PY3: unpack
+        return (self.decider_result_attr,) + self._ctda_mel.getSlotsUsed()
 
     def setDefault(self, record):
         next(self.element_mapping.itervalues()).setDefault(record)
@@ -203,8 +223,8 @@ class MelCtdaFo3(MelCtda):
         self._ignore_ifuncs = ({106, 285} if bush.game.fsName == u'FalloutNV'
                                else set()) # 106 == IsFacingUp, 285 == IsLeftUp
 
-    def loadData(self, record, ins, sub_type, size_, readId):
-        super(MelCtdaFo3, self).loadData(record, ins, sub_type, size_, readId)
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super(MelCtdaFo3, self).load_mel(record, ins, sub_type, size_, *debug_strs)
         if record.ifunc == self._getvatsvalue_ifunc:
             record.param2 = struct_unpack(self._vats_param2_fmt[record.param1],
                                           record.param2)[0]
@@ -232,30 +252,33 @@ class MelDecalData(MelOptStruct):
         u'alphaBlending',
         u'alphaTesting',
         u'noSubtextures', # Skyrim+, will just be ignored for earlier games
-    ))
+    ), unknown_is_unused=True)
 
     def __init__(self):
-        super(MelDecalData, self).__init__(b'DODT', u'7fBB2s3Bs', u'minWidth',
+        super(MelDecalData, self).__init__(b'DODT',
+            [u'7f', u'B', u'B', u'2s', u'3B', u's'], u'minWidth',
             u'maxWidth', u'minHeight', u'maxHeight', u'depth', u'shininess',
             u'parallaxScale', u'parallaxPasses',
-            (self._decal_data_flags, u'decalFlags'), (u'unusedDecal1', null2),
-            u'redDecal', u'greenDecal', u'blueDecal', (u'unusedDecal2', null1))
+            (self._decal_data_flags, u'decalFlags'), u'unusedDecal1',
+            u'redDecal', u'greenDecal', u'blueDecal', u'unusedDecal2')
 
 #------------------------------------------------------------------------------
 class MelReferences(MelGroups):
     """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
     def __init__(self):
-        MelGroups.__init__(self, 'references', MelUnion({
-            'SCRO': MelFid('SCRO', 'reference'),
-            'SCRV': MelUInt32('SCRV', 'reference'),
+        super(MelReferences, self).__init__(u'references', MelUnion({
+            b'SCRO': MelFid(b'SCRO', u'reference'),
+            b'SCRV': MelUInt32(b'SCRV', u'reference'),
         }))
 
 #------------------------------------------------------------------------------
-class MelCoordinates(MelTruncatedStruct):
-    """Skip dump if we're in an interior."""
-    def dumpData(self, record, out):
-        if not record.flags.isInterior:
-            MelTruncatedStruct.dumpData(self, record, out)
+class MelSkipInterior(MelUnion):
+    """Union that skips dumping if we're in an interior."""
+    def __init__(self, element):
+        super(MelSkipInterior, self).__init__({
+            True: MelReadOnly(element),
+            False: element,
+        }, decider=FlagDecider(u'flags', [u'isInterior']))
 
 #------------------------------------------------------------------------------
 class MelColorInterpolator(MelArray):
@@ -264,8 +287,9 @@ class MelColorInterpolator(MelArray):
     with 'time' as the X axis and 'red', 'green', 'blue' and 'alpha' as the Y
     axis."""
     def __init__(self, sub_type, attr):
-        MelArray.__init__(self, attr,
-            MelStruct(sub_type, '5f', 'time', 'red', 'green', 'blue', 'alpha'),
+        super(MelColorInterpolator, self).__init__(attr,
+            MelStruct(sub_type, [u'5f'], u'time', u'red', u'green', u'blue',
+                u'alpha'),
         )
 
 #------------------------------------------------------------------------------
@@ -276,28 +300,47 @@ class MelValueInterpolator(MelArray):
     of two floats, where each entry in the array describes a point on a curve,
     with 'time' as the X axis and 'value' as the Y axis."""
     def __init__(self, sub_type, attr):
-        MelArray.__init__(self, attr,
-            MelStruct(sub_type, '2f', 'time', 'value'),
+        super(MelValueInterpolator, self).__init__(attr,
+            MelStruct(sub_type, [u'2f'], u'time', u'value'),
         )
+
+#------------------------------------------------------------------------------
+class MelColor(MelStruct):
+    """Required Color."""
+    def __init__(self, color_sig=b'CNAM'):
+        super(MelColor, self).__init__(color_sig, [u'4B'], u'red', u'green',
+            u'blue', u'unused_alpha')
+
+class MelColorO(MelOptStruct):
+    """Optional Color."""
+    def __init__(self, color_sig=b'CNAM'):
+        super(MelColorO, self).__init__(color_sig, [u'4B'], u'red', u'green',
+            u'blue', u'unused_alpha')
+
+#------------------------------------------------------------------------------
+class MelDescription(MelLString):
+    """Handles a description (DESC) subrecord."""
+    def __init__(self, desc_attr=u'description'):
+        super(MelDescription, self).__init__(b'DESC', desc_attr)
 
 #------------------------------------------------------------------------------
 class MelEdid(MelString):
     """Handles an Editor ID (EDID) subrecord."""
     def __init__(self):
-        MelString.__init__(self, 'EDID', 'eid')
+        super(MelEdid, self).__init__(b'EDID', u'eid')
 
 #------------------------------------------------------------------------------
 class MelFull(MelLString):
     """Handles a name (FULL) subrecord."""
     def __init__(self):
-        MelLString.__init__(self, 'FULL', 'full')
+        super(MelFull, self).__init__(b'FULL', u'full')
 
 #------------------------------------------------------------------------------
 class MelIcons(MelSequential):
     """Handles icon subrecords. Defaults to ICON and MICO, with attribute names
     'iconPath' and 'smallIconPath', since that's most common."""
-    def __init__(self, icon_attr='iconPath', mico_attr='smallIconPath',
-                 icon_sig='ICON', mico_sig='MICO'):
+    def __init__(self, icon_attr=u'iconPath', mico_attr=u'smallIconPath',
+                 icon_sig=b'ICON', mico_sig=b'MICO'):
         """Creates a new MelIcons with the specified attributes.
 
         :param icon_attr: The attribute to use for the ICON subrecord. If
@@ -305,27 +348,27 @@ class MelIcons(MelSequential):
         :param mico_attr: The attribute to use for the MICO subrecord. If
             falsy, this means 'do not include a MICO subrecord'."""
         final_elements = []
-        if icon_attr: final_elements += [MelString(icon_sig, icon_attr)]
-        if mico_attr: final_elements += [MelString(mico_sig, mico_attr)]
-        MelSequential.__init__(self, *final_elements)
+        if icon_attr: final_elements.append(MelString(icon_sig, icon_attr))
+        if mico_attr: final_elements.append(MelString(mico_sig, mico_attr))
+        super(MelIcons, self).__init__(*final_elements)
 
 class MelIcons2(MelIcons):
     """Handles ICO2 and MIC2 subrecords. Defaults to attribute names
     'femaleIconPath' and 'femaleSmallIconPath', since that's most common."""
-    def __init__(self, ico2_attr='femaleIconPath',
-                 mic2_attr='femaleSmallIconPath'):
-        MelIcons.__init__(self, icon_attr=ico2_attr, mico_attr=mic2_attr,
-                          icon_sig='ICO2', mico_sig='MIC2')
+    def __init__(self, ico2_attr=u'femaleIconPath',
+                 mic2_attr=u'femaleSmallIconPath'):
+        super(MelIcons2, self).__init__(icon_attr=ico2_attr,
+            mico_attr=mic2_attr, icon_sig=b'ICO2', mico_sig=b'MIC2')
 
 class MelIcon(MelIcons):
     """Handles a standalone ICON subrecord, i.e. without any MICO subrecord."""
-    def __init__(self, icon_attr='iconPath'):
-        MelIcons.__init__(self, icon_attr=icon_attr, mico_attr='')
+    def __init__(self, icon_attr=u'iconPath'):
+        super(MelIcon, self).__init__(icon_attr=icon_attr, mico_attr=u'')
 
 class MelIco2(MelIcons2):
     """Handles a standalone ICO2 subrecord, i.e. without any MIC2 subrecord."""
     def __init__(self, ico2_attr):
-        MelIcons2.__init__(self, ico2_attr=ico2_attr, mic2_attr='')
+        super(MelIco2, self).__init__(ico2_attr=ico2_attr, mic2_attr=u'')
 
 #------------------------------------------------------------------------------
 class MelMdob(MelFid):
@@ -338,19 +381,33 @@ class MelWthrColors(MelStruct):
     """Used in WTHR for PNAM and NAM0 for all games but FNV."""
     def __init__(self, wthr_sub_sig):
         MelStruct.__init__(
-            self, wthr_sub_sig, '3Bs3Bs3Bs3Bs', 'riseRed', 'riseGreen',
-            'riseBlue', ('unused1', null1), 'dayRed', 'dayGreen',
-            'dayBlue', ('unused2', null1), 'setRed', 'setGreen', 'setBlue',
-            ('unused3', null1), 'nightRed', 'nightGreen', 'nightBlue',
-            ('unused4', null1))
+            self, wthr_sub_sig,
+            [u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's'], u'riseRed',
+            u'riseGreen',
+            u'riseBlue', u'unused1', u'dayRed', u'dayGreen',
+            u'dayBlue',u'unused2', u'setRed', u'setGreen', u'setBlue',
+            u'unused3', u'nightRed', u'nightGreen', u'nightBlue',
+            u'unused4')
 
 #------------------------------------------------------------------------------
-class MelEnchantment(MelOptFid):
+class MelDropSound(MelFid):
+    """Handles the common ZNAM - Drop Sound subrecord."""
+    def __init__(self):
+        super(MelDropSound, self).__init__(b'ZNAM', u'dropSound')
+
+#------------------------------------------------------------------------------
+class MelEnchantment(MelFid):
     """Represents the common enchantment/object effect subrecord."""
     ##: Would be better renamed to object_effect, but used in tons of places
     # that need renaming/reworking first
     def __init__(self):
         super(MelEnchantment, self).__init__(b'EITM', u'enchantment')
+
+#------------------------------------------------------------------------------
+class MelPickupSound(MelFid):
+    """Handles the common YNAM - Pickup Sound subrecord."""
+    def __init__(self):
+        super(MelPickupSound, self).__init__(b'YNAM', u'pickupSound')
 
 #------------------------------------------------------------------------------
 class MelRaceParts(MelNull):
@@ -365,7 +422,7 @@ class MelRaceParts(MelNull):
         :param indx_to_attr: A mapping from the INDX values to the final
             record attributes that will be used for the subsequent
             subrecords.
-        :type indx_to_attr: dict[int, str]
+        :type indx_to_attr: dict[int, unicode]
         :param group_loaders: A callable that takes the INDX value and
             returns an iterable with one or more MelBase-derived subrecord
             loaders. These will be loaded and dumped directly after each
@@ -385,7 +442,7 @@ class MelRaceParts(MelNull):
         temp_loaders = {}
         for element in self._indx_to_loader.itervalues():
             element.getLoaders(temp_loaders)
-        for signature in temp_loaders.keys():
+        for signature in temp_loaders:
             loaders[signature] = self
 
     def getSlotsUsed(self):
@@ -395,18 +452,19 @@ class MelRaceParts(MelNull):
         for element in self._indx_to_loader.itervalues():
             element.setDefault(record)
 
-    def loadData(self, record, ins, sub_type, size_, readId,
-                 __unpacker=_int_unpacker):
-        if sub_type == 'INDX':
-            self._last_indx, = ins.unpack(__unpacker, size_, readId)
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        __unpacker=_int_unpacker # PY3: keyword only search for __unpacker
+        if sub_type == b'INDX':
+            self._last_indx = ins.unpack(__unpacker, size_, *debug_strs)[0]
         else:
-            self._indx_to_loader[self._last_indx].loadData(
-                record, ins, sub_type, size_, readId)
+            self._indx_to_loader[self._last_indx].load_mel(
+                record, ins, sub_type, size_, *debug_strs)
 
     def dumpData(self, record, out):
         for part_indx, part_attr in self._indx_to_attr.iteritems():
             if hasattr(record, part_attr): # only dump present parts
-                out.packSub('INDX', '=I', part_indx)
+                MelUInt32(b'INDX', u'UNUSED').packSub(
+                    out, struct_pack(u'=I', part_indx))
                 self._indx_to_loader[part_indx].dumpData(record, out)
 
     @property
@@ -417,11 +475,12 @@ class MelRaceParts(MelNull):
 class MelRaceVoices(MelStruct):
     """Set voices to zero, if equal race fid. If both are zero, then skip
     dumping."""
-    def dumpData(self, record, out):
+    def pack_subrecord_data(self, record):
         if record.maleVoice == record.fid: record.maleVoice = 0
         if record.femaleVoice == record.fid: record.femaleVoice = 0
         if (record.maleVoice, record.femaleVoice) != (0, 0):
-            MelStruct.dumpData(self, record, out)
+            return super(MelRaceVoices, self).pack_subrecord_data(record)
+        return None
 
 #------------------------------------------------------------------------------
 class MelScript(MelFid):
@@ -432,15 +491,14 @@ class MelScript(MelFid):
 #------------------------------------------------------------------------------
 class MelScriptVars(MelGroups):
     """Handles SLSD and SCVR combos defining script variables."""
-    _var_flags = Flags(0, Flags.getNames('is_long_or_short'))
+    _var_flags = Flags(0, Flags.getNames(u'is_long_or_short'))
 
     def __init__(self):
-        MelGroups.__init__(self, 'script_vars',
-            MelStruct('SLSD', 'I12sB7s', 'var_index',
-                      ('unused1', null4 + null4 + null4),
-                      (self._var_flags, 'var_flags', 0),
-                      ('unused2', null4 + null3)),
-            MelString('SCVR', 'var_name'),
+        super(MelScriptVars, self).__init__(u'script_vars',
+            MelStruct(b'SLSD', [u'I', u'12s', u'B', u'7s'], u'var_index',
+                      u'unused1', (self._var_flags, u'var_flags'),
+                      u'unused2'),
+            MelString(b'SCVR', u'var_name'),
         )
 
 #------------------------------------------------------------------------------
@@ -452,8 +510,8 @@ class MelEnableParent(MelOptStruct):
 
     def __init__(self):
         super(MelEnableParent, self).__init__(
-            b'XESP', u'IB3s', (FID, u'ep_reference'),
-            (self._parent_flags, u'parent_flags'), (u'xesp_unused', null3)),
+            b'XESP', [u'I', u'B', u'3s'], (FID, u'ep_reference'),
+            (self._parent_flags, u'parent_flags'), u'xesp_unused'),
 
 #------------------------------------------------------------------------------
 class MelMapMarker(MelGroup):
@@ -466,9 +524,9 @@ class MelMapMarker(MelGroup):
     def __init__(self, with_reputation=False):
         group_elems = [
             MelBase(b'XMRK', u'marker_data'),
-            MelOptUInt8(b'FNAM', (self._marker_flags, u'marker_flags')),
+            MelUInt8Flags(b'FNAM', u'marker_flags', self._marker_flags),
             MelFull(),
-            MelOptStruct(b'TNAM', u'Bs', u'marker_type', u'unused1'),
+            MelOptStruct(b'TNAM', [u'B', u's'], u'marker_type', u'unused1'),
         ]
         if with_reputation:
             group_elems.append(MelFid(b'WMI1', u'marker_reputation'))
@@ -481,39 +539,37 @@ class MelMODS(MelBase):
         formElements.add(self)
 
     def setDefault(self,record):
-        record.__setattr__(self.attr,None)
+        setattr(record, self.attr, None)
 
-    def loadData(self, record, ins, sub_type, size_, readId,
-                 __unpacker=_int_unpacker):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        __unpacker=_int_unpacker
         insUnpack = ins.unpack
         insRead32 = ins.readString32
-        count, = insUnpack(__unpacker, 4, readId)
-        data = []
-        dataAppend = data.append
+        count, = insUnpack(__unpacker, 4, *debug_strs)
+        mods_data = []
+        dataAppend = mods_data.append
         for x in xrange(count):
-            string = insRead32(readId)
+            string = insRead32(*debug_strs)
             fid = ins.unpackRef()
-            index, = insUnpack(__unpacker, 4, readId)
+            index, = insUnpack(__unpacker, 4, *debug_strs)
             dataAppend((string,fid,index))
-        record.__setattr__(self.attr,data)
+        setattr(record, self.attr, mods_data)
 
-    def dumpData(self,record,out):
-        data = record.__getattribute__(self.attr)
-        if data is not None:
-            data = record.__getattribute__(self.attr)
-            outData = struct_pack('I', len(data))
-            for (string,fid,index) in data:
-                outData += struct_pack('I', len(string))
-                outData += encode(string)
-                outData += struct_pack('=2I', fid, index)
-            out.packSub(self.subType,outData)
+    def pack_subrecord_data(self,record):
+        mods_data = getattr(record, self.attr)
+        if mods_data is not None:
+            return b''.join(chain([struct_pack(u'I', len(mods_data))],
+                *([struct_pack(u'I', len(string)), encode(string),
+                   struct_pack(u'=2I', fid, index)]
+                  for (string, fid, index) in mods_data)))
 
     def mapFids(self,record,function,save=False):
         attr = self.attr
-        data = record.__getattribute__(attr)
-        if data is not None:
-            data = [(string,function(fid),index) for (string,fid,index) in record.__getattribute__(attr)]
-            if save: record.__setattr__(attr,data)
+        mods_data = getattr(record, attr)
+        if mods_data is not None:
+            mods_data = [(string,function(fid),index) for (string,fid,index)
+                         in getattr(record, attr)]
+            if save: setattr(record, attr, mods_data)
 
 #------------------------------------------------------------------------------
 class MelRegnEntrySubrecord(MelUnion):
@@ -530,33 +586,39 @@ class MelRegnEntrySubrecord(MelUnion):
       - 8: Imposter (FNV only)"""
     def __init__(self, entry_type_val, element):
         """:type entry_type_val: int"""
-        MelUnion.__init__(self, {
+        super(MelRegnEntrySubrecord, self).__init__({
             entry_type_val: element,
-        }, decider=AttrValDecider('entryType'),
-            fallback=MelNull('NULL')) # ignore
+        }, decider=AttrValDecider(u'entryType'),
+            fallback=MelNull(b'NULL')) # ignore
 
 #------------------------------------------------------------------------------
-class MelRef3D(MelStruct):
+class MelRef3D(MelOptStruct):
     """3D position and rotation for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
         super(MelRef3D, self).__init__(
-            b'DATA', u'6f', u'ref_pos_x', u'ref_pos_y', u'ref_pos_z',
+            b'DATA', [u'6f'], u'ref_pos_x', u'ref_pos_y', u'ref_pos_z',
             u'ref_rot_x', u'ref_rot_y', u'ref_rot_z'),
 
 #------------------------------------------------------------------------------
-class MelRefScale(MelOptFloat):
+class MelRefScale(MelFloat):
     """Scale for a reference record (REFR, ACHR, etc.)."""
+    def __init__(self): # default was 1.0
+        super(MelRefScale, self).__init__(b'XSCL', u'ref_scale')
+
+#------------------------------------------------------------------------------
+class MelSpells(MelFids):
+    """Handles the common SPLO subrecord."""
     def __init__(self):
-        super(MelRefScale, self).__init__(b'XSCL', (u'ref_scale', 1.0))
+        super(MelSpells, self).__init__(b'SPLO', u'spells')
 
 #------------------------------------------------------------------------------
 class MelWorldBounds(MelSequential):
     """Worlspace (WRLD) bounds."""
     def __init__(self):
         super(MelWorldBounds, self).__init__(
-            MelStruct(b'NAM0', u'2f', u'object_bounds_min_x',
+            MelStruct(b'NAM0', [u'2f'], u'object_bounds_min_x',
                 u'object_bounds_min_y'),
-            MelStruct(b'NAM9', u'2f', u'object_bounds_max_x',
+            MelStruct(b'NAM9', [u'2f'], u'object_bounds_max_x',
                 u'object_bounds_max_y'),
         )
 
@@ -564,5 +626,42 @@ class MelWorldBounds(MelSequential):
 class MelXlod(MelOptStruct):
     """Distant LOD Data."""
     def __init__(self):
-        super(MelXlod, self).__init__(b'XLOD', u'3f', u'lod1', u'lod2',
+        super(MelXlod, self).__init__(b'XLOD', [u'3f'], u'lod1', u'lod2',
                                       u'lod3')
+
+#------------------------------------------------------------------------------
+class MelOwnership(MelGroup):
+    """Handles XOWN, XRNK for cells and cell children."""
+
+    def __init__(self, attr=u'ownership'):
+        MelGroup.__init__(self, attr,
+            MelFid(b'XOWN', u'owner'),
+            MelSInt32(b'XRNK', u'rank'),
+        )
+
+    def dumpData(self,record,out):
+        if record.ownership and record.ownership.owner: ##: use pack_subrecord_data ?
+            MelGroup.dumpData(self,record,out)
+
+class MelDebrData(MelStruct):
+    def __init__(self):
+        # Format doesn't matter, struct.Struct(u'') works! ##: MelStructured
+        super(MelDebrData, self).__init__(b'DATA', [], u'percentage',
+            (u'modPath', null1), u'flags')
+
+    @staticmethod
+    def _expand_formats(elements, struct_formats):
+        return [0] * len(elements)
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        byte_data = ins.read(size_, *debug_strs)
+        (record.percentage,) = unpack_byte(ins, byte_data[0:1])
+        record.modPath = byte_data[1:-2]
+        if byte_data[-2] != null1:
+            raise ModError(ins.inName,u'Unexpected subrecord: %s' % (debug_strs,))
+        (record.flags,) = struct_unpack(u'B',byte_data[-1])
+
+    def pack_subrecord_data(self, record):
+        return b''.join(
+            [struct_pack(u'B', record.percentage), record.modPath, null1,
+             struct_pack(u'B', record.flags)])

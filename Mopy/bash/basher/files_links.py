@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,25 +24,25 @@
 import re
 import time
 from .. import balt, bosh, bush, bolt, exception
+from ..bosh import ListInfo
 from ..balt import ItemLink, ChoiceLink, OneItemLink
-from ..bolt import GPath
 from ..gui import BusyCursor
 from ..localize import format_date, unformat_date
 
-__all__ = ['Files_Unhide', 'File_Backup', 'File_Duplicate', 'File_Snapshot',
-           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters',
-           'File_Redate']
+__all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
+           u'File_Snapshot', u'File_RevertToBackup', u'File_RevertToSnapshot',
+           u'File_ListMasters', u'File_Redate']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
-    _text = _(u"Unhide...")
+    _text = _(u'Unhide...')
 
     def __init__(self, files_type):
         super(Files_Unhide, self).__init__()
-        self._help = _(u"Unhides hidden %ss.") % files_type
+        self._help = _(u'Unhides hidden %ss.') % files_type
 
     @balt.conversation
     def Execute(self):
@@ -63,8 +62,8 @@ class Files_Unhide(ItemLink):
             #--File already unhidden?
             destPath = destDir.join(srcFileName)
             if destPath.exists() or (destPath + u'.ghost').exists():
-                self._showWarning(_(u"File skipped: %s. File is already "
-                                    u"present.") % (srcFileName.s,))
+                self._showWarning(_(u'File skipped: %s. File is already '
+                                    u'present.') % (srcFileName,))
             #--Move it?
             else:
                 srcFiles.append(srcPath)
@@ -83,17 +82,14 @@ class Files_Unhide(ItemLink):
 # File Links ------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class File_Duplicate(ItemLink):
-    """Create a duplicate of the file - mod, save or bsa."""
+    """Create a duplicate of the file - mod, save, bsa, etc."""
+    _text = _(u'Duplicate...')
+    _help = _(u'Make a copy of the selected file(s).')
 
-    def _initData(self, window, selection):
-        super(File_Duplicate, self)._initData(window, selection)
-        self._text = (_(u'Duplicate'), _(u'Duplicate...'))[len(selection) == 1]
-        self._help = _(u"Make a copy of '%s'") % (selection[0])
-
-    _bsaAndBlocking = _(u"This mod has an associated archive (%s" +
-                        bush.game.Bsa.bsa_extension + u") and an "
-        u"associated plugin-name-specific directory (e.g. Sound\\Voice\\%s), "
-        u"which will not be attached to the duplicate mod.") + u'\n\n' + \
+    _bsaAndBlocking = _(u'This mod has an associated archive (%s' +
+                        bush.game.Bsa.bsa_extension + u') and an '
+        u'associated plugin-name-specific directory (e.g. Sound\\Voice\\%s), '
+        u'which will not be attached to the duplicate mod.') + u'\n\n' + \
         _(u'Note that the BSA archive may also contain a plugin-name-specific '
         u'directory, which would remain detached even if a duplicate archive '
         u'were also created.')
@@ -125,22 +121,23 @@ class File_Duplicate(ItemLink):
             #--Mod with resources? Warn on rename if file has bsa and/or dialog
             if not self._askResourcesOk(fileInfo): continue
             #--Continue copy
-            if bosh.bak_file_pattern.match(to_duplicate.s):
-                continue #YAK!
-            (destDir, wildcard) = (fileInfo.dir, u'*' + to_duplicate.ext)
-            destName = self.window.new_path(
-                GPath(to_duplicate.root + u' Copy' + to_duplicate.ext), destDir)
-            destDir.makedirs()
+            r, e = to_duplicate.root, to_duplicate.ext
+            destName = fileInfo.unique_key(r, e, add_copy=True)
+            destDir = fileInfo.dir
             if len(self.selected) == 1:
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
-                    defaultFile=destName.s, wildcard=wildcard)
+                    defaultFile=destName.s, wildcard=u'*%s' %e)
                 if not destPath: return
                 destDir, destName = destPath.headTail
-            if (destDir == fileInfo.dir) and (destName == to_duplicate):
-                self._showError(
-                    _(u"Files cannot be duplicated to themselves!"))
-                continue
+                if destDir == fileInfo.dir: # FIXME validate (or ask save does that)?
+                    if destName == to_duplicate:
+                        self._showError(
+                            _(u'Files cannot be duplicated to themselves!'))
+                        continue
+                    elif destName in fileInfos:
+                        self._showError(_(u'%s exists!') % destPath)
+                        continue
             fileInfos.copy_info(to_duplicate, destDir, destName)
             if fileInfo.isMod(): ##: move this inside copy_info
                 fileInfos.cached_lo_insert_after(to_duplicate, destName)
@@ -156,12 +153,12 @@ class File_Duplicate(ItemLink):
 
 class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""
-    _text = _(u"List Masters...")
+    _text = _(u'List Masters...')
 
     @property
-    def menu_help(self):
-        return _("Copies list of %(filename)s's masters to the clipboard.") % (
-                        {'filename': self.selected[0]})
+    def link_help(self):
+        return _(u"Copies list of %(filename)s's masters to the clipboard.") % (
+                        {u'filename': self.selected[0]})
 
     def Execute(self):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)
@@ -174,9 +171,9 @@ class File_Snapshot(ItemLink):
     _help = _(u'Creates a snapshot copy of the selected file(s) in a '
               u'subdirectory (Bash\Snapshots).')
 
-    def _initData(self, window, selection):
-        super(File_Snapshot, self)._initData(window, selection)
-        self._text = (_(u'Snapshot'),_(u'Snapshot...'))[len(selection) == 1]
+    @property
+    def link_text(self):
+        return (_(u'Snapshot'), _(u'Snapshot...'))[len(self.selected) == 1]
 
     def Execute(self):
         for fileName, fileInfo in self.iselected_pairs():
@@ -224,14 +221,14 @@ class File_RevertToSnapshot(OneItemLink):
         wildcard = self._selected_info.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()
-        snapPath = self._askOpen(_(u'Revert %s to snapshot:') % fileName.s,
+        snapPath = self._askOpen(_(u'Revert %s to snapshot:') % fileName,
                                  defaultDir=srcDir, wildcard=wildcard,
                                  mustExist=True)
         if not snapPath: return
         snapName = snapPath.tail
         #--Warning box
         message = (_(u'Revert %s to snapshot %s dated %s?') % (
-            fileName.s, snapName.s, format_date(snapPath.mtime)))
+            fileName, snapName, format_date(snapPath.mtime)))
         if not self._askYes(message, _(u'Revert to Snapshot')): return
         with BusyCursor():
             destPath = self._selected_info.abs_path
@@ -251,7 +248,7 @@ class File_RevertToSnapshot(OneItemLink):
                     _(u'Failed to revert %s to snapshot %s. The snapshot file '
                       u'may be corrupt. Do you want to restore the original '
                       u"file again? 'No' keeps the reverted, possibly broken "
-                      u'snapshot instead.') % (fileName.s, snapName.s),
+                      u'snapshot instead.') % (fileName, snapName),
                         title=_(u'Revert to Snapshot - Error')):
                     # Restore the known good file again - no error check needed
                     destPath.untemp()
@@ -262,7 +259,7 @@ class File_RevertToSnapshot(OneItemLink):
 class File_Backup(ItemLink):
     """Backup file."""
     _text = _(u'Backup')
-    _help = _(u"Create a backup of the selected file(s).")
+    _help = _(u'Create a backup of the selected file(s).')
 
     def Execute(self):
         for fileInfo in self.iselected_infos():
@@ -293,8 +290,7 @@ class _RevertBackup(OneItemLink):
         #--Warning box
         sel_file = self._selected_item
         backup_date = format_date(self.backup_path.mtime)
-        message = _(u'Revert %s to backup dated %s?') % (sel_file.s,
-                                                         backup_date)
+        message = _(u'Revert %s to backup dated %s?') % (sel_file, backup_date)
         if not self._askYes(message): return
         with BusyCursor():
             # Make a temp backup first in case reverting to backup fails
@@ -310,7 +306,7 @@ class _RevertBackup(OneItemLink):
                     _(u'Failed to revert %s to backup dated %s. The backup '
                       u'file may be corrupt. Do you want to restore the '
                       u"original file again? 'No' keeps the reverted, "
-                      u'possibly broken backup instead.') % (sel_file.s,
+                      u'possibly broken backup instead.') % (sel_file,
                                                              backup_date),
                         title=_(u'Revert to Backup - Error')):
                     # Restore the known good file again - no error check needed
@@ -334,10 +330,10 @@ class File_Redate(ItemLink):
         # Ask user for revised time and parse it
         new_time_input = self._askText(
             _(u'Redate selected file(s) starting at...'),
-            title=_(u'Redate Files'), default=format_date(int(time.time())))
+            title=_(u'Redate Files'), default=format_date(time.time()))
         if not new_time_input: return
         try:
-            new_time = int(time.mktime(unformat_date(new_time_input, '%c')))
+            new_time = time.mktime(unformat_date(new_time_input))
         except ValueError:
             self._showError(_(u'Unrecognized date: ') + new_time_input)
             return

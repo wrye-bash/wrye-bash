@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,36 +25,40 @@ and the wx.wiz stuff."""
 __author__ = u'Utumno, Infernio'
 
 import wx as _wx
-import wx.adv as _adv     # wxPython wizard class
-defPos = _wx.DefaultPosition
-defSize = _wx.DefaultSize
+import wx.adv as _adv
 
-from .base_components import _AComponent, WithFirstShow
-from .text_components import Label
+from .base_components import _AComponent, Color, csf
+
+# Special constant defining a window as having whatever position the underlying
+# GUI implementation picks for it by default.
+DEFAULT_POSITION = (-1, -1)
 
 class _TopLevelWin(_AComponent):
     """Methods mixin for top level windows
 
     Events:
      - _on_close_evt(): request to close the window."""
-    _defPos = defPos
-    _def_size = defSize
+    _def_pos = _wx.DefaultPosition
+    _def_size = _wx.DefaultSize
     _min_size = _size_key = _pos_key = None
 
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
         # dict holding size/pos info ##: can be bass.settings or balt.sizes
         self._sizes_dict = sizes_dict
-        self._set_pos_size(kwargs, sizes_dict)
         super(_TopLevelWin, self).__init__(parent, *args, **kwargs)
+        self._set_pos_size(kwargs, sizes_dict)
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.on_closing)
         if icon_bundle: self.set_icons(icon_bundle)
         if self._min_size: self.set_min_size(*self._min_size)
 
     def _set_pos_size(self, kwargs, sizes_dict):
-        kwargs['pos'] = kwargs.get('pos', None) or sizes_dict.get(
-            self._pos_key, self._defPos)
-        kwargs['size'] = kwargs.get('size', None) or sizes_dict.get(
+        wanted_pos = kwargs.get('pos', None) or sizes_dict.get(
+            self._pos_key, self._def_pos)
+        # Resolve the special DEFAULT_POSITION constant to a real value
+        self.component_position = (
+            self._def_pos if wanted_pos == DEFAULT_POSITION else wanted_pos)
+        self.component_size = kwargs.get('size', None) or sizes_dict.get(
             self._size_key, self._def_size)
 
     @property
@@ -100,7 +103,7 @@ class _TopLevelWin(_AComponent):
         """Ensure that frame is displayed."""
         if _wx.Display.GetFromWindow(self._native_widget) == -1:
             topLeft = _wx.Display(0).GetGeometry().GetTopLeft()
-            self._native_widget.MoveXY(topLeft.x + x, topLeft.y + y)
+            self._native_widget.Move(topLeft.x + x, topLeft.y + y)
 
 class WindowFrame(_TopLevelWin):
     """Wraps a wx.Frame - saves size/position on closing.
@@ -127,7 +130,7 @@ class WindowFrame(_TopLevelWin):
                                           title=title, style=style, **kwargs)
         self.on_activate = self._evt_handler(_wx.EVT_ACTIVATE,
                                              lambda event: [event.GetActive()])
-        self.reset_background_color()
+        self.set_background_color(self._bkg_color())
 
     def show_frame(self): self._native_widget.Show()
 
@@ -136,6 +139,10 @@ class WindowFrame(_TopLevelWin):
     # TODO(inf) de-wx! Menu should become a wrapped component as well
     def show_popup_menu(self, menu):
         self._native_widget.PopupMenu(menu)
+
+    def _bkg_color(self):
+        """Returns the background color to use for this window."""
+        return Color.from_wx(_wx.SystemSettings.GetColour(_wx.SYS_COLOUR_MENU))
 
 class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""
@@ -200,47 +207,11 @@ class DialogWindow(_TopLevelWin):
         """Closes the modal dialog with a custom exit code."""
         self._native_widget.EndModal(custom_code)
 
-class WizardDialog(DialogWindow, WithFirstShow):
-    """Wrap a wx wizard control.
-
-    Events:
-     - on_wiz_page_change(is_forward: bool, evt_page: PageInstaller):
-     Posted when the user clicks next or previous page. `is_forward` is True
-     for next page. PageInstaller needs to have OnNext() - see uses in belt
-     - _on_wiz_cancel(): Used internally to save size and position
-     - _on_wiz_finished(): Used internally to save size and position
-     - _on_show(): used internally to set page size on first showing the wizard
-     """
-    _wx_widget_type = _adv.Wizard
-
-    def __init__(self, parent, **kwargs):
-        kwargs['style'] = _wx.MAXIMIZE_BOX
-        super(WizardDialog, self).__init__(parent, **kwargs)
-        self.on_wiz_page_change = self._evt_handler(
-            _adv.EVT_WIZARD_PAGE_CHANGING,
-            lambda event: [event.GetDirection(), event.GetPage()])
-        # needed to correctly save size/pos, on_closing seems not enough
-        self._on_wiz_cancel = self._evt_handler(_adv.EVT_WIZARD_CANCEL)
-        self._on_wiz_cancel.subscribe(self.save_size)
-        self._on_wiz_finished = self._evt_handler(_adv.EVT_WIZARD_FINISHED)
-        self._on_wiz_finished.subscribe(self.save_size)
-
-    def _handle_first_show(self):
-        # we have to set initial size here, see WizardDialog._set_pos_size
-        saved_size = self._sizes_dict[self._size_key]
-        # enforce min size
-        self.component_size = (max(saved_size[0], self._def_size[0]),
-                               max(saved_size[1], self._def_size[1]))
-
-    def _set_pos_size(self, kwargs, sizes_dict):
-        # default keys for wizard should exist and return settingDefaults
-        # values. Moreover _wiz.Wizard does not accept a size argument (!)
-        # so this override is needed
-        ##: note wx python expects kwargs as strings - PY3: check
-        kwargs['pos'] = kwargs.get('pos', None) or sizes_dict[self._pos_key]
-
-    def enable_forward_btn(self, do_enable):
-        self._native_widget.FindWindowById(_wx.ID_FORWARD).Enable(do_enable)
+class StartupDialog(DialogWindow):
+    """Dialog shown during early boot, generally due to errors."""
+    def __init__(self, *args, **kwargs):
+        sd_style = _wx.STAY_ON_TOP | _wx.DIALOG_NO_PARENT
+        super(StartupDialog, self).__init__(*args, style=sd_style, **kwargs)
 
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):
@@ -250,24 +221,19 @@ class PanelWin(_AComponent):
         super(PanelWin, self).__init__(
             parent, style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER))
 
-    def pnl_layout(self): self._native_widget.Layout()
-    def pnl_hide(self): self._native_widget.Hide()
-
 class Splitter(_AComponent):
     _wx_widget_type = _wx.SplitterWindow
 
     def __init__(self, parent, allow_split=True, min_pane_size=0,
                  sash_gravity=0):
-        # wx.SplitterWindow is native and does not respect any of the border
-        # flags on Windows :/
         super(Splitter, self).__init__(parent, style=_wx.SP_LIVE_UPDATE)
         if not allow_split: # Don't allow unsplitting
             self._native_widget.Bind(_wx.EVT_SPLITTER_DCLICK,
                                      lambda event: event.Veto())
         if min_pane_size:
-            self._native_widget.SetMinimumPaneSize(min_pane_size)
+            self.set_min_pane_size(min_pane_size)
         if sash_gravity:
-            self._native_widget.SetSashGravity(sash_gravity)
+            self.set_sash_gravity(sash_gravity)
         self._panes = None
 
     def make_panes(self, sash_position=0, first_pane=None, second_pane=None,
@@ -286,7 +252,7 @@ class Splitter(_AComponent):
         self._native_widget.SetSashPosition(sash_position)
 
     def set_min_pane_size(self, min_pane_size):
-        self._native_widget.SetMinimumPaneSize(min_pane_size)
+        self._native_widget.SetMinimumPaneSize(min_pane_size * csf())
 
     def set_sash_gravity(self, sash_gravity):
         self._native_widget.SetSashGravity(sash_gravity)
@@ -330,9 +296,11 @@ class ScrollableWindow(_AComponent):
 
     def __init__(self, parent, scroll_horizontal=True, scroll_vertical=True):
         super(ScrollableWindow, self).__init__(parent)
-        self._native_widget.SetScrollbars(
-            20 if scroll_horizontal else 0, 20 if scroll_vertical else 0,
-            50 if scroll_horizontal else 0, 50 if scroll_vertical else 0)
+        scroll_h = (20 if scroll_horizontal else 0) * csf()
+        scroll_v = (20 if scroll_vertical else 0) * csf()
+        units_h = (50 if scroll_horizontal else 0) * csf()
+        units_v = (50 if scroll_vertical else 0) * csf()
+        self._native_widget.SetScrollbars(scroll_h, scroll_v, units_h, units_v)
 
 class CenteredSplash(_AComponent):
     """A centered splash screen without a timeout. Only disappears when either
@@ -342,7 +310,7 @@ class CenteredSplash(_AComponent):
     def __init__(self, splash_path):
         """Creates a new CenteredSplash with an image read from the specified
         path."""
-        splash_bitmap = _wx.Image(name=splash_path).ConvertToBitmap()
+        splash_bitmap = _wx.Image(splash_path).ConvertToBitmap()
         # Center image on the screen and image will stay until clicked by
         # user or is explicitly destroyed when the main window is ready
         splash_style = _adv.SPLASH_CENTER_ON_SCREEN | _adv.SPLASH_NO_TIMEOUT

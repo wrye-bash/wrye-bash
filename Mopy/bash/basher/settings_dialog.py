@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,6 +24,7 @@ import os
 import subprocess
 import webbrowser
 from collections import defaultdict
+from itertools import izip
 
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
@@ -36,7 +36,8 @@ from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
     WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox, \
     TextField, OpenButton, ScrollableWindow, ClickableImage, RevertButton, \
-    SaveButton, SaveAsButton, DoubleListBox, ATreeMixin, CheckListBox
+    SaveButton, SaveAsButton, DoubleListBox, ATreeMixin, CheckListBox, \
+    VBoxedLayout
 from ..localize import dump_translator
 
 class SettingsDialog(DialogWindow):
@@ -75,7 +76,8 @@ class SettingsDialog(DialogWindow):
 #        self._search_bar = SearchBar(self)
 #        self._search_bar.on_text_changed.subscribe(self._handle_search)
         help_btn = ClickableImage(self, balt.images[u'help.24'].GetBitmap(),
-            btn_tooltip=_(u'Open the Wrye Bash readme in a browser.'))
+            btn_tooltip=_(u'View the readme section for the currently active '
+                          u'settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)
         ok_btn = OkButton(self)
         ok_btn.on_clicked.subscribe(self._send_ok)
@@ -101,19 +103,18 @@ class SettingsDialog(DialogWindow):
         self._changed_state[requesting_page] = is_changed
         self._apply_btn.enabled = any(self._changed_state.itervalues())
 
-    def _exec_request_restart(self, requesting_setting, restart_params):
+    def _exec_request_restart(self, requesting_setting, restart_params=()):
         """Schedules a restart request from the specified setting."""
         self._requesting_restart.add(requesting_setting)
         self._restart_params.extend(restart_params)
 
     def _open_readme(self):
         """Handles a click on the help button by opening the readme."""
-        general_readme = bass.dirs[u'mopy'].join(
-            u'Docs', u'Wrye Bash General Readme.html')
-        if general_readme.isfile():
-            webbrowser.open(general_readme.s)
-        else:
-            balt.showError(self, _(u'Cannot find General Readme file.'))
+        ##: skip_local because webbrowser.open eats anchors on Windows
+        advanced_radme = balt.readme_url(mopy=bass.dirs[u'mopy'],
+                                         advanced=True, skip_local=True)
+        help_anchor = _page_anchors[self._tab_tree.get_selected_page_path()]
+        webbrowser.open(advanced_radme + u'#' + help_anchor)
 
     def _send_apply(self):
         """Propagates an Apply button click to all child pages."""
@@ -128,7 +129,7 @@ class SettingsDialog(DialogWindow):
                         u' - %s' % r for r in sorted(self._requesting_restart))
                     + u'\n\n' + _(u'Do you want to restart now?'),
                     title=_(u'Restart Wrye Bash')):
-                Link.Frame.Restart(self._restart_params)
+                Link.Frame.Restart(*self._restart_params)
             else:
                 # User denied the restart, don't bother them again
                 self._requesting_restart.clear()
@@ -202,6 +203,24 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
     def on_page_closing(self):
         """Called when the settings dialog is about to be closed."""
 
+    def _rename_op(self, chosen_file, parent_dir, msg_title, msg):
+        new_fname = balt.askText(self, msg, title=msg_title,
+                                 default=chosen_file)
+        if not new_fname or new_fname == chosen_file:
+            return False # user canceled or entered identical name
+        new_fpath = parent_dir.join(new_fname)
+        old_fpath = parent_dir.join(chosen_file)
+        if new_fpath.isfile():
+            if not balt.askYes(self, _(u'The chosen filename (%s) already '
+                u'exists. Do you want to replace the file?') % new_fname,
+                title=_(u'Name Conflict')):
+                return False # don't want to replace it, so cancel
+        try:
+            env.shellMove(old_fpath, new_fpath, parent=self._native_widget)
+            return True
+        except (exception.CancelError, exception.SkipError):
+            return False # user canceled
+
 class _AScrollablePage(_ASettingsPage, ScrollableWindow): pass
 class _AFixedPage(_ASettingsPage, PanelWin): pass
 
@@ -223,11 +242,10 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         #--DropDown
         def _display_text(k):
             return _(self._keys_to_tabs[k.split(u'.')[0]]) + colorInfo[k][0]
-        self.text_key = dict((_display_text(x), x) for x in colors)
-        colored = self.text_key.keys()
-        colored.sort(key=unicode.lower)
+        self._txt_key = {_display_text(x): x for x in colors}
+        colored = sorted(self._txt_key, key=unicode.lower)
         combo_text = colored[0]
-        choiceKey = self.text_key[combo_text]
+        choiceKey = self._txt_key[combo_text]
         self.comboBox = DropDown(self, value=combo_text, choices=colored)
         self.comboBox.on_combo_select.subscribe(lambda _sel: self.OnComboBox())
         #--Color Picker
@@ -263,7 +281,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
 
     def GetColorKey(self):
         """Return balt.colors dict key for current combobox selection."""
-        return self.text_key[self.comboBox.get_value()]
+        return self._txt_key[self.comboBox.get_value()]
 
     @staticmethod
     def UpdateUIColors():
@@ -364,9 +382,9 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                     split = line.split(u':')
                     if len(split) != 2:
                         continue
-                    key = split[0]
+                    color_key = split[0]
                     # Verify color exists
-                    if key not in colors:
+                    if color_key not in colors:
                         continue
                     # Parse the color, verify that it's actually valid
                     color_tup = tuple([int(c.strip()) for c
@@ -379,9 +397,10 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                     else:
                         # All checks passed, save it
                         color = Color(*color_tup)
-                        if color == colors[key] and key not in self.changes:
+                        if (color == colors[color_key] and
+                                color_key not in self.changes):
                             continue # skip, identical to our current state
-                        self.changes[key] = color
+                        self.changes[color_key] = color
         except Exception as e:
             balt.showError(self,
                 _(u'An error occurred reading from ') + inPath.stail +
@@ -419,13 +438,6 @@ class ConfigureEditorDialog(DialogWindow):
         browse_editor_btn.on_clicked.subscribe(self._handle_browse)
         self._params_field = TextField(self,
             init_text=bass.settings[u'bash.l10n.editor.param_fmt'])
-        self._po_rename_box = CheckBox(self, _(u'Rename to .po'),
-            checked=bass.settings[u'bash.l10n.editor.rename_to_po'],
-            chkbx_tooltip=_(u"Some gettext editors will not open Wrye Bash's "
-                            u'.txt localization files. With this ticked, the '
-                            u'file will be renamed to .po before it is opened '
-                            u'by the editor, and renamed back to .txt when '
-                            u'it is closed.'))
         ok_btn = OkButton(self)
         ok_btn.on_clicked.subscribe(self._handle_ok)
         VLayout(border=6, spacing=4, item_expand=True, items=[
@@ -434,14 +446,10 @@ class ConfigureEditorDialog(DialogWindow):
                 browse_editor_btn,
             ]),
             Spacer(12),
-            HBoxedLayout(self, title=_(u'Parameters'), item_expand=True,
-                item_weight=1, items=[
-                VLayout(spacing=4, items=[
-                    (self._params_field, LayoutOptions(expand=True, weight=1)),
-                    Label(self, _(u"Note: '%s' will be replaced by the path "
-                                  u'to the localization file.')),
-                    Spacer(4), self._po_rename_box,
-                ]),
+            VBoxedLayout(self, title=_(u'Parameters'), spacing=4, items=[
+                (self._params_field, LayoutOptions(expand=True, weight=1)),
+                Label(self, _(u"Note: '%s' will be replaced by the path "
+                              u'to the localization file.')),
             ]),
             Stretch(), HLayout(spacing=5, items=[
                 Stretch(), ok_btn, CancelButton(self),
@@ -452,7 +460,8 @@ class ConfigureEditorDialog(DialogWindow):
         """Opens a file dialog to choose the editor."""
         # Don't use mustExist, we want to show an error message for that below
         chosen_editor = balt.askOpen(self, title=_(u'Choose Editor'),
-            defaultDir=os.environ.get(u'ProgramFiles', u''), wildcard=u'*.exe',
+            defaultDir=env.get_env_var(u'ProgramFiles', u''),
+            wildcard=u'*.exe',
             mustExist=True)
         if chosen_editor:
             self._editor_location.text_content = chosen_editor.s
@@ -463,41 +472,47 @@ class ConfigureEditorDialog(DialogWindow):
             self._editor_location.text_content
         bass.settings[u'bash.l10n.editor.param_fmt'] = \
             self._params_field.text_content
-        bass.settings[u'bash.l10n.editor.rename_to_po'] = \
-            self._po_rename_box.is_checked
 
-##: Quite a bit of duplicate code with the Backups page here (esp. rename)
+##: Quite a bit of duplicate code with the Backups page here
+class _LangDict(dict):
+    __slots__ = ()
+    def __missing__(self, key):
+        return self.setdefault(key, key)
 class LanguagePage(_AScrollablePage):
     """Change the language that the GUI is displayed in."""
-    _internal_to_localized = defaultdict(lambda l: l, {
-        u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
-        u'chinese (traditional)': _(u'Chinese (Traditional)') + u' (繁体中文)',
-        u'de': _(u'German') + u' (Deutsch)',
-        u'pt_opt': _(u'Portuguese') + u' (português)',
-        u'italian': _(u'Italian') + u' (italiano)',
-        u'japanese': _(u'Japanese') + u' (日本語)',
-        u'russian': _(u'Russian') + u' (ру́сский язы́к)',
-        u'english': _(u'English') + u' (English)',
+    _internal_to_localized = _LangDict({
+        u'zh_CN': _(u'Chinese (Simplified)') + u' (简体中文)',
+        u'zh_TW': _(u'Chinese (Traditional)') + u' (繁体中文)',
+        u'de_DE': _(u'German') + u' (Deutsch)',
+        u'pt_PT': _(u'Portuguese') + u' (português)',
+        u'it_IT': _(u'Italian') + u' (italiano)',
+        u'ja_JP': _(u'Japanese') + u' (日本語)',
+        u'ru_RU': _(u'Russian') + u' (ру́сский язы́к)',
+        u'en_US': _(u'English') + u' (English)',
     })
-    _localized_to_internal = defaultdict(lambda l: l,
+    _localized_to_internal = _LangDict(
         {v: k for k, v in _internal_to_localized.iteritems()})
 
     def __init__(self, parent, page_desc):
         super(LanguagePage, self).__init__(parent, page_desc)
         # Gather all localizations in the l10n directory
         all_langs = [f.sbody for f in bass.dirs[u'l10n'].list()
-                     if f.cext == u'.txt' and f.csbody[-3:] != u'new']
+                     if f.cext == u'.po' and f.csbody[-3:] != u'new']
         # Insert English since there's no localization file for that
-        if u'english' not in all_langs:
-            all_langs.append(u'english')
-        localized_langs = [self._internal_to_localized[l.lower()] for l
-                           in all_langs]
-        active_lang = None
-        for internal_name, localized_name in sorted(zip(
+        if u'en_US' not in all_langs:
+            all_langs.append(u'en_US')
+        localized_langs = [self._internal_to_localized[l] for l in all_langs]
+        # If the user has an unknown language active
+        active_lang = self._internal_to_localized[u'en_US']
+        for internal_name, localized_name in sorted(izip(
                 all_langs, localized_langs), key=lambda l: l[1]):
             if self._is_active_lang(internal_name):
                 active_lang = localized_name
                 break
+        # We can't compare the internal names to mark us as (un)changed since
+        # we may be using a fallback language, so just store this for later
+        # comparisons
+        self._initial_lang = active_lang
         self._lang_dropdown = DropDown(self, value=active_lang,
             choices=localized_langs, auto_tooltip=False)
         self._lang_dropdown.tooltip = _(u'Changes the language that Wrye Bash '
@@ -512,7 +527,7 @@ class LanguagePage(_AScrollablePage):
         is_standalone_warning = Label(self,
             _(u'Note: You are using the standalone version and will not able '
               u'to dump localizations.'))
-        is_standalone_warning.set_foreground_color(colors.RED)
+        is_standalone_warning.set_foreground_color(colors[u'default.warn'])
         is_standalone_warning.visible = bass.is_standalone
         dump_localization_btn = Button(self, _(u'Dump Localization...'),
             btn_tooltip=_(u'Generates an up-to-date version of the '
@@ -535,19 +550,17 @@ class LanguagePage(_AScrollablePage):
             self._panel_text,
             HBoxedLayout(self, title=_(u'Change Language'),
                 items=[self._lang_dropdown]),
-            (HBoxedLayout(self, title=_(u'Manage Localizations'),
-                item_expand=True, item_weight=1, items=[
-                    VLayout(spacing=4, item_expand=True, items=[
-                        is_standalone_warning,
-                        (HLayout(spacing=4, item_expand=True, items=[
-                            (self._l10n_list, LayoutOptions(weight=1)),
-                            VLayout(spacing=4, item_expand=True, items=[
-                                configure_editor_btn, dump_localization_btn,
-                                HorizontalLine(self), self._edit_l10n_btn,
-                                self._rename_l10n_btn,
-                            ]),
-                        ]), LayoutOptions(weight=1)),
-                    ]),
+            (VBoxedLayout(self, title=_(u'Manage Localizations'),
+                spacing=4, item_expand=True, items=[
+                    is_standalone_warning,
+                    (HLayout(spacing=4, item_expand=True, items=[
+                        (self._l10n_list, LayoutOptions(weight=1)),
+                        VLayout(spacing=4, item_expand=True, items=[
+                            configure_editor_btn, dump_localization_btn,
+                            HorizontalLine(self), self._edit_l10n_btn,
+                            self._rename_l10n_btn,
+                        ]),
+                    ]), LayoutOptions(weight=1)),
                 ]), LayoutOptions(weight=1)),
         ]).apply_to(self)
 
@@ -564,8 +577,9 @@ class LanguagePage(_AScrollablePage):
             u'This function is for translating Bash itself (NOT mods) into '
             u'non-English languages. For more info, '
             u'see the Internationalization section of the Advanced Readme.')
-        if not balt.askContinue(self, message, 'bash.dump_translator.continue',
-                _(u'Dump Localization')): return
+        if not balt.askContinue(self, message,
+                u'bash.dump_translator.continue', _(u'Dump Localization')):
+            return
         outPath = bass.dirs[u'l10n']
         with BusyCursor():
             outFile = dump_translator(outPath.s, bass.active_locale)
@@ -580,7 +594,6 @@ class LanguagePage(_AScrollablePage):
         """Opens the selected localization file in an editor."""
         chosen_editor = GPath(bass.settings[u'bash.l10n.editor.path'])
         editor_arg_fmt = bass.settings[u'bash.l10n.editor.param_fmt']
-        rename_po = bass.settings[u'bash.l10n.editor.rename_to_po']
         # First, verify that the chosen editor is valid
         if not chosen_editor:
             balt.showError(self, _(u'No localization editor has been chosen. '
@@ -594,35 +607,17 @@ class LanguagePage(_AScrollablePage):
             return
         # Now we can move on to actually opening the editor
         selected_l10n = bass.dirs[u'l10n'].join(self._chosen_l10n)
-        l10n_po_path = selected_l10n.root + u'.po'
-        # This is what we'll actually be opening, changed below if rename_po
-        final_l10n_path = selected_l10n
-        if rename_po:
-            # If we have to rename to .po, do that now
-            selected_l10n.moveTo(l10n_po_path)
-            final_l10n_path = l10n_po_path
         # Construct the final command and pass it to subprocess
-        try:
-            subprocess.Popen([chosen_editor.s] + [
-                (a % final_l10n_path if u'%s' in a else a)
-                for a in editor_arg_fmt.split(u' ')], close_fds=True)
-            # Tell the user that we've launched the editor and wait until they
-            # confirm that they're done using it
-            balt.showOk(self, _(u'Your localization editor has been launched '
-                                u"to edit '%s'. Once you are done with "
-                                u"editing, please close it and click 'OK'.")
-                              % selected_l10n, title=_(u'Editor Launched'))
-        finally:
-            if rename_po:
-                # Always undo the .po rename if we did that
-                l10n_po_path.moveTo(selected_l10n)
+        subprocess.Popen([chosen_editor.s] + [
+            (a % selected_l10n if u'%s' in a else a)
+            for a in editor_arg_fmt.split(u' ')], close_fds=True)
 
     @staticmethod
     def _gather_l10n():
         """Returns a list of all localization files in the l10n directory."""
         all_l10n_files = []
         for f in bass.dirs[u'l10n'].list():
-            if f.cext == u'.txt':
+            if f.cext == u'.po':
                 all_l10n_files.append(f.tail)
         return all_l10n_files
 
@@ -634,8 +629,7 @@ class LanguagePage(_AScrollablePage):
     def _handle_lang_select(self, selected_lang):
         """Internal callback, called when a new language has been selected.
         Marks this page as changed or not."""
-        self._mark_changed(self, not self._is_active_lang(
-            self._localized_to_internal[selected_lang]))
+        self._mark_changed(self, selected_lang != self._initial_lang)
 
     def _handle_select_l10n(self, _lb_dex, _item_text):
         """Internal callback, enables the context buttons once a localization
@@ -645,7 +639,7 @@ class LanguagePage(_AScrollablePage):
     @staticmethod
     def _is_active_lang(internal_name):
         """Returns True if the specified language is currently active."""
-        return bass.active_locale.lower() in internal_name.lower()
+        return bass.active_locale == internal_name
 
     @property
     def _l10n_dir(self):
@@ -655,8 +649,8 @@ class LanguagePage(_AScrollablePage):
     def on_apply(self):
         super(LanguagePage, self).on_apply()
         selected_lang = self._lang_dropdown.get_value()
-        internal_name = self._localized_to_internal[selected_lang]
-        if not self._is_active_lang(internal_name):
+        if selected_lang != self._initial_lang:
+            internal_name = self._localized_to_internal[selected_lang]
             ##: #26, our oldest open issue; This should be a
             # parameterless restart request, with us having saved the
             # new language to some 'early boot' info file
@@ -669,23 +663,10 @@ class LanguagePage(_AScrollablePage):
 
     def _rename_l10n(self):
         """Renames the currently selected localization file."""
-        new_l10n_name = balt.askText(self,
-            _(u'Please enter the new name for this localization file.'),
-            title=_(u'Rename Localization'), default=self._chosen_l10n)
-        if not new_l10n_name or new_l10n_name == self._chosen_l10n:
-            return # user canceled or entered identical name
-        new_l10n = self._l10n_dir.join(new_l10n_name)
-        old_l10n = self._l10n_dir.join(self._chosen_l10n)
-        if new_l10n.isfile():
-            if not balt.askYes(self, _(u'The chosen filename (%s) already '
-                                       u'exists. Do you want to replace the '
-                                       u'file?') % new_l10n_name,
-                    title=_(u'Name Conflict')):
-                return # don't want to replace it, so cancel
-        try:
-            env.shellMove(old_l10n, new_l10n, parent=self._native_widget)
-        except (exception.CancelError, exception.SkipError):
-            return # user canceled
+        if not self._rename_op(
+            self._chosen_l10n, self._l10n_dir, _(u'Rename Localization'),
+            _(u'Please enter the new name for this localization file.')):
+            return
         self._populate_l10n_list()
         # This is equivalent to removing the selected entry and adding a new
         # one, so we need to disable localization-specific buttons
@@ -730,8 +711,8 @@ class StatusBarPage(_AScrollablePage):
         self._populate_icon_lists()
         VLayout(border=6, spacing=6, item_expand=True, items=[
             self._panel_text, Spacer(3),
-            HBoxedLayout(self, item_border=3, title=_(u'General'), items=[
-                VLayout(spacing=6, items=[
+            VBoxedLayout(self, title=_(u'General'), item_border=3, spacing=6,
+                items=[
                     self._show_app_ver_chk,
                     HLayout(spacing=6, items=[
                         Label(self, _(u'Icon Size:')),
@@ -739,7 +720,6 @@ class StatusBarPage(_AScrollablePage):
                         Label(self, _(u'(currently disabled due to unsolved '
                                       u'glitches and crashes)'))
                     ]),
-                ]),
             ]),
             (HBoxedLayout(self, item_expand=True,
                 title=_(u'Manage Hidden Buttons'), items=[self._icon_lists]),
@@ -817,7 +797,7 @@ class StatusBarPage(_AScrollablePage):
 
     def _populate_icon_lists(self):
         """Clears and repopulates the two icon lists."""
-        # Here be dragons, of the tooltip-related kind
+        ##: Here be dragons, of the tooltip-related kind
         self._tip_to_links.clear()
         hide = bass.settings[u'bash.statusbar.hide']
         hidden = []
@@ -919,7 +899,7 @@ class BackupsPage(_AFixedPage):
         settings_file = balt.askSave(self,
             title=_(u'Backup Bash Settings'), defaultDir=self._backup_dir,
             wildcard=u'*.7z', defaultFile=barb.BackupSettings.backup_filename(
-                bush.game.fsName))
+                bush.game.displayName))
         if not settings_file: return
         with BusyCursor():
             backup = barb.BackupSettings(settings_file, bush.game.fsName,
@@ -944,23 +924,10 @@ class BackupsPage(_AFixedPage):
 
     def _rename_backup(self):
         """Renames the currently selected backup."""
-        new_backup_name = balt.askText(self,
-            _(u'Please enter the new name for this backup.'),
-            title=_(u'Rename Backup'), default=self._chosen_backup)
-        if not new_backup_name or new_backup_name == self._chosen_backup:
-            return # user canceled or entered identical name
-        new_backup = self._backup_dir.join(new_backup_name)
-        old_backup = self._backup_dir.join(self._chosen_backup)
-        if new_backup.isfile():
-            if not balt.askYes(self, _(u'The chosen filename (%s) already '
-                                       u'exists. Do you want to replace the '
-                                       u'file?') % new_backup_name,
-                    title=_(u'Name Conflict')):
-                return # don't want to replace it, so cancel
-        try:
-            env.shellMove(old_backup, new_backup, parent=self._native_widget)
-        except (exception.CancelError, exception.SkipError):
-            return # user canceled
+        if not self._rename_op(
+            self._chosen_backup, self._backup_dir, _(u'Rename Backup'),
+            _(u'Please enter the new name for this backup.')):
+            return
         self._populate_backup_list()
         # This is equivalent to removing the selected entry and adding a new
         # one, so we need to disable backup-specific buttons
@@ -993,7 +960,7 @@ class BackupsPage(_AFixedPage):
             if error_msg and not balt.askWarning(self, error_msg, error_title):
                 return
             restarting = True
-            balt.showInfo(self, '\n'.join([
+            balt.showInfo(self, u'\n'.join([
                 _(u'Your Bash settings have been successfully extracted.'),
                 _(u'Backup Path: ') + settings_file.s, u'', _(u'Before the '
                   u'settings can take effect, Wrye Bash must restart.'), _(
@@ -1032,9 +999,9 @@ class ConfirmationsPage(_AFixedPage):
         u'MOVE': _(u'Move'),
     }
     _label_to_action = {v: k for k, v in _action_to_label.iteritems()}
-    ##: Maybe hide some of these per game? E.g. Nvidia Fog Fix & CBash will
-    # never be relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag
-    # makes no sense for non-SSE/FO4 games
+    ##: Maybe hide some of these per game? E.g. Nvidia Fog will never be
+    # relevant outside of Oblivion/Nehrim, while Add/Remove ESL Flag makes no
+    # sense for non-SSE/FO4 games
     _confirmations = {
         _(u'[INI Edits] Applying an INI tweak'):
             u'bash.iniTweaks.continue',
@@ -1060,8 +1027,6 @@ class ConfirmationsPage(_AFixedPage):
             u'bash.flipMasters.continue',
         _(u'[Mods] Applying the Nvidia Fog Fix'):
             u'bash.cleanMod.continue',
-        _(u'[Mods] Building the Bashed Patch with CBash'):
-            u'bash.patch.cbash_deprecated.continue',
         _(u"[Mods] Changing a plugin's version to 0.8"):
             u'bash.setModVersion.continue',
         _(u'[Mods] Exporting NPC levels to a text file'):
@@ -1069,7 +1034,7 @@ class ConfirmationsPage(_AFixedPage):
         _(u'[Mods] Importing groups from a text file'):
             u'bash.groups.import.continue',
         _(u'[Mods] Locking or unlocking the load order'):
-            u'bash.load_order.lock_continue',
+            u'bash.load_order.lock.continue',
         _(u'[Mods] Removing world orphans'):
             u'bash.removeWorldOrphans.continue',
         _(u"[Mods] Renaming a plugin to something that %s can't "
@@ -1127,7 +1092,8 @@ class ConfirmationsPage(_AFixedPage):
             checked=bass.settings[u'bash.show_internal_keys'])
         self._show_keys_checkbox.on_checked.subscribe(self._on_show_keys)
         self._confirmation_list = CheckListBox(self, isSort=True,
-            isHScroll=True, onCheck=self._on_check_conf)
+            isHScroll=True)
+        self._confirmation_list.on_box_checked.subscribe(self._on_check_conf)
         self._file_drop_dropdown = DropDown(self, value=self._saved_action,
             choices=sorted(self._label_to_action), auto_tooltip=False)
         self._file_drop_dropdown.tooltip = _(u'Choose what to do with files '
@@ -1242,7 +1208,8 @@ class GeneralPage(_AScrollablePage):
     }
     _encodings_reverse = {v: k for k, v in _all_encodings.iteritems()}
     _setting_ids = {u'alt_name_on', u'deprint_on', u'global_menu_on',
-                    u'managed_game', u'plugin_encoding', u'uac_restart'}
+                    u'res_scroll_on', u'managed_game', u'plugin_encoding',
+                    u'uac_restart'}
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
@@ -1275,6 +1242,14 @@ class GeneralPage(_AScrollablePage):
                             u'based on the game it is managing.'),
             checked=bass.settings[u'bash.useAltName'])
         self._alt_name_checkbox.on_checked.subscribe(self._on_alt_name)
+        self._restore_scroll_checkbox = CheckBox(
+            self, _(u'Restore Scroll Positions on Start'),
+            chkbx_tooltip=_(u'Remember where you left off last time and '
+                            u'scroll back down to that plugin/save/etc. on '
+                            u'startup. Can significantly slow down '
+                            u"Wrye Bash's boot process."),
+            checked=bass.settings[u'bash.restore_scroll_positions'])
+        self._restore_scroll_checkbox.on_checked.subscribe(self._on_res_scroll)
         ##: Doesn't really belong here, but couldn't think of a better place
         self._uac_restart_checkbox = CheckBox(self, _(u'Administrator Mode'),
             chkbx_tooltip=_(u'Restart Wrye Bash with administrator '
@@ -1283,22 +1258,18 @@ class GeneralPage(_AScrollablePage):
         self._uac_restart_checkbox.visible = env.isUAC
         VLayout(border=6, spacing=3, item_expand=True, items=[
             self._panel_text,
-            HBoxedLayout(self, title=_(u'Game'), items=[
-                VLayout(spacing=6, items=[
-                    HLayout(spacing=6, items=[
-                        Label(self, _(u'Managed Game:')), self._managed_game,
-                    ]),
-                    HLayout(spacing=6, items=[
-                        Label(self, _(u'Plugin Encoding:')),
-                        self._plugin_encoding,
-                    ]),
+            VBoxedLayout(self, title=_(u'Game'), spacing=6, items=[
+                HLayout(spacing=6, items=[
+                    Label(self, _(u'Managed Game:')), self._managed_game,
+                ]),
+                HLayout(spacing=6, items=[
+                    Label(self, _(u'Plugin Encoding:')), self._plugin_encoding,
                 ]),
             ]),
-            HBoxedLayout(self, title=_(u'Miscellaneous'), items=[
-                VLayout(spacing=6, items=[
-                    self._deprint_checkbox, self._global_menu_checkbox,
-                    self._alt_name_checkbox, self._uac_restart_checkbox,
-                ]),
+            VBoxedLayout(self, title=_(u'Miscellaneous'), spacing=6, items=[
+                self._deprint_checkbox, self._global_menu_checkbox,
+                self._alt_name_checkbox, self._restore_scroll_checkbox,
+                self._uac_restart_checkbox,
             ]),
         ]).apply_to(self)
 
@@ -1316,6 +1287,10 @@ class GeneralPage(_AScrollablePage):
     def _on_global_menu(self, checked):
         self._mark_setting_changed(u'global_menu_on',
             checked != bass.settings[u'bash.show_global_menu'])
+
+    def _on_res_scroll(self, checked):
+        self._mark_setting_changed(u'res_scroll_on', checked != bass.settings[
+            u'bash.restore_scroll_positions'])
 
     def _on_managed_game(self, new_game):
         self._mark_setting_changed(u'managed_game',
@@ -1364,6 +1339,10 @@ class GeneralPage(_AScrollablePage):
             new_alt_name = self._alt_name_checkbox.is_checked
             bass.settings[u'bash.useAltName'] = new_alt_name
             Link.Frame.set_bash_frame_title()
+        # Restore Scroll Positions on Start
+        if self._is_changed(u'res_scroll_on'):
+            new_res_scroll = self._restore_scroll_checkbox.is_checked
+            bass.settings[u'bash.restore_scroll_positions'] = new_res_scroll
         # Administrator Mode
         if self._is_changed(u'uac_restart'):
             self._request_restart(_(u'Administrator Mode'), [u'--uac'])
@@ -1398,14 +1377,14 @@ class TrustedBinariesPage(_AFixedPage):
         ]).apply_to(self)
 
     def _check_changed(self):
-        good_changed = self._binaries_list.left_items != bass.settings[
-            u'bash.installers.goodDlls'].keys()
-        bad_changed = self._binaries_list.right_items != bass.settings[
-            u'bash.installers.badDlls'].keys()
+        good_changed = self._binaries_list.left_items != list(bass.settings[
+            u'bash.installers.goodDlls'])
+        bad_changed = self._binaries_list.right_items != list(bass.settings[
+            u'bash.installers.badDlls'])
         self._mark_changed(self, good_changed or bad_changed)
-        self.pnl_layout()
+        self.update_layout()
 
-    ##: Here be dragons, especially in the import method
+    ##: Here be (some) dragons, especially in the import method
     def _export_lists(self):
         textDir = bass.dirs[u'patches']
         textDir.makedirs()
@@ -1422,14 +1401,14 @@ class TrustedBinariesPage(_AFixedPage):
                     out.write(u'dll:'+dll+u':\r\n')
                     for index, version in enumerate(bass.settings[u'bash.installers.goodDlls'][dll]):
                         out.write(u'version %02d: %s\r\n' % (index, version))
-            else: out.write(u'None\r\n')
+            else: out.write(u'None\r\n') # will be treated as a comment
             out.write(u'badDlls '+_(u'(those dlls that you have chosen to NOT allow to be installed)')+u'\r\n')
             if bass.settings[u'bash.installers.badDlls']:
                 for dll in bass.settings[u'bash.installers.badDlls']:
                     out.write(u'dll:'+dll+u':\r\n')
                     for index, version in enumerate(bass.settings[u'bash.installers.badDlls'][dll]):
                         out.write(u'version %02d: %s\r\n' % (index, version))
-            else: out.write(u'None\r\n')
+            else: out.write(u'None\r\n') # will be treated as a comment
 
     def _import_lists(self):
         textDir = bass.dirs[u'patches']
@@ -1447,22 +1426,51 @@ class TrustedBinariesPage(_AFixedPage):
                    )
         replace = not balt.askYes(Link.Frame, message,
                                   _(u'Merge permissions?'))
+        def parse_path(s):
+            """s was generated by a repr - so get rid of the u-prefix if it's
+            there, drop the quotes and deal with path separators."""
+            if s.startswith(u'u'):
+                s = s[1:]
+            return s[1:-1].replace(u'/', os.sep).replace(u'\\', os.sep)
+        def parse_int(i):
+            """i was generated by a repr - so get rid of the L-suffix if it's
+            there and convert to int."""
+            if i.endswith(u'L'):
+                i = i[:-1]
+            return int(i)
         try:
             with textPath.open(u'r', encoding=u'utf-8-sig') as ins:
                 Dlls = {u'goodDlls':{}, u'badDlls':{}}
+                current, dll = None, None
                 for line in ins:
                     line = line.strip()
                     if line.startswith(u'goodDlls'):
                         current = Dlls[u'goodDlls']
-                    if line.startswith(u'badDlls'):
+                    elif line.startswith(u'badDlls'):
                         current = Dlls[u'badDlls']
                     elif line.startswith(u'dll:'):
+                        if current is None:
+                            raise SyntaxError(u'Missing "goodDlls" or '
+                                              u'"badDlls" statement before '
+                                              u'"dll" statement')
                         dll = line.split(u':',1)[1].strip().rstrip(u':')
-                        current.setdefault(dll,[])
+                        if dll not in current: current[dll] = []
                     elif line.startswith(u'version'):
+                        if dll is None:
+                            raise SyntaxError(u'Missing "dll" statement '
+                                              u'before "version" statement')
                         ver = line.split(u':',1)[1]
-                        ver = eval(ver)
-                        current[dll].append(ver)
+                        # Strip off leading '[' and trailing ']' before split
+                        ver_components = ver[1:-1].split(u',')
+                        if len(ver_components) != 3:
+                            raise SyntaxError(u'Invalid format: expected '
+                                              u'"version: [name, size, crc]"')
+                        # Strip any spacing due to the repr used when exporting
+                        ver_components = [s.strip() for s in ver_components]
+                        inst_name, inst_size, inst_crc = ver_components
+                        current[dll].append((
+                            parse_path(inst_name), parse_int(inst_size),
+                            parse_int(inst_crc)))
             if not replace:
                 self._binaries_list.left_items = sorted(
                     set(self._binaries_list.left_items) |
@@ -1477,12 +1485,12 @@ class TrustedBinariesPage(_AFixedPage):
             balt.showError(self,
                 _(u'Wrye Bash could not load %s, because it is not saved in '
                   u'UTF-8 format.  Please resave it in UTF-8 format and try '
-                  u'again.') % textPath.s)
-        except Exception:
-            deprint(u'Error reading', textPath.s, traceback=True)
+                  u'again.') % textPath)
+        except SyntaxError:
+            deprint(u'Error reading %s' % textPath, traceback=True)
             balt.showError(self,
                 _(u'Wrye Bash could not load %s, because there was an error '
-                  u'in the format of the file.') % textPath.s)
+                  u'in the format of the file.') % textPath)
         finally:
             self._check_changed()
 
@@ -1517,10 +1525,10 @@ class TrustedBinariesPage(_AFixedPage):
         self._mark_changed(self, False)
 
     def _populate_binaries(self):
-        self._binaries_list.left_items = bass.settings[
-            u'bash.installers.goodDlls'].keys()
-        self._binaries_list.right_items = bass.settings[
-            u'bash.installers.badDlls'].keys()
+        self._binaries_list.left_items = list(bass.settings[
+            u'bash.installers.goodDlls'])
+        self._binaries_list.right_items = list(bass.settings[
+            u'bash.installers.badDlls'])
 
     @staticmethod
     def should_appear():
@@ -1566,3 +1574,15 @@ _page_descriptions = {
         _(u'Change which binaries (DLLs, EXEs, etc.) you trust. Untrusted '
           u'binaries will be skipped by BAIN when installing packages.')
 }
+
+# Anchor refs into the WB Advanced Readme
+_page_anchors = defaultdict(lambda: u'settings', {
+    _(u'Appearance') + u'/' + _(u'Colors'): u'settings-appearance-colors',
+    _(u'Appearance') + u'/' + _(u'Language'): u'settings-appearance-language',
+    _(u'Appearance') + u'/' + _(u'Status Bar'):
+        u'settings-appearance-status-bar',
+    _(u'Backups'): u'settings-backups',
+    _(u'Confirmations'): u'settings-confirmations',
+    _(u'General'): u'settings-general',
+    _(u'Trusted Binaries'): u'settings-trusted-binaries',
+})

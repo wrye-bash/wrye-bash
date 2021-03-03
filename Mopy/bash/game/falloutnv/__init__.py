@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,14 +14,16 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """GameInfo override for Fallout NV."""
+
+from collections import defaultdict
+
 from ..fallout3 import Fallout3GameInfo
 from ... import brec
 from ...brec import MreFlst, MreGlob
@@ -35,12 +37,11 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     game_detect_file = u'FalloutNV.exe'
     version_detect_file = u'FalloutNV.exe'
     master_file = u'FalloutNV.esm'
-    pklfile = u'FalloutNV_ids.pkl'
-    masterlist_dir = u'FalloutNV'
+    taglist_dir = u'FalloutNV'
     regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/newvegas/'
     nexusName = u'New Vegas Nexus'
-    nexusKey = u'bash.installers.openNewVegasNexus'
+    nexusKey = u'bash.installers.openNewVegasNexus.continue'
 
     class Se(Fallout3GameInfo.Se):
         se_abbrev = u'NVSE'
@@ -53,6 +54,17 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         url = u'http://nvse.silverlock.org/'
         url_tip = u'http://nvse.silverlock.org/'
 
+    class Bsa(Fallout3GameInfo.Bsa):
+        redate_dict = defaultdict(lambda: u'2006-01-01', {
+            u'Fallout - Meshes.bsa': u'2005-01-01',
+            u'Fallout - Meshes2.bsa': u'2005-01-02',
+            u'Fallout - Misc.bsa': u'2005-01-03',
+            u'Fallout - Sound.bsa': u'2005-01-04',
+            u'Fallout - Textures.bsa': u'2005-01-05',
+            u'Fallout - Textures2.bsa': u'2005-01-06',
+            u'Fallout - Voices1.bsa': u'2005-01-07',
+        })
+
     class Xe(Fallout3GameInfo.Xe):
         full_name = u'FNVEdit'
         xe_key_prefix = u'fnvView'
@@ -62,12 +74,10 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         skip_bain_refresh = {u'fnvedit backups', u'fnvedit cache'}
 
     class Esp(Fallout3GameInfo.Esp):
-        canCBash = False # True?
         validHeaderVersions = (0.94, 1.32, 1.33, 1.34)
 
     allTags = Fallout3GameInfo.allTags | {u'WeaponMods'}
-    # PatchMerger must come first!
-    patchers = Fallout3GameInfo.patchers + (u'WeaponModsPatcher',)
+    patchers = Fallout3GameInfo.patchers | {u'ImportWeaponMods'}
 
     @classmethod
     def init(cls):
@@ -91,7 +101,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MreMicn, MreMstt, MreNavi, MreNavm, MreNote, MrePwat, MreRads, \
             MreRgdl, MreScol, MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, \
             MreWrld, MreAlch
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
                 MreActi, MreAddn, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio,
                 MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams,
                 MreCcrd, MreCdck, MreChal, MreChip, MreClas, MreClmt, MreCmny,
@@ -106,7 +116,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
                 MreRcct, MreRcpe, MreRegn, MreRepu, MreRgdl, MreScol, MreScpt,
                 MreSlpd, MreSoun, MreSpel, MreStat, MreTact, MreTerm, MreTree,
                 MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr, MreGmst,
-            )
+        )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
@@ -131,10 +141,10 @@ class FalloutNVGameInfo(Fallout3GameInfo):
                                          b'INFO', b'LAND', b'NAVM', b'PGRE',
                                          b'PMIS', b'REFR'])
         header_type.plugin_form_version = 15
-        brec.MreRecord.type_class = {
-            x.rec_sig: x for x in (cls.mergeClasses +  # Not Mergeable
-                (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi,
-                 MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreTes4,))}
+        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not Mergeable
+            (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi, MreNavm,
+             MrePgre, MrePmis, MreRefr, MreWrld, MreTes4,))}
+        brec.MreRecord.type_class.update(cls.mergeable_sigs)
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {
             b'TES4', b'ACHR', b'ACRE', b'CELL', b'DIAL', b'INFO', b'LAND',

@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,7 +29,7 @@ and environment issues - do not modify or imitate (ut)."""
 
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
-AppVersion = u'307'  # must represent a valid float
+AppVersion = u'308'  # must represent a valid float
 is_standalone = False # whether or not we're on standalone
 
 #--Global dictionaries - do _not_ reassign !
@@ -38,8 +37,8 @@ is_standalone = False # whether or not we're on standalone
 dirs = {}
 # settings read from the Mopy/bash.ini file in initDefaultSettings()
 inisettings = {}
-# dirs where various apps may be located - populated in initDefaultTools()
-tooldirs = {}
+# dirs where various apps may be located - populated in initTooldirs()
+tooldirs = None # type: dict | None
 
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
 settings = None # bolt.Settings !
@@ -89,8 +88,9 @@ def newTempDir():
     _tempDir = Path.tempDir()
     return _tempDir
 
-# logic for getting the path from the ini - get(section, key, default), duh
 def get_ini_option(ini_parser, option_key, section_key=u'General'):
+    # logic for getting the path from the ini - get(section, key, default)
+    # section is case sensitive - key is not - return type is str in py3
     if not ini_parser or not ini_parser.has_option(section_key, option_key):
         return None
     return ini_parser.get(section_key, option_key)

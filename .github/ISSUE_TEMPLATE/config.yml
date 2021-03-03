@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Discord Server
+    url: https://discord.gg/NwWvAFR
+    about: Wrye Bash discord - report issues here or on AFKMods first
+  - name: AFKMods Thread
+    url: https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/
+    about: Wrye Bash forum thread - report issues here or on Discord first

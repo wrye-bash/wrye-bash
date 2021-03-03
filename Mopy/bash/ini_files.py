@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,7 +27,7 @@ from collections import OrderedDict, Counter
 
 from . import env, bush
 from .bass import dirs
-from .bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, decode, \
+from .bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, decoder, \
     getbestencoding, AFile, OrderedLowerDict
 from .exception import AbstractError, CancelError, SkipError, BoltError
 
@@ -51,8 +50,10 @@ def get_ini_type_and_encoding(abs_ini_path):
     reportedly must be cp1252). More investigation needed."""
     with open(u'%s' % abs_ini_path, u'rb') as ini_file:
         content = ini_file.read()
+    ##: Add a 'return encoding' param to decoder to avoid the potential double
+    # chardet here!
     detected_encoding, _confidence = getbestencoding(content)
-    decoded_content = decode(content, detected_encoding)
+    decoded_content = decoder(content, detected_encoding)
     count = Counter()
     for line in decoded_content.splitlines():
         for ini_type in (IniFile, OBSEIniFile):
@@ -75,18 +76,23 @@ class IniFile(AFile):
     reSetting = re.compile(u'' r'(.+?)\s*=(.*)', re.U)
     formatRes = (reSetting, reSection)
     out_encoding = 'cp1252' # when opening a file for writing force cp1252
-    __empty = LowerDict()
+    __empty_settings = LowerDict()
     defaultSection = u'General'
+    _ci_settings_cache_linenum = __empty_settings
+    _deleted_cache = __empty_settings
 
     def __init__(self, fullpath, ini_encoding):
         super(IniFile, self).__init__(fullpath)
         self.ini_encoding = ini_encoding
         self.isCorrupted = u''
         #--Settings cache
-        self._ci_settings_cache_linenum = self.__empty
-        self._deleted_cache = self.__empty
         self._deleted = False
         self.updated = False # notify iniInfos which should clear this flag
+
+    def has_setting(self, section, key):
+        """Returns True if this INI file has the specified section and key."""
+        ci_temp = self.get_ci_settings()
+        return section in ci_temp and key in ci_temp[section]
 
     def getSetting(self, section, key, default):
         """Gets a single setting from the file."""
@@ -107,45 +113,47 @@ class IniFile(AFile):
     def get_ci_settings(self, with_deleted=False):
         """Populate and return cached settings - if not just reading them
         do a copy first !"""
-        if not self.abs_path.isfile():
+        try:
+            if self._ci_settings_cache_linenum is self.__empty_settings \
+                    or self.do_update(raise_on_error=True):
+                try:
+                    self._ci_settings_cache_linenum, self._deleted_cache, \
+                        self.isCorrupted = self._get_ci_settings(self.abs_path)
+                except UnicodeDecodeError as e:
+                    self.isCorrupted = (_(u'Your %s seems to have unencodable '
+                        u'characters:') + u'\n\n%s') % (self.abs_path, e)
+                    return ({}, {}) if with_deleted else {}
+        except (OSError, IOError):
             return ({}, {}) if with_deleted else {}
-        if self._ci_settings_cache_linenum is self.__empty \
-                or self.do_update():
-            try:
-                self._ci_settings_cache_linenum, self._deleted_cache, \
-                    self.isCorrupted = self._get_ci_settings(self.abs_path)
-            except UnicodeDecodeError as e:
-                self.isCorrupted = (_(u'Your %s seems to have unencodable '
-                    u'characters:') + u'\n\n%s') % (self.abs_path, e)
-                return ({}, {}) if with_deleted else {}
         if with_deleted:
             return self._ci_settings_cache_linenum, self._deleted_cache
         return self._ci_settings_cache_linenum
 
-    def do_update(self):
+    def do_update(self, raise_on_error=False):
         try:
-            stat_tuple = self._stat_tuple()
-            if self._deleted:
-                self.updated = True # restored
+            # do_update will return True if the file was deleted then restored
+            self.updated |= super(IniFile, self).do_update(raise_on_error=True)
+            if self._deleted: # restored
                 self._deleted = False
-        except OSError:
-            self._reset_cache(self._null_stat, load_cache=False)
-            if not self._deleted:
+            return self.updated
+        except (OSError, IOError):
+            # check if we already know it's deleted (used for main game ini)
+            update = not self._deleted
+            if update:
                 # mark as deleted to avoid requesting updates on each refresh
                 self._deleted = self.updated = True
-                return True
-            return False # we already know it's deleted (used for game inis)
-        if self._file_changed(stat_tuple):
-            self._reset_cache(stat_tuple, load_cache=True)
-            self._ci_settings_cache_linenum = self.__empty
-            self.updated = True
-            return True
-        return False
+            if raise_on_error: raise
+            return update
+
+    def _reset_cache(self, stat_tuple, load_cache):
+        super(IniFile, self)._reset_cache(stat_tuple, load_cache)
+        self._ci_settings_cache_linenum = self.__empty_settings
 
     def _get_ci_settings(self, tweakPath):
         """Get settings as defaultdict[dict] of section -> (setting -> value).
         Keys in both levels are case insensitive. Values are stripped of
         whitespace. "deleted settings" keep line number instead of value (?)
+        Only used in get_ci_settings should be bypassed for DefaultIniFile.
         :rtype: tuple(DefaultLowerDict[bolt.LowerDict], DefaultLowerDict[
         bolt.LowerDict], boolean)
         """
@@ -158,11 +166,10 @@ class IniFile(AFile):
         reDeleted = self.__class__.reDeletedSetting
         reSetting = self.__class__.reSetting
         #--Read ini file
-        with tweakPath.open('r') as iniFile:
+        with tweakPath.open(u'r', encoding=self.ini_encoding) as iniFile:
             sectionSettings = None
             section = None
             for i,line in enumerate(iniFile.readlines()):
-                line = unicode(line, self.ini_encoding)
                 maDeleted = reDeleted.match(line)
                 stripped = reComment.sub(u'',line).strip()
                 maSection = reSection.match(stripped)
@@ -187,9 +194,9 @@ class IniFile(AFile):
         """Return a list of the decoded lines in the ini file, if as_unicode
         is True, or the raw bytes in the ini file, if as_unicode is False.
         Note we strip line endings at the end of the line in unicode mode.
-        :rtype: list[unicode]|str"""
+        :rtype: list[unicode]|bytes"""
         try:
-            with self.abs_path.open('rb') as f:
+            with self.abs_path.open(u'rb') as f:
                 content = f.read()
             if not as_unicode: return content
             decoded = unicode(content, self.ini_encoding)
@@ -227,8 +234,7 @@ class IniFile(AFile):
         reSetting = self.reSetting
         #--Read ini file
         section = self.__class__.defaultSection
-        tweak_lines = tweak_file.read_ini_content() # type: list[unicode]
-        for i, line in enumerate(tweak_lines):
+        for i, line in enumerate(tweak_file.read_ini_content()):
             maDeletedSetting = reDeleted.match(line)
             stripped = reComment.sub(u'', line).strip()
             maSection = reSection.match(stripped)
@@ -272,11 +278,12 @@ class IniFile(AFile):
                           deleted))
         return lines
 
-    def _open_for_writing(self, filepath): # preserve windows EOL
+    def _open_for_writing(self): # preserve windows EOL
         """Write to ourselves respecting windows newlines and out_encoding.
         Note content to be writen (if coming from ini tweaks) must be encodable
         to out_encoding."""
-        return codecs.getwriter(self.out_encoding)(open(filepath, u'w'))
+        return codecs.getwriter(self.out_encoding)(
+            open(self.abs_path.temp.s, u'w'))
 
     def target_ini_exists(self, msg=_(
         u'The target ini must exist to apply a tweak to it.')):
@@ -286,7 +293,7 @@ class IniFile(AFile):
         """Apply dictionary of settings to ini file, latter must exist!
         Values in settings dictionary must be actual (setting, value) pairs."""
         ini_settings = _to_lower(ini_settings)
-        deleted_settings = LowerDict((x, set(CIstr(u) for u in y)) for x, y in
+        deleted_settings = LowerDict((x, {CIstr(u) for u in y}) for x, y in
                                      deleted_settings.iteritems())
         reDeleted = self.reDeletedSetting
         reComment = self.reComment
@@ -295,8 +302,7 @@ class IniFile(AFile):
         #--Read init, write temp
         section = None
         sectionSettings = {}
-        ini_lines = self.read_ini_content(as_unicode=True)
-        with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
+        with self._open_for_writing() as tmpFile:
             tmpFileWrite = tmpFile.write
             def _add_remaining_new_items():
                 if section in ini_settings: del ini_settings[section]
@@ -304,7 +310,7 @@ class IniFile(AFile):
                 for sett, val in sectionSettings.iteritems():
                     tmpFileWrite(u'%s=%s\n' % (sett, val))
                 tmpFileWrite(u'\n')
-            for line in ini_lines:
+            for line in self.read_ini_content(as_unicode=True):
                 stripped = reComment.sub(u'', line).strip()
                 maSection = reSection.match(stripped)
                 if maSection:
@@ -368,13 +374,12 @@ class IniFile(AFile):
         still exists after each iteration."""
         re_comment = self.reComment
         re_section = self.reSection
-        ini_lines = self.read_ini_content(as_unicode=True)
         # Tri-State: If None, we haven't hit the section yet. If True, then
         # we've hit it and are actively removing it. If False, then we've fully
         # removed the section already and should ignore further occurences.
         remove_current = None
-        with self._open_for_writing(self.abs_path.temp.s) as out:
-            for line in ini_lines:
+        with self._open_for_writing() as out:
+            for line in self.read_ini_content(as_unicode=True):
                 stripped = re_comment.sub(u'', line).strip()
                 match_section = re_section.match(stripped)
                 if match_section:
@@ -393,26 +398,29 @@ class IniFile(AFile):
 
 class DefaultIniFile(IniFile):
     """A default ini tweak - hardcoded."""
-    __empty = OrderedLowerDict()
 
     def __init__(self, default_ini_name, settings_dict):
-        # we don't call AFile#__init__ to avoid stat'ing the non existing file
-        self.abs_path = GPath(default_ini_name)
-        self._file_size, self._file_mod_time = self._null_stat
+        super(DefaultIniFile, self).__init__(default_ini_name, u'ascii')
         #--Settings cache
         self.lines, current_line = [], 0
         self._ci_settings_cache_linenum = OrderedLowerDict()
         for sect, setts in settings_dict.iteritems():
-            self.lines.append('[' + str(sect) + ']')
+            self.lines.append(u'[%s]' % sect)
             self._ci_settings_cache_linenum[sect] = OrderedLowerDict()
             current_line += 1
             for sett, val in setts.iteritems():
-                self.lines.append(str(sett) + '=' + str(val))
-                self._ci_settings_cache_linenum[sect][sett] = (val, current_line)
+                self.lines.append(u'%s=%s' % (sett, val))
+                self._ci_settings_cache_linenum[sect][sett] = (
+                    val, current_line)
                 current_line += 1
-        self._deleted_cache = self.__empty
+
+    def _stat_tuple(self):
+        """Short circuit updates."""
+        return self._null_stat
 
     def get_ci_settings(self, with_deleted=False):
+        """Trivial override to avoid the if checks in parent (that would
+        return False anyway)."""
         if with_deleted:
             return self._ci_settings_cache_linenum, self._deleted_cache
         return self._ci_settings_cache_linenum
@@ -421,15 +429,13 @@ class DefaultIniFile(IniFile):
         """Note as_unicode=True strips line endings as opposed to parent -
         this is wanted and does not harm in this case. Note also, the binary
         instantiation of the default ini is with windows EOL."""
-        return map(unicode, self.lines) if as_unicode else '\r\n'.join(
-            self.lines) + '\r\n' # add a newline at the end of the ini
+        if as_unicode:
+            return iter(self.lines) # do not modify return value directly
+        # Add a newline at the end of the INI
+        return b'\r\n'.join(l.encode(u'ascii') for l in self.lines) + b'\r\n'
 
-    # Abstract for DefaultIniFile, bit of a smell
-    def do_update(self): raise AbstractError
-    @classmethod
-    def _get_ci_settings(cls, tweakPath):
-        """Do not call this on DefaultTweaks - settings are set in __init__"""
-        raise AbstractError
+    # Abstract for DefaultIniFile, do_update is short-circuit'ed while
+    # _get_ci_settings should not be called.
     def applyTweakFile(self, tweak_lines): raise AbstractError
     def saveSettings(self,ini_settings,deleted_settings={}):
         raise AbstractError
@@ -469,14 +475,13 @@ class OBSEIniFile(IniFile):
                 return match, sectionKey, format_string
         return None, None, None
 
-    @classmethod
-    def _get_ci_settings(cls, tweakPath):
+    def _get_ci_settings(self, tweakPath):
         """Get the settings in the ini script."""
         ini_settings = DefaultLowerDict(LowerDict)
         deleted_settings = DefaultLowerDict(LowerDict)
-        reDeleted = cls.reDeleted
-        reComment = cls.reComment
-        with tweakPath.open('r') as iniFile:
+        reDeleted = self.reDeleted
+        reComment = self.reComment
+        with tweakPath.open(u'r', encoding=self.ini_encoding) as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
                 if maDeleted:
@@ -485,7 +490,7 @@ class OBSEIniFile(IniFile):
                 else:
                     settings_dict = ini_settings
                 stripped = reComment.sub(u'',line).strip()
-                match, section_key, _fmt = cls._parse_obse_line(stripped)
+                match, section_key, _fmt = self._parse_obse_line(stripped)
                 if match:
                     settings_dict[section_key][match.group(1)] = match.group(
                         2).strip(), i
@@ -496,8 +501,7 @@ class OBSEIniFile(IniFile):
         ci_settings, deletedSettings = self.get_ci_settings(with_deleted=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
-        tweak_lines = tweak_file.read_ini_content()  # type: list[unicode]
-        for line in tweak_lines:
+        for line in tweak_file.read_ini_content():
             # Check for deleted lines
             maDeleted = reDeleted.match(line)
             if maDeleted: stripped = maDeleted.group(1)
@@ -541,10 +545,9 @@ class OBSEIniFile(IniFile):
         deleted_settings = _to_lower(deleted_settings)
         reDeleted = self.reDeleted
         reComment = self.reComment
-        ini_lines = self.read_ini_content(as_unicode=True)
-        with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
+        with self._open_for_writing() as tmpFile:
             # Modify/Delete existing lines
-            for line in ini_lines:
+            for line in self.read_ini_content(as_unicode=True):
                 # if not line.rstrip(): continue
                 # Test if line is currently deleted
                 maDeleted = reDeleted.match(line)
@@ -561,8 +564,11 @@ class OBSEIniFile(IniFile):
                         # Un-delete/modify it
                         value = ini_settings[section_key][setting]
                         del ini_settings[section_key][setting]
-                        if isinstance(value, basestring) and value[-1:] == u'\n':
-                            line = value.rstrip(u'\n\r')
+                        if isinstance(value, bytes):
+                            raise RuntimeError(u'Do not pass bytes into '
+                                               u'saveSettings!')
+                        if isinstance(value, unicode) and value[-1:] == u'\n':
+                            line = value.rstrip(u'\n\r') # removes just \n too
                         else:
                             line = format_string % (setting, value)
                     elif not maDeleted and section_key in deleted_settings and setting in deleted_settings[section_key]:
@@ -605,13 +611,12 @@ class OBSEIniFile(IniFile):
         # type: (unicode, bool) -> None
         re_comment = self.reComment
         re_section = self.reSection
-        ini_lines = self.read_ini_content(as_unicode=True)
         # Tri-State: If None, we haven't hit the section yet. If True, then
         # we've hit it and are actively removing it. If False, then we've fully
         # removed the section already and should ignore further occurences.
         remove_current = None
-        with self._open_for_writing(self.abs_path.temp.s) as out:
-            for line in ini_lines:
+        with self._open_for_writing() as out:
+            for line in self.read_ini_content(as_unicode=True):
                 stripped = re_comment.sub(u'', line).strip()
                 # Try checking if it's an OBSE line first
                 _match, section, _fmt = self._parse_obse_line(stripped)
@@ -663,19 +668,18 @@ class GameIni(IniFile):
     def setBsaRedirection(self,doRedirect=True):
         """Activate or deactivate BSA redirection - game ini must exist!"""
         if self.isCorrupted: return
-        section, key = bush.game.Ini.bsa_redirection_key
-        if not section or not key: return
+        br_section, br_key = bush.game.Ini.bsa_redirection_key
+        if not br_section or not br_key: return
         aiBsa = dirs[u'mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
         if aiBsa.exists() and aiBsa.mtime > aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
         # check if BSA redirection is active
-        sArchives = self.getSetting(section, key, u'')
+        sArchives = self.getSetting(br_section, br_key, u'')
         is_bsa_redirection_active = any(x for x in sArchives.split(u',')
             if x.strip().lower() in self.bsaRedirectors)
         if doRedirect == is_bsa_redirection_active:
             return
-        # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
             source = dirs[u'templates'].join(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
@@ -683,7 +687,7 @@ class GameIni(IniFile):
                 env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)
             except (env.AccessDeniedError, CancelError, SkipError):
                 return
-        sArchives = self.getSetting(section,key,u'')
+        sArchives = self.getSetting(br_section, br_key, u'')
         #--Strip existing redirectors out
         archives_ = [x.strip() for x in sArchives.split(u',') if
                      x.strip().lower() not in self.bsaRedirectors]

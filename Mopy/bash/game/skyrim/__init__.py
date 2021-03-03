@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -39,12 +38,11 @@ class SkyrimGameInfo(GameInfo):
     game_detect_file = u'SkyrimLauncher.exe'
     version_detect_file = u'TESV.exe'
     master_file = u'Skyrim.esm'
-    pklfile = u'Skyrim_ids.pkl'
-    masterlist_dir = u'Skyrim'
+    taglist_dir = u'Skyrim'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'
-    nexusKey = 'bash.installers.openSkyrimNexus.continue'
+    nexusKey = u'bash.installers.openSkyrimNexus.continue'
 
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [
         _j(u'meshes', u'actors', u'character', u'facegendata', u'facegeom'),
@@ -88,13 +86,6 @@ class SkyrimGameInfo(GameInfo):
         attachment_regex = u''
         has_bsl = True
         valid_versions = {0x68}
-        vanilla_string_bsas = {
-            u'skyrim.esm': [u'Skyrim - Interface.bsa'],
-            u'update.esm': [u'Skyrim - Interface.bsa'],
-            u'dawnguard.esm': [u'Dawnguard.bsa'],
-            u'hearthfires.esm': [u'Hearthfires.bsa'],
-            u'dragonborn.esm': [u'Dragonborn.bsa'],
-        }
 
     class Psc(GameInfo.Psc):
         source_extensions = {u'.psc'}
@@ -129,6 +120,7 @@ class SkyrimGameInfo(GameInfo):
             u'shadersfx',
             u'skse',
             u'skyproc patchers',
+            u'slanims', # nsfw mods
             u'source', # see Psc.source_redirects above
             u'strings',
             u'tools', # FNIS
@@ -163,6 +155,15 @@ class SkyrimGameInfo(GameInfo):
         validHeaderVersions = (0.94, 1.70,)
         generate_temp_child_onam = True
         max_lvl_list_size = 255
+        biped_flag_names = (
+            u'head', u'hair', u'body', u'hands', u'forearms', u'amulet',
+            u'ring', u'feet', u'calves', u'shield', u'bodyaddon1_tail',
+            u'long_hair', u'circlet', u'bodyaddon2', u'dragon_head',
+            u'dragon_lwing', u'dragon_rwing', u'dragon_body', u'bodyaddon7',
+            u'bodyaddon8', u'decapate_head', u'decapate', u'bodyaddon9',
+            u'bodyaddon10', u'bodyaddon11', u'bodyaddon12', u'bodyaddon13',
+            u'bodyaddon14', u'bodyaddon15', u'bodyaddon16', u'bodyaddon17',
+            u'fx01')
 
     allTags = {
         u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
@@ -170,9 +171,9 @@ class SkyrimGameInfo(GameInfo):
         u'Actors.DeathItem', u'Actors.RecordFlags', u'Actors.Spells',
         u'Actors.SpellsForceAdd', u'Actors.Stats', u'C.Acoustic', u'C.Climate',
         u'C.Encounter', u'C.ForceHideLand', u'C.ImageSpace', u'C.Light',
-        u'C.Location', u'C.LockList', u'C.Music', u'C.Name', u'C.Owner',
-        u'C.RecordFlags', u'C.Regions', u'C.SkyLighting', u'C.Water',
-        u'Deactivate', u'Delev', u'Destructible', u'EffectStats',
+        u'C.Location', u'C.LockList', u'C.MiscFlags', u'C.Music', u'C.Name',
+        u'C.Owner', u'C.RecordFlags', u'C.Regions', u'C.SkyLighting',
+        u'C.Water', u'Deactivate', u'Delev', u'Destructible', u'EffectStats',
         u'EnchantmentStats', u'Factions', u'Filter', u'Graphics',
         u'Invent.Add', u'Invent.Change', u'Invent.Remove', u'Keywords',
         u'MustBeActiveIfImported', u'Names', u'NoMerge',
@@ -182,17 +183,17 @@ class SkyrimGameInfo(GameInfo):
         u'SpellStats', u'Stats', u'Text',
     }
 
-    patchers = (
-        u'PatchMerger', # PatchMerger must come first!
-        u'ActorImporter', u'AliasesPatcher', u'CellImporter',
-        u'ContentsChecker', u'DeathItemPatcher', u'DestructiblePatcher',
-        u'GmstTweaker', u'GraphicsPatcher', u'ImportActorsSpells',
-        u'ImportEffectsStats', u'ImportEnchantmentStats', u'ImportFactions',
-        u'ImportInventory', u'ImportOutfits', u'ImportRelations',
-        u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
-        u'NPCAIPackagePatcher', u'ObjectBoundsImporter', u'SoundPatcher',
-        u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
-    )
+    patchers = {
+        u'AliasModNames', u'ContentsChecker', u'ImportActors',
+        u'ImportActorsAIPackages', u'ImportActorsDeathItems',
+        u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
+        u'ImportDestructible', u'ImportEffectsStats',
+        u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
+        u'ImportKeywords', u'ImportNames', u'ImportObjectBounds',
+        u'ImportOutfits', u'ImportRelations', u'ImportSounds',
+        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
+        u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
+    }
 
     weaponTypes = (
         _(u'Blade (1 Handed)'),
@@ -270,7 +271,7 @@ class SkyrimGameInfo(GameInfo):
             MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MreRace
         # ---------------------------------------------------------------------
         # Unused records, they have empty GRUP in skyrim.esm-------------------
         # CLDC HAIR PWAT RGDL SCOL SCPT
@@ -287,7 +288,7 @@ class SkyrimGameInfo(GameInfo):
         #
         #       MreAchr, MreDial, MreInfo,
         # ---------------------------------------------------------------------
-        cls.mergeClasses = (# MreAchr, MreDial, MreInfo,
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (# MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
@@ -303,7 +304,8 @@ class SkyrimGameInfo(GameInfo):
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
             MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, MreFact,
-        )
+            MreRace,
+        )}
 
         # MreScpt is Oblivion/FO3/FNV Only
         # MreMgef, has not been verified to be used here for Skyrim
@@ -351,7 +353,7 @@ class SkyrimGameInfo(GameInfo):
             MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn,
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-            MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack,
+            MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack, MreRace,
             # MreNavm, MreNavi
         )}
         brec.MreRecord.simpleTypes = (

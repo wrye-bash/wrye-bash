@@ -2,7 +2,7 @@ Wrye Bash
 =========
 
 [![Wrye Bash CI](https://github.com/wrye-bash/wrye-bash/workflows/Wrye%20Bash%20CI/badge.svg)](https://github.com/wrye-bash/wrye-bash/actions?query=workflow%3A%22Wrye+Bash+CI%22)
-[![License: GPL v2](https://img.shields.io/badge/license-GPLv2-blue.svg)](Mopy/license.txt)
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-blue.svg)](LICENSE.md)
 
 ### About
 
@@ -21,11 +21,11 @@ Here is a list of supported games with the minimal patch version that Bash was
 tested on (previous versions or latest versions may or may not work):
 
 * Oblivion (patch 1.2.0.416)
-* Nehrim (patch 2.0.1.6)
+* Nehrim (patch 2.0.2.4)
 * Fallout 3 (patch 1.7.0.3)
 * Fallout New Vegas (patch 1.4.0.525)
 * Skyrim (patch 1.9.36.0)
-* Enderal (patch 1.5.9.0)
+* Enderal (patch 1.6.4.0)
 * Fallout 4 (patch 1.10.163.0)
 * Skyrim Special Edition (patch 1.5.97.0)
 
@@ -55,10 +55,10 @@ To run Wrye Bash from the latest `dev` code (download from [here][12])
 you need:
 
 * A game to manage from the supported games.
-* [Python 2.7 32-bit](http://www.python.org/) (latest 2.7 is recommended)
+* [Python 2.7 64-bit](http://www.python.org/) (latest 2.7 is recommended)
 
-**NB**: the 32-bit version is required even if you are on a 64-bit
-operating system.
+**NB**: the 64-bit version is **required**. 32-bit operating systems are no
+longer supported.
 
 Once you have those, install the required packages by running:
 
@@ -66,7 +66,7 @@ Once you have those, install the required packages by running:
 path/to/python.exe -m pip install -r requirements.txt
 ```
 
-Refer to the readmes for [detailed instructions][12]. In short:
+Refer to the readmes linked above for detailed instructions. In short:
 
 1. Install one of the supported games (Oblivion, Skyrim, Fallout).
 1. Install Python and plugins above.

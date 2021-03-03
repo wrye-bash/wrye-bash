@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,14 +25,26 @@ more specialized parts (e.g. _AComponent)."""
 
 __author__ = u'nycz, Infernio'
 
+import os
+import platform
 import textwrap
 import wx as _wx
 from .events import EventHandler, null_processor
-from ..exception import AbstractError
-from ..bolt import GPath, deprint
+from ..bolt import deprint
 from ..exception import ArgumentError
 
 # Utilities -------------------------------------------------------------------
+_cached_csf = None
+def csf(): ##: This is ugly, is there no nicer way?
+    """Returns the content scale factor (CSF) needed for high DPI displays."""
+    global _cached_csf
+    if _cached_csf is None:
+        if platform.system() != u'Darwin': ##: Linux? os.name == 'nt' if so
+           _cached_csf = _wx.Window().GetContentScaleFactor()
+        else:
+            _cached_csf = 1.0 # Everything scales automatically on macOS
+    return _cached_csf
+
 def wrapped_tooltip(tooltip_text, wrap_width=50):
     """Returns tooltip with wrapped copy of text."""
     tooltip_text = textwrap.fill(tooltip_text, wrap_width)
@@ -87,28 +98,32 @@ class Color(object):
 class Colors(object):
     """Color collection and wrapper for wx.ColourDatabase. Provides
     dictionary syntax access (colors[key]) and predefined colors."""
-    WHITE = Color(255, 255, 255)
-    RED = Color(255, 0, 0)
-    BLACK = Color(0, 0, 0)
-    GRAY = Color(192, 192, 192)
-
     def __init__(self):
         self._colors = {}
 
-    def __setitem__(self,key,value):
+    def __setitem__(self, key_, value):
         """Add a color to the database."""
         if isinstance(value, Color):
-            self._colors[key] = value
+            self._colors[key_] = value
         else:
-            self._colors[key] = Color(*value)
+            self._colors[key_] = Color(*value)
 
-    def __getitem__(self,key):
+    def __getitem__(self, key_):
         """Dictionary syntax: color = colors[key]."""
-        return self._colors[key]
+        return self._colors[key_]
 
     def __iter__(self):
-        for key in self._colors:
-            yield key
+        for key_ in self._colors:
+            yield key_
+
+class _ACFrozen(object):
+    """Helper for _AComponent.pause_drawing."""
+    def __init__(self, wx_parent):
+        self._wx_parent = wx_parent
+    def __enter__(self):
+        self._wx_parent.Freeze()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._wx_parent.Thaw()
 
 # Base Elements ---------------------------------------------------------------
 class _AComponent(object):
@@ -154,11 +169,11 @@ class _AComponent(object):
         :return: This component's name."""
         return self._native_widget.GetName()
 
-    def set_component_name(self, new_name): # type: (unicode) -> None
+    def set_component_name(self, new_ctrl_name): # type: (unicode) -> None
         """Sets the name of this component to the specified name.
 
-        :param new_name: The string to change this component's name to."""
-        self._native_widget.SetName(new_name)
+        :param new_ctrl_name: The string to change this component's name to."""
+        self._native_widget.SetName(new_ctrl_name)
 
     @property
     def visible(self): # type: () -> bool
@@ -237,6 +252,11 @@ class _AComponent(object):
         self._native_widget.SetForegroundColour(new_color.to_rgba_tuple())
         self._native_widget.Refresh()
 
+    def reset_foreground_color(self):
+        """Reset the foreground color of this component to the default one."""
+        self._native_widget.SetForegroundColour(_wx.NullColour)
+        self._native_widget.Refresh()
+
     @property
     def component_position(self):
         """Returns the X and Y position of this component as a tuple.
@@ -258,23 +278,35 @@ class _AComponent(object):
     def component_size(self):
         """Returns the width and height of this component as a tuple.
 
-        :return: A tuple containing the width and height size of this component
-                 as two integers."""
-        curr_size = self._native_widget.GetSize()
+        :return: A tuple containing the width and height in device-independent
+            pixels (DIP) of this component as two integers."""
+        curr_size = self._native_widget.ToDIP(self._native_widget.GetSize())
         return curr_size.width, curr_size.height
 
     @component_size.setter
     def component_size(self, new_size): # type: (tuple) -> None
-        """Changes the X and Y size of this component to the specified
+        """Changes the width and height of this component to the specified
         values.
 
-        :param new_size: A tuple of two integers, X and Y size."""
-        self._native_widget.SetSize(new_size)
+        :param new_size: A tuple of two integers, width and height, in
+            device-independent pixels (DIP)."""
+        self._native_widget.SetSize(self._native_widget.FromDIP(new_size))
+
+    def scaled_size(self):
+        """Returns the actual width and height in physical pixels that this
+        component takes up. For most use cases, you will want component_size
+        instead.
+
+        :return: A tuple containing the width and height of this component as
+            two integers."""
+        curr_size = self._native_widget.GetSize()
+        return curr_size.width, curr_size.height
 
     def set_min_size(self, width, height): # type: (int, int) -> None
         """Sets the minimum size of this component to the specified width and
-        height."""
-        self._native_widget.SetMinSize(_wx.Size(width, height))
+        height in device-independent pixels (DIP)."""
+        self._native_widget.SetMinSize(self._native_widget.FromDIP(
+            (width, height)))
 
     # focus methods wrappers
     def set_focus_from_kb(self):
@@ -295,6 +327,19 @@ class _AComponent(object):
 
     def wx_id_(self): ##: Avoid, we do not want to program with gui ids
         return self._native_widget.GetId()
+
+    def update_layout(self):
+        """Tells the layout applied to this component to update and lay out its
+        sub-components again, based on changes that have been made to them
+        since then. For example, you would have to call this if you hid or
+        resized one of the sub-components, so that the other sub-components can
+        be resized/moved/otherwise updated to account for that."""
+        self._native_widget.Layout()
+
+    def pause_drawing(self):
+        """To be used via Python's 'with' statement. Pauses all visual updates
+        to this component while in the with statement."""
+        return _ACFrozen(self._native_widget)
 
 # Events Mixins ---------------------------------------------------------------
 class WithMouseEvents(_AComponent):
@@ -396,25 +441,7 @@ class WithCharEvents(_AComponent):
         self.on_key_pressed = self._evt_handler(_wx.EVT_CHAR, wrap_processor)
         self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, wrap_processor)
 
-class WithFirstShow(_AComponent):
-    """An _AComponent that does some initialization on first shown.
-    You must override _handle_first_show, the event will be unregistered once
-    this runs once."""
-
-    def __init__(self, *args, **kwargs):
-        super(WithFirstShow, self).__init__(*args, **kwargs)
-        self._on_first_show = self._evt_handler(_wx.EVT_SHOW)
-        self._on_first_show.subscribe(self.__handle_first_show)
-
-    def __handle_first_show(self):
-        self._handle_first_show()
-        self._on_first_show.unsubscribe(self.__handle_first_show)
-
-    def _handle_first_show(self):
-        """Perform some one time initialization on show"""
-        raise AbstractError
-
-class Image(object):
+class ImageWrapper(object):
     """Wrapper for images, allowing access in various formats/classes.
 
     Allows image to be specified before wx.App is initialized."""
@@ -424,17 +451,17 @@ class Image(object):
                  u'bmp': _wx.BITMAP_TYPE_BMP, u'tif': _wx.BITMAP_TYPE_TIF}
 
     def __init__(self, filename, imageType=None, iconSize=16):
-        self._img_path = GPath(filename)
+        self._img_path = filename.s # must be a bolt.Path
         try:
-            self._img_type = imageType or self.typesDict[self._img_path.cext[1:]]
+            self._img_type = imageType or self.typesDict[filename.cext[1:]]
         except KeyError:
-            deprint(u'Unknown image extension %s' % self._img_path.cext)
+            deprint(u'Unknown image extension %s' % filename.cext)
             self._img_type = _wx.BITMAP_TYPE_ANY
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
-        if not GPath(self._img_path.s.split(u';')[0]).exists():
-            raise ArgumentError(u'Missing resource file: %s.' % self._img_path)
+        if not os.path.exists(self._img_path.split(u';')[0]):
+            raise ArgumentError(u'Missing resource file: %s.' % filename)
 
     def GetBitmap(self):
         if not self.bitmap:
@@ -446,20 +473,21 @@ class Image(object):
                 # Hack - when user scales windows display icon may need scaling
                 if w != self.iconSize or h != self.iconSize: # rescale !
                     self.bitmap = _wx.Bitmap(
-                        _wx.ImageFromBitmap(self.bitmap).Scale(
-                          self.iconSize, self.iconSize, _wx.IMAGE_QUALITY_HIGH))
+                        self.bitmap.ConvertToImage().Scale(
+                            self.iconSize, self.iconSize,
+                            _wx.IMAGE_QUALITY_HIGH))
             else:
-                self.bitmap = _wx.Bitmap(self._img_path.s, self._img_type)
+                self.bitmap = _wx.Bitmap(self._img_path, self._img_type)
         return self.bitmap
 
     def GetIcon(self):
         if not self.icon:
             if self._img_type == _wx.BITMAP_TYPE_ICO:
-                self.icon = _wx.Icon(self._img_path.s, _wx.BITMAP_TYPE_ICO,
+                self.icon = _wx.Icon(self._img_path, _wx.BITMAP_TYPE_ICO,
                                      self.iconSize, self.iconSize)
                 # we failed to get the icon? (when display resolution changes)
                 if not self.icon.GetWidth() or not self.icon.GetHeight():
-                    self.icon = _wx.Icon(self._img_path.s, _wx.BITMAP_TYPE_ICO)
+                    self.icon = _wx.Icon(self._img_path, _wx.BITMAP_TYPE_ICO)
             else:
                 self.icon = _wx.Icon()
                 self.icon.CopyFromBitmap(self.GetBitmap())

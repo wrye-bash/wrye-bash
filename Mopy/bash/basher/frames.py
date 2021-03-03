@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,22 +14,23 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
 import re
 import string
+import wx
 from collections import OrderedDict
 
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import bell, Link, Resources
-from ..bolt import decode, GPath
+from ..bolt import GPath
 from ..bosh import omods
+from ..bosh import mods_metadata
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
     web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
@@ -43,8 +44,8 @@ class DocBrowser(WindowFrame):
     def __init__(self):
         # Data
         self._mod_name = GPath(u'')
-        self._db_doc_paths = bosh.modInfos.table.getColumn('doc')
-        self._db_is_editing = bosh.modInfos.table.getColumn('docEdit')
+        self._db_doc_paths = bosh.modInfos.table.getColumn(u'doc')
+        self._db_is_editing = bosh.modInfos.table.getColumn(u'docEdit')
         self._doc_is_wtxt = False
         # Clean data
         for mod_name, doc in self._db_doc_paths.items():
@@ -54,7 +55,7 @@ class DocBrowser(WindowFrame):
         Link.Frame.docBrowser = self
         # Window
         super(DocBrowser, self).__init__(Link.Frame, title=_(u'Doc Browser'),
-                                         icon_bundle=Resources.bashDocBrowser,
+                                         icon_bundle=Resources.bashBlue,
                                          sizes_dict=bass.settings)
         # Base UI components
         root_window = Splitter(self)
@@ -63,7 +64,7 @@ class DocBrowser(WindowFrame):
         # Mod Name
         self._mod_name_box = TextField(mod_list_window, editable=False)
         self._mod_list = ListBox(mod_list_window,
-             choices=sorted(x.s for x in self._db_doc_paths.keys()),
+             choices=sorted(x.s for x in self._db_doc_paths),
              isSort=True, onSelect=self._do_select_mod)
         # Buttons
         self._set_btn = Button(main_window, _(u'Set Doc...'),
@@ -96,15 +97,16 @@ class DocBrowser(WindowFrame):
                          self._next_btn, self._reload_btn]
         #--Mod list
         VLayout(spacing=4, item_expand=True, items=[
-            self._mod_name_box, (self._mod_list, LayoutOptions(weight=1))
+            self._mod_name_box, (self._mod_list, LayoutOptions(weight=1)),
         ]).apply_to(mod_list_window)
         #--Text field and buttons
         VLayout(spacing=4, item_expand=True, items=[
             HLayout(item_expand=True, items=self._buttons),
-            self._doc_name_box, (self._doc_ctrl, LayoutOptions(weight=3))
+            self._doc_name_box, (self._doc_ctrl, LayoutOptions(weight=3)),
         ]).apply_to(main_window)
-        VLayout(item_expand=1, item_border=4, item_weight=1,
-                items=[root_window])
+        VLayout(item_expand=1, item_border=4, item_weight=1, items=[
+            root_window,
+        ]).apply_to(self)
         for btn in self._buttons:
             btn.enabled = False
 
@@ -126,7 +128,7 @@ class DocBrowser(WindowFrame):
             return bell()
         if not doc_path.isfile():
             balt.showWarning(self, _(u'The assigned document is not present:')
-                             + u'\n  ' + doc_path.s)
+                             + u'\n  %s' % doc_path)
         else:
             doc_path.start()
 
@@ -144,7 +146,7 @@ class DocBrowser(WindowFrame):
         if self._mod_name not in self._db_doc_paths:
             return
         index = self._mod_list.lb_index_for_str_item(self._mod_name.s)
-        if index != balt.notFound:
+        if index != wx.NOT_FOUND:
             self._mod_list.lb_delete_at_index(index)
         del self._db_doc_paths[self._mod_name]
         self.DoSave()
@@ -154,7 +156,7 @@ class DocBrowser(WindowFrame):
         self._doc_name_box.text_content = u''
         self._load_data(uni_str=u'')
 
-    def _do_select_mod(self, lb_selection_dex, lb_selection_str):
+    def _do_select_mod(self, _lb_selection_dex, lb_selection_str):
         """Handle mod name combobox selection."""
         self.SetMod(lb_selection_str)
 
@@ -165,12 +167,12 @@ class DocBrowser(WindowFrame):
         if mod_name in self._db_doc_paths:
             (docs_dir, file_name) = self._db_doc_paths[mod_name].headTail
         else:
-            docs_dir = bass.settings['bash.modDocs.dir'] or bass.dirs[u'mods']
+            docs_dir = bass.settings[u'bash.modDocs.dir'] or bass.dirs[u'mods']
             file_name = GPath(u'')
-        doc_path = balt.askOpen(self, _(u'Select doc for %s:') % mod_name.s,
+        doc_path = balt.askOpen(self, _(u'Select doc for %s:') % mod_name,
                                 docs_dir, file_name, u'*.*')
         if not doc_path: return
-        bass.settings['bash.modDocs.dir'] = doc_path.head
+        bass.settings[u'bash.modDocs.dir'] = doc_path.head
         if mod_name not in self._db_doc_paths:
             self._mod_list.lb_append(mod_name.s)
         self._db_doc_paths[mod_name] = doc_path
@@ -201,7 +203,7 @@ class DocBrowser(WindowFrame):
         doc_path = self._db_doc_paths.get(self._mod_name)
         if not doc_path: return  # nothing to save if no file is loaded
         self._doc_ctrl.set_text_modified(False)
-        with doc_path.open('w', encoding='utf-8-sig') as out:
+        with doc_path.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(self._doc_ctrl.fallback_text)
         if self._doc_is_wtxt:
             bolt.WryeText.genHtml(doc_path, None,
@@ -283,13 +285,13 @@ class DocBrowser(WindowFrame):
         """Handle window close event.
         Remember window size, position, etc."""
         self.DoSave()
-        bass.settings['bash.modDocs.show'] = False
+        bass.settings[u'bash.modDocs.show'] = False
         Link.Frame.docBrowser = None
         super(DocBrowser, self).on_closing(destroy)
 
 #------------------------------------------------------------------------------
 _BACK, _FORWARD, _MOD_LIST, _CRC, _VERSION, _SCAN_DIRTY, _COPY_TEXT, \
-_UPDATE = range(8)
+_UPDATE = xrange(8)
 
 def _get_mod_checker_setting(key, default=None):
     return bass.settings.get(u'bash.modChecker.show%s' % key, default)
@@ -336,9 +338,7 @@ class ModChecker(WindowFrame):
         _f(_MOD_LIST,   True,  _(u'Mod List'),        'ModList', False)
         _f(_VERSION,    True,  _(u'Version Numbers'), 'Version', True)
         _f(_CRC,        True,  _(u'CRCs'),            'CRC', False)
-        _f(_SCAN_DIRTY, True,  (_(u'Scan for Dirty Edits')
-                                   if bass.settings['bash.CBashEnabled']
-                                   else _(u"Scan for UDRs")))
+        _f(_SCAN_DIRTY, True,  _(u'Scan for UDRs'))
         _f(_COPY_TEXT,  False, _(u'Copy Text'), callback=self.OnCopyText)
         _f(_UPDATE,     False, _(u'Update'))
         #--Events
@@ -383,7 +383,7 @@ class ModChecker(WindowFrame):
         self.__merged = bosh.modInfos.merged.copy()
         self.__imported = bosh.modInfos.imported.copy()
         #--Do it
-        self.check_mods_text = bosh.configHelpers.checkMods(
+        self.check_mods_text = mods_metadata.checkMods(
             *[_get_mod_checker_setting(self._setting_names[setting_key])
               for setting_key in (_MOD_LIST, _CRC, _VERSION)],
             mod_checker=(None, self)[self._controls[_SCAN_DIRTY].is_checked])
@@ -424,7 +424,6 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
 
     def __init__(self, parent, project):
         #--Data
-        self.project = project
         self.config = config = omods.OmodConfig.getOmodConfig(project)
         #--GUI
         super(InstallerProject_OmodConfigDialog, self).__init__(parent,
@@ -432,7 +431,7 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
             icon_bundle=Resources.bashBlue, sizes_dict=bass.settings,
             caption=True, clip_children=True, tab_traversal=True)
         #--Fields
-        self.gName = TextField(self, init_text=config.name, max_length=100)
+        self.gName = TextField(self, init_text=config.omod_proj,max_length=100)
         self.gVersion = TextField(self, u'{:d}.{:02d}'.format(
             config.vMajor, config.vMinor), max_length=32)
         self.gWebsite = TextField(self, config.website, max_length=512)
@@ -466,7 +465,7 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         """Handle save button."""
         config = self.config
         #--Text fields
-        config.name = self.gName.text_content.strip()
+        config.omod_proj = self.gName.text_content.strip()
         config.website = self.gWebsite.text_content.strip()
         config.omod_author = self.gAuthor.text_content.strip()
         config.email = self.gEmail.text_content.strip()
@@ -475,9 +474,9 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         maVersion = re.match(u'' r'(\d+)\.(\d+)',
                              self.gVersion.text_content.strip(), flags=re.U)
         if maVersion:
-            config.vMajor,config.vMinor = map(int,maVersion.groups())
+            config.vMajor,config.vMinor = (int(g) for g in maVersion.groups())
         else:
             config.vMajor,config.vMinor = (0,0)
         #--Done
-        omods.OmodConfig.writeOmodConfig(self.project, self.config)
+        self.config.writeOmodConfig()
         self.on_closing()

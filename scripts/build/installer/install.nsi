@@ -14,11 +14,10 @@
         File "${WB_CLEAN_MOPY}\redist\vcredist_2010_x86.exe"
         ExecWait '"$TEMP\vcredist_2010_x86.exe" /quiet /norestart'
         DetailPrint "Finished Visual C++ 2010 x86 Redistributable Setup"
-;; Commented out for now, uncomment once we switch to 64bit
-;        DetailPrint "Running Visual C++ 2010 x64 Redistributable Setup..."
-;        File "${WB_CLEAN_MOPY}\redist\vcredist_2010_x64.exe"
-;        ExecWait '"$TEMP\vcredist_2010_x64.exe" /quiet /norestart'
-;        DetailPrint "Finished Visual C++ 2010 x64 Redistributable Setup"
+        DetailPrint "Running Visual C++ 2010 x64 Redistributable Setup..."
+        File "${WB_CLEAN_MOPY}\redist\vcredist_2010_x64.exe"
+        ExecWait '"$TEMP\vcredist_2010_x64.exe" /quiet /norestart'
+        DetailPrint "Finished Visual C++ 2010 x64 Redistributable Setup"
     SectionEnd
 
     Section "Wrye Bash" Main

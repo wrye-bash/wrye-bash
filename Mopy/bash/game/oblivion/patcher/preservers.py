@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,46 +14,40 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from ....brec import MreRecord
-from ....mod_files import ModFile, LoadFactory
-from ....patcher.patchers.base import AImportPatcher, CBash_ImportPatcher, \
-    ImportPatcher
+from .special import _ExSpecial ##: ugh
+from ....patcher.base import ImportPatcher
 
-__all__ = ['RoadImporter', 'CBash_RoadImporter']
+__all__ = [u'ImportRoadsPatcher']
 
-class _ARoadImporter(AImportPatcher):
+class ImportRoadsPatcher(ImportPatcher, _ExSpecial):
     """Imports roads."""
     patcher_name = _(u'Import Roads')
-    patcher_text = _(u"Import roads from source mods.")
+    patcher_desc = _(u"Import roads from source mods.")
     autoKey = {u'Roads'}
+    _config_key = u'RoadImporter'
 
-class RoadImporter(ImportPatcher, _ARoadImporter):
     logMsg = u'\n=== ' + _(u'Worlds Patched')
-    _read_write_records = (b'CELL', b'WRLD', b'ROAD')
+    _read_sigs = (b'CELL', b'WRLD', b'ROAD')
 
     def __init__(self, p_name, p_file, p_sources):
-        super(RoadImporter, self).__init__(p_name, p_file, p_sources)
+        super(ImportRoadsPatcher, self).__init__(p_name, p_file, p_sources)
         self.world_road = {}
 
     def initData(self,progress):
         """Get cells from source files."""
         if not self.isActive: return
-        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x in
-                                           self._read_write_records])
+        self.loadFactory = self._patcher_read_fact()
         for srcMod in self.srcs:
             if srcMod not in self.patchFile.p_file_minfos: continue
             srcInfo = self.patchFile.p_file_minfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            srcFile.load(True)
-            srcFile.convertToLongFids(('WRLD','ROAD'))
-            for worldBlock in srcFile.WRLD.worldBlocks:
+            srcFile = self._mod_file_read(srcInfo)
+            for worldBlock in srcFile.tops[b'WRLD'].worldBlocks:
                 if worldBlock.road:
                     worldId = worldBlock.world.fid
                     road = worldBlock.road.getTypeCopy()
@@ -62,10 +56,9 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
 
     def scanModFile(self, modFile, progress): # scanModFile3 ?
         """Add lists from modFile."""
-        if not self.isActive or 'WRLD' not in modFile.tops: return
-        patchWorlds = self.patchFile.WRLD
-        modFile.convertToLongFids(('CELL','WRLD','ROAD'))
-        for worldBlock in modFile.WRLD.worldBlocks:
+        if not self.isActive or b'WRLD' not in modFile.tops: return
+        patchWorlds = self.patchFile.tops[b'WRLD']
+        for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
             if worldBlock.road:
                 worldId = worldBlock.world.fid
                 road = worldBlock.road.getTypeCopy()
@@ -77,7 +70,7 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         worldsPatched = set()
-        for worldBlock in self.patchFile.WRLD.worldBlocks:
+        for worldBlock in self.patchFile.tops[b'WRLD'].worldBlocks:
             worldId = worldBlock.world.fid
             curRoad = worldBlock.road
             newRoad = self.world_road.get(worldId)
@@ -87,7 +80,7 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
                 worldBlock.road = newRoad
                 keep(worldId)
                 keep(newRoad.fid)
-                worldsPatched.add((worldId[0].s,worldBlock.world.eid))
+                worldsPatched.add((worldId[0], worldBlock.world.eid))
         self.world_road.clear()
         self._patchLog(log,worldsPatched)
 
@@ -96,54 +89,7 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
         for modWorld in sorted(worldsPatched):
             log(u'* %s: %s' % modWorld)
 
-class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
-    _read_write_records = ('ROADS',)
-    logMsg = u'* ' + _(u'Roads Imported') + u': %d'
-    #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
-    #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
-    #It is needed however so that the regular patcher and the CBash patcher have the same behavior.
-    #The regular patcher has to allow unloaded mods because it can't otherwise force the road record to be merged
-    #This isn't standard behavior for import patchers, but consistency between patchers is more important.
-    def __init__(self, p_name, p_file, p_sources):
-        """Prepare to handle specified patch mod. All functions are called
-        after this."""
-        super(CBash_RoadImporter, self).__init__(p_name, p_file, p_sources)
-        self.id_ROAD = {}
-
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        self.id_ROAD[record.fid] = record
-
-    def apply(self,modFile,record,bashTags):
-        """Edits patch file as desired."""
-        self.scan_more(modFile,record,bashTags)
-        recordId = record.fid
-        #If a previous road was scanned, and it is replaced by a new road
-        curRoad = record
-        newRoad = self.id_ROAD.get(recordId, None)
-        if newRoad:
-            #Roads and pathgrids are complex records...
-            #No good way to tell if the roads are equal.
-            #A direct comparison can prove equality, but not inequality
-            if curRoad.pgrp_list == newRoad.pgrp_list and curRoad.pgrr_list == newRoad.pgrr_list:
-                return
-            #So some records that are actually equal won't pass the above test and end up copied over
-            #Bloats the patch a little, but won't hurt anything.
-            if newRoad.fid.ValidateFormID(self.patchFile):
-                copyRoad = newRoad #Copy the new road over
-            elif curRoad and curRoad.fid.ValidateFormID(self.patchFile):
-                copyRoad = curRoad #Copy the current road over (its formID is acceptable)
-            else:
-                #Ignore the record.
-                self.patchFile.patcher_mod_skipcount[self.patcher_name][
-                    modFile.GName] += 1
-                return
-
-            override = copyRoad.CopyAsOverride(self.patchFile, UseWinningParents=True) #Copies the road over (along with the winning version of its parents if needed)
-            if override:
-                #Copy the new road values into the override (in case the CopyAsOverride returned a record pre-existing in the patch file)
-                for copyattr in newRoad.copyattrs:
-                    setattr(override, copyattr, getattr(newRoad, copyattr))
-                self.mod_count[modFile.GName] += 1
-                record.UnloadRecord()
-                record._RecordID = override._RecordID
+    @classmethod
+    def gui_cls_vars(cls):
+        cls_vars = super(ImportRoadsPatcher, cls).gui_cls_vars()
+        return cls_vars.update({u'autoKey': cls.autoKey}) or cls_vars

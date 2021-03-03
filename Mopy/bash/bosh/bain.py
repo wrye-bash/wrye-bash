@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,55 +14,59 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """BAIN backbone classes."""
 
 from __future__ import print_function
+
 import collections
 import copy
 import errno
+import io
 import os
 import re
 import sys
 import time
 from binascii import crc32
 from functools import partial, wraps
-from itertools import groupby, imap
+from itertools import groupby, izip
 from operator import itemgetter, attrgetter
 
-from . import imageExts, DataStore, BestIniFile, InstallerConverter, ModInfos
+from . import imageExts, DataStore, BestIniFile, InstallerConverter, \
+    ModInfos, ListInfo
 from .. import balt, gui # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
-from ..bolt import Path, deprint, round_size, GPath, sio, SubProgress, CIstr, \
-    LowerDict, AFile
+from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
+    LowerDict, AFile, dict_sort, GPath_no_norm
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 from ..ini_files import OBSEIniFile
 
-os_sep = unicode(os.path.sep)
+os_sep = unicode(os.path.sep) # PY3: already unicode
 
-class Installer(object):
+class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
     #--Member data
-    persistent = ('archive', 'order', 'group', 'modified', 'size', 'crc',
-        'fileSizeCrcs', 'type', 'is_active', 'subNames', 'subActives',
-        'dirty_sizeCrc', 'comments', 'extras_dict', 'packageDoc', 'packagePic',
-        'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
-        'blockSize', 'overrideSkips', 'remaps', 'skipRefresh', 'fileRootIdex')
-    volatile = ('ci_dest_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
-        'missingFiles', 'mismatchedFiles', 'project_refreshed',
-        'mismatchedEspms', 'unSize', 'espms', 'underrides', 'hasWizard',
-        'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles', '_dir_dirs_files',
-        'has_fomod_conf')
+    persistent = (u'archive', u'order', u'group', u'modified', u'fsize',
+        u'crc', u'fileSizeCrcs', u'type', u'is_active', u'subNames',
+        u'subActives', u'dirty_sizeCrc', u'comments', u'extras_dict',
+        u'packageDoc', u'packagePic', u'src_sizeCrcDate', u'hasExtraData',
+        u'skipVoices', u'espmNots', u'isSolid', u'blockSize', u'overrideSkips',
+        u'remaps', u'skipRefresh', u'fileRootIdex')
+    volatile = (u'ci_dest_sizeCrc', u'skipExtFiles', u'skipDirFiles',
+        u'status', u'missingFiles', u'mismatchedFiles', u'project_refreshed',
+        u'mismatchedEspms', u'unSize', u'espms', u'underrides', u'hasWizard',
+        u'espmMap', u'hasReadme', u'hasBCF', u'hasBethFiles',
+        u'_dir_dirs_files', u'has_fomod_conf')
+
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     type_string = _(u'Unrecognized')
@@ -78,7 +82,8 @@ class Installer(object):
         u'(' + u'|'.join(docExts) + u')$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
-                u'.fomod', u'.tb2', u'.lzma', u'.manifest', u'.ckm'}
+                u'.fomod', u'.tb2', u'.lzma', u'.manifest', u'.ckm',
+                u'.vortex_backup'}
     skipExts.update(set(readExts))
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
@@ -96,6 +101,8 @@ class Installer(object):
     # Extensions of strings files - automatically built from game constants
     _strings_extensions = {os.path.splitext(x[1].lower())[1]
                            for x in bush.game.Esp.stringsFiles}
+    # InstallersData singleton - consider this tmp
+    instData = None # type: InstallersData
 
     @classmethod
     def is_archive(cls): return False
@@ -104,13 +111,22 @@ class Installer(object):
     @classmethod
     def is_marker(cls): return False
 
+    @classmethod
+    def validate_filename_str(cls, name_str, allowed_exts=frozenset(),
+                              use_default_ext=False):
+        return super(Installer, cls).validate_filename_str(name_str,
+            frozenset()) # block extension check
+
+    @classmethod
+    def get_store(cls): return cls.instData
+
     @staticmethod
     def init_bain_dirs():
         """Initialize BAIN data directories on a per game basis."""
         Installer.dataDirsPlus |= bush.game.Bain.data_dirs
         InstallersData.installers_dir_skips.update(
             {bass.dirs[u'converters'].stail.lower(), u'bash'})
-        user_skipped = bass.inisettings['SkippedBashInstallersDirs'].split(u'|')
+        user_skipped = bass.inisettings[u'SkippedBashInstallersDirs'].split(u'|')
         InstallersData.installers_dir_skips.update(
             skipped.lower() for skipped in user_skipped if skipped)
 
@@ -140,8 +156,8 @@ class Installer(object):
                             new_sizeCrcDate, progress)
         # drop _asFile
         old_sizeCrcDate.clear()
-        for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
-            old_sizeCrcDate[rpFile] = (size, crc, date)
+        for rpFile, (siz, crc, date, _asFile) in new_sizeCrcDate.iteritems():
+            old_sizeCrcDate[rpFile] = (siz, crc, date)
         return changed
 
     @staticmethod
@@ -154,25 +170,25 @@ class Installer(object):
         # is size 0 - add len(pending) to the progress bar max to ensure we
         # don't hit 100% and cause the progress bar to prematurely disappear
         progress.setFull(pending_size + len(pending))
-        for rpFile, (size, _crc, date, asFile) in iter(sorted(pending.items())):
+        for rpFile, (siz, _crc, date, asFile) in dict_sort(pending):
             progress(done, progress_msg + rpFile)
-            sub = bolt.SubProgress(progress, done, done + size + 1)
-            sub.setFull(size + 1)
+            sub = bolt.SubProgress(progress, done, done + siz + 1)
+            sub.setFull(siz + 1)
             crc = 0
             try:
                 with open(asFile, u'rb') as ins:
                     insTell = ins.tell
-                    for block in iter(partial(ins.read, 2097152), ''):
+                    for block in iter(partial(ins.read, 2097152), b''):
                         crc = crc32(block, crc) # 2MB at a time, probably ok
                         sub(insTell())
-            except IOError:
+            except (OSError, IOError):
                 deprint(u'Failed to calculate crc for %s - please report '
                         u'this, and the following traceback:' % asFile,
                         traceback=True)
                 continue
             crc &= 0xFFFFFFFF
-            done += size + 1
-            new_sizeCrcDate[rpFile] = (size, crc, date, asFile)
+            done += siz + 1
+            new_sizeCrcDate[rpFile] = (siz, crc, date, asFile)
 
     #--Initialization, etc ----------------------------------------------------
     def initDefault(self):
@@ -180,7 +196,7 @@ class Installer(object):
         self.archive = u''
         #--Persistent: set by _refreshSource called by refreshBasic
         self.modified = 0 #--Modified date
-        self.size = -1 #--size of archive file
+        self.fsize = -1 #--size of archive file
         self.crc = 0 #--crc of archive
         self.isSolid = False #--package only - solid 7z archive
         self.blockSize = None #--package only - set here and there
@@ -237,10 +253,10 @@ class Installer(object):
 
     @staticmethod
     def number_string(number, marker_string=u''):
-        return str(number)
+        return unicode(number)
 
     def size_string(self, marker_string=u''):
-        return round_size(self.size)
+        return round_size(self.fsize)
 
     def structure_string(self):
         if self.type == 1:
@@ -264,8 +280,8 @@ class Installer(object):
             self.espmNots.add(GPath(oldName))
 
     def resetAllEspmNames(self):
-        for espm in self.remaps.keys():
-            # Need to use .keys(), since 'resetEspmName' will use
+        for espm in list(self.remaps):
+            # Need to use list(), since 'resetEspmName' will use
             # del self.remaps[oldName], changing the dictionary size.
             self.resetEspmName(self.remaps[espm])
 
@@ -292,18 +308,9 @@ class Installer(object):
         self.initDefault()
         self.archive = archive.stail
 
-    def __getstate__(self):
-        """Used by pickler to save object state.""" ##: __reduce__ is called instead
-        getter = object.__getattribute__
-        return tuple(getter(self,x) for x in self.persistent)
-
-    def _fixme_drop__for_loading_in_previous_versions(self):
-        self.src_sizeCrcDate = dict( # FIXME: backwards compat !
-            (GPath(x), y) for x, y in self.src_sizeCrcDate.iteritems())
-        self.dirty_sizeCrc = dict(
-            (GPath(x), y) for x, y in self.dirty_sizeCrc.iteritems())
-        self.fileSizeCrcs = [(unicode(x), y, z) for x, y, z in
-                             self.fileSizeCrcs]
+    def __reduce__(self):
+        """Used by pickler to save object state."""
+        raise AbstractError(u'%s must define __reduce__' % type(self))
 
     def _fixme_drop__fomod_backwards_compat(self):
         # Keys and values in the fomod dict got inverted, name changed to
@@ -317,50 +324,52 @@ class Installer(object):
         """Used by unpickler to recreate object."""
         try:
             self.__setstate(values)
-        except Exception as e:
-            print(('Failed loading %s' % values[0]) + ' due to %s' % e)
-            deprint('Failed loading %s' % values[0], traceback=True)
+        except:
+            deprint(u'Failed loading %s' % values[0], traceback=True)
             # init to default values and let it be picked for refresh in
             # InstallersData#scan_installers_dir
             self.initDefault()
 
     @property
-    def ipath(self): ##: aka abs_path
+    def abs_path(self):
         return bass.dirs[u'installers'].join(self.archive)
+
+    def get_hide_dir(self): ##: Copy-pasted from InstallersData.hidden_dir!
+        return bass.dirs[u'modsBash'].join(u'Hidden')
 
     def __setstate(self,values):
         self.initDefault() # runs on __init__ called by __reduce__
-        map(self.__setattr__,self.persistent,values)
+        for a, v in izip(self.persistent, values):
+            setattr(self, a, v)
         rescan = False
         if not isinstance(self.extras_dict, dict):
             self.extras_dict = {}
             if self.fileRootIdex: # need to add 'root_path' key to extras_dict
                 rescan = True
-        elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
-            rescan = True ##: for people that used my wip branch, drop on 307
-        if not self.ipath.exists():  # pickled installer deleted outside bash
+        self.extras_dict = {unicode(k): v for k, v in self.extras_dict.iteritems()}
+        if not self.abs_path.exists(): # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
             self.src_sizeCrcDate = bolt.LowerDict(
-                ('%s' % x, y) for x, y in self.src_sizeCrcDate.iteritems())
+                (u'%s' % x, y) for x, y in self.src_sizeCrcDate.iteritems())
         if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
             self.dirty_sizeCrc = bolt.LowerDict(
-                ('%s' % x, y) for x, y in self.dirty_sizeCrc.iteritems())
+                (u'%s' % x, y) for x, y in self.dirty_sizeCrc.iteritems())
         if rescan:
             dest_scr = self.refreshBasic(bolt.Progress(),
                                          recalculate_project_crc=False)
         else:
             dest_scr = self.refreshDataSizeCrc()
         if self.overrideSkips:
-            InstallersData.overridden_skips.update(dest_scr.keys())
+            InstallersData.overridden_skips.update(dest_scr)
 
     def __copy__(self):
         """Create a copy of self -- works for subclasses too (assuming
         subclasses don't add new data members)."""
         clone = self.__class__(GPath(self.archive))
         copier = copy.copy
-        getter = object.__getattribute__
-        setter = object.__setattr__
+        getter = object.__getattribute__ ##: is the object. necessary?
+        setter = object.__setattr__ ##: is the object. necessary?
         for attr in Installer.__slots__:
             setter(clone,attr,copier(getter(self,attr)))
         return clone
@@ -369,7 +378,8 @@ class Installer(object):
     # Those files/folders will be always skipped by refreshDataSizeCrc()
     _silentSkipsStart = (
         u'--', u'omod conversion data' + os_sep, u'wizard images' + os_sep)
-    _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'meta.ini', u'config')
+    _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'meta.ini', u'config',
+                       u'__folder_managed_by_vortex')
 
     # global skips that can be overridden en masse by the installer
     _global_skips = []
@@ -383,13 +393,13 @@ class Installer(object):
     def goodDlls(force_recalc=False):
         if Installer._goodDlls is None or force_recalc:
             Installer._goodDlls = collections.defaultdict(list,
-                bass.settings['bash.installers.goodDlls'])
+                bass.settings[u'bash.installers.goodDlls'])
         return Installer._goodDlls
     @staticmethod
     def badDlls(force_recalc=False):
         if Installer._badDlls is None or force_recalc:
             Installer._badDlls = collections.defaultdict(list,
-                bass.settings['bash.installers.badDlls'])
+                bass.settings[u'bash.installers.badDlls'])
         return Installer._badDlls
     # while checking for skips process some installer attributes
     _attributes_process = {}
@@ -403,24 +413,24 @@ class Installer(object):
         del Installer._global_skips[:]
         del Installer._global_start_skips[:]
         Installer._global_skip_extensions.clear()
-        if bass.settings['bash.installers.skipTESVBsl']:
-            Installer._global_skip_extensions.add('.bsl')
-        if bass.settings['bash.installers.skipScriptSources']:
+        if bass.settings[u'bash.installers.skipTESVBsl']:
+            Installer._global_skip_extensions.add(u'.bsl')
+        if bass.settings[u'bash.installers.skipScriptSources']:
             Installer._global_skip_extensions.update(
                 bush.game.Psc.source_extensions)
         # skips files starting with...
-        if bass.settings['bash.installers.skipDistantLOD']:
+        if bass.settings[u'bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')
-        if bass.settings['bash.installers.skipLandscapeLODMeshes']:
+        if bass.settings[u'bash.installers.skipLandscapeLODMeshes']:
             meshes_lod = os_sep.join((u'meshes', u'landscape', u'lod'))
             Installer._global_start_skips.append(meshes_lod)
-        if bass.settings['bash.installers.skipScreenshots']:
+        if bass.settings[u'bash.installers.skipScreenshots']:
             Installer._global_start_skips.append(u'screenshots')
         # LOD textures
         skipLODTextures = bass.settings[
-            'bash.installers.skipLandscapeLODTextures']
+            u'bash.installers.skipLandscapeLODTextures']
         skipLODNormals = bass.settings[
-            'bash.installers.skipLandscapeLODNormals']
+            u'bash.installers.skipLandscapeLODNormals']
         skipAllTextures = skipLODTextures and skipLODNormals
         tex_gen = os_sep.join((u'textures', u'landscapelod', u'generated'))
         if skipAllTextures:
@@ -430,12 +440,12 @@ class Installer(object):
         elif skipLODNormals: Installer._global_skips.append(
             lambda f: f.startswith(tex_gen) and f.endswith(u'_fn.dds'))
         # Skipped extensions
-        skipObse = not bass.settings['bash.installers.allowOBSEPlugins']
+        skipObse = not bass.settings[u'bash.installers.allowOBSEPlugins']
         if skipObse:
             Installer._global_start_skips.append(
                 bush.game.Se.plugin_dir.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
-        if bass.settings['bash.installers.skipImages']:
+        if bass.settings[u'bash.installers.skipImages']:
             Installer._global_skip_extensions |= imageExts
         Installer._init_executables_skips()
 
@@ -457,7 +467,7 @@ class Installer(object):
             rsplit = fileLower.rsplit(os_sep, 1)
             parentDir, fname = (u'', rsplit[0]) if len(rsplit) == 1 else rsplit
             if not self.overrideSkips and bass.settings[
-                'bash.installers.skipDocs'] and not (
+                u'bash.installers.skipDocs'] and not (
                         fname in bush.game.Bain.no_skip) and not (
                         fileExt in bush.game.Bain.no_skip_dirs.get(
                 parentDir, [])):
@@ -504,7 +514,7 @@ class Installer(object):
             if fileLower in bush.game.bethDataFiles:
                 self.hasBethFiles = True
                 if not self.overrideSkips and not bass.settings[
-                    'bash.installers.autoRefreshBethsoft']:
+                    u'bash.installers.autoRefreshBethsoft']:
                     self.skipDirFiles.add(_(u'[Bethesda Content]') + u' ' +
                                           full)
                     return None # FIXME - after renames ?
@@ -528,8 +538,7 @@ class Installer(object):
             start.extend(Installer._global_start_skips)
             skip_ext = Installer._global_skip_extensions
         if start: skips.append(lambda f: f.startswith((tuple(start))))
-        skipEspmVoices = not self.skipVoices and set(
-            x.cs for x in self.espmNots)
+        skipEspmVoices = not self.skipVoices and {x.cs for x in self.espmNots}
         if skipEspmVoices:
             def _skip_espm_voices(fileLower):
                 farPos = fileLower.startswith( # u'sound\\voice\\', 12 chars
@@ -542,21 +551,21 @@ class Installer(object):
     def _init_executables_skips():
         goodDlls = Installer.goodDlls()
         badDlls = Installer.badDlls()
-        def __skipExecutable(checkOBSE, fileLower, full, archiveRoot, size,
+        def __skipExecutable(checkOBSE, fileLower, full, archiveRoot, dll_size,
                              crc, desc, ext, exeDir, dialogTitle):
             if not fileLower.startswith(exeDir): return True
-            if fileLower in badDlls and [archiveRoot, size, crc] in badDlls[
-                fileLower]: return True
-            if not checkOBSE or fileLower in goodDlls and [
-                archiveRoot, size, crc] in goodDlls[fileLower]: return False
+            if fileLower in badDlls and [archiveRoot, dll_size, crc] in \
+                    badDlls[fileLower]: return True
+            if not checkOBSE or fileLower in goodDlls and [archiveRoot,
+                dll_size, crc] in goodDlls[fileLower]: return False
             message = Installer._dllMsg(fileLower, full, archiveRoot,
                                         desc, ext, badDlls, goodDlls)
             if not balt.askYes(balt.Link.Frame,message, dialogTitle):
-                badDlls[fileLower].append([archiveRoot,size,crc])
-                bass.settings['bash.installers.badDlls'] = Installer._badDlls
+                badDlls[fileLower].append([archiveRoot, dll_size, crc])
+                bass.settings[u'bash.installers.badDlls'] = Installer._badDlls
                 return True
-            goodDlls[fileLower].append([archiveRoot,size,crc])
-            bass.settings['bash.installers.goodDlls'] = Installer._goodDlls
+            goodDlls[fileLower].append([archiveRoot, dll_size, crc])
+            bass.settings[u'bash.installers.goodDlls'] = Installer._goodDlls
             return False
         if bush.game.Se.se_abbrev:
             _obse = partial(__skipExecutable,
@@ -626,6 +635,7 @@ class Installer(object):
         self.hasWizard = self.hasBCF = self.hasReadme = False
         self.packageDoc = self.packagePic = None # = self.extras_dict['readMe']
         for attr in {'skipExtFiles','skipDirFiles','espms'}:
+            ##: is the object. necessary?
             object.__getattribute__(self,attr).clear()
         dest_src = bolt.LowerDict()
         #--Bad archive?
@@ -663,7 +673,7 @@ class Installer(object):
         hasExtraData = self.hasExtraData
         # exclude u'' from active subpackages
         activeSubs = (
-            set(x for x, y in zip(self.subNames[1:], self.subActives[1:]) if y)
+            {x for x, y in izip(self.subNames[1:], self.subActives[1:]) if y}
             if bain_type == 2 else set())
         data_sizeCrc = bolt.LowerDict()
         skipDirFiles = self.skipDirFiles
@@ -675,9 +685,9 @@ class Installer(object):
         plugin_extensions = bush.game.espm_extensions
         reReadMeMatch = Installer.reReadMe.match
         #--Scan over fileSizeCrcs
-        root_path = self.extras_dict.get('root_path', u'')
+        root_path = self.extras_dict.get(u'root_path', u'')
         rootIdex = len(root_path)
-        # For backwards compatibility - drop in 308
+        # For backwards compatibility - drop on VDATA3
         self._fixme_drop__fomod_backwards_compat()
         fm_active = self.extras_dict.get(u'fomod_active', False)
         fm_dict = self.extras_dict.get(u'fomod_dict', {})
@@ -694,9 +704,8 @@ class Installer(object):
                 self.has_fomod_conf = full
                 skipDirFilesDiscard(file_relative)
                 continue
-            elif fm_active:
-                if full not in fm_dict:
-                    continue # Pretend all unselected FOMOD files don't exist
+            fm_present = full in fm_dict
+            if fm_active and fm_present:
                 # Remap selected FOMOD files to usable paths
                 file_relative = fm_dict[full]
                 fileLower = file_relative.lower()
@@ -728,7 +737,7 @@ class Installer(object):
                         self.hasWizard = full
                         skipDirFilesDiscard(file_relative)
                         continue
-                    elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+                    elif fileExt == defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
                         self.hasBCF = full
                         skipDirFilesDiscard(file_relative)
                         continue
@@ -770,6 +779,12 @@ class Installer(object):
                 dest = Installer._attributes_process[fileExt](
                     self, fileLower, full, fileExt, file_relative, sub)
                 if dest is None: continue
+            if fm_active and not fm_present:
+                # Pretend all unselected FOMOD files don't exist, but only
+                # after giving them a chance to process up above - that way
+                # packages that include both a wizard and an FOMOD installer
+                # will work (as well as BCFs)
+                continue
             if fileExt in global_skip_ext: continue # docs treated above
             elif fileExt in Installer._executables_process: # and handle execs
                 if Installer._executables_process[fileExt](
@@ -815,10 +830,8 @@ class Installer(object):
 
     def _find_root_index(self, _os_sep=os_sep, skips_start=_silentSkipsStart):
         # basically just care for skips and complex/simple packages
-        #--Sort file names
-        sort_keys_dict = dict( # sort as (dir_path, filename) pairs
-            (x, os.path.split(x[0].lower())) for x in self.fileSizeCrcs)
-        self.fileSizeCrcs.sort(key=sort_keys_dict.__getitem__)
+        # Sort file names as (dir_path, filename) pairs
+        self.fileSizeCrcs.sort(key=lambda x: os.path.split(x[0].lower()))
         #--Find correct starting point to treat as BAIN package
         self.extras_dict.pop(u'root_path', None)
         self.fileRootIdex = 0
@@ -837,28 +850,27 @@ class Installer(object):
                 if dirName not in layout and layout:
                     # A second directory in the archive root, start in the root
                     break
-                root = layoutSetdefault(dirName,{'dirs':{},'files':False})
+                root = layoutSetdefault(dirName,{u'dirs':{},u'files':False})
                 for frag in frags[1:-1]:
-                    root = root['dirs'].setdefault(frag,{'dirs':{},'files':False})
+                    root = root[u'dirs'].setdefault(frag,{u'dirs':{},u'files':False})
                 # the last frag is a file, so its parent dir has files
-                root['files'] = True
+                root[u'files'] = True
         else:
             if not layout: return
-            rootStr = layout.keys()[0]
+            rootStr = next(iter(layout))
             if rootStr.lower() in dataDirsPlus: return
             root = layout[rootStr]
             rootStr = u''.join((rootStr, _os_sep))
             data_dir = bush.game.mods_dir.lower()
             while True:
-                if root['files']:
+                if root[u'files']:
                     # There are files in this folder, call it the starting point
                     break
-                rootDirs = root['dirs']
-                rootDirKeys = rootDirs.keys()
-                if len(rootDirKeys) == 1:
+                rootDirs = root[u'dirs']
+                if len(rootDirs) == 1:
                     # Only one subfolder, see if it's either the data folder,
                     # or an accepted Data sub-folder
-                    rootDirKey = rootDirKeys[0]
+                    rootDirKey = list(rootDirs)[0]
                     rootDirKeyL = rootDirKey.lower()
                     if rootDirKeyL in dataDirsPlus or rootDirKeyL == data_dir:
                         # Found suitable starting point
@@ -869,7 +881,7 @@ class Installer(object):
                 else:
                     # Multiple folders, stop here even if it's no good
                     break
-            self.extras_dict['root_path'] = rootStr # keeps case
+            self.extras_dict[u'root_path'] = rootStr # keeps case
             self.fileRootIdex = len(rootStr)
 
     def _remap_files(self, dest, fileLower, rootLower, fileExt, file_relative,
@@ -931,7 +943,7 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         # hasExtraData is NOT taken into account when calculating package
         # structure or the root_path
-        root_path = self.extras_dict.get('root_path', u'')
+        root_path = self.extras_dict.get(u'root_path', u'')
         for full, size, crc in self.fileSizeCrcs:#break if type=1 else churn on
             if root_path: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
@@ -959,7 +971,8 @@ class Installer(object):
         #--SubNames, SubActives
         if bain_type == 2:
             self.subNames = sorted(subNameSet,key=unicode.lower)
-            actives = set(x for x,y in zip(self.subNames,self.subActives) if (y or x == u''))
+            actives = {x for x, y in izip(self.subNames, self.subActives)
+                       if (y or x == u'')}
             if len(self.subNames) == 2: #--If only one subinstall, then make it active.
                 self.subActives = [True,True] # that's a complex/simple package
             else:
@@ -1040,7 +1053,7 @@ class Installer(object):
         project = outDir.join(project)
         with project.unicodeSafe() as projectDir:
             #--Dump file list
-            with self.tempList.open('w',encoding='utf-8-sig') as out:
+            with self.tempList.open(u'w', encoding=u'utf-8-sig') as out:
                 if release:
                     out.write(u'*thumbs.db\n')
                     out.write(u'*desktop.ini\n')
@@ -1049,8 +1062,8 @@ class Installer(object):
             #--Compress
             command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
                        u'-x@%s -scsUTF-8 -sccUTF-8' % (
-                archives.exe7z, outFile.temp.s, archiveType, solid,
-                outDir.s, projectDir.s, self.tempList.s))
+                archives.exe7z, outFile.temp, archiveType, solid,
+                outDir, projectDir, self.tempList))
             try:
                 # Safe to call without unicodeSafe because the name we chose is
                 # static and therefore guaranteed ASCII. Note that we lie a bit
@@ -1062,28 +1075,19 @@ class Installer(object):
                 self.tempList.remove()
             outFile.moveTo(realOutFile)
 
-    def removeEmpties(self, target_dir=None):
-        """Removes empty directories from project directory."""
-        if not target_dir:
-            if not self.is_project():
-                raise StateError(u'removeEmpties must be either given a path '
-                                 u'or used on a project.')
-            target_dir = self.ipath.s
-        empties = set()
-        for asDir, sDirs, sFiles in bolt.walkdir(target_dir):
-            if not (sDirs or sFiles): empties.add(GPath(asDir))
-        for empty in empties: empty.removedirs()
-        self.ipath.makedirs() #--In case it just got wiped out.
-
-    def _do_sync_data(self, proj_dir, delta_files):
+    def _do_sync_data(self, proj_dir, delta_files, progress):
         """Performs a Sync from Data on the specified project directory with
         the specified missing or mismatched files."""
         data_dir_join = bass.dirs[u'mods'].join
         norm_ghost_get = Installer.getGhosted().get
         upt_numb = del_numb = 0
         proj_dir_join = proj_dir.join
+        progress.setFull(len(delta_files))
         for rel_src, rel_dest in self.refreshDataSizeCrc().iteritems():
             if rel_src not in delta_files: continue
+            progress(del_numb + upt_numb,
+                     _(u'Syncing from %s folder...') % bush.game.mods_dir +
+                     u'\n' + rel_src)
             full_src = data_dir_join(norm_ghost_get(rel_src, rel_src))
             full_dest = proj_dir_join(rel_dest)
             if not full_src.exists():
@@ -1093,35 +1097,16 @@ class Installer(object):
                 full_src.copyTo(full_dest)
                 upt_numb += 1
         if upt_numb or del_numb:
-            self.removeEmpties(proj_dir.s)
+            # Remove empty directories from project directory
+            empties = set()
+            for asDir, sDirs, sFiles in bolt.walkdir(proj_dir.s):
+                if not (sDirs or sFiles): empties.add(GPath(asDir))
+            for empty in empties: empty.removedirs()
+            self.abs_path.makedirs()  #--In case it just got wiped out.
         return upt_numb, del_numb
 
     def size_or_mtime_changed(self, apath):
-        return (self.size, self.modified) != apath.size_mtime()
-
-    def _installer_rename(self, idata_, newName):
-        """Rename package or project."""
-        g_path = GPath(self.archive)
-        if newName != g_path:
-            newPath = bass.dirs[u'installers'].join(newName)
-            if not newPath.exists():
-                DataStore._rename_operation(idata_, g_path, newName)
-                #--Add the new archive to Bash and remove old one
-                idata_[newName] = self
-                del idata_[g_path]
-                #--Update the iniInfos & modInfos for 'installer'
-                from . import modInfos, iniInfos
-                mfiles = [x for x in modInfos.table.getColumn('installer') if
-                          modInfos.table[x]['installer'] == self.archive]
-                ifiles = [x for x in iniInfos.table.getColumn('installer') if
-                          iniInfos.table[x]['installer'] == self.archive]
-                self.archive = newName.s # don't forget to rename !
-                for i in mfiles:
-                    modInfos.table[i]['installer'] = self.archive
-                for i in ifiles:
-                    iniInfos.table[i]['installer'] = self.archive
-                return True, bool(mfiles), bool(ifiles)
-        return False, False, False
+        return (self.fsize, self.modified) != apath.size_mtime()
 
     def open_readme(self): self._open_txt_file(self.hasReadme)
     def open_wizard(self): self._open_txt_file(self.hasWizard)
@@ -1131,6 +1116,9 @@ class Installer(object):
 
     def __repr__(self):
         return u'%s<%r>' % (self.__class__.__name__, self.archive)
+
+    def __str__(self):
+        return self.archive
 
     #--ABSTRACT ---------------------------------------------------------------
     def _refreshSource(self, progress, recalculate_project_crc):
@@ -1144,10 +1132,10 @@ class Installer(object):
         raise AbstractError
 
     def install(self, destFiles, progress=None):
-        """Install specified files to Game\Data directory."""
+        """Install specified files to Data directory."""
         destFiles = set(destFiles)
         dest_src = self.refreshDataSizeCrc(True)
-        for k in dest_src.keys():
+        for k in list(dest_src):
             if k not in destFiles: del dest_src[k]
         if not dest_src: return bolt.LowerDict(), set(), set(), set()
         progress = progress if progress else bolt.Progress()
@@ -1200,25 +1188,37 @@ class Installer(object):
 
     def listSource(self):
         """Return package structure as text."""
-        with sio() as out:
-            log = bolt.LogFile(out)
-            log.setHeader(u'%s ' % self.archive + _(u'Package Structure:'))
-            log(u'[spoiler]\n', False)
-            self._list_package(self.ipath, log)
-            log(u'[/spoiler]')
-            return bolt.winNewLines(log.out.getvalue())
+        log = bolt.LogFile(io.StringIO())
+        log.setHeader(u'%s ' % self + _(u'Package Structure:'))
+        log(u'[spoiler]\n', False)
+        self._list_package(self.abs_path, log)
+        log(u'[/spoiler]')
+        return bolt.winNewLines(log.out.getvalue())
 
     @staticmethod
     def _list_package(apath, log): raise AbstractError
 
-    def renameInstaller(self, name_new, data):
+    def renameInstaller(self, name_new, idata_):
         """Rename installer and return a three tuple specifying if a refresh in
-        mods and ini lists is needed.
-        :rtype: tuple
-        """
-        raise AbstractError
+        mods and ini lists is needed. name_new must be tested (via unique name)
+        otherwise we will overwrite! Currently only called in rename_operation
+        from InstallersList.try_rename - this passes a unique name in.
+        :rtype: tuple"""
+        super(InstallersData, idata_).rename_operation(self, name_new)
+        #--Update the iniInfos & modInfos for 'installer'
+        from . import modInfos, iniInfos
+        ##: self.archive still the old value (should be set in super but no "name" attr)
+        mfiles = [x for x in modInfos.table.getColumn(u'installer') if
+                  modInfos.table[x][u'installer'] == self.archive] ##: ci comparison!
+        ifiles = [x for x in iniInfos.table.getColumn(u'installer') if
+                  iniInfos.table[x][u'installer'] == self.archive]
+        for i in mfiles:
+            modInfos.table[i][u'installer'] = name_new.s
+        for i in ifiles:
+            iniInfos.table[i][u'installer'] = name_new.s
+        return True, bool(mfiles), bool(ifiles)
 
-    def sync_from_data(self, delta_files):
+    def sync_from_data(self, delta_files, progress):
         """Updates this installer according to the specified files in the Data
         directory.
 
@@ -1231,9 +1231,28 @@ class InstallerMarker(Installer):
     """Represents a marker installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
+    _is_filename = False
+
+    @staticmethod
+    def _new_name(base_name, count):
+        cnt_str = (u' (%d)' % count) if count else u''
+        return GPath_no_norm(u'==' + base_name.s.strip(u'=') + cnt_str + u'==')
+
+    def unique_key(self, new_root, ext=u'', add_copy=False):
+        new_name = GPath_no_norm(new_root + (_(u' Copy') if add_copy else u''))
+        if new_name.s == self.ci_key.s: # allow change of case
+            return None
+        return self.unique_name(new_name)
 
     @classmethod
     def is_marker(cls): return True
+
+    @classmethod
+    def rename_area_idxs(cls, text_str, start=0, stop=None):
+        """Markers, change the selection to not include the '=='."""
+        if text_str[:2] == text_str[-2:] == u'==':
+            return 2, len(text_str) - 2
+        return 0, len(text_str)
 
     def __init__(self,archive):
         Installer.__init__(self,archive)
@@ -1241,9 +1260,8 @@ class InstallerMarker(Installer):
 
     def __reduce__(self):
         from . import InstallerMarker as boshInstallerMarker
-        self._fixme_drop__for_loading_in_previous_versions()
         return boshInstallerMarker, (GPath(self.archive),), tuple(
-            imap(self.__getattribute__, self.persistent))
+            getattr(self, a) for a in self.persistent)
 
     @property
     def num_of_files(self): return -1
@@ -1260,17 +1278,10 @@ class InstallerMarker(Installer):
         pass
 
     def install(self, destFiles, progress=None):
-        """Install specified files to Oblivion\Data directory."""
+        """Install specified files to Data directory."""
         pass
 
-    def renameInstaller(self, name_new, data):
-        archive = GPath(self.archive)
-        if name_new == archive:
-            return False, False, False
-        #--Add the marker to Bash and remove old one
-        self.archive = name_new.s
-        data[name_new] = self
-        del data[archive]
+    def renameInstaller(self, name_new, idata_):
         return True, False, False
 
     def refreshBasic(self, progress, recalculate_project_crc=True):
@@ -1281,21 +1292,42 @@ class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Archive')
+    _valid_exts_re = u'' r'(\.(?:' + u'|'.join(
+        ext[1:] for ext in archives.readExts) + u'))'
 
     @classmethod
     def is_archive(cls): return True
 
+    @classmethod
+    def validate_filename_str(cls, name_str, allowed_exts=archives.writeExts,
+                              use_default_ext=False, __7z=archives.defaultExt):
+        r, e = os.path.splitext(name_str)
+        if allowed_exts and e.lower() not in allowed_exts:
+            if not use_default_ext:
+                return _(u'%s does not have correct extension (%s).') % (
+                    name_str, u', '.join(allowed_exts)), None
+            msg = _(u'The %s extension is unsupported. Using %s instead.') % (
+                e, __7z)
+            name_str, e = r + __7z, __7z
+        else: msg = u''
+        name_path, root = super(Installer, cls).validate_filename_str(name_str,
+                                                                      {e})
+        if root is None:
+            return name_path, None
+        if msg: # propagate the msg for extension change
+            return name_path, (root, msg)
+        return name_path, root
+
     def __reduce__(self):
         from . import InstallerArchive as boshInstallerArchive
-        self._fixme_drop__for_loading_in_previous_versions()
         return boshInstallerArchive, (GPath(self.archive),), tuple(
-            imap(self.__getattribute__, self.persistent))
+            getattr(self, a) for a in self.persistent)
 
     #--File Operations --------------------------------------------------------
     def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self.size, self.modified = self.ipath.size_mtime() ##: aka _file_size _file_mod_time
+        self.fsize, self.modified = self.abs_path.size_mtime() ##: aka _file_mod_time
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
@@ -1304,7 +1336,7 @@ class InstallerArchive(Installer):
             __slots__ = ()
         def _parse_archive_line(key, value):
             if   key == u'Solid': self.isSolid = (value[0] == u'+')
-            elif key == u'Path': _li.filepath = value.decode('utf8')
+            elif key == u'Path': _li.filepath = value.decode(u'utf8')
             elif key == u'Size': _li.size = int(value)
             elif key == u'Attributes': _li.isdir = value and (u'D' in value)
             elif key == u'CRC' and value: _li.crc = int(value,16)
@@ -1314,12 +1346,12 @@ class InstallerArchive(Installer):
                     fileSizeCrcs.append((_li.filepath, _li.size, _li.crc))
                     _li.cumCRC += _li.crc
                 _li.filepath = _li.size = _li.crc = _li.isdir = 0
-        with self.ipath.unicodeSafe() as tempArch:
+        with self.abs_path.unicodeSafe() as tempArch:
             try:
                 list_archive(tempArch, _parse_archive_line)
                 self.crc = _li.cumCRC & 0xFFFFFFFF
             except:
-                archive_msg = u"Unable to read archive '%s'." % self.ipath.s
+                archive_msg = u"Unable to read archive '%s'." % self.abs_path
                 deprint(archive_msg, traceback=True)
                 raise InstallerArchiveError(archive_msg)
 
@@ -1328,15 +1360,15 @@ class InstallerArchive(Installer):
         from archive to self.tempDir. progress will be zeroed so pass a
         SubProgress in.
         fileNames: File names (not paths)."""
-        if not fileNames: raise ArgumentError(
-            u'No files to extract for %s.' % self.archive)
+        if not fileNames:
+            raise ArgumentError(u'No files to extract for %s.' % self)
         # expand wildcards in fileNames to get actual count of files to extract
         #--Dump file list
-        with self.tempList.open('w',encoding='utf8') as out:
+        with self.tempList.open(u'w', encoding=u'utf8') as out:
             out.write(u'\n'.join(fileNames))
         #--Ensure temp dir empty
         bass.rmTempDir()
-        with self.ipath.unicodeSafe() as arch:
+        with self.abs_path.unicodeSafe() as arch:
             if progress:
                 progress.state = 0
                 progress.setFull(len(fileNames))
@@ -1353,11 +1385,11 @@ class InstallerArchive(Installer):
 
     def _install(self, dest_src, progress):
         #--Extract
-        progress(0, self.archive + u'\n' + _(u'Extracting files...'))
+        progress(0, (u'%s\n' % self) + _(u'Extracting files...'))
         unpackDir = self.unpackToTemp(dest_src.values(),
                                       SubProgress(progress, 0, 0.9))
         #--Rearrange files
-        progress(0.9, self.archive + u'\n' + _(u'Organizing files...'))
+        progress(0.9, (u'%s\n' % self) + _(u'Organizing files...'))
         srcDirJoin = unpackDir.join
         subprogress = SubProgress(progress,0.9,1.0)
         subprogress.setFull(len(dest_src))
@@ -1374,10 +1406,10 @@ class InstallerArchive(Installer):
         destDir = bass.dirs[u'installers'].join(project)
         destDir.rmtree(safety=u'Installers')
         #--Extract
-        progress(0,project.s+u'\n'+_(u'Extracting files...'))
+        progress(0,u'%s\n'%project+_(u'Extracting files...'))
         unpack_dir = self.unpackToTemp(files, SubProgress(progress, 0, 0.9))
         #--Move
-        progress(0.9,project.s+u'\n'+_(u'Moving files...'))
+        progress(0.9,u'%s\n'%project+_(u'Moving files...'))
         count = 0
         tempDirJoin = unpack_dir.join
         destDirJoin = destDir.join
@@ -1410,10 +1442,6 @@ class InstallerArchive(Installer):
             log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
                 os.sep if isdir else u''))
 
-    def renameInstaller(self, name_new, data):
-        return self._installer_rename(data,
-                                      name_new.root + GPath(self.archive).ext)
-
     def _open_txt_file(self, rel_path):
         with gui.BusyCursor():
             # This is going to leave junk temp files behind...
@@ -1427,28 +1455,6 @@ class InstallerArchive(Installer):
                 # Just allow Bash's atexit function to clean it when quitting.
                 pass
 
-    @staticmethod
-    def _fix_pngs(pngs_to_fix, progress=None):
-        """Runs pngcrush on extracted PNGs to fix invalid sRGB profiles, which
-        would otherwise cause a warning in wx3. Note that we only do this for
-        archives, since people working on projects _should_ see such
-        warnings.
-
-        :param pngs_to_fix: A list of strings denoting the PNGs that we have
-                            to look at.
-        :param progress: The (optional) progress dialog to update."""
-        if not pngs_to_fix: return # fastpath out, otherwise Progress errors
-        if progress:
-            progress.setFull(len(pngs_to_fix))
-        tmp_dir = bass.getTempDir()
-        for pngs_processed, target_png in enumerate(pngs_to_fix, start=1):
-            if progress:
-                progress(pngs_processed,
-                         u'\n%s\n%s' % (_(u'Fixing PNGs...'), target_png))
-            # Will pass through Popen, which tries to encode as ASCII
-            with tmp_dir.join(target_png).unicodeSafe() as ascii_png:
-                archives.fix_png(ascii_png.s)
-
     def _extract_wizard_files(self, wizard_file_name, wizard_prog_title):
         with balt.Progress(wizard_prog_title, u'\n' + u' ' * 60,
                            abort=True) as progress:
@@ -1460,11 +1466,8 @@ class InstallerArchive(Installer):
                                         u'gif', u'pcx', u'pnm', u'tif',
                                         u'tiff', u'tga', u'iff', u'xpm',
                                         u'ico', u'cur', u'ani',)))
-            pngs_to_fix = [p for p in files_to_extract if
-                           p.lower().endswith(u'.png')]
-            unpack_dir = self.unpackToTemp(files_to_extract,
-                bolt.SubProgress(progress,0,0.7), recurse=True)
-            self._fix_pngs(pngs_to_fix, bolt.SubProgress(progress, 0.7, 1.0))
+            unpack_dir = self.unpackToTemp(files_to_extract, progress,
+                                           recurse=True)
         return unpack_dir.join(wizard_file_name)
 
     def wizard_file(self):
@@ -1475,19 +1478,27 @@ class InstallerArchive(Installer):
         return self._extract_wizard_files(self.has_fomod_conf,
                                           _(u'Extracting FOMOD files...'))
 
-    def sync_from_data(self, delta_files): ##: add a progress param?
+    def sync_from_data(self, delta_files, progress):
         # Extract to a temp project, then perform the sync as if it were a
         # regular project and finally repack
         unpack_dir = self.unpackToTemp([x[0] for x in self.fileSizeCrcs],
-            recurse=True)
-        upt_numb, del_numb = self._do_sync_data(unpack_dir, delta_files)
+            recurse=True, progress=SubProgress(progress, 0.1, 0.4))
+        upt_numb, del_numb = self._do_sync_data(
+            unpack_dir, delta_files, progress=SubProgress(progress, 0.4, 0.5))
+        self.packToArchive(unpack_dir, self.writable_archive_name(),
+                           isSolid=True, blockSize=None,
+                           progress=SubProgress(progress, 0.5, 1.0))
+        bass.rmTempDir()
+        return upt_numb, del_numb
+
+    def writable_archive_name(self):
+        """Returns a version of the name of this archive with the file
+        extension changed to be writable (i.e. zip or 7z), if it isn't
+        already."""
         archive_name = GPath(self.archive)
         new_ext = (archive_name.cext if archive_name.cext in archives.writeExts
                    else archives.defaultExt)
-        self.packToArchive(unpack_dir, archive_name.root + new_ext,
-            isSolid=True, blockSize=None)
-        bass.rmTempDir()
-        return upt_numb, del_numb
+        return archive_name.root + new_ext
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -1498,11 +1509,14 @@ class InstallerProject(Installer):
     @classmethod
     def is_project(cls): return True
 
+    @staticmethod
+    def _new_name(base_name, count):
+        return base_name + ((u' (%d)' % count) if count else u'')
+
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
-        self._fixme_drop__for_loading_in_previous_versions()
         return boshInstallerProject, (GPath(self.archive),), tuple(
-            imap(self.__getattribute__, self.persistent))
+            getattr(self, a) for a in self.persistent)
 
     def _refresh_from_project_dir(self, progress=None,
                                   recalculate_all_crcs=False):
@@ -1514,7 +1528,7 @@ class InstallerProject(Installer):
         :return: max modification time for files/folders in project directory
         :rtype: int"""
         #--Scan for changed files
-        apRoot = self.ipath
+        apRoot = self.abs_path
         rootName = apRoot.stail
         progress = progress if progress else bolt.Progress()
         progress_msg = rootName + u'\n' + _(u'Scanning...')
@@ -1538,7 +1552,7 @@ class InstallerProject(Installer):
                 rpFile = os.path.join(rsDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
                 lstat = os.lstat(asFile)
-                size, date = lstat.st_size, int(lstat.st_mtime)
+                size, date = lstat.st_size, lstat.st_mtime
                 max_mtime = max_mtime if max_mtime >= date else date
                 oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
                 if size == oSize and date == oDate:
@@ -1550,31 +1564,31 @@ class InstallerProject(Installer):
                                pending_size, progress, recalculate_all_crcs,
                                rootName)
         #--Done
-        return int(max_mtime)
+        return max_mtime
 
     def size_or_mtime_changed(self, apath, _lstat=os.lstat):
         #FIXME(ut): getmtime(True) won't detect all changes - for instance COBL
         # has 3/25/2020 8:02:00 AM modification time if unpacked and no
         # amount of internal shuffling won't change its apath.getmtime(True)
         getM, join = os.path.getmtime, os.path.join
-        c, size = [], 0
+        c, proj_size = [], 0
         cExtend, cAppend = c.extend, c.append
         self._dir_dirs_files = []
         for root, d, files in bolt.walkdir(apath.s):
             cAppend(getM(root))
             lstats = [_lstat(join(root, f)) for f in files]
             cExtend(ls.st_mtime for ls in lstats)
-            size += sum(ls.st_size for ls in lstats)
+            proj_size += sum(ls.st_size for ls in lstats)
             self._dir_dirs_files.append((root, [], files)) # dirs is unused
-        if self.size != size: return True
+        if self.fsize != proj_size: return True
         # below is for the fix me - we need to add mtimes_str_crc extra persistent attribute to Installer
         # c.sort() # is this needed or os.walk will return the same order during program run
-        # mtimes_str = '.'.join(map(str, c))
+        # mtimes_str = b'.'.join([bytes(x) for x in c])
         # mtimes_str_crc = crc32(mtimes_str)
         try:
-            mtime = int(max(c))
+            mtime = max(c)
         except ValueError: # int(max([]))
-            mtime = 0
+            mtime = 0.0
         return self.modified != mtime
 
     def _refreshSource(self, progress, recalculate_project_crc):
@@ -1591,21 +1605,21 @@ class InstallerProject(Installer):
 ##            cumDate = max(date,cumDate)
             cumCRC += crc
             cumSize += size
-        self.size = cumSize
+        self.fsize = cumSize
         self.crc = cumCRC & 0xFFFFFFFF
         self.project_refreshed = True
 
     def _install(self, dest_src, progress):
         progress.setFull(len(dest_src))
-        progress(0, self.archive + u'\n' + _(u'Moving files...'))
+        progress(0, (u'%s\n' % self) + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files
-        srcDirJoin = self.ipath.join
+        srcDirJoin = self.abs_path.join
         return self._fs_install(dest_src, srcDirJoin, progress, progressPlus,
                                 None)
 
-    def sync_from_data(self, delta_files):
-        return self._do_sync_data(self.ipath, delta_files)
+    def sync_from_data(self, delta_files, progress):
+        return self._do_sync_data(self.abs_path, delta_files, progress)
 
     @staticmethod
     def _list_package(apath, log):
@@ -1621,14 +1635,11 @@ class InstallerProject(Installer):
                     log(u' ' * depth + entry)
         walkPath(apath.s, 0)
 
-    def renameInstaller(self, name_new, data):
-        return self._installer_rename(data, name_new)
+    def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
 
-    def _open_txt_file(self, rel_path): self.ipath.join(rel_path).start()
+    def wizard_file(self): return self.abs_path.join(self.hasWizard)
 
-    def wizard_file(self): return self.ipath.join(self.hasWizard)
-
-    def fomod_file(self): return self.ipath.join(self.has_fomod_conf)
+    def fomod_file(self): return self.abs_path.join(self.has_fomod_conf)
 
 def projects_walk_cache(func): ##: HACK ! Profile
     """Decorator to make sure I dont leak self._dir_dirs_files project cache.
@@ -1673,7 +1684,7 @@ class InstallersData(DataStore):
         self.bash_dir.makedirs()
         #--Persistent data
         self.dictFile = bolt.PickleDict(self.bash_dir.join(u'Installers.dat'))
-        self.data = {}
+        self._data = {}
         self.data_sizeCrcDate = bolt.LowerDict()
         from . import converters
         self.converters_data = converters.ConvertersData(bass.dirs[u'bainData'],
@@ -1695,12 +1706,12 @@ class InstallersData(DataStore):
     @property
     def hidden_dir(self): return bass.dirs[u'modsBash'].join(u'Hidden')
 
-    def add_marker(self, name, order):
+    def add_marker(self, marker_name, order):
         from . import InstallerMarker
-        self[name] = InstallerMarker(name)
+        self[marker_name] = InstallerMarker(marker_name)
         if order is None:
             order = self[self.lastKey].order
-        self.moveArchives([name], order)
+        self.moveArchives([marker_name], order)
 
     def setChanged(self,hasChanged=True):
         """Mark as having changed."""
@@ -1708,41 +1719,41 @@ class InstallersData(DataStore):
 
     def refresh(self, *args, **kwargs): return self.irefresh(*args, **kwargs)
 
-    def irefresh(self, progress=None, what='DIONSC', fullRefresh=False,
+    def irefresh(self, progress=None, what=u'DIONSC', fullRefresh=False,
                  refresh_info=None, deleted=None, pending=None, projects=None):
         progress = progress or bolt.Progress()
         #--Archive invalidation
         from . import oblivionIni, InstallerMarker, modInfos
-        if bass.settings.get('bash.bsaRedirection') and oblivionIni.abs_path.exists():
+        if bass.settings.get(u'bash.bsaRedirection') and oblivionIni.abs_path.exists():
             oblivionIni.setBsaRedirection(True)
         #--Load Installers.dat if not loaded - will set changed to True
         changed = not self.loaded and self.__load(progress)
         #--Last marker
-        if self.lastKey not in self.data:
-            self.data[self.lastKey] = InstallerMarker(self.lastKey)
+        if self.lastKey not in self:
+            self[self.lastKey] = InstallerMarker(self.lastKey)
         if fullRefresh: # BAIN uses modInfos crc cache
             with gui.BusyCursor(): modInfos.refresh_crcs()
         #--Refresh Other - FIXME(ut): docs
-        if 'D' in what:
+        if u'D' in what:
             changed |= self._refresh_from_data_dir(progress, fullRefresh)
-        if 'I' in what: changed |= self._refreshInstallers(
+        if u'I' in what: changed |= self._refreshInstallers(
             progress, fullRefresh, refresh_info, deleted, pending, projects)
-        if 'O' in what or changed: changed |= self.refreshOrder()
-        if 'N' in what or changed: changed |= self.refreshNorm()
-        if 'S' in what or changed: changed |= self.refreshInstallersStatus()
-        if 'C' in what or changed: changed |= \
+        if u'O' in what or changed: changed |= self.refreshOrder()
+        if u'N' in what or changed: changed |= self.refreshNorm()
+        if u'S' in what or changed: changed |= self.refreshInstallersStatus()
+        if u'C' in what or changed: changed |= \
             self.converters_data.refreshConverters(progress, fullRefresh)
         #--Done
         if changed: self.hasChanged = True
         return changed
 
     def __load(self, progress):
-        progress(0, _(u"Loading Data..."))
+        progress(0, _(u'Loading Data...'))
         self.dictFile.load()
         self.converters_data.load()
-        data = self.dictFile.data
-        self.data = data.get('installers', {})
-        pickle = data.get('sizeCrcDate', {})
+        pickl_data = self.dictFile.pickled_data
+        self._data = pickl_data.get(u'installers', {}) or pickl_data.get(b'installers', {})
+        pickle = pickl_data.get(u'sizeCrcDate', {}) or pickl_data.get(b'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
         # fixup: all markers had their archive attribute set to u'===='
@@ -1755,19 +1766,20 @@ class InstallersData(DataStore):
     def save(self):
         """Saves to pickle file."""
         if self.hasChanged:
-            self.dictFile.data['installers'] = self.data
-            self.dictFile.data['sizeCrcDate'] = dict( # FIXME: backwards compat
-                (GPath(x), y) for x, y in self.data_sizeCrcDate.iteritems())
-            # for backwards compatibility, drop
-            self.dictFile.data['crc_installer'] = dict(
-                (x.crc, x) for x in self.itervalues() if x.is_archive())
-            self.dictFile.vdata['version'] = 1
+            self.dictFile.pickled_data[u'installers'] = self._data
+            self.dictFile.pickled_data[u'sizeCrcDate'] = self.data_sizeCrcDate
+            self.dictFile.vdata[u'version'] = 2
             self.dictFile.save()
             self.converters_data.save()
             self.hasChanged = False
 
-    def _rename_operation(self, oldName, newName):
-        return self[oldName].renameInstaller(newName, self)
+    def rename_operation(self, member_info, newName):
+        rename_tuple = member_info.renameInstaller(newName, self)
+        if rename_tuple:
+            del self[member_info.ci_key]
+            member_info.archive = newName.s
+            self[newName] = member_info
+        return rename_tuple
 
     #--Dict Functions ---------------------------------------------------------
     def files_to_delete(self, filenames, **kwargs):
@@ -1784,10 +1796,10 @@ class InstallersData(DataStore):
         super(InstallersData, self)._delete_operation(paths, markers, **kwargs)
 
     def delete_refresh(self, deleted, markers, check_existence):
-        deleted = set(item.tail for item in deleted if
-                      not check_existence or not item.exists())
+        deleted = {item.tail for item in deleted
+                   if not check_existence or not item.exists()}
         if deleted:
-            self.irefresh(what='I', deleted=deleted)
+            self.irefresh(what=u'I', deleted=deleted)
         elif markers:
             self.refreshOrder()
 
@@ -1810,7 +1822,7 @@ class InstallersData(DataStore):
     def move_infos(self, sources, destinations, window, bash_frame):
         moved = super(InstallersData, self).move_infos(sources, destinations,
                                                        window, bash_frame)
-        self.irefresh(what='I', pending=moved)
+        self.irefresh(what=u'I', pending=moved)
         return moved
 
     #--Refresh Functions ------------------------------------------------------
@@ -1855,14 +1867,14 @@ class InstallersData(DataStore):
             self.pop(deleted)
         pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
-        for subPending, is_project in zip(
+        for subPending, is_project_type in izip(
                 (pending - projects, pending & projects), (False, True)):
             if not subPending: continue
-            progress(0,_(u"Scanning Packages..."))
+            progress(0,_(u'Scanning Packages...'))
             progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
-                progress(index,_(u'Scanning Packages...')+u'\n'+package.s)
-                self.refresh_installer(package, is_project, progress,
+                progress(index, _(u'Scanning Packages...') + u'\n%s' % package)
+                self.refresh_installer(package, is_project_type, progress,
                                        _index=index, _fullRefresh=fullRefresh)
         return changed
 
@@ -1879,7 +1891,7 @@ class InstallersData(DataStore):
         installer.refreshBasic(progress, recalculate_project_crc=_fullRefresh)
         if progress: progress(1.0, _(u'Done'))
         if do_refresh:
-            self.irefresh(what='NS')
+            self.irefresh(what=u'NS')
         return installer
 
     def applyEmbeddedBCFs(self, installers=None, destArchives=None,
@@ -1889,12 +1901,12 @@ class InstallersData(DataStore):
                           x.is_archive() and x.hasBCF]
         if not installers: return [], []
         if not destArchives:
-            destArchives = [GPath(u'[Auto applied BCF] %s' % x.archive) for x
+            destArchives = [GPath(u'[Auto applied BCF] %s' % x) for x
                             in installers]
         progress.setFull(len(installers))
         pending = []
-        for i, (installer, destArchive) in enumerate(zip(installers,
-                        destArchives)): # no izip - we may modify installers
+        for i, (installer, destArchive) in list(enumerate(izip(
+                installers, destArchives))): # we may modify installers below
             progress(i, installer.archive)
             #--Extract the embedded BCF and move it to the Converters folder
             unpack_dir = installer.unpackToTemp([installer.hasBCF],
@@ -1906,7 +1918,7 @@ class InstallersData(DataStore):
             #--Create the converter, apply it
             converter = InstallerConverter(bcfFile.tail)
             try:
-                msg = u'%s: ' % destArchive.s + _(
+                msg = u'%s: ' % destArchive + _(
                     u'An error occurred while applying an Embedded BCF.')
                 self.apply_converter(converter, destArchive,
                                      SubProgress(progress, i + 0.5, i + 1.0),
@@ -1917,7 +1929,7 @@ class InstallersData(DataStore):
                 # installer.hasBCF = False
                 installers.remove(installer)
             finally: bcfFile.remove()
-        self.irefresh(what='I', pending=pending)
+        self.irefresh(what=u'I', pending=pending)
         return pending, list(GPath(x.archive) for x in installers)
 
     def apply_converter(self, converter, destArchive, progress, msg,
@@ -1942,7 +1954,7 @@ class InstallersData(DataStore):
             if pending is not None: # caller must take care of the else below !
                 pending.append(destArchive)
             else:
-                self.irefresh(what='I', pending=[destArchive])
+                self.irefresh(what=u'I', pending=[destArchive])
                 return iArchive
         except StateError:
             deprint(msg, traceback=True)
@@ -1972,7 +1984,7 @@ class InstallersData(DataStore):
                     pending.add(item)
                     continue
                 elif installer and not fullRefresh and (installer.skipRefresh
-                       or not bass.settings['bash.installers.autoRefreshProjects']):
+                       or not bass.settings[u'bash.installers.autoRefreshProjects']):
                     installers.add(item) # installer is present
                     continue # and needs not refresh
             else:
@@ -1981,8 +1993,7 @@ class InstallersData(DataStore):
                     apath):
                 pending.add(item)
             else: installers.add(item)
-        deleted = set(x for x, y in self.iteritems() if
-                      not y.is_marker()) - installers - pending
+        deleted = set(self.ipackages(self)) - installers - pending
         refresh_info = self._RefreshInfo(deleted, pending, projects)
         return refresh_info
 
@@ -1995,11 +2006,11 @@ class InstallersData(DataStore):
         """Refresh installer status."""
         inOrder, pending = [], []
         # not specifying the key below results in double time
-        for archive, installer in sorted(self.iteritems(), key=itemgetter(0)):
+        for iname, installer in dict_sort(self):
             if installer.order >= 0:
-                inOrder.append((archive, installer))
+                inOrder.append((iname, installer))
             else:
-                pending.append((archive, installer))
+                pending.append((iname, installer))
         inOrder.sort(key=lambda x: x[1].order)
         for dex, (key, value) in enumerate(inOrder):
             if self.lastKey == key:
@@ -2008,7 +2019,7 @@ class InstallersData(DataStore):
         else:
             inOrder += pending
         changed = False
-        for order, (archive, installer) in enumerate(inOrder):
+        for order, (iname, installer) in enumerate(inOrder):
             if installer.order != order:
                 installer.order = order
                 changed = True
@@ -2062,11 +2073,11 @@ class InstallersData(DataStore):
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
             if asDir == asRoot: InstallersData._skips_in_data_dir(sDirs)
             dirDirsFilesAppend((asDir, sDirs, sFiles))
-        progress(0, _(u"%s: Scanning...") % bass.dirs[u'mods'].stail)
+        progress(0, _(u'%s: Scanning...') % bass.dirs[u'mods'].stail)
         new_sizeCrcDate, pending, pending_size = \
             self._process_data_dir(dirDirsFiles, progress)
         #--Remove empty dirs?
-        if not bass.settings['bash.installers.removeEmptyDirs']:
+        if not bass.settings[u'bash.installers.removeEmptyDirs']:
             for empty in emptyDirs:
                 try: empty.removedirs()
                 except OSError: pass
@@ -2099,11 +2110,12 @@ class InstallersData(DataStore):
         oldGet = self.data_sizeCrcDate.get
         ghost_norm = bolt.LowerDict(
             (y, x) for x, y in Installer.getGhosted().iteritems())
-        if bass.settings['bash.installers.autoRefreshBethsoft']:
+        if bass.settings[u'bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
         else:
-            bethFiles = LowerDict.fromkeys(set(
-                map(CIstr, bush.game.bethDataFiles)) - self.overridden_skips)
+            beth_keys = {CIstr(b) for b in
+                         bush.game.bethDataFiles} - self.overridden_skips
+            bethFiles = LowerDict.fromkeys(beth_keys)
         skipExts = Installer.skipExts
         relPos = len(bass.dirs[u'mods'].s) + 1
         for index, (asDir, __sDirs, sFiles) in enumerate(dirDirsFiles):
@@ -2121,17 +2133,17 @@ class InstallersData(DataStore):
                 asFile = os.path.join(asDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
                 try:
-                    oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
+                    oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0.0))
                     if top_level_espm: # modInfos MUST BE UPDATED
                         try:
                             modInfo = modInfos[GPath(rpFile)]
-                            new_sizeCrcDate[rpFile] = (modInfo.size,
+                            new_sizeCrcDate[rpFile] = (modInfo.fsize,
                                modInfo.cached_mod_crc(), modInfo.mtime, asFile)
                             continue
                         except KeyError:
                             pass # corrupted/missing, let os.lstat decide
                     lstat = os.lstat(asFile)
-                    size, date = lstat.st_size, int(lstat.st_mtime)
+                    size, date = lstat.st_size, lstat.st_mtime
                     if size != oSize or date != oDate:
                         pending[rpFile] = (size, oCrc, date, asFile)
                         pending_size += size
@@ -2151,21 +2163,21 @@ class InstallersData(DataStore):
     def _skips_in_data_dir(sDirs):
         """Skip some top level directories based on global settings - EVEN
         on a fullRefresh."""
-        setSkipOBSE = not bass.settings['bash.installers.allowOBSEPlugins']
-        setSkipDocs = bass.settings['bash.installers.skipDocs']
-        setSkipImages = bass.settings['bash.installers.skipImages']
+        setSkipOBSE = not bass.settings[u'bash.installers.allowOBSEPlugins']
+        setSkipDocs = bass.settings[u'bash.installers.skipDocs']
+        setSkipImages = bass.settings[u'bash.installers.skipImages']
         newSDirs = (x for x in sDirs if
                     x.lower() not in Installer.dataDirsMinus)
-        if bass.settings['bash.installers.skipDistantLOD']:
+        if bass.settings[u'bash.installers.skipDistantLOD']:
             newSDirs = (x for x in newSDirs if x.lower() != u'distantlod')
-        if bass.settings['bash.installers.skipLandscapeLODMeshes']:
+        if bass.settings[u'bash.installers.skipLandscapeLODMeshes']:
             newSDirs = (x for x in newSDirs if x.lower() != os.path.join(
                 u'meshes', u'landscape', u'lod'))
-        if bass.settings['bash.installers.skipScreenshots']:
+        if bass.settings[u'bash.installers.skipScreenshots']:
             newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
         # LOD textures
-        if bass.settings['bash.installers.skipLandscapeLODTextures'] and \
-                bass.settings['bash.installers.skipLandscapeLODNormals']:
+        if bass.settings[u'bash.installers.skipLandscapeLODTextures'] and \
+                bass.settings[u'bash.installers.skipLandscapeLODNormals']:
             newSDirs = (x for x in newSDirs if x.lower() != os.path.join(
                 u'textures', u'landscapelod', u'generated'))
         if setSkipOBSE:
@@ -2187,11 +2199,11 @@ class InstallersData(DataStore):
         :type dest_paths: set[unicode]"""
         root_files = []
         norm_ghost = Installer.getGhosted()
-        for path in dest_paths:
-            sp = path.rsplit(os.sep, 1) # split into ['rel_path, 'file']
+        for data_path in dest_paths:
+            sp = data_path.rsplit(os.sep, 1) # split into ['rel_path, 'file']
             if len(sp) == 1: # top level file
-                name = norm_ghost.get(path, path)
-                root_files.append((bass.dirs[u'mods'].s, name))
+                data_path = norm_ghost.get(data_path, data_path)
+                root_files.append((bass.dirs[u'mods'].s, data_path))
             else:
                 root_files.append((bass.dirs[u'mods'].join(sp[0]).s, sp[1]))
         root_dirs_files = []
@@ -2218,7 +2230,7 @@ class InstallersData(DataStore):
         new_skips_overrides = self.overridden_skips - set(self.data_sizeCrcDate)
         progress = progress or bolt.Progress()
         progress(0, (
-            _(u"%s: Skips overrides...") % bass.dirs[u'mods'].stail) + u'\n')
+            _(u'%s: Skips overrides...') % bass.dirs[u'mods'].stail) + u'\n')
         self.update_data_SizeCrcDate(new_skips_overrides, progress)
 
     @staticmethod
@@ -2263,24 +2275,26 @@ class InstallersData(DataStore):
                 changed.add(abspath)
         do_refresh = False
         for apath in changed | deleted:
-            # the Game/Data dir - will give correct relative path for both
+            # the Data dir - will give correct relative path for both
             # Ini tweaks and mods - those are keyed in data by rel path...
             relpath = apath.relpath(bass.dirs[u'mods'])
             # ghosts...
-            key = relpath.root.s if relpath.cs[-6:] == u'.ghost' else relpath.s
+            path_key = (relpath.root.s if relpath.cs[-6:] == u'.ghost'
+                        else relpath.s)
             if apath in deleted:
-                do_refresh |= bool(self.data_sizeCrcDate.pop(key, None))
+                do_refresh |= bool(self.data_sizeCrcDate.pop(path_key, None))
             else:
-                self.data_sizeCrcDate[key] = (apath.size,apath.crc,apath.mtime)
+                s, m = apath.size_mtime()
+                self.data_sizeCrcDate[path_key] = (s, apath.crc, m)
                 do_refresh = True
         return do_refresh # Some tracked files changed, update installers status
 
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):
         """Move specified archives to specified position."""
-        old_ordered = self.sorted_values(set(self.data) - set(moveList))
+        old_ordered = self.sorted_values(set(self) - set(moveList))
         new_ordered = self.sorted_values(moveList)
-        if newPos >= len(self.keys()): newPos = len(old_ordered)
+        if newPos >= len(self): newPos = len(old_ordered)
         for index, installer in enumerate(old_ordered[:newPos]):
             installer.order = index
         for index, installer in enumerate(new_ordered):
@@ -2359,9 +2373,9 @@ class InstallersData(DataStore):
                 tweakPath.remove()
                 continue
             # Re-write the tweak
-            with tweakPath.open('w') as ini_:
+            with tweakPath.open(u'w') as ini_:
                 ini_.write(u'; INI Tweak created by Wrye Bash, using settings '
-                          u'from old file.\n\n')
+                           u'from old file.\n\n')
                 ini_.writelines(lines)
             # we notify BAIN below, although highly improbable the created ini
             # is included to a package
@@ -2378,7 +2392,7 @@ class InstallersData(DataStore):
         mask = set()
         if last:
             self.moveArchives(packages, len(self))
-        to_install = set(self[x] for x in packages)
+        to_install = {self[x] for x in packages}
         min_order = min(x.order for x in to_install)
         #--Install packages in turn
         progress.setFull(len(packages))
@@ -2445,9 +2459,10 @@ class InstallersData(DataStore):
         :type package_keys: None | collections.Iterable[Path]
         :rtype: list[(Path, Installer)]
         """
-        if package_keys is None: pairs = self.items()
-        else: pairs = [(k, self[k]) for k in package_keys]
-        return sorted(pairs, key=lambda tup: tup[1].order, reverse=reverse)
+        pairs = self if package_keys is None else {k: self[k] for k in
+                                                   package_keys}
+        return dict_sort(pairs, key_f=lambda k: pairs[k].order,
+                         reverse=reverse)
 
     def sorted_values(self, package_keys=None, reverse=False):
         """Return installers for package_keys in self, sorted by install order.
@@ -2462,7 +2477,7 @@ class InstallersData(DataStore):
                      override=True):
         try: return self._install(packages, refresh_ui, progress, last,
                                   override)
-        finally: self.irefresh(what='NS')
+        finally: self.irefresh(what=u'NS')
 
     #--Uninstall, Anneal, Clean
     @staticmethod
@@ -2479,7 +2494,7 @@ class InstallersData(DataStore):
             for folder in sorted(testDirs, key=len, reverse=True):
                 # Sorting by length, descending, ensure we always
                 # are processing the deepest directories first
-                files = set(imap(folder.join, folder.list()))
+                files = {folder.join(x) for x in folder.list()}
                 remaining = files - allRemoves
                 if not remaining: # If all items in this directory will be
                     # removed, this directory is also safe to remove.
@@ -2573,8 +2588,8 @@ class InstallersData(DataStore):
 
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
-        if unArchives == 'ALL': unArchives = self.data
-        unArchives = frozenset(self[x] for x in unArchives)
+        if unArchives == u'ALL': unArchives = frozenset(self.itervalues())
+        else: unArchives = frozenset(self[x] for x in unArchives)
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
@@ -2600,7 +2615,7 @@ class InstallersData(DataStore):
             elif installer.is_active:
                 masked |= self.__restore(installer, removes, restores,
                                          cede_ownership)
-        anneal = bass.settings['bash.installers.autoAnneal']
+        anneal = bass.settings[u'bash.installers.autoAnneal']
         self._remove_restore(removes, restores, refresh_ui, cede_ownership,
                              progress, unArchives, anneal)
 
@@ -2621,24 +2636,24 @@ class InstallersData(DataStore):
                 for ci_dest in owned_files:
                     if modInfos.rightFileType(ci_dest):
                         refresh_ui[0] = True
-                        modInfos.table.setItem(GPath(ci_dest), 'installer',
+                        modInfos.table.setItem(GPath(ci_dest), u'installer',
                                                installer)
                     elif InstallersData._is_ini_tweak(ci_dest):
                         refresh_ui[1] = True
                         iniInfos.table.setItem(GPath(ci_dest).tail,
-                                               'installer', installer)
+                                               u'installer', installer)
         finally:
-            self.irefresh(what='NS')
+            self.irefresh(what=u'NS')
 
     def _restoreFiles(self, restores, refresh_ui, progress):
         installer_destinations = {}
-        restores = sorted(restores.items(), key=itemgetter(1))
+        restores = dict_sort(restores, by_value=True)
         for key, group in groupby(restores, key=itemgetter(1)):
-            installer_destinations[key] = set(dest for dest, _key in group)
+            installer_destinations[key] = {dest for dest, _key in group}
         if not installer_destinations: return
-        installer_destinations = sorted(installer_destinations.items(),
-            key=lambda item: self[item[0]].order)
         progress.setFull(len(installer_destinations))
+        installer_destinations = dict_sort(installer_destinations,
+                                           key_f=lambda k: self[k].order)
         for index, (archive, destFiles) in enumerate(installer_destinations):
             progress(index, archive.s)
             if destFiles:
@@ -2652,7 +2667,7 @@ class InstallersData(DataStore):
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
-        anPackages = (self[package] for package in (anPackages or self.keys()))
+        anPackages = (self[package] for package in (anPackages or self))
         #--Get remove/refresh files from anPackages
         removes = set()
         for installer in anPackages:
@@ -2681,7 +2696,7 @@ class InstallersData(DataStore):
         keepFiles.update((bolt.CIstr(f) for f in bush.game.vanilla_files))
         for bpatch in modInfos.bashed_patches: # type: bolt.Path
             keepFiles.add(bolt.CIstr(bpatch.s))
-            bp_doc = modInfos.table.getItem(bpatch, 'doc')
+            bp_doc = modInfos.table.getItem(bpatch, u'doc')
             if bp_doc: # path is absolute, convert to relative to the Data/ dir
                 try:
                     bp_doc = bp_doc.relpath(bass.dirs[u'mods'].s)
@@ -2689,7 +2704,7 @@ class InstallersData(DataStore):
                     # bp_doc on a different drive, will be skipped anyway
                     continue
                 # Keep both versions of the BP doc (.txt and .html)
-                keepFiles.add((bolt.CIstr('%s' % bp_doc)))
+                keepFiles.add((bolt.CIstr(u'%s' % bp_doc)))
                 keepFiles.add((bolt.CIstr(
                     bp_doc.root.s + (u'.txt' if bp_doc.cext == u'.html'
                                      else u'.html'))))
@@ -2710,8 +2725,8 @@ class InstallersData(DataStore):
         return filtered_removes
 
     def clean_data_dir(self, removes,  refresh_ui):
-        destDir = bass.dirs[u'bainData'].join(u'Data Folder Contents (%s)' %
-            bolt.timestamp())
+        destDir = bass.dirs[u'bainData'].join(u'%s Folder Contents (%s)' % (
+            bush.game.mods_dir, bolt.timestamp()))
         try:
             from . import modInfos
             emptyDirs, mods = set(), set()
@@ -2728,92 +2743,111 @@ class InstallersData(DataStore):
                     emptyDirs.add(full_path.head)
                 except OSError:
                     #It's not imperative that files get moved, so ignore errors
-                    deprint(u'Clean Data: moving %s to % s failed' % (
+                    deprint(u'Clean Data: moving %s to %s failed' % (
                                 full_path, destDir), traceback=True)
             modInfos.delete_refresh(mods, None, check_existence=False)
             for emptyDir in emptyDirs:
                 if emptyDir.isdir() and not emptyDir.list():
                     emptyDir.removedirs()
         finally:
-            self.irefresh(what='NS')
+            self.irefresh(what=u'NS')
 
     #--Utils
     @staticmethod
     def _filter_installer_bsas(inst, active_bsas):
-        return (k for k in active_bsas if k.name.s in inst.ci_dest_sizeCrc)
+        return [k for k in active_bsas if k.name.s in inst.ci_dest_sizeCrc]
 
     @staticmethod
-    def _parse_error(bs, inst):
-        deprint(u'Error parsing %s [%s]' % (bs.name, inst.archive),
-                traceback=True)
+    def _parse_error(bsa_inf, reason):
+        deprint(u'Error parsing %s [%s]' % (bsa_inf, reason), traceback=True)
 
-    def find_conflicts(self, src_installer, active_bsas=None,
-                       conflicts_mode=True):
-        """
-        Returns all conflicts for the specified installer, filtering them by
+    ##: Maybe cache the result? Can take a bit of time to calculate
+    def find_conflicts(self, src_installer, active_bsas=None, bsa_cause=None,
+                       list_overrides=True, include_inactive=False,
+                       include_lower=True, include_bsas=True):
+        """Returns all conflicts for the specified installer, filtering them by
         BSA (if enabled by the user) or loose file and whether they are lower
         or higher than the specified installer.
 
         :param src_installer: The installer to find conflicts for.
-        :param active_bsas: The list of currently active BSAs. Can be retrieved
-                            via bosh.modInfos.get_active_bsas(). Only needed if
-                            BSA conflicts are enabled (via
-                            bash.installers.conflictsReport.showBSAConflicts).
-        :param conflicts_mode: Whether to list overrides (True) or underrides
-                               (False).
+        :param active_bsas: The dict of currently active BSAs. Can be retrieved
+            via bosh.modInfos.get_active_bsas(). Only needed if BSA conflicts
+            are enabled (i.e. include_bsas is True).
+        :Param bsa_cause: The dict of reasons BSAs were loaded. Retrieve
+            alongside active_bsas from bosh.modInfos.get_active_bsas(). Only
+            needed if BSA conflicts are enabled.
+        :param list_overrides: Whether to list overrides (True) or underrides
+            (False).
+        :param include_inactive: Whether or not to include conflicts from
+            inactive packages.
+        :param include_lower: Whether or not to include conflicts with
+            installers that have a lower order than src_installer.
+        :param include_bsas: Whether or not to include BSA conflicts as well.
         :return: Four lists corresponding to the lower loose, higher loose,
-                 lower BSA and higher BSA conflicts. If BSA conflicts are not
-                 enabled, the last two will be None instead.
-        """
+            lower BSA and higher BSA conflicts. If BSA conflicts are not
+            enabled, the last two will be empty."""
         srcOrder = src_installer.order
-        showInactive = conflicts_mode and bass.settings['bash.installers.conflictsReport.showInactive']
-        showLower = conflicts_mode and bass.settings['bash.installers.conflictsReport.showLower']
-        showBSA = bass.settings['bash.installers.conflictsReport.showBSAConflicts']
-        if conflicts_mode:
+        showInactive = list_overrides and include_inactive
+        showLower = list_overrides and include_lower
+        if list_overrides:
             mismatched = set(src_installer.ci_dest_sizeCrc)
         else:
             mismatched = src_installer.underrides
         if not mismatched: return [], [], [], []
         src_sizeCrc = src_installer.ci_dest_sizeCrc
         # Calculate bsa conflicts
-        if showBSA:
-            lower_bsa, higher_bsa = [], []
+        lower_bsa, higher_bsa = [], []
+        if include_bsas:
             # Calculate all conflicts and save them in lower_bsa and higher_bsa
             asset_to_bsa, src_assets = self.find_src_assets(src_installer,
                                                             active_bsas)
+            remaining_bsas = copy.copy(active_bsas)
+            def _process_bsa_conflicts(b_inf, b_source):
+                try: # conflicting assets from this installer active bsas
+                    curConflicts = b_inf.assets & src_assets
+                except BSAError:
+                    self._parse_error(b_inf, b_source)
+                    return
+                # We've used this BSA for a conflict, don't use it again
+                del remaining_bsas[b_inf]
+                if curConflicts:
+                    lower_result, higher_result = set(), set()
+                    add_to_lower = lower_result.add
+                    add_to_higher = higher_result.add
+                    for conflict in curConflicts:
+                        orig_order = active_bsas[asset_to_bsa[conflict]]
+                        curr_order = active_bsas[b_inf]
+                        if curr_order == orig_order: continue
+                        elif curr_order < orig_order:
+                            if showLower: add_to_lower(conflict)
+                        else:
+                            add_to_higher(conflict)
+                    if lower_result:
+                        lower_bsa.append((b_source, b_inf,
+                                          bolt.sortFiles(lower_result)))
+                    if higher_result:
+                        higher_bsa.append((b_source, b_inf,
+                                           bolt.sortFiles(higher_result)))
             for package, installer in self.sorted_pairs():
-                if installer.order == srcOrder or not (showInactive or
-                                                       installer.is_active):
-                    continue # check active installers different than src
+                discard_bsas = installer.order == srcOrder or not (
+                        showInactive or installer.is_active)
                 for bsa_info in self._filter_installer_bsas(
-                        installer, active_bsas):
-                    try: # conflicting assets from this installer active bsas
-                        curConflicts = bsa_info.assets & src_assets
-                    except BSAError:
-                        self._parse_error(bsa_info, installer)
-                        continue
-                    if curConflicts:
-                        lower_result, higher_result = set(), set()
-                        for conflict in curConflicts:
-                            orig_order = active_bsas[asset_to_bsa[conflict]]
-                            curr_order = active_bsas[bsa_info]
-                            if curr_order == orig_order: continue
-                            elif curr_order < orig_order:
-                                if showLower: lower_result.add(conflict)
-                            else:
-                                higher_result.add(conflict)
-                        if lower_result:
-                            lower_bsa.append((package, bsa_info,
-                                              bolt.sortFiles(lower_result)))
-                        if higher_result:
-                            higher_bsa.append((package, bsa_info,
-                                               bolt.sortFiles(higher_result)))
+                        installer, remaining_bsas):
+                    if discard_bsas:
+                        # Either comes from this installer or is from an
+                        # inactive installer - either way, ignore it
+                        ##: Support for inactive BSA conflicts
+                        del remaining_bsas[bsa_info]
+                    else:
+                        _process_bsa_conflicts(bsa_info, package.s)
+            # Check all left-over BSAs - they either came from an INI or from a
+            # plugin file not managed by BAIN (e.g. a DLC)
+            for rem_bsa in list(remaining_bsas):
+                _process_bsa_conflicts(rem_bsa, bsa_cause[rem_bsa])
             def _sort_bsa_conflicts(bsa_conflict):
                 return active_bsas[bsa_conflict[1]]
             lower_bsa.sort(key=_sort_bsa_conflicts)
             higher_bsa.sort(key=_sort_bsa_conflicts)
-        else:
-            lower_bsa, higher_bsa = None, None
         # Calculate loose conflicts
         lower_loose, higher_loose = [], []
         for package, installer in self.sorted_pairs():
@@ -2832,10 +2866,9 @@ class InstallersData(DataStore):
         return lower_loose, higher_loose, lower_bsa, higher_bsa
 
     def find_src_assets(self, src_installer, active_bsas):
-        """Map srcInstaller's active bsas' assets to those bsas, assigning
-        the assets to the highest loading bsa - there's generally only one BSA
-        for Skyrim and older, one or two for SSE and any number of BSAs for
-        FO4.
+        """Map src_installer's active BSAs' assets to those BSAs, assigning
+        the assets to the highest loading BSA. There's generally only one for
+        Skyrim and older, one or two for SSE and any number of BSAs for FO4.
 
         :param src_installer: The installer from which to retrieve BSA assets.
         :param active_bsas: The set of active BSAs. Generally retrieved via
@@ -2843,12 +2876,12 @@ class InstallersData(DataStore):
         :return: An OrderedDict containing a mapping from asset to BSA and the
                  relevant assets from the installer's BSAs in a set."""
         asset_to_bsa, src_assets = collections.OrderedDict(), set()
-        for b in reversed(list(self._filter_installer_bsas(
-                src_installer, active_bsas))):
+        for b in reversed(self._filter_installer_bsas(
+                src_installer, active_bsas)):
             try:
                 b_assets = b.assets - src_assets
             except BSAError:
-                self._parse_error(b, src_installer)
+                self._parse_error(b, src_installer.archive)
                 continue
             if b_assets:
                 for b_asset in b_assets:
@@ -2856,6 +2889,7 @@ class InstallersData(DataStore):
                 src_assets |= b_assets
         return asset_to_bsa, src_assets
 
+    _ini_origin = re.compile(r'(\w+\.ini) \((\w+)\)', re.I | re.U)
     def getConflictReport(self, srcInstaller, mode, modInfos):
         """Returns report of overrides for specified package for display on
         conflicts tab.
@@ -2864,75 +2898,92 @@ class InstallersData(DataStore):
         :param mode: 'OVER': Overrides; 'UNDER': Underrides.
         :param modInfos: bosh.modInfos
         :return: A string containing the printable report of all conflicts."""
-        conflictsMode = (mode == 'OVER')
-        if conflictsMode:
+        list_overrides = (mode == u'OVER')
+        if list_overrides:
             if not set(srcInstaller.ci_dest_sizeCrc): return u''
         else:
             if not srcInstaller.underrides: return u''
-        showLower = conflictsMode and bass.settings['bash.installers.conflictsReport.showLower']
-        showBSA = bass.settings['bash.installers.conflictsReport.showBSAConflicts']
-        active_bsas = modInfos.get_active_bsas() if showBSA else None
+        include_inactive = bass.settings[
+            u'bash.installers.conflictsReport.showInactive']
+        include_lower = list_overrides and bass.settings[
+            u'bash.installers.conflictsReport.showLower']
+        include_bsas = bass.settings[
+            u'bash.installers.conflictsReport.showBSAConflicts']
+        ##: Add support for showing inactive & excluding lower BSAs
+        if include_bsas:
+            active_bsas, bsa_cause = modInfos.get_active_bsas()
+        else:
+            active_bsas, bsa_cause = None, None
         lower_loose, higher_loose, lower_bsa, higher_bsa = self.find_conflicts(
-            srcInstaller, active_bsas, conflictsMode)
+            srcInstaller, active_bsas, bsa_cause, list_overrides,
+            include_inactive, include_lower, include_bsas)
         # Generate report
-        with sio() as buff:
-            # Print BSA conflicts
-            if showBSA:
-                buff.write(u'= %s %s\n\n' % (_(u'Active BSA Conflicts'), u'=' * 40))
-                # Print partitions - bsa loading order NOT installer order
-                def _print_bsa_conflicts(conflicts, title=_(u'Lower')):
-                    buff.write(u'= %s %s\n' % (title, u'=' * 40))
-                    for package_, bsa_, confl_ in conflicts:
-                        buff.write(u'==%X== %s : %s\n' % (
-                            active_bsas[bsa_], package_, bsa_.name))
-                        buff.write(u'\n'.join(confl_) + u'\n\n')
-                if showLower and lower_bsa:
-                    _print_bsa_conflicts(lower_bsa, _(u'Lower'))
-                if higher_bsa:
-                    _print_bsa_conflicts(higher_bsa, _(u'Higher'))
-                buff.write(u'= %s %s\n\n' % (_(u'Loose File Conflicts'), u'=' * 36))
-            # Print loose file conflicts
-            def _print_loose_conflicts(conflicts, title=_(u'Lower')):
+        buff = io.StringIO()
+        # Print BSA conflicts
+        if include_bsas:
+            buff.write(u'= %s %s\n\n' % (_(u'Active BSA Conflicts'), u'=' * 40))
+            # Print partitions - bsa loading order NOT installer order
+            origin_ini_match = self._ini_origin.match
+            def _print_bsa_conflicts(conflicts, title=_(u'Lower')):
                 buff.write(u'= %s %s\n' % (title, u'=' * 40))
-                for inst_, package_, confl_ in conflicts:
-                    buff.write(u'==%d== %s\n' % (inst_.order, package_))
-                    for src_file in confl_:
-                        oldName = inst_.getEspmName(src_file)
-                        buff.write(oldName)
-                        if oldName != src_file:
-                            buff.write(u' -> ')
-                            buff.write(src_file)
-                        buff.write(u'\n')
+                for origin_, bsa_inf, confl_ in conflicts:
+                    # If the origin is an INI, then active_bsas[bsa_inf]
+                    # does not contain a meaningful result (will be an
+                    # extremely large/small number)
+                    ini_ma = origin_ini_match(origin_)
+                    if ini_ma:
+                        buff.write(u'==%s== %s : %s\n' % (
+                            ini_ma.group(1), ini_ma.group(2), bsa_inf))
+                    else:
+                        buff.write(u'==%X== %s : %s\n' % (
+                            active_bsas[bsa_inf], origin_, bsa_inf))
+                    buff.write(u'\n'.join(confl_) + u'\n\n')
+            if include_lower and lower_bsa:
+                _print_bsa_conflicts(lower_bsa, _(u'Lower'))
+            if higher_bsa:
+                _print_bsa_conflicts(higher_bsa, _(u'Higher'))
+            buff.write(u'= %s %s\n\n' % (_(u'Loose File Conflicts'), u'=' * 36))
+        # Print loose file conflicts
+        def _print_loose_conflicts(conflicts, title=_(u'Lower')):
+            buff.write(u'= %s %s\n' % (title, u'=' * 40))
+            for inst_, package_, confl_ in conflicts:
+                buff.write(u'==%d== %s\n' % (inst_.order, package_))
+                for src_file in confl_:
+                    oldName = inst_.getEspmName(src_file)
+                    buff.write(oldName)
+                    if oldName != src_file:
+                        buff.write(u' -> ')
+                        buff.write(src_file)
                     buff.write(u'\n')
-            if showLower and lower_loose:
-                    _print_loose_conflicts(lower_loose, _(u'Lower'))
-            if higher_loose:
-                    _print_loose_conflicts(higher_loose, _(u'Higher'))
-            report = buff.getvalue()
-        if not conflictsMode and not report and not srcInstaller.is_active:
-            report = _(u"No Underrides. Mod is not completely un-installed.")
+                buff.write(u'\n')
+        if include_lower and lower_loose:
+            _print_loose_conflicts(lower_loose, _(u'Lower'))
+        if higher_loose:
+            _print_loose_conflicts(higher_loose, _(u'Higher'))
+        report = buff.getvalue()
+        if not list_overrides and not report and not srcInstaller.is_active:
+            report = _(u'No Underrides. Mod is not completely un-installed.')
         return report
 
     def getPackageList(self,showInactive=True):
         """Returns package list as text."""
         #--Setup
-        with sio() as out:
-            log = bolt.LogFile(out)
-            log.setHeader(_(u'Bain Packages:'))
-            #--List
-            log(u'[spoiler]\n',False)
-            for package, installer in self.sorted_pairs():
-                prefix = u'%03d' % installer.order
-                if installer.is_marker():
-                    log(u'%s - %s' % (prefix, package.s))
-                elif installer.is_active:
-                    log(u'++ %s - %s (%08X) (Installed)' % (
-                        prefix, package.s, installer.crc))
-                elif showInactive:
-                    log(u'-- %s - %s (%08X) (Not Installed)' % (
-                        prefix, package.s, installer.crc))
-            log(u'[/spoiler]')
-            return bolt.winNewLines(log.out.getvalue())
+        log = bolt.LogFile(io.StringIO())
+        log.setHeader(_(u'Bain Packages:'))
+        #--List
+        log(u'[spoiler]\n', False)
+        for package, installer in self.sorted_pairs():
+            prefix = u'%03d' % installer.order
+            if installer.is_marker():
+                log(u'%s - %s' % (prefix, package))
+            elif installer.is_active:
+                log(u'++ %s - %s (%08X) (Installed)' % (
+                    prefix, package, installer.crc))
+            elif showInactive:
+                log(u'-- %s - %s (%08X) (Not Installed)' % (
+                    prefix, package, installer.crc))
+        log(u'[/spoiler]')
+        return bolt.winNewLines(log.out.getvalue())
 
     def filterInstallables(self, installerKeys):
         """Return a sublist of installerKeys that can be installed -
@@ -2940,19 +2991,16 @@ class InstallersData(DataStore):
         :param installerKeys: an iterable of bolt.Path
         :return: a list of installable packages/projects bolt.Path
         """
-        def installable(x): # type -> 0: unset/invalid; 1: simple; 2: complex
-            return self[x].type in (1, 2) and (
-                        self[x].is_archive() or self[x].is_project())
-        return filter(installable, installerKeys)
+        # type -> 0: unset/invalid; 1: simple; 2: complex
+        return [k for k in self.ipackages(installerKeys) if
+                self[k].type in (1, 2)]
 
-    def filterPackages(self, installerKeys):
+    def ipackages(self, installerKeys):
         """Remove markers from installerKeys.
         :type installerKeys: collections.Iterable[bolt.Path]
         :rtype: list[bolt.Path]
         """
-        def _package(x):
-            return self[x].is_archive() or self[x].is_project()
-        return filter(_package, installerKeys)
+        return (x for x in installerKeys if not self[x].is_marker())
 
     def createFromData(self, projectPath, ci_files, progress):
         if not ci_files: return

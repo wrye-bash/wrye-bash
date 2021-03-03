@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,20 +14,21 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains the Fallout 4 record classes. The great majority are
 imported from skyrim, but only after setting MelModel to the FO4 format."""
+from __future__ import unicode_literals
 from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
-    MelStruct, MelUnicode, MelNull, MelFidList, MreLeveledListBase, MelFid, \
-    FID, MelLString, MelUInt8, MelOptFid, MelOptFloat, MelBounds, MelEdid, \
-    MelArray
+    MelStruct, MelNull, MelFidList, MreLeveledListBase, MelFid, \
+    FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, \
+    MelArray, MreGmstBase, MelUInt8Flags
+
 # Set brec.MelModel to the Fallout 4 one - do not import from skyrim.records yet
 if brec.MelModel is None:
 
@@ -35,33 +36,31 @@ if brec.MelModel is None:
         """Represents a model record."""
         # MODB and MODD are no longer used by TES5Edit
         typeSets = {
-            'MODL': ('MODL', 'MODT', 'MODC', 'MODS', 'MODF'),
-            'MOD2': ('MOD2', 'MODT', 'MO2C', 'MO2S', 'MO2F'),
-            'MOD3': ('MOD3', 'MODT', 'MO3C', 'MO3S', 'MO3F'),
-            'MOD4': ('MOD4', 'MODT', 'MO4C', 'MO4S', 'MO4F'),
-            'MOD5': ('MOD5', 'MODT', 'MO5C', 'MO5S', 'MO5F'),
+            b'MODL': (b'MODL', b'MODT', b'MODC', b'MODS', b'MODF'),
+            b'MOD2': (b'MOD2', b'MODT', b'MO2C', b'MO2S', b'MO2F'),
+            b'MOD3': (b'MOD3', b'MODT', b'MO3C', b'MO3S', b'MO3F'),
+            b'MOD4': (b'MOD4', b'MODT', b'MO4C', b'MO4S', b'MO4F'),
+            b'MOD5': (b'MOD5', b'MODT', b'MO5C', b'MO5S', b'MO5F'),
             # Destructible
-            'DMDL': ('DMDL', 'DMDT', 'DMDC', 'DMDS'),
+            b'DMDL': (b'DMDL', b'DMDT', b'DMDC', b'DMDS'),
         }
 
-        def __init__(self, attr='model', subType='MODL'):
-            types = self.__class__.typeSets[subType]
+        def __init__(self, attr=u'model', mel_sig=b'MODL'):
+            types = self.__class__.typeSets[mel_sig]
             MelGroup.__init__(
                 self, attr,
-                MelString(types[0], 'modPath'),
+                MelString(types[0], u'modPath'),
                 # Ignore texture hashes - they're only an optimization, plenty
                 # of records in Skyrim.esm are missing them
                 MelNull(types[1]),
-                MelOptFloat(types[2], 'colorRemappingIndex'),
-                MelOptFid(types[3], 'materialSwap'),
-                MelBase(types[3], 'modf_p')
+                MelFloat(types[2], u'colorRemappingIndex'),
+                MelFid(types[3], u'materialSwap'),
+                MelBase(types[3], u'modf_p')
             )
 
     brec.MelModel = _MelModel
 # Now we can import from parent game records file
 from ..skyrim.records import MreLeveledList
-# Those are unused here, but need be in this file as are accessed via it
-from ..skyrim.records import MreGmst # used in basher.app_buttons.App_GenPickle#_update_pkl
 
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------
@@ -71,18 +70,23 @@ class MreTes4(MreHeaderBase):
     rec_sig = b'TES4'
 
     melSet = MelSet(
-        MelStruct('HEDR', 'f2I', ('version', 1.0), 'numRecords',
-                  ('nextObject', 0x800)),
-        MelBase('TNAM', 'tnam_p'),
-        MelUnicode('CNAM','author',u'',512),
-        MelUnicode('SNAM','description',u'',512),
+        MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',
+            (u'nextObject', 0x001)),
+        MelBase(b'TNAM', 'tnam_p'),
+        MreHeaderBase.MelAuthor(),
+        MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelFidList('ONAM','overrides',),
-        MelBase('SCRN', 'screenshot'),
-        MelBase('INTV', 'unknownINTV'),
-        MelBase('INCC', 'unknownINCC'),
+        MelFidList(b'ONAM','overrides',),
+        MelBase(b'SCRN', 'screenshot'),
+        MelBase(b'INTV', 'unknownINTV'),
+        MelBase(b'INCC', 'unknownINCC'),
     )
     __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreGmst(MreGmstBase):
+    """Game Setting."""
+    isKeyedByEid = True # NULL fids are acceptable.
 
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
@@ -95,17 +99,17 @@ class MreLvli(MreLeveledList):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8('LVLD', 'chanceNone'),
-        MelUInt8('LVLM', 'maxCount'),
-        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0)),
-        MelOptFid('LVLG', 'glob'),
+        MelUInt8(b'LVLD', 'chanceNone'),
+        MelUInt8(b'LVLM', 'maxCount'),
+        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelFid(b'LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
-            MelStruct(b'LLKC', u'2I', (FID, u'keyword'), u'chance'),
+            MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
         ),
-        MelFid('LVSG', 'epicLootChance'),
-        MelLString('ONAM', 'overrideName')
+        MelFid(b'LVSG', 'epicLootChance'),
+        MelLString(b'ONAM', 'overrideName')
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -120,16 +124,16 @@ class MreLvln(MreLeveledList):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelUInt8('LVLD', 'chanceNone'),
-        MelUInt8('LVLM', 'maxCount'),
-        MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0)),
-        MelOptFid('LVLG', 'glob'),
+        MelUInt8(b'LVLD', 'chanceNone'),
+        MelUInt8(b'LVLM', 'maxCount'),
+        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelFid(b'LVLG', 'glob'),
         MreLeveledList.MelLlct(),
         MreLeveledList.MelLvlo(),
         MelArray('filterKeywordChances',
-            MelStruct(b'LLKC', u'2I', (FID, u'keyword'), u'chance'),
+            MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
         ),
-        MelString('MODL','model'),
-        MelBase('MODT','modt_p'),
+        MelString(b'MODL','model'),
+        MelBase(b'MODT','modt_p'),
     )
     __slots__ = melSet.getSlotsUsed()

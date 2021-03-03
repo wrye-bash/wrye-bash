@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -61,8 +60,10 @@
 #  ExecuteRPN
 #==================================================
 from __future__ import division
+
+import operator
 from string import digits, whitespace
-import types
+
 #--------------------------------------------------
 name_start = u'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
 name_chars = name_start + u'0123456789'
@@ -185,8 +186,8 @@ def getType(item, parser=None):
         for i in item:
             if i not in whitespace: return UNKNOWN
         return WHITESPACE
-    if type(item) == types.IntType: return INTEGER
-    if type(item) == types.FloatType: return DECIMAL
+    if isinstance(item, int): return INTEGER
+    if isinstance(item, float): return DECIMAL
     return UNKNOWN
 
 # FlowControl -------------------------------------
@@ -342,7 +343,7 @@ class Parser(object):
 
         def GetData(self):
             """:rtype: Parser.Function | Parser.Keyword | Parser.Operator |
-            basestring | int | float
+            unicode | int | float
             """
             if self.parser:
                 if self.type == FUNCTION: return self.parser.functions[self.text]
@@ -394,22 +395,19 @@ class Parser(object):
         def __and__(self, other): return Parser.Token(self.tkn & other.tkn)
         def __xor__(self, other): return Parser.Token(self.tkn ^ other.tkn)
         def __or__(self, other): return Parser.Token(self.tkn | other.tkn)
-        def __bool__(self): return bool(self.tkn)
+        def __nonzero__(self): return bool(self.tkn)
         def __neg__(self): return Parser.Token(-self.tkn)
         def __pos__(self): return Parser.Token(+self.tkn)
         def __abs__(self): return abs(self.tkn)
         def __int__(self): return int(self.tkn)
+        def __index__(self): return operator.index(self.tkn)
         def __float__(self): return float(self.tkn)
-        def __str__(self): return str(self.tkn)
+        def __str__(self): return unicode(self.tkn)
 
         def __repr__(self): return u'<Token-%s:%s>' % (Types[self.type],self.text)
 
         # Fall through to function/keyword
         def __call__(self, *args, **kwdargs): return self.tkn(*args, **kwdargs)
-
-        # PY3 get rid of this once we port
-        __nonzero__ = __bool__
-
 
     # Now for the Parser class
     def __init__(self,
@@ -430,7 +428,7 @@ class Parser(object):
         self.tokens = []
         self.Flow = []
 
-        self.opChars = ''
+        self.opChars = u''
         self.operators = {}
         self.keywords = {}
         self.functions = {}
@@ -484,33 +482,33 @@ class Parser(object):
         except:
             error(_(u'IndexError'))
 
-    def SetOperator(self, name, *args, **kwdargs):
-        type_ = getType(name, self)
+    def SetOperator(self, op_name, *args, **kwdargs):
+        type_ = getType(op_name, self)
         if type_ not in [NAME,OPERATOR,UNKNOWN]:
-            error(ERR_CANNOT_SET % (u'operator', name, Types[type_]))
-        self.operators[name] = Parser.Operator(name, *args, **kwdargs)
-        for i in name:
+            error(ERR_CANNOT_SET % (u'operator', op_name, Types[type_]))
+        self.operators[op_name] = Parser.Operator(op_name, *args, **kwdargs)
+        for i in op_name:
             if i not in self.opChars: self.opChars += i
-    def SetKeyword(self, name, *args, **kwdargs):
-        type_ = getType(name, self)
+    def SetKeyword(self, keywrd_name, *args, **kwdargs):
+        type_ = getType(keywrd_name, self)
         if type_ not in [NAME,KEYWORD]:
-            error(ERR_CANNOT_SET % (u'keyword', name, Types[type_]))
-        self.keywords[name] = Parser.Keyword(name, *args, **kwdargs)
-    def SetFunction(self, name, *args, **kwdargs):
-        type_ = getType(name, self)
+            error(ERR_CANNOT_SET % (u'keyword', keywrd_name, Types[type_]))
+        self.keywords[keywrd_name] = Parser.Keyword(keywrd_name, *args, **kwdargs)
+    def SetFunction(self, fun_name, *args, **kwdargs):
+        type_ = getType(fun_name, self)
         if type_ not in [NAME,FUNCTION]:
-            error(ERR_CANNOT_SET % (u'function', name, Types[type_]))
-        self.functions[name] = Parser.Function(name, *args, **kwdargs)
-    def SetConstant(self, name, value):
-        type_ = getType(name, self)
+            error(ERR_CANNOT_SET % (u'function', fun_name, Types[type_]))
+        self.functions[fun_name] = Parser.Function(fun_name, *args, **kwdargs)
+    def SetConstant(self, const_name, value):
+        type_ = getType(const_name, self)
         if type_ not in [NAME,CONSTANT]:
-            error(ERR_CANNOT_SET % (u'constant', name, Types[type_]))
-        self.constants[name] = value
-    def SetVariable(self, name, value):
-        type_ = getType(name, self)
+            error(ERR_CANNOT_SET % (u'constant', const_name, Types[type_]))
+        self.constants[const_name] = value
+    def SetVariable(self, var_name, value):
+        type_ = getType(var_name, self)
         if type_ not in [NAME, VARIABLE]:
-            error(ERR_CANNOT_SET % (u'variable', name, Types[type_]))
-        self.variables[name] = value
+            error(ERR_CANNOT_SET % (u'variable', var_name, Types[type_]))
+        self.variables[var_name] = value
 
     # Flow control stack
     def PushFlow(self, stmnt_type, active, keywords, **attribs):
@@ -544,8 +542,8 @@ class Parser(object):
 
         # If we have a keyword, just run it
         if self.tokens[0].type == KEYWORD:
-            key = self.tokens.pop(0)
-            key(*self.tokens)
+            kwrd = self.tokens.pop(0)
+            kwrd(*self.tokens)
         # It's just an expression, didnt start with a keyword
         else:
             # Convert to reverse-polish notation and execute
@@ -659,7 +657,7 @@ class Parser(object):
                 # Dot operator
                 if i.text == self.dotOperator:
                     if idex+1 >= len(tokens):
-                        error(_(u"Dot operator: no function to call."))
+                        error(_(u'Dot operator: no function to call.'))
                     if tokens[idex+1].type != FUNCTION:
                         error(_(u"Dot operator: cannot access non-function '%s'.") % tokens[idex+1].text)
                     if not tokens[idex+1].tkn.dotFunction:
@@ -774,7 +772,7 @@ class Parser(object):
         # Try to figure out if it's multiple operators bunched together
         rightWord = None
         if type_ == UNKNOWN:
-            for idex in range(len(word),0,-1):
+            for idex in xrange(len(word),0,-1):
                 newType = getType(word[0:idex], self)
                 if newType != UNKNOWN:
                     rightWord = word[idex:]
@@ -844,11 +842,11 @@ class Parser(object):
     def _stateDQuote(self, c):
         if c == u'\\': return self._stateDQuoteEscape
         if c == u'"':
-            if not self.word: self.word = u""
+            if not self.word: self.word = u''
             self._emit(type_=STRING)
             return self._stateSpace
         if c == u'\n':
-            error(_(u"Unterminated double quote."))
+            error(_(u'Unterminated double quote.'))
         self._grow(c)
         return self._stateDQuote
     def _stateDQuoteEscape(self, c):

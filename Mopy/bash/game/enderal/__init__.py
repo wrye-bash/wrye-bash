@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -38,7 +37,7 @@ class EnderalGameInfo(SkyrimGameInfo):
     # This isn't exact (currently 1.5.0 when it should be 1.5.7), but it's the
     # closest we're going to get
     version_detect_file = u'Enderal Launcher.exe'
-    pklfile = u'Enderal_ids.pkl'
+    taglist_dir = u'Enderal'
     regInstallKeys = (u'SureAI\\Enderal', u'Install_Path')
 
     class Ini(SkyrimGameInfo.Ini):
@@ -46,22 +45,16 @@ class EnderalGameInfo(SkyrimGameInfo):
         dropdown_inis = [u'Enderal.ini', u'EnderalPrefs.ini']
         save_prefix = u'..\\Enderal\\Saves'
 
-    class Bsa(SkyrimGameInfo.Bsa):
-        vanilla_string_bsas = {
-            u'skyrim.esm': [u'Skyrim - Interface.bsa'],
-            u'update.esm': [u'Skyrim - Interface.bsa'],
-            u'enderal - forgotten stories.esm': [u'Skyrim - Interface.bsa'],
-        }
-
     class Xe(SkyrimGameInfo.Xe):
         full_name = u'EnderalEdit'
         xe_key_prefix = u'enderalView'
 
+    class Bain(SkyrimGameInfo.Bain):
+        skip_bain_refresh = {u'enderaledit backups', u'enderaledit cache'}
+
     nexusUrl = u'https://www.nexusmods.com/enderal/'
     nexusName = u'Enderal Nexus'
     nexusKey = u'bash.installers.openEnderalNexus.continue'
-
-    skip_bain_refresh = {u'enderaledit backups', u'enderaledit cache'}
 
     raceNames = {
         0x13741 : _(u'Half Kilénian'),
@@ -113,7 +106,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MreRace
         # ---------------------------------------------------------------------
         # Unused records, they have empty GRUP in skyrim.esm-------------------
         # CLDC HAIR PWAT RGDL SCOL SCPT
@@ -130,7 +123,7 @@ class EnderalGameInfo(SkyrimGameInfo):
         #
         #       MreAchr, MreDial, MreInfo,
         # ---------------------------------------------------------------------
-        cls.mergeClasses = (# MreAchr, MreDial, MreInfo,
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (# MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
@@ -146,7 +139,8 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
             MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
             MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, MreFact,
-        )
+            MreRace,
+        )}
 
         # MreScpt is Oblivion/FO3/FNV Only
         # MreMgef, has not been verified to be used here for Skyrim
@@ -194,7 +188,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn,
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-            MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack,
+            MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack, MreRace,
             # MreNavm, MreNavi
         )}
         brec.MreRecord.simpleTypes = (

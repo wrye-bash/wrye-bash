@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -37,12 +36,11 @@ class Fallout4GameInfo(GameInfo):
     game_detect_file = u'Fallout4.exe'
     version_detect_file = u'Fallout4.exe'
     master_file = u'Fallout4.esm'
-    pklfile = u'Fallout4_ids.pkl'
-    masterlist_dir = u'Fallout4'
+    taglist_dir = u'Fallout4'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'
-    nexusKey = 'bash.installers.openFallout4Nexus.continue'
+    nexusKey = u'bash.installers.openFallout4Nexus.continue'
 
     espm_extensions = GameInfo.espm_extensions | {u'.esl'}
     has_achlist = True
@@ -83,15 +81,6 @@ class Fallout4GameInfo(GameInfo):
     class Bsa(GameInfo.Bsa):
         bsa_extension = u'.ba2'
         valid_versions = {0x01}
-        vanilla_string_bsas = {
-            u'fallout4.esm': [u'Fallout4 - Interface.ba2'],
-            u'dlcrobot.esm': [u'DLCRobot - Main.ba2'],
-            u'dlcworkshop01.esm': [u'DLCworkshop01 - Main.ba2'],
-            u'dlcworkshop02.esm': [u'DLCworkshop02 - Main.ba2'],
-            u'dlcworkshop03.esm': [u'DLCworkshop03 - Main.ba2'],
-            u'dlccoast.esm': [u'DLCCoast - Main.ba2'],
-            u'dlcnukaworld.esm':  [u'DLCNukaWorld - Main.ba2'],
-        }
 
     class Psc(GameInfo.Psc):
         source_extensions = {u'.psc'}
@@ -133,9 +122,9 @@ class Fallout4GameInfo(GameInfo):
         u'Deactivate', u'Delev', u'Filter', u'ObjectBounds', u'Relev',
     }
 
-    patchers = ( # PatchMerger must come first if enabled!
-        u'ListsMerger', u'ObjectBoundsImporter',
-    )
+    patchers = {
+        u'ImportObjectBounds', u'LeveledLists',
+    }
 
     # ---------------------------------------------------------------------
     # --Imported - MreGlob is special import, not in records.py
@@ -158,11 +147,11 @@ class Fallout4GameInfo(GameInfo):
         #
         #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
         # ---------------------------------------------------------------------
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # -- Imported from Skyrim/SkyrimSE
             # Added to records.py
             MreGmst, MreLvli, MreLvln
-        )
+        )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
@@ -193,9 +182,8 @@ class Fallout4GameInfo(GameInfo):
         header_type.plugin_form_version = 131
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreTes4, #--Always present
-            MreGmst, # Imported from Skyrim or SkyrimSE
-            MreLvli, MreLvln, # Added to records.py
-            )}
+            MreGmst, MreLvli, MreLvln, # Added to records.py
+        )}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES4'})
         cls._validate_records()

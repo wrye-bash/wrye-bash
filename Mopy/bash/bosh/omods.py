@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,8 +26,9 @@ import re
 import subprocess
 from subprocess import PIPE
 from .. import env, bolt, bass, archives
-from ..bolt import decode, encode, Path, startupinfo, unpack_int_signed, \
-    unpack_byte, unpack_short, unpack_int64_signed, struct_pack
+from ..bolt import decoder, encode, Path, startupinfo, unpack_int_signed, \
+    unpack_byte, unpack_short, unpack_int64_signed, pack_byte_signed, \
+    pack_byte, pack_int_signed
 
 def _readNetString(open_file):
     """Read a .net string. THIS CODE IS DUBIOUS!"""
@@ -46,12 +46,12 @@ def _writeNetString(open_file, string):
     """Write string as a .net string. THIS CODE IS DUBIOUS!"""
     strLen = len(string)
     if strLen < 128:
-        open_file.write(struct_pack('b', strLen))
+        pack_byte_signed(open_file, strLen)
     elif strLen > 0x7FFF: #--Actually probably fails earlier.
         raise NotImplementedError(u'String too long to convert.')
     else:
         strLen =  0x80 | strLen & 0x7f | (strLen & 0xff80) << 1
-        open_file.write(struct_pack('b', strLen))
+        pack_byte_signed(open_file, strLen)
     open_file.write(string)
 
 failedOmods = set()
@@ -72,18 +72,18 @@ class OmodFile(object):
         """Read info about the omod from the 'config' file"""
         with open(conf_path.s, u'rb') as omod_config:
             self.version = unpack_byte(omod_config) # OMOD version
-            self.modName = decode(_readNetString(omod_config)) # Mod name
+            self.modName = decoder(_readNetString(omod_config)) # Mod name
             # TODO(ut) original code unpacked signed int, maybe that's why "weird numbers" ?
             self.major = unpack_int_signed(omod_config) # Mod major version - getting weird numbers here though
             self.minor = unpack_int_signed(omod_config) # Mod minor version
-            self.omod_author = decode(_readNetString(omod_config)) # om_author
-            self.email = decode(_readNetString(omod_config)) # email
-            self.website = decode(_readNetString(omod_config)) # website
-            self.desc = decode(_readNetString(omod_config)) # description
+            self.omod_author = decoder(_readNetString(omod_config)) # om_author
+            self.email = decoder(_readNetString(omod_config)) # email
+            self.website = decoder(_readNetString(omod_config)) # website
+            self.desc = decoder(_readNetString(omod_config)) # description
             if self.version >= 2:
                 self.ftime = unpack_int64_signed(omod_config) # creation time
             else:
-                self.ftime = decode(_readNetString(omod_config))
+                self.ftime = decoder(_readNetString(omod_config))
             self.compType = unpack_byte(omod_config) # Compression type. 0 = lzma, 1 = zip
             if self.version >= 1:
                 self.build = unpack_int_signed(omod_config)
@@ -122,14 +122,13 @@ class OmodFile(object):
             cmd7z = [archives.exe7z, u'l', u'-r', u'-sccUTF-8', tempOmod.s]
             with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
                 for line in ins:
-                    line = unicode(line,'utf8')
+                    line = unicode(line,u'utf8')
                     maFileSize = reFileSize.match(line)
                     if maFileSize: #also matches the last line with total sizes
-                        size = int(maFileSize.group(1))
-                        name = maFileSize.group(2).strip().strip(u'\r')
-                        filesizes[name] = size
+                        name_ = maFileSize.group(2).strip().strip(u'\r')
+                        filesizes[name_] = int(maFileSize.group(1))
         # drop the last line entry
-        del filesizes[filesizes.keys()[-1]]
+        del filesizes[list(filesizes)[-1]]
         return filesizes, sum(filesizes.itervalues())
 
     def extractToProject(self,outDir,progress=None):
@@ -149,16 +148,15 @@ class OmodFile(object):
             subprogress = bolt.SubProgress(progress, 0, 0.4)
             current = 0
             with self.omod_path.unicodeSafe() as tempOmod:
-                cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', tempOmod.s, u'-o%s' % extractDir.s, u'-bb1']
+                cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', tempOmod.s, u'-o%s' % extractDir, u'-bb1']
                 with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
                     for line in ins:
                         line = unicode(line,'utf8')
                         maExtracting = reExtracting.match(line)
                         if maExtracting:
-                            name = maExtracting.group(1).strip().strip(u'\r')
-                            size = sizes_[name]
-                            subprogress(float(current) / total, self.omod_path.stail + u'\n' + _(u'Extracting...') + u'\n' + name)
-                            current += size
+                            name_ = maExtracting.group(1).strip().strip(u'\r')
+                            subprogress(float(current) / total, self.omod_path.stail + u'\n' + _(u'Extracting...') + u'\n' + name_)
+                            current += sizes_[name_]
 
             # Get compression type
             progress(0.4, self.omod_path.stail + u'\n' + _(u'Reading config'))
@@ -167,16 +165,21 @@ class OmodFile(object):
             # Collect OMOD conversion data
             ocdDir = stageDir.join(u'omod conversion data')
             progress(0.46, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\ninfo.txt')
-            self.writeInfo(ocdDir.join(u'info.txt'), self.omod_path.stail, extractDir.join(u'readme').exists(), extractDir.join(u'script').exists())
+            scr_path = extractDir.join(u'script')
+            readme_path = extractDir.join(u'readme')
+            readme_exists = readme_path.exists()
+            scr_exists = scr_path.exists()
+            self.writeInfo(ocdDir.join(u'info.txt'), self.omod_path.stail,
+                           readme_exists, scr_exists)
             progress(0.47, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscript')
-            if extractDir.join(u'script').exists():
-                with open(extractDir.join(u'script').s, 'rb') as ins:
-                    with ocdDir.join(u'script.txt').open('w') as output:
+            if scr_exists:
+                with scr_path.open(u'rb') as ins:
+                    with ocdDir.join(u'script.txt').open(u'w') as output:
                         output.write(_readNetString(ins))
             progress(0.48, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nreadme.rtf')
-            if extractDir.join(u'readme').exists():
-                with open(extractDir.join(u'readme').s, 'rb') as ins:
-                    with ocdDir.join(u'readme.rtf').open('w') as output:
+            if readme_exists:
+                with readme_path.open(u'rb') as ins:
+                    with ocdDir.join(u'readme.rtf').open(u'w') as output:
                         output.write(_readNetString(ins))
             progress(0.49, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscreenshot')
             if extractDir.join(u'image').exists():
@@ -189,9 +192,8 @@ class OmodFile(object):
                 extract = self.extractFiles7z
             else:
                 extract = self.extractFilesZip
-
-            pluginSize = sizes_.get('plugins',0)
-            dataSize = sizes_.get('data',0)
+            pluginSize = sizes_.get(u'plugins',0)
+            dataSize = sizes_.get(u'data',0)
             subprogress = bolt.SubProgress(progress, 0.5, 1)
             with stageDir.unicodeSafe() as tempOut:
                 if extractDir.join(u'plugins.crc').exists() and extractDir.join(u'plugins').exists():
@@ -220,7 +222,7 @@ class OmodFile(object):
 
         # Extracted data stream is saved as a file named 'a'
         progress(0, self.omod_path.tail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
-        cmd = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', dataPath.s, u'-o%s' % outPath.s]
+        cmd = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', dataPath.s, u'-o%s' % outPath]
         subprocess.call(cmd, startupinfo=startupinfo)
 
         # Split the uncompress stream into files
@@ -237,9 +239,9 @@ class OmodFile(object):
         # Split the uncompressed stream into files
         progress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail)
         with streamPath.open(u'rb') as bin_out:
-            for i,name in enumerate(fileNames):
-                progress(i, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail + u'\n' + name)
-                outFile = outDir.join(name)
+            for i,fname in enumerate(fileNames):
+                progress(i, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail + u'\n' + fname)
+                outFile = outDir.join(fname)
                 with outFile.open(u'wb') as output:
                     output.write(bin_out.read(sizes_[i]))
         progress(len(fileNames))
@@ -250,9 +252,9 @@ class OmodFile(object):
         totalSize = sum(sizes_)
 
         # Extract data stream to an uncompressed stream
-        subprogress = bolt.SubProgress(progress,0,0.3,full=dataPath.size)
+        subprogress = bolt.SubProgress(progress, 0, 0.3, full=dataPath.psize)
         subprogress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
-        with dataPath.open('rb') as ins:
+        with dataPath.open(u'rb') as ins:
             done = 0
             with open(outPath.join(dataPath.sbody+u'.tmp').s, u'wb') as output:
                 # Decoder properties
@@ -261,14 +263,14 @@ class OmodFile(object):
                 subprogress(5)
 
                 # Next 8 bytes are the size of the data stream
-                for i in range(8):
+                for i in xrange(8):
                     out = totalSize >> (i*8)
-                    output.write(struct_pack('B', out & 0xFF))
+                    pack_byte(output, out & 0xFF)
                     done += 1
                     subprogress(done)
 
                 # Now copy the data stream
-                while ins.tell() < dataPath.size:
+                while ins.tell() < dataPath.psize:
                     output.write(ins.read(512))
                     done += 512
                     subprogress(done)
@@ -295,7 +297,7 @@ class OmodFile(object):
         crcs = list()
         sizes_ = list()
         with open(crc_file_path.s, u'rb') as crc_file:
-            while crc_file.tell() < crc_file_path.size:
+            while crc_file.tell() < crc_file_path.psize:
                 fileNames.append(_readNetString(crc_file))
                 crcs.append(unpack_int_signed(crc_file))
                 sizes_.append(unpack_int64_signed(crc_file))
@@ -303,8 +305,8 @@ class OmodFile(object):
 
 class OmodConfig(object):
     """Tiny little omod config class."""
-    def __init__(self,name):
-        self.name = name.s
+    def __init__(self, omod_proj):
+        self.omod_proj = omod_proj.s
         self.vMajor = 0
         self.vMinor = 1
         self.vBuild = 0
@@ -314,38 +316,41 @@ class OmodConfig(object):
         self.abstract = u''
 
     @staticmethod
-    def getOmodConfig(name):
+    def getOmodConfig(omod_proj):
         """Get obmm config file for project."""
-        config = OmodConfig(name)
-        configPath = bass.dirs[u'installers'].join(name,u'omod conversion data',u'config')
+        config = OmodConfig(omod_proj)
+        configPath = bass.dirs[u'installers'].join(omod_proj,
+            u'omod conversion data', u'config')
         if configPath.exists():
             with open(configPath.s,u'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
-                config.name = decode(_readNetString(ins), encoding=u'utf-8')
+                config.omod_proj = decoder(_readNetString(ins),
+                                           encoding=u'utf-8')
                 config.vMajor = unpack_int_signed(ins)
                 config.vMinor = unpack_int_signed(ins)
                 for attr in (u'omod_author',u'email',u'website',u'abstract'):
-                    setattr(config, attr, decode(_readNetString(ins), encoding=u'utf-8'))
+                    setattr(config, attr,
+                            decoder(_readNetString(ins), encoding=u'utf-8'))
                 ins.read(8) #--Skip date-time
                 ins.read(1) #--Skip zip-compression
                 #config['vBuild'], = ins.unpack('I',4)
         return config
 
-    @staticmethod
-    def writeOmodConfig(name, config):
+    def writeOmodConfig(self):
         """Write obmm config file for project."""
-        configPath = bass.dirs[u'installers'].join(name,u'omod conversion data',u'config')
+        configPath = bass.dirs[u'installers'].join(self.omod_proj,
+            u'omod conversion data', u'config')
         configPath.head.makedirs()
         with open(configPath.temp.s,u'wb') as out:
-            out.write(struct_pack(u'B', 4))
-            _writeNetString(out, config.name.encode(u'utf8'))
-            out.write(struct_pack(u'i', config.vMajor))
-            out.write(struct_pack(u'i', config.vMinor))
+            pack_byte(out, 4)
+            _writeNetString(out, self.omod_proj.encode(u'utf8'))
+            pack_int_signed(out, self.vMajor)
+            pack_int_signed(out, self.vMinor)
             for attr in (u'omod_author', u'email', u'website', u'abstract'):
                 # OBMM reads it fine if in UTF-8, so we'll do that.
-                _writeNetString(out, getattr(config, attr).encode(u'utf-8'))
-            out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
-            out.write(struct_pack(u'b', 0)) #--zip compression (will be ignored)
-            out.write('\xFF\xFF\xFF\xFF')
+                _writeNetString(out, getattr(self, attr).encode(u'utf-8'))
+            out.write(b'\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
+            pack_byte_signed(out, 0) #--zip compression (will be ignored)
+            out.write(b'\xFF\xFF\xFF\xFF')
         configPath.untemp()

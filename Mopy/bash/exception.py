@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,15 +14,15 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains all custom exceptions for Wrye Bash."""
 
+import platform
 import sys
 import traceback
 # NO LOCAL IMPORTS! This has to be importable from any module/package.
@@ -70,18 +70,17 @@ class FileError(BoltError):
         self.in_name = in_name
 
     def __str__(self):
-        return u'{}: {}'.format((self.in_name or u'Unknown File'),
-                                self.message)
+        return u'{}: {}'.format(self.in_name or u'Unknown File', self.message)
 
 class SaveFileError(FileError):
     """Save File Error: File is corrupted."""
     pass
 
-class FileEditError(BoltError):
+class FileEditError(BoltError): ##: never raised?
     """Unable to edit a file"""
     def __init__(self, file_path, message=None):
-        ## type: (Path, basestring) -> None
-        message = message or (u'Unable to edit file %s.' % file_path.s)
+        ## type: (Path, unicode) -> None
+        message = message or (u'Unable to edit file %s.' % file_path)
         super(FileEditError, self).__init__(message)
         self.filePath = file_path
 
@@ -90,41 +89,51 @@ class ModError(FileError):
     """Mod Error: File is corrupted."""
     pass
 
+def _join_sigs(debug_str):
+    if isinstance(debug_str, (tuple, list)):
+        debug_str = u'.'.join(
+            u'%s' % (s.decode(u'ascii') if type(s) is bytes else s) for s
+            in debug_str)
+    return debug_str
+
 class ModReadError(ModError):
     """Mod Error: Attempt to read outside of buffer."""
-    def __init__(self, in_name, record_sig, try_pos, max_pos):
-        ## type: (Path, basestring, int, int) -> None
+    def __init__(self, in_name, debug_str, try_pos, max_pos):
+        ## type: (Path, unicode|bytes, int, int) -> None
+        debug_str = _join_sigs(debug_str)
         if try_pos < 0:
             message = (u'%s: Attempted to read before (%s) beginning of '
-                       u'file/buffer.' % (record_sig, try_pos))
+                       u'file/buffer.' % (debug_str, try_pos))
         else:
             message = (u'%s: Attempted to read past (%s) end (%s) of '
-                       u'file/buffer.' % (record_sig, try_pos, max_pos))
+                       u'file/buffer.' % (debug_str, try_pos, max_pos))
         super(ModReadError, self).__init__(in_name.s, message)
 
 class ModSizeError(ModError):
     """Mod Error: Record/subrecord has wrong size."""
-    def __init__(self, in_name, record_sig, expected_sizes, actual_size):
+    def __init__(self, in_name, debug_str, expected_sizes, actual_size):
         """Indicates that a record or subrecord has the wrong size.
 
         :type in_name: bolt.Path
-        :type record_sig: basestring
+        :type debug_str: unicode|bytes|tuple[unicode|bytes]
         :type expected_sizes: tuple[int]
         :type actual_size: int"""
+        debug_str = _join_sigs(debug_str)
         message_form = (u'%s: Expected one of sizes [%s], but got %u' % (
-            record_sig, u', '.join([u'%s' % x for x in expected_sizes]),
+            debug_str, u', '.join([u'%s' % x for x in expected_sizes]),
             actual_size))
         super(ModSizeError, self).__init__(in_name.s, message_form)
 
 class ModFidMismatchError(ModError):
     """Mod Error: Two FormIDs that should be equal are not."""
-    def __init__(self, in_name, record_sig, fid_expected, fid_actual):
+    def __init__(self, in_name, debug_str, fid_expected, fid_actual):
+        debug_str = _join_sigs(debug_str)
         message_form = (u'%s: FormIDs do not match - expected %r but got %r'
-                        % (record_sig, fid_expected, fid_actual))
+                        % (debug_str, fid_expected, fid_actual))
         super(ModFidMismatchError, self).__init__(in_name.s, message_form)
 
 class ModSigMismatchError(ModError):
-    """Mod Error: A record is getting overriden by a record with a different
+    """Mod Error: A record is getting overridden by a record with a different
     signature. This is undefined behavior."""
     def __init__(self, in_name, record):
         message_form = (u'%r is likely overriding or being overwritten by a '
@@ -279,6 +288,13 @@ class MasterMapError(BoltError):
 class SaveHeaderError(Exception): pass
 
 class InstallerArchiveError(BoltError): pass
+
+class EnvError(Exception):
+    """Attempt to use a feature that is not available on this operating
+    system."""
+    def __init__(self, env_feature):
+        super(EnvError, self).__init__(u"'%s' is not available on %s" % (
+            env_feature, platform.system()))
 
 # gui package exceptions ------------------------------------------------------
 class GuiError(Exception):

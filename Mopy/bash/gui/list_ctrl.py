@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -55,12 +54,12 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
             self.window = window
             self.data_object = _wx.DataObjectComposite()
             self.dataFile = _wx.FileDataObject()                 # Accept files
-            self.dataList = _wx.CustomDataObject('ListIndexes')  # Accept indexes from a list
+            self.dataList = _wx.CustomDataObject(u'ListIndexes')  # Accept indexes from a list
             if dndFiles: self.data_object.Add(self.dataFile)
             if dndList : self.data_object.Add(self.dataList)
             self.SetDataObject(self.data_object)
 
-        def OnData(self, x, y, data):
+        def OnData(self, x, y, _data):
             if self.GetData():
                 dtype = self.data_object.GetReceivedFormat().GetType()
                 if dtype == _wx.DF_FILENAME:
@@ -69,8 +68,8 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                     return _wx.DragResult.DragCopy
                 elif dtype == self.dataList.GetFormat().GetType():
                     # ListCtrl indexes
-                    data = pickle.loads(self.dataList.GetData().tobytes())
-                    self.window._OnDropList(x, y, data)
+                    _data = pickle.loads(self.dataList.GetData().tobytes())
+                    self.window._OnDropList(x, y, _data)
                     return _wx.DragResult.DragCopy
             return _wx.DragResult.DragNone
 
@@ -119,7 +118,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
         if not self.fnDndAllow(event): return
         indices = []
         start = stop = -1
-        for index in range(self.GetItemCount()):
+        for index in xrange(self.GetItemCount()):
             if self.GetItemState(index, _wx.LIST_STATE_SELECTED):
                 if stop >= 0 and self.dndOnlyCont:
                     # Only allow moving selections if they are in a
@@ -133,12 +132,12 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                     stop = index - 1
         if stop < 0: stop = self.GetItemCount()
         selected = pickle.dumps(indices, 1)
-        ldata = _wx.CustomDataObject('ListIndexes')
+        ldata = _wx.CustomDataObject(u'ListIndexes')
         ldata.SetData(selected)
-        data = _wx.DataObjectComposite()
-        data.Add(ldata)
+        data_object = _wx.DataObjectComposite()
+        data_object.Add(ldata)
         source = _wx.DropSource(self)
-        source.SetData(data)
+        source.SetData(data_object)
         source.DoDragDrop(flags=_wx.Drag_DefaultMove)
 
     def OnDropFiles(self, x, y, filenames):
@@ -225,8 +224,8 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
                 lambda event: [event.IsEditCancelled(), event.GetLabel(),
                     event.GetIndex(), self.FindItemAt(event.GetIndex())])
         #--Item/Id mapping
-        self._item_itemId = {} # :type: dict[bolt.Path | basestring | int, int]
-        self._itemId_item = {} # :type: dict[int, bolt.Path | basestring | int]
+        self._item_itemId = {} # :type: dict[bolt.Path | unicode | int, int]
+        self._itemId_item = {} # :type: dict[int, bolt.Path | unicode | int]
 
     # API (beta) -------------------------------------------------------------
     # Internal id <-> item mappings used in wx._controls.ListCtrl.SortItems
@@ -269,7 +268,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
 
     def ReorderDisplayed(self, inorder):
         """Reorder the list control displayed items to match inorder."""
-        sortDict = dict((self._item_itemId[y], x) for x, y in enumerate(inorder))
+        sortDict = {self._item_itemId[y]: x for x, y in enumerate(inorder)}
         self._native_widget.SortItems(lambda x, y: bolt.cmp_(sortDict[x], sortDict[y]))
 
     # native edit control wrappers

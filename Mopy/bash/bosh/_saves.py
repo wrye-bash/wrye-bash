@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,15 +25,18 @@ Oblivion only . We need this split into cosaves and proper saves module and
 coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
 from __future__ import division, print_function
-from collections import Counter, defaultdict
-from itertools import starmap, repeat
 
+import io
+from collections import Counter, defaultdict
+from itertools import izip, starmap, repeat
+
+from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
-from ..bolt import Flags, sio, GPath, decode, deprint, encode, cstrip, \
-    SubProgress, unpack_byte, unpack_str8, unpack_many, unpack_int, \
-    unpack_short, struct_pack, struct_unpack
-from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
-    getFormIndices, unpack_header
+from ..bolt import Flags, deprint, encode, SubProgress, unpack_many, \
+    unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
+    structs_cache, unpack_str8, dict_sort
+from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
+    unpack_header
 from ..exception import ModError, StateError
 from ..mod_files import ModFile, LoadFactory
 
@@ -45,126 +47,127 @@ from ..mod_files import ModFile, LoadFactory
 # Save Change Records ---------------------------------------------------------
 class SreNPC(object):
     """NPC change record."""
-    __slots__ = ('form','health','unused2','attributes','acbs','spells','factions','full','ai','skills','modifiers')
+    __slots__ = (u'form', u'health', u'unused2', u'attributes', u'acbs',
+                 u'spells', u'factions', u'full', u'ai', u'skills',
+                 u'modifiers')
     sre_flags = Flags(0, Flags.getNames(
-        (0,'form'),
-        (2,'health'),
-        (3,'attributes'),
-        (4,'acbs'),
-        (5,'spells'),
-        (6,'factions'),
-        (7,'full'),
-        (8,'ai'),
-        (9,'skills'),
-        (28,'modifiers'),
+        (0,u'form'),
+        (2,u'health'),
+        (3,u'attributes'),
+        (4,u'acbs'),
+        (5,u'spells'),
+        (6,u'factions'),
+        (7,u'full'),
+        (8,u'ai'),
+        (9,u'skills'),
+        (28,u'modifiers'),
         ))
 
     class ACBS(object):
-        __slots__ = ['flags','baseSpell','fatigue','barterGold','level','calcMin','calcMax']
+        __slots__ = (u'flags', u'baseSpell', u'fatigue', u'barterGold',
+                     u'level', u'calcMin', u'calcMax')
 
-    def __init__(self, sre_flags=0, data=None):
+    def __init__(self, sre_flags=0, data_=None):
         for attr in self.__slots__:
-            self.__setattr__(attr,None)
-        if data: self.load(sre_flags, data)
+            setattr(self, attr, None)
+        if data_: self.load(sre_flags, data_)
 
     def getDefault(self,attr):
         """Returns a default version. Only supports acbs."""
-        assert(attr == 'acbs')
+        assert attr == u'acbs'
         acbs = SreNPC.ACBS()
         (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
                 acbs.calcMin, acbs.calcMax) = (0,0,0,0,1,0,0)
         acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
         return acbs
 
-    def load(self, sr_flags, data):
+    def load(self, sr_flags, data_):
         """Loads variables from data."""
-        with sio(data) as ins:
-            def _unpack(fmt, fmt_siz):
-                return struct_unpack(fmt, ins.read(fmt_siz))
-            sr_flags = SreNPC.sre_flags(sr_flags)
-            if sr_flags.form:
-                self.form, = _unpack('I',4)
-            if sr_flags.attributes:
-                self.attributes = list(_unpack('8B',8))
-            if sr_flags.acbs:
-                acbs = self.acbs = SreNPC.ACBS()
-                (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
-                 acbs.level, acbs.calcMin, acbs.calcMax) = _unpack('=I3Hh2H',16)
-                acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
-            if sr_flags.factions:
-                num, = _unpack('H',2)
-                self.factions = list(starmap(_unpack, repeat(('=Ib', 5), num)))
-            if sr_flags.spells:
-                num, = _unpack('H',2)
-                self.spells = list(_unpack('%dI' % num,4*num))
-            if sr_flags.ai:
-                self.ai = ins.read(4)
-            if sr_flags.health:
-                self.health, self.unused2 = _unpack('H2s',4)
-            if sr_flags.modifiers:
-                num, = _unpack('H',2)
-                self.modifiers = list(starmap(_unpack, repeat(('=Bf', 5), num)))
-            if sr_flags.full:
-                size, = _unpack('B',1)
-                self.full = ins.read(size)
-            if sr_flags.skills:
-                self.skills = list(_unpack('21B',21))
-        #--Done
+        ins = io.BytesIO(data_)
+        def _unpack(fmt, fmt_siz):
+            return struct_unpack(fmt, ins.read(fmt_siz))
+        sr_flags = SreNPC.sre_flags(sr_flags)
+        if sr_flags.form:
+            self.form = unpack_int(ins)
+        if sr_flags.attributes:
+            self.attributes = list(_unpack(u'8B', 8))
+        if sr_flags.acbs:
+            acbs = self.acbs = SreNPC.ACBS()
+            (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
+             acbs.level, acbs.calcMin, acbs.calcMax) = _unpack(u'=I3Hh2H', 16)
+            acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
+        if sr_flags.factions:
+            num = unpack_short(ins)
+            self.factions = list(starmap(_unpack, repeat((u'=Ib', 5), num)))
+        if sr_flags.spells:
+            num = unpack_short(ins)
+            self.spells = list(_unpack(u'%dI' % num, 4 * num))
+        if sr_flags.ai:
+            self.ai = ins.read(4)
+        if sr_flags.health:
+            self.health, self.unused2 = _unpack(u'H2s', 4)
+        if sr_flags.modifiers:
+            num = unpack_short(ins)
+            self.modifiers = list(starmap(_unpack, repeat((u'=Bf', 5), num)))
+        if sr_flags.full:
+            self.full = unpack_str8(ins)
+        if sr_flags.skills:
+            self.skills = list(_unpack(u'21B', 21))
 
     def getFlags(self):
         """Returns current flags set."""
         sr_flags = SreNPC.sre_flags()
         for attr in SreNPC.__slots__:
-            if attr != 'unused2':
-                sr_flags.__setattr__(attr,self.__getattribute__(attr) is not None)
+            if attr != u'unused2':
+                setattr(sr_flags, attr, getattr(self, attr) is not None)
         return int(sr_flags)
 
     def getData(self):
         """Returns self.data."""
-        with sio() as out:
-            def _pack(fmt, *args):
-                out.write(struct_pack(fmt, *args))
-            #--Form
-            if self.form is not None:
-                _pack('I',self.form)
-            #--Attributes
-            if self.attributes is not None:
-                _pack('8B',*self.attributes)
-            #--Acbs
-            if self.acbs is not None:
-                acbs = self.acbs
-                _pack('=I3Hh2H',int(acbs.flags), acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
-                    acbs.calcMin, acbs.calcMax)
-            #--Factions
-            if self.factions is not None:
-                _pack('H',len(self.factions))
-                for faction in self.factions:
-                    _pack('=Ib',*faction)
-            #--Spells
-            if self.spells is not None:
-                num = len(self.spells)
-                _pack('H',num)
-                _pack('%dI' % num,*self.spells)
-            #--AI Data
-            if self.ai is not None:
-                out.write(self.ai)
-            #--Health
-            if self.health is not None:
-                _pack('H2s',self.health,self.unused2)
-            #--Modifiers
-            if self.modifiers is not None:
-                _pack('H',len(self.modifiers))
-                for modifier in self.modifiers:
-                    _pack('=Bf',*modifier)
-            #--Full
-            if self.full is not None:
-                _pack('B',len(self.full))
-                out.write(self.full)
-            #--Skills
-            if self.skills is not None:
-                _pack('21B',*self.skills)
-            #--Done
-            return out.getvalue()
+        out = io.BytesIO()
+        def _pack(fmt, *args):
+            out.write(structs_cache[fmt].pack(*args))
+        #--Form
+        if self.form is not None:
+            pack_int(out, self.form)
+        #--Attributes
+        if self.attributes is not None:
+            _pack(u'8B', *self.attributes)
+        #--Acbs
+        if self.acbs is not None:
+            acbs = self.acbs
+            _pack(u'=I3Hh2H',int(acbs.flags), acbs.baseSpell, acbs.fatigue,
+                  acbs.barterGold, acbs.level, acbs.calcMin, acbs.calcMax)
+        #--Factions
+        if self.factions is not None:
+            pack_short(out, len(self.factions))
+            for faction in self.factions:
+                _pack(u'=Ib', *faction)
+        #--Spells
+        if self.spells is not None:
+            num = len(self.spells)
+            pack_short(out, num)
+            _pack(u'%dI' % num, *self.spells)
+        #--AI Data
+        if self.ai is not None:
+            out.write(self.ai)
+        #--Health
+        if self.health is not None:
+            _pack(u'H2s', self.health, self.unused2)
+        #--Modifiers
+        if self.modifiers is not None:
+            pack_short(out, len(self.modifiers))
+            for modifier in self.modifiers:
+                _pack(u'=Bf', *modifier)
+        #--Full
+        if self.full is not None:
+            pack_byte(out, len(self.full))
+            out.write(self.full)
+        #--Skills
+        if self.skills is not None:
+            _pack(u'21B', *self.skills)
+        #--Done
+        return out.getvalue()
 
     def getTuple(self,rec_id,version):
         """Returns record as a change record tuple."""
@@ -172,68 +175,68 @@ class SreNPC(object):
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
-        with sio() as buff:
-            fids = saveFile.fids
-            if self.form is not None:
-                buff.write(u'Form:\n  %d' % self.form)
-            if self.attributes is not None:
-                buff.write(
-                    u'Attributes\n  strength %3d\n  intelligence %3d\n  '
-                    u'willpower %3d\n  agility %3d\n  speed %3d\n  endurance '
-                    u'%3d\n  personality %3d\n  luck %3d\n' % tuple(
-                        self.attributes))
-            if self.acbs is not None:
-                buff.write(u'ACBS:\n')
-                for attr in SreNPC.ACBS.__slots__:
-                    buff.write(u'  %s %s\n' % (attr,getattr(self.acbs,attr)))
-            if self.factions is not None:
-                buff.write(u'Factions:\n')
-                for faction in self.factions:
-                    buff.write(u'  %8X %2X\n' % (fids[faction[0]],faction[1]))
-            if self.spells is not None:
-                buff.write(u'Spells:\n')
-                for spell in self.spells:
-                    buff.write(u'  %8X\n' % fids[spell])
-            if self.ai is not None:
-                buff.write(_(u'AI')+u':\n  ' + self.ai + u'\n')
-            if self.health is not None:
-                buff.write(u'Health\n  %s\n' % self.health)
-                buff.write(u'Unused2\n  %s\n' % self.unused2)
-            if self.modifiers is not None:
-                buff.write(u'Modifiers:\n')
-                for modifier in self.modifiers:
-                    buff.write(u'  %s\n' % modifier)
-            if self.full is not None:
-                buff.write(u'Full:\n  %s\n' % self.full)
-            if self.skills is not None:
-                buff.write(
-                    u'Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n '
-                    u' block %3d\n  blunt %3d\n  handToHand %3d\n  '
-                    u'heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  '
-                    u'conjuration %3d\n  destruction %3d\n  illusion %3d\n  '
-                    u'mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  '
-                    u'lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  '
-                    u'security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(
-                        self.skills))
-            return buff.getvalue()
+        buff = io.StringIO()
+        fids = saveFile.fids
+        if self.form is not None:
+            buff.write(u'Form:\n  %d' % self.form)
+        if self.attributes is not None:
+            buff.write(
+                u'Attributes\n  strength %3d\n  intelligence %3d\n  '
+                u'willpower %3d\n  agility %3d\n  speed %3d\n  endurance '
+                u'%3d\n  personality %3d\n  luck %3d\n' % tuple(
+                    self.attributes))
+        if self.acbs is not None:
+            buff.write(u'ACBS:\n')
+            for attr in SreNPC.ACBS.__slots__:
+                buff.write(u'  %s %s\n' % (attr, getattr(self.acbs, attr)))
+        if self.factions is not None:
+            buff.write(u'Factions:\n')
+            for faction in self.factions:
+                buff.write(u'  %8X %2X\n' % (fids[faction[0]], faction[1]))
+        if self.spells is not None:
+            buff.write(u'Spells:\n')
+            for spell in self.spells:
+                buff.write(u'  %8X\n' % fids[spell])
+        if self.ai is not None:
+            buff.write(_(u'AI')+u':\n  ' + self.ai + u'\n')
+        if self.health is not None:
+            buff.write(u'Health\n  %s\n' % self.health)
+            buff.write(u'Unused2\n  %s\n' % self.unused2)
+        if self.modifiers is not None:
+            buff.write(u'Modifiers:\n')
+            for modifier in self.modifiers:
+                buff.write(u'  %s\n' % modifier)
+        if self.full is not None:
+            buff.write(u'Full:\n  %s\n' % self.full)
+        if self.skills is not None:
+            buff.write(
+                u'Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n '
+                u' block %3d\n  blunt %3d\n  handToHand %3d\n  '
+                u'heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  '
+                u'conjuration %3d\n  destruction %3d\n  illusion %3d\n  '
+                u'mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  '
+                u'lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  '
+                u'security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(
+                    self.skills))
+        return buff.getvalue()
 
 # Save File -------------------------------------------------------------------
 class SaveFile(object):
     """Represents a Tes4 Save file."""
-    recordFlags = Flags(0,Flags.getNames(
-        'form','baseid','moved','havocMoved','scale','allExtra','lock','owner','unk8','unk9',
-        'mapMarkerFlags','hadHavokMoveFlag','unk12','unk13','unk14','unk15',
-        'emptyFlag','droppedItem','doorDefaultState','doorState','teleport',
-        'extraMagic','furnMarkers','oblivionFlag','movementExtra','animation',
-        'script','inventory','created','unk29','enabled'))
+    recordFlags = Flags(0, Flags.getNames(u'form', u'baseid', u'moved',
+        u'havocMoved', u'scale', u'allExtra', u'lock', u'owner', u'unk8',
+        u'unk9', u'mapMarkerFlags', u'hadHavokMoveFlag', u'unk12', u'unk13',
+        u'unk14', u'unk15', u'emptyFlag', u'droppedItem', u'doorDefaultState',
+        u'doorState', u'teleport', u'extraMagic', u'furnMarkers',
+        u'oblivionFlag', u'movementExtra', u'animation', u'script',
+        u'inventory', u'created', u'unk29', u'enabled'))
 
     def __init__(self,saveInfo=None,canSave=True):
         self.fileInfo = saveInfo
         self.canSave = canSave
         #--File Header, Save Game Header
-        self.header = None
+        self.header = None # type: OblivionSaveHeader| None
         self.gameHeader = None
-        self.pcName = None
         #--Masters
         self._masters = []
         #--Global
@@ -257,46 +260,37 @@ class SaveFile(object):
         """Extract info from save file."""
         # TODO: This is Oblivion only code.  Needs to be refactored
         import array
-        path = self.fileInfo.getPath()
-        with open(path.s,u'rb') as ins:
+        with self.fileInfo.abs_path.open(u'rb') as ins:
             #--Progress
             progress = progress or bolt.Progress()
-            progress.setFull(self.fileInfo.size)
+            progress.setFull(self.fileInfo.fsize)
             #--Header
             progress(0,_(u'Reading Header.'))
-            self.header = ins.read(34)
-
-            #--Save Header, pcName
-            gameHeaderSize = unpack_int(ins)
-            self.saveNum,pcNameSize = unpack_many(ins, '=IB')
-            self.pcName = decode(cstrip(ins.read(pcNameSize)))
-            self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
-
-            #--Masters
             del self._masters[:]
-            numMasters = unpack_byte(ins)
-            for count in range(numMasters):
-                self._masters.append(GPath(decode(unpack_str8(ins))))
-
+            self.header = OblivionSaveHeader(self.fileInfo.abs_path,
+                                             load_image=True, ins=ins)
             #--Pre-Records copy buffer
-            def insCopy(buff,size,backSize=0):
+            def insCopy(buff, siz, backSize=0):
                 if backSize: ins.seek(-backSize,1)
-                buff.write(ins.read(size+backSize))
+                buff.write(ins.read(siz + backSize))
 
             #--"Globals" block
-            fidsPointer,recordsNum = unpack_many(ins, '2I')
+            fidsPointer,recordsNum = unpack_many(ins, u'2I')
             #--Pre-globals
             self.preGlobals = ins.read(8*4)
             #--Globals
             globalsNum = unpack_short(ins)
-            self.globals = [unpack_many(ins, 'If') for num in xrange(globalsNum)]
+            self.globals = [unpack_many(ins, u'If')
+                            for _n in xrange(globalsNum)]
             #--Pre-Created (Class, processes, spectator, sky)
-            with sio() as buff:
-                for count in range(4):
-                    siz = unpack_short(ins)
-                    insCopy(buff, siz, 2)
-                insCopy(buff,4) #--Supposedly part of created info, but sticking it here since I don't decode it.
-                self.preCreated = buff.getvalue()
+            buff = io.BytesIO()
+            for x in xrange(4):
+                siz = unpack_short(ins)
+                insCopy(buff, siz, 2)
+            #--Supposedly part of created info, but sticking it here since
+            # I don't decode it.
+            insCopy(buff, 4)
+            self.preCreated = buff.getvalue()
             #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
             modReader = ModReader(self.fileInfo.name,ins)
             createdNum = unpack_int(ins)
@@ -304,11 +298,11 @@ class SaveFile(object):
                 progress(ins.tell(),_(u'Reading created...'))
                 self.created.append(MreRecord(unpack_header(modReader), modReader))
             #--Pre-records: Quickkeys, reticule, interface, regions
-            with sio() as buff:
-                for count in range(4):
-                    siz = unpack_short(ins)
-                    insCopy(buff, siz, 2)
-                self.preRecords = buff.getvalue()
+            buff = io.BytesIO()
+            for x in xrange(4):
+                siz = unpack_short(ins)
+                insCopy(buff, siz, 2)
+            self.preRecords = buff.getvalue()
 
             #--Records
             for count in xrange(recordsNum):
@@ -323,14 +317,14 @@ class SaveFile(object):
             self.tempEffects = ins.read(tmp_effects_size)
             #--Fids
             num = unpack_int(ins)
-            self.fids = array.array('I')
+            self.fids = array.array(u'I')
             self.fids.fromfile(ins,num)
             for iref,fid in enumerate(self.fids):
                 self.irefs[fid] = iref
 
             #--WorldSpaces
             num = unpack_int(ins)
-            self.worldSpaces = array.array('I')
+            self.worldSpaces = array.array(u'I')
             self.worldSpaces.fromfile(ins,num)
         #--Done
         progress(progress.full,_(u'Finished reading.'))
@@ -338,48 +332,34 @@ class SaveFile(object):
     def save(self,outPath=None,progress=None):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
-        if not self.canSave: raise StateError(u"Insufficient data to write file.")
+        if not self.canSave: raise StateError(u'Insufficient data to write file.')
         outPath = outPath or self.fileInfo.getPath()
         with outPath.open(u'wb') as out:
-            def _pack(*args):
-                out.write(struct_pack(*args))
+            def _pack(fmt, *args):
+                out.write(structs_cache[fmt].pack(*args))
             #--Progress
             progress = progress or bolt.Progress()
-            progress.setFull(self.fileInfo.size)
+            progress.setFull(self.fileInfo.fsize)
             #--Header
             progress(0,_(u'Writing Header.'))
-            out.write(self.header)
-            #--Save Header
-            pcName = encode(self.pcName)
-            _pack('=IIB',5+len(pcName)+1+len(self.postNameHeader),
-                self.saveNum, len(pcName)+1)
-            out.write(pcName)
-            out.write('\x00')
-            out.write(self.postNameHeader)
-            #--Masters
-            _pack('B', len(self._masters))
-            for master in self._masters:
-                enc_name = encode(master.s)
-                _pack('B', len(enc_name))
-                out.write(enc_name)
+            self.header.dump_header(out)
             #--Fids Pointer, num records
             fidsPointerPos = out.tell()
-            _pack('I',0) #--Temp. Will write real value later.
-            _pack('I',len(self.records))
+            _pack(u'I',0) #--Temp. Will write real value later.
+            _pack(u'I',len(self.records))
             #--Pre-Globals
             out.write(self.preGlobals)
             #--Globals
-            _pack('H',len(self.globals))
+            _pack(u'H',len(self.globals))
             for iref,value in self.globals:
-                _pack('If',iref,value)
+                _pack(u'If',iref,value)
             #--Pre-Created
             out.write(self.preCreated)
             #--Created
             progress(0.1,_(u'Writing created.'))
-            modWriter = ModWriter(out)
-            _pack('I',len(self.created))
+            _pack(u'I',len(self.created))
             for record in self.created:
-                record.dump(modWriter)
+                record.dump(out)
             #--Pre-records
             out.write(self.preRecords)
             #--Records, temp effects, fids, worldspaces
@@ -388,18 +368,18 @@ class SaveFile(object):
                 _pack(u'=IBIBH',rec_id,rec_kind,flags,version,len(data))
                 out.write(data)
             #--Temp Effects, fids, worldids
-            _pack('I',len(self.tempEffects))
+            _pack(u'I',len(self.tempEffects))
             out.write(self.tempEffects)
             #--Fids
             progress(0.9,_(u'Writing fids, worldids.'))
             fidsPos = out.tell()
             out.seek(fidsPointerPos)
-            _pack('I',fidsPos)
+            _pack(u'I',fidsPos)
             out.seek(fidsPos)
-            _pack('I',len(self.fids))
+            _pack(u'I',len(self.fids))
             self.fids.tofile(out)
             #--Worldspaces
-            _pack('I',len(self.worldSpaces))
+            _pack(u'I',len(self.worldSpaces))
             self.worldSpaces.tofile(out)
             #--Done
             progress(1.0,_(u'Writing complete.'))
@@ -419,7 +399,7 @@ class SaveFile(object):
 
     def indexCreated(self):
         """Fills out self.fid_recNum."""
-        self.fid_createdNum = dict((x.fid,i) for i,x in enumerate(self.created))
+        self.fid_createdNum = {x.fid: i for i, x in enumerate(self.created)}
 
     def removeCreated(self,fid):
         """Removes created if it exists. Returns True if record existed, false if not."""
@@ -434,7 +414,7 @@ class SaveFile(object):
 
     def indexRecords(self):
         """Fills out self.fid_recNum."""
-        self.fid_recNum = dict((entry[0],index) for index,entry in enumerate(self.records))
+        self.fid_recNum = {r[0]: i for i, r in enumerate(self.records)}
 
     def getRecord(self,fid,default=None):
         """Returns recNum and record with corresponding fid."""
@@ -466,17 +446,6 @@ class SaveFile(object):
             del self.records[recNum]
             del self.fid_recNum[fid]
             return True
-
-    def getShortMapper(self):
-        """Returns a mapping function to map long fids to short fids."""
-        indices = dict(
-            [(mas_name, idx) for idx, mas_name in enumerate(self._masters)])
-        def mapper(fid):
-            if fid is None: return None
-            modName,object = fid
-            mod = indices[modName]
-            return (int(mod) << 24 ) | int(object)
-        return mapper
 
     def getFid(self,iref,default=None):
         """Returns fid corresponding to iref."""
@@ -526,12 +495,12 @@ class SaveFile(object):
         created_counts = Counter()
         id_created = {}
         for citem in self.created:
-            created_sizes[citem.recType] += citem.size
-            created_counts[citem.recType] += 1
+            created_sizes[citem._rec_sig] += citem.size
+            created_counts[citem._rec_sig] += 1
             id_created[citem.fid] = citem
-        for rsig in sorted(created_sizes):
+        for rsig, csize in dict_sort(created_sizes):
             log(u'  %d\t%d kb\t%s' % (
-                created_counts[rsig], created_sizes[rsig] // 1024, rsig))
+                created_counts[rsig], csize // 1024, rsig.decode(u'ascii')))
         #--Fids
         lostRefs = 0
         idHist = [0]*256
@@ -543,7 +512,7 @@ class SaveFile(object):
         #--Change Records
         changeHisto = [0]*256
         typeModHisto = defaultdict(Counter)
-        knownTypes = set(bush.game.save_rec_types.keys())
+        knownTypes = set(bush.game.save_rec_types)
         lostChanges = {}
         objRefBases = {}
         objRefNullBases = 0
@@ -563,11 +532,11 @@ class SaveFile(object):
                     print(rec_kind,hex(rec_id),getMaster(mod))
                     knownTypes.add(rec_kind)
                 elif rec_id in id_created:
-                    print(rec_kind, hex(rec_id), id_created[rec_id].recType)
+                    print(rec_kind, hex(rec_id), id_created[rec_id]._rec_sig)
                     knownTypes.add(rec_kind)
             #--Obj ref parents
             if rec_kind == 49 and mod == 255 and (rec_flgs & 2):
-                iref, = struct_unpack('I', data[4:8])
+                iref, = struct_unpack(u'I', data[4:8])
                 count,cumSize = objRefBases.get(iref,(0,0))
                 count += 1
                 cumSize += len(data) + 12
@@ -579,31 +548,27 @@ class SaveFile(object):
         log.setHeader(_(u'Fids'))
         log(u'  Refed\tChanged\tMI    Mod Name')
         log(u'  %d\t\t     Lost Refs (Fid == 0)' % lostRefs)
-        for modIndex,(irefed,changed) in enumerate(zip(idHist,changeHisto)):
+        for modIndex, (irefed,changed) in enumerate(izip(idHist, changeHisto)):
             if irefed or changed:
                 log(u'  %d\t%d\t%02X   %s' % (irefed,changed,modIndex,getMaster(modIndex)))
         #--Lost Changes
         if lostChanges:
             log.setHeader(_(u'LostChanges'))
-            for rec_id, rec_kind in sorted(lostChanges.iteritems(),
-                                           key=lambda t: t[0]):
+            for rec_id, rec_kind in dict_sort(lostChanges):
                 log(hex(rec_id) + rec_type_map.get(rec_kind, u'%s' % rec_kind))
-        for rec_kind, modHisto in sorted(typeModHisto.iteritems(),
-                                         key=lambda t: t[0]):
+        for rec_kind, modHisto in dict_sort(typeModHisto):
             log.setHeader(u'%d %s' % (
                 rec_kind, rec_type_map.get(rec_kind, _(u'Unknown'))))
-            for modIndex,count in sorted(modHisto.iteritems(),
-                                         key=lambda t: t[0]):
+            for modIndex,count in dict_sort(modHisto):
                 log(u'  %d\t%s' % (count,getMaster(modIndex)))
             log(u'  %d\tTotal' % (sum(modHisto.values()),))
-        objRefBases = dict((key,value) for key,value in objRefBases.iteritems() if value[0] > 100)
+        objRefBases = {k: v for k, v in objRefBases.iteritems() if v[0] > 100}
         log.setHeader(_(u'New ObjectRef Bases'))
         if objRefNullBases:
             log(u' Null Bases: %s' % objRefNullBases)
         if objRefBases:
             log(_(u' Count IRef     BaseId'))
-            for iref in sorted(objRefBases.keys()):
-                count,cumSize = objRefBases[iref]
+            for iref, (count, cumSize) in dict_sort(objRefBases):
                 if iref >> 24 == 255:
                     parentid = iref
                 else:
@@ -618,26 +583,25 @@ class SaveFile(object):
         progress.setFull(len(self.created)+len(self.records))
         #--Created objects
         progress(0,_(u'Scanning created objects'))
-        fullAttr = 'full'
         for citem in self.created:
-            if fullAttr in citem.__class__.__slots__:
-                full = citem.__getattribute__(fullAttr)
+            if u'full' in citem.__class__.__slots__:
+                full = citem.full
             else:
-                full = citem.getSubString('FULL')
+                full = citem.getSubString(b'FULL')
             if full:
-                createdCounts[(citem.recType, full)] += 1
+                createdCounts[(citem._rec_sig, full)] += 1
             progress.plus()
-        for key in createdCounts.keys()[:]:
-            minCount = (50,100)[key[0] == 'ALCH']
-            if createdCounts[key] < minCount:
-                del createdCounts[key]
+        for k in list(createdCounts):
+            minCount = (50,100)[k[0] == b'ALCH']
+            if createdCounts[k] < minCount:
+                del createdCounts[k]
         #--Change records
         progress(len(self.created),_(u'Scanning change records.'))
         fids = self.fids
         for record in self.records:
             rec_id,rec_kind,rec_flgs,version,data = record
             if rec_kind == 49 and rec_id >> 24 == 0xFF and (rec_flgs & 2):
-                iref, = struct_unpack('I', data[4:8])
+                iref, = struct_unpack(u'I', data[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     nullRefCount += 1
             progress.plus()
@@ -654,11 +618,11 @@ class SaveFile(object):
             progress(0,_(u'Scanning created objects'))
             kept = []
             for citem in self.created:
-                if 'full' in citem.__class__.__slots__:
-                    full = citem.__getattribute__('full')
+                if u'full' in citem.__class__.__slots__:
+                    full = citem.full
                 else:
-                    full = citem.getSubString('FULL')
-                if full and (citem.recType,full) in uncreateKeys:
+                    full = citem.getSubString(b'FULL')
+                if full and (citem._rec_sig, full) in uncreateKeys:
                     uncreated.add(citem.fid)
                     numUncreated += 1
                 else:
@@ -674,7 +638,7 @@ class SaveFile(object):
             if rec_id in uncreated:
                 numUnCreChanged += 1
             elif removeNullRefs and rec_kind == 49 and rec_id >> 24 == 0xFF and (rec_flgs & 2):
-                iref, = struct_unpack('I', data[4:8])
+                iref, = struct_unpack(u'I', data[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     numUnNulled += 1
                 else:
@@ -688,22 +652,22 @@ class SaveFile(object):
     def getAbomb(self):
         """Gets animation slowing counter(?) value."""
         data = self.preCreated
-        tesClassSize, = struct_unpack('H', data[:2])
+        tesClassSize, = struct_unpack(u'H', data[:2])
         abombBytes = data[2+tesClassSize-4:2+tesClassSize]
-        abombCounter, = struct_unpack('I', abombBytes)
-        abombFloat, = struct_unpack('f', abombBytes)
+        abombCounter, = struct_unpack(u'I', abombBytes)
+        abombFloat, = struct_unpack(u'f', abombBytes)
         return tesClassSize,abombCounter,abombFloat
 
     def setAbomb(self,value=0x41000000):
         """Resets abomb counter to specified value."""
         data = self.preCreated
-        tesClassSize, = struct_unpack('H', data[:2])
+        tesClassSize, = struct_unpack(u'H', data[:2])
         if tesClassSize < 4: return
-        with sio() as buff:
-            buff.write(data)
-            buff.seek(2+tesClassSize-4)
-            buff.write(struct_pack('I', value))
-            self.preCreated = buff.getvalue()
+        buff = io.BytesIO()
+        buff.write(data)
+        buff.seek(2 + tesClassSize - 4)
+        pack_int(buff, value)
+        self.preCreated = buff.getvalue()
 
 #------------------------------------------------------------------------------
 class SaveSpells(object):
@@ -730,25 +694,24 @@ class SaveSpells(object):
         saveName = self.saveInfo.name
         progress(progress.full-1,saveName.s)
         for record in saveFile.created:
-            if record.recType == b'SPEL':
+            if record._rec_sig == b'SPEL':
                 allSpells[(saveName,getObjectIndex(record.fid))] = record.getTypeCopy()
 
     def importMod(self,modInfo):
         """Imports spell info from specified mod."""
         #--Spell list already extracted?
-        if 'bash.spellList' in modInfo.extras:
-            self.allSpells.update(modInfo.extras['bash.spellList'])
+        if u'bash.spellList' in modInfo.extras:
+            self.allSpells.update(modInfo.extras[u'bash.spellList'])
             return
         #--Else extract spell list
-        loadFactory = LoadFactory(False, MreRecord.type_class['SPEL'])
+        loadFactory = LoadFactory(False, by_sig=[b'SPEL'])
         modFile = ModFile(modInfo, loadFactory)
         try: modFile.load(True)
         except ModError as err:
             deprint(u'skipped mod due to read error (%s)' % err)
             return
-        modFile.convertToLongFids(('SPEL',))
-        spells = modInfo.extras['bash.spellList'] = dict(
-            [(record.fid,record) for record in modFile.SPEL.getActiveRecords()])
+        spells = modInfo.extras[u'bash.spellList'] = {
+            record.fid: record for record in modFile.tops[b'SPEL'].getActiveRecords()}
         self.allSpells.update(spells)
 
     def getPlayerSpells(self):
@@ -810,7 +773,7 @@ class SaveEnchantments(object):
         saveName = self.saveInfo.name
         progress(progress.full-1,saveName.s)
         for index,record in enumerate(saveFile.created):
-            if record.recType == b'ENCH':
+            if record._rec_sig == b'ENCH':
                 record = record.getTypeCopy()
                 record.getSize() #--Since type copy makes it changed.
                 saveFile.created[index] = record
@@ -848,6 +811,6 @@ class Save_NPCEdits(object):
         (rec_id,rec_kind,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
         npc.full = encode(newName)
-        saveFile.pcName = newName
+        saveFile.header.pcName = newName
         saveFile.setRecord(npc.getTuple(rec_id,version))
         saveFile.safeSave()

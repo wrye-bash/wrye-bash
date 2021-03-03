@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,15 +14,15 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
-import struct
+import struct as _struct
+from collections import defaultdict
 from os.path import join as _j
 
 from .. import GameInfo
@@ -38,12 +38,11 @@ class OblivionGameInfo(GameInfo):
     game_detect_file = _j(u'Data', u'Oblivion.esm')
     version_detect_file = u'Oblivion.exe'
     master_file = u'Oblivion.esm'
-    pklfile = u'Oblivion_ids.pkl'
-    masterlist_dir = u'Oblivion'
+    taglist_dir = u'Oblivion'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/oblivion/'
     nexusName = u'Oblivion Nexus'
-    nexusKey = 'bash.installers.openOblivionNexus.continue'
+    nexusKey = u'bash.installers.openOblivionNexus.continue'
 
     patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
     patchTip = u'http://www.elderscrolls.com/'
@@ -70,6 +69,7 @@ class OblivionGameInfo(GameInfo):
         cosave_ext = u'.obse'
         url = u'http://obse.silverlock.org/'
         url_tip = u'http://obse.silverlock.org/'
+        limit_fixer_plugins = [u'mod_limit_fix.dll', u'Trifle.dll']
 
     class Ge(GameInfo.Ge):
         ge_abbrev = u'OBGE'
@@ -90,12 +90,20 @@ class OblivionGameInfo(GameInfo):
 
     class Ess(GameInfo.Ess):
         canEditMore = True
+        can_safely_remove_masters = True
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
         # Oblivion accepts the base name and literally *anything* after
         # that. E.g. MyModMeshes.bsa will load from a MyMod.esp plugin
         attachment_regex = u'.*'
+        redate_dict = defaultdict(lambda: u'2006-01-01', {
+            u'Oblivion - Voices1.bsa': u'2005-01-02',
+            u'Oblivion - Voices2.bsa': u'2005-01-03',
+            u'Oblivion - Meshes.bsa': u'2005-01-04',
+            u'Oblivion - Sounds.bsa': u'2005-01-05',
+            u'Oblivion - Misc.bsa': u'2005-01-06',
+        })
         valid_versions = {0x67}
 
     class Xe(GameInfo.Xe):
@@ -138,10 +146,13 @@ class OblivionGameInfo(GameInfo):
 
     class Esp(GameInfo.Esp):
         canBash = True
-        canCBash = True
         canEditHeader = True
         validHeaderVersions = (0.8,1.0)
         stringsFiles = []
+        biped_flag_names = (u'head', u'hair', u'upperBody', u'lowerBody',
+                            u'hand', u'foot', u'rightRing', u'leftRing',
+                            u'amulet', u'weapon', u'backWeapon', u'sideWeapon',
+                            u'quiver', u'shield', u'torch', u'tail')
 
     allTags = {
         u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
@@ -149,10 +160,10 @@ class OblivionGameInfo(GameInfo):
         u'Actors.DeathItem', u'Actors.RecordFlags', u'Actors.Skeleton',
         u'Actors.Spells', u'Actors.SpellsForceAdd', u'Actors.Stats', u'Body-F',
         u'Body-M', u'Body-Size-F', u'Body-Size-M', u'C.Climate', u'C.Light',
-        u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions',
-        u'C.Water', u'Creatures.Blood', u'Creatures.Type', u'Deactivate',
-        u'Delev', u'EffectStats', u'EnchantmentStats', u'Eyes', u'Factions',
-        u'Filter', u'Graphics', u'Hair', u'IIM', u'Invent.Add',
+        u'C.MiscFlags', u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
+        u'C.Regions', u'C.Water', u'Creatures.Blood', u'Creatures.Type',
+        u'Deactivate', u'Delev', u'EffectStats', u'EnchantmentStats', u'Eyes',
+        u'Factions', u'Filter', u'Graphics', u'Hair', u'IIM', u'Invent.Add',
         u'Invent.Change', u'Invent.Remove', u'MustBeActiveIfImported',
         u'Names', u'NoMerge', u'NPC.Class', u'NPC.Eyes', u'NPC.FaceGen',
         u'NPC.Hair', u'NPC.Race', u'NpcFacesForceFullImport', u'R.AddSpells',
@@ -163,37 +174,19 @@ class OblivionGameInfo(GameInfo):
         u'SpellStats', u'Stats', u'Text', u'Voice-F', u'Voice-M',
     }
 
-    patchers = (
-        u'PatchMerger', # PatchMerger must come first!
-        u'ActorImporter', u'AlchemicalCatalogs', u'AliasesPatcher',
-        u'AssortedTweaker', u'CellImporter', u'ClothesTweaker',
-        u'CoblExhaustion', u'ContentsChecker', u'DeathItemPatcher',
-        u'GmstTweaker', u'GraphicsPatcher', u'ImportActorsSpells',
-        u'ImportEffectsStats', u'ImportEnchantmentStats', u'ImportFactions',
-        u'ImportInventory', u'ImportRelations', u'ImportScripts',
-        u'KFFZPatcher', u'ListsMerger', u'MFactMarker', u'NamesPatcher',
-        u'NamesTweaker', u'NPCAIPackagePatcher', u'NpcFacePatcher',
-        u'RacePatcher', u'RoadImporter', u'SEWorldEnforcer', u'SoundPatcher',
-        u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
-        u'UpdateReferences',
-    )
-
-    CBash_patchers = (u'CBash_PatchMerger', # PatchMerger must come first!
-        u'CBash_ActorImporter', u'CBash_AlchemicalCatalogs',
-        u'CBash_AliasesPatcher', u'CBash_AssortedTweaker',
-        u'CBash_CellImporter', u'CBash_ClothesTweaker',
-        u'CBash_CoblExhaustion', u'CBash_ContentsChecker',
-        u'CBash_DeathItemPatcher', u'CBash_GmstTweaker',
-        u'CBash_GraphicsPatcher', u'CBash_ImportActorsSpells',
-        u'CBash_ImportFactions', u'CBash_ImportInventory',
-        u'CBash_ImportRelations', u'CBash_ImportScripts', u'CBash_KFFZPatcher',
-        u'CBash_ListsMerger', u'CBash_MFactMarker', u'CBash_NamesPatcher',
-        u'CBash_NamesTweaker', u'CBash_NPCAIPackagePatcher',
-        u'CBash_NpcFacePatcher', u'CBash_RacePatcher', u'CBash_RoadImporter',
-        u'CBash_SEWorldEnforcer', u'CBash_SoundPatcher',
-        u'CBash_SpellsPatcher', u'CBash_StatsPatcher', u'CBash_TweakActors',
-        u'CBash_UpdateReferences',
-    )
+    patchers = {
+        u'AliasModNames', u'CoblCatalogs', u'CoblExhaustion',
+        u'ContentsChecker', u'ImportActors', u'ImportActorsAIPackages',
+        u'ImportActorsAnimations', u'ImportActorsDeathItems',
+        u'ImportActorsFaces', u'ImportActorsFactions', u'ImportActorsSpells',
+        u'ImportCells', u'ImportEffectsStats', u'ImportEnchantmentStats',
+        u'ImportGraphics', u'ImportInventory', u'ImportNames',
+        u'ImportRelations', u'ImportRoads', u'ImportScripts', u'ImportSounds',
+        u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
+        u'MergePatches', u'MorphFactions', u'RaceRecords', u'ReplaceFormIDs',
+        u'SEWorldTests', u'TweakActors', u'TweakAssorted', u'TweakClothes',
+        u'TweakNames', u'TweakSettings',
+    }
 
     weaponTypes = (
         _(u'Blade (1 Handed)'),
@@ -267,7 +260,7 @@ class OblivionGameInfo(GameInfo):
             MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
             MreGmst, MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo, \
             MrePgrd
-        cls.mergeClasses = (
+        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
             MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,
             MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGlob, MreGras,
@@ -277,15 +270,15 @@ class OblivionGameInfo(GameInfo):
             MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex,
             MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, MreGmst,
             MreRefr, MreRoad, MreWrld, MreDial, MreInfo, MreLand, MrePgrd,
-        )
-        cls.readClasses = (MreMgef, MreScpt,)
-        cls.writeClasses = (MreMgef,)
+        )}
+        cls.readClasses = (b'MGEF', b'SCPT')
+        cls.writeClasses = (b'MGEF',)
         # Setting RecordHeader class variables - Oblivion is special
         header_type = brec.RecordHeader
         header_type.rec_header_size = 20
         header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I']
         header_type.rec_pack_format_str = u''.join(header_type.rec_pack_format)
-        header_type.header_unpack = struct.Struct(
+        header_type.header_unpack = _struct.Struct(
             header_type.rec_pack_format_str).unpack
         header_type.pack_formats = {0: u'=4sI4s2I'}
         header_type.pack_formats.update(

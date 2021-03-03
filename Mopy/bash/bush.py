@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -30,8 +29,8 @@ Bash to use, so must be imported and run high up in the booting sequence.
 # Imports ---------------------------------------------------------------------
 import collections
 import textwrap
-from . import game as game_init
 from . import bass
+from . import game as game_init
 from .bolt import GPath, Path, deprint
 from .env import get_registry_game_path
 from .exception import BoltError
@@ -62,7 +61,7 @@ def _supportedGames():
         if not ispkg: continue # game support modules are packages
         # Equivalent of "from game import <modname>"
         try:
-            module = __import__('game',globals(),locals(),[modname],-1)
+            module = __import__(u'game',globals(),locals(),[modname],-1)
             submod = getattr(module,modname)
             game_type = submod.GAME_TYPE
             _allModules[game_type.displayName] = submod
@@ -78,12 +77,12 @@ def _supportedGames():
     del pkgutil
     # Dump out info about all games that we *could* launch, but wrap it
     deprint(u'The following games are supported by this version of Wrye Bash:')
-    all_supported_games = u', '.join(sorted(_allGames.iterkeys()))
+    all_supported_games = u', '.join(sorted(_allGames))
     for wrapped_line in textwrap.wrap(all_supported_games):
         deprint(u' ' + wrapped_line)
     # Dump out info about all games that we *actually* found
     deprint(u'The following installed games were found via Windows Registry:')
-    for found_name in sorted(_registryGames.iterkeys()):
+    for found_name in sorted(_registryGames):
         deprint(u' %s: %s' % (found_name, _registryGames[found_name]))
     return _registryGames.copy()
 
@@ -114,44 +113,44 @@ def _detectGames(cli_path=u'', bash_ini_=None):
         test_path = GPath(cli_path)
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
-        installPaths['cmd'] = (test_path,
-            _(u'Set game mode to %(gamename)s specified via -o argument') +
-              u': ',
-            _(u'No known game in the path specified via -o argument: ' +
-              u'%(path)s'))
+        installPaths[u'cmd'] = (test_path,
+            u'Set game mode to %(gamename)s specified via -o argument: ',
+            u'No known game in the path specified via -o argument: '
+            u'%(path)s')
     #--Second: check if sOblivionPath is specified in the ini
     ini_game_path = bass.get_ini_option(bash_ini_, u'sOblivionPath')
     if ini_game_path and not ini_game_path == u'.':
         test_path = GPath(ini_game_path.strip())
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
-        installPaths['ini'] = (test_path,
-            _(u'Set game mode to %(gamename)s based on sOblivionPath setting '
-              u'in bash.ini') + u': ',
-            _(u'No known game in the path specified in sOblivionPath ini '
-              u'setting: %(path)s'))
+        installPaths[u'ini'] = (test_path,
+            u'Set game mode to %(gamename)s based on sOblivionPath setting in '
+            u'bash.ini: ',
+            u'No known game in the path specified in sOblivionPath ini '
+            u'setting: %(path)s')
     #--Third: Detect what game is installed one directory up from Mopy
     test_path = Path.getcwd()
     if test_path.cs[-4:] == u'mopy':
         test_path = GPath(test_path.s[:-5])
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
-        installPaths['upMopy'] = (test_path,
-            _(u'Set game mode to %(gamename)s found in parent directory of'
-              u' Mopy') + u': ',
-            _(u'No known game in parent directory of Mopy: %(path)s'))
+        installPaths[u'upMopy'] = (test_path,
+            u'Set game mode to %(gamename)s found in parent directory of '
+            u'Mopy: ',
+            u'No known game in parent directory of Mopy: %(path)s')
     #--Detect
-    deprint(u'Detecting games via the -o argument, bash.ini and relative path:')
+    deprint(u'Detecting games via the -o argument, bash.ini and relative '
+            u'path:')
     # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
     for test_path, foundMsg, errorMsg in installPaths.itervalues():
         for gamename, info in _allGames.items():
             if test_path.join(info.game_detect_file).exists():
                 # Must be this game
-                deprint(foundMsg % {'gamename': gamename}, test_path)
+                deprint(foundMsg % {u'gamename': gamename}, test_path)
                 foundGames_[gamename] = test_path
                 return foundGames_, gamename
         # no game exe in this install path - print error message
-        deprint(errorMsg % {'path': test_path.s})
+        deprint(errorMsg % {u'path': test_path})
     # no game found in installPaths - foundGames are the ones from the registry
     return foundGames_, None
 
@@ -162,26 +161,26 @@ def __setGame(gamename, msg):
     gamePath = foundGames[gamename]
     game = _allGames[gamename](gamePath)
     game_mod = _allModules[gamename]
-    deprint(msg % {'gamename': gamename}, gamePath)
+    deprint(msg % {u'gamename': gamename}, gamePath)
     # Unload the other modules from the cache
     _allGames.clear()
     _allModules.clear()
     game.init()
 
-def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
-    if name is None: # detect available games
-        foundGames_, name = _detectGames(cli_game_dir, bash_ini_)
+def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, gname=None):
+    if gname is None: # detect available games
+        foundGames_, gname = _detectGames(cli_game_dir, bash_ini_)
         foundGames.update(foundGames_) # set the global name -> game path dict
-    if name is not None: # try the game returned by detectGames() or specified
-        __setGame(name, u' Using %(gamename)s game:')
-        return None, None
+    if gname is not None: # try the game returned by detectGames() or specified
+        __setGame(gname, u' Using %(gamename)s game:')
+        return None
     elif len(foundGames) == 1:
-        __setGame(foundGames.keys()[0], u'Single game found [%(gamename)s]:')
-        return None, None
+        __setGame(next(iter(foundGames)), u'Single game found [%(gamename)s]:')
+        return None
     # No match found, return the list of possible games (may be empty if
     # nothing is found in registry)
     game_icons = {g: bass.dirs[u'images'].join(g + u'32.png').s
                   for g in foundGames}
-    return game_icons.keys(), game_icons
+    return game_icons
 
 def game_path(display_name): return foundGames[display_name]

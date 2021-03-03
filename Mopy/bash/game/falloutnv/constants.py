@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -178,27 +177,8 @@ del condition_function_data[1165] # GetWeaponHasScope, 1076 in FNV
 del condition_function_data[1166] # IsControlPressed, 1131 in FNV
 del condition_function_data[1213] # GetFOSEBeta, 1026 in FNV
 
-#--List of GMST's in the main plugin (FalloutNV.esm) that have 0x00000000
-#  as the form id.  Any GMST as such needs its Editor Id listed here.
-gmstEids = gmstEids + ['fActorStrengthEncumbranceMult']
-
-GmstTweaks = GmstTweaks[:]
-GmstTweaks.insert(0, (
-    _(u'Actor: Strength Encumbrance Multiplier'),
-    _(u"Actor's Strength X this = Actor's Encumbrance capacity."),
-        (u'fActorStrengthEncumbranceMult',),
-        (u'1',            1.0),
-        (u'3',            3.0),
-        (u'[5]',          5.0),
-        (u'8',            8.0),
-        (u'10',           10.0),
-        (u'20',           20.0),
-        (_(u'Unlimited'), 999999.0),
-        (_(u'Custom'),    5.0),
-    ))
-
 #------------------------------------------------------------------------------
-# NamesPatcher
+# Import Names
 #------------------------------------------------------------------------------
 namesTypes = namesTypes | {
     b'CCRD', b'CHAL', b'CHIP', b'CMNY', b'CSNO', b'IMOD', b'RCCT', b'RCPE',
@@ -206,7 +186,7 @@ namesTypes = namesTypes | {
 }
 
 #------------------------------------------------------------------------------
-# StatsImporter
+# Import Stats
 #------------------------------------------------------------------------------
 statsTypes.update({
     b'AMMO': (u'eid', u'weight', u'value', u'speed', u'clipRounds',
@@ -286,7 +266,7 @@ statsHeaders = (
 )
 
 #------------------------------------------------------------------------------
-# SoundPatcher
+# Import Sounds
 #------------------------------------------------------------------------------
 soundsTypes.update({
     b'CONT': (u'soundOpen', u'soundClose', u'soundRandomLooping'),
@@ -298,7 +278,7 @@ soundsTypes.update({
 })
 
 #------------------------------------------------------------------------------
-# GraphicsPatcher
+# Import Graphics
 #------------------------------------------------------------------------------
 graphicsTypes.update({
     b'CCRD': (u'iconPath', u'smallIconPath', u'model', u'textureFace',
@@ -317,7 +297,7 @@ graphicsTypes.update({
 })
 
 #------------------------------------------------------------------------------
-# Race Patcher
+# Race Records
 #------------------------------------------------------------------------------
 # Note that we use _x to avoid exposing these to the dynamic importer
 def _fnv(_x): return u'FalloutNV.esm', _x
@@ -371,7 +351,7 @@ default_eyes = {
 del _fnv
 
 #------------------------------------------------------------------------------
-# Text Patcher
+# Import Text
 #------------------------------------------------------------------------------
 text_types.update({
     b'CHAL': (u'description',),
@@ -379,7 +359,7 @@ text_types.update({
 })
 
 #------------------------------------------------------------------------------
-# Object Bounds Patcher
+# Import Object Bounds
 #------------------------------------------------------------------------------
 object_bounds_types = object_bounds_types | {
     b'CCRD', b'CHIP', b'CMNY', b'IMOD',
@@ -402,17 +382,17 @@ cc_valid_types = {
 }
 
 #------------------------------------------------------------------------------
-# Scripts Patcher
+# Import Scripts
 #------------------------------------------------------------------------------
 scripts_types = scripts_types | {b'AMMO', b'CCRD', b'CHAL', b'IMOD'}
 
 #------------------------------------------------------------------------------
-# Destructible Patcher
+# Import Destructible
 #------------------------------------------------------------------------------
 destructible_types = destructible_types | {b'CHIP', b'IMOD'}
 
 #------------------------------------------------------------------------------
-# Actor Patchers
+# Import Actors
 #------------------------------------------------------------------------------
 actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
     u'barterGold', u'calcMax', u'calcMin', u'dispositionBase', u'fatigue',
@@ -423,3 +403,13 @@ actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
     u'flags.noVATSMelee', u'flags.pcLevelOffset', u'flags.respawn',
     u'flags.useTemplate', u'karma', u'level', u'speedMultiplier',
     u'templateFlags')
+
+#------------------------------------------------------------------------------
+# Tweak Assorted
+#------------------------------------------------------------------------------
+assorted_tweaks |= {u'AssortedTweak_ArrowWeight'}
+
+#------------------------------------------------------------------------------
+# Tweak Assorted
+#------------------------------------------------------------------------------
+settings_tweaks |= {u'GmstTweak_Actor_StrengthEncumbranceMultiplier'}

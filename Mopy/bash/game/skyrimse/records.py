@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -27,7 +26,6 @@ from ...bolt import Flags
 from ...brec import MelRecord, MelGroups, MelStruct, MelString, MelSet, \
     MelFloat, MelUInt32, MelCounter, MelEdid
 # Those are unused here, but need be in this file as are accessed via it
-from ..skyrim.records import MreTes4, MreGmst
 from ..skyrim.records import _MelModel # HACK - needed for tests
 
 #------------------------------------------------------------------------------
@@ -39,18 +37,18 @@ class MreVoli(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFloat('CNAM', 'intensity'),
-        MelFloat('DNAM', 'customColorContribution'),
-        MelFloat('ENAM', 'red'),
-        MelFloat('FNAM', 'green'),
-        MelFloat('GNAM', 'blue'),
-        MelFloat('HNAM', 'densityContribution'),
-        MelFloat('INAM', 'densitySize'),
-        MelFloat('JNAM', 'densityWindSpeed'),
-        MelFloat('KNAM', 'densityFallingSpeed'),
-        MelFloat('LNAM', 'phaseFunctionContribution'),
-        MelFloat('MNAM', 'phaseFunctionScattering'),
-        MelFloat('NNAM', 'samplingRepartitionRangeFactor'),
+        MelFloat(b'CNAM', 'intensity'),
+        MelFloat(b'DNAM', 'customColorContribution'),
+        MelFloat(b'ENAM', 'red'),
+        MelFloat(b'FNAM', 'green'),
+        MelFloat(b'GNAM', 'blue'),
+        MelFloat(b'HNAM', 'densityContribution'),
+        MelFloat(b'INAM', 'densitySize'),
+        MelFloat(b'JNAM', 'densityWindSpeed'),
+        MelFloat(b'KNAM', 'densityFallingSpeed'),
+        MelFloat(b'LNAM', 'phaseFunctionContribution'),
+        MelFloat(b'MNAM', 'phaseFunctionScattering'),
+        MelFloat(b'NNAM', 'samplingRepartitionRangeFactor'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -66,21 +64,21 @@ class MreLens(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFloat('CNAM', 'colorInfluence'),
-        MelFloat('DNAM', 'fadeDistanceRadiusScale'),
-        MelCounter(MelUInt32('LFSP', 'sprite_count'),
+        MelFloat(b'CNAM', 'colorInfluence'),
+        MelFloat(b'DNAM', 'fadeDistanceRadiusScale'),
+        MelCounter(MelUInt32(b'LFSP', 'sprite_count'),
                    counts='lensFlareSprites'),
         MelGroups('lensFlareSprites',
-            MelString('DNAM','spriteID'),
-            MelString('FNAM','texture'),
-            MelStruct('LFSD', 'f8I', 'tintRed', 'tintGreen', 'tintBlue',
+            MelString(b'DNAM','spriteID'),
+            MelString(b'FNAM','texture'),
+            MelStruct(b'LFSD', [u'f', u'8I'], 'tintRed', 'tintGreen', 'tintBlue',
                 'width', 'height', 'position', 'angularFade', 'opacity',
-                (LensFlareFlags, 'lensFlags', 0), ),
+                (LensFlareFlags, u'lensFlags'), ),
         )
     ).with_distributor({
-        'DNAM': 'fadeDistanceRadiusScale',
-        'LFSP': {
-            'DNAM': 'lensFlareSprites',
+        b'DNAM': u'fadeDistanceRadiusScale',
+        b'LFSP': {
+            b'DNAM': u'lensFlareSprites',
         },
     })
     __slots__ = melSet.getSlotsUsed()

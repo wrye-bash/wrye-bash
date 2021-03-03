@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,17 +27,18 @@ from __future__ import division
 
 import os
 import traceback
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
+from itertools import izip
 
-import wx.adv as wiz  # wxPython wizard class
-from . import ScriptParser         # generic parser class
+from . import ScriptParser  # generic parser class
 from . import balt, bass, bolt, bosh, bush, load_order
-from .ini_files import OBSEIniFile
+from .ScriptParser import error
 from .env import get_file_version
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
-    WizardDialog, EventResult, ListBox, CheckListBox, Image, PictureWithCursor
-from .ScriptParser import error
+    ListBox, CheckListBox, ImageWrapper, PictureWithCursor, WizardDialog, \
+    WizardPage
+from .ini_files import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")
@@ -69,7 +69,7 @@ class WizInstallInfo(object):
         self.select_plugins = []
         self.rename_plugins = {}
         self.select_sub_packages = []
-        self.ini_edits = {}
+        self.ini_edits = bolt.LowerDict()
         self.should_install = False
 
 class InstallerWizard(WizardDialog):
@@ -81,82 +81,62 @@ class InstallerWizard(WizardDialog):
         super(InstallerWizard, self).__init__(parent,
             title=_(u'Installer Wizard'), sizes_dict=bass.settings,
             size_key=u'bash.wizard.size', pos_key=u'bash.wizard.pos')
-        #'dummy' page tricks the wizard into always showing the "Next" button,
-        #'next' will be set by the parser
-        class _PageDummy(wiz.WizardPage): pass
-        self.dummy = _PageDummy(self._native_widget) # todo de-wx!
-        self.next = None # todo rename
-        #True prevents actually moving to the 'next' page.  We use this after the "Next"
-        #button is pressed, while the parser is running to return the _actual_ next page
-        #'finishing' is to allow the "Next" button to be used when it's name is changed to
-        #'Finish' on the last page of the wizard
-        self.blockChange = True
-        self.finishing = False
         #parser that will spit out the pages
         self.wizard_file = installer.wizard_file()
         self.parser = WryeParser(self, installer, bAuto)
-        #Intercept the changing event so we can implement 'blockChange'
-        self.on_wiz_page_change.subscribe(self.on_page_change)
         self.ret = WizInstallInfo()
 
-    def save_size(self):
+    def disable_wiz_buttons(self):
+        """Disables all navigation buttons except for Cancel."""
+        for b in (self._back_button, self._next_button, self._finish_button):
+            b.enabled = False
+
+    def enable_forward(self, btn_enabled):
+        """Enables or disables both the next and finish buttons."""
+        self._next_button.enabled = btn_enabled
+        self._finish_button.enabled = btn_enabled
+
+    def save_size(self): ##: needed?
         # Otherwise, regular resize, save the size if we're not maximized
         self.on_closing(destroy=False)
 
-    def on_page_change(self, is_forward, evt_page):
-        # type: (bool, PageInstaller) -> EventResult
-        if is_forward:
-            if not self.finishing:
-                # Next, continue script execution
-                if self.blockChange:
-                    #Tell the current page that next was pressed,
-                    #So the parser can continue parsing,
-                    #Then show the page that the parser returns,
-                    #rather than the dummy page
-                    evt_page.OnNext()
-                    self.next = self.parser.Continue()
-                    self.blockChange = False
-                    self._native_widget.ShowPage(self.next)
-                    return EventResult.CANCEL
-                else:
-                    self.blockChange = True
-                    return EventResult.FINISH
-        else:
-            # Previous, pop back to the last state,
-            # and resume execution
-            self.finishing = False
-            self.next = self.parser.Back()
-            self.blockChange = False
-            self._native_widget.ShowPage(self.next)
-            return EventResult.CANCEL
+    def _has_next_page(self):
+        return not self.parser.parser_finished
+
+    def _has_prev_page(self):
+        return self.parser.choiceIdex > 0
+
+    def _get_next_page(self):
+        # If we're still on the dummy page, then we're only changing to the
+        # first page, so skip the OnNext call
+        if self._curr_page != self._dummy_page:
+            self._curr_page.OnNext()
+        return self.parser.Continue()
+
+    def _get_prev_page(self):
+        return self.parser.Back()
+
+    def _cancel_wizard(self, msg=None):
+        self.ret.canceled = msg or True
 
     def Run(self):
-        page = self.parser.Begin(self.wizard_file)
-        if page:
-            self.ret.canceled = not self._native_widget.RunWizard(page)
+        err_msg = self.parser.Begin(self.wizard_file)
+        if err_msg:
+            self._cancel_wizard(err_msg) # Wizard could not be read
+        else:
+            self._run_wizard()
         # Clean up temp files
         if self.parser.bArchive:
             bass.rmTempDir()
         return self.ret
 
-class PageInstaller(wiz.WizardPage):
+class PageInstaller(WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple
     simple things here."""
 
     def __init__(self, parent):
         self._wiz_parent = parent
-        super(PageInstaller, self).__init__(parent._native_widget)
-        self._enableForward(True)
-
-    def _enableForward(self, do_enable):
-        self._wiz_parent.enable_forward_btn(do_enable)
-
-    def GetNext(self): return self._wiz_parent.dummy
-
-    def GetPrev(self):
-        if self._wiz_parent.parser.choiceIdex > 0:
-            return self._wiz_parent.dummy
-        return None
+        super(PageInstaller, self).__init__(parent)
 
     def OnNext(self):
         #This is what needs to be implemented by sub-classes,
@@ -169,21 +149,16 @@ class PageError(PageInstaller):
     and cancels any changes made."""
 
     def __init__(self, parent, title, errorMsg):
-        PageInstaller.__init__(self, parent)
-        #Disable the "Finish"/"Next" button
-        self._enableForward(False)
-        #Layout stuff
+        super(PageError, self).__init__(parent)
+        parent.disable_wiz_buttons()
+        # Layout stuff
         VLayout(spacing=5, items=[
             Label(self, title),
             (TextArea(self, editable=False, init_text=errorMsg,
                       auto_tooltip=False),
              LayoutOptions(weight=1, expand=True))
         ]).apply_to(self)
-        self.Layout()
-
-    def GetNext(self): return None
-
-    def GetPrev(self): return None
+        self.update_layout()
 
 class PageSelect(PageInstaller):
     """A page that shows a message up top, with a selection box on the left
@@ -201,13 +176,14 @@ class PageSelect(PageInstaller):
         self.bmp_item = PictureWithCursor(self, 0, 0, background=None)
         kwargs = dict(choices=listItems, isHScroll=True,
                       onSelect=self.OnSelect)
+        self._page_parent = parent
         if bMany:
             self.listOptions = CheckListBox(self, **kwargs)
             for index, default in enumerate(defaultMap):
                 self.listOptions.lb_check_at_index(index, default)
         else:
             self.listOptions = ListBox(self, **kwargs)
-            self._enableForward(False)
+            parent.enable_forward(False)
             for index, default in enumerate(defaultMap):
                 if default:
                     self.listOptions.lb_select_index(index)
@@ -222,12 +198,12 @@ class PageSelect(PageInstaller):
             Label(self, _(u'Description:')),
             (self.textItem, LayoutOptions(weight=1))
         ]).apply_to(self)
-        self.Layout()
+        self.update_layout()
         self.bmp_item.on_mouse_middle_up.subscribe(self._click_on_image)
         self.bmp_item.on_mouse_left_dclick.subscribe(
             lambda selected_index: self._click_on_image())
 
-    def OnSelect(self, lb_selection_dex, lb_selection_str):
+    def OnSelect(self, lb_selection_dex, _lb_selection_str):
         self.listOptions.lb_select_index(lb_selection_dex) # event.Skip() won't do
         self.Selection(lb_selection_dex)
 
@@ -240,11 +216,11 @@ class PageSelect(PageInstaller):
                 bolt.deprint(u'Failed to open %s.' % img, traceback=True)
 
     def Selection(self, index):
-        self._enableForward(True)
+        self._page_parent.enable_forward(True)
         self.index = index
         self.textItem.text_content = self.descs[index]
         self.bmp_item.set_bitmap(self.images[index])
-        # self.Layout() # the bitmap would change size and so blurred
+        # self.Layout() # the bitmap would change size and show blurred
 
     def OnNext(self):
         temp_items = []
@@ -266,7 +242,7 @@ class PageSelect(PageInstaller):
                 self._wiz_parent.parser.choices.append(temp_items)
         else:
             self._wiz_parent.parser.choices.append(temp_items)
-        self._wiz_parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp_items, hitCase=False)
+        self._wiz_parent.parser.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'Case', u'Default', u'EndSelect'], values=temp_items, hitCase=False)
 
 _obse_mod_formats = bolt.LowerDict(
     {u']set[': u' %(setting)s to %(value)s%(comment)s',
@@ -277,8 +253,8 @@ _obse_del_formats = bolt.LowerDict(
      u']SetNumericGameSetting[': u' %(setting)s DELETED'})
 
 def generateTweakLines(wizardEdits, target):
-    lines = [_(u'; Generated by Wrye Bash %s for \'%s\' via wizard') % (
-        bass.AppVersion, target.s)]
+    lines = [_(u"; Generated by Wrye Bash %s for '%s' via wizard") % (
+        bass.AppVersion, target)]
     for realSection, values in wizardEdits.items():
         if not realSection:
             continue
@@ -295,8 +271,8 @@ def generateTweakLines(wizardEdits, target):
         for realSetting in values[1]:
             setting,value,comment,deleted = values[1][realSetting]
             fmt = delFormat if deleted else modFormat
-            lines.append(fmt % (dict(setting=setting, value=value,
-                                     comment=comment)))
+            lines.append(fmt % {u'setting': setting, u'value': value,
+                                u'comment': comment})
     return lines
 
 class PageFinish(PageInstaller):
@@ -315,17 +291,17 @@ class PageFinish(PageInstaller):
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _(u'The installer script has finished, and '
                                   u'will apply the following settings:'))
-        textTitle.wrap(parent._native_widget.GetPageSize()[0] - 10)
+        textTitle.wrap(parent.get_page_size()[0] - 10)
         # Sub-packages
-        self.listSubs = CheckListBox(
-            self, choices=[x.replace(u'&', u'&&') for x in subs],
-            onCheck=self._on_select_subs)
+        self.listSubs = CheckListBox(self,
+            choices=[x.replace(u'&', u'&&') for x in subs])
+        self.listSubs.on_box_checked.subscribe(self._on_select_subs)
         for index,key in enumerate(subs):
             if subsList[key]:
                 self.listSubs.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_sub_packages.append(key)
-        self.plugin_selection = CheckListBox(self, choices=displayed_plugins,
-            onCheck=self._on_select_plugin)
+        self.plugin_selection = CheckListBox(self, choices=displayed_plugins)
+        self.plugin_selection.on_box_checked.subscribe(self._on_select_plugin)
         for index,key in enumerate(plugins):
             if plugin_list[key]:
                 self.plugin_selection.lb_check_at_index(index, True)
@@ -333,14 +309,14 @@ class PageFinish(PageInstaller):
         self._wiz_parent.ret.rename_plugins = plugin_renames
         # Ini tweaks
         self.listInis = ListBox(self, onSelect=self._on_select_ini,
-                                choices=[x.s for x in iniedits.keys()])
+                                choices=list(iniedits))
         self.listTweaks = ListBox(self)
         self._wiz_parent.ret.ini_edits = iniedits
         # Apply/install checkboxes
         self.checkApply = CheckBox(self, _(u'Apply these selections'),
                                    checked=bAuto)
-        self.checkApply.on_checked.subscribe(self._enableForward)
-        auto = bass.settings['bash.installers.autoWizard']
+        self.checkApply.on_checked.subscribe(parent.enable_forward)
+        auto = bass.settings[u'bash.installers.autoWizard']
         self.checkInstall = CheckBox(self, _(u'Install this package'),
                                      checked=auto)
         self.checkInstall.on_checked.subscribe(self.OnCheckInstall)
@@ -370,14 +346,12 @@ class PageFinish(PageInstaller):
             ])
         ])
         layout.apply_to(self)
-        self._enableForward(bAuto)
+        parent.enable_forward(bAuto)
         self._wiz_parent.finishing = True
-        self.Layout()
+        self.update_layout()
 
     def OnCheckInstall(self, is_checked):
         self._wiz_parent.ret.should_install = is_checked
-
-    def GetNext(self): return None
 
     # Undo selecting/deselection of items for UI consistency
     def _on_select_subs(self, lb_selection_dex):
@@ -387,9 +361,8 @@ class PageFinish(PageInstaller):
         self.plugin_selection.toggle_checked_at_index(lb_selection_dex)
 
     def _on_select_ini(self, lb_selection_dex, lb_selection_str):
-        ini_path = bolt.GPath(lb_selection_str)
-        lines = generateTweakLines(self._wiz_parent.ret.ini_edits[ini_path],
-                                   ini_path)
+        lines = generateTweakLines(
+            self._wiz_parent.ret.ini_edits[lb_selection_str], lb_selection_str)
         self.listTweaks.lb_set_items(lines)
         self.listInis.lb_select_index(lb_selection_dex)
 
@@ -399,9 +372,8 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmp = [Image(
-            bass.dirs[u'images'].join(u'error_cross_24.png').s).GetBitmap(),
-            Image(bass.dirs[u'images'].join(u'checkmark_24.png').s).GetBitmap()]
+        bmp = [ImageWrapper(bass.dirs[u'images'].join(x)).GetBitmap() for x in
+               (u'error_cross_24.png', u'checkmark_24.png')]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
@@ -440,22 +412,22 @@ class PageVersions(PageInstaller):
         text_warning = Label(self, _(u'WARNING: The following version '
                                      u'requirements are not met for using '
                                      u'this installer.'))
-        text_warning.wrap(parent._native_widget.GetPageSize()[0] - 20)
+        text_warning.wrap(parent.get_page_size()[0] - 20)
         self.checkOk = CheckBox(self, _(u'Install anyway.'))
-        self.checkOk.on_checked.subscribe(self._enableForward)
+        self.checkOk.on_checked.subscribe(parent.enable_forward)
         VLayout(items=[
             Stretch(1), (text_warning, LayoutOptions(h_align=CENTER)),
             Stretch(1), (versions_box, LayoutOptions(expand=True, weight=1)),
             Stretch(2),
             (self.checkOk, LayoutOptions(h_align=RIGHT, border=5))
         ]).apply_to(self)
-        self._enableForward(False)
-        self.Layout()
+        parent.enable_forward(False)
+        self.update_layout()
 
 class WryeParser(ScriptParser.Parser):
     """A derived class of Parser, for handling BAIN install wizards."""
     codeboxRemaps = {
-        'Link': {
+        u'Link': {
             # These are links that have different names than their text
             u'SelectOne':u'SelectOne1',
             u'SelectMany':u'SelectMany1',
@@ -493,7 +465,7 @@ class WryeParser(ScriptParser.Parser):
             u'.':u'DotOperator',
             u'SubPackages':u'ForContinueBreakEndFor',
             },
-        'Text': {
+        u'Text': {
             # These are symbols that need to be replaced to be xhtml compliant
             u'&':u'&amp;',
             u'<':u'&lt;',
@@ -505,7 +477,7 @@ class WryeParser(ScriptParser.Parser):
             u'>=':u'&gt;=',
             u'>=:':u'&gt;=:',
             },
-        'Color': {
+        u'Color': {
             # These are items that we want colored differently
             u'in':u'blue',
             u'in:':u'blue',
@@ -520,12 +492,12 @@ class WryeParser(ScriptParser.Parser):
         self = WryeParser(None, None, None, codebox=True) ##: drop this !
         def colorize(text_, color=u'black', link=True):
             href = text_
-            text_ = WryeParser.codeboxRemaps['Text'].get(text_, text_)
+            text_ = WryeParser.codeboxRemaps[u'Text'].get(text_, text_)
             if color != u'black' or link:
-                color = WryeParser.codeboxRemaps['Color'].get(text_, color)
+                color = WryeParser.codeboxRemaps[u'Color'].get(text_, color)
                 text_ = u'<span style="color:%s;">%s</span>' % (color, text_)
             if link:
-                href = WryeParser.codeboxRemaps['Link'].get(href,href)
+                href = WryeParser.codeboxRemaps[u'Link'].get(href,href)
                 text_ = u'<a href="#%s">%s</a>' % (href, text_)
             return text_
         self.cLine = 0
@@ -612,14 +584,15 @@ class WryeParser(ScriptParser.Parser):
             self._wiz_parent = wiz_parent
             self.installer = installer
             self.bArchive = installer.is_archive()
-            self._path = bolt.GPath(installer.archive) if installer else None
+            self._path = installer.archive if installer else None
             if installer and installer.fileRootIdex:
-                root_path = installer.extras_dict.get('root_path', u'')
-                self._path = self._path.join(root_path)
+                root_path = installer.extras_dict.get(u'root_path', u'')
+                self._path = os.path.join(self._path, root_path)
             self.bAuto = bAuto
             self.page = None
             self.choices = []
             self.choiceIdex = -1
+            self.parser_finished = False
             ##: Figure out why BAIN insists on including an empty sub-package
             # everywhere. Broke this part of the code, hence the 'if s' below.
             self.sublist = bolt.LowerDict({
@@ -744,29 +717,28 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword(u'Cancel', self.kwdCancel, 0, 1)
         self.SetKeyword(u'RequireVersions', self.kwdRequireVersions, 1, 4)
 
-    @property
-    def path(self): return self._path
-
     def Begin(self, file_path):
+        self._reset_vars()
+        self.cLine = 0
+        self.reversing = 0
+        self.ExecCount = 0
+        try:
+            with file_path.open(encoding=u'utf-8-sig') as script:
+                # Ensure \n line endings for the script parser
+                self.lines = [x.replace(u'\r\n', u'\n') for x in script.readlines()]
+            return None
+        except UnicodeError:
+            return _(u'Could not read the wizard file.  Please ensure it is '
+                     u'encoded in UTF-8 format.')
+        except (OSError, IOError):
+            return _(u'Could not open wizard file')
+
+    def _reset_vars(self):
         self.variables.clear()
         self.Flow = []
         self.notes = []
         self.plugin_renames = {}
-        self.iniedits = {}
-        self.cLine = 0
-        self.reversing = 0
-        self.ExecCount = 0
-        if file_path.exists() and file_path.isfile():
-            try:
-                with file_path.open(encoding='utf-8-sig') as script:
-                    # Ensure \n line endings for the script parser
-                    self.lines = [x.replace(u'\r\n',u'\n') for x in script.readlines()]
-                return self.Continue()
-            except UnicodeError:
-                balt.showWarning(self._wiz_parent, _(u'Could not read the wizard file.  Please ensure it is encoded in UTF-8 format.'))
-                return
-        balt.showWarning(self._wiz_parent, _(u'Could not open wizard file'))
-        return None
+        self.iniedits = defaultdict(bolt.LowerDict)
 
     def Continue(self):
         self.page = None
@@ -777,9 +749,9 @@ class WryeParser(ScriptParser.Parser):
             except ScriptParser.ParserError as e:
                 bolt.deprint(u'Error in wizard script', traceback=True)
                 return PageError(self._wiz_parent, _(u'Installer Wizard'),
-                                 _(u'An error occurred in the wizard script:') + '\n'
-                                 + _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')) + '\n'
-                                 + _(u'Error:\t%s') % e)
+                     u'\n'.join([_(u'An error occurred in the wizard script:'),
+                     _(u'Line %s:\t%s') % (self.cLine, newline.strip(u'\n')),
+                     _(u'Error:\t%s') % e]))
             except Exception:
                 bolt.deprint(u'Error while running wizard', traceback=True)
                 msg = u'\n'.join([_(u'An unhandled error occurred while '
@@ -790,6 +762,7 @@ class WryeParser(ScriptParser.Parser):
                 return self.page
         self.cLine += 1
         self.cLineStart = self.cLine
+        self.parser_finished = True
         return PageFinish(self._wiz_parent, self.sublist, self.plugin_list,
                           self.plugin_renames, self.bAuto, self.notes,
                           self.iniedits)
@@ -798,11 +771,8 @@ class WryeParser(ScriptParser.Parser):
         if self.choiceIdex == 0:
             return
         # Rebegin
-        self.variables.clear()
-        self.Flow = []
-        self.notes = []
-        self.plugin_renames = {}
-        self.iniedits = {}
+        self._reset_vars()
+        self.parser_finished = False
         i = 0
         while self.ExecCount > 0 and i < len(self.lines):
             line = self.lines[i]
@@ -862,7 +832,7 @@ class WryeParser(ScriptParser.Parser):
     def opE(self, l, r): return l == r
 
     def opEc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() == r.lower()
         else:
             return l == r
@@ -870,7 +840,7 @@ class WryeParser(ScriptParser.Parser):
     def opNE(self, l, r): return l != r
 
     def opNEc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() != r.lower()
         else:
             return l != r
@@ -878,7 +848,7 @@ class WryeParser(ScriptParser.Parser):
     def opGE(self, l, r): return l >= r
 
     def opGEc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() >= r.lower()
         else:
             return l >= r
@@ -886,7 +856,7 @@ class WryeParser(ScriptParser.Parser):
     def opG(self, l, r): return l > r
 
     def opGc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() > r.lower()
         else:
             return l > r
@@ -894,7 +864,7 @@ class WryeParser(ScriptParser.Parser):
     def opLE(self, l, r): return l <= r
 
     def opLEc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() <= r.lower()
         else:
             return l <= r
@@ -902,7 +872,7 @@ class WryeParser(ScriptParser.Parser):
     def opL(self, l, r): return l < r
 
     def opLc(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() < r.lower()
         else:
             return l < r
@@ -911,7 +881,7 @@ class WryeParser(ScriptParser.Parser):
     def opIn(self, l, r): return l in r
 
     def opInCase(self, l, r):
-        if isinstance(l, basestring) and isinstance(r, basestring):
+        if isinstance(l, unicode) and isinstance(r, unicode):
             return l.lower() in r.lower()
         else:
             return l in r
@@ -1020,18 +990,16 @@ class WryeParser(ScriptParser.Parser):
         :param disable: Whether or not this edit should disable the setting in
             question.
         """
-        ini_path = bolt.GPath(ini_name)
         section = section.strip()
         setting = setting.strip()
         comment = comment.strip()
         real_section = OBSEIniFile.ci_pseudosections.get(section, section)
         if comment and not comment.startswith(u';'):
             comment = u';' + comment
-        self.iniedits.setdefault(ini_path, bolt.LowerDict()).setdefault(
+        ci_section = self.iniedits[ini_name].setdefault(
             real_section, [section, bolt.LowerDict()])
-        self.iniedits[ini_path][real_section][0] = section
-        self.iniedits[ini_path][real_section][1][setting] = (setting, value,
-                                                             comment, disable)
+        ci_section[0] = section
+        ci_section[1][setting] = (setting, value, comment, disable)
 
     def fnExec(self, strLines):
         lines = strLines.split(u'\n')
@@ -1053,49 +1021,49 @@ class WryeParser(ScriptParser.Parser):
         self.cLine -= numLines
         self.ExecCount -= 1
 
-    def fnStr(self, data): return unicode(data)
+    def fnStr(self, data_): return unicode(data_)
 
-    def fnInt(self, data):
+    def fnInt(self, data_):
         try:
-            return int(data)
+            return int(data_)
         except ValueError:
             return 0
 
-    def fnFloat(self, data):
+    def fnFloat(self, data_):
         try:
-            return float(data)
+            return float(data_)
         except ValueError:
             return 0.0
 
-    def fnLen(self, data):
+    def fnLen(self, data_):
         try:
-            return len(data)
+            return len(data_)
         except TypeError:
             return 0
 
     def fnEndsWith(self, String, *args):
-        if not isinstance(String, basestring):
+        if not isinstance(String, unicode):
             error(_(u"Function 'endswith' only operates on string types."))
         return String.endswith(args)
 
     def fnStartsWith(self, String, *args):
-        if not isinstance(String, basestring):
+        if not isinstance(String, unicode):
             error(_(u"Function 'startswith' only operates on string types."))
         return String.startswith(args)
 
     def fnLower(self, String):
-        if not isinstance(String, basestring):
+        if not isinstance(String, unicode):
             error(_(u"Function 'lower' only operates on string types."))
         return String.lower()
 
     def fnFind(self, String, sub, start=0, end=-1):
-        if not isinstance(String, basestring):
+        if not isinstance(String, unicode):
             error(_(u"Function 'find' only operates on string types."))
         if end < 0: end += len(String) + 1
         return String.find(sub, start, end)
 
     def fnRFind(self, String, sub, start=0, end=-1):
-        if not isinstance(String, basestring):
+        if not isinstance(String, unicode):
             error(_(u"Function 'rfind' only operates on string types."))
         if end < 0: end += len(String) + 1
         return String.rfind(sub, start, end)
@@ -1212,7 +1180,7 @@ class WryeParser(ScriptParser.Parser):
             error(_(u"Invalid syntax for 'For' statement.  Expected format:")
                     +u'\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name'
                   )
-        if args[1].text == 'from':
+        if args[1].text == u'from':
             #For varname from value_start to value_end [by value_increment]
             if (len(args) not in [5,7]) or (args[3].text != u'to') or (len(args)==7 and args[5].text != u'by'):
                 error(_(u"Invalid syntax for 'For' statement.  Expected format:")
@@ -1229,21 +1197,21 @@ class WryeParser(ScriptParser.Parser):
             self.variables[varname.text] = start
             self.PushFlow(u'For', True, [u'For', u'EndFor'], ForType=0, cLine=self.cLine, varname=varname.text, end=end, by=by)
         elif args[1].text == u'in':
-            # For name in SubPackages / For name in SubPackage
+            # For sub_name in SubPackages / For sub_name in SubPackage
             if args[2].text == u'SubPackages':
                 if len(args) > 4:
                     error(_(u"Invalid syntax for 'For' statement.  Expected format:")
                           +u'\n For var_name in Subpackages\n For var_name in subpackage_name'
                           )
-                List = sorted(self.sublist.keys())
+                List = sorted(self.sublist)
             else:
-                name = self.ExecuteTokens(args[2:])
-                subpackage = name if name in self.sublist else None
+                sub_name = self.ExecuteTokens(args[2:])
+                subpackage = sub_name if sub_name in self.sublist else None
                 if subpackage is None:
-                    error(_(u"SubPackage '%s' does not exist.") % name)
+                    error(_(u"SubPackage '%s' does not exist.") % sub_name)
                 List = []
                 if self.installer.is_project():
-                    sub = bass.dirs[u'installers'].join(self.path, subpackage)
+                    sub = bass.dirs[u'installers'].join(self._path, subpackage)
                     for root_dir, dirs, files in sub.walk():
                         for file_ in files:
                             rel = root_dir.join(file_).relpath(sub)
@@ -1298,7 +1266,7 @@ class WryeParser(ScriptParser.Parser):
     def kwdSelectMany(self, *args):
         self._KeywordSelect(True, u'SelectMany', *args)
 
-    def _KeywordSelect(self, bMany, name, *args):
+    def _KeywordSelect(self, bMany, name_, *args):
         args = list(args)
         if self.LenFlow() > 0 and self.PeekFlow().type == u'Select' and not self.PeekFlow().active:
             #We're inside an invalid Case for a Select already, so just add a blank FlowControl for
@@ -1308,7 +1276,7 @@ class WryeParser(ScriptParser.Parser):
         # Escape ampersands, since they're treated as escape characters by wx
         main_desc = args.pop(0).replace(u'&', u'&&')
         if len(args) % 3:
-            error(MISSING_ARGS % name)
+            error(MISSING_ARGS % name_)
         images = []
         titles = OrderedDict()
         descs = []
@@ -1342,7 +1310,7 @@ class WryeParser(ScriptParser.Parser):
         if self.bArchive:
             imageJoin = bass.getTempDir().join
         else:
-            imageJoin = bass.dirs[u'installers'].join(self.path).join
+            imageJoin = bass.dirs[u'installers'].join(self._path).join
         for i in images:
             # Try looking inside the package first, then look if it's using one
             # of the images packaged with Wrye Bash (from Mopy/bash/images)
@@ -1353,7 +1321,7 @@ class WryeParser(ScriptParser.Parser):
                     wiz_img_path = std_img_path
             image_paths.append(wiz_img_path)
         self.page = PageSelect(self._wiz_parent, bMany, _(u'Installer Wizard'),
-                               main_desc, titles.keys(), descs, image_paths,
+                               main_desc, list(titles), descs, image_paths,
                                titles.values())
 
     def kwdCase(self, value):
@@ -1422,9 +1390,9 @@ class WryeParser(ScriptParser.Parser):
     def kwdDeSelectAll(self): self._SelectAll(False)
 
     def _SelectAll(self, bSelect):
-        for i in self.sublist.keys():
+        for i in list(self.sublist):
             self.sublist[i] = bSelect
-        for i in self.plugin_list.keys():
+        for i in list(self.plugin_list):
             self.plugin_list[i] = bSelect
 
     def kwd_select_plugin(self, plugin_name):
@@ -1445,19 +1413,19 @@ class WryeParser(ScriptParser.Parser):
     def kwd_de_select_all_plugins(self): self._select_all_plugins(False)
 
     def _select_all_plugins(self, should_activate):
-        for i in self.plugin_list.keys():
+        for i in list(self.plugin_list):
             self.plugin_list[i] = should_activate
 
-    def kwd_rename_plugin(self, plugin_name, new_name):
+    def kwd_rename_plugin(self, plugin_name, new_plugin_name):
         plugin_name = self._resolve_plugin_rename(plugin_name)
         if plugin_name:
             # Keep same extension
-            if plugin_name.lower()[-4:] != new_name.lower()[-4:]:
+            if plugin_name.lower()[-4:] != new_plugin_name.lower()[-4:]:
                 raise ScriptParser.ParserError(_(u'Cannot rename %s to %s: '
                                                  u'the extensions must '
                                                  u'match.') %
-                                               (plugin_name, new_name))
-            self.plugin_renames[plugin_name] = new_name
+                                               (plugin_name, new_plugin_name))
+            self.plugin_renames[plugin_name] = new_plugin_name
 
     def kwd_reset_plugin_name(self, plugin_name):
         plugin_name = self._resolve_plugin_rename(plugin_name)
@@ -1513,7 +1481,7 @@ class WryeParser(ScriptParser.Parser):
                                      bWBOk, wbHave, wbWant)
 
     def _TestVersion_GE(self, want):
-        if isinstance(bush.game.Ge.exe, str):
+        if isinstance(bush.game.Ge.exe, bytes):
             files = [bass.dirs[u'mods'].join(bush.game.Ge.exe)]
         else:
             files = [bass.dirs[u'mods'].join(*x) for x in bush.game.Ge.exe]
@@ -1537,7 +1505,7 @@ class WryeParser(ScriptParser.Parser):
             ver = u'.'.join([unicode(i) for i in have])
             if need == u'None':
                 return [1, ver]
-            for have_part, need_part in zip(have, need):
+            for have_part, need_part in izip(have, need):
                 if have_part > need_part:
                     return [1, ver]
                 elif have_part < need_part:
@@ -1552,7 +1520,7 @@ class WryeParser(ScriptParser.Parser):
                                self.plugin_renames, self.bAuto, self.notes,
                                self.iniedits)
 
-    def kwdCancel(self, msg=_(u"No reason given")):
+    def kwdCancel(self, msg=_(u'No reason given')):
         self.page = PageError(self._wiz_parent, _(u'The installer wizard was canceled:'), msg)
 
 bolt.codebox = WryeParser.codebox

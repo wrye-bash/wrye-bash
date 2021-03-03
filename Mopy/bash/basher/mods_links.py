@@ -3,9 +3,9 @@
 # GPL License and Copyright Notice ============================================
 #  This file is part of Wrye Bash.
 #
-#  Wrye Bash is free software; you can redistribute it and/or
+#  Wrye Bash is free software: you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
+#  as published by the Free Software Foundation, either version 3
 #  of the License, or (at your option) any later version.
 #
 #  Wrye Bash is distributed in the hope that it will be useful,
@@ -14,10 +14,9 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with Wrye Bash; if not, write to the Free Software Foundation,
-#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2020 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,23 +24,25 @@
 points to BashFrame.modList singleton."""
 
 import re
+from .dialogs import CreateNewPlugin
 from .frames import ModChecker
 from .. import bass, bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
-    SeparatorLink, Link, AppendableLink
-from ..bolt import CsvReader, GPath
+    SeparatorLink, Link, MultiLink
+from ..bolt import GPath, dict_sort
 from ..gui import BusyCursor
+from ..parsers import CsvParser
 
-__all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
-           'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
-           'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
-           'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
-           'Mods_ScanDirty', 'Mods_CrcRefresh', 'Mods_AutoESLFlagBP',
+__all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
+           u'Mods_OblivionVersion', u'Mods_CreateBlankBashedPatch',
+           u'Mods_CreateBlank', u'Mods_ListMods', u'Mods_ListBashTags',
+           u'Mods_CleanDummyMasters', u'Mods_AutoGhost', u'Mods_LockLoadOrder',
+           u'Mods_ScanDirty', u'Mods_CrcRefresh', u'Mods_AutoESLFlagBP',
            u'Mods_LockActivePlugins', u'Mods_ModChecker',
            u'Mods_ExportBashTags', u'Mods_ImportBashTags',
-           u'Mods_ClearManualBashTags']
+           u'Mods_ClearManualBashTags', u'Mods_OpenLOFileMenu']
 
 # "Load" submenu --------------------------------------------------------------
 class _Mods_LoadListData(balt.ListEditorData):
@@ -55,7 +56,7 @@ class _Mods_LoadListData(balt.ListEditorData):
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
-        return sorted(self.loadListDict.keys(), key=lambda a: a.lower())
+        return sorted(self.loadListDict, key=lambda a: a.lower())
 
     def rename(self,oldName,newName):
         """Renames oldName to newName."""
@@ -99,7 +100,7 @@ class Mods_LoadList(ChoiceLink):
                     bosh.modInfos.lo_activate_all()
                 except exception.PluginsFullError:
                     self._showError(
-                        _(u"Mod list is full, so some mods were skipped"),
+                        _(u'Mod list is full, so some mods were skipped'),
                         _(u'Select All'))
                 except exception.BoltError as e:
                     self._showError(u'%s' % e, _(u'Select All'))
@@ -140,12 +141,12 @@ class Mods_LoadList(ChoiceLink):
             def Execute(self):
                 """Activate mods in list."""
                 mods = set(_self.load_lists[self._text])
-                mods = [m for m in self.window.data_store.keys() if m in mods]
+                mods = [m for m in self.window.data_store if m in mods]
                 self._selectExact(mods)
             @property
-            def menu_help(self):
+            def link_help(self):
                 return _(u'Activate mods in the %(list_name)s list' % {
-                    'list_name': self._text})
+                    u'list_name': self._text})
         self.__class__.choiceLinkType = _LoListLink
 
     @property
@@ -164,7 +165,7 @@ class Mods_LoadList(ChoiceLink):
 
     @property
     def _choices(self):
-        return sorted(self.load_lists.keys(), key=lambda a: a.lower())
+        return sorted(self.load_lists, key=lambda a: a.lower())
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink, EnabledLink):
@@ -195,30 +196,31 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
     """Specify/set Oblivion version."""
     _help = _(u'Specify/set Oblivion version')
 
-    def __init__(self, key, setProfile=False):
+    def __init__(self, version_key, setProfile=False):
         super(Mods_OblivionVersion, self).__init__()
-        self.key = self._text = key
+        self._version_key = self._text = version_key
         self.setProfile = setProfile
 
-    def _check(self): return bosh.modInfos.voCurrent == self.key
+    def _check(self): return bosh.modInfos.voCurrent == self._version_key
 
     def _enable(self):
         return bosh.modInfos.voCurrent is not None \
-                          and self.key in bosh.modInfos.voAvailable
+               and self._version_key in bosh.modInfos.voAvailable
 
     def Execute(self):
         """Handle selection."""
-        if bosh.modInfos.voCurrent == self.key: return
-        bosh.modInfos.setOblivionVersion(self.key)
+        if bosh.modInfos.voCurrent == self._version_key: return
+        bosh.modInfos.setOblivionVersion(self._version_key)
         self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
-            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
+            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,u'vOblivion', self._version_key)
         Link.Frame.set_bash_frame_title()
 
 # "File" submenu --------------------------------------------------------------
 class Mods_CreateBlankBashedPatch(ItemLink):
     """Create a new bashed patch."""
-    _text, _help = _(u'New Bashed Patch...'), _(u'Create a new bashed patch')
+    _text = _(u'New Bashed Patch')
+    _help = _(u'Create a new Bashed Patch.')
 
     def Execute(self):
         newPatchName = bosh.modInfos.generateNextBashedPatch(
@@ -227,54 +229,40 @@ class Mods_CreateBlankBashedPatch(ItemLink):
             self.window.ClearSelected(clear_details=True)
             self.window.RefreshUI(redraw=[newPatchName], refreshSaves=False)
         else:
-            self._showWarning(u"Unable to create new bashed patch: "
-                              u"10 bashed patches already exist!")
+            self._showWarning(u'Unable to create new bashed patch: '
+                              u'10 bashed patches already exist!')
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
-    _text, _help = _(u'New Mod...'), _(u'Create a new blank mod')
-
-    def __init__(self, masterless=False):
-        super(Mods_CreateBlank, self).__init__()
-        self.masterless = masterless
-        if masterless:
-            self._text = _(u'New Mod (masterless)...')
-            self._help = _(u'Create a new blank mod with no masters')
+    _text = _(u'New Plugin...')
+    _help = _(u'Create a new blank plugin.')
 
     def Execute(self):
-        newName = self.window.new_name(GPath(u'New Mod.esp'))
-        windowSelected = self.window.GetSelected()
-        self.window.data_store.create_new_mod(newName, windowSelected,
-                                              masterless=self.masterless)
-        if windowSelected: # assign it the group of the first selected mod
-            mod_group = self.window.data_store.table.getColumn('group')
-            mod_group[newName] = mod_group.get(windowSelected[0], u'')
-        self.window.ClearSelected(clear_details=True)
-        self.window.RefreshUI(redraw=[newName], refreshSaves=False)
+        CreateNewPlugin.display_dialog(self.window)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):
     """Copies list of mod files to clipboard."""
-    _text = _(u"List Mods...")
-    _help = _(u"Copies list of active mod files to clipboard.")
+    _text = _(u'List Mods...')
+    _help = _(u'Copies list of active mod files to clipboard.')
 
     def Execute(self):
         #--Get masters list
         list_txt = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
         balt.copyToClipboard(list_txt)
-        self._showLog(list_txt, title=_(u"Active Mod Files"), fixedFont=False)
+        self._showLog(list_txt, title=_(u'Active Mod Files'), fixedFont=False)
 
 #------------------------------------------------------------------------------
 # Basically just a convenient 'whole LO' version of Mod_ListBashTags
 class Mods_ListBashTags(ItemLink):
     """Copies list of bash tags to clipboard."""
-    _text = _(u"List Bash Tags...")
-    _help = _(u"Copies list of bash tags to clipboard.")
+    _text = _(u'List Bash Tags...')
+    _help = _(u'Copies list of bash tags to clipboard.')
 
     def Execute(self):
         tags_text = bosh.modInfos.getTagList()
         balt.copyToClipboard(tags_text)
-        self._showLog(tags_text, title=_(u"Bash Tags"), fixedFont=False)
+        self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):
@@ -300,7 +288,7 @@ class Mods_CleanDummyMasters(EnabledLink):
 #------------------------------------------------------------------------------
 class Mods_AutoGhost(BoolLink):
     """Toggle Auto-ghosting."""
-    _text, key = _(u'Auto-Ghost'), 'bash.mods.autoGhost'
+    _text, _bl_key = _(u'Auto-Ghost'), u'bash.mods.autoGhost'
     _help = _(u'Toggles whether or not to automatically ghost all disabled '
               u'mods.')
 
@@ -315,13 +303,13 @@ class Mods_AutoESLFlagBP(BoolLink):
     _text = _(u'ESL-Flag Bashed Patches')
     _help = _(u'Automatically flags any built Bashed Patches as ESLs, freeing '
               u'up a load order slot.')
-    key = 'bash.mods.auto_flag_esl'
+    _bl_key = u'bash.mods.auto_flag_esl'
 
 class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
     _text = _(u"Check mods against LOOT's dirty mod list")
     _help = _(u'Display a tooltip if mod is dirty and underline dirty mods.')
-    key = 'bash.mods.scanDirty'
+    _bl_key = u'bash.mods.scanDirty'
 
     def Execute(self):
         super(Mods_ScanDirty, self).Execute()
@@ -330,8 +318,8 @@ class Mods_ScanDirty(BoolLink):
 class Mods_LockLoadOrder(CheckLink):
     """Turn on Lock Load Order feature."""
     _text = _(u'Lock Load Order')
-    _help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
-             u" them whenever Wrye Bash refreshes data/starts up.")
+    _help = _(u'Will reset mod Load Order to whatever Wrye Bash has saved for'
+             u' them whenever Wrye Bash refreshes data/starts up.')
 
     def _check(self): return load_order.locked
 
@@ -342,7 +330,7 @@ class Mods_LockLoadOrder(CheckLink):
                         u'feature is good for maintaining your load order, it '
                         u'will also undo any load order changes that you have '
                         u'made outside Bash.')
-            return self._askContinue(message, 'bash.load_order.lock_continue',
+            return self._askContinue(message, u'bash.load_order.lock.continue',
                                      title=_(u'Lock Load Order'))
         load_order.toggle_lock_load_order(_show_lo_lock_warning)
 
@@ -351,7 +339,7 @@ class Mods_LockActivePlugins(BoolLink, EnabledLink):
     _text = _(u'Lock Active Plugins')
     _help = _(u"Enhances 'Lock Load Order' to also detect when mods are "
               u'enabled or disabled and to undo those changes too.')
-    key = u'bash.load_order.lock_active_plugins'
+    _bl_key = u'bash.load_order.lock_active_plugins'
 
     def _enable(self): return load_order.locked # needs Lock LO to be on
 
@@ -365,12 +353,12 @@ class Mods_CrcRefresh(ItemLink):
     def Execute(self):
         message = u'== %s' % _(u'Mismatched CRCs') + u'\n\n'
         with BusyCursor(): pairs = bosh.modInfos.refresh_crcs()
-        mismatched = dict((k, v) for k, v in pairs.iteritems() if v[0] != v[1])
+        mismatched = {k: v for k, v in pairs.iteritems() if v[0] != v[1]}
         if mismatched:
             message += u'  * ' + u'\n  * '.join(
-                [u'%s: cached %08X real %08X' % (k.s, v[1], v[0]) for k, v in
+                [u'%s: cached %08X real %08X' % (k, v[1], v[0]) for k, v in
                  mismatched.iteritems()])
-            self.window.RefreshUI(redraw=mismatched.keys(), refreshSaves=False)
+            self.window.RefreshUI(redraw=mismatched, refreshSaves=False)
         else: message += _(u'No stale cached CRC values detected')
         self._showWryeLog(message)
 
@@ -386,32 +374,36 @@ class Mods_ModChecker(ItemLink):
         ModChecker.create_or_raise()
 
 #------------------------------------------------------------------------------
-class Mods_ExportBashTags(ItemLink):
+class _Mods_BashTags(ItemLink, CsvParser):
+    pass
+
+class Mods_ExportBashTags(_Mods_BashTags):
     """Writes all currently applied bash tags to a CSV file."""
     _text = _(u'Export Bash Tags...')
     _help = _(u'Exports all currently applied bash tags to a CSV file.')
+    _csv_header = u'Plugin', u'Tags'
 
     def Execute(self):
         exp_path = self._askSave(title=_(u'Export bash tags to CSV file:'),
             defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
             wildcard=u'*.csv')
         if not exp_path: return
-        plugins_exported = 0
-        with exp_path.open(u'w', encoding=u'utf-8-sig') as out:
-            out.write(u'"Plugin","Tags"\n')
-            for pl_name, p in sorted(bosh.modInfos.iteritems(),
-                    key=lambda i: i[0]):
-                curr_tags = p.getBashTags()
-                if curr_tags:
-                    out.write(u'"%s","%s"\n' % (
-                        pl_name, u', '.join(sorted(curr_tags))))
-                    plugins_exported += 1
+        self.plugins_exported = 0
+        self.writeToText(exp_path)
         self._showOk(_(u'Exported tags for %(exp_num)u plugin(s) to '
-                       u'%(exp_path)s.') % {u'exp_num': plugins_exported,
+                       u'%(exp_path)s.') % {u'exp_num': self.plugins_exported,
                                             u'exp_path': exp_path})
 
+    def _write_rows(self, out):
+        for pl_name, p in dict_sort(bosh.modInfos):
+            curr_tags = p.getBashTags()
+            if curr_tags:
+                out.write(u'"%s","%s"\n' % (
+                    pl_name, u', '.join(sorted(curr_tags))))
+                self.plugins_exported += 1
+
 #------------------------------------------------------------------------------
-class Mods_ImportBashTags(ItemLink):
+class Mods_ImportBashTags(_Mods_BashTags):
     """Reads bash tags from a CSV file and applies them to the current plugins
     (as far as possible)."""
     _text = _(u'Import Bash Tags...')
@@ -428,25 +420,29 @@ class Mods_ImportBashTags(ItemLink):
             defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
             wildcard=u'*.csv')
         if not imp_path: return
-        first_line = True
-        plugins_imported = []
-        with CsvReader(imp_path) as ins:
-            for csv_line in ins:
-                if first_line:
-                    first_line = False
-                    if len(csv_line) != 2 or csv_line != [u'Plugin', u'Tags']:
-                        self._showError(_(u'The selected file is not a valid '
-                                          u'bash tags CSV export.'))
-                        return
-                    continue
-                pl_name, curr_tags = GPath(csv_line[0]), csv_line[1]
-                if pl_name in bosh.modInfos:
-                    plugins_imported.append(pl_name)
-                    bosh.modInfos[pl_name].setBashTags(
-                        {t.strip() for t in curr_tags.split(u',')})
-        self.window.RefreshUI(redraw=plugins_imported, refreshSaves=False)
+        self.first_line = True
+        self.plugins_imported = []
+        try:
+            self.readFromText(imp_path)
+        except exception.BoltError:
+            self._showError(_(u'The selected file is not a valid '
+                              u'bash tags CSV export.'))
+            return
+        self.window.RefreshUI(redraw=self.plugins_imported, refreshSaves=False)
         self._showOk(
-            _(u'Imported tags for %u plugin(s).') % len(plugins_imported))
+            _(u'Imported tags for %u plugin(s).') % len(self.plugins_imported))
+
+    def _parse_line(self, csv_fields):
+        if self.first_line: # header validation
+            self.first_line = False
+            if len(csv_fields) != 2 or csv_fields != [u'Plugin', u'Tags']:
+                raise exception.BoltError(u'Header error: %s' % (csv_fields,))
+            return
+        pl_name, curr_tags = GPath(csv_fields[0]), csv_fields[1]
+        if pl_name in bosh.modInfos:
+            self.plugins_imported.append(pl_name)
+            bosh.modInfos[pl_name].setBashTags(
+                {t.strip() for t in curr_tags.split(u',')})
 
 #------------------------------------------------------------------------------
 class Mods_ClearManualBashTags(ItemLink):
@@ -470,3 +466,22 @@ class Mods_ClearManualBashTags(ItemLink):
                 p.reloadBashTags()
         self.window.RefreshUI(redraw=pl_reset, refreshSaves=False)
         self._showOk(_(u'Cleared tags from %u plugin(s).') % len(pl_reset))
+
+#------------------------------------------------------------------------------
+class _Mods_OpenLOFile(ItemLink):
+    """Opens a load order file in the system's default text editor."""
+    def __init__(self, lo_file_path):
+        super(_Mods_OpenLOFile, self).__init__()
+        self._lo_file_path = lo_file_path
+        lo_file_name = lo_file_path.stail
+        self._text = _(u'Open %s') % lo_file_name
+        self._help = _(u'Opens the load order management file "%s" in a text '
+                       u'editor.') % lo_file_name
+
+    def Execute(self):
+        self._lo_file_path.start()
+
+class Mods_OpenLOFileMenu(MultiLink):
+    """Shows one or more links for opening LO management files."""
+    def _links(self):
+        return [_Mods_OpenLOFile(lo_f) for lo_f in load_order.get_lo_files()]
