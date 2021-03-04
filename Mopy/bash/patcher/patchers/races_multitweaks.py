@@ -566,11 +566,10 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                     race.skills = raceData[u'skills']
                     raceChanged = True
             #--Gender info (voice, gender specific body data)
+            bodyKeys = self.bodyKeys.union(self.raceAttributes.union(
+                self.sizeKeys.union({'Ears', 'Voice'})))
             for gender in (u'male',u'female'):
-                bodyKeys = self.bodyKeys.union(self.raceAttributes.union(
-                    {'Ears', 'Voice'}))
-                bodyKeys = [gender + k for k in bodyKeys]
-                for body_key in bodyKeys:
+                for body_key in (gender + k for k in bodyKeys):
                     if body_key in raceData:
                         if getattr(race, body_key) != raceData[body_key]:
                             setattr(race, body_key, raceData[body_key])
