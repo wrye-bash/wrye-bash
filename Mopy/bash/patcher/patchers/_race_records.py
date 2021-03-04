@@ -56,7 +56,7 @@ class RaceRecordsPatcher(ModLoader):
     """Race patcher."""
     patcher_group = u'Special'
     patcher_order = 40
-    _read_sigs = (b'RACE', b'EYES', b'HAIR', b'NPC_')
+    _read_sigs = (b'RACE', b'HAIR', b'NPC_')
     _tweak_classes = {
         RaceTweak_BiggerOrcsAndNords, RaceTweak_MergeSimilarRaceHairs,
         RaceTweak_MergeSimilarRaceEyes, RaceTweak_PlayableEyes,
@@ -67,19 +67,18 @@ class RaceRecordsPatcher(ModLoader):
     def __init__(self, p_name, p_file):
         super(RaceRecordsPatcher, self).__init__(p_name, p_file)
         self.isActive = True #--Always enabled to support eye filtering
-        self.scanTypes = {b'RACE', b'EYES', b'HAIR', b'NPC_'}
+        self.scanTypes = {b'RACE', b'HAIR', b'NPC_'}
         self.vanilla_eyes = _find_vanilla_eyes()
 
     def scanModFile(self, modFile, progress):
         """Add appropriate records from modFile."""
         if not (set(modFile.tops) & self.scanTypes): return
-        #--Eyes, Hair
-        for top_grup_sig in (b'EYES', b'HAIR'):
-            patchBlock = self.patchFile.tops[top_grup_sig]
-            id_records = patchBlock.id_records
-            for record in modFile.tops[top_grup_sig].getActiveRecords():
-                if record.fid not in id_records:
-                    patchBlock.setRecord(record.getTypeCopy())
+        #--Hair
+        patchBlock = self.patchFile.tops[b'HAIR']
+        id_records = patchBlock.id_records
+        for record in modFile.tops[b'HAIR'].getActiveRecords():
+            if record.fid not in id_records:
+                patchBlock.setRecord(record.getTypeCopy())
         #--Npcs with unassigned eyes
         patchBlock = self.patchFile.tops[b'NPC_']
         id_records = patchBlock.id_records
@@ -99,7 +98,6 @@ class RaceRecordsPatcher(ModLoader):
         patchFile = self.patchFile
         if b'RACE' not in patchFile.tops: return
         keep = patchFile.getKeeper()
-        racesSorted = []
         mod_npcsFixed = defaultdict(set)
         reProcess = re.compile(
             u'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
@@ -108,8 +106,6 @@ class RaceRecordsPatcher(ModLoader):
         final_eyes = {}
         defaultMaleHair = {}
         defaultFemaleHair = {}
-        eyeNames  = {x.fid: x.full for x in patchFile.tops[b'EYES'].records}
-        hairNames = {x.fid: x.full for x in patchFile.tops[b'HAIR'].records}
         maleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
                      if not x.flags.notMale}
         femaleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
@@ -126,10 +122,6 @@ class RaceRecordsPatcher(ModLoader):
                                              x in maleHairs]
                 defaultFemaleHair[race.fid] = [x for x in race.hairs if
                                                x in femaleHairs]
-                race.hairs.sort(key=lambda x: hairNames.get(x))
-                race.eyes.sort(key=lambda x: eyeNames.get(x))
-                racesSorted.append(race.eid)
-                keep(race.fid)
         #--Npcs with unassigned eyes/hair
         for npc in patchFile.tops[b'NPC_'].records:
             if npc.fid == (_main_master, 0x000007): continue  #
@@ -156,12 +148,6 @@ class RaceRecordsPatcher(ModLoader):
                 keep(npc.fid)
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
-        log(u'\n=== ' + _(u'Eyes/Hair Sorted'))
-        if not racesSorted:
-            log(u'. ~~%s~~' % _(u'None'))
-        else:
-            for eid in sorted(racesSorted):
-                log(u'* ' + eid)
         if mod_npcsFixed:
             log(u'\n=== ' + _(u'Eyes/Hair Assigned for NPCs'))
             for srcMod in sorted(mod_npcsFixed):

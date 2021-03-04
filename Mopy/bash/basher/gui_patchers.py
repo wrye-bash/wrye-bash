@@ -1266,11 +1266,9 @@ class ReplaceFormIDs(_AListPanelCsv):
 
 # -----------------------------------------------------------------------------
 class RaceRecords(_PatcherPanel):
-    """Merged leveled lists mod file."""
     patcher_name = _(u'Race Records')
-    patcher_desc = _(u'This will sort hairs and eyes. It will also randomly '
-                     u'assign hairs and eyes to NPCs that are otherwise '
-                     u'missing them.')
+    patcher_desc = _(u'This will randomly assign hairs and eyes to NPCs that '
+                     u'are otherwise missing them.')
     _config_key = u'RacePatcher'
     patcher_type = _race_records.RaceRecordsPatcher
 
@@ -1332,6 +1330,15 @@ class EyeChecker(_PatcherPanel):
                      u'bug.')
     _config_key = u'EyeChecker'
     patcher_type = checkers.EyeCheckerPatcher
+    default_isEnabled = True
+
+# -----------------------------------------------------------------------------
+class RaceChecker(_PatcherPanel):
+    """Sorts hairs and eyes."""
+    patcher_name = _(u'Race Checker')
+    patcher_desc = _(u'Sorts race hairs and eyes.')
+    _config_key = u'RaceChecker'
+    patcher_type = checkers.RaceCheckerPatcher
     default_isEnabled = True
 
 #------------------------------------------------------------------------------

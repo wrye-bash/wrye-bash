@@ -272,3 +272,48 @@ class EyeCheckerPatcher(Patcher):
                   u'been removed from the following races.'))
             for eid in sorted(racesFiltered):
                 log(u'* ' + eid)
+
+#------------------------------------------------------------------------------
+class RaceCheckerPatcher(Patcher):
+    patcher_group = u'Special'
+    patcher_order = 40 # Run after Tweak Races
+    _read_sigs = (b'EYES', b'HAIR', b'RACE')
+
+    @property
+    def active_write_sigs(self):
+        return (b'RACE',) if self.isActive else ()
+
+    def scanModFile(self, modFile, progress):
+        if not (set(modFile.tops) & set(self._read_sigs)): return
+        for pb_sig in self._read_sigs:
+            patchBlock = self.patchFile.tops[pb_sig]
+            id_records = patchBlock.id_records
+            for record in modFile.tops[pb_sig].getActiveRecords():
+                if record.fid not in id_records:
+                    patchBlock.setRecord(record.getTypeCopy())
+
+    def buildPatch(self, log, progress):
+        if not self.isActive: return
+        patchFile = self.patchFile
+        if b'RACE' not in patchFile.tops: return
+        keep = patchFile.getKeeper()
+        racesSorted = []
+        eyeNames = {x.fid: x.full for x in patchFile.tops[b'EYES'].records}
+        hairNames = {x.fid: x.full for x in patchFile.tops[b'HAIR'].records}
+        for race in patchFile.tops[b'RACE'].records:
+            if (race.flags.playable or race.fid == (
+                    _main_master, 0x038010)) and race.eyes:
+                prev_hairs = race.hairs[:]
+                race.hairs.sort(key=lambda x: hairNames.get(x))
+                prev_eyes = race.eyes[:]
+                race.eyes.sort(key=lambda x: eyeNames.get(x))
+                if race.hairs != prev_hairs or race.eyes != prev_eyes:
+                    racesSorted.append(race.eid)
+                    keep(race.fid)
+        log.setHeader(u'= ' + self._patcher_name)
+        log(u'\n=== ' + _(u'Eyes/Hair Sorted'))
+        if not racesSorted:
+            log(u'. ~~%s~~' % _(u'None'))
+        else:
+            for eid in sorted(racesSorted):
+                log(u'* ' + eid)
