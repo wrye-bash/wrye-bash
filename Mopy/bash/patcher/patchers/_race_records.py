@@ -169,7 +169,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                 if u'R.ChangeSpells' in bashTags:
                     raceData[u'spellsOverride'] = race.spells
                 if u'R.Description' in bashTags:
-                    tempRaceData[u'text'] = race.text
+                    tempRaceData[u'description'] = race.description
             for master in srcInfo.masterNames:
                 if not master in bosh.modInfos: continue  # or break
                 # filter mods
@@ -304,7 +304,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                         raceChanged = True
             #--Teeth/Mouth/head/ears/description
             for basic_key in (u'teethLower', u'teethUpper', u'mouth',
-                              u'tongue', u'text', u'head'): ##: rename text
+                              u'tongue', u'description', u'head'):
                 if basic_key in raceData:
                     if getattr(race, basic_key) != raceData[basic_key]:
                         setattr(race, basic_key, raceData[basic_key])

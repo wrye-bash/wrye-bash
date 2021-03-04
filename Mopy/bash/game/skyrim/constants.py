@@ -756,7 +756,7 @@ text_types = {
     b'APPA': (u'description',),
     b'ARMO': (u'description',),
     b'AVIF': (u'description',),
-    b'BOOK': (u'description', u'bookText'),
+    b'BOOK': (u'description', u'book_text'),
     b'CLAS': (u'description',),
     #b'COLL': (u'description',), # seems fairly useless to patch this
     b'LSCR': (u'description',),

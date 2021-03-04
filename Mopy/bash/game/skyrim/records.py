@@ -1630,7 +1630,7 @@ class MreBook(MelRecord):
         MelFull(),
         MelModel(),
         MelIcons(),
-        MelDescription(u'bookText'),
+        MelDescription(u'book_text'),
         MelDestructible(),
         MelPickupSound(),
         MelDropSound(),

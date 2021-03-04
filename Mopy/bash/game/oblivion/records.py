@@ -672,7 +672,7 @@ class MreBsgn(MelRecord):
         MelEdid(),
         MelFull(),
         MelIcon(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelSpells(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1349,7 +1349,7 @@ class MreMgef(MelRecord):
         }, decider=AttrValDecider(u'obme_record_version'),
             fallback=MelString(b'EDDX', u'obme_eid')),
         MelFull(),
-        MelString(b'DESC', u'text'),
+        MelDescription(),
         MelIcon(),
         MelModel(),
         MelPartialCounter(MelTruncatedStruct(b'DATA',
@@ -1595,7 +1595,7 @@ class MreRace(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelSpells(),
         MelGroups(u'relations',
             MelStruct(b'XNAM', [u'I', u'i'], (FID, 'faction'), 'mod'),

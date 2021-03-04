@@ -1776,7 +1776,7 @@ class MreMgef(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelIcon(),
         MelModel(),
         MelPartialCounter(MelStruct(b'DATA',
@@ -2466,7 +2466,7 @@ class MreRace(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelGroups('relations',
             MelStruct(b'XNAM', [u'I', u'2i'], (FID, 'faction'), 'mod',
                       'group_combat_reaction'),
