@@ -324,10 +324,6 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
         self.raceAttributes = {'Strength', 'Intelligence', 'Willpower',
                                'Agility', 'Speed', 'Endurance', 'Personality',
                                'Luck'}
-        self.raceSkills = {'skill1', 'skill1Boost', 'skill2', 'skill2Boost',
-                           'skill3', 'skill3Boost', 'skill4', 'skill4Boost',
-                           'skill5', 'skill5Boost', 'skill6', 'skill6Boost',
-                           'skill7', 'skill7Boost'}
         self.eyeKeys = {u'Eyes'}
         self.eye_mesh = {}
         self.scanTypes = {b'RACE', b'EYES', b'HAIR', b'NPC_'}
@@ -410,8 +406,7 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                     for am_key in ['male' + k for k in self.raceAttributes]:
                         tempRaceData[am_key] = getattr(race, am_key)
                 if u'R.Skills' in bashTags:
-                    for skill_key in self.raceSkills:
-                        tempRaceData[skill_key] = getattr(race, skill_key)
+                    tempRaceData[u'skills'] = race.skills
                 if u'R.AddSpells' in bashTags:
                     tempRaceData[u'AddSpells'] = race.spells
                 if u'R.ChangeSpells' in bashTags:
@@ -566,11 +561,10 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                     raceData[u'spells'].append(spell)
                 race.spells = raceData[u'spells']
             #--skills
-            for skill_key in self.raceSkills:
-                if skill_key in raceData:
-                    if getattr(race, skill_key) != raceData[skill_key]:
-                        setattr(race, skill_key, raceData[skill_key])
-                        raceChanged = True
+            if u'skills' in raceData:
+                if race.skills != raceData[u'skills']:
+                    race.skills = raceData[u'skills']
+                    raceChanged = True
             #--Gender info (voice, gender specific body data)
             for gender in (u'male',u'female'):
                 bodyKeys = self.bodyKeys.union(self.raceAttributes.union(

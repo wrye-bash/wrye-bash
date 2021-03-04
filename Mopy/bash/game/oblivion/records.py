@@ -21,11 +21,12 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
+
 from __future__ import unicode_literals
 import io
 import re
 from collections import OrderedDict
-from itertools import chain
+from itertools import chain, izip
 
 from ... import brec
 from ...bolt import Flags
@@ -385,6 +386,47 @@ class MelOwnershipTes4(brec.MelOwnership):
             MelFid(b'XGLB', u'global'),
         )
 
+#------------------------------------------------------------------------------
+# FIXME(inf) Can't use MelLists because one of the attrs is a flags field,
+#  which MelLists doesn't support -> fix that and base this on MelLists
+class MelRaceData(MelStruct):
+    """Pack RACE skills and skill boosts as a single attribute."""
+    _flags = Flags(0, Flags.getNames('playable'))
+
+    def __init__(self):
+        super(MelRaceData, self).__init__(
+            b'DATA', [u'14b', u'2s', u'4f', u'I'], (u'skills', [0] * 14),
+            'unused1', 'maleHeight', 'femaleHeight', 'maleWeight',
+            'femaleWeight', (self._flags, u'flags'))
+
+    @staticmethod
+    def _expand_formats(elements, struct_formats):
+        expanded_fmts = []
+        for f in struct_formats:
+            if f == u'14b':
+                expanded_fmts.append(0)
+            elif f[-1] != u's':
+                expanded_fmts.extend([f[-1]] * int(f[:-1] or 1))
+            else:
+                expanded_fmts.append(int(f[:-1] or 1))
+        return expanded_fmts
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        unpacked = ins.unpack(self._unpacker, size_, *debug_strs)
+        record.skills = unpacked[:14]
+        for attr, value, action in izip(self.attrs[1:], unpacked[14:],
+                                        self.actions[1:]):
+            setattr(record, attr, action(value) if action else value)
+
+    def pack_subrecord_data(self, record):
+        values = list(record.skills)
+        values.extend(
+            action(value).dump() if action else value for value, action in
+            izip((getattr(record, a) for a in self.attrs[1:]),
+                 self.actions[1:]))
+        return self._packer(*values)
+
+#------------------------------------------------------------------------------
 ##: Could technically be reworked for non-Oblivion games, but is broken and
 # unused outside of Oblivion right now
 class MreHasEffects(object):
@@ -1550,8 +1592,6 @@ class MreRace(MelRecord):
     """Race."""
     rec_sig = b'RACE'
 
-    _flags = Flags(0, Flags.getNames('playable'))
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
@@ -1560,12 +1600,7 @@ class MreRace(MelRecord):
         MelGroups(u'relations',
             MelStruct(b'XNAM', [u'I', u'i'], (FID, 'faction'), 'mod'),
         ),
-        MelStruct(b'DATA', [u'14b', u'2s', u'4f', u'I'], 'skill1', 'skill1Boost', 'skill2',
-                  'skill2Boost', 'skill3', 'skill3Boost', 'skill4',
-                  'skill4Boost', 'skill5', 'skill5Boost', 'skill6',
-                  'skill6Boost', 'skill7', 'skill7Boost', 'unused1',
-                  'maleHeight', 'femaleHeight', 'maleWeight', 'femaleWeight',
-                  (_flags, u'flags')),
+        MelRaceData(),
         MelRaceVoices(b'VNAM', ['2I'], (FID, 'maleVoice'), (FID, 'femaleVoice')),
         MelOptStruct(b'DNAM', [u'2I'], (FID, u'defaultHairMale'),
                      (FID, u'defaultHairFemale')),
