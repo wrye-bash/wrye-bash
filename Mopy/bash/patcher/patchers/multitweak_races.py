@@ -20,13 +20,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""This module contains the Oblivion MultiTweakItem classes that tweak RACE
-records. As opposed to the rest of the multitweak items these are not grouped
-by a MultiTweaker but by the RacePatcher (see _race_records.py)."""
+"""This module contains the MultiTweakItem classes that tweak RACE records."""
 
 from itertools import izip
 
-from .base import MultiTweakItem
+from .base import MultiTweakItem, MultiTweaker
 
 _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
                   u'dark seducer', u'golden saint', u'high elf', u'imperial',
@@ -36,7 +34,7 @@ class _ARaceTweak(MultiTweakItem):
     """ABC for race tweaks."""
     tweak_read_classes = b'RACE',
     tweak_log_msg = _(u'Races Tweaked: %(total_changed)d')
-    _tweak_races_data = None # sentinel, set in RaceRecordsPatcher.buildPatch
+    tweak_races_data = None # sentinel, set in RaceRecordsPatcher.buildPatch
 
     def _calc_changed_face_parts(self, face_attr, collected_races_data):
         """Calculates a changes dictionary for the specified face attribute,
@@ -82,7 +80,7 @@ class _ARaceTweak(MultiTweakItem):
             return self._cached_changed_eyes
         except AttributeError:
             self._cached_changed_eyes = self._calc_changed_face_parts(
-                u'eyes', self._tweak_races_data)
+                u'eyes', self.tweak_races_data)
             return self._cached_changed_eyes
 
     def _get_changed_hairs(self):
@@ -92,11 +90,8 @@ class _ARaceTweak(MultiTweakItem):
             return self._cached_changed_hairs
         except AttributeError:
             self._cached_changed_hairs = self._calc_changed_face_parts(
-               u'hairs', self._tweak_races_data)
+               u'hairs', self.tweak_races_data)
             return self._cached_changed_hairs
-
-    def prepare_for_tweaking(self, patch_file):
-        self._tweak_races_data = patch_file.races_data
 
 # -----------------------------------------------------------------------------
 class RaceTweak_BiggerOrcsAndNords(_ARaceTweak):
@@ -147,7 +142,7 @@ class RaceTweak_MergeSimilarRaceHairs(_ARaceTweak):
         if not record.full: return False
         # If this is None, we don't have race data yet and have to blindly
         # forward records until the patcher sends it to us
-        elif self._tweak_races_data is None: return True
+        elif self.tweak_races_data is None: return True
         # Cached, so calling this over and over is fine
         changed_hairs = self._get_changed_hairs()
         rec_full = record.full.lower()
@@ -171,7 +166,7 @@ class RaceTweak_MergeSimilarRaceEyes(_ARaceTweak):
         if not record.full: return False
         # If this is None, we don't have race data yet and have to blindly
         # forward records until the patcher sends it to us
-        if self._tweak_races_data is None: return True
+        if self.tweak_races_data is None: return True
         # Cached, so calling this over and over is fine
         changed_eyes = self._get_changed_eyes()
         rec_full = record.full.lower()
@@ -192,13 +187,13 @@ class _ARUnblockTweak(_ARaceTweak):
         race_sig, race_attr = self._sig_and_attr
         # If this is None, we don't have race data yet and have to blindly
         # forward records until the patcher sends it to us
-        tweak_data = self._tweak_races_data
+        tweak_data = self.tweak_races_data
         return tweak_data is None or getattr(
             record, race_attr) != tweak_data[race_sig]
 
     def tweak_record(self, record):
         race_sig, race_attr = self._sig_and_attr
-        setattr(record, race_attr, self._tweak_races_data[race_sig])
+        setattr(record, race_attr, self.tweak_races_data[race_sig])
 
 # -----------------------------------------------------------------------------
 class RaceTweak_AllHairs(_ARUnblockTweak):
@@ -263,3 +258,45 @@ class RaceTweak_SexlessHairs(_ARaceTweak):
     def tweak_record(self, record):
         record.flags.notMale = False
         record.flags.notFemale = False
+
+# -----------------------------------------------------------------------------
+class TweakRacesPatcher(MultiTweaker):
+    """Tweaks race things."""
+    _tweak_classes = {
+        RaceTweak_BiggerOrcsAndNords, RaceTweak_MergeSimilarRaceHairs,
+        RaceTweak_MergeSimilarRaceEyes, RaceTweak_PlayableEyes,
+        RaceTweak_PlayableHairs, RaceTweak_SexlessHairs, RaceTweak_AllEyes,
+        RaceTweak_AllHairs,
+    }
+
+    def initData(self, progress):
+        super(TweakRacesPatcher, self).initData(progress)
+        self.collected_tweak_data = {b'EYES': [], b'HAIR': []}
+        for race_tweak in self.enabled_tweaks:
+            race_tweak.tweak_races_data = self.collected_tweak_data
+
+    def scanModFile(self, modFile, progress):
+        # Need to gather EYES/HAIR data for the tweaks
+        tweak_data = self.collected_tweak_data
+        for tweak_type in (b'EYES', b'HAIR'):
+            if not tweak_type in modFile.tops: continue
+            for record in modFile.tops[tweak_type].getActiveRecords():
+                tweak_data[tweak_type].append(record.fid)
+        super(TweakRacesPatcher, self).scanModFile(modFile, progress)
+
+    def buildPatch(self, log, progress):
+        # Need to gather RACE data for the tweaks
+        tweak_data = self.collected_tweak_data
+        for record in self.patchFile.tops[b'RACE'].getActiveRecords():
+            ##: Are these checks needed for the tweak data collection?
+            # if not record.eyes:
+            #     continue  # Sheogorath. Assume is handled correctly.
+            # if not record.rightEye or not record.leftEye:
+            #     continue # WIPZ race?
+            # if re.match(u'^117[a-zA-Z]', record.eid, flags=re.U):
+            #     continue  # x117 race?
+            if record.full:
+                tweak_data[record.full.lower()] = {
+                    u'hairs': record.hairs, u'eyes': record.eyes,
+                    u'relations': record.relations}
+        super(TweakRacesPatcher, self).buildPatch(log, progress)

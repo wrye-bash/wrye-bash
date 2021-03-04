@@ -932,7 +932,7 @@ from ..patcher.patchers import base
 from ..patcher.patchers import checkers, mergers, preservers
 from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
     multitweak_clothes, multitweak_names, multitweak_settings, \
-    _race_records
+    multitweak_races, _race_records
 
 # Patchers 10 -----------------------------------------------------------------
 class AliasModNames(_AliasesPatcherPanel):
@@ -1246,6 +1246,13 @@ class TweakActors(_TweakPatcherPanel):
     _config_key = u'TweakActors'
     patcher_type = multitweak_actors.TweakActorsPatcher
 
+# -----------------------------------------------------------------------------
+class TweakRaces(_TweakPatcherPanel):
+    patcher_name = _(u'Tweak Races')
+    patcher_desc = _(u'Tweak race records in specified ways.')
+    _config_key = u'TweakRaces'
+    patcher_type = multitweak_races.TweakRacesPatcher
+
 # Patchers 40 -----------------------------------------------------------------
 class ReplaceFormIDs(_AListPanelCsv):
     """Imports Form Id replacers into the Bashed Patch."""
@@ -1258,7 +1265,7 @@ class ReplaceFormIDs(_AListPanelCsv):
     canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
 # -----------------------------------------------------------------------------
-class RaceRecords(_TweakPatcherPanel):
+class RaceRecords(_PatcherPanel):
     """Merged leveled lists mod file."""
     patcher_name = _(u'Race Records')
     patcher_desc = _(u'This will sort hairs and eyes. It will also randomly '
