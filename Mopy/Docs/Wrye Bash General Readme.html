@@ -777,36 +777,236 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <p>Plugins can be tagged with Bash Tags that tell Wrye Bash that they contain certain changes that should be preserved even if another mod also changes the same things. This is usually because the changes are important to the functionality of the mod. Wrye Bash then allows you to choose which plugins should have which types of changes preserved, by selecting from the various Import sections when building a Bashed Patch.
 <p>If a section's description in the table below begins with <q>Preserves</q> and two or more mods in its list change the same thing, then the later-loading plugin will override the other plugin(s). Otherwise changes are merged.
 <table>
-    <thead><tr><th>Section<th>Description<th>When You Should Use It
+    <thead>
+        <tr>
+            <th>Section</th>
+            <th>Description</th>
+            <th>When You Should Use It</th>
+            <th>Available For</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Import Actors</td><td><em>All but Fallout 4.</em> Preserves changes made to actors (ie. NPCs and creatures) by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportActorsAIPackages">Import Actors: AI Packages</td><td><em>All but Fallout 4.</em> Merges the changes made to actor AI packages by all the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Actors: Animations</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves the changes made to actor animations by all the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Actors: Death Items</td><td><em>All but Fallout 4.</em> Preserves the changes made to the items added to an actor when it dies by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportActorsFaces">Import Actors: Faces</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves the changes made to NPC faces by the mods selected.</td><td>The decision is entirely based on user preference. Choose whichever mods' NPC faces you prefer.</td>
-        <tr><td id="patchImportActorsFactions">Import Actors: Factions</td><td><em>All but Fallout 4.</em> Preserves the changes made to the factions an actor belongs to by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportActorsSpells">Import Actors: Spells</td><td><em>All but Fallout 4.</em> Merges the changes made to the spells actors have by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportCells">Import Cells<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to cell settings such as lighting, climate, music, name, owner, water and more.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Destructible</td><td><em>All but Oblivion, Nehrim&colon; At Fate's Edge &amp; Fallout 4.</em> Preserves the changes made to the ability to destroy certain parts of the environment.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Effect Stats</td><td><em>All but Fallout 4.</em> Preserves the changes made to the stats of magic / base effects.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Enchantment Stats</td><td><em>All but Fallout 4.</em> Preserves the changes made to the effect data of enchantments / object effects.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportGraphics">Import Graphics<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various textures and models throughout the game.<td>The decision is entirely based on user preference. Choose whichever mods' graphics you prefer.
-        <tr><td id="patchImportInventory">Import Inventory<td><em>All but Fallout 4.</em> Merges the changes made to the items in an actor's inventory by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Keywords</td><td><em>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only.</em> Preserves the changes made to the keywords attached to various things throughout the game by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportNames">Import Names<td><em>All but Fallout 4.</em> Preserves the changes made to various names throughout the game by the mods selected.<td>The decision is entirely based on user preference. Choose whichever mods' names you prefer.
-        <tr><td>Import Object Bounds</td><td><em>All but Oblivion &amp; Nehrim&colon; At Fate's Edge.</em> Preserves the changes made by the mods selected to the bounds of many types of objects throughout the world.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Outfits</td><td><em>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only.</em> Merges the changes made to the items in NPC outfits by all the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Races</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves changes made by the mods selected to various race attributes such as height, eyes, hair and voice.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Races: Relations</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Merges additions, changes and deletions to race-faction relations.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Races: Spells</td><td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Merges additions, changes and deletions to race abilities and spells.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportRelations">Import Relations</td><td><em>All but Fallout 4.</em> Merges additions, changes and deletions to faction relations.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Roads<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Preserves the changes made by the mods selected to the landscape's roads.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Scripts<td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves the changes made by the mods selected to the scripts attached to things in the game.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td id="patchImportSounds">Import Sounds<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various sounds in the game.<td>The decision is entirely based on user preference. Choose whichever mods' sounds you prefer.
-        <tr><td id="patchImportSpellStats">Import Spell Stats</td><td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to spells / actor effects in order to fix bugs or rebalance them.</td><td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that overhaul spell stats. In such cases, choose whichever mods' stats you prefer.</td></tr>
-        <tr><td>Import Stats<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to items in order to fix bugs or rebalance them.<td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that overhaul item stats. In such cases, choose whichever mods' stats you prefer.
-        <tr><td>Import Text</td><td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various types of long-form text (e.g. text in a book, descriptions of armor, spells, weapons, etc.).</td><td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that change book texts. In such cases, choose whichever mods' text you prefer.</td></tr>
-        <tr><td>Import Weapon Modifications</td><td><em>Fallout&colon; New Vegas only.</em> Preserves the changes made by the mods selected to weapon modifications.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
+        <tr>
+            <td>Import Actors</td>
+            <td>Preserves changes made to actors (ie. NPCs and creatures) by
+                the mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportActorsAIPackages">Import Actors: AI
+                Packages</td>
+            <td>Merges the changes made to actor AI packages by all the mods
+                selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Actors: Animations</td>
+            <td>Preserves the changes made to actor animations by all the mods
+                selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Import Actors: Death Items</td>
+            <td>Preserves the changes made to the items added to an actor when
+                it dies by the mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportActorsFaces">Import Actors: Faces</td>
+            <td>Preserves the changes made to NPC faces by the mods
+                selected.</td>
+            <td>The decision is entirely based on user preference. Choose
+                whichever mods' NPC faces you prefer.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td id="patchImportActorsFactions">Import Actors: Factions</td>
+            <td>Preserves the changes made to the factions an actor belongs to
+                by the mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportActorsSpells">Import Actors: Spells</td>
+            <td>Merges the changes made to the spells actors have by the mods
+                selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportCells">Import Cells</td>
+            <td>Preserves the changes made by the mods selected to cell
+                settings such as lighting, climate, music, name, owner, water
+                and more.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Destructible</td>
+            <td>Preserves the changes made to the ability to destroy certain
+                parts of the environment.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Oblivion, Nehrim&colon; At Fate's Edge &amp;
+                Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Effect Stats</td>
+            <td>Preserves the changes made to the stats of magic / base
+                effects.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Enchantment Stats</td>
+            <td>Preserves the changes made to the effect data of enchantments
+                / object effects.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportGraphics">Import Graphics</td>
+            <td>Preserves the changes made by the mods selected to various
+                textures and models throughout the game.</td>
+            <td>The decision is entirely based on user preference. Choose
+                whichever mods' graphics you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportInventory">Import Inventory</td>
+            <td>Merges the changes made to the items in an actor's inventory by
+                all the mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Keywords</td>
+            <td>Preserves the changes made to the keywords attached to various
+                things throughout the game by the mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+        <tr>
+            <td id="patchImportNames">Import Names</td>
+            <td>Preserves the changes made to various names throughout the game
+                by the mods selected.</td>
+            <td>The decision is entirely based on user preference. Choose
+                whichever mods' names you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Object Bounds</td>
+            <td>Preserves the changes made by the mods selected to the bounds
+                of many types of objects throughout the world.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Import Outfits</td>
+            <td>Merges the changes made to the items in NPC outfits by all the
+                mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+        <tr>
+            <td>Import Races</td>
+            <td>Preserves changes made by the mods selected to various race
+                attributes such as height, eyes, hair and voice.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Import Races: Relations</td>
+            <td>Merges additions, changes and deletions to race-faction
+                relations.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Import Races: Spells</td>
+            <td>Merges additions, changes and deletions to race abilities and
+                spells.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td id="patchImportRelations">Import Relations</td>
+            <td>Merges additions, changes and deletions to faction
+                relations.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Roads</td>
+            <td>Preserves the changes made by the mods selected to the
+                landscape's roads.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Import Scripts</td>
+            <td>Preserves the changes made by the mods selected to the scripts
+                attached to things in the game.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td id="patchImportSounds">Import Sounds</td>
+            <td>Preserves the changes made by the mods selected to various
+                sounds in the game.</td>
+            <td>The decision is entirely based on user preference. Choose
+                whichever mods' sounds you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportSpellStats">Import Spell Stats</td>
+            <td>Preserves the changes made by the mods selected to spells /
+                actor effects in order to fix bugs or rebalance them.</td>
+            <td>Always, unless you are told otherwise by a mod's readme. There
+                is an element of user preference, for instance if you are using
+                several mods that overhaul spell stats. In such cases, choose
+                whichever mods' stats you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Stats</td>
+            <td>Preserves the changes made by the mods selected to items in
+                order to fix bugs or rebalance them.
+            <td>Always, unless you are told otherwise by a mod's readme. There
+                is an element of user preference, for instance if you are using
+                several mods that overhaul spell stats. In such cases, choose
+                whichever mods' stats you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Text</td>
+            <td>Preserves the changes made by the mods selected to various
+                types of long-form text (e.g. text in a book, descriptions of
+                armor, spells, weapons, etc.).</td>
+            <td>Always, unless you are told otherwise by a mod's readme. There
+                is an element of user preference, for instance if you are using
+                several mods that overhaul spell stats. In such cases, choose
+                whichever mods' stats you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Weapon Modifications</td>
+            <td>Preserves the changes made by the mods selected to weapon
+                modifications.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Fallout&colon; New Vegas</td>
+        </tr>
+    </tbody>
 </table>
 
 <h3 id="patch-tweaking">Applying Tweaks <a class="back2top" href="#contents">Back to top</a></h3>
