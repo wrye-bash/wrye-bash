@@ -1512,6 +1512,12 @@ C.Location, -C.LockList
                 but thankfully no mods seem to have made this mistake.</td>
         </tr>
         <tr>
+            <td>R.Relations</td>
+            <td>Split into R.Relations.Add, R.Relations.Change and
+                R.Relations.Remove. The behavior of the old R.Relations tag is
+                equivalent to all three tags combined.</td>
+        </tr>
+        <tr>
             <td>Relations</td>
             <td>Split into Relations.Add and Relations.Change. The behavior of
                 the old Relations tag is equivalent to Relations.Add combined
@@ -3060,8 +3066,18 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>R.Relations</td>
-            <td>Modifies race relationships.</td>
+            <td>R.Relations.Add</td>
+            <td>Adds race-faction relationships.</td>
+            <td>The faction list (XNAM) of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Relations.Change</td>
+            <td>Changes race-faction relationships.</td>
+            <td>The faction list (XNAM) of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Relations.Remove</td>
+            <td>Removes race-faction relationships.</td>
             <td>The faction list (XNAM) of Race (RACE) records.</td>
         </tr>
         <tr>

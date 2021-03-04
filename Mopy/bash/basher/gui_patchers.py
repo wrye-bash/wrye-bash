@@ -1155,6 +1155,16 @@ class ImportRaces(_ImporterPatcherPanel):
     patcher_type = preservers.ImportRacesPatcher
 
 # -----------------------------------------------------------------------------
+class ImportRacesRelations(_ImporterPatcherPanel):
+    """Imports race-faction relations."""
+    patcher_name = _(u'Import Races: Relations')
+    patcher_desc = _(u'Import race-faction relations from source mods.')
+    autoKey = {u'R.Relations.Add', u'R.Relations.Change',
+               u'R.Relations.Remove'}
+    _config_key = u'ImportRacesRelations'
+    patcher_type = mergers.ImportRacesRelationsPatcher
+
+# -----------------------------------------------------------------------------
 class ImportSpellStats(_ImporterPatcherPanel, _AListPanelCsv):
     """Import spell changes from mod files."""
     patcher_name = _(u'Import Spell Stats')
@@ -1281,7 +1291,7 @@ class RaceRecords(_DoublePatcherPanel):
           u'active mods.  It will also randomly assign hairs and eyes to '
           u'npcs that are otherwise missing them.')]
     )
-    autoKey = {u'R.ChangeSpells', u'R.AddSpells', u'R.Relations'}
+    autoKey = {u'R.ChangeSpells', u'R.AddSpells'}
     _config_key = u'RacePatcher'
     patcher_type = _race_records.RaceRecordsPatcher
 
