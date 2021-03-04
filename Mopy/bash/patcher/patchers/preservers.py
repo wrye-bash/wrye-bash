@@ -36,7 +36,7 @@ from ...brec import MreRecord
 from ...exception import ModSigMismatchError
 
 #------------------------------------------------------------------------------
-class _APreserver(ImportPatcher):
+class APreserver(ImportPatcher):
     """Fairly mature base class for preservers. Some parts could (read should)
     be moved to ImportPatcher and used to eliminate duplication with _AMerger.
 
@@ -58,7 +58,7 @@ class _APreserver(ImportPatcher):
     _force_full_import_tag = None
 
     def __init__(self, p_name, p_file, p_sources):
-        super(_APreserver, self).__init__(p_name, p_file, p_sources)
+        super(APreserver, self).__init__(p_name, p_file, p_sources)
         #--(attribute-> value) dicts keyed by long fid.
         self.id_data = defaultdict(dict)
         self.srcs_sigs = set() #--Record signatures actually provided by src
@@ -266,22 +266,22 @@ class _APreserver(ImportPatcher):
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
-class ImportActorsPatcher(_APreserver):
+class ImportActorsPatcher(APreserver):
     rec_attrs = bush.game.actor_importer_attrs
     _multi_tag = True
 
 #------------------------------------------------------------------------------
 ##: Could be absorbed by ImportActors, but would break existing configs
-class ImportActorsAnimationsPatcher(_APreserver):
+class ImportActorsAnimationsPatcher(APreserver):
     rec_attrs = {x: (u'animations',) for x in bush.game.actor_types}
 
 #------------------------------------------------------------------------------
 ##: Could be absorbed by ImportActors, but would break existing configs
-class ImportActorsDeathItemsPatcher(_APreserver):
+class ImportActorsDeathItemsPatcher(APreserver):
     rec_attrs = {x: (u'deathItem',) for x in bush.game.actor_types}
 
 #------------------------------------------------------------------------------
-class ImportActorsFacesPatcher(_APreserver):
+class ImportActorsFacesPatcher(APreserver):
     logMsg = u'\n=== '+_(u'Faces Patched')
     rec_attrs = {b'NPC_': {
         u'NPC.Eyes': (),
@@ -301,7 +301,7 @@ class ImportActorsFacesPatcher(_APreserver):
     _force_full_import_tag = u'NpcFacesForceFullImport'
 
 #------------------------------------------------------------------------------
-class ImportActorsFactionsPatcher(_APreserver):
+class ImportActorsFactionsPatcher(APreserver):
     logMsg = u'\n=== ' + _(u'Refactioned Actors')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
@@ -323,26 +323,26 @@ class ImportActorsFactionsPatcher(_APreserver):
              for r, d in fact_parser.id_stored_info.iteritems()})
 
 #------------------------------------------------------------------------------
-class ImportDestructiblePatcher(_APreserver):
+class ImportDestructiblePatcher(APreserver):
     """Merges changes to destructible records."""
     rec_attrs = {x: (u'destructible',) for x in bush.game.destructible_types}
 
 #------------------------------------------------------------------------------
-class ImportEffectsStatsPatcher(_APreserver):
+class ImportEffectsStatsPatcher(APreserver):
     """Preserves changes to MGEF stats."""
     rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
 
 #------------------------------------------------------------------------------
-class ImportEnchantmentStatsPatcher(_APreserver):
+class ImportEnchantmentStatsPatcher(APreserver):
     """Preserves changes to ENCH stats."""
     rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}
 
 #------------------------------------------------------------------------------
-class ImportKeywordsPatcher(_APreserver):
+class ImportKeywordsPatcher(APreserver):
     rec_attrs = {x: (u'keywords',) for x in bush.game.keywords_types}
 
 #------------------------------------------------------------------------------
-class ImportNamesPatcher(_APreserver):
+class ImportNamesPatcher(APreserver):
     """Import names from source mods/files."""
     logMsg =  u'\n=== ' + _(u'Renamed Items')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
@@ -358,20 +358,20 @@ class ImportNamesPatcher(_APreserver):
              for r, d in full_parser.type_id_name.iteritems()})
 
 #------------------------------------------------------------------------------
-class ImportObjectBoundsPatcher(_APreserver):
+class ImportObjectBoundsPatcher(APreserver):
     rec_attrs = {x: (u'bounds',) for x in bush.game.object_bounds_types}
 
 #------------------------------------------------------------------------------
-class ImportScriptsPatcher(_APreserver):
+class ImportScriptsPatcher(APreserver):
     rec_attrs = {x: (u'script',) for x in bush.game.scripts_types}
 
 #------------------------------------------------------------------------------
-class ImportSoundsPatcher(_APreserver):
+class ImportSoundsPatcher(APreserver):
     """Imports sounds from source mods into patch."""
     rec_attrs = bush.game.soundsTypes
 
 #------------------------------------------------------------------------------
-class ImportSpellStatsPatcher(_APreserver):
+class ImportSpellStatsPatcher(APreserver):
     """Import spell changes from mod files."""
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {x: bush.game.spell_stats_attrs
@@ -387,7 +387,7 @@ class ImportSpellStatsPatcher(_APreserver):
                        for f, l in spel_parser.fid_stats.iteritems()}})
 
 #------------------------------------------------------------------------------
-class ImportStatsPatcher(_APreserver):
+class ImportStatsPatcher(APreserver):
     """Import stats from mod file."""
     patcher_order = 28 # Run ahead of Bow Reach Fix ##: This seems unneeded
     logMsg = u'\n=== ' + _(u'Imported Stats')
@@ -408,22 +408,8 @@ class ImportStatsPatcher(_APreserver):
         self._process_csv_sources(stat_parser.class_fid_attr_value)
 
 #------------------------------------------------------------------------------
-class ImportTextPatcher(_APreserver):
+class ImportTextPatcher(APreserver):
     rec_attrs = bush.game.text_types
-
-#------------------------------------------------------------------------------
-# TODO(inf) Currently FNV-only, but don't move to game/falloutnv/patcher yet -
-#  this could potentially be refactored and reused for FO4's modifications
-class ImportWeaponModificationsPatcher(_APreserver):
-    """Merge changes to weapon modifications for FalloutNV."""
-    patcher_order = 27 ##: This seems unneeded + no reason given
-    rec_attrs = {b'WEAP': (
-        u'modelWithMods', u'firstPersonModelWithMods', u'weaponMods',
-        u'soundMod1Shoot3Ds', u'soundMod1Shoot2D', u'effectMod1',
-        u'effectMod2', u'effectMod3', u'valueAMod1', u'valueAMod2',
-        u'valueAMod3', u'valueBMod1', u'valueBMod2', u'valueBMod3',
-        u'reloadAnimationMod', u'vatsModReqiured', u'scopeModel',
-        u'dnamFlags1.hasScope', u'dnamFlags2.scopeFromMod')}
 
 #------------------------------------------------------------------------------
 # Patchers to absorb ----------------------------------------------------------
@@ -612,7 +598,7 @@ class ImportCellsPatcher(ImportPatcher):
             log(u'* %s: %d' % (srcMod,count[srcMod]))
 
 #------------------------------------------------------------------------------
-class ImportGraphicsPatcher(_APreserver):
+class ImportGraphicsPatcher(APreserver):
     rec_attrs = bush.game.graphicsTypes
     _fid_rec_attrs = bush.game.graphicsFidTypes
 
@@ -641,4 +627,60 @@ class ImportGraphicsPatcher(_APreserver):
             for attr, value in id_data[fid].iteritems():
                 setattr(record, attr, value)
             keep(fid)
+            type_count[top_mod_rec] += 1
+
+#------------------------------------------------------------------------------
+class ImportRacesPatcher(APreserver):
+    rec_attrs = {
+        b'RACE': {
+            u'R.Attributes-F': (u'femaleStrength', u'femaleIntelligence',
+                                u'femaleWillpower', u'femaleAgility',
+                                u'femaleSpeed', u'femaleEndurance',
+                                u'femalePersonality', u'femaleLuck'),
+            u'R.Attributes-M': (u'maleStrength', u'maleIntelligence',
+                                u'maleWillpower', u'maleAgility', u'maleSpeed',
+                                u'maleEndurance', u'malePersonality',
+                                u'maleLuck'),
+            u'R.Body-F': (u'femaleTailModel', u'femaleUpperBodyPath',
+                          u'femaleLowerBodyPath', u'femaleHandPath',
+                          u'femaleFootPath', u'femaleTailPath'),
+            u'R.Body-M': (u'maleTailModel', u'maleUpperBodyPath',
+                          u'maleLowerBodyPath', u'maleHandPath', u'maleFootPath',
+                          u'maleTailPath'),
+            u'R.Body-Size-F': (u'femaleHeight', u'femaleWeight'),
+            u'R.Body-Size-M': (u'maleHeight', u'maleWeight'),
+            u'R.Description': (u'description',),
+            u'R.Ears': (u'maleEars', u'femaleEars'),
+            u'R.Eyes': (u'eyes', u'leftEye', u'rightEye'),
+            u'R.Hair': (u'hairs',),
+            u'R.Head': (u'head',),
+            u'R.Mouth': (u'mouth', u'tongue'),
+            u'R.Skills': (u'skills',),
+            u'R.Teeth': (u'teethLower', u'teethUpper'),
+            u'R.Voice-F': (u'femaleVoice',),
+            u'R.Voice-M': (u'maleVoice',),
+        },
+    }
+    _multi_tag = True
+
+    def _inner_loop(self, keep, records, top_mod_rec, type_count,
+                    __attrgetters=attrgetter_cache):
+        loop_setattr = setattr_deep if self._deep_attrs else setattr
+        id_data = self.id_data
+        for record in records:
+            rec_fid = record.fid
+            if rec_fid not in id_data: continue
+            for attr, value in id_data[rec_fid].iteritems():
+                record_val = __attrgetters[attr](record)
+                if attr in (u'eyes', u'hairs'):
+                    if set(record_val) != set(value): break
+                else:
+                    if attr in (u'leftEye', u'rightEye') and not record_val:
+                        deprint(u'Very odd race %s found - %s is None' % (
+                            record.full, attr))
+                    elif record_val != value: break
+            else: continue
+            for attr, value in id_data[rec_fid].iteritems():
+                loop_setattr(record, attr, value)
+            keep(rec_fid)
             type_count[top_mod_rec] += 1

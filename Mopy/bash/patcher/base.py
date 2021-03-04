@@ -342,6 +342,8 @@ class ImportPatcher(ListPatcher, ModLoader):
         self._srcMods(log)
         self._plog(log,type_count)
 
+    ##: Unify these - decide which one looks best in the end and make all
+    # patchers use that one
     def _plog(self,log,type_count):
         """Most common logging pattern - override as needed."""
         log(self.__class__.logMsg)

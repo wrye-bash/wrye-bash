@@ -1448,12 +1448,36 @@ C.Location, -C.LockList
     </thead>
     <tbody>
         <tr>
+            <td>Body-F</td>
+            <td>Older name for R.Body-F.</td>
+        </tr>
+        <tr>
+            <td>Body-M</td>
+            <td>Older name for R.Body-M.</td>
+        </tr>
+        <tr>
+            <td>Body-Size-F</td>
+            <td>Older name for R.Body-Size-F.</td>
+        </tr>
+        <tr>
+            <td>Body-Size-M</td>
+            <td>Older name for R.Body-Size-M.</td>
+        </tr>
+        <tr>
             <td>C.GridFlags</td>
             <td>Older name for C.ForceHideLand.</td>
         </tr>
         <tr>
             <td>Derel</td>
             <td>Older name for Relations.Remove.</td>
+        </tr>
+        <tr>
+            <td>Eyes</td>
+            <td>Older name for R.Eyes.</td>
+        </tr>
+        <tr>
+            <td>Hair</td>
+            <td>Older name for R.Hair.</td>
         </tr>
         <tr>
             <td>Invent</td>
@@ -1486,6 +1510,12 @@ C.Location, -C.LockList
                 Warning: Previous versions allowed applying both NpcFaces and
                 one of the two 'Only' tags above. This was undefined behavior,
                 but thankfully no mods seem to have made this mistake.</td>
+        </tr>
+        <tr>
+            <td>R.Relations</td>
+            <td>Split into R.Relations.Add, R.Relations.Change and
+                R.Relations.Remove. The behavior of the old R.Relations tag is
+                equivalent to all three tags combined.</td>
         </tr>
         <tr>
             <td>Relations</td>
@@ -2732,59 +2762,6 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Body-F</td>
-            <td>Modifies female body mesh/texture definitions in (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>Female Body Data
-                        <ul>
-                            <li>Model</li>
-                            <li>Parts</li>
-                        </ul>
-                    </li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Body-M</td>
-            <td>Modifies male body mesh/texture definitions in (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>Male Body Data
-                        <ul>
-                            <li>Model</li>
-                            <li>Parts</li>
-                        </ul>
-                    </li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Body-Size-F</td>
-            <td>Modifies female body weight/height definitions (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>(DATA): Female Height</li>
-                    <li>(DATA): Female Weight</li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Body-Size-M</td>
-            <td>Modifies male body weight/height definitions (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>(DATA): Male Height</li>
-                    <li>(DATA): Male Weight</li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Eyes</td>
-            <td>Adds eyes to races.</td>
-            <td>The Eyes (ENAM) subrecord of Race (RACE) records.</td>
-        </tr>
-        <tr>
             <td id="GraphicsOblivion">Graphics</td>
             <td>Is a graphics replacer.</td>
             <td>The following subrecords:
@@ -2873,11 +2850,6 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Hair</td>
-            <td>Adds hairs to races.</td>
-            <td>The Hairs (HNAM) subrecord of Race (RACE) records.</td>
-        </tr>
-        <tr>
             <td id="NamesOblivion">Names</td>
             <td>Changes the names of things.</td>
             <td>The (FULL) Name subrecord in the following record types:
@@ -2956,6 +2928,58 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>R.Body-F</td>
+            <td>Modifies female body mesh/texture definitions in (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>Female Body Data
+                        <ul>
+                            <li>Model</li>
+                            <li>Parts</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Body-M</td>
+            <td>Modifies male body mesh/texture definitions in (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>Male Body Data
+                        <ul>
+                            <li>Model</li>
+                            <li>Parts</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Body-Size-F</td>
+            <td>Modifies female body weight/height definitions (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>(DATA): Female Height</li>
+                    <li>(DATA): Female Weight</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Body-Size-M</td>
+            <td>Modifies male body weight/height definitions (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>(DATA): Male Height</li>
+                    <li>(DATA): Male Weight</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
             <td>R.ChangeSpells</td>
             <td>Modifies racial spell list(s) (beyond adding spells). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.</td>
             <td>Additions or removals to the spell list (SPLO) of Race (RACE) records.</td>
@@ -2986,6 +3010,16 @@ C.Location, -C.LockList
                     </li>
                 </ul>
             </td>
+        </tr>
+        <tr>
+            <td>R.Eyes</td>
+            <td>Adds eyes to races.</td>
+            <td>The Eyes (ENAM) subrecord of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Hair</td>
+            <td>Adds hairs to races.</td>
+            <td>The Hairs (HNAM) subrecord of Race (RACE) records.</td>
         </tr>
         <tr>
             <td>R.Head</td>
@@ -3032,8 +3066,18 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>R.Relations</td>
-            <td>Modifies race relationships.</td>
+            <td>R.Relations.Add</td>
+            <td>Adds race-faction relationships.</td>
+            <td>The faction list (XNAM) of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Relations.Change</td>
+            <td>Changes race-faction relationships.</td>
+            <td>The faction list (XNAM) of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Relations.Remove</td>
+            <td>Removes race-faction relationships.</td>
             <td>The faction list (XNAM) of Race (RACE) records.</td>
         </tr>
         <tr>
@@ -3062,6 +3106,16 @@ C.Location, -C.LockList
                     </li>
                 </ul>
             </td>
+        </tr>
+        <tr>
+            <td>R.Voice-F</td>
+            <td>Modifies female voice definitions.</td>
+            <td>The male voice (VNAM) of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Voice-M</td>
+            <td>Modifies male voice definitions.</td>
+            <td>The female voice (VNAM) of Race (RACE) records.</td>
         </tr>
         <tr>
             <td id="ScriptsOblivion">Scripts</td>
@@ -3264,16 +3318,6 @@ C.Location, -C.LockList
                 <br>
                 <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
             </td>
-        </tr>
-        <tr>
-            <td>Voice-F</td>
-            <td>Modifies female voice definitions.</td>
-            <td>The male voice (VNAM) of Race (RACE) records.</td>
-        </tr>
-        <tr>
-            <td>Voice-M</td>
-            <td>Modifies male voice definitions.</td>
-            <td>The female voice (VNAM) of Race (RACE) records.</td>
         </tr>
     </tbody>
 </table>
@@ -5334,20 +5378,6 @@ C.Location, -C.LockList
     available, they are only available for Oblivion.</p>
 <table>
     <thead>
-        <tr><th colspan="2">Race Tweaks
-        <tr><th>Tweak<th>Description
-    <tbody>
-        <tr><td>Bigger Nords and Orcs<td>Adjusts the Orc and Nord race records (including mod added races named Orc/Nord) to be taller/heavier - to be more lore friendly. Three choices available - MMM settings, RBP settings or standalone Bigger Nords and Orcs settings.
-        <tr><td>Merge Eyes From Similar Races<td>Merges eye lists from similar races ie RBP Khajiit eyes to Elsweyr Khajiits etc.
-        <tr><td>Merge Hairs From Similar Races<td>Merges hair lists from similar races ie RBP Khajiit hair to Elsweyr Khajiits etc.
-        <tr><td>Playable Eyes<td>Sets all eyes to be playable.
-        <tr><td>Playable Hairs<td>Sets all hairs to be playable.
-        <tr><td>Races Have All Eyes<td>Gives all races all eyes - although Googly Eye scanning/removal takes place after this so the final patch will not have all eyes for all races.
-        <tr><td>Races Have All Hairs<td>Gives all races all hairs.
-        <tr><td>Sexless Hairs<td>Sets all hairs to be useable by both male and female characters.
-</table>
-<table>
-    <thead>
         <tr><th colspan="3">Tweak Actors</th></tr>
         <tr><th>Tweak</th><th>Description</th><th>Available For</th></tr>
     </thead>
@@ -5716,6 +5746,62 @@ C.Location, -C.LockList
     For example, <em>World: Timescale</em>, once changed, is known to become permanently baked in your save game for
     Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition. It can be set once, but thereafter is part of your saves, and can only be
     changed by console command or by starting a new game.</p>
+<table>
+    <thead>
+        <tr><th colspan="3">Tweak Races</th></tr>
+        <tr><th>Tweak</th><th>Description</th><th>Available For</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Bigger Nords and Orcs</td>
+            <td>Adjusts the Orc and Nord race records (including mod added
+                races named Orc/Nord) to be taller/heavier - to be more lore
+                friendly. Three choices available - MMM settings, RBP settings
+                or standalone Bigger Nords and Orcs settings.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Merge Eyes From Similar Races</td>
+            <td>Merges eye lists from similar races, e.g. RBP Khajiit eyes to
+                Elsweyr Khajiits.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Merge Hairs From Similar Races</td>
+            <td>Merges hair lists from similar races, e.g. RBP Khajiit hair to
+                Elsweyr Khajiits.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Playable Eyes</td>
+            <td>Sets all eyes to be playable.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Playable Hairs</td>
+            <td>Sets all hairs to be playable.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Races Have All Eyes</td>
+            <td>Gives all races all eyes - although Googly Eye scanning/removal
+                takes place after this so the final patch will not have all
+                eyes for all races.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Races Have All Hairs</td>
+            <td>Gives all races all hairs.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Sexless Hairs</td>
+            <td>Sets all hairs to be useable by both male and female
+                characters.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+    </tbody>
+</table>
 <table>
     <thead>
         <tr><th colspan="3">Tweak Settings</th></tr>

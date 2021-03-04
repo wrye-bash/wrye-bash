@@ -534,10 +534,10 @@ del _cobl, _ob
 #------------------------------------------------------------------------------
 text_types = {
     b'BOOK': (u'book_text',),
-    b'BSGN': (u'text',),
+    b'BSGN': (u'description',),
     b'CLAS': (u'description',),
     b'LSCR': (u'description',),
-    b'MGEF': (u'text',),
+    b'MGEF': (u'description',),
     # omit RACE - covered by R.Description
     b'SKIL': (u'description',),
 }

@@ -586,7 +586,7 @@ text_types = {
     b'CLAS': (u'description',),
     b'LSCR': (u'description',),
     b'MESG': (u'description',),
-    b'MGEF': (u'text',),
+    b'MGEF': (u'description',),
     b'NOTE': (u'textTopic',),
     b'PERK': (u'description',),
     # omit RACE - covered by R.Description

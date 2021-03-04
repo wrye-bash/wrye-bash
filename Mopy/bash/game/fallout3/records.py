@@ -1776,7 +1776,7 @@ class MreMgef(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelIcon(),
         MelModel(),
         MelPartialCounter(MelStruct(b'DATA',
@@ -2014,7 +2014,9 @@ class MreNpc(MreActor):
                    (u'skillOffsets', [0] * 14)),
         MelFid(b'HNAM','hair'),
         MelFloat(b'LNAM', u'hairLength'),
-        MelFid(b'ENAM','eye'), ####fid Array
+        ##: This is actually an array, but changing it would break the race
+        # patcher (hilariously enough). Fix that and change this.
+        MelFid(b'ENAM','eye'),
         MelStruct(b'HCLR', [u'3B', u's'],'hairRed','hairBlue','hairGreen','unused3'),
         MelFid(b'ZNAM','combatStyle'),
         MelUInt32(b'NAM4', u'impactMaterialType'),
@@ -2466,7 +2468,7 @@ class MreRace(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelDescription(u'text'),
+        MelDescription(),
         MelGroups('relations',
             MelStruct(b'XNAM', [u'I', u'2i'], (FID, 'faction'), 'mod',
                       'group_combat_reaction'),

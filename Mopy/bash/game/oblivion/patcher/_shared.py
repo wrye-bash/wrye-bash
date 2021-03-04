@@ -20,28 +20,26 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Temp module to encapsulate some shared dependencies left over from splitting
+special.py."""
 
-"""This module contains the patcher classes
+from ....bolt import GPath
+from ....patcher.base import Abstract_Patcher
 
-# Patchers 1 ------------------------------------------------------------------
-In patchers/base.py except Patcher which is in patcher/base.py
+cobl_main = GPath(u'Cobl Main.esm')
 
-# Patchers 10 -----------------------------------------------------------------
-In patchers/base.py
+class ExSpecial(Abstract_Patcher):
+    """Those used to be subclasses of SpecialPatcher that did not make much
+    sense as they did not use scan_more."""
+    patcher_group = u'Special'
+    patcher_order = 40
+    patcher_name = u'UNDEFINED'
+    patcher_desc = u'UNDEFINED'
+    _config_key = None # type: unicode
 
-# Patchers: 20 ----------------------------------------------------------------
-mergers.py
-preservers.py
-
-# Patchers: 30 ----------------------------------------------------------------
-# MultiTweakItem and MultiTweaker classes
-multitweak_actors.py
-multitweak_assorted.py
-multitweak_clothes.py
-multitweak_names.py
-multitweak_races.py
-multitweak_settings.py
-
-# Patchers: 40 ----------------------------------------------------------------
-checkers.py
-"""
+    @classmethod
+    def gui_cls_vars(cls):
+        """Class variables for gui patcher classes created dynamically."""
+        return {u'patcher_type': cls, u'patcher_desc': cls.patcher_desc,
+                u'patcher_name': cls.patcher_name,
+                u'_config_key': cls._config_key}

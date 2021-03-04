@@ -1031,14 +1031,24 @@ class ModInfo(FileInfo):
 removed_tags = {u'Merge', u'ScriptContents'}
 # Indefinite backwards-compatibility aliases for deprecated tags
 tag_aliases = {
+    u'Body-F': {u'R.Body-F'},
+    u'Body-M': {u'R.Body-M'},
+    u'Body-Size-F': {u'R.Body-Size-F'},
+    u'Body-Size-M': {u'R.Body-Size-M'},
     u'C.GridFlags': {u'C.ForceHideLand'},
     u'Derel': {u'Relations.Remove'},
+    u'Eyes': {u'R.Eyes'},
+    u'Hair': {u'R.Hair'},
     u'Invent': {u'Invent.Add', u'Invent.Remove'},
     u'InventOnly': {u'IIM', u'Invent.Add', u'Invent.Remove'},
     u'Npc.EyesOnly': {u'NPC.Eyes'},
     u'Npc.HairOnly': {u'NPC.Hair'},
     u'NpcFaces': {u'NPC.Eyes', u'NPC.Hair', u'NPC.FaceGen'},
+    u'R.Relations': {u'R.Relations.Add', u'R.Relations.Change',
+                     u'R.Relations.Remove'},
     u'Relations': {u'Relations.Add', u'Relations.Change'},
+    u'Voice-F': {u'R.Voice-F'},
+    u'Voice-M': {u'R.Voice-M'},
 }
 
 def process_tags(tag_set, drop_unknown=True):

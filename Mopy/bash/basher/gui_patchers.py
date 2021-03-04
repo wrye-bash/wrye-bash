@@ -783,36 +783,6 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         return self.patcher_type(self.patcher_name, patch_file, enabledTweaks)
 
 #------------------------------------------------------------------------------
-class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
-    """Only used in Race Patcher which features a double panel (source mods
-    and tweaks)."""
-    listLabel = _(u'Race Mods')
-    tweak_label = _(u'Race Tweaks')
-    # CONFIG DEFAULTS
-    default_isEnabled = True # isActive will be set to True in initPatchFile
-
-    def GetConfigPanel(self, parent, config_layout, gTipText):
-        """Show config."""
-        if self.gConfigPanel: return self.gConfigPanel
-        gConfigPanel = super(_DoublePatcherPanel, self).GetConfigPanel(parent,
-            config_layout, gTipText)
-        return gConfigPanel
-
-    #--Config Phase -----------------------------------------------------------
-    def _log_config(self, conf, config, clip, log):
-        _ListPatcherPanel._log_config(self, conf, config, clip, log)
-        log.setHeader(u'== ' + self.tweak_label)
-        clip.write(u'\n')
-        clip.write(u'== ' + self.tweak_label + u'\n')
-        _TweakPatcherPanel._log_config(self, conf, config, clip, log)
-
-    def get_patcher_instance(self, patch_file):
-        enabledTweaks = [t for t in self._all_tweaks if t.isEnabled]
-        patcher_sources = [x for x in self.configItems if self.configChecks[x]]
-        return self.patcher_type(self.patcher_name, patch_file,
-                                 patcher_sources, enabledTweaks)
-
-#------------------------------------------------------------------------------
 class _ImporterPatcherPanel(_ListPatcherPanel):
 
     def saveConfig(self, configs):
@@ -959,11 +929,10 @@ class _AListPanelCsv(_ListPatcherPanel):
 # Do _not_ change the _config_key attr or you will break existing BP configs
 #------------------------------------------------------------------------------
 from ..patcher.patchers import base
-from ..patcher.patchers import mergers, preservers
+from ..patcher.patchers import checkers, mergers, preservers
 from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
     multitweak_clothes, multitweak_names, multitweak_settings, \
-    races_multitweaks
-from ..patcher.patchers import special
+    multitweak_races
 
 # Patchers 10 -----------------------------------------------------------------
 class AliasModNames(_AliasesPatcherPanel):
@@ -1143,6 +1112,38 @@ class ImportScripts(_ImporterPatcherPanel):
     patcher_type = preservers.ImportScriptsPatcher
 
 # -----------------------------------------------------------------------------
+class ImportRaces(_ImporterPatcherPanel):
+    """Imports race-related data."""
+    patcher_name = _(u'Import Races')
+    patcher_desc = _(u'Import race eyes, hair, body, voice, etc. from source '
+                     u'mods.')
+    ##: Move to a game constant -> multi-game plus decouples this
+    autoKey = set(chain.from_iterable(
+        d.iterkeys() for d in
+        preservers.ImportRacesPatcher.rec_attrs.itervalues()))
+    _config_key = u'ImportRaces'
+    patcher_type = preservers.ImportRacesPatcher
+
+# -----------------------------------------------------------------------------
+class ImportRacesRelations(_ImporterPatcherPanel):
+    """Imports race-faction relations."""
+    patcher_name = _(u'Import Races: Relations')
+    patcher_desc = _(u'Import race-faction relations from source mods.')
+    autoKey = {u'R.Relations.Add', u'R.Relations.Change',
+               u'R.Relations.Remove'}
+    _config_key = u'ImportRacesRelations'
+    patcher_type = mergers.ImportRacesRelationsPatcher
+
+# -----------------------------------------------------------------------------
+class ImportRacesSpells(_ImporterPatcherPanel):
+    """Imports race spells/abilities."""
+    patcher_name = _(u'Import Races: Spells')
+    patcher_desc = _(u'Import race abilities and spells from source mods.')
+    autoKey = {u'R.AddSpells', u'R.ChangeSpells'}
+    _config_key = u'ImportRacesSpells'
+    patcher_type = mergers.ImportRacesSpellsPatcher
+
+# -----------------------------------------------------------------------------
 class ImportSpellStats(_ImporterPatcherPanel, _AListPanelCsv):
     """Import spell changes from mod files."""
     patcher_name = _(u'Import Spell Stats')
@@ -1163,14 +1164,6 @@ class ImportDestructible(_ImporterPatcherPanel):
     autoKey = {u'Destructible'}
     _config_key = u'DestructiblePatcher'
     patcher_type = preservers.ImportDestructiblePatcher
-
-# -----------------------------------------------------------------------------
-class ImportWeaponMods(_ImporterPatcherPanel):
-    patcher_name = _(u'Import Weapon Modifications')
-    patcher_desc = _(u'Merges changes to weapon modifications.')
-    autoKey = {u'WeaponMods'}
-    _config_key = u'WeaponModsPatcher'
-    patcher_type = preservers.ImportWeaponModificationsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportKeywords(_ImporterPatcherPanel):
@@ -1253,6 +1246,13 @@ class TweakActors(_TweakPatcherPanel):
     _config_key = u'TweakActors'
     patcher_type = multitweak_actors.TweakActorsPatcher
 
+# -----------------------------------------------------------------------------
+class TweakRaces(_TweakPatcherPanel):
+    patcher_name = _(u'Tweak Races')
+    patcher_desc = _(u'Tweak race records in specified ways.')
+    _config_key = u'TweakRaces'
+    patcher_type = multitweak_races.TweakRacesPatcher
+
 # Patchers 40 -----------------------------------------------------------------
 class ReplaceFormIDs(_AListPanelCsv):
     """Imports Form Id replacers into the Bashed Patch."""
@@ -1263,27 +1263,6 @@ class ReplaceFormIDs(_AListPanelCsv):
     _config_key = u'UpdateReferences'
     patcher_type = base.ReplaceFormIDsPatcher
     canAutoItemCheck = False #--GUI: Whether new items are checked by default.
-
-# -----------------------------------------------------------------------------
-class RaceRecords(_DoublePatcherPanel):
-    """Merged leveled lists mod file."""
-    patcher_name = _(u'Race Records')
-    patcher_desc = u'\n\n'.join([
-        _(u'Merge race eyes, hair, body, voice from mods.'),
-        _(u'Any non-active, non-merged mods in the following list '
-          u'will be IGNORED.'),
-        _(u'Even if none of the below mods are checked, this will sort '
-          u'hairs and eyes and attempt to remove googly eyes from all '
-          u'active mods.  It will also randomly assign hairs and eyes to '
-          u'npcs that are otherwise missing them.')]
-    )
-    autoKey = {u'R.Head', u'R.Ears', u'Eyes',
-               u'Voice-F', u'R.ChangeSpells', u'R.Teeth', u'Voice-M',
-               u'R.Attributes-M', u'R.Attributes-F', u'Body-F', u'Body-M',
-               u'R.Mouth', u'R.Description', u'R.AddSpells', u'Body-Size-F',
-               u'R.Relations', u'Body-Size-M', u'R.Skills', u'Hair'}
-    _config_key = u'RacePatcher'
-    patcher_type = races_multitweaks.RaceRecordsPatcher
 
 # -----------------------------------------------------------------------------
 class _AListsMerger(_ListsMergerPanel):
@@ -1305,7 +1284,7 @@ class LeveledLists(_AListsMerger):
           u'or inactive) using the list below.')])
     autoKey = {u'Delev', u'Relev'}
     _config_key = u'ListsMerger'
-    patcher_type = special.LeveledListsPatcher
+    patcher_type = mergers.LeveledListsPatcher
     show_empty_sublist_checkbox = True
 
 class FormIDLists(_AListsMerger):
@@ -1317,7 +1296,7 @@ class FormIDLists(_AListsMerger):
           u'inactive) using the list below.')])
     autoKey = {u'Deflst'}
     _config_key = u'FidListsMerger'
-    patcher_type = special.FormIDListsPatcher
+    patcher_type = mergers.FormIDListsPatcher
     listLabel = _(u'Override Deflst Tags')
     forceItemCheck = False #--Force configChecked to True for all items
     choiceMenu = (u'Auto', u'----', u'Deflst')
@@ -1332,7 +1311,36 @@ class ContentsChecker(_PatcherPanel):
     patcher_desc = _(u'Checks contents of leveled lists, inventories and '
                      u'containers for correct types.')
     _config_key = u'ContentsChecker'
-    patcher_type = special.ContentsCheckerPatcher
+    patcher_type = checkers.ContentsCheckerPatcher
+    default_isEnabled = True
+
+# -----------------------------------------------------------------------------
+class EyeChecker(_PatcherPanel):
+    """Checks for and fixes googly eyes."""
+    patcher_name = _(u'Eye Checker')
+    patcher_desc = _(u"Filters race eyes in order to fix the 'googly eyes' "
+                     u'bug.')
+    _config_key = u'EyeChecker'
+    patcher_type = checkers.EyeCheckerPatcher
+    default_isEnabled = True
+
+# -----------------------------------------------------------------------------
+class RaceChecker(_PatcherPanel):
+    """Sorts hairs and eyes."""
+    patcher_name = _(u'Race Checker')
+    patcher_desc = _(u'Sorts race hairs and eyes.')
+    _config_key = u'RaceChecker'
+    patcher_type = checkers.RaceCheckerPatcher
+    default_isEnabled = True
+
+#------------------------------------------------------------------------------
+class NpcChecker(_PatcherPanel):
+    """Assigns missing hair and eyes."""
+    patcher_name = _(u'NPC Checker')
+    patcher_desc = _(u'This will randomly assign hairs and eyes to NPCs that '
+                     u'are otherwise missing them.')
+    _config_key = u'NpcChecker'
+    patcher_type = checkers.NpcCheckerPatcher
     default_isEnabled = True
 
 #------------------------------------------------------------------------------
