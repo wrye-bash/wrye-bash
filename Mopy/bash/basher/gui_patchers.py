@@ -1118,8 +1118,7 @@ class ImportRaces(_ImporterPatcherPanel):
     patcher_desc = _(u'Import race eyes, hair, body, voice, etc. from source '
                      u'mods.')
     ##: Move to a game constant -> multi-game plus decouples this
-    autoKey = set(chain.from_iterable(
-        d.iterkeys() for d in
+    autoKey = set(chain.from_iterable(d for d in
         preservers.ImportRacesPatcher.rec_attrs.itervalues()))
     _config_key = u'ImportRaces'
     patcher_type = preservers.ImportRacesPatcher

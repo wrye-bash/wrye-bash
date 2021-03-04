@@ -328,15 +328,15 @@ class _ARFBGGTweak(_ARaceTweak):
 
 class RaceTweak_ForceBehaviorGraphGender_Female(_ARFBGGTweak):
     tweak_name = _(u'Force Behavior Graph Gender: Female')
-    tweak_tip = _(u'Controls whether certain races will walk with inverted '
-                  u'gender animations (e.g. orcs).')
+    tweak_tip = _(u'Controls whether certain races will use inverted gender '
+                  u'animations (e.g. orcs).')
     tweak_key = u'force_behavior_graph_gender_female'
     _targets_female_graph = True
 
 class RaceTweak_ForceBehaviorGraphGender_Male(_ARFBGGTweak):
     tweak_name = _(u'Force Behavior Graph Gender: Male')
-    tweak_tip = _(u'Controls whether certain races will walk with inverted '
-                  u'gender animations (e.g. orcs).')
+    tweak_tip = _(u'Controls whether certain races will use inverted gender '
+                  u'animations (e.g. orcs).')
     tweak_key = u'force_behavior_graph_gender_male'
 
 # -----------------------------------------------------------------------------

@@ -78,7 +78,7 @@ def setup_locale(cli_lang):
         trans_path = os.path.join(os.getcwdu(), u'Mopy', u'bash', u'l10n')
     supported_l10ns = [l[:-3] for l in os.listdir(trans_path)
                        if l[-3:] == u'.po']
-    if not any(l == target_name for l in supported_l10ns):
+    if target_name not in supported_l10ns:
         # We don't support this exact language. Check if we support any similar
         # languages (i.e. same prefix)
         wanted_prefix = target_name.split(u'_', 1)[0]

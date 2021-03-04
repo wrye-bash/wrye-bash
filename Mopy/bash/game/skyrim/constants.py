@@ -472,13 +472,12 @@ listTypes = (b'LVLI',b'LVLN',b'LVSP',)
 #------------------------------------------------------------------------------
 # Import Names
 #------------------------------------------------------------------------------
-# remaining to add: 'RACE',
 namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF', b'BOOK',
               b'CLAS', b'CLFM', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'EYES',
               b'FACT', b'FLOR', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM',
               b'LCTN', b'LIGH', b'MESG', b'MGEF', b'MISC', b'MSTT', b'NPC_',
-              b'PERK', b'PROJ', b'SCRL', b'SHOU', b'SLGM', b'SNCT', b'SPEL',
-              b'TACT', b'TREE', b'WATR', b'WEAP', b'WOOP'}
+              b'PERK', b'PROJ', b'RACE', b'SCRL', b'SHOU', b'SLGM', b'SNCT',
+              b'SPEL', b'TACT', b'TREE', b'WATR', b'WEAP', b'WOOP'}
 
 #------------------------------------------------------------------------------
 # Import Prices
