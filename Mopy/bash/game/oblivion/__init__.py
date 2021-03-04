@@ -185,7 +185,7 @@ class OblivionGameInfo(GameInfo):
         u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
         u'MergePatches', u'MorphFactions', u'RaceRecords', u'ReplaceFormIDs',
         u'SEWorldTests', u'TweakActors', u'TweakAssorted', u'TweakClothes',
-        u'TweakNames', u'TweakSettings',
+        u'TweakNames', u'TweakSettings', u'ImportRaces',
     }
 
     weaponTypes = (

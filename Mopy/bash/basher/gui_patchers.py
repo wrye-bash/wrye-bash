@@ -1142,6 +1142,19 @@ class ImportScripts(_ImporterPatcherPanel):
     patcher_type = preservers.ImportScriptsPatcher
 
 # -----------------------------------------------------------------------------
+class ImportRaces(_ImporterPatcherPanel):
+    """Imports race-related data."""
+    patcher_name = _(u'Import Races')
+    patcher_desc = _(u'Import race eyes, hair, body, voice, etc. from source '
+                     u'mods.')
+    ##: Move to a game constant -> multi-game plus decouples this
+    autoKey = set(chain.from_iterable(
+        d.iterkeys() for d in
+        preservers.ImportRacesPatcher.rec_attrs.itervalues()))
+    _config_key = u'ImportRaces'
+    patcher_type = preservers.ImportRacesPatcher
+
+# -----------------------------------------------------------------------------
 class ImportSpellStats(_ImporterPatcherPanel, _AListPanelCsv):
     """Import spell changes from mod files."""
     patcher_name = _(u'Import Spell Stats')
@@ -1268,11 +1281,7 @@ class RaceRecords(_DoublePatcherPanel):
           u'active mods.  It will also randomly assign hairs and eyes to '
           u'npcs that are otherwise missing them.')]
     )
-    autoKey = {u'R.Head', u'R.Ears', u'Eyes',
-               u'Voice-F', u'R.ChangeSpells', u'R.Teeth', u'Voice-M',
-               u'R.Attributes-M', u'R.Attributes-F', u'Body-F', u'Body-M',
-               u'R.Mouth', u'R.Description', u'R.AddSpells', u'Body-Size-F',
-               u'R.Relations', u'Body-Size-M', u'R.Skills', u'Hair'}
+    autoKey = {u'R.ChangeSpells', u'R.AddSpells', u'R.Relations'}
     _config_key = u'RacePatcher'
     patcher_type = _race_records.RaceRecordsPatcher
 

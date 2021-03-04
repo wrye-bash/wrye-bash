@@ -628,3 +628,59 @@ class ImportGraphicsPatcher(APreserver):
                 setattr(record, attr, value)
             keep(fid)
             type_count[top_mod_rec] += 1
+
+#------------------------------------------------------------------------------
+class ImportRacesPatcher(APreserver):
+    rec_attrs = {
+        b'RACE': {
+            u'Body-F': (u'femaleTailModel', u'femaleUpperBodyPath',
+                        u'femaleLowerBodyPath', u'femaleHandPath',
+                        u'femaleFootPath', u'femaleTailPath'),
+            u'Body-M': (u'maleTailModel', u'maleUpperBodyPath',
+                        u'maleLowerBodyPath', u'maleHandPath', u'maleFootPath',
+                        u'maleTailPath'),
+            u'Body-Size-F': (u'femaleHeight', u'femaleWeight'),
+            u'Body-Size-M': (u'maleHeight', u'maleWeight'),
+            u'Eyes': (u'eyes', u'leftEye', u'rightEye'),
+            u'Hair': (u'hairs',),
+            u'R.Attributes-F': (u'femaleStrength', u'femaleIntelligence',
+                                u'femaleWillpower', u'femaleAgility',
+                                u'femaleSpeed', u'femaleEndurance',
+                                u'femalePersonality', u'femaleLuck'),
+            u'R.Attributes-M': (u'maleStrength', u'maleIntelligence',
+                                u'maleWillpower', u'maleAgility', u'maleSpeed',
+                                u'maleEndurance', u'malePersonality',
+                                u'maleLuck'),
+            u'R.Description': (u'description',),
+            u'R.Ears': (u'maleEars', u'femaleEars'),
+            u'R.Head': (u'head',),
+            u'R.Mouth': (u'mouth', u'tongue'),
+            u'R.Skills': (u'skills',),
+            u'R.Teeth': (u'teethLower', u'teethUpper'),
+            u'Voice-F': (u'femaleVoice',),
+            u'Voice-M': (u'maleVoice',),
+        },
+    }
+    _multi_tag = True
+
+    def _inner_loop(self, keep, records, top_mod_rec, type_count,
+                    __attrgetters=attrgetter_cache):
+        loop_setattr = setattr_deep if self._deep_attrs else setattr
+        id_data = self.id_data
+        for record in records:
+            rec_fid = record.fid
+            if rec_fid not in id_data: continue
+            for attr, value in id_data[rec_fid].iteritems():
+                record_val = __attrgetters[attr](record)
+                if attr in (u'eyes', u'hairs'):
+                    if set(record_val) != set(value): break
+                else:
+                    if attr in (u'leftEye', u'rightEye') and not record_val:
+                        deprint(u'Very odd race %s found - %s is None' % (
+                            record.full, attr))
+                    elif record_val != value: break
+            else: continue
+            for attr, value in id_data[rec_fid].iteritems():
+                loop_setattr(record, attr, value)
+            keep(rec_fid)
+            type_count[top_mod_rec] += 1
