@@ -962,7 +962,7 @@ from ..patcher.patchers import base
 from ..patcher.patchers import checkers, mergers, preservers
 from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
     multitweak_clothes, multitweak_names, multitweak_settings, \
-    races_multitweaks
+    _race_records
 
 # Patchers 10 -----------------------------------------------------------------
 class AliasModNames(_AliasesPatcherPanel):
@@ -1274,7 +1274,7 @@ class RaceRecords(_DoublePatcherPanel):
                u'R.Mouth', u'R.Description', u'R.AddSpells', u'Body-Size-F',
                u'R.Relations', u'Body-Size-M', u'R.Skills', u'Hair'}
     _config_key = u'RacePatcher'
-    patcher_type = races_multitweaks.RaceRecordsPatcher
+    patcher_type = _race_records.RaceRecordsPatcher
 
 # -----------------------------------------------------------------------------
 class _AListsMerger(_ListsMergerPanel):
