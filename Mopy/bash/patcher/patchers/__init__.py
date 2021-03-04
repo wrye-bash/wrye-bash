@@ -43,6 +43,5 @@ multitweak_races.py
 multitweak_settings.py
 
 # Patchers: 40 ----------------------------------------------------------------
-_race_records.py
 checkers.py
 """

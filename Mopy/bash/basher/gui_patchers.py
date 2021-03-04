@@ -932,7 +932,7 @@ from ..patcher.patchers import base
 from ..patcher.patchers import checkers, mergers, preservers
 from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
     multitweak_clothes, multitweak_names, multitweak_settings, \
-    multitweak_races, _race_records
+    multitweak_races
 
 # Patchers 10 -----------------------------------------------------------------
 class AliasModNames(_AliasesPatcherPanel):
@@ -1265,14 +1265,6 @@ class ReplaceFormIDs(_AListPanelCsv):
     canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
 # -----------------------------------------------------------------------------
-class RaceRecords(_PatcherPanel):
-    patcher_name = _(u'Race Records')
-    patcher_desc = _(u'This will randomly assign hairs and eyes to NPCs that '
-                     u'are otherwise missing them.')
-    _config_key = u'RacePatcher'
-    patcher_type = _race_records.RaceRecordsPatcher
-
-# -----------------------------------------------------------------------------
 class _AListsMerger(_ListsMergerPanel):
     """Mergers targeting all mods in the LO, with the option to override
     tags."""
@@ -1339,6 +1331,16 @@ class RaceChecker(_PatcherPanel):
     patcher_desc = _(u'Sorts race hairs and eyes.')
     _config_key = u'RaceChecker'
     patcher_type = checkers.RaceCheckerPatcher
+    default_isEnabled = True
+
+#------------------------------------------------------------------------------
+class NpcChecker(_PatcherPanel):
+    """Assigns missing hair and eyes."""
+    patcher_name = _(u'NPC Checker')
+    patcher_desc = _(u'This will randomly assign hairs and eyes to NPCs that '
+                     u'are otherwise missing them.')
+    _config_key = u'NpcChecker'
+    patcher_type = checkers.NpcCheckerPatcher
     default_isEnabled = True
 
 #------------------------------------------------------------------------------

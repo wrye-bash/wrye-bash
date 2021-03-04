@@ -34,7 +34,7 @@ class _ARaceTweak(MultiTweakItem):
     """ABC for race tweaks."""
     tweak_read_classes = b'RACE',
     tweak_log_msg = _(u'Races Tweaked: %(total_changed)d')
-    tweak_races_data = None # sentinel, set in RaceRecordsPatcher.buildPatch
+    tweak_races_data = None # sentinel, set by the tweaker
 
     def _calc_changed_face_parts(self, face_attr, collected_races_data):
         """Calculates a changes dictionary for the specified face attribute,

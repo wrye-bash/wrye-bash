@@ -158,8 +158,9 @@ class Fallout3GameInfo(GameInfo):
         u'Sound', u'SpellStats', u'Stats', u'Text',
     }
 
-    # Remaining to add:
-    #  TweakNames, RaceRecords, ReplaceFormIDs
+    # Remaining to add (some of these might be impossible to port):
+    #  TweakNames, ImportRaces, u'ImportRacesSpells, ImportRacesRelations,
+    #  EyeChecker, TweakRaces, RaceChecker, NpcChecker, ReplaceFormIDs
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
         u'ImportActorsAIPackages', u'ImportActorsAnimations',

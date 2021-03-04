@@ -24,10 +24,11 @@
 properties about records and either notifies the user or attempts a fix when it
 notices a problem."""
 
+import random
 import re
 from collections import defaultdict
 from itertools import chain
-# Internal
+
 from ..base import Patcher
 from ... import bush
 from ...bolt import GPath, deprint
@@ -194,8 +195,8 @@ class EyeCheckerPatcher(Patcher):
         try:
             blueEyeMesh = eye_mesh[(_main_master, 0x27308)]
         except KeyError:
-            print(u'error getting blue eye mesh:')
-            print(u'eye meshes:', eye_mesh)
+            deprint(u'error getting blue eye mesh:')
+            deprint(u'eye meshes:', eye_mesh)
             raise
         argonianEyeMesh = eye_mesh[(_main_master, 0x3e91e)]
         for eye in (
@@ -317,3 +318,99 @@ class RaceCheckerPatcher(Patcher):
         else:
             for eid in sorted(racesSorted):
                 log(u'* ' + eid)
+
+#------------------------------------------------------------------------------
+def _find_vanilla_eyes():
+    """Converts vanilla default_eyes to use long FormIDs and returns the
+    result."""
+    def _conv_fid(rc_fid): return GPath(rc_fid[0]), rc_fid[1]
+    ret = {}
+    for race_fid, race_eyes in bush.game.default_eyes.iteritems():
+        new_key = _conv_fid(race_fid)
+        new_val = [_conv_fid(eye_fid) for eye_fid in race_eyes]
+        ret[new_key] = new_val
+    return ret
+
+class NpcCheckerPatcher(Patcher):
+    """Race patcher."""
+    patcher_group = u'Special'
+    patcher_order = 40
+    _read_sigs = (b'HAIR', b'NPC_', b'RACE')
+
+    def __init__(self, p_name, p_file):
+        super(NpcCheckerPatcher, self).__init__(p_name, p_file)
+        self.vanilla_eyes = _find_vanilla_eyes()
+
+    @property
+    def active_write_sigs(self):
+        return (b'NPC_',) if self.isActive else ()
+
+    def scanModFile(self, modFile, progress):
+        """Add appropriate records from modFile."""
+        if not (set(modFile.tops) & set(self._read_sigs)): return
+        for pb_sig in self._read_sigs:
+            patchBlock = self.patchFile.tops[pb_sig]
+            id_records = patchBlock.id_records
+            for record in modFile.tops[pb_sig].getActiveRecords():
+                if record.fid not in id_records:
+                    patchBlock.setRecord(record.getTypeCopy())
+
+    def buildPatch(self,log,progress):
+        """Updates races as needed."""
+        if not self.isActive: return
+        patchFile = self.patchFile
+        if not set(patchFile.tops) & {b'NPC_', b'RACE'}: return
+        keep = patchFile.getKeeper()
+        mod_npcsFixed = defaultdict(set)
+        reProcess = re.compile(
+            u'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
+            re.I | re.U)
+        #--Sort Eyes/Hair
+        final_eyes = {}
+        defaultMaleHair = {}
+        defaultFemaleHair = {}
+        maleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
+                     if not x.flags.notMale}
+        femaleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
+                       if not x.flags.notFemale}
+        for race in patchFile.tops[b'RACE'].records:
+            if (race.flags.playable or race.fid == (
+                    _main_master, 0x038010)) and race.eyes:
+                final_eyes[race.fid] = [x for x in
+                                        self.vanilla_eyes.get(race.fid, [])
+                                        if x in race.eyes]
+                if not final_eyes[race.fid]:
+                    final_eyes[race.fid] = [race.eyes[0]]
+                defaultMaleHair[race.fid] = [x for x in race.hairs if
+                                             x in maleHairs]
+                defaultFemaleHair[race.fid] = [x for x in race.hairs if
+                                               x in femaleHairs]
+        #--Npcs with unassigned eyes/hair
+        for npc in patchFile.tops[b'NPC_'].records:
+            if npc.fid == (_main_master, 0x000007): continue # skip player
+            if npc.full is not None and npc.race == (
+                    _main_master, 0x038010) and not reProcess.search(
+                    npc.full): continue
+            raceEyes = final_eyes.get(npc.race)
+            random.seed(npc.fid[1]) # make it deterministic
+            if not npc.eye and raceEyes:
+                npc.eye = random.choice(raceEyes)
+                mod_npcsFixed[npc.fid[0]].add(npc.fid)
+                keep(npc.fid)
+            raceHair = (
+                (defaultMaleHair, defaultFemaleHair)[npc.flags.female]).get(
+                npc.race)
+            if not npc.hair and raceHair:
+                npc.hair = random.choice(raceHair)
+                mod_npcsFixed[npc.fid[0]].add(npc.fid)
+                keep(npc.fid)
+            if not npc.hairLength:
+                npc.hairLength = random.random()
+                mod_npcsFixed[npc.fid[0]].add(npc.fid)
+                keep(npc.fid)
+        #--Done
+        log.setHeader(u'= ' + self._patcher_name)
+        if mod_npcsFixed:
+            log(u'\n=== ' + _(u'Eyes/Hair Assigned for NPCs'))
+            for srcMod in sorted(mod_npcsFixed):
+                log(u'* %s: %d' % (srcMod, len(mod_npcsFixed[srcMod])))

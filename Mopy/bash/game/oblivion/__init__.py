@@ -185,7 +185,7 @@ class OblivionGameInfo(GameInfo):
         u'ImportGraphics', u'ImportInventory', u'ImportNames',
         u'ImportRelations', u'ImportRoads', u'ImportScripts', u'ImportSounds',
         u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
-        u'MergePatches', u'MorphFactions', u'RaceRecords', u'ReplaceFormIDs',
+        u'MergePatches', u'MorphFactions', u'NpcChecker', u'ReplaceFormIDs',
         u'SEWorldTests', u'TweakActors', u'TweakAssorted', u'TweakClothes',
         u'TweakNames', u'TweakSettings', u'ImportRaces', u'ImportRacesSpells',
         u'ImportRacesRelations', u'EyeChecker', u'TweakRaces', u'RaceChecker',
