@@ -1261,10 +1261,9 @@ class ReplaceFormIDs(_AListPanelCsv):
 class RaceRecords(_TweakPatcherPanel):
     """Merged leveled lists mod file."""
     patcher_name = _(u'Race Records')
-    patcher_desc = _(u'This will sort hairs and eyes and attempt to remove '
-                     u'googly eyes from all active mods. It will also '
-                     u'randomly assign hairs and eyes to NPCs that are '
-                     u'otherwise missing them.')
+    patcher_desc = _(u'This will sort hairs and eyes. It will also randomly '
+                     u'assign hairs and eyes to NPCs that are otherwise '
+                     u'missing them.')
     _config_key = u'RacePatcher'
     patcher_type = _race_records.RaceRecordsPatcher
 
@@ -1316,6 +1315,16 @@ class ContentsChecker(_PatcherPanel):
                      u'containers for correct types.')
     _config_key = u'ContentsChecker'
     patcher_type = checkers.ContentsCheckerPatcher
+    default_isEnabled = True
+
+# -----------------------------------------------------------------------------
+class EyeChecker(_PatcherPanel):
+    """Checks for and fixes googly eyes."""
+    patcher_name = _(u'Eye Checker')
+    patcher_desc = _(u"Filters race eyes in order to fix the 'googly eyes' "
+                     u'bug.')
+    _config_key = u'EyeChecker'
+    patcher_type = checkers.EyeCheckerPatcher
     default_isEnabled = True
 
 #------------------------------------------------------------------------------

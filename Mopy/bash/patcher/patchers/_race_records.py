@@ -34,8 +34,7 @@ from .base import MultiTweaker
 from .multitweak_races import *
 from ..base import ModLoader
 from ... import bush
-from ...bolt import GPath, deprint
-from ...brec import strFid
+from ...bolt import GPath
 
 # Utilities & Constants -------------------------------------------------------
 def _find_vanilla_eyes():
@@ -71,7 +70,6 @@ class RaceRecordsPatcher(MultiTweaker, ModLoader):
                                                  enabled_tweaks)
         self.races_data = {b'EYES': [], b'HAIR': []}
         self.isActive = True #--Always enabled to support eye filtering
-        self.eye_mesh = {}
         self.scanTypes = {b'RACE', b'EYES', b'HAIR', b'NPC_'}
         self.vanilla_eyes = _find_vanilla_eyes()
 
@@ -88,9 +86,7 @@ class RaceRecordsPatcher(MultiTweaker, ModLoader):
     def scanModFile(self, modFile, progress):
         """Add appropriate records from modFile."""
         races_data = self.races_data
-        eye_mesh = self.eye_mesh
         if not (set(modFile.tops) & self.scanTypes): return
-        srcEyes = {record.fid for record in modFile.tops[b'EYES'].getActiveRecords()}
         #--Eyes, Hair
         for top_grup_sig in (b'EYES', b'HAIR'):
             patchBlock = self.patchFile.tops[top_grup_sig]
@@ -111,17 +107,6 @@ class RaceRecordsPatcher(MultiTweaker, ModLoader):
         for record in modFile.tops[b'RACE'].getActiveRecords():
             if record.fid not in id_records:
                 patchBlock.setRecord(record.getTypeCopy())
-            if not record.rightEye or not record.leftEye:
-                # Don't complain if the FULL is missing, that probably means
-                # it's an internal or unused RACE
-                if record.full:
-                    deprint(u'No right and/or no left eye recorded in race '
-                        u'%s, from mod %s' % (record.full, modFile.fileInfo))
-                continue
-            for eye in record.eyes:
-                if eye in srcEyes:
-                    eye_mesh[eye] = (record.rightEye.modPath.lower(),
-                                     record.leftEye.modPath.lower())
         # HACK - wholesale copy of MultiTweaker.scanModFile, see #494
         rec_pool = defaultdict(set)
         common_tops = set(modFile.tops) & set(self._tweak_dict)
@@ -146,101 +131,22 @@ class RaceRecordsPatcher(MultiTweaker, ModLoader):
 
     def buildPatch(self,log,progress):
         """Updates races as needed."""
-        debug = False
         tweak_data = self.races_data
         if not self.isActive: return
         patchFile = self.patchFile
-        keep = patchFile.getKeeper()
         if b'RACE' not in patchFile.tops: return
         racesSorted = []
-        racesFiltered = []
         mod_npcsFixed = defaultdict(set)
         reProcess = re.compile(
             u'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
             re.I | re.U)
-        #--Eye Mesh filtering
-        eye_mesh = self.eye_mesh
-        try:
-            blueEyeMesh = eye_mesh[(_main_master, 0x27308)]
-        except KeyError:
-            print(u'error getting blue eye mesh:')
-            print(u'eye meshes:', eye_mesh)
-            raise
-        argonianEyeMesh = eye_mesh[(_main_master, 0x3e91e)]
-        if debug:
-            print(u'== Eye Mesh Filtering')
-            print(u'blueEyeMesh',blueEyeMesh)
-            print(u'argonianEyeMesh',argonianEyeMesh)
-        for eye in (
-            (_main_master, 0x1a), #--Reanimate
-            (_main_master, 0x54bb9), #--Dark Seducer
-            (_main_master, 0x54bba), #--Golden Saint
-            (_main_master, 0x5fa43), #--Ordered
-            ):
-            eye_mesh.setdefault(eye,blueEyeMesh)
-        def setRaceEyeMesh(race,rightPath,leftPath):
-            race.rightEye.modPath = rightPath
-            race.leftEye.modPath = leftPath
         for race in patchFile.tops[b'RACE'].records:
-            if debug: print(u'===', race.eid)
+            ##: are these checks needed for the tweak data collection as well?
             if not race.eyes: continue  #--Sheogorath. Assume is handled
             # correctly.
             if not race.rightEye or not race.leftEye: continue #--WIPZ race?
             if re.match(u'^117[a-zA-Z]', race.eid, flags=re.U): continue  #--
             #  x117 race?
-            raceChanged = False
-            mesh_eye = {}
-            for eye in race.eyes:
-                if eye not in eye_mesh:
-                    deprint(
-                        _(u'Mesh undefined for eye %s in race %s, eye removed '
-                          u'from race list.') % (
-                            strFid(eye), race.eid,))
-                    continue
-                mesh = eye_mesh[eye]
-                if mesh not in mesh_eye:
-                    mesh_eye[mesh] = []
-                mesh_eye[mesh].append(eye)
-            currentMesh = (
-                race.rightEye.modPath.lower(), race.leftEye.modPath.lower())
-            try:
-                maxEyesMesh = sorted(mesh_eye, key=lambda a: len(mesh_eye[a]),
-                                     reverse=True)[0]
-            except IndexError:
-                maxEyesMesh = blueEyeMesh
-            #--Single eye mesh, but doesn't match current mesh?
-            if len(mesh_eye) == 1 and currentMesh != maxEyesMesh:
-                setRaceEyeMesh(race,*maxEyesMesh)
-                raceChanged = True
-            #--Multiple eye meshes (and playable)?
-            if debug:
-                for mesh,eyes in mesh_eye.iteritems():
-                    print(mesh)
-                    for eye in eyes: print(u' ',strFid(eye))
-            if len(mesh_eye) > 1 and (race.flags.playable or race.fid == (
-                    _main_master, 0x038010)):
-                #--If blueEyeMesh (mesh used for vanilla eyes) is present,
-                # use that.
-                if blueEyeMesh in mesh_eye and currentMesh != argonianEyeMesh:
-                    setRaceEyeMesh(race,*blueEyeMesh)
-                    race.eyes = mesh_eye[blueEyeMesh]
-                    raceChanged = True
-                elif argonianEyeMesh in mesh_eye:
-                    setRaceEyeMesh(race,*argonianEyeMesh)
-                    race.eyes = mesh_eye[argonianEyeMesh]
-                    raceChanged = True
-                #--Else figure that current eye mesh is the correct one
-                elif currentMesh in mesh_eye:
-                    race.eyes = mesh_eye[currentMesh]
-                    raceChanged = True
-                #--Else use most popular eye mesh
-                else:
-                    setRaceEyeMesh(race,*maxEyesMesh)
-                    race.eyes = mesh_eye[maxEyesMesh]
-                    raceChanged = True
-            if raceChanged:
-                racesFiltered.append(race.eid)
-                keep(race.fid)
             if race.full:
                 tweak_data[race.full.lower()] = {'hairs': race.hairs,
                                                  'eyes': race.eyes,
@@ -338,14 +244,6 @@ class RaceRecordsPatcher(MultiTweaker, ModLoader):
             log(u'. ~~%s~~' % _(u'None'))
         else:
             for eid in sorted(racesSorted):
-                log(u'* ' + eid)
-        log(u'\n=== ' + _(u'Eye Meshes Filtered'))
-        if not racesFiltered:
-            log(u'. ~~%s~~' % _(u'None'))
-        else:
-            log(_(u"In order to prevent 'googly eyes', incompatible eyes have "
-                  u'been removed from the following races.'))
-            for eid in sorted(racesFiltered):
                 log(u'* ' + eid)
         if mod_npcsFixed:
             log(u'\n=== ' + _(u'Eyes/Hair Assigned for NPCs'))
