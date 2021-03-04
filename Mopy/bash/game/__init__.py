@@ -519,10 +519,6 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     actor_tweaks = set()
 
-    #--------------------------------------------------------------------------
-    # Tweak Assorted
-    #--------------------------------------------------------------------------
-    nirnroots = _(u'Nirnroots')
 
     #--------------------------------------------------------------------------
     # Tweak Names
@@ -567,6 +563,13 @@ class GameInfo(object):
     # The record type that contains the static attenuation field tweaked by the
     # static attenuation tweaks. SNDR on newer games, SOUN on older games.
     static_attenuation_rec_type = b'SNDR'
+    # Localized version of 'Nirnroots' in Tamriel, 'Vynroots' in Vyn
+    nirnroots = _(u'Nirnroots')
+
+    #--------------------------------------------------------------------------
+    # Import Races
+    #--------------------------------------------------------------------------
+    import_races_attrs = {}
 
     #--------------------------------------------------------------------------
     # Magic Effects - Oblivion-specific
@@ -633,6 +636,7 @@ class GameInfo(object):
         u'spell_stats_types', u'statsHeaders', u'statsTypes', u'text_types',
         u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
         u'nonplayable_biped_flags', u'not_playable_flag', u'settings_tweaks',
+        u'import_races_attrs',
     }
 
     @classmethod

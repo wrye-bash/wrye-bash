@@ -829,3 +829,30 @@ record_type_name = {
     b'MISC': _(u'Misc'),
     b'WEAP': _(u'Weapons'),
 }
+
+#--------------------------------------------------------------------------
+# Import Races
+#--------------------------------------------------------------------------
+import_races_attrs = {
+    b'RACE': {
+        u'R.Body-F': (u'femaleUpperBody', u'femaleLeftHand',
+                      u'femaleRightHand', u'femaleUpperBodyTexture'),
+        u'R.Body-M': (u'maleUpperBody', u'maleLeftHand', u'maleRightHand',
+                      u'maleUpperBodyTexture'),
+        u'R.Body-Size-F': (u'femaleHeight', u'femaleWeight'),
+        u'R.Body-Size-M': (u'maleHeight', u'maleWeight'),
+        u'R.Description': (u'description',),
+        u'R.Ears': (u'maleEars', u'femaleEars'),
+        u'R.Eyes': (u'eyes', u'femaleLeftEye', u'femaleRightEye',
+                    u'maleLeftEye', u'maleRightEye'),
+        u'R.Hair': (u'hairs',),
+        u'R.Head': (u'femaleHead', u'maleHead',),
+        u'R.Mouth': (u'maleMouth', u'femaleMouth', u'maleTongue',
+                     u'femaleTongue'),
+        u'R.Skills': (u'skills',),
+        u'R.Teeth': (u'femaleTeethLower', u'femaleTeethUpper',
+                     u'maleTeethLower', u'maleTeethUpper'),
+        u'R.Voice-F': (u'femaleVoice',),
+        u'R.Voice-M': (u'maleVoice',),
+    },
+}

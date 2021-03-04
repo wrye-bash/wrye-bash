@@ -25,7 +25,7 @@ definitions for some commonly needed subrecords."""
 
 from __future__ import division, print_function
 from collections import defaultdict
-from itertools import chain
+from itertools import chain, izip
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider
@@ -408,6 +408,39 @@ class MelPickupSound(MelFid):
     """Handles the common YNAM - Pickup Sound subrecord."""
     def __init__(self):
         super(MelPickupSound, self).__init__(b'YNAM', u'pickupSound')
+
+#------------------------------------------------------------------------------
+# FIXME(inf) Can't use MelLists because one of the attrs is a flags field,
+#  which MelLists doesn't support -> fix that and base this on MelLists
+class MelRaceData(MelStruct):
+    """Pack RACE skills and skill boosts as a single attribute."""
+
+    @staticmethod
+    def _expand_formats(elements, struct_formats):
+        expanded_fmts = []
+        for f in struct_formats:
+            if f == u'14b':
+                expanded_fmts.append(0)
+            elif f[-1] != u's':
+                expanded_fmts.extend([f[-1]] * int(f[:-1] or 1))
+            else:
+                expanded_fmts.append(int(f[:-1] or 1))
+        return expanded_fmts
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        unpacked = ins.unpack(self._unpacker, size_, *debug_strs)
+        record.skills = unpacked[:14]
+        for attr, value, action in izip(self.attrs[1:], unpacked[14:],
+                                        self.actions[1:]):
+            setattr(record, attr, action(value) if action else value)
+
+    def pack_subrecord_data(self, record):
+        values = list(record.skills)
+        values.extend(
+            action(value).dump() if action else value for value, action in
+            izip((getattr(record, a) for a in self.attrs[1:]),
+                 self.actions[1:]))
+        return self._packer(*values)
 
 #------------------------------------------------------------------------------
 class MelRaceParts(MelNull):
