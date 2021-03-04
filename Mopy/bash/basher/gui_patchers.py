@@ -959,11 +959,10 @@ class _AListPanelCsv(_ListPatcherPanel):
 # Do _not_ change the _config_key attr or you will break existing BP configs
 #------------------------------------------------------------------------------
 from ..patcher.patchers import base
-from ..patcher.patchers import mergers, preservers
+from ..patcher.patchers import checkers, mergers, preservers
 from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
     multitweak_clothes, multitweak_names, multitweak_settings, \
     races_multitweaks
-from ..patcher.patchers import special
 
 # Patchers 10 -----------------------------------------------------------------
 class AliasModNames(_AliasesPatcherPanel):
@@ -1305,7 +1304,7 @@ class LeveledLists(_AListsMerger):
           u'or inactive) using the list below.')])
     autoKey = {u'Delev', u'Relev'}
     _config_key = u'ListsMerger'
-    patcher_type = special.LeveledListsPatcher
+    patcher_type = mergers.LeveledListsPatcher
     show_empty_sublist_checkbox = True
 
 class FormIDLists(_AListsMerger):
@@ -1317,7 +1316,7 @@ class FormIDLists(_AListsMerger):
           u'inactive) using the list below.')])
     autoKey = {u'Deflst'}
     _config_key = u'FidListsMerger'
-    patcher_type = special.FormIDListsPatcher
+    patcher_type = mergers.FormIDListsPatcher
     listLabel = _(u'Override Deflst Tags')
     forceItemCheck = False #--Force configChecked to True for all items
     choiceMenu = (u'Auto', u'----', u'Deflst')
@@ -1332,7 +1331,7 @@ class ContentsChecker(_PatcherPanel):
     patcher_desc = _(u'Checks contents of leveled lists, inventories and '
                      u'containers for correct types.')
     _config_key = u'ContentsChecker'
-    patcher_type = special.ContentsCheckerPatcher
+    patcher_type = checkers.ContentsCheckerPatcher
     default_isEnabled = True
 
 #------------------------------------------------------------------------------

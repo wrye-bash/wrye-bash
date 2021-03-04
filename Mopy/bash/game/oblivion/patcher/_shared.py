@@ -20,22 +20,26 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Temp module to encapsulate some shared dependencies left over from splitting
+special.py."""
 
-"""This package contains the Oblivion specific patchers. This module
-contains the data structures that are dynamically set on a per game basis in
-bush."""
-from .checkers import CoblCatalogsPatcher, SEWorldTestsPatcher
-from .preservers import ImportRoadsPatcher, CoblExhaustionPatcher, \
-    MorphFactionsPatcher
+from ....bolt import GPath
+from ....patcher.base import Abstract_Patcher
 
-gameSpecificPatchers = {
-    u'CoblCatalogs': CoblCatalogsPatcher,
-    u'SEWorldTests': SEWorldTestsPatcher,
-}
-gameSpecificListPatchers = {
-    u'CoblExhaustion': CoblExhaustionPatcher,
-    u'MorphFactions': MorphFactionsPatcher,
-}
-game_specific_import_patchers = {
-    u'ImportRoads': ImportRoadsPatcher,
-}
+cobl_main = GPath(u'Cobl Main.esm')
+
+class ExSpecial(Abstract_Patcher):
+    """Those used to be subclasses of SpecialPatcher that did not make much
+    sense as they did not use scan_more."""
+    patcher_group = u'Special'
+    patcher_order = 40
+    patcher_name = u'UNDEFINED'
+    patcher_desc = u'UNDEFINED'
+    _config_key = None # type: unicode
+
+    @classmethod
+    def gui_cls_vars(cls):
+        """Class variables for gui patcher classes created dynamically."""
+        return {u'patcher_type': cls, u'patcher_desc': cls.patcher_desc,
+                u'patcher_name': cls.patcher_name,
+                u'_config_key': cls._config_key}
