@@ -783,36 +783,6 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         return self.patcher_type(self.patcher_name, patch_file, enabledTweaks)
 
 #------------------------------------------------------------------------------
-class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
-    """Only used in Race Patcher which features a double panel (source mods
-    and tweaks)."""
-    listLabel = _(u'Race Mods')
-    tweak_label = _(u'Race Tweaks')
-    # CONFIG DEFAULTS
-    default_isEnabled = True # isActive will be set to True in initPatchFile
-
-    def GetConfigPanel(self, parent, config_layout, gTipText):
-        """Show config."""
-        if self.gConfigPanel: return self.gConfigPanel
-        gConfigPanel = super(_DoublePatcherPanel, self).GetConfigPanel(parent,
-            config_layout, gTipText)
-        return gConfigPanel
-
-    #--Config Phase -----------------------------------------------------------
-    def _log_config(self, conf, config, clip, log):
-        _ListPatcherPanel._log_config(self, conf, config, clip, log)
-        log.setHeader(u'== ' + self.tweak_label)
-        clip.write(u'\n')
-        clip.write(u'== ' + self.tweak_label + u'\n')
-        _TweakPatcherPanel._log_config(self, conf, config, clip, log)
-
-    def get_patcher_instance(self, patch_file):
-        enabledTweaks = [t for t in self._all_tweaks if t.isEnabled]
-        patcher_sources = [x for x in self.configItems if self.configChecks[x]]
-        return self.patcher_type(self.patcher_name, patch_file,
-                                 patcher_sources, enabledTweaks)
-
-#------------------------------------------------------------------------------
 class _ImporterPatcherPanel(_ListPatcherPanel):
 
     def saveConfig(self, configs):
@@ -1165,6 +1135,15 @@ class ImportRacesRelations(_ImporterPatcherPanel):
     patcher_type = mergers.ImportRacesRelationsPatcher
 
 # -----------------------------------------------------------------------------
+class ImportRacesSpells(_ImporterPatcherPanel):
+    """Imports race spells/abilities."""
+    patcher_name = _(u'Import Races: Spells')
+    patcher_desc = _(u'Import race abilities and spells from source mods.')
+    autoKey = {u'R.AddSpells', u'R.ChangeSpells'}
+    _config_key = u'ImportRacesSpells'
+    patcher_type = mergers.ImportRacesSpellsPatcher
+
+# -----------------------------------------------------------------------------
 class ImportSpellStats(_ImporterPatcherPanel, _AListPanelCsv):
     """Import spell changes from mod files."""
     patcher_name = _(u'Import Spell Stats')
@@ -1279,19 +1258,13 @@ class ReplaceFormIDs(_AListPanelCsv):
     canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
 # -----------------------------------------------------------------------------
-class RaceRecords(_DoublePatcherPanel):
+class RaceRecords(_TweakPatcherPanel):
     """Merged leveled lists mod file."""
     patcher_name = _(u'Race Records')
-    patcher_desc = u'\n\n'.join([
-        _(u'Merge race eyes, hair, body, voice from mods.'),
-        _(u'Any non-active, non-merged mods in the following list '
-          u'will be IGNORED.'),
-        _(u'Even if none of the below mods are checked, this will sort '
-          u'hairs and eyes and attempt to remove googly eyes from all '
-          u'active mods.  It will also randomly assign hairs and eyes to '
-          u'npcs that are otherwise missing them.')]
-    )
-    autoKey = {u'R.ChangeSpells', u'R.AddSpells'}
+    patcher_desc = _(u'This will sort hairs and eyes and attempt to remove '
+                     u'googly eyes from all active mods. It will also '
+                     u'randomly assign hairs and eyes to NPCs that are '
+                     u'otherwise missing them.')
     _config_key = u'RacePatcher'
     patcher_type = _race_records.RaceRecordsPatcher
 

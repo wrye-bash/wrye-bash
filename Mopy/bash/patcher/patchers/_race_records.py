@@ -30,13 +30,12 @@ import re
 from collections import defaultdict, Counter
 
 # Internal
+from .base import MultiTweaker
 from .multitweak_races import *
-from ..base import ListPatcher, ModLoader
-from ... import bosh, bush
+from ..base import ModLoader
+from ... import bush
 from ...bolt import GPath, deprint
-from ...brec import MelObject, strFid
-from ...exception import BoltError
-from ...patcher.base import AMultiTweaker
+from ...brec import strFid
 
 # Utilities & Constants -------------------------------------------------------
 def _find_vanilla_eyes():
@@ -55,7 +54,7 @@ _main_master = GPath(bush.game.master_file)
 #------------------------------------------------------------------------------
 # Race Records ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
+class RaceRecordsPatcher(MultiTweaker, ModLoader):
     """Race patcher - we inherit from AMultiTweaker to use tweak_instances."""
     patcher_group = u'Special'
     patcher_order = 40
@@ -67,18 +66,14 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
         RaceTweak_AllHairs,
     }
 
-    def __init__(self, p_name, p_file, p_sources, enabled_tweaks):
-        # NB: call the ListPatcher __init__ not the AMultiTweaker one!
-        super(AMultiTweaker, self).__init__(p_name, p_file, p_sources)
+    def __init__(self, p_name, p_file, enabled_tweaks):
+        super(RaceRecordsPatcher, self).__init__(p_name, p_file,
+                                                 enabled_tweaks)
         self.races_data = {b'EYES': [], b'HAIR': []}
-        self.raceData = defaultdict(dict) #--Race eye meshes, hair,eyes
-        #--Restrict srcs to active/merged mods.
-        self.srcs = [x for x in self.srcs if x in p_file.allSet]
         self.isActive = True #--Always enabled to support eye filtering
         self.eye_mesh = {}
         self.scanTypes = {b'RACE', b'EYES', b'HAIR', b'NPC_'}
         self.vanilla_eyes = _find_vanilla_eyes()
-        self.enabled_tweaks = enabled_tweaks
 
     def initData(self,progress):
         """Get data from source files."""
@@ -89,54 +84,6 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
         for tweak in self.enabled_tweaks: # type: MultiTweakItem
             for read_sig in tweak.tweak_read_classes:
                 t_dict[read_sig][tweak.supports_pooling].append(tweak)
-        if not self.isActive or not self.srcs: return
-        self.loadFactory = self._patcher_read_fact(by_sig=[b'RACE'])
-        progress.setFull(len(self.srcs))
-        cachedMasters = {}
-        for index,srcMod in enumerate(self.srcs):
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
-            srcFile = self._mod_file_read(srcInfo)
-            bashTags = srcInfo.getBashTags()
-            if b'RACE' not in srcFile.tops: continue
-            tmp_race_data = defaultdict(dict) #so as not to carry anything over!
-            if u'R.ChangeSpells' in bashTags and u'R.AddSpells' in bashTags:
-                raise BoltError(
-                    u'WARNING mod %s has both R.AddSpells and R.ChangeSpells '
-                    u'tags - only one of those tags should be on a mod at '
-                    u'one time' % srcMod)
-            for race in srcFile.tops[b'RACE'].getActiveRecords():
-                tempRaceData = tmp_race_data[race.fid]
-                raceData = self.raceData[race.fid]
-                if u'R.AddSpells' in bashTags:
-                    tempRaceData[u'AddSpells'] = race.spells
-                if u'R.ChangeSpells' in bashTags:
-                    raceData[u'spellsOverride'] = race.spells
-            for master in srcInfo.masterNames:
-                if not master in bosh.modInfos: continue  # or break
-                # filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
-                else:
-                    masterInfo = bosh.modInfos[master]
-                    masterFile = self._mod_file_read(masterInfo)
-                    if b'RACE' not in masterFile.tops: continue
-                    cachedMasters[master] = masterFile
-                for race in masterFile.tops[b'RACE'].getActiveRecords():
-                    if race.fid not in tmp_race_data: continue
-                    tempRaceData = tmp_race_data[race.fid]
-                    raceData = self.raceData[race.fid]
-                    if u'AddSpells' in tempRaceData:
-                        raceData.setdefault(u'AddSpells', []) ##: set?
-                        for spell in tempRaceData[u'AddSpells']:
-                            if spell not in race.spells:
-                                if spell not in raceData[u'AddSpells']:
-                                    raceData[u'AddSpells'].append(spell)
-                        del tempRaceData[u'AddSpells']
-                    for race_key in tempRaceData:
-                        if tempRaceData[race_key] != getattr(race, race_key):
-                            raceData[race_key] = tempRaceData[race_key]
-            progress.plus()
 
     def scanModFile(self, modFile, progress):
         """Add appropriate records from modFile."""
@@ -205,31 +152,12 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
         patchFile = self.patchFile
         keep = patchFile.getKeeper()
         if b'RACE' not in patchFile.tops: return
-        racesPatched = []
         racesSorted = []
         racesFiltered = []
         mod_npcsFixed = defaultdict(set)
         reProcess = re.compile(
             u'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
             re.I | re.U)
-        #--Import race info
-        for race in patchFile.tops[b'RACE'].records:
-            #~~print 'Building',race.eid
-            raceData = self.raceData.get(race.fid, None)
-            if not raceData: continue
-            raceChanged = False
-            #--spells
-            if u'spellsOverride' in raceData:
-                race.spells = raceData[u'spellsOverride']
-            if u'AddSpells' in raceData:
-                raceData[u'spells'] = race.spells
-                for spell in raceData[u'AddSpells']:
-                    raceData[u'spells'].append(spell)
-                race.spells = raceData[u'spells']
-            #--Changed
-            if raceChanged:
-                racesPatched.append(race.eid)
-                keep(race.fid)
         #--Eye Mesh filtering
         eye_mesh = self.eye_mesh
         try:
@@ -405,13 +333,6 @@ class RaceRecordsPatcher(AMultiTweaker, ListPatcher, ModLoader):
                 keep(npc.fid)
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
-        self._srcMods(log)
-        log(u'\n=== ' + _(u'Merged'))
-        if not racesPatched:
-            log(u'. ~~%s~~' % _(u'None'))
-        else:
-            for eid in sorted(racesPatched):
-                log(u'* ' + eid)
         log(u'\n=== ' + _(u'Eyes/Hair Sorted'))
         if not racesSorted:
             log(u'. ~~%s~~' % _(u'None'))
