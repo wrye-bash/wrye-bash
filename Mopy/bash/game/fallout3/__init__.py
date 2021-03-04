@@ -136,9 +136,10 @@ class Fallout3GameInfo(GameInfo):
                             u'bodyAddOn3')
 
     # Remaining to add:
-    # 'Body-F', 'Body-M', 'Body-Size-F', 'Body-Size-M', 'Eyes', 'Hair',
-    # 'R.Attributes-F', 'R.Attributes-M', 'R.Description', 'R.Ears', 'R.Head',
-    # 'R.Mouth', 'R.Relations', 'R.Skills', 'R.Teeth', 'Voice-F', 'Voice-M'
+    # 'R.Body-F', 'R.Body-M', 'R.Body-Size-F', 'R.Body-Size-M', 'R.Eyes',
+    # 'R.Hair', 'R.Attributes-F', 'R.Attributes-M', 'R.Description', 'R.Ears',
+    # 'R.Head', 'R.Mouth', 'R.Relations', 'R.Skills', 'R.Teeth', 'R.Voice-F',
+    # 'R.Voice-M'
     allTags = {
         u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
         u'Actors.AIPackagesForceAdd', u'Actors.Anims', u'Actors.CombatStyle',

@@ -1448,12 +1448,36 @@ C.Location, -C.LockList
     </thead>
     <tbody>
         <tr>
+            <td>Body-F</td>
+            <td>Older name for R.Body-F.</td>
+        </tr>
+        <tr>
+            <td>Body-M</td>
+            <td>Older name for R.Body-M.</td>
+        </tr>
+        <tr>
+            <td>Body-Size-F</td>
+            <td>Older name for R.Body-Size-F.</td>
+        </tr>
+        <tr>
+            <td>Body-Size-M</td>
+            <td>Older name for R.Body-Size-M.</td>
+        </tr>
+        <tr>
             <td>C.GridFlags</td>
             <td>Older name for C.ForceHideLand.</td>
         </tr>
         <tr>
             <td>Derel</td>
             <td>Older name for Relations.Remove.</td>
+        </tr>
+        <tr>
+            <td>Eyes</td>
+            <td>Older name for R.Eyes.</td>
+        </tr>
+        <tr>
+            <td>Hair</td>
+            <td>Older name for R.Hair.</td>
         </tr>
         <tr>
             <td>Invent</td>
@@ -2732,59 +2756,6 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Body-F</td>
-            <td>Modifies female body mesh/texture definitions in (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>Female Body Data
-                        <ul>
-                            <li>Model</li>
-                            <li>Parts</li>
-                        </ul>
-                    </li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Body-M</td>
-            <td>Modifies male body mesh/texture definitions in (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>Male Body Data
-                        <ul>
-                            <li>Model</li>
-                            <li>Parts</li>
-                        </ul>
-                    </li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Body-Size-F</td>
-            <td>Modifies female body weight/height definitions (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>(DATA): Female Height</li>
-                    <li>(DATA): Female Weight</li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Body-Size-M</td>
-            <td>Modifies male body weight/height definitions (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>(DATA): Male Height</li>
-                    <li>(DATA): Male Weight</li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Eyes</td>
-            <td>Adds eyes to races.</td>
-            <td>The Eyes (ENAM) subrecord of Race (RACE) records.</td>
-        </tr>
-        <tr>
             <td id="GraphicsOblivion">Graphics</td>
             <td>Is a graphics replacer.</td>
             <td>The following subrecords:
@@ -2873,11 +2844,6 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Hair</td>
-            <td>Adds hairs to races.</td>
-            <td>The Hairs (HNAM) subrecord of Race (RACE) records.</td>
-        </tr>
-        <tr>
             <td id="NamesOblivion">Names</td>
             <td>Changes the names of things.</td>
             <td>The (FULL) Name subrecord in the following record types:
@@ -2956,6 +2922,58 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>R.Body-F</td>
+            <td>Modifies female body mesh/texture definitions in (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>Female Body Data
+                        <ul>
+                            <li>Model</li>
+                            <li>Parts</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Body-M</td>
+            <td>Modifies male body mesh/texture definitions in (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>Male Body Data
+                        <ul>
+                            <li>Model</li>
+                            <li>Parts</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Body-Size-F</td>
+            <td>Modifies female body weight/height definitions (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>(DATA): Female Height</li>
+                    <li>(DATA): Female Weight</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Body-Size-M</td>
+            <td>Modifies male body weight/height definitions (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>(DATA): Male Height</li>
+                    <li>(DATA): Male Weight</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
             <td>R.ChangeSpells</td>
             <td>Modifies racial spell list(s) (beyond adding spells). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.</td>
             <td>Additions or removals to the spell list (SPLO) of Race (RACE) records.</td>
@@ -2986,6 +3004,16 @@ C.Location, -C.LockList
                     </li>
                 </ul>
             </td>
+        </tr>
+        <tr>
+            <td>R.Eyes</td>
+            <td>Adds eyes to races.</td>
+            <td>The Eyes (ENAM) subrecord of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Hair</td>
+            <td>Adds hairs to races.</td>
+            <td>The Hairs (HNAM) subrecord of Race (RACE) records.</td>
         </tr>
         <tr>
             <td>R.Head</td>
@@ -3062,6 +3090,16 @@ C.Location, -C.LockList
                     </li>
                 </ul>
             </td>
+        </tr>
+        <tr>
+            <td>R.Voice-F</td>
+            <td>Modifies female voice definitions.</td>
+            <td>The male voice (VNAM) of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Voice-M</td>
+            <td>Modifies male voice definitions.</td>
+            <td>The female voice (VNAM) of Race (RACE) records.</td>
         </tr>
         <tr>
             <td id="ScriptsOblivion">Scripts</td>
@@ -3264,16 +3302,6 @@ C.Location, -C.LockList
                 <br>
                 <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
             </td>
-        </tr>
-        <tr>
-            <td>Voice-F</td>
-            <td>Modifies female voice definitions.</td>
-            <td>The male voice (VNAM) of Race (RACE) records.</td>
-        </tr>
-        <tr>
-            <td>Voice-M</td>
-            <td>Modifies male voice definitions.</td>
-            <td>The female voice (VNAM) of Race (RACE) records.</td>
         </tr>
     </tbody>
 </table>

@@ -158,12 +158,12 @@ class OblivionGameInfo(GameInfo):
         u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
         u'Actors.AIPackagesForceAdd', u'Actors.Anims', u'Actors.CombatStyle',
         u'Actors.DeathItem', u'Actors.RecordFlags', u'Actors.Skeleton',
-        u'Actors.Spells', u'Actors.SpellsForceAdd', u'Actors.Stats', u'Body-F',
-        u'Body-M', u'Body-Size-F', u'Body-Size-M', u'C.Climate', u'C.Light',
+        u'Actors.Spells', u'Actors.SpellsForceAdd', u'Actors.Stats', u'R.Body-F',
+        u'R.Body-M', u'R.Body-Size-F', u'R.Body-Size-M', u'C.Climate', u'C.Light',
         u'C.MiscFlags', u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
         u'C.Regions', u'C.Water', u'Creatures.Blood', u'Creatures.Type',
-        u'Deactivate', u'Delev', u'EffectStats', u'EnchantmentStats', u'Eyes',
-        u'Factions', u'Filter', u'Graphics', u'Hair', u'IIM', u'Invent.Add',
+        u'Deactivate', u'Delev', u'EffectStats', u'EnchantmentStats', u'R.Eyes',
+        u'Factions', u'Filter', u'Graphics', u'R.Hair', u'IIM', u'Invent.Add',
         u'Invent.Change', u'Invent.Remove', u'MustBeActiveIfImported',
         u'Names', u'NoMerge', u'NPC.Class', u'NPC.Eyes', u'NPC.FaceGen',
         u'NPC.Hair', u'NPC.Race', u'NpcFacesForceFullImport', u'R.AddSpells',
@@ -171,7 +171,7 @@ class OblivionGameInfo(GameInfo):
         u'R.Description', u'R.Ears', u'R.Head', u'R.Mouth', u'R.Relations',
         u'R.Skills', u'R.Teeth', u'Relations.Add', u'Relations.Change',
         u'Relations.Remove', u'Relev', u'Roads', u'Scripts', u'Sound',
-        u'SpellStats', u'Stats', u'Text', u'Voice-F', u'Voice-M',
+        u'SpellStats', u'Stats', u'Text', u'R.Voice-F', u'R.Voice-M',
     }
 
     patchers = {
