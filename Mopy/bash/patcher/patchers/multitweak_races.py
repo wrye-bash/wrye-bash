@@ -25,6 +25,7 @@
 from itertools import izip
 
 from .base import MultiTweakItem, MultiTweaker
+from ... import bush
 
 _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
                   u'dark seducer', u'golden saint', u'high elf', u'imperial',
@@ -216,20 +217,20 @@ class RaceTweak_AllEyes(_ARUnblockTweak):
 # -----------------------------------------------------------------------------
 class _ARPlayableTweak(_ARaceTweak):
     """Shared code of playable hair/eyes tweaks."""
+    tweak_choices = [(u'Get it done', 1)]
+
     def wants_record(self, record):
         return not record.flags.playable
 
     def tweak_record(self, record):
         record.flags.playable = True
 
-# -----------------------------------------------------------------------------
 class RaceTweak_PlayableEyes(_ARPlayableTweak):
     """Sets all eyes to be playable."""
     tweak_read_classes = b'EYES',
     tweak_name = _(u'Playable Eyes')
     tweak_tip = _(u'Sets all eyes to be playable.')
     tweak_key = u'playableeyes'
-    tweak_choices = [(u'Get it done', 1)]
     tweak_log_msg = _(u'Eyes Tweaked: %(total_changed)d')
 
 # -----------------------------------------------------------------------------
@@ -237,20 +238,23 @@ class RaceTweak_PlayableHairs(_ARPlayableTweak):
     """Sets all hairs to be playable."""
     tweak_read_classes = b'HAIR',
     tweak_name = _(u'Playable Hairs')
-    tweak_tip = _(u'Sets all Hairs to be playable.')
+    tweak_tip = _(u'Sets all hairs to be playable.')
     tweak_key = u'playablehairs'
-    tweak_choices = [(u'Get it done', 1)]
     tweak_log_msg = _(u'Hairs Tweaked: %(total_changed)d')
 
 # -----------------------------------------------------------------------------
-class RaceTweak_SexlessHairs(_ARaceTweak):
-    """Sets all hairs to be playable by both males and females."""
-    tweak_read_classes = b'HAIR',
-    tweak_name = _(u'Sexless Hairs')
-    tweak_tip = _(u'Lets any sex of character use any hair.')
-    tweak_key = u'sexlesshairs'
+class RaceTweak_PlayableHeadParts(_ARPlayableTweak):
+    """Sets all head parts to be playable."""
+    tweak_read_classes = b'HDPT',
+    tweak_name = _(u'Playable Head Parts')
+    tweak_tip = _(u'Sets all head parts to be playable.')
+    tweak_key = u'playable_head_parts'
+    tweak_log_msg = _(u'Head Parts Tweaked: %(total_changed)d')
+
+# -----------------------------------------------------------------------------
+class _ARGenderlessTweak(_ARaceTweak):
+    """Shared code of genderless hair/eyes tweaks."""
     tweak_choices = [(u'Get it done', 1)]
-    tweak_log_msg = _(u'Hairs Tweaked: %(total_changed)d')
 
     def wants_record(self, record):
         return record.flags.notMale or record.flags.notFemale
@@ -259,15 +263,27 @@ class RaceTweak_SexlessHairs(_ARaceTweak):
         record.flags.notMale = False
         record.flags.notFemale = False
 
+class RaceTweak_GenderlessHairs(_ARGenderlessTweak):
+    """Sets all hairs to be playable, regardless of gender."""
+    tweak_read_classes = b'HAIR',
+    tweak_name = _(u'Genderless Hairs')
+    tweak_tip = _(u'Lets characters of any gender use any hair.')
+    tweak_key = u'sexlesshairs'
+    tweak_log_msg = _(u'Hairs Tweaked: %(total_changed)d')
+
+# -----------------------------------------------------------------------------
+class RaceTweak_GenderlessHeadParts(_ARGenderlessTweak):
+    """Sets all head parts to be playable, regardless of gender."""
+    tweak_read_classes = b'HDPT',
+    tweak_name = _(u'Genderless Head Parts')
+    tweak_tip = _(u'Lets characters of any gender use any head part.')
+    tweak_key = u'genderless_head_parts'
+    tweak_log_msg = _(u'Head Parts Tweaked: %(total_changed)d')
+
 # -----------------------------------------------------------------------------
 class TweakRacesPatcher(MultiTweaker):
     """Tweaks race things."""
-    _tweak_classes = {
-        RaceTweak_BiggerOrcsAndNords, RaceTweak_MergeSimilarRaceHairs,
-        RaceTweak_MergeSimilarRaceEyes, RaceTweak_PlayableEyes,
-        RaceTweak_PlayableHairs, RaceTweak_SexlessHairs, RaceTweak_AllEyes,
-        RaceTweak_AllHairs,
-    }
+    _tweak_classes = {globals()[t] for t in bush.game.race_tweaks}
 
     def initData(self, progress):
         super(TweakRacesPatcher, self).initData(progress)

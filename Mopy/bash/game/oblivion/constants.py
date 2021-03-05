@@ -794,9 +794,9 @@ not_playable_flag = (u'biped_flags', u'notPlayable')
 staff_condition = (u'weaponType', 4)
 static_attenuation_rec_type = b'SOUN'
 
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Import Races
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 import_races_attrs = {
     b'RACE': {
         u'R.Attributes-F': (u'femaleStrength', u'femaleIntelligence',
@@ -826,6 +826,20 @@ import_races_attrs = {
         u'R.Voice-F': (u'femaleVoice',),
         u'R.Voice-M': (u'maleVoice',),
     },
+}
+
+#--------------------------------------------------------------------------
+# Tweak Races
+#--------------------------------------------------------------------------
+race_tweaks = {
+    u'RaceTweak_BiggerOrcsAndNords',
+    u'RaceTweak_MergeSimilarRaceHairs',
+    u'RaceTweak_MergeSimilarRaceEyes',
+    u'RaceTweak_PlayableEyes',
+    u'RaceTweak_PlayableHairs',
+    u'RaceTweak_GenderlessHairs',
+    u'RaceTweak_AllEyes',
+    u'RaceTweak_AllHairs',
 }
 
 #------------------------------------------------------------------------------

@@ -2574,8 +2574,8 @@ class MreHdpt(MelRecord):
 
     HdptTypeFlags = Flags(0, Flags.getNames(
         (0, 'playable'),
-        (1, 'male'),
-        (2, 'female'),
+        (1, 'notFemale'),
+        (2, 'notMale'),
         (3, 'isExtraPart'),
         (4, 'useSolidTint'),
     ))

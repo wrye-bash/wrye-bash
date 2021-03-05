@@ -830,9 +830,9 @@ record_type_name = {
     b'WEAP': _(u'Weapons'),
 }
 
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Import Races
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 import_races_attrs = {
     b'RACE': {
         u'R.Body-F': (u'femaleUpperBody', u'femaleLeftHand',
@@ -855,6 +855,20 @@ import_races_attrs = {
         u'R.Voice-F': (u'femaleVoice',),
         u'R.Voice-M': (u'maleVoice',),
     },
+}
+
+#------------------------------------------------------------------------------
+# Tweak Races
+#------------------------------------------------------------------------------
+race_tweaks = {
+    u'RaceTweak_PlayableEyes',
+    u'RaceTweak_MergeSimilarRaceHairs',
+    u'RaceTweak_MergeSimilarRaceEyes',
+    u'RaceTweak_PlayableHairs',
+    u'RaceTweak_PlayableHeadParts',
+    u'RaceTweak_GenderlessHairs',
+    u'RaceTweak_AllEyes',
+    u'RaceTweak_AllHairs',
 }
 
 #------------------------------------------------------------------------------

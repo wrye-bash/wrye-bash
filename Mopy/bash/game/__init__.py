@@ -572,6 +572,11 @@ class GameInfo(object):
     import_races_attrs = {}
 
     #--------------------------------------------------------------------------
+    # Tweak Races
+    #--------------------------------------------------------------------------
+    race_tweaks = set()
+
+    #--------------------------------------------------------------------------
     # Magic Effects - Oblivion-specific
     #--------------------------------------------------------------------------
     # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
@@ -636,7 +641,7 @@ class GameInfo(object):
         u'spell_stats_types', u'statsHeaders', u'statsTypes', u'text_types',
         u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
         u'nonplayable_biped_flags', u'not_playable_flag', u'settings_tweaks',
-        u'import_races_attrs',
+        u'import_races_attrs', u'race_tweaks',
     }
 
     @classmethod
