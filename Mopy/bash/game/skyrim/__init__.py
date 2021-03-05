@@ -182,13 +182,14 @@ class SkyrimGameInfo(GameInfo):
         u'Relations.Change', u'Relations.Remove', u'Relev', u'Sound',
         u'SpellStats', u'Stats', u'Text', u'R.Body-Size-F', u'R.Body-Size-M',
         u'R.Description', u'R.Skills', u'R.Voice-F', u'R.Voice-M',
+        u'R.AddSpells', u'R.ChangeSpells',
     }
 
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'ImportActors', u'ImportRaces',
         u'ImportActorsAIPackages', u'ImportActorsDeathItems',
         u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats',
+        u'ImportDestructible', u'ImportEffectsStats', u'ImportRacesSpells',
         u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
         u'ImportKeywords', u'ImportNames', u'ImportObjectBounds',
         u'ImportOutfits', u'ImportRelations', u'ImportSounds',

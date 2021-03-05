@@ -2410,6 +2410,18 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>R.AddSpells</td>
+            <td>Adds spells to racial spell list(s). Either R.ChangeSpells or
+                R.AddSpells should be used for a plugin, not both.</td>
+            <td>Additions to the spell list of (RACE) Race records.
+                <br>
+                <br>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                    Enderal&colon; Forgotten Stories &amp;
+                    Skyrim&colon; Special Edition only.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>R.Body-F</td>
             <td>Modifies female body mesh/texture definitions in (RACE) Race
                 record.</td>
@@ -2463,6 +2475,20 @@ C.Location, -C.LockList
                     <li>(DATA) Male Weight</li>
                 </ul>
                 <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.ChangeSpells</td>
+            <td>Modifies racial spell list(s) (beyond adding spells). Either
+                R.ChangeSpells or R.AddSpells should be used for a plugin, not
+                both.</td>
+            <td>Additions or removals to the (SPLO) spell list of (RACE) Race
+                records.
+                <br>
+                <br>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                    Enderal&colon; Forgotten Stories &amp;
+                    Skyrim&colon; Special Edition only.</strong>
             </td>
         </tr>
         <tr>
@@ -3065,12 +3091,6 @@ C.Location, -C.LockList
             <td>The (ROAD) Road subrecord of (WRLD) Worldspace records.</td>
         </tr>
         <tr>
-            <td>R.AddSpells</td>
-            <td>Adds spells to racial spell list(s). Either R.ChangeSpells or
-                R.AddSpells should be used for a plugin, not both.</td>
-            <td>Additions to the spell list of (RACE) Race records.</td>
-        </tr>
-        <tr>
             <td>R.Attributes-F</td>
             <td>Modifies racial attributes for females.</td>
             <td>The following (RACE) Race subrecords:
@@ -3101,14 +3121,6 @@ C.Location, -C.LockList
                     <li>(ATTR) Male Luck</li>
                 </ul>
             </td>
-        </tr>
-        <tr>
-            <td>R.ChangeSpells</td>
-            <td>Modifies racial spell list(s) (beyond adding spells). Either
-                R.ChangeSpells or R.AddSpells should be used for a plugin, not
-                both.</td>
-            <td>Additions or removals to the (SPLO) spell list of (RACE) Race
-                records.</td>
         </tr>
         <tr>
             <td id="REyesOblivion">R.Eyes</td>
@@ -5785,7 +5797,7 @@ C.Location, -C.LockList
             <td>Ensures that cells have at least one non-zero fog value. For
                 avoiding the Nvidia fog-related black screen. This feature is
                 based on <a href="https://www.nexusmods.com/oblivion/mods/11167/?">Quarn's Nvidia Black Screen Fix</a>.</td>
-            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
                 Fallout&colon; New Vegas</td>
         </tr>
         <tr>
