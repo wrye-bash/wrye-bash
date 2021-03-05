@@ -29,6 +29,7 @@ import re
 from collections import defaultdict
 from itertools import chain
 
+from .base import is_templated
 from ..base import Patcher
 from ... import bush
 from ...bolt import GPath, deprint
@@ -280,10 +281,6 @@ class RaceCheckerPatcher(Patcher):
     patcher_order = 40 # Run after Tweak Races
     _read_sigs = (b'EYES', b'HAIR', b'RACE')
 
-    @property
-    def active_write_sigs(self):
-        return (b'RACE',) if self.isActive else ()
-
     def scanModFile(self, modFile, progress):
         if not (set(modFile.tops) & set(self._read_sigs)): return
         for pb_sig in self._read_sigs:
@@ -323,7 +320,11 @@ class RaceCheckerPatcher(Patcher):
 def _find_vanilla_eyes():
     """Converts vanilla default_eyes to use long FormIDs and returns the
     result."""
-    def _conv_fid(rc_fid): return GPath(rc_fid[0]), rc_fid[1]
+    def _conv_fid(rc_fid):
+        rc_file, rc_obj = rc_fid
+        if rc_file is None: # special case: None = game master
+            rc_file = bush.game.master_file
+        return GPath(rc_file), rc_obj
     ret = {}
     for race_fid, race_eyes in bush.game.default_eyes.iteritems():
         new_key = _conv_fid(race_fid)
@@ -340,10 +341,6 @@ class NpcCheckerPatcher(Patcher):
     def __init__(self, p_name, p_file):
         super(NpcCheckerPatcher, self).__init__(p_name, p_file)
         self.vanilla_eyes = _find_vanilla_eyes()
-
-    @property
-    def active_write_sigs(self):
-        return (b'NPC_',) if self.isActive else ()
 
     def scanModFile(self, modFile, progress):
         """Add appropriate records from modFile."""
@@ -391,6 +388,8 @@ class NpcCheckerPatcher(Patcher):
             if npc.full is not None and npc.race == (
                     _main_master, 0x038010) and not reProcess.search(
                     npc.full): continue
+            if is_templated(npc, u'useModelAnimation'):
+                continue # Changing templated actors wouldn't do anything
             raceEyes = final_eyes.get(npc.race)
             random.seed(npc.fid[1]) # make it deterministic
             if not npc.eye and raceEyes:

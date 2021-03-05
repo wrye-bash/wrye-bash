@@ -631,36 +631,7 @@ class ImportGraphicsPatcher(APreserver):
 
 #------------------------------------------------------------------------------
 class ImportRacesPatcher(APreserver):
-    rec_attrs = {
-        b'RACE': {
-            u'R.Attributes-F': (u'femaleStrength', u'femaleIntelligence',
-                                u'femaleWillpower', u'femaleAgility',
-                                u'femaleSpeed', u'femaleEndurance',
-                                u'femalePersonality', u'femaleLuck'),
-            u'R.Attributes-M': (u'maleStrength', u'maleIntelligence',
-                                u'maleWillpower', u'maleAgility', u'maleSpeed',
-                                u'maleEndurance', u'malePersonality',
-                                u'maleLuck'),
-            u'R.Body-F': (u'femaleTailModel', u'femaleUpperBodyPath',
-                          u'femaleLowerBodyPath', u'femaleHandPath',
-                          u'femaleFootPath', u'femaleTailPath'),
-            u'R.Body-M': (u'maleTailModel', u'maleUpperBodyPath',
-                          u'maleLowerBodyPath', u'maleHandPath', u'maleFootPath',
-                          u'maleTailPath'),
-            u'R.Body-Size-F': (u'femaleHeight', u'femaleWeight'),
-            u'R.Body-Size-M': (u'maleHeight', u'maleWeight'),
-            u'R.Description': (u'description',),
-            u'R.Ears': (u'maleEars', u'femaleEars'),
-            u'R.Eyes': (u'eyes', u'leftEye', u'rightEye'),
-            u'R.Hair': (u'hairs',),
-            u'R.Head': (u'head',),
-            u'R.Mouth': (u'mouth', u'tongue'),
-            u'R.Skills': (u'skills',),
-            u'R.Teeth': (u'teethLower', u'teethUpper'),
-            u'R.Voice-F': (u'femaleVoice',),
-            u'R.Voice-M': (u'maleVoice',),
-        },
-    }
+    rec_attrs = bush.game.import_races_attrs
     _multi_tag = True
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count,

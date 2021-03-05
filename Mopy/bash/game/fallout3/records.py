@@ -43,8 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelLists, MelPickupSound, MelDropSound, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOwnership, \
-    MelDebrData
+    MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData
 from ...exception import ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -2012,11 +2011,9 @@ class MreNpc(MreActor):
         MelFids(b'PNAM','headParts'),
         MelNpcDnam(b'DNAM', [u'14B', u'14B'], (u'skillValues', [0] * 14),
                    (u'skillOffsets', [0] * 14)),
-        MelFid(b'HNAM','hair'),
+        MelFid(b'HNAM', 'hair'),
         MelFloat(b'LNAM', u'hairLength'),
-        ##: This is actually an array, but changing it would break the race
-        # patcher (hilariously enough). Fix that and change this.
-        MelFid(b'ENAM','eye'),
+        MelFid(b'ENAM', 'eye'),
         MelStruct(b'HCLR', [u'3B', u's'],'hairRed','hairBlue','hairGreen','unused3'),
         MelFid(b'ZNAM','combatStyle'),
         MelUInt32(b'NAM4', u'impactMaterialType'),
@@ -2463,7 +2460,7 @@ class MreRace(MelRecord):
     """Race."""
     rec_sig = b'RACE'
 
-    _flags = Flags(0, Flags.getNames('playable', None, 'child'))
+    _flags = Flags(0, Flags.getNames((0, 'playable'), (2, 'child')))
 
     melSet = MelSet(
         MelEdid(),
@@ -2473,10 +2470,10 @@ class MreRace(MelRecord):
             MelStruct(b'XNAM', [u'I', u'2i'], (FID, 'faction'), 'mod',
                       'group_combat_reaction'),
         ),
-        MelStruct(b'DATA', [u'14b', u'2s', u'4f', u'I'],'skill1','skill1Boost','skill2','skill2Boost',
-                  'skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost',
-                  'skill6','skill6Boost','skill7','skill7Boost','unused1',
-                  'maleHeight','femaleHeight','maleWeight','femaleWeight',(_flags, u'flags')),
+        MelRaceData(b'DATA', [u'14b', u'2s', u'4f', u'I'],
+                    (u'skills', [0] * 14), 'unused1', 'maleHeight',
+                    'femaleHeight', 'maleWeight', 'femaleWeight',
+                    (_flags, u'flags')),
         MelFid(b'ONAM','Older'),
         MelFid(b'YNAM','Younger'),
         MelBase(b'NAM2','_nam2',b''),
@@ -2486,7 +2483,7 @@ class MreRace(MelRecord):
         MelStruct(b'CNAM', [u'2B'],'defaultHairColorMale','defaultHairColorFemale'),
         MelFloat(b'PNAM', 'mainClamp'),
         MelFloat(b'UNAM', 'faceClamp'),
-        MelStruct(b'ATTR', [u'2B'],'maleBaseAttribute','femaleBaseAttribute'),
+        MelStruct(b'ATTR', [u'2s'], u'unused_attributes'), # leftover
         MelBase(b'NAM0', 'head_data_marker', b''),
         MelBase(b'MNAM', 'male_head_data_marker', b''),
         MelRaceParts({
@@ -2529,7 +2526,7 @@ class MreRace(MelRecord):
             3: u'femaleUpperBodyTexture',
         }, group_loaders=lambda _indx: (
             MelIcons(),
-            MelModel()
+            MelModel(),
         )),
         MelFidList(b'HNAM','hairs'),
         MelFidList(b'ENAM','eyes'),

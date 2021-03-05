@@ -25,7 +25,7 @@ definitions for some commonly needed subrecords."""
 
 from __future__ import division, print_function
 from collections import defaultdict
-from itertools import chain
+from itertools import chain, izip
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider
@@ -35,7 +35,7 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelUInt8Flags, MelSInt32
 from .utils_constants import _int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
-from ..exception import ModError
+from ..exception import ModError, ModSizeError
 
 #------------------------------------------------------------------------------
 class MelActionFlags(MelUInt32Flags):
@@ -408,6 +408,51 @@ class MelPickupSound(MelFid):
     """Handles the common YNAM - Pickup Sound subrecord."""
     def __init__(self):
         super(MelPickupSound, self).__init__(b'YNAM', u'pickupSound')
+
+#------------------------------------------------------------------------------
+##: This is a strange fusion of MelLists, MelStruct and MelTruncatedStruct
+# because one of the attrs is a flags field and in Skyrim it's truncated too
+class MelRaceData(MelTruncatedStruct):
+    """Pack RACE skills and skill boosts as a single attribute."""
+
+    def __init__(self, sub_sig, sub_fmt, *elements, **kwargs):
+        if 'old_versions' not in kwargs:
+            kwargs['old_versions'] = set() # set default to avoid errors
+        super(MelRaceData, self).__init__(sub_sig, sub_fmt, *elements,
+                                          **kwargs)
+
+    @staticmethod
+    def _expand_formats(elements, struct_formats):
+        expanded_fmts = []
+        for f in struct_formats:
+            if f == u'14b':
+                expanded_fmts.append(0)
+            elif f[-1] != u's':
+                expanded_fmts.extend([f[-1]] * int(f[:-1] or 1))
+            else:
+                expanded_fmts.append(int(f[:-1] or 1))
+        return expanded_fmts
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        try:
+            target_unpacker = self._all_unpackers[size_]
+        except KeyError:
+            raise ModSizeError(ins.inName, debug_strs,
+                               tuple(self._all_unpackers), size_)
+        unpacked = ins.unpack(target_unpacker, size_, *debug_strs)
+        unpacked = self._pre_process_unpacked(unpacked)
+        record.skills = unpacked[:14]
+        for attr, value, action in izip(self.attrs[1:], unpacked[14:],
+                                        self.actions[1:]):
+            setattr(record, attr, action(value) if action else value)
+
+    def pack_subrecord_data(self, record):
+        values = list(record.skills)
+        values.extend(
+            action(value).dump() if action else value for value, action in
+            izip((getattr(record, a) for a in self.attrs[1:]),
+                 self.actions[1:]))
+        return self._packer(*values)
 
 #------------------------------------------------------------------------------
 class MelRaceParts(MelNull):

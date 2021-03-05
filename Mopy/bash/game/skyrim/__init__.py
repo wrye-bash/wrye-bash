@@ -180,19 +180,22 @@ class SkyrimGameInfo(GameInfo):
         u'NPC.AIPackageOverrides', u'NPC.Class', u'NPC.Race', u'ObjectBounds',
         u'Outfits.Add', u'Outfits.Remove', u'Relations.Add',
         u'Relations.Change', u'Relations.Remove', u'Relev', u'Sound',
-        u'SpellStats', u'Stats', u'Text',
+        u'SpellStats', u'Stats', u'Text', u'R.Body-Size-F', u'R.Body-Size-M',
+        u'R.Description', u'R.Skills', u'R.Voice-F', u'R.Voice-M',
+        u'R.AddSpells', u'R.ChangeSpells', u'R.Stats',
     }
 
     patchers = {
-        u'AliasModNames', u'ContentsChecker', u'ImportActors',
+        u'AliasModNames', u'ContentsChecker', u'ImportActors', u'ImportRaces',
         u'ImportActorsAIPackages', u'ImportActorsDeathItems',
         u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats',
+        u'ImportDestructible', u'ImportEffectsStats', u'ImportRacesSpells',
         u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
         u'ImportKeywords', u'ImportNames', u'ImportObjectBounds',
         u'ImportOutfits', u'ImportRelations', u'ImportSounds',
         u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
         u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
+        u'TweakRaces',
     }
 
     weaponTypes = (

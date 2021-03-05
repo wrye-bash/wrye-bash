@@ -369,3 +369,10 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in load_order.get_ordered(count):
             log(u'* %s: %d' % (srcMod,count[srcMod]))
+
+#------------------------------------------------------------------------------
+def is_templated(record, flag_name):
+    """Checks if the specified record has a template record and the
+    appropriate template flag set."""
+    return (getattr(record, u'template', None) is not None and
+            getattr(record.templateFlags, flag_name))

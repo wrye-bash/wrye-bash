@@ -809,23 +809,105 @@ relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
 #------------------------------------------------------------------------------
 ench_stats_attrs = (u'itemType', u'chargeAmount', u'enchantCost', u'flags')
 
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Import Effect Stats
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
                     u'resist_value', u'projectileSpeed', u'cef_enchantment',
                     u'cef_barter', u'effect_archetype', u'actorValue')
 
-# Record type to name dictionary
-record_type_name = {
-    b'ALCH': _(u'Ingestibles'),
-    b'AMMO': _(u'Ammo'),
-    b'ARMA': _(u'Armature'),
-    b'ARMO': _(u'Armors'),
-    b'BOOK': _(u'Books'),
-    b'INGR': _(u'Ingredients'),
-    b'KEYM': _(u'Keys'),
-    b'LIGH': _(u'Lights'),
-    b'MISC': _(u'Misc'),
-    b'WEAP': _(u'Weapons'),
+#------------------------------------------------------------------------------
+# Import Races
+#------------------------------------------------------------------------------
+import_races_attrs = {
+    b'RACE': {
+        u'R.Body-F': (u'femaleUpperBody', u'femaleLeftHand',
+                      u'femaleRightHand', u'femaleUpperBodyTexture'),
+        u'R.Body-M': (u'maleUpperBody', u'maleLeftHand', u'maleRightHand',
+                      u'maleUpperBodyTexture'),
+        u'R.Body-Size-F': (u'femaleHeight', u'femaleWeight'),
+        u'R.Body-Size-M': (u'maleHeight', u'maleWeight'),
+        u'R.Description': (u'description',),
+        u'R.Ears': (u'maleEars', u'femaleEars'),
+        u'R.Eyes': (u'eyes', u'femaleLeftEye', u'femaleRightEye',
+                    u'maleLeftEye', u'maleRightEye'),
+        u'R.Hair': (u'hairs',),
+        u'R.Head': (u'femaleHead', u'maleHead',),
+        u'R.Mouth': (u'maleMouth', u'femaleMouth', u'maleTongue',
+                     u'femaleTongue'),
+        u'R.Skills': (u'skills',),
+        u'R.Teeth': (u'femaleTeethLower', u'femaleTeethUpper',
+                     u'maleTeethLower', u'maleTeethUpper'),
+        u'R.Voice-F': (u'femaleVoice',),
+        u'R.Voice-M': (u'maleVoice',),
+    },
 }
+
+#------------------------------------------------------------------------------
+# Tweak Races
+#------------------------------------------------------------------------------
+race_tweaks = {
+    u'RaceTweak_PlayableEyes',
+    u'RaceTweak_MergeSimilarRaceHairs',
+    u'RaceTweak_MergeSimilarRaceEyes',
+    u'RaceTweak_PlayableHairs',
+    u'RaceTweak_PlayableHeadParts',
+    u'RaceTweak_GenderlessHairs',
+    u'RaceTweak_AllEyes',
+    u'RaceTweak_AllHairs',
+}
+race_tweaks_need_collection = True
+
+#------------------------------------------------------------------------------
+# NPC Checker
+#------------------------------------------------------------------------------
+# Note that we use _x to avoid exposing these to the dynamic importer
+def _fid(_x): return None, _x # None <=> game master
+_standard_eyes = [_fid(_x) for _x in (0x4252, 0x4253, 0x4254, 0x4255, 0x4256)]
+default_eyes = {
+    #--FalloutNV.esm
+    # Caucasian
+    _fid(0x000019): _standard_eyes,
+    # Hispanic
+    _fid(0x0038e5): _standard_eyes,
+    # Asian
+    _fid(0x0038e6): _standard_eyes,
+    # Ghoul
+    _fid(0x003b3e): [_fid(0x35e4f)],
+    # AfricanAmerican
+    _fid(0x00424a): _standard_eyes,
+    # AfricanAmerican Child
+    _fid(0x0042be): _standard_eyes,
+    # AfricanAmerican Old
+    _fid(0x0042bf): _standard_eyes,
+    # Asian Child
+    _fid(0x0042c0): _standard_eyes,
+    # Asian Old
+    _fid(0x0042c1): _standard_eyes,
+    # Caucasian Child
+    _fid(0x0042c2): _standard_eyes,
+    # Caucasian Old
+    _fid(0x0042c3): _standard_eyes,
+    # Hispanic Child
+    _fid(0x0042c4): _standard_eyes,
+    # Hispanic Old
+    _fid(0x0042c5): _standard_eyes,
+    # Caucasian Raider
+    _fid(0x04bb8d): [_fid(0x4cb10)],
+    # Hispanic Raider
+    _fid(0x04bf70): [_fid(0x4cb10)],
+    # Asian Raider
+    _fid(0x04bf71): [_fid(0x4cb10)],
+    # AfricanAmerican Raider
+    _fid(0x04bf72): [_fid(0x4cb10)],
+    # Hispanic Old Aged
+    _fid(0x0987dc): _standard_eyes,
+    # Asian Old Aged
+    _fid(0x0987dd): _standard_eyes,
+    # AfricanAmerican Old Aged
+    _fid(0x0987de): _standard_eyes,
+    # Caucasian Old Aged
+    _fid(0x0987df): _standard_eyes,
+}
+# Clean this up, no need to keep it around now
+del _fid

@@ -38,20 +38,20 @@ bethDataFiles = {
 }
 
 #------------------------------------------------------------------------------
-# Race Records
+# NPC Checker
 #------------------------------------------------------------------------------
 # Note that we use _x to avoid exposing these to the dynamic importer
-def _neh(_x): return u'Nehrim.esm', _x
-_standard_eyes = [_neh(_x) for _x in (0x27306, 0x27308, 0x27309)]
+def _fid(_x): return None, _x # None <=> game master
+_standard_eyes = [_fid(_x) for _x in (0x27306, 0x27308, 0x27309)]
 default_eyes = {
-    _neh(0x224FC):  _standard_eyes, # Alemanne
-    _neh(0x18D9E5): [_neh(_x) for _x in (
+    _fid(0x224FC): _standard_eyes, # Alemanne
+    _fid(0x18D9E5): [_fid(_x) for _x in (
         0x47EF, 0x18D9D9, 0x18D9DA, 0x18D9DB, 0x18D9DC, 0x18D9DD, 0x18D9DE,
         0x18D9DF, 0x18D9E0, 0x18D9E1, 0x18D9E2)], # Half-Aeterna
-    _neh(0x224FD):  _standard_eyes, # Normanne
+    _fid(0x224FD): _standard_eyes, # Normanne
 }
-# Clean these up, no need to keep them around now
-del _neh
+# Clean this up, no need to keep it around now
+del _fid
 
 #------------------------------------------------------------------------------
 # Tweak Actors

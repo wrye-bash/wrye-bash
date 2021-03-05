@@ -33,8 +33,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MreGmstBase, MelLString, MelMODS, MelColorInterpolator, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
-    MelUInt16, MelUInt32, \
-    MelActionFlags, MelCounter, \
+    MelUInt16, MelUInt32, MelActionFlags, MelCounter, MelRaceData, \
     MelPartialCounter, MelBounds, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, GameDecider, MelReadOnly, \
@@ -43,8 +42,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelPickupSound, MelDropSound, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOwnership, MelDebrData, \
-    get_structs
+    MelUInt32Flags, MelOwnership, MelDebrData, get_structs
 from ...exception import ModError, ModSizeError, StateError
 
 # Set MelModel in brec but only if unset, otherwise we are being imported from
@@ -2576,8 +2574,8 @@ class MreHdpt(MelRecord):
 
     HdptTypeFlags = Flags(0, Flags.getNames(
         (0, 'playable'),
-        (1, 'male'),
-        (2, 'female'),
+        (1, 'notFemale'),
+        (2, 'notMale'),
         (3, 'isExtraPart'),
         (4, 'useSolidTint'),
     ))
@@ -2587,7 +2585,7 @@ class MreHdpt(MelRecord):
         MelFull(),
         MelModel(),
         MelUInt8Flags(b'DATA', u'flags', HdptTypeFlags),
-        MelUInt32(b'PNAM', 'hdptTypes'),
+        MelUInt32(b'PNAM', 'hdpt_type'),
         MelFids(b'HNAM','extraParts'),
         MelGroups('partsData',
             MelUInt32(b'NAM0', 'headPartType',),
@@ -4238,12 +4236,9 @@ class MreRace(MelRecord):
         MelFid(b'WNAM', u'race_skin'),
         MelBipedObjectData(), # required
         MelKeywords(),
-        MelTruncatedStruct(b'DATA', # required
+        MelRaceData(b'DATA', # required
             [u'14b', u'2s', u'4f', u'I', u'7f', u'I', u'2i', u'f', u'i', u'5f',
-             u'i', u'4f', u'I', u'9f'], u'skill1', u'skill1Boost',
-            u'skill2', u'skill2Boost', u'skill3', u'skill3Boost', u'skill4',
-            u'skill4Boost', u'skill5', u'skill5Boost', u'skill6',
-            u'skill6Boost', u'skill7', u'skill7Boost', u'unknown1',
+             u'i', u'4f', u'I', u'9f'], u'skills', u'unknown1',
             u'maleHeight', u'femaleHeight', u'maleWeight', u'femaleWeight',
             (_data_flags_1, u'data_flags_1'), u'starting_health',
             u'starting_magicka', u'starting_stamina', u'base_carry_weight',

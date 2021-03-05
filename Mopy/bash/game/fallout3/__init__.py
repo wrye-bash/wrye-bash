@@ -135,11 +135,6 @@ class Fallout3GameInfo(GameInfo):
                             u'mouthObject', u'bodyAddOn1', u'bodyAddOn2',
                             u'bodyAddOn3')
 
-    # Remaining to add:
-    # 'R.Body-F', 'R.Body-M', 'R.Body-Size-F', 'R.Body-Size-M', 'R.Eyes',
-    # 'R.Hair', 'R.Attributes-F', 'R.Attributes-M', 'R.Description', 'R.Ears',
-    # 'R.Head', 'R.Mouth', 'R.Relations.Add', 'R.Relations.Change',
-    # 'R.Relations.Remove', 'R.Skills', 'R.Teeth', 'R.Voice-F', 'R.Voice-M'
     allTags = {
         u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
         u'Actors.AIPackagesForceAdd', u'Actors.Anims', u'Actors.CombatStyle',
@@ -155,23 +150,27 @@ class Fallout3GameInfo(GameInfo):
         u'NPC.Class', u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
         u'NpcFacesForceFullImport', u'ObjectBounds', u'Relations.Add',
         u'Relations.Change', u'Relations.Remove', u'Relev', u'Scripts',
-        u'Sound', u'SpellStats', u'Stats', u'Text',
+        u'Sound', u'SpellStats', u'Stats', u'Text', u'R.Body-F', u'R.Body-M',
+        u'R.Body-Size-F', u'R.Body-Size-M', u'R.Description', u'R.Ears',
+        u'R.Eyes', u'R.Hair', u'R.Head', u'R.Mouth', u'R.Skills', u'R.Teeth',
+        u'R.Voice-F', u'R.Voice-M', u'R.Relations.Add', u'R.Relations.Change',
+        u'R.Relations.Remove',
     }
 
     # Remaining to add (some of these might be impossible to port):
-    #  TweakNames, ImportRaces, u'ImportRacesSpells, ImportRacesRelations,
-    #  EyeChecker, TweakRaces, RaceChecker, NpcChecker, ReplaceFormIDs
+    #  TweakNames, ReplaceFormIDs
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
-        u'ImportActorsAIPackages', u'ImportActorsAnimations',
-        u'ImportActorsDeathItems', u'ImportActorsFaces',
+        u'ImportActorsAIPackages', u'ImportActorsAnimations', u'NpcChecker',
+        u'ImportActorsDeathItems', u'ImportActorsFaces', u'RaceChecker',
         u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats',
+        u'ImportDestructible', u'ImportEffectsStats', u'ImportRaces',
         u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
         u'ImportNames', u'ImportObjectBounds', u'ImportRelations',
         u'ImportScripts', u'ImportSounds', u'ImportSpellStats', u'ImportStats',
         u'ImportText', u'LeveledLists', u'MergePatches', u'TweakActors',
-        u'TweakAssorted', u'TweakSettings',
+        u'TweakAssorted', u'TweakSettings', u'ImportRacesRelations',
+        u'TweakRaces',
     }
 
     weaponTypes = (

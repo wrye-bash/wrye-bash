@@ -999,9 +999,9 @@ ench_stats_attrs = (u'enchantmentCost', u'generalFlags', u'castType',
                     u'enchantmentAmount', u'targetType', u'enchantType',
                     u'chargeTime', u'baseEnchantment', u'wornRestrictions')
 
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Import Effect Stats
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'magic_skill',
                     u'resist_value', u'taper_weight', u'minimum_skill_level',
                     u'spellmaking_area', u'spellmaking_casting_time',
@@ -1011,18 +1011,30 @@ mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'magic_skill',
                     u'equip_ability', u'perk_to_apply',
                     u'script_effect_ai_score', u'script_effect_ai_delay_time')
 
-# Record type to name dictionary
-record_type_name = {
-    b'ALCH': _(u'Ingestibles'),
-    b'AMMO': _(u'Ammo'),
-    b'APPA': _(u'Apparatuses'),
-    b'ARMO': _(u'Armors'),
-    b'BOOK': _(u'Books'),
-    b'INGR': _(u'Ingredients'),
-    b'KEYM': _(u'Keys'),
-    b'LIGH': _(u'Lights'),
-    b'MISC': _(u'Misc'),
-    b'SLGM': _(u'Soulgems'),
-    b'SPEL': _(u'Spells'),
-    b'WEAP': _(u'Weapons'),
+#------------------------------------------------------------------------------
+# Import Races
+#------------------------------------------------------------------------------
+import_races_attrs = {
+    b'RACE': {
+        u'R.Body-Size-F': (u'femaleHeight', u'femaleWeight'),
+        u'R.Body-Size-M': (u'maleHeight', u'maleWeight'),
+        u'R.Description': (u'description',),
+        u'R.Skills': (u'skills',),
+        u'R.Stats': (u'starting_health', u'starting_magicka',
+                     u'starting_stamina', u'base_carry_weight',
+                     u'health_regen', u'magicka_regen', u'stamina_regen',
+                     u'unarmed_damage', u'unarmed_reach'),
+        u'R.Voice-F': (u'femaleVoice',),
+        u'R.Voice-M': (u'maleVoice',),
+    },
+}
+
+#--------------------------------------------------------------------------
+# Tweak Races
+#--------------------------------------------------------------------------
+race_tweaks = {
+    u'RaceTweak_PlayableHeadParts',
+    u'RaceTweak_GenderlessHeadParts',
+    u'RaceTweak_ForceBehaviorGraphGender_Female',
+    u'RaceTweak_ForceBehaviorGraphGender_Male',
 }

@@ -27,10 +27,10 @@ to the Actors Multitweaker - as well as the TweakActors itself."""
 import random
 import re
 # Internal
+from .base import MultiTweakItem, MultiTweaker, is_templated
 from ... import bass, bush
 from ...bolt import GPath
 from ...exception import AbstractError
-from .base import MultiTweakItem, MultiTweaker
 
 class _AActorTweak(MultiTweakItem):
     """Base for all actor tweaks."""
@@ -43,13 +43,6 @@ class _AActorTweak(MultiTweakItem):
         except AttributeError:
             # Some weird plugins have NPCs with no skeleton assigned to them
             return None
-
-    @staticmethod
-    def _is_templated(record, flag_name):
-        """Checks if the specified record has a template record and the
-        appropriate template flag set."""
-        return (getattr(record, u'template', None) is not None
-                and getattr(record.templateFlags, flag_name))
 
 class _ANpcTweak(_AActorTweak):
     """Base for all NPC_ tweaks."""
@@ -327,7 +320,7 @@ class QuietFeetPatcher(_ACreatureTweak):
 
     def wants_record(self, record):
         # Check if we're templated first (only relevant on FO3/FNV)
-        if self._is_templated(record, u'useModelAnimation'): return False
+        if is_templated(record, u'useModelAnimation'): return False
         chosen_target = self.choiceValues[self.chosen][0]
         if chosen_target == u'partial' and not any(
                 s.type in (2, 3) for s in record.sounds):
@@ -355,7 +348,7 @@ class IrresponsibleCreaturesPatcher(_ACreatureTweak):
         # Must not be templated (FO3/FNV only), the creature must not be
         # irresponsible already, and if we're in 'only horses' mode, the
         # creature must be a horse
-        return (not self._is_templated(record, u'useAIData')
+        return (not is_templated(record, u'useAIData')
                 and record.responsibility != 0
                 and (self.choiceValues[self.chosen][0] == u'all'
                      or record.creatureType == 4))
