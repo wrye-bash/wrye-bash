@@ -575,6 +575,9 @@ class GameInfo(object):
     # Tweak Races
     #--------------------------------------------------------------------------
     race_tweaks = set()
+    # Whether or not Tweak Races should collect extra data from EYES, HAIR and
+    # RACE records and make it available to the tweaks
+    race_tweaks_need_collection = False
 
     #--------------------------------------------------------------------------
     # Magic Effects - Oblivion-specific
@@ -638,7 +641,7 @@ class GameInfo(object):
         u'spell_stats_types', u'statsHeaders', u'statsTypes', u'text_types',
         u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
         u'nonplayable_biped_flags', u'not_playable_flag', u'settings_tweaks',
-        u'import_races_attrs',
+        u'import_races_attrs', u'race_tweaks_need_collection',
     }
 
     @classmethod

@@ -26,6 +26,7 @@ from itertools import izip
 
 from .base import MultiTweakItem, MultiTweaker
 from ... import bush
+from ...bolt import attrgetter_cache
 
 _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
                   u'dark seducer', u'golden saint', u'high elf', u'imperial',
@@ -280,6 +281,64 @@ class RaceTweak_GenderlessHeadParts(_ARGenderlessTweak):
     tweak_key = u'genderless_head_parts'
     tweak_log_msg = _(u'Head Parts Tweaked: %(total_changed)d')
 
+    def wants_record(self, record):
+        # Exclude eyes and faces (types 2 & 3) because they just look wrong
+        return record.hdpt_type not in (2, 3) and super(
+            RaceTweak_GenderlessHeadParts, self).wants_record(record)
+
+# -----------------------------------------------------------------------------
+class _ARFBGGTweak(_ARaceTweak):
+    """Forces behavior graph path to match the gender it's specified for."""
+    tweak_choices = [(_(u'Match'), u'match_gender'),
+                     (_(u'Invert'), u'invert_gender'),]
+    # Variables based on whether or not we're targeting the female graph
+    # (0 = male, 1 = female)
+    _graph_defaults = (u'' r'Actors\Character\DefaultMale.hkx',
+                       u'' r'Actors\Character\DefaultFemale.hkx')
+    _graph_defaults_lower = tuple(g.lower() for g in reversed(_graph_defaults))
+    _graph_attrs = (u'male_behavior_graph', u'female_behavior_graph')
+    # Whether to target the male or female behavior graph
+    _targets_female_graph = False
+
+    def _set_cached_attrs(self, __attrget=attrgetter_cache):
+        """Set the target attributes based on the selection the user made."""
+        female_graph = self._targets_female_graph
+        self._target_graph_getter = __attrget[self._graph_attrs[female_graph]]
+        # Apply the inversion now if the user has chosen to invert
+        if self.choiceValues[self.chosen][0] == u'invert_gender':
+            female_graph = not female_graph
+        self._target_graph_out = self._graph_defaults[female_graph]
+        self._target_graph_in = self._graph_defaults_lower[female_graph]
+
+    @property
+    def get_target_graph(self):
+        try:
+            return self._target_graph_getter
+        except AttributeError:
+            self._set_cached_attrs()
+            return self._target_graph_getter
+
+    def wants_record(self, record):
+        target_graph = self.get_target_graph(record)
+        return (target_graph and target_graph.modPath.lower() ==
+                self._target_graph_in)
+
+    def tweak_record(self, record):
+        self.get_target_graph(record).modPath = self._target_graph_out
+
+class RaceTweak_ForceBehaviorGraphGender_Female(_ARFBGGTweak):
+    tweak_name = _(u'Force Behavior Graph Gender: Female')
+    tweak_tip = _(u'Controls whether certain races will walk with inverted '
+                  u'gender animations (e.g. orcs).')
+    tweak_key = u'force_behavior_graph_gender_female'
+    _targets_female_graph = True
+
+class RaceTweak_ForceBehaviorGraphGender_Male(_ARFBGGTweak):
+    tweak_name = _(u'Force Behavior Graph Gender: Male')
+    tweak_tip = _(u'Controls whether certain races will walk with inverted '
+                  u'gender animations (e.g. orcs).')
+    tweak_key = u'force_behavior_graph_gender_male'
+
 # -----------------------------------------------------------------------------
 class TweakRacesPatcher(MultiTweaker):
     """Tweaks race things."""
@@ -287,32 +346,36 @@ class TweakRacesPatcher(MultiTweaker):
 
     def initData(self, progress):
         super(TweakRacesPatcher, self).initData(progress)
-        self.collected_tweak_data = {b'EYES': [], b'HAIR': []}
-        for race_tweak in self.enabled_tweaks:
-            race_tweak.tweak_races_data = self.collected_tweak_data
+        if bush.game.race_tweaks_need_collection:
+            self.collected_tweak_data = {b'EYES': [], b'HAIR': []}
+            for race_tweak in self.enabled_tweaks:
+                race_tweak.tweak_races_data = self.collected_tweak_data
 
     def scanModFile(self, modFile, progress):
-        # Need to gather EYES/HAIR data for the tweaks
-        tweak_data = self.collected_tweak_data
-        for tweak_type in (b'EYES', b'HAIR'):
-            if not tweak_type in modFile.tops: continue
-            for record in modFile.tops[tweak_type].getActiveRecords():
-                tweak_data[tweak_type].append(record.fid)
+        if bush.game.race_tweaks_need_collection:
+            # Need to gather EYES/HAIR data for the tweaks
+            tweak_data = self.collected_tweak_data
+            for tweak_type in (b'EYES', b'HAIR'):
+                if tweak_type not in modFile.tops: continue
+                for record in modFile.tops[tweak_type].getActiveRecords():
+                    tweak_data[tweak_type].append(record.fid)
         super(TweakRacesPatcher, self).scanModFile(modFile, progress)
 
     def buildPatch(self, log, progress):
-        # Need to gather RACE data for the tweaks
-        tweak_data = self.collected_tweak_data
-        for record in self.patchFile.tops[b'RACE'].getActiveRecords():
-            ##: Are these checks needed for the tweak data collection?
-            # if not record.eyes:
-            #     continue  # Sheogorath. Assume is handled correctly.
-            # if not record.rightEye or not record.leftEye:
-            #     continue # WIPZ race?
-            # if re.match(u'^117[a-zA-Z]', record.eid, flags=re.U):
-            #     continue  # x117 race?
-            if record.full:
-                tweak_data[record.full.lower()] = {
-                    u'hairs': record.hairs, u'eyes': record.eyes,
-                    u'relations': record.relations}
+        if (bush.game.race_tweaks_need_collection
+                and b'RACE' in self.patchFile.tops):
+            # Need to gather RACE data for the tweaks
+            tweak_data = self.collected_tweak_data
+            for record in self.patchFile.tops[b'RACE'].getActiveRecords():
+                ##: Are these checks needed for the tweak data collection?
+                # if not record.eyes:
+                #     continue  # Sheogorath. Assume is handled correctly.
+                # if not record.rightEye or not record.leftEye:
+                #     continue # WIPZ race?
+                # if re.match(u'^117[a-zA-Z]', record.eid, flags=re.U):
+                #     continue  # x117 race?
+                if record.full:
+                    tweak_data[record.full.lower()] = {
+                        u'hairs': record.hairs, u'eyes': record.eyes,
+                        u'relations': record.relations}
         super(TweakRacesPatcher, self).buildPatch(log, progress)

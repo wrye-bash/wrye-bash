@@ -5615,8 +5615,26 @@ C.Location, -C.LockList
         <tr><td>Irresponsible Creatures</td><td>Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes.</td><td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas</td></tr>
         <tr><td>Mayu's Animation Overhaul Skeleton Tweaker</td><td>Sets NPC skeletons paths to match that required for MAO to work. <strong>Requires</strong> Mayu's Animation Overhaul or it will almost certainly cause CTDs.</td><td>Oblivion</td></tr>
         <tr><td>No Bloody Creatures</td><td>Nulls the blood records of all creatures; acts like 'Mart's Monster Mod - No Blood.esp' except it is universal and doesn't work with MMM (MMM uses a different system - it won't cause any harm if used with MMM, it will just have pretty much no effect).</td><td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td></tr>
-        <tr><td>Opposite Gender Anims: Female</td><td>Enables or disables the 'Opposite Gender Anims' flag for all female NPCs. Similar to the 'Feminine Females' mod, but applies to your whole load order.</td><td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</td></tr>
-        <tr><td>Opposite Gender Anims: Male</td><td>Enables or disables the 'Opposite Gender Anims' flag for all male NPCs. Similar to the 'Feminine Females' mod, but applies to your whole load order.</td><td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</td></tr>
+        <tr>
+            <td id="patch-tweak-actors-ogaf">Opposite Gender Anims: Female</td>
+            <td>Enables or disables the 'Opposite Gender Anims' flag for all
+                female NPCs. Similar to the 'Feminine Females' mod, but applies
+                to your whole load order. If you're using this, you probably
+                want <a href="#patch-tweak-races-fbggf">Force Behavior Graph
+                    Gender: Female</a> as well.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special
+                Edition</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-actors-ogam">Opposite Gender Anims: Male</td>
+            <td>Enables or disables the 'Opposite Gender Anims' flag for all
+                male NPCs. Similar to the 'Feminine Females' mod, but applies
+                to your whole load order. If you're using this, you probably
+                want <a href="#patch-tweak-races-fbggm">Force Behavior Graph
+                    Gender: Male</a> as well.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special
+                Edition</td>
+        </tr>
         <tr><td>Quiet Feet</td><td>Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost.</td><td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas</td></tr>
         <tr><td>Real Walk for female NPCs</td><td>Changes all female NPCs to use Mur Zuk's Real Walk. <strong>Requires</strong> Mur Zuk's Real Walk animation file.</td><td>Oblivion</td></tr>
         <tr><td>Redguard FGTS Nuller</td><td>Sets Redguard NPC FGTS subrecords to null; for use with Better Redguards.</td><td>Oblivion</td></tr>
@@ -6015,6 +6033,12 @@ C.Location, -C.LockList
                 Fallout&colon; New Vegas</td>
         </tr>
         <tr>
+            <td>Playable Head Parts</td>
+            <td>Sets all head parts to be playable.</td>
+            <td>All but Oblivion, Nehrim&colon; At Fate's Edge &amp;
+                Fallout 4</td>
+        </tr>
+        <tr>
             <td>Races Have All Eyes</td>
             <td>Gives all races all eyes - although Googly Eye scanning/removal
                 takes place after this so the final patch will not have all
@@ -6033,6 +6057,36 @@ C.Location, -C.LockList
             <td>Sets all hairs to be useable regardless of gender.</td>
             <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
                 Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Genderless Head Parts</td>
+            <td>Sets all head parts to be useable regardless of gender. The
+                only exceptions are eyes and faces, which look extremely broken
+                when used by a character with a different gender.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-races-fbggf">Force Behavior Graph Gender:
+                Female</td>
+            <td>Changes whether or not female NPCs of certain races should walk
+                with inverted gender animations (e.g. orcs). If you're using
+                this, you probably want
+                <a href="#patch-tweak-actors-ogaf">Opposite Gender Anims:
+                    Female</a> as well.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-races-fbggm">Force Behavior Graph Gender:
+                Male</td>
+            <td>Changes whether or not male NPCs of certain races should walk
+                with inverted gender animations (e.g. orcs). If you're using
+                this, you probably want
+                <a href="#patch-tweak-actors-ogam">Opposite Gender Anims:
+                    Male</a> as well.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
         </tr>
     </tbody>
 </table>

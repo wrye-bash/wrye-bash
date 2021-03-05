@@ -1028,3 +1028,13 @@ import_races_attrs = {
         u'R.Voice-M': (u'maleVoice',),
     },
 }
+
+#--------------------------------------------------------------------------
+# Tweak Races
+#--------------------------------------------------------------------------
+race_tweaks = {
+    u'RaceTweak_PlayableHeadParts',
+    u'RaceTweak_GenderlessHeadParts',
+    u'RaceTweak_ForceBehaviorGraphGender_Female',
+    u'RaceTweak_ForceBehaviorGraphGender_Male',
+}

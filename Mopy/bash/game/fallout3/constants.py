@@ -856,6 +856,7 @@ race_tweaks = {
     u'RaceTweak_AllEyes',
     u'RaceTweak_AllHairs',
 }
+race_tweaks_need_collection = True
 
 #------------------------------------------------------------------------------
 # NPC Checker

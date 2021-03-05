@@ -2585,7 +2585,7 @@ class MreHdpt(MelRecord):
         MelFull(),
         MelModel(),
         MelUInt8Flags(b'DATA', u'flags', HdptTypeFlags),
-        MelUInt32(b'PNAM', 'hdptTypes'),
+        MelUInt32(b'PNAM', 'hdpt_type'),
         MelFids(b'HNAM','extraParts'),
         MelGroups('partsData',
             MelUInt32(b'NAM0', 'headPartType',),
