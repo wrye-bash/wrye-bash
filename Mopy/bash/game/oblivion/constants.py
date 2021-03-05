@@ -1159,21 +1159,3 @@ actor_values = [
     u'Darkness', #--70
     u'ResistWaterDamage',
 ]
-
-# Record type to name dictionary
-record_type_name = {
-    b'ALCH': _(u'Potions'),
-    b'AMMO': _(u'Ammo'),
-    b'APPA': _(u'Apparatuses'),
-    b'ARMO': _(u'Armors'),
-    b'BOOK': _(u'Books'),
-    b'CLOT': _(u'Clothes'),
-    b'INGR': _(u'Ingredients'),
-    b'KEYM': _(u'Keys'),
-    b'LIGH': _(u'Lights'),
-    b'MISC': _(u'Misc'),
-    b'SGST': _(u'Sigil Stones'),
-    b'SLGM': _(u'Soulgems'),
-    b'SPEL': _(u'Spells'),
-    b'WEAP': _(u'Weapons'),
-}

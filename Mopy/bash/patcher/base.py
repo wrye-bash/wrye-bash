@@ -355,12 +355,3 @@ class ImportPatcher(ListPatcher, ModLoader):
         log(self.__class__.logMsg % sum(mod_count.values()))
         for mod in load_order.get_ordered(mod_count):
             log(u'* %s: %3d' % (mod, mod_count[mod]))
-
-    def _plog2(self,log,allCounts):
-        log(self.__class__.logMsg)
-        for top_rec_type, count, counts in allCounts:
-            if not count: continue
-            typeName = bush.game.record_type_name[top_rec_type]
-            log(u'* %s: %d' % (typeName, count))
-            for modName, type_counts in dict_sort(counts):
-                log(u'  * %s: %d' % (modName, type_counts))

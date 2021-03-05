@@ -816,20 +816,6 @@ mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
                     u'resist_value', u'projectileSpeed', u'cef_enchantment',
                     u'cef_barter', u'effect_archetype', u'actorValue')
 
-# Record type to name dictionary
-record_type_name = {
-    b'ALCH': _(u'Ingestibles'),
-    b'AMMO': _(u'Ammo'),
-    b'ARMA': _(u'Armature'),
-    b'ARMO': _(u'Armors'),
-    b'BOOK': _(u'Books'),
-    b'INGR': _(u'Ingredients'),
-    b'KEYM': _(u'Keys'),
-    b'LIGH': _(u'Lights'),
-    b'MISC': _(u'Misc'),
-    b'WEAP': _(u'Weapons'),
-}
-
 #------------------------------------------------------------------------------
 # Import Races
 #------------------------------------------------------------------------------

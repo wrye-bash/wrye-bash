@@ -597,9 +597,6 @@ class GameInfo(object):
     # Human-readable names for each actor value
     actor_values = []
 
-    # Record type to name dictionary
-    record_type_name = {}
-
     # Set in game/*/default_tweaks.py, this is a dictionary mapping names for
     # 'default' INI tweaks (i.e. ones that we ship with WB and that can't be
     # deleted) to OrderedDicts that implement the actual tweaks. See
@@ -635,13 +632,13 @@ class GameInfo(object):
         u'hostile_effects', u'inventoryTypes', u'keywords_types', u'listTypes',
         u'mgef_basevalue', u'mgef_name', u'mgef_school', u'mgef_stats_attrs',
         u'namesTypes', u'nirnroots', u'object_bounds_types', u'pricesTypes',
-        u'record_type_name', u'relations_attrs', u'relations_csv_header',
+        u'relations_attrs', u'relations_csv_header',  u'race_tweaks',
         u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
         u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
         u'spell_stats_types', u'statsHeaders', u'statsTypes', u'text_types',
         u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
         u'nonplayable_biped_flags', u'not_playable_flag', u'settings_tweaks',
-        u'import_races_attrs', u'race_tweaks',
+        u'import_races_attrs',
     }
 
     @classmethod

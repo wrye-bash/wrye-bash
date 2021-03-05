@@ -1028,19 +1028,3 @@ import_races_attrs = {
         u'R.Voice-M': (u'maleVoice',),
     },
 }
-
-# Record type to name dictionary
-record_type_name = {
-    b'ALCH': _(u'Ingestibles'),
-    b'AMMO': _(u'Ammo'),
-    b'APPA': _(u'Apparatuses'),
-    b'ARMO': _(u'Armors'),
-    b'BOOK': _(u'Books'),
-    b'INGR': _(u'Ingredients'),
-    b'KEYM': _(u'Keys'),
-    b'LIGH': _(u'Lights'),
-    b'MISC': _(u'Misc'),
-    b'SLGM': _(u'Soulgems'),
-    b'SPEL': _(u'Spells'),
-    b'WEAP': _(u'Weapons'),
-}
