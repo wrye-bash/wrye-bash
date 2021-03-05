@@ -465,51 +465,52 @@ inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
 # Race Records
 #------------------------------------------------------------------------------
 # Note that we use _x to avoid exposing these to the dynamic importer
-def _ob(_x): return u'Oblivion.esm', _x
+def _fid(_x): return None, _x # None <=> game master
 def _cobl(_x): return u'Cobl Main.esm', _x
-_standard_eyes = [_ob(_x) for _x in (0x27306, 0x27308, 0x27309)] + \
+_standard_eyes = [_fid(_x) for _x in (0x27306, 0x27308, 0x27309)] + \
                  [_cobl(_x) for _x in (0x000821, 0x000823, 0x000825, 0x000828,
                                        0x000834, 0x000837, 0x000839, 0x00084F)]
 default_eyes = {
     #--Oblivion.esm
     # Argonian
-    _ob(0x23FE9): [_ob(0x3E91E)] +
-                  [_cobl(_x) for _x in (0x01F407, 0x01F408, 0x01F40B, 0x01F40C,
-                                        0x01F410, 0x01F411, 0x01F414, 0x01F416,
-                                        0x01F417, 0x01F41A, 0x01F41B, 0x01F41E,
-                                        0x01F41F, 0x01F422, 0x01F424)],
+    _fid(0x23FE9): [_fid(0x3E91E)] +
+                   [_cobl(_x) for _x in (0x01F407, 0x01F408, 0x01F40B,
+                                         0x01F40C, 0x01F410, 0x01F411,
+                                         0x01F414, 0x01F416, 0x01F417,
+                                         0x01F41A, 0x01F41B, 0x01F41E,
+                                         0x01F41F, 0x01F422, 0x01F424)],
     # Breton
-    _ob(0x0224FC): _standard_eyes,
+    _fid(0x0224FC): _standard_eyes,
     # Dark Elf
-    _ob(0x0191C1): [_ob(0x27307)] +
-                   [_cobl(_x) for _x in (0x000861, 0x000864, 0x000851)],
+    _fid(0x0191C1): [_fid(0x27307)] +
+                    [_cobl(_x) for _x in (0x000861, 0x000864, 0x000851)],
     # High Elf
-    _ob(0x019204): _standard_eyes,
+    _fid(0x019204): _standard_eyes,
     # Imperial
-    _ob(0x000907): _standard_eyes,
+    _fid(0x000907): _standard_eyes,
     # Khajiit
-    _ob(0x022C37): [_ob(0x375c8)] +
-                   [_cobl(_x) for _x in (0x00083B, 0x00083E, 0x000843,
-                                         0x000846, 0x000849, 0x00084C)],
+    _fid(0x022C37): [_fid(0x375c8)] +
+                    [_cobl(_x) for _x in (0x00083B, 0x00083E, 0x000843,
+                                          0x000846, 0x000849, 0x00084C)],
     # Nord
-    _ob(0x0224FD): _standard_eyes,
+    _fid(0x0224FD): _standard_eyes,
     # Orc
-    _ob(0x0191C0): [_ob(0x2730A)] +
-                   [_cobl(_x) for _x in (0x000853, 0x000855, 0x000858,
-                                         0x00085A, 0x00085C, 0x00085E)],
+    _fid(0x0191C0): [_fid(0x2730A)] +
+                    [_cobl(_x) for _x in (0x000853, 0x000855, 0x000858,
+                                          0x00085A, 0x00085C, 0x00085E)],
     # Redguard
-    _ob(0x000D43): _standard_eyes,
+    _fid(0x000D43): _standard_eyes,
     # Wood Elf
-    _ob(0x0223C8): _standard_eyes,
+    _fid(0x0223C8): _standard_eyes,
     #--Cobl Main.esm
     # cobRaceAureal
-    _cobl(0x07948): [_ob(0x54BBA)],
+    _cobl(0x07948): [_fid(0x54BBA)],
     # cobRaceHidden
     _cobl(0x02B60): [_cobl(_x) for _x in (0x01F43A, 0x01F438, 0x01F439,
                                           0x0015A7, 0x01792C, 0x0015AC,
                                           0x0015A8, 0x0015AB, 0x0015AA)],
     # cobRaceMazken
-    _cobl(0x07947): [_ob(0x54BB9)],
+    _cobl(0x07947): [_fid(0x54BB9)],
     # cobRaceOhmes
     _cobl(0x1791B): [_cobl(_x) for _x in (0x017901, 0x017902, 0x017903,
                                           0x017904, 0x017905, 0x017906,
@@ -527,7 +528,7 @@ default_eyes = {
                                           0x00DBE1)],
 }
 # Clean these up, no need to keep them around now
-del _cobl, _ob
+del _cobl, _fid
 
 #------------------------------------------------------------------------------
 # Import Text

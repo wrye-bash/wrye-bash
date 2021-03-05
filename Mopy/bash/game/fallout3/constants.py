@@ -856,3 +856,57 @@ import_races_attrs = {
         u'R.Voice-M': (u'maleVoice',),
     },
 }
+
+#------------------------------------------------------------------------------
+# NPC Checker
+#------------------------------------------------------------------------------
+# Note that we use _x to avoid exposing these to the dynamic importer
+def _fid(_x): return None, _x # None <=> game master
+_standard_eyes = [_fid(_x) for _x in (0x4252, 0x4253, 0x4254, 0x4255, 0x4256)]
+default_eyes = {
+    #--FalloutNV.esm
+    # Caucasian
+    _fid(0x000019): _standard_eyes,
+    # Hispanic
+    _fid(0x0038e5): _standard_eyes,
+    # Asian
+    _fid(0x0038e6): _standard_eyes,
+    # Ghoul
+    _fid(0x003b3e): [_fid(0x35e4f)],
+    # AfricanAmerican
+    _fid(0x00424a): _standard_eyes,
+    # AfricanAmerican Child
+    _fid(0x0042be): _standard_eyes,
+    # AfricanAmerican Old
+    _fid(0x0042bf): _standard_eyes,
+    # Asian Child
+    _fid(0x0042c0): _standard_eyes,
+    # Asian Old
+    _fid(0x0042c1): _standard_eyes,
+    # Caucasian Child
+    _fid(0x0042c2): _standard_eyes,
+    # Caucasian Old
+    _fid(0x0042c3): _standard_eyes,
+    # Hispanic Child
+    _fid(0x0042c4): _standard_eyes,
+    # Hispanic Old
+    _fid(0x0042c5): _standard_eyes,
+    # Caucasian Raider
+    _fid(0x04bb8d): [_fid(0x4cb10)],
+    # Hispanic Raider
+    _fid(0x04bf70): [_fid(0x4cb10)],
+    # Asian Raider
+    _fid(0x04bf71): [_fid(0x4cb10)],
+    # AfricanAmerican Raider
+    _fid(0x04bf72): [_fid(0x4cb10)],
+    # Hispanic Old Aged
+    _fid(0x0987dc): _standard_eyes,
+    # Asian Old Aged
+    _fid(0x0987dd): _standard_eyes,
+    # AfricanAmerican Old Aged
+    _fid(0x0987de): _standard_eyes,
+    # Caucasian Old Aged
+    _fid(0x0987df): _standard_eyes,
+}
+# Clean this up, no need to keep it around now
+del _fid
