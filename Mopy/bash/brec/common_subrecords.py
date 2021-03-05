@@ -35,7 +35,7 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelUInt8Flags, MelSInt32
 from .utils_constants import _int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
-from ..exception import ModError
+from ..exception import ModError, ModSizeError
 
 #------------------------------------------------------------------------------
 class MelActionFlags(MelUInt32Flags):
@@ -410,10 +410,16 @@ class MelPickupSound(MelFid):
         super(MelPickupSound, self).__init__(b'YNAM', u'pickupSound')
 
 #------------------------------------------------------------------------------
-# FIXME(inf) Can't use MelLists because one of the attrs is a flags field,
-#  which MelLists doesn't support -> fix that and base this on MelLists
-class MelRaceData(MelStruct):
+##: This is a strange fusion of MelLists, MelStruct and MelTruncatedStruct
+# because one of the attrs is a flags field and in Skyrim it's truncated too
+class MelRaceData(MelTruncatedStruct):
     """Pack RACE skills and skill boosts as a single attribute."""
+
+    def __init__(self, sub_sig, sub_fmt, *elements, **kwargs):
+        if 'old_versions' not in kwargs:
+            kwargs['old_versions'] = set() # set default to avoid errors
+        super(MelRaceData, self).__init__(sub_sig, sub_fmt, *elements,
+                                          **kwargs)
 
     @staticmethod
     def _expand_formats(elements, struct_formats):
@@ -428,7 +434,13 @@ class MelRaceData(MelStruct):
         return expanded_fmts
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        unpacked = ins.unpack(self._unpacker, size_, *debug_strs)
+        try:
+            target_unpacker = self._all_unpackers[size_]
+        except KeyError:
+            raise ModSizeError(ins.inName, debug_strs,
+                               tuple(self._all_unpackers), size_)
+        unpacked = ins.unpack(target_unpacker, size_, *debug_strs)
+        unpacked = self._pre_process_unpacked(unpacked)
         record.skills = unpacked[:14]
         for attr, value, action in izip(self.attrs[1:], unpacked[14:],
                                         self.actions[1:]):
