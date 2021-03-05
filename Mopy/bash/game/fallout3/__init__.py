@@ -158,20 +158,19 @@ class Fallout3GameInfo(GameInfo):
     }
 
     # Remaining to add (some of these might be impossible to port):
-    #  TweakNames, ReplaceFormIDs,
-    #  RaceChecker, NpcChecker,
+    #  TweakNames, ReplaceFormIDs
+    #  NpcChecker
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
         u'ImportActorsAIPackages', u'ImportActorsAnimations',
-        u'ImportActorsDeathItems', u'ImportActorsFaces',
+        u'ImportActorsDeathItems', u'ImportActorsFaces', u'RaceChecker',
         u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats',
+        u'ImportDestructible', u'ImportEffectsStats', u'ImportRaces',
         u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
         u'ImportNames', u'ImportObjectBounds', u'ImportRelations',
         u'ImportScripts', u'ImportSounds', u'ImportSpellStats', u'ImportStats',
         u'ImportText', u'LeveledLists', u'MergePatches', u'TweakActors',
-        u'TweakAssorted', u'TweakSettings', u'ImportRaces',
-        u'ImportRacesRelations',
+        u'TweakAssorted', u'TweakSettings', u'ImportRacesRelations',
     }
 
     weaponTypes = (

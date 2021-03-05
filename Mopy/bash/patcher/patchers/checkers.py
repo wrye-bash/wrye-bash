@@ -280,10 +280,6 @@ class RaceCheckerPatcher(Patcher):
     patcher_order = 40 # Run after Tweak Races
     _read_sigs = (b'EYES', b'HAIR', b'RACE')
 
-    @property
-    def active_write_sigs(self):
-        return (b'RACE',) if self.isActive else ()
-
     def scanModFile(self, modFile, progress):
         if not (set(modFile.tops) & set(self._read_sigs)): return
         for pb_sig in self._read_sigs:
@@ -340,10 +336,6 @@ class NpcCheckerPatcher(Patcher):
     def __init__(self, p_name, p_file):
         super(NpcCheckerPatcher, self).__init__(p_name, p_file)
         self.vanilla_eyes = _find_vanilla_eyes()
-
-    @property
-    def active_write_sigs(self):
-        return (b'NPC_',) if self.isActive else ()
 
     def scanModFile(self, modFile, progress):
         """Add appropriate records from modFile."""
