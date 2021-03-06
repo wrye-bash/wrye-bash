@@ -327,7 +327,7 @@ class CenteredSplash(_AComponent):
                                                    1, None) # Timeout - ignored
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.stop_splash)
-        _wx.Yield()
+        _wx.Yield() ##: huh?
 
     def stop_splash(self):
         """Hides and terminates the splash screen."""

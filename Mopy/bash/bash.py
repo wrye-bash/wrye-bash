@@ -554,11 +554,15 @@ def _close_dialog_windows():
     This will not close the main bash window (BashFrame) because closing that
     results in virtual function call exceptions."""
     import wx as _wx
+    import wx.adv as _adv
     for window in _wx.GetTopLevelWindows():
         if basher is None or not isinstance(window, basher.BashFrame):
             if isinstance(window, _wx.Dialog):
                 window.Destroy()
-            window.Close()
+            ##: Skip for SplashScreen because it may hard-crash Python with
+            # code -1073740771 (0xC000041D) when we call anything on it
+            if not isinstance(window, _adv.SplashScreen):
+                window.Close()
 
 class _AppReturnCode(object):
     def __init__(self): self.value = None
