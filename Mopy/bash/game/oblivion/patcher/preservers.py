@@ -127,8 +127,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
 
     def __init__(self, p_name, p_file, p_sources):
         super(CoblExhaustionPatcher, self).__init__(p_name, p_file, p_sources)
-        # FIXME(inf) Should this be &=? See also MorphFactionsPatcher below
-        self.isActive |= (cobl_main in p_file.loadSet and
+        self.isActive &= (cobl_main in p_file.loadSet and
             self.patchFile.p_file_minfos.getVersionFloat(cobl_main) > 1.65)
         self.id_exhaustion = self.id_info
 
