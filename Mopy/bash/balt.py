@@ -27,15 +27,12 @@ now. See #190, its code should be refactored and land in basher and/or gui."""
 from __future__ import division
 
 import io
-import re
 
 from . import bass # for dirs - try to avoid
-#--Localization
-#..Handled by bolt, so import that.
 from . import bolt
-from .bolt import GPath, deprint
-from .exception import AbstractError, AccessDeniedError, ArgumentError, \
-    BoltError, CancelError, SkipError, StateError
+from .bolt import GPath, deprint, readme_url
+from .exception import AbstractError, AccessDeniedError, BoltError, \
+    CancelError, SkipError, StateError
 #--Python
 import time
 import threading
@@ -2238,8 +2235,7 @@ def ask_uac_restart(message, title, mopy):
         return askYes(None, message + u'\n\n' + _(
             u'Start Wrye Bash with Administrator Privileges?'), title)
     admin = _(u'Run with Administrator Privileges')
-    readme = readme_url(mopy)
-    readme += u'#trouble-permissions'
+    readme = readme_url(mopy) + u'#trouble-permissions'
     return vistaDialog(None, message=message,
         buttons=[(True, u'+' + admin), (False, _(u'Run normally'))],
         title=title, expander=[_(u'How to avoid this message in the future'),
@@ -2249,17 +2245,6 @@ def ask_uac_restart(message, title, mopy):
             u'\n' + _(u'--uac: always run with Admin Privileges') +
             u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
                 u'for more information.') % {u'readmePath': readme}])[0]
-
-def readme_url(mopy, advanced=False, skip_local=False):
-    readme_name = (u'Wrye Bash Advanced Readme.html' if advanced else
-                   u'Wrye Bash General Readme.html')
-    readme = mopy.join(u'Docs', readme_name)
-    if not skip_local and readme.isfile():
-        readme = u'file:///' + readme.s.replace(u'\\', u'/')
-    else:
-        # Fallback to Git repository
-        readme = u'http://wrye-bash.github.io/docs/' + readme_name
-    return readme.replace(u' ', u'%20')
 
 class INIListCtrl(wx.ListCtrl):
 

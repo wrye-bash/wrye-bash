@@ -678,7 +678,7 @@ class App_Help(StatusBar_Button):
     imageKey, _tip = u'help.%s', _(u'Help File')
 
     def Execute(self):
-        webbrowser.open(balt.readme_url(mopy=bass.dirs[u'mopy']))
+        webbrowser.open(bolt.readme_url(mopy=bass.dirs[u'mopy']))
 
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):

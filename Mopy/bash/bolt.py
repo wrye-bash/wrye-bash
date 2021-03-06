@@ -2225,6 +2225,18 @@ def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
     for k_ in sorted(di, key=key_f, reverse=reverse):
         yield k_, di[k_]
 
+#------------------------------------------------------------------------------
+def readme_url(mopy, advanced=False, skip_local=False):
+    readme_name = (u'Wrye Bash Advanced Readme.html' if advanced else
+                   u'Wrye Bash General Readme.html')
+    readme = mopy.join(u'Docs', readme_name)
+    if not skip_local and readme.isfile():
+        readme = u'file:///' + readme.s.replace(u'\\', u'/')
+    else:
+        # Fallback to Git repository
+        readme = u'http://wrye-bash.github.io/docs/' + readme_name
+    return readme.replace(u' ', u'%20')
+
 # WryeText --------------------------------------------------------------------
 codebox = None
 class WryeText(object):

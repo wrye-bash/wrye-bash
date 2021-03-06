@@ -30,7 +30,7 @@ from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import colors, Link, Resources
-from ..bolt import deprint, GPath
+from ..bolt import deprint, GPath, readme_url
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
@@ -108,8 +108,8 @@ class SettingsDialog(DialogWindow):
     def _open_readme(self):
         """Handles a click on the help button by opening the readme."""
         ##: skip_local because webbrowser.open eats anchors on Windows
-        advanced_radme = balt.readme_url(mopy=bass.dirs[u'mopy'],
-                                         advanced=True, skip_local=True)
+        advanced_radme = readme_url(mopy=bass.dirs[u'mopy'], advanced=True,
+                                    skip_local=True)
         help_anchor = _page_anchors[self._tab_tree.get_selected_page_path()]
         webbrowser.open(advanced_radme + u'#' + help_anchor)
 
