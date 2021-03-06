@@ -1208,11 +1208,10 @@ class Mod_SkipDirtyCheck(TransLink):
 
 #------------------------------------------------------------------------------
 class Mod_ScanDirty(ItemLink):
-    """Give detailed printout of what Wrye Bash is detecting as UDR and ITM
-    records"""
+    """Give detailed printout of what Wrye Bash is detecting as UDR records."""
     _text = _(u'Scan for UDRs')
-    _help = _(u'Give detailed printout of what Wrye Bash is detecting as UDR'
-             u' and ITM records')
+    _help = _(u'Give detailed printout of what Wrye Bash is detecting as UDR '
+              u'records')
 
     def Execute(self):
         """Handle execution"""
@@ -1224,9 +1223,8 @@ class Mod_ScanDirty(ItemLink):
             return
         log = bolt.LogFile(io.StringIO())
         log.setHeader(u'= '+_(u'Scan Mods'))
-        log(_(u'This is a report of records that were detected as either '
-              u'Identical To Master (ITM) or a deleted reference (UDR).')
-            + u'\n')
+        log(_(u'This is a report of records that were detected as a deleted '
+              u'reference (UDR).') + u'\n')
         # Change a FID to something more useful for displaying
         def strFid(form_id):
             modId = (0xFF000000 & form_id) >> 24
@@ -1237,12 +1235,8 @@ class Mod_ScanDirty(ItemLink):
         clean = []
         error = []
         for i,modInfo in enumerate(selected_infs):
-            udrs,itms,fog = ret[i]
-            if modInfo.name == GPath(u'Unofficial Oblivion Patch.esp'):
-                # Record for non-SI users, shows up as ITM if SI is installed (OK)
-                itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
-            if modInfo.isBP(): itms = set()
-            if udrs or itms:
+            udrs, fog = ret[i]
+            if udrs:
                 pos = len(dirty)
                 dirty.append(u'* __%s__:\n' % modInfo)
                 dirty[pos] += u'  * %s: %i\n' % (_(u'UDR'),len(udrs))
@@ -1268,7 +1262,7 @@ class Mod_ScanDirty(ItemLink):
                         item = u'%s - %s attached to Exterior CELL (%s), attached to WRLD (%s)%s' % (
                             strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
                     dirty[pos] += u'    * %s\n' % item
-            elif udrs is None or itms is None:
+            elif udrs is None:
                 error.append(u'* __%s__' % modInfo)
             else:
                 clean.append(u'* __%s__' % modInfo)

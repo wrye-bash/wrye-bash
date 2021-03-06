@@ -138,27 +138,23 @@ def checkMods(showModList=False, showCRC=False, showVersion=True,
             modInfos[x].header.version, 6) not in valid_vers]
     #--Look for dirty edits
     shouldClean = {}
-    scan = []
+    scan_infs = []
     dirty_msgs = [(x, modInfos[x].getDirtyMessage()) for x in active]
     for x, y in dirty_msgs:
         if y[0]:
             shouldClean[x] = y[1]
         elif mod_checker:
-            scan.append(modInfos[x])
+            scan_infs.append(modInfos[x])
     if mod_checker:
         try:
             with balt.Progress(_(u'Scanning for Dirty Edits...'),u'\n'+u' '*60, parent=mod_checker, abort=True) as progress:
-                ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
-                for i,mod in enumerate(scan):
-                    udrs,itms,fog = ret[i]
-                    if mod.name == GPath(u'Unofficial Oblivion Patch.esp'): itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
-                    if mod.isBP(): itms = set()
-                    if udrs or itms:
+                ret = ModCleaner.scan_Many(scan_infs, ModCleaner.UDR, progress)
+                for i, mod in enumerate(scan_infs):
+                    udrs, fog = ret[i]
+                    if udrs:
                         cleanMsg = []
                         if udrs:
                             cleanMsg.append(u'UDR(%i)' % len(udrs))
-                        if itms:
-                            cleanMsg.append(u'ITM(%i)' % len(itms))
                         cleanMsg = u', '.join(cleanMsg)
                         shouldClean[mod.ci_key] = cleanMsg
         except CancelError:
@@ -204,9 +200,8 @@ def checkMods(showModList=False, showCRC=False, showVersion=True,
         log.setHeader(
             u'=== ' + _(u'Mods that need cleaning with %s') %
             bush.game.Xe.full_name)
-        log(_(u'Following mods have identical to master (ITM) '
-              u'records, deleted records (UDR), or other issues that '
-              u'should be fixed with %(xedit_name)s. Visit the '
+        log(_(u'Following mods have deleted records (UDR), or other issues '
+              u'that should be fixed with %(xedit_name)s. Visit the '
               u'%(cleaning_wiki_url)s for more information.') % {
             u'cleaning_wiki_url': _cleaning_wiki_url,
             u'xedit_name': bush.game.Xe.full_name})
@@ -269,10 +264,9 @@ class ModCleaner(object):
     """Class for cleaning ITM and UDR edits from mods. ITM detection does not
     currently work with PBash."""
     UDR     = 0x01  # Deleted references
-    ITM     = 0x02  # Identical to master records
+    # ITM     = 0x02  # Identical to master records
     FOG     = 0x04  # Nvidia Fog Fix
-    ALL = UDR|ITM|FOG
-    DEFAULT = UDR|ITM
+    ALL = UDR | FOG
 
     class UdrInfo(object):
         # UDR info
@@ -306,30 +300,17 @@ class ModCleaner(object):
 
     def __init__(self,modInfo):
         self.modInfo = modInfo
-        self.itm = set()    # Fids for Identical To Master records
         self.udr = set()    # Fids for Deleted Reference records
         self.fog = set()    # Fids for Cells needing the Nvidia Fog Fix
 
-    def scan(self,what=ALL,progress=bolt.Progress(),detailed=False):
-        """Scan this mod for dirty edits.
-           return (UDR,ITM,FogFix)"""
-        udr,itm,fog = ModCleaner.scan_Many([self.modInfo],what,progress,detailed)[0]
-        if what & ModCleaner.UDR:
-            self.udr = udr
-        if what & ModCleaner.ITM:
-            self.itm = itm
-        if what & ModCleaner.FOG:
-            self.fog = fog
-        return udr,itm,fog
-
     @staticmethod
-    def scan_Many(mod_infs, what=DEFAULT, progress=bolt.Progress(),
+    def scan_Many(mod_infs, what=UDR, progress=bolt.Progress(),
             detailed=False, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
             __wrld_types=_wrld_types, __unpacker2=structs_cache[u'2i'].unpack):
         """Scan multiple mods for dirty edits"""
         if len(mod_infs) == 0: return []
-        if not (what & (ModCleaner.UDR|ModCleaner.FOG)):
-            return [(set(), set(), set())] * len(mod_infs)
+        if not (what & ModCleaner.ALL):
+            return [(set(), set())] * len(mod_infs)
         # Python can't do ITM scanning
         doUDR = what & ModCleaner.UDR
         doFog = what & ModCleaner.FOG
@@ -337,7 +318,6 @@ class ModCleaner(object):
         ret = []
         for i,modInfo in enumerate(mod_infs):
             progress(i, _(u'Scanning...') + u'\n%s' % modInfo)
-            itm = set() ##: itms is never updated
             fog = set()
             #--UDR stuff
             udr = {}
@@ -449,9 +429,9 @@ class ModCleaner(object):
                         raise
                     except:
                         deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo, ins.tell()), traceback=True)
-                        udr = itm = fog = None
+                        udr = fog = None
                 #--Done
-            ret.append((udr.values() if udr is not None else None,itm,fog))
+            ret.append((udr.values() if udr is not None else None, fog))
         return ret
 
 #------------------------------------------------------------------------------
