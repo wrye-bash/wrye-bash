@@ -419,10 +419,10 @@ class GlobalMenu(_AComponent):
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
         # If we don't pause here, the GUI will flicker like crazy
-        with Link.Frame.global_menu.pause_drawing():
+        with self.pause_drawing():
             # Clear the menu and repopulate it. Have to do this JIT, since the
-            # checked/enabled/appended state of links will depend on the current
-            # state of WB itself.
+            # checked/enabled/appended state of links will depend on the
+            # current state of WB itself.
             for old_menu_item in wx_menu.GetMenuItems():
                 wx_menu.DestroyItem(old_menu_item)
             # Need to set this, otherwise help text won't be shown

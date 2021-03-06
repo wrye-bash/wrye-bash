@@ -55,6 +55,7 @@ from __future__ import division
 
 import collections
 import io
+import os
 import sys
 import time
 from collections import OrderedDict, namedtuple
@@ -4169,9 +4170,14 @@ class BashFrame(WindowFrame):
     def refresh_global_menu_visibility(self):
         """Hides or shows the global menu, depending on the setting the user
         chose."""
-        self._native_widget.SetMenuBar(
-            self.global_menu._native_widget if bass.settings[
-                u'bash.show_global_menu'] else None)
+        # Forcibly hide it on Linux because of the possibility that someone is
+        # using a system-wide menubar (e.g. Ubuntu). wxWidgets (and hence also
+        # wxPython) do not generate open/close events for that style of
+        # menubar, which means we can't implement our JIT global menu - it will
+        # simply display empty global menus that do nothing when clicked.
+        show_gm = bass.settings[u'bash.show_global_menu'] and os.name == u'nt'
+        self._native_widget.SetMenuBar(self.global_menu._native_widget
+                                       if show_gm else None)
 
 #------------------------------------------------------------------------------
 class BashApp(wx.App):

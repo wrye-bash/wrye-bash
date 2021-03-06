@@ -1217,6 +1217,8 @@ class GeneralPage(_AScrollablePage):
                             u'be accessible by right-clicking the columns.'),
             checked=bass.settings[u'bash.show_global_menu'])
         self._global_menu_checkbox.on_checked.subscribe(self._on_global_menu)
+        # Hide the option on Linux - see refresh_global_menu_visibility
+        self._global_menu_checkbox.visible = os.name == u'nt'
         self._alt_name_checkbox = CheckBox(self,
             _(u'Use Alternate Wrye Bash Name'),
             chkbx_tooltip=_(u'Use an alternate display name for Wrye Bash '
