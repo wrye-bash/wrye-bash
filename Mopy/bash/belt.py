@@ -31,13 +31,13 @@ from collections import OrderedDict, defaultdict
 from itertools import izip
 
 from . import ScriptParser  # generic parser class
-from . import balt, bass, bolt, bosh, bush, load_order
+from . import bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
 from .env import get_file_version
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
     ListBox, CheckListBox, ImageWrapper, PictureWithCursor, WizardDialog, \
-    WizardPage
+    WizardPage, staticBitmap
 from .ini_files import OBSEIniFile
 
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
@@ -388,7 +388,7 @@ class PageVersions(PageInstaller):
         linkGame.tooltip = bush.game.patchTip
         versions_layout.append_row([linkGame, Label(self, gameNeed),
                                     Label(self, gameHave),
-                                    balt.staticBitmap(self, bmp[bGameOk])])
+                                    staticBitmap(self, bmp[bGameOk])])
         def _link_row(tool, tool_name, need, have, ok, title=None, url=None,
                       tooltip_=None):
             if tool is None or tool_name != u'':
@@ -397,7 +397,7 @@ class PageVersions(PageInstaller):
                 link.tooltip = tooltip_ or tool.url_tip
                 versions_layout.append_row([link, Label(self, need),
                                             Label(self, have),
-                                            balt.staticBitmap(self, bmp[ok])])
+                                            staticBitmap(self, bmp[ok])])
         # Script Extender
         _link_row(bush.game.Se, bush.game.Se.se_abbrev, seNeed, seHave, bSEOk)
         # Graphics extender

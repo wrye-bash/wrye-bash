@@ -36,6 +36,7 @@ from .layouts import *
 from .list_ctrl import *
 from .misc_components import *
 from .multi_choices import *
+from .popups import *
 from .text_components import *
 from .top_level_windows import *
 from .wizards import *

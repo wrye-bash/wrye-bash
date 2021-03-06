@@ -29,10 +29,10 @@ from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .settings_dialog import SettingsDialog
 from .. import bass, bosh, bolt, balt, bush, load_order
-from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink, staticBitmap
+from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink
 from ..env import getJava
 from ..exception import AbstractError
-from ..gui import ClickableImage, EventResult
+from ..gui import ClickableImage, EventResult, staticBitmap
 
 __all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
            u'TESCS_Button', u'App_Tes4View', u'App_BOSS',

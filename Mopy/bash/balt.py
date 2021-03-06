@@ -50,7 +50,7 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
     Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, \
     ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
-    CENTER
+    staticBitmap
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -188,18 +188,6 @@ def bell(arg=None):
     wx.Bell()
     return arg
 
-def staticBitmap(parent, bitmap=None, size=(32, 32), special=u'warn'):
-    """Tailored to current usages - IAW: do not use."""
-    if bitmap is None:
-        bmp = wx.ArtProvider.GetBitmap
-        if special == u'warn':
-            bitmap = bmp(wx.ART_WARNING,wx.ART_MESSAGE_BOX, size)
-        elif special == u'undo':
-            return bmp(wx.ART_UNDO,wx.ART_TOOLBAR,size)
-        else: raise ArgumentError(
-            u'special must be either warn or undo: %r given' % special)
-    return wx.StaticBitmap(_AComponent._resolve(parent), bitmap=bitmap)
-
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
 def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
@@ -274,48 +262,6 @@ class _ContinueDialog(DialogWindow):
         else:
             return super(_ContinueDialog, cls).display_dialog(*args, **kwargs)
         return result, check
-
-class CopyOrMoveDialog(DialogWindow):
-    """A dialog that allows the user to choose between moving or copying a
-    file and also includes a checkbox for remembering the choice in the
-    future."""
-    title = _(u'Move or Copy?')
-    _def_size = _min_size = (450, 175)
-
-    def __init__(self, parent, message):
-        super(CopyOrMoveDialog, self).__init__(parent, sizes_dict=sizes)
-        self._ret_action = u''
-        self._gCheckBox = CheckBox(self, _(u"Don't show this in the future."))
-        move_button = Button(self, btn_label=_(u'Move'))
-        move_button.on_clicked.subscribe(lambda: self._return_action(u'MOVE'))
-        copy_button = Button(self, btn_label=_(u'Copy'), default=True)
-        copy_button.on_clicked.subscribe(lambda: self._return_action(u'COPY'))
-        VLayout(border=6, spacing=6, item_expand=True, items=[
-            HLayout(spacing=6, item_border=6, items=[
-                (staticBitmap(self), LayoutOptions(v_align=CENTER)),
-                (Label(self, message), LayoutOptions(expand=True))
-            ]),
-            Stretch(),
-            HorizontalLine(self),
-            HLayout(spacing=4, item_expand=True, items=[
-                self._gCheckBox, Stretch(), move_button, copy_button,
-                CancelButton(self),
-            ]),
-        ]).apply_to(self)
-
-    def _return_action(self, new_ret):
-        """Callback for the move/copy buttons."""
-        self._ret_action = new_ret
-        self.accept_modal()
-
-    def get_action(self):
-        """Returns the choice the user made. Either the string 'MOVE' or the
-        string 'COPY'."""
-        return self._ret_action
-
-    def should_remember(self):
-        """Returns True if the choice the user made should be remembered."""
-        return self._gCheckBox.is_checked
 
 #------------------------------------------------------------------------------
 # TODO(inf) de-wx! move all the ask* methods to gui? Then we can easily

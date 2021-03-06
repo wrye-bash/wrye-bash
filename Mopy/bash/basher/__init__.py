@@ -55,8 +55,6 @@ from __future__ import division
 
 import collections
 import io
-import os
-import re
 import sys
 import time
 from collections import OrderedDict, namedtuple
@@ -70,7 +68,7 @@ import wx
 from .. import bush, bosh, bolt, bass, env, load_order, archives
 from ..bolt import GPath, SubProgress, deprint, round_size, \
     OrderedDefaultDict, dict_sort
-from ..bosh import omods, ModInfo, SaveInfo
+from ..bosh import omods, ModInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
 from ..localize import format_date, unformat_date
@@ -80,16 +78,16 @@ startupinfo = bolt.startupinfo
 #--Balt
 from .. import balt
 from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
-    ChoiceLink, staticBitmap, AppendableLink, ListBoxes, \
-    INIListCtrl, DnDStatusBar, NotebookPanel
+    ChoiceLink, AppendableLink, ListBoxes, INIListCtrl, DnDStatusBar, \
+    NotebookPanel
 from ..balt import colors, images, Resources
 from ..balt import Links, ItemLink
 
-from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
-    LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
-    TOP, VLayout, EventResult, DropDown, DialogWindow, WindowFrame, Splitter, \
-    TabbedPanel, PanelWin, CheckListBox, Color, Picture, ImageWrapper, \
-    CenteredSplash, BusyCursor, RadioButton, GlobalMenu
+from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
+    SaveButton, Stretch, TextArea, TextField, VLayout, EventResult, DropDown, \
+    WindowFrame, Splitter, TabbedPanel, PanelWin, CheckListBox, Color, \
+    Picture, ImageWrapper, CenteredSplash, BusyCursor, RadioButton, \
+    GlobalMenu, CopyOrMovePopup
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, installercons
@@ -2503,7 +2501,8 @@ class InstallersList(balt.UIList):
             else: message = _(u'You have dragged some converters into Wrye '
                             u'Bash.')
             message += u'\n' + _(u'What would you like to do with them?')
-            with balt.CopyOrMoveDialog(self, message) as cm_dialog:
+            with CopyOrMovePopup(self, message,
+                                 sizes_dict=balt.sizes) as cm_dialog:
                 if cm_dialog.show_modal():
                     action = cm_dialog.get_action()
                     if cm_dialog.should_remember():
