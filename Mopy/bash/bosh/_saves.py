@@ -471,9 +471,9 @@ class SaveFile(object):
         doUnknownTypes = False
         def getMaster(modIndex):
             if modIndex < len(self._masters):
-                return self._masters[modIndex].s
+                return self._masters[modIndex]
             elif modIndex == 0xFF:
-                return self.fileInfo.name.s
+                return self.fileInfo.name
             else:
                 return _(u'Missing Master ')+hex(modIndex)
         #--ABomb
@@ -483,7 +483,7 @@ class SaveFile(object):
         log(_(u'  Float:\t%.2f') % abombFloat)
         #--FBomb
         log.setHeader(_(u'Fbomb Counter'))
-        log(_(u'  Next in-game object: %08X') % struct_unpack('I', self.preGlobals[:4]))
+        log(_(u'  Next in-game object: %08X') % struct_unpack(u'I', self.preGlobals[:4]))
         #--Array Sizes
         log.setHeader(u'Array Sizes')
         log(u'  %d\t%s' % (len(self.created),_(u'Created Items')))
@@ -529,7 +529,7 @@ class SaveFile(object):
             #--Unknown type?
             if doUnknownTypes and rec_kind not in knownTypes:
                 if mod < 255:
-                    print(rec_kind,hex(rec_id),getMaster(mod))
+                    print(rec_kind,hex(rec_id), u'%s' % getMaster(mod))
                     knownTypes.add(rec_kind)
                 elif rec_id in id_created:
                     print(rec_kind, hex(rec_id), id_created[rec_id]._rec_sig)

@@ -1573,16 +1573,16 @@ class UIList(wx.Panel):
 
     def hide(self, items):
         deletd = []
-        for ci_key, inf in items:
+        for ci_key_, inf in items:
             destDir = inf.get_hide_dir()
-            if destDir.join(ci_key).exists():
+            if destDir.join(ci_key_).exists():
                 message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % ci_key)
+                             u'files directory. Overwrite it?') % ci_key_)
                 if not askYes(self, message, _(u'Hide Files')): continue
             #--Do it
             with BusyCursor():
-                self.data_store.move_info(ci_key, destDir)
-                deletd.append(ci_key)
+                self.data_store.move_info(ci_key_, destDir)
+                deletd.append(ci_key_)
         #--Refresh stuff
         self.data_store.delete_refresh(deletd, None, check_existence=True)
 

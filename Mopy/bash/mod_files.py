@@ -322,7 +322,7 @@ class ModFile(object):
 
     def getLongMapper(self):
         """Returns a mapping function to map short fids to long fids."""
-        masters_list = self.tes4.masters+[self.fileInfo.name]
+        masters_list = self.augmented_masters()
         maxMaster = len(masters_list)-1
         def mapper(fid):
             if fid is None: return None
@@ -331,9 +331,13 @@ class ModFile(object):
             return masters_list[min(mod, maxMaster)], object # clamp HITMEs
         return mapper
 
+    def augmented_masters(self):
+        """List of plugin masters with the plugin's own name appended."""
+        return self.tes4.masters + [self.fileInfo.name] # Py3: unpack
+
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
-        masters_list = self.tes4.masters + [self.fileInfo.name]
+        masters_list = self.augmented_masters()
         indices = {mname: index for index, mname in enumerate(masters_list)}
         has_expanded_range = bush.game.Esp.expanded_plugin_range
         if (has_expanded_range and len(masters_list) > 1

@@ -1216,10 +1216,10 @@ class Mod_ScanDirty(ItemLink):
 
     def Execute(self):
         """Handle execution"""
-        modInfos = [x for x in self.iselected_infos()]
+        selected_infs = [x for x in self.iselected_infos()]
         try:
             with balt.Progress(_(u'Dirty Edits'),u'\n'+u' '*60,abort=True) as progress:
-                ret = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress, detailed=True)
+                ret = bosh.mods_metadata.ModCleaner.scan_Many(selected_infs, progress=progress, detailed=True)
         except CancelError:
             return
         log = bolt.LogFile(io.StringIO())
@@ -1227,7 +1227,7 @@ class Mod_ScanDirty(ItemLink):
         log(_(u'This is a report of records that were detected as either '
               u'Identical To Master (ITM) or a deleted reference (UDR).')
             + u'\n')
-        # Change a FID to something more usefull for displaying
+        # Change a FID to something more useful for displaying
         def strFid(form_id):
             modId = (0xFF000000 & form_id) >> 24
             modName = modInfo.masterNames[modId]
@@ -1236,7 +1236,7 @@ class Mod_ScanDirty(ItemLink):
         dirty = []
         clean = []
         error = []
-        for i,modInfo in enumerate(modInfos):
+        for i,modInfo in enumerate(selected_infs):
             udrs,itms,fog = ret[i]
             if modInfo.name == GPath(u'Unofficial Oblivion Patch.esp'):
                 # Record for non-SI users, shows up as ITM if SI is installed (OK)

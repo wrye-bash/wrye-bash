@@ -44,7 +44,7 @@ from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import GPath, decoder, deprint, csvFormat, floats_equal, \
     setattr_deep, attrgetter_cache, struct_unpack, struct_pack
-from .brec import MreRecord, MelObject, genFid, RecHeader
+from .brec import MreRecord, MelObject, genFid, RecHeader, null4
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
@@ -807,7 +807,7 @@ class FidReplacer(_HandleAliases):
         """Updates specified mod file."""
         modFile = self._load_plugin(modInfo)
         # Create filtered versions of our mappings
-        masters_list = set(modFile.tes4.masters + [modFile.fileInfo.name])
+        masters_list = set(modFile.augmented_masters())
         filt_fids = {oldId for oldId in self.old_eid if
                      oldId[0] in masters_list}
         filt_fids.update(newId for newId in self.new_eid
@@ -1223,7 +1223,7 @@ class _UsesEffectsMixin(_HandleAliases):
                 sevisuals = ctypes.cast(ctypes.byref(ctypes.c_ulong(sevisuals))
                     ,ctypes.POINTER(ctypes.c_char * 4)).contents.value
             if sevisuals == u'' or sevisuals is None:
-                sevisuals = u'\x00\x00\x00\x00'
+                sevisuals = null4
             sevisual = sevisuals
             seflags = _coerce(seflags, int, AllowNone=True)
             sename = _coerce(sename, unicode, AllowNone=True)
@@ -1235,7 +1235,8 @@ class _UsesEffectsMixin(_HandleAliases):
             effects.append(effect)
         return effects
 
-    def writeEffects(self,effects):
+    @staticmethod
+    def writeEffects(effects):
         schoolTypeNumber_Name = _UsesEffectsMixin.schoolTypeNumber_Name
         recipientTypeNumber_Name = _UsesEffectsMixin.recipientTypeNumber_Name
         actorValueNumber_Name = _UsesEffectsMixin.actorValueNumber_Name
@@ -1650,8 +1651,7 @@ class SpellRecords(_UsesEffectsMixin):
                     spell_flags, mc, ss, its, aeil, saa, daar, tewt,
                     self.writeEffects(effects))
             else:
-                eid, cost, levelType, spellType, spell_flags = \
-                    fid_stats[fid]
+                eid, cost, levelType, spellType, spell_flags = fid_stats[fid]
                 levelType = levelTypeNumber_Name.get(levelType,levelType)
                 spellType = spellTypeNumber_Name.get(spellType,spellType)
                 output = rowFormat % (

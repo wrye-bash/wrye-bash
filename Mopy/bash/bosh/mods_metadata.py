@@ -160,7 +160,7 @@ def checkMods(showModList=False, showCRC=False, showVersion=True,
                         if itms:
                             cleanMsg.append(u'ITM(%i)' % len(itms))
                         cleanMsg = u', '.join(cleanMsg)
-                        shouldClean[mod.name] = cleanMsg
+                        shouldClean[mod.ci_key] = cleanMsg
         except CancelError:
             pass
     # below is always empty with current implementation
@@ -323,21 +323,21 @@ class ModCleaner(object):
         return udr,itm,fog
 
     @staticmethod
-    def scan_Many(modInfos, what=DEFAULT, progress=bolt.Progress(),
-        detailed=False, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
-        __wrld_types=_wrld_types, __unpacker2=structs_cache[u'2i'].unpack):
+    def scan_Many(mod_infs, what=DEFAULT, progress=bolt.Progress(),
+            detailed=False, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
+            __wrld_types=_wrld_types, __unpacker2=structs_cache[u'2i'].unpack):
         """Scan multiple mods for dirty edits"""
-        if len(modInfos) == 0: return []
+        if len(mod_infs) == 0: return []
         if not (what & (ModCleaner.UDR|ModCleaner.FOG)):
-            return [(set(), set(), set())] * len(modInfos)
+            return [(set(), set(), set())] * len(mod_infs)
         # Python can't do ITM scanning
         doUDR = what & ModCleaner.UDR
         doFog = what & ModCleaner.FOG
-        progress.setFull(max(len(modInfos),1))
+        progress.setFull(max(len(mod_infs), 1))
         ret = []
-        for i,modInfo in enumerate(modInfos):
-            progress(i,_(u'Scanning...') + u'\n%s' % modInfo.name)
-            itm = set()
+        for i,modInfo in enumerate(mod_infs):
+            progress(i, _(u'Scanning...') + u'\n%s' % modInfo)
+            itm = set() ##: itms is never updated
             fog = set()
             #--UDR stuff
             udr = {}
@@ -353,7 +353,7 @@ class ModCleaner(object):
                 parentFid = None
                 parentParentFid = None
                 # Location (Interior = #, Exteror = (X,Y)
-                with ModReader(modInfo.name,modInfo.getPath().open(u'rb')) as ins:
+                with ModReader(modInfo.ci_key, modInfo.getPath().open(u'rb')) as ins:
                     try:
                         insAtEnd = ins.atEnd
                         insTell = ins.tell
@@ -471,7 +471,7 @@ class NvidiaFogFixer(object):
         #--File stream
         minfo_path = self.modInfo.getPath()
         #--Scan/Edit
-        with ModReader(self.modInfo.name,minfo_path.open(u'rb')) as ins:
+        with ModReader(self.modInfo.ci_key, minfo_path.open(u'rb')) as ins:
             with minfo_path.temp.open(u'wb') as  out:
                 def copy(bsize):
                     buff = ins.read(bsize)
@@ -534,14 +534,14 @@ class ModDetails(object):
                     raise ModError(ins.inName,
                         u'Mis-sized compressed data. Expected %d, got '
                         u'%d.' % (blob_siz, len(new_rec_data)))
-            return ModReader(modInfo.name, io.BytesIO(new_rec_data))
+            return ModReader(modInfo.ci_key, io.BytesIO(new_rec_data))
         progress = progress or bolt.Progress()
         group_records = self.group_records
         records = group_records[bush.game.Esp.plugin_header_sig]
         complex_groups = {b'CELL', b'DIAL', b'WRLD'}
         if bush.game.fsName in (u'Fallout4', u'Fallout4VR'):
             complex_groups.add(b'QUST')
-        with ModReader(modInfo.name, modInfo.abs_path.open(u'rb')) as ins:
+        with ModReader(modInfo.ci_key, modInfo.abs_path.open(u'rb')) as ins:
             while not ins.atEnd():
                 header = ins.unpackRecHeader()
                 _rsig = header.recType
