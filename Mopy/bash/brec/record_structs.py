@@ -41,7 +41,8 @@ class MelSet(object):
     """Set of mod record elements."""
 
     def __init__(self,*elements):
-        self.elements = elements
+        # Filter out None, produced by static deciders like fnv_only
+        self.elements = [e for e in elements if e is not None]
         self.defaulters = {}
         self.loaders = {}
         self.formElements = set()
