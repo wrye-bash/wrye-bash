@@ -529,7 +529,7 @@ class MobDial(MobObjects):
         (PNAM) Previous Info. These do not simply describe a linear list, but a
         directed graph - e.g. you can have edges B->A and C->A, which would
         leave both C->B->A and B->C->A as valid orders. To decide in such
-        cases, we stick to low->high FormIDs.
+        cases, we stick with whatever the previous order was.
 
         Note: We assume the PNAM graph is acyclic - cyclic graphs are errors
         in plugins anyways, so the behavior of PBash when encountering such
@@ -537,14 +537,17 @@ class MobDial(MobObjects):
         # First gather a list of all 'orphans', i.e. INFOs that have no PNAM.
         # We'll start with these and insert non-orphans into the list at the
         # right spot based on their PNAM
-        sorted_infos = sorted((o for o in self.records if not o.prevInfo),
-            key=lambda x: x.fid)
-        remaining_infos = deque(sorted(set(self.records) - set(sorted_infos),
-            key=lambda x: x.fid))
+        sorted_infos = []
+        remaining_infos = deque()
+        for r in self.records:
+            if not r.prevInfo:
+                sorted_infos.append(r)
+            else:
+                remaining_infos.append(r)
         visited_fids = set()
         while remaining_infos:
-            # Pop from the right to maintain a low->high sort order of FormIDs
-            # when inserting multiple INFOs with the same PNAM
+            # Pop from the right to maintain the original sort order when
+            # inserting multiple INFOs with the same PNAM
             curr_info = remaining_infos.pop()
             wanted_prev_fid = curr_info.prevInfo
             # Look if a record matching the PNAM has already been inserted
@@ -560,24 +563,16 @@ class MobDial(MobObjects):
                     # file (which is fine and happens all the time), or this
                     # INFO is in a cycle, or the PNAM points to a non-existent
                     # record.
-                    # To handle this situation, we basically do a single
-                    # iteration of insertion sort to find a suitable spot to
-                    # put it.
+                    # To handle this situation, we simply append it to the end
+                    # of our sorted INFOs.
                     # We don't warn here because trying to differentiate the
                     # valid and common case from the two error cases would be
-                    # too slow. xEdit can do this much better
-                    for i in xrange(len(sorted_infos)):
-                        if curr_info.fid <= sorted_infos[i].fid:
-                            # We found a suitable spot, insert it and break
-                            sorted_infos.insert(i, curr_info)
-                            break
-                    else:
-                        # List is either empty or the fid is >= all fids in the
-                        # list. Either way, just append to the end
-                        sorted_infos.append(curr_info)
+                    # too slow. xEdit can do this much better.
+                    sorted_infos.append(curr_info)
                 else:
                     # We'll have to revisit this INFO later when its PNAM may
-                    # have been added, so move it to the end of the queue
+                    # have been added, so move it to the end (== left side) of
+                    # the queue
                     visited_fids.add(curr_info.fid)
                     remaining_infos.appendleft(curr_info)
         return sorted_infos
