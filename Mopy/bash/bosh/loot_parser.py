@@ -339,12 +339,11 @@ class _ConditionalTag(object):
         :rtype: set[unicode]"""
         resulting_tags = set()
         for tag in tag_set:
-            try:
+            # Most tags are unconditional, so avoid try-except
+            if isinstance(tag, _ConditionalTag):
                 if tag.eval_condition():
-                    # Conditional tag, and the condition is valid
                     resulting_tags.add(tag.tag_name)
-            except AttributeError:
-                # Unconditional tag
+            else:
                 resulting_tags.add(tag)
         return resulting_tags
 

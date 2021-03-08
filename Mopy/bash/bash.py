@@ -118,16 +118,17 @@ def _import_deps():
             # means an MSVC redist is missing
             deps_msg += _(u'This most likely means you are missing a certain '
                           u'version of the Microsoft Visual C++ '
-                          u'Redistributable. Try installing some older ones.')
+                          u'Redistributable. Try installing the 2010 x64 '
+                          u'version.')
         else:
             deps_msg += _(u'Ensure you have installed these dependencies '
                           u'properly. Should the error still occur, check '
                           u'your installed Microsoft Visual C++ '
-                          u'Redistributables and try installing some older '
-                          u'ones.')
+                          u'Redistributables and try installing the 2010 x64 '
+                          u'version.')
         _close_dialog_windows()
-        _show_boot_popup(_(u'The following dependencies could not be located or '
-                         u'failed to load:') + u'\n\n' + deps_msg)
+        _show_boot_popup(_(u'The following dependencies could not be located '
+                           u'or failed to load:') + u'\n\n' + deps_msg)
 
 #------------------------------------------------------------------------------
 def assure_single_instance(instance):
