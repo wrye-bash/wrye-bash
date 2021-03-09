@@ -21,5 +21,4 @@
 #
 # =============================================================================
 
-from ..skyrimse.records import *
 from ..skyrimse.records import _MelModel # HACK - needed for tests

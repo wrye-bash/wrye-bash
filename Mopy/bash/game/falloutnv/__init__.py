@@ -87,7 +87,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MreChal, MreChip, MreCmny, MreCsno, MreDehy, MreDial, MreHung, \
             MreImod, MreLsct, MreMset, MreRcct, MreRcpe, MreRepu, MreSlpd, \
             MreWthr
-        # then from fallout3.records
+        # Then from fallout3.records
         from ..fallout3.records import MreCpth, MreIdle, MreMesg, MrePack, \
             MrePerk, MreQust, MreSpel, MreTerm, MreNpc, MreAddn, MreAnio, \
             MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt, MreCobj, \

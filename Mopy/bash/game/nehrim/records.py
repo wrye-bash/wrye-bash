@@ -21,7 +21,4 @@
 #
 # =============================================================================
 
-"""This module contains the Nehrim record classes imported from Oblivion."""
-
-from ..oblivion.records import *
 from ..oblivion.records import _MelModel # HACK - needed for tests

@@ -22,11 +22,11 @@
 # =============================================================================
 """This module contains the skyrim SE record classes. The great majority are
 imported from skyrim."""
+
+from ..skyrim.records import _MelModel # HACK - needed for tests
 from ...bolt import Flags
 from ...brec import MelRecord, MelGroups, MelStruct, MelString, MelSet, \
     MelFloat, MelUInt32, MelCounter, MelEdid
-# Those are unused here, but need be in this file as are accessed via it
-from ..skyrim.records import _MelModel # HACK - needed for tests
 
 #------------------------------------------------------------------------------
 # Added in SSE ----------------------------------------------------------------
