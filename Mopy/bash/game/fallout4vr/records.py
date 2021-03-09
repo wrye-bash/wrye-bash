@@ -23,7 +23,6 @@
 """This module contains only the overrides of record classes needed for
 FO4VR."""
 
-from ..fallout4.records import _MelModel # HACK - needed for tests
 from ...brec import MreHeaderBase, MelSet, MelStruct, MelBase, MelFidList
 
 # Only difference from FO4 is the default version, but this seems less hacky

@@ -1592,7 +1592,7 @@ class SpellRecords(_UsesEffectsMixin):
                                                      _coerce(spellType,
                                                              int) or 0)
                 ##: HACK, 'flags' needs to be a Flags instance on dump
-                spell_flags = bush.game_mod.records.MreSpel._SpellFlags(
+                MreRecord.type_class[b'SPEL']._SpellFlags(
                     _coerce(spell_flags, int))
                 if not detailed or len(fields) < 7:
                     fid_stats[mid] = [eid, cost, levelType, spellType,

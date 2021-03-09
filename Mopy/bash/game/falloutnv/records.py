@@ -25,7 +25,6 @@ from __future__ import division
 from __future__ import unicode_literals
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelDestructible, MelConditions
-from ..fallout3.records import _MelModel # HACK - needed for tests
 from ...bolt import Flags, struct_calcsize
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \

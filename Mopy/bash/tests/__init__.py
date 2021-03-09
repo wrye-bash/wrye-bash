@@ -109,9 +109,6 @@ def set_game(game_fsName):
         brec.MelModel = None
         new_game.init()
         _game_cache[game_fsName] = new_game
-    bush.game_mod = bush._allModules[game_fsName]
-    from .. import brec
-    brec.MelModel = bush.game_mod.records._MelModel
 
 def _emulate_startup():
     """Emulates a normal Wrye Bash startup, but without launching basher
