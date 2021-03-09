@@ -35,7 +35,9 @@ class OblivionGameInfo(GameInfo):
     altName = u'Wrye Bash'
     bash_root_prefix = u'Oblivion'
     launch_exe = u'Oblivion.exe'
-    game_detect_file = _j(u'Data', u'Oblivion.esm')
+    # Set to this because that file does not exist in Nehrim, whereas
+    # OblivionLauncher.exe and Oblivion.exe do
+    game_detect_files = [_j(u'Data', u'Oblivion.esm')]
     version_detect_file = u'Oblivion.exe'
     master_file = u'Oblivion.esm'
     taglist_dir = u'Oblivion'

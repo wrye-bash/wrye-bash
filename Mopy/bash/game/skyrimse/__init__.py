@@ -31,7 +31,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     fsName = u'Skyrim Special Edition'
     bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
     launch_exe = u'SkyrimSE.exe'
-    game_detect_file = u'SkyrimSE.exe'
+    # Set to this because SkyrimSE.exe also exists for Enderal SE
+    game_detect_files = [u'SkyrimSELauncher.exe']
     version_detect_file = u'SkyrimSE.exe'
     taglist_dir = u'SkyrimSE'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',

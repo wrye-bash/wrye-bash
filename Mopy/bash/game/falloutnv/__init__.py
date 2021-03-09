@@ -34,7 +34,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     altName = u'Wrye Flash NV'
     bash_root_prefix = u'FalloutNV'
     launch_exe = u'FalloutNV.exe'
-    game_detect_file = u'FalloutNV.exe'
+    game_detect_files = [u'FalloutNV.exe']
     version_detect_file = u'FalloutNV.exe'
     master_file = u'FalloutNV.esm'
     taglist_dir = u'FalloutNV'

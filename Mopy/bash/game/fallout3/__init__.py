@@ -35,7 +35,7 @@ class Fallout3GameInfo(GameInfo):
     altName = u'Wrye Flash'
     bash_root_prefix = u'Fallout3'
     launch_exe = u'Fallout3.exe'
-    game_detect_file = u'Fallout3.exe'
+    game_detect_files = [u'Fallout3.exe']
     version_detect_file = u'Fallout3.exe'
     master_file = u'Fallout3.esm'
     taglist_dir = u'Fallout3'

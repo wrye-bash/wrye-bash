@@ -31,8 +31,9 @@ class EnderalGameInfo(SkyrimGameInfo):
     displayName = u'Enderal'
     fsName = u'Enderal'
     bash_root_prefix = u'Enderal'
-    # Set to this because TESV.exe also exists for Enderal
-    game_detect_file = u'Enderal Launcher.exe'
+    # Enderal SE also has an Enderal Launcher.exe, but no TESV.exe. Skyrim LE
+    # has TESV.exe, but no Enderal Launcher.exe
+    game_detect_files = [u'Enderal Launcher.exe', u'TESV.exe']
     # This isn't exact (currently 1.5.0 when it should be 1.5.7), but it's the
     # closest we're going to get
     version_detect_file = u'Enderal Launcher.exe'

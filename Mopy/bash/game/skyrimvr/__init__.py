@@ -33,7 +33,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     altName = u'Wrye VRash'
     bash_root_prefix = u'Skyrim VR' # backwards compat :(
     launch_exe = u'SkyrimVR.exe'
-    game_detect_file = u'SkyrimVR.exe'
+    game_detect_files = [u'SkyrimVR.exe']
     version_detect_file = u'SkyrimVR.exe'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim VR', u'Installed Path')
 

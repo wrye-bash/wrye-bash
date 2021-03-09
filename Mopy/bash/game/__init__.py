@@ -48,12 +48,14 @@ class GameInfo(object):
     uses_personal_folders = True
     # The exe to use when launching the game (without xSE present)
     launch_exe = u'' ## Example: u'TESV.exe'
-    # Path to a file to look for to see if this is the right game when joined
-    # with the -o parameter. Must be unique among all games. As a rule of
-    # thumb, use the file you specified in launch_exe, unless that file is
-    # shared by multiple games, in which case you MUST find unique files - see
-    # Skyrim and Enderal, which share TESV.exe.
-    game_detect_file = u''
+    # Path to one or more files to look for to see if this is the right game
+    # when joined with the game's root path (i.e. the one above the Data
+    # folder). The combination of these files must be unique among all games.
+    # As a rule of thumb, use the file you specified in launch_exe, unless that
+    # file is shared by multiple games, in which case you MUST find unique
+    # files - for an example, see Enderal and Skyrim (and the SE versions of
+    # both).
+    game_detect_files = []
     # Path to a file to pass to env.get_file_version to determine the game's
     # version. Usually the same as launch_exe, but some games need different
     # ones here (e.g. Enderal, which has Skyrim's version in the launch_exe,

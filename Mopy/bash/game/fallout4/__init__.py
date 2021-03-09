@@ -33,7 +33,7 @@ class Fallout4GameInfo(GameInfo):
     altName = u'Wrye Flash'
     bash_root_prefix = u'Fallout4'
     launch_exe = u'Fallout4.exe'
-    game_detect_file = u'Fallout4.exe'
+    game_detect_files = [u'Fallout4.exe']
     version_detect_file = u'Fallout4.exe'
     master_file = u'Fallout4.esm'
     taglist_dir = u'Fallout4'

@@ -32,7 +32,7 @@ from ...brec import MreGlob, MreLand
 class NehrimGameInfo(OblivionGameInfo):
     displayName = u'Nehrim'
     bash_root_prefix = u'Nehrim'
-    game_detect_file = _j(u'Data', u'Nehrim.esm')
+    game_detect_files = [u'NehrimLauncher.exe']
     master_file = u'Nehrim.esm'
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
     nexusName = u'Nehrim Nexus'
