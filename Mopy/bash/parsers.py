@@ -933,8 +933,10 @@ class ItemStats(_HandleAliases):
         super(ItemStats, self).__init__(aliases_)
         self.class_attrs = bush.game.statsTypes
         self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
-        if bush.game.fsName in (u'Enderal', u'Skyrim',
-                                u'Skyrim Special Edition'):
+        ##: This should really be done via some bush.game variable
+        if bush.game.fsName in (u'Enderal', u'Skyrim', u'Skyrim VR',
+                                u'Skyrim Special Edition',
+                                u'Enderal Special Edition'):
             self.attr_type = {u'eid': self.sstr,
                               u'weight': self.sfloat,
                               u'value': self.sint,

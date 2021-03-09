@@ -1522,13 +1522,18 @@ class SkyrimVR(SkyrimSE):
         GPath_no_norm(u'SkyrimVR.esm'),)
     _ccc_filename = u''
 
+class EnderalSE(SkyrimSE):
+    must_be_active_if_present = Enderal.must_be_active_if_present
+
 # Game factory
 def game_factory(game_fsName, mod_infos, plugins_txt_path,
                  loadorder_txt_path=None):
     if game_fsName == u'Skyrim':
         return Skyrim(mod_infos, plugins_txt_path, loadorder_txt_path)
-    if game_fsName == u'Enderal':
+    elif game_fsName == u'Enderal':
         return Enderal(mod_infos, plugins_txt_path, loadorder_txt_path)
+    elif game_fsName == u'Enderal Special Edition':
+        return EnderalSE(mod_infos, plugins_txt_path)
     elif game_fsName == u'Skyrim Special Edition':
         return SkyrimSE(mod_infos, plugins_txt_path)
     elif game_fsName == u'Skyrim VR':

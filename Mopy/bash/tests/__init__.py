@@ -84,6 +84,7 @@ def iter_resources(resource_subfolder, filter_by_game=frozenset()):
 # Maps the resource subfolder game names back to displayNames
 resource_to_displayName = {
     u'enderal': u'Enderal',
+    u'enderalse': u'Enderal Special Edition',
     u'fallout3': u'Fallout 3',
     u'fallout4': u'Fallout 4',
     u'fallout4vr': u'Fallout 4 VR',
