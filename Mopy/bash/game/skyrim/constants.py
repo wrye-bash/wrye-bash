@@ -553,6 +553,21 @@ statsHeaders = (
         _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Damage'),
         _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
 )
+item_attr_type = {
+    u'eid': u'sstr',
+    u'weight': u'sfloat',
+    u'value': u'sint',
+    u'damage': u'sint',
+    u'armorRating': u'sint',
+    u'duration': u'sint',
+    u'speed': u'sfloat',
+    u'reach': u'sfloat',
+    u'stagger': u'sfloat',
+    u'enchantPoints': u'sint',
+    u'critDamage': u'sint',
+    u'criticalMultiplier': u'sfloat',
+    u'criticalEffect': u'sint',
+}
 
 #------------------------------------------------------------------------------
 # Import Sounds

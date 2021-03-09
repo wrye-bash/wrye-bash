@@ -441,6 +441,7 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     statsTypes = {}
     statsHeaders = ()
+    item_attr_type = {}
 
     #--------------------------------------------------------------------------
     # Import Sounds
@@ -644,6 +645,7 @@ class GameInfo(object):
         u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
         u'nonplayable_biped_flags', u'not_playable_flag', u'settings_tweaks',
         u'import_races_attrs', u'race_tweaks_need_collection',
+        u'item_attr_type',
     }
 
     @classmethod

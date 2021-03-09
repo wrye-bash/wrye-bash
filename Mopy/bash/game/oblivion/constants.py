@@ -282,6 +282,7 @@ namesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
 # Import Prices
 #------------------------------------------------------------------------------
 pricesTypes = {b'ALCH':{},b'AMMO':{},b'APPA':{},b'ARMO':{},b'BOOK':{},b'CLOT':{},b'INGR':{},b'KEYM':{},b'LIGH':{},b'MISC':{},b'SGST':{},b'SLGM':{},b'WEAP':{}}
+
 #------------------------------------------------------------------------------
 # Import Stats
 #------------------------------------------------------------------------------
@@ -355,6 +356,20 @@ statsHeaders = (
         _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'Damage'),
         _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
 )
+item_attr_type = {
+    u'eid': u'sstr',
+    u'weight': u'sfloat',
+    u'value': u'sint',
+    u'damage': u'sint',
+    u'speed': u'sfloat',
+    u'enchantPoints': u'sint',
+    u'health': u'sint',
+    u'strength': u'sint',
+    u'duration': u'sint',
+    u'quality': u'sfloat',
+    u'uses': u'sint',
+    u'reach': u'sfloat',
+}
 
 #------------------------------------------------------------------------------
 # Import Sounds
