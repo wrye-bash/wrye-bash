@@ -76,6 +76,19 @@ class NehrimGameInfo(OblivionGameInfo):
         0x224fd:  0x1da83, #--Nor
     }
 
+    bethDataFiles = {
+        u'nehrim.esm',
+        u'translation.esp',
+        u'l - misc.bsa',
+        u'l - voices.bsa',
+        u'n - meshes.bsa',
+        u'n - misc.bsa',
+        u'n - sounds.bsa',
+        u'n - textures1.bsa',
+        u'n - textures2.bsa',
+    }
+
+    nirnroots = _(u'Vynroots')
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

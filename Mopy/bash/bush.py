@@ -34,9 +34,10 @@ from . import game as game_init
 from .bolt import GPath, Path, deprint
 from .env import get_registry_game_path
 from .exception import BoltError
+from .game import patch_game
 
 # Game detection --------------------------------------------------------------
-game = None         # type: game_init.GameInfo
+game = None         # type: patch_game.PatchGame
 foundGames = {}     # {'name': Path} dict used by the Settings switch game menu
 
 # Module Cache

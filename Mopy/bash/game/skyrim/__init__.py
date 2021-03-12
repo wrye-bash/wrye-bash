@@ -24,11 +24,11 @@
 
 from os.path import join as _j
 
-from .. import GameInfo
+from ..patch_game import GameInfo, PatchGame
 from ... import brec
 from ...brec import MreFlst, MreGlob
 
-class SkyrimGameInfo(GameInfo):
+class SkyrimGameInfo(PatchGame):
     displayName = u'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
@@ -256,6 +256,35 @@ class SkyrimGameInfo(GameInfo):
         0x13749 : 0x69473, #--Bos
         }
 
+    bethDataFiles = {
+        #--Vanilla
+        u'skyrim.esm',
+        u'update.esm',
+        u'update.bsa',
+        u'dawnguard.esm',
+        u'dawnguard.bsa',
+        u'hearthfires.bsa',
+        u'hearthfires.esm',
+        u'dragonborn.esm',
+        u'dragonborn.bsa',
+        u'skyrim - animations.bsa',
+        u'skyrim - interface.bsa',
+        u'skyrim - meshes.bsa',
+        u'skyrim - misc.bsa',
+        u'skyrim - shaders.bsa',
+        u'skyrim - sounds.bsa',
+        u'skyrim - textures.bsa',
+        u'skyrim - voices.bsa',
+        u'skyrim - voicesextra.bsa',
+        u'highrestexturepack01.esp',
+        u'highrestexturepack02.esp',
+        u'highrestexturepack03.esp',
+        u'highrestexturepack01.bsa',
+        u'highrestexturepack02.bsa',
+        u'highrestexturepack03.bsa',
+    }
+
+    _patcher_package = u'bash.game.skyrim'
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

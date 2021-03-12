@@ -24,10 +24,10 @@
 
 from os.path import join as _j
 
-from .. import GameInfo
+from ..patch_game import GameInfo, PatchGame
 from ... import brec
 
-class Fallout4GameInfo(GameInfo):
+class Fallout4GameInfo(PatchGame):
     displayName = u'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
@@ -124,6 +124,65 @@ class Fallout4GameInfo(GameInfo):
 
     patchers = {
         u'ImportObjectBounds', u'LeveledLists',
+    }
+
+    bethDataFiles = {
+        #--Vanilla
+        u'fallout4.esm',
+        u'fallout4.cdx',
+        u'fallout4 - animations.ba2',
+        u'fallout4 - geometry.csg',
+        u'fallout4 - interface.ba2',
+        u'fallout4 - materials.ba2',
+        u'fallout4 - meshes.ba2',
+        u'fallout4 - meshesextra.ba2',
+        u'fallout4 - misc.ba2',
+        u'fallout4 - nvflex.ba2',
+        u'fallout4 - shaders.ba2',
+        u'fallout4 - sounds.ba2',
+        u'fallout4 - startup.ba2',
+        u'fallout4 - textures1.ba2',
+        u'fallout4 - textures2.ba2',
+        u'fallout4 - textures3.ba2',
+        u'fallout4 - textures4.ba2',
+        u'fallout4 - textures5.ba2',
+        u'fallout4 - textures6.ba2',
+        u'fallout4 - textures7.ba2',
+        u'fallout4 - textures8.ba2',
+        u'fallout4 - textures9.ba2',
+        u'fallout4 - voices.ba2',
+        u'dlcrobot.esm',
+        u'dlcrobot.cdx',
+        u'dlcrobot - geometry.csg',
+        u'dlcrobot - main.ba2',
+        u'dlcrobot - textures.ba2',
+        u'dlcrobot - voices_en.ba2',
+        u'dlcworkshop01.esm',
+        u'dlcworkshop01.cdx',
+        u'dlcworkshop01 - geometry.csg',
+        u'dlcworkshop01 - main.ba2',
+        u'dlcworkshop01 - textures.ba2',
+        u'dlccoast.esm',
+        u'dlccoast.cdx',
+        u'dlccoast - geometry.csg',
+        u'dlccoast - main.ba2',
+        u'dlccoast - textures.ba2',
+        u'dlccoast - voices_en.ba2',
+        u'dlcworkshop02.esm',
+        u'dlcworkshop02 - main.ba2',
+        u'dlcworkshop02 - textures.ba2',
+        u'dlcworkshop03.esm',
+        u'dlcworkshop03.cdx',
+        u'dlcworkshop03 - geometry.csg',
+        u'dlcworkshop03 - main.ba2',
+        u'dlcworkshop03 - textures.ba2',
+        u'dlcworkshop03 - voices_en.ba2',
+        u'dlcnukaworld.esm',
+        u'dlcnukaworld.cdx',
+        u'dlcnukaworld - geometry.csg',
+        u'dlcnukaworld - main.ba2',
+        u'dlcnukaworld - textures.ba2',
+        u'dlcnukaworld - voices_en.ba2',
     }
 
     @classmethod

@@ -25,11 +25,11 @@
 from collections import defaultdict
 from os.path import join as _j
 
-from .. import GameInfo
+from ..patch_game import GameInfo, PatchGame
 from ... import brec
 from ...brec import MreFlst, MreGlob
 
-class Fallout3GameInfo(GameInfo):
+class Fallout3GameInfo(PatchGame):
     displayName = u'Fallout 3'
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
@@ -278,6 +278,33 @@ class Fallout3GameInfo(GameInfo):
         0x0987de : 0x044529, #--FOA
         0x0987df : 0x044529, #--COA
         }
+
+    bethDataFiles = {
+        #--Vanilla
+        u'fallout3.esm',
+        u'fallout - menuvoices.bsa',
+        u'fallout - meshes.bsa',
+        u'fallout - misc.bsa',
+        u'fallout - sound.bsa',
+        u'fallout - textures.bsa',
+        u'fallout - voices.bsa',
+        #-- DLC
+        u'anchorage.esm',
+        u'anchorage - main.bsa',
+        u'anchorage - sounds.bsa',
+        u'thepitt.esm',
+        u'thepitt - main.bsa',
+        u'thepitt - sounds.bsa',
+        u'brokensteel.esm',
+        u'brokensteel - main.bsa',
+        u'brokensteel - sounds.bsa',
+        u'pointlookout.esm',
+        u'pointlookout - main.bsa',
+        u'pointlookout - sounds.bsa',
+        u'zeta.esm',
+        u'zeta - main.bsa',
+        u'zeta - sounds.bsa',
+    }
 
     @classmethod
     def init(cls):

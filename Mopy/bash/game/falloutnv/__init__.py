@@ -79,6 +79,44 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     allTags = Fallout3GameInfo.allTags | {u'WeaponMods'}
     patchers = Fallout3GameInfo.patchers | {u'ImportWeaponMods'}
 
+    bethDataFiles = {
+        #--Vanilla
+        u'falloutnv.esm',
+        u'fallout - invalidation.bsa',
+        u'fallout - meshes.bsa',
+        u'fallout - meshes2.bsa',
+        u'fallout - misc.bsa',
+        u'fallout - sound.bsa',
+        u'fallout - textures.bsa',
+        u'fallout - textures2.bsa',
+        u'fallout - voices1.bsa',
+        #--Preorder Packs
+        u'caravanpack.esm',
+        u'caravanpack - main.bsa',
+        u'classicpack.esm',
+        u'classicpack - main.bsa',
+        u'mercenarypack.esm',
+        u'mercenarypack - main.bsa',
+        u'tribalpack.esm',
+        u'tribalpack - main.bsa',
+        #--DLCs
+        u'deadmoney.esm',
+        u'deadmoney - main.bsa',
+        u'deadmoney - sounds.bsa',
+        u'gunrunnersarsenal.esm',
+        u'gunrunnersarsenal - main.bsa',
+        u'gunrunnersarsenal - sounds.bsa',
+        u'honesthearts.esm',
+        u'honesthearts - main.bsa',
+        u'honesthearts - sounds.bsa',
+        u'oldworldblues.esm',
+        u'oldworldblues - main.bsa',
+        u'oldworldblues - sounds.bsa',
+        u'lonesomeroad.esm',
+        u'lonesomeroad - main.bsa',
+        u'lonesomeroad - sounds.bsa',
+    }
+
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

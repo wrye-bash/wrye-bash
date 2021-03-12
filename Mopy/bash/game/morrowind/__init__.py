@@ -24,10 +24,10 @@
 import struct as _struct
 from collections import defaultdict
 
-from .. import GameInfo
+from ..patch_game import GameInfo, PatchGame
 from ... import brec
 
-class MorrowindGameInfo(GameInfo):
+class MorrowindGameInfo(PatchGame):
     displayName = u'Morrowind'
     fsName = u'Morrowind'
     altName = u'Wrye Mash'
@@ -101,6 +101,17 @@ class MorrowindGameInfo(GameInfo):
         stringsFiles = []
         validHeaderVersions = (1.2, 1.3)
 
+    bethDataFiles = {
+        #--Vanilla
+        u'morrowind.esm',
+        u'morrowind.bsa',
+        u'tribunal.esm',
+        u'tribunal.bsa',
+        u'bloodmoon.esm',
+        u'bloodmoon.bsa',
+    }
+
+    _patcher_package = PatchGame._morrowind
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

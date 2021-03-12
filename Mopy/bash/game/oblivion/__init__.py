@@ -25,11 +25,11 @@ import struct as _struct
 from collections import defaultdict
 from os.path import join as _j
 
-from .. import GameInfo
+from ..patch_game import GameInfo, PatchGame
 from ... import brec
 from ...brec import MreGlob, MreLand
 
-class OblivionGameInfo(GameInfo):
+class OblivionGameInfo(PatchGame):
     displayName = u'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
@@ -251,6 +251,26 @@ class OblivionGameInfo(GameInfo):
         0x00d43 : 0x64210, #--Red
         0x223c8 : 0x69473, #--Bos
         }
+
+    bethDataFiles = {
+        #--Vanilla
+        u'oblivion.esm',
+        u'oblivion_1.1.esm',
+        u'oblivion_si.esm',
+        u'oblivion - meshes.bsa',
+        u'oblivion - misc.bsa',
+        u'oblivion - sounds.bsa',
+        u'oblivion - textures - compressed.bsa',
+        u'oblivion - textures - compressed.bsa.orig',
+        u'oblivion - voices1.bsa',
+        u'oblivion - voices2.bsa',
+        #--Shivering Isles
+        u'dlcshiveringisles.esp',
+        u'dlcshiveringisles - meshes.bsa',
+        u'dlcshiveringisles - sounds.bsa',
+        u'dlcshiveringisles - textures.bsa',
+        u'dlcshiveringisles - voices.bsa',
+    }
 
     @classmethod
     def init(cls):

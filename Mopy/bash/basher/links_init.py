@@ -42,7 +42,7 @@ from .. import bass, balt, bush
 from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, \
     UIList_OpenStore, UIList_Hide
 from ..env import init_app_links
-from ..game import GameInfo
+from ..game.patch_game import PatchGame
 from ..gui import ImageWrapper
 
 #------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ def InitStatusBar():
             imageList(u'tools/tes4view%s.png'),
             _(u'Launch TES4View'),
             uid=u'TES4View'))
-    for game_class in GameInfo.supported_games(): # TODO(ut): don't save those for all games!
+    for game_class in PatchGame.supported_games(): # TODO(ut): don't save those for all games!
         xe_name = game_class.Xe.full_name
         BashStatusBar.buttons.append(App_Tes4View(
             (bass.tooldirs[xe_name + u'Path'],

@@ -87,6 +87,30 @@ class EnderalGameInfo(SkyrimGameInfo):
         0x13748 : 0x64210, #--Qyr
     }
 
+    bethDataFiles = {
+        u'skyrim.esm',
+        u'update.esm',
+        u'update.bsa',
+        u'enderal - forgotten stories.esm',
+        u'e - meshes.bsa',
+        u'e - music.bsa',
+        u'e - scripts.bsa',
+        u'e - sounds.bsa',
+        u'e - textures1.bsa',
+        u'e - textures2.bsa',
+        u'e - textures3.bsa',
+        u'l - textures.bsa',
+        u'l - voices.bsa',
+        u'skyrim - animations.bsa',
+        u'skyrim - interface.bsa',
+        u'skyrim - meshes.bsa',
+        u'skyrim - misc.bsa',
+        u'skyrim - shaders.bsa',
+        u'skyrim - sounds.bsa',
+        u'skyrim - textures.bsa',
+    }
+
+    nirnroots = _(u'Vynroots')
     @classmethod
     def init(cls):
         # Copy-pasted from Skyrim
