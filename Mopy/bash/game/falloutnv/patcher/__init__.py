@@ -20,307 +20,329 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This package contains the Fallout New Vegas specific patchers. This module
 contains the data structures that are dynamically set on a per game basis in
 bush."""
-from ...fallout3.patcher import *
 
-from . import preservers
+from ...fallout3.patcher import _Fallout3PatchGame
 
-game_specific_import_patchers = {
-    u'ImportWeaponMods': preservers.WeaponModsPatcher,
-}
-del preservers # not in _constants_members
+# PY3: Take advantage of PEP 584 to get rid of all those update() calls
+class _FalloutNVPatchGame(_Fallout3PatchGame):
+    # Need to locally import the preservers since that file needs to use
+    # bush.game, which won't be set when we initialize the game yet
+    @property
+    def game_specific_import_patchers(self):
+        from . import preservers
+        return {
+            u'ImportWeaponMods': preservers.WeaponModsPatcher,
+        }
 
-# Function Info ---------------------------------------------------------------
-# 0: no param; 1: int param; 2: formid param; 3: float param
-condition_function_data.update({ # new & changed functions in FNV
-    398:  (u'IsLimbGone', 1, 1),
-    420:  (u'GetObjectiveCompleted', 2, 1),
-    421:  (u'GetObjectiveDisplayed', 2, 1),
-    449:  (u'HasPerk', 2, 1),
-    451:  (u'IsLastIdlePlayed', 0, 0),
-    462:  (u'IsPlayerTagSkill', 2, 0),
-    474:  (u'GetIsAlignment', 2, 0),
-    480:  (u'GetIsUsedItemEquipType', 2, 0),
-    531:  (u'IsInCriticalStage', 2, 0),
-    573:  (u'GetReputation', 1, 1),
-    574:  (u'GetReputationPct', 1, 1),
-    575:  (u'GetReputationThreshold', 1, 1),
-    586:  (u'IsHardcore', 0, 0),
-    601:  (u'GetForceHitReaction', 0, 0),
-    607:  (u'ChallengeLocked', 2, 0),
-    610:  (u'GetCasinoWinningStage', 1, 0),
-    612:  (u'PlayerInRegion', 2, 0),
-    614:  (u'GetChallengeCompleted', 2, 0),
-    619:  (u'IsAlwaysHardcore', 0, 0),
+    # Function Info ---------------------------------------------------------------
+    # 0: no param; 1: int param; 2: formid param; 3: float param
+    condition_function_data = _Fallout3PatchGame.condition_function_data
+    condition_function_data.update({ # new & changed functions in FNV
+        398:  (u'IsLimbGone', 1, 1),
+        420:  (u'GetObjectiveCompleted', 2, 1),
+        421:  (u'GetObjectiveDisplayed', 2, 1),
+        449:  (u'HasPerk', 2, 1),
+        451:  (u'IsLastIdlePlayed', 0, 0),
+        462:  (u'IsPlayerTagSkill', 2, 0),
+        474:  (u'GetIsAlignment', 2, 0),
+        480:  (u'GetIsUsedItemEquipType', 2, 0),
+        531:  (u'IsInCriticalStage', 2, 0),
+        573:  (u'GetReputation', 1, 1),
+        574:  (u'GetReputationPct', 1, 1),
+        575:  (u'GetReputationThreshold', 1, 1),
+        586:  (u'IsHardcore', 0, 0),
+        601:  (u'GetForceHitReaction', 0, 0),
+        607:  (u'ChallengeLocked', 2, 0),
+        610:  (u'GetCasinoWinningStage', 1, 0),
+        612:  (u'PlayerInRegion', 2, 0),
+        614:  (u'GetChallengeCompleted', 2, 0),
+        619:  (u'IsAlwaysHardcore', 0, 0),
 
-    # extended by NVSE
-    1024: (u'GetNVSEVersion', 0, 0),
-    1025: (u'GetNVSERevision', 0, 0),
-    1026: (u'GetNVSEBeta', 0, 0),
-    1028: (u'GetWeight', 2, 0),
-    1076: (u'GetWeaponHasScope', 2, 0),
-    1089: (u'ListGetFormIndex', 2, 2),
-    1107: (u'IsKeyPressed', 1, 1),
-    1131: (u'IsControlPressed', 1, 1),
-    1271: (u'HasOwnership', 2, 0),
-    1272: (u'IsOwned', 2, 0),
-    1274: (u'GetDialogueTarget', 2, 0),
-    1275: (u'GetDialogueSubject', 2, 0),
-    1276: (u'GetDialogueSpeaker', 2, 0),
-    1278: (u'GetAgeClass', 2, 0),
-    1286: (u'GetTokenValue', 2, 0),
-    1288: (u'GetTokenRef', 2, 0),
-    1291: (u'GetPaired', 2, 2),
-    1292: (u'GetRespawn', 2, 0),
-    1294: (u'GetPermanent', 2, 0),
-    1297: (u'IsRefInList', 2, 2),
-    1301: (u'GetPackageCount', 2, 0),
-    1440: (u'IsPlayerSwimming', 0, 0),
-    1441: (u'GetTFC', 0, 0),
-    1475: (u'GetPerkRank', 2, 2),
-    1476: (u'GetAltPerkRank', 2, 2),
-    1541: (u'GetActorFIKstatus', 0, 0),
+        # extended by NVSE
+        1024: (u'GetNVSEVersion', 0, 0),
+        1025: (u'GetNVSERevision', 0, 0),
+        1026: (u'GetNVSEBeta', 0, 0),
+        1028: (u'GetWeight', 2, 0),
+        1076: (u'GetWeaponHasScope', 2, 0),
+        1089: (u'ListGetFormIndex', 2, 2),
+        1107: (u'IsKeyPressed', 1, 1),
+        1131: (u'IsControlPressed', 1, 1),
+        1271: (u'HasOwnership', 2, 0),
+        1272: (u'IsOwned', 2, 0),
+        1274: (u'GetDialogueTarget', 2, 0),
+        1275: (u'GetDialogueSubject', 2, 0),
+        1276: (u'GetDialogueSpeaker', 2, 0),
+        1278: (u'GetAgeClass', 2, 0),
+        1286: (u'GetTokenValue', 2, 0),
+        1288: (u'GetTokenRef', 2, 0),
+        1291: (u'GetPaired', 2, 2),
+        1292: (u'GetRespawn', 2, 0),
+        1294: (u'GetPermanent', 2, 0),
+        1297: (u'IsRefInList', 2, 2),
+        1301: (u'GetPackageCount', 2, 0),
+        1440: (u'IsPlayerSwimming', 0, 0),
+        1441: (u'GetTFC', 0, 0),
+        1475: (u'GetPerkRank', 2, 2),
+        1476: (u'GetAltPerkRank', 2, 2),
+        1541: (u'GetActorFIKstatus', 0, 0),
 
-    # Added by nvse_plugin_ExtendedActorVariable
-    4352: (u'GetExtendedActorVariable', 2, 0),
-    4353: (u'GetBaseExtendedActorVariable', 2, 0),
-    4355: (u'GetModExtendedActorVariable', 2, 0),
+        # Added by nvse_plugin_ExtendedActorVariable
+        4352: (u'GetExtendedActorVariable', 2, 0),
+        4353: (u'GetBaseExtendedActorVariable', 2, 0),
+        4355: (u'GetModExtendedActorVariable', 2, 0),
 
-    # Added by nvse_extender
-    4420: (u'NX_GetEVFl', 0, 0),
-    4426: (u'NX_GetQVEVFl', 2, 1),
+        # Added by nvse_extender
+        4420: (u'NX_GetEVFl', 0, 0),
+        4426: (u'NX_GetQVEVFl', 2, 1),
 
-    # Added by lutana_nvse
-    4612: (u'IsButtonPressed', 1, 0),
-    4613: (u'GetLeftStickX', 0, 0),
-    4614: (u'GetLeftStickY', 0, 0),
-    4615: (u'GetRightStickX', 0, 0),
-    4616: (u'GetRightStickY', 0, 0),
-    4617: (u'GetLeftTrigger', 0, 0),
-    4618: (u'GetRightTrigger', 0, 0),
-    4708: (u'GetArmorClass', 2, 0),
-    4709: (u'IsRaceInList', 2, 0),
-    4758: (u'IsButtonDisabled', 1, 0),
-    4761: (u'IsButtonHeld', 1, 0),
-    4774: (u'IsTriggerDisabled', 1, 0),
-    4777: (u'IsTriggerHeld', 1, 0),
-    4822: (u'GetReferenceFlag', 1, 0),
-    4832: (u'GetDistance2D', 2, 0),
-    4833: (u'GetDistance3D', 2, 0),
-    4843: (u'PlayerHasKey', 0, 0),
+        # Added by lutana_nvse
+        4612: (u'IsButtonPressed', 1, 0),
+        4613: (u'GetLeftStickX', 0, 0),
+        4614: (u'GetLeftStickY', 0, 0),
+        4615: (u'GetRightStickX', 0, 0),
+        4616: (u'GetRightStickY', 0, 0),
+        4617: (u'GetLeftTrigger', 0, 0),
+        4618: (u'GetRightTrigger', 0, 0),
+        4708: (u'GetArmorClass', 2, 0),
+        4709: (u'IsRaceInList', 2, 0),
+        4758: (u'IsButtonDisabled', 1, 0),
+        4761: (u'IsButtonHeld', 1, 0),
+        4774: (u'IsTriggerDisabled', 1, 0),
+        4777: (u'IsTriggerHeld', 1, 0),
+        4822: (u'GetReferenceFlag', 1, 0),
+        4832: (u'GetDistance2D', 2, 0),
+        4833: (u'GetDistance3D', 2, 0),
+        4843: (u'PlayerHasKey', 0, 0),
 
-    # Added by JIP NVSE Plugin
-    5637: (u'GetIsPoisoned', 0, 0),
-    5708: (u'IsEquippedWeaponSilenced', 0, 0),
-    5709: (u'IsEquippedWeaponScoped', 0, 0),
-    5947: (u'GetActorLightAmount', 0, 0),
-    5951: (u'GetGameDifficulty', 0, 0),
-    5962: (u'GetPCDetectionState', 0, 0),
-    5993: (u'IsAttacking', 0, 0),
-    5994: (u'GetPCUsingScope', 0, 0),
-    6010: (u'GetPCUsingIronSights', 0, 0),
-    6012: (u'GetRadiationLevelAlt', 0, 0),
-    6013: (u'IsInWater', 0, 0),
-    6058: (u'GetAlwaysRun', 0, 0),
-    6059: (u'GetAutoMove', 0, 0),
-    6061: (u'GetIsRagdolled', 0, 0),
-    6065: (u'AuxVarGetFltCond', 2, 1),
-    6069: (u'IsInAir', 0, 0),
-    6070: (u'GetHasContact', 2, 0),
-    6072: (u'GetHasContactBase', 2, 0),
-    6073: (u'GetHasContactType', 1, 0),
-    6124: (u'IsSpellTargetAlt', 2, 0),
-    6167: (u'IsIdlePlayingEx', 2, 0),
-    6186: (u'IsInCharGen', 0, 0),
-    6192: (u'GetWaterImmersionPerc', 0, 0),
-    6204: (u'IsFleeing', 0, 0),
-    6217: (u'GetTargetUnreachable', 0, 0),
-})
+        # Added by JIP NVSE Plugin
+        5637: (u'GetIsPoisoned', 0, 0),
+        5708: (u'IsEquippedWeaponSilenced', 0, 0),
+        5709: (u'IsEquippedWeaponScoped', 0, 0),
+        5947: (u'GetActorLightAmount', 0, 0),
+        5951: (u'GetGameDifficulty', 0, 0),
+        5962: (u'GetPCDetectionState', 0, 0),
+        5993: (u'IsAttacking', 0, 0),
+        5994: (u'GetPCUsingScope', 0, 0),
+        6010: (u'GetPCUsingIronSights', 0, 0),
+        6012: (u'GetRadiationLevelAlt', 0, 0),
+        6013: (u'IsInWater', 0, 0),
+        6058: (u'GetAlwaysRun', 0, 0),
+        6059: (u'GetAutoMove', 0, 0),
+        6061: (u'GetIsRagdolled', 0, 0),
+        6065: (u'AuxVarGetFltCond', 2, 1),
+        6069: (u'IsInAir', 0, 0),
+        6070: (u'GetHasContact', 2, 0),
+        6072: (u'GetHasContactBase', 2, 0),
+        6073: (u'GetHasContactType', 1, 0),
+        6124: (u'IsSpellTargetAlt', 2, 0),
+        6167: (u'IsIdlePlayingEx', 2, 0),
+        6186: (u'IsInCharGen', 0, 0),
+        6192: (u'GetWaterImmersionPerc', 0, 0),
+        6204: (u'IsFleeing', 0, 0),
+        6217: (u'GetTargetUnreachable', 0, 0),
+    })
 
-# Remove functions with different indices in FNV
-del condition_function_data[1082] # IsKeyPressed, 1107 in FNV
-del condition_function_data[1165] # GetWeaponHasScope, 1076 in FNV
-del condition_function_data[1166] # IsControlPressed, 1131 in FNV
-del condition_function_data[1213] # GetFOSEBeta, 1026 in FNV
+    # Remove functions with different indices in FNV
+    del condition_function_data[1082] # IsKeyPressed, 1107 in FNV
+    del condition_function_data[1165] # GetWeaponHasScope, 1076 in FNV
+    del condition_function_data[1166] # IsControlPressed, 1131 in FNV
+    del condition_function_data[1213] # GetFOSEBeta, 1026 in FNV
 
-#------------------------------------------------------------------------------
-# Import Names
-#------------------------------------------------------------------------------
-namesTypes |= {b'CCRD', b'CHAL', b'CHIP', b'CMNY', b'CSNO', b'IMOD', b'RCCT',
-               b'RCPE', b'REPU', }
+    #------------------------------------------------------------------------------
+    # Import Names
+    #------------------------------------------------------------------------------
+    namesTypes = _Fallout3PatchGame.namesTypes | {
+        b'CCRD', b'CHAL', b'CHIP', b'CMNY', b'CSNO', b'IMOD', b'RCCT', b'RCPE',
+        b'REPU',
+    }
 
-#------------------------------------------------------------------------------
-# Import Stats
-#------------------------------------------------------------------------------
-statsTypes.update({
-    b'AMMO': (u'eid', u'weight', u'value', u'speed', u'clipRounds',
-              u'projPerShot'),
-    b'ARMA': (u'eid', u'weight', u'value', u'health', u'ar', u'dt'),
-    b'ARMO': (u'eid', u'weight', u'value', u'health', u'ar', u'dt'),
-    b'WEAP': (
-        u'eid', u'weight', u'value', u'health', u'damage', u'clipsize',
-        u'animationMultiplier', u'reach', u'ammoUse', u'minSpread', u'spread',
-        u'sightFov', u'baseVatsToHitChance', u'projectileCount', u'minRange',
-        u'maxRange', u'animationAttackMultiplier', u'fireRate',
-        u'overrideActionPoint', u'rumbleLeftMotorStrength',
-        u'rumbleRightMotorStrength', u'rumbleDuration',
-        u'overrideDamageToWeaponMult', u'attackShotsPerSec', u'reloadTime',
-        u'jamTime', u'aimArc', u'rambleWavelangth', u'limbDmgMult',
-        u'sightUsage', u'semiAutomaticFireDelayMin',
-        u'semiAutomaticFireDelayMax', u'strengthReq', u'regenRate',
-        u'killImpulse', u'impulseDist', u'skillReq', u'criticalDamage',
-        u'criticalMultiplier', u'vatsSkill', u'vatsDamMult', u'vatsAp'),
-})
+    #------------------------------------------------------------------------------
+    # Import Stats
+    #------------------------------------------------------------------------------
+    statsTypes = _Fallout3PatchGame.statsTypes
+    statsTypes.update({
+        b'AMMO': (u'eid', u'weight', u'value', u'speed', u'clipRounds',
+                  u'projPerShot'),
+        b'ARMA': (u'eid', u'weight', u'value', u'health', u'ar', u'dt'),
+        b'ARMO': (u'eid', u'weight', u'value', u'health', u'ar', u'dt'),
+        b'WEAP': (
+            u'eid', u'weight', u'value', u'health', u'damage', u'clipsize',
+            u'animationMultiplier', u'reach', u'ammoUse', u'minSpread', u'spread',
+            u'sightFov', u'baseVatsToHitChance', u'projectileCount', u'minRange',
+            u'maxRange', u'animationAttackMultiplier', u'fireRate',
+            u'overrideActionPoint', u'rumbleLeftMotorStrength',
+            u'rumbleRightMotorStrength', u'rumbleDuration',
+            u'overrideDamageToWeaponMult', u'attackShotsPerSec', u'reloadTime',
+            u'jamTime', u'aimArc', u'rambleWavelangth', u'limbDmgMult',
+            u'sightUsage', u'semiAutomaticFireDelayMin',
+            u'semiAutomaticFireDelayMax', u'strengthReq', u'regenRate',
+            u'killImpulse', u'impulseDist', u'skillReq', u'criticalDamage',
+            u'criticalMultiplier', u'vatsSkill', u'vatsDamMult', u'vatsAp'),
+    })
 
-##: Format needs rethinking - will be done in inf-312-parser-abc
-statsHeaders = (
-    #--Alch
-    (u'ALCH',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #Ammo
-    (u'AMMO',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Speed'),_(u'Clip Rounds'),_(u'Proj/Shot'))) + u'"\n')),
-    #--Armor
-    (u'ARMO',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'AR'),_(u'DT'))) + u'"\n')),
-    #--Armor Addon
-    (u'ARMA',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'AR'),_(u'DT'))) + u'"\n')),
-    #Books
-    (u'BOOK',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #Ingredients
-    (u'INGR',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-       _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #--Keys
-    (u'KEYM',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #Lights
-    (u'LIGH',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Duration'))) + u'"\n')),
-    #--Misc
-    (u'MISC',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #--Weapons
-    (u'WEAP',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'Damage'),
-        _(u'Clip Size'),_(u'Animation Multiplier'),_(u'Reach'),_(u'Ammo Use'),
-        _(u'Min Spread'),_(u'Spread'),_(u'Sight Fov'),
-        _(u'Base VATS To-Hit Chance'), _(u'Projectile Count'),_(u'Min Range'),
-        _(u'Max Range'), _(u'Animation Attack Multiplier'), _(u'Fire Rate'),
-        _(u'Override - Action Point'), _(u'Rumble - Left Motor Strength'),
-        _(u'rRmble - Right Motor Strength'), _(u'Rumble - Duration'),
-        _(u'Override - Damage To Weapon Mult'), _(u'Attack Shots/Sec'),
-        _(u'Reload Time'), _(u'Jam Time'), _(u'Aim Arc'), _(u'Ramble - Wavelangth'),
-        _(u'Limb Dmg Mult'), _(u'Sight Usage'),_(u'Semi-Automatic Fire Delay Min'),
-        _(u'Semi-Automatic Fire Delay Max'),_(u'Strength Req'), _(u'Regen Rate'),
-        _(u'Kill Impulse'), _(u'Impulse Dist'), _(u'Skill Req'),_(u'Critical Damage'),
-        _(u'Crit % Mult'),_(u'VATS Skill'), _(u'VATS Dam. Mult'),
-        _(u'VATS AP'))) + u'"\n')),
-)
+    ##: Format needs rethinking
+    statsHeaders = (
+        #--Alch
+        (u'ALCH',
+            (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+            _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+        #Ammo
+        (u'AMMO',
+            (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+            _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Speed'),_(u'Clip Rounds'),_(u'Proj/Shot'))) + u'"\n')),
+        #--Armor
+        (u'ARMO',
+            (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+            _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'AR'),_(u'DT'))) + u'"\n')),
+        #--Armor Addon
+        (u'ARMA',
+            (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+            _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'AR'),_(u'DT'))) + u'"\n')),
+        #Books
+        (u'BOOK',
+            (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+            _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+        #Ingredients
+        (u'INGR',
+            (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+           _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+        #--Keys
+        (u'KEYM',
+            (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+            _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+        #Lights
+        (u'LIGH',
+            (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+            _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Duration'))) + u'"\n')),
+        #--Misc
+        (u'MISC',
+            (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+            _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
+        #--Weapons
+        (u'WEAP',
+            (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
+            _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'Damage'),
+            _(u'Clip Size'),_(u'Animation Multiplier'),_(u'Reach'),_(u'Ammo Use'),
+            _(u'Min Spread'),_(u'Spread'),_(u'Sight Fov'),
+            _(u'Base VATS To-Hit Chance'), _(u'Projectile Count'),_(u'Min Range'),
+            _(u'Max Range'), _(u'Animation Attack Multiplier'), _(u'Fire Rate'),
+            _(u'Override - Action Point'), _(u'Rumble - Left Motor Strength'),
+            _(u'rRmble - Right Motor Strength'), _(u'Rumble - Duration'),
+            _(u'Override - Damage To Weapon Mult'), _(u'Attack Shots/Sec'),
+            _(u'Reload Time'), _(u'Jam Time'), _(u'Aim Arc'), _(u'Ramble - Wavelangth'),
+            _(u'Limb Dmg Mult'), _(u'Sight Usage'),_(u'Semi-Automatic Fire Delay Min'),
+            _(u'Semi-Automatic Fire Delay Max'),_(u'Strength Req'), _(u'Regen Rate'),
+            _(u'Kill Impulse'), _(u'Impulse Dist'), _(u'Skill Req'),_(u'Critical Damage'),
+            _(u'Crit % Mult'),_(u'VATS Skill'), _(u'VATS Dam. Mult'),
+            _(u'VATS AP'))) + u'"\n')),
+    )
 
-#------------------------------------------------------------------------------
-# Import Sounds
-#------------------------------------------------------------------------------
-soundsTypes.update({
-    b'CONT': (u'soundOpen', u'soundClose', u'soundRandomLooping'),
-    b'WEAP': (u'pickupSound', u'dropSound', u'soundGunShot3D',
-              u'soundGunShot2D', u'soundGunShot3DLooping',
-              u'soundMeleeSwingGunNoAmmo', u'soundBlock', u'idleSound',
-              u'equipSound', u'unequipSound', u'soundMod1Shoot3Ds',
-              u'soundMod1Shoot2D', u'soundLevel'),
-})
+    #------------------------------------------------------------------------------
+    # Import Sounds
+    #------------------------------------------------------------------------------
+    soundsTypes = _Fallout3PatchGame.soundsTypes
+    soundsTypes.update({
+        b'CONT': (u'soundOpen', u'soundClose', u'soundRandomLooping'),
+        b'WEAP': (u'pickupSound', u'dropSound', u'soundGunShot3D',
+                  u'soundGunShot2D', u'soundGunShot3DLooping',
+                  u'soundMeleeSwingGunNoAmmo', u'soundBlock', u'idleSound',
+                  u'equipSound', u'unequipSound', u'soundMod1Shoot3Ds',
+                  u'soundMod1Shoot2D', u'soundLevel'),
+    })
 
-#------------------------------------------------------------------------------
-# Import Graphics
-#------------------------------------------------------------------------------
-graphicsTypes.update({
-    b'CCRD': (u'iconPath', u'smallIconPath', u'model', u'textureFace',
-              u'textureBack'),
-    b'CHIP': (u'iconPath', u'smallIconPath', u'model'),
-    b'CMNY': (u'iconPath', u'smallIconPath', u'model'),
-    b'CSNO': (u'chipModels', u'slotMachineModel', u'blackjackTableModel',
-              u'extraBlackjackTableModel', u'rouletteTableModel',
-              u'slotReelTextures', u'blackjackDecks'),
-    b'IMOD': (u'iconPath', u'smallIconPath', u'model'),
-    b'REPU': (u'iconPath', u'smallIconPath'),
-    b'WEAP': (u'iconPath', u'smallIconPath', u'model', u'shellCasingModel',
-              u'scopeModel', u'worldModel', u'modelWithMods',
-              u'firstPersonModelWithMods', u'animationType', u'gripAnimation',
-              u'reloadAnimation'),
-})
+    #------------------------------------------------------------------------------
+    # Import Graphics
+    #------------------------------------------------------------------------------
+    graphicsTypes = _Fallout3PatchGame.graphicsTypes
+    graphicsTypes.update({
+        b'CCRD': (u'iconPath', u'smallIconPath', u'model', u'textureFace',
+                  u'textureBack'),
+        b'CHIP': (u'iconPath', u'smallIconPath', u'model'),
+        b'CMNY': (u'iconPath', u'smallIconPath', u'model'),
+        b'CSNO': (u'chipModels', u'slotMachineModel', u'blackjackTableModel',
+                  u'extraBlackjackTableModel', u'rouletteTableModel',
+                  u'slotReelTextures', u'blackjackDecks'),
+        b'IMOD': (u'iconPath', u'smallIconPath', u'model'),
+        b'REPU': (u'iconPath', u'smallIconPath'),
+        b'WEAP': (u'iconPath', u'smallIconPath', u'model', u'shellCasingModel',
+                  u'scopeModel', u'worldModel', u'modelWithMods',
+                  u'firstPersonModelWithMods', u'animationType', u'gripAnimation',
+                  u'reloadAnimation'),
+    })
 
-#------------------------------------------------------------------------------
-# Import Text
-#------------------------------------------------------------------------------
-text_types.update({
-    b'CHAL': (u'description',),
-    b'IMOD': (u'description',),
-})
+    #------------------------------------------------------------------------------
+    # Import Text
+    #------------------------------------------------------------------------------
+    text_types = _Fallout3PatchGame.text_types
+    text_types.update({
+        b'CHAL': (u'description',),
+        b'IMOD': (u'description',),
+    })
 
-#------------------------------------------------------------------------------
-# Import Object Bounds
-#------------------------------------------------------------------------------
-object_bounds_types |= {b'CCRD', b'CHIP', b'CMNY', b'IMOD', }
+    #------------------------------------------------------------------------------
+    # Import Object Bounds
+    #------------------------------------------------------------------------------
+    object_bounds_types = _Fallout3PatchGame.object_bounds_types | {
+        b'CCRD', b'CHIP', b'CMNY', b'IMOD',
+    }
 
-#------------------------------------------------------------------------------
-# Contents Checker
-#------------------------------------------------------------------------------
-# Entry types used for CONT, CREA, LVLI and NPC_
-_common_entry_types = {b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CCRD', b'CHIP',
-                       b'CMNY', b'IMOD', b'KEYM', b'LIGH', b'LVLI', b'MISC',
-                       b'NOTE', b'WEAP'}
-cc_valid_types = {
-    b'CONT': _common_entry_types,
-    b'CREA': _common_entry_types,
-    b'LVLC': {b'CREA', b'LVLC'},
-    b'LVLN': {b'LVLN', b'NPC_'},
-    b'LVLI': _common_entry_types,
-    b'NPC_': _common_entry_types,
-}
+    #------------------------------------------------------------------------------
+    # Contents Checker
+    #------------------------------------------------------------------------------
+    # Entry types used for CONT, CREA, LVLI and NPC_
+    _common_entry_types = {b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'CCRD', b'CHIP',
+                           b'CMNY', b'IMOD', b'KEYM', b'LIGH', b'LVLI', b'MISC',
+                           b'NOTE', b'WEAP'}
+    cc_valid_types = {
+        b'CONT': _common_entry_types,
+        b'CREA': _common_entry_types,
+        b'LVLC': {b'CREA', b'LVLC'},
+        b'LVLN': {b'LVLN', b'NPC_'},
+        b'LVLI': _common_entry_types,
+        b'NPC_': _common_entry_types,
+    }
 
-#------------------------------------------------------------------------------
-# Import Scripts
-#------------------------------------------------------------------------------
-scripts_types |= {b'AMMO', b'CCRD', b'CHAL', b'IMOD'}
+    #------------------------------------------------------------------------------
+    # Import Scripts
+    #------------------------------------------------------------------------------
+    scripts_types = _Fallout3PatchGame.scripts_types | {
+        b'AMMO', b'CCRD', b'CHAL', b'IMOD',
+    }
 
-#------------------------------------------------------------------------------
-# Import Destructible
-#------------------------------------------------------------------------------
-destructible_types |= {b'CHIP', b'IMOD'}
+    #------------------------------------------------------------------------------
+    # Import Destructible
+    #------------------------------------------------------------------------------
+    destructible_types = _Fallout3PatchGame.destructible_types | {
+        b'CHIP', b'IMOD',
+    }
 
-#------------------------------------------------------------------------------
-# Import Actors
-#------------------------------------------------------------------------------
-actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
-    u'barterGold', u'calcMax', u'calcMin', u'dispositionBase', u'fatigue',
-    u'flags.autoCalc', u'flags.autocalcService', u'flags.canBeAllRaces',
-    u'flags.essential', u'flags.female', u'flags.isChargenFacePreset',
-    u'flags.noBloodDecal', u'flags.noBloodSpray', u'flags.noKnockDown',
-    u'flags.noLowLevel', u'flags.noRotatingHeadTrack', u'flags.notPushable',
-    u'flags.noVATSMelee', u'flags.pcLevelOffset', u'flags.respawn',
-    u'flags.useTemplate', u'karma', u'level', u'speedMultiplier',
-    u'templateFlags')
+    #------------------------------------------------------------------------------
+    # Import Actors
+    #------------------------------------------------------------------------------
+    actor_importer_attrs = _Fallout3PatchGame.actor_importer_attrs
+    actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
+        u'barterGold', u'calcMax', u'calcMin', u'dispositionBase', u'fatigue',
+        u'flags.autoCalc', u'flags.autocalcService', u'flags.canBeAllRaces',
+        u'flags.essential', u'flags.female', u'flags.isChargenFacePreset',
+        u'flags.noBloodDecal', u'flags.noBloodSpray', u'flags.noKnockDown',
+        u'flags.noLowLevel', u'flags.noRotatingHeadTrack', u'flags.notPushable',
+        u'flags.noVATSMelee', u'flags.pcLevelOffset', u'flags.respawn',
+        u'flags.useTemplate', u'karma', u'level', u'speedMultiplier',
+        u'templateFlags')
 
-#------------------------------------------------------------------------------
-# Tweak Assorted
-#------------------------------------------------------------------------------
-assorted_tweaks |= {u'AssortedTweak_ArrowWeight'}
+    #------------------------------------------------------------------------------
+    # Tweak Assorted
+    #------------------------------------------------------------------------------
+    assorted_tweaks = _Fallout3PatchGame.assorted_tweaks | {
+        u'AssortedTweak_ArrowWeight',
+    }
 
-#------------------------------------------------------------------------------
-# Tweak Assorted
-#------------------------------------------------------------------------------
-settings_tweaks |= {u'GmstTweak_Actor_StrengthEncumbranceMultiplier'}
+    #------------------------------------------------------------------------------
+    # Tweak Assorted
+    #------------------------------------------------------------------------------
+    settings_tweaks = _Fallout3PatchGame.settings_tweaks | {
+        u'GmstTweak_Actor_StrengthEncumbranceMultiplier',
+    }

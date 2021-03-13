@@ -91,7 +91,7 @@ class APreserver(ImportPatcher):
         self.srcs = [s for s in p_sources if s.cext != u'.csv']
         self.loadFactory = self._patcher_read_fact(by_sig=self.rec_type_attrs)
 
-    # CSV helpers - holding out hope for inf-312-parser-abc
+    # CSV helpers
     def _parse_csv_sources(self, progress):
         """Parses CSV files. Only called if _csv_parser is set. Override as
         needed and call _process_csv_sources until parser ABC is done."""

@@ -22,7 +22,6 @@
 #
 # =============================================================================
 """Module housing a GameInfo subtype allowing to build a Bashed patch."""
-import importlib
 
 from . import GameInfo
 
@@ -33,6 +32,13 @@ class PatchGame(GameInfo):
     in the class body. This is done for decluttering the game overrides from
     too specific (and often big) data structures - however the exact constants
     included here is still WIP."""
+    # Set in game/*/patcher.py used in Mopy/bash/basher/gui_patchers.py
+    @property
+    def gameSpecificPatchers(self): return {}
+    @property
+    def gameSpecificListPatchers(self): return {}
+    @property
+    def game_specific_import_patchers(self): return {}
 
     # Bash Tags supported by this game
     allTags = set()
@@ -40,11 +46,6 @@ class PatchGame(GameInfo):
     # Patchers available when building a Bashed Patch (referenced by GUI class
     # name, see gui_patchers.py for their definitions).
     patchers = set()
-
-    # Set in game/*/patcher.py used in Mopy/bash/basher/gui_patchers.py
-    gameSpecificPatchers = {}
-    gameSpecificListPatchers = {}
-    game_specific_import_patchers = {}
 
     # Record information - set in cls.init ------------------------------------
     # Mergeable record types
@@ -74,51 +75,6 @@ class PatchGame(GameInfo):
     # special, because the type of its second parameter depends on the value of
     # the first parameter.
     getvatsvalue_index = 0
-
-    # Dynamic importer --------------------------------------------------------
-    _constants_members = {
-        # gui patchers
-        u'gameSpecificPatchers', u'gameSpecificListPatchers',
-        u'game_specific_import_patchers',
-        # patcher and tweaks constants
-        u'actor_importer_attrs', u'actor_tweaks', u'actor_types',
-        u'actor_values', u'assorted_tweaks', u'body_tags', u'cc_passes',
-        u'cc_valid_types', u'cellRecAttrs', u'cell_float_attrs',
-        u'cell_skip_interior_attrs', u'condition_function_data',
-        u'default_eyes', u'destructible_types', u'ench_stats_attrs',
-        u'generic_av_effects', u'getvatsvalue_index', u'graphicsFidTypes',
-        u'graphicsModelAttrs', u'graphicsTypes', u'hostile_effects',
-        u'import_races_attrs', u'inventoryTypes', u'item_attr_type',
-        u'keywords_types', u'listTypes', u'mgef_basevalue', u'mgef_name',
-        u'mgef_school', u'mgef_stats_attrs', u'namesTypes',
-        u'nonplayable_biped_flags', u'not_playable_flag',
-        u'object_bounds_types', u'pricesTypes', u'race_tweaks',
-        u'race_tweaks_need_collection', u'relations_attrs',
-        u'relations_csv_header', u'relations_csv_row_format',
-        u'save_rec_types', u'scripts_types', u'settings_tweaks',
-        u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'spell_stats_types', u'staff_condition',
-        u'static_attenuation_rec_type', u'statsHeaders', u'statsTypes',
-        u'text_types',
-    }
-
-    _morrowind = object() # morrowind has no patcher
-    _patcher_package = u'' # read the patcher of another (parent) game
-    @classmethod
-    def _dynamic_import_modules(cls, package_name):
-        """Dynamically import the patcher module."""
-        super(PatchGame, cls)._dynamic_import_modules(package_name)
-        if cls._patcher_package is cls._morrowind:
-            return
-        package_name = cls._patcher_package or package_name
-        patchers_module = importlib.import_module(u'.patcher',
-            package=package_name)
-        for k in dir(patchers_module):
-            if k.startswith(u'_'): continue
-            if k not in cls._constants_members:
-                raise SyntaxError(u"Unexpected game constant '%s', check for "
-                                  u'typos or update _constants_members' % k)
-            setattr(cls, k, getattr(patchers_module, k))
 
     #--------------------------------------------------------------------------
     # Leveled Lists

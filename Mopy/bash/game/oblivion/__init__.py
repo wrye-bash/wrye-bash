@@ -25,11 +25,12 @@ import struct as _struct
 from collections import defaultdict
 from os.path import join as _j
 
-from ..patch_game import GameInfo, PatchGame
+from .patcher import _OblivionPatchGame
+from .. import GameInfo
 from ... import brec
 from ...brec import MreGlob, MreLand
 
-class OblivionGameInfo(PatchGame):
+class OblivionGameInfo(_OblivionPatchGame):
     displayName = u'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'

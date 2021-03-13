@@ -443,6 +443,7 @@ class GameInfo(object):
         game_types = set(cls.__subclasses__())
         game_types.update(
             chain.from_iterable(c.__subclasses__() for c in list(game_types)))
-        return game_types
+        # Skip the internal PatchGame subclasses
+        return {g for g in game_types if not g.__name__.startswith(u'_')}
 
 GAME_TYPE = None

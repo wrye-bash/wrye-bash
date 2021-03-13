@@ -25,11 +25,12 @@
 from collections import defaultdict
 from os.path import join as _j
 
-from ..patch_game import GameInfo, PatchGame
+from .patcher import _Fallout3PatchGame
+from .. import GameInfo
 from ... import brec
 from ...brec import MreFlst, MreGlob
 
-class Fallout3GameInfo(PatchGame):
+class Fallout3GameInfo(_Fallout3PatchGame):
     displayName = u'Fallout 3'
     fsName = u'Fallout3'
     altName = u'Wrye Flash'

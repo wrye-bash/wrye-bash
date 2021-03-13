@@ -24,11 +24,12 @@
 
 from os.path import join as _j
 
-from ..patch_game import GameInfo, PatchGame
+from .patcher import _SkyrimPatchGame
+from .. import GameInfo
 from ... import brec
 from ...brec import MreFlst, MreGlob
 
-class SkyrimGameInfo(PatchGame):
+class SkyrimGameInfo(_SkyrimPatchGame):
     displayName = u'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
@@ -284,7 +285,6 @@ class SkyrimGameInfo(PatchGame):
         u'highrestexturepack03.bsa',
     }
 
-    _patcher_package = u'bash.game.skyrim'
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

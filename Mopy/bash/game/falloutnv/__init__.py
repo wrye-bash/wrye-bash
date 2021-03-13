@@ -24,11 +24,12 @@
 
 from collections import defaultdict
 
+from .patcher import _FalloutNVPatchGame
 from ..fallout3 import Fallout3GameInfo
 from ... import brec
 from ...brec import MreFlst, MreGlob
 
-class FalloutNVGameInfo(Fallout3GameInfo):
+class FalloutNVGameInfo(_FalloutNVPatchGame, Fallout3GameInfo):
     displayName = u'Fallout New Vegas'
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'

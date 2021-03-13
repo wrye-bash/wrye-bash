@@ -24,7 +24,8 @@
 import struct as _struct
 from collections import defaultdict
 
-from ..patch_game import GameInfo, PatchGame
+from .. import GameInfo
+from ..patch_game import PatchGame
 from ... import brec
 
 class MorrowindGameInfo(PatchGame):
@@ -111,7 +112,6 @@ class MorrowindGameInfo(PatchGame):
         u'bloodmoon.bsa',
     }
 
-    _patcher_package = PatchGame._morrowind
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

@@ -21,15 +21,16 @@
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
+
 import struct as _struct
 from collections import defaultdict
-from os.path import join as _j
 
+from .patcher import _NehrimPatchGame
 from ..oblivion import OblivionGameInfo
 from ... import brec
 from ...brec import MreGlob, MreLand
 
-class NehrimGameInfo(OblivionGameInfo):
+class NehrimGameInfo(_NehrimPatchGame, OblivionGameInfo):
     displayName = u'Nehrim'
     bash_root_prefix = u'Nehrim'
     game_detect_files = [u'NehrimLauncher.exe']

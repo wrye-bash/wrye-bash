@@ -24,10 +24,11 @@
 
 from os.path import join as _j
 
-from ..patch_game import GameInfo, PatchGame
+from .patcher import _Fallout4PatchGame
+from .. import GameInfo
 from ... import brec
 
-class Fallout4GameInfo(PatchGame):
+class Fallout4GameInfo(_Fallout4PatchGame):
     displayName = u'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'

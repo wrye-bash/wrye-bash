@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """GameInfo override for TES V: Skyrim VR."""
 
 from ..skyrimse import SkyrimSEGameInfo
