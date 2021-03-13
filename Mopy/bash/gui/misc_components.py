@@ -35,6 +35,7 @@ from .base_components import _AComponent, Color, WithMouseEvents, \
     ImageWrapper, WithCharEvents
 from .events import EventResult
 from ..bolt import Path, dict_sort
+from ..exception import ArgumentError
 
 class Font(_wx.Font):
     @staticmethod
@@ -418,10 +419,10 @@ class GlobalMenu(_AComponent):
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
         # If we don't pause here, the GUI will flicker like crazy
-        with Link.Frame.global_menu.pause_drawing():
+        with self.pause_drawing():
             # Clear the menu and repopulate it. Have to do this JIT, since the
-            # checked/enabled/appended state of links will depend on the current
-            # state of WB itself.
+            # checked/enabled/appended state of links will depend on the
+            # current state of WB itself.
             for old_menu_item in wx_menu.GetMenuItems():
                 wx_menu.DestroyItem(old_menu_item)
             # Need to set this, otherwise help text won't be shown
@@ -437,3 +438,16 @@ class GlobalMenu(_AComponent):
         if isinstance(wx_menu, self._GMCategory):
             from ..balt import Link ##: de-wx! move links to gui
             Link.Popup = None
+
+# TODO(inf) de-wx! Actually, don't - absorb via better API
+def staticBitmap(parent, bitmap=None, size=(32, 32), special=u'warn'):
+    """Tailored to current usages - IAW: do not use."""
+    if bitmap is None:
+        bmp = _wx.ArtProvider.GetBitmap
+        if special == u'warn':
+            bitmap = bmp(_wx.ART_WARNING, _wx.ART_MESSAGE_BOX, size)
+        elif special == u'undo':
+            return bmp(_wx.ART_UNDO, _wx.ART_TOOLBAR, size)
+        else: raise ArgumentError(
+            u'special must be either warn or undo: %r given' % special)
+    return _wx.StaticBitmap(_AComponent._resolve(parent), bitmap=bitmap)

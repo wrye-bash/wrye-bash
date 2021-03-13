@@ -58,8 +58,15 @@ class _TopLevelWin(_AComponent):
         # Resolve the special DEFAULT_POSITION constant to a real value
         self.component_position = (
             self._def_pos if wanted_pos == DEFAULT_POSITION else wanted_pos)
-        self.component_size = kwargs.get('size', None) or sizes_dict.get(
-            self._size_key, self._def_size)
+        wanted_width, wanted_height = kwargs.get(
+            'size', None) or sizes_dict.get(self._size_key, self._def_size)
+        # Check if our wanted width or height is too small and bump it up
+        if self._min_size:
+            if wanted_width < self._min_size[0]:
+                wanted_width = self._min_size[0]
+            if wanted_height < self._min_size[1]:
+                wanted_height = self._min_size[1]
+        self.component_size = (wanted_width, wanted_height)
 
     @property
     def is_maximized(self):
@@ -320,7 +327,7 @@ class CenteredSplash(_AComponent):
                                                    1, None) # Timeout - ignored
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.stop_splash)
-        _wx.Yield()
+        _wx.Yield() ##: huh?
 
     def stop_splash(self):
         """Hides and terminates the splash screen."""

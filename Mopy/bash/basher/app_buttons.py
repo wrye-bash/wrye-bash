@@ -29,10 +29,10 @@ from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .settings_dialog import SettingsDialog
 from .. import bass, bosh, bolt, balt, bush, load_order
-from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink, staticBitmap
+from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink
 from ..env import getJava
 from ..exception import AbstractError
-from ..gui import ClickableImage, EventResult
+from ..gui import ClickableImage, EventResult, staticBitmap
 
 __all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
            u'TESCS_Button', u'App_Tes4View', u'App_BOSS',
@@ -678,7 +678,7 @@ class App_Help(StatusBar_Button):
     imageKey, _tip = u'help.%s', _(u'Help File')
 
     def Execute(self):
-        webbrowser.open(balt.readme_url(mopy=bass.dirs[u'mopy']))
+        webbrowser.open(bolt.readme_url(mopy=bass.dirs[u'mopy']))
 
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):

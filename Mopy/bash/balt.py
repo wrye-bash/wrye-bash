@@ -27,15 +27,12 @@ now. See #190, its code should be refactored and land in basher and/or gui."""
 from __future__ import division
 
 import io
-import re
 
 from . import bass # for dirs - try to avoid
-#--Localization
-#..Handled by bolt, so import that.
 from . import bolt
-from .bolt import GPath, deprint
-from .exception import AbstractError, AccessDeniedError, ArgumentError, \
-    BoltError, CancelError, SkipError, StateError
+from .bolt import GPath, deprint, readme_url
+from .exception import AbstractError, AccessDeniedError, BoltError, \
+    CancelError, SkipError, StateError
 #--Python
 import time
 import threading
@@ -48,8 +45,9 @@ import wx.adv
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, ImageWrapper, \
-    BusyCursor, GlobalMenu, WrappingTextMixin
+    Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, \
+    ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
+    staticBitmap
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -187,23 +185,6 @@ def bell(arg=None):
     wx.Bell()
     return arg
 
-def ok_and_cancel_group(parent, on_ok=None):
-    ok_button = OkButton(parent)
-    ok_button.on_clicked.subscribe(on_ok)
-    return HLayout(spacing=4, items=[ok_button, CancelButton(parent)])
-
-def staticBitmap(parent, bitmap=None, size=(32, 32), special=u'warn'):
-    """Tailored to current usages - IAW: do not use."""
-    if bitmap is None:
-        bmp = wx.ArtProvider.GetBitmap
-        if special == u'warn':
-            bitmap = bmp(wx.ART_WARNING,wx.ART_MESSAGE_BOX, size)
-        elif special == u'undo':
-            return bmp(wx.ART_UNDO,wx.ART_TOOLBAR,size)
-        else: raise ArgumentError(
-            u'special must be either warn or undo: %r given' % special)
-    return wx.StaticBitmap(_AComponent._resolve(parent), bitmap=bitmap)
-
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
 def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
@@ -246,17 +227,22 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
     return False
 
 class _ContinueDialog(DialogWindow):
-    def __init__(self, parent, message, title, checkBoxText):
-        super(_ContinueDialog, parent).__init__(parent, title, sizes_dict=sizes, size=(350, -1))
-        self.gCheckBox = CheckBox(self, checkBoxText)
+    _def_size = _min_size = (360, 150)
+
+    def __init__(self, parent, message, title, checkBoxTxt):
+        super(_ContinueDialog, self).__init__(parent, title, sizes_dict=sizes)
+        self.gCheckBox = CheckBox(self, checkBoxTxt)
         #--Layout
         VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, items=[
                 (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
                 (Label(self, message), LayoutOptions(expand=True, weight=1))]),
              LayoutOptions(weight=1)),
-            self.gCheckBox,
-            ok_and_cancel_group(self)
+            Stretch(),
+            HorizontalLine(self),
+            HLayout(spacing=4, item_expand=True, items=[
+                self.gCheckBox, Stretch(), OkButton(self), CancelButton(self),
+            ]),
         ]).apply_to(self)
 
     def show_modal(self):
@@ -474,7 +460,7 @@ class Log(_Log):
             fixedStyle.SetFont(fixedFont)
             # txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
         #--Layout
-        ok_button = OkButton(self.window, default=True)
+        ok_button = OkButton(self.window)
         ok_button.on_clicked.subscribe(self.window.close_win)
         VLayout(border=2, items=[
             (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
@@ -500,7 +486,7 @@ class WryeLog(_Log):
         self._html_ctrl = DocumentViewer(self.window)
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
-        gOkButton = OkButton(self.window, default=True)
+        gOkButton = OkButton(self.window)
         gOkButton.on_clicked.subscribe(self.window.close_win)
         if not asDialog:
             self.window.set_background_color(gOkButton.get_background_color())
@@ -1179,15 +1165,11 @@ class UIList(wx.Panel):
             if wrapped_evt.is_shift_down: # de-select all
                 self.ClearSelected(clear_details=True)
             else: # select all
-                try:
-                    self.__gList.on_item_selected.unsubscribe(
-                        self._handle_select)
+                with self.__gList.on_item_selected.pause_subscription(
+                    self._handle_select):
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
                     self.__gList.lc_select_item_at_index(-1) # -1 indicates 'all items'
-                finally:
-                    self.__gList.on_item_selected.subscribe(
-                        self._handle_select)
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in wxDelete:
             with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
@@ -1329,11 +1311,9 @@ class UIList(wx.Panel):
 
     def SelectItemsNoCallback(self, items, deselectOthers=False):
         if deselectOthers: self.ClearSelected()
-        try:
-            self.__gList.on_item_selected.unsubscribe(self._handle_select)
+        with self.__gList.on_item_selected.pause_subscription(
+            self._handle_select):
             for item in items: self.SelectItem(item)
-        finally:
-            self.__gList.on_item_selected.subscribe(self._handle_select)
 
     def ClearSelected(self, clear_details=False):
         """Unselect all items."""
@@ -2214,7 +2194,7 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
             layout.add((HBoxedLayout(self, item_expand=True, title=title,
                                      item_weight=1, items=[checksCtrl]),
                         LayoutOptions(expand=True, weight=1)))
-        btns = [OkButton(self, btn_label=bOk, default=True),
+        btns = [OkButton(self, btn_label=bOk),
                 CancelButton(self, btn_label=bCancel) if canCancel else None]
         layout.add((HLayout(spacing=5, items=btns),
                     LayoutOptions(h_align=RIGHT)))
@@ -2250,8 +2230,7 @@ def ask_uac_restart(message, title, mopy):
         return askYes(None, message + u'\n\n' + _(
             u'Start Wrye Bash with Administrator Privileges?'), title)
     admin = _(u'Run with Administrator Privileges')
-    readme = readme_url(mopy)
-    readme += u'#trouble-permissions'
+    readme = readme_url(mopy) + u'#trouble-permissions'
     return vistaDialog(None, message=message,
         buttons=[(True, u'+' + admin), (False, _(u'Run normally'))],
         title=title, expander=[_(u'How to avoid this message in the future'),
@@ -2261,17 +2240,6 @@ def ask_uac_restart(message, title, mopy):
             u'\n' + _(u'--uac: always run with Admin Privileges') +
             u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
                 u'for more information.') % {u'readmePath': readme}])[0]
-
-def readme_url(mopy, advanced=False, skip_local=False):
-    readme_name = (u'Wrye Bash Advanced Readme.html' if advanced else
-                   u'Wrye Bash General Readme.html')
-    readme = mopy.join(u'Docs', readme_name)
-    if not skip_local and readme.isfile():
-        readme = u'file:///' + readme.s.replace(u'\\', u'/')
-    else:
-        # Fallback to Git repository
-        readme = u'http://wrye-bash.github.io/docs/' + readme_name
-    return readme.replace(u' ', u'%20')
 
 class INIListCtrl(wx.ListCtrl):
 

@@ -27,11 +27,9 @@ from itertools import chain
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bolt # for type hints
-from ..balt import readme_url
-from .. import load_order
-from .. import bass
+from .. import load_order, bass
 from ..brec import MreRecord, RecHeader
-from ..bolt import GPath, SubProgress, deprint, Progress, dict_sort
+from ..bolt import GPath, SubProgress, deprint, Progress, dict_sort, readme_url
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import ModFile, LoadFactory

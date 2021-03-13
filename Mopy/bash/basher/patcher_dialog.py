@@ -87,7 +87,6 @@ class PatchDialog(DialogWindow):
         self.gDeselectAll = DeselectAllButton(self)
         self.gDeselectAll.on_clicked.subscribe(
             lambda: self._mass_select_recursive(False))
-        cancelButton = CancelButton(self)
         self.gPatchers = CheckListBox(self, choices=patcherNames,
                                       isSingle=True, onSelect=self.OnSelect)
         self.gPatchers.on_box_checked.subscribe(self.OnCheck)
@@ -120,10 +119,12 @@ class PatchDialog(DialogWindow):
             HorizontalLine(self),
             HLayout(spacing=4, items=[
                 Stretch(), self.gExportConfig, self.gImportConfig,
-                self.gRevertConfig, self.gRevertToDefault]),
+                self.gRevertConfig, self.gRevertToDefault,
+            ]),
             HLayout(spacing=4, items=[
                 Stretch(), self.gExecute, self.gSelectAll, self.gDeselectAll,
-                cancelButton])
+                CancelButton(self),
+            ]),
         ]).apply_to(self)
         #--Patcher panels
         for patcher in self._gui_patchers:

@@ -30,7 +30,7 @@ from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import colors, Link, Resources
-from ..bolt import deprint, GPath
+from ..bolt import deprint, GPath, readme_url
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
@@ -80,11 +80,7 @@ class SettingsDialog(DialogWindow):
                           u'settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)
         ok_btn = OkButton(self)
-        ok_btn.on_clicked.subscribe(self._send_ok)
-        cancel_btn = CancelButton(self)
-        # This will automatically be picked up for the top-right close button
-        # by wxPython, due to us using CancelButton
-        cancel_btn.on_clicked.subscribe(self._send_closing)
+        ok_btn.on_clicked.subscribe(self._send_apply)
         self._apply_btn = ApplyButton(self)
         self._apply_btn.enabled = False
         self._apply_btn.on_clicked.subscribe(self._send_apply)
@@ -93,7 +89,8 @@ class SettingsDialog(DialogWindow):
             (self._tab_tree, LayoutOptions(weight=1)),
             HorizontalLine(self),
             HLayout(spacing=5, items=[
-                help_btn, Stretch(), ok_btn, cancel_btn, self._apply_btn,
+                help_btn, Stretch(), ok_btn, CancelButton(self),
+                self._apply_btn,
             ]),
         ]).apply_to(self)
 
@@ -111,8 +108,8 @@ class SettingsDialog(DialogWindow):
     def _open_readme(self):
         """Handles a click on the help button by opening the readme."""
         ##: skip_local because webbrowser.open eats anchors on Windows
-        advanced_radme = balt.readme_url(mopy=bass.dirs[u'mopy'],
-                                         advanced=True, skip_local=True)
+        advanced_radme = readme_url(mopy=bass.dirs[u'mopy'], advanced=True,
+                                    skip_local=True)
         help_anchor = _page_anchors[self._tab_tree.get_selected_page_path()]
         webbrowser.open(advanced_radme + u'#' + help_anchor)
 
@@ -134,16 +131,6 @@ class SettingsDialog(DialogWindow):
                 # User denied the restart, don't bother them again
                 self._requesting_restart.clear()
                 del self._restart_params[:]
-
-    def _send_closing(self):
-        """Propagates a Cancel button click to all child pages."""
-        for leaf_page in self._tab_tree.get_leaf_pages():
-            leaf_page.on_page_closing()
-
-    def _send_ok(self):
-        """Propagates an OK button click to all child pages."""
-        self._send_closing()
-        self._send_apply()
 
 class _ASettingsPage(WrappingTextMixin, ATreeMixin):
     """Abstract class for all settings pages."""
@@ -199,9 +186,6 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
         for setting_key in self._setting_states:
             self._setting_states[setting_key] = False
         self._mark_changed(self, False)
-
-    def on_page_closing(self):
-        """Called when the settings dialog is about to be closed."""
 
     def _rename_op(self, chosen_file, parent_dir, msg_title, msg):
         new_fname = balt.askText(self, msg, title=msg_title,
@@ -417,9 +401,6 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         newColor = self.picker.get_color()
         self.changes[color_key] = newColor
         self.UpdateUIButtons()
-
-    def on_page_closing(self):
-        self.comboBox.unsubscribe_handler_()
 
 # Languages -------------------------------------------------------------------
 class ConfigureEditorDialog(DialogWindow):
@@ -1236,6 +1217,8 @@ class GeneralPage(_AScrollablePage):
                             u'be accessible by right-clicking the columns.'),
             checked=bass.settings[u'bash.show_global_menu'])
         self._global_menu_checkbox.on_checked.subscribe(self._on_global_menu)
+        # Hide the option on Linux - see refresh_global_menu_visibility
+        self._global_menu_checkbox.visible = os.name == u'nt'
         self._alt_name_checkbox = CheckBox(self,
             _(u'Use Alternate Wrye Bash Name'),
             chkbx_tooltip=_(u'Use an alternate display name for Wrye Bash '
