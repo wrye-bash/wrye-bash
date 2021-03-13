@@ -33,7 +33,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     altName = u'Wrye VRash'
     bash_root_prefix = u'Skyrim VR' # backwards compat :(
     launch_exe = u'SkyrimVR.exe'
-    game_detect_file = u'SkyrimVR.exe'
+    game_detect_files = [u'SkyrimVR.exe']
     version_detect_file = u'SkyrimVR.exe'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim VR', u'Installed Path')
 
@@ -68,7 +68,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     def init(cls):
         cls._dynamic_import_modules(__name__)
         # First import from skyrimse.records file
-        from .records import MreVoli, MreLens
+        from ..skyrimse.records import MreVoli, MreLens
         # then import rest of records from skyrim.records
         from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
             MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \

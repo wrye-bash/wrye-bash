@@ -21,7 +21,10 @@
 #
 # =============================================================================
 
-"""This module contains the Nehrim record classes imported from Oblivion."""
+"""This package contains the Enderal SE specific patchers. This module
+contains the data structures that are dynamically set on a per game basis in
+bush."""
 
-from ..oblivion.records import *
-from ..oblivion.records import _MelModel # HACK - needed for tests
+gameSpecificPatchers = {}
+gameSpecificListPatchers = {}
+game_specific_import_patchers = {}

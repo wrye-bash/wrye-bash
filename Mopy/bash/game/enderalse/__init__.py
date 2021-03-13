@@ -20,64 +20,35 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for TES V: Skyrim Special Edition."""
+"""This modules defines static data for use by bush, when Enderal SE is set as
+the active game."""
 
-from ..skyrim import SkyrimGameInfo
+from ..enderal import EnderalGameInfo
+from ..skyrimse import SkyrimSEGameInfo
 from ... import brec
 from ...brec import MreFlst, MreGlob
 
-class SkyrimSEGameInfo(SkyrimGameInfo):
-    displayName = u'Skyrim Special Edition'
-    fsName = u'Skyrim Special Edition'
-    bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
-    launch_exe = u'SkyrimSE.exe'
-    # Set to this because SkyrimSE.exe also exists for Enderal SE
-    game_detect_files = [u'SkyrimSELauncher.exe']
-    version_detect_file = u'SkyrimSE.exe'
-    taglist_dir = u'SkyrimSE'
-    regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',
-                      u'Installed Path')
+# We want the final chain of attribute lookups to be Enderal SE -> Enderal LE
+# -> Skyrim SE -> Skyrim LE -> Defaults, i.e. the narrower overrides first
+class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
+    displayName = u'Enderal Special Edition'
+    fsName = u'Enderal Special Edition'
+    bash_root_prefix = u'EnderalSE'
+    # Enderal LE also has an Enderal Launcher.exe, but no SkyrimSE.exe. Skyrim
+    # SE has SkyrimSE.exe, but no Enderal Launcher.exe
+    game_detect_files = [u'Enderal Launcher.exe', u'SkyrimSE.exe']
+    regInstallKeys = (u'SureAI\\EnderalSE', u'Install_Path')
 
-    nexusUrl = u'https://www.nexusmods.com/skyrimspecialedition/'
-    nexusName = u'Skyrim SE Nexus'
-    nexusKey = u'bash.installers.openSkyrimSeNexus.continue'
-
-    espm_extensions = SkyrimGameInfo.espm_extensions | {u'.esl'}
-    has_achlist = True
-    check_esl = True
-
-    class Se(SkyrimGameInfo.Se):
-        se_abbrev = u'SKSE64'
-        long_name = u'Skyrim SE Script Extender'
-        exe = u'skse64_loader.exe'
-        ver_files = [u'skse64_loader.exe', u'skse64_steam_loader.dll']
-
-    # ScriptDragon doesn't exist for SSE
-    class Sd(SkyrimGameInfo.Sd):
-        sd_abbrev = u''
-        long_name = u''
-        install_dir = u''
-
-    class Bsa(SkyrimGameInfo.Bsa):
-        # Skyrim SE accepts the base name and ' - Textures'
-        attachment_regex = r'(?: \- Textures)?'
-        valid_versions = {0x69}
-
-    class Xe(SkyrimGameInfo.Xe):
-        full_name = u'SSEEdit'
-        xe_key_prefix = u'sseView'
-
-    class Bain(SkyrimGameInfo.Bain):
-        skip_bain_refresh = {u'sseedit backups', u'sseedit cache'}
-
-    allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
-    patchers = SkyrimGameInfo.patchers - {u'MergePatches'}
+    nexusUrl = u'https://www.nexusmods.com/enderalspecialedition/'
+    nexusName = u'Enderal Special Edition Nexus'
+    nexusKey = u'bash.installers.openEnderalSENexus.continue'
 
     @classmethod
     def init(cls):
+        # Copy-pasted from Skyrim
         cls._dynamic_import_modules(__name__)
         # First import from skyrimse.records file
-        from .records import MreVoli, MreLens
+        from ..skyrimse.records import MreVoli, MreLens
         # then import rest of records from skyrim.records
         from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
             MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \
@@ -166,4 +137,4 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
                                               b'DIAL', b'INFO', b'WRLD'})
         cls._validate_records()
 
-GAME_TYPE = SkyrimSEGameInfo
+GAME_TYPE = EnderalSEGameInfo

@@ -21,7 +21,4 @@
 #
 # =============================================================================
 
-"""This module contains the enderal record classes imported from skyrim"""
-
-from ..skyrim.records import *
-from ..skyrim.records import _MelModel # HACK - needed for tests
+from ..enderal.constants import *

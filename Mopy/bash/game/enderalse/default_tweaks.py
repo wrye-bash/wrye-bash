@@ -20,27 +20,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""This module contains only the overrides of record classes needed for
-FO4VR."""
 
-from ...brec import MreHeaderBase, MelSet, MelStruct, MelBase, MelFidList
+from ..enderal.default_tweaks import default_tweaks
+from ..skyrimse.default_tweaks import add_tweaks, remove_tweaks
 
-# Only difference from FO4 is the default version, but this seems less hacky
-# than adding a game var just for this and dynamically importing it in FO4
-class MreTes4(MreHeaderBase):
-    """TES4 Record. File header."""
-    rec_sig = b'TES4'
-
-    melSet = MelSet(
-        MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 0.95), u'numRecords',
-                  (u'nextObject', 0x800)),
-        MelBase(b'TNAM', u'tnam_p'),
-        MreHeaderBase.MelAuthor(),
-        MreHeaderBase.MelDescription(),
-        MreHeaderBase.MelMasterNames(),
-        MelFidList(b'ONAM', u'overrides',),
-        MelBase(b'SCRN', u'screenshot'),
-        MelBase(b'INTV', u'unknownINTV'),
-        MelBase(b'INCC', u'unknownINCC'),
-    )
-    __slots__ = melSet.getSlotsUsed()
+# Apply the Skyrim SE tweak additions/removals to the Enderal tweaks
+default_tweaks = {k: v for k, v in default_tweaks.iteritems()
+                  if not k in remove_tweaks}
+default_tweaks.update(add_tweaks)

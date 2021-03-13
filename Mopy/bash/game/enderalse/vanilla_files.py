@@ -20,6 +20,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""This module lists the files installed in the Data folder in a completely
+vanilla Enderal SE setup."""
 
-from ..skyrimse.records import *
-from ..skyrimse.records import _MelModel # HACK - needed for tests
+# TODO(inf) Update once Enderal SE is released
+from ..enderal.vanilla_files import vanilla_files

@@ -25,18 +25,19 @@ from collections import OrderedDict
 from ..skyrim.default_tweaks import default_tweaks
 
 # Remove tweaks that don't apply to SSE
-for t in {u'Shadows, Res512 Dist 1 [SkyrimPrefs].ini',
-          u'SunShadow, Update 0.0000 [Skyrim].ini',
-          u'SunShadow, Update 0.0500 [Skyrim].ini',
-          u'SunShadow, Update 0.1000 [Skyrim].ini',
-          u'SunShadow, Update 0.2000 [Skyrim].ini',
-          u'WaterReflect, Res1024 [SkyrimPrefs].ini',
-          u'WaterReflect, Res256 [SkyrimPrefs].ini',
-          u'WaterReflect, Res512 ~Default[SkyrimPrefs].ini'}:
-    del default_tweaks[t]
+remove_tweaks = {u'Shadows, Res512 Dist 1 [SkyrimPrefs].ini',
+                 u'SunShadow, Update 0.0000 [Skyrim].ini',
+                 u'SunShadow, Update 0.0500 [Skyrim].ini',
+                 u'SunShadow, Update 0.1000 [Skyrim].ini',
+                 u'SunShadow, Update 0.2000 [Skyrim].ini',
+                 u'WaterReflect, Res1024 [SkyrimPrefs].ini',
+                 u'WaterReflect, Res256 [SkyrimPrefs].ini',
+                 u'WaterReflect, Res512 ~Default[SkyrimPrefs].ini'}
+default_tweaks = {k: v for k, v in default_tweaks.iteritems()
+                  if k not in remove_tweaks}
 
 # Add new SSE-specific tweaks
-default_tweaks.update({
+add_tweaks = {
     u'Invalidate, Allow loose files [Skyrim].ini': OrderedDict(
         [(u'Archive', OrderedDict([(u'bInvalidateOlderFiles', u'1')]))]),
     u'Invalidate, Disallow loose files ~Default [Skyrim].ini': OrderedDict(
@@ -71,4 +72,5 @@ default_tweaks.update({
         [(u'Interface', OrderedDict([(u'bShowTutorials', u'0')]))]),
     u'Tutorials, On [Skyrim].ini': OrderedDict(
         [(u'Interface', OrderedDict([(u'bShowTutorials', u'1')]))]),
-})
+}
+default_tweaks.update(add_tweaks)

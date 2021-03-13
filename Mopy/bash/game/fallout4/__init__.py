@@ -33,7 +33,7 @@ class Fallout4GameInfo(GameInfo):
     altName = u'Wrye Flash'
     bash_root_prefix = u'Fallout4'
     launch_exe = u'Fallout4.exe'
-    game_detect_file = u'Fallout4.exe'
+    game_detect_files = [u'Fallout4.exe']
     version_detect_file = u'Fallout4.exe'
     master_file = u'Fallout4.esm'
     taglist_dir = u'Fallout4'
@@ -126,30 +126,11 @@ class Fallout4GameInfo(GameInfo):
         u'ImportObjectBounds', u'LeveledLists',
     }
 
-    # ---------------------------------------------------------------------
-    # --Imported - MreGlob is special import, not in records.py
-    # ---------------------------------------------------------------------
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        # First import from fallout4.records file, so MelModel is set correctly
         from .records import MreGmst, MreTes4, MreLvli, MreLvln
-        # ---------------------------------------------------------------------
-        # These Are normally not mergable but added to brec.MreRecord.type_class
-        #
-        #       MreCell,
-        # ---------------------------------------------------------------------
-        # These have undefined FormIDs Do not merge them
-        #
-        #       MreNavi, MreNavm,
-        # ---------------------------------------------------------------------
-        # These need syntax revision but can be merged once that is corrected
-        #
-        #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
-        # ---------------------------------------------------------------------
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
-            # -- Imported from Skyrim/SkyrimSE
-            # Added to records.py
             MreGmst, MreLvli, MreLvln
         )}
         # Setting RecordHeader class variables --------------------------------
@@ -181,8 +162,7 @@ class Fallout4GameInfo(GameInfo):
              b'DIAL', b'INFO'})
         header_type.plugin_form_version = 131
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreTes4, #--Always present
-            MreGmst, MreLvli, MreLvln, # Added to records.py
+            MreTes4, MreGmst, MreLvli, MreLvln,
         )}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES4'})

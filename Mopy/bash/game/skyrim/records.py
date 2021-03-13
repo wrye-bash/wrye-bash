@@ -25,7 +25,7 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 from itertools import izip
 
-from ... import brec, bolt
+from ... import brec, bolt, bush
 from ...bolt import Flags, struct_pack, structs_cache, unpack_str16
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
@@ -74,6 +74,21 @@ if brec.MelModel is None:
 
     brec.MelModel = _MelModel
 from ...brec import MelModel
+
+#------------------------------------------------------------------------------
+_is_sse = bush.game.fsName in (u'Skyrim Special Edition', u'Skyrim VR')
+def if_sse(le_version, se_version):
+    """Resolves to one of two different objects, depending on whether we're
+    managing Skyrim LE or SE."""
+    return se_version if _is_sse else le_version
+
+def sse_only(sse_obj):
+    """Wrapper around if_sse that resolves to None for SLE. Useful for things
+    that have been added in SSE as MelSet will ignore None elements. Can also
+    be used with Flags, but keep in mind that a None flag will still take up an
+    index in the flags list, so it's a good idea to specify flag indices
+    explicitly when using it."""
+    return if_sse(le_version=None, se_version=sse_obj)
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -292,35 +307,6 @@ class MelLocation(MelUnion):
                 loader=MelSInt32(sub_sig, u'location_type'),
                 decider=AttrValDecider(u'location_type'))
         )
-
-#------------------------------------------------------------------------------
-class MelIsSSE(MelUnion):
-    """Union that resolves to one of two different subrecords, depending on
-    whether we're managing Skyrim LE or SE."""
-    def __init__(self, le_version, se_version):
-        """Creates a new MelIsSSE instance, with the specified LE and SE
-        versions of the subrecord.
-
-        :type le_version: MelBase
-        :type se_version: MelBase"""
-        super(MelIsSSE, self).__init__({
-            u'Enderal': le_version,
-            u'Skyrim': le_version,
-            u'Skyrim Special Edition': se_version,
-            u'Skyrim VR': se_version,
-        }, decider=GameDecider())
-
-class MelSSEOnly(MelIsSSE):
-    """Version of MelIsSSE that resolves to MelNull for SLE. Useful for
-    subrecords that have been added in SSE."""
-    def __init__(self, element):
-        """Creates a new MelSSEOnly instance, with the specified subrecord
-        element.
-
-        :type element: MelBase"""
-        super(MelSSEOnly, self).__init__(
-            le_version=MelNull(next(iter(element.signatures))),
-            se_version=element)
 
 #------------------------------------------------------------------------------
 class MelSMFlags(MelStruct):
@@ -1418,7 +1404,7 @@ class MreAmmo(MelRecord):
         MelDropSound(),
         MelDescription(),
         MelKeywords(),
-        MelIsSSE(
+        if_sse(
             le_version=MelStruct(b'DATA', [u'I', u'I', u'f', u'I'], (FID, 'projectile'),
                                  (AmmoTypeFlags, 'flags'), 'damage', 'value'),
             se_version=MelTruncatedStruct(b'DATA', [u'2I', u'f', u'I', u'f'],
@@ -3144,7 +3130,7 @@ class MreLtex(MelRecord):
         MelStruct(b'HNAM', [u'2B'], 'friction', 'restitution',),
         MelUInt8(b'SNAM', 'textureSpecularExponent'),
         MelFids(b'GNAM','grasses'),
-        MelSSEOnly(MelUInt32Flags(b'INAM', u'snow_flags', _SnowFlags))
+        sse_only(MelUInt32Flags(b'INAM', u'snow_flags', _SnowFlags))
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3239,7 +3225,7 @@ class MreMato(MelRecord):
         MelGroups('property_data',
             MelBase(b'DNAM', 'data_entry'),
         ),
-        MelIsSSE(
+        if_sse(
             le_version=MelTruncatedStruct(
                 b'DATA', [u'11f', u'I'], 'falloffScale', 'falloffBias', 'noiseUVScale',
                 'materialUVScale', 'projectionVectorX', 'projectionVectorY',
@@ -3960,18 +3946,17 @@ class MreProj(MelRecord):
     rec_sig = b'PROJ'
 
     ProjTypeFlags = Flags(0, Flags.getNames(
-        (0, 'hitscan'),
-        (1, 'explosive'),
-        (2, 'altTriger'),
-        (3, 'muzzleFlash'),
-        (4, 'unknown4'),
-        (5, 'canbeDisable'),
-        (6, 'canbePickedUp'),
-        (7, 'superSonic'),
-        (8, 'pinsLimbs'),
-        (9, 'passThroughSmallTransparent'),
-        (10, 'disableCombatAimCorrection'),
-        (11, 'rotation'),
+        (0, 'is_hitscan'),
+        (1, 'is_explosive'),
+        (2, 'alt_trigger'),
+        (3, 'has_muzzle_flash'),
+        (5, 'can_be_disabled'),
+        (6, 'can_be_picked_up'),
+        (7, 'is_super_sonic'),
+        (8, 'pins_limbs'),
+        (9, 'pass_through_small_transparent'),
+        (10, 'disable_combat_aim_correction'),
+        (11, 'projectile_rotates'),
     ))
 
     melSet = MelSet(
@@ -5087,7 +5072,7 @@ class MreStat(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelIsSSE(
+        if_sse(
             le_version=MelStruct(b'DNAM', [u'f', u'I'], 'maxAngle30to120',
                                  (FID, 'material')),
             se_version=MelTruncatedStruct(
@@ -5256,7 +5241,7 @@ class MreWatr(MelRecord):
         MelFid(b'XNAM','spell',),
         MelFid(b'INAM','imageSpace',),
         MelUInt16(b'DATA', 'damagePerSecond'),
-        MelIsSSE(
+        if_sse(
             le_version=MelStruct(b'DNAM', [u'7f', u'4s', u'2f', u'3B', u's', u'3B', u's', u'3B', u's', u'4s', u'43f'],
                                  *_dnam_common),
             se_version=MelTruncatedStruct(b'DNAM',
@@ -5273,7 +5258,7 @@ class MreWatr(MelRecord):
         MelString(b'NAM2', 'noiseTextureLayer1'),
         MelString(b'NAM3', 'noiseTextureLayer2'),
         MelString(b'NAM4', 'noiseTextureLayer3'),
-        MelSSEOnly(MelString(b'NAM5', 'flowNormalsNoiseTexture')),
+        sse_only(MelString(b'NAM5', 'flowNormalsNoiseTexture')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -5372,7 +5357,7 @@ class MreWeap(MelRecord):
                   u'rumbleLeftMotorStrength', u'rumbleRightMotorStrength',
                   u'rumbleDuration', u'dnamUnk5', u'skill',
                   u'dnamUnk6', u'resist', u'dnamUnk7', u'stagger'),
-        MelIsSSE(
+        if_sse(
             le_version=MelStruct(b'CRDT',
                 [u'H', u'2s', u'f', u'B', u'3s', u'I'], u'critDamage', u'crdtUnk1',
                 u'criticalMultiplier', (WeapFlags3, u'criticalFlags'),
@@ -5594,7 +5579,7 @@ class MreWthr(MelRecord):
         MelStruct(b'IMSP', [u'4I'], (FID, 'image_space_sunrise'),
                   (FID, 'image_space_day'), (FID, 'image_space_sunset'),
                   (FID, 'image_space_night'),),
-        MelSSEOnly(MelOptStruct(
+        sse_only(MelOptStruct(
             b'HNAM', [u'4I'], (FID, 'volumetricLightingSunrise'),
             (FID, 'volumetricLightingDay'), (FID, 'volumetricLightingSunset'),
             (FID, 'volumetricLightingNight'))),
@@ -5614,6 +5599,6 @@ class MreWthr(MelRecord):
         MelBase(b'NAM2', 'unused6'),
         MelBase(b'NAM3', 'unused7'),
         MelModel(u'aurora', b'MODL'),
-        MelSSEOnly(MelFid(b'GNAM', 'sunGlareLensFlare')),
+        sse_only(MelFid(b'GNAM', 'sunGlareLensFlare')),
     )
     __slots__ = melSet.getSlotsUsed()

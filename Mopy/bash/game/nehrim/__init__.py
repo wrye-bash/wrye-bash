@@ -32,7 +32,7 @@ from ...brec import MreGlob, MreLand
 class NehrimGameInfo(OblivionGameInfo):
     displayName = u'Nehrim'
     bash_root_prefix = u'Nehrim'
-    game_detect_file = _j(u'Data', u'Nehrim.esm')
+    game_detect_files = [u'NehrimLauncher.exe']
     master_file = u'Nehrim.esm'
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
     nexusName = u'Nehrim Nexus'
@@ -79,7 +79,7 @@ class NehrimGameInfo(OblivionGameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, \
+        from ..oblivion.records import MreActi, MreAlch, MreAmmo, MreAnio, \
             MreArmo, MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, \
             MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor, MreFurn, \
             MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, \
@@ -88,7 +88,7 @@ class NehrimGameInfo(OblivionGameInfo):
             MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, \
             MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
             MreGmst, MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo, \
-            MrePgrd
+            MrePgrd, MreAppa
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
             MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,

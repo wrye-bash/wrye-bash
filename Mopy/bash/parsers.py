@@ -933,87 +933,8 @@ class ItemStats(_HandleAliases):
         super(ItemStats, self).__init__(aliases_)
         self.class_attrs = bush.game.statsTypes
         self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
-        if bush.game.fsName in (u'Enderal', u'Skyrim',
-                                u'Skyrim Special Edition'):
-            self.attr_type = {u'eid': self.sstr,
-                              u'weight': self.sfloat,
-                              u'value': self.sint,
-                              u'damage': self.sint,
-                              u'armorRating': self.sint,
-                              u'duration': self.sint,
-                              u'speed': self.sfloat,
-                              u'reach': self.sfloat,
-                              u'stagger': self.sfloat,
-                              u'enchantPoints': self.sint,
-                              u'critDamage': self.sint,
-                              u'criticalMultiplier': self.sfloat,
-                              u'criticalEffect': self.sint,}
-        elif bush.game.fsName in (u'FalloutNV', u'Fallout3'):
-            self.attr_type = {u'eid': self.sstr,
-                              u'weight': self.sfloat,
-                              u'value': self.sint,
-                              u'damage': self.sint,
-                              u'speed': self.sfloat,
-                              u'enchantPoints': self.snoneint,
-                              u'health': self.sint,
-                              u'strength': self.sint,
-                              u'duration': self.sint,
-                              u'quality': self.sfloat,
-                              u'uses': self.sint,
-                              u'reach': self.sfloat,
-                              u'clipRounds': self.sint,
-                              u'projPerShot': self.sint,
-                              u'ar': self.sint,
-                              u'dt': self.sfloat,
-                              u'clipsize': self.sint,
-                              u'animationMultiplier': self.sfloat,
-                              u'ammoUse': self.sint,
-                              u'minSpread': self.sfloat,
-                              u'spread': self.sfloat,
-                              u'sightFov': self.sfloat,
-                              u'baseVatsToHitChance': self.sint,
-                              u'projectileCount': self.sint,
-                              u'minRange': self.sfloat,
-                              u'maxRange': self.sfloat,
-                              u'animationAttackMultiplier': self.sfloat,
-                              u'fireRate': self.sfloat,
-                              u'overrideActionPoint': self.sfloat,
-                              u'rumbleLeftMotorStrength': self.sfloat,
-                              u'rumbleRightMotorStrength': self.sfloat,
-                              u'rumbleDuration': self.sfloat,
-                              u'overrideDamageToWeaponMult': self.sfloat,
-                              u'attackShotsPerSec': self.sfloat,
-                              u'reloadTime': self.sfloat,
-                              u'jamTime': self.sfloat,
-                              u'aimArc': self.sfloat,
-                              u'rambleWavelangth': self.sfloat,
-                              u'limbDmgMult': self.sfloat,
-                              u'sightUsage': self.sfloat,
-                              u'semiAutomaticFireDelayMin': self.sfloat,
-                              u'semiAutomaticFireDelayMax': self.sfloat,
-                              u'strengthReq': self.sint,
-                              u'regenRate': self.sfloat,
-                              u'killImpulse': self.sfloat,
-                              u'impulseDist': self.sfloat,
-                              u'skillReq': self.sint,
-                              u'criticalDamage': self.sint,
-                              u'criticalMultiplier': self.sfloat,
-                              u'vatsSkill': self.sfloat,
-                              u'vatsDamMult': self.sfloat,
-                              u'vatsAp': self.sfloat,}
-        elif bush.game.fsName == u'Oblivion':
-            self.attr_type = {u'eid': self.sstr,
-                              u'weight': self.sfloat,
-                              u'value': self.sint,
-                              u'damage': self.sint,
-                              u'speed': self.sfloat,
-                              u'enchantPoints': self.sint,
-                              u'health': self.sint,
-                              u'strength': self.sint,
-                              u'duration': self.sint,
-                              u'quality': self.sfloat,
-                              u'uses': self.sint,
-                              u'reach': self.sfloat,}
+        self.attr_type = {a: getattr(self, t) for a, t
+                          in bush.game.item_attr_type.iteritems()}
         self.types = set(self.class_attrs)
 
     def readFromMod(self,modInfo):
@@ -1671,7 +1592,7 @@ class SpellRecords(_UsesEffectsMixin):
                                                      _coerce(spellType,
                                                              int) or 0)
                 ##: HACK, 'flags' needs to be a Flags instance on dump
-                spell_flags = bush.game_mod.records.MreSpel._SpellFlags(
+                MreRecord.type_class[b'SPEL']._SpellFlags(
                     _coerce(spell_flags, int))
                 if not detailed or len(fields) < 7:
                     fid_stats[mid] = [eid, cost, levelType, spellType,
