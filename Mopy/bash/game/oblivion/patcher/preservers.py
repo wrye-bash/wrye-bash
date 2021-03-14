@@ -175,7 +175,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
             isExhausted = False ##: unused, was it supposed to be used?
             for effect in record.effects:
                 if effect.effect_sig == b'SEFF' \
-                        and effect.scriptEffect.script == exhaustId:
+                        and effect.scriptEffect.script_fid == exhaustId:
                     duration = 0
                     break
             if not duration: continue
@@ -187,7 +187,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
             effect.duration = duration
             scriptEffect = record.getDefault(u'effects.scriptEffect')
             scriptEffect.full = u'Power Exhaustion'
-            scriptEffect.script = exhaustId
+            scriptEffect.script_fid = exhaustId
             scriptEffect.school = 2
             scriptEffect.visual = null4
             scriptEffect.flags.hostile = False

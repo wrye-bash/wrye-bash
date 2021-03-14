@@ -156,7 +156,7 @@ class MelEffects(MelSequential):
                           u'magnitude', u'area', u'duration', u'recipient',
                           u'actorValue'),
                 MelGroup(u'scriptEffect',
-                    MelEffectsScit(b'SCIT', [u'2I', u'4s', u'B', u'3s'], (FID, u'script'),
+                    MelEffectsScit(b'SCIT', [u'2I', u'4s', u'B', u'3s'], (FID, u'script_fid'),
                         u'school', u'visual', (MelEffects.se_flags, u'flags'),
                         u'unused1', old_versions={u'2I4s', u'I'}),
                     MelFull(),
@@ -334,7 +334,7 @@ class MelLevListLvlo(MelTruncatedStruct):
 
 class MreLeveledList(MreLeveledListBase):
     """Leveled item/creature/spell list."""
-    top_copy_attrs = ('script','template','chanceNone',)
+    top_copy_attrs = ('script_fid','template','chanceNone',)
 
     melSet = MelSet(
         MelEdid(),

@@ -1221,7 +1221,7 @@ class _UsesEffectsMixin(_HandleAliases):
                 eff.scriptEffect = se = rec_type.getDefault(
                     u'effects.scriptEffect')
                 se.full = sename
-                se.script = self._get_alias(semod), seobj #self._coerce_fid(semod, seobj)
+                se.script_fid = self._get_alias(semod), seobj #self._coerce_fid(semod, seobj)
                 se.school = seschool
                 se.visual = sevisual
                 se.flags = seflags # FIXME this need to be a se_flags
@@ -1249,7 +1249,7 @@ class _UsesEffectsMixin(_HandleAliases):
             if effect.scriptEffect: ##: #480 - setDefault commit - return None
                 se = effect.scriptEffect
                 longid, seschool, sevisual, seflags, sename = \
-                    se.script, se.school, se.visual, se.flags, se.full
+                    se.script_fid, se.school, se.visual, se.flags, se.full
                 sevisual = u'NONE' if sevisual == null4 else sevisual.decode(
                     u'ascii')
                 seschool = schoolTypeNumber_Name.get(seschool,seschool)
@@ -1295,7 +1295,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
 
     def __init__(self, aliases_=None):
         self.attrs = [u'eid', u'full', u'model.modPath', u'model.modb',
-                      u'iconPath', u'script', u'uses', u'value', u'weight',
+                      u'iconPath', u'script_fid', u'uses', u'value', u'weight',
                       u'effects']
         self._round_attrs = [u'model.modb', u'weight']
         super(SigilStoneDetails, self).__init__(aliases_)
@@ -1527,7 +1527,7 @@ class IngredientDetails(_UsesEffectsMixin):
     def __init__(self, aliases_=None):
         # same as for the SGST apart from 'uses'
         self.attrs = [u'eid', u'full', u'model.modPath', u'model.modb',
-                      u'iconPath', u'script', u'value', u'weight', u'effects']
+                      u'iconPath', u'script_fid', u'value', u'weight', u'effects']
         self._round_attrs = [u'model.modb', u'weight']
         super(IngredientDetails, self).__init__(aliases_)
 

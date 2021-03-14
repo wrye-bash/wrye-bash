@@ -363,7 +363,7 @@ class ImportObjectBoundsPatcher(APreserver):
 
 #------------------------------------------------------------------------------
 class ImportScriptsPatcher(APreserver):
-    rec_attrs = {x: (u'script',) for x in bush.game.scripts_types}
+    rec_attrs = {x: (u'script_fid',) for x in bush.game.scripts_types}
 
 #------------------------------------------------------------------------------
 class ImportSoundsPatcher(APreserver):
