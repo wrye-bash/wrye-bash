@@ -33,7 +33,7 @@ from __future__ import division, print_function
 
 import csv
 import re
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, OrderedDict
 from itertools import izip, chain
 from operator import attrgetter, itemgetter
 
@@ -127,8 +127,8 @@ def _key_sort(di, id_eid_=None, keys_dex=(), values_dex=(), by_value=False):
 class CsvParser(object):
     """Basic read/write csv functionality - ScriptParser handles script files
     not csvs though."""
-    _csv_header = () # has property overrides
-    _row_fmt_str = u'' # has property overrides
+    _csv_header = ()
+    _row_fmt_str = u''
 
     def readFromText(self, csv_path):
         """Reads information from the specified CSV file and stores the result
@@ -1130,7 +1130,7 @@ class ScriptText(CsvParser):
 #------------------------------------------------------------------------------
 class _UsesEffectsMixin(_HandleAliases):
     """Mixin class to support reading/writing effect data to/from csv files"""
-    headers = (
+    effect_headers = (
         _(u'Effect'),_(u'Name'),_(u'Magnitude'),_(u'Area'),_(u'Duration'),
         _(u'Range'),_(u'Actor Value'),_(u'SE Mod Name'),_(u'SE ObjectIndex'),
         _(u'SE school'),_(u'SE visual'),_(u'SE Is Hostile'),_(u'SE Name'))
@@ -1150,16 +1150,48 @@ class _UsesEffectsMixin(_HandleAliases):
     schoolTypeName_Number = {y.lower(): x for x, y
                              in schoolTypeNumber_Name.iteritems()
                              if x is not None}
+    _float_attrs = frozenset([u'model.modb', u'weight'])
+    _int_attrs = ()
+    _row_fmt_str = u'"%s","0x%06X",%s\n'
 
-    def __init__(self, aliases_, called_from_patcher=False):
+    def __init__(self, aliases_, atts, called_from_patcher=False):
         super(_UsesEffectsMixin, self).__init__(aliases_, called_from_patcher)
+        self._get_csv_serializers(atts)
         self.fid_stats = {}
         self.id_stored_data = {self._parser_sigs[0]: self.fid_stats}
 
+    def _get_csv_serializers(self, atts): ##: technically belongs to records
+        """Return encoders per attribute - each encoder should return a
+        string corresponding to a csv column."""
+        # we need to capture k otherwise it will point to atts[-1]
+        _create_lambda = lambda k: (lambda c: u'"%s"' % c[k])
+        self._attr_serializer = OrderedDict(
+            (k, _create_lambda(k)) for k in atts)
+        # special handling for script_fid - used to be exception based...
+        if u'script_fid' in atts:
+            def _handle_script_fid(c):
+                fid_tuple = c[u'script_fid']
+                if fid_tuple is not None:
+                    return u'"%s","0x%06X"' % fid_tuple
+                return u'"None","None"'
+            self._attr_serializer[u'script_fid'] = _handle_script_fid
+        # float attributes
+        for k in self._float_attrs:
+            self._attr_serializer[k] = (lambda k: (lambda c: u'"%f"' % c[k]))(
+                k)
+        # int attributes
+        for k in self._int_attrs: ##: make sure %d works even for flags
+            self._attr_serializer[k] = (lambda k: (lambda c: u'"%d"' % c[k]))(
+                k)
+        # effects
+        if u'effects' in atts:
+            self._attr_serializer[u'effects'] = lambda c: self.writeEffects(
+                c[u'effects'])[1:] # chop off the first comma...
+
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
         id_data[record.fid] = {att: __attrgetters[att](record) for att in
-                               self.attrs}
-        for idx in self._round_attrs:
+                               self._attr_serializer}
+        for idx in self._float_attrs:
             id_data[record.fid][idx] = round(id_data[record.fid][idx], 6)
 
     def readEffects(self, _effects, __packer=structs_cache[u'I'].pack):
@@ -1253,9 +1285,8 @@ class _UsesEffectsMixin(_HandleAliases):
                 sevisual = u'NONE' if sevisual == null4 else sevisual.decode(
                     u'ascii')
                 seschool = schoolTypeNumber_Name.get(seschool,seschool)
-                output.append(scriptEffectFormat % (
-                    longid[0],longid[1],seschool,sevisual,int(seflags),
-                    sename))
+                output.append(scriptEffectFormat % (longid[0], longid[1],
+                    seschool, sevisual, bool(int(seflags)), sename))
             else:
                 output.append(noscriptEffectFiller)
         return u''.join(output)
@@ -1268,16 +1299,27 @@ class _UsesEffectsMixin(_HandleAliases):
         for record in modFile.tops[self._parser_sigs[0]].getActiveRecords():
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
-            oldStats = {att: __attrgetters[att](record) for att in self.attrs}
-            for att in self._round_attrs:
-                oldStats[att] = round(oldStats[att], 6)
-            if oldStats != newStats:
-                for att, val in newStats.iteritems(): ##: call only on changed attrs!
+            imported = False
+            for att, val in newStats.iteritems():
+                old_val = __attrgetters[att](record)
+                if att in self._float_attrs: old_val = round(old_val, 6)
+                elif att == u'eid': old_eid = old_val
+                if old_val != val:
+                    imported = True
                     setattr_deep(record, att, val)
-                changed.append(oldStats[u'eid'])
+            if imported:
+                changed.append(old_eid)
                 record.setChanged()
         if changed: modFile.safeSave()
         return changed
+
+    def _write_rows(self, out):
+        """Exports stats to specified text file."""
+        stats, row_fmt_str = self.fid_stats, self._row_fmt_str
+        for rfid in sorted(stats, key=lambda x: stats[x][u'eid'].lower()): ##: , x[0]) ??
+            output = row_fmt_str % (rfid[0], rfid[1], u','.join(
+                ser(stats[rfid]) for ser in self._attr_serializer.itervalues()))
+            out.write(output)
 
 #------------------------------------------------------------------------------
 class SigilStoneDetails(_UsesEffectsMixin):
@@ -1287,18 +1329,16 @@ class SigilStoneDetails(_UsesEffectsMixin):
                    _(u'Name'), _(u'Model Path'), _(u'Bound Radius'),
                    _(u'Icon Path'), _(u'Script Mod Name'),
                    _(u'Script ObjectIndex'), _(u'Uses'), _(u'Value'),
-                   _(u'Weight'),) + _UsesEffectsMixin.headers * 2 + (
+                   _(u'Weight'),) + _UsesEffectsMixin.effect_headers * 2 + (
                       _(u'Additional Effects (Same format)'),)
-    _row_fmt_str = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
-                   u'"%d","%d","%f"'
+    _int_attrs = (u'uses', u'value')
     _parser_sigs = [b'SGST']
 
     def __init__(self, aliases_=None, called_from_patcher=False):
-        self.attrs = [u'eid', u'full', u'model.modPath', u'model.modb',
-                      u'iconPath', u'script_fid', u'uses', u'value', u'weight',
-                      u'effects']
-        self._round_attrs = [u'model.modb', u'weight']
-        super(SigilStoneDetails, self).__init__(aliases_, called_from_patcher)
+        super(SigilStoneDetails, self).__init__(aliases_,
+            [u'eid', u'full', u'model.modPath', u'model.modb', u'iconPath',
+             u'script_fid', u'uses', u'value', u'weight', u'effects'],
+            called_from_patcher)
 
     def _parse_line(self, csv_fields):
         """Imports stats from specified text file."""
@@ -1318,28 +1358,7 @@ class SigilStoneDetails(_UsesEffectsMixin):
         weight = _coerce(weight,float)
         vals = [eid, full, modPath, modb, iconPath, sid, uses, value, weight,
                 self.readEffects(csv_fields[12:])]
-        self.fid_stats[mid] = dict(izip(self.attrs, vals))
-
-    def _write_rows(self, out):
-        """Exports stats to specified text file."""
-        altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s",' \
-                       u'"%d","%d","%f"'
-        for fid in sorted(self.fid_stats,
-                          key=lambda x: self.fid_stats[x][u'eid'].lower()):
-            (eid, name_, modpath, modb, iconpath, scriptfid, uses, value,
-             weight, effects) = (self.fid_stats[fid][x] for x in self.attrs)
-            scriptfid = scriptfid or (GPath(u'None'),None)
-            try:
-                output = self._row_fmt_str % (
-                    fid[0], fid[1], eid, name_, modpath, modb, iconpath,
-                    scriptfid[0], scriptfid[1], uses, value, weight)
-            except TypeError:
-                output = altrowFormat % (
-                    fid[0],fid[1],eid,name_,modpath,modb,iconpath,
-                    scriptfid[0],scriptfid[1],uses,value,weight)
-            output += self.writeEffects(effects)
-            output += u'\n'
-            out.write(output)
+        self.fid_stats[mid] = dict(izip(self._attr_serializer, vals))
 
 #------------------------------------------------------------------------------
 class ItemPrices(_HandleAliases):
@@ -1405,14 +1424,28 @@ class SpellRecords(_UsesEffectsMixin):
         u'flags.scriptEffectAlwaysApplies', u'flags.disallowAbsorbReflect',
         u'flags.touchExplodesWOTarget', u'effects')
     _csv_attrs = (u'eid', u'cost', u'level', u'spellType', u'flags')
+    _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
+                  _(u'Editor Id'), _(u'Cost'), _(u'Level Type'),
+                  _(u'Spell Type'), _(u'Spell Flags'))
+    _float_attrs = frozenset()
+    _int_attrs = (u'cost', u'flags')
+    _row_fmt_str = u'"SPEL","%s","0x%06X",%s\n'
     _parser_sigs = [b'SPEL']
 
     def __init__(self, aliases_=None, detailed=False,
                  called_from_patcher=False):
-        self.attrs = bush.game.spell_stats_attrs
+        atts = bush.game.spell_stats_attrs if called_from_patcher else \
+            self._csv_attrs
         self.detailed = detailed
         if detailed:
-            self.attrs += self.__class__._extra_attrs
+            atts += self.__class__._extra_attrs
+            self._csv_header += (
+                _(u'Manual Cost'), _(u'Start Spell'), _(u'Immune To Silence'),
+                _(u'Area Effect Ignores LOS'), _(u'Script Always Applies'),
+                _(u'Disallow Absorb and Reflect'), _(
+                    u'Touch Explodes Without Target'),
+            ) + _UsesEffectsMixin.effect_headers * 2 + (
+                         _(u'Additional Effects (Same format)'),)
         self.spellTypeNumber_Name = {None: u'NONE',
                                      0   : u'Spell',
                                      1   : u'Disease',
@@ -1432,8 +1465,18 @@ class SpellRecords(_UsesEffectsMixin):
         self.levelTypeName_Number = {y.lower(): x for x, y
                                      in self.levelTypeNumber_Name.iteritems()
                                      if x is not None}
-        self._round_attrs = []
-        super(SpellRecords, self).__init__(aliases_, called_from_patcher)
+        super(SpellRecords, self).__init__(aliases_, atts, called_from_patcher)
+
+    def _get_csv_serializers(self, atts):
+        super(SpellRecords, self)._get_csv_serializers(atts)
+        level_name = self.levelTypeNumber_Name
+        spell_name = self.spellTypeNumber_Name
+        if u'level' in self._attr_serializer:
+            self._attr_serializer[u'level'] = lambda c: \
+                u'"%s"' % level_name.get(c[u'level'], c[u'level'])
+        if u'spellType' in self._attr_serializer:
+            self._attr_serializer[u'spellType'] = lambda c: \
+                u'"%s"' % spell_name.get(c[u'spellType'], c[u'spellType'])
 
     def _parse_line(self, fields):
         """Imports stats from specified text file."""
@@ -1466,52 +1509,6 @@ class SpellRecords(_UsesEffectsMixin):
                 self.readEffects(fields[15:])]
         self.fid_stats[mid].update(izip(self.__class__._extra_attrs, vals))
 
-    @property
-    def _csv_header(self):
-        header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
-                  _(u'Editor Id'), _(u'Cost'), _(u'Level Type'),
-                  _(u'Spell Type'), _(u'Spell Flags'))
-        if self.detailed:
-            header = header + (
-                _(u'Manual Cost'), _(u'Start Spell'), _(u'Immune To Silence'),
-                _(u'Area Effect Ignores LOS'), _(u'Script Always Applies'),
-                _(u'Disallow Absorb and Reflect'), _(
-                    u'Touch Explodes Without Target'),
-            ) + _UsesEffectsMixin.headers * 2 + (
-                         _(u'Additional Effects (Same format)'),)
-        return header
-
-    @property
-    def _row_fmt_str(self):
-        return u'"%s","%s","0x%06X","%s","%d","%s","%s","%d"' + (
-            u',"%s","%s","%s","%s","%s","%s","%s"%s\n' if self.detailed else
-            u'\n')
-
-    def _write_rows(self, out):
-        """Exports stats to specified text file."""
-        detailed,fid_stats,spellTypeNumber_Name,levelTypeNumber_Name = \
-            self.detailed,self.fid_stats,self.spellTypeNumber_Name, \
-            self.levelTypeNumber_Name
-        rowFormat = self._row_fmt_str # cache it's a property!
-        for fid in sorted(fid_stats,
-                          key=lambda x:(fid_stats[x][u'eid'].lower(), x[0])):
-            eid, cost, levelType, spellType, spell_flags = (fid_stats[fid][x]
-                for x in self._csv_attrs)
-            levelType = levelTypeNumber_Name.get(levelType,levelType)
-            spellType = spellTypeNumber_Name.get(spellType,spellType)
-            if detailed:
-                mc, ss, its, aeil, saa, daar, tewt, effects = (
-                    fid_stats[fid][x] for x in self.__class__._extra_attrs)
-                output = rowFormat % (
-                    u'SPEL', fid[0], fid[1], eid, cost, levelType, spellType,
-                    spell_flags, mc, ss, its, aeil, saa, daar, tewt,
-                    self.writeEffects(effects))
-            else:
-                output = rowFormat % (
-                    u'SPEL', fid[0], fid[1], eid, cost, levelType, spellType,
-                    spell_flags)
-            out.write(output)
-
 #------------------------------------------------------------------------------
 class IngredientDetails(_UsesEffectsMixin):
     """Details on Ingredients, with functions for importing/exporting
@@ -1519,18 +1516,16 @@ class IngredientDetails(_UsesEffectsMixin):
     _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Editor Id'),
         _(u'Name'), _(u'Model Path'), _(u'Bound Radius'), _(u'Icon Path'),
         _(u'Script Mod Name'), _(u'Script ObjectIndex'), _(u'Value'),
-        _(u'Weight'),) + _UsesEffectsMixin.headers * 2 + \
+        _(u'Weight'),) + _UsesEffectsMixin.effect_headers * 2 + \
                   (_(u'Additional Effects (Same format)'),)
-    _row_fmt_str = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","0x%06X",' \
-                   u'"%d","%f"'
+    _int_attrs = (u'value',)
     _parser_sigs = [b'INGR']
 
     def __init__(self, aliases_=None, called_from_patcher=False):
-        # same as for the SGST apart from 'uses'
-        self.attrs = [u'eid', u'full', u'model.modPath', u'model.modb',
-                      u'iconPath', u'script_fid', u'value', u'weight', u'effects']
-        self._round_attrs = [u'model.modb', u'weight']
-        super(IngredientDetails, self).__init__(aliases_, called_from_patcher)
+        # same as SGST apart from 'uses'
+        super(IngredientDetails, self).__init__(aliases_, [u'eid', u'full',
+            u'model.modPath', u'model.modb', u'iconPath', u'script_fid',
+            u'value', u'weight', u'effects'], called_from_patcher)
 
     def _parse_line(self, csv_fields):
         mmod, mobj, eid, full, modPath, modb, iconPath, smod, sobj, value,\
@@ -1546,26 +1541,6 @@ class IngredientDetails(_UsesEffectsMixin):
         iconPath = str_or_none(iconPath)
         value = _coerce(value, int)
         weight = _coerce(weight, float)
-        self.fid_stats[mid] = dict(izip(self.attrs, [eid, full, modPath, modb,
-            iconPath, sid, value, weight, self.readEffects(csv_fields[11:])]))
-
-    def _write_rows(self, out):
-        """Exports stats to specified text file."""
-        altrowFormat = u'"%s","0x%06X","%s","%s","%s","%f","%s","%s","%s",' \
-                       u'"%d","%f"'
-        for fid in sorted(self.fid_stats,
-                          key=lambda x: self.fid_stats[x][u'eid'].lower()):
-            eid,name_,modpath,modb,iconpath,scriptfid,value,weight, \
-            effects = (self.fid_stats[fid][x] for x in self.attrs)
-            scriptfid = scriptfid or (GPath(u'None'), None)
-            try:
-                output = self._row_fmt_str % (
-                    fid[0],fid[1],eid,name_,modpath,modb,iconpath,
-                    scriptfid[0],scriptfid[1],value,weight)
-            except TypeError:
-                output = altrowFormat % (
-                    fid[0],fid[1],eid,name_,modpath,modb,iconpath,
-                    scriptfid[0],scriptfid[1],value,weight)
-            output += self.writeEffects(effects)
-            output += u'\n'
-            out.write(output)
+        self.fid_stats[mid] = dict(izip(self._attr_serializer, [eid, full,
+            modPath, modb, iconPath, sid, value, weight, self.readEffects(
+                csv_fields[11:])]))
