@@ -70,6 +70,9 @@ def get_registry_path(_subkey, _entry, _detection_files):
 def get_registry_game_path(_submod):
     return None # no registry on Linux
 
+def get_win_store_game_path(_submod):
+    return None # no Windows Store on Linux
+
 def get_personal_path():
     return _getShellPath(u'Personal'), _get_error_info()
 

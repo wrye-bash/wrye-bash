@@ -52,6 +52,10 @@ class OblivionGameInfo(PatchGame):
     using_txt_file = False
     has_standalone_pluggy = True
 
+    class Ws(GameInfo.Ws):
+        publisher_name = u'Bethesda'
+        win_store_name = u'BethesdaSoftworks.TESOblivion-PC'
+
     class Ck(GameInfo.Ck):
         ck_abbrev = u'TESCS'
         long_name = u'Construction Set'

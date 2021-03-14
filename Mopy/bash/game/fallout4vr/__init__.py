@@ -40,6 +40,12 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     espm_extensions = Fallout4GameInfo.espm_extensions - {u'.esl'}
     check_esl = False
 
+    class Ws(Fallout4GameInfo.Ws):
+        # Fallout 4 VR has no Windows Store version, don't
+        # implicitely use Fallout 4's information
+        publisher_name = u''
+        win_store_name = u''
+
     class Se(Fallout4GameInfo.Se):
         se_abbrev = u'F4SEVR'
         long_name = u'Fallout 4 VR Script Extender'

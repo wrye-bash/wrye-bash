@@ -109,6 +109,20 @@ class GameInfo(object):
         self.gamePath = gamePath # absolute bolt Path to the game directory
         self.has_esl = u'.esl' in self.espm_extensions
 
+    class Ws(object):
+        """Information about this game on the Windows Store."""
+        # The publisher name for common games.  Currently only
+        # 'Bethesda' is allowed for Bethesda games.  If specified,
+        # publisher_id is not required
+        publisher_name = u''
+        # The publisher ID for the publisher of the game.  Required
+        # except for common publishers supported above.  For example
+        # Bethesda's publisher ID is '3275kfvn8vcwc'
+        publisher_id = u''
+        # The internal name used by the Windows Store to identify the game
+        # For example Morrowind is 'BethesdaSofworks.TESMorrowind-PC'
+        win_store_name = u''
+
     class Ck(object):
         """Information about the official plugin editor (generally called some
         variation of 'Creation Kit') for this game."""

@@ -24,6 +24,7 @@
 
 from __future__ import print_function
 
+import itertools
 import os
 import re
 import sys
@@ -214,6 +215,84 @@ def _query_fixed_field_version(file_name, version_prefix):
     ls = info[u'%sLS' % version_prefix]
     return win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), \
            win32api.LOWORD(ls)
+
+
+class _WindowsStoreFinder(object):
+    developer_ids = {
+        u'Bethesda': u'3275kfvn8vcwc'
+    }
+
+    def __init__(self):
+        # Structure: dict
+        #  common_name: dict
+        #    package_full_name: mutable_location
+        self.location_cache = {}
+
+    def _get_publisher_id(self, publisher_name):
+        try:
+            return self.developer_ids[publisher_name]
+        except KeyError:
+            return None
+
+    def _get_package_full_names(self, common_name, publisher_id):
+        common_name += '_' + publisher_id
+        full_names = []
+        try:
+            # First, find all "families" for the game (architecture, version)
+            families_key = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,
+                                          r'Local Settings\Software\Microsoft'
+                                          r'\Windows\CurrentVersion\AppModel'
+                                          r'\Repository\Families')
+            with families_key:
+                family_key = winreg.OpenKey(families_key, common_name)
+                num_families = winreg.QueryInfoKey(family_key)[0]
+                for i in xrange(num_families):
+                    full_names.append(winreg.EnumKey(family_key, i))
+        except WindowsError as e:
+            # We're on a version of Windows that does not have the package registry
+            pass
+        return full_names
+
+    def get_mutable_locations(self, common_name, publisher_name=None, publisher_id=None):
+        # Hit the cache first
+        try:
+            return self.location_cache[common_name]
+        except KeyError:
+            pass
+        # Not in the cached, lookup in the Windows Registry
+        if not publisher_id:
+            publisher_id = self._get_publisher_id(publisher_name)
+        if not publisher_id:
+            # No publisher information, cannot look up
+            return None
+        self.location_cache[common_name] = locations = dict()
+        package_full_names = self._get_package_full_names(common_name, publisher_id)
+        try:
+            for package_full_name in package_full_names:
+                # Lookup the package index
+                index_key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\AppModel'
+                    r'\StateRepository\Cache\Package\Index\PackageFullName')
+                with index_key:
+                    pfn_key = winreg.OpenKey(index_key, package_full_name)
+                    with pfn_key:
+                        package_index = winreg.EnumKey(pfn_key, 0)
+                # Lookup the mutable location
+                repo_key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\AppModel'
+                    r'\StateRepository\Cache\Package\Data')
+                with repo_key:
+                    data_key = winreg.OpenKey(repo_key, package_index)
+                    with data_key:
+                        ml_entry = winreg.QueryValueEx(data_key, 'MutableLocation')
+                        if ml_entry[0] and ml_entry[1] == winreg.REG_SZ:
+                            locations[package_full_name] = ml_entry[0]
+        except WindowsError:
+            # We're on a version of Windows that does not have the package registry
+            pass
+        return locations
+
+_win_store_finder = _WindowsStoreFinder()
 
 # All code starting from the 'BEGIN MIT-LICENSED PART' comment and until the
 # 'END MIT-LICENSED PART' comment is based on
@@ -623,9 +702,30 @@ def get_registry_path(subkey, entry, detection_files):
     return None
 
 def get_registry_game_path(submod):
-    """Check registry supplied game paths for the game detection file."""
+    """Check registry-supplied game paths for the game detection file(s)."""
     subkey, entry = submod.regInstallKeys
     return get_registry_path(subkey, entry, submod.game_detect_files)
+
+def get_win_store_game_path(submod):
+    """Check Windows Store-supplied game paths for the game detection
+    file(s)."""
+    ## TODO(lojack): There can potentially be multiple results for a given game
+    ## due to different game version/architecture.  Right now we just take
+    ## the first one, find a good way to pick the best one.  Probably by looking
+    ## at the install time value in the registry.
+    publisher_name = submod.Ws.publisher_name
+    publisher_id = submod.Ws.publisher_id
+    common_name = submod.Ws.win_store_name
+    locations = _win_store_finder.get_mutable_locations(
+        common_name,
+        publisher_name,
+        publisher_id
+    )
+    if locations:
+        # Use the first location for now, see the TODO above
+        return GPath(locations.values()[0])
+    else:
+        return None
 
 def get_personal_path():
     return (GPath(_get_known_path(_FOLDERID.Documents)),

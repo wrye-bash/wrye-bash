@@ -40,6 +40,12 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     espm_extensions = SkyrimSEGameInfo.espm_extensions - {u'.esl'}
     check_esl = False
 
+    class Ws(SkyrimSEGameInfo.Ws):
+        # Skyrim VR doesn't have a Windows Store version,
+        # so don't implicitely use the SkyrimSE one
+        publisher_name = u''
+        win_store_name = u''
+
     class Se(SkyrimSEGameInfo.Se):
         se_abbrev = u'SKSEVR'
         long_name = u'Skyrim VR Script Extender'

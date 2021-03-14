@@ -31,8 +31,8 @@ import collections
 import textwrap
 from . import bass
 from . import game as game_init
-from .bolt import GPath, Path, deprint
-from .env import get_registry_game_path
+from .bolt import GPath, Path, deprint, dict_sort
+from .env import get_registry_game_path, get_win_store_game_path
 from .exception import BoltError
 from .game import patch_game
 
@@ -43,6 +43,7 @@ foundGames = {}     # {'name': Path} dict used by the Settings switch game menu
 # Module Cache
 _allGames = {}        # 'name' -> GameInfo
 _registryGames = {}   # 'name' -> path
+_win_store_games = {} # 'name' -> path
 
 def reset_bush_globals():
     global game
@@ -55,7 +56,7 @@ def _supportedGames():
     # rebuilt cache
     reset_bush_globals()
     import pkgutil
-    # Detect the known games
+    # Detect known games from the registry and Windows Store
     for importer, modname, ispkg in pkgutil.iter_modules(game_init.__path__):
         if not ispkg: continue # game support modules are packages
         # Equivalent of "from game import <modname>"
@@ -63,12 +64,18 @@ def _supportedGames():
             module = __import__(u'game',globals(),locals(),[modname],-1)
             game_type = getattr(module, modname).GAME_TYPE
             _allGames[game_type.displayName] = game_type
-            #--Get this game's install path
+            # Get this game's install path(s)
             registry_path = get_registry_game_path(game_type)
+            win_store_path = get_win_store_game_path(game_type)
         except (ImportError, AttributeError):
             deprint(u'Error in game support module:', modname, traceback=True)
             continue
-        if registry_path: _registryGames[game_type.displayName] = registry_path
+        # If we have the same game in multiple places, let the registry win.
+        # This shouldn't happen since the MS versions are separate WB games
+        if registry_path:
+            _registryGames[game_type.displayName] = registry_path
+        elif win_store_path:
+            _win_store_games[game_type.displayName] = win_store_path
         del module
     # unload some modules, _supportedGames is meant to run once
     del pkgutil
@@ -78,10 +85,36 @@ def _supportedGames():
     for wrapped_line in textwrap.wrap(all_supported_games):
         deprint(u' ' + wrapped_line)
     # Dump out info about all games that we *actually* found
-    deprint(u'The following installed games were found via Windows Registry:')
-    for found_name in sorted(_registryGames):
-        deprint(u' %s: %s' % (found_name, _registryGames[found_name]))
-    return _registryGames.copy()
+    deprint(u'Wrye Bash looked for games in the following places:')
+    deprint(u' 1. Windows Registry:')
+    if _registryGames:
+        deprint(u'  The following installed games were found via the '
+                u'registry:')
+        for found_name, found_path in dict_sort(_registryGames):
+            deprint(u'   %s: %s' % (found_name, found_path))
+    else:
+        deprint(u'  No installed games were found via the registry')
+    for wrapped_line in textwrap.wrap(
+            u'Make sure to run the launcher of each game you installed through '
+            u'Steam once, otherwise Wrye Bash will not be able to find it.'):
+        deprint(u'  ' + wrapped_line)
+    deprint(u' 2. Windows Store:')
+    if _win_store_games:
+        deprint(u'  The following installed games with modding enabled were '
+                u'found via the Windows Store:')
+        for found_name, found_path in dict_sort(_win_store_games):
+            deprint(u'   %s: %s' % (found_name, found_path))
+    else:
+        deprint(u'  No installed games with modding enabled were found via '
+                u'the Windows Store.')
+    for wrapped_line in textwrap.wrap(
+            u'Make sure to enable mods for each Windows Store game you have '
+            u'installed, otherwise Wrye Bash will not be able to find it.'):
+        deprint(u'  ' + wrapped_line)
+    # Join the dicts of games we found from all global sources, PY3: dict union
+    all_found_games = _registryGames.copy()
+    all_found_games.update(_win_store_games)
+    return all_found_games
 
 def _detectGames(cli_path=u'', bash_ini_=None):
     """Detect which supported games are installed.

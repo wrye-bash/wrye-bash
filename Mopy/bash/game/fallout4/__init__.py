@@ -49,6 +49,10 @@ class Fallout4GameInfo(PatchGame):
         _j(u'meshes', u'actors', u'character', u'facegendata', u'facegeom'),
         _j(u'meshes', u'actors', u'character', u'facecustomization')]
 
+    class Ws(GameInfo.Ws):
+        publisher_name = u'Bethesda'
+        win_store_name = u'BethesdaSoftworks.Fallout4-PC'
+
     class Ck(GameInfo.Ck):
         ck_abbrev = u'CK'
         long_name = u'Creation Kit'
