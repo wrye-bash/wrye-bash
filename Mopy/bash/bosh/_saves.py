@@ -266,14 +266,13 @@ class SaveFile(object):
             progress.setFull(self.fileInfo.fsize)
             #--Header
             progress(0,_(u'Reading Header.'))
-            del self._masters[:]
             self.header = OblivionSaveHeader(self.fileInfo.abs_path,
                                              load_image=True, ins=ins)
+            self._masters = self.header.masters
             #--Pre-Records copy buffer
             def insCopy(buff, siz, backSize=0):
                 if backSize: ins.seek(-backSize,1)
                 buff.write(ins.read(siz + backSize))
-
             #--"Globals" block
             fidsPointer,recordsNum = unpack_many(ins, u'2I')
             #--Pre-globals
@@ -391,11 +390,6 @@ class SaveFile(object):
         self.save(filePath.temp,progress)
         filePath.untemp()
         self.fileInfo.setmtime()
-
-    def addMaster(self,master):
-        """Adds master to masters list."""
-        if master not in self._masters:
-            self._masters.append(master)
 
     def indexCreated(self):
         """Fills out self.fid_recNum."""

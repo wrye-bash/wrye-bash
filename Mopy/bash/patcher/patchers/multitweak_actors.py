@@ -115,7 +115,7 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
                   u"Requires VadersApp's Oblivion Real Bodies.")
     tweak_key = u'VORB'
     tweak_log_header = _(u"VadersApp's Oblivion Real Bodies")
-    _skeleton_dir = GPath(u'Characters').join(u'_male')
+    _skeleton_dir = u'Characters\\_male'
 
     def _get_skeleton_collections(self):
         """construct skeleton mesh collections. skeleton_list gets files that
@@ -148,11 +148,11 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
             return self._get_skeleton_path(record) # leave unchanged
         special_skel_mesh = u'skel_special_%X.nif' % record.fid[1]
         if special_skel_mesh in skeleton_specials:
-            return self._skeleton_dir.join(special_skel_mesh)
+            return u'%s\\%s' % (self._skeleton_dir, special_skel_mesh)
         else:
             random.seed(record.fid[1]) # make it deterministic
-            rand_index = random.randint(1, len(skeleton_list)) - 1
-            return self._skeleton_dir.join(skeleton_list[rand_index]).s
+            rand_index = random.randint(1, len(skeleton_list)) - 1 ##: choice?
+            return u'%s\\%s' % (self._skeleton_dir, skeleton_list[rand_index])
 
 #------------------------------------------------------------------------------
 class VanillaNPCSkeletonPatcher(_ASkeletonTweak):
