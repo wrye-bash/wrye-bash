@@ -47,10 +47,6 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     has_achlist = True
     check_esl = True
 
-    class Ws(SkyrimGameInfo.Ws):
-        publisher_name = u'Bethesda'
-        win_store_name = u'BethesdaSoftworks.SkyrimSE-PC'
-
     class Se(SkyrimGameInfo.Se):
         se_abbrev = u'SKSE64'
         long_name = u'Skyrim SE Script Extender'

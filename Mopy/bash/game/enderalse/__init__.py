@@ -44,11 +44,6 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     nexusName = u'Enderal Special Edition Nexus'
     nexusKey = u'bash.installers.openEnderalSENexus.continue'
 
-    class Ws(SkyrimSEGameInfo.Ws):
-        # Don't implicitely use the SkryimSE windows store info
-        publisher_name = u''
-        win_store_name = u''
-
     @classmethod
     def init(cls):
         # Copy-pasted from Skyrim
