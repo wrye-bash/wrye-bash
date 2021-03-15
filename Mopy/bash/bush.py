@@ -207,8 +207,7 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, gname=None):
         return None
     # No match found, return the list of possible games (may be empty if
     # nothing is found in registry)
-    game_icons = {g: bass.dirs[u'images'].join(g + u'32.png').s
-                  for g in foundGames}
-    return game_icons
+    return {_allGames[found_game]: fg_path for found_game, fg_path
+            in foundGames.iteritems()}
 
 def game_path(display_name): return foundGames[display_name]

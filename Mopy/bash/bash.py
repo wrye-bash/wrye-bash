@@ -471,20 +471,15 @@ def _detect_game(opts, backup_bash_ini):
 def _import_bush_and_set_game(opts, bashIni):
     from . import bush
     bolt.deprint(u'Searching for game to manage:')
-    game_icons = bush.detect_and_set_game(opts.oblivionPath, bashIni)
-    if game_icons is not None:  # None == success
-        if len(game_icons) == 0:
+    game_infos = bush.detect_and_set_game(opts.oblivionPath,
+                                                      bashIni)
+    if game_infos is not None:  # None == success
+        if len(game_infos) == 0:
+            # FIXME(inf) Show as a separate popup
             msgtext = _(u'Wrye Bash could not find a game to manage. Please '
                         u'use the -o command line argument to specify the '
                         u'game path.')
-        else:
-            msgtext = (_(u'Wrye Bash could not determine which game to '
-                         u'manage. The following games have been detected, '
-                         u'please select one to manage.') + u'\n\n' +
-                       _(u'To prevent this message in the future, use the -o '
-                         u'command line argument or the bash.ini to specify '
-                         u'the game path.'))
-        retCode = _select_game_popup(game_icons, bolt.text_wrap(msgtext, 65))
+        retCode = _select_game_popup(game_infos)
         if retCode is None:
             bolt.deprint(u'No games were found or selected. Aborting.')
             return None
@@ -570,46 +565,97 @@ class _AppReturnCode(object):
     def get(self): return self.value
     def set(self, value): self.value = value
 
-def _select_game_popup(game_icons, msgtext):
+def _select_game_popup(game_infos):
     import wx as _wx
     from .balt import Resources
-    from .gui import CancelImageButton, ImageButton, Label, ScrollableWindow, \
-        TextAlignment, WindowFrame, VLayout
+    from .gui import Label, TextAlignment, WindowFrame, VLayout, \
+        ImageDropDown, LayoutOptions, SearchBar, VBoxedLayout, TextField, \
+        HLayout, QuitButton, ImageButton, HorizontalLine, Stretch
+    ##: Move to popups.py?
     class GameSelect(WindowFrame):
-        def __init__(self, game_icons, callback):
-            super(GameSelect, self).__init__(None, u'Wrye Bash',
-                                             icon_bundle=Resources.bashRed)
-            self.callback = callback
-            # Setup the size - we give each button 38 pixels, 32 for the image
-            # plus 6 for the borders. However, we limit the total size of the
-            # display list at 600 pixels, where the scrollbar takes over
-            self.set_min_size(420, 200)
-            self.component_size = (420, min(600, 200 + len(game_icons) * 38))
-            # Construct the window and add the static text
-            scrl_win = ScrollableWindow(self)
-            layout = VLayout(item_border=3, item_expand=True, items=[
-                Label(scrl_win, msgtext, alignment=TextAlignment.CENTER),
-            ])
-            # Add the game buttons to the window
-            for game_name, game_icon in sorted(game_icons.iteritems(),
-                                               key=lambda k: k[0].lower()):
-                layout.add(ImageButton(scrl_win, _wx.Bitmap(game_icon),
-                                       btn_label=game_name))
-            # Finally, append the 'Quit' button
-            layout.add(CancelImageButton(scrl_win, btn_label=_(u'Quit')))
-            layout.apply_to(scrl_win)
-            # TODO(inf) de-wx! Probably best to rewrite this entirely
-            self._native_widget.Bind(_wx.EVT_BUTTON, self.OnButton)
+        _def_size = (500, 400)
 
-        def OnButton(self, event):
-            if event.GetId() != _wx.ID_CANCEL:
-                self.callback(self._native_widget.FindWindowById(
-                    event.GetId()).GetLabel())
-            self.close_win(True)
+        def __init__(self, game_infos, callback):
+            super(GameSelect, self).__init__(None, _(u'Select Game'),
+                                             icon_bundle=Resources.bashRed)
+            self._callback = callback
+            self._sorted_games = sorted(g.displayName for g in game_infos)
+            self._game_to_path = {g.displayName: p.s for g, p
+                                  in game_infos.iteritems()}
+            self._game_to_info = {g.displayName: g for g in game_infos}
+            self._game_to_bitmap = {g: _wx.Bitmap(bass.dirs[u'images'].join(
+                g + u'32.png').s) for g in self._sorted_games}
+            # Construction of the actual GUI begins here
+            game_search = SearchBar(self)
+            game_search.on_text_changed.subscribe(self._perform_search)
+            self._game_dropdown = ImageDropDown(self, value=u'', choices=[u''])
+            self._game_dropdown.on_combo_select.subscribe(self._select_game)
+            self._game_path = TextField(self, editable=False)
+            quit_button = QuitButton(self)
+            quit_button.on_clicked.subscribe(lambda: self._close_game_select(
+                return_code=None))
+            launch_img = bass.dirs[u'images'].join(u'bash_32_2.png').s
+            self._launch_button = ImageButton(self, _wx.Bitmap(launch_img),
+                                              btn_label=_(u'Launch'))
+            self._launch_button.on_clicked.subscribe(
+                lambda: self._close_game_select(
+                    return_code=self._game_dropdown.get_value()))
+            # Start out with an empty search and the alphabetically first game
+            # selected
+            self._perform_search(search_str=u'')
+            VLayout(item_expand=True, border=6, spacing=12, items=[
+                Label(self, _(u'Please choose a game to manage.'),
+                      alignment=TextAlignment.CENTER),
+                game_search, self._game_dropdown,
+                (VBoxedLayout(self, title=_(u'Game Details'), item_expand=True,
+                              spacing=12, items=[
+                    HLayout(spacing=6, item_expand=True, items=[
+                        Label(self, _(u'Install Path:')),
+                        (self._game_path, LayoutOptions(weight=1)),
+                    ]),
+                ]), LayoutOptions(weight=3)),
+                HorizontalLine(self),
+                (HLayout(item_expand=True, item_weight=1, items=[
+                    quit_button, Stretch(), self._launch_button,
+                ]), LayoutOptions(weight=1)),
+            ]).apply_to(self)
+
+        def _perform_search(self, search_str):
+            prev_choice = self._game_dropdown.get_value()
+            search_lower = search_str.lower().strip()
+            filtered_games = [g for g in self._sorted_games
+                              if search_lower in g.lower()]
+            with self._game_dropdown.pause_drawing():
+                self._game_dropdown.set_choices(filtered_games)
+                self._game_dropdown.set_bitmaps([self._game_to_bitmap[g]
+                                                 for g in filtered_games])
+                # Check if the previous choice can be restored now, otherwise
+                # select the first game
+                try:
+                    new_choice = filtered_games.index(prev_choice)
+                except ValueError:
+                    new_choice = 0
+                self._game_dropdown.set_selection(new_choice)
+            # Enable the Launch button only if a game is selected
+            new_selection = self._game_dropdown.get_value()
+            self._launch_button.enabled = bool(new_selection)
+            # Finally, update the game details to match the newly active game
+            self._select_game(new_selection)
+
+        def _select_game(self, selected_game):
+            if not selected_game:
+                # No game selected, clear the details
+                self._game_path.text_content = u''
+            else:
+                self._game_path.text_content = self._game_to_path[selected_game]
+
+        def _close_game_select(self, return_code):
+            self.close_win(force_close=True)
+            self._callback(return_code)
     _app = _wx.App(False)
     _app.locale = _wx.Locale(_wx.LANGUAGE_DEFAULT)
     retCode = _AppReturnCode()
-    frame = GameSelect(game_icons, retCode.set)
+    frame = GameSelect(game_infos, retCode.set)
     frame.show_frame()
     frame._native_widget.Center() # TODO(inf) de-wx!
     _app.MainLoop()
