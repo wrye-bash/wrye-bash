@@ -2725,12 +2725,61 @@ class ModInfos(FileInfos):
         #--Done/Error Message
         message = u''
         if missingSet:
-            message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
+            message += _(u'Some plugins could not be found and were '
+                         u'skipped:') + u'\n* '
             message += u'\n* '.join(x.s for x in missingSet)
         if skipped:
             if missingSet: message += u'\n'
-            message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
+            message += _(u'Load order is full, so some plugins were '
+                         u'skipped:') + u'\n* '
             message += u'\n* '.join(x.s for x in skipped)
+        return message
+
+    def lo_reorder(self, partial_order):
+        """Changes the load order to match the specified potentially invalid
+        'partial' load order as much as possible. To that end, it filters out
+        plugins that don't exist in the Data folder and tries to insert plugins
+        that are present in the Data folder but not in the partial order before
+        the same plugin that they are placed before in the current load
+        order."""
+        present_plugins = set(self)
+        partial_plugins = set(partial_order)
+        # Plugins in the partial order that are missing from the Data folder
+        excess_plugins = partial_plugins - present_plugins
+        filtered_order = [p for p in partial_order if p not in excess_plugins]
+        remaining_plugins = present_plugins - set(filtered_order)
+        current_order = self._lo_wip
+        collected_plugins = []
+        left_off = 0
+        while remaining_plugins:
+            for i, curr_plugin in enumerate(current_order[left_off:]):
+                # Look for continuous segments that are missing from the
+                # filtered partial load order
+                if curr_plugin in remaining_plugins:
+                    collected_plugins.append(curr_plugin)
+                    remaining_plugins.remove(curr_plugin)
+                elif collected_plugins:
+                    # We've hit a plugin that's common between current and
+                    # filtered orders after a continuous segment, look up the
+                    # shared plugin and insert the plugins in the same order
+                    # they have in the current order into the filtered order
+                    index_in_filtered = filtered_order.index(curr_plugin)
+                    for coll_plugin in reversed(collected_plugins):
+                        filtered_order.insert(index_in_filtered, coll_plugin)
+                    left_off += i + 1
+                    collected_plugins = []
+                    break # Restart the for loop
+            else:
+                # Exited the loop without breaking -> some extra plugins should
+                # be appended at the end
+                filtered_order.extend(collected_plugins)
+        self._lo_wip = filtered_order
+        self.cached_lo_save_lo()
+        message = u''
+        if excess_plugins:
+            message += _(u'Some plugins could not be found and were '
+                         u'skipped:') + u'\n* '
+            message += u'\n* '.join(x.s for x in excess_plugins)
         return message
 
     #--Helpers ----------------------------------------------------------------

@@ -6986,13 +6986,43 @@ C.Location, -C.LockList
 <h3 id="saves-symbols">Color scheme for Save Game Files <a class="back2top" href="#contents">Back to top</a></h3>
 <table>
     <thead>
-        <tr><th>Checkbox Colour<th>Meaning
+        <tr>
+            <th>Checkbox Colour</th>
+            <th>Meaning</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td><img alt="Purple" src="../bash/images/checkbox_purple_on.png"/><td>Excellent. Exactly synced with the current load order.
-        <tr><td><img alt="Blue" src="../bash/images/checkbox_blue_on.png"/><td>Good. Compatible with the current load order. However, the current load order includes some plugins that are not used by this save game.
-        <tr><td><img alt="Green" src="../bash/images/checkbox_green_on.png"/><td>Good, but not in sync with the current load order. Use <a href="#savesLoadMasters">Load Masters</a> to sync load order to this save.
-        <tr><td><img alt="Orange" src="../bash/images/checkbox_orange_on.png"/><td>Some plugins have changed order. the game and the Construction Set/Creation Kit will adjust for this when loaded. However, if some of the plugins that you depend made conflicting changes to the same item, a different plugin may now dominate because of the reordering.
-        <tr><td><img alt="Red" src="../bash/images/checkbox_red_on.png"/><td>A master is missing. You should check to make sure that you have not inadvertently renamed or removed the plugin.
+        <tr>
+            <td><img alt="Purple" src="../bash/images/checkbox_purple_on.png"/></td>
+            <td>Excellent. Exactly synced with the current load order.</td>
+        </tr>
+        <tr>
+            <td><img alt="Blue" src="../bash/images/checkbox_blue_on.png"/></td>
+            <td>Good. Compatible with the current load order. However, the
+                current load order includes some plugins that are not used by
+                this save game.</td>
+        </tr>
+        <tr>
+            <td><img alt="Green" src="../bash/images/checkbox_green_on.png"/></td>
+            <td>Good, but not in sync with the current active mods. You can use
+                <a href="#savesActivateMasters">Activate Masters</a> to sync
+                active plugins to this save.</td>
+        </tr>
+        <tr>
+            <td><img alt="Orange" src="../bash/images/checkbox_orange_on.png"/></td>
+            <td>Some plugins have changed order. The game and the TESCS/GECK/CK
+                will adjust for this when loaded. However, if some of the
+                plugins that you use made conflicting changes to the same item,
+                a different plugin may now dominate because of the reordering.
+                You can use <a href="#savesReorderMasters">Reorder Masters</a>
+                to sync load order to this save.</td>
+        </tr>
+        <tr>
+            <td><img alt="Red" src="../bash/images/checkbox_red_on.png"/></td>
+            <td>A master is missing. You should check to make sure that you
+                have not inadvertently renamed or removed the plugin.</td>
+        </tr>
+    </tbody>
 </table>
 
 <h3 id="saves-masters-symbols">Color scheme for Save Game Masters (MI &amp; Current LO) <a class="back2top" href="#contents">Back to top</a></h3>
@@ -7097,158 +7127,283 @@ C.Location, -C.LockList
     </figure>
     <table>
         <thead>
-            <tr><th colspan="3">Save Context Menu</th></tr>
-            <tr><th colspan="2">Command</th><th>Description</th></tr>
+            <tr>
+                <th colspan="3">Save Context Menu</th>
+            </tr>
+            <tr>
+                <th colspan="2">Command</th>
+                <th>Description</th>
+            </tr>
         </thead>
         <tbody>
-            <tr><td rowspan="7">File..</td>
-                <td>Rename...</td><td>Rename the selected save file. <code>.bak</code> files
-                    are not supported and you can't change the extension (specifying another
-                    extension will make the rename fail).</td></tr>
-                <tr><td>Duplicate...</td><td>Creates a duplicate of the selected save file in
-                    the saves folder.</td></tr>
-                <tr><td>Hide...</td><td>Moves the selected save file to the
-                    <code>My Games\[Game]\Saves\[optional profile dir\]Bash\Hidden</code>
-                    directory.</td></tr>
-                <tr>
-                    <td>Delete</td>
-                    <td>Deletes the selected save(s) and any backups of them.
-                        Deleted saves are sent to the Recycling Bin.</td>
-                </tr>
-                <tr><td>Backup</td><td>Creates a backup of the selected save file in
-                    <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up
-                    save file has <code>f</code> appended to its file extension, giving
-                    <code>.essf</code> or <code>.fosf</code>.</td></tr>
-                <tr><td>Revert to Backup...</td><td>Reverts the selected save file to the last
-                    backup made of it.</td></tr>
-                <tr><td>Revert to First Backup...</td><td>Reverts the selected save file to the
-                    first backup made of it.</td></tr>
-            <tr><td colspan="2" id="savesMoveTo">Move To</td><td>This submenu allows you to
-                specify a save profile to move the selected save(s) to from the active save
-                profile.</td></tr>
-            <tr><td colspan="2" id="savesCopyTo">Copy To</td><td>This submenu allows you to
-                specify a save profile to copy the selected save(s) to, so that it is present
-                in both the active and specified save profiles.</td></tr>
-            <tr><td colspan="2" id="savesLoadMasters">Load Masters</td><td>Synchronizes
-                activated plugins to savegame's masters.</td></tr>
-            <tr><td colspan="2" id="savesListMasters">List Masters...</td><td>Lists savegame
-                masters in load order and copies the list to the clipboard. Version numbers
-                are displayed if detected.</td></tr>
-            <tr><td colspan="2" id="savesDiffMasters">Diff Masters...</td><td>If two savegames
-                are selected, then this will compare the masters of the new save to those of
-                the older save. If one savegame is selected, then this will compare the
-                currently active plugins to the masters of the selected savegame. The
-                comparison details masters that have been removed and added in the newer save
-                since the older save, or removed and added in the load order since the
-                selected save.</td></tr>
-            <tr><td colspan="2" id="savesStatistics">Statistics</td><td><em>Oblivion &amp;  &amp; Nehrim&colon; At Fate's Edge only.</em>
-                This produces a set of various technical statistics for the selected savegame.
-                The following information is produced:
-                <ul>
-                    <li>Array sizes. These arrays are for each of the major sections in the
-                        save file.</li>
-                    <li>Created items. These are items created in-game, through scripting or
-                        some sort of crafting skill (eg. alchemy, spellmaking).</li>
-                    <li>Form IDs. This is a breakdown of the Form ID table in the savegame,
-                        sorted by source plugin. The Form ID table maps savegame reference
-                        numbers to the Form ID of the referenced record. If a reference is
-                        made to a record from a mod that is no longer loaded, the Form ID is
-                        replaced with a 0.</li>
-                    <li>Record details. This gives a breakdown of the different types of
-                        records stored in the save file. The type is given as a number and as
-                        text (eg. <code>48 Cell</code>), and then the number of records
-                        referenced from each plugin is given below.</li>
-                    <li>New ObjectRef Bases. These are objects that belong to the savegame, for
-                        example arrows dropped on the ground in-game. They generally are
-                        created and destroyed by the game as required, though bad scripting
-                        techniques can cause some of them to stick around. The "Base" of an
-                        objectRef is the baseid of the object (e.g., the formid of a steel
-                        arrow from Oblivion.esm). The objectRef refers to these indirectly
-                        through an "iref". Usually this will map back to a formid, but if the
-                        original mod has been removed from the load order, then the formid is
-                        set to zero. If this has happened, then a count of such "Null Bases"
-                        will be shown. After the "Null Base" count (if present) is a list of
-                        New ObjectRef Bases where the count is over 100 (e.g., if there are
-                        over 100 new arrows lying around). Show is the count, the iref and the
-                        base formid. Formid beginning with FF is reference to an object defined
-                        by the savegame. Otherwise, the formid will map back to a mod. The
-                        first two digits are the modindex, and can be matched to a mod through
-                        the "MI" column in the list of savegame masters.</li>
-                </ul></td></tr>
-            <tr><td colspan="2" id="saveDumpSE">Dump .**se Contents</td><td>This is similar to
-                <a href="#savesStatistics">Statistics</a> above, but reports statistics for the
-                <code>.**se</code> cosave file (e.g. <code>.obse</code> for Oblivion or
-                <code>.skse</code> for Skyrim) associated with the selected save.</td></tr>
-            <tr><td colspan="2">Dump .pluggy Contents</td><td><em>Oblivion &amp;  &amp; Nehrim&colon; At Fate's Edge only.</em> Behaves
-                like <a href="#saveDumpSE">Dump .**se Contents</a>, but for the Pluggy cosave
-                file associated with the selected save.</td></tr>
-            <tr><td colspan="2" id="savesDeleteSpells">Delete Spells...</td><td>
-                <em>Oblivion &amp;  &amp; Nehrim&colon; At Fate's Edge only.</em> This allows you to delete unused spells from your spell
-                list in the selected save. <strong>Warning:</strong> This cannot be undone. Most
-                spells may be repurchased or recreated, but quest and other special spells will
-                likely have to be added using the console.</td></tr>
-            <tr><td colspan="2">Rename Player...</td><td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Renames the
-                player's character in the selected save.</td></tr>
-            <tr><td colspan="2">Set Number of Uses for Weapon Enchantments...</td><td>
-                <em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you to set the number of casts available to any
-                enchanted weapon you created in-game, or that has otherwise been recorded in
-                your savegame.</td></tr>
-            <tr><td colspan="2">Import Face...</td><td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Relates to
-                <a href="#saves-face">Face Importing</a>. This command allows you to import a
-                face for the save file's player character (and possibly some NPCs) from another
-                save file or from an NPC in a mod.</td></tr>
-            <tr><td colspan="2">Rename Enchanted...</td><td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you
-                to rename any enchanted items that you have created in-game for the selected
-                save.</td></tr>
-            <tr><td colspan="2" id="savesRenamePotions">Rename Potions...</td><td>
-                <em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you to rename any potions that you have created
-                in-game for the selected save.</td></tr>
-            <tr><td colspan="2">Rename Spells...</td><td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you to
-                rename any spells that you have created in-game for the selected save.</td></tr>
-            <tr><td colspan="2" id="savesReweighPotions">Reweigh Potions...</td><td>
-                <em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Potions created in-game are given a weight that is
-                somewhat arbitrarily selected and potentially high. This command may be used to
-                set all created potions to have a specific weight. Potions created after the use
-                of this command with new names, new effects or new durations will not be
-                affected.</td></tr>
-            <tr><td colspan="2" id="savesUpdateNPCLevels">Update NPC Levels...</td><td>
-                <em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Updates the level information for NPCs stored in the
-                selected savegame to reflect the active load order's NPC level settings. This is
-                required because although NPC levels are set via plugins, once an NPC is
-                encountered its level is stored in the save file, which overrides the plugin
-                levels.</td></tr>
-            <tr><td colspan="2">Export Screenshot...</td><td>Allows you to save the image used
-                as the save file's screenshot as a JPEG.</td></tr>
-            <tr><td colspan="2">Re-number Save(s)...<td>Allows the re-numbering of the selected
-                save file(s). If more than one file is selected, the first will be renumbered to
-                the given number and the others will be numbered in increments of one from the
-                given number. The save name must be of the form
-                <code>&lt;Save (case insensitive)&gt;&lt;space&gt;&lt;some digits&gt;&lt;optional text&gt;.&lt;save extension&gt;</code>.</td></tr>
-            <tr><td colspan="2" id="savesRemoveBloat">Remove Bloat...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
-                <strong>This is an experimental command. It is recommended that saves are backed
-                up before using it on them.</strong> It attempts to determine how much bloating
-                there is in the selected save file and then optionally remove it. If the command
-                reports a large number of created objects, there could be a problem with one of
-                your mods, and such mods should be removed or updated. There are two common
-                types of bloat:
-                <ul>
-                    <li>Excess created objects can occur through the use of scripting by a mod
-                        to duplicate existing objects in-game and a failure by the mod to clean
-                        up the duplicates after their use.</li>
-                    <li>Null references are caused when objects from a mod that is removed are
-                        present in the game world. These objects then get replaced with null
-                        references when the game is next saved with the mod missing.</li>
-                </ul></td></tr>
-            <tr><td colspan="2" id="savesRepairAbomb">Repair Abomb<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
-                <q>Abomb Animation Slowing</q> is a slowing of animations that typically occurs
-                around 225 hours into the game, though it may occur earlier or later. This is
-                an engine bug, and this command avoids its effects by resetting a related
-                counter (TesClass Abomb counter is reset to 0x41000000).</td></tr>
-            <tr><td colspan="2">Repair Hair<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Oblivion has a bug that
-                will cause a crash if your PC's hair comes from a mod that has been removed and
-                you then run showRaceMenu. This command resets your hair to the default for that
-                race and gender, so you can then use showRaceMenu to select a new hair again if
-                you wish.</td></tr>
+            <tr>
+                <td rowspan="7">File..</td>
+                <td>Rename...</td>
+                <td>Rename the selected save file.</td>
+            </tr>
+            <tr>
+                <td>Duplicate...</td>
+                <td>Creates a duplicate of the selected save file in the saves
+                    folder.</td>
+            </tr>
+            <tr>
+                <td>Hide...</td>
+                <td>Moves the selected save file to the <code>My Games\[Game]\
+                    Saves\[optional profile dir\]Bash\Hidden</code>
+                    directory.</td>
+            </tr>
+            <tr>
+                <td>Delete</td>
+                <td>Deletes the selected save(s) and any associated backups.
+                    Deleted saves are sent to the Recycling Bin.</td>
+            </tr>
+            <tr>
+                <td>Backup</td>
+                <td>Creates a backup of the selected save file in
+                    <code>[Game] Mods\Bash Mod Data\Backups</code>. On first
+                    run, the backed-up save file has <code>f</code> appended to
+                    its file extension, giving <code>.essf</code> or
+                    <code>.fosf</code>.</td>
+            </tr>
+            <tr>
+                <td>Revert to Backup...</td>
+                <td>Reverts the selected save file to the last backup made of
+                    it.</td>
+            </tr>
+            <tr>
+                <td>Revert to First Backup...</td>
+                <td>Reverts the selected save file to the first backup made of
+                    it.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesMoveTo">Move To</td>
+                <td>This submenu allows you to specify a save profile to move
+                    the selected save(s) to from the active save profile.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesCopyTo">Copy To</td>
+                <td>This submenu allows you to specify a save profile to copy
+                    the selected save(s) to, so that it is present in both the
+                    active and specified save profiles.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesActivateMasters">Activate Masters</td>
+                <td>Activates exactly the plugins present in the selected
+                    savegame's masters.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesReorderMasters">Reorder Masters</td>
+                <td>Reorders plugins in the load order to match the order of
+                    the selected savegame's masters.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesListMasters">List Masters...</td>
+                <td>Lists savegame masters in load order and copies the list to
+                    the clipboard. Version numbers are displayed if
+                    detected.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesDiffMasters">Diff Masters...</td>
+                <td>If two savegames are selected, then this will compare the
+                    masters of the new save to those of the older save. If one
+                    savegame is selected, then this will compare the currently
+                    active plugins to the masters of the selected savegame. The
+                    comparison details masters that have been removed and added
+                    in the newer save since the older save, or removed and
+                    added in the load order since the selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesStatistics">Statistics</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> This
+                    produces a set of various technical statistics for the
+                    selected savegame. The following information is produced:
+                    <ul>
+                        <li>Array sizes. These arrays are for each of the major
+                            sections in the save file.</li>
+                        <li>Created items. These are items created in-game,
+                            through scripting or some sort of crafting skill
+                            (e.g. alchemy, spellmaking).</li>
+                        <li>FormIDs. This is a breakdown of the FormID table in
+                            the savegame, sorted by source plugin. The FormID
+                            table maps savegame reference numbers to the FormID
+                            of the referenced record. If a reference is made to
+                            a record from a mod that is no longer loaded, the
+                            FormID is replaced with a 0.</li>
+                        <li>Record details. This gives a breakdown of the
+                            different types of records stored in the save file.
+                            The type is given as a number and as text
+                            (e.g. <code>48 Cell</code>), and then the number of
+                            records referenced from each plugin is given
+                            below.</li>
+                        <li>New ObjectRef Bases. These are objects that belong
+                            to the savegame, for example arrows dropped on the
+                            ground in-game. They generally are created and
+                            destroyed by the game as required, though bad
+                            scripting techniques can cause some of them to
+                            stick around. The "Base" of an objectRef is the
+                            BaseID of the object (e.g., the FormID of a steel
+                            arrow from Oblivion.esm). The ObjectRef refers to
+                            these indirectly through an "iref". Usually this
+                            will map back to a FormID, but if the original mod
+                            has been removed from the load order, then the
+                            FormID is set to zero. If this has happened, then a
+                            count of such "Null Bases" will be shown. After the
+                            "Null Base" count (if present) is a list of New
+                            ObjectRef Bases where the count is over 100
+                            (e.g. if there are over 100 new arrows lying
+                            around). Shown is the count, the iref and the base
+                            FormID. FormIDs beginning with FF are references to
+                            an object defined by the savegame. Otherwise, the
+                            FormID will map back to a mod. The first two digits
+                            are the modindex, and can be matched to a mod
+                            through the "MI" column in the list of savegame
+                            masters.</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" id="saveDumpSE">Dump .**se Contents</td>
+                <td>This is similar to
+                    <a href="#savesStatistics">Statistics</a> above, but
+                    reports statistics for the <code>.**se</code> cosave file
+                    (e.g. <code>.obse</code> for Oblivion or <code>.skse</code>
+                    for Skyrim) associated with the selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Dump .pluggy Contents</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
+                    Behaves like <a href="#saveDumpSE">Dump .**se Contents</a>,
+                    but for the Pluggy cosave associated with the selected
+                    save.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesDeleteSpells">Delete Spells...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> This
+                    allows you to delete unused spells from your spell list in
+                    the selected save. <strong>Warning:</strong> This cannot be
+                    undone. Most spells may be repurchased or recreated, but
+                    quest and other special spells can most likely only be
+                    readded using the console.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Rename Player...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Renames
+                    the player's character in the selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Set Number of Uses for Weapon
+                    Enchantments...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you
+                    to set the number of casts available to any enchanted
+                    weapon you created in-game, or that has otherwise been
+                    recorded in your savegame.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Import Face...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Relates to
+                    <a href="#saves-face">Face Importing</a>. This command
+                    allows you to import a face for the save file's player
+                    character (and possibly some NPCs) from another save file
+                    or from an NPC in a mod.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Rename Enchanted...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you
+                    to rename any enchanted items that you have created in-game
+                    for the selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesRenamePotions">Rename Potions...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you
+                    to rename any potions that you have created in-game for the
+                    selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Rename Spells...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you
+                    to rename any spells that you have created in-game for the
+                    selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesReweighPotions">Reweigh
+                    Potions...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Potions
+                    created in-game are given a weight that is somewhat
+                    arbitrarily selected and potentially high. This command may
+                    be used to set all created potions to have a specific
+                    weight. Potions created after the use of this command with
+                    new names, new effects or new durations will not be
+                    affected.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesUpdateNPCLevels">Update NPC
+                    Levels...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Updates
+                    the level information for NPCs stored in the selected
+                    savegame to reflect the active load order's NPC level
+                    settings. This is required because although NPC levels are
+                    set via plugins, once an NPC is encountered its level is
+                    stored in the save file, which overrides the plugin
+                    levels.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Export Screenshot...</td>
+                <td>Allows you to save the image used as the save file's
+                    screenshot as a JPEG.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Re-number Save(s)...</td>
+                <td>Allows the re-numbering of the selected save file(s). If
+                    more than one file is selected, the first will be
+                    renumbered to the given number and the others will be
+                    numbered in increments of one from the given number. The
+                    save name must be of the form <code>&lt;Save (case
+                        insensitive)&gt; &lt;some digits&gt;&lt;optional text&gt;.&lt;save
+                        extension&gt;</code>.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesRemoveBloat">Remove Bloat...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
+                    <strong>This is an experimental command. It is recommended
+                        that saves are backed up before using it on
+                        them.</strong> It attempts to determine how much
+                    bloating there is in the selected save file and then
+                    optionally remove it. If the command reports a large number
+                    of created objects, there could be a problem with one of
+                    your mods, and such mods should be removed or updated.
+                    There are two common types of bloat:
+                    <ul>
+                        <li>Excess created objects can occur through the use of
+                            scripting by a mod to duplicate existing objects
+                            in-game and a failure by the mod to clean up the
+                            duplicates after their use.</li>
+                        <li>Null references are caused when objects from a mod
+                            that is removed are present in the game world.
+                            These objects then get replaced with null
+                            references when the game is next saved with the mod
+                            missing.</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesRepairAbomb">Repair Abomb</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
+                    <q>Abomb Animation Slowing</q> is a slowing of animations
+                    that typically occurs around 225 hours into the game,
+                    though it may occur earlier or later. This is an engine
+                    bug, and this command avoids its effects by resetting a
+                    related counter (TesClass Abomb counter is reset to
+                    0x41000000).</td>
+            </tr>
+            <tr>
+                <td colspan="2">Repair Hair</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Oblivion
+                    has a bug that will cause a crash if your PC's hair comes
+                    from a mod that has been removed and you then run
+                    showRaceMenu. This command resets your hair to the default
+                    for that race and gender, so you can then use showRaceMenu
+                    to select a new hair again if you wish.</td>
+            </tr>
         </tbody>
     </table>
 </div>

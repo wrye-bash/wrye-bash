@@ -37,17 +37,17 @@ from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, UIList_Rename
 from ..bolt import GPath, SubProgress
 from ..bosh import faces, SaveInfo
-from ..exception import ArgumentError, BoltError, CancelError, ModError
+from ..exception import ArgumentError, BoltError, ModError, AbstractError
 from ..gui import BusyCursor, ImageWrapper
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
 __all__ = [u'Saves_Profiles', u'Save_Rename', u'Save_Renumber', u'Save_Move',
-           u'Save_LoadMasters', u'Save_DiffMasters', u'Save_Stats',
+           u'Save_ActivateMasters', u'Save_DiffMasters', u'Save_Stats',
            u'Save_StatObse', u'Save_EditPCSpells', u'Save_RenamePlayer',
            u'Save_EditCreatedEnchantmentCosts', u'Save_ImportFace',
            u'Save_EditCreated', u'Save_ReweighPotions', u'Save_UpdateNPCLevels',
            u'Save_ExportScreenshot', u'Save_Unbloat', u'Save_RepairAbomb',
-           u'Save_RepairHair', u'Save_StatPluggy']
+           u'Save_RepairHair', u'Save_StatPluggy', u'Save_ReorderMasters']
 
 #------------------------------------------------------------------------------
 # Saves Links -----------------------------------------------------------------
@@ -217,17 +217,36 @@ class Saves_Profiles(ChoiceLink):
     extraItems = [_Edit(), SeparatorLink(), _Default()]
 
 #------------------------------------------------------------------------------
-class Save_LoadMasters(OneItemLink):
-    """Sets the active mods to the save game's masters."""
-    _text = _(u'Load Masters')
-    _help = _(u"Set the active mods to the save game's masters")
-
+class _Save_ChangeLO(OneItemLink):
+    """Abstract class for links that alter load order."""
     def Execute(self):
-        errorMessage = bosh.modInfos.lo_activate_exact(
-            self._selected_info.masterNames)
+        errorMessage = self._lo_operation()
         BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
         self.window.Focus()
-        if errorMessage: self._showError(errorMessage, self._selected_item)
+        if errorMessage:
+            self._showError(errorMessage, self._selected_item)
+
+    def _lo_operation(self):
+        raise AbstractError(u'_lo_operation not implemented')
+
+class Save_ActivateMasters(_Save_ChangeLO):
+    """Sets the active mods to the save game's masters."""
+    _text = _(u'Activate Masters')
+    _help = _(u'Activates exactly the plugins present in the master list of '
+              u'this save.')
+
+    def _lo_operation(self):
+        return bosh.modInfos.lo_activate_exact(self._selected_info.masterNames)
+
+#------------------------------------------------------------------------------
+class Save_ReorderMasters(_Save_ChangeLO):
+    """Changes the laod order to match the save game's masters."""
+    _text = _(u'Reorder Masters')
+    _help = _(u'Reorders the plugins in the current load order to match the '
+              u'order of plugins in this save.')
+
+    def _lo_operation(self):
+        return bosh.modInfos.lo_reorder(self._selected_info.masterNames)
 
 #------------------------------------------------------------------------------
 class Save_ImportFace(OneItemLink):
@@ -305,6 +324,8 @@ class Save_ExportScreenshot(OneItemLink):
         image.SaveFile(imagePath.s, ImageWrapper.typesDict[u'jpg'])
 
 #------------------------------------------------------------------------------
+##: Split in two, one OneItemLink diffing against active plugins and one link
+# that needs two or more plugins and diffs those against each other
 class Save_DiffMasters(EnabledLink):
     """Shows how saves masters differ from active mod list."""
     _text = _(u'Diff Masters...')

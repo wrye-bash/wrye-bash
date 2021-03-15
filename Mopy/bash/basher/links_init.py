@@ -697,7 +697,8 @@ def InitSaveLinks():
         SaveList.context_links.append(copyMenu)
     #--------------------------------------------
     SaveList.context_links.append(SeparatorLink())
-    SaveList.context_links.append(Save_LoadMasters())
+    SaveList.context_links.append(Save_ActivateMasters())
+    SaveList.context_links.append(Save_ReorderMasters())
     SaveList.context_links.append(File_ListMasters())
     SaveList.context_links.append(Save_DiffMasters())
     if bush.game.Ess.canEditMore:
