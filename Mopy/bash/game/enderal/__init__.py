@@ -30,6 +30,7 @@ from ...brec import MreFlst, MreGlob
 class EnderalGameInfo(SkyrimGameInfo):
     displayName = u'Enderal'
     fsName = u'Enderal'
+    game_icon = u'enderal_%u.png'
     bash_root_prefix = u'Enderal'
     # Enderal SE also has an Enderal Launcher.exe, but no TESV.exe. Skyrim LE
     # has TESV.exe, but no Enderal Launcher.exe

@@ -29,6 +29,7 @@ from ...brec import MreFlst, MreGlob
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
     fsName = u'Skyrim Special Edition'
+    game_icon = u'skyrimse_%u.png'
     bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
     launch_exe = u'SkyrimSE.exe'
     # Set to this because SkyrimSE.exe also exists for Enderal SE

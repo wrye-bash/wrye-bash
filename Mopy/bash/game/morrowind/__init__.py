@@ -31,6 +31,7 @@ class MorrowindGameInfo(PatchGame):
     displayName = u'Morrowind'
     fsName = u'Morrowind'
     altName = u'Wrye Mash'
+    game_icon = u'morrowind_%u.png'
     bash_root_prefix = u'Morrowind'
     uses_personal_folders = False
     launch_exe = u'Morrowind.exe'

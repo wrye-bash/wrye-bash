@@ -31,6 +31,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     displayName = u'Skyrim VR'
     fsName = u'Skyrim VR'
     altName = u'Wrye VRash'
+    game_icon = u'skyrimvr_%u.png'
     bash_root_prefix = u'Skyrim VR' # backwards compat :(
     launch_exe = u'SkyrimVR.exe'
     game_detect_files = [u'SkyrimVR.exe']

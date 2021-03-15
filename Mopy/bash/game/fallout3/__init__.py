@@ -33,6 +33,7 @@ class Fallout3GameInfo(PatchGame):
     displayName = u'Fallout 3'
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
+    game_icon = u'fallout3_%u.png'
     bash_root_prefix = u'Fallout3'
     launch_exe = u'Fallout3.exe'
     game_detect_files = [u'Fallout3.exe']

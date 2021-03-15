@@ -33,6 +33,7 @@ class OblivionGameInfo(PatchGame):
     displayName = u'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
+    game_icon = u'oblivion_%u.png'
     bash_root_prefix = u'Oblivion'
     launch_exe = u'Oblivion.exe'
     # Set to this because that file does not exist in Nehrim, whereas

@@ -32,6 +32,7 @@ class SkyrimGameInfo(PatchGame):
     displayName = u'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
+    game_icon = u'skyrim_%u.png'
     bash_root_prefix = u'Skyrim'
     launch_exe = u'TESV.exe'
     # Set to this because TESV.exe also exists for Enderal

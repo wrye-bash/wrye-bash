@@ -31,6 +31,7 @@ from ...brec import MreGlob, MreLand
 
 class NehrimGameInfo(OblivionGameInfo):
     displayName = u'Nehrim'
+    game_icon = u'nehrim_%u.png'
     bash_root_prefix = u'Nehrim'
     game_detect_files = [u'NehrimLauncher.exe']
     master_file = u'Nehrim.esm'

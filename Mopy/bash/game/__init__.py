@@ -40,6 +40,9 @@ class GameInfo(object):
     fsName = u'' ## Example: u'Skyrim'
     # Alternate display name of Wrye Bash when managing this game
     altName = u'' ## Example: u'Wrye Smash'
+    # Name of the icon to use for the game, including a %u specifier for the
+    # icon size (16/24/32)
+    game_icon = u'' ## Example: u'skyrim_%u.png'
     # Name of the prefix of the '<X> Mods' folder, i.e. <X> is this string.
     # Preferably pick a single word here, equal to fsName if possible.
     bash_root_prefix = u'' ## Example: u'Skyrim'

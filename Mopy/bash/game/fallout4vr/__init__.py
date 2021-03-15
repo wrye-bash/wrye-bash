@@ -29,6 +29,7 @@ from ... import brec
 class Fallout4VRGameInfo(Fallout4GameInfo):
     displayName = u'Fallout 4 VR'
     fsName = u'Fallout4VR'
+    game_icon = u'fallout4vr_%u.png'
     altName = u'Wrye VRash'
     bash_root_prefix = u'Fallout4VR'
     launch_exe = u'Fallout4VR.exe'

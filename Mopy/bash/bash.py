@@ -583,8 +583,9 @@ def _select_game_popup(game_infos):
             self._game_to_path = {g.displayName: p.s for g, p
                                   in game_infos.iteritems()}
             self._game_to_info = {g.displayName: g for g in game_infos}
-            self._game_to_bitmap = {g: _wx.Bitmap(bass.dirs[u'images'].join(
-                g + u'32.png').s) for g in self._sorted_games}
+            self._game_to_bitmap = {
+                g.displayName: _wx.Bitmap(bass.dirs[u'images'].join(
+                    g.game_icon % 32).s) for g in game_infos}
             # Construction of the actual GUI begins here
             game_search = SearchBar(self)
             game_search.on_text_changed.subscribe(self._perform_search)

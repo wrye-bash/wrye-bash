@@ -33,6 +33,7 @@ from ...brec import MreFlst, MreGlob
 class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     displayName = u'Enderal Special Edition'
     fsName = u'Enderal Special Edition'
+    game_icon = u'enderalse_%u.png'
     bash_root_prefix = u'EnderalSE'
     # Enderal LE also has an Enderal Launcher.exe, but no SkyrimSE.exe. Skyrim
     # SE has SkyrimSE.exe, but no Enderal Launcher.exe

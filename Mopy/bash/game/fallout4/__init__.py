@@ -31,6 +31,7 @@ class Fallout4GameInfo(PatchGame):
     displayName = u'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
+    game_icon = u'fallout4_%u.png'
     bash_root_prefix = u'Fallout4'
     launch_exe = u'Fallout4.exe'
     game_detect_files = [u'Fallout4.exe']
