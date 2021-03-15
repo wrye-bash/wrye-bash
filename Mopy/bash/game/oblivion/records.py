@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
     MelDescription, BipedFlags, MelSpells, MelUInt8Flags, MelUInt32Flags, \
     SignatureDecider, MelRaceData, MelFactions, MelActorSounds, \
-    MelWeatherTypes, MelFactionRanks, MelLscrLocations
+    MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -820,7 +820,7 @@ class MreCrea(MreActorBase):
         MelBase(b'NIFT','nift_p'), # Texture File Hashes
         MelStruct(b'ACBS', [u'I', u'3H', u'h', u'2H'],
             (_flags, u'flags'),'baseSpell','fatigue','barterGold',
-            ('level',1),'calcMin','calcMax'),
+            ('level_offset',1),'calcMin','calcMax'),
         MelFactions(),
         MelFid(b'INAM','deathItem'),
         MelScript(),
@@ -1372,7 +1372,7 @@ class MreNpc(MreActorBase):
         MelModel(),
         MelStruct(b'ACBS', [u'I', u'3H', u'h', u'2H'],
             (_flags, u'flags'),'baseSpell','fatigue','barterGold',
-            ('level',1),'calcMin','calcMax'),
+            ('level_offset',1),'calcMin','calcMax'),
         MelFactions(),
         MelFid(b'INAM','deathItem'),
         MelFid(b'RNAM','race'),
@@ -1853,6 +1853,27 @@ class MreSoun(MelRecord):
 class MreSpel(MelRecord,MreHasEffects):
     """Spell."""
     rec_sig = b'SPEL'
+    spellTypeNumber_Name = {None: u'NONE', ##: TODO do I ever get None ?
+                            0   : u'Spell',
+                            1   : u'Disease',
+                            2   : u'Power',
+                            3   : u'LesserPower',
+                            4   : u'Ability',
+                            5   : u'Poison'}
+    spellTypeName_Number = {y.lower(): x for x, y in
+                            spellTypeNumber_Name.iteritems() if x is not None}
+    levelTypeNumber_Name = {None : u'NONE',
+                            0    : u'Novice',
+                            1    : u'Apprentice',
+                            2    : u'Journeyman',
+                            3    : u'Expert',
+                            4    : u'Master'}
+    levelTypeName_Number = {y.lower(): x for x, y in
+                            levelTypeNumber_Name.iteritems() if x is not None}
+    attr_csv_struct[u'level'][2] = \
+        lambda val: u'"%s"' % MreSpel.levelTypeNumber_Name.get(val, val)
+    attr_csv_struct[u'spellType'][2] = \
+        lambda val: u'"%s"' % MreSpel.spellTypeNumber_Name.get(val, val)
 
     class SpellFlags(Flags):
         """For SpellFlags, immuneToSilence activates bits 1 AND 3."""
@@ -1876,6 +1897,17 @@ class MreSpel(MelRecord,MreHasEffects):
         MelEffectsObmeFull(),
     ).with_distributor(_effects_distributor)
     __slots__ = melSet.getSlotsUsed()
+
+    @classmethod
+    def parse_csv_line(cls, index_dict, csv_fields, reuse=False):
+        attr_dict = super(MreSpel, cls).parse_csv_line(index_dict, csv_fields,
+                                                       reuse)
+        attr_dict[u'level'] = cls.levelTypeName_Number.get(
+            attr_dict[u'level'].lower(), attr_dict[u'level'])
+        attr_dict[u'spellType'] = cls.spellTypeName_Number.get(
+            attr_dict[u'spellType'].lower(), attr_dict[u'spellType'])
+        attr_dict[u'flags'] = cls._SpellFlags(attr_dict.get(u'flags', 0))
+        return attr_dict
 
 class MreStat(MelRecord):
     """Static."""

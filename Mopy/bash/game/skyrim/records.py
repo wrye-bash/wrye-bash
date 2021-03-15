@@ -3612,7 +3612,7 @@ class MreNpc(MreActorBase):
         MelBounds(),
         MelStruct(b'ACBS', [u'I', u'2H', u'h', u'3H', u'h', u'3H'],
                   (NpcFlags1, u'flags'),'magickaOffset',
-                  'staminaOffset','level','calcMin',
+                  'staminaOffset','level_offset','calcMin',
                   'calcMax','speedMultiplier','dispositionBase',
                   (_TemplateFlags, u'templateFlags'), 'healthOffset',
                   'bleedoutOverride',),

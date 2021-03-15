@@ -989,7 +989,7 @@ class MreCrea(MreActor):
         MelBodyParts(),
         MelBase(b'NIFT','nift_p'), # Texture File Hashes
         MelStruct(b'ACBS', [u'I', u'2H', u'h', u'3H', u'f', u'h', u'H'],(_flags, u'flags'),'fatigue',
-            'barterGold',('level',1),'calcMin','calcMax','speedMultiplier',
+            'barterGold',('level_offset',1),'calcMin','calcMax','speedMultiplier',
             'karma', 'dispositionBase',
             (MreActor.TemplateFlags, 'templateFlags')),
         MelFactions(),
@@ -2098,7 +2098,7 @@ class MreNpc(MreActor):
         MelModel(),
         MelStruct(b'ACBS', [u'I', u'2H', u'h', u'3H', u'f', u'2H'],
             (_flags, u'flags'),'fatigue','barterGold',
-            ('level',1),'calcMin','calcMax','speedMultiplier','karma',
+            ('level_offset',1),'calcMin','calcMax','speedMultiplier','karma',
             'dispositionBase', (MreActor.TemplateFlags, u'templateFlags')),
         MelFactions(),
         MelFid(b'INAM','deathItem'),

@@ -750,7 +750,7 @@ actor_importer_attrs = {
                          u'flags.pcLevelMult', u'flags.protected',
                          u'flags.respawn', u'flags.simpleActor',
                          u'flags.summonable', u'flags.unique', u'healthOffset',
-                         u'level', u'magickaOffset', u'speedMultiplier',
+                         u'level_offset', u'magickaOffset', u'speedMultiplier',
                          u'staminaOffset'),
         u'Actors.AIData': (u'aggression', u'aggroRadiusBehavior',
                            u'assistance', u'attack', u'confidence',
