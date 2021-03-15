@@ -132,7 +132,7 @@ class CsvParser(object):
 
     def readFromText(self, csv_path):
         """Reads information from the specified CSV file and stores the result
-        in id_stored_info. You must override _parse_line for this method to
+        in id_stored_data. You must override _parse_line for this method to
         work.
 
         :param csv_path: The path to the CSV file that should be read."""
@@ -145,7 +145,7 @@ class CsvParser(object):
 
     def _parse_line(self, csv_fields):
         """Parse the specified CSV line and update the parser's instance
-        id_stored_info - both id and stored_info vary in type and meaning.
+        id_stored_data - both id and stored_data vary in type and meaning.
 
         :param csv_fields: A line in a CSV file, already split into fields."""
         raise AbstractError(u'%s must implement _parse_line' % type(self))
@@ -157,7 +157,7 @@ class CsvParser(object):
             self._write_rows(out)
 
     def _write_rows(self, out):
-        raise AbstractError
+        raise AbstractError(u'%s must implement _write_rows' % type(self))
 
     def _header_row(self):
         return u'"%s"\n' % u'","'.join(self._csv_header)
@@ -171,8 +171,8 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
         # used if the Aliases Patcher has been enabled
         self.aliases = aliases_ or {} # type: dict
         # Set to True when called by a patcher - can be used to alter stored
-        # data format when reading from a csv
-        self.called_from_patcher = called_from_patcher
+        # data format when reading from a csv - could be in a subclass
+        self._called_from_patcher = called_from_patcher
 
     def _get_alias(self, modname):
         """Encapsulate getting alias for modname returned from _CsvReader."""
@@ -230,7 +230,7 @@ class _AParser(_HandleAliases):
        _fp_types appropriately and override _read_record_fp to use this pass.
      - The second pass filters by record type and long FormID, and can choose
        whether or not it wants to store certain information. The result is
-       stored in id_stored_info. You will have to set _sp_types appropriately
+       stored in id_stored_data. You will have to set _sp_types appropriately
        and override _is_record_useful and _read_record_sp to use this pass.
      - If you want to skip either pass, just leave _fp_types / _sp_types
        empty."""
@@ -260,7 +260,7 @@ class _AParser(_HandleAliases):
         self._sp_types = ()
         # Maps record types to dicts that map long fids to stored information
         # May have been retrieved from mod in second pass, or from a CSV file
-        self.id_stored_info = defaultdict(lambda : defaultdict(dict))
+        self.id_stored_data = defaultdict(lambda : defaultdict(dict))
         super(_AParser, self).__init__(aliases_, called_from_patcher)
 
     # Plugin-related utilities
@@ -315,7 +315,7 @@ class _AParser(_HandleAliases):
     # Reading from plugin - second pass
     def _read_plugin_sp(self, loaded_mod):
         """Performs a second pass of reading on the specified plugin, but not
-        its masters. Results are stored in id_stored_info.
+        its masters. Results are stored in id_stored_data.
 
         :param loaded_mod: The loaded mod to read from."""
         for rec_type in self._sp_types:
@@ -325,7 +325,7 @@ class _AParser(_HandleAliases):
                 # Check if we even want this record first
                 if self._is_record_useful(record):
                     rec_fid = record.fid
-                    self.id_stored_info[rec_type][rec_fid] = \
+                    self.id_stored_data[rec_type][rec_fid] = \
                         self._read_record_sp(record)
                     # Check if we need to follow up on the first pass info
                     if self._context_needs_followup:
@@ -356,8 +356,8 @@ class _AParser(_HandleAliases):
     def readFromMod(self, mod_info):
         """Asks this parser to read information from the specified ModInfo
         instance. Executes the needed passes and stores extracted information
-        in id_context and / or id_stored_info. Note that this does not
-        automatically clear id_stored_info to allow combining multiple sources.
+        in id_context and / or id_stored_data. Note that this does not
+        automatically clear id_stored_data to allow combining multiple sources.
 
         :param mod_info: The ModInfo instance to read from."""
         self._current_mod = mod_info.name
@@ -379,7 +379,7 @@ class _AParser(_HandleAliases):
 
     # Writing to plugins
     def _do_write_plugin(self, loaded_mod):
-        """Writes the information stored in id_stored_info into the specified
+        """Writes the information stored in id_stored_data into the specified
         plugin.
 
         :param loaded_mod: The loaded mod to write to.
@@ -388,7 +388,7 @@ class _AParser(_HandleAliases):
         # Counts the number of records that were changed in each record type
         num_changed_records = Counter()
         # We know that the loaded mod only has the tops loaded that we need
-        for rec_type, stored_rec_info in self.id_stored_info.iteritems():
+        for rec_type, stored_rec_info in self.id_stored_data.iteritems():
             rec_block = loaded_mod.tops.get(rec_type, None)
             # Check if this record type makes any sense to patch
             if not stored_rec_info or not rec_block: continue
@@ -424,9 +424,10 @@ class _AParser(_HandleAliases):
             into."""
         return self._read_record_sp(record)
 
-    def _should_write_record(self, new_info, cur_info):
+    @staticmethod
+    def _should_write_record(new_info, cur_info):
         """Checks if we should write out information for the current record,
-        based on the 'new' information (i.e. the info stored in id_stored_info)
+        based on the 'new' information (i.e. the info stored in id_stored_data)
         and the 'current' information (i.e. the info stored in the record
         itself). By default, this returns True if they are different. However,
         you may want to override this if you e.g. only care about the contents
@@ -455,7 +456,7 @@ class _AParser(_HandleAliases):
         :return: A dict mapping record types to the number of changed records
             in them."""
         return self._do_write_plugin(
-            self._load_plugin(mod_info, target_types=self.id_stored_info))
+            self._load_plugin(mod_info, target_types=self.id_stored_data))
 
     # Other API
     @property
@@ -474,8 +475,8 @@ class ActorFactions(_AParser):
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ActorFactions, self).__init__(aliases_, called_from_patcher)
-        if called_from_patcher:
-            self.id_stored_info = defaultdict(
+        if self._called_from_patcher:
+            self.id_stored_data = defaultdict(
                 lambda: defaultdict(lambda: {u'factions': []}))
         a_types = bush.game.actor_types
         # We don't need the first pass if we're used by the parser
@@ -515,17 +516,17 @@ class ActorFactions(_AParser):
         fid = self._coerce_fid(fmod, fobj)
         rank = int(rank)
         top_grup_sig = top_grup.encode(u'ascii')
-        if self.called_from_patcher:
+        if self._called_from_patcher:
             ret_obj = MreRecord.type_class[top_grup_sig].getDefault(u'factions')
             ret_obj.faction = fid
             ret_obj.rank = rank
-            self.id_stored_info[top_grup_sig][aid][u'factions'].append(ret_obj)
+            self.id_stored_data[top_grup_sig][aid][u'factions'].append(ret_obj)
         else:
-            self.id_stored_info[top_grup_sig][aid][fid] = rank
+            self.id_stored_data[top_grup_sig][aid][fid] = rank
 
     def _write_rows(self, out):
         """Exports faction data to specified text file."""
-        type_id_factions,id_eid = self.id_stored_info, self.id_context
+        type_id_factions,id_eid = self.id_stored_data, self.id_context
         for top_grup_sig, id_factions in _key_sort(type_id_factions):
             for aid, factions, actorEid in _key_sort(id_factions, id_eid):
                 for faction, rank, factionEid in _key_sort(factions, id_eid):
@@ -736,7 +737,7 @@ class FactionRelations(_AParser):
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(FactionRelations, self).__init__(aliases_, called_from_patcher)
-        self._fp_types = (b'FACT',) if not self.called_from_patcher else ()
+        self._fp_types = (b'FACT',) if not self._called_from_patcher else ()
         self._sp_types = (b'FACT',)
         self._needs_fp_master_sort = True
 
@@ -752,7 +753,7 @@ class FactionRelations(_AParser):
     def _read_record_sp(self, record):
         # Look if we already have relations and base ourselves on those,
         # otherwise make a new list
-        relations = self.id_stored_info[b'FACT'][record.fid]
+        relations = self.id_stored_data[b'FACT'][record.fid]
         # Merge added relations, preserve changed relations
         for relation in record.relations:
             rel_attrs = tuple(getattr(relation, a) for a
@@ -782,11 +783,11 @@ class FactionRelations(_AParser):
         _med, mmod, mobj, _oed, omod, oobj = csv_fields[:6]
         mid = self._coerce_fid(mmod, mobj)
         oid = self._coerce_fid(omod, oobj)
-        self.id_stored_info[b'FACT'][mid][oid] = tuple(csv_fields[6:])
+        self.id_stored_data[b'FACT'][mid][oid] = tuple(csv_fields[6:])
 
     def _write_rows(self, out):
         """Exports faction relations to specified text file."""
-        id_relations, id_eid = self.id_stored_info[b'FACT'], self.id_context
+        id_relations, id_eid = self.id_stored_data[b'FACT'], self.id_context
         for main_fid, rel, main_eid in _key_sort(id_relations, id_eid_=id_eid):
             for oth_fid, relation_obj, oth_eid in _key_sort(
                     rel, id_eid_=id_eid):
@@ -902,7 +903,7 @@ class FullNames(_HandleAliases):
         full = str_or_none(full)
         self.id_stored_data[top_grup.encode(u'ascii')][longid] = {
             # Discard the Editor ID and turn the tuples into dictionaries
-            u'full': full} if self.called_from_patcher else (eid, full)
+            u'full': full} if self._called_from_patcher else (eid, full)
 
     def _write_rows(self, out):
         """Exports id_stored_data to specified text file."""
@@ -921,7 +922,7 @@ class ItemStats(_HandleAliases):
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ItemStats, self).__init__(aliases_, called_from_patcher)
         self.sig_stats_attrs = bush.game.statsTypes
-        self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
+        self.id_stored_data = defaultdict(lambda : defaultdict(dict))
         self._parser_sigs = set(self.sig_stats_attrs)
         # Populate _attr_serializer per attribute
         def _create_lambda(k):
@@ -940,20 +941,16 @@ class ItemStats(_HandleAliases):
         self._attr_serializer = {att: _create_lambda(att) for att in set(
             chain.from_iterable(self.sig_stats_attrs.itervalues()))}
 
-    def readFromMod(self,modInfo):
-        """Reads stats from specified mod."""
-        modFile = self._load_plugin(modInfo, keepAll=False)
-        for top_grup_sig, atts in self.sig_stats_attrs.iteritems():
-            for record in modFile.tops[top_grup_sig].getActiveRecords():
-                self.class_fid_attr_value[top_grup_sig][record.fid].update(
-                    izip(atts, (getattr(record, a) for a in atts)))
+    def _read_record(self, record, id_data):
+        atts = self.sig_stats_attrs[record.rec_sig]
+        id_data[record.fid].update(
+            izip(atts, (getattr(record, a) for a in atts)))
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
         modFile = self._load_plugin(modInfo)
         changed = Counter() #--changed[modName] = numChanged
-        for top_grup_sig, fid_attr_value in \
-                self.class_fid_attr_value.iteritems():
+        for top_grup_sig, fid_attr_value in self.id_stored_data.iteritems():
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 longid = record.fid
                 itemStats = fid_attr_value.get(longid,None)
@@ -981,13 +978,15 @@ class ItemStats(_HandleAliases):
         longid = self._coerce_fid(modName, objectStr) # blow and exit on header
         top_grup_sig = top_grup.encode(u'ascii')
         attrs = self.sig_stats_attrs[top_grup_sig]
-        attr_value = ((att, bush.game.stats_attrs_desers[att][0](value)) for
-                      att, value in izip(attrs, csv_fields[3:3 + len(attrs)]))
-        self.class_fid_attr_value[top_grup_sig][longid].update(attr_value)
+        attr_value = {att: bush.game.stats_attrs_desers[att][0](value) for
+                      att, value in izip(attrs, csv_fields[3:3 + len(attrs)])}
+        if self._called_from_patcher:
+            del attr_value[u'eid']
+        self.id_stored_data[top_grup_sig][longid].update(attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
-        class_fid_attr_value = self.class_fid_attr_value
+        class_fid_attr_value = self.id_stored_data
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
             for top_grup_sig, fid_attr_value in class_fid_attr_value.iteritems():
                 if not fid_attr_value: continue
@@ -1446,8 +1445,8 @@ class SpellRecords(_UsesEffectsMixin):
 
     def __init__(self, aliases_=None, detailed=False,
                  called_from_patcher=False):
-        atts = bush.game.spell_stats_attrs if called_from_patcher else \
-            self._csv_attrs
+        atts = (bush.game.spell_stats_attrs if called_from_patcher
+                else self._csv_attrs)
         self.detailed = detailed
         if detailed:
             atts += self.__class__._extra_attrs

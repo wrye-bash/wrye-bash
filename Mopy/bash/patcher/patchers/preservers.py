@@ -91,10 +91,9 @@ class APreserver(ImportPatcher):
         self.srcs = [s for s in p_sources if s.cext != u'.csv']
         self.loadFactory = self._patcher_read_fact(by_sig=self.rec_type_attrs)
 
-    # CSV helpers - holding out hope for inf-312-parser-abc
+    # CSV helpers
     def _parse_csv_sources(self, progress):
-        """Parses CSV files. Only called if _csv_parser is set. Override as
-        needed and call _process_csv_sources until parser ABC is done."""
+        """Parses CSV files. Only called if _csv_parser is set."""
         parser_instance = self._csv_parser(self.patchFile.pfile_aliases,
                                            called_from_patcher=True)
         for src_path in self.csv_srcs:
@@ -107,11 +106,7 @@ class APreserver(ImportPatcher):
                 deprint(u'%s is not saved in UTF-8 format' % src_path,
                     traceback=True)
             progress.plus()
-        return parser_instance
-
-    def _process_csv_sources(self, parsed_sources):
-        """Call from an override of _parse_csv_sources. Applies changes parsed
-        from the CSV sources to this patcher's internal data structures."""
+        parsed_sources = parser_instance.id_stored_data
         # Filter out any entries that don't actually have data or don't
         # actually exist (for this game at least)
         ##: make sure k is always bytes and drop encode below
@@ -307,11 +302,6 @@ class ImportActorsFactionsPatcher(APreserver):
     rec_attrs = {x: (u'factions',) for x in bush.game.actor_types}
     _csv_parser = parsers.ActorFactions
 
-    def _parse_csv_sources(self, progress):
-        fact_parser = super(
-            ImportActorsFactionsPatcher, self)._parse_csv_sources(progress)
-        self._process_csv_sources(fact_parser.id_stored_info)
-
 #------------------------------------------------------------------------------
 class ImportDestructiblePatcher(APreserver):
     """Merges changes to destructible records."""
@@ -339,11 +329,6 @@ class ImportNamesPatcher(APreserver):
     rec_attrs = {x: (u'full',) for x in bush.game.namesTypes}
     _csv_parser = parsers.FullNames
 
-    def _parse_csv_sources(self, progress):
-        full_parser = super(
-            ImportNamesPatcher, self)._parse_csv_sources(progress)
-        self._process_csv_sources(full_parser.id_stored_data)
-
 #------------------------------------------------------------------------------
 class ImportObjectBoundsPatcher(APreserver):
     rec_attrs = {x: (u'bounds',) for x in bush.game.object_bounds_types}
@@ -365,11 +350,6 @@ class ImportSpellStatsPatcher(APreserver):
                  for x in bush.game.spell_stats_types}
     _csv_parser = parsers.SpellRecords
 
-    def _parse_csv_sources(self, progress):
-        spel_parser = super(
-            ImportSpellStatsPatcher, self)._parse_csv_sources(progress)
-        self._process_csv_sources(spel_parser.id_stored_data)
-
 #------------------------------------------------------------------------------
 class ImportStatsPatcher(APreserver):
     """Import stats from mod file."""
@@ -381,15 +361,6 @@ class ImportStatsPatcher(APreserver):
     rec_attrs = {r: tuple(x for x in a if x != u'eid')
                  for r, a in bush.game.statsTypes.iteritems()}
     _csv_parser = parsers.ItemStats
-
-    def _parse_csv_sources(self, progress):
-        stat_parser = super(
-            ImportStatsPatcher, self)._parse_csv_sources(progress)
-        # See rec_attrs above for an explanation of the Editor ID problem
-        for src_attrs in stat_parser.class_fid_attr_value.itervalues():
-            for attr_values in src_attrs.itervalues():
-                del attr_values[u'eid']
-        self._process_csv_sources(stat_parser.class_fid_attr_value)
 
 #------------------------------------------------------------------------------
 class ImportTextPatcher(APreserver):
