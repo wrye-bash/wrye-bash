@@ -33,11 +33,15 @@ class Fallout4GameInfo(PatchGame):
     altName = u'Wrye Flash'
     game_icon = u'fallout4_%u.png'
     bash_root_prefix = u'Fallout4'
+    bak_game_name = u'Fallout4'
+    my_games_name = u'Fallout4'
+    appdata_name = u'Fallout4'
     launch_exe = u'Fallout4.exe'
     game_detect_files = [u'Fallout4.exe']
     version_detect_file = u'Fallout4.exe'
     master_file = u'Fallout4.esm'
     taglist_dir = u'Fallout4'
+    loot_dir = u'Fallout4'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'

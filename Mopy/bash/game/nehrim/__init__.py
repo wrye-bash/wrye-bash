@@ -33,8 +33,11 @@ class NehrimGameInfo(OblivionGameInfo):
     displayName = u'Nehrim'
     game_icon = u'nehrim_%u.png'
     bash_root_prefix = u'Nehrim'
+    bak_game_name = u'Nehrim'
     game_detect_files = [u'NehrimLauncher.exe']
     master_file = u'Nehrim.esm'
+    loot_dir = u'Nehrim'
+    boss_game_name = u'Nehrim'
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
     nexusName = u'Nehrim Nexus'
     nexusKey = u'bash.installers.openNehrimNexus.continue'

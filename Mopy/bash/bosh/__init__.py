@@ -3602,7 +3602,7 @@ def initBosh(bashIni, game_ini_path):
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'initBosh: Bash dirs are not initialized')
     loot_path = bass.dirs[u'userApp'].join(os.pardir, u'LOOT',
-        bush.game.fsName)
+                                           bush.game.loot_dir)
     lootMasterPath = loot_path.join(u'masterlist.yaml')
     lootUserPath = loot_path.join(u'userlist.yaml')
     tagList = bass.dirs[u'taglists'].join(u'taglist.yaml')

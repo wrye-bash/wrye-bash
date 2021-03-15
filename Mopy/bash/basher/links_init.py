@@ -122,11 +122,10 @@ def InitStatusBar():
         App_Tes4View((bass.tooldirs[u'Tes4LodGenPath'], u'-TES4 -lodgen'),
                      imageList(u'tools/tes4lodgen%s.png'),
                      _(u"Launch Tes4LODGen"), uid=u'TES4LODGen'))
-    BashStatusBar.buttons.append( #BOSS
-        App_BOSS((bass.tooldirs[u'boss']),
-                imageList(u'boss%s.png'),
-                _(u'Launch BOSS'),
-                uid=u'BOSS'))
+    if bush.game.boss_game_name:
+        BashStatusBar.buttons.append( #BOSS
+            App_BOSS((bass.tooldirs[u'boss']), imageList(u'boss%s.png'),
+                     _(u'Launch BOSS'), uid=u'BOSS'))
     if bass.inisettings[u'ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons
         for mb in modeling_tools_buttons:

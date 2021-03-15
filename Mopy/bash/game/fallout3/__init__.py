@@ -35,11 +35,17 @@ class Fallout3GameInfo(PatchGame):
     altName = u'Wrye Flash'
     game_icon = u'fallout3_%u.png'
     bash_root_prefix = u'Fallout3'
+    bak_game_name = u'Fallout3'
+    template_dir = u'Fallout3'
+    my_games_name = u'Fallout3'
+    appdata_name = u'Fallout3'
     launch_exe = u'Fallout3.exe'
     game_detect_files = [u'Fallout3.exe']
     version_detect_file = u'Fallout3.exe'
     master_file = u'Fallout3.esm'
     taglist_dir = u'Fallout3'
+    loot_dir = u'Fallout3'
+    boss_game_name = u'Fallout3'
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout3/'
     nexusName = u'Fallout 3 Nexus'

@@ -26,6 +26,8 @@ from ..oblivion import OblivionGameInfo
 
 class WSOblivionGameInfo(OblivionGameInfo):
     displayName = u'Oblivion (WS)'
+    # `appdata_name` and `my_games_name` use the original locations, unlike
+    # other Windows Store games.
     regInstallKeys = ()
 
     class Ws(OblivionGameInfo.Ws):

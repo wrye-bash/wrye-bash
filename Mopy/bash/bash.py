@@ -337,7 +337,8 @@ def _main(opts, wx_locale):
         if not bush_game: return
         if restore_:
             try:
-                restore_.restore_settings(bush_game.fsName,
+                restore_.restore_settings(
+                    bush_game.bak_game_name, bush_game.my_games_name,
                     bush_game.bash_root_prefix, bush_game.mods_dir)
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
@@ -412,14 +413,16 @@ def _main(opts, wx_locale):
         base_dir = bass.settings[u'bash.backupPath'] or bass.dirs[u'modsBash']
         settings_file = (opts.backup and opts.filename) or None
         if not settings_file:
-            bak_f = barb.BackupSettings.backup_filename(bush_game.displayName)
+            bkf = barb.BackupSettings.backup_filename(bush_game.bak_game_name)
             settings_file = balt.askSave(
                 frame, title=_(u'Backup Bash Settings'), defaultDir=base_dir,
-                wildcard=u'*.7z', defaultFile=bak_f)
+                wildcard=u'*.7z', defaultFile=bkf)
         if settings_file:
             with gui.BusyCursor():
-                backup = barb.BackupSettings(settings_file, bush_game.fsName,
-                    bush_game.bash_root_prefix, bush_game.mods_dir)
+                backup = barb.BackupSettings(
+                    settings_file, bush_game.bak_game_name,
+                    bush_game.my_games_name, bush_game.bash_root_prefix,
+                    bush_game.mods_dir)
             try:
                 with gui.BusyCursor():
                     backup.backup_settings(balt)

@@ -33,11 +33,16 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     altName = u'Wrye Flash NV'
     game_icon = u'falloutnv_%u.png'
     bash_root_prefix = u'FalloutNV'
+    bak_game_name = u'FalloutNV'
+    my_games_name = u'FalloutNV'
+    appdata_name = u'FalloutNV'
     launch_exe = u'FalloutNV.exe'
     game_detect_files = [u'FalloutNV.exe']
     version_detect_file = u'FalloutNV.exe'
     master_file = u'FalloutNV.esm'
     taglist_dir = u'FalloutNV'
+    loot_dir = u'FalloutNV'
+    boss_game_name = u'FalloutNV'
     regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/newvegas/'
     nexusName = u'New Vegas Nexus'

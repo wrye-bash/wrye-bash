@@ -450,7 +450,7 @@ class App_BOSS(_ExeButton):
             extraArgs.append(u'-c',)
         if bass.tooldirs[u'boss'].version >= (2, 0, 0, 0):
             # After version 2.0, need to pass in the -g argument
-            extraArgs.append(u'-g%s' % bush.game.fsName,)
+            extraArgs.append(u'-g%s' % bush.game.boss_game_name)
         self.extraArgs = tuple(extraArgs)
         super(App_BOSS, self).Execute()
         if bass.settings[u'BOSS.ClearLockTimes']:

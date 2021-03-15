@@ -227,16 +227,25 @@ class _WindowsStoreFinder(object):
         #  common_name: dict
         #    package_full_name: mutable_location
         self.location_cache = {}
+        self.full_names_cache = {}
 
-    def _get_publisher_id(self, publisher_name):
-        try:
-            return self.developer_ids[publisher_name]
-        except KeyError:
+    def get_package_name(self, common_name, publisher_name=None, publisher_id=None):
+        """Gets the package name from the common_name an publisher information."""
+        if not publisher_id:
+            publisher_id = self.developer_ids.get(publisher_name)
+        if not publisher_id:
+            # No publisher information, abort
             return None
+        return common_name + '_' + publisher_id
 
-    def _get_package_full_names(self, common_name, publisher_id):
-        common_name += '_' + publisher_id
-        full_names = []
+    def get_package_full_names(self, package_name):
+        """Get all `package_full_name`s for this game."""
+        try:
+            return self.full_names_cache[package_name]
+        except KeyError:
+            # Not in the cache, look up in the registry
+            pass
+        self.full_names_cache[package_name] = full_names = []
         try:
             # First, find all "families" for the game (architecture, version)
             families_key = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,
@@ -244,7 +253,7 @@ class _WindowsStoreFinder(object):
                                           r'\Windows\CurrentVersion\AppModel'
                                           r'\Repository\Families')
             with families_key:
-                family_key = winreg.OpenKey(families_key, common_name)
+                family_key = winreg.OpenKey(families_key, package_name)
                 num_families = winreg.QueryInfoKey(family_key)[0]
                 for i in xrange(num_families):
                     full_names.append(winreg.EnumKey(family_key, i))
@@ -253,22 +262,15 @@ class _WindowsStoreFinder(object):
             pass
         return full_names
 
-    def get_mutable_locations(self, common_name, publisher_name=None, publisher_id=None):
-        # Hit the cache first
+    def get_mutable_locations(self, package_name):
         try:
-            return self.location_cache[common_name]
+            return self.location_cache[package_name]
         except KeyError:
             pass
-        # Not in the cached, lookup in the Windows Registry
-        if not publisher_id:
-            publisher_id = self._get_publisher_id(publisher_name)
-        if not publisher_id:
-            # No publisher information, cannot look up
-            return None
-        self.location_cache[common_name] = locations = dict()
-        package_full_names = self._get_package_full_names(common_name, publisher_id)
+        full_names = self.get_package_full_names(package_name)
+        self.location_cache[package_name] = locations = dict()
         try:
-            for package_full_name in package_full_names:
+            for package_full_name in full_names:
                 # Lookup the package index
                 index_key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
                     r'SOFTWARE\Microsoft\Windows\CurrentVersion\AppModel'
@@ -719,15 +721,21 @@ def get_win_store_game_path(submod):
     publisher_name = submod.Ws.publisher_name
     publisher_id = submod.Ws.publisher_id
     common_name = submod.Ws.win_store_name
-    locations = _win_store_finder.get_mutable_locations(
+    package_name = _win_store_finder.get_package_name(
         common_name,
         publisher_name,
         publisher_id
     )
+    locations = _win_store_finder.get_mutable_locations(package_name)
     if locations:
         # Use the first location for now, see the TODO above
+        ## TODO(lojack): This is kind of ulgy, probably a better way to store
+        ## this:
+        submod.Ws._package_name = package_name
         return GPath(locations.values()[0])
     else:
+        # Should already be u'', but set it in case it's not.
+        submod.Ws._package_name = u''
         return None
 
 def get_personal_path():

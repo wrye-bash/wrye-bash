@@ -26,6 +26,8 @@ from ..skyrimse import SkyrimSEGameInfo
 
 class WSSkyrimSEGameInfo(SkyrimSEGameInfo):
     displayName = u'Skyrim Special Edition (WS)'
+    appdata_name = u'Skyrim Special Edition MS'
+    my_games_name = u'Skyrim Special Edition MS'
     regInstallKeys = ()
 
     class Ws(SkyrimSEGameInfo.Ws):

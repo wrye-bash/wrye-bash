@@ -28,7 +28,7 @@ from ConfigParser import ConfigParser, MissingSectionHeaderError
 # Local - don't import anything else
 from . import env
 from .bass import dirs, get_ini_option
-from .bolt import GPath, Path, getbestencoding
+from .bolt import GPath, Path, getbestencoding, deprint
 from .env import get_personal_path, get_local_app_data_path
 from .exception import BoltError, NonExistentDriveError
 
@@ -139,18 +139,27 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     init_warnings = []
     #--Oblivion (Application) Directories
     dirs[u'app'] = game_info.gamePath
-    dirs[u'defaultPatches'] = dirs[u'mopy'].join(u'Bash Patches',
-        game_info.fsName)
+    dirs[u'defaultPatches'] = (
+        dirs[u'mopy'].join(u'Bash Patches', game_info.bash_patches_dir)
+        if game_info.bash_patches_dir else u'')
     dirs[u'taglists'] = dirs[u'mopy'].join(u'taglists', game_info.taglist_dir)
     #  Personal
     if game_info.uses_personal_folders:
         personal = getPersonalPath(bashIni_, personal)
-        dirs[u'saveBase'] = personal.join(u'My Games', game_info.fsName)
+        dirs[u'saveBase'] = personal.join(u'My Games', game_info.my_games_name)
     else:
         dirs[u'saveBase'] = dirs[u'app']
+    deprint(u'My Games location set to %s' % dirs[u'saveBase'])
     #  Local Application Data
     localAppData = getLocalAppDataPath(bashIni_, localAppData)
-    dirs[u'userApp'] = localAppData.join(game_info.fsName)
+    #  AppData for the game, depends on if it's a WS game or not:
+    if game_info.Ws._package_name:
+        dirs[u'userApp'] = localAppData.join(
+            u'Packages', game_info.Ws._package_name, u'LocalCache', u'Local',
+            game_info.appdata_name)
+    else:
+        dirs[u'userApp'] = localAppData.join(game_info.appdata_name)
+    deprint(u'LocalAppData location set to %s' % dirs[u'userApp'])
     # Use local copy of the oblivion.ini if present
     # see: http://en.uesp.net/wiki/Oblivion:Ini_Settings
     # Oblivion reads the Oblivion.ini in the directory where it exists

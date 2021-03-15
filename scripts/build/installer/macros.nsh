@@ -654,9 +654,6 @@
     !macro RemoveCurrentFiles Path
         ; Remove files belonging to current build
         RMDir /r "${Path}\Mopy"
-        ; Do not remove ArchiveInvalidationInvalidated!, because if it's registered
-        ; in the users INI file, this will cause problems
-        ;;Delete "${Path}\Data\ArchiveInvalidationInvalidated!.bsa"
         RMDir "${Path}\Data\INI Tweaks"
         RMDir "${Path}\Data\Docs"
         RMDir "${Path}\Data\BashTags"

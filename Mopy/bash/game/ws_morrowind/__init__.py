@@ -26,6 +26,7 @@ from ..morrowind import MorrowindGameInfo
 
 class WSMorrowindGameInfo(MorrowindGameInfo):
     displayName = u'Morrowind (WS)'
+    # Morrowind does not use the personal folders, so no my_games_name etc.
     regInstallKeys = ()
 
     class Ws(MorrowindGameInfo.Ws):

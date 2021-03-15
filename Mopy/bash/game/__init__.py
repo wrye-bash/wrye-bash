@@ -36,7 +36,9 @@ class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
     # Name of the game to use in UI.
     displayName = u'' ## Example: u'Skyrim'
-    # Name of the game's filesystem folder.
+    # A name used throughout the codebase for identifying the current game in
+    # various situations, e.g. to decide which BSAs to use, which save header
+    # types to use, etc.
     fsName = u'' ## Example: u'Skyrim'
     # Alternate display name of Wrye Bash when managing this game
     altName = u'' ## Example: u'Wrye Smash'
@@ -44,11 +46,29 @@ class GameInfo(object):
     # icon size (16/24/32)
     game_icon = u'' ## Example: u'skyrim_%u.png'
     # Name of the prefix of the '<X> Mods' folder, i.e. <X> is this string.
-    # Preferably pick a single word here, equal to fsName if possible.
+    # Preferably pick a single word without spaces here, but don't change it
+    # once set due to backwards compatibility (duh)
     bash_root_prefix = u'' ## Example: u'Skyrim'
+    # Name of the prefix for the game folder inside created backups and for
+    # naming backups. Should not be changed once set, otherwise restoring old
+    # backups will no longer work
+    bak_game_name = u''
+    # The name of the directory, relative to Mopy/templates, in which the BSA
+    # redirection template for this game is placed. This folder is
+    # *deprecated*, see issue #519
+    template_dir = u''
+    # The name of the directory, relative to Mopy/Bash Patches, in which
+    # default Bashed Patch resource files (e.g. CSV files) are stored. If
+    # empty, indicates that WB does not come with any such files for this game
+    bash_patches_dir = u''
     # True if the game uses the 'My Documents' folder, False to just use the
     # game path
     uses_personal_folders = True
+    # Name of the folder in My Documents\My Games that holds this game's data
+    # (saves, INIs, etc.)
+    my_games_name = u''
+    # Name of the game's AppData folder, relative to %LocalAppData%
+    appdata_name = u''
     # The exe to use when launching the game (without xSE present)
     launch_exe = u'' ## Example: u'TESV.exe'
     # Path to one or more files to look for to see if this is the right game
@@ -69,9 +89,15 @@ class GameInfo(object):
     # The directory in which mods and other data files reside. This is relative
     # to the game directory.
     mods_dir = u'Data'
-    # The directory containing the taglist for this game, relative to
-    # 'Mopy/taglists'
+    # The name of the directory containing the taglist for this game, relative
+    # to 'Mopy/taglists'
     taglist_dir = u''
+    # The name of the directory that LOOT writes its masterlist into, relative
+    # to '%LocalAppData%\LOOT'
+    loot_dir = u''
+    # The name that this game has on the BOSS command line. If empty, indicates
+    # that BOSS does not support this game
+    boss_game_name = u''
     # Registry keys to read to find the install location
     # These are relative to:
     #  HKLM\Software
@@ -114,17 +140,19 @@ class GameInfo(object):
 
     class Ws(object):
         """Information about this game on the Windows Store."""
-        # The publisher name for common games.  Currently only
-        # 'Bethesda' is allowed for Bethesda games.  If specified,
-        # publisher_id is not required
+        # The publisher name for common games. Currently only 'Bethesda' is
+        # allowed for Bethesda games. If specified, publisher_id is not
+        # required
         publisher_name = u''
-        # The publisher ID for the publisher of the game.  Required
-        # except for common publishers supported above.  For example
-        # Bethesda's publisher ID is '3275kfvn8vcwc'
+        # The publisher ID for the publisher of the game. Required except for
+        # common publishers supported above. For example, Bethesda's publisher
+        # ID is '3275kfvn8vcwc'
         publisher_id = u''
-        # The internal name used by the Windows Store to identify the game
-        # For example Morrowind is 'BethesdaSofworks.TESMorrowind-PC'
+        # The internal name used by the Windows Store to identify the game.
+        # For example, Morrowind is 'BethesdaSofworks.TESMorrowind-PC'
         win_store_name = u''
+        # Internally used, set by the game detection code
+        _package_name = u''
 
     class Ck(object):
         """Information about the official plugin editor (generally called some

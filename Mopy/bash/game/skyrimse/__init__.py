@@ -31,14 +31,18 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     fsName = u'Skyrim Special Edition'
     game_icon = u'skyrimse_%u.png'
     bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
+    bak_game_name = u'Skyrim Special Edition'
+    my_games_name = u'Skyrim Special Edition'
+    appdata_name = u'Skyrim Special Edition'
     launch_exe = u'SkyrimSE.exe'
     # Set to this because SkyrimSE.exe also exists for Enderal SE
     game_detect_files = [u'SkyrimSELauncher.exe']
     version_detect_file = u'SkyrimSE.exe'
     taglist_dir = u'SkyrimSE'
+    loot_dir = u'Skyrim Special Edition'
+    boss_game_name = u'' # BOSS does not support SSE
     regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',
                       u'Installed Path')
-
     nexusUrl = u'https://www.nexusmods.com/skyrimspecialedition/'
     nexusName = u'Skyrim SE Nexus'
     nexusKey = u'bash.installers.openSkyrimSeNexus.continue'

@@ -35,11 +35,14 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     fsName = u'Enderal Special Edition'
     game_icon = u'enderalse_%u.png'
     bash_root_prefix = u'EnderalSE'
+    bak_game_name = u'Enderal Special Edition'
+    my_games_name = u'Enderal Special Edition'
+    appdata_name = u'Enderal Special Edition'
     # Enderal LE also has an Enderal Launcher.exe, but no SkyrimSE.exe. Skyrim
     # SE has SkyrimSE.exe, but no Enderal Launcher.exe
     game_detect_files = [u'Enderal Launcher.exe', u'SkyrimSE.exe']
+    loot_dir = u'Enderal Special Edition'
     regInstallKeys = (u'SureAI\\EnderalSE', u'Install_Path')
-
     nexusUrl = u'https://www.nexusmods.com/enderalspecialedition/'
     nexusName = u'Enderal Special Edition Nexus'
     nexusKey = u'bash.installers.openEnderalSENexus.continue'
