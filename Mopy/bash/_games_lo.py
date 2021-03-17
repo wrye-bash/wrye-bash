@@ -1495,28 +1495,6 @@ class SkyrimSE(AsteriskGame):
         return {GPath_no_norm(u'Skyrim.esm')} | set(
             self.must_be_active_if_present)
 
-    __dlc_spacing = 60.0 # in seconds
-    def _fixed_order_plugins(self):
-        """Return the semi fixed plugins after pinning them in correct order by
-        timestamping them."""
-        # get existing
-        ret = super(AsteriskGame, self)._fixed_order_plugins()
-        # rewrite mtimes
-        master_mtime = self.mod_infos[self.master_path].mtime
-        update = GPath_no_norm(u'Update.esm')
-        for dlc in ret[1:]:
-            if dlc == update:
-                master_mtime = self.mod_infos[update].mtime
-            else:
-                master_mtime += self.__dlc_spacing
-                dlc_mtime = self.mod_infos[dlc].mtime
-                if dlc_mtime != master_mtime:
-                    self.mod_infos[dlc].setmtime(master_mtime)
-                    bolt.deprint(u'Restamped %s  from %s to %s' % (
-                        dlc, format_date(dlc_mtime),
-                        format_date(master_mtime)))
-        return ret
-
 class SkyrimVR(SkyrimSE):
     must_be_active_if_present = SkyrimSE.must_be_active_if_present + (
         GPath_no_norm(u'SkyrimVR.esm'),)
