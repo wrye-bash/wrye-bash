@@ -91,7 +91,7 @@ def _supportedGames():
         deprint(u'  The following installed games were found via the '
                 u'registry:')
         for found_name, found_path in dict_sort(_registryGames):
-            deprint(u'   %s: %s' % (found_name, found_path))
+            deprint(u'   - %s: %s' % (found_name, found_path))
     else:
         deprint(u'  No installed games were found via the registry')
     for wrapped_line in textwrap.wrap(
@@ -103,7 +103,7 @@ def _supportedGames():
         deprint(u'  The following installed games with modding enabled were '
                 u'found via the Windows Store:')
         for found_name, found_path in dict_sort(_win_store_games):
-            deprint(u'   %s: %s' % (found_name, found_path))
+            deprint(u'   - %s: %s' % (found_name, found_path))
     else:
         deprint(u'  No installed games with modding enabled were found via '
                 u'the Windows Store.')
