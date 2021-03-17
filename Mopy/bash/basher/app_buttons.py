@@ -492,20 +492,25 @@ class Game_Button(_ExeButton):
         return tip_
 
     def _app_button_execute(self):
-        exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
-        exe_laa = bass.dirs[u'app'].join(bush.game.Laa.exe)
-        exe_path = self.exePath # Default to the regular launcher
-        if BashStatusBar.laaButton.button_state:
-            # Should use the LAA Launcher if it's present
-            exe_path = (exe_laa if exe_laa.isfile() else exe_path)
-        elif BashStatusBar.obseButton.button_state:
-            # OBSE refuses to start when its EXE is launched on a Steam
-            # installation
-            if bush.game.fsName != u'Oblivion' or not bass.dirs[u'app'].join(
-                    u'installscript.vdf').isfile():
-                # Should use the xSE launcher if it's present
-                exe_path = (exe_xse if exe_xse.isfile() else exe_path)
-        self._run_exe(exe_path, [exe_path.s])
+        if bush.game.Ws._package_name:
+            # Windows Store apps have to be launched entirely differently
+            gm_cmd = u'shell:AppsFolder\\%s!Game' % bush.game.Ws._package_name
+            subprocess.Popen([u'start', gm_cmd], shell=True)
+        else:
+            exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
+            exe_laa = bass.dirs[u'app'].join(bush.game.Laa.exe)
+            exe_path = self.exePath # Default to the regular launcher
+            if BashStatusBar.laaButton.button_state:
+                # Should use the LAA Launcher if it's present
+                exe_path = (exe_laa if exe_laa.isfile() else exe_path)
+            elif BashStatusBar.obseButton.button_state:
+                # OBSE refuses to start when its EXE is launched on a Steam
+                # installation
+                if bush.game.fsName != u'Oblivion' or not bass.dirs[u'app'].join(
+                        u'installscript.vdf').isfile():
+                    # Should use the xSE launcher if it's present
+                    exe_path = (exe_xse if exe_xse.isfile() else exe_path)
+            self._run_exe(exe_path, [exe_path.s])
         if bass.settings.get(u'bash.autoQuit.on', False):
             Link.Frame.close_win(True)
 
@@ -517,6 +522,12 @@ class Game_Button(_ExeButton):
             version = u'.'.join([u'%s'%x for x in version])
             return version
         return u''
+
+    def IsPresent(self):
+        if bush.game.Ws._package_name:
+            # Always possible to run, even if the EXE is missing/inaccessible
+            return True
+        return super(Game_Button, self).IsPresent()
 
 #------------------------------------------------------------------------------
 class TESCS_Button(_ExeButton):
