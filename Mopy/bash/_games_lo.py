@@ -736,13 +736,21 @@ class INIGame(Game):
     def _backup_active_plugins(self):
         if self._handles_actives:
             ini_path = self._cached_ini_actives.abs_path
-            ini_path.copyTo(ini_path.backup)
+            try:
+                ini_path.copyTo(ini_path.backup)
+            except IOError:
+                bolt.deprint(u'Tried to back up %s, but it did not '
+                             u'exist' % ini_path)
         else: super(INIGame, self)._backup_active_plugins()
 
     def _backup_load_order(self):
         if self._handles_lo:
             ini_path = self._cached_ini_lo.abs_path
-            ini_path.copyTo(ini_path.backup)
+            try:
+                ini_path.copyTo(ini_path.backup)
+            except IOError:
+                bolt.deprint(u'Tried to back up %s, but it did not '
+                             u'exist' % ini_path)
         else: super(INIGame, self)._backup_load_order()
 
     # Reading from INI
@@ -886,7 +894,11 @@ class TimestampGame(Game):
         return mods
 
     def _backup_active_plugins(self):
-        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        try:
+            self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        except IOError:
+            bolt.deprint(u'Tried to back up %s, but it did not '
+                         u'exist' % self.plugins_txt_path)
 
     def _backup_load_order(self):
         pass # timestamps, no file to backup
@@ -1011,10 +1023,18 @@ class TextfileGame(Game):
 
     # Abstract overrides ------------------------------------------------------
     def _backup_active_plugins(self):
-        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        try:
+            self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        except IOError:
+            bolt.deprint(u'Tried to back up %s, but it did not '
+                         u'exist' % self.plugins_txt_path)
 
     def _backup_load_order(self):
-        self.loadorder_txt_path.copyTo(self.loadorder_txt_path.backup)
+        try:
+            self.loadorder_txt_path.copyTo(self.loadorder_txt_path.backup)
+        except IOError:
+            bolt.deprint(u'Tried to back up %s, but it did not '
+                         u'exist' % self.loadorder_txt_path)
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from loadorder.txt file. If loadorder.txt does not
@@ -1149,7 +1169,11 @@ class AsteriskGame(Game):
 
     # Abstract overrides ------------------------------------------------------
     def _backup_active_plugins(self):
-        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        try:
+            self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        except IOError:
+            bolt.deprint(u'Tried to back up %s, but it did not '
+                         u'exist' % self.plugins_txt_path)
 
     def _backup_load_order(self):
         self._backup_active_plugins() # same thing for asterisk games
