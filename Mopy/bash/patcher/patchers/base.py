@@ -33,7 +33,7 @@ from ...bolt import GPath, deprint
 from ...brec import MreRecord
 from ...exception import AbstractError
 from ...mod_files import LoadFactory, ModFile
-from ...parsers import _HandleAliases
+from ...parsers import FidReplacer
 
 # Patchers 1 ------------------------------------------------------------------
 class MultiTweakItem(AMultiTweakItem):
@@ -195,27 +195,23 @@ class MergePatchesPatcher(ListPatcher):
         # first - ensured through its group of 'General'
         p_file.set_mergeable_mods(self.srcs)
 
-class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
+class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     patcher_group = u'General'
     patcher_order = 15
-    _read_sigs = MreRecord.simpleTypes | (
+    _read_sigs = _parser_sigs = MreRecord.simpleTypes | (
         {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'})
 
     def __init__(self, p_name, p_file, p_sources):
         super(ReplaceFormIDsPatcher, self).__init__(p_file.pfile_aliases)
+        self._parser_sigs = self._read_sigs ##: yak due to parsers being imported early
         ListPatcher.__init__(self, p_name, p_file, p_sources)
-        self.old_new = {} #--Maps old fid to new fid
-        self.old_eid = {} #--Maps old fid to old editor id
-        self.new_eid = {} #--Maps new fid to new editor id
 
     def _parse_line(self, csv_fields):
         oldMod, oldObj, oldEid, newEid, newMod, newObj = csv_fields[1:7]
         oldId = self._coerce_fid(oldMod, oldObj)
         newId = self._coerce_fid(newMod, newObj)
         self.old_new[oldId] = newId
-        self.old_eid[oldId] = oldEid
-        self.new_eid[newId] = newEid
 
     def initData(self,progress):
         """Get names from source files."""
@@ -313,7 +309,7 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
     def buildPatch(self,log,progress):
         """Adds merged fids to patchfile."""
         if not self.isActive: return
-        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
+        old_new = self.old_new
         keep = self.patchFile.getKeeper()
         count = Counter()
         def swapper(oldId):
