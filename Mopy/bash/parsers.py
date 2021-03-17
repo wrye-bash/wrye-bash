@@ -598,6 +598,7 @@ class EditorIds(_HandleAliases):
     _row_fmt_str = u'"%s","%s","0x%06X","%s"\n'
     _id_indexes = (1, 2)
     _grup_index = 0
+    _attr_dex = {u'eid': 3}
 
     def __init__(self, aliases_=None, questionableEidsSet=None,
                  badEidsList=None, called_from_patcher=False):
@@ -674,10 +675,10 @@ class EditorIds(_HandleAliases):
             self.old_new[csv_fields[4].lower()] = \
                 self.id_stored_data[top_grup_sig][longid]
 
-    def _update_from_csv(self, csv_fields,
+    def _update_from_csv(self, csv_fields, index_dict=None,
                  __reValidEid=re.compile(u'^[a-zA-Z0-9]+$'),
                 __reGoodEid=re.compile(u'^[a-zA-Z]')):
-        eid = str_or_none(csv_fields[3])
+        eid = super(EditorIds, self)._update_from_csv(csv_fields)[u'eid']
         if not __reValidEid.match(eid):
             if self.badEidsList is not None:
                 self.badEidsList.append(eid)
@@ -1262,15 +1263,14 @@ class SigilStoneDetails(_UsesEffectsMixin):
                    _(u'Weight'),) + _UsesEffectsMixin.effect_headers * 2 + (
                       _(u'Additional Effects (Same format)'),)
     _parser_sigs = [b'SGST']
+    _attr_dex = {u'eid': 2, u'full': 3, u'model.modPath': 4, u'model.modb': 5,
+                 u'iconPath': 6, u'uses': 9, u'value': 10, u'weight': 11}
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(SigilStoneDetails, self).__init__(aliases_,
             [u'eid', u'full', u'model.modPath', u'model.modb', u'iconPath',
              u'script_fid', u'uses', u'value', u'weight', u'effects'],
             called_from_patcher)
-        self._attr_dex = {u'eid': 2, u'full': 3, u'model.modPath': 4,
-                          u'model.modb': 5, u'iconPath': 6, u'uses': 9,
-                          u'value': 10, u'weight': 11}
 
 #------------------------------------------------------------------------------
 class ItemPrices(_HandleAliases):
@@ -1371,12 +1371,11 @@ class IngredientDetails(_UsesEffectsMixin):
         _(u'Weight'),) + _UsesEffectsMixin.effect_headers * 2 + \
                   (_(u'Additional Effects (Same format)'),)
     _parser_sigs = [b'INGR']
+    _attr_dex = {u'eid': 2, u'full': 3, u'model.modPath': 4, u'model.modb': 5,
+                 u'iconPath': 6, u'value': 9, u'weight': 10}
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         # same as SGST apart from 'uses'
         super(IngredientDetails, self).__init__(aliases_, [u'eid', u'full',
             u'model.modPath', u'model.modb', u'iconPath', u'script_fid',
             u'value', u'weight', u'effects'], called_from_patcher)
-        self._attr_dex = {u'eid': 2, u'full': 3, u'model.modPath': 4,
-                          u'model.modb': 5, u'iconPath': 6, u'value': 9,
-                          u'weight': 10}

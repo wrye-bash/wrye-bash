@@ -44,6 +44,7 @@ from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap
+from ..bosh import InstallerArchive, InstallerProject
 from ..exception import CancelError, SkipError, StateError
 from ..gui import BusyCursor, copy_text_to_clipboard
 
@@ -77,8 +78,8 @@ class _InstallerLink(Installers_Link, EnabledLink):
 
     def isSingleArchive(self):
         """Indicates whether or not is single archive."""
-        if len(self.selected) != 1: return False
-        else: return next(self.iselected_infos()).is_archive()
+        return len(self.selected) == 1 and next(
+            self.iselected_infos()).is_archive()
 
     ##: Methods below should be in archives.py
     def _promptSolidBlockSize(self, title, value=0):
@@ -107,8 +108,8 @@ class _InstallerLink(Installers_Link, EnabledLink):
                                     SubProgress(progress, 0, 0.8),
                                     release=release)
             #--Add the new archive to Bash
-            iArchive = self.idata.refresh_installer(archive_path,
-                is_project=False, progress=progress,
+            iArchive = InstallerArchive.refresh_installer(
+                archive_path, self.idata, progress=progress,
                 install_order=installer.order + 1, do_refresh=True)
             iArchive.blockSize = blockSize
         self.window.RefreshUI(detail_item=archive_path)
@@ -859,9 +860,8 @@ class Installer_CopyConflicts(_SingleInstallable):
                 g_path = GPath(u'%03d - %s' % (
                     order if order < src_order else order + 1, package.s))
                 curFile = _copy_conflicts(curFile)
-        self.idata.refresh_installer(destDir, is_project=True, progress=None,
-                                     install_order=src_order + 1,
-                                     do_refresh=True)
+        InstallerProject.refresh_installer(destDir, self.idata, progress=None,
+            install_order=src_order + 1, do_refresh=True)
         self.window.RefreshUI(detail_item=destDir)
 
 #------------------------------------------------------------------------------
@@ -1080,7 +1080,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
             projects = []
             for installer, project in to_unpack:
                 installer.unpackToProject(project,SubProgress(progress,0,0.8))
-                self.idata.refresh_installer(project, is_project=True,
+                InstallerProject.refresh_installer(project, self.idata,
                     progress=SubProgress(progress, 0.8, 0.99),
                     install_order=installer.order + 1, do_refresh=False)
                 projects.append(project)
@@ -1165,8 +1165,8 @@ class Installer_SyncFromData(_SingleInstallable):
             if was_rar:
                 final_package = self._selected_info.writable_archive_name()
                 # Move the new archive directly underneath the old archive
-                self.idata.refresh_installer(
-                    final_package, is_project=False, do_refresh=False,
+                InstallerArchive.refresh_installer(
+                    final_package, self.idata, do_refresh=False,
                     progress=SubProgress(progress, 0.8, 0.9),
                     install_order=self._selected_info.order + 1)
                 self.idata[final_package].is_active = True

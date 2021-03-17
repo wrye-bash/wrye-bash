@@ -1225,6 +1225,23 @@ class Installer(ListInfo):
         :type delta_files: set[bolt.CIstr]"""
         raise AbstractError
 
+    # Factory -----------------------------------------------------------------
+    @classmethod
+    def refresh_installer(cls, package, idata, progress, install_order=None,
+                          do_refresh=False, _index=None, _fullRefresh=False):
+        installer = idata.get(package)
+        if not installer:
+            installer = idata[package] = cls(package)
+            if install_order is not None:
+                idata.moveArchives([package], install_order)
+        if _index is not None:
+            progress = SubProgress(progress, _index, _index + 1)
+        installer.refreshBasic(progress, recalculate_project_crc=_fullRefresh)
+        if progress: progress(1.0, _(u'Done'))
+        if do_refresh:
+            idata.irefresh(what=u'NS')
+        return installer
+
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
     """Represents a marker installer entry."""
@@ -1866,32 +1883,16 @@ class InstallersData(DataStore):
             self.pop(deleted)
         pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
-        for subPending, is_project_type in izip(
-                (pending - projects, pending & projects), (False, True)):
+        for subPending, inst_type in izip(
+                (pending - projects, pending & projects), self._inst_types):
             if not subPending: continue
             progress(0,_(u'Scanning Packages...'))
             progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
                 progress(index, _(u'Scanning Packages...') + u'\n%s' % package)
-                self.refresh_installer(package, is_project_type, progress,
-                                       _index=index, _fullRefresh=fullRefresh)
+                inst_type.refresh_installer(package, self, progress,
+                    _index=index, _fullRefresh=fullRefresh)
         return changed
-
-    def refresh_installer(self, package, is_project, progress,
-                          install_order=None, do_refresh=False, _index=None,
-                          _fullRefresh=False):
-        installer = self.get(package)
-        if not installer:
-            installer = self[package] = self._inst_types[is_project](package)
-            if install_order is not None:
-                self.moveArchives([package], install_order)
-        if _index is not None:
-            progress = SubProgress(progress, _index, _index + 1)
-        installer.refreshBasic(progress, recalculate_project_crc=_fullRefresh)
-        if progress: progress(1.0, _(u'Done'))
-        if do_refresh:
-            self.irefresh(what=u'NS')
-        return installer
 
     def applyEmbeddedBCFs(self, installers=None, destArchives=None,
                           progress=bolt.Progress()):
@@ -3014,5 +3015,5 @@ class InstallersData(DataStore):
             srcJoin(norm_ghost.get(filename, filename)).copyTo(
                 dstJoin(filename))
         # Refresh, so we can manipulate the InstallerProject item
-        self.refresh_installer(projectPath, True, progress, do_refresh=True,
-                               install_order=len(self)) # install last
+        self._inst_types[1].refresh_installer(projectPath, self, progress,
+            do_refresh=True, install_order=len(self)) # install last

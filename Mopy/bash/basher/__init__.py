@@ -2950,11 +2950,7 @@ class InstallersDetails(_SashDetailsPanel):
             nConfigured = len(installer.ci_dest_sizeCrc)
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
-            if installer.is_project():
-                info += _(u'Size:') + u' %s\n' % round_size(installer.fsize)
-            elif installer.is_marker():
-                info += _(u'Size:')+u' N/A\n'
-            elif installer.is_archive():
+            if installer.is_archive():
                 if installer.isSolid:
                     if installer.blockSize:
                         sSolid = _(u'Solid, Block Size: %d MB') % installer.blockSize
@@ -2964,10 +2960,11 @@ class InstallersDetails(_SashDetailsPanel):
                         sSolid = _(u'Solid, Block Size: 7z Default')
                 else:
                     sSolid = _(u'Non-solid')
-                info += _(u'Size: %s (%s)') % (
-                    round_size(installer.fsize), sSolid) + u'\n'
+                info += _(u'Size: %s (%s)') % (installer.size_string(),
+                                               sSolid) + u'\n'
             else:
-                info += _(u'Size: Unrecognized')+u'\n'
+                info += _(u'Size:') + u' %s\n' % installer.size_string(
+                    marker_string=u'N/A')
             info += (_(u'Modified:') +u' %s\n' % format_date(installer.modified),
                      _(u'Modified:') +u' N/A\n',)[installer.is_marker()]
             info += (_(u'Data CRC:')+u' %08X\n' % installer.crc,

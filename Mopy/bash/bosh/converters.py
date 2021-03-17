@@ -588,10 +588,8 @@ class InstallerConverter(object):
                                % e), sys.exc_info()[2]
         #--Determine settings for 7z
         installerCRC = srcInstaller.crc
-        if isinstance(srcInstaller, Path):
-            apath = srcInstaller
-        elif srcInstaller.is_archive():
-            apath = srcInstaller.abs_path
+        apath = srcInstaller if isinstance(srcInstaller,
+                                           Path) else srcInstaller.abs_path
         subTempDir = tmpDir.join(u'%08X' % installerCRC)
         if progress:
             progress(0, u'%s\n' % apath + _(u'Extracting files...'))
