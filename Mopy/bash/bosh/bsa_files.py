@@ -994,9 +994,10 @@ def get_bsa_type(game_fsName):
     elif game_fsName in (u'Enderal', u'Fallout3', u'FalloutNV', u'Skyrim'):
         return BSA
     elif game_fsName in (u'Skyrim Special Edition', u'Skyrim VR',
-                         u'Enderal Special Edition'):
+                         u'Enderal Special Edition',
+                         u'Skyrim Special Edition MS'):
         return SkyrimSeBsa
-    elif game_fsName in (u'Fallout4', u'Fallout4VR'):
+    elif game_fsName in (u'Fallout4', u'Fallout4VR', u'Fallout4 MS'):
         # Hashes are I not Q in BA2s!
         _HashedRecord.formats = [(u'I', struct_calcsize(u'I'))]
         return BA2

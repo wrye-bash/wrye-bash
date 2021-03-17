@@ -751,7 +751,9 @@ class ModInfo(FileInfo):
                                                             ins, True)
             except struct_error as rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
-        if bush.game.fsName in (u'Skyrim Special Edition', u'Skyrim VR'):
+        if bush.game.fsName in (u'Skyrim Special Edition', u'Skyrim VR',
+                                u'Enderal Special Edition',
+                                u'Skyrim Special Edition MS'):
             if tes4_rec_header.form_version != \
                     RecordHeader.plugin_form_version:
                 modInfos.sse_form43.add(self.name)

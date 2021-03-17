@@ -519,7 +519,7 @@ class ModDetails(object):
         group_records = self.group_records
         records = group_records[bush.game.Esp.plugin_header_sig]
         complex_groups = {b'CELL', b'DIAL', b'WRLD'}
-        if bush.game.fsName in (u'Fallout4', u'Fallout4VR'):
+        if bush.game.fsName in (u'Fallout4', u'Fallout4VR', u'Fallout4 MS'):
             complex_groups.add(b'QUST')
         with ModReader(modInfo.ci_key, modInfo.abs_path.open(u'rb')) as ins:
             while not ins.atEnd():

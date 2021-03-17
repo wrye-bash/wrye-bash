@@ -26,6 +26,7 @@ from ..fallout4 import Fallout4GameInfo
 
 class WSFallout4GameInfo(Fallout4GameInfo):
     displayName = u'Fallout 4 (WS)'
+    fsName = u'Fallout 4 MS'
     appdata_name = u'Fallout 4 MS'
     my_games_name = u'Fallout 4 MS'
     regInstallKeys = ()

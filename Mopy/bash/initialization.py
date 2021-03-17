@@ -86,11 +86,11 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
             % (app_data_local_path, sErrorInfo))
     return app_data_local_path
 
-def getOblivionModsPath(bash_ini_, game_info, ws_location=False):
+def getOblivionModsPath(bash_ini_, game_info, is_win_store):
     ob_mods_path = get_path_from_ini(bash_ini_, u'sOblivionMods')
     if ob_mods_path:
         src = [u'[General]', u'sOblivionMods']
-    elif not ws_location:
+    elif not is_win_store:
         # Currently the standard location, next to the game install
         ob_mods_path = GPath(GPath(u'..').join(u'%s Mods'
                                                % game_info.bash_root_prefix))
@@ -160,8 +160,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     #  Local Application Data
     dirs[u'local_appdata'] = localAppData = getLocalAppDataPath(bashIni_,
                                                                 localAppData)
-    #  AppData for the game, depends on if it's a WS game or not, detection
-    #  method will probably change in the future (_package_name, ew).
+    # AppData for the game, depends on if it's a WS game or not, detection
+    # method will probably change in the future (_package_name, ew).
     is_win_store = bool(game_info.Ws._package_name)
     if is_win_store:
         dirs[u'userApp'] = localAppData.join(

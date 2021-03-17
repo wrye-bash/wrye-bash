@@ -94,6 +94,10 @@ resource_to_displayName = {
     u'skyrim': u'Skyrim',
     u'skyrimse': u'Skyrim Special Edition',
     u'skyrimvr': u'Skyrim VR',
+    u'ws_fallout4': u'Fallout 4 (WS)',
+    u'ws_morrowind': u'Morrowind (WS)',
+    u'ws_oblivion': u'Oblivion (WS)',
+    u'ws_skyrimse': u'Skyrim Special Edition (WS)',
 }
 # Cache for created and initialized GameInfos
 _game_cache = {}
