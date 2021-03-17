@@ -52,7 +52,6 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 import collections
-import io
 import os
 import sys
 import time
@@ -2894,72 +2893,53 @@ class InstallersDetails(_SashDetailsPanel):
         if initialized: return
         else: self.infoPages[index][1] = True
         pageName = gPage.get_component_name()
-        def dumpFiles(files, header=u''):
+        def _dumpFiles(files, header=u''):
             if files:
-                buff = io.StringIO()
+                buff = []
                 files = bolt.sortFiles(files)
-                if header: buff.write(header+u'\n')
+                if header: buff.append(header)
                 for file in files:
                     oldName = installer.getEspmName(file)
-                    buff.write(oldName)
                     if oldName != file:
-                        buff.write(u' -> ')
-                        buff.write(file)
-                    buff.write(u'\n')
-                return buff.getvalue()
+                        oldName = f'{oldName} -> {file}'
+                    buff.append(oldName)
+                return buff.append('') or '\n'.join(buff) # add a newline
             elif header:
                 return header+u'\n'
             else:
                 return u''
         if pageName == u'gGeneral':
-            info = u'== '+_(u'Overview')+u'\n'
-            info += _(u'Type: ') + installer.type_string + u'\n'
-            info += installer.structure_string() + u'\n'
+            inf_ = ['== ' + _('Overview'), _('Type: ') + installer.type_string,
+                    installer.structure_string(), installer.size_info_str()]
             nConfigured = len(installer.ci_dest_sizeCrc)
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
-            if installer.is_archive():
-                if installer.isSolid:
-                    if installer.blockSize:
-                        sSolid = _(u'Solid, Block Size: %d MB') % installer.blockSize
-                    elif installer.blockSize is None:
-                        sSolid = _(u'Solid, Block Size: Unknown')
-                    else:
-                        sSolid = _(u'Solid, Block Size: 7z Default')
-                else:
-                    sSolid = _(u'Non-solid')
-                info += _(u'Size: %s (%s)') % (installer.size_string(),
-                                               sSolid) + u'\n'
-            else:
-                info += _(u'Size:') + u' %s\n' % installer.size_string(
-                    marker_string=u'N/A')
-            info += (_(u'Modified:') +u' %s\n' % format_date(installer.modified),
-                     _(u'Modified:') +u' N/A\n',)[installer.is_marker()]
-            info += (_(u'Data CRC:')+u' %08X\n' % installer.crc,
-                     _(u'Data CRC:')+u' N/A\n',)[installer.is_marker()]
-            info += (_(u'Files:') + u' %s\n' % installer.number_string(
-                installer.num_of_files, marker_string=u'N/A'))
-            info += (_(u'Configured:')+u' %u (%s)\n' % (
-                nConfigured, round_size(installer.unSize)),
-                     _(u'Configured:')+u' N/A\n',)[installer.is_marker()]
-            info += (_(u'  Matched:') + u' %s\n' % installer.number_string(
-                nConfigured - nMissing - nMismatched, marker_string=u'N/A'))
-            info += (_(u'  Missing:')+u' %s\n' % installer.number_string(
-                nMissing, marker_string=u'N/A'))
-            info += (_(u'  Conflicts:')+u' %s\n' % installer.number_string(
-                nMismatched, marker_string=u'N/A'))
-            info += u'\n'
-            #--Infoboxes
-            gPage.text_content = info + dumpFiles(
-                installer.ci_dest_sizeCrc, u'== ' + _(u'Configured Files'))
+            is_mark = installer.is_marker()
+            numstr = partial(installer.number_string, marker_string='N/A')
+            inf_.extend([
+                _('Modified:') + (' N/A' if is_mark else
+                    f' {format_date(installer.modified)}'),
+                _('Data CRC:') + (' N/A' if is_mark else
+                    f' {installer.crc:08X}'),
+                _('Files:') + f' {numstr(installer.num_of_files)}',
+                _('Configured:') + (' N/A' if is_mark else
+                    f' {nConfigured:d} ({round_size(installer.unSize)})'),
+                _('  Matched:') + ' %s' % numstr(
+                    nConfigured - nMissing - nMismatched),
+                 _('  Missing:') + f' {numstr(nMissing)}',
+                 _('  Conflicts:') + f' {numstr(nMismatched)}',
+                #--Infoboxes
+                _dumpFiles(installer.ci_dest_sizeCrc,
+                           '== ' + _('Configured Files'))])
+            gPage.text_content = u'\n'.join(inf_)
         elif pageName == u'gMatched':
-            gPage.text_content = dumpFiles(set(
+            gPage.text_content = _dumpFiles(set(
                 installer.ci_dest_sizeCrc) - installer.missingFiles -
                                            installer.mismatchedFiles)
         elif pageName == u'gMissing':
-            gPage.text_content = dumpFiles(installer.missingFiles)
+            gPage.text_content = _dumpFiles(installer.missingFiles)
         elif pageName == u'gMismatched':
-            gPage.text_content = dumpFiles(installer.mismatchedFiles)
+            gPage.text_content = _dumpFiles(installer.mismatchedFiles)
         elif pageName == u'gConflicts':
             gPage.text_content = self._idata.getConflictReport(
                 installer, u'OVER', bosh.modInfos)
@@ -2967,11 +2947,11 @@ class InstallersDetails(_SashDetailsPanel):
             gPage.text_content = self._idata.getConflictReport(
                 installer, u'UNDER', bosh.modInfos)
         elif pageName == u'gDirty':
-            gPage.text_content = dumpFiles(installer.dirty_sizeCrc)
+            gPage.text_content = _dumpFiles(installer.dirty_sizeCrc)
         elif pageName == u'gSkipped':
-            gPage.text_content = u'\n'.join((dumpFiles(
+            gPage.text_content = u'\n'.join((_dumpFiles(
                 installer.skipExtFiles, u'== ' + _(u'Skipped (Extension)')),
-                                             dumpFiles(
+                                             _dumpFiles(
                 installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)'))))
 
     #--Config

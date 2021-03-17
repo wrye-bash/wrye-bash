@@ -413,7 +413,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         """Duplicate selected Installer."""
         newName = self._selected_info.unique_key(self._selected_item.root,
                                                  add_copy=True)
-        allowed_exts = {} if not self._selected_info.is_archive() else {
+        allowed_exts = set() if not self._selected_info.is_archive() else {
             self._selected_item.ext}
         result = self._askFilename(
             _(u'Duplicate %s to:') % self._selected_item, newName.s,

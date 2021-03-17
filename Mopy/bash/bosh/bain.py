@@ -252,8 +252,9 @@ class Installer(ListInfo):
     def number_string(number, marker_string=u''):
         return str(number)
 
-    def size_string(self, marker_string=u''):
-        return round_size(self.fsize)
+    def size_string(self): return round_size(self.fsize)
+
+    def size_info_str(self): return  _(u'Size:') + u' %s' % self.size_string()
 
     def structure_string(self):
         if self.type == 1:
@@ -466,7 +467,7 @@ class Installer(ListInfo):
             dest = file_relative
             if not parentDir:
                 archiveRoot = GPath(
-                    self.archive).sroot if self.is_archive() else self.archive
+                    self.archive).sroot if self._valid_exts_re else self.archive
                 if fileLower in {u'masterlist.txt', u'dlclist.txt'}:
                     self.skipDirFiles.add(full)
                     return None # we dont want to install those files
@@ -632,14 +633,13 @@ class Installer(ListInfo):
         #--Bad archive?
         if bain_type not in {1,2}: return dest_src
         archiveRoot = GPath(
-            self.archive).sroot if self.is_archive() else self.archive
+            self.archive).sroot if self._valid_exts_re else self.archive
         docExts = self.docExts
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
         unSize = 0
         bethFiles = bush.game.bethDataFiles
-        strings_exts = self._strings_extensions
         skips, global_skip_ext = self._init_skips()
         if self.overrideSkips:
             ##: We should split this - Override Skips & Override Redirects
@@ -1274,7 +1274,9 @@ class InstallerMarker(Installer):
     @staticmethod
     def number_string(number, marker_string=u''): return marker_string
 
-    def size_string(self, marker_string=u''): return marker_string
+    def size_string(self): return u''
+
+    def size_info_str(self): return  _(u'Size:') + u' N/A\n'
 
     def structure_string(self): return _(u'Structure: N/A')
 
@@ -1302,6 +1304,18 @@ class InstallerArchive(Installer):
 
     @classmethod
     def is_archive(cls): return True
+
+    def size_info_str(self):
+        if self.isSolid:
+            if self.blockSize:
+                sSolid = _(u'Solid, Block Size: %d MB') % self.blockSize
+            elif self.blockSize is None:
+                sSolid = _(u'Solid, Block Size: Unknown')
+            else:
+                sSolid = _(u'Solid, Block Size: 7z Default')
+        else:
+            sSolid = _(u'Non-solid')
+        return _(u'Size: %s (%s)') % (self.size_string(), sSolid)
 
     @classmethod
     def validate_filename_str(cls, name_str, allowed_exts=archives.writeExts,
