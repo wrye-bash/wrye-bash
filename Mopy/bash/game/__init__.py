@@ -140,6 +140,11 @@ class GameInfo(object):
 
     class Ws(object):
         """Information about this game on the Windows Store."""
+        # A list of directory names for different language versions that ship
+        # with this game. Each one acts as a separate game installation under
+        # the main Windows Store path. If empty, indicates that the Windows
+        # Store location is the game installtion
+        game_language_dirs = []
         # The publisher name for common games. Currently only 'Bethesda' is
         # allowed for Bethesda games. If specified, publisher_id is not
         # required

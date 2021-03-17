@@ -472,23 +472,28 @@ def _detect_game(opts, backup_bash_ini):
     return bashIni, bush_game, game_ini_path
 
 def _import_bush_and_set_game(opts, bashIni):
-    from . import bush
+    from . import bush, balt
     bolt.deprint(u'Searching for game to manage:')
-    game_infos = bush.detect_and_set_game(opts.oblivionPath,
-                                                      bashIni)
+    game_infos = bush.detect_and_set_game(opts.oblivionPath, bashIni)
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
-            # FIXME(inf) Show as a separate popup
-            msgtext = _(u'Wrye Bash could not find a game to manage. Please '
-                        u'use the -o command line argument to specify the '
-                        u'game path.')
+            balt.showError(
+                None, _(u'Wrye Bash could not find a game to manage. Make '
+                        u'sure to launch games you installed through Steam '
+                        u'once and enable mods on games you installed through '
+                        u'the Windows Store.') + u'\n\n' +
+                      _(u'You can also use the -o command line argument or '
+                        u'bash.ini to specify the path manually.'),
+                title=_(u'No Game Found'))
+            return None
         retCode = _select_game_popup(game_infos)
-        if retCode is None:
+        if not retCode:
             bolt.deprint(u'No games were found or selected. Aborting.')
             return None
         # Add the game to the command line, so we use it if we restart
-        bass.update_sys_argv([u'--oblivionPath', bush.game_path(retCode).s])
-        bush.detect_and_set_game(opts.oblivionPath, bashIni, retCode)
+        gname, gm_path = retCode
+        bass.update_sys_argv([u'--oblivionPath', gm_path])
+        bush.detect_and_set_game(opts.oblivionPath, bashIni, gname, gm_path)
     return bush.game
 
 def _show_boot_popup(msg, is_critical=True):
@@ -573,17 +578,18 @@ def _select_game_popup(game_infos):
     from .balt import Resources
     from .gui import Label, TextAlignment, WindowFrame, VLayout, \
         ImageDropDown, LayoutOptions, SearchBar, VBoxedLayout, TextField, \
-        HLayout, QuitButton, ImageButton, HorizontalLine, Stretch
-    ##: Move to popups.py?
-    class GameSelect(WindowFrame):
+        HLayout, QuitButton, ImageButton, HorizontalLine, Stretch, DropDown
+    ##: Decouple game icon paths and move to popups.py once balt is refactored
+    # enough
+    class SelectGamePopup(WindowFrame):
         _def_size = (500, 400)
 
         def __init__(self, game_infos, callback):
-            super(GameSelect, self).__init__(None, _(u'Select Game'),
-                                             icon_bundle=Resources.bashRed)
+            super(SelectGamePopup, self).__init__(
+                None, title=_(u'Select Game'), icon_bundle=Resources.bashRed)
             self._callback = callback
             self._sorted_games = sorted(g.displayName for g in game_infos)
-            self._game_to_path = {g.displayName: p.s for g, p
+            self._game_to_paths = {g.displayName: ps for g, ps
                                   in game_infos.iteritems()}
             self._game_to_info = {g.displayName: g for g in game_infos}
             self._game_to_bitmap = {
@@ -594,16 +600,15 @@ def _select_game_popup(game_infos):
             game_search.on_text_changed.subscribe(self._perform_search)
             self._game_dropdown = ImageDropDown(self, value=u'', choices=[u''])
             self._game_dropdown.on_combo_select.subscribe(self._select_game)
+            self._lang_dropdown = DropDown(self, value=u'', choices=[u''])
+            self._lang_dropdown.on_combo_select.subscribe(self._select_lang)
             self._game_path = TextField(self, editable=False)
             quit_button = QuitButton(self)
-            quit_button.on_clicked.subscribe(lambda: self._close_game_select(
-                return_code=None))
+            quit_button.on_clicked.subscribe(self._handle_quit)
             launch_img = bass.dirs[u'images'].join(u'bash_32_2.png').s
             self._launch_button = ImageButton(self, _wx.Bitmap(launch_img),
                                               btn_label=_(u'Launch'))
-            self._launch_button.on_clicked.subscribe(
-                lambda: self._close_game_select(
-                    return_code=self._game_dropdown.get_value()))
+            self._launch_button.on_clicked.subscribe(self._handle_launch)
             # Start out with an empty search and the alphabetically first game
             # selected
             self._perform_search(search_str=u'')
@@ -614,6 +619,10 @@ def _select_game_popup(game_infos):
                 (VBoxedLayout(self, title=_(u'Game Details'), item_expand=True,
                               spacing=12, items=[
                     HLayout(spacing=6, item_expand=True, items=[
+                        Label(self, _(u'Variant:')),
+                        (self._lang_dropdown, LayoutOptions(weight=1)),
+                    ]),
+                    HLayout(spacing=6, item_expand=True, items=[
                         Label(self, _(u'Install Path:')),
                         (self._game_path, LayoutOptions(weight=1)),
                     ]),
@@ -623,6 +632,18 @@ def _select_game_popup(game_infos):
                     quit_button, Stretch(), self._launch_button,
                 ]), LayoutOptions(weight=1)),
             ]).apply_to(self)
+
+        @property
+        def _chosen_path(self):
+            avail_paths = self._game_to_paths[self._game_dropdown.get_value()]
+            if len(avail_paths) == 1:
+                return avail_paths[0]
+            else:
+                chosen_lang = self._lang_dropdown.get_value()
+                for p in avail_paths:
+                    if chosen_lang in p.s:
+                        return p
+                return None # Should never happen
 
         def _perform_search(self, search_str):
             prev_choice = self._game_dropdown.get_value()
@@ -649,17 +670,41 @@ def _select_game_popup(game_infos):
         def _select_game(self, selected_game):
             if not selected_game:
                 # No game selected, clear the details
+                self._lang_dropdown.set_choices([_(u'N/A')])
+                self._lang_dropdown.set_selection(0)
+                self._lang_dropdown.enabled = False
                 self._game_path.text_content = u''
             else:
-                self._game_path.text_content = self._game_to_path[selected_game]
+                # Enable the Language dropdown only if we >1 path for the newly
+                # active game
+                available_paths = self._game_to_paths[selected_game]
+                if len(available_paths) > 1:
+                    self._lang_dropdown.set_choices([p.stail for p
+                                                     in available_paths])
+                    self._lang_dropdown.set_selection(0)
+                    self._lang_dropdown.enabled = True
+                else:
+                    self._lang_dropdown.set_choices([_(u'N/A')])
+                    self._lang_dropdown.set_selection(0)
+                    self._lang_dropdown.enabled = False
+                # Set the path based on the default language
+                self._select_lang()
 
-        def _close_game_select(self, return_code):
+        def _select_lang(self, _selected_lang=None):
+            self._game_path.text_content = self._chosen_path.s
+
+        def _handle_quit(self):
+            self._callback(None)
             self.close_win(force_close=True)
-            self._callback(return_code)
+
+        def _handle_launch(self):
+            self._callback((self._game_dropdown.get_value(),
+                            self._chosen_path))
+            self.close_win(force_close=True)
     _app = _wx.App(False)
     _app.locale = _wx.Locale(_wx.LANGUAGE_DEFAULT)
     retCode = _AppReturnCode()
-    frame = GameSelect(game_infos, retCode.set)
+    frame = SelectGamePopup(game_infos, retCode.set)
     frame.show_frame()
     frame._native_widget.Center() # TODO(inf) de-wx!
     _app.MainLoop()

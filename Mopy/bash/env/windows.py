@@ -216,7 +216,6 @@ def _query_fixed_field_version(file_name, version_prefix):
     return win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), \
            win32api.LOWORD(ls)
 
-
 class _WindowsStoreFinder(object):
     developer_ids = {
         u'Bethesda': u'3275kfvn8vcwc'
@@ -229,8 +228,10 @@ class _WindowsStoreFinder(object):
         self.location_cache = {}
         self.full_names_cache = {}
 
-    def get_package_name(self, common_name, publisher_name=None, publisher_id=None):
-        """Gets the package name from the common_name an publisher information."""
+    def get_package_name(self, common_name, publisher_name=None,
+                         publisher_id=None):
+        """Gets the package name from the common_name an publisher
+        information."""
         if not publisher_id:
             publisher_id = self.developer_ids.get(publisher_name)
         if not publisher_id:
@@ -258,7 +259,8 @@ class _WindowsStoreFinder(object):
                 for i in xrange(num_families):
                     full_names.append(winreg.EnumKey(family_key, i))
         except WindowsError as e:
-            # We're on a version of Windows that does not have the package registry
+            # We're on a version of Windows that does not have the package
+            # registry
             pass
         return full_names
 
@@ -286,11 +288,13 @@ class _WindowsStoreFinder(object):
                 with repo_key:
                     data_key = winreg.OpenKey(repo_key, package_index)
                     with data_key:
-                        ml_entry = winreg.QueryValueEx(data_key, 'MutableLocation')
+                        ml_entry = winreg.QueryValueEx(data_key,
+                                                       u'MutableLocation')
                         if ml_entry[0] and ml_entry[1] == winreg.REG_SZ:
                             locations[package_full_name] = ml_entry[0]
         except WindowsError:
-            # We're on a version of Windows that does not have the package registry
+            # We're on a version of Windows that does not have the package
+            # registry
             pass
         return locations
 
@@ -703,40 +707,43 @@ def get_registry_path(subkey, entry, detection_files):
             return installPath
     return None
 
-def get_registry_game_path(submod):
+def get_registry_game_paths(submod):
     """Check registry-supplied game paths for the game detection file(s)."""
     reg_keys = submod.regInstallKeys
     if not reg_keys:
-        return None # Game is not detectable via registry
+        return [] # Game is not detectable via registry
     subkey, entry = reg_keys
-    return get_registry_path(subkey, entry, submod.game_detect_files)
+    reg_path = get_registry_path(subkey, entry, submod.game_detect_files)
+    return [] if not reg_path else [reg_path]
 
-def get_win_store_game_path(submod):
+def get_win_store_game_paths(submod):
     """Check Windows Store-supplied game paths for the game detection
     file(s)."""
-    ## TODO(lojack): There can potentially be multiple results for a given game
-    ## due to different game version/architecture.  Right now we just take
-    ## the first one, find a good way to pick the best one.  Probably by looking
-    ## at the install time value in the registry.
     publisher_name = submod.Ws.publisher_name
     publisher_id = submod.Ws.publisher_id
     common_name = submod.Ws.win_store_name
     package_name = _win_store_finder.get_package_name(
-        common_name,
-        publisher_name,
-        publisher_id
-    )
+        common_name, publisher_name, publisher_id)
     locations = _win_store_finder.get_mutable_locations(package_name)
     if locations:
-        # Use the first location for now, see the TODO above
-        ## TODO(lojack): This is kind of ulgy, probably a better way to store
-        ## this:
+        # TODO(lojack): This is kind of ulgy, probably a better way to store
+        #  this:
         submod.Ws._package_name = package_name
-        return GPath(locations.values()[0])
+        # TODO(lojack): There can potentially be multiple results for a given
+        #  game due to different game version/architecture. Right now we just
+        #  take the first one, find a good way to pick the best one. Probably
+        #  by looking at the install time value in the registry.
+        first_location = GPath(locations.values()[0])
+        if submod.Ws.game_language_dirs:
+            language_locations = [first_location.join(l)
+                                  for l in submod.Ws.game_language_dirs]
+            return [p for p in language_locations if p.isdir()]
+        else:
+            return [first_location]
     else:
         # Should already be u'', but set it in case it's not.
         submod.Ws._package_name = u''
-        return None
+        return []
 
 def get_personal_path():
     return (GPath(_get_known_path(_FOLDERID.Documents)),

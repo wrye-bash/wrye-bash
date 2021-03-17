@@ -32,5 +32,8 @@ class WSMorrowindGameInfo(MorrowindGameInfo):
     class Ws(MorrowindGameInfo.Ws):
         publisher_name = u'Bethesda'
         win_store_name = u'BethesdaSoftworks.TESMorrowind-PC'
+        game_language_dirs = [u'Morrowind GOTY English',
+                              u'Morrowind GOTY French',
+                              u'Morrowind GOTY German']
 
 GAME_TYPE = WSMorrowindGameInfo

@@ -33,5 +33,10 @@ class WSOblivionGameInfo(OblivionGameInfo):
     class Ws(OblivionGameInfo.Ws):
         publisher_name = u'Bethesda'
         win_store_name = u'BethesdaSoftworks.TESOblivion-PC'
+        game_language_dirs = [u'Oblivion GOTY English',
+                              u'Oblivion GOTY French',
+                              u'Oblivion GOTY German',
+                              u'Oblivion GOTY Italian',
+                              u'Oblivion GOTY Spanish']
 
 GAME_TYPE = WSOblivionGameInfo
