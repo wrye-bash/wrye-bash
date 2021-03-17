@@ -31,8 +31,6 @@ from ..exception import EnvError
 from .common import get_env_var, iter_env_vars
 
 # API - Constants =============================================================
-isUAC = False # Not a thing on Linux
-
 try:
     MAX_PATH = int(subprocess.check_output([u'getconf', u'PATH_MAX', u'/']))
 except (ValueError, subprocess.CalledProcessError, OSError):
@@ -92,6 +90,9 @@ def testUAC(_gameDataPath):
 
 def setUAC(_handle, _uac=True):
     pass # Noop on Linux
+
+def is_uac():
+    return False # Not a thing on Linux
 
 def getJava(): # PY3: cache this
     try:

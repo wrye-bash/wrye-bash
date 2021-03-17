@@ -43,7 +43,7 @@ from ..exception import AccessDeniedError, BoltError, NonExistentDriveError
 from .common import get_env_var
 
 # API - Constants =============================================================
-isUAC = False # True if the game is under UAC protection
+isUAC = False
 
 from ctypes.wintypes import MAX_PATH
 from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, \
@@ -516,14 +516,17 @@ _PFTASKDIALOGCALLBACK = WINFUNCTYPE(c_void_p, c_void_p, c_uint, c_uint, c_long,
 #-------Win32 Stucts/Unions--------#
 # Callers do not have to worry about using these.
 class _TASKDIALOG_BUTTON(Structure):
+    _pack_ = 1
     _fields_ = [(u'nButtonID', c_int),
                 (u'pszButtonText', c_wchar_p)]
 
 class _FOOTERICON(Union):
+    _pack_ = 1
     _fields_ = [(u'hFooterIcon', c_void_p),
                 (u'pszFooterIcon', c_ushort)]
 
 class _MAINICON(Union):
+    _pack_ = 1
     _fields_ = [(u'hMainIcon', c_void_p),
                 (u'pszMainIcon', c_ushort)]
 
@@ -663,6 +666,7 @@ _SHGSI_LINKOVERLAY   = 0x00008000 # get icon with a link overlay on it
 _SHGSI_SELECTED      = 0x00010000 # get icon in selected state
 
 class _SHSTOCKICONINFO(Structure):
+    _pack_ = 1
     _fields_ = [(u'cbSize', c_ulong),
                 (u'hIcon', c_void_p),
                 (u'iSysImageIndex', c_int),
@@ -821,7 +825,7 @@ def get_file_version(filename):
     return _query_string_field_version(filename, u'FileVersion')
 
 def testUAC(gameDataPath):
-    print(u'testing UAC')
+    deprint(u'Testing if game folder is UAC-protected')
     tmpDir = Path.tempDir()
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
@@ -867,6 +871,10 @@ def getJava(): # PY3: cache this
         # So javaw.exe would actually be in Windows\SysWOW64
         java_bin_path = sys_root.join(u'syswow64', u'javaw.exe')
     return java_bin_path
+
+def is_uac():
+    """Returns True if the game is under UAC protection."""
+    return isUAC
 
 def fixup_taskbar_icon():
     """On Windows 7+, if taskbar settings for taskbar buttons is set to 'Always

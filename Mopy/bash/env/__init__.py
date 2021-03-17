@@ -55,6 +55,8 @@ from ..exception import CancelError, SkipError, AccessDeniedError, \
 # NB: AccessDeniedError is not 5 but 120 as seen in:
 # https://msdn.microsoft.com/en-us/library/windows/desktop/bb762164%28v=vs.85%29.aspx
 _file_op_error_map = {
+    # Returned for Windows Store games that need admin access
+    17: AccessDeniedError,
     120: AccessDeniedError,
     # https://msdn.microsoft.com/en-us/library/windows/desktop/ms681383%28v=vs.85%29.aspx
     1223: CancelError,

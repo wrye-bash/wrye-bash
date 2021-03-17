@@ -385,7 +385,7 @@ def _main(opts, wx_locale):
     app.locale = wx_locale
     if not bass.is_standalone and (
         not _rightWxVersion() or not _rightPythonVersion()): return
-    if env.isUAC:
+    if env.is_uac():
         uacRestart = opts.uac
         if not opts.noUac and not opts.uac:
             # Show a prompt asking if we should restart in Admin Mode
@@ -492,7 +492,7 @@ def _import_bush_and_set_game(opts, bashIni):
             return None
         # Add the game to the command line, so we use it if we restart
         gname, gm_path = retCode
-        bass.update_sys_argv([u'--oblivionPath', gm_path])
+        bass.update_sys_argv([u'--oblivionPath', u'%s' % gm_path])
         bush.detect_and_set_game(opts.oblivionPath, bashIni, gname, gm_path)
     return bush.game
 
