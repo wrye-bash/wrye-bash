@@ -125,7 +125,7 @@ def _key_sort(di, id_eid_=None, keys_dex=(), values_dex=(), by_value=False):
             yield k, di[k]
 
 class CsvParser(object):
-    """Basic read/write csv functionality - ScriptParser handles script files
+    """Basic read/write csv functionality - ScriptText handles script files
     not csvs though."""
     _csv_header = ()
     _row_fmt_str = u''
@@ -133,7 +133,7 @@ class CsvParser(object):
     def readFromText(self, csv_path):
         """Reads information from the specified CSV file and stores the result
         in id_stored_data. You must override _parse_line for this method to
-        work.
+        work. ScriptText is a special case.
 
         :param csv_path: The path to the CSV file that should be read."""
         with _CsvReader(csv_path) as ins:
@@ -150,17 +150,18 @@ class CsvParser(object):
         :param csv_fields: A line in a CSV file, already split into fields."""
         raise AbstractError(u'%s must implement _parse_line' % type(self))
 
-    def writeToText(self,textPath):
-        """Exports ____ to specified text file."""
+    def write_text_file(self, textPath):
+        """Export ____ to specified text file. You must override _write_rows.
+        """
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
-            out.write(self._header_row())
+            self._header_row(out)
             self._write_rows(out)
 
     def _write_rows(self, out):
         raise AbstractError(u'%s must implement _write_rows' % type(self))
 
-    def _header_row(self):
-        return u'"%s"\n' % u'","'.join(self._csv_header)
+    def _header_row(self, out):
+        out.write(u'"%s"\n' % u'","'.join(self._csv_header))
 
 class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
     """WIP aliases handling."""
@@ -986,25 +987,25 @@ class ItemStats(_HandleAliases):
             del attr_value[u'eid']
         self.id_stored_data[top_grup_sig][longid].update(attr_value)
 
-    def writeToText(self,textPath):
+    def _header_row(self, out): pass # different header per sig
+
+    def _write_rows(self, out):
         """Writes stats to specified text file."""
-        class_fid_attr_value = self.id_stored_data
-        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
-            for top_grup_sig, fid_attr_value in class_fid_attr_value.iteritems():
-                if not fid_attr_value: continue
-                sers = [self._attr_serializer[x] for x in
-                        self.sig_stats_attrs[top_grup_sig]]
-                out.write(u'"%s"\n' % u'","'.join( # Py3: unpack
-                    (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex')) + tuple(
-                        bush.game.stats_attrs_desers[a][1] for a in
-                        self.sig_stats_attrs[top_grup_sig])))
-                for longid in sorted(fid_attr_value, key=lambda lid: (
-                        lid, fid_attr_value[lid][u'eid'].lower())):
-                    attr_value = fid_attr_value[longid]
-                    output = self._row_fmt_str % (
-                        top_grup_sig.decode(u'ascii'), longid[0], longid[1],
-                        u','.join(ser(attr_value) for ser in sers))
-                    out.write(output)
+        for top_grup_sig, fid_attr_value in _key_sort(self.id_stored_data):
+            if not fid_attr_value: continue
+            sers = [self._attr_serializer[x] for x in
+                    self.sig_stats_attrs[top_grup_sig]]
+            out.write(u'"%s"\n' % u'","'.join( # Py3: unpack
+                (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex')) + tuple(
+                    bush.game.stats_attrs_desers[a][1] for a in
+                    self.sig_stats_attrs[top_grup_sig])))
+            top_grup = top_grup_sig.decode(u'ascii')
+            for longid in sorted(fid_attr_value, key=lambda lid: (
+                    lid, fid_attr_value[lid][u'eid'].lower())):
+                attr_value = fid_attr_value[longid]
+                output = self._row_fmt_str % (top_grup, longid[0], longid[1],
+                    u','.join(ser(attr_value) for ser in sers))
+                out.write(output)
 
 #------------------------------------------------------------------------------
 class ScriptText(CsvParser):
@@ -1036,7 +1037,7 @@ class ScriptText(CsvParser):
                 outpath = dirs[u'patches'].join(folder).join(
                     fileName + inisettings[u'ScriptFileExt'])
                 self.__writting = (scpt_txt, longid, eid)
-                self.writeToText(outpath)
+                self.write_text_file(outpath)
                 del self.__writting
                 exportedScripts.append(eid)
         return exportedScripts
@@ -1055,12 +1056,12 @@ class ScriptText(CsvParser):
                 tmp.append(line[:pos])
         return __win_line_sep.join(tmp) if tmp else u''
 
-    def _header_row(self, __win_line_sep=u'\r\n'):
+    def _header_row(self, out, __win_line_sep=u'\r\n'):
         # __win_line_sep: scripts line separator - or so we trust
         __, longid, eid = self.__writting
         header = (__win_line_sep + u';').join(
             (u'%s' % longid[0], u'0x%06X' % longid[1], eid))
-        return u';%s%s' % (header, __win_line_sep)
+        out.write(u';%s%s' % (header, __win_line_sep))
 
     def _write_rows(self, out):
         scpt_txt, __fid, __eid = self.__writting
