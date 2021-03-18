@@ -48,7 +48,7 @@ setting up the repository and git basics. Please read at least:
 * [[github] Branching and merging to dev using rebase](https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase)
 * [[dev] Coding Style](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style)
 * [[dev] Deciphering Source Filenames](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Deciphering-Source-Filenames)
-* [[git] Commit guidelines](https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Commit-guidelines)
+* [[dev] Commit guidelines](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Commit-guidelines)
 
 When ready: do not issue a pull request - contact instead a member of the team
 in the relevant issue or mentioning them on your commit and let them review.
