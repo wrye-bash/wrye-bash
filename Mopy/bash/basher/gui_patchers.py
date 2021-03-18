@@ -55,6 +55,9 @@ class _PatcherPanel(object):
             raise SyntaxError(u'No _config_key set for patcher panel class '
                               u'%s' % self.__class__.__name__)
         self.gConfigPanel = None
+        # Used to keep track of the state of the patcher label
+        self._is_bolded = False
+        self._is_slanted = False
 
     @property
     def patcher_tip(self):
@@ -71,7 +74,11 @@ class _PatcherPanel(object):
         self.isEnabled = self_enabled
         self.patch_dialog.check_patcher(self, self_enabled)
 
-    def _BoldPatcherLabel(self): self.patch_dialog.BoldPatcher(self)
+    def _style_patcher_label(self, bold=False, slant=False):
+        self._is_bolded |= bold
+        self._is_slanted |= slant
+        self.patch_dialog.style_patcher(self, bold=self._is_bolded,
+                                        slant=self._is_slanted)
 
     def _GetIsFirstLoad(self):
         return getattr(self, u'is_first_load', False)
@@ -93,7 +100,7 @@ class _PatcherPanel(object):
         config_layout.add(self.gConfigPanel)
         # Bold the patcher if it's new, but the patch itself isn't new
         if not self._was_present and not self._GetIsFirstLoad():
-            self._BoldPatcherLabel()
+            self._style_patcher_label(bold=True)
         return self.gConfigPanel
 
     def Layout(self):
@@ -326,7 +333,7 @@ class _ListPatcherPanel(_PatcherPanel):
         self.gList.lb_clear()
         isFirstLoad = self._GetIsFirstLoad()
         patcherOn = False
-        patcherBold = False
+        patcher_bold = False
         for index,item in enumerate(items):
             itemLabel = self.getItemLabel(item)
             self.gList.lb_insert(itemLabel, index)
@@ -340,17 +347,19 @@ class _ListPatcherPanel(_PatcherPanel):
                     if effectiveDefaultItemCheck:
                         patcherOn = True
                     if not isFirstLoad:
-                        # indicate that this is a new item by bolding it and its parent patcher
-                        self.gList.lb_bold_font_at_index(index)
-                        patcherBold = True
+                        # Indicate that this is a new item by bolding it and
+                        # its parent patcher
+                        self.gList.lb_style_font_at_index(index, bold=True)
+                        patcher_bold = True
                 self.gList.lb_check_at_index(index,
                     self.configChecks.setdefault(
                         item, effectiveDefaultItemCheck))
         self.configItems = items
         if patcherOn:
             self._enable_self()
-        if patcherBold:
-            self._BoldPatcherLabel()
+        # Bold it if it has a new item, slant it if it has no items
+        patcher_slant = self.gList.lb_get_items_count() == 0
+        self._style_patcher_label(bold=patcher_bold, slant=patcher_slant)
 
     def OnListCheck(self, _lb_selection_dex=None):
         """One of list items was checked. Update all configChecks states."""
@@ -562,7 +571,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         """Set item to specified set of items."""
         self.gTweakList.lb_clear()
         isFirstLoad = self._GetIsFirstLoad()
-        patcherBold = False
+        patcher_bold = False
         for index,tweak in enumerate(self._all_tweaks):
             label = tweak.getListLabel()
             if tweak.choiceLabels and tweak.choiceLabels[
@@ -571,11 +580,13 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             self.gTweakList.lb_insert(label, index)
             self.gTweakList.lb_check_at_index(index, tweak.isEnabled)
             if not isFirstLoad and tweak.isNew():
-                # indicate that this is a new item by bolding it and its parent patcher
-                self.gTweakList.lb_bold_font_at_index(index)
-                patcherBold = True
-        if patcherBold:
-            self._BoldPatcherLabel()
+                # Indicate that this is a new item by bolding it and its parent
+                # patcher
+                self.gTweakList.lb_style_font_at_index(index, bold=True)
+                patcher_bold = True
+        # Bold it if it has a new item, slant it if it has no items
+        patcher_slant = self.gTweakList.lb_get_items_count() == 0
+        self._style_patcher_label(bold=patcher_bold, slant=patcher_slant)
 
     def TweakOnListCheck(self, lb_selection_dex=None):
         """One of list items was checked. Update all check states."""
@@ -897,6 +908,11 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             super(_ListsMergerPanel, self)._import_config(default)
 
     def mass_select(self, select=True): self.isEnabled = select
+
+    def _style_patcher_label(self, bold=False, slant=False):
+        # Never italicize these since they will run even if there are no tagged
+        # source plugins
+        super(_ListsMergerPanel, self)._style_patcher_label(bold=bold)
 
 class _MergerPanel(_ListPatcherPanel):
     listLabel = _(u'Mergeable Mods')

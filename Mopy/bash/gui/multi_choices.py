@@ -174,10 +174,11 @@ class ListBox(WithMouseEvents):
 
     def lb_clear(self): self._native_widget.Clear()
 
-    def lb_bold_font_at_index(self, lb_selection_dex):
-        get_font = self._native_widget.GetFont()
-        self._native_widget.SetItemFont(lb_selection_dex,
-                                        Font.Style(get_font, bold=True))
+    def lb_style_font_at_index(self, lb_selection_dex, bold=False,
+                               slant=False):
+        curr_font = self._native_widget.GetFont()
+        styled_font = Font.Style(curr_font, bold=bold, slant=slant)
+        self._native_widget.SetItemFont(lb_selection_dex, styled_font)
 
     # Getters - we should encapsulate index access
     def lb_get_next_item(self, item, geometry=_wx.LIST_NEXT_ALL,

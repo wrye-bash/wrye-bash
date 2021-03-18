@@ -758,7 +758,12 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <h3 id="patch-configuration">Bash Configuration <a class="back2top" href="#contents">Back to top</a></h3>
 <p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><strong>Bashed Patch, 0.esp</strong></q>. It is configured using the plugin context menu command <a href="#modsRebuildPatch">Rebuild Patch...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
 <p>The configuration dialog consists of a list of major sections to the left, and the contents of the selected section to the right, with the build and save buttons at the bottom. The sections and their items have checkboxes: checking a section will include all its checked items in the Bashed Patch. Unchecked sections and items will not be included. Some sections don't have any items, and so just need the section checkbox checked.
-<p>A short description of each section and some items is displayed near the bottom of the window if the section/item is hovered over. Bolded items are new since the last time the Bashed Patch was built. Wrye Bash will try to auto-configure most sections, but some will still need tweaking.
+<p>A short description of each section and some items is displayed near the
+    bottom of the window if the section/item is hovered over. Bolded items are
+    new since the last time the Bashed Patch was built, italicized items will
+    not run because they have no active sources (e.g. no mods to import). Wrye
+    Bash will usually do a good job auto-configuring most sections, but you may
+    want to alter options, especially in the Tweak section.</p>
 <table>
     <thead>
         <tr><th colspan="2">Bashed Patch Configuration Buttons
