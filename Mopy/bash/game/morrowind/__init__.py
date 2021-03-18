@@ -38,6 +38,7 @@ class MorrowindGameInfo(PatchGame):
     appdata_name = u'Morrowind'
     launch_exe = u'Morrowind.exe'
     game_detect_files = [u'Morrowind.exe']
+    game_detect_excludes = [u'appxmanifest.xml']
     version_detect_file = u'Morrowind.exe'
     master_file = u'Morrowind.esm'
     mods_dir = u'Data Files'

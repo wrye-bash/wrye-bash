@@ -38,6 +38,7 @@ class Fallout4GameInfo(PatchGame):
     appdata_name = u'Fallout4'
     launch_exe = u'Fallout4.exe'
     game_detect_files = [u'Fallout4.exe']
+    game_detect_excludes = [u'appxmanifest.xml']
     version_detect_file = u'Fallout4.exe'
     master_file = u'Fallout4.esm'
     taglist_dir = u'Fallout4'

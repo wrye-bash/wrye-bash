@@ -29,6 +29,8 @@ class WSOblivionGameInfo(OblivionGameInfo):
     # `appdata_name` and `my_games_name` use the original locations, unlike
     # other Windows Store games.
     regInstallKeys = ()
+    game_detect_files = OblivionGameInfo.game_detect_files + [u'appxmanifest.xml']
+    game_detect_excludes = []
 
     class Ws(OblivionGameInfo.Ws):
         publisher_name = u'Bethesda'

@@ -28,6 +28,8 @@ class WSMorrowindGameInfo(MorrowindGameInfo):
     displayName = u'Morrowind (WS)'
     # Morrowind does not use the personal folders, so no my_games_name etc.
     regInstallKeys = ()
+    game_detect_files = MorrowindGameInfo.game_detect_files + [u'appxmanifest.xml']
+    game_detect_excludes = []
 
     class Ws(MorrowindGameInfo.Ws):
         publisher_name = u'Bethesda'

@@ -79,6 +79,10 @@ class GameInfo(object):
     # files - for an example, see Enderal and Skyrim (and the SE versions of
     # both).
     game_detect_files = []
+    # Path to one or more files to look for to see if this is *not* the right
+    # game when joined with the game's root path. Used to differentia between
+    # versions of the game distributed on different platforms (Windows Store).
+    game_detect_excludes = []
     # Path to a file to pass to env.get_file_version to determine the game's
     # version. Usually the same as launch_exe, but some games need different
     # ones here (e.g. Enderal, which has Skyrim's version in the launch_exe,
@@ -156,8 +160,6 @@ class GameInfo(object):
         # The internal name used by the Windows Store to identify the game.
         # For example, Morrowind is 'BethesdaSofworks.TESMorrowind-PC'
         win_store_name = u''
-        # Internally used, set by the game detection code
-        _package_name = u''
 
     class Ck(object):
         """Information about the official plugin editor (generally called some

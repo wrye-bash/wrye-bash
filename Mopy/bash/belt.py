@@ -915,9 +915,15 @@ class WryeParser(ScriptParser.Parser):
 
     # Functions...
     def fnCompareGameVersion(self, obWant):
+        if bush.ws_info.installed:
+            # Windows Store app
+            game_version = bush.ws_info.get_installed_version().version
+        else:
+            game_version = None
         ret = self._TestVersion(
             self._TestVersion_Want(obWant),
-            bass.dirs[u'app'].join(bush.game.version_detect_file))
+            bass.dirs[u'app'].join(bush.game.version_detect_file),
+            have=game_version)
         return ret[0]
 
     def fnCompareSEVersion(self, seWant):
@@ -1494,23 +1500,24 @@ class WryeParser(ScriptParser.Parser):
 
     def _TestVersion_Want(self, want):
         try:
-            need = [int(i) for i in want.split(u'.')]
+            need = tuple(int(i) for i in want.split(u'.'))
         except ValueError:
             need = u'None'
         return need
 
-    def _TestVersion(self, need, file_):
-        if file_ and file_.exists():
+    def _TestVersion(self, need, file_, have=None):
+        if not have and file_ and file_.exists():
             have = get_file_version(file_.s)
+        if have:
             ver = u'.'.join([unicode(i) for i in have])
             if need == u'None':
                 return [1, ver]
-            for have_part, need_part in izip(have, need):
-                if have_part > need_part:
-                    return [1, ver]
-                elif have_part < need_part:
-                    return [-1, ver]
-            return [0, ver]
+            elif have > need:
+                return [1, ver]
+            elif have < need:
+                return [-1, ver]
+            else:
+                return [0, ver]
         elif need == u'None':
             return [0, u'None']
         return [-1, u'None']

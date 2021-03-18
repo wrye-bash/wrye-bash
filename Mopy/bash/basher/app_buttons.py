@@ -492,9 +492,11 @@ class Game_Button(_ExeButton):
         return tip_
 
     def _app_button_execute(self):
-        if bush.game.Ws._package_name:
+        if bush.ws_info.installed:
+            version_info = bush.ws_info.get_installed_version()
             # Windows Store apps have to be launched entirely differently
-            gm_cmd = u'shell:AppsFolder\\%s!Game' % bush.game.Ws._package_name
+            gm_cmd = u'shell:AppsFolder\\%s!%s' % (
+                bush.ws_info.app_name, version_info.entry_point)
             subprocess.Popen([u'start', gm_cmd], shell=True)
         else:
             exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
@@ -524,7 +526,7 @@ class Game_Button(_ExeButton):
         return u''
 
     def IsPresent(self):
-        if bush.game.Ws._package_name:
+        if bush.ws_info.installed:
             # Always possible to run, even if the EXE is missing/inaccessible
             return True
         return super(Game_Button, self).IsPresent()

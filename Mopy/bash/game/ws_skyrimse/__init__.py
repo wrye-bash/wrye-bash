@@ -30,6 +30,8 @@ class WSSkyrimSEGameInfo(SkyrimSEGameInfo):
     appdata_name = u'Skyrim Special Edition MS'
     my_games_name = u'Skyrim Special Edition MS'
     regInstallKeys = ()
+    game_detect_files = SkyrimSEGameInfo.game_detect_files + [u'appxmanifest.xml']
+    game_detect_excludes = []
 
     class Ws(SkyrimSEGameInfo.Ws):
         publisher_name = u'Bethesda'

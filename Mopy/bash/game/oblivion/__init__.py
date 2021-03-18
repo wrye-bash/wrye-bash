@@ -44,6 +44,7 @@ class OblivionGameInfo(PatchGame):
     # Set to this because that file does not exist in Nehrim, whereas
     # OblivionLauncher.exe and Oblivion.exe do
     game_detect_files = [_j(u'Data', u'Oblivion.esm')]
+    game_detect_excludes = [u'appxmanifest.xml']
     version_detect_file = u'Oblivion.exe'
     master_file = u'Oblivion.esm'
     taglist_dir = u'Oblivion'

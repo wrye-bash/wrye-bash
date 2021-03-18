@@ -52,12 +52,19 @@ from ..bolt import deprint, Path
 from ..exception import CancelError, SkipError, AccessDeniedError, \
     DirectoryFileCollisionError, FileOperationError
 
-# NB: AccessDeniedError is not 5 but 120 as seen in:
+# NOTE(lojack): AccessDenied can be a result of many error codes,
+# According to 
 # https://msdn.microsoft.com/en-us/library/windows/desktop/bb762164%28v=vs.85%29.aspx
+# If you recieve an error code not on that list, then you assume it is one of
+# the default WinError.h error codes, in this case 5 is `ERROR_ACCESS_DENIED`.
+# I actually DO get error code 5, when the game detection for WS games wasn't
+# including the language directories (which caused us to attempt one directory
+# too high in the tree).
 _file_op_error_map = {
     # Returned for Windows Store games that need admin access
-    17: AccessDeniedError,
-    120: AccessDeniedError,
+    5: AccessDeniedError,    # ERROR_ACCESS_DENIED
+    17: AccessDeniedError,   # ERROR_INVALID_ACCESS
+    120: AccessDeniedError,  # DE_ACCESSDENIEDSRC -> source AccessDenied
     # https://msdn.microsoft.com/en-us/library/windows/desktop/ms681383%28v=vs.85%29.aspx
     1223: CancelError,
 }

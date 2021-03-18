@@ -32,12 +32,14 @@ import textwrap
 from . import bass
 from . import game as game_init
 from .bolt import GPath, Path, deprint, dict_sort
-from .env import get_registry_game_paths, get_win_store_game_paths
+from .env import get_registry_game_paths, get_win_store_game_paths, \
+    get_win_store_game_info
 from .exception import BoltError
 from .game import patch_game
 
 # Game detection --------------------------------------------------------------
 game = None         # type: patch_game.PatchGame
+ws_info = None      # type: env.WinAppInfo
 foundGames = {}     # {'name': Path} dict used by the Settings switch game menu
 
 # Module Cache
@@ -47,7 +49,9 @@ _win_store_games = {} # 'name' -> list[path]
 
 def reset_bush_globals():
     global game
+    global ws_info
     game = None
+    ws_info = None
     for d in (_allGames, _registryGames):
         d.clear()
 
@@ -82,16 +86,27 @@ def _supportedGames():
             module = __import__(u'game',globals(),locals(),[modname],-1)
             game_type = getattr(module, modname).GAME_TYPE
             _allGames[game_type.displayName] = game_type
+        except (ImportError, AttributeError):
+            deprint(u'Error in game support module %s' % modname,
+                    traceback=True)
+            continue
+        try:
             # Get this game's install path(s)
             registry_paths = get_registry_game_paths(game_type)
+        except AttributeError:
+            deprint(u'Error getting registry paths for %s'
+                    % game_type.displayName, traceback=True)
+        else:
+            if registry_paths:
+                _registryGames[game_type.displayName] = registry_paths
+        try:
             win_store_paths = get_win_store_game_paths(game_type)
-        except (ImportError, AttributeError):
-            deprint(u'Error in game support module:', modname, traceback=True)
-            continue
-        if registry_paths:
-            _registryGames[game_type.displayName] = registry_paths
-        if win_store_paths:
-            _win_store_games[game_type.displayName] = win_store_paths
+        except AttributeError:
+            deprint(u'Error getting windows store paths for %s' %
+                    game_type.displayName, traceback=True)
+        else:
+            if win_store_paths:
+                _win_store_games[game_type.displayName] = win_store_paths
         del module
     # unload some modules, _supportedGames is meant to run once
     del pkgutil
@@ -110,8 +125,9 @@ def _supportedGames():
     else:
         deprint(u'  No installed games were found via the registry')
     for wrapped_line in textwrap.wrap(
-            u'Make sure to run the launcher of each game you installed through '
-            u'Steam once, otherwise Wrye Bash will not be able to find it.'):
+            u'Make sure to run the launcher of each game you installed '
+            u'through Steam once, otherwise Wrye Bash will not be able to '
+            u'find it.'):
         deprint(u'  ' + wrapped_line)
     deprint(u' 2. Windows Store:')
     if _win_store_games:
@@ -193,10 +209,12 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     for test_path, foundMsg, errorMsg in installPaths.itervalues():
         for gamename, info in _allGames.items():
             if all(test_path.join(g).exists() for g in info.game_detect_files):
-                # Must be this game
-                deprint(foundMsg % {u'gamename': gamename}, test_path)
-                foundGames_[gamename] = [test_path]
-                return foundGames_, gamename, test_path
+                if not any(test_path.join(g).exists()
+                           for g in info.game_detect_excludes):
+                    # Must be this game
+                    deprint(foundMsg % {u'gamename': gamename}, test_path)
+                    foundGames_[gamename] = [test_path]
+                    return foundGames_, gamename, test_path
         # no game exe in this install path - print error message
         deprint(errorMsg % {u'path': test_path})
     # no game found in installPaths - foundGames are the ones from the registry
@@ -205,8 +223,11 @@ def _detectGames(cli_path=u'', bash_ini_=None):
 def __setGame(gamename, gamePath, msg):
     """Set bush game globals - raise if they are already set."""
     global game
-    if game is not None: raise BoltError(u'Trying to reset the game')
+    global ws_info
+    if game is not None or ws_info is not None:
+        raise BoltError(u'Trying to reset the game')
     game = _allGames[gamename](gamePath)
+    ws_info = get_win_store_game_info(game)
     deprint(msg % {u'gamename': gamename}, gamePath)
     # Unload the other modules from the cache
     _allGames.clear()

@@ -29,7 +29,8 @@ from ConfigParser import ConfigParser, MissingSectionHeaderError
 from . import env
 from .bass import dirs, get_ini_option
 from .bolt import GPath, Path, getbestencoding, deprint
-from .env import get_personal_path, get_local_app_data_path
+from .env import get_personal_path, get_local_app_data_path, \
+    get_win_store_game_info
 from .exception import BoltError, NonExistentDriveError
 
 mopy_dirs_initialized = bash_dirs_initialized = False
@@ -86,11 +87,12 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
             % (app_data_local_path, sErrorInfo))
     return app_data_local_path
 
-def getOblivionModsPath(bash_ini_, game_info, is_win_store):
+def getOblivionModsPath(bash_ini_, game_info):
     ob_mods_path = get_path_from_ini(bash_ini_, u'sOblivionMods')
+    ws_info = get_win_store_game_info(game_info)
     if ob_mods_path:
         src = [u'[General]', u'sOblivionMods']
-    elif not is_win_store:
+    elif not ws_info.installed:
         # Currently the standard location, next to the game install
         ob_mods_path = GPath(GPath(u'..').join(u'%s Mods'
                                                % game_info.bash_root_prefix))
@@ -160,12 +162,12 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     #  Local Application Data
     dirs[u'local_appdata'] = localAppData = getLocalAppDataPath(bashIni_,
                                                                 localAppData)
-    # AppData for the game, depends on if it's a WS game or not, detection
-    # method will probably change in the future (_package_name, ew).
-    is_win_store = bool(game_info.Ws._package_name)
-    if is_win_store:
+    # AppData for the game, depends on if it's a WS game or not.
+    ws_info = get_win_store_game_info(game_info)
+    if ws_info.installed:
+        version_info = ws_info.get_installed_version()
         dirs[u'userApp'] = localAppData.join(
-            u'Packages', game_info.Ws._package_name, u'LocalCache', u'Local',
+            u'Packages', version_info.full_name, u'LocalCache', u'Local',
             game_info.appdata_name)
     else:
         dirs[u'userApp'] = localAppData.join(game_info.appdata_name)
@@ -217,8 +219,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     dirs[u'tag_files'] = dirs[u'mods'].join(u'BashTags')
     dirs[u'ini_tweaks'] = dirs[u'mods'].join(u'INI Tweaks')
     #--Mod Data, Installers
-    oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni_, game_info,
-                                                        is_win_store)
+    oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni_, game_info)
     dirs[u'bash_root'] = oblivionMods
     deprint(u'Game Mods location set to %s' % oblivionMods)
     dirs[u'modsBash'], modsBashSrc = getBashModDataPath(bashIni_)
