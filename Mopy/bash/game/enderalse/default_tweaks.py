@@ -20,11 +20,17 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+from collections import OrderedDict
 
 from ..enderal.default_tweaks import default_tweaks
-from ..skyrimse.default_tweaks import add_tweaks, remove_tweaks
 
-# Apply the Skyrim SE tweak additions/removals to the Enderal tweaks
-default_tweaks = {k: v for k, v in default_tweaks.iteritems()
-                  if not k in remove_tweaks}
+# Add new Enderal SE-specific tweaks
+add_tweaks = {
+    u'Save Game Compression, LZ4 ~Default [Enderal].ini': OrderedDict(
+        [(u'SaveGame', OrderedDict([(u'uiCompression', u'2')]))]),
+    u'Save Game Compression, zlib [Enderal].ini': OrderedDict(
+        [(u'SaveGame', OrderedDict([(u'uiCompression', u'1')]))]),
+    u'Save Game Compression, Off [Enderal].ini': OrderedDict(
+        [(u'SaveGame', OrderedDict([(u'uiCompression', u'0')]))]),
+}
 default_tweaks.update(add_tweaks)

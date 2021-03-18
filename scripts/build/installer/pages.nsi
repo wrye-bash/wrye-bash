@@ -84,6 +84,19 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
+        ${If} $Path_EnderalSE != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for EnderalSE"
+                Pop $Check_EnderalSE
+                ${NSD_SetState} $Check_EnderalSE $CheckState_EnderalSE
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_EnderalSE"
+                Pop $PathDialogue_EnderalSE
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_EnderalSE
+                nsDialogs::OnClick $Browse_EnderalSE $Function_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
         nsDialogs::Show
     FunctionEnd
 
@@ -94,6 +107,7 @@
         ${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
         ${NSD_GetText} $PathDialogue_SkyrimSE $Path_SkyrimSE
         ${NSD_GetText} $PathDialogue_Enderal $Path_Enderal
+        ${NSD_GetText} $PathDialogue_EnderalSE $Path_EnderalSE
 
         ; Game states
         ${NSD_GetState} $Check_OB $CheckState_OB
@@ -101,6 +115,7 @@
         ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
         ${NSD_GetState} $Check_Enderal $CheckState_Enderal
+        ${NSD_GetState} $Check_EnderalSE $CheckState_EnderalSE
     FunctionEnd
 
     Function PAGE_INSTALLLOCATIONS_FALLOUT
@@ -286,6 +301,13 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_EnderalSE == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_EnderalSE "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_Fallout3 == ${BST_CHECKED}
             ${StrLoc} $0 $Path_Fallout3 "$PROGRAMFILES\" ">"
             ${If} "0" == $0
@@ -387,6 +409,12 @@
             IntOp $0 $0 + 9
         ${EndIf}
 
+        ${If} $Path_EnderalSE != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u "EnderalSE"
+                Pop $Check_EnderalSE
+            IntOp $0 $0 + 9
+        ${EndIf}
+
         ${If} $Path_Fallout3 != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 8u "Fallout3"
                 Pop $Check_Fallout3
@@ -440,6 +468,7 @@
         ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
         ${NSD_GetState} $Check_Enderal $CheckState_Enderal
+        ${NSD_GetState} $Check_EnderalSE $CheckState_EnderalSE
         ${NSD_GetState} $Check_Fallout3 $CheckState_Fallout3
         ${NSD_GetState} $Check_FalloutNV $CheckState_FalloutNV
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
@@ -473,6 +502,11 @@
         ${If} $CheckState_Enderal == ${BST_CHECKED}
             SetOutPath "$Path_Enderal\Mopy"
             ExecShell "open" "$Path_Enderal\Mopy\Wrye Bash.exe"
+        ${EndIf}
+
+        ${If} $CheckState_EnderalSE == ${BST_CHECKED}
+            SetOutPath "$Path_EnderalSE\Mopy"
+            ExecShell "open" "$Path_EnderalSE\Mopy\Wrye Bash.exe"
         ${EndIf}
 
         ${If} $CheckState_Fallout3 == ${BST_CHECKED}
@@ -510,6 +544,8 @@
                 ExecShell "open" "$Path_SkyrimSE\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_Enderal != $Empty
                 ExecShell "open" "$Path_Enderal\Mopy\Docs\Wrye Bash General Readme.html"
+            ${ElseIf} $Path_EnderalSE != $Empty
+                ExecShell "open" "$Path_EnderalSE\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_Fallout3 != $Empty
                 ExecShell "open" "$Path_Fallout3\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_FalloutNV != $Empty
@@ -541,6 +577,9 @@
             ${EndIf}
             ${If} $Path_Enderal != $Empty
                 !insertmacro RemoveOldFiles "$Path_Enderal"
+            ${EndIf}
+            ${If} $Path_EnderalSE != $Empty
+                !insertmacro RemoveOldFiles "$Path_EnderalSE"
             ${EndIf}
             ${If} $Path_Fallout3 != $Empty
                 !insertmacro RemoveOldFiles "$Path_Fallout3"
@@ -639,6 +678,19 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
+        ${If} $Path_EnderalSE != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 13u "&EnderalSE"
+                Pop $Check_EnderalSE
+                ${NSD_SetState} $Check_EnderalSE $CheckState_EnderalSE
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_EnderalSE"
+                Pop $PathDialogue_EnderalSE
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_EnderalSE
+                nsDialogs::OnClick $Browse_EnderalSE $unFunction_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
         ;${NSD_CreateCheckBox} 0 $0u 100% 13u "Uninstall userfiles/Bash data."
         ;    Pop $Check_RemoveUserFiles
         ;    ${NSD_SetState} $Check_RemoveUserFiles ${BST_CHECKED}
@@ -651,11 +703,13 @@
         ${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
         ${NSD_GetText} $PathDialogue_SkyrimSE $Path_SkyrimSE
         ${NSD_GetText} $PathDialogue_Enderal $Path_Enderal
+        ${NSD_GetText} $PathDialogue_EnderalSE $Path_EnderalSE
         ${NSD_GetState} $Check_OB $CheckState_OB
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
         ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
         ${NSD_GetState} $Check_Enderal $CheckState_Enderal
+        ${NSD_GetState} $Check_EnderalSE $CheckState_EnderalSE
     FunctionEnd
 
     Function un.PAGE_SELECT_GAMES_FALLOUT

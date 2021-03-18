@@ -29,6 +29,7 @@ tested on (previous versions or latest versions may or may not work):
 * Enderal (patch 1.6.4.0)
 * Fallout 4 (patch 1.10.163.0)
 * Skyrim Special Edition (patch 1.5.97.0)
+* Enderal Special Edition (patch 1.6.4.0)
 
 **Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 4 and
 Skyrim Special Edition are supported as well.
@@ -140,3 +141,4 @@ bleeding edge branch. Commits land here for testing.
   [22]: https://www.nexusmods.com/enderal/mods/97
   [23]: https://www.nexusmods.com/nehrim/mods/2
   [24]: https://github.com/wrye-bash/wrye-bash/blob/dev/Contributing.md
+  [25]: https://www.nexusmods.com/enderalspecialedition/mods/7

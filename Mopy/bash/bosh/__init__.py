@@ -2376,7 +2376,7 @@ class ModInfos(FileInfos):
             fileInfo = self[fileName]
             cs_name = fileName.cs
             if cs_name in bush.game.bethDataFiles:
-                if return_results: reasons.append(_(u'Is Bethesda Plugin.'))
+                if return_results: reasons.append(_(u'Is Vanilla Plugin.'))
                 canMerge = False
             elif fileInfo.is_esl():
                 # Do not mark esls as esl capable

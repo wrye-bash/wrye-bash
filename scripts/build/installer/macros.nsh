@@ -708,6 +708,11 @@
             ReadRegStr $Path_Enderal HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Enderal Path"
         ${EndIf}
 
+        ReadRegStr $Path_EnderalSE HKLM "SOFTWARE\Wrye Bash" "EnderalSE Path"
+        ${If} $Path_EnderalSE == $Empty
+            ReadRegStr $Path_EnderalSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "EnderalSE Path"
+        ${EndIf}
+
         ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
         ${If} $Path_Ex1 == $Empty
             ReadRegStr $Path_Ex1 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1"
@@ -759,6 +764,11 @@
         ReadRegStr $Path_Enderal HKLM "SOFTWARE\Wrye Bash" "Enderal Path"
         ${If} $Path_Enderal == $Empty
             ReadRegStr $Path_Enderal HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Enderal Path"
+        ${EndIf}
+
+        ReadRegStr $Path_EnderalSE HKLM "SOFTWARE\Wrye Bash" "EnderalSE Path"
+        ${If} $Path_EnderalSE == $Empty
+            ReadRegStr $Path_EnderalSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "EnderalSE Path"
         ${EndIf}
 
         ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"

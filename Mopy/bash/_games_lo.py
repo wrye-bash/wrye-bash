@@ -1189,7 +1189,13 @@ class AsteriskGame(Game):
     _ccc_fallback = ()
     _star = True
 
-    def pinned_mods(self): return self._active_entries_to_remove()
+    def _active_entries_to_remove(self):
+        return super(AsteriskGame, self)._active_entries_to_remove() | set(
+            self.must_be_active_if_present)
+
+    def pinned_mods(self):
+        return super(AsteriskGame, self).pinned_mods() | set(
+            self.must_be_active_if_present)
 
     def load_order_changed(self): return self._plugins_txt_modified()
 
@@ -1581,10 +1587,6 @@ class Fallout4(AsteriskGame):
         u'ccCRSFO4001-PipCoA.esl',
     ))
 
-    def _active_entries_to_remove(self):
-        return {GPath_no_norm(u'Fallout4.esm')} | set(
-            self.must_be_active_if_present)
-
 class Fallout4VR(Fallout4):
     must_be_active_if_present = Fallout4.must_be_active_if_present + (
         GPath_no_norm(u'Fallout4_VR.esm'),)
@@ -1657,17 +1659,24 @@ class SkyrimSE(AsteriskGame):
         u'ccEEJSSE004-Hall.esl',
     ))
 
-    def _active_entries_to_remove(self):
-        return {GPath_no_norm(u'Skyrim.esm')} | set(
-            self.must_be_active_if_present)
-
 class SkyrimVR(SkyrimSE):
     must_be_active_if_present = SkyrimSE.must_be_active_if_present + (
         GPath_no_norm(u'SkyrimVR.esm'),)
     _ccc_filename = u''
 
 class EnderalSE(SkyrimSE):
-    must_be_active_if_present = Enderal.must_be_active_if_present
+    # Update.esm is forcibly loaded after the (empty) DLC plugins by the game
+    must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
+        u'Dawnguard.esm', u'Hearthfires.esm', u'Dragonborn.esm', u'Update.esm',
+        u'Enderal - Forgotten Stories.esm',
+    ))
+
+    def _active_entries_to_remove(self):
+        return super(EnderalSE, self)._active_entries_to_remove() - {
+            # Enderal - Forgotten Stories.esm is *not* hardcoded to load, so
+            # don't remove it from the LO
+            GPath_no_norm(u'Enderal - Forgotten Stories.esm'),
+        }
 
 # WindowsStoreGame overrides
 class SkyrimSEWS(WindowsStoreGame, SkyrimSE): pass

@@ -54,6 +54,7 @@ ManifestDPIAware true
     Var Path_Fallout3
     Var Path_FalloutNV
     Var Path_Enderal
+    Var Path_EnderalSE
     Var Path_Ex1
     Var Path_Ex2
 
@@ -67,6 +68,7 @@ ManifestDPIAware true
     Var Check_Fallout3
     Var Check_FalloutNV
     Var Check_Enderal
+    Var Check_EnderalSE
     Var Check_Ex1
     Var Check_Ex2
     Var CheckState_OB
@@ -78,6 +80,7 @@ ManifestDPIAware true
     Var CheckState_Fallout3
     Var CheckState_FalloutNV
     Var CheckState_Enderal
+    Var CheckState_EnderalSE
     Var CheckState_Ex1
     Var CheckState_Ex2
     Var PathDialogue_OB
@@ -88,6 +91,7 @@ ManifestDPIAware true
     Var PathDialogue_Fallout3
     Var PathDialogue_FalloutNV
     Var PathDialogue_Enderal
+    Var PathDialogue_EnderalSE
     Var PathDialogue_Ex1
     Var PathDialogue_Ex2
     Var Browse_OB
@@ -98,6 +102,7 @@ ManifestDPIAware true
     Var Browse_Fallout3
     Var Browse_FalloutNV
     Var Browse_Enderal
+    Var Browse_EnderalSE
     Var Browse_Ex1
     Var Browse_Ex2
     Var Check_Readme
@@ -213,9 +218,24 @@ ManifestDPIAware true
 
         ${If} $Path_Enderal == $Empty
             ReadRegStr $Path_Enderal HKCU "Software\SureAI\Enderal" "Install_Path"
+            ${If} $Path_Enderal == $Empty
+                ReadRegStr $Path_Enderal HKCU "SOFTWARE\WOW6432Node\SureAI\Enderal" "Install_Path"
+            ${EndIf}
         ${EndIf}
         ${If} $Path_Enderal != $Empty
             StrCpy $CheckState_Enderal ${BST_CHECKED}
+        ${EndIf}
+
+        ${If} $Path_EnderalSE == $Empty
+            ; This is in HKCU. There's also one in HKLM that uses
+            ; 'SureAI\Enderal SE' for some reason
+            ReadRegStr $Path_EnderalSE HKCU "Software\SureAI\EnderalSE" "Install_Path"
+            ${If} $Path_EnderalSE == $Empty
+                ReadRegStr $Path_EnderalSE HKCU "SOFTWARE\WOW6432Node\SureAI\EnderalSE" "Install_Path"
+            ${EndIf}
+        ${EndIf}
+        ${If} $Path_EnderalSE != $Empty
+            StrCpy $CheckState_EnderalSE ${BST_CHECKED}
         ${EndIf}
 
         ${If} $Path_Ex1 != $Empty
@@ -249,6 +269,8 @@ ManifestDPIAware true
             StrCpy $1 $PathDialogue_FalloutNV
         ${ElseIf} $0 == $Browse_Enderal
             StrCpy $1 $PathDialogue_Enderal
+        ${ElseIf} $0 == $Browse_EnderalSE
+            StrCpy $1 $PathDialogue_EnderalSE
         ${ElseIf} $0 == $Browse_Ex1
             StrCpy $1 $PathDialogue_Ex1
         ${ElseIf} $0 == $Browse_Ex2
@@ -303,6 +325,8 @@ ManifestDPIAware true
             StrCpy $1 $PathDialogue_FalloutNV
         ${ElseIf} $0 == $Browse_Enderal
             StrCpy $1 $PathDialogue_Enderal
+        ${ElseIf} $0 == $Browse_EnderalSE
+            StrCpy $1 $PathDialogue_EnderalSE
         ${ElseIf} $0 == $Browse_Ex1
             StrCpy $1 $PathDialogue_Ex1
         ${ElseIf} $0 == $Browse_Ex2

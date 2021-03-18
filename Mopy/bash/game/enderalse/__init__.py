@@ -42,10 +42,50 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     # SE has SkyrimSE.exe, but no Enderal Launcher.exe
     game_detect_includes = [u'Enderal Launcher.exe', u'SkyrimSE.exe']
     loot_dir = u'Enderal Special Edition'
+    # This is in HKCU. There's also one in HKLM that uses 'SureAI\Enderal SE'
+    # for some reason
     regInstallKeys = (u'SureAI\\EnderalSE', u'Install_Path')
     nexusUrl = u'https://www.nexusmods.com/enderalspecialedition/'
     nexusName = u'Enderal Special Edition Nexus'
     nexusKey = u'bash.installers.openEnderalSENexus.continue'
+
+    class Ini(EnderalGameInfo.Ini):
+        save_prefix = u'..\\Enderal Special Edition\\Saves'
+
+    bethDataFiles = {
+        u'skyrim.esm',
+        u'dawnguard.esm',
+        u'hearthfires.esm',
+        u'dragonborn.esm',
+        u'update.esm',
+        u'enderal - forgotten stories.esm',
+        u'e - meshes.bsa',
+        u'e - scripts.bsa',
+        u'e - se.bsa',
+        u'e - sounds.bsa',
+        u'e - textures1.bsa',
+        u'e - textures2.bsa',
+        u'e - textures3.bsa',
+        u'l - textures.bsa',
+        u'l - voices.bsa',
+        u'skyrim - animations.bsa',
+        u'skyrim - interface.bsa',
+        u'skyrim - meshes0.bsa',
+        u'skyrim - meshes1.bsa',
+        u'skyrim - misc.bsa',
+        u'skyrim - patch.bsa',
+        u'skyrim - shaders.bsa',
+        u'skyrim - sounds.bsa',
+        u'skyrim - textures0.bsa',
+        u'skyrim - textures1.bsa',
+        u'skyrim - textures2.bsa',
+        u'skyrim - textures3.bsa',
+        u'skyrim - textures4.bsa',
+        u'skyrim - textures5.bsa',
+        u'skyrim - textures6.bsa',
+        u'skyrim - textures7.bsa',
+        u'skyrim - textures8.bsa',
+    }
 
     @classmethod
     def init(cls):

@@ -79,6 +79,13 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_EnderalSE == ${BST_CHECKED}
+            ; Install resources:
+            ${If} $Path_EnderalSE != $Empty
+                !insertmacro InstallBashFiles "EnderalSE" "EnderalSE" "$Path_EnderalSE" "EnderalSE Path"
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Ex1 != $Empty
@@ -173,6 +180,14 @@
                 SetOutPath $Path_Enderal\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Enderal.lnk" "$Path_Enderal\Mopy\Wrye Bash.exe"
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Enderal (Debug Log).lnk" "$Path_Enderal\Mopy\Wrye Bash.exe" "-d"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_EnderalSE == ${BST_CHECKED}
+            ${If} $Path_EnderalSE != $Empty
+                SetOutPath $Path_EnderalSE\Mopy
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - EnderalSE.lnk" "$Path_EnderalSE\Mopy\Wrye Bash.exe"
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - EnderalSE (Debug Log).lnk" "$Path_EnderalSE\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
