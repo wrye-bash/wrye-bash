@@ -20,6 +20,7 @@ contributing.
 Here is a list of supported games with the minimal patch version that Bash was
 tested on (previous versions or latest versions may or may not work):
 
+* Morrowind (very early support, patch 1.6.1820)
 * Oblivion (patch 1.2.0.416)
 * Nehrim (patch 2.0.2.4)
 * Fallout 3 (patch 1.7.0.3)
@@ -28,6 +29,9 @@ tested on (previous versions or latest versions may or may not work):
 * Enderal (patch 1.6.4.0)
 * Fallout 4 (patch 1.10.163.0)
 * Skyrim Special Edition (patch 1.5.97.0)
+
+**Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 4 and
+Skyrim Special Edition are supported as well.
 
 ### Download
 
