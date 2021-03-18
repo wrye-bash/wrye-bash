@@ -40,6 +40,8 @@ from ...exception import AbstractError, BoltError, ModSigMismatchError
 ##: add ForceAdd support
 ##: once the two tasks above are done, absorb all other mergers
 ##: a lot of code still shared with _APreserver - move to ImportPatcher
+##: add CSV support - we broke Import Relations when we made it an _AMerger
+# instance (the GUI will still list them too)
 class _AMerger(ImportPatcher):
     """Still very WIP base class for mergers."""
     # Bash tags for each function of the merger. None means that it does not

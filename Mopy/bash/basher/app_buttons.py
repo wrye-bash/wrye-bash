@@ -508,8 +508,8 @@ class Game_Button(_ExeButton):
             elif BashStatusBar.obseButton.button_state:
                 # OBSE refuses to start when its EXE is launched on a Steam
                 # installation
-                if bush.game.fsName != u'Oblivion' or not bass.dirs[u'app'].join(
-                        u'installscript.vdf').isfile():
+                if (bush.game.fsName != u'Oblivion'
+                        or u'steam' not in bass.dirs[u'app'].cs):
                     # Should use the xSE launcher if it's present
                     exe_path = (exe_xse if exe_xse.isfile() else exe_path)
             self._run_exe(exe_path, [exe_path.s])
