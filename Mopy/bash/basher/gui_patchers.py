@@ -91,6 +91,9 @@ class _PatcherPanel(object):
                  LayoutOptions(weight=0))])
         self.main_layout.apply_to(self.gConfigPanel)
         config_layout.add(self.gConfigPanel)
+        # Bold the patcher if it's new, but the patch itself isn't new
+        if not self._was_present and not self._GetIsFirstLoad():
+            self._BoldPatcherLabel()
         return self.gConfigPanel
 
     def Layout(self):
@@ -110,7 +113,10 @@ class _PatcherPanel(object):
         config for this patch stored in modInfos.table[patch][
         'bash.patch.configs']. If no config is saved then the class
         default_XXX values are used for the relevant attributes."""
-        config = configs.setdefault(self.__class__._config_key, {})
+        # Remember whether we were present in the config for bolding later
+        self._was_present = self.__class__._config_key in configs
+        config = (configs[self.__class__._config_key]
+                  if self._was_present else {})
         self.isEnabled = config.get('isEnabled',
                                     self.__class__.default_isEnabled)
         # return the config dict for this patcher to read additional values

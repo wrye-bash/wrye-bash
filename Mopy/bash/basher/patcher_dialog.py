@@ -101,7 +101,8 @@ class PatchDialog(DialogWindow):
         self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
         for index,patcher in enumerate(self._gui_patchers):
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
-        self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
+        self.defaultTipText = _(u'Items that are new since the last time this '
+                                u'patch was built are displayed in bold.')
         self.gTipText = Label(self,self.defaultTipText)
         #--Events
         self.gPatchers.on_mouse_leaving.subscribe(self._mouse_leaving)
