@@ -23,6 +23,7 @@
 """GameInfo override for the Windows Store version of Fallout 4."""
 
 from ..fallout4 import Fallout4GameInfo
+from .. import WS_COMMON
 
 class WSFallout4GameInfo(Fallout4GameInfo):
     displayName = u'Fallout 4 (WS)'
@@ -30,7 +31,7 @@ class WSFallout4GameInfo(Fallout4GameInfo):
     appdata_name = u'Fallout 4 MS'
     my_games_name = u'Fallout 4 MS'
     regInstallKeys = ()
-    game_detect_files = Fallout4GameInfo.game_detect_files + [u'appxmanifest.xml']
+    game_detect_includes = Fallout4GameInfo.game_detect_includes + WS_COMMON
     game_detect_excludes = []
 
     class Ws(Fallout4GameInfo.Ws):

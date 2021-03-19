@@ -37,7 +37,7 @@ class EnderalGameInfo(SkyrimGameInfo):
     appdata_name = u'Enderal'
     # Enderal SE also has an Enderal Launcher.exe, but no TESV.exe. Skyrim LE
     # has TESV.exe, but no Enderal Launcher.exe
-    game_detect_files = [u'Enderal Launcher.exe', u'TESV.exe']
+    game_detect_includes = [u'Enderal Launcher.exe', u'TESV.exe']
     # This isn't exact (currently 1.5.0 when it should be 1.5.7), but it's the
     # closest we're going to get
     version_detect_file = u'Enderal Launcher.exe'

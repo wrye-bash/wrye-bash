@@ -791,7 +791,7 @@ _HEADING = 3
 # END TASKDIALOG PART =========================================================
 
 # API - Functions =============================================================
-def get_registry_path(subkey, entry, detection_files):
+def get_registry_path(subkey, entry, test_path_callback):
     """Check registry for a path to a program."""
     if not winreg: return None
     for hkey in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
@@ -806,8 +806,7 @@ def get_registry_path(subkey, entry, detection_files):
             if reg_val[1] != winreg.REG_SZ: continue
             installPath = GPath(reg_val[0])
             if not installPath.exists(): continue
-            if not all(installPath.join(g).exists() for g in detection_files):
-                continue
+            if not test_path_callback(installPath): continue
             return installPath
     return None
 
@@ -817,7 +816,7 @@ def get_registry_game_paths(submod):
     if not reg_keys:
         return [] # Game is not detectable via registry
     subkey, entry = reg_keys
-    reg_path = get_registry_path(subkey, entry, submod.game_detect_files)
+    reg_path = get_registry_path(subkey, entry, submod.test_game_path)
     return [] if not reg_path else [reg_path]
 
 def get_win_store_game_info(submod):

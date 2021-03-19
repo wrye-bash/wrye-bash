@@ -23,6 +23,7 @@
 """GameInfo override for the Windows Store version of Skyrim SE."""
 
 from ..skyrimse import SkyrimSEGameInfo
+from .. import WS_COMMON
 
 class WSSkyrimSEGameInfo(SkyrimSEGameInfo):
     displayName = u'Skyrim Special Edition (WS)'
@@ -30,7 +31,7 @@ class WSSkyrimSEGameInfo(SkyrimSEGameInfo):
     appdata_name = u'Skyrim Special Edition MS'
     my_games_name = u'Skyrim Special Edition MS'
     regInstallKeys = ()
-    game_detect_files = SkyrimSEGameInfo.game_detect_files + [u'appxmanifest.xml']
+    game_detect_includes = SkyrimSEGameInfo.game_detect_includes + WS_COMMON
     game_detect_excludes = []
 
     class Ws(SkyrimSEGameInfo.Ws):

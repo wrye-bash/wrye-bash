@@ -23,6 +23,7 @@
 """GameInfo override for TES V: Skyrim Special Edition."""
 
 from ..skyrim import SkyrimGameInfo
+from .. import WS_COMMON
 from ... import brec
 from ...brec import MreFlst, MreGlob
 
@@ -36,10 +37,10 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     appdata_name = u'Skyrim Special Edition'
     launch_exe = u'SkyrimSE.exe'
     # Set to this because SkyrimSE.exe also exists for Enderal SE
-    game_detect_files = [u'SkyrimSELauncher.exe']
+    game_detect_includes = [u'SkyrimSELauncher.exe']
     # Steam/GOG SkyrimSE has SkyrimSELauncher.exe, but no appxmanifest.xml
     # Windows Store SkryimSE has SkyrimSELauncher.exe and appxmanifest.xml
-    game_detect_excludes = [u'appxmanifest.xml']
+    game_detect_excludes = WS_COMMON
     version_detect_file = u'SkyrimSE.exe'
     taglist_dir = u'SkyrimSE'
     loot_dir = u'Skyrim Special Edition'

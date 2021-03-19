@@ -23,13 +23,14 @@
 """GameInfo override for the Windows Store version of Oblivion."""
 
 from ..oblivion import OblivionGameInfo
+from .. import WS_COMMON
 
 class WSOblivionGameInfo(OblivionGameInfo):
     displayName = u'Oblivion (WS)'
     # `appdata_name` and `my_games_name` use the original locations, unlike
     # other Windows Store games.
     regInstallKeys = ()
-    game_detect_files = OblivionGameInfo.game_detect_files + [u'appxmanifest.xml']
+    game_detect_includes = OblivionGameInfo.game_detect_includes + WS_COMMON
     game_detect_excludes = []
 
     class Ws(OblivionGameInfo.Ws):

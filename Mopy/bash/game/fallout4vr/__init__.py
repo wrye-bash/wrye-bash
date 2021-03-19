@@ -36,7 +36,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     my_games_name = u'Fallout4VR'
     appdata_name = u'Fallout4VR'
     launch_exe = u'Fallout4VR.exe'
-    game_detect_files = [u'Fallout4VR.exe']
+    game_detect_includes = [u'Fallout4VR.exe']
     version_detect_file = u'Fallout4VR.exe'
     master_file = u'Fallout4.esm'
     loot_dir = u'Fallout4VR'

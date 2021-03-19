@@ -78,7 +78,7 @@ class GameInfo(object):
     # file is shared by multiple games, in which case you MUST find unique
     # files - for an example, see Enderal and Skyrim (and the SE versions of
     # both).
-    game_detect_files = []
+    game_detect_includes = []
     # Path to one or more files to look for to see if this is *not* the right
     # game when joined with the game's root path. Used to differentia between
     # versions of the game distributed on different platforms (Windows Store).
@@ -496,5 +496,16 @@ class GameInfo(object):
         game_types.update(
             chain.from_iterable(c.__subclasses__() for c in list(game_types)))
         return game_types
+
+    @classmethod
+    def test_game_path(cls, test_path):
+        """Helper method to determine if required game detection files are
+           present, and no excluded files are present, in the test path."""
+        return (all(test_path.join(p).exists()
+                for p in cls.game_detect_includes) and not
+                any(test_path.join(p).exists()
+                for p in cls.game_detect_excludes))
+
+WS_COMMON = [u'appxmanifest.xml']
 
 GAME_TYPE = None

@@ -26,6 +26,7 @@ from collections import defaultdict
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
+from .. import WS_COMMON
 from ... import brec
 from ...brec import MreGlob, MreLand
 
@@ -43,8 +44,8 @@ class OblivionGameInfo(PatchGame):
     launch_exe = u'Oblivion.exe'
     # Set to this because that file does not exist in Nehrim, whereas
     # OblivionLauncher.exe and Oblivion.exe do
-    game_detect_files = [_j(u'Data', u'Oblivion.esm')]
-    game_detect_excludes = [u'appxmanifest.xml']
+    game_detect_includes = [_j(u'Data', u'Oblivion.esm')]
+    game_detect_excludes = WS_COMMON
     version_detect_file = u'Oblivion.exe'
     master_file = u'Oblivion.esm'
     taglist_dir = u'Oblivion'

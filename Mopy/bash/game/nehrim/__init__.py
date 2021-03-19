@@ -34,7 +34,7 @@ class NehrimGameInfo(OblivionGameInfo):
     game_icon = u'nehrim_%u.png'
     bash_root_prefix = u'Nehrim'
     bak_game_name = u'Nehrim'
-    game_detect_files = [u'NehrimLauncher.exe']
+    game_detect_includes = [u'NehrimLauncher.exe']
     master_file = u'Nehrim.esm'
     loot_dir = u'Nehrim'
     boss_game_name = u'Nehrim'

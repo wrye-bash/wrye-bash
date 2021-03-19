@@ -208,13 +208,11 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
     for test_path, foundMsg, errorMsg in installPaths.itervalues():
         for gamename, info in _allGames.items():
-            if all(test_path.join(g).exists() for g in info.game_detect_files):
-                if not any(test_path.join(g).exists()
-                           for g in info.game_detect_excludes):
-                    # Must be this game
-                    deprint(foundMsg % {u'gamename': gamename}, test_path)
-                    foundGames_[gamename] = [test_path]
-                    return foundGames_, gamename, test_path
+            if info.test_game_path(test_path):
+                # Must be this game
+                deprint(foundMsg % {u'gamename': gamename}, test_path)
+                foundGames_[gamename] = [test_path]
+                return foundGames_, gamename, test_path
         # no game exe in this install path - print error message
         deprint(errorMsg % {u'path': test_path})
     # no game found in installPaths - foundGames are the ones from the registry

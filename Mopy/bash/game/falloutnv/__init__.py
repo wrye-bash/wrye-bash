@@ -37,7 +37,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     my_games_name = u'FalloutNV'
     appdata_name = u'FalloutNV'
     launch_exe = u'FalloutNV.exe'
-    game_detect_files = [u'FalloutNV.exe']
+    game_detect_includes = [u'FalloutNV.exe']
     version_detect_file = u'FalloutNV.exe'
     master_file = u'FalloutNV.esm'
     taglist_dir = u'FalloutNV'

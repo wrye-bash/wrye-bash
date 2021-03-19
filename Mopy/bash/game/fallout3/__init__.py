@@ -40,7 +40,7 @@ class Fallout3GameInfo(PatchGame):
     my_games_name = u'Fallout3'
     appdata_name = u'Fallout3'
     launch_exe = u'Fallout3.exe'
-    game_detect_files = [u'Fallout3.exe']
+    game_detect_includes = [u'Fallout3.exe']
     version_detect_file = u'Fallout3.exe'
     master_file = u'Fallout3.esm'
     taglist_dir = u'Fallout3'

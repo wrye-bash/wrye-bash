@@ -25,6 +25,7 @@ import struct as _struct
 from collections import defaultdict
 
 from ..patch_game import GameInfo, PatchGame
+from .. import WS_COMMON
 from ... import brec
 
 class MorrowindGameInfo(PatchGame):
@@ -37,8 +38,8 @@ class MorrowindGameInfo(PatchGame):
     uses_personal_folders = False
     appdata_name = u'Morrowind'
     launch_exe = u'Morrowind.exe'
-    game_detect_files = [u'Morrowind.exe']
-    game_detect_excludes = [u'appxmanifest.xml']
+    game_detect_includes = [u'Morrowind.exe']
+    game_detect_excludes = WS_COMMON
     version_detect_file = u'Morrowind.exe'
     master_file = u'Morrowind.esm'
     mods_dir = u'Data Files'

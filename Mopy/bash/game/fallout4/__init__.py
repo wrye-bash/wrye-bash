@@ -25,6 +25,7 @@
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
+from .. import WS_COMMON
 from ... import brec
 
 class Fallout4GameInfo(PatchGame):
@@ -37,8 +38,8 @@ class Fallout4GameInfo(PatchGame):
     my_games_name = u'Fallout4'
     appdata_name = u'Fallout4'
     launch_exe = u'Fallout4.exe'
-    game_detect_files = [u'Fallout4.exe']
-    game_detect_excludes = [u'appxmanifest.xml']
+    game_detect_includes = [u'Fallout4.exe']
+    game_detect_excludes = WS_COMMON
     version_detect_file = u'Fallout4.exe'
     master_file = u'Fallout4.esm'
     taglist_dir = u'Fallout4'

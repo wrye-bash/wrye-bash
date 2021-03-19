@@ -39,7 +39,7 @@ class SkyrimGameInfo(PatchGame):
     appdata_name = u'Skyrim'
     launch_exe = u'TESV.exe'
     # Set to this because TESV.exe also exists for Enderal
-    game_detect_files = [u'SkyrimLauncher.exe']
+    game_detect_includes = [u'SkyrimLauncher.exe']
     version_detect_file = u'TESV.exe'
     master_file = u'Skyrim.esm'
     taglist_dir = u'Skyrim'

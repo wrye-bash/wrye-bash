@@ -23,12 +23,13 @@
 """GameInfo override for the Windows Store version of Morrowind."""
 
 from ..morrowind import MorrowindGameInfo
+from .. import WS_COMMON
 
 class WSMorrowindGameInfo(MorrowindGameInfo):
     displayName = u'Morrowind (WS)'
     # Morrowind does not use the personal folders, so no my_games_name etc.
     regInstallKeys = ()
-    game_detect_files = MorrowindGameInfo.game_detect_files + [u'appxmanifest.xml']
+    game_detect_includes = MorrowindGameInfo.game_detect_includes + WS_COMMON
     game_detect_excludes = []
 
     class Ws(MorrowindGameInfo.Ws):
