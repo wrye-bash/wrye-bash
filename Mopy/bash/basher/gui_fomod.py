@@ -57,11 +57,17 @@ class InstallerFomod(WizardDialog):
             target_installer.extras_dict.get(u'root_path', u'')
             if target_installer.fileRootIdex else u'')
         fm_file = target_installer.fomod_file().s
-        gver = env.get_file_version(bass.dirs[u'app'].join(
-            bush.game.version_detect_file).s)
+        if bush.ws_info.installed:
+            # Windows store game
+            gver = bush.ws_info.get_installed_version().version
+        else:
+            # Standard game
+            gver = env.get_file_version(bass.dirs[u'app'].join(
+                bush.game.version_detect_file).s)
+        version_string = u'.'.join([unicode(i) for i in gver])
         self.fomod_parser = FomodInstaller(
             fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],
-            u'.'.join([unicode(i) for i in gver]))
+            version_string)
         super(InstallerFomod, self).__init__(
             parent_window, sizes_dict=bass.settings,
             title=_(u'FOMOD Installer - %s') % self.fomod_parser.fomod_name,
