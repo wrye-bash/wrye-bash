@@ -280,6 +280,9 @@ class OblivionGameInfo(PatchGame):
         u'dlcshiveringisles - sounds.bsa',
         u'dlcshiveringisles - textures.bsa',
         u'dlcshiveringisles - voices.bsa',
+        #--Knights of the Nine - shipped with all WS versions
+        u'knights.esp',
+        u'knights.bsa',
     }
 
     @classmethod
