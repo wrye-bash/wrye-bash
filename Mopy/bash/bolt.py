@@ -31,6 +31,7 @@ import collections
 import copy
 import datetime
 import errno
+import io
 import os
 import re
 import shutil
@@ -48,6 +49,7 @@ from itertools import chain, izip
 from keyword import iskeyword
 from operator import attrgetter
 from urllib import quote
+from contextlib import contextmanager
 
 import chardet
 
@@ -1701,11 +1703,20 @@ deprintOn = False
 
 import inspect
 def deprint(*args,**keyargs):
-    """Prints message along with file and line location."""
+    """Prints message along with file and line location.
+       Available keyword arguements:
+       trace: (default True) - if a Truthy value, displays the module,
+              line number, and function this was used from
+       traceback: (default False) - if a Truthy value, prints any tracebacks
+              for exceptions that have occurred.
+       frame: (default 1) - With `trace`, determines the function caller's
+              frame for getting the function name
+    """
     if not deprintOn and not keyargs.get(u'on'): return
     if keyargs.get(u'trace', True):
+        frame = keyargs.get(u'frame', 1)
         stack = inspect.stack()
-        file_, line, function = stack[1][1:4]
+        file_, line, function = stack[frame][1:4]
         msg = u'%s %4d %s: ' % (GPath(file_).tail, line, function)
     else:
         msg = u''
@@ -1736,6 +1747,22 @@ def deprint(*args,**keyargs):
     except UnicodeError:
         # Nope, it's going somewhere else
         print(msg.encode(Path.sys_fs_enc))
+
+@contextmanager
+def redirect_stdout_to_deprint(use_bytes=True): # PY3: redirect_stdout
+    old_stdout = sys.stdout
+    io_type = (io.StringIO, io.BytesIO)[use_bytes]
+    with io_type() as io_stream:
+        sys.stdout = io_stream
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+            # 1 = this function's frame
+            # 2 = @contextmanager's frame
+            # 3 = caller's frame
+            # rstrip to remove newlines due to using io.<*>IO
+            deprint(io_stream.getvalue().rstrip(), frame=3)
 
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""

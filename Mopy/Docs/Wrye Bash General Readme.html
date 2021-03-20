@@ -1669,7 +1669,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 
 <h3 id="trouble-known">Known Bugs <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Wrye Bash, being a complex program, has its share of bugs.
-    Visit our <a href="https://github.com/wrye-bash/wrye-bash/issues">issue tracker</a> for know bugs and enhancement requests.
+    Visit our <a href="https://github.com/wrye-bash/wrye-bash/issues">issue tracker</a> for known bugs and enhancement requests.
 Respect developer's time - keep discussions there short, sweet and technical. No walls of text or forum chit chat.
 
 <h3 id="trouble-mistakes">Common Issues <a class="back2top" href="#contents">Back to top</a></h3>
@@ -1683,6 +1683,22 @@ Respect developer's time - keep discussions there short, sweet and technical. No
         <tr><td>The NTVDM CPU has encountered an illegal instruction.<td>This is a Python issue that causes the installation of PyWin32 (part of the Wrye Python bundle) to fail.<td> One workaround is to use the Standalone version of Wrye Bash. The alternative is to <a href="https://pypi.org/project/pywin32/">install it seperately</a>, after installing Wrye Bash.
         <tr><td>Wrye Bash will not start, and no Bug Dump can be generated<td>Wrye Bash is installed in a directory with unicode characters, and the Python interpreter has problems importing files in such directories.<td>Reinstall Wrye Bash to a directory without unicode characters.
         <tr><td>File not found errors<td>Mapped paths and junction links can confuse Wrye Bash, leading to file not found errors.<td>Avoid using mapped paths and junction links for your game install.
+        <tr>
+            <td>Failed to retrieve known folder path</td>
+            <td>This is almost always caused by OneDrive taking control of your
+                My Documents folder.</td>
+            <td>Follow the directions found in
+                <a href="https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057">this link</a>
+                and remove the Documents folder from OneDrive.</td>
+        </tr>
+        <tr>
+            <td>IOError: [Errno 22] Invalid argument</td>
+            <td>This is almost always caused by OneDrive taking control of your
+                My Documents folder.</td>
+            <td>Follow the directions found in
+                <a href="https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057">this link</a>
+                and remove the Documents folder from OneDrive.</td>
+        </tr>
 </table>
 
 
