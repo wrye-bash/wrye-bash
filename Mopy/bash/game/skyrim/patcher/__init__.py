@@ -466,82 +466,20 @@ pricesTypes = {
 # Import Stats
 #------------------------------------------------------------------------------
 statsTypes = {
-        b'ALCH':('eid', 'weight', 'value'),
-        b'AMMO':('eid', 'value', 'damage'),
-        b'APPA':('eid', 'weight', 'value'),
-        b'ARMO':('eid', 'weight', 'value', 'armorRating'),
-        b'BOOK':('eid', 'weight', 'value'),
-        b'INGR':('eid', 'weight', 'value'),
-        b'KEYM':('eid', 'weight', 'value'),
-        b'LIGH':('eid', 'weight', 'value', 'duration'),
-        b'MISC':('eid', 'weight', 'value'),
-        b'SLGM':('eid', 'weight', 'value'),
-        b'WEAP':('eid', 'weight', 'value', 'damage', 'speed', 'reach',
-                'enchantPoints', 'stagger', 'critDamage','criticalMultiplier',
-                'criticalEffect',),
+        b'ALCH':(u'eid', u'weight', u'value'),
+        b'AMMO':(u'eid', u'value', u'damage'),
+        b'APPA':(u'eid', u'weight', u'value'),
+        b'ARMO':(u'eid', u'weight', u'value', u'armorRating'),
+        b'BOOK':(u'eid', u'weight', u'value'),
+        b'INGR':(u'eid', u'weight', u'value'),
+        b'KEYM':(u'eid', u'weight', u'value'),
+        b'LIGH':(u'eid', u'weight', u'value', u'duration'),
+        b'MISC':(u'eid', u'weight', u'value'),
+        b'SLGM':(u'eid', u'weight', u'value'),
+        b'WEAP':(u'eid', u'weight', u'value', u'damage', u'speed', u'reach',
+                 u'enchantPoints', u'stagger', u'critDamage',
+                 u'criticalMultiplier', u'criticalEffect',),
     }
-statsHeaders = (
-    #--Alch
-    (u'ALCH',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #--Ammo
-    (u'AMMO',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #--Apparatus
-    (u'APPA',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #--Armo
-    (u'ARMO',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'armorRating'))) + u'"\n')),
-    #Books
-    (u'BOOK',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-        #Ingredients
-    (u'INGR',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #--Keys
-    (u'KEYM',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #Lights
-    (u'LIGH',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Duration'))) + u'"\n')),
-    #--Misc
-    (u'MISC',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #Soulgems
-    (u'SLGM',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #--Weapons
-    (u'WEAP',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Damage'),
-        _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
-)
-item_attr_type = {
-    u'eid': u'sstr',
-    u'weight': u'sfloat',
-    u'value': u'sint',
-    u'damage': u'sint',
-    u'armorRating': u'sint',
-    u'duration': u'sint',
-    u'speed': u'sfloat',
-    u'reach': u'sfloat',
-    u'stagger': u'sfloat',
-    u'enchantPoints': u'sint',
-    u'critDamage': u'sint',
-    u'criticalMultiplier': u'sfloat',
-    u'criticalEffect': u'sint',
-}
 
 #------------------------------------------------------------------------------
 # Import Sounds

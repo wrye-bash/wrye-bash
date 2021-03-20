@@ -35,7 +35,7 @@ import csv
 import ctypes
 import re
 from collections import defaultdict, Counter
-from itertools import izip
+from itertools import izip, chain
 from operator import attrgetter, itemgetter
 
 # Internal
@@ -44,7 +44,7 @@ from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import GPath, decoder, deprint, csvFormat, floats_equal, \
     setattr_deep, attrgetter_cache, struct_unpack, struct_pack, str_or_none, \
-    int_or_none
+    int_or_none, nonzero_or_none
 from .brec import MreRecord, MelObject, genFid, RecHeader, null4
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
@@ -911,40 +911,37 @@ class FullNames(_HandleAliases):
 class ItemStats(_HandleAliases):
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
-
-    @staticmethod
-    def sstr(value):
-        return _coerce(value, unicode, AllowNone=True)
-
-    @staticmethod
-    def sfloat(value):
-        return _coerce(value, float, AllowNone=True)
-
-    @staticmethod
-    def sint(value):
-        return _coerce(value, int, AllowNone=False)
-
-    @staticmethod
-    def snoneint(value):
-        x = _coerce(value, int, AllowNone=True)
-        if x == 0: return None
-        return x
+    _row_fmt_str = u'"%s","%s","0x%06X",%s\n'
 
     def __init__(self, types=None, aliases_=None):
         super(ItemStats, self).__init__(aliases_)
-        self.class_attrs = bush.game.statsTypes
+        self.sig_stats_attrs = bush.game.statsTypes
         self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
-        self.attr_type = {a: getattr(self, t) for a, t
-                          in bush.game.item_attr_type.iteritems()}
-        self.types = set(self.class_attrs)
+        self.types = set(self.sig_stats_attrs)
+        # Populate _attr_serializer per attribute
+        def _create_lambda(k):
+            stype = nonzero_or_none if k == u'enchantPoints' else \
+                bush.game.stats_attrs_desers[k][0] # previous behavior
+            def _serialize(c):
+                val = stype(c[k])
+                tval = type(val)
+                if val is None or tval is unicode:
+                    return u'"%s"' % val
+                elif tval is int:
+                    return u'"%d"' % val
+                elif tval is float:
+                    return u'"%f"' % val
+            return _serialize
+        self._attr_serializer = {att: _create_lambda(att) for att in set(
+            chain.from_iterable(self.sig_stats_attrs.itervalues()))}
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
         modFile = self._load_plugin(modInfo, keepAll=False)
-        for top_grup_sig, attrs in self.class_attrs.iteritems():
+        for top_grup_sig, atts in self.sig_stats_attrs.iteritems():
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 self.class_fid_attr_value[top_grup_sig][record.fid].update(
-                    izip(attrs, (getattr(record, a) for a in attrs)))
+                    izip(atts, (getattr(record, a) for a in atts)))
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
@@ -952,14 +949,12 @@ class ItemStats(_HandleAliases):
         changed = Counter() #--changed[modName] = numChanged
         for top_grup_sig, fid_attr_value in \
                 self.class_fid_attr_value.iteritems():
-            attrs = self.class_attrs[top_grup_sig]
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 longid = record.fid
                 itemStats = fid_attr_value.get(longid,None)
                 if not itemStats: continue
-                oldValues = {a: getattr(record, a) for a in attrs}
                 for stat_key, n_stat in itemStats.iteritems():
-                    o_stat = oldValues[stat_key]
+                    o_stat = getattr(record, stat_key)
                     if isinstance(o_stat, float) or isinstance(n_stat, float):
                         # These are floats, we have to do inexact comparison
                         if not floats_equal(o_stat, n_stat):
@@ -978,52 +973,33 @@ class ItemStats(_HandleAliases):
     def _parse_line(self, csv_fields):
         """Reads stats from specified text file."""
         top_grup, modName, objectStr = csv_fields[:3]
-        longid = self._coerce_fid(modName, objectStr)
-        attrs = self.class_attrs[top_grup]
-        attr_value = {}
-        for attr, value in izip(attrs, csv_fields[3:3 + len(attrs)]):
-            attr_value[attr] = self.attr_type[attr](value)
-        self.class_fid_attr_value[top_grup.encode(u'ascii')][longid].update(
-            attr_value)
+        longid = self._coerce_fid(modName, objectStr) # blow and exit on header
+        top_grup_sig = top_grup.encode(u'ascii')
+        attrs = self.sig_stats_attrs[top_grup_sig]
+        attr_value = ((att, bush.game.stats_attrs_desers[att][0](value)) for
+                      att, value in izip(attrs, csv_fields[3:3 + len(attrs)]))
+        self.class_fid_attr_value[top_grup_sig][longid].update(attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
         class_fid_attr_value = self.class_fid_attr_value
         with textPath.open(u'w', encoding=u'utf-8-sig') as out:
-            def write(out, attrs, values):
-                attr_type = self.attr_type
-                csvFormat = []
-                sstr = self.sstr
-                sint = self.sint
-                snoneint = self.snoneint
-                sfloat = self.sfloat
-                for index, attr in enumerate(attrs):
-                    if attr == u'enchantPoints':
-                        stype = self.snoneint
-                    else:
-                        stype = attr_type[attr]
-                    values[index] = stype(values[index]) #sanitize output
-                    if values[index] is None:
-                        csvFormat.append(u'"{0[%d]}"' % index)
-                    elif stype is sstr:
-                        csvFormat.append(u'"{0[%d]}"' % index)
-                    elif stype is sint or stype is snoneint:
-                        csvFormat.append(u'"{0[%d]:d}"' % index)
-                    elif stype is sfloat:
-                        csvFormat.append(u'"{0[%d]:f}"' % index)
-                csvFormat = u','.join(csvFormat)
-                out.write(csvFormat.format(values) + u'\n')
-            for group,header in bush.game.statsHeaders:
-                fid_attr_value = class_fid_attr_value[group]
+            for top_grup_sig, fid_attr_value in class_fid_attr_value.iteritems():
                 if not fid_attr_value: continue
-                attrs = self.class_attrs[group]
-                out.write(header)
+                serializers = self._attr_serializer
+                sers = [serializers[x] for x in
+                        self.sig_stats_attrs[top_grup_sig]]
+                out.write(u'"%s"\n' % u'","'.join( # Py3: unpack
+                    (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex')) + tuple(
+                        bush.game.stats_attrs_desers[a][1] for a in
+                        self.sig_stats_attrs[top_grup_sig])))
                 for longid in sorted(fid_attr_value, key=lambda lid: (
                         lid, fid_attr_value[lid][u'eid'].lower())):
                     attr_value = fid_attr_value[longid]
-                    out.write(
-                        u'"%s","%s","0x%06X",' % (group,longid[0],longid[1]))
-                    write(out, attrs, list(attr_value[a] for a in attrs))
+                    output = self._row_fmt_str % (
+                        top_grup_sig.decode(u'ascii'), longid[0], longid[1],
+                        u','.join(ser(attr_value) for ser in sers))
+                    out.write(output)
 
 #------------------------------------------------------------------------------
 class ScriptText(CsvParser):
