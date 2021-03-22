@@ -242,6 +242,9 @@ class GameInfo(object):
         # An INI key listing BSAs that will override all plugin BSAs. Blank if
         # it doesn't exist for this game
         resource_override_key = u''
+        # The default value for resource_override_key if it's missing from the
+        # game INI
+        resource_override_defaults = []
         # Whether this game supports mod ini files aka ini fragments
         supports_mod_inis = True
 
@@ -279,9 +282,6 @@ class GameInfo(object):
         # before all mod BSAs, and all BSAs before loose files by choosing
         # dates older than the game's release date.
         redate_dict = defaultdict(lambda: u'2006-01-01')
-        # The default value for Ini.resource_override_key if it's missing from
-        # the game INI
-        resource_override_defaults = []
         # All BSA versions accepted by this game. If empty, indicates that this
         # game does not use BSA versions and so BSA version checks will be
         # skipped entirely.

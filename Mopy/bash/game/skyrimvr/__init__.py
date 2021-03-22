@@ -50,8 +50,6 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
         default_ini_file = u'Skyrim.ini' # yes, that's the default one
         dropdown_inis = [u'SkyrimVR.ini', u'SkyrimPrefs.ini']
         resource_override_key = u'sVrResourceArchiveList'
-
-    class Bsa(SkyrimSEGameInfo.Bsa):
         resource_override_defaults = [u'Skyrim_VR - Main.bsa']
 
     class Xe(SkyrimSEGameInfo.Xe):

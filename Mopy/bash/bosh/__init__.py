@@ -2879,7 +2879,7 @@ class ModInfos(FileInfos):
         if res_ov_key:
             # Start out with the defaults set by the engine
             res_ov_bsas = [available_bsas[GPath_no_norm(b)] for b in
-                           bush.game.Bsa.resource_override_defaults]
+                           bush.game.Ini.resource_override_defaults]
             res_ov_cause = u'%s (%s)' % (bush.game.Ini.dropdown_inis[0],
                                          res_ov_key)
             # Then look if any INIs overwrite them
