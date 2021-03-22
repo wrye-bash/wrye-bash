@@ -917,13 +917,13 @@ class WryeParser(ScriptParser.Parser):
     def fnCompareGameVersion(self, obWant):
         if bush.ws_info.installed:
             # Windows Store app
-            game_version = bush.ws_info.get_installed_version().version
+            game_have = bush.ws_info.get_installed_version().version
         else:
-            game_version = None
+            game_have = None
         ret = self._TestVersion(
             self._TestVersion_Want(obWant),
             bass.dirs[u'app'].join(bush.game.version_detect_file),
-            have=game_version)
+            have=game_have)
         return ret[0]
 
     def fnCompareSEVersion(self, seWant):
@@ -1454,8 +1454,14 @@ class WryeParser(ScriptParser.Parser):
         if geWant == u'None': ge = u'None'
         if not wbWant: wbWant = u'0.0'
         wbHave = bass.AppVersion
+        if bush.ws_info.installed:
+            # Windows Store app
+            game_have = bush.ws_info.get_installed_version().version
+        else:
+            game_have = None
         ret = self._TestVersion(
-            gameWant, bass.dirs[u'app'].join(bush.game.version_detect_file))
+            gameWant, bass.dirs[u'app'].join(bush.game.version_detect_file),
+            have=game_have)
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
         if bush.game.Se.se_abbrev != u'':

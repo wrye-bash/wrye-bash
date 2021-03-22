@@ -519,9 +519,12 @@ class Game_Button(_ExeButton):
     @property
     def version(self):
         if not bass.settings[u'bash.statusbar.showversion']: return u''
-        version = self._version_path.strippedVersion
+        if bush.ws_info.installed:
+            version = bush.ws_info.get_installed_version().version
+        else:
+            version = self._version_path.strippedVersion
         if version != (0,):
-            version = u'.'.join([u'%s'%x for x in version])
+            version = u'.'.join([u'%s' % x for x in version])
             return version
         return u''
 
