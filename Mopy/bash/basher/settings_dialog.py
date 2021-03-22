@@ -249,8 +249,9 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         #--Events
         self.picker.on_color_picker_evt.subscribe(self.OnColorPicker)
         #--Layout
-        VLayout(border=6, item_expand=True, spacing=5, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             HLayout(items=[
                 (self.comboBox, LayoutOptions(expand=True, weight=1)),
                 self.picker]),
@@ -527,8 +528,9 @@ class LanguagePage(_AScrollablePage):
         # Populate the list and disable the context buttons by default
         self._populate_l10n_list()
         self._set_context_buttons(btns_enabled=False)
-        VLayout(border=6, item_expand=True, spacing=4, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             HBoxedLayout(self, title=_(u'Change Language'),
                 items=[self._lang_dropdown]),
             (VBoxedLayout(self, title=_(u'Manage Localizations'),
@@ -690,8 +692,9 @@ class StatusBarPage(_AScrollablePage):
             right_btn_tooltip=_(u'Hide the selected button.'))
         self._icon_lists.move_btn_callback = self._on_move_btn
         self._populate_icon_lists()
-        VLayout(border=6, spacing=6, item_expand=True, items=[
-            self._panel_text, Spacer(3),
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            self._panel_text,
+            HorizontalLine(self),
             VBoxedLayout(self, title=_(u'General'), item_border=3, spacing=6,
                 items=[
                     self._show_app_ver_chk,
@@ -831,8 +834,9 @@ class BackupsPage(_AFixedPage):
         # These start out disabled, because nothing is selected by default
         self._set_context_buttons(btns_enabled=False)
         self._populate_backup_list()
-        VLayout(border=6, spacing=3, item_expand=True, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             (HLayout(spacing=4, item_expand=True, items=[
                 (self._backup_list, LayoutOptions(weight=1)),
                 VLayout(item_expand=True, spacing=4, items=[
@@ -1084,8 +1088,9 @@ class ConfirmationsPage(_AFixedPage):
                                              u'Installers tab.')
         self._file_drop_dropdown.on_combo_select.subscribe(self._on_file_drop)
         self._populate_confirmations()
-        VLayout(border=6, spacing=3, item_expand=True, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             HLayout(spacing=6, items=[
                 Label(self, _(u'Drop Action:')), self._file_drop_dropdown,
             ]),
@@ -1241,8 +1246,9 @@ class GeneralPage(_AScrollablePage):
                             u'privileges.'))
         self._uac_restart_checkbox.on_checked.subscribe(self._on_uac_restart)
         self._uac_restart_checkbox.visible = env.isUAC
-        VLayout(border=6, spacing=3, item_expand=True, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             VBoxedLayout(self, title=_(u'Game'), spacing=6, items=[
                 HLayout(spacing=6, items=[
                     Label(self, _(u'Managed Game:')), self._managed_game,
@@ -1355,8 +1361,9 @@ class TrustedBinariesPage(_AFixedPage):
                           u'control over trusted binary versions.'))
         export_btn.on_clicked.subscribe(self._export_lists)
         self._populate_binaries()
-        VLayout(border=6, spacing=3, item_expand=True, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             (self._binaries_list, LayoutOptions(weight=1)),
             HLayout(spacing=4, items=[Stretch(), import_btn, export_btn]),
         ]).apply_to(self)
