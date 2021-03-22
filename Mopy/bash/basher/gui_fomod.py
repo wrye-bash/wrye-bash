@@ -57,13 +57,14 @@ class InstallerFomod(WizardDialog):
             target_installer.extras_dict.get(u'root_path', u'')
             if target_installer.fileRootIdex else u'')
         fm_file = target_installer.fomod_file().s
-        if bush.ws_info.installed:
-            # Windows store game
-            gver = bush.ws_info.get_installed_version().version
-        else:
-            # Standard game
-            gver = env.get_file_version(bass.dirs[u'app'].join(
-                bush.game.version_detect_file).s)
+        # Get the game version, be careful about Windows Store games
+        test_path = bass.dirs[u'app'].join(bush.game.version_detect_file)
+        try:
+            gver = env.get_file_version(test_path.s)
+            if gver == (0, 0, 0, 0) and bush.ws_info.installed:
+                gver = env.get_game_version_fallback(test_path, bush.ws_info)
+        except OSError:
+            gver = env.get_game_version_fallback(test_path, bush.ws_info)
         version_string = u'.'.join([unicode(i) for i in gver])
         self.fomod_parser = FomodInstaller(
             fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],

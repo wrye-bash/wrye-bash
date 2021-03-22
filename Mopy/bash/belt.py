@@ -33,7 +33,7 @@ from itertools import izip
 from . import ScriptParser  # generic parser class
 from . import bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
-from .env import get_file_version
+from .env import get_file_version, get_game_version_fallback
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
     ListBox, CheckListBox, ImageWrapper, PictureWithCursor, WizardDialog, \
@@ -915,15 +915,16 @@ class WryeParser(ScriptParser.Parser):
 
     # Functions...
     def fnCompareGameVersion(self, obWant):
-        if bush.ws_info.installed:
-            # Windows Store app
-            game_have = bush.ws_info.get_installed_version().version
-        else:
-            game_have = None
-        ret = self._TestVersion(
-            self._TestVersion_Want(obWant),
-            bass.dirs[u'app'].join(bush.game.version_detect_file),
-            have=game_have)
+        want_version = self._TestVersion_Want(obWant)
+        test_file = bass.dirs[u'app'].join(bush.game.version_detect_file)
+        try:
+            game_have = get_file_version(test_file.s)
+            if game_have == (0, 0, 0, 0) and bush.ws_info.installed:
+                game_have = get_game_version_fallback(test_file, bush.ws_info)
+            ret = self._TestVersion(want_version, test_file, game_have)
+        except OSError:
+            game_have = get_game_version_fallback(test_file, bush.ws_info)
+            ret = self._TestVersion(want_version, test_file, game_have)
         return ret[0]
 
     def fnCompareSEVersion(self, seWant):
@@ -1454,14 +1455,16 @@ class WryeParser(ScriptParser.Parser):
         if geWant == u'None': ge = u'None'
         if not wbWant: wbWant = u'0.0'
         wbHave = bass.AppVersion
-        if bush.ws_info.installed:
-            # Windows Store app
-            game_have = bush.ws_info.get_installed_version().version
-        else:
-            game_have = None
-        ret = self._TestVersion(
-            gameWant, bass.dirs[u'app'].join(bush.game.version_detect_file),
-            have=game_have)
+        # Get the game version - be careful about Windows Store versions
+        test_path = bass.dirs[u'app'].join(bush.game.version_detect_file)
+        try:
+            game_have = get_file_version(test_path.s)
+            if game_have == (0, 0, 0, 0) and bush.ws_info.installed:
+                game_have = get_game_version_fallback(test_path, bush.ws_info)
+            ret = self._TestVersion(gameWant, test_path, game_have)
+        except OSError:
+            game_have = get_game_version_fallback(test_path, bush.ws_info)
+            ret = self._TestVersion(gameWant, test_path, game_have)
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
         if bush.game.Se.se_abbrev != u'':

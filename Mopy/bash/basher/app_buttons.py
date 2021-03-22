@@ -30,7 +30,7 @@ from .frames import ModChecker, DocBrowser
 from .settings_dialog import SettingsDialog
 from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink
-from ..env import getJava
+from ..env import getJava, get_game_version_fallback
 from ..exception import AbstractError
 from ..gui import ClickableImage, EventResult, staticBitmap
 
@@ -519,10 +519,14 @@ class Game_Button(_ExeButton):
     @property
     def version(self):
         if not bass.settings[u'bash.statusbar.showversion']: return u''
-        if bush.ws_info.installed:
-            version = bush.ws_info.get_installed_version().version
-        else:
+        try:
             version = self._version_path.strippedVersion
+            if version == (0,) and bush.ws_info.installed:
+                version = get_game_version_fallback(self._version_path,
+                                                    bush.ws_info)
+        except OSError:
+            version = get_game_version_fallback(
+                self._version_path, bush.ws_info)
         if version != (0,):
             version = u'.'.join([u'%s' % x for x in version])
             return version

@@ -27,6 +27,8 @@ import stat
 import sys
 import warnings
 
+from .. import bolt
+
 def clear_read_only(filepath): # copied from bolt
     os.chmod(u'%s' % filepath, stat.S_IWUSR | stat.S_IWOTH)
 
@@ -116,7 +118,12 @@ class WinAppVersionInfo(object):
         self.full_name = full_name
         self.mutable_location = mutable_location
         self.install_location = install_location
-        self.version = version
+        # NOTE: the version parsed here is from the package name or app manifest
+        # which do not agree in general with the canonnical "game version"
+        # found in the executable.  We store it only as a fallback in case
+        # the Windows Store changes (again) to where we cannot parse the EXE
+        # for the real version.
+        self._version = version
         self.install_time = install_time
         self.entry_point = entry_point
 
@@ -161,6 +168,27 @@ class WinAppInfo(object):
                 u'versions:%i)'
                 % (self.publisher_name, self.publisher_id, self.app_name,
                    len(self.versions)))
+
+def get_game_version_fallback(test_path, ws_info):
+    """A fallback method of determining the game version for Windows Store
+       games.  The version returned by this method is not consistent with the
+       usual executable version, so this should only be used in the even that
+       a permission error prevents parsing the game file for version
+       information.  This may happen at a developer's whim: Bethesda's games
+       originally could not be parsed, but were later updated so they could be
+       parsed."""
+    warn_msg = _(u'Warning: %(game_file)s could not be parsed for version '
+                 u'information.') % {'game_file': test_path}
+    if ws_info.installed:
+        bolt.deprint(warn_msg + u' ' +
+            _(u'A fallback has been used, but may not be accurate.'))
+        return ws_info.get_installed_version()._version
+    else:
+        bolt.deprint(warn_msg + u' ' +
+            _(u'This is not a Windows Store game, your system likely needs '
+              u'to be configured for file permissions.  See the Wrye Bash '
+              u'General Readme for more information.'))
+        return (0,0,0,0)
 
 def get_win_store_game_paths(submod):
     """Check Windows Store-supplied game paths for the game detection
