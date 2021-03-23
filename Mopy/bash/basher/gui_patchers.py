@@ -991,6 +991,16 @@ class ImportActors(_ImporterPatcherPanel):
     patcher_type = preservers.ImportActorsPatcher
 
 # -----------------------------------------------------------------------------
+class ImportActorsPerks(_ImporterPatcherPanel):
+    """Merges changes to actor perks."""
+    patcher_name = _(u'Import Actors: Perks')
+    patcher_desc = _(u'Import actor perks from source mods.')
+    autoKey = {u'Actors.Perks.Add', u'Actors.Perks.Change',
+               u'Actors.Perks.Remove'}
+    _config_key = u'ImportActorsPerks'
+    patcher_type = mergers.ImportActorsPerksPatcher
+
+# -----------------------------------------------------------------------------
 class ImportActorsDeathItems(_ImporterPatcherPanel):
     """Merges changes to actor death items."""
     patcher_name = _(u'Import Actors: Death Items')

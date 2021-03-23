@@ -238,6 +238,17 @@ class _AMerger(ImportPatcher):
 #------------------------------------------------------------------------------
 # Absorbed patchers -----------------------------------------------------------
 #------------------------------------------------------------------------------
+class ImportActorsPerksPatcher(_AMerger):
+    logMsg = u'\n=== ' + _(u'Perk Lists Changed') + u': %d'
+    _add_tag = u'Actors.Perks.Add'
+    _change_tag = u'Actors.Perks.Change'
+    _remove_tag = u'Actors.Perks.Remove'
+    _wanted_subrecord = {x: u'perks' for x in bush.game.actor_types}
+
+    def _entry_key(self, subrecord_entry):
+        return subrecord_entry.perk
+
+#------------------------------------------------------------------------------
 class ImportInventoryPatcher(_AMerger):
     logMsg = u'\n=== ' + _(u'Inventories Changed') + u': %d'
     _add_tag = u'Invent.Add'
