@@ -171,25 +171,7 @@ class SkyrimGameInfo(PatchGame):
             u'bodyaddon14', u'bodyaddon15', u'bodyaddon16', u'bodyaddon17',
             u'fx01')
 
-    allTags = {
-        u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
-        u'Actors.AIPackagesForceAdd', u'Actors.CombatStyle',
-        u'Actors.DeathItem', u'Actors.RecordFlags', u'Actors.Spells',
-        u'Actors.SpellsForceAdd', u'Actors.Stats', u'C.Acoustic', u'C.Climate',
-        u'C.Encounter', u'C.ForceHideLand', u'C.ImageSpace', u'C.Light',
-        u'C.Location', u'C.LockList', u'C.MiscFlags', u'C.Music', u'C.Name',
-        u'C.Owner', u'C.RecordFlags', u'C.Regions', u'C.SkyLighting',
-        u'C.Water', u'Deactivate', u'Delev', u'Destructible', u'EffectStats',
-        u'EnchantmentStats', u'Factions', u'Filter', u'Graphics',
-        u'Invent.Add', u'Invent.Change', u'Invent.Remove', u'Keywords',
-        u'MustBeActiveIfImported', u'Names', u'NoMerge',
-        u'NPC.AIPackageOverrides', u'NPC.Class', u'NPC.Race', u'ObjectBounds',
-        u'Outfits.Add', u'Outfits.Remove', u'Relations.Add',
-        u'Relations.Change', u'Relations.Remove', u'Relev', u'Sound',
-        u'SpellStats', u'Stats', u'Text', u'R.Body-Size-F', u'R.Body-Size-M',
-        u'R.Description', u'R.Skills', u'R.Voice-F', u'R.Voice-M',
-        u'R.AddSpells', u'R.ChangeSpells', u'R.Stats',
-    }
+    allTags = PatchGame.allTags | {u'NoMerge'}
 
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'ImportActors', u'ImportRaces',

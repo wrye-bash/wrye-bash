@@ -125,10 +125,6 @@ class Fallout4GameInfo(PatchGame):
         expanded_plugin_range = True
         max_lvl_list_size = 255
 
-    allTags = {
-        u'Deactivate', u'Delev', u'Filter', u'ObjectBounds', u'Relev',
-    }
-
     patchers = {
         u'ImportObjectBounds', u'LeveledLists',
     }

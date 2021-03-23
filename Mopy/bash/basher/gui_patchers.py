@@ -1389,3 +1389,6 @@ def initPatchers():
     patcher_classes.sort(
         key=lambda a: group_order[a.patcher_type.patcher_group])
     all_gui_patchers.extend((p() for p in patcher_classes))
+    # Update the set of all tags for this game based on the available patchers
+    bush.game.allTags.update(chain.from_iterable(p.autoKey
+                                                 for p in all_gui_patchers))

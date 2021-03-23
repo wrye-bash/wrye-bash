@@ -142,27 +142,7 @@ class Fallout3GameInfo(PatchGame):
                             u'mouthObject', u'bodyAddOn1', u'bodyAddOn2',
                             u'bodyAddOn3')
 
-    allTags = {
-        u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
-        u'Actors.AIPackagesForceAdd', u'Actors.Anims', u'Actors.CombatStyle',
-        u'Actors.DeathItem', u'Actors.RecordFlags', u'Actors.Skeleton',
-        u'Actors.Spells', u'Actors.SpellsForceAdd', u'Actors.Stats',
-        u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ForceHideLand',
-        u'C.ImageSpace', u'C.Light', u'C.MiscFlags', u'C.Music', u'C.Name',
-        u'C.Owner', u'C.RecordFlags', u'C.Regions', u'C.Water',
-        u'Creatures.Blood', u'Creatures.Type', u'Deactivate', u'Deflst',
-        u'Delev', u'Destructible', u'EffectStats', u'EnchantmentStats',
-        u'Factions', u'Filter', u'Graphics', u'Invent.Add', u'Invent.Change',
-        u'Invent.Remove', u'MustBeActiveIfImported', u'Names', u'NoMerge',
-        u'NPC.Class', u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
-        u'NpcFacesForceFullImport', u'ObjectBounds', u'Relations.Add',
-        u'Relations.Change', u'Relations.Remove', u'Relev', u'Scripts',
-        u'Sound', u'SpellStats', u'Stats', u'Text', u'R.Body-F', u'R.Body-M',
-        u'R.Body-Size-F', u'R.Body-Size-M', u'R.Description', u'R.Ears',
-        u'R.Eyes', u'R.Hair', u'R.Head', u'R.Mouth', u'R.Skills', u'R.Teeth',
-        u'R.Voice-F', u'R.Voice-M', u'R.Relations.Add', u'R.Relations.Change',
-        u'R.Relations.Remove',
-    }
+    allTags = PatchGame.allTags | {u'NoMerge'}
 
     # Remaining to add (some of these might be impossible to port):
     #  TweakNames, ReplaceFormIDs

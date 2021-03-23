@@ -34,8 +34,10 @@ class PatchGame(GameInfo):
     too specific (and often big) data structures - however the exact constants
     included here is still WIP."""
 
-    # Bash Tags supported by this game
-    allTags = set()
+    # Bash Tags supported by this game. List only tags that aren't used by
+    # patchers here (e.g. Deactivate, Filter, etc.), patcher-based tags get
+    # dynamically added in gui_patchers.
+    allTags = {u'Deactivate', u'Filter', u'MustBeActiveIfImported'}
 
     # Patchers available when building a Bashed Patch (referenced by GUI class
     # name, see gui_patchers.py for their definitions).
