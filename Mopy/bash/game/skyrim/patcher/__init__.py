@@ -839,9 +839,13 @@ actor_importer_attrs = {
                           u'smithingSO', u'smithingSV', u'sneakSO', u'sneakSV',
                           u'speechcraftSO', u'speechcraftSV', u'stamina',
                           u'twoHandedSO', u'twoHandedSV'),
+        u'Actors.Voice': (u'voice',),
         u'NPC.AIPackageOverrides': (u'spectator', u'observe', u'guardWarn',
                                     u'combat'),
+        u'NPC.AttackRace': (u'attackRace',),
         u'NPC.Class': (u'iclass',),
+        u'NPC.CrimeFaction': (u'crime_faction',),
+        u'NPC.DefaultOutfit': (u'default_outfit',),
         u'NPC.Race': (u'race',),
     },
 }
