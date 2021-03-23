@@ -185,6 +185,10 @@ class CsvParser(object):
 class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
     """WIP aliases handling."""
     _parser_sigs = [] # record signatures this parser recognises
+    # the indexes of the csv fields that will create the id in id_stored_data
+    _id_indexes = ()
+    # the index of the csv field that contains the group type
+    _grup_index = None
 
     def __init__(self, aliases_, called_from_patcher=False):
         # Automatically set in _parse_csv_sources to the patch file's aliases -
@@ -202,6 +206,14 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
         # get alias for modname returned from _CsvReader
         modname = GPath(modname)
         return GPath(self.aliases.get(modname, modname)), int(hex_fid, 0)
+
+    def _parse_line(self, csv_fields):
+        top_grup_sig = csv_fields[self._grup_index].encode(u'ascii')
+        longid = self._coerce_fid(csv_fields[self._id_indexes[0]],
+                                  csv_fields[self._id_indexes[1]])
+        self.id_stored_data[top_grup_sig][longid] = self._update_from_csv(
+            csv_fields)
+        return top_grup_sig, longid
 
     def readFromMod(self, modInfo):
         """Hasty readFromMod implementation."""
@@ -583,6 +595,8 @@ class EditorIds(_HandleAliases):
     _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
                    _(u'Editor Id'))
     _row_fmt_str = u'"%s","%s","0x%06X","%s"\n'
+    _id_indexes = (1, 2)
+    _grup_index = 0
 
     def __init__(self, aliases_=None, questionableEidsSet=None,
                  badEidsList=None, called_from_patcher=False):
@@ -653,22 +667,24 @@ class EditorIds(_HandleAliases):
         #--Done
         return changed
 
-    def _parse_line(self, csv_fields,
-                    __reValidEid=re.compile(u'^[a-zA-Z0-9]+$'),
-                    __reGoodEid=re.compile(u'^[a-zA-Z]')):
-        top_grup, mod, objectIndex, eid = csv_fields[:4]  ##: debug: top_grup??
-        longid = self._coerce_fid(mod, objectIndex)
-        eid = str_or_none(eid)
+    def _parse_line(self, csv_fields):
+        top_grup_sig, longid = super(EditorIds, self)._parse_line(csv_fields)
+        #--Explicit old to new def? (Used for script updating.)
+        if len(csv_fields) > 4:
+            self.old_new[csv_fields[4].lower()] = \
+                self.id_stored_data[top_grup_sig][longid]
+
+    def _update_from_csv(self, csv_fields,
+                 __reValidEid=re.compile(u'^[a-zA-Z0-9]+$'),
+                __reGoodEid=re.compile(u'^[a-zA-Z]')):
+        eid = str_or_none(csv_fields[3])
         if not __reValidEid.match(eid):
             if self.badEidsList is not None:
                 self.badEidsList.append(eid)
-            return
+            raise ValueError # exit _parse_line
         if self.questionableEidsSet is not None and not __reGoodEid.match(eid):
             self.questionableEidsSet.add(eid)
-        #--Explicit old to new def? (Used for script updating.)
-        if len(csv_fields) > 4:
-            self.old_new[csv_fields[4].lower()] = eid
-        self.id_stored_data[top_grup.encode(u'ascii')][longid] = eid
+        return eid
 
     def _write_rows(self, out):
         for top_grup_sig, id_eid in _key_sort(self.id_stored_data):
@@ -814,6 +830,8 @@ class FullNames(_HandleAliases):
     _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
                    _(u'Editor Id'), _(u'Name'))
     _row_fmt_str = u'"%s","%s","0x%06X","%s","%s"\n'
+    _id_indexes = (1, 2)
+    _grup_index = 0
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(FullNames, self).__init__(aliases_, called_from_patcher)
@@ -838,12 +856,6 @@ class FullNames(_HandleAliases):
             record.full = newFull
             record.setChanged()
             changed[di[u'eid']] = (full, newFull)
-
-    def _parse_line(self, csv_fields):
-        top_grup, mod, objectIndex = csv_fields[:3]
-        longid = self._coerce_fid(mod, objectIndex)
-        self.id_stored_data[top_grup.encode(u'ascii')][longid] = \
-            self._update_from_csv(csv_fields)
 
     def _write_rows(self, out):
         """Exports id_stored_data to specified text file."""
@@ -1271,6 +1283,8 @@ class ItemPrices(_HandleAliases):
     _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Value'),
                    _(u'Editor Id'), _(u'Name'), _(u'Type'))
     _row_fmt_str = u'"%s","0x%06X",' + csvFormat(u'iss') + u',%s\n'
+    _id_indexes = (0, 1)
+    _grup_index = 5
 
     def __init__(self, aliases_=None):
         super(ItemPrices, self).__init__(aliases_)
@@ -1293,12 +1307,6 @@ class ItemPrices(_HandleAliases):
             record.value = value
             changed[longid[0]] += 1
             record.setChanged()
-
-    def _parse_line(self, csv_fields):
-        mmod, mobj, value, eid, itm_name, top_grup = csv_fields[:6]
-        longid = self._coerce_fid(mmod, mobj)
-        self.id_stored_data[top_grup.encode(u'ascii')][longid] = \
-            self._update_from_csv(csv_fields)
 
     def _write_rows(self, out, __getter=itemgetter(u'value', u'eid', u'full')):
         """Writes item prices to specified text file."""
