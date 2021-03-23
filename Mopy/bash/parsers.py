@@ -955,20 +955,22 @@ class ItemStats(_HandleAliases):
                 longid = record.fid
                 itemStats = fid_attr_value.get(longid,None)
                 if not itemStats: continue
+                change = False
                 for stat_key, n_stat in itemStats.iteritems():
+                    if change:
+                        setattr(record, stat_key, n_stat)
+                        continue
                     o_stat = getattr(record, stat_key)
                     if isinstance(o_stat, float) or isinstance(n_stat, float):
                         # These are floats, we have to do inexact comparison
-                        if not floats_equal(o_stat, n_stat):
-                            break
+                        change = not floats_equal(o_stat, n_stat)
                     elif o_stat != n_stat:
-                        break
-                else:
-                    continue # attrs are equal, move on to next record
-                for attr, value in itemStats.iteritems():
-                    setattr(record,attr,value)
-                record.setChanged()
-                changed[longid[0]] += 1
+                        change = True
+                    if change:
+                        setattr(record, stat_key, n_stat)
+                if change:
+                    record.setChanged()
+                    changed[longid[0]] += 1
         if changed: modFile.safeSave()
         return changed
 
@@ -1171,6 +1173,14 @@ class _UsesEffectsMixin(_HandleAliases):
         self.fid_stats = {}
         self.id_stored_data = {self._parser_sigs[0]: self.fid_stats}
 
+    def _parse_line(self, mid): # common operations for Sigil/Ingredients
+        for att in self._float_attrs:
+            self.fid_stats[mid][att] = _coerce(self.fid_stats[mid][att], float)
+        for att in self._int_attrs:
+            self.fid_stats[mid][att] = int_or_none(self.fid_stats[mid][att])
+        for att in [u'eid', u'full', u'model.modPath', u'iconPath']:
+            self.fid_stats[mid][att] = str_or_none(self.fid_stats[mid][att])
+
     def _get_csv_serializers(self, atts): ##: technically belongs to records
         """Return encoders per attribute - each encoder should return a
         string corresponding to a csv column."""
@@ -1359,17 +1369,10 @@ class SigilStoneDetails(_UsesEffectsMixin):
         smod = str_or_none(smod)
         if smod is None: sid = None
         else: sid = self._coerce_fid(smod, sobj)
-        eid = str_or_none(eid)
-        full = str_or_none(full)
-        modPath = str_or_none(modPath)
-        modb = _coerce(modb,float)
-        iconPath = str_or_none(iconPath)
-        uses = _coerce(uses,int)
-        value = _coerce(value,int)
-        weight = _coerce(weight,float)
         vals = [eid, full, modPath, modb, iconPath, sid, uses, value, weight,
                 self.readEffects(csv_fields[12:])]
         self.fid_stats[mid] = dict(izip(self._attr_serializer, vals))
+        super(SigilStoneDetails, self)._parse_line(mid)
 
 #------------------------------------------------------------------------------
 class ItemPrices(_HandleAliases):
@@ -1545,13 +1548,7 @@ class IngredientDetails(_UsesEffectsMixin):
         smod = str_or_none(smod)
         if smod is None: sid = None
         else: sid = self._coerce_fid(smod, sobj)
-        eid = str_or_none(eid)
-        full = str_or_none(full)
-        modPath = str_or_none(modPath)
-        modb = _coerce(modb, float)
-        iconPath = str_or_none(iconPath)
-        value = _coerce(value, int)
-        weight = _coerce(weight, float)
         self.fid_stats[mid] = dict(izip(self._attr_serializer, [eid, full,
             modPath, modb, iconPath, sid, value, weight, self.readEffects(
                 csv_fields[11:])]))
+        super(IngredientDetails, self)._parse_line(mid)
