@@ -341,6 +341,16 @@ class _AComponent(object):
         to this component while in the with statement."""
         return _ACFrozen(self._native_widget)
 
+    def to_absolute_position(self, relative_pos): # type: (tuple) -> tuple
+        """Converts the specified position that is relative to the center of
+        this component into absolute coordinates, i.e. relative to the top left
+        of the screen."""
+        return tuple(self._native_widget.ClientToScreen(relative_pos))
+
+    def to_relative_position(self, absolute_pos): # type: (tuple) -> tuple
+        """The inverse of to_absolute_position."""
+        return tuple(self._native_widget.ScreenToClient(absolute_pos))
+
 # Events Mixins ---------------------------------------------------------------
 class WithMouseEvents(_AComponent):
     """An _AComponent that handles mouse events.
@@ -376,7 +386,7 @@ class WithMouseEvents(_AComponent):
 
         @property
         def evt_pos(self):
-            return self.__mouse_evt.GetPosition()
+            return tuple(self.__mouse_evt.GetPosition())
 
         @property
         def is_alt_down(self):

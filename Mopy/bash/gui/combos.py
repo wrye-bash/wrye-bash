@@ -111,7 +111,7 @@ class DoubleListBox(PanelWin):
             other_list = self._left_list
             my_btn = self._move_left_btn
             other_btn = self._move_right_btn
-        other_list.lb_clear_selection()
+        other_list.lb_select_none()
         my_btn.enabled = True
         other_btn.enabled = False
 

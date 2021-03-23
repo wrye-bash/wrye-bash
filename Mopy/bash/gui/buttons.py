@@ -44,7 +44,7 @@ class Button(_AComponent):
     # The label to use when no label was explicitly specified. Set per class.
     _default_label = u''
 
-    def __init__(self, parent, btn_label=u'', btn_tooltip=None, default=False,
+    def __init__(self, parent, btn_label=u'', btn_tooltip=u'', default=False,
                  exact_fit=False, no_border=False):
         """Creates a new Button with the specified properties.
 
@@ -268,7 +268,7 @@ class ClickableImage(ImageButton):
     """An image that acts like a button. Has no text and no borders.
 
     See Button for documentation on button events."""
-    def __init__(self, parent, image, btn_tooltip=None):
+    def __init__(self, parent, image, btn_tooltip=None, no_border=True):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
@@ -276,6 +276,6 @@ class ClickableImage(ImageButton):
         :param image: The image shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
                             button."""
-        super(ClickableImage, self).__init__(parent, image,
-                                             btn_tooltip=btn_tooltip,
-                                             exact_fit=True, no_border=True)
+        super(ClickableImage, self).__init__(
+            parent, image, btn_tooltip=btn_tooltip, exact_fit=True,
+            no_border=no_border)

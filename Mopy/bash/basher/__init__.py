@@ -78,17 +78,16 @@ startupinfo = bolt.startupinfo
 
 #--Balt
 from .. import balt
-from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
-    ChoiceLink, AppendableLink, ListBoxes, INIListCtrl, DnDStatusBar, \
-    NotebookPanel
-from ..balt import colors, images, Resources
-from ..balt import Links, ItemLink
+from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, Resources, \
+    AppendableLink, ListBoxes, INIListCtrl, DnDStatusBar, NotebookPanel, \
+    images, colors, Links, ItemLink
 
 from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
     SaveButton, Stretch, TextArea, TextField, VLayout, EventResult, DropDown, \
     WindowFrame, Splitter, TabbedPanel, PanelWin, CheckListBox, Color, \
     Picture, ImageWrapper, CenteredSplash, BusyCursor, RadioButton, \
-    GlobalMenu, CopyOrMovePopup
+    GlobalMenu, CopyOrMovePopup, ListBox, ClickableImage, CENTER, \
+    MultiChoicePopup, WithMouseEvents
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, installercons
@@ -1488,10 +1487,23 @@ class ModDetails(_ModsSavesDetails):
         self._desc_area.on_focus_lost.subscribe(self.OnEditDescription)
         self._desc_area.on_text_changed.subscribe(self.OnDescrEdit)
         #--Bash tags
-        self.gTags = TextArea(self._bottom_low_panel, auto_tooltip=False,
-                              editable=False)
-                                # size=(textWidth, 64))
-        self.gTags.on_right_clicked.subscribe(self.ShowBashTagsMenu)
+        ##: Come up with a better solution for this
+        class _ExClickableImage(WithMouseEvents, ClickableImage):
+            bind_lclick_down = True
+        self._add_tag_btn = _ExClickableImage(
+            self._bottom_low_panel,
+            wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16, 16)),
+            no_border=False, btn_tooltip=_(u'Add bash tags to this plugin.'))
+        self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
+        self._rem_tag_btn = ClickableImage(
+            self._bottom_low_panel,
+            wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16, 16)),
+            no_border=False, btn_tooltip=_(u'Remove the selected tag(s) from '
+                                           u'this plugin.'))
+        self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
+        self.gTags = ListBox(self._bottom_low_panel, isSort=True,
+                             isSingle=False, isExtended=True)
+        self.gTags.on_mouse_right_up.subscribe(self._popup_misc_tags)
         #--Layout
         VLayout(spacing=4, item_expand=True, items=[
             HLayout(items=[Label(top, _(u'File:')), Stretch(), self.version]),
@@ -1501,8 +1513,12 @@ class ModDetails(_ModsSavesDetails):
             Label(top, _(u'Description:')),
             (self._desc_area, LayoutOptions(expand=True, weight=1))
         ]).apply_to(top)
-        VLayout(spacing=4, items=[
-            Label(self._bottom_low_panel, _(u'Bash Tags:')),
+        VLayout(spacing=4, item_expand=True, items=[
+            HLayout(item_expand=True, items=[
+                (Label(self._bottom_low_panel, _(u'Bash Tags:')),
+                 LayoutOptions(expand=False, v_align=CENTER)),
+                Stretch(), self._add_tag_btn, self._rem_tag_btn,
+            ]),
             (self.gTags, LayoutOptions(expand=True, weight=1))
         ]).apply_to(self._bottom_low_panel)
 
@@ -1527,8 +1543,9 @@ class ModDetails(_ModsSavesDetails):
             self.modifiedStr = format_date(modInfo.mtime)
             self.descriptionStr = modInfo.header.description
             self.versionStr = u'v%0.2f' % modInfo.header.version
-            tagsStr = u'\n'.join(sorted(modInfo.getBashTags()))
-        else: tagsStr = u''
+            minf_tags = list(modInfo.getBashTags())
+        else:
+            minf_tags = []
         #--Set fields
         self._fname_ctrl.text_content = self.fileStr
         self.gAuthor.text_content = self.authorStr
@@ -1536,7 +1553,7 @@ class ModDetails(_ModsSavesDetails):
         self._desc_area.text_content = self.descriptionStr
         self.version.label_text = self.versionStr
         self.uilist.SetFileInfo(self.modInfo)
-        self.gTags.text_content = tagsStr
+        self.gTags.lb_set_items(minf_tags)
         if self.modInfo and not self.modInfo.is_auto_tagged():
             self.gTags.set_background_color(
                 self.gAuthor.get_background_color())
@@ -1681,19 +1698,74 @@ class ModDetails(_ModsSavesDetails):
         modInfo.setmtime(time.mktime(newTimeTup))
 
     #--Bash Tags
-    def ShowBashTagsMenu(self):
-        """Show bash tags menu."""
-        # Note that we have to return EventResult.FINISH, otherwise the default
-        # text menu will get shown after a tag is applied.
-        if not self.modInfo: return EventResult.FINISH
+    def _popup_add_tags(self, wrapped_evt, _lb_dex_and_flags):
+        """Show bash tag selection menu."""
+        if not self.modInfo: return
+        def _refresh_only_details():
+            self.SetFile()
+        mod_info = self.modInfo # type: bosh.ModInfo
+        app_tags = mod_info.getBashTags()
+        class BashTagsPopup(MultiChoicePopup):
+            def _update_tags(self, changed_tags, tags_were_added):
+                """Adds or removes the specified set of tags."""
+                if mod_info.is_auto_tagged():
+                    mod_info.set_auto_tagged(False)
+                curr_app_tags = mod_info.getBashTags()
+                if tags_were_added:
+                    curr_app_tags |= changed_tags
+                else:
+                    curr_app_tags -= changed_tags
+                mod_info.setBashTags(curr_app_tags)
+                _refresh_only_details()
+            def on_item_checked(self, choice_name, choice_checked):
+                self._update_tags({choice_name}, choice_checked)
+            def on_mass_select(self, curr_choices, choices_checked):
+                self._update_tags(set(curr_choices), choices_checked)
+        bt_popup = BashTagsPopup(
+            self, all_choices={t: t in app_tags for t in bush.game.allTags},
+            help_text=_(u'Tick a tag to add it to the plugin.'),
+            aa_btn_tooltip=_(u'Add all shown tags to the plugin.'),
+            ra_btn_tooltip=_(u'Remove all shown tags from the plugin.'))
+        mouse_pos = self._add_tag_btn.to_absolute_position(wrapped_evt.evt_pos)
+        bt_popup.show_popup(mouse_pos)
+        # Returning FINISH is important here because the OS handler will
+        # otherwise take focus away from the popup, which causes it to close
+        # immediately (since it's transient)
+        return EventResult.FINISH
+
+    def _remove_selected_tags(self):
+        """Callback to remove the selected bash tags from the current
+        plugin."""
+        if not self.modInfo: return
+        sel_tags = set(self.gTags.lb_get_selected_strings())
+        if not sel_tags: return
+        # Remember where the first selected tag was so we can reselect
+        first_tag_index = next(iter(self.gTags.lb_get_selections()))
+        if self.modInfo.is_auto_tagged():
+            self.modInfo.set_auto_tagged(False)
+        self.modInfo.setBashTags(self.modInfo.getBashTags() - sel_tags)
+        self.SetFile() # refresh only details
+        new_tag_count = self.gTags.lb_get_items_count()
+        if new_tag_count:
+            if first_tag_index >= new_tag_count:
+                # We removed the end of the tags list, select the new last tag
+                self.gTags.lb_select_index(new_tag_count - 1)
+            else:
+                # Otherwise we removed in the middle, so starting from our
+                # selection, everything will have shifted down by one, meaning
+                # we can reselect at the same index to get the next item
+                self.gTags.lb_select_index(first_tag_index)
+
+    def _popup_misc_tags(self, _lb_selection_dex):
+        """Show a menu for miscellaneous tags menu functionality."""
+        if not self.modInfo: return
         #--Links closure
         mod_info = self.modInfo # type: bosh.ModInfo
         mod_tags = mod_info.getBashTags()
-        def _refreshUI():
-            self.panel_uilist.RefreshUI(redraw=[mod_info.name],
-                refreshSaves=False)
+        def _refresh_only_details():
+            self.SetFile()
         # Toggle auto Bash tags
-        class _TagsAuto(CheckLink):
+        class Tags_Automatic(CheckLink):
             _text = _(u'Automatic')
             _help = _(u'Use the tags from the description and '
                       u'masterlist/userlist.')
@@ -1703,7 +1775,7 @@ class ModDetails(_ModsSavesDetails):
                 new_auto = not mod_info.is_auto_tagged()
                 mod_info.set_auto_tagged(new_auto)
                 if new_auto: mod_info.reloadBashTags()
-                _refreshUI()
+                _refresh_only_details()
         # Copy tags to various places
         bashTagsDesc = mod_info.getBashTagsDesc()
         tag_plugin_name = mod_info.name
@@ -1715,7 +1787,7 @@ class ModDetails(_ModsSavesDetails):
         old_tags |= added_tags
         old_tags -= deleted_tags
         dir_diff = bosh.mods_metadata.diff_tags(mod_tags, old_tags)
-        class _CopyBashTagsDir(EnabledLink):
+        class Tags_CopyToBashTags(EnabledLink):
             _text = _(u'Copy to BashTags')
             _help = _(u'Copies a diff between currently applied tags and '
                       u'description/LOOT tags to %s.') % (
@@ -1727,50 +1799,43 @@ class ModDetails(_ModsSavesDetails):
                 """Copy manually assigned bash tags into the Data/BashTags
                 folder."""
                 bosh.mods_metadata.save_tags_to_dir(tag_plugin_name, dir_diff)
-                _refreshUI()
-        class _CopyDesc(EnabledLink):
+                _refresh_only_details()
+        class Tags_CopyToDescription(EnabledLink):
             _text = _(u'Copy to Description')
-            _help = _(u'Copies currently applied tags to the mod description.')
+            _help = _(u'Copies currently applied tags to the plugin '
+                      u'description.')
             def _enable(self):
                 return (not mod_info.is_auto_tagged()
                         and mod_tags != bashTagsDesc)
             def Execute(self):
                 """Copy manually assigned bash tags into the mod description"""
                 if mod_info.setBashTagsDesc(mod_tags):
-                    _refreshUI()
+                    _refresh_only_details()
                 else:
                     balt.showError(
                         Link.Frame, _(u'Description field including the Bash '
                                       u'Tags must be at most 511 characters. '
                                       u'Edit the description to leave enough '
                                       u'room.'))
-        # Tags links
-        class _TagLink(CheckLink):
-            @property
-            def link_help(self):
-                return _(u'Add %(tag)s to %(modname)s') % (
-                    {u'tag': self._text, u'modname': mod_info.name})
-            def _check(self): return self._text in mod_tags
+        class Tags_SelectAll(ItemLink):
+            _text = _(u'Select All')
+            _help = _(u'Selects all currently applied tags.')
             def Execute(self):
-                """Toggle bash tag from menu."""
-                if mod_info.is_auto_tagged(): mod_info.set_auto_tagged(False)
-                modTags = mod_tags ^ {self._text}
-                mod_info.setBashTags(modTags)
-                _refreshUI()
-        # Menu
-        class _TagLinks(ChoiceLink):
-            choiceLinkType = _TagLink
-            def __init__(self):
-                super(_TagLinks, self).__init__()
-                self.extraItems = [_TagsAuto(), _CopyBashTagsDir(),
-                                   _CopyDesc(), SeparatorLink()]
-            @property
-            def _choices(self): return sorted(bush.game.allTags)
-        ##: Popup the menu - ChoiceLink should really be a Links subclass
-        tagLinks = Links()
-        tagLinks.append(_TagLinks())
-        tagLinks.popup_menu(self.gTags, None)
-        return EventResult.FINISH
+                self.window.lb_select_all()
+        class Tags_DeselectAll(ItemLink):
+            _text = _(u'Deselect All')
+            _help = _(u'Deselects all currently applied tags.')
+            def Execute(self):
+                self.window.lb_select_none()
+        tag_links = Links()
+        tag_links.append(Tags_Automatic())
+        tag_links.append(SeparatorLink())
+        tag_links.append(Tags_CopyToBashTags())
+        tag_links.append(Tags_CopyToDescription())
+        tag_links.append(SeparatorLink())
+        tag_links.append(Tags_SelectAll())
+        tag_links.append(Tags_DeselectAll())
+        tag_links.popup_menu(self.gTags, None)
 
 #------------------------------------------------------------------------------
 class INIDetailsPanel(_DetailsMixin, SashPanel):

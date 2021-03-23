@@ -367,7 +367,7 @@ class CreateNewPlugin(DialogWindow):
     def _handle_search(self, search_str):
         """Internal callback used to repopulate the masters box whenever the
         text in the search bar changes."""
-        lower_search_str = search_str.lower()
+        lower_search_str = search_str.lower().strip()
         new_m_keys, new_m_values = [], []
         # Case-insensitively filter based on the keys, then update the box
         for k, v in self._masters_dict.iteritems():
