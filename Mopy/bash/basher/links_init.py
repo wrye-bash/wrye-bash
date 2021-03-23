@@ -246,7 +246,7 @@ def InitInstallerLinks():
         file_menu.links.append(balt.UIList_Delete())
         InstallersList.context_links.append(file_menu)
     if True: #--Open At...
-        openAtMenu = InstallerOpenAt_MainMenu(oneDatumOnly=True)
+        openAtMenu = MenuLink(_(u'Open at..'), oneDatumOnly=True)
         openAtMenu.links.append(Installer_OpenSearch())
         openAtMenu.links.append(Installer_OpenNexus())
         openAtMenu.links.append(Installer_OpenTESA())

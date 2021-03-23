@@ -48,7 +48,7 @@ from ..exception import CancelError, SkipError, StateError
 from ..gui import BusyCursor
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
-           u'InstallerOpenAt_MainMenu', u'Installer_OpenSearch',
+           u'Installer_OpenSearch',
            u'Installer_OpenTESA', u'Installer_Hide', u'Installer_Rename',
            u'Installer_Refresh', u'Installer_Move', u'Installer_HasExtraData',
            u'Installer_OverrideSkips', u'Installer_SkipVoices',
@@ -673,20 +673,22 @@ class _Installer_OpenAt(_InstallerLink):
     _open_at_continue = u'OVERRIDE'
 
     def _enable(self):
+        # The menu won't even be enabled if >1 plugin is selected
         x = self.__class__.regexp.search(self.selected[0].s)
-        if not bool(self.isSingleArchive() and x): return False
+        if not x: return False
         self.mod_url_id = x.group(self.__class__.group)
         return bool(self.mod_url_id)
 
     def _url(self): return self.__class__.baseUrl + self.mod_url_id
 
     def Execute(self):
-        if self._askContinue(self.message, self._open_at_continue, self.askTitle):
+        if self._askContinue(self.message, self._open_at_continue,
+                             self.askTitle):
             webbrowser.open(self._url())
 
 class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
     regexp = bosh.reTesNexus
-    _text = _(bush.game.nexusName)
+    _text = u'%s...' % bush.game.nexusName
     _help = _(u"Opens this mod's page at the %(nexusName)s.") % \
             {u'nexusName': bush.game.nexusName}
     message = _(
@@ -704,7 +706,7 @@ class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
 class Installer_OpenSearch(_Installer_OpenAt):
     group = 1
     regexp = bosh.reTesNexus
-    _text = _(u'Google...')
+    _text = u'Google...'
     _help = _(u"Searches for this mod's title on Google.")
     _open_at_continue = u'bash.installers.opensearch.continue'
     askTitle = _(u'Open a search')
@@ -716,7 +718,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
 
 class Installer_OpenTESA(_Installer_OpenAt):
     regexp = bosh.reTESA
-    _text = _(u'TES Alliance...')
+    _text = u'TES Alliance...'
     _help = _(u"Opens this mod's page at TES Alliance.")
     _open_at_continue = u'bash.installers.openTESA.continue'
     askTitle = _(u'Open at TES Alliance')
@@ -1390,13 +1392,6 @@ class InstallerConverter_Create(_InstallerConverter_Link):
 #------------------------------------------------------------------------------
 # Installer Submenus ----------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerOpenAt_MainMenu(balt.MenuLink):
-    """Main Open At Menu"""
-    _text = _(u'Open at')
-    def _enable(self):
-        return super(InstallerOpenAt_MainMenu, self)._enable() and (
-            self._first_selected().is_archive())
-
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
     _text = _(u'Apply')
