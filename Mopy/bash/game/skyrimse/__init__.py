@@ -108,6 +108,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         u'skyrim - voices_en0.bsa',
     }
 
+    _patcher_package = u'bash.game.skyrimse' # We need to override tweaks
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

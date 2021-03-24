@@ -21,6 +21,7 @@
 #
 # =============================================================================
 """GameInfo override for Fallout NV."""
+
 from collections import defaultdict
 
 from ..fallout3 import Fallout3GameInfo

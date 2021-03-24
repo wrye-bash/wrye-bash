@@ -877,7 +877,6 @@ assorted_tweaks = {
     u'AssortedTweak_IngredientWeight',
     u'AssortedTweak_PotionWeightMinimum',
     u'AssortedTweak_StaffWeight',
-    u'AssortedTweak_ArrowWeight',
     u'AssortedTweak_HarvestChance',
     u'AssortedTweak_WindSpeed',
     u'AssortedTweak_UniformGroundcover',

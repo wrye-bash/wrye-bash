@@ -121,6 +121,7 @@ class MorrowindGameInfo(PatchGame):
     def _dynamic_import_modules(cls, package_name):
         """morrowind has no patcher currently - read tweaks, vanilla_files"""
         super(PatchGame, cls)._dynamic_import_modules(package_name)
+
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
