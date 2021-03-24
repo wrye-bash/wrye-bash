@@ -686,13 +686,7 @@ def _parse_list(list_path):
     :return: A LowerDict representing the list's contents.
     :rtype: LowerDict[unicode, _PluginEntry]"""
     with list_path.open(u'r', encoding=u'utf-8') as ins:
-        # HACK! https://github.com/yaml/pyyaml/issues/373
-        if u'fallout4' in list_path.cs:
-            yaml_data = ins.read().replace(u'incWithPatchVersion1.5.157.0',
-                                           u'incWithPatchVersion1_5_157_0')
-            list_contents = yaml.load(yaml_data, Loader=SafeLoader)
-        else:
-            list_contents = yaml.load(ins, Loader=SafeLoader)
+        list_contents = yaml.load(ins, Loader=SafeLoader)
     # The list contents may be None if the list file exists, but is an entirely
     # empty YAML file. Just return an empty dict in that case.
     if not list_contents:
