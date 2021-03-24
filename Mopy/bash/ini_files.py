@@ -681,7 +681,8 @@ class GameIni(IniFile):
         if doRedirect == is_bsa_redirection_active:
             return
         if doRedirect and not aiBsa.exists():
-            source = dirs[u'templates'].join(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
+            source = dirs[u'templates'].join(
+                bush.game.template_dir, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
                 env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)

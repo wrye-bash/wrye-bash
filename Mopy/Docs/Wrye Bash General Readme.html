@@ -124,14 +124,15 @@
 </ul>
 <p>It currently supports the following games:</p>
 <ul>
-    <li>Oblivion</li>
+    <li>Morrowind (very early support, Steam and Windows Store versions)</li>
+    <li>Oblivion (Steam and Windows Store versions)</li>
     <li>Nehrim&colon; At Fate's Edge</li>
     <li>Fallout 3</li>
     <li>Fallout&colon; New Vegas</li>
     <li>Skyrim</li>
     <li>Enderal&colon; Forgotten Stories</li>
-    <li>Fallout 4</li>
-    <li>Skyrim&colon; Special Edition</li>
+    <li>Fallout 4 (Steam and Windows Store versions)</li>
+    <li>Skyrim&colon; Special Edition (Steam and Windows Store versions)</li>
 </ul>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
 <p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.</p>
@@ -140,6 +141,7 @@
 <p>Modding for Creation Engine games has a wonderful history of confusing terminology. The list below details some terms commonly used when dealing with mods.
 <ul>
     <li><strong>The game</strong> is the game that Wrye Bash is managing, one of the ones listed above.</li>
+    <li><strong>Windows Store</strong> refers to a game installed with the Windows Store.  This could also be referred to as a Game Pass, Xbox App, or Microsoft Store game.</li>
     <li><strong>CTD</strong> is an acronym for Crash To Desktop. Used to describe the game crashing.</li>
     <li><strong>DLC</strong> refers to any of the official downloadable content for the game.</li>
     <li><strong>Mod</strong> refers to any unofficial user-made modification to the game.</li>
@@ -156,6 +158,7 @@
     <table>
         <thead><tr><th>Game</th><th>Master File</th></tr></thead>
         <tbody>
+            <tr><td>Morrowind</td><td>Morrowind.esm</td></tr>
             <tr><td>Oblivion</td><td>Oblivion.esm</td></tr>
             <tr><td>Nehrim&colon; At Fate's Edge</td><td>Nehrim.esm</td></tr>
             <tr><td>Fallout 3</td><td>Fallout3.esm</td></tr>
@@ -221,7 +224,7 @@
     <li><code>[Game]\Data\Docs</code>
     <li><code>[Game]\Data\INI Tweaks</code>
     <li><code>Documents\My Games\[Game]</code> - Only delete the <code>BashProfiles.dat</code>, <code>BashProfiles.dat.bak</code>, <code>BashSettings.dat</code>, <code>BashSettings.dat.bak</code>, <code>Messages.dat</code>, <code>Messages.dat.bak</code>, <code>People.dat</code> and <code>People.dat.bak</code> files and the <code>Saves\Bash</code> folder.
-    <li><code>[Game] Mods</code> (in the same folder as [Game]) - The <code>Bash Installers</code> folder stores the mods you've installed via BAIN.
+    <li><code>[Game] Mods</code> (in the same folder as [Game] for most games, in <code>Documents\Wrye Bash</code> for Windows Store games) - The <code>Bash Installers</code> folder stores the mods you've installed via BAIN.
 </ul>
 
 <h2 id="bain">Installing Mods <a class="back2top" href="#contents">Back to top</a></h2>
@@ -1344,14 +1347,14 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     </thead>
     <tbody>
         <tr>
-            <td><img alt="Oblivion Icon" src="../bash/images/Oblivion32.png" width="32" height="32"/></td><td>Oblivion</td>
-            <td><img alt="Nehrim Icon" src="../bash/images/Nehrim32.png" width="32" height="32"/></td><td>Nehrim&colon; At Fate's Edge</td>
-            <td><img alt="Fallout 3 Icon" src="../bash/images/Fallout 332.png" width="32" height="32"/></td><td>Fallout 3</td>
-            <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/Fallout New Vegas32.png" width="32" height="32"/></td><td>Fallout&colon; New Vegas</td>
-            <td><img alt="Skyrim Icon" src="../bash/images/Skyrim32.png" width="32" height="32"/></td><td>Skyrim</td>
-            <td><img alt="Enderal Icon" src="../bash/images/Enderal32.png" width="32" height="32"/></td><td>Enderal&colon; Forgotten Stories</td>
-            <td><img alt="Fallout 4 Icon" src="../bash/images/Fallout 432.png" width="32" height="32"/></td><td>Fallout 4</td>
-            <td><img alt="Skyrim&colon; Special Edition Icon" src="../bash/images/Skyrim Special Edition32.png" width="32" height="32"/></td><td>Skyrim&colon; Special Edition</td>
+            <td><img alt="Oblivion Icon" src="../bash/images/oblivion_32.png" width="32" height="32"/></td><td>Oblivion</td>
+            <td><img alt="Nehrim Icon" src="../bash/images/nehrim_32.png" width="32" height="32"/></td><td>Nehrim&colon; At Fate's Edge</td>
+            <td><img alt="Fallout 3 Icon" src="../bash/images/fallout3_32.png" width="32" height="32"/></td><td>Fallout 3</td>
+            <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/falloutnv_32.png" width="32" height="32"/></td><td>Fallout&colon; New Vegas</td>
+            <td><img alt="Skyrim Icon" src="../bash/images/skyrim_32.png" width="32" height="32"/></td><td>Skyrim</td>
+            <td><img alt="Enderal Icon" src="../bash/images/enderal_32.png" width="32" height="32"/></td><td>Enderal&colon; Forgotten Stories</td>
+            <td><img alt="Fallout 4 Icon" src="../bash/images/fallout4_32.png" width="32" height="32"/></td><td>Fallout 4</td>
+            <td><img alt="Skyrim&colon; Special Edition Icon" src="../bash/images/skyrim_32.png" width="32" height="32"/></td><td>Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td><img alt="Oblivion CS Icon" src="../bash/images/tescs32.png" width="32" height="32"/></td><td><a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">TES Construction Set</a></td>
@@ -1592,7 +1595,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <p>The log file will detail the cause of the problem that is stopping Wrye Bash from starting. Read it and the rest of this section to see if the problem is something you can fix yourself. If not, report it to an official Wrye Bash thread for support.</p>
 
 <h3 id="trouble-permissions">File Permissions <a class="back2top" href="#contents">Back to top</a></h3>
-<p>If you are running Windows Vista or later, Wrye Bash (and other modding programs) may be prevented from working correctly by the UAC security feature.  There are four common workarounds to this problem:
+<p>If you are running Windows Vista or later, Wrye Bash (and other modding programs) may be prevented from working correctly by the UAC security feature.  For Windows Store games, there are no workarounds to this, if you receive errors you must launch as as Administrator (workaround 4). There are four common workarounds to this problem:
 <ol>
     <li>Install the game outside <q>Program Files</q> or <q>Program Files (x86)</q>. UAC prevents unauthorised edits to these folders, so by installing the game outside of them, you remove it from UAC's reach, allowing you to use mods more easily. Steam users can move their Steam installation and games using <a href="https://support.steampowered.com/kb_article.php?ref=7418-YUBN-8129">these instructions</a>.
     <li>Deactivate UAC. This can be done from the Control Panel, and will turn UAC off across the whole of your computer. It is up to you whether you feel that you have adequate security measures in place to do this without risk.
@@ -1633,6 +1636,21 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     <li>In the <q>Group or user names</q> box, select the <q>Users</q> option.
     <li>In the lower box, check the box opposite <q>Full Control</q> in the <q>Allow</q> column. Press OK to exit. If a UAC prompt appears, allow the change.
     <li>In the <q>Properties</q> window, select OK to exit. You should now have Full Control permissions over your chosen folder.
+</ol>
+<p>If your game is a Windows Store game (Installed via the Windows Store or
+    Xbox App), then there are additional permissions to deal with:</p>
+<ol>
+    <li>Wrye Bash will by default use a different writable location to store
+        your installers, as well as metadata about those installers: Your
+        <code>My Documents\Wrye Bash</code> folder.</li>
+    <li>Wrye Bash may need to redate plugins and/or BSAs. Unfortunately, we
+        don't currently have a way to do this in non-admin mode, so for these
+        operations you need to either run Wrye Bash as admin, or grant <q>Full
+            Control</q> as described above for the game folder. Specifically,
+        Oblivion requires this on a regular basis to redate plugins for Load
+        Order configuraion. Later games do not usually need this, so they are
+        for the most part safe to run in non-admin mode and without changing
+        file permissions.</li>
 </ol>
 
 <h3 id="trouble-backup">Backing Up &amp; Restoring Settings <a class="back2top" href="#contents">Back to top</a></h3>

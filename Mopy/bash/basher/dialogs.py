@@ -207,10 +207,10 @@ class CreateNewProject(DialogWindow):
         tmpDir = bolt.Path.tempDir()
         tempProject = tmpDir.join(projectName)
         if self.checkEsp.is_checked:
-            fileName = u'Blank, %s.esp' % bush.game.fsName
+            fileName = u'Blank, %s.esp' % bush.game.displayName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject)
         if self.checkEspMasterless.is_checked:
-            fileName = u'Blank, %s (masterless).esp' % bush.game.fsName
+            fileName = u'Blank, %s (masterless).esp' % bush.game.displayName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject,
                                          wanted_masters=[])
         if self.checkWizard.is_checked:

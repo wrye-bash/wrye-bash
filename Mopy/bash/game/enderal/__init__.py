@@ -30,15 +30,24 @@ from ...brec import MreFlst, MreGlob
 class EnderalGameInfo(SkyrimGameInfo):
     displayName = u'Enderal'
     fsName = u'Enderal'
+    game_icon = u'enderal_%u.png'
     bash_root_prefix = u'Enderal'
+    bak_game_name = u'Enderal'
+    my_games_name = u'Enderal'
+    appdata_name = u'Enderal'
     # Enderal SE also has an Enderal Launcher.exe, but no TESV.exe. Skyrim LE
     # has TESV.exe, but no Enderal Launcher.exe
-    game_detect_files = [u'Enderal Launcher.exe', u'TESV.exe']
+    game_detect_includes = [u'Enderal Launcher.exe', u'TESV.exe']
     # This isn't exact (currently 1.5.0 when it should be 1.5.7), but it's the
     # closest we're going to get
     version_detect_file = u'Enderal Launcher.exe'
     taglist_dir = u'Enderal'
+    loot_dir = u'Enderal'
+    boss_game_name = u'' # BOSS does not support Enderal
     regInstallKeys = (u'SureAI\\Enderal', u'Install_Path')
+    nexusUrl = u'https://www.nexusmods.com/enderal/'
+    nexusName = u'Enderal Nexus'
+    nexusKey = u'bash.installers.openEnderalNexus.continue'
 
     class Ini(SkyrimGameInfo.Ini):
         default_ini_file = u'enderal_default.ini'
@@ -51,10 +60,6 @@ class EnderalGameInfo(SkyrimGameInfo):
 
     class Bain(SkyrimGameInfo.Bain):
         skip_bain_refresh = {u'enderaledit backups', u'enderaledit cache'}
-
-    nexusUrl = u'https://www.nexusmods.com/enderal/'
-    nexusName = u'Enderal Nexus'
-    nexusKey = u'bash.installers.openEnderalNexus.continue'
 
     raceNames = {
         0x13741 : _(u'Half Kilénian'),

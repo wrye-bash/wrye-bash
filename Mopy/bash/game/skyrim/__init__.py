@@ -32,13 +32,19 @@ class SkyrimGameInfo(PatchGame):
     displayName = u'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
+    game_icon = u'skyrim_%u.png'
     bash_root_prefix = u'Skyrim'
+    bak_game_name = u'Skyrim'
+    my_games_name = u'Skyrim'
+    appdata_name = u'Skyrim'
     launch_exe = u'TESV.exe'
     # Set to this because TESV.exe also exists for Enderal
-    game_detect_files = [u'SkyrimLauncher.exe']
+    game_detect_includes = [u'SkyrimLauncher.exe']
     version_detect_file = u'TESV.exe'
     master_file = u'Skyrim.esm'
     taglist_dir = u'Skyrim'
+    loot_dir = u'Skyrim'
+    boss_game_name = u'Skyrim'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'

@@ -321,7 +321,7 @@ def vistaDialog(parent, message, title, checkBoxTxt=None,
     buttons = buttons if buttons is not None else (
         (BTN_OK, u'ok'), (BTN_CANCEL, u'cancel'))
     heading = heading if heading is not None else title
-    title = title if heading is not None else u'Wrye Bash'
+    title = title if title is not None else u'Wrye Bash'
     dialog = TaskDialog(title, heading, message,
                         buttons=[x[1] for x in buttons], main_icon=icon,
                         parenthwnd=parent.GetHandle() if parent else None,
@@ -2232,7 +2232,7 @@ def ask_uac_restart(message, title, mopy):
     admin = _(u'Run with Administrator Privileges')
     readme = readme_url(mopy) + u'#trouble-permissions'
     return vistaDialog(None, message=message,
-        buttons=[(True, u'+' + admin), (False, _(u'Run normally'))],
+        buttons=[(BTN_YES, u'+' + admin), (BTN_NO, _(u'Run normally'))],
         title=title, expander=[_(u'How to avoid this message in the future'),
             _(u'Less information'),
             _(u'Use one of the following command line switches:') +

@@ -751,7 +751,9 @@ class ModInfo(FileInfo):
                                                             ins, True)
             except struct_error as rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
-        if bush.game.fsName in (u'Skyrim Special Edition', u'Skyrim VR'):
+        if bush.game.fsName in (u'Skyrim Special Edition', u'Skyrim VR',
+                                u'Enderal Special Edition',
+                                u'Skyrim Special Edition MS'):
             if tes4_rec_header.form_version != \
                     RecordHeader.plugin_form_version:
                 modInfos.sse_form43.add(self.name)
@@ -3440,8 +3442,8 @@ def initTooldirs():
     else:
         tooldirs[u'boss'] = GPath(u'C:\\**DNE**')
         # Detect globally installed (into Program Files) BOSS
-        path_in_registry = env.get_registry_path(u'Boss', u'Installed Path',
-                                                 [u'BOSS.exe'])
+        path_in_registry = env.get_registry_path(
+            u'Boss', u'Installed Path', lambda p: p.join(u'BOSS.exe').isfile())
         if path_in_registry:
             if path_in_registry.isdir():
                 path_in_registry = path_in_registry.join(u'BOSS.exe')
@@ -3601,8 +3603,7 @@ def initBosh(bashIni, game_ini_path):
     # Setup loot_parser, needs to be done after the dirs are initialized
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'initBosh: Bash dirs are not initialized')
-    loot_path = bass.dirs[u'userApp'].join(os.pardir, u'LOOT',
-        bush.game.fsName)
+    loot_path = bass.dirs[u'local_appdata'].join(u'LOOT', bush.game.loot_dir)
     lootMasterPath = loot_path.join(u'masterlist.yaml')
     lootUserPath = loot_path.join(u'userlist.yaml')
     tagList = bass.dirs[u'taglists'].join(u'taglist.yaml')

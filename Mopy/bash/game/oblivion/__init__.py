@@ -26,6 +26,7 @@ from collections import defaultdict
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
+from .. import WS_COMMON
 from ... import brec
 from ...brec import MreGlob, MreLand
 
@@ -33,14 +34,23 @@ class OblivionGameInfo(PatchGame):
     displayName = u'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
+    game_icon = u'oblivion_%u.png'
     bash_root_prefix = u'Oblivion'
+    bak_game_name = u'Oblivion'
+    template_dir = u'Oblivion'
+    bash_patches_dir = u'Oblivion'
+    my_games_name = u'Oblivion'
+    appdata_name = u'Oblivion'
     launch_exe = u'Oblivion.exe'
     # Set to this because that file does not exist in Nehrim, whereas
     # OblivionLauncher.exe and Oblivion.exe do
-    game_detect_files = [_j(u'Data', u'Oblivion.esm')]
+    game_detect_includes = [_j(u'Data', u'Oblivion.esm')]
+    game_detect_excludes = WS_COMMON
     version_detect_file = u'Oblivion.exe'
     master_file = u'Oblivion.esm'
     taglist_dir = u'Oblivion'
+    loot_dir = u'Oblivion'
+    boss_game_name = u'Oblivion'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/oblivion/'
     nexusName = u'Oblivion Nexus'
@@ -270,6 +280,9 @@ class OblivionGameInfo(PatchGame):
         u'dlcshiveringisles - sounds.bsa',
         u'dlcshiveringisles - textures.bsa',
         u'dlcshiveringisles - voices.bsa',
+        #--Knights of the Nine - shipped with all WS versions
+        u'knights.esp',
+        u'knights.bsa',
     }
 
     @classmethod

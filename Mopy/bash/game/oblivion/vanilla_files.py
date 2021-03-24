@@ -25,6 +25,8 @@ vanilla Oblivion setup."""
 
 #--Every file in the Data directory from Bethsoft
 vanilla_files = {
+    # Verified correct for all WS language variants:
+    #   English, French, German, Italian, Spanish
     # Section 1: Vanilla files
     u'Credits.txt',
     u'Oblivion - Meshes.bsa',

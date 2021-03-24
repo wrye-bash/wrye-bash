@@ -152,8 +152,9 @@ class Saves_ProfilesData(balt.ListEditorData):
             if not balt.askYes(self.parent,message,_(u'Delete Profile')):
                 return False
         #--Remove directory
-        if GPath(bush.game.fsName).join(u'Saves').s not in profileDir.s:
-            raise BoltError(u'Sanity check failed: No "%s\\Saves" in %s.' % (bush.game.fsName,profileDir))
+        if GPath(bush.game.my_games_name).join(u'Saves').s not in profileDir.s:
+            raise BoltError(u'Sanity check failed: No "%s\\Saves" in %s.' % (
+                bush.game.my_games_name, profileDir))
         shutil.rmtree(profileDir.s) #--DO NOT SCREW THIS UP!!!
         bosh.saveInfos.profiles.delRow(profileSaves)
         return True

@@ -614,15 +614,46 @@
         ; As of 308, only the red and blue icon sets are used
         Delete "${Path}\Mopy\bash\images\docbrowser32.ico"
         Delete "${Path}\Mopy\bash\images\wrye_monkey_87_sharp.ico"
+        ; As of 309, game icons have been renamed (again)
+        Delete "${Path}\Mopy\bash\images\Enderal16.png"
+        Delete "${Path}\Mopy\bash\images\Enderal24.png"
+        Delete "${Path}\Mopy\bash\images\Enderal32.png"
+        Delete "${Path}\Mopy\bash\images\Fallout 4 VR16.png"
+        Delete "${Path}\Mopy\bash\images\Fallout 4 VR24.png"
+        Delete "${Path}\Mopy\bash\images\Fallout 4 VR32.png"
+        Delete "${Path}\Mopy\bash\images\Fallout 316.png"
+        Delete "${Path}\Mopy\bash\images\Fallout 324.png"
+        Delete "${Path}\Mopy\bash\images\Fallout 332.png"
+        Delete "${Path}\Mopy\bash\images\Fallout 416.png"
+        Delete "${Path}\Mopy\bash\images\Fallout 424.png"
+        Delete "${Path}\Mopy\bash\images\Fallout 432.png"
+        Delete "${Path}\Mopy\bash\images\Fallout New Vegas16.png"
+        Delete "${Path}\Mopy\bash\images\Fallout New Vegas24.png"
+        Delete "${Path}\Mopy\bash\images\Fallout New Vegas32.png"
+        Delete "${Path}\Mopy\bash\images\Morrowind16.png"
+        Delete "${Path}\Mopy\bash\images\Morrowind24.png"
+        Delete "${Path}\Mopy\bash\images\Morrowind32.png"
+        Delete "${Path}\Mopy\bash\images\Nehrim16.png"
+        Delete "${Path}\Mopy\bash\images\Nehrim24.png"
+        Delete "${Path}\Mopy\bash\images\Nehrim32.png"
+        Delete "${Path}\Mopy\bash\images\Oblivion16.png"
+        Delete "${Path}\Mopy\bash\images\Oblivion24.png"
+        Delete "${Path}\Mopy\bash\images\Oblivion32.png"
+        Delete "${Path}\Mopy\bash\images\Skyrim16.png"
+        Delete "${Path}\Mopy\bash\images\Skyrim24.png"
+        Delete "${Path}\Mopy\bash\images\Skyrim32.png"
+        Delete "${Path}\Mopy\bash\images\Skyrim Special Edition16.png"
+        Delete "${Path}\Mopy\bash\images\Skyrim Special Edition24.png"
+        Delete "${Path}\Mopy\bash\images\Skyrim Special Edition32.png"
+        Delete "${Path}\Mopy\bash\images\Skyrim VR16.png"
+        Delete "${Path}\Mopy\bash\images\Skyrim VR24.png"
+        Delete "${Path}\Mopy\bash\images\Skyrim VR32.png"
     !macroend
 
 
     !macro RemoveCurrentFiles Path
         ; Remove files belonging to current build
         RMDir /r "${Path}\Mopy"
-        ; Do not remove ArchiveInvalidationInvalidated!, because if it's registered
-        ; in the users INI file, this will cause problems
-        ;;Delete "${Path}\Data\ArchiveInvalidationInvalidated!.bsa"
         RMDir "${Path}\Data\INI Tweaks"
         RMDir "${Path}\Data\Docs"
         RMDir "${Path}\Data\BashTags"

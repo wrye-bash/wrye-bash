@@ -39,7 +39,6 @@ from itertools import izip
 from . import bass, bolt, env, exception
 from .bolt import GPath_no_norm, dict_sort
 from .ini_files import get_ini_type_and_encoding
-from .localize import format_date
 
 def _write_plugins_txt_(path, lord, active, _star):
     try:
@@ -460,13 +459,27 @@ class Game(object):
 
     def get_acti_file(self):
         """Returns the path of the file used by this game for storing active
-        plugins."""
+        plugins.
+
+        :rtype: bolt.Path"""
         return None # base case
 
     def get_lo_file(self):
         """Returns the path of the file used by this game for storing load
-        order."""
+        order.
+
+        :rtype: bolt.Path"""
         return None # base case
+
+    def _set_acti_file(self, new_acti_file):
+        """Sets the path of the file used by this game for storing active
+        plugins."""
+        pass # base case
+
+    def _set_lo_file(self, new_lo_file):
+        """Sets the path of the file used by this game for storing load
+        order."""
+        pass # base case
 
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord, fix_lo):
@@ -645,6 +658,18 @@ class Game(object):
     @classmethod
     def parse_ccc_file(cls): pass
 
+    def print_lo_paths(self):
+        """Prints the paths that will be used and what they'll be used for.
+        Useful for debugging."""
+        lo_file = self.get_lo_file()
+        acti_file = self.get_acti_file()
+        if lo_file or acti_file:
+            bolt.deprint(u'Using the following load order files:')
+            if lo_file:
+                bolt.deprint(u' - Load order: %s' % lo_file)
+            if acti_file and acti_file != lo_file:
+                bolt.deprint(u' - Active plugins: %s' % acti_file)
+
 class INIGame(Game):
     """Class for games which use an INI section to determine parts of the load
     order. Meant to be used in multiple inheritance with other Game types, be
@@ -736,13 +761,21 @@ class INIGame(Game):
     def _backup_active_plugins(self):
         if self._handles_actives:
             ini_path = self._cached_ini_actives.abs_path
-            ini_path.copyTo(ini_path.backup)
+            try:
+                ini_path.copyTo(ini_path.backup)
+            except IOError:
+                bolt.deprint(u'Tried to back up %s, but it did not '
+                             u'exist' % ini_path)
         else: super(INIGame, self)._backup_active_plugins()
 
     def _backup_load_order(self):
         if self._handles_lo:
             ini_path = self._cached_ini_lo.abs_path
-            ini_path.copyTo(ini_path.backup)
+            try:
+                ini_path.copyTo(ini_path.backup)
+            except IOError:
+                bolt.deprint(u'Tried to back up %s, but it did not '
+                             u'exist' % ini_path)
         else: super(INIGame, self)._backup_load_order()
 
     # Reading from INI
@@ -839,6 +872,14 @@ class INIGame(Game):
             return self._cached_ini_lo.abs_path
         return super(INIGame, self).get_lo_file()
 
+    def _set_acti_file(self, new_acti_file):
+        raise exception.AbstractError(u'INIGame does not support'
+                                      u'_set_acti_file right now')
+
+    def _set_lo_file(self, new_lo_file):
+        raise exception.AbstractError(u'INIGame does not support _set_lo_file '
+                                      u'right now')
+
 class TimestampGame(Game):
     """Oblivion and other games where load order is set using modification
     times.
@@ -877,6 +918,9 @@ class TimestampGame(Game):
     def get_acti_file(self):
         return self.plugins_txt_path
 
+    def _set_acti_file(self, new_acti_file):
+        self.plugins_txt_path = new_acti_file
+
     # Abstract overrides ------------------------------------------------------
     def __calculate_mtime_order(self, mods=None): # excludes corrupt mods
         # sort case insensitive (for time conflicts)
@@ -886,7 +930,11 @@ class TimestampGame(Game):
         return mods
 
     def _backup_active_plugins(self):
-        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        try:
+            self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        except IOError:
+            bolt.deprint(u'Tried to back up %s, but it did not '
+                         u'exist' % self.plugins_txt_path)
 
     def _backup_load_order(self):
         pass # timestamps, no file to backup
@@ -1009,12 +1057,26 @@ class TextfileGame(Game):
     def get_lo_file(self):
         return self.loadorder_txt_path
 
+    def _set_acti_file(self, new_acti_file):
+        self.plugins_txt_path = new_acti_file
+
+    def _set_lo_file(self, new_lo_file):
+        self.loadorder_txt_path = new_lo_file
+
     # Abstract overrides ------------------------------------------------------
     def _backup_active_plugins(self):
-        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        try:
+            self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        except IOError:
+            bolt.deprint(u'Tried to back up %s, but it did not '
+                         u'exist' % self.plugins_txt_path)
 
     def _backup_load_order(self):
-        self.loadorder_txt_path.copyTo(self.loadorder_txt_path.backup)
+        try:
+            self.loadorder_txt_path.copyTo(self.loadorder_txt_path.backup)
+        except IOError:
+            bolt.deprint(u'Tried to back up %s, but it did not '
+                         u'exist' % self.loadorder_txt_path)
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from loadorder.txt file. If loadorder.txt does not
@@ -1147,9 +1209,19 @@ class AsteriskGame(Game):
     def get_lo_file(self):
         return self.plugins_txt_path
 
+    def _set_acti_file(self, new_acti_file):
+        self.plugins_txt_path = new_acti_file
+
+    def _set_lo_file(self, new_lo_file):
+        self.plugins_txt_path = new_lo_file
+
     # Abstract overrides ------------------------------------------------------
     def _backup_active_plugins(self):
-        self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        try:
+            self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        except IOError:
+            bolt.deprint(u'Tried to back up %s, but it did not '
+                         u'exist' % self.plugins_txt_path)
 
     def _backup_load_order(self):
         self._backup_active_plugins() # same thing for asterisk games
@@ -1235,6 +1307,96 @@ class AsteriskGame(Game):
             bolt.deprint(u'%s does not exist or could not be read, falling '
                          u'back to hardcoded CCC list' % cls._ccc_filename)
             cls.must_be_active_if_present += cls._ccc_fallback
+
+class WindowsStoreGame(Game):
+    """Mixin for Windows Store games, which have a second, fallback directory
+    which we must keep in sync with the main one."""
+    @property
+    def _fallback_lo_files(self):
+        """Returns a tuple containing the fallback actives/LO files"""
+        try:
+            return self._second_acti_file, self._second_lo_file
+        except AttributeError:
+            from . import bush
+            sec_path = bass.dirs[u'local_appdata'].join(bush.game.appdata_name)
+            acti_file = self.get_acti_file()
+            self._second_acti_file = (sec_path.join(acti_file.stail)
+                                      if acti_file else None)
+            lo_file = self.get_lo_file()
+            self._second_lo_file = (sec_path.join(lo_file.stail)
+                                    if lo_file else None)
+            return self._second_acti_file, self._second_lo_file
+
+    def _fetch_load_order(self, cached_load_order, cached_active):
+        _fb_acti_file, fb_lo_file = self._fallback_lo_files
+        lo_file = self.get_lo_file()
+        if lo_file and fb_lo_file:
+            # Use the main LO file if possible, but if the main file is missing
+            # or the fallback file is newer, use that one
+            if lo_file.isfile():
+                file_to_use = lo_file
+                if fb_lo_file.isfile() and fb_lo_file.mtime > lo_file.mtime:
+                    file_to_use = fb_lo_file
+            else:
+                file_to_use = fb_lo_file
+            swap_files = file_to_use is not lo_file
+        else:
+            # We don't even have LO files for this game, skip right to parent
+            file_to_use = None
+            swap_files = False
+        if swap_files:
+            self._set_lo_file(file_to_use)
+        ret_lo = super(WindowsStoreGame, self)._fetch_load_order(
+            cached_load_order, cached_active)
+        if swap_files:
+            self._set_lo_file(lo_file)
+        return ret_lo
+
+    def _fetch_active_plugins(self):
+        fb_acti_file, _fb_lo_file = self._fallback_lo_files
+        acti_file = self.get_acti_file()
+        if acti_file and fb_acti_file:
+            # Use the main actives file if possible, but if the main file is
+            # missing or the fallback file is newer, use that one
+            if acti_file.isfile():
+                file_to_use = acti_file
+                if (fb_acti_file.isfile() and
+                        fb_acti_file.mtime > acti_file.mtime):
+                    file_to_use = fb_acti_file
+            else:
+                file_to_use = fb_acti_file
+            swap_files = file_to_use is not acti_file
+        else:
+            # We don't even have actives files for this game, skip right to
+            # parent
+            file_to_use = None
+            swap_files = False
+        if swap_files:
+            self._set_acti_file(file_to_use)
+        ret_acti = super(WindowsStoreGame, self)._fetch_active_plugins()
+        if swap_files:
+            self._set_acti_file(acti_file)
+        return ret_acti
+
+    def _persist_active_plugins(self, active, lord):
+        super(WindowsStoreGame, self)._persist_active_plugins(active, lord)
+        fb_acti_file, _fb_lo_file = self._fallback_lo_files
+        if fb_acti_file:
+            self.get_acti_file().copyTo(fb_acti_file)
+
+    def _persist_load_order(self, lord, active):
+        super(WindowsStoreGame, self)._persist_load_order(lord, active)
+        _fb_acti_file, fb_lo_file = self._fallback_lo_files
+        if fb_lo_file:
+            self.get_lo_file().copyTo(fb_lo_file)
+
+    def print_lo_paths(self):
+        super(WindowsStoreGame, self).print_lo_paths()
+        fb_acti_file, fb_lo_file = self._fallback_lo_files
+        if fb_lo_file:
+            bolt.deprint(u' - Load order (fallback): %s' % fb_lo_file)
+        if fb_acti_file and fb_acti_file != fb_lo_file:
+            bolt.deprint(u' - Active plugins (fallback): %s' % fb_acti_file)
 
 # TextfileGame overrides
 class Skyrim(TextfileGame):
@@ -1495,28 +1657,6 @@ class SkyrimSE(AsteriskGame):
         return {GPath_no_norm(u'Skyrim.esm')} | set(
             self.must_be_active_if_present)
 
-    __dlc_spacing = 60.0 # in seconds
-    def _fixed_order_plugins(self):
-        """Return the semi fixed plugins after pinning them in correct order by
-        timestamping them."""
-        # get existing
-        ret = super(AsteriskGame, self)._fixed_order_plugins()
-        # rewrite mtimes
-        master_mtime = self.mod_infos[self.master_path].mtime
-        update = GPath_no_norm(u'Update.esm')
-        for dlc in ret[1:]:
-            if dlc == update:
-                master_mtime = self.mod_infos[update].mtime
-            else:
-                master_mtime += self.__dlc_spacing
-                dlc_mtime = self.mod_infos[dlc].mtime
-                if dlc_mtime != master_mtime:
-                    self.mod_infos[dlc].setmtime(master_mtime)
-                    bolt.deprint(u'Restamped %s  from %s to %s' % (
-                        dlc, format_date(dlc_mtime),
-                        format_date(master_mtime)))
-        return ret
-
 class SkyrimVR(SkyrimSE):
     must_be_active_if_present = SkyrimSE.must_be_active_if_present + (
         GPath_no_norm(u'SkyrimVR.esm'),)
@@ -1525,10 +1665,16 @@ class SkyrimVR(SkyrimSE):
 class EnderalSE(SkyrimSE):
     must_be_active_if_present = Enderal.must_be_active_if_present
 
+# WindowsStoreGame overrides
+class SkyrimSEWS(WindowsStoreGame, SkyrimSE): pass
+class Fallout4WS(WindowsStoreGame, Fallout4): pass
+
 # Game factory
 def game_factory(game_fsName, mod_infos, plugins_txt_path,
                  loadorder_txt_path=None):
-    if game_fsName == u'Skyrim':
+    if game_fsName == u'Morrowind':
+        return Morrowind(mod_infos)
+    elif game_fsName == u'Skyrim':
         return Skyrim(mod_infos, plugins_txt_path, loadorder_txt_path)
     elif game_fsName == u'Enderal':
         return Enderal(mod_infos, plugins_txt_path, loadorder_txt_path)
@@ -1538,12 +1684,14 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
         return SkyrimSE(mod_infos, plugins_txt_path)
     elif game_fsName == u'Skyrim VR':
         return SkyrimVR(mod_infos, plugins_txt_path)
+    elif game_fsName == u'Skyrim Special Edition MS':
+        return SkyrimSEWS(mod_infos, plugins_txt_path)
     elif game_fsName == u'Fallout4':
         return Fallout4(mod_infos, plugins_txt_path)
     elif game_fsName == u'Fallout4VR':
         return Fallout4VR(mod_infos, plugins_txt_path)
-    elif game_fsName == u'Morrowind':
-        return Morrowind(mod_infos)
+    elif game_fsName == u'Fallout4 MS':
+        return Fallout4WS(mod_infos, plugins_txt_path)
     else:
         return TimestampGame(mod_infos, plugins_txt_path)
 

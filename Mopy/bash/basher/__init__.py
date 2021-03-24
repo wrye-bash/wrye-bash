@@ -4078,11 +4078,10 @@ class BashFrame(WindowFrame):
         testFile = bass.dirs[u'mopy'].join(u'Docs', u'wtxt_teal.css')
         if self.incompleteInstallError or testFile.exists(): return
         self.incompleteInstallError = True
-        msg = _(u'Installation appears incomplete.  Please re-unzip bash '
-        u'to game directory so that ALL files are installed.') + u'\n\n' + _(
-        u'Correct installation will create %s\\Mopy and '
-        u'%s\\%s\\Docs directories.') % (bush.game.fsName, bush.game.fsName,
-                                         bush.game.mods_dir)
+        msg = _(u'Installation appears incomplete. Please re-unzip bash to '
+                u'game directory so that ALL files are installed.') + u'\n\n'\
+              + _(u'Correct installation will create a Mopy and %s\\Docs '
+                  u'directories.') % bush.game.mods_dir
         balt.showWarning(self, msg, _(u'Incomplete Installation'))
 
     def on_closing(self, destroy=True):

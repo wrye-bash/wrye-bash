@@ -28,6 +28,7 @@ __author__ = u'nycz, Utumno'
 from itertools import izip
 
 import wx as _wx
+import wx.adv as _adv
 
 from .base_components import _AComponent, Color, WithCharEvents, \
     WithMouseEvents
@@ -86,6 +87,17 @@ class DropDown(_AComponent):
 
     def get_value(self):
         return self._native_widget.GetValue()
+
+class ImageDropDown(DropDown):
+    """A version of DropDown that shows a bitmap in front of each entry."""
+    _wx_widget_type = _adv.BitmapComboBox
+
+    def set_bitmaps(self, bitmaps):
+        """Changes the bitmaps shown in the dropdown. It is recommended to use
+        pause_drawing around this (in combination with all other DropDown
+        updating you're doing) to avoid flicker."""
+        for i, bitmap in enumerate(bitmaps):
+            self._native_widget.SetItemBitmap(i, bitmap)
 
 class ColorPicker(_AComponent):
     """A button with a color that launches a color picker dialog.

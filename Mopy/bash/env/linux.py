@@ -28,11 +28,9 @@ import sys
 
 from ..bolt import deprint, GPath, structs_cache
 from ..exception import EnvError
-from .common import get_env_var, iter_env_vars
+from .common import get_env_var, iter_env_vars, WinAppInfo
 
 # API - Constants =============================================================
-isUAC = False # Not a thing on Linux
-
 try:
     MAX_PATH = int(subprocess.check_output([u'getconf', u'PATH_MAX', u'/']))
 except (ValueError, subprocess.CalledProcessError, OSError):
@@ -64,11 +62,14 @@ def _get_error_info():
 
 # API - Functions =============================================================
 ##: Several of these should probably raise instead
-def get_registry_path(_subkey, _entry, _detection_files):
+def get_registry_path(_subkey, _entry, _test_path_callback):
     return None # no registry on Linux
 
-def get_registry_game_path(_submod):
-    return None # no registry on Linux
+def get_registry_game_paths(_submod):
+    return [] # no registry on Linux
+
+def get_win_store_game_info(_submod):
+    return WinAppInfo() # no Windows Store on Linux
 
 def get_personal_path():
     return _getShellPath(u'Personal'), _get_error_info()
@@ -89,6 +90,9 @@ def testUAC(_gameDataPath):
 
 def setUAC(_handle, _uac=True):
     pass # Noop on Linux
+
+def is_uac():
+    return False # Not a thing on Linux
 
 def getJava(): # PY3: cache this
     try:

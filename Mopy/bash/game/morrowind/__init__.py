@@ -25,20 +25,26 @@ import struct as _struct
 from collections import defaultdict
 
 from ..patch_game import GameInfo, PatchGame
+from .. import WS_COMMON
 from ... import brec
 
 class MorrowindGameInfo(PatchGame):
     displayName = u'Morrowind'
     fsName = u'Morrowind'
     altName = u'Wrye Mash'
+    game_icon = u'morrowind_%u.png'
     bash_root_prefix = u'Morrowind'
+    bak_game_name = u'Morrowind'
     uses_personal_folders = False
+    appdata_name = u'Morrowind'
     launch_exe = u'Morrowind.exe'
-    game_detect_files = [u'Morrowind.exe']
+    game_detect_includes = [u'Morrowind.exe']
+    game_detect_excludes = WS_COMMON
     version_detect_file = u'Morrowind.exe'
     master_file = u'Morrowind.esm'
     mods_dir = u'Data Files'
     taglist_dir = u'Morrowind'
+    loot_dir = u'Morrowind'
     # This is according to xEdit's sources, but it doesn't make that key for me
     regInstallKeys = (u'Bethesda Softworks\\Morrowind', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/morrowind/'

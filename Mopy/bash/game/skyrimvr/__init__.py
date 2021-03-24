@@ -31,10 +31,15 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     displayName = u'Skyrim VR'
     fsName = u'Skyrim VR'
     altName = u'Wrye VRash'
+    game_icon = u'skyrimvr_%u.png'
     bash_root_prefix = u'Skyrim VR' # backwards compat :(
+    bak_game_name = u'Skyrim VR'
+    my_games_name = u'Skyrim VR'
+    appdata_name = u'Skyrim VR'
     launch_exe = u'SkyrimVR.exe'
-    game_detect_files = [u'SkyrimVR.exe']
+    game_detect_includes = [u'SkyrimVR.exe']
     version_detect_file = u'SkyrimVR.exe'
+    loot_dir = u'Skyrim VR'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim VR', u'Installed Path')
 
     espm_extensions = SkyrimSEGameInfo.espm_extensions - {u'.esl'}

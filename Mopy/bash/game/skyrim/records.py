@@ -76,7 +76,9 @@ if brec.MelModel is None:
 from ...brec import MelModel
 
 #------------------------------------------------------------------------------
-_is_sse = bush.game.fsName in (u'Skyrim Special Edition', u'Skyrim VR')
+_is_sse = bush.game.fsName in (
+    u'Skyrim Special Edition', u'Skyrim VR', u'Enderal Special Edition',
+    u'Skyrim Special Edition MS')
 def if_sse(le_version, se_version):
     """Resolves to one of two different objects, depending on whether we're
     managing Skyrim LE or SE."""

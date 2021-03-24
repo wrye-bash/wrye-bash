@@ -33,7 +33,7 @@ from itertools import izip
 from . import ScriptParser  # generic parser class
 from . import bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
-from .env import get_file_version
+from .env import get_file_version, get_game_version_fallback
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
     ListBox, CheckListBox, ImageWrapper, PictureWithCursor, WizardDialog, \
@@ -915,9 +915,16 @@ class WryeParser(ScriptParser.Parser):
 
     # Functions...
     def fnCompareGameVersion(self, obWant):
-        ret = self._TestVersion(
-            self._TestVersion_Want(obWant),
-            bass.dirs[u'app'].join(bush.game.version_detect_file))
+        want_version = self._TestVersion_Want(obWant)
+        test_file = bass.dirs[u'app'].join(bush.game.version_detect_file)
+        try:
+            game_have = get_file_version(test_file.s)
+            if game_have == (0, 0, 0, 0) and bush.ws_info.installed:
+                game_have = get_game_version_fallback(test_file, bush.ws_info)
+            ret = self._TestVersion(want_version, test_file, game_have)
+        except OSError:
+            game_have = get_game_version_fallback(test_file, bush.ws_info)
+            ret = self._TestVersion(want_version, test_file, game_have)
         return ret[0]
 
     def fnCompareSEVersion(self, seWant):
@@ -1448,8 +1455,16 @@ class WryeParser(ScriptParser.Parser):
         if geWant == u'None': ge = u'None'
         if not wbWant: wbWant = u'0.0'
         wbHave = bass.AppVersion
-        ret = self._TestVersion(
-            gameWant, bass.dirs[u'app'].join(bush.game.version_detect_file))
+        # Get the game version - be careful about Windows Store versions
+        test_path = bass.dirs[u'app'].join(bush.game.version_detect_file)
+        try:
+            game_have = get_file_version(test_path.s)
+            if game_have == (0, 0, 0, 0) and bush.ws_info.installed:
+                game_have = get_game_version_fallback(test_path, bush.ws_info)
+            ret = self._TestVersion(gameWant, test_path, game_have)
+        except OSError:
+            game_have = get_game_version_fallback(test_path, bush.ws_info)
+            ret = self._TestVersion(gameWant, test_path, game_have)
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
         if bush.game.Se.se_abbrev != u'':
@@ -1494,23 +1509,24 @@ class WryeParser(ScriptParser.Parser):
 
     def _TestVersion_Want(self, want):
         try:
-            need = [int(i) for i in want.split(u'.')]
+            need = tuple(int(i) for i in want.split(u'.'))
         except ValueError:
             need = u'None'
         return need
 
-    def _TestVersion(self, need, file_):
-        if file_ and file_.exists():
+    def _TestVersion(self, need, file_, have=None):
+        if not have and file_ and file_.exists():
             have = get_file_version(file_.s)
+        if have:
             ver = u'.'.join([unicode(i) for i in have])
             if need == u'None':
                 return [1, ver]
-            for have_part, need_part in izip(have, need):
-                if have_part > need_part:
-                    return [1, ver]
-                elif have_part < need_part:
-                    return [-1, ver]
-            return [0, ver]
+            elif have > need:
+                return [1, ver]
+            elif have < need:
+                return [-1, ver]
+            else:
+                return [0, ver]
         elif need == u'None':
             return [0, u'None']
         return [-1, u'None']

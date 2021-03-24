@@ -80,6 +80,10 @@ class LOOTParser(object):
         self._cached_masterlist = {}
         self._cached_regexes = {}
         self._cached_merges = {}
+        deprint(u'Using these LOOT paths:')
+        deprint(u' Masterlist: %s' % masterlist_path)
+        deprint(u' Userlist: %s' % userlist_path)
+        deprint(u' Taglist (fallback): %s' % taglist_path)
         self._masterlist  = AFile(masterlist_path)
         self._userlist  = AFile(userlist_path)
         self._taglist  = AFile(taglist_path)

@@ -880,11 +880,13 @@ class BackupsPage(_AFixedPage):
         settings_file = balt.askSave(self,
             title=_(u'Backup Bash Settings'), defaultDir=self._backup_dir,
             wildcard=u'*.7z', defaultFile=barb.BackupSettings.backup_filename(
-                bush.game.displayName))
+                bush.game.bak_game_name))
         if not settings_file: return
         with BusyCursor():
-            backup = barb.BackupSettings(settings_file, bush.game.fsName,
-                bush.game.bash_root_prefix, bush.game.mods_dir)
+            backup = barb.BackupSettings(
+                settings_file, bush.game.bak_game_name,
+                bush.game.my_games_name, bush.game.bash_root_prefix,
+                bush.game.mods_dir)
         try:
             with BusyCursor(): backup.backup_settings(balt)
         except exception.StateError:
@@ -933,7 +935,7 @@ class BackupsPage(_AFixedPage):
             with BusyCursor():
                 backup_dir = restore_.extract_backup()
             error_msg, error_title = restore_.incompatible_backup_error(
-                bush.game.fsName)
+                bush.game.bak_game_name)
             if error_msg:
                 balt.showError(self, error_msg, error_title)
                 return

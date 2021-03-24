@@ -75,7 +75,7 @@ def InitStatusBar():
         Game_Button(
             bass.dirs[u'app'].join(bush.game.launch_exe),
             bass.dirs[u'app'].join(bush.game.version_detect_file),
-            imageList(u'%s%%s.png' % bush.game.displayName),
+            imageList(bush.game.game_icon),
             u' '.join((_(u'Launch'), bush.game.displayName)),
             u' '.join((_(u'Launch'), bush.game.displayName, u'%(version)s'))))
     BashStatusBar.buttons.append( #TESCS/CreationKit
@@ -122,11 +122,10 @@ def InitStatusBar():
         App_Tes4View((bass.tooldirs[u'Tes4LodGenPath'], u'-TES4 -lodgen'),
                      imageList(u'tools/tes4lodgen%s.png'),
                      _(u"Launch Tes4LODGen"), uid=u'TES4LODGen'))
-    BashStatusBar.buttons.append( #BOSS
-        App_BOSS((bass.tooldirs[u'boss']),
-                imageList(u'boss%s.png'),
-                _(u'Launch BOSS'),
-                uid=u'BOSS'))
+    if bush.game.boss_game_name:
+        BashStatusBar.buttons.append( #BOSS
+            App_BOSS((bass.tooldirs[u'boss']), imageList(u'boss%s.png'),
+                     _(u'Launch BOSS'), uid=u'BOSS'))
     if bass.inisettings[u'ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons
         for mb in modeling_tools_buttons:
