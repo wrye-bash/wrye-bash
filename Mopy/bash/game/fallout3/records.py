@@ -190,9 +190,10 @@ class MelEmbeddedScript(MelSequential):
 
     def __init__(self):
         super(MelEmbeddedScript, self).__init__(
-            MelStruct(b'SCHR', [u'4s', u'3I', u'2H'], u'unused1', u'num_refs',
-                      u'compiled_size', u'last_index', u'script_type',
-                      (self._script_header_flags, u'schr_flags')),
+            MelOptStruct(
+                b'SCHR', [u'4s', u'3I', u'2H'], u'unused1', u'num_refs',
+                u'compiled_size', u'last_index', u'script_type',
+                (self._script_header_flags, u'schr_flags')),
             MelBase(b'SCDA', u'compiled_script'),
             MelString(b'SCTX', u'script_source'),
             MelScriptVars(),
@@ -2145,21 +2146,34 @@ class MreNpc(MreActor):
 class MelIdleHandler(MelGroup):
     """Occurs three times in PACK, so moved here to deduplicate the
     definition a bit."""
-    # The subrecord type used for the marker
-    _attr_lookup = {
-        u'on_begin': b'POBA',
-        u'on_change': b'POCA',
-        u'on_end': b'POEA',
-    }
     _variableFlags = Flags(0, Flags.getNames(u'isLongOrShort'))
 
-    def __init__(self, attr):
-        super(MelIdleHandler, self).__init__(attr,
-            MelBase(self._attr_lookup[attr], attr + u'_marker'),
+    def __init__(self, ih_sig, ih_attr):
+        super(MelIdleHandler, self).__init__(ih_attr,
+            MelBase(ih_sig, ih_attr + u'_marker'),
             MelFid(b'INAM', u'idle_anim'),
             MelEmbeddedScript(),
             MelFid(b'TNAM', u'topic'),
         )
+
+class MelLocation2(MelUnion):
+    """Occurs twice in PACK, so moved here to deduplicate the definition a
+    bit."""
+    def __init__(self, loc2_prefix):
+        loc2_type = loc2_prefix + u'_type'
+        loc2_id = loc2_prefix + u'_id'
+        loc2_radius = loc2_prefix + u'_radius'
+        super(MelLocation2, self).__init__({
+            (0, 1, 4): MelOptStruct(b'PLD2', [u'i', u'I', u'i'], loc2_type,
+                                    (FID, loc2_id), loc2_radius),
+            (2, 3, 6, 7): MelOptStruct(b'PLD2', [u'i', u'4s', u'i'],
+                                       loc2_type, loc2_id, loc2_radius),
+            5: MelOptStruct(b'PLD2', [u'i', u'I', u'i'], loc2_type,
+                            loc2_id, loc2_radius),
+        }, decider=PartialLoadDecider(
+            loader=MelSInt32(b'PLD2', loc2_type),
+            decider=AttrValDecider(loc2_type),
+        ))
 
 class MrePack(MelRecord):
     """Package."""
@@ -2184,12 +2198,17 @@ class MrePack(MelRecord):
         u'allow_idle_chatter',
         u'avoid_radiation',
     ), unknown_is_unused=True)
+    _dialogue_data_flags = Flags(0, Flags.getNames(
+        (0, u'no_headtracking'),
+        (8, u'dont_control_target_movement'),
+    ))
 
     melSet = MelSet(
-        MelEdid(),
-        MelTruncatedStruct(b'PKDT', [u'I', u'2H', u'I'], (_flags, u'flags'), u'aiType',
+        MelEdid(), # required
+        MelTruncatedStruct(
+            b'PKDT', [u'I', u'2H', u'I'], (_flags, u'flags'), u'aiType',
             (_fallout_behavior_flags, u'falloutBehaviorFlags'),
-            u'typeSpecificFlags', old_versions={u'I2H'}),
+            u'typeSpecificFlags', old_versions={u'I2H'}), # required
         MelUnion({
             (0, 1, 4): MelOptStruct(b'PLDT', [u'i', u'I', u'i'], u'locType',
                 (FID, u'locId'), u'locRadius'),
@@ -2201,18 +2220,9 @@ class MrePack(MelRecord):
             loader=MelSInt32(b'PLDT', u'locType'),
             decider=AttrValDecider(u'locType'),
         )),
-        MelUnion({
-            (0, 1, 4): MelOptStruct(b'PLD2', [u'i', u'I', u'i'], u'locType2',
-                (FID, u'locId2'), u'locRadius2'),
-            (2, 3, 6, 7): MelOptStruct(b'PLD2', [u'i', u'4s', u'i'], u'locType2',
-                u'locId2', u'locRadius2'),
-            5: MelOptStruct(b'PLD2', [u'i', u'I', u'i'], u'locType2', u'locId2',
-                u'locRadius2'),
-        }, decider=PartialLoadDecider(
-            loader=MelSInt32(b'PLD2', u'locType2'),
-            decider=AttrValDecider(u'locType2'),
-        )),
-        MelStruct(b'PSDT', [u'2b', u'B', u'b', u'i'],'month','day','date','time','duration'),
+        MelLocation2(u'loc2'),
+        MelStruct(b'PSDT', [u'2b', u'B', u'b', u'i'], 'month', 'day', 'date',
+                  'time', 'duration'), # required
         MelUnion({
             (0, 1): MelTruncatedStruct(b'PTDT', [u'i', u'I', u'i', u'f'], u'targetType',
                 (FID, u'targetId'), u'targetCount', u'targetUnknown1',
@@ -2260,22 +2270,30 @@ class MrePack(MelRecord):
         )),
         MelBase(b'PUID','useItemMarker'),
         MelBase(b'PKAM','ambushMarker'),
-        MelTruncatedStruct(b'PKDD', [u'f', u'2I', u'4s', u'I', u'4s'], 'dialFov', 'dialTopic',
-                           'dialFlags', 'dialUnknown1', 'dialType',
-                           'dialUnknown2', is_optional=True,
-                           old_versions={'f2I4sI', 'f2I4s', 'f2I'}),
-        MelIdleHandler(u'on_begin'),
-        MelIdleHandler(u'on_end'),
-        MelIdleHandler(u'on_change'),
+        MelTruncatedStruct(
+            b'PKDD', [u'f', u'2I', u'4s', u'I', u'4s'], 'dialFov',
+            (FID, 'dialTopic'), (_dialogue_data_flags, 'dialFlags'),
+            'dialUnknown1', 'dialType', 'dialUnknown2', is_optional=True,
+            old_versions={'f2I4sI', 'f2I4s', 'f2I'}),
+        MelLocation2(u'loc2_again'),
+        MelIdleHandler(b'POBA', u'on_begin'), # required
+        MelIdleHandler(b'POEA', u'on_end'), # required
+        MelIdleHandler(b'POCA', u'on_change'), # required
     ).with_distributor({
+        b'PKDT': {
+            b'PLD2': u'loc2_type',
+        },
+        b'PSDT': {
+            b'PLD2': u'loc2_again_type',
+        },
         b'POBA': {
             b'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': u'on_begin',
         },
         b'POEA': {
-            b'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': u'on_begin',
+            b'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': u'on_end',
         },
         b'POCA': {
-            b'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': u'on_begin',
+            b'INAM|SCHR|SCDA|SCTX|SLSD|SCVR|SCRO|SCRV|TNAM': u'on_change',
         },
     })
     __slots__ = melSet.getSlotsUsed()
