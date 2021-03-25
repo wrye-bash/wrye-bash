@@ -444,6 +444,29 @@ class ModHeaderReader(object):
     """Allows very fast reading of a plugin's headers, skipping reading and
     decoding of anything but the headers."""
     @staticmethod
+    def formids_in_esl_range(mod_info):
+        """Checks if all FormIDs in the specified mod are in the ESL range."""
+        num_masters = len(mod_info.masterNames)
+        with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
+            ins_at_end = ins.atEnd
+            ins_unpack_rec_header = ins.unpackRecHeader
+            try:
+                while not ins_at_end():
+                    header = ins_unpack_rec_header()
+                    # Skip GRUPs themselves, only process their records
+                    header_rec_sig = header.recType
+                    if header_rec_sig != b'GRUP':
+                        header_fid = header.fid
+                        if (header_fid >> 24 >= num_masters and
+                                (header_fid & 0xFFFFFF) > 0xFFF):
+                            return False # FormID out of range
+                        header.skip_blob(ins)
+            except (OSError, struct_error) as e:
+                raise ModError(ins.inName, u'Error scanning %s, file read '
+                    u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
+        return True
+
+    @staticmethod
     def read_mod_headers(mod_info):
         """Reads the headers of every record in the specified mod, returning
         them as a dict, mapping record signature to a list of the headers of
@@ -468,7 +491,7 @@ class ModHeaderReader(object):
                     u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
         return ret_headers
 
-    ##: The method above has to be very fast, but this one can afford to be
+    ##: The methods above have to be very fast, but this one can afford to be
     # much slower. Should eventually be absorbed by refactored ModFile API.
     @staticmethod
     def read_temp_child_headers(mod_info):
@@ -483,7 +506,6 @@ class ModHeaderReader(object):
         with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
-            ins_seek = ins.seek
             try:
                 while not ins_at_end():
                     header = ins_unpack_rec_header()
