@@ -25,6 +25,7 @@ subrecords in memory."""
 
 from __future__ import division, print_function
 
+from collections import defaultdict
 import copy
 import io
 import zlib
@@ -255,10 +256,13 @@ class MreRecord(object):
         ))
     __slots__ = [u'header', u'_rec_sig', u'fid', u'flags1', u'size', u'flags2',
                  u'changed', u'data', u'inName', u'longFids']
-    #--Set at end of class data definitions.
-    type_class = None
-    simpleTypes = None
     isKeyedByEid = False
+    #--Set at end of class data definitions.
+    type_class = {}
+    simpleTypes = set()
+    # Maps subrecord signatures to a set of record signatures that can contain
+    # those subrecords
+    subrec_sig_to_record_sig = defaultdict(set)
 
     def __init__(self, header, ins=None, do_unpack=False):
         self.header = header

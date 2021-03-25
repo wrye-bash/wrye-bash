@@ -32,6 +32,7 @@ import io
 import re
 import traceback
 from itertools import izip
+from operator import itemgetter
 
 # Local
 from . import configIsCBash
@@ -596,21 +597,24 @@ class Mod_Details(OneItemLink):
 
     def Execute(self):
         with balt.Progress(self._selected_item.s) as progress:
-            mod_details = bosh.mods_metadata.ModDetails()
-            mod_details.readFromMod(self._selected_info,
-                                    SubProgress(progress, 0.1, 0.7))
+            sel_info_data = mod_files.ModHeaderReader.extract_mod_data(
+                self._selected_info, SubProgress(progress, 0.1, 0.7))
             buff = io.StringIO()
-            progress(0.7,_(u'Sorting records.'))
-            for group in sorted(mod_details.group_records):
+            complex_groups = {b'CELL', b'WRLD', b'DIAL'}
+            if bush.game.fsName in (u'Fallout4', u'Fallout4VR',
+                                    u'Fallout4 MS'):
+                complex_groups.add(b'QUST')
+            progress(0.7, _(u'Sorting records.'))
+            for group, group_records in dict_sort(sel_info_data):
                 buff.write(group.decode(u'ascii') + u'\n')
-                if group in (b'CELL',b'WRLD',b'DIAL'):
-                    buff.write(u'  '+_(u'(Details not provided for this record type.)')+u'\n\n')
+                if group in complex_groups:
+                    buff.write(u'  %s\n\n' % _(u'(Details not provided for '
+                                               u'this record type.)'))
                     continue
-                records = mod_details.group_records[group]
-                records.sort(key=lambda a: a[1].lower())
-                #if group != 'GMST': records.sort(key=lambda a: a[0] >> 24)
-                for fid,eid in records:
-                    buff.write(u'  %08X %s\n' % (fid,eid))
+                records = [(f, e) for f, (_h, e) in group_records.iteritems()]
+                records.sort(key=lambda r: r[1].lower())
+                for f, e in records:
+                    buff.write(u'  %08X %s\n' % (f, e))
                 buff.write(u'\n')
             self._showLog(buff.getvalue(), title=self._selected_item,
                           fixedFont=True)

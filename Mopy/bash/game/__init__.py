@@ -489,9 +489,12 @@ class GameInfo(object):
     @staticmethod
     def _validate_records():
         """Performs validation on the record syntax for all decoded records."""
+        sr_to_r = brec.MreRecord.subrec_sig_to_record_sig
         for rec_class in brec.MreRecord.type_class.itervalues():
             if issubclass(rec_class, brec.MelRecord):
                 rec_class.validate_record_syntax()
+                for sr_sig in rec_class.melSet.loaders:
+                    sr_to_r[sr_sig].add(rec_class.rec_sig)
 
     @classmethod
     def supported_games(cls):

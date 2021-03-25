@@ -23,14 +23,13 @@
 from __future__ import division
 
 import io
-import zlib
 from collections import defaultdict
 
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
-from ..bolt import GPath, deprint, structs_cache
-from ..brec import ModReader, MreRecord, SubrecordBlob, null1
-from ..exception import CancelError, ModError
+from ..bolt import deprint, structs_cache
+from ..brec import ModReader, MreRecord, SubrecordBlob
+from ..exception import CancelError
 
 # BashTags dir ----------------------------------------------------------------
 def get_tags_from_dir(plugin_name):
@@ -491,60 +490,3 @@ class NvidiaFogFixer(object):
             self.modInfo.setmtime(crc_changed=True) # fog fixes
         else:
             minfo_path.temp.remove()
-
-#------------------------------------------------------------------------------
-class ModDetails(object):
-    """Details data for a mods file. Similar to TesCS Details view."""
-    def __init__(self):
-        # group_records[group] = [(fid0, eid0), (fid1, eid1),...]
-        self.group_records = defaultdict(list)
-
-    def readFromMod(self, modInfo, progress=None,
-            __unpacker=structs_cache[u'I'].unpack):
-        """Extracts details from mod file."""
-        def getRecordReader():
-            """Decompress record data as needed."""
-            blob_siz = header.blob_size()
-            if not MreRecord.flags1_(header.flags1).compressed:
-                new_rec_data = ins.read(blob_siz)
-            else:
-                size_check = __unpacker(ins.read(4))[0]
-                new_rec_data = zlib.decompress(ins.read(blob_siz - 4))
-                if len(new_rec_data) != size_check:
-                    raise ModError(ins.inName,
-                        u'Mis-sized compressed data. Expected %d, got '
-                        u'%d.' % (blob_siz, len(new_rec_data)))
-            return ModReader(modInfo.ci_key, io.BytesIO(new_rec_data))
-        progress = progress or bolt.Progress()
-        group_records = self.group_records
-        records = group_records[bush.game.Esp.plugin_header_sig]
-        complex_groups = {b'CELL', b'DIAL', b'WRLD'}
-        if bush.game.fsName in (u'Fallout4', u'Fallout4VR', u'Fallout4 MS'):
-            complex_groups.add(b'QUST')
-        with ModReader(modInfo.ci_key, modInfo.abs_path.open(u'rb')) as ins:
-            while not ins.atEnd():
-                header = ins.unpackRecHeader()
-                _rsig = header.recType
-                if _rsig == b'GRUP':
-                    label = header.label
-                    progress(1.0 * ins.tell() / modInfo.fsize,
-                             _(u'Scanning: %s') % label.decode(u'ascii'))
-                    records = group_records[label]
-                    if label in complex_groups: # skip these groups
-                        header.skip_blob(ins)
-                else:
-                    eid = u''
-                    next_record = ins.tell() + header.blob_size()
-                    recs = getRecordReader()
-                    while not recs.atEnd():
-                        subrec = SubrecordBlob(recs, _rsig, mel_sigs={b'EDID'})
-                        if subrec.mel_data is not None:
-                            # FIXME copied from readString
-                            eid = u'\n'.join(bolt.decoder(
-                                x, bolt.pluginEncoding,
-                                avoidEncodings=(u'utf8', u'utf-8')) for x
-                                in subrec.mel_data.rstrip(null1).split(b'\n'))
-                            break
-                    records.append((header.fid, eid))
-                    ins.seek(next_record) # we may have break'd at EDID
-        del group_records[bush.game.Esp.plugin_header_sig]
