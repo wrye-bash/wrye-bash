@@ -100,26 +100,18 @@ class Subrecord(object):
                                                               lenData))
         outWrite(binary_data)
 
-def unpackSubHeader(ins, rsig=b'----', expType=None, expSize=0,  # PY3: ,*,
+def unpackSubHeader(ins, rsig=b'----', # PY3: ,*,
                     __unpacker=_int_unpacker, __sr=Subrecord):
     """Unpack a subrecord header. Optionally checks for match with expected
     type and size."""
-    ins_unpack = ins.unpack
-    mel_sig, mel_size = ins_unpack(__sr.sub_header_unpack,
+    mel_sig, mel_size = ins.unpack(__sr.sub_header_unpack,
                                    __sr.sub_header_size, rsig, u'SUB_HEAD')
-    #--Extended storage?
+    # Extended storage - very rare, so don't optimize inlines etc. for it
     if mel_sig == b'XXXX':
+        ins_unpack = ins.unpack
         mel_size = ins_unpack(__unpacker, 4, rsig, u'XXXX.SIZE')[0]
         mel_sig = ins_unpack(__sr.sub_header_unpack, __sr.sub_header_size,
                              rsig, u'XXXX.TYPE')[0] # Throw away size here (always == 0)
-    #--Match expected name?
-    if expType and expType != mel_sig:
-        raise exception.ModError(ins.inName, u'%s: Expected %s subrecord, '
-            u'but found %s instead.' % (rsig, expType, mel_sig))
-    #--Match expected size?
-    if expSize and expSize != mel_size:
-        raise exception.ModSizeError(ins.inName, (rsig , mel_sig),
-                                     (expSize,), mel_size)
     return mel_sig, mel_size
 
 class SubrecordBlob(Subrecord):
