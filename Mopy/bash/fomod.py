@@ -215,13 +215,16 @@ class _FomodFileInfo(object):
         :param file_list: list of files in the mod being installed
         :param inst_root: The root path to retrieve sources relative to."""
         fm_infos = []
+        md_lower = bush.game.mods_dir.lower()
+        md_lower_slash = tuple(md_lower + s for s in (u'/', u'\\'))
+        md_lower_strip = len(md_lower) + 1 # for the (back)slash
         for file_object in files_elem.findall(u'*'):
             file_src = inst_root + _xml_decode(file_object.get(u'source'))
             if file_src.endswith((u'/', u'\\')):
                 file_src = file_src[:-1]
             file_src = GPath(file_src)
             file_dest = _xml_decode(file_object.get(u'destination', None))
-            if file_dest is None:  # omitted destination
+            if file_dest is None: # omitted destination
                 file_dest = file_src
             elif file_object.tag == u'file' and (
                 not file_dest or file_dest.endswith((u'/', u'\\'))):
@@ -232,6 +235,18 @@ class _FomodFileInfo(object):
             else:
                 # destination still needs normalizing
                 file_dest = GPath(file_dest)
+            # Be forgiving of FOMODs that specify redundant 'Data' folders in
+            # the destination
+            file_dest_s = file_dest.s
+            dest_lower = file_dest_s.lower()
+            if dest_lower == md_lower:
+                file_dest_s = u''
+            else:
+                while dest_lower.startswith(md_lower_slash):
+                    file_dest_s = file_dest_s[md_lower_strip:]
+                    dest_lower = file_dest_s.lower()
+            if file_dest_s != file_dest.s:
+                file_dest = GPath(file_dest_s)
             file_prty = int(_xml_decode(file_object.get(u'priority', u'0')))
             source_lower = file_src.s.lower()
             # We need to include the path separators when checking, since
