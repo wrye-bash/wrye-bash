@@ -330,6 +330,7 @@ class ModFile(object):
         def mapper(fid):
             if fid is None: return None
             if isinstance(fid, tuple): return fid
+            # PY3: drop the int() calls
             mod,object = int(fid >> 24),int(fid & 0xFFFFFF)
             return masters_list[min(mod, maxMaster)], object # clamp HITMEs
         return mapper

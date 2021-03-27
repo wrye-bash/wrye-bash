@@ -23,11 +23,11 @@
 from __future__ import division
 
 import io
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
-from ..bolt import dict_sort, structs_cache
+from ..bolt import dict_sort, structs_cache, SubProgress
 from ..brec import ModReader, SubrecordBlob
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
@@ -104,11 +104,22 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     mod_checker should be the instance of PluginChecker, to scan."""
     # Setup some commonly used collections of plugin info
     from . import modInfos
+    full_acti = load_order.cached_active_tuple()
+    plugin_to_acti_index = {p: i for i, p in enumerate(full_acti)}
     all_present_minfs = [modInfos[x] for x in load_order.cached_lo_tuple()]
-    all_active_plugins = set(load_order.cached_active_tuple())
+    all_active_plugins = set(full_acti)
     game_master_name = bush.game.master_file
     vanilla_masters = bush.game.bethDataFiles
+    # All log operations that put FormIDs into the log must do it relative to
+    # the entire load order and set this to True
+    fids_in_log = False
     log = bolt.LogFile(io.StringIO())
+    # -------------------------------------------------------------------------
+    # The header we'll be showing at the start of the log. Separate so that we
+    # can check if the log is empty
+    log_header = u'= ' + _(u'Check Plugins') + u'\n'
+    log_header += _(u'This is a report of any problems Wrye Bash was able to '
+                    u'identify in your currently installed plugins.')
     # -------------------------------------------------------------------------
     # Check for ESL-capable plugins that aren't ESL-flagged.
     can_esl_flag = modInfos.mergeable if bush.game.check_esl else set()
@@ -173,87 +184,238 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
             scan_for_cleaning.add(x)
     # -------------------------------------------------------------------------
     # Scan plugins to collect data for more detailed analysis.
-    # Maps plugin names to the collected data for that mod
-    all_extracted_data = defaultdict(dict)
+    scanning_canceled = False
+    all_deleted_refs = defaultdict(list) # ci_key -> list[fid]
+    all_deleted_navms = defaultdict(list) # ci_key -> list[fid]
+    all_deleted_others = defaultdict(list) # ci_key -> list[fid]
+    # fid -> (is_injected, orig_plugin, list[(eid, sig, plugin)])
+    record_type_collisions = {}
+    # fid -> (orig_plugin, list[(eid, sig, plugin)])
+    probable_injected_collisions = {}
     if scan_plugins:
+        progress = None
         try:
             # Extract data for all plugins (we'll need the context from all of
             # them, even the game master)
-            with balt.Progress(_(u'Checking Plugins...'), u'\n' + u' ' * 60,
-                               parent=mc_parent, abort=True) as progress:
-                progress.setFull(len(all_present_minfs))
-                for i, present_minf in enumerate(all_present_minfs):
-                    mod_progress = bolt.SubProgress(progress, i, i + 1)
-                    ext_data = ModHeaderReader.extract_mod_data(present_minf,
-                                                                mod_progress)
-                    all_extracted_data[present_minf.ci_key] = ext_data
+            progress = balt.Progress(
+                _(u'Checking Plugins...'), u'\n' + u' ' * 60,
+                parent=mc_parent, abort=True)
+            load_progress = SubProgress(progress, 0, 0.7)
+            load_progress.setFull(len(all_present_minfs))
+            all_extracted_data = OrderedDict() # PY3: dict
+            for i, present_minf in enumerate(all_present_minfs):
+                mod_progress = SubProgress(load_progress, i, i + 1)
+                ext_data = ModHeaderReader.extract_mod_data(present_minf,
+                                                            mod_progress)
+                all_extracted_data[present_minf.ci_key] = ext_data
+            # Run over all plugin data once for efficiency, collecing
+            # information such as deleted records and overrides
+            scan_progress = SubProgress(progress, 0.7, 0.9)
+            scan_progress.setFull(len(all_extracted_data))
+            all_ref_types = bush.game.Esp.reference_types
+            # Temporary place to collect (eid, sig, plugin)-lists
+            all_record_versions = defaultdict(list)
+            for i, (p_ci_key, ext_data) in enumerate(
+                    all_extracted_data.iteritems()):
+                scan_progress(i, (_(u'Scanning: %s') % p_ci_key))
+                # Two situations where we can skip checking deleted records:
+                # 1. The game master can't have deleted records (deleting a
+                #    record from the master file that introduced it just
+                #    removes the record from existence entirely).
+                # 2. If we have a LOOT report for a plugin, we can skip every
+                #    deleted reference and deleted navmesh and just use the
+                #    LOOT report.
+                scan_deleted = (p_ci_key != game_master_name and
+                                p_ci_key in scan_for_cleaning)
+                # We have to skip checking overrides if the plugin is inactive
+                # because a whole-LO FormID is not a valid concept for inactive
+                # plugins. Plus, collisions from inactive plugins are either
+                # harmless (if the plugin really is inactive) or will show up
+                # in the BP (if the plugin is actually merged into the BP).
+                scan_overrides = p_ci_key in all_active_plugins
+                deleted_refrs = all_deleted_refs[p_ci_key]
+                deleted_refrs_append = deleted_refrs.append
+                deleted_navms = all_deleted_navms[p_ci_key]
+                deleted_navms_append = deleted_navms.append
+                deleted_others = all_deleted_others[p_ci_key]
+                deleted_others_append = deleted_others.append
+                p_masters = modInfos[p_ci_key].masterNames + (p_ci_key,)
+                p_num_masters = len(p_masters)
+                for r, d in ext_data.iteritems():
+                    for r_fid, (r_header, r_eid) in d.iteritems():
+                        if scan_deleted:
+                            # Check the deleted flag - unpacking flags is too
+                            # expensive
+                            if r_header.flags1 & 0x00000020:
+                                w_rec_type = r_header.recType
+                                if w_rec_type == b'NAVM':
+                                    deleted_navms_append(r_fid)
+                                elif w_rec_type in all_ref_types:
+                                    deleted_refrs_append(r_fid)
+                                else:
+                                    deleted_others_append(r_fid)
+                        r_mod_index = r_fid >> 24
+                        # p_masters includes self, so >=
+                        is_hitme = r_mod_index >= p_num_masters
+                        if scan_overrides:
+                            # Convert into a load order FormID - ugly but fast,
+                            # inlined and hand-optmized from various methods.
+                            # Calling them would be way too slow.
+                            # PY3: drop the int() call
+                            lo_fid = int(
+                                r_fid & 0xFFFFFF | plugin_to_acti_index[
+                                    p_masters[p_num_masters - 1 if is_hitme
+                                              else r_mod_index]] << 24)
+                            all_record_versions[lo_fid].append(
+                                (r_eid, r_header.recType, p_ci_key))
+            # Check for record type collisions, i.e. overrides where the record
+            # type of at least one override does not match the base record's
+            # type and probable injected collisions, i.e. injected records
+            # where the EDID of at least one version does not match the EDIDs
+            # of the other versions
+            collision_progress = SubProgress(progress, 0.9, 1)
+            # We can't get an accurate progress bar here, because the loop
+            # below is far too hot. Instead, at least make sure the progress
+            # bar updates on each collision by bumping the state.
+            collision_progress.setFull(len(all_active_plugins))
+            prog_msg = u'{}\n%s'.format(_(u'Looking for collisions...'))
+            num_collisions = 0
+            collision_progress(num_collisions, prog_msg % game_master_name)
+            for r_fid, r_versions in all_record_versions.iteritems():
+                first_eid, first_sig, first_plugin = r_versions[0]
+                # These FormIDs are whole-LO and HITMEs are truncated, so this
+                # is safe
+                orig_plugin = full_acti[r_fid >> 24]
+                # Record versions are sorted by load order, so if the first
+                # version's originating plugin does not match the plugin that
+                # the whole-LO FormID points to, this record must be injected
+                is_injected = orig_plugin != first_plugin
+                definite_collision = False
+                probable_collision = False
+                for r_eid, r_sig, _r_plugin in r_versions[1:]:
+                    if first_sig != r_sig:
+                        # At least one override has a different record type,
+                        # this is for sure a collision.
+                        definite_collision = True
+                        break
+                    if is_injected and first_eid != r_eid:
+                        # This is an injected record and at least one override
+                        # has a different EDID, this is probably a collision.
+                        # However, we can't break because there might also be
+                        # definite collision with a version after this one.
+                        probable_collision = True
+                if definite_collision:
+                    num_collisions += 1
+                    record_type_collisions[r_fid] = (is_injected, orig_plugin,
+                                                     r_versions)
+                    collision_progress(num_collisions, prog_msg % orig_plugin)
+                elif probable_collision:
+                    num_collisions += 1
+                    probable_injected_collisions[r_fid] = (orig_plugin,
+                                                           r_versions)
+                    collision_progress(num_collisions, prog_msg % orig_plugin)
         except CancelError:
-            pass
+            scanning_canceled = True
+        finally:
+            if progress:
+                progress.Destroy()
     # -------------------------------------------------------------------------
-    # Check for deleted records in the plugins.
-    all_ref_types = bush.game.Esp.reference_types
+    # Check for deleted references
+    if all_deleted_refs:
+        for p_ci_key, deleted_refrs in all_deleted_refs.iteritems():
+            if deleted_refrs:
+                num_deleted = len(deleted_refrs)
+                if num_deleted == 1: # I hate natural languages :/
+                    del_msg = _(u'1 deleted reference')
+                else:
+                    del_msg = _(u'%d deleted references') % num_deleted
+                cleaning_messages[p_ci_key] = del_msg
+    # -------------------------------------------------------------------------
+    # Check for deleted navmeshes
     deleted_navmeshes = {}
+    if all_deleted_navms:
+        for p_ci_key, deleted_navms in all_deleted_navms.iteritems():
+            # Deleted navmeshes can't and shouldn't be fixed in vanilla files,
+            # so don't show warnings for them
+            plugin_is_vanilla = p_ci_key in vanilla_masters
+            if deleted_navms and not plugin_is_vanilla:
+                num_deleted = len(deleted_navms)
+                if num_deleted == 1:
+                    del_msg = _(u'1 deleted navmesh')
+                else:
+                    del_msg = _(u'%d deleted navmeshes') % num_deleted
+                deleted_navmeshes[p_ci_key] = del_msg
+    # -------------------------------------------------------------------------
+    # Check for deleted base records
     deleted_base_recs = {}
-    for p_ci_key, ext_data in all_extracted_data.iteritems():
-        def discard_fid(_r_fid): pass
-        deleted_navms = []
-        # If we have a LOOT report for a plugin, we can skip every deleted
-        # reference and deleted navmesh
-        deleted_navms_append = (discard_fid if p_ci_key in scan_for_cleaning
-                                else deleted_navms.append)
-        deleted_refrs = []
-        deleted_refrs_append = (discard_fid if p_ci_key in scan_for_cleaning
-                                else deleted_refrs.append)
-        deleted_others = []
-        deleted_others_append = deleted_others.append
-        for r, d in ext_data.iteritems():
-            if p_ci_key == game_master_name:
-                # The game master can't have deleted records (deleting a record
-                # from the master file that introduced it just removes the
-                # record from existence entirely)
-                continue
-            for r_fid, (r_header, _r_eid) in d.iteritems():
-                # Check the deleted flag - unpacking flags is too expensive
-                if r_header.flags1 & 0x00000020:
-                    w_rec_type = r_header.recType
-                    if w_rec_type == b'NAVM':
-                        deleted_navms_append(r_fid)
-                    elif w_rec_type in all_ref_types:
-                        deleted_refrs_append(r_fid)
-                    else:
-                        deleted_others_append(r_fid)
-        if deleted_refrs:
-            num_deleted = len(deleted_refrs)
-            if num_deleted == 1: # I hate natural languages :P
-                del_msg = _(u'1 deleted reference')
-            else:
-                del_msg = _(u'%d deleted references') % num_deleted
-            cleaning_messages[p_ci_key] = del_msg
-        # Deleted navmeshes and base records can't and shouldn't be fixed in
-        # vanilla files, so don't show warnings for them
-        plugin_is_vanilla = p_ci_key in vanilla_masters
-        if deleted_navms and not plugin_is_vanilla:
-            num_deleted = len(deleted_navms)
-            if num_deleted == 1:
-                del_msg = _(u'1 deleted navmesh')
-            else:
-                del_msg = _(u'%d deleted navmeshes') % num_deleted
-            deleted_navmeshes[p_ci_key] = del_msg
-        if deleted_others and not plugin_is_vanilla:
-            num_deleted = len(deleted_others)
-            if num_deleted == 1:
-                del_msg = _(u'1 deleted base record')
-            else:
-                del_msg = _(u'%d deleted base records') % num_deleted
-            deleted_base_recs[p_ci_key] = del_msg
-    # From here on we have data on all plugin problems, so it's purely a matter
-    # of building the log
+    if all_deleted_others:
+        for p_ci_key, deleted_others in all_deleted_others.iteritems():
+            # Deleted navmeshes can't and shouldn't be fixed in vanilla files,
+            # so don't show warnings for them
+            plugin_is_vanilla = p_ci_key in vanilla_masters
+            if deleted_others and not plugin_is_vanilla:
+                num_deleted = len(deleted_others)
+                if num_deleted == 1:
+                    del_msg = _(u'1 deleted base record')
+                else:
+                    del_msg = _(u'%d deleted base records') % num_deleted
+                deleted_base_recs[p_ci_key] = del_msg
+    # -------------------------------------------------------------------------
+    # Some helpers for building the log
     def log_plugins(plugin_list):
+        """Logs a simple list of plugins."""
         for p in sorted(plugin_list):
             log(u'* __%s__' % p)
     def log_plugin_messages(plugin_dict):
+        """Logs a list of plugins with a message after each plugin."""
         for p, p_msg in dict_sort(plugin_dict):
             log(u'* __%s:__  %s' % (p, p_msg))
+    if bush.game.has_esl:
+        # Need to undo the offset we applied to sort ESLs after regulars
+        sort_offset = load_order.max_espms() - 1
+        def format_fid(whole_lo_fid, fid_orig_plugin):
+            """Formats a whole-LO FormID, which can exceed normal FormID limits
+            (e.g. 211000800 is perfectly fine in a load order with ESLs), so
+            that xEdit (and the game) can understand it."""
+            orig_minf = modInfos[fid_orig_plugin]
+            proper_index = orig_minf.real_index()
+            if orig_minf.is_esl():
+                return u'FE%03X%03X' % (proper_index - sort_offset,
+                                        whole_lo_fid & 0x00000FFF)
+            else:
+                return u'%02X%06X' % (proper_index, whole_lo_fid & 0x00FFFFFF)
+    else:
+        def format_fid(whole_lo_fid, _fid_orig_plugin):
+            # For non-ESL games simple hexadecimal formatting will do
+            return u'%08X' % whole_lo_fid
+    def log_collision(coll_fid, coll_inj, coll_plugin, coll_versions):
+        """Logs a single collision with the specified FormID, injected status,
+        origin plugin and collision info."""
+        # FormIDs must be in long format at this point
+        proper_fid = format_fid(coll_fid, coll_plugin)
+        if coll_inj:
+            log(u'* ' + _(u'%s injected into %s, colliding versions:')
+                % (proper_fid, coll_plugin))
+        else:
+            log(u'* ' + _(u'%s from %s, colliding versions:')
+                % (proper_fid, coll_plugin))
+        for ver_eid, ver_sig, ver_orig_plugin in coll_versions:
+            fmt_record = u'%s [%s:%s]' % (ver_eid, ver_sig, proper_fid)
+            # Mark the base record if the record wasn't injected
+            if not coll_inj and ver_orig_plugin == coll_plugin:
+                log(u'  * ' + _(u'%s from %s (base record)') % (
+                    fmt_record, ver_orig_plugin))
+            else:
+                log(u'  * ' + _(u'%s from %s') % (
+                    fmt_record, ver_orig_plugin))
+    # -------------------------------------------------------------------------
+    # From here on we have data on all plugin problems, so it's purely a matter
+    # of building the log
+    if scanning_canceled:
+        log.setHeader(u'=== ' + _(u'Plugin Loading Canceled'))
+        log(_(u'The loading of plugins was canceled and the resulting report '
+              u"may not be accurate. You can use the 'Update' button to load "
+              u'plugins and generate a new report.'))
     if can_esl_flag:
         log.setHeader(u'=== ' + _(u'ESL Capable'))
         log(_(u'The following plugins could be assigned an ESL flag.'))
@@ -333,24 +495,60 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
               u'which should usually be done by the mod author. Failing that, '
               u'the safest course of action is to uninstall the plugin.'))
         log_plugin_messages(deleted_base_recs)
+    if record_type_collisions:
+        log.setHeader(u'=== ' + _(u'Record Type Collisions'))
+        log(_(u'The following records override each other, but have different '
+              u'record types. This is undefined behavior, but will almost '
+              u'certainly lead to CTDs. Such conflicts can only be fixed '
+              u'manually, which should usually be done by the mod author. '
+              u'Failing that, the safest course of action is to uninstall the '
+              u'plugin.'))
+        fids_in_log = True # PY3: nonlocal, move this into log_collision
+        for orig_fid, (is_inj, orig_plugin, coll_info) in dict_sort(
+                record_type_collisions):
+            log_collision(orig_fid, is_inj, orig_plugin, coll_info)
+    if probable_injected_collisions:
+        log.setHeader(u'=== ' + _(u'Probable Injected Collisions'))
+        log(_(u'The following injected records override each other, but have '
+              u'different Editor IDs (EDIDs). This probably means that two '
+              u'different injected records have collided, but have the same '
+              u'record signature. The resulting behavior depends on what the '
+              u'injecting plugins are trying to do with the record, but they '
+              u'will most likely not work as intended. Such conflicts can '
+              u'only be fixed manually, which should usually be done by the '
+              u'mod author. Failing that, the safest course of action is to '
+              u'uninstall the plugin '))
+        fids_in_log = True
+        for orig_fid, (orig_plugin, coll_info) in dict_sort(
+                probable_injected_collisions):
+            log_collision(orig_fid, True, orig_plugin, coll_info)
     # If we haven't logged anything (remember, the header is a separate
     # variable) then let the user know they have no problems.
     temp_log = log.out.getvalue()
     if not temp_log:
         log.setHeader(u'=== ' + _(u'No Problems Found'))
-        log(_(u'Wrye Bash did not find any problems with your installed '
-              u'plugins. Congratulations!'))
+        if not scan_plugins:
+            log(_(u'Wrye Bash did not find any problems with your installed '
+                  u'plugins without loading them. Turning on loading of '
+                  u'plugins may find more problems.'))
+        else:
+            log(_(u'Wrye Bash did not find any problems with your installed '
+                  u'plugins. Congratulations!'))
     # We already logged missing or delinquent masters up above, so don't
     # duplicate that info in the mod list
     if showModList:
         log(u'\n' + modInfos.getModList(showCRC, showVersion, wtxt=True,
                                         log_problems=False).strip())
-    # Finally, add the header at the start of the log
-    log_header = u'= ' + _(u'Check Plugins') + u'\n'
-    log_header += _(u'This is a report of any problems Wrye Bash was able to '
-                    u'identify in your currently installed plugins.')
-    log_header += u'\n\n'
-    return log_header + log.out.getvalue()
+    # If the log includes any FormIDs, include a help note in the header
+    if fids_in_log:
+        log_header += u'\n\n~~%s~~ %s' % (
+            _(u'Note that all FormIDs in the report are relative to the '
+              u'entire load order.'),
+            _(u'If you want to view these FormIDs in %(xedit_name)s, make '
+              u'sure to load your entire load order (simply accept the '
+              u"'Module Selection' prompt in %(xedit_name)s with OK).") % {
+                u'xedit_name': bush.game.Xe.full_name})
+    return log_header + u'\n\n' + log.out.getvalue()
 
 #------------------------------------------------------------------------------
 class NvidiaFogFixer(object):
