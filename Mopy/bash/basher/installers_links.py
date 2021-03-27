@@ -29,6 +29,7 @@ from .dialogs import CreateNewProject
 from .. import bass, bosh, balt, bush, load_order
 from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, \
     EnabledLink
+from ..gui import copy_text_to_clipboard
 
 __all__ = [u'Installers_SortActive', u'Installers_SortProjects',
            u'Installers_RefreshData', u'Installers_AddMarker',
@@ -180,7 +181,7 @@ class Installers_ListPackages(Installers_Link):
         installed_only = self._askYes(message, _(u'Only Show Installed?'))
         package_list = self.idata.getPackageList(
             showInactive=not installed_only)
-        balt.copyToClipboard(package_list)
+        copy_text_to_clipboard(package_list)
         self._showLog(package_list, title=_(u'BAIN Packages'), fixedFont=False)
 
 class Installers_AnnealAll(Installers_Link):

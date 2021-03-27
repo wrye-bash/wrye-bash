@@ -26,8 +26,6 @@ now. See #190, its code should be refactored and land in basher and/or gui."""
 # Imports ---------------------------------------------------------------------
 from __future__ import division
 
-import io
-
 from . import bass # for dirs - try to avoid
 from . import bolt
 from .bolt import GPath, deprint, readme_url
@@ -47,7 +45,7 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
     Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, \
     ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
-    staticBitmap
+    staticBitmap, bell, copy_files_to_clipboard
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -178,12 +176,6 @@ class ColorChecks(ImageList):
             elif status <=20: shortKey = u'orange.off'
             else: shortKey = u'red.off'
         return self.indices[shortKey]
-
-# Elements --------------------------------------------------------------------
-def bell(arg=None):
-    """"Rings the system bell and returns the input argument (useful for return bell(value))."""
-    wx.Bell()
-    return arg
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -478,9 +470,9 @@ class WryeLog(_Log):
         if isinstance(logText, bolt.Path):
             logPath = logText
         else:
-            logPath = _settings.get(u'balt.WryeLog.temp',
-                bolt.Path.getcwd().join(u'WryeLogTemp.html'))
-            convert_wtext_to_html(logPath, logText)
+            logPath = bass.dirs[u'saveBase'].join(u'WryeLogTemp.html')
+            css_dir = bass.dirs[u'mopy'].join(u'Docs')
+            bolt.convert_wtext_to_html(logPath, logText, css_dir)
         super(WryeLog, self).__init__(parent, title, asDialog, log_icons)
         #--Text
         self._html_ctrl = DocumentViewer(self.window)
@@ -498,12 +490,6 @@ class WryeLog(_Log):
              LayoutOptions(border=2))
         ]).apply_to(self.window)
         self.ShowLog()
-
-def convert_wtext_to_html(logPath, logText):
-    cssDir = _settings.get(u'balt.WryeLog.cssDir', GPath(u''))
-    ins = io.StringIO(logText + u'\n{{CSS:wtxt_sand_small.css}}')
-    with logPath.open(u'w', encoding=u'utf-8-sig') as out:
-        bolt.WryeText.genHtml(ins, out, cssDir)
 
 def playSound(parent,sound):
     if not sound: return
@@ -1171,13 +1157,13 @@ class UIList(wx.Panel):
                     self.panel.ClearDetails()
                     self.__gList.lc_select_item_at_index(-1) # -1 indicates 'all items'
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
-        elif code in wxDelete:
+        elif code in _wx_delete:
             with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
         elif cmd_down and code == ord(u'O'): # Ctrl+O
             self.open_data_store()
         # Ctrl+C: Copy file(s) to clipboard
         elif self.__class__._copy_paths and cmd_down and code == ord(u'C'):
-            copyListToClipboard(
+            copy_files_to_clipboard(
                 [x.abs_path.s for x in self.GetSelectedInfos()])
 
     # Columns callbacks
@@ -2072,45 +2058,11 @@ class UIList_Hide(ItemLink):
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-def copyToClipboard(text_to_copy):
-    if wx.TheClipboard.Open():
-        wx.TheClipboard.SetData(wx.TextDataObject(text_to_copy))
-        wx.TheClipboard.Close()
-
-def copyListToClipboard(selected):
-    if selected and not wx.TheClipboard.IsOpened():
-        wx.TheClipboard.Open()
-        clipData = wx.FileDataObject()
-        for abspath in selected: clipData.AddFile(abspath)
-        wx.TheClipboard.SetData(clipData)
-        wx.TheClipboard.Close()
-
-def clipboardDropFiles(millis, callable_):
-    if wx.TheClipboard.Open():
-        if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
-            obj = wx.FileDataObject()
-            wx.TheClipboard.GetData(obj)
-            wx.CallLater(millis, callable_, 0, 0, obj.GetFilenames())
-        wx.TheClipboard.Close()
-
-def read_from_clipboard():
-    """Returns any text data that is currently in the system clipboard, or an
-    empty string if none is stored."""
-    text_data = wx.TextDataObject()
-    was_sucessful = False
-    if wx.TheClipboard.Open():
-        was_sucessful = wx.TheClipboard.GetData(text_data)
-        wx.TheClipboard.Close()
-    return text_data.GetText() if was_sucessful else u''
-
-def getKeyState(key): return wx.GetKeyState(key)
-def getKeyState_Shift(): return wx.GetKeyState(wx.WXK_SHIFT)
-
-wxArrowUp = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
+_wx_arrow_up = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
 wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
-wxArrows = wxArrowUp | wxArrowDown
+wxArrows = _wx_arrow_up | wxArrowDown
 wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}
-wxDelete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
+_wx_delete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
 
 # ListBoxes -------------------------------------------------------------------
 class _CheckList_SelectAll(ItemLink):

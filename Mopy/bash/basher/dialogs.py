@@ -26,13 +26,13 @@ from itertools import izip
 from . import bEnableWizard, BashFrame
 from .constants import installercons
 from .. import bass, balt, bosh, bolt, bush, env, load_order
-from ..balt import colors, bell
+from ..balt import colors
 from ..bosh import faces, ModInfo
 from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
     VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
     HBoxedLayout, SelectAllButton, DeselectAllButton, VBoxedLayout, \
-    TextAlignment, SearchBar
+    TextAlignment, SearchBar, bell
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""

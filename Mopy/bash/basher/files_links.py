@@ -24,9 +24,8 @@
 import re
 import time
 from .. import balt, bosh, bush, bolt, exception
-from ..bosh import ListInfo
 from ..balt import ItemLink, ChoiceLink, OneItemLink
-from ..gui import BusyCursor
+from ..gui import BusyCursor, copy_text_to_clipboard
 from ..localize import format_date, unformat_date
 
 __all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
@@ -110,8 +109,7 @@ class File_Duplicate(ItemLink):
                                            bsa=self._bsa,
                                            blocking=self._blocking)
         if not msg: return True  # resources ok
-        return balt.askWarning(self.window, msg,
-                               _(u'Duplicate ') + fileInfo.name.s)
+        return self._askWarning(msg, _(u'Duplicate ') + fileInfo.name.s)
 
     @balt.conversation
     def Execute(self):
@@ -162,7 +160,7 @@ class File_ListMasters(OneItemLink):
 
     def Execute(self):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)
-        balt.copyToClipboard(list_of_mods)
+        copy_text_to_clipboard(list_of_mods)
         self._showLog(list_of_mods, title=self._selected_item.s,
                       fixedFont=False)
 

@@ -32,6 +32,7 @@ from .checkables import *
 from .combos import *
 from .doc_viewer import *
 from .events import *
+from .functions import *
 from .layouts import *
 from .list_ctrl import *
 from .misc_components import *

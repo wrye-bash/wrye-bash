@@ -27,14 +27,14 @@ import wx
 from collections import OrderedDict
 
 from .. import bass, balt, bosh, bolt, load_order
-from ..balt import bell, Link, Resources
+from ..balt import Link, Resources
 from ..bolt import GPath
 from ..bosh import omods
 from ..bosh import mods_metadata
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
     web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
-    pdf_viewer_available
+    pdf_viewer_available, bell, copy_text_to_clipboard
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -363,7 +363,7 @@ class ModChecker(WindowFrame):
         text_ = re.sub(u'(__|\*\*|~~)', u'', text_, re.U)
         text_ = re.sub(u'&bull; &bull;', u'**', text_, re.U)
         text_ = re.sub(u'<[^>]+>', u'', text_, re.U)
-        balt.copyToClipboard(text_)
+        copy_text_to_clipboard(text_)
 
     def CheckMods(self, _new_value=None):
         """Do mod check."""
@@ -389,7 +389,8 @@ class ModChecker(WindowFrame):
             mod_checker=(None, self)[self._controls[_SCAN_DIRTY].is_checked])
         if web_viewer_available():
             log_path = bass.dirs[u'saveBase'].join(u'ModChecker.html')
-            balt.convert_wtext_to_html(log_path, self.check_mods_text)
+            css_dir = bass.dirs[u'mopy'].join(u'Docs')
+            bolt.convert_wtext_to_html(log_path, self.check_mods_text, css_dir)
             self._html_ctrl.try_load_html(log_path)
         else:
             self._html_ctrl.load_text(self.check_mods_text)

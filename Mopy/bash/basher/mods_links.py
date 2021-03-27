@@ -32,7 +32,8 @@ from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link, MultiLink
 from ..bolt import GPath, dict_sort
-from ..gui import BusyCursor
+from ..gui import BusyCursor, copy_text_to_clipboard, get_shift_down, \
+    get_ctrl_down
 from ..parsers import CsvParser
 
 __all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
@@ -248,8 +249,9 @@ class Mods_ListMods(ItemLink):
 
     def Execute(self):
         #--Get masters list
-        list_txt = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
-        balt.copyToClipboard(list_txt)
+        list_txt = bosh.modInfos.getModList(showCRC=get_shift_down(),
+                                            showVersion=not get_ctrl_down())
+        copy_text_to_clipboard(list_txt)
         self._showLog(list_txt, title=_(u'Active Mod Files'), fixedFont=False)
 
 #------------------------------------------------------------------------------
@@ -261,7 +263,7 @@ class Mods_ListBashTags(ItemLink):
 
     def Execute(self):
         tags_text = bosh.modInfos.getTagList()
-        balt.copyToClipboard(tags_text)
+        copy_text_to_clipboard(tags_text)
         self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
 
 #------------------------------------------------------------------------------

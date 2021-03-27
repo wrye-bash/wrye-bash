@@ -198,7 +198,7 @@ class PatchDialog(DialogWindow):
             timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
             readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.sroot + u'.txt')
-            docsDir = bass.settings.get(u'balt.WryeLog.cssDir', GPath(u''))
+            docsDir = bass.dirs[u'mopy'].join(u'Docs')
             tempReadmeDir = Path.tempDir().join(u'Docs')
             tempReadme = tempReadmeDir.join(patch_name.sroot+u'.txt')
             #--Write log/readme to temp dir first

@@ -48,7 +48,7 @@ from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError
 from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
     OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
-    ImageWrapper, BusyCursor
+    ImageWrapper, BusyCursor, copy_text_to_clipboard
 from ..parsers import CsvParser
 from ..patcher import exportConfig, patch_files
 
@@ -635,7 +635,7 @@ class Mod_ListBashTags(ItemLink):
     def Execute(self):
         #--Get masters list
         tags_text = bosh.modInfos.getTagList(list(self.iselected_infos()))
-        balt.copyToClipboard(tags_text)
+        copy_text_to_clipboard(tags_text)
         self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
 
 def _getUrl(installer):
@@ -697,7 +697,7 @@ class Mod_CreateLOOTReport(_NotObLink):
                                 u'useful.'))
         else:
             # Show results + copy to clipboard
-            balt.copyToClipboard(log_txt)
+            copy_text_to_clipboard(log_txt)
             self._showLog(log_txt, title=_(u'LOOT Entry'), fixedFont=False)
 
 class Mod_CopyModInfo(ItemLink):
@@ -733,7 +733,7 @@ class Mod_CopyModInfo(ItemLink):
                 info_txt += u'\n'+_(u'Version')+u': %s' % version
         if spoiler: info_txt += u'[/spoiler]'
         # Show results + copy to clipboard
-        balt.copyToClipboard(info_txt)
+        copy_text_to_clipboard(info_txt)
         self._showLog(info_txt, title=_(u'Mod Info Report'), fixedFont=False)
 
 class Mod_ListDependent(OneItemLink):
@@ -772,7 +772,7 @@ class Mod_ListDependent(OneItemLink):
         if not text_list:  log(u'None')
         log(u'[/spoiler]')
         text_list = bolt.winNewLines(log.out.getvalue())
-        balt.copyToClipboard(text_list)
+        copy_text_to_clipboard(text_list)
         self._showLog(text_list, title=legend, fixedFont=False)
 
 class Mod_JumpToInstaller(AppendableLink, OneItemLink):
@@ -1132,7 +1132,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             patcher.log_config(config, clip, log)
         #-- Show log
         clip.write(u'[/spoiler]')
-        balt.copyToClipboard(clip.getvalue())
+        copy_text_to_clipboard(clip.getvalue())
         log_text = log.out.getvalue()
         self._showWryeLog(log_text, title=_(u'Bashed Patch Configuration'))
 

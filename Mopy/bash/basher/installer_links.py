@@ -45,7 +45,7 @@ from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap
 from ..exception import CancelError, SkipError, StateError
-from ..gui import BusyCursor
+from ..gui import BusyCursor, copy_text_to_clipboard
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
            u'Installer_OpenSearch',
@@ -600,7 +600,7 @@ class Installer_ListStructure(OneItemLink, _InstallerLink):
     def Execute(self):
         source_list_txt = self._selected_info.listSource()
         #--Get masters list
-        balt.copyToClipboard(source_list_txt)
+        copy_text_to_clipboard(source_list_txt)
         self._showLog(source_list_txt, title=_(u'Package Structure'),
                       fixedFont=False)
 
@@ -955,7 +955,7 @@ class Installer_Espm_List(_Installer_Details_Link):
             subs += [u'   ',u'** '][espm_list.lb_is_checked_at_index(index)] + \
                     espm_list.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
-        balt.copyToClipboard(subs)
+        copy_text_to_clipboard(subs)
         self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
 
 class Installer_Espm_JumpToMod(_Installer_Details_Link):
@@ -1029,7 +1029,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
             subs += [u'   ', u'** '][self.window.gSubList.lb_is_checked_at_index(
                 index)] + self.window.gSubList.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
-        balt.copyToClipboard(subs)
+        copy_text_to_clipboard(subs)
         self._showLog(subs, title=_(u'Sub-Package Lists'), fixedFont=False)
 
 #------------------------------------------------------------------------------

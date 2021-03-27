@@ -28,8 +28,9 @@ import wx as _wx
 from .base_components import _AComponent
 from .buttons import Button, CancelButton, DeselectAllButton, SelectAllButton
 from .checkables import CheckBox
+from .functions import staticBitmap # yuck
 from .layouts import CENTER, HLayout, LayoutOptions, Stretch, VLayout
-from .misc_components import HorizontalLine, staticBitmap # yuck
+from .misc_components import HorizontalLine
 from .multi_choices import CheckListBox
 from .text_components import Label, SearchBar, TextAlignment
 from .top_level_windows import DialogWindow

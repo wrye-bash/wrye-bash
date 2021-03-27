@@ -87,7 +87,8 @@ from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
     WindowFrame, Splitter, TabbedPanel, PanelWin, CheckListBox, Color, \
     Picture, ImageWrapper, CenteredSplash, BusyCursor, RadioButton, \
     GlobalMenu, CopyOrMovePopup, ListBox, ClickableImage, CENTER, \
-    MultiChoicePopup, WithMouseEvents
+    MultiChoicePopup, WithMouseEvents, read_files_from_clipboard_cb, \
+    get_shift_down
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, installercons
@@ -2642,7 +2643,9 @@ class InstallersList(balt.UIList):
             self.EnsureVisibleIndex(visibleIndex)
         elif wrapped_evt.is_cmd_down and code == ord(u'V'):
             ##Ctrl+V
-            balt.clipboardDropFiles(10, self.OnDropFiles)
+            read_files_from_clipboard_cb(
+                lambda clip_file_paths: self.OnDropFiles(
+                    0, 0, clip_file_paths))
         # Enter: Open selected installers
         elif code in balt.wxReturn: self.OpenSelected()
         else:
@@ -3023,7 +3026,7 @@ class InstallersDetails(_SashDetailsPanel):
         self.gSubList.lb_select_index(lb_selection_dex)
         for lb_selection_dex in xrange(self.gSubList.lb_get_items_count()):
             installer.subActives[lb_selection_dex+1] = self.gSubList.lb_is_checked_at_index(lb_selection_dex)
-        if not balt.getKeyState_Shift():
+        if not get_shift_down():
             self.refreshCurrent(installer)
 
     def _selection_menu(self, lb_selection_dex):
@@ -3051,7 +3054,7 @@ class InstallersDetails(_SashDetailsPanel):
         else:
             espmNots.add(espm)
         self.gEspmList.lb_select_index(lb_selection_dex)    # so that (un)checking also selects (moves the highlight)
-        if not balt.getKeyState_Shift():
+        if not get_shift_down():
             self.refreshCurrent(self.file_info)
 
     def _on_plugin_filter_dclick(self, selected_index):
@@ -4342,10 +4345,6 @@ def InitSettings(): # this must run first !
     bosh.bain.Installer.init_attributes_process()
     # Plugin encoding used to decode mod string fields
     bolt.pluginEncoding = bass.settings[u'bash.pluginEncoding']
-    #--Wrye Balt
-    settings[u'balt.WryeLog.temp'] = bass.dirs[u'saveBase'].join(
-        u'WryeLogTemp.html')
-    settings[u'balt.WryeLog.cssDir'] = bass.dirs[u'mopy'].join(u'Docs')
     initPatchers()
 
 def InitImages():

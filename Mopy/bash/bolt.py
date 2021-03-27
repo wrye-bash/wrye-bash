@@ -2338,13 +2338,13 @@ class WryeText(object):
 
     # Conversion ---------------------------------------------------------------
     @staticmethod
-    def genHtml(ins,out=None,*cssDirs):
+    def genHtml(ins, out=None, *css_dirs):
         """Reads a wtxt input stream and writes an html output stream."""
         # Path or Stream? -----------------------------------------------
         if isinstance(ins, (Path, unicode)):
             srcPath = GPath(ins)
             outPath = GPath(out) or srcPath.root+u'.html'
-            cssDirs = (srcPath.head,) + cssDirs
+            css_dirs = (srcPath.head,) + css_dirs
             ins = srcPath.open(encoding=u'utf-8-sig')
             out = outPath.open(u'w',encoding=u'utf-8-sig')
         else:
@@ -2352,7 +2352,7 @@ class WryeText(object):
         # Setup
         outWrite = out.write
 
-        cssDirs = (GPath(d) for d in cssDirs)
+        css_dirs = (GPath(d) for d in css_dirs)
         # Setup ---------------------------------------------------------
         #--Headers
         reHead = re.compile(u'(=+) *(.+)',re.U)
@@ -2612,7 +2612,7 @@ class WryeText(object):
         else:
             if cssName.ext != u'.css':
                 raise exception.BoltError(u'Invalid Css file: %s' % cssName)
-            for css_dir in cssDirs:
+            for css_dir in css_dirs:
                 cssPath = GPath(css_dir).join(cssName)
                 if cssPath.exists(): break
             else:
@@ -2640,6 +2640,11 @@ class WryeText(object):
         if srcPath:
             ins.close()
             out.close()
+
+def convert_wtext_to_html(logPath, logText, *css_dirs):
+    ins = io.StringIO(logText + u'\n{{CSS:wtxt_sand_small.css}}')
+    with logPath.open(u'w', encoding=u'utf-8-sig') as out:
+        WryeText.genHtml(ins, out, *css_dirs)
 
 # Main -------------------------------------------------------------------------
 if __name__ == u'__main__' and len(sys.argv) > 1:

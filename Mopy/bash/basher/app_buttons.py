@@ -32,7 +32,8 @@ from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink
 from ..env import getJava, get_game_version_fallback
 from ..exception import AbstractError
-from ..gui import ClickableImage, EventResult, staticBitmap
+from ..gui import ClickableImage, EventResult, staticBitmap, get_key_down, \
+    get_shift_down
 
 __all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
            u'TESCS_Button', u'App_Tes4View', u'App_BOSS',
@@ -440,14 +441,16 @@ class App_BOSS(_ExeButton):
             self.exePath = self.boss_path
         self.wait = bool(bass.settings[u'BOSS.ClearLockTimes'])
         extraArgs = []
-        if balt.getKeyState(82) and balt.getKeyState_Shift():
-            extraArgs.append(u'-r 2',) # Revert level 2 - BOSS version 1.6+
-        elif balt.getKeyState(82):
-            extraArgs.append(u'-r 1',) # Revert level 1 - BOSS version 1.6+
-        if balt.getKeyState(83):
-            extraArgs.append(u'-s',) # Silent Mode - BOSS version 1.6+
-        if balt.getKeyState(67): #c - print crc calculations in BOSS log.
-            extraArgs.append(u'-c',)
+        ##: These should become right click options instead
+        if get_key_down(u'R'):
+            if get_shift_down():
+                extraArgs.append(u'-r 2') # Revert level 2 - BOSS version 1.6+
+            else:
+                extraArgs.append(u'-r 1') # Revert level 1 - BOSS version 1.6+
+        if get_key_down(u'S'):
+            extraArgs.append(u'-s') # Silent Mode - BOSS version 1.6+
+        if get_key_down(u'C'): # Print crc calculations in BOSS log.
+            extraArgs.append(u'-c')
         if bass.tooldirs[u'boss'].version >= (2, 0, 0, 0):
             # After version 2.0, need to pass in the -g argument
             extraArgs.append(u'-g%s' % bush.game.boss_game_name)

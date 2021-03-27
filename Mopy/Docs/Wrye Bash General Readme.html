@@ -688,7 +688,15 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <tr><td>Files..<td>New Bashed Patch...</td><td>Creates a new <a href="#patch">Bashed
             Patch</a> plugin. Useful if you accidentally delete your current one or wish to
             have more than one.</td></tr>
-        <tr><td colspan="2" id="modsListMods">List Mods<td>This lists the load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
+        <tr>
+            <td colspan="2" id="modsListMods">List Mods</td>
+            <td>This lists the load order, including version information,
+                activation status and major load order errors. It can be useful
+                for debugging a broken load order. If the Shift key is held
+                when this command is selected, the CRCs of plugins will also
+                be displayed in the output. If the Ctrl key is held, then the
+                versions of plugins will not be shown in the output.</td>
+        </tr>
         <tr><td colspan="2" id="modsListBashTags">List Bash Tags<td>This lists all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
         <tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The Oblivion game engine has a bug where it reads all the plugins in the Data folder,
             and this can affect performance when the number of plugins is around 300+. In Skyrim there is a different problem, namely if you have over
@@ -1395,7 +1403,6 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
      when BOSS is run from its application launcher in the status bar, to allow BOSS to set the load order, re-enabling it after BOSS has finished running. It has no effect when BOSS
      is run from outside Wrye Bash, or when Wrye Bash is managing Skyrim or a newer game.
  <li>Right-clicking the BOSS icon and selecting the <q>Launch using GUI</q> will cause Wrye Bash to launch BOSS's GUI instead of its command line interface.
-    <li>If <strong>V</strong> is pressed, it will disable version parsing.
     <li>If <strong>R</strong> is pressed, it will do a level 1 revert (to the state just prior to the last sort).
     <li>If <strong>Shift-R</strong> is pressed, it will do a level 2 revert (to the state just prior to the 2nd last sort).
     <li>If <strong>S</strong> is pressed, it will run BOSS in its silent mode, so that the BOSS Log does not automatically open once it has finished running.

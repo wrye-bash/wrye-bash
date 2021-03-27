@@ -34,8 +34,8 @@ from itertools import chain, imap
 from .base_components import _AComponent, Color, WithMouseEvents, \
     ImageWrapper, WithCharEvents
 from .events import EventResult
+from .functions import copy_text_to_clipboard, read_from_clipboard
 from ..bolt import Path, dict_sort
-from ..exception import ArgumentError
 
 class Font(_wx.Font):
     @staticmethod
@@ -201,16 +201,15 @@ class Table(WithCharEvents):
                         self._native_widget.SelectCol(c, True)
             elif kcode == ord(u'C'):
                 # Ctrl+C - copy contents of selected cells
-                from .. import balt # TODO(inf) de-wx! move this to gui
-                balt.copyToClipboard(self._format_selected_cells(
+                copy_text_to_clipboard(self._format_selected_cells(
                     self.get_selected_cells()))
             elif kcode == ord(u'V'):
                 # Ctrl+V - paste contents of selected cells
                 if not self._native_widget.IsEditable(): return
-                from .. import balt # TODO(inf) de-wx! move these to gui
                 parsed_clipboard = self._parse_clipboard_contents(
-                    balt.read_from_clipboard())
+                    read_from_clipboard())
                 if not parsed_clipboard:
+                    from .. import balt # TODO(inf) de-wx! move this to gui
                     balt.showWarning(self, _(u'Could not parse the pasted '
                                              u'contents as a valid table.'))
                     return
@@ -347,17 +346,6 @@ class Table(WithCharEvents):
                     self.set_cell_value(col_label, row_label, target_val)
 
 # Other -----------------------------------------------------------------------
-class BusyCursor(object):
-    """To be used with 'with' statements - changes the user's cursor to the
-    system's 'busy' cursor style. Useful to signal that a running operation is
-    making progress, but won't take long enough to be worth a progress
-    dialog."""
-    def __enter__(self):
-        _wx.BeginBusyCursor()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        _wx.EndBusyCursor()
-
 class GlobalMenu(_AComponent):
     """A global menu bar that populates JIT by repopulating its contents right
     before the menu is opened by the user. The menus are called 'categories' to
@@ -438,16 +426,3 @@ class GlobalMenu(_AComponent):
         if isinstance(wx_menu, self._GMCategory):
             from ..balt import Link ##: de-wx! move links to gui
             Link.Popup = None
-
-# TODO(inf) de-wx! Actually, don't - absorb via better API
-def staticBitmap(parent, bitmap=None, size=(32, 32), special=u'warn'):
-    """Tailored to current usages - IAW: do not use."""
-    if bitmap is None:
-        bmp = _wx.ArtProvider.GetBitmap
-        if special == u'warn':
-            bitmap = bmp(_wx.ART_WARNING, _wx.ART_MESSAGE_BOX, size)
-        elif special == u'undo':
-            return bmp(_wx.ART_UNDO, _wx.ART_TOOLBAR, size)
-        else: raise ArgumentError(
-            u'special must be either warn or undo: %r given' % special)
-    return _wx.StaticBitmap(_AComponent._resolve(parent), bitmap=bitmap)
