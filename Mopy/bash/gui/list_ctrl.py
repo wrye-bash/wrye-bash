@@ -278,9 +278,11 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
     def ec_get_selection(self):
         return self._native_widget.GetEditControl().GetSelection()
 
-    def ec_set_on_char_handler(self, on_char_handler):
+    def ec_set_f2_handler(self, on_char_handler):
+        """Sets a handler for when the F2 key is pressed. Note that you have to
+        return EventResult.FINISH when handling this event."""
         on_char = EventHandler(self._native_widget.GetEditControl(),
-            _wx.EVT_CHAR, lambda event: [
+            _wx.EVT_KEY_DOWN, lambda event: [
                 event.GetKeyCode() == _wx.WXK_F2,
                 self._native_widget.GetEditControl().GetValue(), self])
         on_char.subscribe(on_char_handler)

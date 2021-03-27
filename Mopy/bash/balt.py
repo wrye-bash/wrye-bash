@@ -931,7 +931,7 @@ class UIList(wx.Panel):
         self.__gList.on_context_menu.subscribe(self.DoItemMenu)
         self.__gList.on_lst_col_click.subscribe(self.OnColumnClick)
         self.__gList.on_key_up.subscribe(self._handle_key_up)
-        self.__gList.on_key_pressed.subscribe(self.OnChar)
+        self.__gList.on_key_down.subscribe(self._handle_key_down)
         #--Events: Columns
         self.__gList.on_lst_col_end_drag.subscribe(self.OnColumnResize)
         #--Events: Items
@@ -1145,9 +1145,9 @@ class UIList(wx.Panel):
 
     def _handle_key_up(self, wrapped_evt):
         """Char event: select all items, delete selected items, rename."""
-        code = wrapped_evt.key_code
+        kcode = wrapped_evt.key_code
         cmd_down = wrapped_evt.is_cmd_down
-        if cmd_down and code == ord(u'A'): # Ctrl+A
+        if cmd_down and kcode == ord(u'A'): # Ctrl+A
             if wrapped_evt.is_shift_down: # de-select all
                 self.ClearSelected(clear_details=True)
             else: # select all
@@ -1156,13 +1156,13 @@ class UIList(wx.Panel):
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
                     self.__gList.lc_select_item_at_index(-1) # -1 indicates 'all items'
-        elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
-        elif code in _wx_delete:
+        elif self.__class__._editLabels and kcode == wx.WXK_F2: self.Rename()
+        elif kcode in _wx_delete:
             with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
-        elif cmd_down and code == ord(u'O'): # Ctrl+O
+        elif cmd_down and kcode == ord(u'O'): # Ctrl+O
             self.open_data_store()
         # Ctrl+C: Copy file(s) to clipboard
-        elif self.__class__._copy_paths and cmd_down and code == ord(u'C'):
+        elif self.__class__._copy_paths and cmd_down and kcode == ord(u'C'):
             copy_files_to_clipboard(
                 [x.abs_path.s for x in self.GetSelectedInfos()])
 
@@ -1194,7 +1194,7 @@ class UIList(wx.Panel):
     #--Events skipped
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags): pass
     def OnDClick(self, lb_dex_and_flags): pass
-    def OnChar(self, wrapped_evt): pass
+    def _handle_key_down(self, wrapped_evt): pass
     #--Edit labels - only registered if _editLabels != False
     def _rename_type(self):
         """Check if the operation is allowed and return the item type of the
@@ -1208,7 +1208,7 @@ class UIList(wx.Panel):
             # Nothing selected / rename mixed installer types / last marker
             return EventResult.CANCEL
         uilist_ctrl.ec_set_selection(*rename_type.rename_area_idxs(evt_label))
-        uilist_ctrl.ec_set_on_char_handler(self._on_f2_handler)
+        uilist_ctrl.ec_set_f2_handler(self._on_f2_handler)
         return EventResult.FINISH  ##: needed?
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         # should only be subscribed if _editLabels==True and overridden
@@ -1230,7 +1230,7 @@ class UIList(wx.Panel):
                 else:
                     selection_span = sel_start, _sel_stop
             uilist_ctrl.ec_set_selection(*selection_span)
-            return EventResult.FINISH  ##: needed?
+            return EventResult.FINISH
 
     def try_rename(self, info, newFileName): # Mods/BSAs
         return self._try_rename(info, newFileName)

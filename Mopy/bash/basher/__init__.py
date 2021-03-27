@@ -882,7 +882,8 @@ class ModList(_ModsUIList):
     #-- Drag and Drop-----------------------------------------------------
     def _dropIndexes(self, indexes, newIndex): # will mess with plugins cache !
         """Drop contiguous indexes on newIndex and return True if LO changed"""
-        if newIndex < 0: return False # from OnChar() & moving master esm up
+        if newIndex < 0:
+            return False # from _handle_key_down() & moving master esm up
         count = self.item_count
         dropItem = self.GetItem(newIndex if (count > newIndex) else count - 1)
         firstItem = self.GetItem(indexes[0])
@@ -1044,7 +1045,7 @@ class ModList(_ModsUIList):
         Link.Frame.docBrowser.SetMod(modInfo.name)
         Link.Frame.docBrowser.raise_frame()
 
-    def OnChar(self, wrapped_evt):
+    def _handle_key_down(self, wrapped_evt):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
         def undo_redo_op(lo_op):
             # Grab copies of the old LO/actives for find_first_difference
@@ -1060,8 +1061,8 @@ class ModList(_ModsUIList):
             # details into account
             self.RefreshUI(redraw=self._lo_redraw_targets({curr_lo[low_diff]}),
                            refreshSaves=True)
-        code = wrapped_evt.key_code
-        if wrapped_evt.is_cmd_down and code in balt.wxArrows:
+        kcode = wrapped_evt.key_code
+        if wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
             if not self.dndAllow(event=None): return
             # Calculate continuous chunks of indexes
             chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
@@ -1072,7 +1073,7 @@ class ModList(_ModsUIList):
                     chunks.append([])
                 previous = dex
                 chunks[chunk].append(dex)
-            moveMod = 1 if code in balt.wxArrowDown else -1
+            moveMod = 1 if kcode in balt.wxArrowDown else -1
             moved = False
             # Initialize the lowest index to the smallest existing one (we
             # won't ever beat this one if we are moving indices up)
@@ -1088,15 +1089,16 @@ class ModList(_ModsUIList):
                 moved |= self._dropIndexes(chunk, newIndex)
             if moved: self._refreshOnDrop(lowest_index)
         # Ctrl+Z: Undo last load order or active plugins change
-        # Can't use ord('Z') below - check wx._core.KeyEvent docs
-        elif wrapped_evt.is_cmd_down and code == 26:
+        elif wrapped_evt.is_cmd_down and kcode == ord(u'Z'):
             undo_redo_op(self.data_store.redo_load_order
                          if wrapped_evt.is_shift_down
                          else self.data_store.undo_load_order)
-        elif wrapped_evt.is_cmd_down and code == 25:
+        # Ctrl+Y: Redo last load order or active plugins change
+        elif wrapped_evt.is_cmd_down and kcode == ord(u'Y'):
             undo_redo_op(self.data_store.redo_load_order)
         else: # correctly update the highlight around selected mod
             return EventResult.CONTINUE
+        # Otherwise we'd jump to a random plugin that starts with the key code
         return EventResult.FINISH
 
     def _handle_key_up(self, wrapped_evt):
@@ -2620,15 +2622,15 @@ class InstallersList(balt.UIList):
             return super(InstallersList, self).dndAllow(event) # disallow
         return True
 
-    def OnChar(self, wrapped_evt):
+    def _handle_key_down(self, wrapped_evt):
         """Char event: Reorder."""
-        code = wrapped_evt.key_code
-        ##Ctrl+Up/Ctrl+Down - Move installer up/down install order
-        if wrapped_evt.is_cmd_down and code in balt.wxArrows:
+        kcode = wrapped_evt.key_code
+        # Ctrl+Up/Ctrl+Down - Move installer up/down install order
+        if wrapped_evt.is_cmd_down and kcode in balt.wxArrows:
             selected = self.GetSelected()
             if len(selected) < 1: return
             orderKey = partial(self._sort_keys[u'Order'], self)
-            moveMod = 1 if code in balt.wxArrowDown else -1 # move down or up
+            moveMod = 1 if kcode in balt.wxArrowDown else -1 # move down or up
             sorted_ = sorted(selected, key=orderKey, reverse=(moveMod == 1))
             # get the index two positions after the last or before the first
             visibleIndex = self.GetIndex(sorted_[0]) + moveMod * 2
@@ -2641,15 +2643,16 @@ class InstallersList(balt.UIList):
             self.RefreshUI()
             visibleIndex = sorted((visibleIndex, 0, maxPos))[1]
             self.EnsureVisibleIndex(visibleIndex)
-        elif wrapped_evt.is_cmd_down and code == ord(u'V'):
-            ##Ctrl+V
+        elif wrapped_evt.is_cmd_down and kcode == ord(u'V'):
+            # Ctrl+V - drop files onto the Installers tab via clipboard
             read_files_from_clipboard_cb(
                 lambda clip_file_paths: self.OnDropFiles(
                     0, 0, clip_file_paths))
         # Enter: Open selected installers
-        elif code in balt.wxReturn: self.OpenSelected()
+        elif kcode in balt.wxReturn: self.OpenSelected()
         else:
             return EventResult.CONTINUE
+        # Otherwise we'd jump to a random plugin that starts with the key code
         return EventResult.FINISH
 
     def OnDClick(self, lb_dex_and_flags):
@@ -2673,10 +2676,9 @@ class InstallersList(balt.UIList):
 
     def _handle_key_up(self, wrapped_evt):
         """Char events: Action depends on keys pressed"""
-        code = wrapped_evt.key_code
         # Ctrl+Shift+N - Add a marker
-        if wrapped_evt.is_cmd_down and wrapped_evt.is_shift_down and \
-                code == ord(u'N'):
+        if (wrapped_evt.is_cmd_down and wrapped_evt.is_shift_down and
+                wrapped_evt.key_code == ord(u'N')):
             self.addMarker()
         super(InstallersList, self)._handle_key_up(wrapped_evt)
 
@@ -3385,7 +3387,7 @@ class ScreensList(balt.UIList):
                 item_edited[0] = newName
             return oldName, newName # continue
 
-    def OnChar(self, wrapped_evt):
+    def _handle_key_up(self, wrapped_evt):
         # Enter: Open selected screens
         if wrapped_evt.key_code in balt.wxReturn: self.OpenSelected()
         else: super(ScreensList, self)._handle_key_up(wrapped_evt)

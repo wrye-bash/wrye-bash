@@ -189,8 +189,8 @@ class Table(WithCharEvents):
 
     def _on_table_key_up(self, wrapped_evt):
         """Internal handler, implements copy and paste, select all, etc."""
-        kcode = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down:
+            kcode = wrapped_evt.key_code
             if kcode == ord(u'A'):
                 if wrapped_evt.is_shift_down:
                     # Ctrl+Shift+A - unselect all cells

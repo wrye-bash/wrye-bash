@@ -107,7 +107,7 @@ class PatchDialog(DialogWindow):
         #--Events
         self.gPatchers.on_mouse_leaving.subscribe(self._mouse_leaving)
         self.gPatchers.on_mouse_motion.subscribe(self.handle_mouse_motion)
-        self.gPatchers.on_key_pressed.subscribe(self._on_char)
+        self.gPatchers.on_key_down.subscribe(self._on_char)
         self.mouse_dex = -1
         #--Layout
         self.config_layout = VLayout(item_expand=True, item_weight=1)
@@ -417,7 +417,9 @@ class PatchDialog(DialogWindow):
 
     def _on_char(self, wrapped_evt):
         """Keyboard input to the patchers list box"""
-        if wrapped_evt.key_code == 1 and wrapped_evt.is_cmd_down: # Ctrl+'A'
+        # Ctrl+'A' - select all items of the current patchers (or deselect them
+        # if Shift is also held)
+        if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'A'):
             patcher = self.currentPatcher
             if patcher is not None:
                 patcher.mass_select(select=not wrapped_evt.is_shift_down)

@@ -422,9 +422,15 @@ class WithCharEvents(_AComponent):
     """An _AComponent that handles key presses events.
 
     Key events.
-      - on_key_pressed(wrapped_evt: _WrapKeyEvt): key pressed
-      - on_key_up(wrapped_evt: _WrapKeyEvt, self: WithCharEvents): key
-        released"""
+      - on_key_down(wrapped_evt: _WrapKeyEvt): Posted when a key is starting to
+        be pressed, before OS handlers have had a chance to handle it. That
+        means you can override behavior like jumping to a list item when a
+        letter is pressed by using this. Note that you have to return
+        EventResult.FINISH if you override behavior for a particular key code,
+        otherwise the OS behavior will also be executed.
+      - on_key_up(wrapped_evt: _WrapKeyEvt, self: WithCharEvents): Posted when
+        a key is starting to be released. OS handlers for this key have run if
+        they weren't overriden by an on_key_down subscription."""
     class _WrapKeyEvt(object):
         def __init__(self, mouse_evt):
             self.__key_evt = mouse_evt # type: _wx.KeyEvent
@@ -448,7 +454,7 @@ class WithCharEvents(_AComponent):
     def __init__(self, *args, **kwargs):
         super(WithCharEvents, self).__init__(*args, **kwargs)
         wrap_processor = lambda event: [self._WrapKeyEvt(event)]
-        self.on_key_pressed = self._evt_handler(_wx.EVT_CHAR, wrap_processor)
+        self.on_key_down = self._evt_handler(_wx.EVT_KEY_DOWN, wrap_processor)
         self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, wrap_processor)
 
 class ImageWrapper(object):
