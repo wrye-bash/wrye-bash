@@ -27,7 +27,7 @@ from __future__ import division, print_function
 
 from collections import defaultdict
 from itertools import chain
-from zlib import decompress as zlib_decompress
+from zlib import decompress as zlib_decompress, error as zlib_error
 
 from . import bolt, bush, env, load_order
 from .bolt import deprint, GPath, SubProgress, structs_cache, struct_error,\
@@ -491,6 +491,7 @@ class ModHeaderReader(object):
         minf_ci_key = mod_info.ci_key
         sh_unpack = Subrecord.sub_header_unpack
         sh_size = Subrecord.sub_header_size
+        main_progress_msg = _(u'Loading: %s') % minf_ci_key
         # Where we'll store all the collected record data
         group_records = defaultdict(lambda: defaultdict(tuple))
         # The current top GRUP label - starts out as TES4/TES3
@@ -521,8 +522,8 @@ class ModHeaderReader(object):
                     # Nothing special to do for non-top GRUPs
                     if not header.is_top_group_header: continue
                     tg_label = header.label
-                    progress(ins_tell() / minf_size,
-                             _(u'Scanning: %s') % tg_label.decode(u'ascii'))
+                    progress(ins_tell() / minf_size, u'%s\n%s' % (
+                        main_progress_msg, tg_label.decode(u'ascii')))
                     records = group_records[tg_label]
                 #     skip_eids = tg_label not in records_with_eids
                 # elif skip_eids:
@@ -538,7 +539,16 @@ class ModHeaderReader(object):
                     next_record = ins_tell() + blob_siz
                     if header.flags1 & 0x00040000: # 'compressed' flag
                         size_check = __unpacker(ins_read(4))[0]
-                        new_rec_data = zlib_decompress(ins_read(blob_siz - 4))
+                        try:
+                            new_rec_data = zlib_decompress(ins_read(
+                                blob_siz - 4))
+                        except zlib_error:
+                            if minf_ci_key == u'FalloutNV.esm':
+                                # Yep, FalloutNV.esm has a record with broken
+                                # zlib data. Just skip it.
+                                ins_seek(next_record)
+                                continue
+                            raise
                         if len(new_rec_data) != size_check:
                             raise ModError(ins.inName,
                                 u'Mis-sized compressed data. Expected %d, got '

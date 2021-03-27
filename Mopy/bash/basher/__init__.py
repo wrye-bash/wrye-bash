@@ -3858,7 +3858,7 @@ class BashFrame(WindowFrame):
     """Main application frame."""
     ##:ex basher globals - hunt their use down - replace with methods - see #63
     docBrowser = None
-    modChecker = None
+    plugin_checker = None
     # UILists - use sparingly for inter Panel communication
     # modList is always set but for example iniList may be None (tab not
     # enabled).

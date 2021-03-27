@@ -162,7 +162,7 @@ def InitStatusBar():
                 app_button_factory((pth,()), icon, shortcut_descr, canHide=False))
     #--Final couple
     BashStatusBar.buttons.append(App_DocBrowser(uid=u'DocBrowser'))
-    BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))
+    BashStatusBar.buttons.append(App_PluginChecker(uid=u'ModChecker'))
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
     if bass.inisettings[u'ShowDevTools']:
@@ -460,7 +460,7 @@ def InitModLinks():
     ModList.column_links.append(Mods_ScanDirty())
     ModList.column_links.append(SeparatorLink())
     ModList.column_links.append(Mods_CrcRefresh())
-    ModList.column_links.append(Mods_ModChecker())
+    ModList.column_links.append(Mods_PluginChecker())
     #--ModList: Item Links
     if bass.inisettings[u'ShowDevTools'] and bush.game.Esp.canBash:
         ModList.context_links.append(Mod_FullLoad())
@@ -630,7 +630,7 @@ def InitModLinks():
     view_menu.append(Mods_ListMods())
     if bush.game.allTags:
         view_menu.append(Mods_ListBashTags())
-    view_menu.append(Mods_ModChecker())
+    view_menu.append(Mods_PluginChecker())
     # Settings Menu
     settings_menu = ModList.global_links[_(u'Settings')]
     settings_menu.append(Mods_AutoGhost())

@@ -2470,7 +2470,8 @@ class ModInfos(FileInfos):
                     imported_.add(imp_name)
         return merged_,imported_
 
-    def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):
+    def getModList(self, showCRC=False, showVersion=True, fileInfo=None,
+                   wtxt=False, log_problems=True):
         """Returns mod list as text. If fileInfo is provided will show mod list
         for its masters. Otherwise will show currently loaded mods."""
         #--Setup
@@ -2478,14 +2479,14 @@ class ModInfos(FileInfos):
         head, bul, sMissing, sDelinquent, sImported = (
             u'=== ',
             u'* ',
-            _(u'  * __Missing Master:__ '),
-            _(u'  * __Delinquent Master:__ '),
+            u'  * __%s__' % _(u'Missing Master: %s'),
+            u'  * __%s__' % _(u'Delinquent Master: %s'),
             u'&bull; &bull;'
             ) if wtxt else (
             u'',
             u'',
-            _(u'----> MISSING MASTER: '),
-            _(u'----> Delinquent MASTER: '),
+            u'----> %s' % _(u'MISSING MASTER: %s'),
+            u'----> %s' % _(u'DELINQUENT MASTER: %s'),
             u'**')
         if fileInfo:
             masters_set = set(fileInfo.masterNames)
@@ -2522,7 +2523,7 @@ class ModInfos(FileInfos):
             if showCRC:
                 log_str += _(u'  [CRC: %s]') % (self[mname].crc_string())
             log(log_str)
-            if mname in masters_set:
+            if log_problems and mname in masters_set:
                 for master2 in self[mname].masterNames:
                     if master2 not in self:
                         log(sMissing + master2.s)

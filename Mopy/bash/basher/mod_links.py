@@ -596,7 +596,7 @@ class Mod_Details(OneItemLink):
     _help = _(u'Show Mod Details')
 
     def Execute(self):
-        with balt.Progress(self._selected_item.s) as progress:
+        with balt.Progress(_(u'Details')) as progress:
             sel_info_data = mod_files.ModHeaderReader.extract_mod_data(
                 self._selected_info, SubProgress(progress, 0.1, 0.7))
             buff = io.StringIO()

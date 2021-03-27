@@ -165,6 +165,7 @@ class OblivionGameInfo(PatchGame):
                             u'hand', u'foot', u'rightRing', u'leftRing',
                             u'amulet', u'weapon', u'backWeapon', u'sideWeapon',
                             u'quiver', u'shield', u'torch', u'tail')
+        reference_types = {b'ACHR', b'ACRE', b'REFR'}
 
     allTags = PatchGame.allTags | {u'IIM', u'NoMerge'}
 

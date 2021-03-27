@@ -27,9 +27,12 @@ from collections import defaultdict
 
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
-from ..bolt import deprint, structs_cache
-from ..brec import ModReader, MreRecord, SubrecordBlob
+from ..bolt import dict_sort, structs_cache
+from ..brec import ModReader, SubrecordBlob
 from ..exception import CancelError
+from ..mod_files import ModHeaderReader
+
+_wrld_types = frozenset((b'CELL', b'WRLD'))
 
 # BashTags dir ----------------------------------------------------------------
 def get_tags_from_dir(plugin_name):
@@ -91,347 +94,263 @@ def diff_tags(plugin_new_tags, plugin_old_tags):
     removed tags."""
     return plugin_new_tags - plugin_old_tags, plugin_old_tags - plugin_new_tags
 
-#--Mod Checker ----------------------------------------------------------------
+#--Plugin Checker -------------------------------------------------------------
 _cleaning_wiki_url = (u'[[!https://tes5edit.github.io/docs/7-mod-cleaning-and'
                       u'-error-checking.html|Tome of xEdit]]')
 
-def checkMods(showModList=False, showCRC=False, showVersion=True,
-              mod_checker=None):
+def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
+              scan_plugins=True):
     """Checks currently loaded mods for certain errors / warnings.
-    mod_checker should be the instance of ModChecker, to scan."""
+    mod_checker should be the instance of PluginChecker, to scan."""
+    # Setup some commonly used collections of plugin info
     from . import modInfos
-    active = set(load_order.cached_active_tuple())
-    imported_ = modInfos.imported
-    removeEslFlag = set()
-    warning = u'=== <font color=red>'+_(u'WARNING:')+u'</font> '
-    #--Header
+    all_present_minfs = [modInfos[x] for x in load_order.cached_lo_tuple()]
+    all_active_plugins = set(load_order.cached_active_tuple())
+    game_master_name = bush.game.master_file
+    vanilla_masters = bush.game.bethDataFiles
     log = bolt.LogFile(io.StringIO())
-    log.setHeader(u'= '+_(u'Check Mods'),True)
+    # -------------------------------------------------------------------------
+    # Check for ESL-capable plugins that aren't ESL-flagged.
+    can_esl_flag = modInfos.mergeable if bush.game.check_esl else set()
+    # -------------------------------------------------------------------------
+    # Check for ESL-flagged plugins that aren't ESL-capable.
+    remove_esl_flag = set()
     if bush.game.check_esl:
-        log(_(u'This is a report on your currently installed or '
-              u'active mods.'))
-    else:
-        log(_(u'This is a report on your currently installed, active, '
-              u'or merged mods.'))
-    #--Mergeable/NoMerge/Deactivate tagged mods
-    if bush.game.check_esl:
-        shouldMerge = modInfos.mergeable
-    else:
-        shouldMerge = active & modInfos.mergeable
-    if bush.game.check_esl:
-        for m, modinf in modInfos.items():
+        for m, modinf in modInfos.iteritems():
             if not modinf.is_esl():
                 continue # we check .esl extension and ESL flagged mods
             if not is_esl_capable(modinf, modInfos, reasons=None):
-                removeEslFlag.add(m)
+                remove_esl_flag.add(m)
+    # -------------------------------------------------------------------------
+    # Check for mergeable plugins that aren't merged into a BP.
+    can_merge = ((all_active_plugins & modInfos.mergeable)
+                 if not bush.game.check_esl else set())
+    # Don't bug users to merge NoMerge-tagged plugins
+    for mod in tuple(can_merge):
+        if u'NoMerge' in modInfos[mod].getBashTags():
+            can_merge.discard(mod)
+    # -------------------------------------------------------------------------
+    # Check for Deactivate-tagged plugins that are active and
+    # MustBeActiveIfImported-tagged plugins that are imported, but inactive.
     should_deactivate = []
-    for x in active:
-        tags = modInfos[x].getBashTags()
-        if u'Deactivate' in tags: should_deactivate.append(x)
-    should_activate = [x for x in imported_ if x not in active and
-                u'MustBeActiveIfImported' in modInfos[x].getBashTags()]
-    #--Mods with invalid TES4 version
+    should_activate = []
+    for p_minf in all_present_minfs:
+        p_ci_key = p_minf.ci_key
+        p_active = p_ci_key in all_active_plugins
+        p_imported = p_ci_key in modInfos.imported
+        p_tags = p_minf.getBashTags()
+        if u'Deactivate' in p_tags and p_active:
+            should_deactivate.append(p_ci_key)
+        if u'MustBeActiveIfImported' in p_tags and not p_active and p_imported:
+            should_activate.append(p_ci_key)
+    # -------------------------------------------------------------------------
+    # Check for missing or delinquent masters
+    seen_plugins = set()
+    p_missing_masters = set()
+    p_delinquent_masters = set()
+    for p in load_order.cached_active_tuple():
+        for p_master in modInfos[p].masterNames:
+            if p_master not in all_active_plugins:
+                p_missing_masters.add(p)
+            if p_master not in seen_plugins:
+                p_delinquent_masters.add(p)
+        seen_plugins.add(p)
+    # -------------------------------------------------------------------------
+    # Check for plugins with invalid TES4 version.
     valid_vers = bush.game.Esp.validHeaderVersions
-    invalidVersion = [(x, unicode(round(modInfos[x].header.version, 6)))
-                      for x in active if round(
-            modInfos[x].header.version, 6) not in valid_vers]
-    #--Look for dirty edits
-    shouldClean = {}
-    scan_infs = []
-    dirty_msgs = [(x, modInfos[x].getDirtyMessage()) for x in active]
+    invalid_tes4_versions = {x: unicode(round(modInfos[x].header.version, 6))
+                             for x in all_active_plugins if round(
+            modInfos[x].header.version, 6) not in valid_vers}
+    # -------------------------------------------------------------------------
+    # Check for cleaning information from LOOT.
+    cleaning_messages = {}
+    scan_for_cleaning = set()
+    dirty_msgs = [(m.ci_key, m.getDirtyMessage()) for m in all_present_minfs]
     for x, y in dirty_msgs:
         if y[0]:
-            shouldClean[x] = y[1]
-        elif mod_checker:
-            scan_infs.append(modInfos[x])
-    if mod_checker:
+            cleaning_messages[x] = y[1]
+        elif scan_plugins:
+            scan_for_cleaning.add(x)
+    # -------------------------------------------------------------------------
+    # Scan plugins to collect data for more detailed analysis.
+    # Maps plugin names to the collected data for that mod
+    all_extracted_data = defaultdict(dict)
+    if scan_plugins:
         try:
-            with balt.Progress(_(u'Scanning for Dirty Edits...'),u'\n'+u' '*60, parent=mod_checker, abort=True) as progress:
-                ret = ModCleaner.scan_Many(scan_infs, ModCleaner.UDR, progress)
-                for i, mod in enumerate(scan_infs):
-                    udrs, fog = ret[i]
-                    if udrs:
-                        cleanMsg = []
-                        if udrs:
-                            cleanMsg.append(u'UDR(%i)' % len(udrs))
-                        cleanMsg = u', '.join(cleanMsg)
-                        shouldClean[mod.ci_key] = cleanMsg
+            # Extract data for all plugins (we'll need the context from all of
+            # them, even the game master)
+            with balt.Progress(_(u'Checking Plugins...'), u'\n' + u' ' * 60,
+                               parent=mc_parent, abort=True) as progress:
+                progress.setFull(len(all_present_minfs))
+                for i, present_minf in enumerate(all_present_minfs):
+                    mod_progress = bolt.SubProgress(progress, i, i + 1)
+                    ext_data = ModHeaderReader.extract_mod_data(present_minf,
+                                                                mod_progress)
+                    all_extracted_data[present_minf.ci_key] = ext_data
         except CancelError:
             pass
-    # below is always empty with current implementation
-    shouldCleanMaybe = [(x, y[1]) for x, y in dirty_msgs if
-                        not y[0] and y[1] != u'']
-    for mod in tuple(shouldMerge):
-        if u'NoMerge' in modInfos[mod].getBashTags():
-            shouldMerge.discard(mod)
-    if shouldMerge:
-        if bush.game.check_esl:
-            log.setHeader(u'=== '+_(u'ESL Capable'))
-            log(_(u'Following mods could be assigned an ESL flag but '
-                  u'are not ESL flagged.'))
-        else:
-            log.setHeader(u'=== ' + _(u'Mergeable'))
-            log(_(u'Following mods are active, but could be merged into '
-                  u'the Bashed Patch.'))
-        for mod in sorted(shouldMerge):
-            log(u'* __%s__' % mod)
-    if removeEslFlag:
+    # -------------------------------------------------------------------------
+    # Check for deleted records in the plugins.
+    all_ref_types = bush.game.Esp.reference_types
+    deleted_navmeshes = {}
+    deleted_base_recs = {}
+    for p_ci_key, ext_data in all_extracted_data.iteritems():
+        def discard_fid(_r_fid): pass
+        deleted_navms = []
+        # If we have a LOOT report for a plugin, we can skip every deleted
+        # reference and deleted navmesh
+        deleted_navms_append = (discard_fid if p_ci_key in scan_for_cleaning
+                                else deleted_navms.append)
+        deleted_refrs = []
+        deleted_refrs_append = (discard_fid if p_ci_key in scan_for_cleaning
+                                else deleted_refrs.append)
+        deleted_others = []
+        deleted_others_append = deleted_others.append
+        for r, d in ext_data.iteritems():
+            if p_ci_key == game_master_name:
+                # The game master can't have deleted records (deleting a record
+                # from the master file that introduced it just removes the
+                # record from existence entirely)
+                continue
+            for r_fid, (r_header, _r_eid) in d.iteritems():
+                # Check the deleted flag - unpacking flags is too expensive
+                if r_header.flags1 & 0x00000020:
+                    w_rec_type = r_header.recType
+                    if w_rec_type == b'NAVM':
+                        deleted_navms_append(r_fid)
+                    elif w_rec_type in all_ref_types:
+                        deleted_refrs_append(r_fid)
+                    else:
+                        deleted_others_append(r_fid)
+        if deleted_refrs:
+            num_deleted = len(deleted_refrs)
+            if num_deleted == 1: # I hate natural languages :P
+                del_msg = _(u'1 deleted reference')
+            else:
+                del_msg = _(u'%d deleted references') % num_deleted
+            cleaning_messages[p_ci_key] = del_msg
+        # Deleted navmeshes and base records can't and shouldn't be fixed in
+        # vanilla files, so don't show warnings for them
+        plugin_is_vanilla = p_ci_key in vanilla_masters
+        if deleted_navms and not plugin_is_vanilla:
+            num_deleted = len(deleted_navms)
+            if num_deleted == 1:
+                del_msg = _(u'1 deleted navmesh')
+            else:
+                del_msg = _(u'%d deleted navmeshes') % num_deleted
+            deleted_navmeshes[p_ci_key] = del_msg
+        if deleted_others and not plugin_is_vanilla:
+            num_deleted = len(deleted_others)
+            if num_deleted == 1:
+                del_msg = _(u'1 deleted base record')
+            else:
+                del_msg = _(u'%d deleted base records') % num_deleted
+            deleted_base_recs[p_ci_key] = del_msg
+    # From here on we have data on all plugin problems, so it's purely a matter
+    # of building the log
+    def log_plugins(plugin_list):
+        for p in sorted(plugin_list):
+            log(u'* __%s__' % p)
+    def log_plugin_messages(plugin_dict):
+        for p, p_msg in dict_sort(plugin_dict):
+            log(u'* __%s:__  %s' % (p, p_msg))
+    if can_esl_flag:
+        log.setHeader(u'=== ' + _(u'ESL Capable'))
+        log(_(u'The following plugins could be assigned an ESL flag.'))
+        log_plugins(can_esl_flag)
+    if remove_esl_flag:
         log.setHeader(u'=== ' + _(u'Incorrect ESL Flag'))
-        log(_(u'Following mods have an ESL flag, but do not qualify. '
+        log(_(u'The following plugins have an ESL flag, but do not qualify. '
               u"Either remove the flag with 'Remove ESL Flag', or "
               u"change the extension to '.esp' if it is '.esl'."))
-        for mod in sorted(removeEslFlag):
-            log(u'* __%s__' % mod)
+        log_plugins(remove_esl_flag)
+    if can_merge:
+        log.setHeader(u'=== ' + _(u'Mergeable'))
+        log(_(u'The following plugins are active, but could be merged into '
+              u'the Bashed Patch.'))
+        log_plugins(can_merge)
     if should_deactivate:
-        log.setHeader(u'=== '+_(u'Deactivate Tagged Mods'))
-        log(_(u'Following mods are tagged Deactivate and should be '
-              u'deactivated and imported into the Bashed Patch but '
-              u'are currently active.'))
-        for mod in sorted(should_deactivate):
-            log(u'* __%s__' % mod)
+        log.setHeader(u'=== ' + _(u'Deactivate-tagged But Active'))
+        log(_(u"The following plugins are tagged with 'Deactivate' and should "
+              u'be deactivated and imported into the Bashed Patch.'))
+        log_plugins(should_deactivate)
     if should_activate:
-        log.setHeader(u'=== '+_(u'MustBeActiveIfImported Tagged Mods'))
-        log(_(u'Following mods have to be active as well as imported into the '
-              u'Bashed Patch but are currently inactive.'))
-        for mod in sorted(should_activate):
-            log(u'* __%s__' % mod)
-    if shouldClean:
-        log.setHeader(
-            u'=== ' + _(u'Mods that need cleaning with %s') %
-            bush.game.Xe.full_name)
-        log(_(u'Following mods have deleted records (UDR), or other issues '
-              u'that should be fixed with %(xedit_name)s. Visit the '
+        log.setHeader(u'=== '+_(u'MustBeActiveIfImported-tagged But Inactive'))
+        log(_(u'The following plugins are tagged with '
+              u"'MustBeActiveIfImported' and should be activated if they are "
+              u'also imported into the Bashed Patch. They are currently '
+              u'imported, but not active.'))
+        log_plugins(should_activate)
+    if p_missing_masters:
+        log.setHeader(_(u'Missing Masters'))
+        log(_(u'The following plugins have missing masters and are active. '
+              u'This will cause a CTD at the main menu and must be '
+              u'corrected.'))
+        log_plugins(p_missing_masters)
+    if p_delinquent_masters:
+        log.setHeader(_(u'Delinquent Masters'))
+        log(_(u'The following plugins have delinquent masters, i.e. masters '
+              u'that are set to load after their dependent plugins. The game '
+              u'will try to force them to load before the dependent plugins, '
+              u'which can lead to unpredictable or undefined behavior and '
+              u'must be corrected.'))
+        log_plugins(p_delinquent_masters)
+    if invalid_tes4_versions:
+        # Always an ASCII byte string, so this is fine
+        p_header_sig = bush.game.Esp.plugin_header_sig.decode(u'ascii')
+        ver_list = u', '.join(
+            sorted(unicode(v) for v in bush.game.Esp.validHeaderVersions))
+        log.setHeader(u'=== ' + _(u'Invalid %s versions') % p_header_sig)
+        log(_(u"The following plugins have a %s version that isn't "
+              u'recognized as one of the standard versions (%s). This is '
+              u'undefined behavior. It can possibly be corrected by resaving '
+              u'the plugins in the %s.') % (p_header_sig, ver_list,
+                                            bush.game.Ck.long_name))
+        log_plugin_messages(invalid_tes4_versions)
+    if cleaning_messages:
+        log.setHeader(u'=== ' + _(u'Cleaning With %s Needed') %
+                      bush.game.Xe.full_name)
+        log(_(u'The following plugins have deleted references or other issues '
+              u'that can and should be fixed with %(xedit_name)s. Visit the '
               u'%(cleaning_wiki_url)s for more information.') % {
             u'cleaning_wiki_url': _cleaning_wiki_url,
             u'xedit_name': bush.game.Xe.full_name})
-        for mod in sorted(shouldClean):
-            log(u'* __%s:__  %s' % (mod, shouldClean[mod]))
-    if shouldCleanMaybe:
-        log.setHeader(
-            u'=== ' + _(u'Mods with special cleaning instructions'))
-        log(_(u'Following mods have special instructions for cleaning '
-              u'with %s') % bush.game.Xe.full_name)
-        for mod in sorted(shouldCleanMaybe):
-            log(u'* __%s:__  %s' % mod) # mod is a tuple here
-    elif mod_checker and not shouldClean:
-        log.setHeader(
-            u'=== ' + _(u'Mods that need cleaning with %s') %
-            bush.game.Xe.full_name)
-        log(_(u'Congratulations, all mods appear clean.'))
-    if invalidVersion:
-        # Always an ASCII byte string, so this is fine
-        header_sig_ = unicode(bush.game.Esp.plugin_header_sig,
-                              encoding=u'ascii')
-        ver_list = u', '.join(
-            sorted(unicode(v) for v in bush.game.Esp.validHeaderVersions))
-        log.setHeader(
-            u'=== ' + _(u'Mods with non-standard %s versions') %
-            header_sig_)
-        log(_(u"The following mods have a %s version that isn't "
-              u'recognized as one of the standard versions '
-              u'(%s). It is untested what effects this can have on '
-              u'%s.') % (header_sig_, ver_list, bush.game.displayName))
-        for mod in sorted(invalidVersion):
-            log(u'* __%s:__  %s' % mod) # mod is a tuple here
-    #--Missing/Delinquent Masters
+        log_plugin_messages(cleaning_messages)
+    if deleted_navmeshes:
+        log.setHeader(u'=== ' + _(u'Deleted Navmeshes'))
+        log(_(u'The following plugins have deleted navmeshes. They will cause '
+              u'a CTD if another plugin references the deleted navmesh or a '
+              u'nearby navmesh. They can only be fixed manually, which should '
+              u'usually be done by the mod author. Failing that, the safest '
+              u'course of action is to uninstall the plugin.'))
+        log_plugin_messages(deleted_navmeshes)
+    if deleted_base_recs:
+        log.setHeader(u'=== ' + _(u'Deleted Base Records'))
+        log(_(u'The following plugins have deleted base records. If another '
+              u'plugin references the deleted record, the resulting behavior '
+              u'is undefined. It may CTD, fail to delete the record or do any '
+              u'number of other things. They can only be fixed manually, '
+              u'which should usually be done by the mod author. Failing that, '
+              u'the safest course of action is to uninstall the plugin.'))
+        log_plugin_messages(deleted_base_recs)
+    # If we haven't logged anything (remember, the header is a separate
+    # variable) then let the user know they have no problems.
+    temp_log = log.out.getvalue()
+    if not temp_log:
+        log.setHeader(u'=== ' + _(u'No Problems Found'))
+        log(_(u'Wrye Bash did not find any problems with your installed '
+              u'plugins. Congratulations!'))
+    # We already logged missing or delinquent masters up above, so don't
+    # duplicate that info in the mod list
     if showModList:
-        log(u'\n' + modInfos.getModList(showCRC, showVersion,
-                                        wtxt=True).strip())
-    else:
-        log.setHeader(warning+_(u'Missing/Delinquent Masters'))
-        previousMods = set()
-        for mod in load_order.cached_active_tuple():
-            loggedMod = False
-            for master in modInfos[mod].masterNames:
-                if master not in active:
-                    label_ = _(u'MISSING')
-                elif master not in previousMods:
-                    label_ = _(u'DELINQUENT')
-                else:
-                    label_ = u''
-                if label_:
-                    if not loggedMod:
-                        log(u'* %s' % mod)
-                        loggedMod = True
-                    log(u'  * __%s__ %s' %(label_,master))
-            previousMods.add(mod)
-    return log.out.getvalue()
-
-#------------------------------------------------------------------------------
-_wrld_types = frozenset((b'CELL', b'WRLD'))
-class ModCleaner(object):
-    """Class for cleaning ITM and UDR edits from mods. ITM detection does not
-    currently work with PBash."""
-    UDR     = 0x01  # Deleted references
-    # ITM     = 0x02  # Identical to master records
-    FOG     = 0x04  # Nvidia Fog Fix
-    ALL = UDR | FOG
-
-    class UdrInfo(object):
-        # UDR info
-        # (UDR fid, UDR Type, UDR Parent Fid, UDR Parent Type, UDR Parent Parent Fid, UDR Parent Block, UDR Paren SubBlock)
-        def __init__(self,fid,Type=None,parentFid=None,parentEid=u'',
-                     parentType=None,parentParentFid=None,parentParentEid=u'',
-                     pos=None):
-            self.fid = fid
-            self.type = Type
-            self.parentFid = parentFid
-            self.parentEid = parentEid
-            self.parentType = parentType
-            self.pos = pos
-            self.parentParentFid = parentParentFid
-            self.parentParentEid = parentParentEid
-
-        # Implement rich comparison operators, __cmp__ is deprecated
-        def __eq__(self, other):
-            return self.fid == other.fid
-        def __ne__(self, other):
-            return self.fid != other.fid
-        def __lt__(self, other):
-            return self.fid < other.fid
-        def __le__(self, other):
-            return self.fid <= other.fid
-        def __gt__(self, other):
-            return self.fid > other.fid
-        def __ge__(self, other):
-            return self.fid >= other.fid
-
-
-    def __init__(self,modInfo):
-        self.modInfo = modInfo
-        self.udr = set()    # Fids for Deleted Reference records
-        self.fog = set()    # Fids for Cells needing the Nvidia Fog Fix
-
-    @staticmethod
-    def scan_Many(mod_infs, what=UDR, progress=bolt.Progress(),
-            detailed=False, __unpacker=structs_cache[u'=12s2f2l2f'].unpack,
-            __wrld_types=_wrld_types, __unpacker2=structs_cache[u'2i'].unpack):
-        """Scan multiple mods for dirty edits"""
-        if len(mod_infs) == 0: return []
-        if not (what & ModCleaner.ALL):
-            return [(set(), set())] * len(mod_infs)
-        # Python can't do ITM scanning
-        doUDR = what & ModCleaner.UDR
-        doFog = what & ModCleaner.FOG
-        progress.setFull(max(len(mod_infs), 1))
-        ret = []
-        for i,modInfo in enumerate(mod_infs):
-            progress(i, _(u'Scanning...') + u'\n%s' % modInfo)
-            fog = set()
-            #--UDR stuff
-            udr = {}
-            parents_to_scan = defaultdict(set)
-            if len(modInfo.masterNames) > 0:
-                subprogress = bolt.SubProgress(progress,i,i+1)
-                if detailed:
-                    subprogress.setFull(max(modInfo.fsize * 2, 1))
-                else:
-                    subprogress.setFull(max(modInfo.fsize, 1))
-                #--Scan
-                parentType = None
-                parentFid = None
-                parentParentFid = None
-                # Location (Interior = #, Exteror = (X,Y)
-                with ModReader(modInfo.ci_key, modInfo.getPath().open(u'rb')) as ins:
-                    try:
-                        insAtEnd = ins.atEnd
-                        insTell = ins.tell
-                        insUnpackRecHeader = ins.unpackRecHeader
-                        while not insAtEnd():
-                            subprogress(insTell())
-                            header = insUnpackRecHeader()
-                            _rsig = header.recType
-                            #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
-                            if _rsig == b'GRUP':
-                                groupType = header.groupType
-                                if groupType == 0 and header.label not in __wrld_types:
-                                    # Skip Tops except for WRLD and CELL groups
-                                    header.skip_blob(ins)
-                                elif detailed:
-                                    if groupType == 1:
-                                        # World Children
-                                        parentParentFid = header.label
-                                        parentType = 1 # Exterior Cell
-                                        parentFid = None
-                                    elif groupType == 2:
-                                        # Interior Cell Block
-                                        parentType = 0 # Interior Cell
-                                        parentParentFid = parentFid = None
-                                    elif groupType in {6,8,9,10}:
-                                        # Cell Children, Cell Persistent Children,
-                                        # Cell Temporary Children, Cell VWD Children
-                                        parentFid = header.label
-                                    else: # 3,4,5,7 - Topic Children
-                                        pass
-                            else:
-                                header_fid = header.fid
-                                if doUDR and header.flags1 & 0x20 and _rsig in (
-                                    b'ACRE',               #--Oblivion only
-                                    b'ACHR',b'REFR',        #--Both
-                                    b'NAVM',b'PHZD',b'PGRE', #--Skyrim only
-                                    ):
-                                    if not detailed:
-                                        udr[header_fid] = ModCleaner.UdrInfo(header_fid)
-                                    else:
-                                        udr[header_fid] = ModCleaner.UdrInfo(
-                                            header_fid, _rsig, parentFid, u'',
-                                            parentType, parentParentFid, u'',
-                                            None)
-                                        parents_to_scan[parentFid].add(header_fid)
-                                        if parentParentFid:
-                                            parents_to_scan[parentParentFid].add(header_fid)
-                                if doFog and _rsig == b'CELL':
-                                    nextRecord = insTell() + header.blob_size()
-                                    while insTell() < nextRecord:
-                                        subrec = SubrecordBlob(ins, _rsig, mel_sigs={b'XCLL'})
-                                        if subrec.mel_data is not None:
-                                            color, near, far, rotXY, rotZ, \
-                                            fade, clip = __unpacker(
-                                                subrec.mel_data)
-                                            if not (near or far or clip):
-                                                fog.add(header_fid)
-                                else:
-                                    header.skip_blob(ins)
-                        if parents_to_scan:
-                            # Detailed info - need to re-scan for CELL and WRLD infomation
-                            ins.seek(0)
-                            baseSize = modInfo.fsize
-                            while not insAtEnd():
-                                subprogress(baseSize+insTell())
-                                header = insUnpackRecHeader()
-                                _rsig = header.recType
-                                if _rsig == b'GRUP':
-                                    if header.groupType == 0 and header.label not in __wrld_types:
-                                        header.skip_blob(ins)
-                                else:
-                                    fid = header.fid
-                                    if fid in parents_to_scan:
-                                        record = MreRecord(header,ins,True)
-                                        eid = u''
-                                        for subrec in record.iterate_subrecords(mel_sigs={b'EDID', b'XCLC'}):
-                                            if subrec.mel_sig == b'EDID':
-                                                eid = bolt.decoder(subrec.mel_data)
-                                            elif subrec.mel_sig == b'XCLC':
-                                                pos = __unpacker2(
-                                                    subrec.mel_data[:8])
-                                        for udrFid in parents_to_scan[fid]:
-                                            if _rsig == b'CELL':
-                                                udr[udrFid].parentEid = eid
-                                                if udr[udrFid].parentType == 1:
-                                                    # Exterior Cell, calculate position
-                                                    udr[udrFid].pos = pos
-                                            elif _rsig == b'WRLD':
-                                                udr[udrFid].parentParentEid = eid
-                                    else:
-                                        header.skip_blob(ins)
-                    except CancelError:
-                        raise
-                    except:
-                        deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo, ins.tell()), traceback=True)
-                        udr = fog = None
-                #--Done
-            ret.append((udr.values() if udr is not None else None, fog))
-        return ret
+        log(u'\n' + modInfos.getModList(showCRC, showVersion, wtxt=True,
+                                        log_problems=False).strip())
+    # Finally, add the header at the start of the log
+    log_header = u'= ' + _(u'Check Plugins') + u'\n'
+    log_header += _(u'This is a report of any problems Wrye Bash was able to '
+                    u'identify in your currently installed plugins.')
+    log_header += u'\n\n'
+    return log_header + log.out.getvalue()
 
 #------------------------------------------------------------------------------
 class NvidiaFogFixer(object):

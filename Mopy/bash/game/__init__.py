@@ -429,6 +429,10 @@ class GameInfo(object):
         biped_flag_names = ()
         # The maximum number of masters that a plugin can have for this game.
         master_limit = 255 # 256 - 1 for the plugin itself
+        # All 'reference' types, i.e. record types that occur in CELL/WLRD
+        # groups and place some sort of thing into the cell (e.g. ACHR, REFR,
+        # PMIS, etc.)
+        reference_types = set()
 
     # Class attributes moved to constants module, set dynamically at init
     #--Game ESM/ESP/BSA files
