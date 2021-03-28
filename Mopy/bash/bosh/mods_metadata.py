@@ -331,7 +331,10 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     # Check for deleted references
     if all_deleted_refs:
         for p_ci_key, deleted_refrs in all_deleted_refs.iteritems():
-            if deleted_refrs:
+            # .esu files created by xEdit use deleted records on purpose to
+            # mark records that exist in one plugin but not in the other
+            plugin_is_esu = p_ci_key.cext == u'.esu'
+            if deleted_refrs and not plugin_is_esu:
                 num_deleted = len(deleted_refrs)
                 if num_deleted == 1: # I hate natural languages :/
                     del_msg = _(u'1 deleted reference')
@@ -346,7 +349,10 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
             # Deleted navmeshes can't and shouldn't be fixed in vanilla files,
             # so don't show warnings for them
             plugin_is_vanilla = p_ci_key in vanilla_masters
-            if deleted_navms and not plugin_is_vanilla:
+            # .esu files created by xEdit use deleted records on purpose to
+            # mark records that exist in one plugin but not in the other
+            plugin_is_esu = p_ci_key.cext == u'.esu'
+            if deleted_navms and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_navms)
                 if num_deleted == 1:
                     del_msg = _(u'1 deleted navmesh')
@@ -361,7 +367,10 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
             # Deleted navmeshes can't and shouldn't be fixed in vanilla files,
             # so don't show warnings for them
             plugin_is_vanilla = p_ci_key in vanilla_masters
-            if deleted_others and not plugin_is_vanilla:
+            # .esu files created by xEdit use deleted records on purpose to
+            # mark records that exist in one plugin but not in the other
+            plugin_is_esu = p_ci_key.cext == u'.esu'
+            if deleted_others and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_others)
                 if num_deleted == 1:
                     del_msg = _(u'1 deleted base record')
