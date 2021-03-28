@@ -121,6 +121,9 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     log_header += _(u'This is a report of any problems Wrye Bash was able to '
                     u'identify in your currently installed plugins.')
     # -------------------------------------------------------------------------
+    # Check for corrupt plugins
+    all_corrupted = modInfos.corrupted
+    # -------------------------------------------------------------------------
     # Check for ESL-capable plugins that aren't ESL-flagged.
     can_esl_flag = modInfos.mergeable if bush.game.check_esl else set()
     # -------------------------------------------------------------------------
@@ -434,6 +437,11 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
         log(_(u'The loading of plugins was canceled and the resulting report '
               u"may not be accurate. You can use the 'Update' button to load "
               u'plugins and generate a new report.'))
+    if all_corrupted:
+        log.setHeader(u'=== ' + _(u'Corrupted'))
+        log(_(u'Wrye Bash could not read the follow plugins. They most likely '
+              u'have corrupt or otherwise malformed headers.'))
+        log_plugin_messages(all_corrupted) ##: Just log_plugins?
     if can_esl_flag:
         log.setHeader(u'=== ' + _(u'ESL Capable'))
         log(_(u'The following plugins could be assigned an ESL flag.'))
