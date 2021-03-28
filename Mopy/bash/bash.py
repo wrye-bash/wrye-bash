@@ -381,6 +381,8 @@ def _main(opts, wx_locale):
             app = basher.BashApp(False)
     else:
         app = basher.BashApp(True)
+    # Set the window title for stdout/stderr messages
+    app.SetOutputWindowAttributes(u'Wrye Bash stdout/stderr:')
     # Need to reference the locale object somewhere, so let's do it on the App
     app.locale = wx_locale
     if not bass.is_standalone and (

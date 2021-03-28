@@ -1701,6 +1701,9 @@ class ModDetails(_ModsSavesDetails):
         modInfo.setmtime(time.mktime(newTimeTup))
 
     #--Bash Tags
+    ##: Once we're on wx4.1.1, we can use OnDimiss to fully refreshUI the
+    # plugin in question (and do the same when removing a tag), so that
+    # adding/removing a NoMerge tag properly updates the text color
     def _popup_add_tags(self, wrapped_evt, _lb_dex_and_flags):
         """Show bash tag selection menu."""
         if not self.modInfo: return

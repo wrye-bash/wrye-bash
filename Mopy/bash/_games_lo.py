@@ -665,10 +665,14 @@ class Game(object):
         acti_file = self.get_acti_file()
         if lo_file or acti_file:
             bolt.deprint(u'Using the following load order files:')
-            if lo_file:
-                bolt.deprint(u' - Load order: %s' % lo_file)
-            if acti_file and acti_file != lo_file:
-                bolt.deprint(u' - Active plugins: %s' % acti_file)
+            if acti_file == lo_file:
+                bolt.deprint(u' - Load order and active '
+                             u'plugins: %s' % acti_file)
+            else:
+                if lo_file:
+                    bolt.deprint(u' - Load order: %s' % lo_file)
+                if acti_file:
+                    bolt.deprint(u' - Active plugins: %s' % acti_file)
 
 class INIGame(Game):
     """Class for games which use an INI section to determine parts of the load
