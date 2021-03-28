@@ -4093,7 +4093,7 @@ class BashFrame(WindowFrame):
             message.append(m)
             self.knownInvalidVerions |= invalidVersions
         if warn_mods and not bosh.modInfos.sse_form43 <= self.known_sse_form43_mods:
-            m = [_(u'Older Plugin Record Version'),
+            m = [_(u'Old Header Form Versions'),
                  _(u"The following mods don't use the current plugin Form Version: ")]
             m.extend(sorted(bosh.modInfos.sse_form43 - self.known_sse_form43_mods))
             message.append(m)

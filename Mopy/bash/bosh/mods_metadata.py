@@ -176,6 +176,10 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                              for x in all_active_plugins if round(
             modInfos[x].header.version, 6) not in valid_vers}
     # -------------------------------------------------------------------------
+    # Check for older form versions, which may point to improperly converted
+    # plugins
+    older_form_versions = modInfos.sse_form43
+    # -------------------------------------------------------------------------
     # Check for cleaning information from LOOT.
     cleaning_messages = {}
     scan_for_cleaning = set()
@@ -495,6 +499,16 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
               u'the plugins in the %s.') % (p_header_sig, ver_list,
                                             bush.game.Ck.long_name))
         log_plugin_messages(invalid_tes4_versions)
+    if older_form_versions:
+        log.setHeader(u'=== ' + _(u'Old Header Form Versions'))
+        log(_(u'The following have a form version on their headers that is '
+              u'older than the minimum version created by the %(ck_name)s. '
+              u'This probably means that the plugin was not properly '
+              u'converted to work with %(game_name)s.') % {
+            u'ck_name': bush.game.Ck.long_name,
+            u'game_name': bush.game.displayName,
+        })
+        log_plugins(older_form_versions)
     if cleaning_messages:
         log.setHeader(u'=== ' + _(u'Cleaning With %s Needed') %
                       bush.game.Xe.full_name)
