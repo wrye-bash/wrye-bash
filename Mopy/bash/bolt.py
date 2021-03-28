@@ -2314,7 +2314,7 @@ class WryeText(object):
       bullet, and the * produces a bullet character.
 
     Styles:
-      __Text__
+      __Bold__
       ~~Italic~~
       **BoldItalic**
     Notes:

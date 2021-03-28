@@ -192,6 +192,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     record_type_collisions = {}
     # fid -> (orig_plugin, list[(eid, sig, plugin)])
     probable_injected_collisions = {}
+    all_hitmes = defaultdict(list) # ci_key -> list[fid]
     if scan_plugins:
         progress = None
         try:
@@ -233,12 +234,10 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                 # harmless (if the plugin really is inactive) or will show up
                 # in the BP (if the plugin is actually merged into the BP).
                 scan_overrides = p_ci_key in all_active_plugins
-                deleted_refrs = all_deleted_refs[p_ci_key]
-                deleted_refrs_append = deleted_refrs.append
-                deleted_navms = all_deleted_navms[p_ci_key]
-                deleted_navms_append = deleted_navms.append
-                deleted_others = all_deleted_others[p_ci_key]
-                deleted_others_append = deleted_others.append
+                add_deleted_ref = all_deleted_refs[p_ci_key].append
+                add_deleted_navm = all_deleted_navms[p_ci_key].append
+                add_deleted_rec = all_deleted_others[p_ci_key].append
+                add_hitme = all_hitmes[p_ci_key].append
                 p_masters = modInfos[p_ci_key].masterNames + (p_ci_key,)
                 p_num_masters = len(p_masters)
                 for r, d in ext_data.iteritems():
@@ -249,14 +248,16 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                             if r_header.flags1 & 0x00000020:
                                 w_rec_type = r_header.recType
                                 if w_rec_type == b'NAVM':
-                                    deleted_navms_append(r_fid)
+                                    add_deleted_navm(r_fid)
                                 elif w_rec_type in all_ref_types:
-                                    deleted_refrs_append(r_fid)
+                                    add_deleted_ref(r_fid)
                                 else:
-                                    deleted_others_append(r_fid)
+                                    add_deleted_rec(r_fid)
                         r_mod_index = r_fid >> 24
                         # p_masters includes self, so >=
                         is_hitme = r_mod_index >= p_num_masters
+                        if is_hitme:
+                            add_hitme(r_fid)
                         if scan_overrides:
                             # Convert into a load order FormID - ugly but fast,
                             # inlined and hand-optmized from various methods.
@@ -360,6 +361,23 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                 else:
                     del_msg = _(u'%d deleted base records') % num_deleted
                 deleted_base_recs[p_ci_key] = del_msg
+    # -------------------------------------------------------------------------
+    # Check for HITMEs, i.e. records with a mod index that is > the number of
+    # masters that the containing plugin has
+    hitmes = {}
+    if all_hitmes:
+        for p_ci_key, found_hitmes in all_hitmes.iteritems():
+            # HITMEs can't and shouldn't be fixed in vanilla files, so don't
+            # show warnings for them
+            plugin_is_vanilla = p_ci_key in vanilla_masters
+            if found_hitmes and not plugin_is_vanilla:
+                num_hitmes = len(found_hitmes)
+                # No point in making these translatable, HITME is a fixed term
+                if num_hitmes == 1:
+                    hitme_msg = u'1 HITME'
+                else:
+                    hitme_msg = u'%d HITMEs' % num_hitmes
+                hitmes[p_ci_key] = hitme_msg
     # -------------------------------------------------------------------------
     # Some helpers for building the log
     def log_plugins(plugin_list):
@@ -495,6 +513,22 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
               u'which should usually be done by the mod author. Failing that, '
               u'the safest course of action is to uninstall the plugin.'))
         log_plugin_messages(deleted_base_recs)
+    if hitmes:
+        log.setHeader(u'=== ' + u'HITMEs')
+        log(_(u'The following plugins have HITMEs (%(hitme_acronym)s), which '
+              u'most commonly occur when the %(ck_name)s or an advanced mode '
+              u'of %(xedit_name)s were used to improperly remove a master. '
+              u'The behavior of these plugins is undefined and may lead to '
+              u'them not working correctly or causing CTDs. Such a plugin is '
+              u'usually beyond saving and mod authors should revert to a '
+              u'backup from before the HITMEs corrupted the plugin. The '
+              u'safest course of action for a user is to uninstall it.') % {
+            u'hitme_acronym': u'__H__igher __I__ndex __T__han __M__asterlist '
+                              u'__E__ntries',
+            u'ck_name': bush.game.Ck.long_name,
+            u'xedit_name': bush.game.Xe.full_name,
+        })
+        log_plugin_messages(hitmes)
     if record_type_collisions:
         log.setHeader(u'=== ' + _(u'Record Type Collisions'))
         log(_(u'The following records override each other, but have different '
