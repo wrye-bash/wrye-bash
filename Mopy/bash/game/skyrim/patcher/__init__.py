@@ -972,6 +972,7 @@ settings_tweaks = {
     u'GmstTweak_Prompt_Sit',
     u'GmstTweak_Prompt_Take',
     u'GmstTweak_Prompt_Talk',
+    u'GmstTweak_Msg_NoSoulGemLargeEnough',
 }
 
 #------------------------------------------------------------------------------

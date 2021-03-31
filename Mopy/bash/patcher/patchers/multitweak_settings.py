@@ -1710,6 +1710,13 @@ class GmstTweak_Prompt_Talk_Tes4(GmstTweak_Prompt_Talk):
     tweak_key = (u'sTargetTypeTalk',)
 
 #------------------------------------------------------------------------------
+class GmstTweak_Msg_NoSoulGemLargeEnough(_AMsgTweak):
+    tweak_name = _(u'Msg: No Soul Gem Large Enough')
+    tweak_tip = _(u'Message when there is no soul gem large enough for a '
+                  u'captured soul.')
+    tweak_key = (u'sSoulGemTooSmall',)
+
+#------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):
     """Tweaks GLOB and GMST records in various ways."""
     _tweak_classes = {globals()[t] for t in bush.game.settings_tweaks}
