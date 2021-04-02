@@ -22,6 +22,7 @@
 # =============================================================================
 """This module contains the MultiTweakItem classes that tweak RACE records."""
 
+from collections import defaultdict
 from itertools import izip
 
 from .base import MultiTweakItem, MultiTweaker
@@ -41,22 +42,26 @@ class _ARaceTweak(MultiTweakItem):
     def _calc_changed_face_parts(self, face_attr, collected_races_data):
         """Calculates a changes dictionary for the specified face attribute,
         using the specified collected races data."""
-        changed_hairs = {}
+        changed_parts = defaultdict(list)
         #process hair lists
         if self.choiceValues[self.chosen][0] == 1:
             # Merge face parts only from vanilla races to custom parts
             for race in collected_races_data:
+                if race in (b'HAIR', b'EYES'): continue # ugh
+                old_r_data = collected_races_data[race][face_attr]
                 for r in _vanilla_races:
                     if r in race:
-                        if (collected_races_data[r][face_attr] !=
-                                collected_races_data[race][face_attr]):
-                            # yuach nasty but quickly and easily removes
-                            # duplicates.
-                            changed_hairs[race] = list(set(
-                                collected_races_data[r][face_attr] +
-                                collected_races_data[race][face_attr]))
+                        new_r_data = collected_races_data[r][face_attr]
+                        if new_r_data != old_r_data:
+                            # Merge the data and combine it with data from
+                            # previous iterations
+                            merged_r_data = set(new_r_data + old_r_data +
+                                                changed_parts[race])
+                            changed_parts[race] = list(merged_r_data)
         else: # full back and forth merge!
             for race in collected_races_data:
+                if race in (b'HAIR', b'EYES'): continue # ugh
+                old_r_data = collected_races_data[race][face_attr]
                 # nasty processing slog
                 rs = race.split(u'(')
                 rs = rs[0].split()
@@ -67,13 +72,14 @@ class _ARaceTweak(MultiTweakItem):
                     if r == race: continue
                     for s in rs:
                         if s in r:
-                            if (collected_races_data[r][face_attr] !=
-                                    collected_races_data[race][face_attr]):
-                                # list(set([]) disgusting thing again
-                                changed_hairs[race] = list(set(
-                                    collected_races_data[r][face_attr] +
-                                    collected_races_data[race][face_attr]))
-        return changed_hairs
+                            new_r_data = collected_races_data[r][face_attr]
+                            if new_r_data != old_r_data:
+                                # Merge the data and combine it with data from
+                                # previous iterations
+                                merged_r_data = set(new_r_data + old_r_data +
+                                                    changed_parts[race])
+                                changed_parts[race] = list(merged_r_data)
+        return changed_parts
 
     def _get_changed_eyes(self):
         """Returns the changed eyes dictionary. A cached wrapper around
@@ -348,8 +354,6 @@ class TweakRacesPatcher(MultiTweaker):
         super(TweakRacesPatcher, self).initData(progress)
         if bush.game.race_tweaks_need_collection:
             self.collected_tweak_data = {b'EYES': [], b'HAIR': []}
-            for race_tweak in self.enabled_tweaks:
-                race_tweak.tweak_races_data = self.collected_tweak_data
 
     def scanModFile(self, modFile, progress):
         if bush.game.race_tweaks_need_collection:
@@ -378,4 +382,6 @@ class TweakRacesPatcher(MultiTweaker):
                     tweak_data[record.full.lower()] = {
                         u'hairs': record.hairs, u'eyes': record.eyes,
                         u'relations': record.relations}
+            for race_tweak in self.enabled_tweaks:
+                race_tweak.tweak_races_data = self.collected_tweak_data
         super(TweakRacesPatcher, self).buildPatch(log, progress)
