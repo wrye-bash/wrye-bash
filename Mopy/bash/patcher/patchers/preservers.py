@@ -95,9 +95,8 @@ class APreserver(ImportPatcher):
     def _parse_csv_sources(self, progress):
         """Parses CSV files. Only called if _csv_parser is set. Override as
         needed and call _process_csv_sources until parser ABC is done."""
-        parser_instance = self._csv_parser()
-        parser_instance.aliases = self.patchFile.pfile_aliases
-        parser_instance.called_from_patcher = True
+        parser_instance = self._csv_parser(self.patchFile.pfile_aliases,
+                                           called_from_patcher=True)
         for src_path in self.csv_srcs:
             try:
                 parser_instance.readFromText(getPatchesPath(src_path))
@@ -115,6 +114,7 @@ class APreserver(ImportPatcher):
         from the CSV sources to this patcher's internal data structures."""
         # Filter out any entries that don't actually have data or don't
         # actually exist (for this game at least)
+        ##: make sure k is always bytes and drop encode below
         filtered_dict = {k.encode(u'ascii') if type(k) is unicode else k: v
                          for k, v in parsed_sources.iteritems()
                          if v and k in MreRecord.type_class}
