@@ -29,7 +29,7 @@ from itertools import izip
 from operator import attrgetter
 
 from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
-    MelUnion
+    MelUnion, MelSorted
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
     MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString, \
     MelUnicode
@@ -138,7 +138,7 @@ class MreFlst(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFids(b'LNAM', u'formIDInList'),
+        MelFids(b'LNAM', u'formIDInList'), # do *not* sort!
     )
 
     __slots__ = melSet.getSlotsUsed() + [u'mergeOverLast', u'mergeSources',
@@ -239,7 +239,7 @@ class MreLand(MelRecord):
         MelBase(b'VNML', u'vertex_normals'),
         MelBase(b'VHGT', u'vertex_height_map'),
         MelBase(b'VCLR', u'vertex_colors'),
-        MelGroups(u'layers',
+        MelSorted(MelGroups(u'layers',
             # Start a new layer each time we hit one of these
             MelUnion({
                 b'ATXT': MelStruct(b'ATXT', [u'I', u'B', u's', u'h'], (FID, u'atxt_texture'),
@@ -249,10 +249,10 @@ class MreLand(MelRecord):
             }),
             # VTXT only exists for ATXT layers, i.e. if ATXT's FormID is valid
             MelUnion({
-                True:  MelBase(b'VTXT', u'alpha_layer_data'),
+                True:  MelBase(b'VTXT', u'alpha_layer_data'), # sorted
                 False: MelNull(b'VTXT'),
             }, decider=FidNotNullDecider(u'atxt_texture')),
-        ),
+        ), sort_by_attrs=(u'quadrant', u'layer')),
         MelArray(u'vertex_textures',
             MelFid(b'VTEX', u'vertex_texture'),
         ),

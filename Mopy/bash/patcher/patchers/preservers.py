@@ -506,6 +506,9 @@ class ImportCellsPatcher(ImportPatcher):
             patch_cell_fid = patchCellBlock.cell.fid
             for attr,value in cellData[patch_cell_fid].iteritems():
                 curr_value = __attrgetters[attr](patchCellBlock.cell)
+                ##: If we made MelSorted sort on load too, we could drop this -
+                # but that might be too expensive? Maybe add a parameter to
+                # MelSorted to sort on load only for specific subrecords?
                 if attr == u'regions':
                     if set(value).difference(set(curr_value)):
                         setattr_deep(patchCellBlock.cell, attr, value)

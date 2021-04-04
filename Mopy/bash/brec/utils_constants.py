@@ -26,7 +26,7 @@ almost all other parts of brec."""
 from __future__ import division, print_function
 
 from .. import bolt
-from ..bolt import cstrip, decoder, Flags, structs_cache
+from ..bolt import cstrip, decoder, Flags, structs_cache, attrgetter_cache
 # no local imports, imported everywhere in brec
 
 # Random stuff ----------------------------------------------------------------
@@ -106,6 +106,32 @@ class BipedFlags(Flags):
         flag_names = Flags.getNames(*bush.game.Esp.biped_flag_names)
         if new_flag_names: flag_names.update(new_flag_names)
         super(BipedFlags, self).__init__(flag_default, flag_names)
+
+# Sort Keys -------------------------------------------------------------------
+_perk_type_to_attrs = {
+    0: attrgetter_cache[(u'quest', u'quest_stage')],
+    1: attrgetter_cache[u'ability'],
+    2: attrgetter_cache[(u'entry_point', u'function')],
+}
+
+def perk_effect_key(e):
+    """Special sort key for PERK effects."""
+    perk_effect_type = e.type
+    # The first three are always present, the others depend on the perk
+    # effect's type
+    extra_vals = _perk_type_to_attrs[perk_effect_type](e)
+    if not isinstance(extra_vals, tuple):
+        # Second case from above, only a single attribute returned
+        return (e.rank, e.priority, perk_effect_type, extra_vals)
+    else:
+        return (e.rank, e.priority, perk_effect_type) + extra_vals
+
+vmad_fragments_key = attrgetter_cache[u'fragment_index']
+vmad_properties_key = attrgetter_cache[u'prop_name']
+vmad_qust_aliases_key = attrgetter_cache[u'alias_ref_obj']
+vmad_qust_fragments_key = attrgetter_cache[(u'quest_stage',
+                                            u'quest_stage_index')]
+vmad_script_key = attrgetter_cache[u'script_name']
 
 # Constants -------------------------------------------------------------------
 # Used by MelStruct classes to indicate fid elements.

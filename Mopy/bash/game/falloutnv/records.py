@@ -21,8 +21,8 @@
 #
 # =============================================================================
 """This module contains the falloutnv record classes."""
-from __future__ import division
-from __future__ import unicode_literals
+from __future__ import division, unicode_literals
+
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelDestructible, MelConditions
 from ...bolt import Flags, struct_calcsize
@@ -31,7 +31,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
     MelFid, MelFids, MelBase, MelFidList, MreHeaderBase, MelFloat, MelUInt8, \
     MelUInt32, MelBounds, null1, MelTruncatedStruct, MelIcons, MelIcon, \
     MelIco2, MelEdid, MelFull, MelArray, MelObject, MelNull, MelScript, \
-    MelDescription, MelPickupSound, MelDropSound, MelUInt8Flags
+    MelDescription, MelPickupSound, MelDropSound, MelUInt8Flags, MelSInt32, \
+    MelSorted
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -69,12 +70,12 @@ class MreAloc(MelRecord):
         MelUInt32(b'NAM5', 'dayStart'),
         MelUInt32(b'NAM6', 'nightStart'),
         MelUInt32(b'NAM7', 'retrigerDelay'),
-        MelFids(b'HNAM','neutralSets'),
-        MelFids(b'ZNAM','allySets'),
-        MelFids(b'XNAM','friendSets'),
-        MelFids(b'YNAM','enemySets'),
-        MelFids(b'LNAM','locationSets'),
-        MelFids(b'GNAM','battleSets'),
+        MelSorted(MelFids(b'HNAM', 'neutralSets')),
+        MelSorted(MelFids(b'ZNAM', 'allySets')),
+        MelSorted(MelFids(b'XNAM', 'friendSets')),
+        MelSorted(MelFids(b'YNAM', 'enemySets')),
+        MelSorted(MelFids(b'LNAM', 'locationSets')),
+        MelSorted(MelFids(b'GNAM', 'battleSets')),
         MelFid(b'RNAM','conditionalFaction'),
         MelUInt32(b'FNAM', 'fnam'),
     )
@@ -126,7 +127,7 @@ class MreCdck(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelFids(b'CARD','cards'),
+        MelSorted(MelFids(b'CARD', 'cards')),
         MelUInt32(b'DATA', 'count'), # 'Count (broken)' in xEdit - unused?
     )
     __slots__ = melSet.getSlotsUsed()
@@ -229,25 +230,29 @@ class MreDial(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'INFC','bare_infc_p'),
-        MelFid(b'INFX','bare_infx_p'),
-        MelGroups('quests',
-            MelFid(b'QSTI','quest'),
-            MelGroups('unknown',
-                MelFid(b'INFC','infc_p'),
-                MelBase(b'INFX','infx_p'),
+        # Handle broken records that have INFC/INFX without a preceding QSTI
+        # (e.g. [DIAL:001287C6] and [DIAL:000E9084])
+        MelFid(b'INFC', 'broken_infc'),
+        MelFid(b'INFX', 'broken_infx'),
+        MelSorted(MelGroups('added_quests',
+            MelFid(b'QSTI', 'added_quest'),
+            MelGroups('shared_infos',
+                MelFid(b'INFC', 'info_connection'),
+                MelSInt32(b'INFX', 'info_index'),
             ),
-        ),
+        ), sort_by_attrs='added_quest'),
+        # Apparently unused, but xEdit has it so we should keep it too
+        MelSorted(MelFids(b'QSTR', 'removed_quests')),
         MelFull(),
         MelFloat(b'PNAM', 'priority'),
-        MelString(b'TDUM','tdum_p'),
+        MelString(b'TDUM', 'dumb_response'),
         MelTruncatedStruct(b'DATA', [u'2B'], 'dialType',
                            (_DialFlags, u'dialFlags'), old_versions={'B'}),
     ).with_distributor({
-        b'INFC': u'bare_infc_p',
-        b'INFX': u'bare_infx_p',
+        b'INFC': u'broken_infc',
+        b'INFX': u'broken_infx',
         b'QSTI': {
-            b'INFC|INFX': u'quests',
+            b'INFC|INFX': u'added_quests',
         },
     })
     __slots__ = melSet.getSlotsUsed()

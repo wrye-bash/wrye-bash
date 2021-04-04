@@ -28,13 +28,14 @@ from collections import defaultdict
 from itertools import chain, izip
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion, PartialLoadDecider, FlagDecider
+    MelUnion, PartialLoadDecider, FlagDecider, MelSorted
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
-    MelFloat, MelReadOnly, MelFids, MelUInt32Flags, \
-    MelUInt8Flags, MelSInt32
+    MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
+    MelStrings, MelUInt8, MelFidList
 from .utils_constants import _int_unpacker, FID, null1
-from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte
+from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
+    dict_sort
 from ..exception import ModError, ModSizeError
 
 #------------------------------------------------------------------------------
@@ -56,9 +57,9 @@ class MelActivateParents(MelGroup):
     def __init__(self):
         super(MelActivateParents, self).__init__(u'activate_parents',
             MelUInt8Flags(b'XAPD', u'activate_parent_flags', self._ap_flags),
-            MelGroups(u'activate_parent_refs',
+            MelSorted(MelGroups(u'activate_parent_refs',
                 MelStruct(b'XAPR', [u'I', u'f'], (FID, u'ap_reference'), u'ap_delay'),
-            ),
+            ), sort_by_attrs=u'ap_reference'),
         )
 
 #------------------------------------------------------------------------------
@@ -506,7 +507,8 @@ class MelRaceParts(MelNull):
                 record, ins, sub_type, size_, *debug_strs)
 
     def dumpData(self, record, out):
-        for part_indx, part_attr in self._indx_to_attr.iteritems():
+        # Note that we have to dump out the attributes sorted by the INDX value
+        for part_indx, part_attr in dict_sort(self._indx_to_attr):
             if hasattr(record, part_attr): # only dump present parts
                 MelUInt32(b'INDX', u'UNUSED').packSub(
                     out, struct_pack(u'=I', part_indx))
@@ -534,17 +536,17 @@ class MelScript(MelFid):
         super(MelScript, self).__init__(b'SCRI', u'script_fid')
 
 #------------------------------------------------------------------------------
-class MelScriptVars(MelGroups):
+class MelScriptVars(MelSorted):
     """Handles SLSD and SCVR combos defining script variables."""
     _var_flags = Flags(0, Flags.getNames(u'is_long_or_short'))
 
     def __init__(self):
-        super(MelScriptVars, self).__init__(u'script_vars',
+        super(MelScriptVars, self).__init__(MelGroups(u'script_vars',
             MelStruct(b'SLSD', [u'I', u'12s', u'B', u'7s'], u'var_index',
                       u'unused1', (self._var_flags, u'var_flags'),
                       u'unused2'),
             MelString(b'SCVR', u'var_name'),
-        )
+        ), sort_by_attrs=u'var_index')
 
 #------------------------------------------------------------------------------
 class MelEnableParent(MelOptStruct):
@@ -603,6 +605,8 @@ class MelMODS(MelBase):
     def pack_subrecord_data(self,record):
         mods_data = getattr(record, self.attr)
         if mods_data is not None:
+            # Sort by 3D Name and 3D Index
+            mods_data.sort(key=lambda e: (e[0], e[2]))
             return b''.join(chain([struct_pack(u'I', len(mods_data))],
                 *([struct_pack(u'I', len(string)), encode(string),
                    struct_pack(u'=2I', fid, index)]
@@ -651,10 +655,10 @@ class MelRefScale(MelFloat):
         super(MelRefScale, self).__init__(b'XSCL', u'ref_scale')
 
 #------------------------------------------------------------------------------
-class MelSpells(MelFids):
+class MelSpells(MelSorted):
     """Handles the common SPLO subrecord."""
     def __init__(self):
-        super(MelSpells, self).__init__(b'SPLO', u'spells')
+        super(MelSpells, self).__init__(MelFids(b'SPLO', u'spells'))
 
 #------------------------------------------------------------------------------
 class MelWorldBounds(MelSequential):
@@ -688,6 +692,7 @@ class MelOwnership(MelGroup):
         if record.ownership and record.ownership.owner: ##: use pack_subrecord_data ?
             MelGroup.dumpData(self,record,out)
 
+#------------------------------------------------------------------------------
 class MelDebrData(MelStruct):
     def __init__(self):
         # Format doesn't matter, struct.Struct(u'') works! ##: MelStructured
@@ -710,3 +715,105 @@ class MelDebrData(MelStruct):
         return b''.join(
             [struct_pack(u'B', record.percentage), record.modPath, null1,
              struct_pack(u'B', record.flags)])
+
+#------------------------------------------------------------------------------
+class MelBodyParts(MelSorted):
+    """Handles the common NIFZ (Body Parts) subrecord."""
+    def __init__(self): ##: case insensitive
+        super(MelBodyParts, self).__init__(MelStrings(b'NIFZ', u'bodyParts'))
+
+#------------------------------------------------------------------------------
+class MelFactions(MelSorted):
+    """Handles the common SNAM (Factions) subrecord."""
+    def __init__(self):
+        super(MelFactions, self).__init__(MelGroups(u'factions',
+            MelStruct(b'SNAM', [u'I', u'B', u'3s'], (FID, u'faction'), u'rank',
+                      (u'unused1', b'ODB')),
+        ), sort_by_attrs=u'faction'),
+
+#------------------------------------------------------------------------------
+class MelAnimations(MelSorted):
+    """Handles the common KFFZ (Animations) subrecord."""
+    def __init__(self):
+        super(MelAnimations, self).__init__(
+            MelStrings(b'KFFZ', u'animations')), ##: case insensitive
+
+#------------------------------------------------------------------------------
+class MelRelations(MelSorted):
+    """Handles the common XNAM (Relations) subrecord. Group combat reaction
+    (GCR) can be excluded (i.e. in Oblivion)."""
+    def __init__(self, with_gcr=True):
+        if with_gcr:
+            rel_struct = MelStruct(b'XNAM', [u'I', u'i', u'I'],
+                                   (FID, u'faction'), u'mod',
+                                   u'group_combat_reaction')
+        else:
+            rel_struct = MelStruct(b'XNAM', [u'I', u'i'],
+                                   (FID, u'faction'), u'mod')
+        super(MelRelations, self).__init__(MelGroups(u'relations', rel_struct),
+                                           sort_by_attrs=u'faction')
+
+#------------------------------------------------------------------------------
+class MelActorSounds(MelSorted):
+    """Handles the CSDT/CSDI/CSDC subrecord complex used by CREA records in
+    TES4/FO3/FNV and NPC_ records in TES5."""
+    def __init__(self):
+        super(MelActorSounds, self).__init__(MelGroups(u'sounds',
+            MelUInt32(b'CSDT', u'type'),
+            MelSorted(MelGroups(u'sound_types',
+                MelFid(b'CSDI', u'sound'),
+                MelUInt8(b'CSDC', u'chance'),
+            ), sort_by_attrs=u'sound'),
+        ), sort_by_attrs=u'type')
+
+#------------------------------------------------------------------------------
+class MelRegions(MelSorted):
+    """Handles the CELL subrecord XCLR (Regions)."""
+    def __init__(self):
+        super(MelRegions, self).__init__(MelFidList(b'XCLR', u'regions'))
+
+#------------------------------------------------------------------------------
+class MelWeatherTypes(MelSorted):
+    """Handles the CLMT subrecord WLST (Weather Types)."""
+    def __init__(self, with_global=True):
+        if with_global:
+            wlst_struct = MelStruct(b'WLST', [u'I', u'i', u'I'],
+                                    (FID, u'weather'), u'chance',
+                                    (FID, u'global'))
+        else:
+            wlst_struct = MelStruct(b'WLST', [u'I', u'i'], (FID, u'weather'),
+                                    u'chance')
+        super(MelWeatherTypes, self).__init__(MelArray(
+            u'weather_types', wlst_struct), sort_by_attrs=u'weather')
+
+#------------------------------------------------------------------------------
+class MelFactionRanks(MelSorted):
+    """Handles the FACT RNAM/MNAM/FNAM/INAM subrecords."""
+    def __init__(self):
+        super(MelFactionRanks, self).__init__(MelGroups(u'ranks',
+            MelSInt32(b'RNAM', u'rank_level'),
+            MelLString(b'MNAM', u'male_title'),
+            MelLString(b'FNAM', u'female_title'),
+            MelString(b'INAM', u'insignia_path'),
+        ), sort_by_attrs=u'rank_level')
+
+#------------------------------------------------------------------------------
+class MelLscrLocations(MelSorted):
+    """Handles the LSCR subrecord LNAM (Locations)."""
+    def __init__(self):
+        super(MelLscrLocations, self).__init__(MelGroups(u'locations',
+            MelStruct(b'LNAM', [u'2I', u'2h'], (FID, u'direct'),
+                      (FID, u'indirect'), u'gridy', u'gridx'),
+        ), sort_by_attrs=(u'direct', u'indirect', u'gridy', u'gridx'))
+
+#------------------------------------------------------------------------------
+class MelReflectedRefractedBy(MelSorted):
+    """Reflected/Refracted By for a reference record (REFR, ACHR, etc.)."""
+    _watertypeFlags = Flags(0, Flags.getNames(u'reflection', u'refraction'))
+
+    def __init__(self):
+        super(MelReflectedRefractedBy, self).__init__(
+            MelGroups(u'reflectedRefractedBy',
+                MelStruct(b'XPWR', [u'2I'], (FID, u'waterReference'),
+                          (self._watertypeFlags, u'waterFlags')),
+        ), sort_by_attrs=u'waterReference')

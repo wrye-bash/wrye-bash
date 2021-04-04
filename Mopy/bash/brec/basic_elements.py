@@ -30,8 +30,7 @@ from itertools import izip
 from .utils_constants import FID, null1, _make_hashable, FixedString, \
     _int_unpacker, get_structs
 from .. import bolt, exception
-from ..bolt import decoder, encode, structs_cache, struct_calcsize, \
-    struct_error
+from ..bolt import decoder, encode, structs_cache, struct_calcsize
 
 #------------------------------------------------------------------------------
 class MelObject(object):
@@ -207,7 +206,9 @@ class MelBase(Subrecord):
     def mapFids(self,record,function,save=False):
         """Applies function to fids. If save is True, then fid is set
         to result of function."""
-        raise exception.AbstractError(u'%r does not have FormIDs' % record)
+        raise exception.AbstractError(u'mapFids called on subrecord without '
+                                      u'FormIDs (signatures: %s)'
+                                      % sorted(self.signatures))
 
     @property
     def signatures(self):
@@ -241,79 +242,6 @@ class _MelNum(MelBase):
         """Will only be dumped if set by load_mel."""
         attr = getattr(record, self.attr)
         return None if attr is None else self._packer(attr)
-
-#------------------------------------------------------------------------------
-class MelCounter(MelBase):
-    """Wraps a MelStruct-derived object with one numeric element (meaning that
-    it is compatible with e.g. MelUInt32). Just before writing, the wrapped
-    element's value is updated to the len() of another element's value, e.g. a
-    MelGroups instance. Additionally, dumping is skipped if the counter is
-    falsy after updating.
-
-    Does not support anything that seems at odds with that goal, in particular
-    fids and defaulters. See also MelPartialCounter, which targets mixed
-    structs."""
-    def __init__(self, counter_mel, counts):
-        """Creates a new MelCounter.
-
-        :param counter_mel: The element that stores the counter's value.
-        :type counter_mel: _MelField
-        :param counts: The attribute name that this counter counts.
-        :type counts: unicode"""
-        self._counter_mel = counter_mel
-        self.counted_attr = counts
-
-    def getSlotsUsed(self):
-        return self._counter_mel.getSlotsUsed()
-
-    def getLoaders(self, loaders):
-        loaders[self._counter_mel.mel_sig] = self
-
-    def setDefault(self, record):
-        self._counter_mel.setDefault(record)
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        self._counter_mel.load_mel(record, ins, sub_type, size_, *debug_strs)
-
-    def dumpData(self, record, out):
-        # Count the counted type first, then check if we should even dump
-        val_len = len(getattr(record, self.counted_attr, []))
-        setattr(record, self._counter_mel.attr, val_len)
-        if val_len:
-            self._counter_mel.dumpData(record, out)
-
-    @property
-    def signatures(self):
-        return self._counter_mel.signatures
-
-    @property
-    def static_size(self):
-        return self._counter_mel.static_size
-
-class MelPartialCounter(MelCounter):
-    """Extends MelCounter to work for MelStruct's that contain more than just a
-    counter. This means adding behavior for mapping fids, but dropping the
-    conditional dumping behavior."""
-    def __init__(self, counter_mel, counter, counts):
-        """Creates a new MelPartialCounter.
-
-        :param counter_mel: The element that stores the counter's value.
-        :type counter_mel: MelStruct
-        :param counter: The attribute name of the counter.
-        :type counter: unicode
-        :param counts: The attribute name that this counter counts.
-        :type counts: unicode"""
-        super(MelPartialCounter, self).__init__(counter_mel, counts)
-        self.counter_attr = counter
-
-    def hasFids(self, formElements):
-        self._counter_mel.hasFids(formElements)
-
-    def dumpData(self, record, out):
-        # Count the counted type, then update and dump unconditionally
-        setattr(record, self.counter_attr,
-                len(getattr(record, self.counted_attr, [])))
-        self._counter_mel.dumpData(record, out)
 
 #------------------------------------------------------------------------------
 # TODO(inf) DEPRECATED! - don't use for new usages -> MelGroups(MelFid)

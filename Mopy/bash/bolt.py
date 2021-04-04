@@ -410,8 +410,9 @@ class OrderedLowerDict(LowerDict, collections.OrderedDict):
 #------------------------------------------------------------------------------
 # cache attrgetter objects
 class _AttrGettersCache(dict):
-    def __missing__(self, attr_name):
-        return self.setdefault(attr_name, attrgetter(attr_name))
+    def __missing__(self, ag_key):
+        return self.setdefault(ag_key, attrgetter(ag_key) if isinstance(
+            ag_key, unicode) else attrgetter(*ag_key))
 
 attrgetter_cache = _AttrGettersCache()
 
