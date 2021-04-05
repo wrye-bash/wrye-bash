@@ -1111,7 +1111,7 @@ class MreInfo(MelRecord):
                            (_flags, u'flags'), old_versions={u'H'}),
         MelFid(b'QSTI', u'info_quest'),
         MelFid(b'TPIC', u'info_topic'),
-        MelFid(b'PNAM', u'prevInfo'),
+        MelFid(b'PNAM', u'prev_info'),
         MelFids(b'NAME', u'addTopics'),
         MelGroups(u'responses',
             MelStruct(b'TRDT', [u'I', u'i', u'4s', u'B', u'3s'], u'emotionType', u'emotionValue',

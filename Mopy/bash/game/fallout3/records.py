@@ -1615,7 +1615,7 @@ class MreInfo(MelRecord):
                            old_versions={'2B'}),
         MelFid(b'QSTI', u'info_quest'),
         MelFid(b'TPIC', u'info_topic'),
-        MelFid(b'PNAM','prevInfo'),
+        MelFid(b'PNAM', 'prev_info'),
         MelFids(b'NAME','addTopics'),
         MelGroups('responses',
             MelStruct(b'TRDT', [u'I', u'i', u'4s', u'B', u'3s', u'I', u'B', u'3s'],'emotionType','emotionValue','unused1','responseNum',('unused2',b'\xcd\xcd\xcd'),

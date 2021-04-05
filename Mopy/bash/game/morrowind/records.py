@@ -691,8 +691,8 @@ class MreInfo(MelRecord):
 
     melSet = MelSet(
         MelString(b'INAM', u'info_name_string'),
-        MelString(b'PNAM', u'prev_info_name'),
-        MelString(b'NNAM', u'next_info_name'),
+        MelString(b'PNAM', u'prev_info'),
+        MelString(b'NNAM', u'next_info'),
         MelStruct(b'DATA', [u'B', u'3s', u'I', u'B', u'b', u'B', u's'], u'dialogue_type', u'unused1',
             u'disposition', u'dialogue_rank', u'speaker_gender', u'pc_rank',
             u'unused2'),

@@ -2684,7 +2684,7 @@ class MreInfo(MelRecord):
         MelStruct(b'ENAM', [u'2H'], (_EnamResponseFlags, u'flags'),
                   'resetHours',),
         MelFid(b'TPIC', u'info_topic'),
-        MelFid(b'PNAM','prevInfo',),
+        MelFid(b'PNAM', 'prev_info'),
         MelUInt8(b'CNAM', 'favorLevel'),
         MelFids(b'TCLT','linkTo',),
         MelFid(b'DNAM','responseData',),

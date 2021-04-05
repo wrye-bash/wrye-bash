@@ -108,6 +108,8 @@ class BipedFlags(Flags):
         super(BipedFlags, self).__init__(flag_default, flag_names)
 
 # Sort Keys -------------------------------------------------------------------
+fid_key = attrgetter_cache[u'fid']
+
 _perk_type_to_attrs = {
     0: attrgetter_cache[(u'quest', u'quest_stage')],
     1: attrgetter_cache[u'ability'],
