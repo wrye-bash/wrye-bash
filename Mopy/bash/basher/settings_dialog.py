@@ -1304,9 +1304,10 @@ class GeneralPage(_AScrollablePage):
                       u'the status bar will not change after switching.'),
                     u'bash.switch_games_warning.continue'):
             chosen_game = self._managed_game.get_value()
+            ##: The [0] here is ugly, doesn't allow changing WS variations
             self._request_restart(
                 _(u'Managed Game: %s') % chosen_game,
-                [u'--oblivionPath', bush.game_path(chosen_game).s])
+                [(u'--oblivionPath', bush.game_path(chosen_game)[0].s)])
         # Plugin Encoding
         if self._is_changed(u'plugin_encoding'):
             chosen_encoding = self._plugin_encoding.get_value()
