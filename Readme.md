@@ -130,7 +130,7 @@ bleeding edge branch. Commits land here for testing.
   [11]: http://wrye-bash.github.io/docs/Wrye%20Bash%20Advanced%20Readme.html#install
   [12]: https://github.com/wrye-bash/wrye-bash/archive/dev.zip
   [14]: https://github.com/wrye-bash/wrye-bash/blob/0a47238de9e7f46f55fe755f2744e2cea521f514/Mopy/bash/balt.py#L678
-  [15]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Running-Wrye-Bash-on-WINE-%28Arch-Linux%29
+  [15]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bguide%5D-Running-Wrye-Bash-on-WINE-%28Arch-Linux%29
   [16]: https://github.com/wrye-bash/wrye-bash/issues/240
   [17]: https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games
   [18]: https://discord.gg/NwWvAFR
