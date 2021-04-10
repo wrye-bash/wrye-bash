@@ -378,7 +378,10 @@ class GameInfo(object):
         # Files BAIN shouldn't skip
         no_skip = ()
         # Directories where specific file extensions should not be skipped
-        no_skip_dirs = {}
+        no_skip_dirs = {
+            # BashTags files are obviously not docs, so don't skip them
+            u'bashtags': [u'.txt'],
+        }
         # Folders BAIN should never CRC check in the Data directory
         skip_bain_refresh = set(
             # Use lowercase names
