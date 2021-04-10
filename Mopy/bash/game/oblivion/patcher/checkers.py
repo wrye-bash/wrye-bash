@@ -89,7 +89,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         attr_or_skill = u'(%s|%s)' % (_(u'Attribute'), _(u'Skill'))
         for mgef in alt_names:
             alt_names[mgef] = re.sub(attr_or_skill, u'', alt_names[mgef])
-        actorEffects = bush.game.generic_av_effects
+        actorEffects = MreRecord.type_class[b'MGEF'].generic_av_effects
         from ..records import actor_values
         keep = self.patchFile.getKeeper()
         #--Book generator
