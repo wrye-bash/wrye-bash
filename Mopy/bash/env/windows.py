@@ -979,7 +979,7 @@ def mark_high_dpi_aware():
 def python_tools_dir():
     """Returns the absolute path to the Tools directory of the currently used
     Python installation."""
-    return os.path.join(sys.prefix, u'lib', u'Tools') # easy on Windows
+    return os.path.join(sys.prefix, u'Tools') # easy on Windows
 
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""

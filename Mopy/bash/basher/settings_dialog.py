@@ -638,7 +638,7 @@ class LanguagePage(_AScrollablePage):
             # parameterless restart request, with us having saved the
             # new language to some 'early boot' info file
             self._request_restart(_(u'Language: %s') % selected_lang,
-                [u'--Language', internal_name])
+                [(u'--Language', internal_name)])
 
     def _populate_l10n_list(self):
         """Clears and repopulates the localization list."""
