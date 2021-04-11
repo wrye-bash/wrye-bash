@@ -876,7 +876,7 @@ class AssortedTweak_AllWaterDamages(MultiTweakItem):
         record.flags.causesDamage = True
 
 #------------------------------------------------------------------------------
-class AssortedTweak_AbsorbSummonFix(IndexingTweak,MultiTweakItem):
+class AssortedTweak_AbsorbSummonFix(IndexingTweak):
     """Adds the 'No Absorb/Reflect' flag to summoning spells."""
     tweak_read_classes = b'SPEL',
     tweak_name = _(u'Magic: Summoning Absorption Fix')
@@ -889,12 +889,9 @@ class AssortedTweak_AbsorbSummonFix(IndexingTweak,MultiTweakItem):
     _index_sigs = [b'MGEF']
 
     def prepare_for_tweaking(self, patch_file):
-        ##: Same HACK as in NamesTweak_Scrolls.prepare_for_tweaking
-        self._look_up_mgef = id_mgef = {}
-        for pl_path in patch_file.loadMods:
-            ench_plugin = self._mod_file_read(patch_file.p_file_minfos[pl_path])
-            for record in ench_plugin.tops[b'MGEF'].getActiveRecords():
-                id_mgef[record.fid] = record
+        super(AssortedTweak_AbsorbSummonFix, self).prepare_for_tweaking(
+            patch_file)
+        self._look_up_mgef = self._indexed_records[b'MGEF']
 
     def wants_record(self, record):
         if record.dataFlags.noAbsorbReflect: return False

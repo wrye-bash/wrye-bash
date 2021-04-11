@@ -81,18 +81,31 @@ class MultiTweakItem(AMultiTweakItem):
         np_flag_attr, np_flag_name = bush.game.not_playable_flag
         return getattr(getattr(record, np_flag_attr), np_flag_name)
 
+# HACK - and what an ugly one - we need a general API to express to the BP that
+# a patcher/tweak wants it to index all records for certain record types in
+# some central place (and NOT by forwarding all records into the BP!)
 class IndexingTweak(MultiTweakItem):
-    """See HACK notes in NamesTweak_Scrolls.prepare_for_tweaking."""
     _index_sigs = []
 
     def __init__(self):
         super(IndexingTweak, self).__init__()
         self.loadFactory = LoadFactory(keepAll=False, by_sig=self._index_sigs)
+        self._indexed_records = defaultdict(dict)
 
     def _mod_file_read(self, modInfo):
         modFile = ModFile(modInfo, self.loadFactory)
         modFile.load(do_unpack=True)
         return modFile
+
+    def prepare_for_tweaking(self, patch_file):
+        pf_minfs = patch_file.p_file_minfos
+        for pl_path in patch_file.allMods:
+            index_plugin = self._mod_file_read(pf_minfs[pl_path])
+            for index_sig in self._index_sigs:
+                id_dict = self._indexed_records[index_sig]
+                for record in index_plugin.tops[index_sig].getActiveRecords():
+                    id_dict[record.fid] = record
+        super(IndexingTweak, self).prepare_for_tweaking(patch_file)
 
 class CustomChoiceTweak(MultiTweakItem):
     """Base class for tweaks that have a custom choice with the 'Custom'

@@ -79,6 +79,7 @@ class _ANamesTweak(MultiTweakItem):
         # These are cached, so fine to call for all tweaks
         self._tweak_mgef_hostiles = patch_file.getMgefHostiles()
         self._tweak_mgef_school = patch_file.getMgefSchool()
+        super(_ANamesTweak, self).prepare_for_tweaking(patch_file)
 
 class _AMgefNamesTweak(_ANamesTweak):
     """Shared code of a few names tweaks that handle MGEFs."""
@@ -223,7 +224,7 @@ class NamesTweak_Potions(_AMgefNamesTweak):
 #------------------------------------------------------------------------------
 _re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 
-class NamesTweak_Scrolls(_AMgefNamesTweak, IndexingTweak):
+class NamesTweak_Scrolls(IndexingTweak, _AMgefNamesTweak):
     """Names tweaker for scrolls."""
     tweak_read_classes = b'BOOK',
     tweak_name = _(u'Notes And Scrolls')
@@ -268,15 +269,7 @@ class NamesTweak_Scrolls(_AMgefNamesTweak, IndexingTweak):
 
     def prepare_for_tweaking(self, patch_file):
         super(NamesTweak_Scrolls, self).prepare_for_tweaking(patch_file)
-        # HACK - and what an ugly one - we need a general API to express to the
-        # BP that a patcher/tweak wants it to index all records for certain
-        # record types in some central place (and NOT by forwarding all records
-        # into the BP!)
-        self._look_up_ench = id_ench = {}
-        for pl_path in patch_file.loadMods:
-            ench_plugin = self._mod_file_read(patch_file.p_file_minfos[pl_path])
-            for record in ench_plugin.tops[b'ENCH'].getActiveRecords():
-                id_ench[record.fid] = record
+        self._look_up_ench = self._indexed_records[b'ENCH']
 
     def _get_rename_params(self, record):
         return record, lambda e: self._look_up_ench.get(e, 6) ##: 6?
