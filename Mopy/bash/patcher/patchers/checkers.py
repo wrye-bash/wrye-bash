@@ -34,7 +34,7 @@ from itertools import chain
 from .base import is_templated
 from ..base import Patcher, ModLoader
 from ... import bush
-from ...bolt import GPath, deprint, floats_equal
+from ...bolt import GPath, deprint, floats_equal, dict_sort
 from ...brec import strFid
 from ...mod_files import LoadFactory
 
@@ -361,7 +361,7 @@ class NpcCheckerPatcher(Patcher):
         patchFile = self.patchFile
         if not set(patchFile.tops) & {b'NPC_', b'RACE'}: return
         keep = patchFile.getKeeper()
-        mod_npcsFixed = defaultdict(set)
+        mod_npcsFixed = Counter()
         reProcess = re.compile(
             u'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
             re.I | re.U)
@@ -387,35 +387,37 @@ class NpcCheckerPatcher(Patcher):
                                                x in femaleHairs]
         #--Npcs with unassigned eyes/hair
         for npc in patchFile.tops[b'NPC_'].records:
-            if npc.fid == (_main_master, 0x000007): continue # skip player
+            npc_fid = npc.fid
+            if npc_fid == (_main_master, 0x000007): continue # skip player
             if npc.full is not None and npc.race == (
                     _main_master, 0x038010) and not reProcess.search(
                     npc.full): continue
             if is_templated(npc, u'useModelAnimation'):
                 continue # Changing templated actors wouldn't do anything
             raceEyes = final_eyes.get(npc.race)
-            random.seed(npc.fid[1]) # make it deterministic
+            npc_src_plugin, npc_obj_id = npc_fid
+            random.seed(npc_obj_id) # make it deterministic
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
-                mod_npcsFixed[npc.fid[0]].add(npc.fid)
-                keep(npc.fid)
+                mod_npcsFixed[npc_src_plugin] += 1
+                keep(npc_fid)
             raceHair = (
                 (defaultMaleHair, defaultFemaleHair)[npc.flags.female]).get(
                 npc.race)
             if not npc.hair and raceHair:
                 npc.hair = random.choice(raceHair)
-                mod_npcsFixed[npc.fid[0]].add(npc.fid)
-                keep(npc.fid)
+                mod_npcsFixed[npc_src_plugin] += 1
+                keep(npc_fid)
             if not npc.hairLength:
                 npc.hairLength = random.random()
-                mod_npcsFixed[npc.fid[0]].add(npc.fid)
-                keep(npc.fid)
+                mod_npcsFixed[npc_src_plugin] += 1
+                keep(npc_fid)
         #--Done
         log.setHeader(u'= ' + self._patcher_name)
         if mod_npcsFixed:
             log(u'\n=== ' + _(u'Eyes/Hair Assigned for NPCs'))
-            for srcMod in sorted(mod_npcsFixed):
-                log(u'* %s: %d' % (srcMod, len(mod_npcsFixed[srcMod])))
+            for src_mod, num_fixed in dict_sort(mod_npcsFixed):
+                log(u'* %s: %d' % (src_mod, num_fixed))
 
 #------------------------------------------------------------------------------
 class TimescaleCheckerPatcher(ModLoader):
@@ -483,5 +485,5 @@ class TimescaleCheckerPatcher(ModLoader):
         log.setHeader(u'= ' + self._patcher_name)
         if grasses_changed:
             log(u'\n=== ' + _(u'Wave Periods changed'))
-            for src_mod in sorted(grasses_changed):
-                log(u'* %s: %d' % (src_mod, grasses_changed[src_mod]))
+            for src_mod, num_fixed in dict_sort(grasses_changed):
+                log(u'* %s: %d' % (src_mod, num_fixed))
