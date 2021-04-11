@@ -146,8 +146,8 @@ class Mods_LoadList(ChoiceLink):
                 self._selectExact(mods)
             @property
             def link_help(self):
-                return _(u'Activate mods in the %(list_name)s list' % {
-                    u'list_name': self._text})
+                return _(u'Activate mods in the %(list_name)s list.') % {
+                    u'list_name': self._text}
         self.__class__.choiceLinkType = _LoListLink
 
     @property

@@ -195,8 +195,7 @@ class _App_Button(StatusBar_Button):
         if not self.IsPresent():
             balt.showError(Link.Frame,
                            _(u'Application missing: %s') % self.exePath,
-                           _(u"Could not launch '%s'" % self.exePath.stail)
-                           )
+                           _(u"Could not launch '%s'") % self.exePath.stail)
             return
         self._app_button_execute()
 

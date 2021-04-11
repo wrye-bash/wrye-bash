@@ -85,23 +85,23 @@ class File_Duplicate(ItemLink):
     _text = _(u'Duplicate...')
     _help = _(u'Make a copy of the selected file(s).')
 
-    _bsaAndBlocking = _(u'This mod has an associated archive (%s' +
-                        bush.game.Bsa.bsa_extension + u') and an '
-        u'associated plugin-name-specific directory (e.g. Sound\\Voice\\%s), '
-        u'which will not be attached to the duplicate mod.') + u'\n\n' + \
-        _(u'Note that the BSA archive may also contain a plugin-name-specific '
+    _bsaAndBlocking = _(
+        u'This mod has an associated archive (%s) and an associated '
+        u'plugin-name-specific directory (e.g. Sound\\Voice\\%s), which will '
+        u'not be attached to the duplicate mod.') + u'\n\n' + _(
+        u'Note that the BSA archive may also contain a plugin-name-specific '
         u'directory, which would remain detached even if a duplicate archive '
         u'were also created.')
-    _bsa = _(u'This mod has an associated archive (%s' +
-             bush.game.Bsa.bsa_extension + u'), which will not be '
-        u'attached to the duplicate mod.') + u'\n\n' + _(u'Note that this BSA '
-        u'archive may contain a plugin-name-specific directory'
-        u' (e.g. Sound\\Voice\\%s), which would remain detached even if a '
-        u'duplicate archive were also created.'
-    )
-    _blocking = _(u'This mod has an associated plugin-name-specific directory '
-                  u'(e.g. Sound\\Voice\\%s), which will not be attached to '
-                  u'the duplicate mod.')
+    _bsa = _(
+        u'This mod has an associated archive (%s), which will not be attached '
+        u'to the duplicate mod.') + u'\n\n' + _(
+        u'Note that this BSA archive may contain a plugin-name-specific '
+        u'directory (e.g. Sound\\Voice\\%s), which would remain detached even '
+        u'if a duplicate archive were also created.')
+    _blocking = _(
+        u'This mod has an associated plugin-name-specific directory (e.g. '
+        u'Sound\\Voice\\%s), which will not be attached to the duplicate '
+        u'mod.')
 
     def _askResourcesOk(self, fileInfo):
         msg = bosh.modInfos.askResourcesOk(fileInfo,
@@ -109,7 +109,7 @@ class File_Duplicate(ItemLink):
                                            bsa=self._bsa,
                                            blocking=self._blocking)
         if not msg: return True  # resources ok
-        return self._askWarning(msg, _(u'Duplicate ') + fileInfo.name.s)
+        return self._askWarning(msg, _(u'Duplicate %s') % fileInfo.name.s)
 
     @balt.conversation
     def Execute(self):

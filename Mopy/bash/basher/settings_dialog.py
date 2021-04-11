@@ -212,12 +212,12 @@ class _AFixedPage(_ASettingsPage, PanelWin): pass
 class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     """Color configuration page."""
     _keys_to_tabs = {
-        u'mods': _(u'[Mods] '),
-        u'screens': _(u'[Saves, Screens] '),
-        u'installers': _(u'[Installers] '),
-        u'ini': _(u'[INI Edits] '),
-        u'tweak': _(u'[INI Edits] '),
-        u'default': _(u'[All] '),
+        u'mods': _(u'[Mods] %s'),
+        u'screens': _(u'[Saves, Screens] %s'),
+        u'installers': _(u'[Installers] %s'),
+        u'ini': _(u'[INI Edits] %s'),
+        u'tweak': _(u'[INI Edits] %s'),
+        u'default': _(u'[All] %s'),
     }
 
     def __init__(self, parent, page_desc):
@@ -225,7 +225,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.changes = dict()
         #--DropDown
         def _display_text(k):
-            return _(self._keys_to_tabs[k.split(u'.')[0]]) + colorInfo[k][0]
+            return self._keys_to_tabs[k.split(u'.')[0]] % colorInfo[k][0]
         self._txt_key = {_display_text(x): x for x in colors}
         colored = sorted(self._txt_key, key=unicode.lower)
         combo_text = colored[0]

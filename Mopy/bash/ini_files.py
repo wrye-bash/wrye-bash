@@ -660,8 +660,8 @@ class GameIni(IniFile):
             msg = _(u'The game INI must exist to apply a tweak to it.')
         target_exists = super(GameIni, self).target_ini_exists()
         if target_exists: return True
-        msg = _(u'%(ini_path)s does not exist.' % {
-            u'ini_path': self.abs_path}) + u'\n\n' + msg + u'\n\n'
+        msg = _(u'%(ini_path)s does not exist.') % {
+            u'ini_path': self.abs_path} + u'\n\n' + msg + u'\n\n'
         return msg
 
     #--BSA Redirection --------------------------------------------------------

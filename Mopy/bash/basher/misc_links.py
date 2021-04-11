@@ -204,7 +204,7 @@ class Master_ChangeTo(_Master_EditList):
         #--Valid directory?
         if newDir != bosh.modInfos.store_dir:
             self._showError(_(u'File must be selected from %s '
-                              u'directory.' % bush.game.mods_dir))
+                              u'directory.') % bush.game.mods_dir)
             return
         elif newName == master_name:
             return

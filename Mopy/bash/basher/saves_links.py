@@ -200,7 +200,7 @@ class Saves_Profiles(ChoiceLink):
         def link_help(self):
             profile_dir = Saves_Profiles._my_games.join(
                 bush.game.Ini.save_prefix)
-            return _(u'Set profile to the default (%s)' % profile_dir)
+            return _(u'Set profile to the default (%s).') % profile_dir
 
         @property
         def relativePath(self): return bush.game.Ini.save_prefix

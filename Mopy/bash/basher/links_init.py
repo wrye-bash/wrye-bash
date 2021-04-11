@@ -108,7 +108,7 @@ def InitStatusBar():
         BashStatusBar.buttons.append(App_Tes4View(
             (bass.tooldirs[xe_name + u'Path'],
              u'-%s -edit' % xe_name[:-4]), # chop off edit
-            imageList(u'tools/tes4edit%s.png'), _(u'Launch %s' % xe_name),
+            imageList(u'tools/tes4edit%s.png'), _(u'Launch %s') % xe_name,
             uid=xe_name))
     BashStatusBar.buttons.append(  #TesVGecko
         app_button_factory((bass.tooldirs[u'Tes5GeckoPath']),

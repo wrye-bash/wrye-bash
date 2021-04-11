@@ -1613,7 +1613,7 @@ class Mod_SetVersion(OneItemLink):
                 u'to edit newer official mods in the %s by resetting the '
                 u'internal file version number back to 0.8. While this will '
                 u'make the mod editable, it may also break the mod in some '
-                u'way.' % bush.game.Ck.long_name)
+                u'way.') % bush.game.Ck.long_name
 
     def _enable(self):
         return (super(Mod_SetVersion, self)._enable() and
@@ -1791,7 +1791,8 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
     def Execute(self):
         if not self._askContinueImport(): return
         supportedExts = self.__class__.supportedExts
-        textName = self._selected_item.root + self.__class__.csvFile
+        csv_filename = self.__class__.csvFile
+        textName = self._selected_item.root + csv_filename
         textDir = bass.dirs[u'patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
@@ -1801,10 +1802,14 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
         #--Extension error check
         ext = textName.cext
         if ext not in supportedExts:
-            espml = u'or '.join(bush.game.espm_extensions)
-            self._showError(_(u'Source file must be a {0} file{1}.'.format(
-                self.__class__.csvFile, (len(supportedExts) > 1 and (
-                        u' or mod (%s or .ghost)' % espml)) or u'')))
+            plugin_exts = u'or '.join(sorted(bush.game.espm_extensions
+                                             | {u'.ghost'}))
+            if len(supportedExts) > 1:
+                csv_err = _(u'Source file must be a %s file or a plugin '
+                            u'(%s).') % (csv_filename, plugin_exts)
+            else:
+                csv_err = _(u'Source file must be a %s file.') % csv_filename
+            self._showError(csv_err)
             return
         #--Import
         changed = self._import(ext, textDir, textName, textPath)

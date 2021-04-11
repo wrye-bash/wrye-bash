@@ -715,7 +715,7 @@ class INIList(balt.UIList):
         default_ini = bass.dirs[u'app'].join(bush.game.Ini.default_ini_file)
         if default_ini.exists():
             msg += _(u'Do you want Bash to create it by copying '
-                     u'%(default_ini)s ?' % {u'default_ini': default_ini})
+                     u'%(default_ini)s ?') % {u'default_ini': default_ini}
             if not balt.askYes(None, msg, _(u'Missing game Ini')):
                 return False
         else:
@@ -907,8 +907,8 @@ class ModList(_ModsUIList):
         else:
             pinned = load_order.filter_pinned(self.GetSelected())
             if pinned:
-                msg = _(u"You can't reorder the following mods:\n" +
-                        u', '.join(unicode(s) for s in pinned))
+                msg = (_(u"You can't reorder the following mods:") + u'\n' +
+                       u', '.join(unicode(s) for s in pinned))
                 continue_key = u'bash.mods.dnd.pinned.continue'
         if msg:
             balt.askContinue(self, msg, continue_key)
@@ -1606,21 +1606,22 @@ class ModDetails(_ModsSavesDetails):
             self.descriptionStr = self._desc_area.text_content ##: .replace(u'\n', u'r\n')
             self.SetEdited()
 
-    bsaAndBlocking = _(u'This mod has an associated archive (%s' +
-                       bush.game.Bsa.bsa_extension + u') and an '
-        u'associated plugin-name-specific directory (e.g. Sound\\Voice\\%s),'
-        u' which will become detached when the mod is renamed.') + u'\n\n' + \
-        _(u'Note that the BSA archive may also contain a plugin-name-specific '
+    bsaAndBlocking = _(
+        u'This mod has an associated archive (%s) and an associated '
+        u'plugin-name-specific directory (e.g. Sound\\Voice\\%s), which will '
+        u'become detached when the mod is renamed.') + u'\n\n' + _(
+        u'Note that the BSA archive may also contain a plugin-name-specific '
         u'directory, which would remain detached even if the archive name is '
         u'adjusted.')
-    bsa = _(u'This mod has an associated archive (%s' +
-            bush.game.Bsa.bsa_extension + u'), which will become '
-        u'detached when the mod is renamed.') + u'\n\n' + _(u'Note that this '
-        u'BSA archive may contain a plugin-name-specific directory (e.g. '
-        u'Sound\\Voice\\%s), which would remain detached even if the archive '
-        u'file name is adjusted.')
-    blocking = _(u'This mod has an associated plugin-name-specific directory, '
-        u'(e.g. Sound\\Voice\\%s) which will become detached when the mod is '
+    bsa = _(
+        u'This mod has an associated archive (%s), which will become detached '
+        u'when the mod is renamed.') + u'\n\n' + _(
+        u'Note that this BSA archive may contain a plugin-name-specific '
+        u'directory (e.g. Sound\\Voice\\%s), which would remain detached even '
+        u'if the archive file name is adjusted.')
+    blocking = _(
+        u'This mod has an associated plugin-name-specific directory, (e.g. '
+        u'Sound\\Voice\\%s) which will become detached when the mod is '
         u'renamed.')
 
     def _askResourcesOk(self, fileInfo):
@@ -2152,7 +2153,7 @@ class SaveList(balt.UIList):
             return
         msg = _(u'Clicking on a save icon will disable/enable the save '
                 u'by changing its extension to %(ess)s (enabled) or .esr '
-                u'(disabled).' % {u'ess': bush.game.Ess.ext})
+                u'(disabled).') % {u'ess': bush.game.Ess.ext}
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
         sinf = self.data_store[hitItem]
@@ -2435,8 +2436,8 @@ class InstallersList(balt.UIList):
                 return None
             #--Also, don't allow renaming the 'Last' marker
             elif item is self.data_store[self.data_store.lastKey]:
-                balt.showError(self, _(
-                    u'Renaming %s is not allowed' % self.data_store.lastKey))
+                balt.showError(self, _(u'Renaming %s is not '
+                                       u'allowed') % self.data_store.lastKey)
                 return None
         return renaming_type
 

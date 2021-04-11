@@ -2359,7 +2359,7 @@ class ModInfos(FileInfos):
         return_results is set to True."""
         messagetext = _(u'Check ESL Qualifications') if bush.game.check_esl \
             else _(u'Mark Mergeable')
-        with prog or balt.Progress(_(messagetext) + u' ' * 30) as prog:
+        with prog or balt.Progress(messagetext + u' ' * 30) as prog:
             return self._rescanMergeable(names, prog, return_results)
 
     def _rescanMergeable(self, names, progress, return_results):
@@ -2603,8 +2603,9 @@ class ModInfos(FileInfos):
         if (hasBsa, hasBlocking) == (False,False):
             return u''
         mPath = fileInfo.name
-        if hasBsa and hasBlocking: msg = bsaAndBlocking % (mPath.sroot, mPath)
-        elif hasBsa: msg = bsa % (mPath.sroot, mPath)
+        bsa_name = mPath.sroot + bush.game.Bsa.bsa_extension
+        if hasBsa and hasBlocking: msg = bsaAndBlocking % (bsa_name, mPath)
+        elif hasBsa: msg = bsa % (bsa_name, mPath)
         else: msg = blocking % mPath
         return msg
 
