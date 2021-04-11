@@ -2541,7 +2541,7 @@ class MreGras(MelRecord):
         MelStruct(b'DATA', [u'3B', u's', u'H', u'2s', u'I', u'4f', u'B', u'3s'],'density','minSlope','maxSlope',
                   'unkGras1','unitsFromWater','unkGras2',
                   'unitsFromWaterType','positionRange','heightRange',
-                  'colorRange','wavePeriod',(GrasTypeFlags, u'flags'),
+                  'colorRange', 'wave_period', (GrasTypeFlags, u'flags'),
                   'unkGras3',),
     )
     __slots__ = melSet.getSlotsUsed()

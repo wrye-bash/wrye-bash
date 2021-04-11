@@ -88,7 +88,7 @@ class PatchGame(GameInfo):
         u'default_eyes', u'destructible_types', u'ench_stats_attrs',
         u'generic_av_effects', u'getvatsvalue_index', u'graphicsFidTypes',
         u'graphicsModelAttrs', u'graphicsTypes', u'hostile_effects',
-        u'import_races_attrs', u'inventoryTypes',
+        u'import_races_attrs', u'inventoryTypes', u'default_wp_timescale',
         u'keywords_types', u'listTypes', u'mgef_basevalue', u'mgef_name',
         u'mgef_school', u'mgef_stats_attrs', u'namesTypes',
         u'nonplayable_biped_flags', u'not_playable_flag',
@@ -227,7 +227,7 @@ class PatchGame(GameInfo):
     inventoryTypes = ()
 
     #--------------------------------------------------------------------------
-    # Race Records
+    # NPC Checker
     #--------------------------------------------------------------------------
     default_eyes = {}
 
@@ -339,6 +339,13 @@ class PatchGame(GameInfo):
     # Whether or not Tweak Races should collect extra data from EYES, HAIR and
     # RACE records and make it available to the tweaks
     race_tweaks_need_collection = False
+
+    #--------------------------------------------------------------------------
+    # Timescale Checker
+    #--------------------------------------------------------------------------
+    # The effective timescale to which the wave periods of this game's grass
+    # are specified
+    default_wp_timescale = 10
 
     #--------------------------------------------------------------------------
     # Magic Effects - Oblivion-specific

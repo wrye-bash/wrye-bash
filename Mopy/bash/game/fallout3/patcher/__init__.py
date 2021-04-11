@@ -834,3 +834,8 @@ default_eyes = {
 }
 # Clean this up, no need to keep it around now
 del _fid
+
+#------------------------------------------------------------------------------
+# Timescale Checker
+#------------------------------------------------------------------------------
+default_wp_timescale = 30

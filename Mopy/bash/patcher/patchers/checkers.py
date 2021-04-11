@@ -24,16 +24,19 @@
 properties about records and either notifies the user or attempts a fix when it
 notices a problem."""
 
+from __future__ import division
+
 import random
 import re
-from collections import defaultdict
+from collections import defaultdict, Counter
 from itertools import chain
 
 from .base import is_templated
-from ..base import Patcher
+from ..base import Patcher, ModLoader
 from ... import bush
-from ...bolt import GPath, deprint
+from ...bolt import GPath, deprint, floats_equal
 from ...brec import strFid
+from ...mod_files import LoadFactory
 
 class ContentsCheckerPatcher(Patcher):
     """Checks contents of leveled lists, inventories and containers for
@@ -413,3 +416,72 @@ class NpcCheckerPatcher(Patcher):
             log(u'\n=== ' + _(u'Eyes/Hair Assigned for NPCs'))
             for srcMod in sorted(mod_npcsFixed):
                 log(u'* %s: %d' % (srcMod, len(mod_npcsFixed[srcMod])))
+
+#------------------------------------------------------------------------------
+class TimescaleCheckerPatcher(ModLoader):
+    patcher_group = u'Special'
+    patcher_order = 40
+    _read_sigs = (b'GRAS',)
+
+    def __init__(self, p_name, p_file):
+        super(TimescaleCheckerPatcher, self).__init__(p_name, p_file)
+        # We want to use _mod_read_records for GLOB records, not GRAS records
+        self.loadFactory = LoadFactory(False, by_sig=[b'GLOB'])
+
+    def scanModFile(self, modFile, progress):
+        if not (set(modFile.tops) & set(self._read_sigs)): return
+        for pb_sig in self._read_sigs:
+            patch_block = self.patchFile.tops[pb_sig]
+            id_records = patch_block.id_records
+            for record in modFile.tops[pb_sig].iter_present_records():
+                if record.fid in id_records: continue
+                if floats_equal(record.wave_period, 0.0): continue
+                patch_block.setRecord(record.getTypeCopy())
+
+    def buildPatch(self, log, progress):
+        if not self.isActive: return
+        # The base timescale to which all wave periods are relative
+        def_timescale = bush.game.default_wp_timescale
+        # First, look in the BP to see if we have a record that overrides the
+        # timescale
+        def find_timescale(glob_file):
+            if b'GLOB' not in glob_file.tops: return None
+            for glob_rec in glob_file.tops[b'GLOB'].iter_present_records():
+                glob_eid = glob_rec.eid
+                if glob_eid and glob_eid.lower() == u'timescale':
+                    return glob_rec.global_value
+            return None
+        final_timescale = find_timescale(self.patchFile)
+        # If the BP didn't have it, look through all plugins that could
+        # override the timescale and look for the last override (hence the
+        # reversed order)
+        if final_timescale is None:
+            pf_minfs = self.patchFile.p_file_minfos
+            relevant_plugins = [pf_minfs[p] for p in self.patchFile.allMods]
+            for r_plugin in reversed(relevant_plugins):
+                final_timescale = find_timescale(self._mod_file_read(r_plugin))
+                if final_timescale is not None:
+                    break
+        # If none of the plugins had it (this should be impossible), assume the
+        # timescale is identical to the default timescale
+        if final_timescale is None:
+            final_timescale = def_timescale
+        if final_timescale == def_timescale:
+            # Nothing to do, all grasses will have a matching wave period
+            return
+        keep = self.patchFile.getKeeper()
+        grasses_changed = Counter()
+        # The multiplier should do the inverse of what the final timescale is
+        # doing, e.g. changing timescale from 30 to 20 -> multiply wave period
+        # by 1.5 (= 30/20)
+        wp_multiplier = def_timescale / final_timescale
+        for grass_rec in self.patchFile.tops[b'GRAS'].iter_present_records():
+            grass_rec.wave_period *= wp_multiplier
+            grass_fid = grass_rec.fid
+            grasses_changed[grass_fid[0]] += 1
+            keep(grass_fid)
+        log.setHeader(u'= ' + self._patcher_name)
+        if grasses_changed:
+            log(u'\n=== ' + _(u'Wave Periods changed'))
+            for src_mod in sorted(grasses_changed):
+                log(u'* %s: %d' % (src_mod, grasses_changed[src_mod]))

@@ -184,7 +184,7 @@ class SkyrimGameInfo(PatchGame):
         u'ImportOutfits', u'ImportRelations', u'ImportSounds',
         u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
         u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
-        u'TweakRaces', u'ImportActorsPerks',
+        u'TweakRaces', u'ImportActorsPerks', u'TimescaleChecker',
     }
 
     weaponTypes = (

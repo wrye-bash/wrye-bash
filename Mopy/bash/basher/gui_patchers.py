@@ -1359,6 +1359,22 @@ class NpcChecker(_PatcherPanel):
     default_isEnabled = True
 
 #------------------------------------------------------------------------------
+class TimescaleChecker(_PatcherPanel):
+    """Adjusts the wave period of grass match changes in the timescale."""
+    patcher_name = _(u'Timescale Checker')
+    patcher_desc = u'\n'.join([
+        _(u'Adjusts the wave period of grasses to match changes in the '
+          u'timescale.'),
+        _(u'Does nothing if you are not using a nonstandard timescale.'),
+        u'',
+        _(u'Incompatible with plugins that change grass wave periods to match '
+          u'a different timescale. Uninstall such plugins before using this.'),
+    ])
+    _config_key = u'TimescaleChecker'
+    patcher_type = checkers.TimescaleCheckerPatcher
+    default_isEnabled = True
+
+#------------------------------------------------------------------------------
 # Game specific GUI Patchers --------------------------------------------------
 #------------------------------------------------------------------------------
 from .patcher_dialog import all_gui_patchers

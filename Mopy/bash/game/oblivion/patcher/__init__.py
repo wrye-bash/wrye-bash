@@ -393,7 +393,7 @@ graphicsModelAttrs = (u'model', u'maleBody', u'maleWorld', u'femaleBody', u'fema
 inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
 
 #------------------------------------------------------------------------------
-# Race Records
+# NPC Checker
 #------------------------------------------------------------------------------
 # Note that we use _x to avoid exposing these to the dynamic importer
 def _fid(_x): return None, _x # None <=> game master
@@ -685,7 +685,7 @@ mgef_stats_attrs = (u'flags', u'base_cost', u'associated_item', u'school',
                     u'resist_value', u'projectileSpeed', u'cef_enchantment',
                     u'cef_barter')
 
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Tweak Assorted
 #------------------------------------------------------------------------------
 assorted_tweaks = {
@@ -760,9 +760,9 @@ import_races_attrs = {
     },
 }
 
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Tweak Races
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 race_tweaks = {
     u'RaceTweak_BiggerOrcsAndNords',
     u'RaceTweak_MergeSimilarRaceHairs',
@@ -774,6 +774,14 @@ race_tweaks = {
     u'RaceTweak_AllHairs',
 }
 race_tweaks_need_collection = True
+
+#------------------------------------------------------------------------------
+# Timescale Checker
+#------------------------------------------------------------------------------
+# Nehrim has a timescale of 10, but the Nehrim devs forgot to change the wave
+# periods for their grass to match, hence we keep default_wp_timescale at 30
+# for Nehrim too
+default_wp_timescale = 30
 
 #------------------------------------------------------------------------------
 # Magic Effects
