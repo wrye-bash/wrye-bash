@@ -298,7 +298,7 @@ class MreAlch(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelString(b'TEXT', u'book_text'),
+        MelString(b'TEXT', u'inventory_icon'),
         MelScriptId(),
         MelMWFull(),
         MelStruct(b'ALDT', [u'f', u'2I'], u'potion_weight', u'potion_value',
@@ -924,7 +924,7 @@ class MreNpc(MelRecord):
         MelString(b'KNAM', u'hair_model'),
         MelScriptId(),
         MelUnion({
-            12: MelStruct(b'NPDT', [u'H', u'3B', u'3s', u'B'], u'npc_level', u'npc_disposition',
+            12: MelStruct(b'NPDT', [u'H', u'3B', u'3s', u'I'], u'npc_level', u'npc_disposition',
                 u'npc_reputation', u'npc_rank', u'unknown1',
                 u'npc_gold'),
             52: MelNpcData(b'NPDT', [u'H', u'8B', u'27B', u's', u'H', u'H', u'H', u'B', u'B', u'B', u's', u'I'], u'npc_level',
