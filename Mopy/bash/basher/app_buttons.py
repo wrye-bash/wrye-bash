@@ -26,7 +26,7 @@ import os
 import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
-from .frames import ModChecker, DocBrowser
+from .frames import PluginChecker, DocBrowser
 from .settings_dialog import SettingsDialog
 from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink
@@ -36,8 +36,8 @@ from ..gui import ClickableImage, EventResult, staticBitmap, get_key_down, \
     get_shift_down
 
 __all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
-           u'TESCS_Button', u'App_Tes4View', u'App_BOSS',
-           u'App_DocBrowser', u'App_ModChecker', u'App_Settings', u'App_Help',
+           u'TESCS_Button', u'App_Tes4View', u'App_BOSS', u'App_Help',
+           u'App_DocBrowser', u'App_PluginChecker', u'App_Settings',
            u'App_Restart', u'app_button_factory']
 
 #------------------------------------------------------------------------------
@@ -739,9 +739,10 @@ class App_Restart(StatusBar_Button):
     def Execute(self): Link.Frame.Restart()
 
 #------------------------------------------------------------------------------
-class App_ModChecker(StatusBar_Button):
-    """Show mod checker."""
-    imageKey, _tip = u'modchecker.%s', _(u'Mod Checker')
+class App_PluginChecker(StatusBar_Button):
+    """Show plugin checker."""
+    _tip = _(u'Plugin Checker')
+    imageKey = u'modchecker.%s'
 
     def Execute(self):
-        ModChecker.create_or_raise()
+        PluginChecker.create_or_raise()

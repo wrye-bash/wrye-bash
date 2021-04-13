@@ -171,6 +171,8 @@ class SkyrimGameInfo(PatchGame):
             u'bodyaddon10', u'bodyaddon11', u'bodyaddon12', u'bodyaddon13',
             u'bodyaddon14', u'bodyaddon15', u'bodyaddon16', u'bodyaddon17',
             u'fx01')
+        reference_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON',
+                           b'PFLA', b'PGRE', b'PHZD', b'PMIS', b'REFR'}
 
     allTags = PatchGame.allTags | {u'NoMerge'}
 

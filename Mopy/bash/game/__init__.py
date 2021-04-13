@@ -429,6 +429,10 @@ class GameInfo(object):
         biped_flag_names = ()
         # The maximum number of masters that a plugin can have for this game.
         master_limit = 255 # 256 - 1 for the plugin itself
+        # All 'reference' types, i.e. record types that occur in CELL/WLRD
+        # groups and place some sort of thing into the cell (e.g. ACHR, REFR,
+        # PMIS, etc.)
+        reference_types = set()
 
     # Class attributes moved to constants module, set dynamically at init
     #--Game ESM/ESP/BSA files
@@ -489,9 +493,12 @@ class GameInfo(object):
     @staticmethod
     def _validate_records():
         """Performs validation on the record syntax for all decoded records."""
+        sr_to_r = brec.MreRecord.subrec_sig_to_record_sig
         for rec_class in brec.MreRecord.type_class.itervalues():
             if issubclass(rec_class, brec.MelRecord):
                 rec_class.validate_record_syntax()
+                for sr_sig in rec_class.melSet.loaders:
+                    sr_to_r[sr_sig].add(rec_class.rec_sig)
 
     @classmethod
     def supported_games(cls):

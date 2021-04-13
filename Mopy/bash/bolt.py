@@ -2267,12 +2267,11 @@ def natural_key():
 def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
     """WIP wrap common dict sorting patterns - key_f if passed takes
     precedence."""
-    if key_f is not None:
-        pass
-    elif values_dex:
-        key_f = lambda k: tuple(di[k][x] for x in values_dex)
-    elif by_value:
-        key_f = lambda k: di[k]
+    if key_f is None:
+        if values_dex:
+            key_f = lambda k: tuple(di[k][x] for x in values_dex)
+        elif by_value:
+            key_f = lambda k: di[k]
     for k_ in sorted(di, key=key_f, reverse=reverse):
         yield k_, di[k_]
 
@@ -2315,7 +2314,7 @@ class WryeText(object):
       bullet, and the * produces a bullet character.
 
     Styles:
-      __Text__
+      __Bold__
       ~~Italic~~
       **BoldItalic**
     Notes:

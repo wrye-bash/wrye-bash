@@ -118,7 +118,7 @@
                 <li class="list"><a href="#tools">Miscellaneous Tools</a>
                     <ol class="items">
                         <li><a href="#tools-docs">Doc Browser</a>
-                        <li><a href="#tools-checker">Mod Checker</a>
+                        <li><a href="#tools-checker">Plugin Checker</a>
                         <li><a href="#tools-swapping">Oblivion.esm Swapping</a>
                         <li><a href="#tools-shortcuts">Keyboard Shortcuts</a>
                         <li><a href="#tools-arguments">Command Line Arguments</a>
@@ -1042,8 +1042,8 @@ tab. The directories skipped are:
             <tr><td colspan="2" id="refreshCRCs">Recalculate CRCs<td>Clean stale CRCs from cache. Workaround for buggy CRC updates in previous
                 versions of Bash. Use for instance when plugins show as mismatched in BAIN when they are not.
             <tr>
-                <td colspan="2">Mod Checker...</td>
-                <td>Launches the <a href="#tools-checker">Mod Checker</a>.</td>
+                <td colspan="2" id="modsPluginChecker">Plugin Checker...</td>
+                <td>Launches the <a href="#tools-checker">Plugin Checker</a>.</td>
             </tr>
         </tbody>
     </table>
@@ -8112,32 +8112,58 @@ C.Location, -C.LockList
 </ul>
 
 
-<h3 class="clearfb" id="tools-checker">Mod Checker <a class="back2top" href="#contents">Back to top</a></h3>
-<p>The Mod Checker checks your active and merged plugins for errors, and provides warnings for any found, as well as configuration recaps and suggestions. It can be opened by clicking the <a href="Wrye%20Bash%20General%20Readme.html#launchersModChecker">Mod Checker button</a> in the status bar.
-<p>At the top of the report is the Active Mod Files section, which lists your load order. It also displays any warnings that are applicable beneath the plugin(s) that they are applicable to. These warnings are either regarding missing masters or delinquent masters.
+<h3 class="clearfb" id="tools-checker">Plugin Checker <a class="back2top" href="#contents">Back to top</a></h3>
+<p>The Plugin Checker checks your active and merged plugins for errors, and
+    provides warnings for any found, as well as configuration recaps and
+    suggestions. It can be opened by clicking the
+    <a href="Wrye%20Bash%20General%20Readme.html#launchersPluginChecker">Plugin
+        Checker button</a> in the status bar or by using the
+    <a href="#modsPluginChecker">Plugin Checker menu option</a>.
+<p>At the top of the report is the Active Mod Files section, which lists your
+    load order if you enabled it using the
+    <a href="#pluginCheckerPluginList">Plugin List</a> toggle. After that comes
+    a report of all problems that were detected. A full list of problems
+    detected by the Plugin Checker follows:</p>
 <ul>
-    <li>Missing masters occur when a plugin that an active plugin depends on is not active. This results in an immediate CTD when the game is launched.
-    <li>Delinquent masters occur when a plugin's master loads after the plugin itself. This should be fixed to prevent issues in-game.
+    <li>Corrupted plugins</li>
+    <li>ESL-capable plugins</li>
+    <li>Incorrectly ESL-flagged plugins</li>
+    <li>Mergeable plugins</li>
+    <li>Deactivate-tagged plugins that are active</li>
+    <li>MustBeActiveIfImported-tagged plugins that are imported, but
+        inactive</li>
+    <li>Plugins with missing masters</li>
+    <li>Plugins with delinquent masters, i.e. masters that load after their
+        dependent plugins</li>
+    <li>Plugins with unknown header versions</li>
+    <li>For SSE and games based on it, plugins with Form Version <=43</li>
+    <li>Cleaning information retrieved from LOOT</li>
+    <li>Deleted references</li>
+    <li>Deleted navmeshes</li>
+    <li>Deleted base records</li>
+    <li>HITMEs</li>
+    <li>Record type collisions</li>
+    <li>Probable injected collisions</li>
 </ul>
 <div class="prlflex clearf">
   <figure class="slideshow" style="width: 576px; min-height: 596px">
-    <img alt="Mod Checker" src="../bash/images/readme/mod-checker-1.png">
-        <img alt="Mod Checker" src="../bash/images/readme/mod-checker-2.png">
+    <img alt="Plugin Checker" src="../bash/images/readme/mod-checker-1.png">
+        <img alt="Plugin Checker" src="../bash/images/readme/mod-checker-2.png">
     <figcaption class="tools-checker-figcap">
-      Wrye Bash's Mod Checker
+      Wrye Bash's Plugin Checker
     </figcaption>
   </figure>
   <table>
     <thead>
-        <tr><th colspan="2">Mod Checker Controls
+        <tr><th colspan="2">Plugin Checker Controls
         <tr><th>Control<th>Function
     <tbody>
-        <tr><td>Forward/Back Arrows<td>The Mod Checker report may contain links to other pages. These two buttons allow navigation between pages viewed, similar to the forward/back buttons in a web browser.
+        <tr><td>Forward/Back Arrows<td>The Plugin Checker report may contain links to other pages. These two buttons allow navigation between pages viewed, similar to the forward/back buttons in a web browser.
         <tr><td>Reload</td><td>Reloads the current page. Works identically to a browser's reload button.</td></tr>
-        <tr><td>Mod List<td>Toggles the display of the Active Mod Files list.
+        <tr><td id="pluginCheckerPluginList">Plugin List<td>Toggles the display of the Active Mod Files list.
         <tr><td>Version Numbers<td>Toggles display of version numbers where found for the plugins in the Active Mod Files list.
         <tr><td>CRCs<td>Toggles display of the CRCs for the plugins in the Active Mod Files list.
-        <tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Mod Checker's report.
+        <tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Plugin Checker's report.
         <tr><td>Copy Text<td>Copies the text of the report to the clipboard. Useful for posting on forums.
         <tr><td>Update<td>Forces a refresh of the report.
   </table>

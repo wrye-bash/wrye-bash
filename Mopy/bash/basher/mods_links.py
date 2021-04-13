@@ -25,7 +25,7 @@ points to BashFrame.modList singleton."""
 
 import re
 from .dialogs import CreateNewPlugin
-from .frames import ModChecker
+from .frames import PluginChecker
 from .. import bass, bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
@@ -41,7 +41,7 @@ __all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
            u'Mods_CreateBlank', u'Mods_ListMods', u'Mods_ListBashTags',
            u'Mods_CleanDummyMasters', u'Mods_AutoGhost', u'Mods_LockLoadOrder',
            u'Mods_ScanDirty', u'Mods_CrcRefresh', u'Mods_AutoESLFlagBP',
-           u'Mods_LockActivePlugins', u'Mods_ModChecker',
+           u'Mods_LockActivePlugins', u'Mods_PluginChecker',
            u'Mods_ExportBashTags', u'Mods_ImportBashTags',
            u'Mods_ClearManualBashTags', u'Mods_OpenLOFileMenu']
 
@@ -365,15 +365,15 @@ class Mods_CrcRefresh(ItemLink):
         self._showWryeLog(message)
 
 #------------------------------------------------------------------------------
-class Mods_ModChecker(ItemLink):
-    """Launches the Mod Checker. More discoverable alternative to the teensy
+class Mods_PluginChecker(ItemLink):
+    """Launches the Plugin Checker. More discoverable alternative to the teensy
     icon at the bottom."""
-    _text = _(u'Mod Checker...')
-    _help = _(u'Checks your loaded plugins for certain problems and shows a '
+    _text = _(u'Plugin Checker...')
+    _help = _(u'Checks your loaded plugins for various problems and shows a '
               u'configurable report.')
 
     def Execute(self):
-        ModChecker.create_or_raise()
+        PluginChecker.create_or_raise()
 
 #------------------------------------------------------------------------------
 class _Mods_BashTags(ItemLink, CsvParser):

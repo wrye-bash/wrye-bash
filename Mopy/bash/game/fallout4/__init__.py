@@ -125,6 +125,8 @@ class Fallout4GameInfo(PatchGame):
         validHeaderVersions = (0.95, 1.0)
         expanded_plugin_range = True
         max_lvl_list_size = 255
+        reference_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON',
+                           b'PFLA', b'PGRE', b'PHZD', b'PMIS', b'REFR'}
 
     patchers = {
         u'ImportObjectBounds', u'LeveledLists',

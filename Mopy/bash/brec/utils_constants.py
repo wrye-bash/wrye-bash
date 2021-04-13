@@ -80,6 +80,7 @@ def strFid(form_id):
     else:
         return u'%08X' % form_id
 
+# PY3: drop the int() calls in these four methods
 def genFid(modIndex,objectIndex):
     """Generates a fid from modIndex and ObjectIndex."""
     return int(objectIndex) | (int(modIndex) << 24)

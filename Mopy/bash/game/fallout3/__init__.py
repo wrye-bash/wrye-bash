@@ -141,6 +141,8 @@ class Fallout3GameInfo(PatchGame):
                             u'noseRing', u'earrings', u'mask', u'choker',
                             u'mouthObject', u'bodyAddOn1', u'bodyAddOn2',
                             u'bodyAddOn3')
+        reference_types = {b'ACHR', b'ACRE', b'PBEA', b'PGRE', b'PMIS',
+                           b'REFR'}
 
     allTags = PatchGame.allTags | {u'NoMerge'}
 

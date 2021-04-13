@@ -137,23 +137,13 @@ def is_esl_capable(modInfo, _minfos, reasons):
                     return value of this method is of interest.
     :return: True if the specified mod could be flagged as ESL."""
     verbose = reasons is not None
-    record_headers = {}
+    formids_valid = True
     try:
-        record_headers = ModHeaderReader.read_mod_headers(modInfo)
+        formids_valid = ModHeaderReader.formids_in_esl_range(modInfo)
     except ModError as e:
         if not verbose: return False
         reasons.append(u'%s.' % e)
-    # Check for new FormIDs greater then 0xFFF
-    num_masters = len(modInfo.masterNames)
-    has_new_recs = False
-    for _rec_type, rec_headers in record_headers.iteritems():
-        for header in rec_headers:
-            if header.fid >> 24 >= num_masters:
-                if (header.fid & 0xFFFFFF) > 0xFFF:
-                    has_new_recs = True
-                    break
-        if has_new_recs:
-            if not verbose: return False
-            reasons.append(_(u'New FormIDs greater than 0xFFF.'))
-            break
+    if not formids_valid:
+        if not verbose: return False
+        reasons.append(_(u'New FormIDs greater than 0xFFF.'))
     return False if reasons else True

@@ -290,7 +290,7 @@ class DocBrowser(WindowFrame):
         super(DocBrowser, self).on_closing(destroy)
 
 #------------------------------------------------------------------------------
-_BACK, _FORWARD, _MOD_LIST, _CRC, _VERSION, _SCAN_DIRTY, _COPY_TEXT, \
+_BACK, _FORWARD, _MOD_LIST, _CRC, _VERSION, _LOAD_PLUGINS, _COPY_TEXT, \
 _UPDATE = xrange(8)
 
 def _get_mod_checker_setting(key, default=None):
@@ -299,17 +299,18 @@ def _get_mod_checker_setting(key, default=None):
 def _set_mod_checker_setting(key, value):
     bass.settings[u'bash.modChecker.show%s' % key] = value
 
-class ModChecker(WindowFrame):
-    """Mod Checker frame."""
+class PluginChecker(WindowFrame):
+    """Plugin Checker frame."""
     _frame_settings_key = u'bash.modChecker'
     _def_size = (475, 500)
 
     def __init__(self):
         #--Singleton
-        Link.Frame.modChecker = self
+        Link.Frame.plugin_checker = self
         #--Window
-        super(ModChecker, self).__init__(Link.Frame, title=_(u'Mod Checker'),
-            icon_bundle=Resources.bashBlue, sizes_dict=bass.settings)
+        super(PluginChecker, self).__init__(
+            Link.Frame, title=_(u'Plugin Checker'), sizes_dict=bass.settings,
+            icon_bundle=Resources.bashBlue)
         #--Data
         self.orderedActive = None
         self.__merged = None
@@ -321,26 +322,34 @@ class ModChecker(WindowFrame):
         self._controls = OrderedDict()
         self._setting_names = {}
         def _f(key, make_checkbox, caption_, setting_key=None,
-               setting_value=None, callback=self.CheckMods):
+               setting_value=None, callback=self.CheckMods, setting_tip=u''):
             if make_checkbox:
                 btn = CheckBox(self, caption_)
                 btn.on_checked.subscribe(callback)
             else:
                 btn = Button(self, caption_)
                 btn.on_clicked.subscribe(callback)
-            if setting_key is not None:
+            btn.tooltip = setting_tip
+            if make_checkbox and setting_key is not None:
                 new_value = bass.settings.get(
-                    'bash.modChecker.show{}'.format(setting_key), setting_value)
-                if make_checkbox:
-                    btn.is_checked = new_value
+                    u'bash.modChecker.show%s' % setting_key, setting_value)
+                btn.is_checked = new_value
                 self._setting_names[key] = setting_key
             self._controls[key] = btn
-        _f(_MOD_LIST,   True,  _(u'Mod List'),        'ModList', False)
-        _f(_VERSION,    True,  _(u'Version Numbers'), 'Version', True)
-        _f(_CRC,        True,  _(u'CRCs'),            'CRC', False)
-        _f(_SCAN_DIRTY, True,  _(u'Scan for UDRs'))
-        _f(_COPY_TEXT,  False, _(u'Copy Text'), callback=self.OnCopyText)
-        _f(_UPDATE,     False, _(u'Update'))
+        _f(_MOD_LIST,     True,  _(u'Plugin List'),     u'ModList', False,
+           setting_tip=_(u'Show a list of all installed plugins as well.'))
+        _f(_VERSION,      True,  _(u'Version Numbers'), u'Version', True,
+           setting_tip=_(u'Show verion numbers alongside the plugin list.'))
+        _f(_CRC,          True,  _(u'CRCs'),            u'CRC',     False,
+           setting_tip=_(u'Show CRCs alongside the plugin list.'))
+        _f(_LOAD_PLUGINS, True,  _(u'Load Plugins'),    u'Plugins', True,
+           setting_tip=_(u'Detect more types of problems that require loading '
+                         u'every plugin.'))
+        _f(_COPY_TEXT,    False, _(u'Copy Text'), callback=self.OnCopyText,
+           setting_tip=_(u'Copy a text version of the report to the '
+                         u'clipboard.'))
+        _f(_UPDATE,       False, _(u'Update'),
+           setting_tip=_(u'Regenerate the report from scratch.'))
         #--Events
         self.on_activate.subscribe(self.on_activation)
         VLayout(border=4, spacing=4, item_expand=True, items=[
@@ -350,7 +359,7 @@ class ModChecker(WindowFrame):
                 self._controls[_VERSION]
             ]),
             HLayout(spacing=4, items=[
-                self._controls[_SCAN_DIRTY], Stretch(), self._controls[_UPDATE],
+                self._controls[_LOAD_PLUGINS], Stretch(), self._controls[_UPDATE],
                 self._controls[_COPY_TEXT], back_btn, forward_btn, reload_btn
             ])
         ]).apply_to(self)
@@ -367,15 +376,14 @@ class ModChecker(WindowFrame):
 
     def CheckMods(self, _new_value=None):
         """Do mod check."""
-        # Enable or disable the children of ModList and RuleSets buttons
+        # Enable or disable the children of the Mod List button
         _set_mod_checker_setting(self._setting_names[_MOD_LIST],
                                  self._controls[_MOD_LIST].is_checked)
-        # Enable or disable the children of the ModList buttons
         setting_val = _get_mod_checker_setting(self._setting_names[_MOD_LIST])
         for ctrl_id in (_CRC, _VERSION):
             self._controls[ctrl_id].enabled = setting_val
         # Set settings from all the buttons' values
-        for ctrl_id in (_CRC, _VERSION):
+        for ctrl_id in (_CRC, _VERSION, _LOAD_PLUGINS):
             _set_mod_checker_setting(self._setting_names[ctrl_id],
                                      self._controls[ctrl_id].is_checked)
         #--Cache info from modinfos to support auto-update.
@@ -384,9 +392,9 @@ class ModChecker(WindowFrame):
         self.__imported = bosh.modInfos.imported.copy()
         #--Do it
         self.check_mods_text = mods_metadata.checkMods(
-            *[_get_mod_checker_setting(self._setting_names[setting_key])
-              for setting_key in (_MOD_LIST, _CRC, _VERSION)],
-            mod_checker=(None, self)[self._controls[_SCAN_DIRTY].is_checked])
+            self, *[_get_mod_checker_setting(self._setting_names[setting_key])
+                    for setting_key in (_MOD_LIST, _CRC, _VERSION,
+                                        _LOAD_PLUGINS)])
         if web_viewer_available():
             log_path = bass.dirs[u'saveBase'].join(u'ModChecker.html')
             css_dir = bass.dirs[u'mopy'].join(u'Docs')
@@ -405,18 +413,18 @@ class ModChecker(WindowFrame):
             self.CheckMods()
 
     def on_closing(self, destroy=True):
-        # Need to unset Link.Frame.modChecker here to avoid accessing a deleted
-        # object when clicking the mod checker button again.
-        Link.Frame.modChecker = None
-        super(ModChecker, self).on_closing(destroy)
+        # Need to unset Link.Frame.plugin_checker here to avoid accessing a
+        # deleted object when clicking the plugin checker button again.
+        Link.Frame.plugin_checker = None
+        super(PluginChecker, self).on_closing(destroy)
 
     @classmethod
     def create_or_raise(cls):
-        """Creates and shows the mod checker if it doesn't already exist,
+        """Creates and shows the plugin checker if it doesn't already exist,
         otherwise just raises the existing one."""
-        if not Link.Frame.modChecker:
+        if not Link.Frame.plugin_checker:
             cls().show_frame()
-        Link.Frame.modChecker.raise_frame()
+        Link.Frame.plugin_checker.raise_frame()
 
 #------------------------------------------------------------------------------
 class InstallerProject_OmodConfigDialog(WindowFrame):

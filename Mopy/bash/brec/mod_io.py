@@ -25,6 +25,7 @@ files."""
 
 from __future__ import division, print_function
 import os
+from io import BytesIO
 
 # no local imports beyond this, imported everywhere in brec
 from .utils_constants import _int_unpacker, group_types, null1, strFid
@@ -58,6 +59,7 @@ class RecordHeader(object):
     valid_header_sigs = set()
     #--Plugin form version, we must pack this in the TES4 header
     plugin_form_version = 0
+    is_top_group_header = False
     __slots__ = (u'recType', u'size', u'extra')
 
     @property
@@ -68,7 +70,6 @@ class RecordHeader(object):
 class RecHeader(RecordHeader):
     """Fixed size structure defining next record."""
     __slots__ = (u'flags1', u'fid', u'flags2')
-    is_top_group_header = False
 
     def __init__(self, recType=b'TES4', size=0, arg1=0, arg2=0, arg3=0, arg4=0):
         """Fixed size structure defining next record.
@@ -319,3 +320,25 @@ class ModReader(object):
 
     def unpackRecHeader(self, __head_unpack=unpack_header):
         return __head_unpack(self)
+
+class FastModReader(BytesIO):
+    """BytesIO-derived class that mimics ModReader, but runs at lightning
+    speed."""
+    def __init__(self, in_name, initial_bytes):
+        super(FastModReader, self).__init__(initial_bytes)
+        # Mirror ModReader.inName - name of the input file
+        self.inName = in_name
+        # Mirror ModReader.size - size of the input file
+        self.size = len(initial_bytes)
+        # Mirror ModReader.ins - the actual open file that we wrap
+        self.ins = self
+
+    def __enter__(self): return self
+
+    def unpack(self, struct_unpacker, size, *debug_strs):
+        """Mirror ModReader.unpack."""
+        read_data = self.read(size)
+        if len(read_data) != size:
+            raise ModReadError(self.inName, debug_strs,
+                               self.tell() - len(read_data), self.size)
+        return struct_unpacker(read_data)
