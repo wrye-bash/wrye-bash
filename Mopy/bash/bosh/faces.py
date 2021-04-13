@@ -187,9 +187,9 @@ class PCFaces(object):
                                           encode(saveFile.header.pcName))
         (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair, face.eye,
             face.hairLength, face.hairRed, face.hairBlue, face.hairGreen, face.unused3, face.gender) = struct_unpack(
-            '=200s120s200s3If3BsB',data[namePos-542:namePos-1])
+            u'=200s120s200s3If3BsB',data[namePos-542:namePos-1])
         classPos = namePos + len(saveFile.header.pcName) + 1
-        face.iclass, = struct_unpack('I', data[classPos:classPos+4])
+        face.iclass, = struct_unpack(u'I', data[classPos:classPos+4])
         #--Iref >> fid
         getFid = saveFile.getFid
         face.race = getFid(face.race)

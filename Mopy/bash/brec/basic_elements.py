@@ -661,9 +661,9 @@ class MelStruct(MelBase):
             setattr(record, attr, action(value) if action else value)
 
     def pack_subrecord_data(self, record):
-        # Just in case, apply the action to itself before dumping to handle
-        # e.g. a FixedString getting assigned a unicode value. Worst case,
-        # this is just a noop.
+        # Apply the action to itself before dumping to handle e.g. a
+        # FixedString getting assigned a unicode value. Worst case, this is
+        # just a noop - it is needed however when we read a flag say from a csv
         values = [
             action(value).dump() if action else value for value, action in
             izip((getattr(record, a) for a in self.attrs), self.actions)]

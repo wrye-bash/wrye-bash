@@ -531,7 +531,7 @@ class MelRaceVoices(MelStruct):
 class MelScript(MelFid):
     """Represents the common script subrecord in TES4/FO3/FNV."""
     def __init__(self):
-        super(MelScript, self).__init__(b'SCRI', u'script')
+        super(MelScript, self).__init__(b'SCRI', u'script_fid')
 
 #------------------------------------------------------------------------------
 class MelScriptVars(MelGroups):

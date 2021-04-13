@@ -28,6 +28,8 @@ bush."""
 # Function Info ---------------------------------------------------------------
 # Needs to be public so we can import it for FNV
 # 0: no param; 1: int param; 2: formid param; 3: float param
+# ***no imports!***
+
 condition_function_data = {
     1:    (u'GetDistance', 2, 0),
     5:    (u'GetLocked', 0, 0),
@@ -298,8 +300,8 @@ namesTypes = {
 #------------------------------------------------------------------------------
 # Import Prices
 #------------------------------------------------------------------------------
-pricesTypes = {b'ALCH': {}, b'AMMO': {}, b'ARMO': {}, b'ARMA': {}, b'BOOK': {},
-               b'INGR': {}, b'KEYM': {}, b'LIGH': {}, b'MISC': {}, b'WEAP': {}}
+pricesTypes = {b'ALCH', b'AMMO', b'ARMA', b'ARMO', b'BOOK', b'INGR', b'KEYM',
+               b'LIGH', b'MISC', b'WEAP'}
 
 #------------------------------------------------------------------------------
 # Import Stats
@@ -326,116 +328,6 @@ statsTypes = {
         u'sightUsage', u'semiAutomaticFireDelayMin',
         u'semiAutomaticFireDelayMax', u'criticalDamage',
         u'criticalMultiplier'),
-}
-
-# TODO(lojack): the record signatures seem to be only used by CSV reading/
-# writing.  Make sure there's no broken interaction there.
-statsHeaders = (
-    #--Alch
-    (u'ALCH',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #Ammo
-    (u'AMMO',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Speed'),_(u'Clip Rounds'),_(u'Proj/Shot'))) + u'"\n')),
-    #--Armor
-    (u'ARMO',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'AR'),_(u'DT'))) + u'"\n')),
-    #--Armor Addon
-    (u'ARMA',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'AR'))) + u'"\n')),
-    #Books
-    (u'BOOK',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #Ingredients
-    (u'INGR',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-       _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #--Keys
-    (u'KEYM',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #Lights
-    (u'LIGH',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Duration'))) + u'"\n')),
-    #--Misc
-    (u'MISC',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'))) + u'"\n')),
-    #--Weapons
-    (u'WEAP',
-        (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Health'),_(u'Damage'),
-        _(u'Clip Size'),_(u'Animation Multiplier'),_(u'Reach'),_(u'Ammo Use'),
-        _(u'Min Spread'),_(u'Spread'),_(u'Sight Fov'),
-        _(u'Base VATS To-Hit Chance'), _(u'Projectile Count'),_(u'Min Range'),
-        _(u'Max Range'), _(u'Animation Attack Multiplier'), _(u'Fire Rate'),
-        _(u'Override - Action Point'), _(u'Rumble - Left Motor Strength'),
-        _(u'rRmble - Right Motor Strength'), _(u'Rumble - Duration'),
-        _(u'Override - Damage To Weapon Mult'), _(u'Attack Shots/Sec'),
-        _(u'Reload Time'), _(u'Jam Time'), _(u'Aim Arc'), _(u'Ramble - Wavelangth'),
-        _(u'Limb Dmg Mult'), _(u'Sight Usage'),_(u'Semi-Automatic Fire Delay Min'),
-        _(u'Semi-Automatic Fire Delay Max'),_(u'Critical Damage'),
-        _(u'Crit % Mult'))) + u'"\n')),
-)
-item_attr_type = {
-    u'eid': u'sstr',
-    u'weight': u'sfloat',
-    u'value': u'sint',
-    u'damage': u'sint',
-    u'speed': u'sfloat',
-    u'enchantPoints': u'snoneint',
-    u'health': u'sint',
-    u'strength': u'sint',
-    u'duration': u'sint',
-    u'quality': u'sfloat',
-    u'uses': u'sint',
-    u'reach': u'sfloat',
-    u'clipRounds': u'sint',
-    u'projPerShot': u'sint',
-    u'ar': u'sint',
-    u'dt': u'sfloat',
-    u'clipsize': u'sint',
-    u'animationMultiplier': u'sfloat',
-    u'ammoUse': u'sint',
-    u'minSpread': u'sfloat',
-    u'spread': u'sfloat',
-    u'sightFov': u'sfloat',
-    u'baseVatsToHitChance': u'sint',
-    u'projectileCount': u'sint',
-    u'minRange': u'sfloat',
-    u'maxRange': u'sfloat',
-    u'animationAttackMultiplier': u'sfloat',
-    u'fireRate': u'sfloat',
-    u'overrideActionPoint': u'sfloat',
-    u'rumbleLeftMotorStrength': u'sfloat',
-    u'rumbleRightMotorStrength': u'sfloat',
-    u'rumbleDuration': u'sfloat',
-    u'overrideDamageToWeaponMult': u'sfloat',
-    u'attackShotsPerSec': u'sfloat',
-    u'reloadTime': u'sfloat',
-    u'jamTime': u'sfloat',
-    u'aimArc': u'sfloat',
-    u'rambleWavelangth': u'sfloat',
-    u'limbDmgMult': u'sfloat',
-    u'sightUsage': u'sfloat',
-    u'semiAutomaticFireDelayMin': u'sfloat',
-    u'semiAutomaticFireDelayMax': u'sfloat',
-    u'strengthReq': u'sint',
-    u'regenRate': u'sfloat',
-    u'killImpulse': u'sfloat',
-    u'impulseDist': u'sfloat',
-    u'skillReq': u'sint',
-    u'criticalDamage': u'sint',
-    u'criticalMultiplier': u'sfloat',
-    u'vatsSkill': u'sfloat',
-    u'vatsDamMult': u'sfloat',
-    u'vatsAp': u'sfloat',
 }
 
 #------------------------------------------------------------------------------

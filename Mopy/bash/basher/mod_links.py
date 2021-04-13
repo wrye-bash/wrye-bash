@@ -494,7 +494,7 @@ class _Mod_Groups_Export(ItemLink):
         #--Export
         modGroups = _ModGroups()
         modGroups.readFromModInfos(self.selected)
-        modGroups.writeToText(textPath)
+        modGroups.write_text_file(textPath)
         self._showOk(_(u'Exported %d mod/groups.') % len(modGroups.mod_group))
 
 class _Mod_Groups_Import(ItemLink):
@@ -1740,7 +1740,7 @@ class _Mod_Export_Link(_Import_Export_Link, ItemLink):
                 readProgress(index, _(u'Reading') + u' %s.' % fileName)
                 parser.readFromMod(fileInfo)
             progress(0.8, _(u'Exporting to') + u' %s.' % textName)
-            parser.writeToText(textPath)
+            parser.write_text_file(textPath)
             progress(1.0, _(u'Done.'))
 
     def _parser(self): raise AbstractError

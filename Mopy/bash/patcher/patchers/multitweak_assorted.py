@@ -160,10 +160,10 @@ class _APlayableTweak(MultiTweakItem):
                 _remaining_checks.search(test_str))
 
     def wants_record(self, record):
-        # 'script' does not exist for later games, so use getattr
+        # 'script_fid' does not exist for later games, so use getattr
         if (not self._is_nonplayable(record) or
             not self._any_body_flag_set(record) or
-                getattr(record, u'script', None)): return False
+                getattr(record, u'script_fid', None)): return False
         # Later games mostly have these 'non-playable indicators' in the EDID
         clothing_eid = record.eid
         if clothing_eid and self._should_skip(clothing_eid.lower()):

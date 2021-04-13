@@ -246,6 +246,34 @@ def sortFiles(files, __split=os.path.split):
     """Utility function. Sorts files by directory, then file name."""
     return sorted(files, key=lambda x: __split(x.lower()))
 
+def str_or_none(uni_str):
+    return None if uni_str.lower() == u'none' else uni_str
+
+def int_or_none(uni_str):
+    try:
+        return int(uni_str)
+    except ValueError:
+        return None
+
+def nonzero_or_none(uni_str):
+    try:
+        return int(uni_str) or None
+    except (ValueError, TypeError):
+        return None
+
+def int_or_zero(uni_str):
+    try:
+        return int(uni_str)
+    except ValueError:
+        return 0
+
+def float_or_none(uni_str):
+    try: ##: is this needed (elsewhere also?)?
+        return round(struct_unpack(u'f', struct_pack(u'f', float(uni_str)))[0],
+                     6)
+    except ValueError:
+        return None
+
 # PY3: Dicts are ordered by default on py3.7, so drop this in favor of just
 # collections.defaultdict
 class OrderedDefaultDict(collections.OrderedDict, collections.defaultdict):

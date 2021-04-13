@@ -391,7 +391,7 @@ class Mods_ExportBashTags(_Mods_BashTags):
             wildcard=u'*.csv')
         if not exp_path: return
         self.plugins_exported = 0
-        self.writeToText(exp_path)
+        self.write_text_file(exp_path)
         self._showOk(_(u'Exported tags for %(exp_num)u plugin(s) to '
                        u'%(exp_path)s.') % {u'exp_num': self.plugins_exported,
                                             u'exp_path': exp_path})

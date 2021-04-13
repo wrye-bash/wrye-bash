@@ -130,9 +130,8 @@ class LoadFactory(object):
     def getCellTypeClass(self):
         """Returns type_class dictionary for cell objects."""
         if not self.cellType_class:
-            types = (b'REFR',b'ACHR',b'ACRE',b'PGRD',b'LAND',b'CELL',b'ROAD')
-            getterRecClass = self.getRecClass
-            self.cellType_class.update((x,getterRecClass(x)) for x in types)
+            self.cellType_class.update((x, self.getRecClass(x)) for x in (
+                b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND', b'CELL', b'ROAD'))
         return self.cellType_class
 
     def getUnpackCellBlocks(self,topType):

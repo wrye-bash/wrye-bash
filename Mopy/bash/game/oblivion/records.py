@@ -143,7 +143,7 @@ class MelEffects(MelSequential):
     which is why it's so complex. The challenge is that we basically have to
     redirect every procedure to one of two lists of elements, depending on
     whether an 'OBME' subrecord exists or not."""
-    _se_flags = Flags(0, Flags.getNames(u'hostile'))
+    se_flags = Flags(0, Flags.getNames(u'hostile'))
 
     def __init__(self):
         # Vanilla Elements ----------------------------------------------------
@@ -156,8 +156,8 @@ class MelEffects(MelSequential):
                           u'magnitude', u'area', u'duration', u'recipient',
                           u'actorValue'),
                 MelGroup(u'scriptEffect',
-                    MelEffectsScit(b'SCIT', [u'2I', u'4s', u'B', u'3s'], (FID, u'script'),
-                        u'school', u'visual', (MelEffects._se_flags, u'flags'),
+                    MelEffectsScit(b'SCIT', [u'2I', u'4s', u'B', u'3s'], (FID, u'script_fid'),
+                        u'school', u'visual', (MelEffects.se_flags, u'flags'),
                         u'unused1', old_versions={u'2I4s', u'I'}),
                     MelFull(),
                 ),
@@ -194,20 +194,20 @@ class MelEffects(MelSequential):
                     MelUnion({
                         0: MelStruct(b'SCIT', [u'4s', u'I', u'4s', u'B', u'3s'],
                                      u'efix_param', u'school', u'visual',
-                                     (MelEffects._se_flags, u'flags'),
+                                     (MelEffects.se_flags, u'flags'),
                                      u'unused1'),
                         1: MelStruct(b'SCIT', [u'2I', u'4s', u'B', u'3s'], (FID, u'efix_param'),
                                      u'school', u'visual',
-                                     (MelEffects._se_flags, u'flags'),
+                                     (MelEffects.se_flags, u'flags'),
                                      u'unused1'),
                         2: MelStruct(b'SCIT', [u'4s', u'I', u'4s', u'B', u'3s'],
                                      (u'efix_param', b'REHE'), u'school',
                                      u'visual',
-                                     (MelEffects._se_flags, u'flags'),
+                                     (MelEffects.se_flags, u'flags'),
                                      u'unused1'),
                         3: MelStruct(b'SCIT', [u'2I', u'4s', u'B', u'3s'], (FID, u'efit_param'),
                                      u'school', u'visual',
-                                     (MelEffects._se_flags, u'flags'),
+                                     (MelEffects.se_flags, u'flags'),
                                      u'unused1'),
                     }, decider=AttrValDecider(u'efix_param_info')),
                     MelFull(),
@@ -334,7 +334,7 @@ class MelLevListLvlo(MelTruncatedStruct):
 
 class MreLeveledList(MreLeveledListBase):
     """Leveled item/creature/spell list."""
-    top_copy_attrs = ('script','template','chanceNone',)
+    top_copy_attrs = ('script_fid','template','chanceNone',)
 
     melSet = MelSet(
         MelEdid(),
