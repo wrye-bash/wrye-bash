@@ -347,7 +347,7 @@ class _AWeightTweak(CustomChoiceTweak):
         log.setHeader(u'=== ' + self.tweak_log_header)
         log(self._log_weight_value % self.chosen_weight)
         log(u'* ' + self.tweak_log_msg % {
-            u'total_changed': sum(count.values())})
+            u'total_changed': sum(count.itervalues())})
         for src_plugin in load_order.get_ordered(count):
             log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
 

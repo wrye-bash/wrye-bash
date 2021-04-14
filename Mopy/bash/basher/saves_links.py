@@ -495,7 +495,7 @@ class Save_EditCreatedData(balt.ListEditorData):
         else:
             self.changed = False #--Allows graceful effort if close fails.
             count = 0
-            for newName,(oldName,records) in self.name_nameRecords.items():
+            for newName,(oldName,records) in self.name_nameRecords.iteritems():
                 if newName == oldName: continue
                 for record in records:
                     record.full = newName

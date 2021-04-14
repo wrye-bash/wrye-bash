@@ -205,7 +205,7 @@ class SashPanel(NotebookPanel):
         """Unfortunately can't use EVT_SHOW, as the panel needs to be
         populated for position to be set correctly."""
         if self._firstShow:
-            for key, ui_set in self._ui_settings.items():
+            for key, ui_set in self._ui_settings.iteritems():
                 sashPos = settings.get(self.__class__.keyPrefix + key,
                                        ui_set.default_(self))
                 ui_set.set_(self, sashPos)
@@ -213,7 +213,7 @@ class SashPanel(NotebookPanel):
 
     def ClosePanel(self, destroy=False):
         if not self._firstShow and destroy: # if the panel was shown
-            for key, ui_set in self._ui_settings.items():
+            for key, ui_set in self._ui_settings.iteritems():
                 settings[self.__class__.keyPrefix + key] = ui_set.get_(self)
 
 class SashUIListPanel(SashPanel):
@@ -517,7 +517,7 @@ class MasterList(_ModsUIList):
     def InitEdit(self):
         #--Pre-clean
         edited = False
-        for mi, masterInfo in self.data_store.items():
+        for mi, masterInfo in self.data_store.iteritems():
             newName = settings[u'bash.mods.renames'].get(
                 masterInfo.curr_name, None)
             #--Rename?
@@ -1893,7 +1893,8 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     @property
     def current_ini_path(self):
         """Return path of currently chosen ini."""
-        return self.target_inis.values()[settings[u'bash.ini.choice']]
+        return list(self.target_inis.itervalues())[
+            settings[u'bash.ini.choice']]
 
     @property
     def target_inis(self):
@@ -2641,7 +2642,7 @@ class InstallersList(balt.UIList):
             sorted_ = sorted(selected, key=orderKey, reverse=(moveMod == 1))
             # get the index two positions after the last or before the first
             visibleIndex = self.GetIndex(sorted_[0]) + moveMod * 2
-            maxPos = max(x.order for x in self.data_store.values())
+            maxPos = max(x.order for x in self.data_store.itervalues())
             for thisFile in sorted_:
                 newPos = self.data_store[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
@@ -3594,9 +3595,9 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
         else:
             # It was disabled, enable it
             insertAt = 0
-            for key, is_enabled in bass.settings[u'bash.tabs.order'].items():
-                if key == self.tabKey: break
-                insertAt += is_enabled
+            for k, k_enabled in bass.settings[u'bash.tabs.order'].iteritems():
+                if k == self.tabKey: break
+                insertAt += k_enabled
             className,title,panel = tabInfo[self.tabKey]
             if not panel:
                 panel = globals()[className](Link.Frame.notebook)
@@ -3624,6 +3625,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         """Return dict containing saved tab order and enabled state of tabs."""
         newOrder = settings.getChanged(u'bash.tabs.order',
                                        BashNotebook._tabs_enabled_ordered)
+        # FIXME(inf) Backwards compatibility with <306, drop on VDATA3
         if not isinstance(newOrder, OrderedDict): # convert, on updating to 306
             enabled = settings.getChanged(u'bash.tabs', # deprecated -never use
                                           BashNotebook._tabs_enabled_ordered)
@@ -3647,7 +3649,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         balt.TabDragMixin.__init__(self)
         #--Pages
         iInstallers = iMods = -1
-        for page, enabled in self._tabOrder().items():
+        for page, enabled in self._tabOrder().iteritems():
             if not enabled: continue
             className, title, item = tabInfo[page]
             panel = globals().get(className,None)
@@ -4202,9 +4204,10 @@ class BashFrame(WindowFrame):
         modNames = set(bosh.modInfos)
         modNames.update(bosh.modInfos.table)
         renames = bass.settings.getChanged(u'bash.mods.renames')
-        for key,value in renames.items():
-            if value not in modNames:
-                del renames[key]
+        # Make a copy, we may alter it in the loop
+        for old_mname, new_mname in list(renames.iteritems()):
+            if new_mname not in modNames:
+                del renames[old_mname]
         #--Clean colors dictionary
         currentColors = set(settings[u'bash.colors'])
         defaultColors = set(settingDefaults[u'bash.colors'])

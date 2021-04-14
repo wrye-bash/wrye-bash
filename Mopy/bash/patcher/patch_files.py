@@ -67,10 +67,9 @@ class PatchFile(ModFile):
                   u'work properly. If this was not intentional, rebuild the '
                   u'patch after either deactivating the imported mods listed '
                   u'below or activating the missing mod(s).'))
-            for patcher, mod_skipcount in \
-                    self.patcher_mod_skipcount.iteritems():
+            for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
                 log(u'* ' + _(u'%s skipped %d records:') % (
-                patcher, sum(mod_skipcount.values())))
+                patcher, sum(mod_skipcount.itervalues())))
                 for mod, skipcount in mod_skipcount.iteritems():
                     log(u'  * ' + _(
                         u'The imported mod, %s, skipped %d records.') % (
@@ -288,15 +287,15 @@ class PatchFile(ModFile):
             patcher.buildPatch(log,SubProgress(subProgress,index))
         # Trim records to only keep ones we actually changed
         progress(0.9,_(u'Completing')+u'\n'+_(u'Trimming records...'))
-        for block in self.tops.values():
+        for block in self.tops.itervalues():
             block.keepRecords(self.keepIds)
         progress(0.95,_(u'Completing')+u'\n'+_(u'Converting fids...'))
         # Convert masters to short fids
         self.tes4.masters = self.getMastersUsed()
         progress(1.0, _(u'Compiled.'))
         # Build the description
-        numRecords = sum(
-            x.getNumRecords(includeGroups=False) for x in self.tops.values())
+        numRecords = sum(x.getNumRecords(includeGroups=False)
+                         for x in self.tops.itervalues())
         self.tes4.description = (
                 _(u'Updated: ') + format_date(time.time()) + u'\n\n' + _(
                 u'Records Changed: %d') % numRecords)

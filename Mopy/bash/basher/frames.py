@@ -48,7 +48,7 @@ class DocBrowser(WindowFrame):
         self._db_is_editing = bosh.modInfos.table.getColumn(u'docEdit')
         self._doc_is_wtxt = False
         # Clean data
-        for mod_name, doc in self._db_doc_paths.items():
+        for mod_name, doc in list(self._db_doc_paths.iteritems()):
             if not isinstance(doc, bolt.Path):
                 self._db_doc_paths[mod_name] = GPath(doc)
         # Singleton

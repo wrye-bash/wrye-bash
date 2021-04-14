@@ -451,7 +451,7 @@ class _ModGroups(CsvParser):
     def assignedGroups():
         """Return all groups that are currently assigned to mods."""
         column = bosh.modInfos.table.getColumn(u'group')
-        return {x[1] for x in column.items() if x[1]} #x=(bolt.Path,'group')
+        return {x for x in column.itervalues() if x}
 
     def writeToModInfos(self,mods=None):
         """Exports mod groups to modInfos."""
@@ -543,8 +543,8 @@ class Mod_Groups(_Mod_Labels):
     def _initData(self, window, selection):
         super(Mod_Groups, self)._initData(window, selection)
         selection = set(selection)
-        mod_group = bosh.modInfos.table.getColumn(u'group').items()
-        modGroup = {x[1] for x in mod_group if x[0] in selection}
+        mod_group = bosh.modInfos.table.getColumn(u'group')
+        modGroup = {x[1] for x in mod_group.iteritems() if x[0] in selection}
         class _CheckGroup(CheckLink, self.__class__.choiceLinkType):
             def _check(self):
                 """Check the Link if any of the selected mods belongs to it."""

@@ -888,8 +888,9 @@ class MelUnion(MelBase):
 
     @property
     def static_size(self):
-        all_elements = self.element_mapping.values() + (
-            [self.fallback] if self.fallback else [])
+        all_elements = list(self.element_mapping.itervalues())
+        if self.fallback:
+            all_elements.append(self.fallback)
         first_size = all_elements[0].static_size # pick arbitrary element size
         if any(element.static_size != first_size for element in all_elements):
             raise exception.AbstractError() # The sizes are not all identical

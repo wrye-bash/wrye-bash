@@ -940,7 +940,7 @@ class ItemStats(_HandleAliases):
                     return u'"%f"' % val
             return _serialize
         self._attr_serializer = {att: _create_lambda(att) for att in set(
-            chain.from_iterable(self.sig_stats_attrs.itervalues()))}
+            chain.from_iterable(self.sig_stats_attrs.viewvalues()))}
 
     def _read_record(self, record, id_data):
         atts = self.sig_stats_attrs[record.rec_sig]

@@ -558,7 +558,7 @@ class _AFixedContainer(_AVmadComponent):
 
     @property
     def used_slots(self):
-        return self.__class__.flags_to_children.values() + super(
+        return list(self.__class__.flags_to_children.itervalues()) + super(
             _AFixedContainer, self).used_slots
 
 class _AVariableContainer(_AVmadComponent):

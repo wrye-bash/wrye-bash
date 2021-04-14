@@ -133,7 +133,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
-        log(u'* ' + _(u'Powers Tweaked') + u': %d' % sum(count.values()))
+        log(u'* ' + _(u'Powers Tweaked') + u': %d' % sum(count.itervalues()))
         for srcMod in load_order.get_ordered(count):
             log(u'  * %s: %d' % (srcMod, count[srcMod]))
 

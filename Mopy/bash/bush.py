@@ -207,7 +207,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
             u'path:')
     # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
     for test_path, foundMsg, errorMsg in installPaths.itervalues():
-        for gamename, info in _allGames.items():
+        for gamename, info in _allGames.iteritems():
             if info.test_game_path(test_path):
                 # Must be this game
                 deprint(foundMsg % {u'gamename': gamename}, test_path)

@@ -43,7 +43,7 @@ def move_to_bash(*files):
     try:
         yield
     finally:
-        for target in file_map.values():
+        for target in file_map.itervalues():
             os.remove(target)
 
 # https://stackoverflow.com/a/18940379

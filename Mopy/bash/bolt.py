@@ -1173,17 +1173,21 @@ class DataDict(object):
     def __iter__(self):
         return iter(self._data)
     def values(self):
-        return self._data.values()
+        return self._data.viewvalues()
+    def itervalues(self): # PY3: Drop
+        return self.values()
+    def viewvalues(self): # PY3: Drop
+        return self.values()
     def items(self):
-        return self._data.items()
+        return self._data.viewitems()
+    def iteritems(self): # PY3: Drop
+        return self.items()
+    def viewitems(self): # PY3: Drop
+        return self.items()
     def get(self,key,default=None):
         return self._data.get(key, default)
     def pop(self,key,default=None):
         return self._data.pop(key, default)
-    def iteritems(self):
-        return self._data.iteritems()
-    def itervalues(self):
-        return self._data.itervalues()
 
 #------------------------------------------------------------------------------
 class AFile(object):
@@ -1574,11 +1578,24 @@ class DataTableColumn(object):
         column = self.column
         return (key for key, col_dict in self._table.iteritems() if
                 column in col_dict)
+    def values(self):
+        """Dictionary emulation."""
+        tableData = self._table._data
+        column = self.column
+        return (tableData[k][column] for k in self)
+    def itervalues(self): # PY3: drop, 2to3 will have made it unused
+        return self.values()
+    def viewvalues(self): # PY3: drop, 2to3 will have made it unused
+        return self.values()
     def items(self):
         """Dictionary emulation."""
         tableData = self._table._data
         column = self.column
-        return [(key,tableData[key][column]) for key in self]
+        return ((k, tableData[k][column]) for k in self)
+    def iteritems(self): # PY3: Drop
+        return self.items()
+    def viewitems(self): # PY3: Drop
+        return self.items()
     def clear(self):
         """Dictionary emulation."""
         self._table.delColumn(self.column)
@@ -1656,9 +1673,10 @@ class DataTable(DataDict):
             del self._data[row]
             self.hasChanged = True
 
+    ##: DataTableColumn.clear is the only usage, and that seems unused too
     def delColumn(self,column):
         """Deletes column of data."""
-        for rowData in self._data.values():
+        for rowData in self._data.itervalues():
             if column in rowData:
                 del rowData[column]
                 self.hasChanged = True

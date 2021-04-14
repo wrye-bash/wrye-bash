@@ -182,7 +182,7 @@ class MelCtda(MelUnion):
     # To avoid having to ask 100s of unions to each set their defaults,
     # declare they have fids, etc. Wastes a *lot* of time.
     def hasFids(self, formElements):
-        self.fid_elements = self.element_mapping.values()
+        self.fid_elements = list(self.element_mapping.itervalues())
         formElements.add(self)
 
     def getLoaders(self, loaders):

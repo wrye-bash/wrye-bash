@@ -385,7 +385,7 @@ class FomodInstaller(object):
                 required_files_elem, self.file_list, self.installer_root)
         user_files = []
         selected_options = [option.option_object
-                            for options in self._previous_pages.values()
+                            for options in self._previous_pages.itervalues()
                             for option in options]
         for option in selected_options:
             option_files = option.find(u'files')
@@ -422,7 +422,7 @@ class FomodInstaller(object):
         Useful for either debugging or testing flag dependencies."""
         fm_flag_dict = {}
         fm_flags_list = [option.option_object.find(u'conditionFlags')
-                         for options in self._previous_pages.values()
+                         for options in self._previous_pages.itervalues()
                          for option in options]
         for fm_flags in fm_flags_list:
             if fm_flags is None:

@@ -45,7 +45,7 @@ class ContentsCheckerPatcher(Patcher):
     patcher_order = 50
     contType_entryTypes = bush.game.cc_valid_types
     contTypes = set(contType_entryTypes)
-    entryTypes = set(chain.from_iterable(contType_entryTypes.itervalues()))
+    entryTypes = set(chain.from_iterable(contType_entryTypes.viewvalues()))
     _read_sigs = tuple(contTypes | entryTypes)
 
     def __init__(self, p_name, p_file):

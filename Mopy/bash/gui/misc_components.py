@@ -240,7 +240,7 @@ class Table(WithCharEvents):
             max_col_lengths = {}
             for col_label, col_cells in sel_cells.iteritems():
                 max_col_lengths[col_label] = max(
-                    imap(len, col_cells.itervalues()))
+                    imap(len, col_cells.viewvalues()))
             # We now have enough info to format the header, so do that
             first_header_line = u' ' * max_row_length + u' | '
             first_header_line += u' | '.join(l.ljust(max_col_lengths[l])

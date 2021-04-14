@@ -583,7 +583,7 @@ class ListEditor(DialogWindow):
             (lid_data.showSave, _(u'Save'), self.DoSave),
             (lid_data.showCancel, _(u'Cancel'), self.DoCancel),
             ]
-        for k,v in (orderedDict or {}).items():
+        for k, v in (orderedDict or {}).iteritems():
             buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
             def _btn(btn_label, btn_callback):

@@ -222,7 +222,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
 
     def __init__(self, parent, page_desc):
         super(ColorsPage, self).__init__(parent, page_desc)
-        self.changes = dict()
+        self.changes = {}
         #--DropDown
         def _display_text(k):
             return self._keys_to_tabs[k.split(u'.')[0]] % colorInfo[k][0]
@@ -278,27 +278,27 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
 
     def UpdateUIButtons(self):
         # Apply All and Default All
-        for key, val in self.changes.items():
-            if val == colors[key]:
-                del self.changes[key]
+        for col_key, changed_color in list(self.changes.iteritems()):
+            if changed_color == colors[col_key]:
+                del self.changes[col_key]
         anyChanged = bool(self.changes)
         allDefault = True
-        for key in colors:
-            if key in self.changes:
-                color = self.changes[key]
+        for col_key in colors:
+            if col_key in self.changes:
+                color = self.changes[col_key]
             else:
-                color = colors[key]
-            default = color == Color(*settingDefaults[u'bash.colors'][key])
+                color = colors[col_key]
+            default = color == Color(*settingDefaults[u'bash.colors'][col_key])
             if not default:
                 allDefault = False
                 break
         # Apply and Default
-        color_key = self.GetColorKey()
-        if color_key in self.changes:
-            color = self.changes[color_key]
+        col_key = self.GetColorKey()
+        if col_key in self.changes:
+            color = self.changes[col_key]
         else:
-            color = colors[color_key]
-        default = color == Color(*settingDefaults[u'bash.colors'][color_key])
+            color = colors[col_key]
+        default = color == Color(*settingDefaults[u'bash.colors'][col_key])
         # Update the Buttons, DropDown, and ColorPicker
         if self._mark_changed:
             # If _mark_changed is None, then we're still in the construction
@@ -487,7 +487,7 @@ class LanguagePage(_AScrollablePage):
         # If the user has an unknown language active
         active_lang = self._internal_to_localized[u'en_US']
         for internal_name, localized_name in sorted(izip(
-                all_langs, localized_langs), key=lambda l: l[1]):
+                all_langs, localized_langs), key=lambda x: x[1]):
             if self._is_active_lang(internal_name):
                 active_lang = localized_name
                 break
@@ -1132,8 +1132,8 @@ class ConfirmationsPage(_AFixedPage):
     def _populate_confirmations(self):
         """Repopulates the list of confirmations and ticks them according to
         bass.settings."""
-        sorted_confs = sorted(self._confirmations.iteritems(),
-            key=lambda c: c[0])
+        sorted_confs = sorted(self._confirmations.viewitems(),
+                              key=lambda x: x[0])
         if self._show_keys_checkbox.is_checked:
             conf_names = [u'%s (%s)' % c for c in sorted_confs]
         else:
@@ -1459,7 +1459,7 @@ class TrustedBinariesPage(_AFixedPage):
                             raise SyntaxError(u'Invalid format: expected '
                                               u'"version: [name, size, crc]"')
                         # Strip any spacing due to the repr used when exporting
-                        ver_components = [s.strip() for s in ver_components]
+                        ver_components = [c.strip() for c in ver_components]
                         inst_name, inst_size, inst_crc = ver_components
                         current[dll].append((
                             parse_path(inst_name), parse_int(inst_size),

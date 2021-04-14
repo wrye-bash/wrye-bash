@@ -555,7 +555,7 @@ class SaveFile(object):
                 rec_kind, rec_type_map.get(rec_kind, _(u'Unknown'))))
             for modIndex,count in dict_sort(modHisto):
                 log(u'  %d\t%s' % (count,getMaster(modIndex)))
-            log(u'  %d\tTotal' % (sum(modHisto.values()),))
+            log(u'  %d\tTotal' % sum(modHisto.itervalues()))
         objRefBases = {k: v for k, v in objRefBases.iteritems() if v[0] > 100}
         log.setHeader(_(u'New ObjectRef Bases'))
         if objRefNullBases:

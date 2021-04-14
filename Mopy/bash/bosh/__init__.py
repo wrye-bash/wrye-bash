@@ -345,7 +345,7 @@ class FileInfo(AFile, ListInfo):
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
         #--Skip backup?
-        if not self in self.get_store().values(): return
+        if self not in self.get_store().viewvalues(): return
         if self.madeBackup and not forceBackup: return
         #--Backup
         self.get_store().copy_info(self.name, backupDir)
@@ -1336,7 +1336,7 @@ class SaveInfo(FileInfo):
         master_map = {x.s: y.s for x, y in
                       izip(oldMasters, self.header.masters) if x != y}
         if master_map:
-            for co_file in self._co_saves.values():
+            for co_file in self._co_saves.itervalues():
                 co_file.remap_plugins(master_map)
                 co_file.write_cosave_safe()
 
@@ -1428,7 +1428,7 @@ class SaveInfo(FileInfo):
         # super call added the backup paths but not the actual rename cosave
         # paths inside the store_dir - add those only if they exist
         old, new = old_new_paths[0] # HACK: (oldName.ess, newName.ess) abspaths
-        for co_type, co_file in self._co_saves.items():
+        for co_type, co_file in self._co_saves.iteritems():
             old_new_paths.append((co_file.abs_path,
                                   co_type.get_cosave_path(new)))
         return old_new_paths
@@ -1602,7 +1602,7 @@ class TableFileInfos(DataStore):
                 if filePath.exists():
                     del paths_to_keys[filePath] # item was not deleted
         self._notify_bain(deleted=paths_to_keys)
-        return paths_to_keys.values()
+        return list(paths_to_keys.itervalues())
 
     def _notify_bain(self, deleted=frozenset(), changed=frozenset(),
                      renamed={}):
@@ -1799,7 +1799,8 @@ class INIInfos(TableFileInfos):
                 choice, previous_ini = -1, None
         else: # not an OrderedDict, updating from 306
             choice, previous_ini = -1, None
-        for ini_name, ini_path in _target_inis.items(): # dict may be modified
+        # Make a copy, we may modify the _target_inis dict
+        for ini_name, ini_path in list(_target_inis.iteritems()):
             if ini_name == _(u'Browse...'): continue
             # If user started with non-translated, 'Browse...'
             # will still be in here, but in English.  It wont get picked
@@ -1826,7 +1827,7 @@ class INIInfos(TableFileInfos):
             choice = list(bass.settings[u'bash.ini.choices']).index(
                 previous_ini)
         bass.settings[u'bash.ini.choice'] = choice if choice >= 0 else 0
-        self.ini = bass.settings[u'bash.ini.choices'].values()[
+        self.ini = list(bass.settings[u'bash.ini.choices'].itervalues())[
             bass.settings[u'bash.ini.choice']]
 
     @property
@@ -1967,7 +1968,7 @@ class INIInfos(TableFileInfos):
                     if setting in target_settings[section]:
                         new_tweak_settings[section][setting] = \
                             target_settings[section][setting]
-        for k,v in new_tweak_settings.items(): # drop line numbers
+        for k, v in list(new_tweak_settings.iteritems()): # drop line numbers
             new_tweak_settings[k] = { # saveSettings converts to LowerDict
                 sett: val[0] for sett, val in v.iteritems()}
         dup_info.saveSettings(new_tweak_settings)
@@ -2813,7 +2814,8 @@ class ModInfos(FileInfos):
             return True
 
     def ini_files(self): ##: What about SkyrimCustom.ini etc?
-        iniFiles = self._plugin_inis.values() # in active order
+        # PY3: We can replace this with reversed() on 3.8+
+        iniFiles = list(self._plugin_inis.itervalues()) # in active order
         iniFiles.reverse() # later loading inis override previous settings
         iniFiles.append(oblivionIni)
         return iniFiles
@@ -2868,7 +2870,7 @@ class ModInfos(FileInfos):
         those plugins. Otherwise, returns it for all plugins."""
         if for_plugins is None: for_plugins = list(self)
         # We'll be removing BSAs from here once we've given them a position
-        available_bsas = dict(bsaInfos.iteritems())
+        available_bsas = dict(bsaInfos.viewitems())
         bsa_lo = OrderedDict() # Final load order, -1 means it came from an INI
         bsa_cause = {} # Reason each BSA was loaded
         def _bsas_from_ini(i, k):
@@ -3248,14 +3250,14 @@ class SaveInfos(FileInfos):
         """Renames member file from oldName to newName, update also cosave
         instance names."""
         old_key = super(SaveInfos, self).rename_operation(member_info, newName)
-        for co_type, co_file in self[newName]._co_saves.items():
+        for co_type, co_file in self[newName]._co_saves.iteritems():
             co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
         return old_key
 
     def _additional_deletes(self, fileInfo, toDelete):
         # type: (SaveInfo, list) -> None
         toDelete.extend(
-            x.abs_path for x in fileInfo._co_saves.values())
+            x.abs_path for x in fileInfo._co_saves.itervalues())
         # now add backups and cosaves backups
         super(SaveInfos, self)._additional_deletes(fileInfo, toDelete)
 
@@ -3271,7 +3273,7 @@ class SaveInfos(FileInfos):
             co_instances = self[fileName]._co_saves
         except KeyError: # fileName is outside self.store_dir
             co_instances = SaveInfo.get_cosaves_for_path(fileName)
-        for co_type, co_file in co_instances.items():
+        for co_type, co_file in co_instances.iteritems():
             newPath = co_type.get_cosave_path(dest_path)
             if newPath.exists(): newPath.remove() ##: dont like it, investigate
             if co_file.abs_path.exists(): pathFunc(co_file.abs_path, newPath)

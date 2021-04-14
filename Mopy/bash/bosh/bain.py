@@ -1022,7 +1022,7 @@ class Installer(ListInfo):
             else: status = 30
         #--Clean Dirty
         dirty_sizeCrc = self.dirty_sizeCrc
-        for filename,sizeCrc in dirty_sizeCrc.items():
+        for filename, sizeCrc in list(dirty_sizeCrc.iteritems()):
             sizeCrcDate = data_sizeCrcDate.get(filename)
             if (not sizeCrcDate or sizeCrc != sizeCrcDate[:2] or
                 sizeCrc == data_sizeCrc.get(filename)
@@ -1386,7 +1386,7 @@ class InstallerArchive(Installer):
     def _install(self, dest_src, progress):
         #--Extract
         progress(0, (u'%s\n' % self) + _(u'Extracting files...'))
-        unpackDir = self.unpackToTemp(dest_src.values(),
+        unpackDir = self.unpackToTemp(list(dest_src.itervalues()),
                                       SubProgress(progress, 0, 0.9))
         #--Rearrange files
         progress(0.9, (u'%s\n' % self) + _(u'Organizing files...'))
@@ -1652,8 +1652,8 @@ def projects_walk_cache(func): ##: HACK ! Profile
         try:
             return func(self, *args, **kwargs)
         finally:
-            it = self.itervalues() if isinstance(self, InstallersData) else \
-                self.listData.itervalues()
+            it = (self.viewvalues() if isinstance(self, InstallersData) else
+                  self.listData.viewvalues())
             for project in it:
                 if project.is_project():
                     project._dir_dirs_files = None
@@ -2267,7 +2267,7 @@ class InstallersData(DataStore):
             InstallersData._externally_updated)
         InstallersData._externally_updated.clear()
         InstallersData._externally_deleted.clear()
-        for abspath, tracked in InstallersData._miscTrackedFiles.items():
+        for abspath, tracked in list(InstallersData._miscTrackedFiles.iteritems()):
             if not abspath.exists(): # untrack - runs on first run !!
                 InstallersData._miscTrackedFiles.pop(abspath, None)
                 deleted.add(abspath)
@@ -2343,7 +2343,7 @@ class InstallersData(DataStore):
         in the new ini."""
         removed = set()
         from . import iniInfos
-        pseudosections = set(OBSEIniFile.ci_pseudosections.values())
+        pseudosections = set(OBSEIniFile.ci_pseudosections.itervalues())
         for (tweakPath, iniAbsDataPath) in tweaksCreated:
             iniFile = BestIniFile(iniAbsDataPath)
             currSection = None
@@ -2469,7 +2469,7 @@ class InstallersData(DataStore):
         :type package_keys: None | collections.Iterable[Path]
         :rtype: list[Installer]
         """
-        if package_keys is None: values = self.values()
+        if package_keys is None: values = self.viewvalues()
         else: values = [self[k] for k in package_keys]
         return sorted(values, key=attrgetter('order'), reverse=reverse)
 
@@ -2588,7 +2588,7 @@ class InstallersData(DataStore):
 
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
-        if unArchives == u'ALL': unArchives = frozenset(self.itervalues())
+        if unArchives == u'ALL': unArchives = frozenset(self.viewvalues())
         else: unArchives = frozenset(self[x] for x in unArchives)
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that

@@ -84,7 +84,7 @@ class APreserver(ImportPatcher):
                 v for d in self.rec_type_attrs.itervalues()
                 for v in d.itervalues())
         else:
-            all_attrs = chain.from_iterable(self.rec_type_attrs.itervalues())
+            all_attrs = chain.from_iterable(self.rec_type_attrs.viewvalues())
         self._deep_attrs = any(u'.' in a for a in all_attrs)
         # Split srcs based on CSV extension ##: move somewhere else?
         self.csv_srcs = [s for s in p_sources if s.cext == u'.csv']
@@ -550,7 +550,7 @@ class ImportCellsPatcher(ImportPatcher):
         self.cellData.clear()
         self._patchLog(log, count)
 
-    def _plog(self,log,count): # type 1 but for logMsg % sum(count.values())...
+    def _plog(self,log,count): # type 1 but for logMsg % sum(...)
         log(self.__class__.logMsg)
         for srcMod in load_order.get_ordered(count):
             log(u'* %s: %d' % (srcMod,count[srcMod]))
