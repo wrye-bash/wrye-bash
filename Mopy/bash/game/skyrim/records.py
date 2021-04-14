@@ -4697,21 +4697,6 @@ class MreScen(MelRecord):
     rec_sig = b'SCEN'
 
     ScenFlags5 = Flags(0, Flags.getNames(
-            (0, 'unknown1'),
-            (1, 'unknown2'),
-            (2, 'unknown3'),
-            (3, 'unknown4'),
-            (4, 'unknown5'),
-            (5, 'unknown6'),
-            (6, 'unknown7'),
-            (7, 'unknown8'),
-            (8, 'unknown9'),
-            (9, 'unknown10'),
-            (10, 'unknown11'),
-            (11, 'unknown12'),
-            (12, 'unknown13'),
-            (13, 'unknown14'),
-            (14, 'unknown15'),
             (15, 'faceTarget'),
             (16, 'looping'),
             (17, 'headtrackPlayer'),
