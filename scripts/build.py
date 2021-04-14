@@ -243,15 +243,6 @@ def download_redists():
     present."""
     if not os.path.isdir(REDIST_PATH):
         os.makedirs(REDIST_PATH)
-    msvc_2010_x86 = os.path.join(REDIST_PATH, u'vcredist_2010_x86.exe')
-    if not os.path.isfile(msvc_2010_x86):
-        LOGGER.info(u'MSVC 2010 x86 redistributable not found, downloading')
-        utils.download_file(u'https://download.microsoft.com/download/5/B/C/'
-                            u'5BC5DBB3-652D-4DCE-B14A-475AB85EEF6E/'
-                            u'vcredist_x86.exe', msvc_2010_x86)
-        LOGGER.debug(u'MSVC 2010 x86 redistributable downloaded successfully')
-    else:
-        LOGGER.debug(u'MSVC 2010 x86 redistributable found')
     msvc_2010_x64 = os.path.join(REDIST_PATH, u'vcredist_2010_x64.exe')
     if not os.path.isfile(msvc_2010_x64):
         LOGGER.info(u'MSVC 2010 x64 redistributable not found, downloading')
