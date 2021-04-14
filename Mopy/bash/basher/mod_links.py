@@ -1686,7 +1686,13 @@ class Mod_Face_Import(OneItemLink):
     def Execute(self):
         #--Select source face file
         srcDir = bosh.saveInfos.store_dir
-        wildcard = _(u'%s Files')%bush.game.displayName+u' (*.ess;*.esr)|*.ess;*.esr'
+        wildcard = (_(u'%(game_name)s Saves (*%(save_ext_on)s;'
+                      u'*%(save_ext_off)s)')
+                    + u'|*%(save_ext_on)s;*%(save_ext_off)s') % {
+            u'game_name': bush.game.displayName,
+            u'save_ext_on': bush.game.Ess.ext,
+            u'save_ext_off': bush.game.Ess.ext[:-1] + u'r',
+        }
         #--File dialog
         srcPath = self._askOpen(_(u'Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard, mustExist=True)

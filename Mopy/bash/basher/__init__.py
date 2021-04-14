@@ -2151,14 +2151,17 @@ class SaveList(balt.UIList):
         if hitItem.cext == u'.bak':
             balt.showError(self, _(u'You cannot enable save backups.'))
             return
+        enabled_ext = bush.game.Ess.ext
+        disabled_ext = enabled_ext[:-1] + u'r'
         msg = _(u'Clicking on a save icon will disable/enable the save '
-                u'by changing its extension to %(ess)s (enabled) or .esr '
-                u'(disabled).') % {u'ess': bush.game.Ess.ext}
+                u'by changing its extension to %(save_ext_on)s (enabled) or '
+                u'%(save_ext_off)s (disabled).') % {
+            u'save_ext_on': enabled_ext, u'save_ext_off': disabled_ext}
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
         sinf = self.data_store[hitItem]
         do_enable = not sinf.is_save_enabled()
-        extension = bush.game.Ess.ext if do_enable else hitItem.ext[:-1] + u'r'
+        extension = enabled_ext if do_enable else disabled_ext
         rename_res = self.try_rename(sinf, hitItem.root, ext=extension)
         if rename_res:
             self.RefreshUI(redraw=[rename_res[1]], to_del=[hitItem])
