@@ -1692,14 +1692,14 @@ class Mod_Face_Import(OneItemLink):
                                 wildcard=wildcard, mustExist=True)
         if not srcPath: return
         #--Get face
-        srcInfo = bosh.SaveInfo(srcPath)
+        srcInfo = bosh.SaveInfo(srcPath, load_cache=True)
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
         npc = bosh.faces.PCFaces.mod_addFace(self._selected_info, srcFace)
-        #--Save Face picture? # FIXME(ut) does not save face picture but save screen ?!
+        ##: Saves an image of the save file's screenshot for some reason?
         imagePath = bosh.modInfos.store_dir.join(u'Docs', u'Images', npc.eid + u'.jpg')
         if not imagePath.exists():
-            srcInfo.readHeader()
+            srcInfo.header.read_save_header(load_image=True)
             # TODO(inf) de-wx! Again, image/bitmap stuff
             image = ImageWrapper.from_bitstream(
                 *srcInfo.header.image_parameters).ConvertToImage()

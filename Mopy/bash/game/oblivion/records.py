@@ -1409,24 +1409,24 @@ class MreNpc(MreActorBase):
         self.race = race
         if not self.model:
             self.model = self.getDefault('model')
-        if race in (0x23fe9,0x223c7):
+        if race in (0x23fe9, 0x223c7): # Argonian & Khajiit
             self.model.modPath = u"Characters\\_Male\\SkeletonBeast.NIF"
         else:
             self.model.modPath = u"Characters\\_Male\\skeleton.nif"
         fnams = {
-            0x23fe9 : 0x3cdc ,#--Argonian
-            0x224fc : 0x1d48 ,#--Breton
-            0x191c1 : 0x5472 ,#--Dark Elf
-            0x19204 : 0x21e6 ,#--High Elf
-            0x00907 : 0x358e ,#--Imperial
-            0x22c37 : 0x5b54 ,#--Khajiit
-            0x224fd : 0x03b6 ,#--Nord
-            0x191c0 : 0x0974 ,#--Orc
-            0x00d43 : 0x61a9 ,#--Redguard
-            0x00019 : 0x4477 ,#--Vampire
-            0x223c8 : 0x4a2e ,#--Wood Elf
-            }
-        self.fnam = fnams.get(race,0x358e)
+            0x23fe9 : b'\xdc<',    # Argonian
+            0x224fc : b'H\x1d',    # Breton
+            0x191c1 : b'rT',       # Dark Elf
+            0x19204 : b'\xe6!',    # High Elf
+            0x00907 : b'\x8e5',    # Imperial
+            0x22c37 : b'T[',       # Khajiit
+            0x224fd : b'\xb6\x03', # Nord
+            0x191c0 : b't\t',      # Orc
+            0x00d43 : b'\xa9a',    # Redguard
+            0x00019 : b'wD',       # Vampire
+            0x223c8 : b'.J',       # Wood Elf
+        }
+        self.fnam = fnams.get(race, b'\x8e5') # default to Imperial
 
 class MrePack(MelRecord):
     """AI Package."""
