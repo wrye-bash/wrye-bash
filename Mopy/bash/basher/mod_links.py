@@ -679,8 +679,6 @@ class Mod_CreateLOOTReport(_NotObLink):
             curr_tags = fileInfo.getBashTags()
             added = curr_tags - desc_tags
             removed = desc_tags - curr_tags
-            if not added and not removed:
-                continue # Skip if it's going to be a useless entry
             # Name of file, plus a link if we can figure it out
             log_txt += u"  - name: '%s'\n" % fileName
             inst = fileInfo.get_table_prop(u'installer', u'')
@@ -695,14 +693,9 @@ class Mod_CreateLOOTReport(_NotObLink):
                     log_txt += u'    tag:\n'
                     for fmt_tag in fmt_tags:
                         log_txt += u'      - %s\n' % fmt_tag
-        if not log_txt:
-            self._showWarning(_(u'No tags applied that are not already in the '
-                                u'plugin description, entry would not be '
-                                u'useful.'))
-        else:
-            # Show results + copy to clipboard
-            copy_text_to_clipboard(log_txt)
-            self._showLog(log_txt, title=_(u'LOOT Entry'), fixedFont=False)
+        # Show results + copy to clipboard
+        copy_text_to_clipboard(log_txt)
+        self._showLog(log_txt, title=_(u'LOOT Entry'), fixedFont=False)
 
 class Mod_CopyModInfo(ItemLink):
     """Copies the basic info about selected mod(s)."""
