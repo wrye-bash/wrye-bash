@@ -225,6 +225,9 @@ class AMultiTweakItem(object):
             self.default = 0 # no explicit default item, so default to first
         # Create the custom choice if a label was specified for it
         if self.custom_choice is not None:
+            # Add a separator right before the custom choice
+            self.choiceLabels.append(u'----')
+            self.choiceValues.append(u'----')
             self.choiceLabels.append(self.custom_choice)
             self.choiceValues.append(self.choiceValues[self.default])
         #--Config

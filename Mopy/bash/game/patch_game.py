@@ -144,7 +144,7 @@ class PatchGame(GameInfo):
         u'vatsAp': (float_or_none, _(u'VATS AP')),
         u'clipRounds': (int_or_zero, _(u'Clip Rounds')),
         u'jamTime': (float_or_none, _(u'Jam Time')),
-        u'dt': (float_or_none, _(u'DT')),
+        u'dt': (float_or_none, _(u'Damage Threshold')),
         u'criticalMultiplier': (float_or_none, _(u'Critical Multiplier')),
         u'maxRange': (float_or_none, _(u'Maximum Range')),
         u'rumbleLeftMotorStrength': (
