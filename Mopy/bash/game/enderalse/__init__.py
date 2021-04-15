@@ -49,6 +49,10 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     nexusName = u'Enderal Special Edition Nexus'
     nexusKey = u'bash.installers.openEnderalSENexus.continue'
 
+    class Xe(EnderalGameInfo.Xe):
+        full_name = u'EnderalSEEdit'
+        xe_key_prefix = u'enderalSEView'
+
     class Ini(EnderalGameInfo.Ini):
         save_prefix = u'..\\Enderal Special Edition\\Saves'
 

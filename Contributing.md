@@ -40,10 +40,11 @@ To contribute, set up a fork and PyCharm [as detailed here](https://github.com/w
 Our wiki contains dev, git and github labelled articles to get you started with
 setting up the repository and git basics. Please read at least:
 
-* [[git] Syncing a Fork with the main repository](https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Syncing-a-Fork-with-the-main-repository).
 * [[dev] Coding Style](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style)
 * [[dev] Deciphering Source Filenames](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Deciphering-Source-Filenames)
 * [[dev] Commit guidelines](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Commit-guidelines)
+* [[git] Syncing a Fork with the main repository](https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Syncing-a-Fork-with-the-main-repository).
+* [[github] Branching Model & Using The Repository](/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&-Using-The-Repository)
 
 When ready: do not issue a pull request - contact instead a member of the team
 in the relevant issue or mentioning them on your commit and let them review.
