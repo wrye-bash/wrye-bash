@@ -526,9 +526,9 @@ class MreArma(MelRecord):
         MelStruct(b'DATA', [u'I', u'I', u'f'],'value','health','weight'),
         if_fnv(
             fo3_version=MelStruct(
-                b'DNAM', [u'h', u'H'], 'ar', (_dnamFlags, u'dnamFlags')),
+                b'DNAM', [u'h', u'H'], 'dr', (_dnamFlags, u'dnamFlags')),
             fnv_version=MelTruncatedStruct(
-                b'DNAM', [u'h', u'H', u'f', u'4s'], 'ar',
+                b'DNAM', [u'h', u'H', u'f', u'4s'], 'dr',
                 (_dnamFlags, u'dnamFlags'), 'dt', 'armaDnam1',
                 old_versions={'hH'}),
         ),
@@ -565,9 +565,9 @@ class MreArmo(MelRecord):
         MelStruct(b'DATA', [u'2i', u'f'],'value','health','weight'),
         if_fnv(
             fo3_version=MelStruct(
-                b'DNAM', [u'h', u'H'], 'ar', (_dnamFlags, u'dnamFlags')),
+                b'DNAM', [u'h', u'H'], 'dr', (_dnamFlags, u'dnamFlags')),
             fnv_version=MelTruncatedStruct(
-                b'DNAM', [u'h', u'H', u'f', u'4s'], 'ar',
+                b'DNAM', [u'h', u'H', u'f', u'4s'], 'dr',
                 (_dnamFlags, u'dnamFlags'), 'dt', 'armoDnam1',
                 old_versions={'hH'}),
         ),
@@ -3244,7 +3244,7 @@ class MreWeap(MelRecord):
                     'rumbleRightMotorStrength', 'rumbleDuration',
                     'overrideDamageToWeaponMult', 'attackShotsPerSec',
                     'reloadTime', 'jamTime', 'aimArc', ('skill', 45),
-                    'rumblePattern', 'rambleWavelangth', 'limbDmgMult',
+                    'rumblePattern', 'rumbleWavelength', 'limbDmgMult',
                     ('resistType', -1), 'sightUsage',
                     'semiAutomaticFireDelayMin', 'semiAutomaticFireDelayMax']
 
