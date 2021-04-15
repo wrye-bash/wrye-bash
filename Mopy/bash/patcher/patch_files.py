@@ -156,7 +156,7 @@ class PatchFile(ModFile):
         self.compiledAllMods = []
         self.patcher_mod_skipcount = defaultdict(Counter)
         #--Config
-        self.bodyTags = bush.game.body_tags
+        self.bodyTags = u''
         #--Mods
         # checking for files to include in patch, investigate
         loadMods = [m for m in load_order.cached_lower_loading(

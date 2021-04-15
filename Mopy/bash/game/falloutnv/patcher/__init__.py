@@ -257,6 +257,12 @@ actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
 assorted_tweaks |= {u'AssortedTweak_ArrowWeight'}
 
 #------------------------------------------------------------------------------
-# Tweak Assorted
+# Tweak Settings
 #------------------------------------------------------------------------------
 settings_tweaks |= {u'GmstTweak_Actor_StrengthEncumbranceMultiplier'}
+
+#------------------------------------------------------------------------------
+# Tweak Names
+#------------------------------------------------------------------------------
+names_tweaks -= {u'NamesTweak_AmmoWeight_Fo3'}
+names_tweaks |= {u'NamesTweak_AmmoWeight_Fnv'}

@@ -388,7 +388,8 @@ class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
             return _(u'Maximum potion weight cannot exceed 1.0. Potions with '
                      u'higher weight are ignored by this tweak (since they '
                      u"are usually special 'potion in name only' items).")
-        return None
+        return super(AssortedTweak_PotionWeight, self).validate_values(
+            chosen_values)
 
     def wants_record(self, record):
         return record.weight < 1.0 and super(

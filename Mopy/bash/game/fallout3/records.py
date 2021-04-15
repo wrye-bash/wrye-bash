@@ -125,7 +125,7 @@ class MelBipedData(MelStruct):
     _biped_flags = BipedFlags()
     _general_flags = Flags(0, Flags.getNames(
         fnv_only((2, u'hasBackpack')),
-        fnv_only((3, u'medium')),
+        fnv_only((3, u'medium_armor')),
         (5, u'powerArmor'),
         (6, u'notPlayable'),
         (7, u'heavyArmor'),
@@ -207,6 +207,21 @@ class MelEmbeddedScript(MelSequential):
 class MelEquipmentType(MelSInt32):
     """Handles the common ETYP subrecord."""
     def __init__(self):
+        ##: On py3, we really need enums for records. This is a prime candidate
+        # 00: 'Big Guns',
+        # 01: 'Energy Weapons',
+        # 02: 'Small Guns',
+        # 03: 'Melee Weapons',
+        # 04: 'Unarmed Weapon',
+        # 05: 'Thrown Weapons',
+        # 06: 'Mine',
+        # 07: 'Body Wear',
+        # 08: 'Head Wear',
+        # 09: 'Hand Wear',
+        # 10: 'Chems',
+        # 11: 'Stimpak',
+        # 12: 'Food',
+        # 13: 'Alcohol'
         super(MelEquipmentType, self).__init__(b'ETYP', u'equipment_type', -1)
 
 #------------------------------------------------------------------------------

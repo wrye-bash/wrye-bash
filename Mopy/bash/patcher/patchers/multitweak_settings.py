@@ -170,7 +170,7 @@ class _AGmstTweak(MultiTweakItem):
                     return _(u"The value chosen for GMST '%s' must be a "
                              u'float, but is currently of type %s (%s).') % (
                         target_eid, type(target_value).__name__, target_value)
-        return None
+        return super(_AGmstTweak, self).validate_values(chosen_values)
 
     def wants_record(self, record):
         if record.fid[0] not in bush.game.bethDataFiles:

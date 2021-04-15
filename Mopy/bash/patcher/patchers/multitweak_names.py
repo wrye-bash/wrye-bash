@@ -20,49 +20,143 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module contains oblivion multitweak item patcher classes that belong
 to the Names Multitweaker - as well as the tweaker itself."""
 
 from __future__ import division
 
 import re
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 
 # Internal
-from .base import MultiTweakItem, IndexingTweak, MultiTweaker
+from .base import MultiTweakItem, IndexingTweak, MultiTweaker, \
+    CustomChoiceTweak
+from ... import bush
 from ...bolt import build_esub, RecPath
 from ...exception import AbstractError, BPConfigError
 
-_ignored_chars=frozenset(u'+-=.()[]')
+_ignored_chars = frozenset(u'+-=.()[]<>')
 
-class _ANamesTweak(MultiTweakItem):
+##: The Armor/Clothes tweaks allow customizing the tags used. The others should
+# too, but before we do that we need to replace NamesTweak_BodyPartCodes with
+# something better (e.g. a special 'settings patcher' inside the BP)
+
+class _ANamesTweak(CustomChoiceTweak):
     """Shared code of names tweaks."""
     tweak_log_msg = _(u'Items Renamed: %(total_changed)d')
     _tweak_mgef_hostiles = set()
     _tweak_mgef_school = {}
+    _choice_formats = [] # The default formats for this tweak
+    _example_item = _example_code = u'' # An example item name and its code
+    _example_stat = 0 # The example item's stat
+    _may_have_stats = False # Whether formats with '%02d' in them are OK
+    _may_lack_specifiers = False # Whether formats without '%s' in them are OK
+    _prepends_name = False # Whether the tweak prepends or appends the name
+
+    def __init__(self):
+        # Generate choices based on the example item, code and stat
+        dynamic_choices = []
+        for choice_fmt in self._choice_formats:
+            if choice_fmt == u'----':
+                formatted_label = u'----'
+            else:
+                if self._may_have_stats and u'%02d' in choice_fmt:
+                    formatted_label = choice_fmt % (self._example_code,
+                                                    self._example_stat)
+                elif self._may_lack_specifiers and u'%s' not in choice_fmt:
+                    formatted_label = choice_fmt
+                else:
+                    formatted_label = choice_fmt % self._example_code
+                if self._prepends_name:
+                    formatted_label = self._example_item + formatted_label
+                else:
+                    formatted_label += self._example_item
+            dynamic_choices.append((formatted_label, choice_fmt))
+        self.tweak_choices = dynamic_choices
+        super(_ANamesTweak, self).__init__()
 
     @property
     def chosen_format(self): return self.choiceValues[self.chosen][0]
 
+    def validate_values(self, chosen_values):
+        wanted_fmt = chosen_values[0]
+        if self._may_lack_specifiers:
+            if self._may_have_stats:
+                # May contain any combination of a single %s and a single %02d,
+                # but no other specifiers
+                fmt_params = ()
+                if u'%s' in wanted_fmt:
+                    fmt_params = (u'A', 1) if u'%02d' in wanted_fmt else u'A'
+                elif u'%02d' in wanted_fmt:
+                    fmt_params = 1
+                if fmt_params:
+                    try:
+                        wanted_fmt % fmt_params
+                    except TypeError:
+                        return _(u'The format you entered is not valid for '
+                                 u'this tweak. It may contain exactly one '
+                                 u"'%s' and one '%02d' as well as any regular "
+                                 u'characters, but no other format '
+                                 u"specifiers. See the 'Tweak Names' section "
+                                 u'of the Advanced Readme for more '
+                                 u'information.')
+            else:
+                # May contain a single %s, but no other specifiers
+                if u'%s' in wanted_fmt:
+                    try:
+                        wanted_fmt % u'A'
+                    except TypeError:
+                        return _(u'The format you entered is not valid for '
+                                 u'this tweak. It may contain exactly one '
+                                 u"'%s' and any regular characters, but no "
+                                 u"other format specifiers. See the 'Tweak "
+                                 u"Names' section of the Advanced Readme for "
+                                 u'more information.')
+        elif self._may_have_stats:
+            # Must contain a single %s and may contain a %02d
+            fmt_params = (u'A', 1) if u'%02d' in wanted_fmt else u'A'
+            try:
+                wanted_fmt % fmt_params
+            except TypeError:
+                return _(u'The format you entered is not valid for this '
+                         u"tweak. It must contain exactly one '%s' and may "
+                         u"contain one '%02d' as well as any regular "
+                         u'characters, but no other format specifiers. See '
+                         u"the 'Tweak Names' section of the Advanced Readme "
+                         u'for more information.')
+        else:
+            # Must contain a single %s and no other specifiers
+            try:
+                wanted_fmt % u'A'
+            except TypeError:
+                return _(u'The format you entered is not valid for this '
+                         u"tweak. It must contain exactly one '%s' and may "
+                         u'contain any regular characters, but no other '
+                         u"format specifiers. See the 'Tweak Names' section "
+                         u'of the Advanced Readme for more information.')
+        return super(_ANamesTweak, self).validate_values(chosen_values)
+
+    def wants_record(self, record):
+        old_full = record.full
+        # Skip records that are probably already labeled or otherwise unusual
+        # (i.e. start with a non-word character)
+        return (old_full and old_full[0] not in _ignored_chars and
+                old_full != self._exec_rename(record))
+
     def tweak_record(self, record):
         record.full = self._exec_rename(record)
 
-    def _do_exec_rename(self, *placeholder):
-        """Does the actual renaming, returning the new name as its result.
-        Should take any information it needs as parameters - see overrides for
-        examples."""
-        raise AbstractError(u'_do_exec_rename not implemented')
-
     def _exec_rename(self, record):
-        """Convenience method that calls _do_exec_rename, passing the correct
-        record attributes in."""
-        return self._do_exec_rename(*self._get_rename_params(record))
+        """Does the actual renaming, returning the new name as its result."""
+        raise AbstractError(u'_exec_rename not implemented')
 
-    def _get_rename_params(self, record):
-        """Returns the parameters that should be passed to _do_exec_rename.
-        Passes only the record itself by default."""
-        return (record,)
+class _AMgefNamesTweak(_ANamesTweak):
+    """Shared code of a few names tweaks that handle MGEFs.
+    Oblivion-specific."""
+    def prepare_for_tweaking(self, patch_file):
+        self._tweak_mgef_hostiles = patch_file.getMgefHostiles()
+        self._tweak_mgef_school = patch_file.getMgefSchool()
+        super(_ANamesTweak, self).prepare_for_tweaking(patch_file)
 
     def _is_effect_hostile(self, magic_effect):
         """Returns a truthy value if the specified MGEF is hostile."""
@@ -70,19 +164,6 @@ class _ANamesTweak(MultiTweakItem):
                 if magic_effect.scriptEffect
                 else magic_effect.effect_sig in self._tweak_mgef_hostiles)
 
-    def _try_renaming(self, record):
-        """Checks if renaming via _exec_rename would change the specified
-        record's name."""
-        return record.full != self._exec_rename(record)
-
-    def prepare_for_tweaking(self, patch_file):
-        # These are cached, so fine to call for all tweaks
-        self._tweak_mgef_hostiles = patch_file.getMgefHostiles()
-        self._tweak_mgef_school = patch_file.getMgefSchool()
-        super(_ANamesTweak, self).prepare_for_tweaking(patch_file)
-
-class _AMgefNamesTweak(_ANamesTweak):
-    """Shared code of a few names tweaks that handle MGEFs."""
     def _get_effect_school(self, magic_effect):
         """Returns the school of the specified MGEF."""
         return (magic_effect.scriptEffect.school if magic_effect.scriptEffect
@@ -91,114 +172,191 @@ class _AMgefNamesTweak(_ANamesTweak):
     def wants_record(self, record):
         # Once we have MGEFs indexed, we can try renaming to check more
         # thoroughly (i.e. during the buildPatch/apply phase)
-        return (record.full and (not self._tweak_mgef_hostiles or
-                self._try_renaming(record)))
+        old_full = record.full
+        return (old_full and (not self._tweak_mgef_hostiles or
+                old_full != self._exec_rename(record)))
 
 ##: This would be better handled with some sort of settings menu for the BP
-class NamesTweak_BodyTags(MultiTweakItem): # not _ANamesTweak, no classes!
+class NamesTweak_BodyPartCodes(CustomChoiceTweak): # loads no records
     """Only exists to change _PFile.bodyTags - see _ANamesTweaker.__init__ for
     the implementation."""
     tweak_name = _(u'Body Part Codes')
-    tweak_tip = _(u'Sets body part codes used by Armor/Clothes name tweaks. '
-                  u'A: Amulet, R: Ring, etc.')
+    tweak_tip = _(u'Sets body part codes used by Armor/Clothes name tweaks.')
     tweak_key = u'bodyTags'
-    tweak_choices = [(u'ARGHTCCPBS', u'ARGHTCCPBS'),
-                     (u'ABGHINOPSL', u'ABGHINOPSL')]
+    tweak_choices = [(c, c) for c in bush.game.body_part_codes]
     tweak_order = 9 # Run before all other tweaks
 
+    def __init__(self):
+        super(NamesTweak_BodyPartCodes, self).__init__()
+        len_first = len(self.tweak_choices[0][0])
+        # Verify that the body_part_codes constant is valid
+        for tc in self.tweak_choices[1:]:
+            if len(tc[0]) != len_first:
+                raise SyntaxError(u'Not all body part codes have the same '
+                                  u'length for this game.')
+
     def tweak_log(self, log, count): pass # 'internal' tweak, log nothing
+
+    def validate_values(self, chosen_values):
+        cho_len = len(chosen_values[0])
+        req_len = len(self.tweak_choices[0][0])
+        if cho_len != req_len:
+            return _(u'The value has length %d, but must have length %d to '
+                     u'match the number of body part types for this game. See '
+                     u"the 'Tweak Names' section of the Advanced Readme for "
+                     u'more information.') % (cho_len, req_len)
+        return super(NamesTweak_BodyPartCodes, self).validate_values(
+            chosen_values)
 
 #------------------------------------------------------------------------------
 class _ANamesTweak_Body(_ANamesTweak):
     """Shared code of 'body names' tweaks."""
-    _tweak_body_tags = u'' # set in _ANamesTweaker.__init__
+    _tweak_body_tags = u'' # Set in _ANamesTweaker.__init__
 
     def wants_record(self, record):
         if self._is_nonplayable(record):
             return False
-        old_full = record.full
-        return (old_full and old_full[0] not in _ignored_chars and
-                self._try_renaming(record))
+        return super(_ANamesTweak_Body, self).wants_record(record)
 
-    def _do_exec_rename(self, record, heavy_armor_addition, is_head, is_ring,
-                        is_amulet, is_robe, is_chest, is_pants, is_gloves,
-                        is_shoes, is_tail, is_shield):
-        record_full = record.full
+class _ANamesTweak_Body_Tes4(_ANamesTweak_Body):
+    def _exec_rename(self, record):
         amulet_tag, ring_tag, gloves_tag, head_tag, tail_tag, robe_tag, \
         chest_tag, pants_tag, shoes_tag, shield_tag = self._tweak_body_tags
-        if is_head: equipment_tag = head_tag
-        elif is_ring: equipment_tag = ring_tag
-        elif is_amulet: equipment_tag = amulet_tag
-        elif is_robe: equipment_tag = robe_tag
-        elif is_chest: equipment_tag = chest_tag
-        elif is_pants: equipment_tag = pants_tag
-        elif is_gloves: equipment_tag = gloves_tag
-        elif is_shoes: equipment_tag = shoes_tag
-        elif is_tail: equipment_tag = tail_tag
-        elif is_shield: equipment_tag = shield_tag
-        else: return record_full # Weird record, don't change anything
-        prefix_subs = (equipment_tag + heavy_armor_addition,)
-        prefix_format = self.chosen_format
-        if u'%02d' in prefix_format: # Whether or not to show stats
-            prefix_subs += (record.strength / 100,)
-        return prefix_format % prefix_subs + record_full
-
-    def _get_rename_params(self, record):
         body_flags = record.biped_flags
-        return (record, (u'LH'[body_flags.heavyArmor]
-                         if record._rec_sig == b'ARMO' else u''),
-                body_flags.head or body_flags.hair,
-                body_flags.rightRing or body_flags.leftRing, body_flags.amulet,
-                body_flags.upperBody and body_flags.lowerBody,
-                body_flags.upperBody, body_flags.lowerBody, body_flags.hand,
-                body_flags.foot, body_flags.tail, body_flags.shield)
+        if body_flags.head or body_flags.hair:
+            equipment_tag = head_tag
+        elif body_flags.rightRing or body_flags.leftRing:
+            equipment_tag = ring_tag
+        elif body_flags.amulet:
+            equipment_tag = amulet_tag
+        elif body_flags.upperBody and body_flags.lowerBody:
+            equipment_tag = robe_tag
+        elif body_flags.upperBody:
+            equipment_tag = chest_tag
+        elif body_flags.lowerBody:
+            equipment_tag = pants_tag
+        elif body_flags.hand:
+            equipment_tag = gloves_tag
+        elif body_flags.foot:
+            equipment_tag = shoes_tag
+        elif body_flags.tail:
+            equipment_tag = tail_tag
+        elif body_flags.shield:
+            equipment_tag = shield_tag
+        else: return record.full # Weird record, don't change anything
+        armor_addition = (u'LH'[body_flags.heavyArmor]
+                          if record._rec_sig == b'ARMO' else u'')
+        prefix_subs = (equipment_tag + armor_addition,)
+        prefix_format = self.chosen_format
+        if self._may_have_stats and u'%02d' in prefix_format:
+            # Armor rating is scaled up x100 in the records
+            prefix_subs += (record.strength / 100,)
+        return prefix_format % prefix_subs + record.full
+
+class  _ANamesTweak_Body_Fo3(_ANamesTweak_Body):
+    _is_fnv = bush.game.fsName == u'FalloutNV'
+
+    def _exec_rename(self, record):
+        head_tag, body_tag, gloves_tag, pipboy_tag, backpack_tag, fancy_tag, \
+        accessory_tag = self._tweak_body_tags
+        gen_flags = record.generalFlags
+        if gen_flags.powerArmor:
+            armor_addition = u'P'
+        elif gen_flags.heavyArmor:
+            armor_addition = u'H'
+        elif self._is_fnv and gen_flags.medium_armor: # flag added in FNV
+            armor_addition = u'M'
+        else: # light armor
+            armor_addition = u'L'
+        body_flags = record.biped_flags
+        if body_flags.upperBody:
+            equipment_tag = body_tag
+        elif (body_flags.head or body_flags.hair or body_flags.headband or
+              body_flags.hat):
+            equipment_tag = head_tag
+        elif body_flags.leftHand or body_flags.rightHand:
+            equipment_tag = gloves_tag
+        elif (body_flags.necklace or body_flags.eyeGlasses or
+              body_flags.noseRing or body_flags.earrings or body_flags.mask or
+              body_flags.choker or body_flags.mouthObject):
+            equipment_tag = fancy_tag
+        elif body_flags.backpack:
+            equipment_tag = backpack_tag
+        elif (body_flags.bodyAddOn1 or body_flags.bodyAddOn2 or
+              body_flags.bodyAddOn3):
+            equipment_tag = accessory_tag
+        elif body_flags.pipboy:
+            equipment_tag = pipboy_tag
+        else: return record.full # Weird record, don't change anything
+        prefix_subs = (equipment_tag + armor_addition,)
+        prefix_format = self.chosen_format
+        if self._may_have_stats and u'%02d' in prefix_format:
+            if self._is_fnv:
+                # Use damage threshold instead of damage resistance for FNV.
+                # Note that that one is *not* scaled up x100 in the records
+                prefix_subs += (record.dt,)
+            else:
+                # Damage resistance is scaled up x100 in the records
+                prefix_subs += (record.dr / 100,)
+        return prefix_format % prefix_subs + record.full
 
 #------------------------------------------------------------------------------
-class NamesTweak_Body_Armor(_ANamesTweak_Body):
+class _ANamesTweak_Body_Armor(_ANamesTweak_Body):
     tweak_read_classes = b'ARMO',
-    tweak_name = _(u'Armor')
-    tweak_tip = _(u'Rename armor to sort by type.')
+    tweak_name = _(u'Sort: Armor/Clothes')
+    tweak_tip = _(u'Rename armor and clothes to sort by type.')
     tweak_key = u'ARMO' # u'' is intended, not a record sig, ugh...
-    tweak_choices = [(_(u'BL Leather Boots'),     u'%s '),
-                     (_(u'BL. Leather Boots'),    u'%s. '),
-                     (_(u'BL - Leather Boots'),   u'%s - '),
-                     (_(u'(BL) Leather Boots'),   u'(%s) '),
-                     (u'----', u'----'),
-                     (_(u'BL02 Leather Boots'),   u'%s%02d '),
-                     (_(u'BL02. Leather Boots'),  u'%s%02d. '),
-                     (_(u'BL02 - Leather Boots'), u'%s%02d - '),
-                     (_(u'(BL02) Leather Boots'), u'(%s%02d) ')]
     tweak_log_msg = _(u'Armor Pieces Renamed: %(total_changed)d')
+    _choice_formats = [u'%s ', u'%s. ', u'%s - ', u'(%s) ', u'----',
+                       u'%s%02d ', u'%s%02d. ', u'%s%02d - ', u'(%s%02d) ']
+    _may_have_stats = True
+
+class NamesTweak_Body_Armor_Tes4(_ANamesTweak_Body_Tes4,
+                                 _ANamesTweak_Body_Armor):
+    tweak_name = _(u'Sort: Armor')
+    tweak_tip = _(u'Rename armor to sort by type and armor rating.')
+    _example_item = _(u'Leather Boots')
+    _example_code = u'BL'
+    _example_stat = 2
+
+class NamesTweak_Body_Armor_Fo3(_ANamesTweak_Body_Fo3,
+                                _ANamesTweak_Body_Armor):
+    _example_item = _(u'Sleepwear')
+    _example_code = u'A'
+    _example_stat = 1
 
 #------------------------------------------------------------------------------
-class NamesTweak_Body_Clothes(_ANamesTweak_Body):
+class NamesTweak_Body_Clothes(_ANamesTweak_Body_Tes4):
     tweak_read_classes = b'CLOT',
-    tweak_name = _(u'Clothes')
+    tweak_name = _(u'Sort: Clothes')
     tweak_tip = _(u'Rename clothes to sort by type.')
     tweak_key = u'CLOT' # u'' is intended, not a record sig, ugh...
-    tweak_choices = [(_(u'P Grey Trousers'),   u'%s '),
-                     (_(u'P. Grey Trousers'),  u'%s. '),
-                     (_(u'P - Grey Trousers'), u'%s - '),
-                     (_(u'(P) Grey Trousers'), u'(%s) ')]
     tweak_log_msg = _(u'Clothes Renamed: %(total_changed)d')
+    _choice_formats = [u'%s ', u'%s. ', u'%s - ', u'(%s) ']
+    _example_item = _(u'Grey Trousers')
+    _example_code = u'P'
 
 #------------------------------------------------------------------------------
 _re_old_potion_label = re.compile(u'^(-|X) ', re.U)
 _re_old_potion_end = re.compile(u' -$', re.U)
 
-class NamesTweak_Potions(_AMgefNamesTweak):
+class _ANamesTweak_Ingestibles(_ANamesTweak):
     """Names tweaker for potions."""
     tweak_read_classes = b'ALCH',
-    tweak_name = _(u'Potions')
-    tweak_tip = _(u'Label potions to sort by type and effect.')
+    tweak_name = _(u'Sort: Ingestibles')
+    tweak_tip = _(u'Label ingestibles (potions and food) to sort by type.')
     tweak_key = u'ALCH' # u'' is intended, not a record sig, ugh...
-    tweak_choices = [(_(u'XD Illness'),   u'%s '),
-                     (_(u'XD. Illness'),  u'%s. '),
-                     (_(u'XD - Illness'), u'%s - '),
-                     (_(u'(XD) Illness'), u'(%s) ')]
-    tweak_log_msg = _(u'Potions Renamed: %(total_changed)d')
+    tweak_log_msg = _(u'Ingestibles Renamed: %(total_changed)d')
+    _choice_formats = [u'%s ', u'%s. ', u'%s - ', u'(%s) ']
 
-    def _do_exec_rename(self, record, is_food):
+class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles, _AMgefNamesTweak):
+    tweak_read_classes = b'ALCH',
+    tweak_tip = _(u'Label ingestibles (potions and drinks) to sort by type '
+                  u'and effect.')
+    _example_item = _(u'Illness')
+    _example_code = u'XD'
+
+    def _exec_rename(self, record):
         school = 6 # Default to 6 (U: unknown)
         for i, rec_effect in enumerate(record.effects):
             if i == 0:
@@ -212,56 +370,73 @@ class NamesTweak_Potions(_AMgefNamesTweak):
         # Remove existing label and ending
         wip_name = _re_old_potion_label.sub(u'', record.full)
         wip_name = _re_old_potion_end.sub(u'', wip_name)
-        if is_food:
+        if record.flags.isFood:
             return u'.' + wip_name
         else:
             effect_label = (u'X' if is_poison else u'') + u'ACDIMRU'[school]
             return self.chosen_format % effect_label + wip_name
 
-    def _get_rename_params(self, record):
-        return record, record.flags.isFood
+class NamesTweak_Ingestibles_Fo3(_ANamesTweak_Ingestibles):
+    # Ingestibles are pretty much limited to food and medicine in FO3/FNV, so
+    # we just show the equipment type
+    _example_item = _(u'Radroach Meat')
+    _example_code = u'F'
+    _valid_ingestibles = set(xrange(10, 14))
+
+    def _exec_rename(self, record):
+        alch_etyp = record.equipment_type
+        if alch_etyp in self._valid_ingestibles:
+            etyp_label = u'CSFA'[alch_etyp - 10]
+        else:
+            etyp_label = u'U' # Unknown
+        # Food doubles as the miscellaneous category, so label non-food in the
+        # food category as 'other'
+        if etyp_label == u'F' and not record.flags.isFood:
+            etyp_label = u'O'
+        return self.chosen_format % etyp_label + record.full
 
 #------------------------------------------------------------------------------
-_re_old_magic_label = re.compile(u'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
+_re_old_magic_label = re.compile(u'' r'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 
-class NamesTweak_Scrolls(IndexingTweak, _AMgefNamesTweak):
+class NamesTweak_Scrolls(_AMgefNamesTweak, IndexingTweak):
     """Names tweaker for scrolls."""
     tweak_read_classes = b'BOOK',
-    tweak_name = _(u'Notes And Scrolls')
+    tweak_name = _(u'Sort: Notes/Scrolls')
     tweak_tip = _(u'Mark notes and scrolls to sort separately from books.')
     tweak_key = u'scrolls'
-    tweak_choices = [(_(u'~Fire Ball'),     u'~'),
-                     (_(u'~D Fire Ball'),   u'~%s '),
-                     (_(u'~D. Fire Ball'),  u'~%s. '),
-                     (_(u'~D - Fire Ball'), u'~%s - '),
-                     (_(u'~(D) Fire Ball'), u'~(%s) '),
-                     (u'----', u'----'),
-                     (_(u'.Fire Ball'),     u'.'),
-                     (_(u'.D Fire Ball'),   u'.%s '),
-                     (_(u'.D. Fire Ball'),  u'.%s. '),
-                     (_(u'.D - Fire Ball'), u'.%s - '),
-                     (_(u'.(D) Fire Ball'), u'.(%s) ')]
     tweak_log_msg = _(u'Notes and Scrolls Renamed: %(total_changed)d')
+    _choice_formats = [u'~', u'~%s ', u'~%s. ', u'~%s - ', u'~(%s) ', u'----',
+                       u'.', u'.%s ', u'.%s. ', u'.%s - ', u'.(%s) ']
+    _example_item = _(u'Fireball')
+    _example_code = u'D'
+    _may_lack_specifiers = True
     _look_up_ench = None
     _index_sigs = [b'ENCH']
 
-    def _do_exec_rename(self, record, look_up_ench):
-        # Magic label
-        order_format = (u'~.', u'.~')[self.chosen_format[0] == u'~']
-        magic_format = self.chosen_format[1:]
+    def _exec_rename(self, record):
+        magic_format = self.chosen_format
+        order_format = (u'~.', u'.~')[magic_format[0] == u'~']
         wip_name = record.full
         rec_ench = record.enchantment
         is_enchanted = bool(rec_ench)
-        if magic_format and is_enchanted:
+        if is_enchanted and u'%s' in magic_format:
             school = 6 # Default to 6 (U: unknown)
-            enchantment = look_up_ench(rec_ench)
+            enchantment = self._look_up_ench[rec_ench]
             if enchantment and enchantment.effects:
                 school = self._get_effect_school(enchantment.effects[0])
             # Remove existing label
             wip_name = _re_old_magic_label.sub(u'', wip_name)
-            wip_name = magic_format % u'ACDIMRU'[school] + wip_name
-        # Ordering
+            wip_name = magic_format[1:] % u'ACDIMRU'[school] + wip_name
+        # Order by whether or not the scroll is enchanted
         return order_format[is_enchanted] + wip_name
+
+    def validate_values(self, chosen_values):
+        wanted_fmt = chosen_values[0]
+        if not wanted_fmt or wanted_fmt[0] not in (u'~', u'.'):
+            return _(u"The format must begin with a '~' or a '.'. See the "
+                     u"'Tweak Names' section of the Advanced Readme for more "
+                     u'information.')
+        return super(NamesTweak_Scrolls, self).validate_values(chosen_values)
 
     def wants_record(self, record):
         return (record.flags.isScroll and not record.flags.isFixed and
@@ -271,78 +446,171 @@ class NamesTweak_Scrolls(IndexingTweak, _AMgefNamesTweak):
         super(NamesTweak_Scrolls, self).prepare_for_tweaking(patch_file)
         self._look_up_ench = self._indexed_records[b'ENCH']
 
-    def _get_rename_params(self, record):
-        return record, lambda e: self._look_up_ench.get(e, 6) ##: 6?
-
 #------------------------------------------------------------------------------
 class NamesTweak_Spells(_AMgefNamesTweak):
     """Names tweaker for spells."""
     tweak_read_classes = b'SPEL',
-    tweak_name = _(u'Spells')
+    tweak_name = _(u'Sort: Spells')
     tweak_tip = _(u'Label spells to sort by school and level.')
     tweak_key = u'SPEL' # u'' is intended, not a record sig, ugh...
-    tweak_choices = [(_(u'Fire Ball'),      u'NOTAGS'),
-                     (u'----', u'----'),
-                     (_(u'D Fire Ball'),    u'%s '),
-                     (_(u'D. Fire Ball'),   u'%s. '),
-                     (_(u'D - Fire Ball'),  u'%s - '),
-                     (_(u'(D) Fire Ball'),  u'(%s) '),
-                     (u'----', u'----'),
-                     (_(u'D2 Fire Ball'),   u'%s%d '),
-                     (_(u'D2. Fire Ball'),  u'%s%d. '),
-                     (_(u'D2 - Fire Ball'), u'%s%d - '),
-                     (_(u'(D2) Fire Ball'), u'(%s%d) ')]
     tweak_log_msg = _(u'Spells Renamed: %(total_changed)d')
+    _choice_formats = [u'', u'----', u'%s ', u'%s. ', u'%s - ', u'(%s) ',
+                       u'----', u'%s%02d ', u'%s%02d. ', u'%s%02d - ',
+                       u'(%s%02d) ']
+    _example_item = _(u'Fireball')
+    _example_code = u'D'
+    _example_stat = 2
+    _may_have_stats = True
+    _may_lack_specifiers = True
 
     def wants_record(self, record):
         return record.spellType == 0 and super(
             NamesTweak_Spells, self).wants_record(record)
 
-    def _do_exec_rename(self, record):
+    def _exec_rename(self, record):
         school = 6 # Default to 6 (U: unknown)
         if record.effects:
             school = self._get_effect_school(record.effects[0])
         # Remove existing label
         wip_name = _re_old_magic_label.sub(u'', record.full)
-        if u'%s' in self.chosen_format: # don't remove tags
-            if u'%d' in self.chosen_format: # show level
+        if u'%s' in self.chosen_format: # show spell school
+            if u'%02d' in self.chosen_format: # also show level
                 wip_name = self.chosen_format % (u'ACDIMRU'[school],
-                                            record.level) + wip_name
+                                                 record.level) + wip_name
             else:
                 wip_name = self.chosen_format % u'ACDIMRU'[school] + wip_name
+        elif u'%02d' in self.chosen_format: # no school, but show level
+            wip_name = self.chosen_format % record.level + wip_name
         return wip_name
 
 #------------------------------------------------------------------------------
-class NamesTweak_Weapons(_ANamesTweak):
+class _ANamesTweak_Weapons(_ANamesTweak):
     """Names tweaker for weapons and ammo."""
     tweak_read_classes = b'AMMO', b'WEAP',
-    tweak_name = _(u'Weapons')
-    tweak_tip = _(u'Label ammo and weapons to sort by type and damage.')
+    tweak_name = _(u'Sort: Weapons/Ammunition')
+    tweak_tip = _(u'Label weapons and ammunition to sort by type and damage.')
     tweak_key = u'WEAP' # u'' is intended, not a record sig, ugh...
-    tweak_choices = [(_(u'B Iron Bow'),     u'%s '),
-                     (_(u'B. Iron Bow'),    u'%s. '),
-                     (_(u'B - Iron Bow'),   u'%s - '),
-                     (_(u'(B) Iron Bow'),   u'(%s) '),
-                     (u'----', u'----'),
-                     (_(u'B08 Iron Bow'),   u'%s%02d '),
-                     (_(u'B08. Iron Bow'),  u'%s%02d. '),
-                     (_(u'B08 - Iron Bow'), u'%s%02d - '),
-                     (_(u'(B08) Iron Bow'), u'(%s%02d) ')]
+    tweak_log_msg = _(u'Weapons and Ammuntion Renamed: %(total_changed)d')
+    _choice_formats = [u'%s ', u'%s. ', u'%s - ', u'(%s) ', u'----',
+                       u'%s%02d ', u'%s%02d. ', u'%s%02d - ', u'(%s%02d) ']
+    _may_have_stats = True
 
     def wants_record(self, record):
-        return (record.full and (record._rec_sig != b'AMMO'
-                                 or record.full[0] not in _ignored_chars)
-                and self._try_renaming(record))
+        # Do not use _ignored_chars, AMMO in FO3/FNV can start with dots
+        ##: What about WEAP? Pre-tweak-pooling didn't do it - kept it that way,
+        # but I'm not sure *why* pre-TP didn't do it
+        old_full = record.full
+        return (old_full and old_full != self._exec_rename(record))
 
-    def _do_exec_rename(self, record):
-        weapon_index = record.weaponType if record._rec_sig == b'WEAP' else 6
-        format_subs = (u'CDEFGBA'[weapon_index],)
+class NamesTweak_Weapons_Tes4(_ANamesTweak_Weapons):
+    _example_item = _(u'Elven Bow')
+    _example_code = u'B'
+    _example_stat = 14
+    _valid_weapons = set(xrange(0, 5))
+    _w_type_attr = u'weaponType'
+
+    def _exec_rename(self, record):
+        if record._rec_sig == b'WEAP':
+            weapon_index = record.weaponType
+            if weapon_index not in self._valid_weapons:
+                weapon_index = 6 # O, other
+            format_subs = (u'CDEFGBO'[weapon_index],)
+        else:
+            format_subs = (u'A',)
+        if u'%02d' in self.chosen_format:
+            format_subs += (record.damage,)
+        return self.chosen_format % format_subs + record.full
+
+class NamesTweak_Weapons_Fo3(_ANamesTweak_Weapons):
+    # AMMO does not have a damage field in FO3/FNV, so just adding 'A' to all
+    # of them doesn't help much
+    tweak_read_classes = b'WEAP',
+    tweak_name = _(u'Sort: Weapons')
+    tweak_tip = _(u'Label weapons to sort by type and damage.')
+    _example_item = _(u'BB Gun')
+    _example_code = u'S'
+    _example_stat = 10
+    _valid_weapons = set(xrange(0, 7))
+    _w_type_attr = u'equipment_type'
+
+    def _exec_rename(self, record):
+        weap_etyp = record.equipment_type
+        if weap_etyp not in self._valid_weapons:
+            weap_etyp = 7 # O, other
+        format_subs = (u'BESMUTLO'[weap_etyp],)
         if u'%02d' in self.chosen_format:
             format_subs += (record.damage,)
         return self.chosen_format % format_subs + record.full
 
 #------------------------------------------------------------------------------
-class _ATextReplacer(_ANamesTweak):
+_re_old_ammo_label = re.compile(u'' r'^(.*)( \(WG \d+\.\d+\))$')
+_re_flst_ammo_weight = re.compile(u'' r'^AmmoWeight(\d)(\d{2})List$')
+
+class _ANamesTweak_AmmoWeight(_ANamesTweak):
+    """Appends ammunition weight to the end of the ammunition's name."""
+    tweak_read_classes = b'AMMO',
+    tweak_name = _(u'Append Ammunition Weight')
+    tweak_tip = _(u'Appends the weight of ammunition to the end of the '
+                  u'ammunition name.')
+    tweak_key = u'AmmoWeight'
+    _choice_formats = [u' (WG %s)', u' (%s)']
+    _example_item = _(u'Iron Arrow')
+    _example_code = u'0.01'
+    _prepends_name = True
+
+    def _exec_rename(self, record):
+        old_full = record.full
+        fmt_weight = self.chosen_format % (
+                u'%.2f' % self._get_record_weight(record))
+        # Strip out any old weight labels if they're present
+        ma_ammo = _re_old_ammo_label.match(old_full)
+        if ma_ammo:
+            return ma_ammo.group(1) + fmt_weight
+        else:
+            return old_full + fmt_weight
+
+    def _get_record_weight(self, record):
+        raise AbstractError(u'_get_record_weight not implemented')
+
+class NamesTweak_AmmoWeight(_ANamesTweak_AmmoWeight):
+    def _get_record_weight(self, record):
+        return record.weight
+
+class NamesTweak_AmmoWeight_Fnv(NamesTweak_AmmoWeight):
+    _example_item = _(u'BB')
+
+class NamesTweak_AmmoWeight_Fo3(NamesTweak_AmmoWeight_Fnv, IndexingTweak):
+    """FO3 requires FWE (FO3 Wanderers Edition)."""
+    tweak_tip = _(u'Requires FWE. Appends the FWE weight of ammunition to the '
+                  u'end of the ammunition name.')
+    _index_sigs = [b'FLST']
+
+    def __init__(self):
+        super(NamesTweak_AmmoWeight_Fo3, self).__init__()
+        self._look_up_weight = None
+
+    def prepare_for_tweaking(self, patch_file):
+        super(NamesTweak_AmmoWeight_Fo3, self).prepare_for_tweaking(patch_file)
+        # Gather weight from FWE FormID Lists
+        self._look_up_weight = luw = defaultdict(lambda: 0.0)
+        for flst_rec in self._indexed_records[b'FLST'].itervalues():
+            ma_flst = _re_flst_ammo_weight.match(flst_rec.eid)
+            if ma_flst:
+                flst_weight = float(u'%s.%s' % (ma_flst.group(1),
+                                                ma_flst.group(2)))
+                for ammo_fid in flst_rec.formIDInList:
+                    luw[ammo_fid] = flst_weight
+
+    def wants_record(self, record):
+        if self._look_up_weight is None:
+            return True # We haven't collected weights yet, forward everything
+        return super(NamesTweak_AmmoWeight_Fo3, self).wants_record(record)
+
+    def _get_record_weight(self, record):
+        return self._look_up_weight[record.fid]
+
+#------------------------------------------------------------------------------
+class _ATextReplacer(MultiTweakItem):
     """Base class for replacing any text via regular expressions."""
     ##: Move to game/*/constants, and boom, we have a cross-game text replacer!
     _match_replace_rpaths = {
@@ -514,21 +782,14 @@ class NamesTweak_SecurityToLockpicking(_ATextReplacer):
 #------------------------------------------------------------------------------
 class TweakNamesPatcher(MultiTweaker):
     """Tweaks record full names in various ways."""
-    _tweak_classes = {
-        NamesTweak_BodyTags, NamesTweak_Body_Armor, NamesTweak_Body_Clothes,
-        NamesTweak_Potions, NamesTweak_Scrolls, NamesTweak_Spells,
-        NamesTweak_Weapons, NamesTweak_DwarvenToDwemer,
-        NamesTweak_DwarfsToDwarves, NamesTweak_StaffsToStaves,
-        NamesTweak_FatigueToStamina, NamesTweak_MarksmanToArchery,
-        NamesTweak_SecurityToLockpicking,
-    }
+    _tweak_classes = {globals()[t] for t in bush.game.names_tweaks}
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(TweakNamesPatcher, self).__init__(p_name, p_file, enabled_tweaks)
         body_part_tags = u''
         for names_tweak in enabled_tweaks:
             # Always the first one if it's enabled, so this is safe
-            if isinstance(names_tweak, NamesTweak_BodyTags):
+            if isinstance(names_tweak, NamesTweak_BodyPartCodes):
                 body_part_tags = p_file.bodyTags = names_tweak.choiceValues[
                     names_tweak.chosen][0]
             elif isinstance(names_tweak, _ANamesTweak_Body):

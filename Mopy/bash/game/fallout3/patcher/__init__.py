@@ -651,7 +651,14 @@ actor_tweaks = {
 #------------------------------------------------------------------------------
 # Tweak Names
 #------------------------------------------------------------------------------
-body_tags = u'HAGPBFE'
+names_tweaks = {
+    u'NamesTweak_BodyPartCodes',
+    u'NamesTweak_Body_Armor_Fo3',
+    u'NamesTweak_Ingestibles_Fo3',
+    u'NamesTweak_Weapons_Fo3',
+    u'NamesTweak_AmmoWeight_Fo3',
+}
+body_part_codes = (u'HAGPBFE', u'HBGPEFE')
 
 #------------------------------------------------------------------------------
 # Tweak Settings
@@ -770,11 +777,11 @@ import_races_attrs = {
 # Tweak Races
 #------------------------------------------------------------------------------
 race_tweaks = {
-    u'RaceTweak_PlayableEyes',
+    u'RaceTweak_PlayableHeadParts',
     u'RaceTweak_MergeSimilarRaceHairs',
     u'RaceTweak_MergeSimilarRaceEyes',
+    u'RaceTweak_PlayableEyes',
     u'RaceTweak_PlayableHairs',
-    u'RaceTweak_PlayableHeadParts',
     u'RaceTweak_GenderlessHairs',
     u'RaceTweak_AllEyes',
     u'RaceTweak_AllHairs',

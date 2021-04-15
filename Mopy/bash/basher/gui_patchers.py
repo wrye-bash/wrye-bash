@@ -739,9 +739,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                             _(u'The values you entered (%s) are not valid '
                               u'for this tweak.') % u', '.join(
                                 unicode(s) for s in value))
-            balt.showError(self.gConfigPanel, error_header + u'\n\n' +
-                           _(u'Reason: %s') % validation_error,
-                           title=tweak.tweak_name + _(u' - Error'))
+            balt.showError(self.gConfigPanel,
+                           error_header + u'\n\n' + validation_error,
+                           title=_(u'%s - Error') % tweak.tweak_name)
 
     def mass_select(self, select=True):
         """'Select All' or 'Deselect All' button was pressed, update all
@@ -1265,8 +1265,8 @@ class TweakSettings(_GmstTweakerPanel):
 # -----------------------------------------------------------------------------
 class TweakNames(_TweakPatcherPanel):
     patcher_name = _(u'Tweak Names')
-    patcher_desc = _(u'Tweak object names in various ways such as lore '
-                     u'friendliness or show type/quality.')
+    patcher_desc = _(u'Tweak object names to sort them by type/stats or to '
+                     u'improve things like lore friendliness.')
     _config_key = u'NamesTweaker'
     patcher_type = multitweak_names.TweakNamesPatcher
 

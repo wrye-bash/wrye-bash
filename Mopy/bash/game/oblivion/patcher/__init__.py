@@ -578,10 +578,26 @@ actor_tweaks = {
 #------------------------------------------------------------------------------
 # Tweak Names
 #------------------------------------------------------------------------------
-body_tags = u'ARGHTCCPBS'
+names_tweaks = {
+    u'NamesTweak_BodyPartCodes',
+    u'NamesTweak_Body_Armor_Tes4',
+    u'NamesTweak_Body_Clothes',
+    u'NamesTweak_Ingestibles_Tes4',
+    u'NamesTweak_Scrolls',
+    u'NamesTweak_Spells',
+    u'NamesTweak_Weapons_Tes4',
+    u'NamesTweak_DwarvenToDwemer',
+    u'NamesTweak_DwarfsToDwarves',
+    u'NamesTweak_StaffsToStaves',
+    u'NamesTweak_FatigueToStamina',
+    u'NamesTweak_MarksmanToArchery',
+    u'NamesTweak_SecurityToLockpicking',
+    u'NamesTweak_AmmoWeight',
+}
+body_part_codes = (u'ARGHTCCPBS', u'ABGHINOPSL')
 
 #------------------------------------------------------------------------------
-# Tweak Names
+# Tweak Settings
 #------------------------------------------------------------------------------
 settings_tweaks = {
     u'GlobalsTweak_Timescale',

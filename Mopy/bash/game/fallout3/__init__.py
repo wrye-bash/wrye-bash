@@ -146,8 +146,6 @@ class Fallout3GameInfo(PatchGame):
 
     allTags = PatchGame.allTags | {u'NoMerge'}
 
-    # Remaining to add (some of these might be impossible to port):
-    #  TweakNames, ReplaceFormIDs
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
         u'ImportActorsAIPackages', u'ImportActorsAnimations', u'NpcChecker',
@@ -159,7 +157,7 @@ class Fallout3GameInfo(PatchGame):
         u'ImportScripts', u'ImportSounds', u'ImportSpellStats', u'ImportStats',
         u'ImportText', u'LeveledLists', u'MergePatches', u'TweakActors',
         u'TweakAssorted', u'TweakSettings', u'ImportRacesRelations',
-        u'TweakRaces', u'TimescaleChecker',
+        u'TweakRaces', u'TimescaleChecker', u'TweakNames',
     }
 
     weaponTypes = (

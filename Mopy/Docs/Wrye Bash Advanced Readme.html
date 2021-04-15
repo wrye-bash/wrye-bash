@@ -6038,67 +6038,566 @@ C.Location, -C.LockList
 </table>
 <table>
     <thead>
-        <tr><th colspan="2">Tweak Clothes
-        <tr><th>Tweak<th>Description
+        <tr>
+            <th colspan="3">Tweak Clothes</th>
+        </tr>
+        <tr>
+            <th>Tweak</th>
+            <th>Description</th>
+            <th>Available For</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Gloves Show Rings<td>Prevents gloves from hiding rings.
-        <tr><td>Max Weight Amulets<td>Sets the maximum weight of amulets in the game. Amulets with higher weights will have their weight set to this value.
-        <tr><td>Max Weight Hoods<td>Sets the maximum weight of hoods in the game. Hoods with higher weights will have their weight set to this value.
-        <tr><td>Max Weight Rings<td>Sets the maximum weight of rings in the game. Rings with higher weights will have their weight set to this value.
-        <tr><td>Robes Show Amulets<td>Forces all robes to show amulets.
-        <tr><td>Robes Show Pants<td>Allows you to wear pants/skirts/greaves with robes. This is useful for armor and enchantment. Not recommended because graphics clipping is common.
-        <tr><td>Unlimited Amulets<td>Allows you to wear an unlimited number of amulets. Not recommended because it is unbalancing and it prevents amulets from displaying (i.e., they won't appear around your or NPC's necks).
-        <tr><td>Unlimited Rings<td>Allows you to wear an unlimited number of rings. Not recommended because it is unbalancing and it prevents rings from displaying (i.e., they won't appear on your or NPC's fingers).
+        <tr>
+            <td>Gloves Show Rings</td>
+            <td>Prevents gloves from hiding rings.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Max Weight Amulets</td>
+            <td>Sets the maximum weight of amulets in the game. Amulets with
+                higher weights will have their weight set to this value.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Max Weight Hoods</td>
+            <td>Sets the maximum weight of hoods in the game. Hoods with higher
+                weights will have their weight set to this value.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Max Weight Rings</td>
+            <td>Sets the maximum weight of rings in the game. Rings with higher
+                weights will have their weight set to this value.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Robes Show Amulets</td>
+            <td>Forces all robes to show amulets.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Robes Show Pants</td>
+            <td>Allows you to wear pants/skirts/greaves with robes. This is
+                useful for armor and enchantment. Not recommended because
+                graphics clipping is common.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Unlimited Amulets</td>
+            <td>Allows you to wear an unlimited number of amulets. Not
+                recommended because it is unbalancing and it prevents amulets
+                from displaying (i.e., they won't appear around your or NPC's
+                necks).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Unlimited Rings</td>
+            <td>Allows you to wear an unlimited number of rings. Not
+                recommended because it is unbalancing and it prevents rings
+                from displaying (i.e., they won't appear on your or NPC's
+                fingers).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+    </tbody>
 </table>
+<p id="patch-tweak-names-note"><strong>Note regarding Tweak Names:</strong>
+Almost all the <em>Sort: </em> tweaks will skip records whose (FULL) Name
+starts with one of the following characters: <code>+</code>, <code>-</code>,
+<code>=</code>, <code>.</code>, <code>(</code>, <code>)</code>, <code>[</code>,
+<code>]</code>, <code>&lt;</code>, <code>&gt;</code>. The reason for this is because
+items with names that start with such characters are almost always special,
+mod-added items that should not be touched by these tweaks. Exceptions will be
+noted in the description of the tweak.</p>
 <table>
     <thead>
-        <tr><th colspan="2">Tweak Names
-        <tr><th>Tweak<th>Description
+        <tr>
+            <th colspan="3">Tweak Names</th>
+        </tr>
+        <tr>
+            <th>Tweak</th>
+            <th>Description</th>
+            <th>Available For</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Body Part Codes<td>This determines what code will be used for tweaking armor and clothes covering various body parts. There are two versions. Each code letter is assigned in order to: Amulets, Rings, Gloves, Helmets, Tail items, Robes (upper+lower body), Chest, Pants/Greaves, Boots/Shoes, Shields.
-        <tr><td>Armor<td>Tweaks names of armors to make them sort more easily in inventory. There is a choice of formats and whether you want armor rating to be shown.
-        <tr><td>Clothes<td>Tweaks names of clothes to make them sort more easily in inventory. There is a choice of formats.
+        <tr>
+            <td>Append Ammunition Weight</td>
+            <td>Appends the ammunition weight of (AMMO) Ammunition records to
+                the end of their name. Weight is formatted using exactly two
+                decimal places, i.e. <q>0.1</q> will be shown as <q>0.10</q>,
+                while <q>0.001</q> will be shown as <q>0.00</q>.
+                <br>
+                For <strong>Fallout 3</strong>, this tweak does nothing unless
+                you have
+                <a href="https://www.nexusmods.com/fallout3/mods/2761">FO3
+                    Wanderers Edition (FWE)</a> installed. If you do have it
+                installed, it uses the FWE ammo weight to rename.
+                <br>
+                <br>
+                You can also specify a custom format. It must contain a single
+                <code>%s</code> specifier, which will be replaced by the
+                ammunition weight. For example, the custom format
+                <code>&nbsp;%s</code> would rename ammunition called <q>BB</q>
+                with a weight of 0.01 to <q>BB 0.01</q>.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-names-bpc">Body Part Codes</td>
+            <td>This determines what codes will be used for tweaking armor and
+                clothes covering various body parts. What types of items the
+                code letters are assigned to varies from game to game. They are
+                assigned in the following order:
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Oblivion &amp; Nehrim&colon; At Fate's
+                                Edge</th>
+                            <th>Fallout 3 &amp; Fallout&colon; New Vegas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                10 categories of items:
+                                <ul>
+                                    <li>Amulets</li>
+                                    <li>Rings (left or right ring)</li>
+                                    <li>Gloves</li>
+                                    <li>Helmets (head or hair)</li>
+                                    <li>Tail items</li>
+                                    <li>Robes (upper and lower body)</li>
+                                    <li>Chest</li>
+                                    <li>Pants/Greaves</li>
+                                    <li>Boots/Shoes</li>
+                                    <li>Shields</li>
+                                </ul>
+                                For example, the value <code>ARGHTCCPBS</code>
+                                will assign <q>A</q> to amulets, <q>R</q> to
+                                rings, <q>G</q> to gloves, etc.
+                            </td>
+                            <td>
+                                7 categories of items:
+                                <ul>
+                                    <li>Head (head, hair, headband or
+                                        hair)</li>
+                                    <li>Body</li>
+                                    <li>Gloves (left or right hand)</li>
+                                    <li>Pipboy</li>
+                                    <li>Backpack</li>
+                                    <li>Fancy (necklace, eyeglasses, nose ring,
+                                        earrings, mask, coker or mouth
+                                        object)</li>
+                                    <li>Accessory (body addon 1, 2 or 3)</li>
+                                </ul>
+                                For example, the value <code>HAGPBFE</code>
+                                will assign <q>H</q> to head armor, <q>A</q> to
+                                body armor, <q>G</q> to gloves, etc.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                You can specify a custom value as well. It is specified as a
+                string that must have the same length as the number of codes.
+                See the examples in the table up above.
+            </td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
         <tr>
             <td>Lore Friendly Text: Dwarven -&gt; Dwemer</td>
-            <td>Changes nearly any usage of the word Dwarven to use Dwemer
-                instead in order to better follow lore.</td>
+            <td>Changes any usage of the word <q>Dwarven</q> or <q>Dwarf</q> to
+                use <q>Dwemer</q> instead in order to better follow lore
+                (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
-        <tr><td>Notes and Scrolls<td>Tweaks names of notes and scrolls to make them sort more easily in inventory. There is a choice of formats and whether you want enchanted scrolls at top (~) or the bottom (.) of list. (Note that the "~" will not display in the inventory.)
-        <tr><td>Potions<td>Tweaks names of potions to make them sort more easily in inventory. There is a choice of formats.
         <tr>
             <td>Proper English Text: Dwarfs -&gt; Dwarves</td>
-            <td>Renames any instances of dwarfs to dwarves.</td>
+            <td>Renames any instances of <q>Dwarfs</q> to <q>Dwarves</q>
+                (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
         <tr>
             <td>Proper English Text: Staffs -&gt; Staves</td>
-            <td>Renames any instances of staffs to staves.</td>
+            <td>Renames any instances of <q>Staffs</q> to <q>Staves</q>
+                (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
         <tr>
             <td>Skyrim-style Text: Fatigue -&gt; Stamina</td>
-            <td>Renames any instances of fatigue to stamina.</td>
+            <td>Renames any instances of <q>Fatigue</q> to <q>Stamina</q>
+                (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
         <tr>
             <td>Skyrim-style Text: Marksman -&gt; Archery</td>
-            <td>Renames any instances of marksman to archery or archer,
-                depending on whether or not they are preceded by an article
-                ('a' and 'the').</td>
+            <td>Renames any instances of <q>Marksman</q> to <q>Archery</q> or
+                <q>Archer</q>, depending on whether or not they are preceded by
+                an article (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
         <tr>
             <td>Skyrim-style Text: Security -&gt; Lockpicking</td>
-            <td>Renames any instances of security to lockpicking (except in
-                books, because of the huge number of false positives).</td>
+            <td>Renames any instances of <q>Security</q> to <q>Lockpicking</q>,
+                except in books because of the huge number of false positives
+                (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
-        <tr><td>Spells<td> There is a choice of formats and whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
-        <tr><td>Weapons<td> There is a choice of formats and whether you want damage to be shown.
+        <tr>
+            <td id="patch-tweak-names-sa">Sort: Armor</td>
+            <td>Tweaks names of armors to make them sort more easily in the
+                inventory. The tweak options specify the format used to change
+                armor names. They prepend two letters and optionally the armor
+                rating to the armor name. The first letter is one of the ones
+                from the <a href="#patch-tweak-names-bpc">Body Part Codes</a>
+                tweak, the second one is an <q>L</q> if the armor is light and
+                an <q>H</q> if the armor is heavy.
+                <br>
+                <br>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> format specifier, which will be replaced
+                by the two letters mentioned above. It may contain a single
+                <code>%02d</code> format specifier, which will be replaced with
+                the armor rating. For example, the custom format
+                <code>[%s: %02d]&nbsp;</code> would rename an armor called
+                <q>Leather Boots</q> with an armor rating of 2 to
+                <q>[BL: 02] Leather Boots</q>.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Sort: Armor/Clothes</td>
+            <td>Same as the <a href="#patch-tweak-names-sa">Sort: Armor</a> and
+                <a href="#patch-tweak-names-sc">Sort: Clothes</a> tweaks
+                combined. In newer games, there is no real distinction between
+                the two anymore.
+                <br>
+                <br>
+                For Fallout 3 &amp; Fallout&colon; New Vegas, the second letter
+                can also be <q>P</q>, which indicates power armor.
+                <br>
+                For Fallout&colon; New Vegas, it can also be <q>M</q>, which
+                indicates medium armor.</td>
+            <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-names-sc">Sort: Clothes</td>
+            <td>Tweaks names of clothes to make them sort more easily in the
+                inventory. Works similarly to the
+                <a href="#patch-tweak-names-sa">Sort: Armor</a> tweak, but the
+                second letter does not exist (since there are no light or heavy
+                clothes) and there is no way to display armor rating (since
+                clothes do not have armor rating).
+                <br>
+                <br>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> format specifier, which will be replaced
+                by the two letters mentioned above. For example, the custom
+                format <code>%s*&nbsp;</code> would rename a piece of clothing
+                called <q>Grey Trousers</q> to <q>P* Grey Trousers</q>.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Sort: Ingestibles</td>
+            <td>Tweaks names of ingestibles (potions and drinks, as well as
+                food in newer games than Oblivion) to make them sort more
+                easily in the inventory. This tweak behaves quite differently,
+                depending on the game:
+                <ul>
+                    <li><strong>Oblivion &amp; Nehrim&colon; At Fate's
+                        Edge:</strong>
+                        <br>
+                        Always prepends a <q>.</q> if the ingestible is marked
+                        as food, regardless of the chosen format. For example,
+                        a drink called <q>Beer</q> would be renamed to
+                        <q>.Beer</q>.
+                        <br>
+                        Poisons (potions with only harmful effects) will have
+                        two letters prepended: an <q>X</q> and a letter
+                        corresponding to the primary effect's school:
+                        <table id="patch-tweak-names-schools">
+                            <thead>
+                                <tr>
+                                    <th>School</th>
+                                    <th>Code</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Alteration</td>
+                                    <td>A</td>
+                                </tr>
+                                <tr>
+                                    <td>Conjuration</td>
+                                    <td>C</td>
+                                </tr>
+                                <tr>
+                                    <td>Destruction</td>
+                                    <td>D</td>
+                                </tr>
+                                <tr>
+                                    <td>Illusion</td>
+                                    <td>I</td>
+                                </tr>
+                                <tr>
+                                    <td>Mysticism</td>
+                                    <td>M</td>
+                                </tr>
+                                <tr>
+                                    <td>Restoration</td>
+                                    <td>R</td>
+                                </tr>
+                                <tr>
+                                    <td>Unknown</td>
+                                    <td>U</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        For example, using the format <code>%s:&nbsp;</code>, a
+                        poison called called <q>Poison of Weakness</q> with a
+                        primary effect from the school of Destruction would be
+                        renamed to <q>XD: Poison of Weakness</q>.
+                        <br>
+                        Potions (all ALCH records that don't fall into the two
+                        categories above) will only have the primary effect
+                        letter prepended. For example, using the format from
+                        above, a potion called <q>Potion of Regeneration</q>
+                        with an effect from the school of Restoration would be
+                        renamed to <q>R: Potion of Regeneration</q>.
+                    </li>
+                    <li><strong>Fallout 3 &amp; Fallout&colon; New
+                        Vegas:</strong>
+                        Every ingestible will have a single letter prepended,
+                        based on its (ETYP) Equipment Type and whether or not
+                        the Food Item flag is set in (ENIT) Effect Data:
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Condition</th>
+                                    <th>Code</th>
+                                </tr>
+                            </thead>
+                            <tbod>
+                                <tr>
+                                    <td>Equipment Type is Chems (10)</td>
+                                    <td>C</td>
+                                </tr>
+                                <tr>
+                                    <td>Equipment Type is Stimpak (11)</td>
+                                    <td>S</td>
+                                </tr>
+                                <tr>
+                                    <td>Equipment Type is Food (12), Food Item
+                                        flag is set</td>
+                                    <td>F</td>
+                                </tr>
+                                <tr>
+                                    <td>Equipment Type is Food (12), Food Item
+                                        flag is not set
+                                        <br>
+                                        <em>(Other, includes e.g. skill
+                                        magazines)</em></td>
+                                    <td>O</td>
+                                </tr>
+                                <tr>
+                                    <td>Equipment Type is Alcohol (13)</td>
+                                    <td>A</td>
+                                </tr>
+                                <tr>
+                                    <td>None of the previous conditions hold
+                                        <br>
+                                        <em>(Unknown, probably a special mod
+                                            item)</em></td>
+                                    <td>U</td>
+                                </tr>
+                            </tbod>
+                        </table>
+                        For example, using the format <code>#%s&nbsp;</code>,
+                        an item called <q>Radroach Meat</q> with an Equipment
+                        Type of Food (12) and the Food Item flag set would be
+                        renamed to <q>#F Radroach Meat</q>.
+                    </li>
+                </ul>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> format specifier, which will be replaced
+                by the letter codes detailed above, and may contain any other
+                characters. See the examples listed above.
+            </td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Sort: Notes/Scrolls</td>
+            <td>Tweaks names of notes and scrolls to make them sort more easily
+                in the inventory. Each note/scroll will have a <q>~</q> or a
+                <q>.</q> as prepended (note that the <q>~</q> will not display
+                in the inventory). Formats that start with a <q>~</q> will
+                prepend the <q>~</q> to enchanted scrolls and the <q>.</q> to
+                notes. Formats that start with a <q>.</q> function in reverse.
+                You can also choose to include a letter denoting the magic
+                school that the first effect on the scroll belongs to.
+                <br>
+                <br>
+                You can specify a custom value as well. It must start with
+                either <q>~</q> or <q>.</q>, as described above, and may
+                contain a single <code>%s</code> specifier, which will be
+                replaced by a letter matching the primary effect's school (see
+                <a href="#patch-tweak-names-schools">the table from above</a>).
+                For example, the custom format <code>~&lt;%s&gt;&nbsp;</code> would rename
+                an enchanted scroll called <q>Fireball</q> to <q>~&lt;D&gt;
+                    Fireball</q> and a regular note called <q>Handwritten
+                    Note</q> to <q>.Handwritten Note</q>.
+            </td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Sort: Spells</td>
+            <td>Tweaks names of spells to make them sort more easily in the
+                menu. Each spell can have a letter denoting its primary school
+                (see <a href="#patch-tweak-names-schools">the table from
+                    above</a>) and/or the spell level prepended.
+                <br>
+                <br>
+                You can specify a custom value as well. It may contain a single
+                <code>%s</code> specifier, a single <code>%02d</code>
+                specifier, both, or neither. For example, the custom format
+                <code>%s|%02d&nbsp;</code> would rename a spell called
+                <q>Fireball</q> from the school of Destruction with a level of
+                2 to <q>D|02 Fireball</q>.
+            </td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-names-swa">Sort: Weapons/Ammunition</td>
+            <td>Tweaks names of weapons and ammunition to make them sort more
+                easily in the inventory. For (WEAP) Weapon records, a single
+                letter indicating the weapon type is prepended:
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Weapon Type</th>
+                            <th>Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Blade One Hand (0)</td>
+                            <td>C</td>
+                        </tr>
+                        <tr>
+                            <td>Blade Two Hand (1)</td>
+                            <td>D</td>
+                        </tr>
+                        <tr>
+                            <td>Blunt One Hand (2)</td>
+                            <td>E</td>
+                        </tr>
+                        <tr>
+                            <td>Blunt Two Hand (3)</td>
+                            <td>F</td>
+                        </tr>
+                        <tr>
+                            <td>Staff (4)</td>
+                            <td>G</td>
+                        </tr>
+                        <tr>
+                            <td>Bow (5)</td>
+                            <td>B</td>
+                        </tr>
+                        <tr>
+                            <td>Other (any other value)</td>
+                            <td>O</td>
+                        </tr>
+                    </tbody>
+                </table>
+                For (AMMO) Ammunition records, an <q>A</q> is used instead.
+                In either case, you can also choose to include the damage dealt
+                by the weapon/ammunition.
+                <br>
+                <strong>Note:</strong> This tweak does not ignore records
+                starting with the <a href="#patch-tweak-names-note">special
+                    characters</a> outlined in the note above.
+                <br>
+                <br>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> specifier and may contain a single
+                <code>%02d</code> specifier. For example, the custom format
+                <code>W%s%02d&nbsp;</code> would rename a weapon called
+                <q>Elven Bow</q> with a damage of 14 to <q>WB14 Elven Bow</q>.
+            </td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Sort: Weapons</td>
+            <td>Similar to <a href="#patch-tweak-names-swa">Sort:
+                Weapons/Ammunition</a>. Does not support ammunition (since AMMO
+                records do not have damage in these games) and uses a different
+                set of codes based on the (ETYP) Equipment Type:
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Equipment Type</th>
+                            <th>Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Big Guns (0)</td>
+                            <td>B</td>
+                        </tr>
+                        <tr>
+                            <td>Energy Weapons (1)</td>
+                            <td>E</td>
+                        </tr>
+                        <tr>
+                            <td>Small Guns (2)</td>
+                            <td>S</td>
+                        </tr>
+                        <tr>
+                            <td>Melee Weapons (3)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>Unarmed Weapons (4)</td>
+                            <td>U</td>
+                        </tr>
+                        <tr>
+                            <td>Thrown Weapons (5)</td>
+                            <td>T</td>
+                        </tr>
+                        <tr>
+                            <td>Mine (6)</td>
+                            <td>L</td>
+                        </tr>
+                        <tr>
+                            <td>Other (any other value)</td>
+                            <td>O</td>
+                        </tr>
+                    </tbody>
+                </table>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> specifier and may contain a single
+                <code>%02d</code> specifier. For example, the custom format
+                <code>%s%02d$&nbsp;</code> would rename a weapon called
+                <q>BB Gun</q> with a damage of 10 to <q>S10$ BB Gun</q>.</td>
+            <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
+        </tr>
+    </tbody>
 </table>
-<p><strong>Note regarding Tweak Settings</strong>: In some cases for newer games the following Tweaks may become a permanent part of your saves,
-    and so should be set prior to starting a new game.<br>
-    Trying to change the same settings in a continued game by rebuilding your bashed patch may fail
-    for games newer than Oblivion &amp; Nehrim&colon; At Fate's Edge, because the game setting will always be loaded from your ongoing save files ( which the game loads last,
-    after the Bashed Patch ).<br>
-    For example, <em>World: Timescale</em>, once changed, is known to become permanently baked in your save game for
-    Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition. It can be set once, but thereafter is part of your saves, and can only be
-    changed by console command or by starting a new game.</p>
+<p><strong>Note regarding Tweak Settings:</strong> In some cases for newer
+    games the following Tweaks may become a permanent part of your saves, and
+    so should be set prior to starting a new game.
+    <br>
+    Trying to change settings in a continued game by rebuilding your Bashed
+    Patch may fail for games newer than Oblivion &amp; Nehrim&colon; At Fate's Edge,
+    because the setting will be loaded from your save file (which the game
+    loads last, after the Bashed Patch).
+    <br>
+    For example, <em>World: Timescale</em>, once changed, is known to become
+    permanently baked in your save game for Skyrim, Enderal&colon; Forgotten Stories
+    &amp; Skyrim&colon; Special Edition. It can be set once, but thereafter is part of
+    your saves, and can only be changed by console command or by starting a new
+    game.</p>
 <table>
     <thead>
         <tr><th colspan="3">Tweak Races</th></tr>
@@ -7018,7 +7517,7 @@ C.Location, -C.LockList
         <tr><td>TI to Cobl_Formids<td>Replaces ingredients added by Tamrielic Ingredients with equivalents added by Cobl.
         <tr><td rowspan="5">Import Names<td>Guard_Names<td>Based on <a href="https://www.nexusmods.com/oblivion/mods/2326">Flak's Complete Names Project</a>, this CSV file gives unique names to guards, legion soldiers, couriers and a few other NPCs and creatures with generic names. It covers both vanilla Oblivion and Oscuro's Oblivion Overhaul.
         <tr><td>OOO_Potion_Names<td>Renames the alcoholic beverages back to vanilla names for those that don't like OOO's method of renaming them.
-        <tr><td>Random_NPC_Alternate_Names<td>Does the same as <a href="#patchRandomNPCNames">Random NPC Names</a> above, but using different names.
+        <tr><td>Random_NPC_Alternate_Names<td>Does the same as <a href="#patchRandomNPCNames">Random NPC Names</a> below, but using different names.
         <tr><td id="patchRandomNPCNames">Random_NPC_Names<td>Gives unique names to generically named NPCs and renames some others from the following mods:
             <ul>
                 <li>Crowded Roads Revamped by Spotty42

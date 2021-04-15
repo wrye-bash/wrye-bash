@@ -82,7 +82,7 @@ class PatchGame(GameInfo):
     _constants_members = {
         # patcher and tweaks constants
         u'actor_importer_attrs', u'actor_tweaks', u'actor_types',
-        u'actor_values', u'assorted_tweaks', u'body_tags', u'cc_passes',
+        u'actor_values', u'assorted_tweaks', u'names_tweaks', u'cc_passes',
         u'cc_valid_types', u'cellRecAttrs', u'cell_float_attrs',
         u'cell_skip_interior_attrs', u'condition_function_data',
         u'default_eyes', u'destructible_types', u'ench_stats_attrs',
@@ -91,7 +91,7 @@ class PatchGame(GameInfo):
         u'import_races_attrs', u'inventoryTypes', u'default_wp_timescale',
         u'keywords_types', u'listTypes', u'mgef_basevalue', u'mgef_name',
         u'mgef_school', u'mgef_stats_attrs', u'namesTypes',
-        u'nonplayable_biped_flags', u'not_playable_flag',
+        u'nonplayable_biped_flags', u'not_playable_flag', u'body_part_codes',
         u'object_bounds_types', u'pricesTypes', u'race_tweaks',
         u'race_tweaks_need_collection', u'relations_attrs',
         u'relations_csv_header', u'relations_csv_row_format',
@@ -284,7 +284,8 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     # Tweak Names
     #--------------------------------------------------------------------------
-    body_tags = u''
+    names_tweaks = set()
+    body_part_codes = ()
 
     #--------------------------------------------------------------------------
     # Tweak Settings
