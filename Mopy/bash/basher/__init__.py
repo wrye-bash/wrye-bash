@@ -3652,6 +3652,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             className, title, item = tabInfo[page]
             panel = globals().get(className,None)
             if panel is None: continue
+            deprint(u"Constructing panel '%s'" % title)
             # Some page specific stuff
             if page == u'Installers': iInstallers = self.GetPageCount()
             elif page == u'Mods': iMods = self.GetPageCount()
@@ -3661,9 +3662,10 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
                 self.AddPage(item._native_widget, title)
                 tabInfo[page][2] = item
                 _widget_to_panel[item.wx_id_()] = item
+                deprint(u"Panel '%s' constructed successfully" % title)
             except:
                 if page == u'Mods':
-                    deprint(u"Fatal error constructing '%s' panel." % title)
+                    deprint(u"Fatal error constructing panel '%s'." % title)
                     raise
                 deprint(u"Error constructing '%s' panel." % title,
                         traceback=True)
@@ -4294,17 +4296,17 @@ class BashApp(wx.App):
     @staticmethod
     def InitData(progress):
         """Initialize all data. Called by Init()."""
-        progress(0.05, _(u'Initializing BsaInfos'))
+        progress(0.2, _(u'Initializing BSAs'))
         #bsaInfos: used in warnTooManyModsBsas() and modInfos strings detection
         bosh.bsaInfos = bosh.BSAInfos()
         bosh.bsaInfos.refresh(booting=True)
-        progress(0.20, _(u'Initializing ModInfos'))
+        progress(0.3, _(u'Initializing plugins'))
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh(booting=True)
-        progress(0.50, _(u'Initializing SaveInfos'))
+        progress(0.5, _(u'Initializing saves'))
         bosh.saveInfos = bosh.SaveInfos()
         bosh.saveInfos.refresh(booting=True)
-        progress(0.60, _(u'Initializing IniInfos'))
+        progress(0.6, _(u'Initializing INIs'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh(refresh_target=False)
         # screens/installers data are refreshed upon showing the panel
@@ -4324,7 +4326,9 @@ class BashApp(wx.App):
         if settings[u'bash.version'] != bass.AppVersion:
             settings[u'bash.version'] = bass.AppVersion
             # rescan mergeability on version upgrade to detect new mergeable
+            deprint(u'Version changed, rescanning mergeability')
             bosh.modInfos.rescanMergeable(bosh.modInfos, bolt.Progress())
+            deprint(u'Done rescanning mergeability')
 
 # Initialization --------------------------------------------------------------
 from .gui_patchers import initPatchers
