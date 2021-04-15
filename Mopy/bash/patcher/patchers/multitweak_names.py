@@ -30,9 +30,9 @@ import re
 from collections import OrderedDict
 
 # Internal
-from ...bolt import build_esub, RecPath
-from ...exception import AbstractError
 from .base import MultiTweakItem, IndexingTweak, MultiTweaker
+from ...bolt import build_esub, RecPath
+from ...exception import AbstractError, BPConfigError
 
 _ignored_chars=frozenset(u'+-=.()[]')
 
@@ -525,10 +525,15 @@ class TweakNamesPatcher(MultiTweaker):
 
     def __init__(self, p_name, p_file, enabled_tweaks):
         super(TweakNamesPatcher, self).__init__(p_name, p_file, enabled_tweaks)
-        for names_tweak in enabled_tweaks[1:]:
+        body_part_tags = u''
+        for names_tweak in enabled_tweaks:
             # Always the first one if it's enabled, so this is safe
             if isinstance(names_tweak, NamesTweak_BodyTags):
-                p_file.bodyTags = names_tweak.choiceValues[
+                body_part_tags = p_file.bodyTags = names_tweak.choiceValues[
                     names_tweak.chosen][0]
             elif isinstance(names_tweak, _ANamesTweak_Body):
-                names_tweak._tweak_body_tags = p_file.bodyTags
+                if not body_part_tags:
+                    raise BPConfigError(_(u"'Body Part Codes' must be enabled "
+                                          u"when using the '%s' tweak.")
+                                        % names_tweak.tweak_name)
+                names_tweak._tweak_body_tags = body_part_tags

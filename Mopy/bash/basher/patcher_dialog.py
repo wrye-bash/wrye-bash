@@ -33,7 +33,7 @@ from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
 from ..bolt import SubProgress, GPath, Path
 from ..exception import BoltError, CancelError, FileEditError, \
-    PluginsFullError, SkipError
+    PluginsFullError, SkipError, BPConfigError
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
@@ -254,20 +254,20 @@ class PatchDialog(DialogWindow):
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
         except CancelError:
             pass
-        except FileEditError as error:
-            self._error(_(u'File Edit Error'), error)
-        except BoltError as error:
-            self._error(_(u'Processing Error'), error)
-        except:
-            self._error()
+        except BPConfigError as e: # User configured BP incorrectly
+            self._error(_(u'The configuration of the Bashed Patch is '
+                          u'incorrect.') + u'\n' + e.message)
+        except (BoltError, FileEditError) as e: # Nonfatal error
+            self._error(u'%s' % e)
+        except Exception as e: # Fatal error
+            self._error(u'%s' % e)
             raise
         finally:
             if progress: progress.Destroy()
 
-    def _error(self, msg=None, error=None):
+    def _error(self, e_msg):
         balt.playSound(self.parent, bass.inisettings[u'SoundError'])
-        if msg:
-            balt.showError(self, u'%s' % error, _(u'File Edit Error'))
+        balt.showError(self, e_msg, _(u'Bashed Patch Error'))
         bolt.deprint(u'Exception during Bashed Patch building:',
                      traceback=True)
 

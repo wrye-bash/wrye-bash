@@ -296,6 +296,11 @@ class EnvError(Exception):
         super(EnvError, self).__init__(u"'%s' is not available on %s" % (
             env_feature, platform.system()))
 
+class BPConfigError(Exception):
+    """The configuration of the Bashed Patch is invalid in some way. Note that
+    the error messages raised by this will be shown to the user in the GUI and
+    so should be translated."""
+
 # gui package exceptions ------------------------------------------------------
 class GuiError(Exception):
     """Base class for exceptions thrown in the gui package."""
