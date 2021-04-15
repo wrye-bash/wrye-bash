@@ -289,8 +289,8 @@ class FileInfo(AFile, ListInfo):
     #--------------------------------------------------------------------------
     #--File type tests ##: Belong to ModInfo!
     #--Note that these tests only test extension, not the file data.
-    def isMod(self):
-        return ModInfos.rightFileType(self.name)
+    def isMod(self): # TODO(ut) obsolete - replace by inheritance
+        return ModInfos.rightFileType(self.ci_key)
 
     def setmtime(self, set_time=0.0, crc_changed=False):
         """Sets mtime. Defaults to current value (i.e. reset).
@@ -319,18 +319,10 @@ class FileInfo(AFile, ListInfo):
         if status == 30:
             return status
         #--Misordered?
-        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
-        loads_before_its_masters = self.isMod() and self.masterOrder and \
-                                   load_order.cached_lo_index(
-            self.masterOrder[-1]) > load_order.cached_lo_index(self.name)
-        if self.masterOrder != self.masterNames and loads_before_its_masters:
-            return 21
-        elif loads_before_its_masters:
-            return 20
-        elif self.masterOrder != self.masterNames:
-            return 10
-        else:
-            return status
+        return self._masters_order_status(status)
+
+    def _masters_order_status(self, status):
+        return status
 
     def _get_masters(self):
         """Return the masters of this file as a list, if this file has
@@ -1027,6 +1019,20 @@ class ModInfo(FileInfo):
             old_new_paths[0] = (self.abs_path, old_new_paths[0][1] + u'.ghost')
         return old_new_paths
 
+    def _masters_order_status(self, status):
+        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
+        loads_before_its_masters = self.masterOrder and \
+                                   load_order.cached_lo_index(
+            self.masterOrder[-1]) > load_order.cached_lo_index(self.ci_key)
+        if self.masterOrder != self.masterNames and loads_before_its_masters:
+            return 21
+        elif loads_before_its_masters:
+            return 20
+        elif self.masterOrder != self.masterNames:
+            return 10
+        else:
+            return status
+
 # Deprecated/Obsolete Bash Tags -----------------------------------------------
 # Tags that have been removed from Wrye Bash and should be dropped from pickle
 # files
@@ -1252,20 +1258,30 @@ class SaveInfo(FileInfo):
     def get_store(cls): return saveInfos
 
     def getStatus(self):
-        status = FileInfo.getStatus(self)
-        if status == 10:
-            status = 20 # Reordered masters are far more important in saves
+        status = super(SaveInfo, self).getStatus()
+        if status > 0:
+            # Missing or reordered masters -> orange or red
+            return status
         masterOrder = self.masterOrder
-        #--File size?
-        if status > 0 or len(masterOrder) > len(load_order.cached_active_tuple()):
-            return status
-        #--Current ordering?
-        if masterOrder != load_order.cached_active_tuple()[:len(masterOrder)]:
-            return status
-        elif masterOrder == load_order.cached_active_tuple():
+        active_tuple = load_order.cached_active_tuple()
+        if masterOrder == active_tuple:
+            # Exact match with LO -> purple
             return -20
-        else:
+        len_m = len(masterOrder)
+        if len(active_tuple) > len_m and masterOrder == active_tuple[:len_m]:
+            # Matches LO except for new plugins at the end -> blue
             return -10
+        else:
+            # Does not match the LO's active plugins, but the order is correct.
+            # That means the LO has new plugins, but not at the end -> green
+            return 0
+
+    def _masters_order_status(self, status):
+        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
+        if self.masterOrder != self.masterNames:
+            return 20 # Reordered masters are far more important in saves
+        else:
+            return status
 
     def is_save_enabled(self):
         """True if I am enabled."""
