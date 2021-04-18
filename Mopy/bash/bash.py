@@ -478,14 +478,13 @@ def _import_bush_and_set_game(opts, bashIni):
     game_infos = bush.detect_and_set_game(opts.oblivionPath, bashIni)
     if game_infos is not None:  # None == success
         if len(game_infos) == 0:
-            balt.showError(
-                None, _(u'Wrye Bash could not find a game to manage. Make '
-                        u'sure to launch games you installed through Steam '
-                        u'once and enable mods on games you installed through '
-                        u'the Windows Store.') + u'\n\n' +
-                      _(u'You can also use the -o command line argument or '
-                        u'bash.ini to specify the path manually.'),
-                title=_(u'No Game Found'))
+            _show_boot_popup(_(
+                u'Wrye Bash could not find a game to manage. Make sure to '
+                u'launch games you installed through Steam once and enable '
+                u'mods on games you installed through the Windows '
+                u'Store.') + u'\n\n' + _(
+                u'You can also use the -o command line argument or bash.ini '
+                u'to specify the path manually.'))
             return None
         retCode = _select_game_popup(game_infos)
         if not retCode:
