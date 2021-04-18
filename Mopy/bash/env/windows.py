@@ -46,7 +46,7 @@ from ..exception import AccessDeniedError, BoltError, NonExistentDriveError
 from .common import get_env_var, WinAppInfo, WinAppVersionInfo
 
 # API - Constants =============================================================
-isUAC = False
+_isUAC = False
 
 from ctypes.wintypes import MAX_PATH
 from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, \
@@ -913,15 +913,15 @@ def testUAC(gameDataPath):
     try: # to move it into the Data directory
         shellMove(tempFile, dest, silent=True)
     except AccessDeniedError:
-        global isUAC
-        isUAC = True
+        global _isUAC
+        _isUAC = True
     finally:
         shellDeletePass(tmpDir)
         shellDeletePass(dest)
 
 def setUAC(handle, uac=True):
     """Calls the Windows API to set a button as UAC"""
-    if isUAC and win32gui:
+    if _isUAC and win32gui:
         win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
 def getJava(): # PY3: cache this
@@ -953,7 +953,7 @@ def getJava(): # PY3: cache this
 
 def is_uac():
     """Returns True if the game is under UAC protection."""
-    return isUAC
+    return _isUAC
 
 def fixup_taskbar_icon():
     """On Windows 7+, if taskbar settings for taskbar buttons is set to 'Always

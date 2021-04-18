@@ -1246,7 +1246,7 @@ class GeneralPage(_AScrollablePage):
             chkbx_tooltip=_(u'Restart Wrye Bash with administrator '
                             u'privileges.'))
         self._uac_restart_checkbox.on_checked.subscribe(self._on_uac_restart)
-        self._uac_restart_checkbox.visible = env.isUAC
+        self._uac_restart_checkbox.visible = env.is_uac()
         VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
             HorizontalLine(self),
