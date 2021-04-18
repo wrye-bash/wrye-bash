@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import io
 import os
 import subprocess
 import webbrowser
@@ -339,7 +340,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                                outDir, _(u'Colors.txt'), u'*.txt')
         if not outPath: return
         try:
-            with outPath.open(u'w') as out:
+            with outPath.open(u'w', encoding=u'utf-8') as out:
                 for key in sorted(colors):
                     if key in self.changes:
                         color = self.changes[key]
@@ -359,7 +360,7 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                               mustExist=True)
         if not inPath: return
         try:
-            with inPath.open(u'r') as ins:
+            with inPath.open(u'r', encoding=u'utf-8') as ins:
                 for line in ins:
                     # Format validation
                     if u':' not in line:
@@ -1387,21 +1388,33 @@ class TrustedBinariesPage(_AFixedPage):
         textPath = balt.askSave(self, title=title, defaultDir=textDir,
             defaultFile=file_, wildcard=u'*.txt')
         if not textPath: return
-        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
-            out.write(u'goodDlls '+_(u'(those dlls that you have chosen to allow to be installed)')+u'\r\n')
+        with textPath.open(u'w', encoding=u'utf-8') as out:
+            # Stick a header in there and include the version. Should always be
+            # a comment anyways, but to be sure, put a '#' in front of it
+            out.write(u'# %s\n' % (_(u'Exported by Wrye Bash v%s')
+                                   % bass.AppVersion))
+            out.write(u'goodDlls # %s\n' % _(u'Binaries whose installation '
+                                             u'you have allowed'))
             if bass.settings[u'bash.installers.goodDlls']:
                 for dll in bass.settings[u'bash.installers.goodDlls']:
-                    out.write(u'dll:'+dll+u':\r\n')
-                    for index, version in enumerate(bass.settings[u'bash.installers.goodDlls'][dll]):
-                        out.write(u'version %02d: %s\r\n' % (index, version))
-            else: out.write(u'None\r\n') # will be treated as a comment
-            out.write(u'badDlls '+_(u'(those dlls that you have chosen to NOT allow to be installed)')+u'\r\n')
+                    out.write(u'dll: %s:\n' % dll)
+                    for i, version in enumerate(
+                            bass.settings[u'bash.installers.goodDlls'][dll]):
+                        v_name, v_size, v_crc = version
+                        out.write(u"version %02d: ['%s', %d, %d]\n" % (
+                            i, v_name, v_size, v_crc))
+            else: out.write(u'# %s\n' % _(u'None')) # Treated as a comment
+            out.write(u'badDlls # %s\n' % _(u'Binaries whose installation you '
+                                            u'have forbidden'))
             if bass.settings[u'bash.installers.badDlls']:
                 for dll in bass.settings[u'bash.installers.badDlls']:
-                    out.write(u'dll:'+dll+u':\r\n')
-                    for index, version in enumerate(bass.settings[u'bash.installers.badDlls'][dll]):
-                        out.write(u'version %02d: %s\r\n' % (index, version))
-            else: out.write(u'None\r\n') # will be treated as a comment
+                    out.write(u'dll: %s:\n' % dll)
+                    for i, version in enumerate(
+                            bass.settings[u'bash.installers.badDlls'][dll]):
+                        v_name, v_size, v_crc = version
+                        out.write(u"version %02d: ['%s', %d, %d]\n" % (
+                            i, v_name, v_size, v_crc))
+            else: out.write(u'# %s\n' % _(u'None')) # Treated as a comment
 
     def _import_lists(self):
         textDir = bass.dirs[u'patches']
@@ -1432,7 +1445,12 @@ class TrustedBinariesPage(_AFixedPage):
                 i = i[:-1]
             return int(i)
         try:
-            with textPath.open(u'r', encoding=u'utf-8-sig') as ins:
+            with textPath.open(u'rb') as ins:
+                contents = ins.read()
+            # WB versions before 309 wrote a BOM into these files
+            if contents.startswith(b'\xef\xbb\xbf'):
+                contents = contents[3:]
+            with io.StringIO(contents.decode(u'utf-8')) as ins:
                 Dlls = {u'goodDlls':{}, u'badDlls':{}}
                 current, dll = None, None
                 for line in ins:

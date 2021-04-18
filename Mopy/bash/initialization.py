@@ -23,14 +23,14 @@
 """Functions for initializing Bash data structures on boot. For now exports
 functions to initialize bass.dirs that need be initialized high up into the
 boot sequence to be able to backup/restore settings."""
+import io
 import os
 from ConfigParser import ConfigParser, MissingSectionHeaderError
-# Local - don't import anything else
-from . import env
+# Local - make sure that all imports here are carefully done in bash.py first
 from .bass import dirs, get_ini_option
-from .bolt import GPath, Path, getbestencoding, deprint
+from .bolt import GPath, Path, decoder, deprint
 from .env import get_personal_path, get_local_app_data_path, \
-    get_win_store_game_info
+    get_win_store_game_info, shellMakeDirs
 from .exception import BoltError, NonExistentDriveError
 
 mopy_dirs_initialized = bash_dirs_initialized = False
@@ -195,9 +195,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
             except UnicodeDecodeError:
                 # No good, this is a nonstandard encoding
                 with data_oblivion_ini.open(u'rb') as ins:
-                    ini_enc = getbestencoding(ins.read())[0]
-                with data_oblivion_ini.open(u'r', encoding=ini_enc) as ins:
-                    oblivionIni.readfp(ins)
+                    ini_contents = ins.read()
+                oblivionIni.readfp(io.StringIO(decoder(ini_contents)))
         except MissingSectionHeaderError:
             # Probably not actually a game INI - might be reshade
             init_warnings.append(
@@ -244,7 +243,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         for dir_key in dir_keys:
             wanted_dir = dirs[dir_key]
             deprint(u' - %s' % wanted_dir)
-            env.shellMakeDirs([wanted_dir])
+            shellMakeDirs([wanted_dir])
     except NonExistentDriveError as e:
         # NonExistentDriveError is thrown by shellMakeDirs if any of the
         # directories cannot be created due to residing on a non-existing

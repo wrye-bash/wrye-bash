@@ -1053,6 +1053,7 @@ class Installer(ListInfo):
         project = outDir.join(project)
         with project.unicodeSafe() as projectDir:
             #--Dump file list
+            ##: We don't use a BOM for tempList in unpackToTemp...
             with self.tempList.open(u'w', encoding=u'utf-8-sig') as out:
                 if release:
                     out.write(u'*thumbs.db\n')
@@ -2372,12 +2373,14 @@ class InstallersData(DataStore):
                 removed.add((tweakPath, iniAbsDataPath))
                 tweakPath.remove()
                 continue
-            # Re-write the tweak
-            with tweakPath.open(u'w') as ini_:
-                ini_.write(u'; INI Tweak created by Wrye Bash, using settings '
-                           u'from old file.\n\n')
+            # Re-write the tweak. Use UTF-8 so that we can localize the
+            # comment at the top
+            with tweakPath.open(u'w', encoding=u'utf-8') as ini_:
+                ini_.write(u'; %s\n\n' % (_(u'INI Tweak created by Wrye Bash '
+                                            u'%s, using settings from old '
+                                            u'file.') % bass.AppVersion))
                 ini_.writelines(lines)
-            # we notify BAIN below, although highly improbable the created ini
+            # We notify BAIN below, although highly improbable the created ini
             # is included to a package
             iniInfos.new_info(tweakPath.tail, notify_bain=True)
         tweaksCreated -= removed

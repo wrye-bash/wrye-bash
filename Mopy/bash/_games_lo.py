@@ -1306,14 +1306,22 @@ class AsteriskGame(Game):
     @classmethod
     def parse_ccc_file(cls):
         if not cls._ccc_filename: return # Abort if this game has no CC
-        _ccc_path = bass.dirs[u'app'].join(cls._ccc_filename)
+        ccc_path = bass.dirs[u'app'].join(cls._ccc_filename)
         try:
-            with open(_ccc_path.s, u'r') as ins:
-                cls.must_be_active_if_present += tuple(
-                    GPath_no_norm(line.strip()) for line in ins.readlines())
+            with open(ccc_path.s, u'rb') as ins:
+                ccc_contents = []
+                for ccc_line in ins.readlines():
+                    try:
+                        ccc_dec = bolt.decoder(ccc_line, encoding=u'cp1252')
+                        ccc_contents.append(GPath_no_norm(ccc_dec.strip()))
+                    except UnicodeError:
+                        bolt.deprint(u'Failed to decode CCC entry %r'
+                                     % ccc_line)
+                        continue
+                cls.must_be_active_if_present += tuple(ccc_contents)
         except (OSError, IOError) as e:
             if e.errno != errno.ENOENT:
-                bolt.deprint(u'Failed to open %s' % _ccc_path, traceback=True)
+                bolt.deprint(u'Failed to open %s' % ccc_path, traceback=True)
             bolt.deprint(u'%s does not exist or could not be read, falling '
                          u'back to hardcoded CCC list' % cls._ccc_filename)
             cls.must_be_active_if_present += cls._ccc_fallback

@@ -174,12 +174,12 @@ class OmodFile(object):
             progress(0.47, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscript')
             if scr_exists:
                 with scr_path.open(u'rb') as ins:
-                    with ocdDir.join(u'script.txt').open(u'w') as output:
+                    with ocdDir.join(u'script.txt').open(u'wb') as output:
                         output.write(_readNetString(ins))
             progress(0.48, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nreadme.rtf')
             if readme_exists:
                 with readme_path.open(u'rb') as ins:
-                    with ocdDir.join(u'readme.rtf').open(u'w') as output:
+                    with ocdDir.join(u'readme.rtf').open(u'wb') as output:
                         output.write(_readNetString(ins))
             progress(0.49, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscreenshot')
             if extractDir.join(u'image').exists():

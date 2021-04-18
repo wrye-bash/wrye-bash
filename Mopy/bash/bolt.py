@@ -26,7 +26,6 @@
 from __future__ import division, print_function
 
 import cPickle as pickle  # PY3
-import codecs
 import collections
 import copy
 import datetime
@@ -826,13 +825,10 @@ class Path(object):
                         try: chmod(rootJoin(filename),stat_flags)
                         except: pass
 
-    def open(self,*args,**kwdargs): # PY3: drop - open() accepts encoding now
+    def open(self,*args,**kwdargs):
         if self.shead and not os.path.exists(self.shead):
             os.makedirs(self.shead)
-        if u'encoding' in kwdargs:
-            return codecs.open(self._s,*args,**kwdargs)
-        else:
-            return open(self._s,*args,**kwdargs)
+        return io.open(self._s, *args, **kwdargs)
     def makedirs(self):
         try:
             os.makedirs(self._s)
@@ -943,7 +939,7 @@ class Path(object):
         """Safely check whether a file is editable."""
         delete = not os.path.exists(self._s)
         try:
-            with open(self._s,u'ab'):
+            with open(self._s, u'ab'):
                 return True
         except:
             return False
@@ -2391,8 +2387,8 @@ class WryeText(object):
             srcPath = GPath(ins)
             outPath = GPath(out) or srcPath.root+u'.html'
             css_dirs = (srcPath.head,) + css_dirs
-            ins = srcPath.open(encoding=u'utf-8-sig')
-            out = outPath.open(u'w',encoding=u'utf-8-sig')
+            ins = srcPath.open(u'r', encoding=u'utf-8-sig')
+            out = outPath.open(u'w', encoding=u'utf-8-sig')
         else:
             srcPath = outPath = None
         # Setup

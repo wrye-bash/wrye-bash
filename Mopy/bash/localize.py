@@ -148,7 +148,7 @@ def setup_locale(cli_lang):
                     m = os.path.join(python_tools_dir(), u'i18n', u'msgfmt.py')
                     subprocess.call([sys.executable, m, u'-o', mo, po])
             # We've successfully compiled the translation, read it into memory
-            with open(mo,u'rb') as trans_file:
+            with open(mo, u'rb') as trans_file:
                 trans = gettext.GNUTranslations(trans_file)
         except (UnicodeError, OSError):
             bolt.deprint(u'Error loading translation file:')

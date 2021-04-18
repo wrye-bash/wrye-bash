@@ -580,6 +580,7 @@ class InstallerConverter(object):
         tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
         #--Dump file list
         try:
+            ##: We don't use a BOM for tempList in unpackToTemp...
             with tempList.open(u'w', encoding=u'utf-8-sig') as out:
                 out.write(u'\n'.join(fileNames))
         except Exception as e:

@@ -28,7 +28,7 @@ loop."""
 # Imports ---------------------------------------------------------------------
 from __future__ import print_function
 import atexit
-import codecs
+import io
 import os
 import platform
 import shutil
@@ -64,10 +64,9 @@ def _early_setup(debug):
         # Also, setup stdout/stderr to the debug log if debug mode /
         # standalone before wxPython is up
         global _bugdump_handle
-        # _bugdump_handle = io.open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w',encoding=u'utf-8')
-        _bugdump_handle = codecs.getwriter(u'utf-8')(
-            open(os.path.join(os.getcwdu(), u'BashBugDump.log'), u'w',
-                 buffering=0))
+        _bugdump_handle = io.open(
+            os.path.join(os.getcwdu(), u'BashBugDump.log'), u'w', buffering=1,
+            encoding=u'utf-8')
         sys.stdout = _bugdump_handle
         sys.stderr = _bugdump_handle
 
@@ -233,7 +232,7 @@ def _bash_ini_parser(bash_ini_path):
         # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
         # English INI is ASCII)
         # PY3: use read(bash_ini_path, encoding='utf-8') instead
-        with codecs.open(bash_ini_path, encoding=u'utf-8') as bash_ini:
+        with io.open(bash_ini_path, u'r', encoding=u'utf-8') as bash_ini:
             bash_ini_parser.readfp(bash_ini)
     return bash_ini_parser
 

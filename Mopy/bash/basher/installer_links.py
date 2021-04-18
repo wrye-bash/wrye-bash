@@ -620,7 +620,10 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
         info_dir = bass.dirs[u'app'].join(self.__class__._mode_info_dir)
         info_dir.makedirs()
         achlist = info_dir.join(self._selected_info.archive + u'.achlist')
-        with BusyCursor(), open(achlist.s, u'w') as out:
+        ##: Windows-1252 is a guess. The CK is able to decode non-ASCII
+        # characters encoded with it correctly, at the very least (UTF-8/UTF-16
+        # both fail), but the encoding might depend on the game language?
+        with BusyCursor(), achlist.open(u'w', encoding=u'cp1252') as out:
             out.write(u'[\n\t"')
             lines = u'",\n\t"'.join(
                 u'\\'.join((bush.game.mods_dir, d)).replace(u'\\', u'\\\\')

@@ -1038,8 +1038,10 @@ PatchPlugin &lt;NewFile&gt; &lt;FileToPatch&gt; [Create]</code>
 <h2 id="trusted-binaries">Trusted Binaries</h2>
 <p>This format is used for exporting and importing data by the
     <a href="Wrye%20Bash%20Advanced%20Readme.html#settings-trusted-binaries">Trusted Binaries</a>
-    settings page. It is a simple plaintext format, stored with UTF-8
-    encoding in files with the <code>.txt</code> extension.</p>
+    settings page. It is a simple plaintext format, stored with UTF-8 encoding
+    (do <em>not</em> include a BOM when writing, but be ready to handle a BOM
+    when reading since versions of Wrye Bash before 309 wrote BOMs) in files
+    with the <code>.txt</code> extension.</p>
 <p>Each line is either a <em>statement</em> or a <em>comment</em>. If the line
     begins with one of they statement keywords, as described below, it is a
     statement. Otherwise, it is considered a comment and ignored

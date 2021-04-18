@@ -625,7 +625,7 @@ class DDSFile(AFile):
         """Writes this DDS file to the specified path. If out_path is None,
         this file's own path will be used."""
         out_path = out_path or self.abs_path
-        with out_path.open(u'w') as out:
+        with out_path.open(u'wb') as out:
             out.write(self.dump_file())
 
     def write_file_safe(self, out_path=None):

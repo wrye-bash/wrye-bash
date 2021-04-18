@@ -723,7 +723,7 @@ class WryeParser(ScriptParser.Parser):
         self.reversing = 0
         self.ExecCount = 0
         try:
-            with file_path.open(encoding=u'utf-8-sig') as wiz_script:
+            with file_path.open(u'r', encoding=u'utf-8-sig') as wiz_script:
                 # Ensure \n line endings for the script parser
                 self.lines = [x.replace(u'\r\n', u'\n') for x in wiz_script.readlines()]
             return None

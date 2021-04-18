@@ -254,7 +254,8 @@ class DocBrowser(WindowFrame):
                     u'Docs', u'{} Readme Template'.format(fname))
                                   for fname in (u'My', u'Bash')):
                 if template_file.exists():
-                    template = u''.join(template_file.open().readlines())
+                    with template_file.open(u'rb') as ins:
+                        template = bolt.decoder(ins.read())
                     break
             else:
                 template = u'= $modName {}#\n{}'.format(u'=' * (74-len(mod_name)),
