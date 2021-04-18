@@ -115,7 +115,7 @@ except ImportError:
 if sys.version_info >= (3,0):
     _prefix = sys.prefix
 else:
-    _prefix = sys.prefix.decode(sys.getfilesystemencoding())
+    _prefix = sys.prefix.decode(bolt.Path.sys_fs_enc)
 _env_path = env.get_env_var(u'PATH')
 if sys.prefix not in set(_env_path.split(u';')):
     env.set_env_var(u'PATH', _env_path + u';' + _prefix)

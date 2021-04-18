@@ -204,7 +204,7 @@ def dump_environment():
     import wx as _wx
     import lz4
     import yaml
-    fse = sys.getfilesystemencoding()
+    fse = bolt.Path.sys_fs_enc
     msg = [
         u'Using Wrye Bash Version %s%s' % (bass.AppVersion,
             u' (Standalone)' if bass.is_standalone else u''),

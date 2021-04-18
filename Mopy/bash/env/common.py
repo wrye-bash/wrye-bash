@@ -64,7 +64,7 @@ if sys.version_info >= (3,0):
 else:
     # Python 2 version, encode/decode values, but warn if using bytes
     # to future proof for Python 3
-    _fsencoding = sys.getfilesystemencoding()
+    _fsencoding = bolt.Path.sys_fs_enc
 
     def _warn(msg):
         warnings.warn(msg, UnicodeWarning, stacklevel=2)

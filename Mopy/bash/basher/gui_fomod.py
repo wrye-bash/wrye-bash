@@ -401,11 +401,11 @@ class PageFinish(PageInstaller):
             checked=self._page_parent.fm_ret.should_install)
         check_install.on_checked.subscribe(self._on_check_install)
         use_table = bass.settings[u'bash.fomod.use_table']
-        check_output = CheckBox(self, _(u'Use Table View'), checked=use_table,
-                                chkbx_tooltip=_(u'Switch to a table-based '
-                                                u'view of the files that are '
-                                                u'going to be installed.'))
-        check_output.on_checked.subscribe(self._on_switch_output)
+        check_tab_view = CheckBox(
+            self, _(u'Use Table View'), checked=use_table,
+            chkbx_tooltip=_(u'Switch to a table-based view of the files that '
+                            u'are going to be installed.'))
+        check_tab_view.on_checked.subscribe(self._on_switch_output)
         # This can take a bit for very large FOMOD installs
         with BusyCursor():
             installer_output = self._page_parent.fomod_parser.get_fomod_files()
@@ -433,7 +433,7 @@ class PageFinish(PageInstaller):
              LayoutOptions(expand=False, h_align=CENTER)),
             (self._output_table, LayoutOptions(weight=1)),
             (self._output_text, LayoutOptions(weight=1)),
-            HLayout(items=[check_install, Stretch(), check_output]),
+            HLayout(items=[check_install, Stretch(), check_tab_view]),
         ]).apply_to(self)
         self.update_layout()
 
