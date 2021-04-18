@@ -248,7 +248,7 @@ class AMultiTweakItem(object):
     def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled, self.chosen = self.default_enabled, 0
-        self._isNew = not (self.tweak_key in configs)
+        self._isNew = self.tweak_key not in configs
         if not self._isNew:
             self.isEnabled,value = configs[self.tweak_key]
             if value in self.choiceValues:

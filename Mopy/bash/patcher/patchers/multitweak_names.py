@@ -479,9 +479,25 @@ class NamesTweak_Spells(_AMgefNamesTweak):
                                                  record.level) + wip_name
             else:
                 wip_name = self.chosen_format % u'ACDIMRU'[school] + wip_name
-        elif u'%02d' in self.chosen_format: # no school, but show level
-            wip_name = self.chosen_format % record.level + wip_name
+        else:
+            if u'%02d' in self.chosen_format: # no school, but show level
+                wip_name = self.chosen_format % record.level + wip_name
+            else: # nothing special, just prepend a static format
+                wip_name = self.chosen_format + wip_name
         return wip_name
+
+    # Upgrade older format that used different values - drop on VDATA3?
+    def init_tweak_config(self, configs):
+        if self.tweak_key in configs:
+            is_enabled, tweak_value = configs[self.tweak_key]
+            if tweak_value == u'NOTAGS':
+                # NOTAGS was replaced by an empty string
+                tweak_value = u''
+            elif u'%d' in tweak_value:
+                # %d was replaced by %02d
+                tweak_value = tweak_value.replace(u'%d', u'%02d')
+            configs[self.tweak_key] = (is_enabled, tweak_value)
+        super(NamesTweak_Spells, self).init_tweak_config(configs)
 
 #------------------------------------------------------------------------------
 class _ANamesTweak_Weapons(_ANamesTweak):
@@ -604,6 +620,8 @@ class NamesTweak_AmmoWeight_Fo3(NamesTweak_AmmoWeight_Fnv, IndexingTweak):
     def wants_record(self, record):
         if self._look_up_weight is None:
             return True # We haven't collected weights yet, forward everything
+        elif not self._look_up_weight:
+            return False # We've collected weights, but not found anything
         return super(NamesTweak_AmmoWeight_Fo3, self).wants_record(record)
 
     def _get_record_weight(self, record):
