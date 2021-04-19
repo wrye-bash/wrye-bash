@@ -44,7 +44,7 @@ from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_str_int_delim, unpack_str16_delim, unpack_str_byte_delim, \
     unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short, \
     pack_float, pack_string, pack_str8, pack_bzstr8, structs_cache, \
-    struct_error
+    struct_error, remove_newlines
 from ..exception import SaveHeaderError, raise_bolt_error, AbstractError
 
 # Utilities -------------------------------------------------------------------
@@ -94,9 +94,10 @@ class SaveFileHeader(object):
         self.load_masters(ins)
         # additional calculations - TODO(ut): rework decoding
         self.calc_time()
-        self.pcName = decoder(cstrip(self.pcName))
-        self.pcLocation = decoder(cstrip(self.pcLocation), bolt.pluginEncoding,
-                                 avoidEncodings=(u'utf8', u'utf-8'))
+        self.pcName = remove_newlines(decoder(cstrip(self.pcName)))
+        self.pcLocation = remove_newlines(decoder(
+            cstrip(self.pcLocation), bolt.pluginEncoding,
+            avoidEncodings=(u'utf8', u'utf-8')))
         self.masters = [bolt.GPath_no_norm(decoder(
             x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
             for x in self.masters]
@@ -651,9 +652,9 @@ class MorrowindSaveHeader(SaveFileHeader):
         save_info = ModInfo(self._save_info.abs_path, load_cache=True)
         ##: Figure out where some more of these are (e.g. level)
         self.header_size = save_info.header.size
-        self.pcName = save_info.header.pc_name
+        self.pcName = remove_newlines(save_info.header.pc_name)
         self.pcLevel = 0
-        self.pcLocation = save_info.header.curr_cell
+        self.pcLocation = remove_newlines(save_info.header.curr_cell)
         self.gameDays = self.gameTicks = 0
         self.masters = save_info.masterNames[:]
         self.pc_curr_health = save_info.header.pc_curr_health

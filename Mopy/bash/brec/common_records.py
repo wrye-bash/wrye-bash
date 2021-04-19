@@ -37,7 +37,8 @@ from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID
 from .. import bolt, exception
-from ..bolt import decoder, GPath, struct_pack, structs_cache
+from ..bolt import decoder, GPath, struct_pack, structs_cache, \
+    remove_newlines, to_unix_newlines
 from ..exception import StateError
 
 #------------------------------------------------------------------------------
@@ -101,16 +102,16 @@ class MreHeaderBase(MelRecord):
 
     @property
     def description(self):
-        return self.description_pstr or u''
+        return to_unix_newlines(self.description_pstr or u'')
     @description.setter
     def description(self, new_desc):
         self.description_pstr = new_desc
     @property
     def author(self):
-        return self.author_pstr
+        return remove_newlines(self.author_pstr or u'')
     @author.setter
-    def author(self, val):
-        self.author_pstr = val
+    def author(self, new_author):
+        self.author_pstr = new_author
 
     def loadData(self, ins, endPos):
         super(MreHeaderBase, self).loadData(ins, endPos)

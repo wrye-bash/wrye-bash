@@ -223,6 +223,16 @@ def encode_complex_string(string_val, max_size=None, min_size=None,
         string_val += b'\x00' * (min_size - len(string_val))
     return string_val
 
+def to_unix_newlines(s): # type: (unicode) -> unicode
+    """Replaces non-UNIX newlines in the specified string with Unix newlines.
+    Handles both CR-LF (Windows) and pure CR (macOS)."""
+    return s.replace(u'\r\n', u'\n').replace(u'\r', u'\n')
+
+def remove_newlines(s): # type: (unicode) -> unicode
+    """Removes all newlines (whether they are in LF, CR-LF or CR form) from the
+    specified string."""
+    return to_unix_newlines(s).replace(u'\n', u'')
+
 def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
 ##: Keep an eye on https://bugs.python.org/issue31749
