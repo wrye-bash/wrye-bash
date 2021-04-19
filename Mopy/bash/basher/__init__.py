@@ -4091,8 +4091,9 @@ class BashFrame(WindowFrame):
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
-        invalidVersions = {x.name for x in bosh.modInfos.itervalues() if round(
-            x.header.version, 6) not in bush.game.Esp.validHeaderVersions}
+        valid_vers = bush.game.Esp.validHeaderVersions
+        invalidVersions = {x.name for x in bosh.modInfos.itervalues() if
+                           all(x.header.version != v for v in valid_vers)}
         if warn_mods and not invalidVersions <= self.knownInvalidVerions:
             m = [_(u'Unrecognized Versions'),
                  _(u'The following mods have unrecognized header versions: ')]

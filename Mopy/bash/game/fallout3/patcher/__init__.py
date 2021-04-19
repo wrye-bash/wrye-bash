@@ -28,7 +28,6 @@ bush."""
 # Function Info ---------------------------------------------------------------
 # Needs to be public so we can import it for FNV
 # 0: no param; 1: int param; 2: formid param; 3: float param
-# ***no imports!***
 
 condition_function_data = {
     1:    (u'GetDistance', 2, 0),
@@ -387,8 +386,6 @@ cellRecAttrs = {
     u'C.Water': (u'water', u'waterHeight', u'waterNoiseTexture',
                  u'flags.hasWater'),
 }
-cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
-                    u'fogPower', u'waterHeight'}
 
 #------------------------------------------------------------------------------
 # Import Graphics

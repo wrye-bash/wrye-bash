@@ -27,9 +27,10 @@ from __future__ import division
 import random
 import re
 # Internal
-from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak, IndexingTweak
-from ... import bush, load_order
-from ...bolt import GPath, deprint, floats_equal
+from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak, \
+    IndexingTweak
+from ... import bush, load_order, bolt
+from ...bolt import GPath, deprint
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):
@@ -290,7 +291,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
         # All of these floats must be approximately equal to 0
         for fog_attr in (u'fogNear', u'fogFar', u'fogClip'):
             fog_val = getattr(record, fog_attr)
-            if fog_val is not None and not floats_equal(fog_val, 0.0):
+            if fog_val is not None and fog_val != 0.0: # type: bolt.Rounder
                 return False
         return True
 
@@ -352,8 +353,7 @@ class _AWeightTweak(CustomChoiceTweak):
             log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
 
     def wants_record(self, record):
-        return (record.weight > self.chosen_weight and
-                not floats_equal(record.weight, self.chosen_weight))
+        return record.weight > self.chosen_weight # type: bolt.Rounder
 
     def tweak_record(self, record):
         record.weight = self.chosen_weight
@@ -422,8 +422,7 @@ class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
     _log_weight_value = _(u'Ingestibles set to minimum weight of %f.')
 
     def wants_record(self, record): ##: no SEFF condition - intended?
-        return (record.weight < self.chosen_weight and
-                not floats_equal(record.weight, self.chosen_weight))
+        return record.weight < self.chosen_weight
 
 #------------------------------------------------------------------------------
 class AssortedTweak_StaffWeight(_AWeightTweak):
@@ -553,7 +552,7 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
     tweak_log_msg = _(u'Grasses Normalized: %(total_changed)d')
 
     def wants_record(self, record):
-        return not floats_equal(record.heightRange, 0.0)
+        return record.heightRange != 0.0 # type: bolt.Rounder
 
     def tweak_record(self, record):
         record.heightRange = 0.0

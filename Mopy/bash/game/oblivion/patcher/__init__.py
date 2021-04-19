@@ -324,8 +324,6 @@ cellRecAttrs = {
     u'C.Regions': (u'regions',),
     u'C.Water': (u'water', u'waterHeight', u'flags.hasWater'),
 }
-cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
-                    u'waterHeight'}
 
 #------------------------------------------------------------------------------
 # Import Graphics

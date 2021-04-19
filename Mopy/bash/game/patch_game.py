@@ -83,7 +83,7 @@ class PatchGame(GameInfo):
         # patcher and tweaks constants
         u'actor_importer_attrs', u'actor_tweaks', u'actor_types',
         u'actor_values', u'assorted_tweaks', u'names_tweaks', u'cc_passes',
-        u'cc_valid_types', u'cellRecAttrs', u'cell_float_attrs',
+        u'cc_valid_types', u'cellRecAttrs',
         u'cell_skip_interior_attrs', u'condition_function_data',
         u'default_eyes', u'destructible_types', u'ench_stats_attrs',
         u'generic_av_effects', u'getvatsvalue_index', u'graphicsFidTypes',
@@ -211,7 +211,6 @@ class PatchGame(GameInfo):
     # Import Cells
     #--------------------------------------------------------------------------
     cellRecAttrs = {}
-    cell_float_attrs = set()
     cell_skip_interior_attrs = set()
 
     #--------------------------------------------------------------------------

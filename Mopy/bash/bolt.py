@@ -278,8 +278,7 @@ def int_or_zero(uni_str):
 
 def float_or_none(uni_str):
     try: ##: is this needed (elsewhere also?)?
-        return round(struct_unpack(u'f', struct_pack(u'f', float(uni_str)))[0],
-                     6)
+        return Rounder(float(uni_str))
     except ValueError:
         return None
 
@@ -1718,20 +1717,47 @@ def cmp_(x, y):
     # TODO(lojack): Hunt down and rewrite any usages of this
     return (x > y) - (x < y)
 
-def isclose_(a, b, rel_tol=1e-09, abs_tol=0.0):
-    """Inexact float comparison. PY3: drop in favor of math.isclose."""
-    try:
-        return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
-    except TypeError:
-        if a is b is None: return True
-        return False
+class Rounder(float):
+    """Float wrapper used for inexact comparison of float record elements."""
+    __slots__ = ()
 
-def floats_equal(a, b):
-    """Checks if the two floats are equal to the sixth place (relatively) or to
-    the twelfth place (absolutely). Used for inexact comparisons in tweaks,
-    etc. Note that these parameters were picked fairly arbitrarily, so feel
-    free to tweak them if they turn out to be a problem."""
-    return isclose_(a, b, rel_tol=1e-06, abs_tol=1e-12)
+    #--Hash/Compare
+    def __hash__(self):
+        raise exception.AbstractError(
+            u'%s does not define __hash__' % type(self))
+    def __eq__(self, b, rel_tol=1e-06, abs_tol=1e-12):
+        """Check if the two floats are equal to the sixth place (relatively)
+        or to the twelfth place (absolutely). Note that these parameters
+        were picked fairly arbitrarily, so feel free to tweak them if they
+        turn out to be a problem.""" # PY3: drop in favor of math.isclose
+        try:
+            return abs(self - b) <= max(rel_tol * max(abs(self), abs(b)),
+                                        abs_tol)
+        except TypeError:
+            return super(Rounder, self).__eq__(b)
+    def __ne__(self, b, rel_tol=1e-06, abs_tol=1e-12):
+        try:
+            return abs(self - b) > max(rel_tol * max(abs(self), abs(b)),
+                                       abs_tol)
+        except TypeError:
+            return super(Rounder, self).__ne__(b)
+    def __lt__(self, other):
+        return self != other and super(Rounder, self).__lt__(other)
+    def __gt__(self, other):
+        return self != other and super(Rounder, self).__gt__(other)
+    def __le__(self, other):
+        return self == other or super(Rounder, self).__lt__(other)
+    def __ge__(self, other):
+        return self == other or super(Rounder, self).__gt__(other)
+    #--repr
+    def __repr__(self):
+        return u'%s(%s)' % (
+            type(self).__name__, super(Rounder, self).__repr__())
+    def __str__(self):
+        return u'%.6f' % round(self, 6) # for writing out in csv
+
+    # Action API --------------------------------------------------------------
+    def dump(self): return self  ##: TODO round?
 
 def cstrip(inString): # TODO(ut): hunt down and deprecate - it's O(n)+
     """Convert c-string (null-terminated string) to python string."""

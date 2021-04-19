@@ -30,7 +30,7 @@ from itertools import izip
 from .utils_constants import FID, null1, _make_hashable, FixedString, \
     _int_unpacker, get_structs
 from .. import bolt, exception
-from ..bolt import decoder, encode, structs_cache, struct_calcsize
+from ..bolt import decoder, encode, structs_cache, struct_calcsize, Rounder
 
 #------------------------------------------------------------------------------
 class MelObject(object):
@@ -621,6 +621,8 @@ class MelStruct(MelBase):
                 attrs[index] = element
                 if type(fmt_str) is int and fmt_str: # 0 for weird subclasses
                     defaults[index] = fmt_str * null1
+                elif fmt_str == u'f':
+                    actions[index] = Rounder
             else:
                 el_0 = element[0]
                 attrIndex = el_0 == 0
@@ -630,6 +632,8 @@ class MelStruct(MelBase):
                 elif callable(el_0):
                     actions[index] = el_0
                     attrIndex = 1
+                elif fmt_str == u'f':
+                    actions[index] = Rounder # note this overrides action
                 attrs[index] = element[attrIndex]
                 if len(element) - attrIndex == 2:
                     defaults[index] = element[-1] # else leave to 0
@@ -665,6 +669,10 @@ class MelFixedString(MelStruct):
 class MelFloat(_MelNum):
     """Float."""
     _unpacker, _packer, static_size = get_structs(u'=f')
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        float_val = ins.unpack(self._unpacker, size_, *debug_strs)[0]
+        setattr(record, self.attr, Rounder(float_val)) ##: note we dont round on dump
 
 class MelSInt8(_MelNum):
     """Signed 8-bit integer."""

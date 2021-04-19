@@ -175,9 +175,9 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     # -------------------------------------------------------------------------
     # Check for plugins with invalid TES4 version.
     valid_vers = bush.game.Esp.validHeaderVersions
-    invalid_tes4_versions = {x: unicode(round(modInfos[x].header.version, 6))
-                             for x in all_active_plugins if round(
-            modInfos[x].header.version, 6) not in valid_vers}
+    invalid_tes4_versions = {x: u'%s' % modInfos[x].header.version for x in
+                             all_active_plugins if all(
+            modInfos[x].header.version != v for v in valid_vers)}
     # -------------------------------------------------------------------------
     # Check for older form versions, which may point to improperly converted
     # plugins

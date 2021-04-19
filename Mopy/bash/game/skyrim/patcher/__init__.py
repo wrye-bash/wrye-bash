@@ -541,7 +541,7 @@ cellRecAttrs = {
     u'C.Encounter': (u'encounterZone',),
     u'C.ForceHideLand': (u'land_flags',),
     u'C.ImageSpace': (u'imageSpace',),
-    ##: Patches unuseds?
+    ##: Patches unused?
     u'C.Light': (u'ambientRed', u'ambientGreen', u'ambientBlue', u'unused1',
                  u'directionalRed', u'directionalGreen', u'directionalBlue',
                  u'unused2', u'fogRed', u'fogGreen', u'fogBlue', u'unused3',
@@ -570,9 +570,6 @@ cellRecAttrs = {
     u'C.Water': (u'water', u'waterHeight', u'waterNoiseTexture',
                  u'waterEnvironmentMap', u'flags.hasWater'),
 }
-cell_float_attrs = {u'fogNear', u'fogFar', u'directionalFade', u'fogClip',
-                    u'fogPower', u'fogMax', u'fresnelPower', u'lightFadeBegin',
-                    u'lightFadeEnd', u'waterHeight'}
 cell_skip_interior_attrs = {u'waterHeight'}
 
 #------------------------------------------------------------------------------

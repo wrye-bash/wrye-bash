@@ -33,8 +33,8 @@ from itertools import chain
 
 from .base import is_templated
 from ..base import Patcher, ModLoader
-from ... import bush
-from ...bolt import GPath, deprint, floats_equal, dict_sort
+from ... import bush, bolt
+from ...bolt import GPath, deprint, dict_sort
 from ...brec import strFid
 from ...mod_files import LoadFactory
 
@@ -438,7 +438,7 @@ class TimescaleCheckerPatcher(ModLoader):
             id_records = patch_block.id_records
             for record in modFile.tops[pb_sig].iter_present_records():
                 if record.fid in id_records: continue
-                if floats_equal(record.wave_period, 0.0): continue
+                if record.wave_period == 0.0: continue # type: bolt.Rounder
                 patch_block.setRecord(record.getTypeCopy())
 
     def buildPatch(self, log, progress):

@@ -151,11 +151,9 @@ class _AMerger(ImportPatcher):
                 # Changed entries are those entries that haven't been newly
                 # added but also differ from the master entries
                 if can_change:
-                    lookup_added = set(addEntries)
-                    lookup_masters = set(masterEntries)
                     changed_entries = [x for x in entries
-                                       if x not in lookup_masters
-                                       and x not in lookup_added]
+                                       if x not in masterEntries
+                                       and x not in addEntries]
                 else:
                     changed_entries = []
                 final_add_entries = addEntries if can_add else []
@@ -202,7 +200,7 @@ class _AMerger(ImportPatcher):
                     # additions
                     if change_entries:
                         # In order to not modify the list while iterating
-                        final_remove = set()
+                        final_remove = []
                         final_add = []
                         record_entries = getattr(record, sr_attr)
                         for change_entry in change_entries:
@@ -212,7 +210,7 @@ class _AMerger(ImportPatcher):
                             for curr_entry in record_entries:
                                 if en_key(change_entry) == en_key(curr_entry):
                                     # Remove the old entry, add the changed one
-                                    final_remove.add(curr_entry)
+                                    final_remove.append(curr_entry)
                                     final_add.append(change_entry)
                                     break
                         # No need to check both, see add/append above

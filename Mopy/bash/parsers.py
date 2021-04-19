@@ -41,9 +41,9 @@ from operator import attrgetter, itemgetter
 from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
-from .bolt import GPath, decoder, deprint, csvFormat, floats_equal, \
-    setattr_deep, attrgetter_cache, struct_unpack, struct_pack, str_or_none, \
-    int_or_none, nonzero_or_none, structs_cache
+from .bolt import GPath, decoder, deprint, csvFormat, setattr_deep, \
+    attrgetter_cache, str_or_none, int_or_none, nonzero_or_none, \
+    structs_cache, Rounder, float_or_none
 from .brec import MreRecord, MelObject, genFid, RecHeader, null4
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
@@ -53,7 +53,7 @@ def _coerce(value, newtype, base=None, AllowNone=False):
     try:
         if newtype is float:
             #--Force standard precision
-            return round(struct_unpack(u'f', struct_pack(u'f', float(value)))[0], 6)
+            return Rounder(float(value))
         elif newtype is bool:
             if isinstance(value, (unicode, bytes)): ##: investigate
                 retValue = value.strip().lower()
@@ -962,11 +962,7 @@ class ItemStats(_HandleAliases):
                         setattr(record, stat_key, n_stat)
                         continue
                     o_stat = getattr(record, stat_key)
-                    if isinstance(o_stat, float) or isinstance(n_stat, float):
-                        # These are floats, we have to do inexact comparison
-                        change = not floats_equal(o_stat, n_stat)
-                    elif o_stat != n_stat:
-                        change = True
+                    change = o_stat != n_stat
                     if change:
                         setattr(record, stat_key, n_stat)
                 if change:
@@ -1176,7 +1172,7 @@ class _UsesEffectsMixin(_HandleAliases):
 
     def _parse_line(self, mid): # common operations for Sigil/Ingredients
         for att in self._float_attrs:
-            self.fid_stats[mid][att] = _coerce(self.fid_stats[mid][att], float)
+            self.fid_stats[mid][att] = float_or_none(self.fid_stats[mid][att])
         for att in self._int_attrs:
             self.fid_stats[mid][att] = int_or_none(self.fid_stats[mid][att])
         for att in [u'eid', u'full', u'model.modPath', u'iconPath']:
@@ -1197,10 +1193,6 @@ class _UsesEffectsMixin(_HandleAliases):
                     return u'"%s","0x%06X"' % fid_tuple
                 return u'"None","None"'
             self._attr_serializer[u'script_fid'] = _handle_script_fid
-        # float attributes
-        for k in self._float_attrs:
-            self._attr_serializer[k] = (lambda k: (lambda c: u'"%f"' % c[k]))(
-                k)
         # int attributes
         for k in self._int_attrs: ##: make sure %d works even for flags
             self._attr_serializer[k] = (lambda k: (lambda c: u'"%d"' % c[k]))(
@@ -1213,8 +1205,6 @@ class _UsesEffectsMixin(_HandleAliases):
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
         id_data[record.fid] = {att: __attrgetters[att](record) for att in
                                self._attr_serializer}
-        for idx in self._float_attrs:
-            id_data[record.fid][idx] = round(id_data[record.fid][idx], 6)
 
     def readEffects(self, _effects, __packer=structs_cache[u'I'].pack):
         schoolTypeName_Number = _UsesEffectsMixin.schoolTypeName_Number
@@ -1324,8 +1314,7 @@ class _UsesEffectsMixin(_HandleAliases):
             imported = False
             for att, val in newStats.iteritems():
                 old_val = __attrgetters[att](record)
-                if att in self._float_attrs: old_val = round(old_val, 6)
-                elif att == u'eid': old_eid = old_val
+                if att == u'eid': old_eid = old_val
                 if old_val != val:
                     imported = True
                     setattr_deep(record, att, val)

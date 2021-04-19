@@ -31,7 +31,7 @@ from itertools import chain
 from .. import getPatchesPath
 from ..base import ImportPatcher
 from ... import bush, load_order, parsers
-from ...bolt import attrgetter_cache, deprint, floats_equal, setattr_deep
+from ...bolt import attrgetter_cache, deprint, setattr_deep
 from ...brec import MreRecord
 from ...exception import ModSigMismatchError
 
@@ -492,7 +492,6 @@ class ImportCellsPatcher(ImportPatcher):
 
     def buildPatch(self, log, progress, __attrgetters=attrgetter_cache):
         """Adds merged lists to patchfile."""
-        c_float_attrs = bush.game.cell_float_attrs
         def handlePatchCellBlock(patchCellBlock):
             """This function checks if an attribute or flag in CellData has
             a value which is different to the corresponding value in the
@@ -511,10 +510,6 @@ class ImportCellsPatcher(ImportPatcher):
                 # MelSorted to sort on load only for specific subrecords?
                 if attr == u'regions':
                     if set(value).difference(set(curr_value)):
-                        setattr_deep(patchCellBlock.cell, attr, value)
-                        modified = True
-                elif attr in c_float_attrs:
-                    if not floats_equal(value, curr_value):
                         setattr_deep(patchCellBlock.cell, attr, value)
                         modified = True
                 else:

@@ -27,7 +27,6 @@ from itertools import izip
 
 from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak
 from ... import bush  # for game
-from ...bolt import floats_equal
 
 class _AGlobalsTweak(CustomChoiceTweak):
     """Sets a global to specified value."""
@@ -178,10 +177,7 @@ class _AGmstTweak(MultiTweakItem):
         rec_eid = record.eid.lower()
         if rec_eid not in self.eid_was_itpo: return False # not needed
         target_val = self._find_chosen_value(rec_eid)
-        if rec_eid.startswith(u'f'):
-            ret_val = not floats_equal(record.value, target_val)
-        else:
-            ret_val = record.value != target_val
+        ret_val = record.value != target_val
         # Remember whether the last entry was ITPO or not
         self.eid_was_itpo[rec_eid] = not ret_val
         return ret_val

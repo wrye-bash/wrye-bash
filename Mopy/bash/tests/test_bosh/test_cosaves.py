@@ -25,7 +25,7 @@ import io
 from .. import get_meta_value, iter_games, iter_resources, \
     resource_to_displayName, set_game
 from ... import bush
-from ...bolt import GPath, LogFile, floats_equal
+from ...bolt import GPath, LogFile, Rounder
 from ...bosh.cosaves import get_cosave_types, xSECosave, _xSEHeader, \
     _xSEChunk, _xSEModListChunk, _xSEChunkPLGN, _Remappable, PluggyCosave
 from ...exception import AbstractError
@@ -84,8 +84,8 @@ class ATestACosave(object):
             assert curr_cosave.abs_path.crc == temp_cosave_path.crc
             # Cosave writing should not change mtime, since we use that to
             # detect desyncs between save and cosave
-            assert floats_equal(curr_cosave.abs_path.mtime,
-                                temp_cosave_path.mtime)
+            assert Rounder(curr_cosave.abs_path.mtime) == Rounder(
+                temp_cosave_path.mtime)
         self._do_map_cosaves(_check_writing)
 
     def test_get_master_list(self):

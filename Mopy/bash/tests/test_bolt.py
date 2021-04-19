@@ -25,7 +25,7 @@ from collections import OrderedDict
 import pytest
 
 from ..bolt import LowerDict, DefaultLowerDict, OrderedLowerDict, decoder, \
-    encode, getbestencoding, GPath, Path
+    encode, getbestencoding, GPath, Path, Rounder
 
 def test_getbestencoding():
     """Tests getbestencoding. Keep this one small, we don't want to test
@@ -427,3 +427,27 @@ class TestPath(object):
         dd = {u'c:/random/path.txt': 1}
         assert not GPath(u'c:/random/path.txt') in dd
         assert not GPath(u'' r'c:\random\path.txt') in dd
+
+class TestRounder(object):
+
+    def test__eq__(self):
+        # would be different if we actually rounded
+        assert Rounder(1.0000017) == Rounder(1.0000014)
+        # system mtimes check
+        assert Rounder(1618840002.5121067) == Rounder(1618840002.512106)
+        rounder_5th = Rounder(1.00001)
+        assert rounder_5th == 1.00001
+        assert rounder_5th != 1.000
+        assert rounder_5th != Rounder(1.000)
+        assert rounder_5th == Rounder(1.00001)
+        rounder_6th = Rounder(1.000001)
+        assert rounder_6th == 1.000
+        assert rounder_6th == Rounder(1)
+        assert rounder_6th == 1
+        # cross type comparisons - TODO: py3 may raise?
+        assert rounder_5th != b'123'
+        assert not (rounder_5th == [])
+        assert not (rounder_5th == [1])
+        assert not (rounder_5th == None)
+        assert not (rounder_5th == True)
+        assert not (rounder_5th == 55)
