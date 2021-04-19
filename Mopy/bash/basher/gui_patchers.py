@@ -327,7 +327,7 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def SetItems(self,items):
         """Set item to specified set of items."""
-        items = self.items = self.sortConfig(items)
+        items = self.items = load_order.get_ordered(items)
         forceItemCheck = self.forceItemCheck
         defaultItemCheck = self.__class__.canAutoItemCheck and bass.inisettings[u'AutoItemCheck']
         self.gList.lb_clear()
@@ -400,12 +400,6 @@ class _ListPatcherPanel(_PatcherPanel):
         selections = self.gList.lb_get_selections()
         newItems = [item for index,item in enumerate(self.configItems) if index not in selections]
         self.SetItems(newItems)
-
-    @staticmethod
-    def sortConfig(items):
-        """Return sorted items. Default assumes mods and sorts by load
-        order."""
-        return load_order.get_ordered(items)
 
     def mass_select(self, select=True):
         super(_ListPatcherPanel, self).mass_select(select)
@@ -486,11 +480,11 @@ class _ListPatcherPanel(_PatcherPanel):
                 #     item, u', '.join([repr(c) for c in self.configChecks])))
 
     def get_patcher_instance(self, patch_file):
-        patcher_sources = self._get_list_patcher_srcs(patch_file)
+        patcher_sources = self._get_list_patcher_srcs()
         return self.patcher_type(self.patcher_name, patch_file,
                                  patcher_sources)
 
-    def _get_list_patcher_srcs(self, patch_file):
+    def _get_list_patcher_srcs(self):
         patcher_sources = [x for x in self.configItems if self.configChecks[x]]
         return patcher_sources
 
@@ -1301,7 +1295,7 @@ class _AListsMerger(_ListsMergerPanel):
     """Mergers targeting all mods in the LO, with the option to override
     tags."""
     def get_patcher_instance(self, patch_file):
-        patcher_sources = self._get_list_patcher_srcs(patch_file)
+        patcher_sources = self._get_list_patcher_srcs()
         return self.patcher_type(self.patcher_name, patch_file,
                                  patcher_sources,
                                  self.remove_empty_sublists,

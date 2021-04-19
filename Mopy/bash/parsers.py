@@ -43,35 +43,15 @@ from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import GPath, decoder, deprint, csvFormat, setattr_deep, \
     attrgetter_cache, str_or_none, int_or_none, nonzero_or_none, \
-    structs_cache, Rounder, float_or_none
+    structs_cache, float_or_none, int_or_zero
 from .brec import MreRecord, MelObject, genFid, RecHeader, null4
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
 # Utils ##: absorb in CsvParser
-def _coerce(value, newtype, base=None, AllowNone=False):
-    try:
-        if newtype is float:
-            #--Force standard precision
-            return Rounder(float(value))
-        elif newtype is bool:
-            if isinstance(value, (unicode, bytes)): ##: investigate
-                retValue = value.strip().lower()
-                if AllowNone and retValue == u'none': return None
-                return retValue not in (u'',u'none',u'false',u'no',u'0',u'0.0')
-            else: return bool(value)
-        elif base: retValue = newtype(value, base)
-        elif newtype is unicode: retValue = decoder(value)
-        else: retValue = newtype(value)
-        if (AllowNone and
-            (isinstance(retValue,bytes) and retValue.lower() == b'none') or
-            (isinstance(retValue,unicode) and retValue.lower() == u'none')
-            ):
-            return None
-        return retValue
-    except (ValueError,TypeError):
-        if newtype is int and not AllowNone: return 0
-        return None
+def _str_to_bool(value, __falsy=frozenset(
+    [u'', u'none', u'false', u'no', u'0', u'0.0'])):
+    return value.strip().lower() not in __falsy
 
 class _CsvReader(object):
     """For reading csv files. Handles comma, semicolon and tab separated (excel) formats.
@@ -175,18 +155,14 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
         # data format when reading from a csv - could be in a subclass
         self._called_from_patcher = called_from_patcher
 
-    def _get_alias(self, modname):
-        """Encapsulate getting alias for modname returned from _CsvReader."""
-        ##: inline once parsers are refactored (and document also the csv format)
-        modname = GPath(modname)
-        return GPath(self.aliases.get(modname, modname)) ##: drop GPath?
-
     def _coerce_fid(self, modname, hex_fid):
         """Create a long formid from a unicode modname and a unicode
         hexadecimal - it will blow with ValueError if hex_fid is not
-        convertible."""
+        in the form 0x123abc abd check for aliases of modname."""
         if not hex_fid.startswith(u'0x'): raise ValueError # exit _parse_line
-        return self._get_alias(modname), int(hex_fid, 0)
+        # get alias for modname returned from _CsvReader
+        modname = GPath(modname)
+        return GPath(self.aliases.get(modname, modname)), int(hex_fid, 0)
 
     def _load_plugin(self, mod_info, keepAll=True, target_types=None):
         """Loads the specified record types in the specified ModInfo and
@@ -594,9 +570,9 @@ class ActorLevels(_HandleAliases):
         if (source.lower() in self._skip_mods) or fidMod.lower() == u'none':
             return
         fid = self._coerce_fid(fidMod, fidObject)
-        offset = _coerce(offset, int)
-        calcMin = _coerce(calcMin, int)
-        calcMax = _coerce(calcMax, int)
+        offset = int_or_zero(offset)
+        calcMin = int_or_zero(calcMin)
+        calcMax = int_or_zero(calcMax)
         self.mod_id_levels[source][fid] = (eid, 1, offset, calcMin, calcMax)
 
     def _write_rows(self, out):
@@ -719,7 +695,7 @@ class EditorIds(_HandleAliases):
             self.questionableEidsSet.add(eid)
         #--Explicit old to new def? (Used for script updating.)
         if len(csv_fields) > 4:
-            self.old_new[_coerce(csv_fields[4], unicode).lower()] = eid
+            self.old_new[csv_fields[4].lower()] = eid
         self.id_stored_data[top_grup.encode(u'ascii')][longid] = eid
 
     def _write_rows(self, out):
@@ -1223,15 +1199,16 @@ class _UsesEffectsMixin(_HandleAliases):
             range_ = str_or_none(range_)
             if range_:
                 range_ = recipientTypeName_Number.get(range_.lower(),
-                                                      _coerce(range_,int))
+                                                      int_or_zero(range_))
             actorvalue = str_or_none(actorvalue)
             if actorvalue:
                 actorvalue = actorValueName_Number.get(actorvalue.lower(),
-                                                       _coerce(actorvalue,int))
+                                                       int_or_zero(actorvalue))
             if None in (eff_name,magnitude,area,duration,range_,actorvalue):
                 continue
             rec_type = MreRecord.type_class[self._parser_sigs[0]]
             eff = rec_type.getDefault(u'effects')
+            effects.append(eff)
             eff.effect_sig = eff_name.encode(u'ascii')
             eff.magnitude = magnitude
             eff.area = area
@@ -1240,11 +1217,21 @@ class _UsesEffectsMixin(_HandleAliases):
             eff.actorValue = actorvalue
             # script effect
             semod = str_or_none(semod)
-            seobj = _coerce(seobj, int, 16, AllowNone=True)
+            if semod is None or not seobj.startswith(u'0x'):
+                continue
             seschool = str_or_none(seschool)
             if seschool:
                 seschool = schoolTypeName_Number.get(seschool.lower(),
-                                                     _coerce(seschool,int))
+                                                     int_or_zero(seschool))
+            seflags = int_or_none(seflags)
+            sename = str_or_none(sename)
+            if any(x is None for x in (seschool, seflags, sename)):
+                continue
+            eff.scriptEffect = se = rec_type.getDefault(
+                u'effects.scriptEffect')
+            se.full = sename
+            se.script_fid = self._coerce_fid(semod, seobj)
+            se.school = seschool
             sevisuals = int_or_none(sevisual) #OBME not
             # supported (support requires adding a mod/objectid format to
             # the csv, this assumes visual MGEFCode is raw)
@@ -1257,19 +1244,8 @@ class _UsesEffectsMixin(_HandleAliases):
             else: # pack int to bytes
                 sevisuals = __packer(sevisuals)
             sevisual = sevisuals
-            seflags = int_or_none(seflags)
-            sename = str_or_none(sename)
-            if all(x is not None for x in (semod, seobj, seschool,
-                                           # sevisual, never None
-                                           seflags, sename)):
-                eff.scriptEffect = se = rec_type.getDefault(
-                    u'effects.scriptEffect')
-                se.full = sename
-                se.script_fid = self._get_alias(semod), seobj #self._coerce_fid(semod, seobj)
-                se.school = seschool
-                se.visual = sevisual
-                se.flags = seflags # FIXME this need to be a se_flags
-            effects.append(eff)
+            se.visual = sevisual
+            se.flags = seflags # FIXME this need to be a se_flags
         return effects
 
     @staticmethod
@@ -1402,7 +1378,7 @@ class ItemPrices(_HandleAliases):
     def _parse_line(self, csv_fields):
         mmod, mobj, value, eid, itm_name, top_grup = csv_fields[:6]
         longid = self._coerce_fid(mmod, mobj)
-        value = _coerce(value, int)
+        value = int_or_zero(value)
         eid = str_or_none(eid)
         itm_name = str_or_none(itm_name)
         self.id_stored_data[top_grup.encode(u'ascii')][longid] = [value, eid,
@@ -1419,7 +1395,6 @@ class ItemPrices(_HandleAliases):
                     tuple(fid_stats[fid]) + (top_grup,)))
 
 #------------------------------------------------------------------------------
-_to_bool = lambda x: _coerce(x, bool)
 class SpellRecords(_UsesEffectsMixin):
     """Statistics for spells, with functions for importing/exporting from/to
     mod/text file."""
@@ -1494,20 +1469,20 @@ class SpellRecords(_UsesEffectsMixin):
         if group.lower() != u'spel': return
         mid = self._coerce_fid(mmod, mobj)
         eid = str_or_none(eid)
-        cost = _coerce(cost, int)
+        cost = int_or_zero(cost)
         levelType = self.levelTypeName_Number.get(levelType.lower(),
-                                                  _coerce(levelType, int))
+                                                  int_or_zero(levelType))
         spellType = self.spellTypeName_Number.get(spellType.lower(),
-                                                  _coerce(spellType, int))
+                                                  int_or_zero(spellType))
         ##: HACK, 'flags' needs to be a Flags instance on dump
         spell_flags = MreRecord.type_class[b'SPEL']._SpellFlags(
-            _coerce(spell_flags, int))
+            int_or_zero(spell_flags))
         vals = [eid, cost, levelType, spellType, spell_flags]
         self.fid_stats[mid] = dict( ##: this won't work for other games
             izip(self._csv_attrs, vals))
         if not self.detailed:  # or len(fields) < 7: ValueError
             return
-        mc, ss, its, aeil, saa, daar, tewt = [_to_bool(f) for f in
+        mc, ss, its, aeil, saa, daar, tewt = [_str_to_bool(f) for f in
                                               fields[8:15]] #py3: map
         vals = [mc, ss, its, aeil, saa, daar, tewt,
                 self.readEffects(fields[15:])]

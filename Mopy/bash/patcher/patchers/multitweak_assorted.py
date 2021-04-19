@@ -303,9 +303,9 @@ class AssortedTweak_FogFix(MultiTweakItem):
         should_add_cell = self.wants_record
         add_cell = patch_file.tops[b'CELL'].setCell
         for cell_block in mod_file.tops[b'CELL'].cellBlocks:
-            curr_cell = cell_block.cell
-            if should_add_cell(curr_cell):
-                add_cell(curr_cell)
+            current_cell = cell_block.cell
+            if should_add_cell(current_cell):
+                add_cell(current_cell)
 
     def tweak_build_patch(self, log, count, patch_file):
         """Adds merged lists to patchfile."""
