@@ -313,7 +313,6 @@ class _Mod_LabelsData(balt.ListEditorData):
             balt.showError(self.parent,
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
-        bass.settings.setChanged(self.setKey)
         self.mod_labels.append(newName)
         self.mod_labels.sort()
         return newName
@@ -329,7 +328,6 @@ class _Mod_LabelsData(balt.ListEditorData):
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
         #--Rename
-        bass.settings.setChanged(self.setKey)
         self.mod_labels.remove(oldName)
         self.mod_labels.append(newName)
         self.mod_labels.sort()
@@ -346,7 +344,6 @@ class _Mod_LabelsData(balt.ListEditorData):
 
     def remove(self,item):
         """Removes group."""
-        bass.settings.setChanged(self.setKey)
         self.mod_labels.remove(item)
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
@@ -366,7 +363,6 @@ class _Mod_LabelsData(balt.ListEditorData):
         """
         items.sort(key=lambda a: a.lower())
         if self.mod_labels == items: return False
-        bass.settings.setChanged(self.setKey)
         # do not reassign self.mod_labels! points to settings[self.setKey]
         self.mod_labels[:] = items
         return True

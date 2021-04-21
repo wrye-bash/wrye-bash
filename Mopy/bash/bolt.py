@@ -23,14 +23,12 @@
 
 # Imports ---------------------------------------------------------------------
 #--Standard
-
-
-import pickle
 import collections
 import copy
 import datetime
 import io
 import os
+import pickle
 import re
 import shutil
 import stat
@@ -42,12 +40,12 @@ import tempfile
 import textwrap
 import traceback
 from binascii import crc32
+from contextlib import contextmanager, redirect_stdout
 from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
 from urllib.parse import quote
-from contextlib import contextmanager, redirect_stdout
 
 import chardet
 
@@ -1388,83 +1386,52 @@ class Settings(DataDict):
 
     Default setting for configurations are either set in bulk (by the
     loadDefaults function) or are set as needed in the code (e.g., various
-    auto-continue settings for bash. Only settings that have been changed from
-    the default values are saved in persistent storage.
-
-    Directly setting a value in the dictionary will mark it as changed (and thus
-    to be archived). However, an indirect change (e.g., to a value that is a
-    list) must be manually marked as changed by using the setChanged method."""
+    auto-continue settings for bash). Only settings that have been changed from
+    the default values are saved in persistent storage."""
 
     def __init__(self, dictFile):
         """Initialize. Read settings from dictFile."""
         self.dictFile = dictFile
-        self.cleanSave = False
         if self.dictFile:
             res = dictFile.load()
-            self.cleanSave = res == 0 # no data read - do not attempt to read on save
             self.vdata = dictFile.vdata.copy()
             self._data = dictFile.pickled_data.copy()
         else:
             self.vdata = {}
             self._data = {}
         self.defaults = {}
-        self.changed = set()
-        self.deleted = set()
 
     def loadDefaults(self, default_settings):
-        """Add default settings to dictionary. Will not replace values that are already set."""
+        """Add default settings to dictionary."""
         self.defaults = default_settings
-        for key in default_settings: # PY3: ChainMap?
-            if key not in self:
-                self[key] = copy.deepcopy(default_settings[key])
+        #--Clean colors dictionary
+        if (color_dict := self.get(u'bash.colors', None)) is not None:
+            currentColors = set(color_dict)
+            defaultColors = set(default_settings[u'bash.colors'])
+            invalidColors = currentColors - defaultColors
+            missingColors = defaultColors - currentColors
+            for key in invalidColors:
+                del self[u'bash.colors'][key]
+            for key in missingColors:
+                self[u'bash.colors'][key] = default_settings[u'bash.colors'][key]
+        # fill up missing settings from defaults, making sure we do not
+        # modify the latter
+        self._data = collections.ChainMap(self._data,
+                                          copy.deepcopy(self.defaults))
 
     def save(self):
-        """Save to pickle file. Only key/values marked as changed are saved."""
+        """Save to pickle file. Only key/values differing from defaults are
+        saved."""
         dictFile = self.dictFile
-        if not dictFile or dictFile.readOnly: return
-        # on a clean save ignore BashSettings.dat.bak possibly corrupt
-        if not self.cleanSave: dictFile.load()
         dictFile.vdata = self.vdata.copy()
-        for del_key in self.deleted:
-            dictFile.pickled_data.pop(del_key, None)
-        for changed_key in self.changed:
-            if self[changed_key] == self.defaults.get(changed_key, None):
-                dictFile.pickled_data.pop(changed_key, None)
-            else:
-                dictFile.pickled_data[changed_key] = self[changed_key]
+        to_save = {}
+        for sett_key, sett_val in self.items():
+            if sett_key in self.defaults and self.defaults[
+                sett_key] == sett_val: # not all settings are in defaults
+                continue
+            to_save[sett_key] = sett_val
+        self.dictFile.pickled_data = to_save
         dictFile.save()
-
-    def setChanged(self,key):
-        """Marks given key as having been changed. Use if value is a dictionary, list or other object."""
-        if key not in self:
-            raise exception.ArgumentError(u'No settings data for ' + key)
-        self.changed.add(key)
-
-    def getChanged(self,key,default=None):
-        """Gets and marks as changed."""
-        if default is not None and key not in self:
-            self[key] = default
-        self.setChanged(key)
-        return self.get(key)
-
-    #--Dictionary Emulation
-    def __setitem__(self,key,value):
-        """Dictionary emulation. Marks key as changed."""
-        if key in self.deleted: self.deleted.remove(key)
-        self.changed.add(key)
-        self._data[key] = value
-
-    def __delitem__(self,key):
-        """Dictionary emulation. Marks key as deleted."""
-        if key in self.changed: self.changed.remove(key)
-        self.deleted.add(key)
-        del self._data[key]
-
-    def pop(self,key,default=None):
-        """Dictionary emulation: extract value and delete from dictionary."""
-        if key in self.changed: self.changed.remove(key)
-        self.deleted.add(key)
-        return self._data.pop(key, default)
 
 # Structure wrappers ----------------------------------------------------------
 class _StructsCache(dict):

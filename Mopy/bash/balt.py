@@ -920,17 +920,16 @@ class UIList(wx.Panel):
     @property
     def allCols(self): return list(self.labels)
     @property
-    def colWidths(self):
-        return _settings.getChanged(self.keyPrefix + u'.colWidths', {})
+    def colWidths(self): return _settings[self.keyPrefix + u'.colWidths']
     @property
-    def colReverse(self): # not sure why it gets it changed but no harm either
+    def colReverse(self):
         """Dictionary column->isReversed."""
-        return _settings.getChanged(self.keyPrefix + u'.colReverse', {})
+        return _settings[self.keyPrefix + u'.colReverse']
     @property
-    def cols(self): return _settings.getChanged(self.keyPrefix + u'.cols')
+    def cols(self): return _settings[self.keyPrefix + u'.cols']
     @property
     def autoColWidths(self):
-        return _settings.get(u'bash.autoSizeListColumns', 0)
+        return _settings[u'bash.autoSizeListColumns']
     @autoColWidths.setter
     def autoColWidths(self, val): _settings[u'bash.autoSizeListColumns'] = val
     # the current sort column
@@ -1386,22 +1385,18 @@ class UIList(wx.Panel):
         valid_columns = set(self.allCols)
         # Clean the widths/reverse dictionaries - extracted into helper method
         def clean_dict(dict_key):
-            stored_dict = _settings.getChanged(self.keyPrefix + dict_key, {})
+            stored_dict = _settings[self.keyPrefix + dict_key]
             invalid_columns = set(stored_dict) - valid_columns
-            if invalid_columns:
-                for c in invalid_columns:
-                    del stored_dict[c]
-                _settings.setChanged(self.keyPrefix + dict_key)
+            for c in invalid_columns:
+                del stored_dict[c]
         clean_dict(u'.colWidths')
         clean_dict(u'.colReverse')
         # Clean the list of enabled columns for this UIList
         stored_cols = self.cols
         invalid_columns = set(stored_cols) - valid_columns
-        if invalid_columns:
-            for c in invalid_columns:
-                while c in stored_cols: # Just in case there's duplicates
-                    stored_cols.remove(c)
-            _settings.setChanged(self.keyPrefix + u'.cols')
+        for c in invalid_columns:
+            while c in stored_cols:  # Just in case there's duplicates
+                stored_cols.remove(c)
         # Finally, reset the sort column to the default if it's invalid now
         if self.sort_column not in valid_columns:
             self.sort_column = self._default_sort_col
@@ -2281,7 +2276,6 @@ class DnDStatusBar(wx.StatusBar):
                 overIndex = _settings[u'bash.statusbar.order'].index(overUid)
                 _settings[u'bash.statusbar.order'].remove(uid)
                 _settings[u'bash.statusbar.order'].insert(overIndex, uid)
-                _settings.setChanged(u'bash.statusbar.order')
                 # update self.buttons
                 self.buttons.remove(button)
                 self.buttons.insert(over, button)

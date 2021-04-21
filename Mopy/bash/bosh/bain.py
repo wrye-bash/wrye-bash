@@ -1741,7 +1741,7 @@ class InstallersData(DataStore):
         progress = progress or bolt.Progress()
         #--Archive invalidation
         from . import oblivionIni, InstallerMarker, modInfos
-        if bass.settings.get(u'bash.bsaRedirection') and oblivionIni.abs_path.exists():
+        if bass.settings[u'bash.bsaRedirection'] and oblivionIni.abs_path.exists():
             oblivionIni.setBsaRedirection(True)
         #--Load Installers.dat if not loaded - will set changed to True
         changed = not self.loaded and self.__load(progress)

@@ -209,7 +209,7 @@ class Master_ChangeTo(_Master_EditList):
             return
         #--Save Name
         masterInfo.set_name(newName)
-        bass.settings.getChanged(u'bash.mods.renames')[master_name] = newName
+        bass.settings[u'bash.mods.renames'][master_name] = newName
         self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
@@ -272,14 +272,14 @@ class _Column(CheckLink, EnabledLink):
     def _check(self): return self.colName in self.window.cols
 
     def Execute(self):
-        if self.colName in self.window.cols:
-            self.window.cols.remove(self.colName)
+        window_cols = self.window.cols
+        if self.colName in window_cols:
+            window_cols.remove(self.colName)
         else:
             #--Ensure the same order each time
-            cols = self.window.cols[:]
-            del self.window.cols[:]
-            self.window.cols.extend([x for x in self.window.allCols if
-                                     x in cols or x == self.colName])
+            cols = set(window_cols)
+            window_cols[:] = [x for x in self.window.allCols if
+                              x in cols or x == self.colName]
         self.window.PopulateColumns()
         self.window.RefreshUI()
 

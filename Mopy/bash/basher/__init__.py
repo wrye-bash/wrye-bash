@@ -331,7 +331,7 @@ class MasterList(_ModsUIList):
     @property
     def cols(self):
         # using self.__class__.keyPrefix for common saves/mods masters settings
-        return settings.getChanged(self.__class__.keyPrefix + u'.cols')
+        return settings[self.__class__.keyPrefix + u'.cols']
 
     message = _(u'Edit/update the masters list? Note that the update process '
                 u'may automatically rename some files. Be sure to review the '
@@ -545,8 +545,7 @@ class MasterList(_ModsUIList):
             masterInfo = self.data_store[evt_item]
             masterInfo.set_name(newName)
             self.SetMasterlistEdited()
-            settings.getChanged(u'bash.mods.renames')[
-                masterInfo.old_name] = newName
+            settings[u'bash.mods.renames'][masterInfo.old_name] = newName
             # populate, refresh must be called last
             self.PopulateItem(itemDex=evt_index)
             return EventResult.FINISH ##: needed?
@@ -1653,7 +1652,7 @@ class ModDetails(_ModsSavesDetails):
                                      u'bash.rename.isBadFileName.continue')
                 ):
                 return ##: cancels all other changes - move to validate_filename (without the balt part)
-            settings.getChanged(u'bash.mods.renames')[oldName] = newName
+            settings[u'bash.mods.renames'][oldName] = newName
             changeName = self.panel_uilist.try_rename(modInfo, newName)
         #--Change hedr/masters?
         if changeHedr or changeMasters:
@@ -3142,7 +3141,7 @@ class InstallersPanel(BashTab):
 
     @balt.conversation
     def _first_run_set_enabled(self):
-        if settings.get(u'bash.installers.isFirstRun', True):
+        if settings[u'bash.installers.isFirstRun']:
             settings[u'bash.installers.isFirstRun'] = False
             message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
                 u'If you do, Bash will first need to initialize some data. '
@@ -3601,16 +3600,8 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
     @staticmethod
     def _tabOrder():
         """Return dict containing saved tab order and enabled state of tabs."""
-        newOrder = settings.getChanged(u'bash.tabs.order',
-                                       BashNotebook._tabs_enabled_ordered)
-        # FIXME(inf) Backwards compatibility with <306, drop on VDATA3
-        if not isinstance(newOrder, OrderedDict): # convert, on updating to 306
-            enabled = settings.getChanged(u'bash.tabs', # deprecated -never use
-                                          BashNotebook._tabs_enabled_ordered)
-            newOrder = OrderedDict([(x, enabled[x]) for x in newOrder
-            # needed if user updates to 306+ that drops 'bash.tabs', the latter
-            # is unchanged from default and the new version also removes a panel
-                                    if x in enabled])
+        newOrder = settings.get(u'bash.tabs.order',
+                                BashNotebook._tabs_enabled_ordered)
         # append any new tabs - appends last
         newTabs = set(tabInfo) - set(newOrder)
         for n in newTabs: newOrder[n] = BashNotebook._tabs_enabled_ordered[n]
@@ -3731,16 +3722,13 @@ class BashStatusBar(DnDStatusBar):
     def UpdateIconSizes(self, skip_refresh=False):
         self.buttons = [] # will be populated with _displayed_ gButtons - g ?
         order = settings[u'bash.statusbar.order']
-        orderChanged = False
         hide = settings[u'bash.statusbar.hide']
-        hideChanged = False
         # Add buttons in order that is saved - on first run order = [] !
         for uid in order[:]:
             link = self.GetLink(uid=uid)
             # Doesn't exist?
             if link is None:
                 order.remove(uid)
-                orderChanged = True
                 continue
             # Hidden?
             if uid in hide: continue
@@ -3759,16 +3747,11 @@ class BashStatusBar(DnDStatusBar):
             # Remove any hide settings, if they exist
             if uid in hide:
                 hide.discard(uid)
-                hideChanged = True
             order.append(uid)
-            orderChanged = True
             try:
                 self._addButton(link)
             except AttributeError:
                 deprint(u'Failed to load button %r' % (uid,), traceback=True)
-        # Update settings
-        if orderChanged: settings.setChanged(u'bash.statusbar.order')
-        if hideChanged: settings.setChanged(u'bash.statusbar.hide')
         if not skip_refresh:
             self.refresh_status_bar(refresh_icon_size=True)
 
@@ -3780,20 +3763,17 @@ class BashStatusBar(DnDStatusBar):
                 button.visible = False
                 self.buttons.remove(button)
                 settings[u'bash.statusbar.hide'].add(link.uid)
-                settings.setChanged(u'bash.statusbar.hide')
                 if not skip_refresh:
                     self.refresh_status_bar()
 
     def UnhideButton(self, link, skip_refresh=False):
         uid = link.uid
         settings[u'bash.statusbar.hide'].discard(uid)
-        settings.setChanged(u'bash.statusbar.hide')
         # Find the position to insert it at
         order = settings[u'bash.statusbar.order']
         if uid not in order:
             # Not specified, put it at the end
             order.append(uid)
-            settings.setChanged(u'bash.statusbar.order')
             self._addButton(link)
         else:
             # Specified, but now factor in hidden buttons, etc
@@ -4182,25 +4162,11 @@ class BashFrame(WindowFrame):
         #--Clean rename dictionary.
         modNames = set(bosh.modInfos)
         modNames.update(bosh.modInfos.table)
-        renames = bass.settings.getChanged(u'bash.mods.renames')
+        renames = bass.settings[u'bash.mods.renames']
         # Make a copy, we may alter it in the loop
         for old_mname, new_mname in list(renames.items()):
             if new_mname not in modNames:
                 del renames[old_mname]
-        #--Clean colors dictionary
-        currentColors = set(settings[u'bash.colors'])
-        defaultColors = set(settingDefaults[u'bash.colors'])
-        invalidColors = currentColors - defaultColors
-        missingColors = defaultColors - currentColors
-        if invalidColors:
-            for key in invalidColors:
-                del settings[u'bash.colors'][key]
-        if missingColors:
-            for key in missingColors:
-                settings[u'bash.colors'][key] = settingDefaults[
-                    u'bash.colors'][key]
-        if invalidColors or missingColors:
-            settings.setChanged(u'bash.colors')
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
             goodRoots = {p.root for p in fileInfos}
@@ -4324,7 +4290,7 @@ def InitSettings(): # this must run first !
     bosh.initSettings()
     global settings
     balt._settings = bass.settings
-    balt.sizes = bass.settings.getChanged(u'bash.window.sizes', {})
+    balt.sizes = bass.settings.get(u'bash.window.sizes', {})
     settings = bass.settings
     settings.loadDefaults(settingDefaults)
     # The colors dictionary only gets copied into settings if it is missing

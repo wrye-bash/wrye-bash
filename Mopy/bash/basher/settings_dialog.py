@@ -326,7 +326,6 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         for key,newColor in self.changes.items():
             bass.settings[u'bash.colors'][key] = newColor.to_rgb_tuple()
             colors[key] = newColor
-        bass.settings.setChanged(u'bash.colors')
         self.UpdateUIButtons()
         self.UpdateUIColors()
 
@@ -1527,9 +1526,7 @@ class TrustedBinariesPage(_AFixedPage):
             source_dict=good_dlls_dict)
         merge_versions(dll_source=bad_removed, target_dict=good_dlls_dict,
             source_dict=bad_dlls_dict)
-        # Force the settings to be saved and BAIN to update its good/bad caches
-        bass.settings.setChanged(u'bash.installers.badDlls')
-        bass.settings.setChanged(u'bash.installers.goodDlls')
+        # Force BAIN to update its good/bad caches
         bosh.bain.Installer.badDlls(force_recalc=True)
         bosh.bain.Installer.goodDlls(force_recalc=True)
         self._mark_changed(self, False)

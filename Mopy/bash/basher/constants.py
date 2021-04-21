@@ -172,6 +172,7 @@ settingDefaults = { # keep current naming format till refactored
     u'bash.pluginEncoding': u'cp1252',    # Western European
     u'bash.show_internal_keys': False,
     u'bash.restore_scroll_positions': False,
+    u'bash.autoSizeListColumns': 0,
     #--Colors
     u'bash.colors': {
         #--Common Colors
@@ -284,6 +285,7 @@ settingDefaults = { # keep current naming format till refactored
         u'Files': 55,
     },
     u'bash.installers.page': 0,
+    u'bash.installers.isFirstRun': True,
     u'bash.installers.enabled': True,
     u'bash.installers.autoAnneal': True,
     u'bash.installers.autoWizard': True,
@@ -355,6 +357,8 @@ settingDefaults = { # keep current naming format till refactored
         u'CRC': 60,
         u'Mod Status': 50,
     },
+    u'bash.mods.details.colWidths': {},
+    u'bash.mods.details.colReverse': {},
     u'bash.mods.renames': {},
     u'bash.mods.scanDirty': True,
     u'bash.mods.export.skip': u'',
@@ -375,6 +379,8 @@ settingDefaults = { # keep current naming format till refactored
         u'Player': 70,
         u'Cell': 80,
     },
+    u'bash.saves.details.colWidths': {},
+    u'bash.saves.details.colReverse': {},
     #--Wrye Bash: BSAs
     u'bash.BSAs.cols': [u'File', u'Modified', u'Size'],
     u'bash.BSAs.sort': u'File',

@@ -2340,7 +2340,7 @@ class ModInfos(FileInfos):
         toggling bash.mods.autoGhost to False we forcibly unghost all mods
         """
         changed = []
-        toGhost = bass.settings.get(u'bash.mods.autoGhost',False)
+        toGhost = bass.settings[u'bash.mods.autoGhost']
         if force or toGhost:
             allowGhosting = self.table.getColumn(u'allowGhosting')
             for mod, modInfo in self.items():
