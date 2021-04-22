@@ -33,7 +33,7 @@ exe7z = u'7z.exe' if os.name == u'nt' else u'7z'
 pngcrush = u'pngcrush.exe' if os.name == u'nt' else u'pngcrush'
 defaultExt = u'.7z'
 writeExts = {u'.7z': u'7z', u'.zip': u'zip'}
-readExts = {u'.rar', u'.7z.001', u'.001'}
+readExts = {u'.rar', u'.001'}
 readExts.update(writeExts)
 noSolidExts = {u'.zip'}
 reSolid = re.compile(u'' r'[-/]ms=[^\s]+', re.IGNORECASE)
@@ -42,7 +42,7 @@ regExtractMatch = re.compile(u'- (.+)', re.U).match
 regErrMatch = re.compile(u'^(Error:.+|.+ {5}Data Error?|Sub items Errors:.+)',
     re.U).match
 reListArchive = re.compile(
-    u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+    u'' r'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
 
 def compress7z(command, full_dest, rel_dest, srcDir, progress=None):
     if progress is not None: #--Used solely for the progress bar

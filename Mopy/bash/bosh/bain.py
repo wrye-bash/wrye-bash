@@ -2078,7 +2078,7 @@ class InstallersData(DataStore):
         new_sizeCrcDate, pending, pending_size = \
             self._process_data_dir(dirDirsFiles, progress)
         #--Remove empty dirs?
-        if not bass.settings[u'bash.installers.removeEmptyDirs']:
+        if bass.settings[u'bash.installers.removeEmptyDirs']:
             for empty in emptyDirs:
                 try: empty.removedirs()
                 except OSError: pass

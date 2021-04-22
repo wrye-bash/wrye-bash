@@ -247,17 +247,20 @@
 The first time the Installers tab is opened, a dialog will appear asking if BAIN should be initialized.
 If you click <q>Yes</q>, BAIN will be initialised, which can take some time.
 After that, the information refresh performed when the Installers tab is opened is much faster.</p>
-<p>BAIN's primary function is to install mod packages. <strong>BAIN Packages</strong> can be <code>.zip</code>,
-    <code>.7z</code> or <code>.rar</code> archives or uncompressed directories. Uncompressed directories are called <strong>Projects</strong> while archives are usually called
-    <strong>packages</strong>, abusing terminology. When we refer to projects and packages together we will be also using the collective term <strong>installers</strong>.
+<p>BAIN's primary function is to install mod packages. <strong>BAIN
+    Packages</strong> can be compressed archives (<code>.zip</code>,
+    <code>.7z</code>, <code>.rar</code>, <code>.001</code>, <code>.tar</code>) or uncompressed
+directories. Uncompressed directories are called <strong>projects</strong>.
+When we refer to projects and archives together we will also be using the
+collective term <strong>packages</strong> or <strong>installers</strong>.</p>
 <p>If BAIN is disabled, ie. if you clicked <q>No</q> on the dialog that was displayed the first time you selected the Installers tab, it can be re-enabled by right clicking on a column header in the Installers tab and selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainEnabled">Enabled</a>.
 
-<p>Installers need to be placed in the <code>Bash Installers</code> directory which is created the first time Bash runs inside the <code>"Game" Mods</code> directory. This directory is by default
+<p>Packages need to be placed in the <code>Bash Installers</code> directory which is created the first time Bash runs inside the <code>"Game" Mods</code> directory. This directory is by default
     created on the same level as your game directory (that is, if your game exe is located in "C:\GAMES\TESIV\Oblivion", then by default Bash will create the "C:\GAMES\TESIV\Oblivion Mods\"
     directory on first run), but you can point Bash to create this "Game" Mods directory wherever you want (or point it to an existing one) via the <code>sOblivionMods</code> ini setting. Do
     <em>not</em> however put it inside the game Data directory, as the game may well be confused and scan it adding to performance deterioration, mods thrashing.
 <p>To add an installer to Wrye Bash Installers, you can either manually copy and paste the zip to the Bash Installers Directory, or just drag and drop the zip onto the Installers tab.
-<p>Bash will scan the Bash Installers directory and pick up all subfolders and all <code>.zip</code>, <code>.7z</code> or <code>.rar</code> archives - except for:
+<p>Bash will scan the Bash Installers directory and pick up all subfolders and all archives - except for:
 
 <ol>
     <li>folders or files that begin with <code>--</code> will be skipped
