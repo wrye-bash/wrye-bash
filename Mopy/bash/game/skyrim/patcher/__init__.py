@@ -958,9 +958,9 @@ import_races_attrs = {
     },
 }
 
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Tweak Races
-#--------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 race_tweaks = {
     u'RaceTweak_PlayableHeadParts',
     u'RaceTweak_GenderlessHeadParts',
@@ -968,3 +968,9 @@ race_tweaks = {
     u'RaceTweak_ForceBehaviorGraphGender_Male',
 }
 
+#------------------------------------------------------------------------------
+# Timescale Checker
+#------------------------------------------------------------------------------
+# Same story as in Nehrim for Enderal too - devs changed timescale, but forgot
+# to adjust wave periods. So keep at 20 for Enderal.
+default_wp_timescale = 20
