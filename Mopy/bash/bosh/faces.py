@@ -27,8 +27,8 @@ import re
 from . import SaveInfo
 from ._saves import SaveFile, SreNPC
 from .. import bush
-from ..bolt import Flags, Path, encode, pack_byte, pack_int, struct_pack, \
-    struct_unpack, structs_cache
+from ..bolt import Flags, pack_byte, pack_int, struct_pack, struct_unpack, \
+    structs_cache
 from ..brec import FormId, int_unpacker, null2, RecordType
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
@@ -171,9 +171,9 @@ class PCFaces(object):
                                           saveFile.header.pc_name_pstr)
         (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair, face.eye,
          face.hairLength, face.hairRed, face.hairBlue, face.hairGreen,
-         face.unused3, face.gender) = __faceunpack(
-            data[namePos - 542:namePos - 1])
-        classPos = namePos + len(saveFile.header.pcName) + 1
+         face.unused3, face.gender) = __faceunpack( # namePos-1 cause of the
+            data[namePos - 542:namePos - 1]) # byte before the name
+        classPos = namePos + len(saveFile.header.pc_name_pstr) + 1 # for the null
         face.npc_class, = __unpacker(data[classPos:classPos+4])
         #--Iref >> fid
         getFid = saveFile.getFid
@@ -295,17 +295,18 @@ class PCFaces(object):
         else:
             buff.seek(1,1)
         #--Name?
+        len_bytes = len(saveFile.header.pc_name_pstr) + 2
         if pcf_flags.pcf_name:
-            postName = buff.getvalue()[buff.tell() +
-                                       len(saveFile.header.pcName) + 2:]
-            pack_byte(buff,len(face.pcName)+1)
-            buff.write(encode(face.pcName, firstEncoding=Path.sys_fs_enc)) # TODO: firstEncoding=Path.sys_fs_enc?
+            postName = buff.getvalue()[buff.tell() + len_bytes:]
+            # set pc_name_pstr to the encoded face.pcName
+            saveFile.header.pcName = face.pcName
+            pack_byte(buff, len(saveFile.header.pc_name_pstr) + 1)
+            buff.write(saveFile.header.pc_name_pstr)
             buff.write(b'\x00')
             buff.write(postName)
             buff.seek(-len(postName),1)
-            saveFile.header.pcName = face.pcName
         else:
-            buff.seek(len(saveFile.header.pcName) + 2, 1)
+            buff.seek(len_bytes, 1) # we keep the name as it was
         #--Class?
         if pcf_flags.pcf_class and face.npc_class:
             pos = buff.tell()
