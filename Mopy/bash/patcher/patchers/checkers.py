@@ -100,6 +100,8 @@ class ContentsCheckerPatcher(Patcher):
                                    cc_pass)
             # See explanation below (entry_fid definition)
             needs_entry_attr = len(cc_pass) == 3
+            group_attr = cc_pass[1]
+            entry_attr = cc_pass[2] if needs_entry_attr else None
             # First entry in the pass is always the record types this pass
             # applies to
             for rec_type in cc_pass[0]:
@@ -110,7 +112,6 @@ class ContentsCheckerPatcher(Patcher):
                 # types
                 valid_types = set(self.contType_entryTypes[rec_type])
                 for record in modFile.tops[rec_type].records:
-                    group_attr = cc_pass[1]
                     # Set up two lists, one containing the current record
                     # contents, and a second one that we will be filling with
                     # only valid entries.
@@ -121,7 +122,7 @@ class ContentsCheckerPatcher(Patcher):
                         # MelObject instances, so we have to take an additional
                         # step to retrieve the fids (e.g. for MelGroups or
                         # MelStructs)
-                        entry_fid = getattr(entry, cc_pass[2]) \
+                        entry_fid = getattr(entry, entry_attr) \
                             if needs_entry_attr else entry
                         # Actually check if the fid has the correct type. If
                         # it's not valid, then this will return None, which is

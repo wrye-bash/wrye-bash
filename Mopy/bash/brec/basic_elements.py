@@ -692,22 +692,23 @@ class MelUInt32(_MelNum):
 
 class _MelFlags(_MelNum):
     """Integer flag field."""
-    __slots__ = (u'_flag_type',)
+    __slots__ = (u'_flag_type', u'_flag_default')
 
     def __init__(self, mel_sig, attr, flags_type):
         super(_MelFlags, self).__init__(mel_sig, attr)
         self._flag_type = flags_type
+        self._flag_default = self._flag_type(self.default)
 
     def setDefault(self, record):
-        setattr(record, self.attr, self._flag_type(self.default))
+        setattr(record, self.attr, self._flag_default())
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         setattr(record, self.attr, self._flag_type(ins.unpack(
             self._unpacker, size_, *debug_strs)[0]))
 
     def pack_subrecord_data(self, record):
-        attr = getattr(record, self.attr)
-        return self._packer(attr.dump()) if attr is not None else None
+        flag_val = getattr(record, self.attr)
+        return self._packer(flag_val.dump()) if flag_val is not None else None
 
 class MelUInt8Flags(MelUInt8, _MelFlags): pass
 class MelUInt16Flags(MelUInt16, _MelFlags): pass

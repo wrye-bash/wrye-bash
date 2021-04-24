@@ -48,6 +48,13 @@ class MelActionFlags(MelUInt32Flags):
         super(MelActionFlags, self).__init__(b'XACT', u'action_flags',
                                              self._act_flags)
 
+    ##: HACK - right solution is having None as the default for flags combined
+    # with the ability to mark subrecords as required (e.g. for QSDT)
+    def pack_subrecord_data(self, record):
+        flag_val = getattr(record, self.attr)
+        return (self._packer(flag_val.dump())
+                if flag_val != self._flag_default else None)
+
 #------------------------------------------------------------------------------
 class MelActivateParents(MelGroup):
     """XAPD/XAPR (Activate Parents) subrecords for REFR records."""
