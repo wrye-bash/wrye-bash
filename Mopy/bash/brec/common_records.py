@@ -279,14 +279,14 @@ class AMreHeader(MelRecord):
         return self.description_pstr._decoded
     @description.setter
     def description(self, new_desc):
-        self.description_pstr = _DescrStr.from_basestring(new_desc)
+        self.description_pstr = _DescrStr.from_unicode(new_desc)
 
     @property
     def author(self):
         return self.author_pstr._decoded
     @author.setter
     def author(self, new_author):
-        self.author_pstr = _AuthorStr.from_basestring(new_author)
+        self.author_pstr = _AuthorStr.from_unicode(new_author)
 
     def loadData(self, ins, endPos, *, file_offset=0):
         """Loads data from input stream - we need to grab the masters as
@@ -327,7 +327,7 @@ class AMreHeader(MelRecord):
     def masters(self, new_masters):
         # TODO below must be per plugin or use bolt.PluginEncoding or... -> note we dump in cp1252
         self.plugin_masters = [
-            ChardetStr.from_basestring(x.s if isinstance(x, bolt.Path) else x)
+            ChardetStr.from_unicode(x.s if isinstance(x, bolt.Path) else x)
             for x in new_masters]
         # TODO(inf) For Morrowind, this will have to query the files for
         #  their size and then store that

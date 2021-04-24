@@ -277,7 +277,7 @@ class SaveFileHeader(object):
 
     @pcName.setter
     def pcName(self, new_name):
-        self.pc_name_pstr = _PcNameStr.from_basestring(new_name)
+        self.pc_name_pstr = _PcNameStr.from_unicode(new_name)
 
     def dump_header(self, out):
         raise NotImplementedError

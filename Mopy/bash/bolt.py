@@ -694,8 +694,9 @@ class PluginStr(bytes):
             target_encoding)
 
     @classmethod
-    def from_basestring(cls, str_or_bytes):
-        return cls(encode(str_or_bytes, firstEncoding=cls.preferred_encoding or pluginEncoding))
+    def from_unicode(cls, uni_str):
+        return cls(encode(uni_str,
+            firstEncoding=cls.preferred_encoding or pluginEncoding))
 
     #--Hash/Compare
     def __hash__(self):
@@ -750,8 +751,8 @@ class ChardetStr(PluginStr):
         return self._preferred_encoding # None == automatic detection
 
     @classmethod
-    def from_basestring(cls, str_or_bytes):  # automatic detection
-        return cls(encode(str_or_bytes, firstEncoding=None))
+    def from_unicode(cls, uni_str): # automatic detection
+        return cls(encode(uni_str, firstEncoding=None))
 
 class StripNewlines(PluginStr):
     """Removes all newlines (whether they are in LF, CR-LF or CR form) from
