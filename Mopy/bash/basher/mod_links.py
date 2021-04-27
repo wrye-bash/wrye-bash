@@ -1416,54 +1416,60 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
     _load_sigs = [b'SCPT']
 
     def Execute(self):
-        message = _(u"This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.")
+        message = _(u"This command will remove the effects of a 'compile all' "
+                    u"by removing all scripts whose sources appear to be "
+                    u"identical to the version that they override.")
         if not self._askContinue(message, u'bash.decompileAll.continue',
                                  _(u'Decompile All')): return
-        for fileName, fileInfo in self.iselected_pairs():
-            file_name_s = fileName.s
-            if fileInfo.match_oblivion_re():
-                self._showWarning(_(u'Skipping %s') % fileInfo,
-                                  _(u'Decompile All'))
-                continue
-            modFile = self._load_mod(fileInfo)
-            badGenericLore = False
-            removed = []
-            id_text = {}
-            scpt_grp = modFile.tops[b'SCPT']
-            if scpt_grp.getNumRecords(includeGroups=False):
-                loadFactory = self._load_fact(keepAll=False)
-                for master in modFile.tes4.masters:
-                    masterFile = mod_files.ModFile(bosh.modInfos[master], loadFactory)
-                    masterFile.load(True)
-                    for record in masterFile.tops[b'SCPT'].getActiveRecords():
-                        id_text[record.fid] = record.script_source
-                newRecords = []
-                generic_lore_fid = (bosh.modInfos.masterName, 0x025811)
-                for record in scpt_grp.records:
-                    fid = record.fid
-                    #--Special handling for genericLoreScript
-                    if (fid in id_text and record.fid == generic_lore_fid and
-                        record.compiled_size == 4 and record.last_index == 0):
-                        removed.append(record.eid)
-                        badGenericLore = True
-                    elif fid in id_text and id_text[fid] == \
-                            record.script_source:
-                        removed.append(record.eid)
-                    else:
-                        newRecords.append(record)
-                scpt_grp.records = newRecords
-                scpt_grp.setChanged()
-            if len(removed) >= 50 or badGenericLore:
-                modFile.safeSave()
-                self._showOk((_(u'Scripts removed: %d.') + u'\n' +
-                              _(u'Scripts remaining: %d')) %
-                             (len(removed), len(scpt_grp.records)), file_name_s)
-            elif removed:
-                self._showOk(_(u'Only %d scripts were identical.  This is '
-                               u'probably intentional, so no changes have '
-                               u'been made.') % len(removed), file_name_s)
-            else:
-                self._showOk(_(u'No changes required.'), file_name_s)
+        with BusyCursor():
+            for fileName, fileInfo in self.iselected_pairs():
+                file_name_s = fileName.s
+                if fileInfo.match_oblivion_re():
+                    self._showWarning(_(u'Skipping %s') % fileInfo,
+                                      _(u'Decompile All'))
+                    continue
+                modFile = self._load_mod(fileInfo)
+                badGenericLore = False
+                removed = []
+                id_text = {}
+                scpt_grp = modFile.tops[b'SCPT']
+                if scpt_grp.getNumRecords(includeGroups=False):
+                    master_factory = self._load_fact(keepAll=False)
+                    for master in modFile.tes4.masters:
+                        masterFile = mod_files.ModFile(bosh.modInfos[master],
+                                                       master_factory)
+                        masterFile.load(True)
+                        for r in masterFile.tops[b'SCPT'].getActiveRecords():
+                            id_text[r.fid] = r.script_source
+                    newRecords = []
+                    generic_lore_fid = (bosh.modInfos.masterName, 0x025811)
+                    for record in scpt_grp.records:
+                        fid = record.fid
+                        #--Special handling for genericLoreScript
+                        if (fid in id_text and
+                                record.fid == generic_lore_fid and
+                                record.compiled_size == 4 and
+                                record.last_index == 0):
+                            removed.append(record.eid)
+                            badGenericLore = True
+                        elif (fid in id_text and
+                              id_text[fid] == record.script_source):
+                            removed.append(record.eid)
+                        else:
+                            newRecords.append(record)
+                    scpt_grp.records = newRecords
+                    scpt_grp.setChanged()
+                if len(removed) >= 50 or badGenericLore:
+                    modFile.safeSave()
+                    self._showOk((_(u'Scripts removed: %d.') + u'\n' +
+                                  _(u'Scripts remaining: %d')) % (
+                        len(removed), len(scpt_grp.records)), file_name_s)
+                elif removed:
+                    self._showOk(_(u'Only %d scripts were identical.  This is '
+                                   u'probably intentional, so no changes have '
+                                   u'been made.') % len(removed), file_name_s)
+                else:
+                    self._showOk(_(u'No changes required.'), file_name_s)
 
 #------------------------------------------------------------------------------
 class _Esm_Esl_Flip(EnabledLink):
