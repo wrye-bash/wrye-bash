@@ -125,8 +125,18 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     # Check for corrupt plugins
     all_corrupted = modInfos.corrupted
     # -------------------------------------------------------------------------
-    # Check for ESL-capable plugins that aren't ESL-flagged.
-    can_esl_flag = modInfos.mergeable if bush.game.check_esl else set()
+    if bush.game.check_esl:
+        # Check for ESL-capable plugins that aren't ESL-flagged.
+        can_esl_flag = modInfos.mergeable
+        can_merge = set()
+    else:
+        # Check for mergeable plugins that aren't merged into a BP.
+        can_esl_flag = set()
+        can_merge = all_active_plugins & modInfos.mergeable
+    # Don't show NoMerge-tagged plugins as mergeable
+    for mod in list(can_merge):
+        if u'NoMerge' in modInfos[mod].getBashTags():
+            can_merge.discard(mod)
     # -------------------------------------------------------------------------
     # Check for ESL-flagged plugins that aren't ESL-capable.
     remove_esl_flag = set()
@@ -136,14 +146,6 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                 continue # we check .esl extension and ESL flagged mods
             if not is_esl_capable(modinf, modInfos, reasons=None):
                 remove_esl_flag.add(m)
-    # -------------------------------------------------------------------------
-    # Check for mergeable plugins that aren't merged into a BP.
-    can_merge = ((all_active_plugins & modInfos.mergeable)
-                 if not bush.game.check_esl else set())
-    # Don't bug users to merge NoMerge-tagged plugins
-    for mod in tuple(can_merge):
-        if u'NoMerge' in modInfos[mod].getBashTags():
-            can_merge.discard(mod)
     # -------------------------------------------------------------------------
     # Check for Deactivate-tagged plugins that are active and
     # MustBeActiveIfImported-tagged plugins that are imported, but inactive.
@@ -332,10 +334,12 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     # Check for deleted references
     if all_deleted_refs:
         for p_ci_key, deleted_refrs in all_deleted_refs.iteritems():
+            # Rely on LOOT for detecting deleted references in vanilla files
+            plugin_is_vanilla = p_ci_key in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
             # mark records that exist in one plugin but not in the other
             plugin_is_esu = p_ci_key.cext == u'.esu'
-            if deleted_refrs and not plugin_is_esu:
+            if deleted_refrs and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_refrs)
                 if num_deleted == 1: # I hate natural languages :/
                     del_msg = _(u'1 deleted reference')
