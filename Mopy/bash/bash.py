@@ -28,6 +28,7 @@ loop."""
 # Imports ---------------------------------------------------------------------
 from __future__ import print_function
 import atexit
+import codecs
 import io
 import os
 import platform
@@ -64,9 +65,13 @@ def _early_setup(debug):
         # Also, setup stdout/stderr to the debug log if debug mode /
         # standalone before wxPython is up
         global _bugdump_handle
-        _bugdump_handle = io.open(
-            os.path.join(os.getcwdu(), u'BashBugDump.log'), u'w', buffering=1,
-            encoding=u'utf-8')
+        # PY3: Replace with this
+        # _bugdump_handle = io.open(
+        #     os.path.join(os.getcwdu(), u'BashBugDump.log'), u'w', buffering=1,
+        #     encoding=u'utf-8')
+        _bugdump_handle = codecs.getwriter(u'utf-8')(
+            open(os.path.join(os.getcwdu(), u'BashBugDump.log'), u'w',
+                 buffering=0))
         sys.stdout = _bugdump_handle
         sys.stderr = _bugdump_handle
 
