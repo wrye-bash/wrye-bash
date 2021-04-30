@@ -247,9 +247,8 @@ actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
     u'flags.essential', u'flags.female', u'flags.isChargenFacePreset',
     u'flags.noBloodDecal', u'flags.noBloodSpray', u'flags.noKnockDown',
     u'flags.noLowLevel', u'flags.noRotatingHeadTrack', u'flags.notPushable',
-    u'flags.noVATSMelee', u'flags.pcLevelOffset', u'flags.respawn',
-    u'flags.useTemplate', u'karma', u'level', u'speedMultiplier',
-    u'templateFlags')
+    u'flags.noVATSMelee', u'flags.pcLevelOffset', u'flags.respawn', u'karma',
+    u'level', u'speedMultiplier')
 
 #------------------------------------------------------------------------------
 # Tweak Assorted
