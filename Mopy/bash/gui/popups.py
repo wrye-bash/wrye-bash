@@ -118,6 +118,7 @@ class MultiChoicePopup(_TransientPopup):
         self._all_choices = list(dict_sort(all_choices))
         choice_search = SearchBar(self)
         choice_search.on_text_changed.subscribe(self._search_choices)
+        choice_search.set_focus()
         self._choice_box = CheckListBox(self)
         self._choice_box.on_box_checked.subscribe(self._handle_item_checked)
         select_all_btn = SelectAllButton(self, _(u'Add All'),
