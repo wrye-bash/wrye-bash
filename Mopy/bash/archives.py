@@ -35,6 +35,7 @@ defaultExt = u'.7z'
 writeExts = {u'.7z': u'7z', u'.zip': u'zip'}
 readExts = {u'.rar', u'.001'}
 readExts.update(writeExts)
+omod_exts = {u'.omod', u'.fomod'}
 noSolidExts = {u'.zip'}
 reSolid = re.compile(u'' r'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(u'' r'Compressing\s+(.+)', re.U).match

@@ -2588,7 +2588,7 @@ class InstallersList(balt.UIList):
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
         omodnames = [x for x in filenames if
-                     not x.isdir() and x.cext == u'.omod']
+                     not x.isdir() and x.cext in archives.omod_exts]
         converters = [x for x in filenames if
                       bosh.converters.ConvertersData.validConverterName(x)]
         filenames = [x for x in filenames if x.isdir()
@@ -3238,7 +3238,7 @@ class InstallersPanel(BashTab):
             dirInstallers = bass.dirs[u'installers']
             dirInstallersJoin = dirInstallers.join
             omods = [dirInstallersJoin(x) for x in dirInstallers.list() if
-                     x.cext == u'.omod']
+                     x.cext in archives.omod_exts]
             progress.setFull(max(len(omods), 1))
             omodMoves, omodRemoves = set(), set()
             for i, omod in enumerate(omods):
