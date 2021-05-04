@@ -143,6 +143,21 @@ class CsvParser(object):
         return MreRecord.parse_csv_line(index_dict or self._attr_dex,
             csv_fields, reuse=index_dict is not None)
 
+    # Load plugin -------------------------------------------------------------
+    def _load_plugin(self, mod_info, keepAll=True, target_types=None):
+        """Loads the specified record types in the specified ModInfo and
+        returns the result.
+
+        :param mod_info: The ModInfo object to read.
+        :param target_types: An iterable yielding record signatures to load.
+        :return: An object representing the loaded plugin."""
+        mod_file = ModFile(mod_info, self._load_factory(keepAll, target_types))
+        mod_file.load(do_unpack=True)
+        return mod_file
+
+    def _load_factory(self, keepAll=True, target_types=None):
+        return LoadFactory(keepAll, by_sig=target_types or self._parser_sigs)
+
 class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
     """WIP aliases handling."""
     _parser_sigs = [] # record signatures this parser recognises
@@ -163,20 +178,6 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
         # get alias for modname returned from _CsvReader
         modname = GPath(modname)
         return GPath(self.aliases.get(modname, modname)), int(hex_fid, 0)
-
-    def _load_plugin(self, mod_info, keepAll=True, target_types=None):
-        """Loads the specified record types in the specified ModInfo and
-        returns the result.
-
-        :param mod_info: The ModInfo object to read.
-        :param target_types: An iterable yielding record signatures to load.
-        :return: An object representing the loaded plugin."""
-        mod_file = ModFile(mod_info, self._load_factory(keepAll, target_types))
-        mod_file.load(do_unpack=True)
-        return mod_file
-
-    def _load_factory(self, keepAll=True, target_types=None):
-        return LoadFactory(keepAll, by_sig=target_types or self._parser_sigs)
 
     def readFromMod(self, modInfo):
         """Hasty readFromMod implementation."""
@@ -930,6 +931,7 @@ class ItemStats(_HandleAliases):
 class ScriptText(CsvParser):
     #todo(ut): maybe standardize script line endings (read both write windows)?
     """import & export functions for script text."""
+    _parser_sigs = [b'SCPT']
 
     def __init__(self):
         self.eid_data = {}
@@ -989,9 +991,7 @@ class ScriptText(CsvParser):
     def readFromMod(self, modInfo):
         """Reads stats from specified mod."""
         eid_data = self.eid_data
-        loadFactory = LoadFactory(False, by_sig=[b'SCPT'])
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
+        modFile = self._load_plugin(modInfo, keepAll=False)
         with Progress(_(u'Export Scripts')) as progress:
             records = list(modFile.tops[b'SCPT'].iter_present_records())
             y = len(records)
@@ -1003,10 +1003,7 @@ class ScriptText(CsvParser):
         """Writes scripts to specified mod."""
         eid_data = self.eid_data
         changed = []
-        added = []
-        loadFactory = LoadFactory(True, by_sig=[b'SCPT'])
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
+        modFile = self._load_plugin(modInfo)
         for record in modFile.tops[b'SCPT'].iter_present_records():
             eid = record.eid
             data_ = eid_data.get(eid,None)
@@ -1018,6 +1015,7 @@ class ScriptText(CsvParser):
                     record.setChanged()
                     changed.append(eid)
                 del eid_data[eid]
+        added = []
         if makeNew and eid_data:
             tes4 = modFile.tes4
             for eid, (newText, longid) in eid_data.iteritems():
