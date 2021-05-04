@@ -172,8 +172,9 @@ class CsvParser(object):
             rec_block = modFile.tops.get(top_grup_sig, None)
             # Check if this record type makes any sense to patch
             if not stored_rec_info or not rec_block: continue
-            for rfid_, record in rec_block.iter_present_records():
-                self._write_record(record, stored_rec_info, changed)
+            for rfid, record in rec_block.iter_present_records():
+                self._check_write_record(rfid, record, stored_rec_info,
+                                         changed)
         changed = self._additional_processing(changed, modFile)
         # Check if we've actually changed something, otherwise skip saving
         if changed: modFile.safeSave()
@@ -181,6 +182,13 @@ class CsvParser(object):
 
     def _additional_processing(self, changed, modFile):
         return changed
+
+    def _check_write_record(self, rfid, record, stored_rec_info, changed):
+        """Check if we have stored data for this record usually based on its
+        fid."""
+        stored_data = stored_rec_info.get(rfid)
+        if stored_data:
+            self._write_record(record, stored_data, changed)
 
 class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
     """WIP aliases handling."""
@@ -399,18 +407,13 @@ class _AParser(_HandleAliases):
         :param cur_info: The current record info."""
         raise AbstractError(u'_write_record_2 not implemented')
 
-    def _write_record(self, record, stored_rec_info, changed):
+    def _write_record(self, record, new_info, changed):
         """Asks this parser to write its stored information to the specified
         ModInfo instance.
 
         :param mod_info: The ModInfo instance to write to.
         :return: A dict mapping record types to the number of changed records
             in them."""
-        rec_fid = record.fid
-        if rec_fid not in stored_rec_info: return
-        # Compare the stored information to the information currently
-        # in the plugin
-        new_info = stored_rec_info[rec_fid]
         cur_info = self._read_record_sp(record)
         if new_info != cur_info:
             # It's different, ask the parser to write it out
@@ -539,17 +542,15 @@ class ActorLevels(_HandleAliases):
         return 0
 
     _changed_type = list
-    def _write_record(self, record, id_levels, changed, __getter=itemgetter(
+    def _write_record(self, record, levels, changed, __getter=itemgetter(
             u'level_offset', u'calcMin', u'calcMax')):
-        longfid = record.fid
-        if longfid in id_levels:
-            level_offset, calcMin, calcMax = __getter(id_levels[longfid])
-            if ((record.level_offset,record.calcMin,record.calcMax) != (
-                    level_offset,calcMin,calcMax)):
-                (record.level_offset,record.calcMin,record.calcMax) = (
-                    level_offset,calcMin,calcMax)
-                record.setChanged()
-                changed.append(longfid)
+        level_offset, calcMin, calcMax = __getter(levels)
+        if ((record.level_offset,record.calcMin,record.calcMax) != (
+                level_offset,calcMin,calcMax)):
+            (record.level_offset,record.calcMin,record.calcMax) = (
+                level_offset,calcMin,calcMax)
+            record.setChanged()
+            changed.append(record.fid)
 
     def _additional_processing(self, changed, modFile):
         return len(changed)
@@ -618,10 +619,9 @@ class EditorIds(_HandleAliases):
         return changed
 
     _changed_type = list
-    def _write_record(self, record, id_eid, changed):
-        newEid = id_eid.get(record.fid)
+    def _write_record(self, record, newEid, changed):
         oldEid = record.eid
-        if newEid and oldEid and newEid != oldEid:
+        if oldEid and newEid != oldEid:
             record.eid = newEid
             record.setChanged()
             changed.append((oldEid, newEid))
@@ -846,10 +846,7 @@ class FullNames(_HandleAliases):
         if record.eid and full: # never used from patcher
             id_data[record.fid] = {u'eid': record.eid, u'full': full}
 
-    def _write_record(self, record, id_name, changed):
-        longid = record.fid
-        di = id_name.get(longid, None)
-        if di is None: return
+    def _write_record(self, record, di, changed):
         full = record.full
         newFull = di[u'full']
         if newFull and newFull not in (full, u'NO NAME'):
@@ -888,11 +885,8 @@ class ItemStats(_HandleAliases):
             izip(atts, (getattr(record, a) for a in atts)))
 
     _changed_type = Counter #--changed[modName] = numChanged
-    def _write_record(self, record, id_levels, changed):
+    def _write_record(self, record, itemStats, changed):
         """Writes stats to specified mod."""
-        longid = record.fid
-        itemStats = id_levels.get(longid,None)
-        if not itemStats: return
         change = False
         for stat_key, n_stat in itemStats.iteritems():
             if change:
@@ -904,7 +898,7 @@ class ItemStats(_HandleAliases):
                 setattr(record, stat_key, n_stat)
         if change:
             record.setChanged()
-            changed[longid[0]] += 1
+            changed[record.fid[0]] += 1
 
     def _parse_line(self, csv_fields):
         """Reads stats from specified text file."""
@@ -1018,17 +1012,21 @@ class ScriptText(CsvParser):
             return [], []
         return changed
 
-    def _write_record(self, record, eid_data, changed):
+    def _check_write_record(self, _rfid, record, eid_data, changed):
+        # the keys are eids here!
         eid = record.eid
         data_ = eid_data.get(eid,None)
-        if data_ is not None:
-            newText, longid = data_
-            oldText = record.script_source
-            if oldText.lower() != newText.lower():
-                record.script_source = newText
-                record.setChanged()
-                changed.append(eid)
-            del eid_data[eid]
+        if data_:
+            self._write_record(record, data_, changed)
+
+    def _write_record(self, record, data_, changed):
+        newText, longid = data_
+        oldText = record.script_source
+        if oldText.lower() != newText.lower():
+            record.script_source = newText
+            record.setChanged()
+            changed.append(record.eid)
+        del self.eid_data[record.eid]
 
     def _additional_processing(self, changed, modFile):
         added = []
@@ -1231,10 +1229,9 @@ class _UsesEffectsMixin(_HandleAliases):
         return u''.join(output)
 
     _changed_type = list
-    def _write_record(self, record, id_eid, changed, __attrgetters=attrgetter_cache):
+    def _write_record(self, record, newStats, changed,
+                      __attrgetters=attrgetter_cache):
         """Writes stats to specified mod."""
-        newStats = id_eid.get(record.fid, None)
-        if not newStats: return
         imported = False
         for att, val in newStats.iteritems():
             old_val = __attrgetters[att](record)
@@ -1297,15 +1294,12 @@ class ItemPrices(_HandleAliases):
                                self.item_prices_attrs}
 
     _changed_type = Counter
-    def _write_record(self, record, id_eid, changed):
+    def _write_record(self, record, stats, changed):
         """Writes stats to specified record."""
-        longid = record.fid
-        stats = id_eid.get(longid,None)
-        if not stats: return
         value = stats[u'value']
         if record.value != value:
             record.value = value
-            changed[longid[0]] += 1
+            changed[record.fid[0]] += 1
             record.setChanged()
 
     def _write_rows(self, out, __getter=itemgetter(u'value', u'eid', u'full')):
