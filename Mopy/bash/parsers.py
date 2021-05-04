@@ -158,6 +158,30 @@ class CsvParser(object):
     def _load_factory(self, keepAll=True, target_types=None):
         return LoadFactory(keepAll, by_sig=target_types or self._parser_sigs)
 
+    _changed_type = dict # used in writeToMod to report changed records
+    def writeToMod(self,modInfo):
+        """Hasty writeToMod implementation - export id_stored_data to specified
+        mod.
+
+        :param modInfo: The ModInfo instance to write to.
+        :return: info on number of changed records, usually per record type."""
+        modFile = self._load_plugin(modInfo, target_types=self.id_stored_data)
+        changed = self._changed_type()
+        # We know that the loaded mod only has the tops loaded that we need
+        for top_grup_sig, stored_rec_info in self.id_stored_data.iteritems():
+            rec_block = modFile.tops.get(top_grup_sig, None)
+            # Check if this record type makes any sense to patch
+            if not stored_rec_info or not rec_block: continue
+            for rfid_, record in rec_block.iter_present_records():
+                self._write_record(record, stored_rec_info, changed)
+        changed = self._additional_processing(changed, modFile)
+        # Check if we've actually changed something, otherwise skip saving
+        if changed: modFile.safeSave()
+        return changed
+
+    def _additional_processing(self, changed, modFile):
+        return changed
+
 class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
     """WIP aliases handling."""
     _parser_sigs = [] # record signatures this parser recognises
@@ -191,30 +215,6 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
 
     def _read_record(self, record, id_data):
         raise AbstractError
-
-    _changed_type = dict # used in writeToMod to report changed records
-    def writeToMod(self,modInfo):
-        """Hasty writeToMod implementation - export id_stored_data to specified
-        mod.
-
-        :param modInfo: The ModInfo instance to write to.
-        :return: info on number of changed records, usually per record type."""
-        modFile = self._load_plugin(modInfo, target_types=self.id_stored_data)
-        changed = self._changed_type()
-        # We know that the loaded mod only has the tops loaded that we need
-        for top_grup_sig, stored_rec_info in self.id_stored_data.iteritems():
-            rec_block = modFile.tops.get(top_grup_sig, None)
-            # Check if this record type makes any sense to patch
-            if not stored_rec_info or not rec_block: continue
-            for rfid, record in rec_block.iter_present_records():
-                self._write_record(record, stored_rec_info, changed)
-        changed = self._additional_processing(changed, modFile)
-        # Check if we've actually changed something, otherwise skip saving
-        if changed: modFile.safeSave()
-        return changed
-
-    def _additional_processing(self, changed, modFile):
-        return changed
 
 # TODO(inf) Once refactoring is done, we could easily take in Progress objects
 #  for more accurate progress bars when importing/exporting
@@ -935,6 +935,7 @@ class ScriptText(CsvParser):
 
     def __init__(self):
         self.eid_data = {}
+        self.id_stored_data = {b'SCPT': self.eid_data}
 
     def export_scripts(self, folder, progress, skip, deprefix, skipcomments):
         """Writes scripts to specified folder."""
@@ -999,26 +1000,32 @@ class ScriptText(CsvParser):
                 progress(((0.5/y) * z), _(u'Reading scripts in %s.') % modInfo)
                 eid_data[record.eid] = (record.script_source, rfid)
 
+    _changed_type = list
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
-        eid_data = self.eid_data
-        changed = []
-        modFile = self._load_plugin(modInfo)
-        for record in modFile.tops[b'SCPT'].iter_present_records():
-            eid = record.eid
-            data_ = eid_data.get(eid,None)
-            if data_ is not None:
-                newText, longid = data_
-                oldText = record.script_source
-                if oldText.lower() != newText.lower():
-                    record.script_source = newText
-                    record.setChanged()
-                    changed.append(eid)
-                del eid_data[eid]
+        self.makeNew = makeNew
+        changed = super(ScriptText, self).writeToMod(modInfo)
+        if changed is None:
+            return [], []
+        return changed
+
+    def _write_record(self, record, eid_data, changed):
+        eid = record.eid
+        data_ = eid_data.get(eid,None)
+        if data_ is not None:
+            newText, longid = data_
+            oldText = record.script_source
+            if oldText.lower() != newText.lower():
+                record.script_source = newText
+                record.setChanged()
+                changed.append(eid)
+            del eid_data[eid]
+
+    def _additional_processing(self, changed, modFile):
         added = []
-        if makeNew and eid_data:
+        if self.makeNew and self.eid_data:
             tes4 = modFile.tes4
-            for eid, (newText, longid) in eid_data.iteritems():
+            for eid, (newText, longid) in self.eid_data.iteritems():
                 scriptFid = genFid(tes4.num_masters, tes4.getNextObject())
                 newScript = MreRecord.type_class[b'SCPT'](
                     RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0))
@@ -1027,8 +1034,8 @@ class ScriptText(CsvParser):
                 newScript.setChanged()
                 modFile.tops[b'SCPT'].records.append(newScript)
                 added.append(eid)
-        if changed or added: modFile.safeSave()
-        return changed, added
+        if changed or added: return changed, added
+        return None
 
     def read_script_folder(self, textPath, progress):
         """Reads scripts from files in specified mods' directory in bashed
