@@ -436,8 +436,8 @@ class TimescaleCheckerPatcher(ModLoader):
         for pb_sig in self._read_sigs:
             patch_block = self.patchFile.tops[pb_sig]
             id_records = patch_block.id_records
-            for record in modFile.tops[pb_sig].iter_present_records():
-                if record.fid in id_records: continue
+            for rfid, record in modFile.tops[pb_sig].iter_present_records():
+                if rfid in id_records: continue
                 if record.wave_period == 0.0: continue # type: bolt.Rounder
                 patch_block.setRecord(record.getTypeCopy())
 
@@ -449,8 +449,8 @@ class TimescaleCheckerPatcher(ModLoader):
         # timescale
         def find_timescale(glob_file):
             if b'GLOB' not in glob_file.tops: return None
-            for glob_rec in glob_file.tops[b'GLOB'].iter_present_records():
-                glob_eid = glob_rec.eid
+            for glob_eid, glob_rec in glob_file.tops[
+                b'GLOB'].iter_present_records(rec_key=u'eid'):
                 if glob_eid and glob_eid.lower() == u'timescale':
                     return glob_rec.global_value
             return None
@@ -478,9 +478,8 @@ class TimescaleCheckerPatcher(ModLoader):
         # doing, e.g. changing timescale from 30 to 20 -> multiply wave period
         # by 1.5 (= 30/20)
         wp_multiplier = def_timescale / final_timescale
-        for grass_rec in self.patchFile.tops[b'GRAS'].iter_present_records():
+        for grass_fid, grass_rec in self.patchFile.tops[b'GRAS'].iter_present_records():
             grass_rec.wave_period *= wp_multiplier
-            grass_fid = grass_rec.fid
             grasses_changed[grass_fid[0]] += 1
             keep(grass_fid)
         log.setHeader(u'= ' + self._patcher_name)

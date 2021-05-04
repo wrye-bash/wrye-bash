@@ -24,15 +24,12 @@
 """Menu items for the _item_ menu of the mods tab - their window attribute
 points to BashFrame.modList singleton."""
 
-from __future__ import print_function
-
 import collections
 import copy
 import io
 import re
 import traceback
 from itertools import izip
-from operator import itemgetter
 
 # Local
 from . import configIsCBash
@@ -560,7 +557,7 @@ class Mod_Groups(_Mod_Labels):
         self.__class__.choiceLinkType = _CheckGroup
 
     def _doRefresh(self):
-        """Add to the list of groups groups currently assigned to mods."""
+        """Add to the list of groups currently assigned to mods."""
         self.listEditor.SetItemsTo(list(set(bass.settings[
             u'bash.mods.groups']) | _ModGroups.assignedGroups()))
 
@@ -1440,21 +1437,19 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                         masterFile = mod_files.ModFile(bosh.modInfos[master],
                                                        master_factory)
                         masterFile.load(True)
-                        for r in masterFile.tops[b'SCPT'].getActiveRecords():
-                            id_text[r.fid] = r.script_source
+                        for rfid, r in masterFile.tops[b'SCPT'].iter_present_records():
+                            id_text[rfid] = r.script_source
                     newRecords = []
                     generic_lore_fid = (bosh.modInfos.masterName, 0x025811)
-                    for record in scpt_grp.records:
-                        fid = record.fid
+                    for rfid, record in scpt_grp.iter_present_records():
                         #--Special handling for genericLoreScript
-                        if (fid in id_text and
-                                record.fid == generic_lore_fid and
-                                record.compiled_size == 4 and
-                                record.last_index == 0):
+                        if (rfid in id_text and rfid == generic_lore_fid and
+                            record.compiled_size == 4 and
+                            record.last_index == 0):
                             removed.append(record.eid)
                             badGenericLore = True
-                        elif (fid in id_text and
-                              id_text[fid] == record.script_source):
+                        elif (rfid in id_text and
+                              id_text[rfid] == record.script_source):
                             removed.append(record.eid)
                         else:
                             newRecords.append(record)
@@ -1730,7 +1725,6 @@ class _Import_Export_Link(AppendableLink):
         try:
             # Check if all record types required by this parser exist for this
             # game and are supported for loading
-            rec_types = MreRecord.type_class
             return all(sig in bush.game.mergeable_sigs
                        for sig in test_parser.all_types)
         except AttributeError:
@@ -1926,10 +1920,9 @@ class Mod_Factions_Import(_Mod_Import_Link):
     _parser_class = ActorFactions
 
     def _log(self, changed, fileName):
-        log_out = u'\n'.join(
-            (u'* %s : %03d  %s' % (grp_name, v, fileName)) for
-            grp_name, v in sorted(changed.iteritems()))
-        self._showLog(log_out)
+        log_out = ((u'* %s : %03d  %s\n' % (grp_name, v, fileName)) for
+                   grp_name, v in sorted(changed.iteritems()))
+        self._showLog(u''.join(log_out))
 
 #------------------------------------------------------------------------------
 from ..parsers import ScriptText
@@ -2087,10 +2080,9 @@ class Mod_Stats_Import(_Mod_Import_Link):
     _parser_class = ItemStats
 
     def _log(self, changed, fileName):
-        buff = io.StringIO()
-        for modName in sorted(changed):
-            buff.write(u'* %03d  %s\n' % (changed[modName], modName))
-        self._showLog(buff.getvalue())
+        msg = (u'* %03d  %s\n' % (count, modName) for modName, count in
+               dict_sort(changed))
+        self._showLog(u''.join(msg))
 
 #------------------------------------------------------------------------------
 from ..parsers import ItemPrices
@@ -2121,11 +2113,9 @@ class Mod_Prices_Import(_Mod_Import_Link):
     _parser_class = ItemPrices
 
     def _log(self, changed, fileName):
-        buff = io.StringIO()
-        for modName in sorted(changed):
-            buff.write(_(u'Imported Prices:')
-                       + u'\n* %s: %d\n' % (modName, changed[modName]))
-        self._showLog(buff.getvalue())
+        msg = (_(u'Imported Prices:') + u'\n* %s: %d\n' % (modName, count) for
+               modName, count in dict_sort(changed))
+        self._showLog(u''.join(msg))
 
 #------------------------------------------------------------------------------
 from ..parsers import SigilStoneDetails
@@ -2156,13 +2146,10 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     noChange = _(u'No relevant Sigil Stone details to import.')
     _parser_class = SigilStoneDetails
 
-    def _log(self, changed, fileName):
-        buff = io.StringIO()
-        buff.write((_(u'Imported Sigil Stone details to mod %s:')
-                    + u'\n') % fileName)
-        for eid in sorted(changed):
-            buff.write(u'* %s\n' % eid)
-        self._showLog(buff.getvalue())
+    def _log(self, changed, fname):
+        msg = [(_(u'Imported Sigil Stone details to mod %s:') + u'\n') % fname]
+        msg.extend(u'* %s\n' % eid for eid in sorted(changed))
+        self._showLog(u''.join(msg))
 
 #------------------------------------------------------------------------------
 from ..parsers import SpellRecords
@@ -2209,12 +2196,9 @@ class Mod_SpellRecords_Import(_SpellRecords_Link, _Mod_Import_Link):
     _do_what = _(u'Import flags and effects?')
 
     def _log(self, changed, fileName):
-        buff = io.StringIO()
-        buff.write((_(u'Imported Spell details to mod %s:')
-                    + u'\n') % fileName)
-        for eid in sorted(changed):
-            buff.write(u'* %s\n' % eid)
-        self._showLog(buff.getvalue())
+        msg = [(_(u'Imported Spell details to mod %s:') + u'\n') % fileName]
+        msg.extend(u'* %s\n' % eid for eid in sorted(changed))
+        self._showLog(u''.join(msg))
 
 #------------------------------------------------------------------------------
 from ..parsers import IngredientDetails
@@ -2244,13 +2228,10 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
     noChange = _(u'No relevant Ingredient details to import.')
     _parser_class = IngredientDetails
 
-    def _log(self, changed, fileName):
-        buff = io.StringIO()
-        buff.write((_(u'Imported Ingredient details to mod %s:')
-                    + u'\n') % fileName)
-        for eid in sorted(changed):
-            buff.write(u'* %s\n' % eid)
-        self._showLog(buff.getvalue())
+    def _log(self, changed, fname):
+        msg = [(_(u'Imported Ingredient details to mod %s:') + u'\n') % fname]
+        msg.extend(u'* %s\n' % eid for eid in sorted(changed))
+        self._showLog(u''.join(msg))
 
 #------------------------------------------------------------------------------
 from ..parsers import EditorIds
@@ -2359,13 +2340,6 @@ class Mod_FullNames_Import(_Mod_Import_Link):
         return FullNames()
 
     def _log(self, changed, fileName):
-        buff = io.StringIO()
-        format_ = u'%s:   %s >> %s\n'
-        #buff.write(format_ % (_(u'Editor Id'), _(u'Name')))
-        for eid in sorted(changed):
-            full, newFull = changed[eid]
-            try:
-                buff.write(format_ % (eid, full, newFull))
-            except:
-                print(u'unicode error:', (format_, eid, full, newFull))
-        self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
+        msg = (u'%s:   %s >> %s\n' % (eid, oldFull, newFull) for
+               eid, (oldFull, newFull) in dict_sort(changed))
+        self._showLog(u''.join(msg), title=_(u'Objects Renamed'))

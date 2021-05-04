@@ -35,7 +35,7 @@ import csv
 import re
 from collections import defaultdict, Counter, OrderedDict
 from itertools import izip
-from operator import attrgetter, itemgetter
+from operator import itemgetter
 
 # Internal
 from . import bush, load_order
@@ -185,11 +185,29 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
             typeBlock = modFile.tops.get(top_grup_sig)
             if not typeBlock: continue
             id_data = self.id_stored_data[top_grup_sig]
-            for record in typeBlock.getActiveRecords():
+            for rfid, record in typeBlock.iter_present_records():
                 self._read_record(record, id_data)
 
     def _read_record(self, record, id_data):
         raise AbstractError
+
+    _changed_type = dict # used in writeToMod to report changed records
+    def writeToMod(self,modInfo):
+        """Hasty writeToMod implementation - export id_stored_data to specified
+        mod."""
+        modFile = self._load_plugin(modInfo)
+        changed = self._changed_type()
+        for top_grup_sig, id_data in self.id_stored_data.iteritems():
+            typeBlock = modFile.tops.get(top_grup_sig,None)
+            if not id_data or not typeBlock: continue
+            for rfid_, record in typeBlock.iter_present_records():
+                self._write_record(record, id_data, changed)
+        changed = self._additional_processing(changed, modFile)
+        if changed: modFile.safeSave()
+        return changed
+
+    def _additional_processing(self, changed, modFile):
+        return changed
 
 # TODO(inf) Once refactoring is done, we could easily take in Progress objects
 #  for more accurate progress bars when importing/exporting
@@ -261,9 +279,8 @@ class _AParser(_HandleAliases):
             for block_type in self._fp_types:
                 rec_block = mod_to_read.tops.get(block_type, None)
                 if not rec_block: continue
-                for record in rec_block.getActiveRecords():
-                    self.id_context[record.fid] = \
-                        self._read_record_fp(record)
+                for rfid, record in rec_block.iter_present_records():
+                    self.id_context[rfid] = self._read_record_fp(record)
             self._fp_mods.add(mod_to_read.fileInfo.ci_key)
         # Process the mod's masters first, but see if we need to sort them
         master_names = loaded_mod.tes4.masters
@@ -298,16 +315,14 @@ class _AParser(_HandleAliases):
         for rec_type in self._sp_types:
             rec_block = loaded_mod.tops.get(rec_type, None)
             if not rec_block: continue
-            for record in rec_block.getActiveRecords():
+            for rfid, record in rec_block.iter_present_records():
                 # Check if we even want this record first
                 if self._is_record_useful(record):
-                    rec_fid = record.fid
-                    self.id_stored_data[rec_type][rec_fid] = \
+                    self.id_stored_data[rec_type][rfid] = \
                         self._read_record_sp(record)
                     # Check if we need to follow up on the first pass info
                     if self._context_needs_followup:
-                        self.id_context[rec_fid] = \
-                            self._read_record_fp(record)
+                        self.id_context[rfid] = self._read_record_fp(record)
 
     def _is_record_useful(self, record):
         """The parser should check if the specified record would be useful to
@@ -369,14 +384,11 @@ class _AParser(_HandleAliases):
             rec_block = loaded_mod.tops.get(rec_type, None)
             # Check if this record type makes any sense to patch
             if not stored_rec_info or not rec_block: continue
-            # TODO(inf) Copied from implementations below, may have to be
-            #  getActiveRecords()?
-            for record in rec_block.records:
-                rec_fid = record.fid
-                if rec_fid not in stored_rec_info: continue
+            for rfid, record in rec_block.iter_present_records():
+                if rfid not in stored_rec_info: continue
                 # Compare the stored information to the information currently
                 # in the plugin
-                new_info = stored_rec_info[rec_fid]
+                new_info = stored_rec_info[rfid]
                 cur_info = self._get_cur_record_info(record)
                 if self._should_write_record(new_info, cur_info):
                     # It's different, ask the parser to write it out
@@ -538,12 +550,12 @@ class ActorLevels(_HandleAliases):
             if modName in gotLevels: continue
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
-            for record in modFile.tops[b'NPC_'].getActiveRecords():
+            for rfid, record in modFile.tops[b'NPC_'].iter_present_records():
                 items = izip((u'eid', u'flags.pcLevelOffset', u'level_offset',
                           u'calcMin', u'calcMax'), (record.eid,
                          bool(record.flags.pcLevelOffset), record.level_offset,
                          record.calcMin, record.calcMax))
-                mod_id_levels[modName][record.fid] = dict(items)
+                mod_id_levels[modName][rfid] = dict(items)
             gotLevels.add(modName)
 
     def writeToMod(self, modInfo):
@@ -555,7 +567,7 @@ class ActorLevels(_HandleAliases):
                                       mod_id_levels.get(GPath(u'Unknown'),
                                                         None))
         if id_levels:
-            for record in modFile.tops[b'NPC_'].records:
+            for rfid_, record in modFile.tops[b'NPC_'].iter_present_records():
                 changed = self._write_record(record, id_levels, changed)
         #--Done
         if changed: modFile.safeSave()
@@ -628,24 +640,14 @@ class EditorIds(_HandleAliases):
     def _read_record(self, record, id_data):
         if record.eid: id_data[record.fid] = record.eid
 
-    def writeToMod(self,modInfo):
-        """Exports eids to specified mod."""
-        modFile = self._load_plugin(modInfo)
-        changed = []
-        for type_ in self._parser_sigs:
-            id_eid = self.id_stored_data.get(type_, None)
-            typeBlock = modFile.tops.get(type_, None)
-            if not id_eid or not typeBlock: continue
-            for record in typeBlock.records:
-                self._write_record(record, id_eid, changed)
+    def _additional_processing(self, changed, modFile):
         #--Update scripts
         old_new = dict(self.old_new)
         old_new.update({oldEid.lower(): newEid for oldEid, newEid in changed})
         changed.extend(self.changeScripts(modFile,old_new))
-        #--Done
-        if changed: modFile.safeSave()
         return changed
 
+    _changed_type = list
     def _write_record(self, record, id_eid, changed):
         newEid = id_eid.get(record.fid)
         oldEid = record.eid
@@ -667,7 +669,8 @@ class EditorIds(_HandleAliases):
             else:
                 return newWord
         #--Scripts
-        for script_rec in sorted(modFile.tops[b'SCPT'].records, key=attrgetter(u'eid')):
+        scpt_recs = modFile.tops[b'SCPT'].iter_present_records(rec_key=u'eid')
+        for reid, script_rec in sorted(scpt_recs, key=itemgetter(0)): # by eid
             if not script_rec.script_source: continue
             newText = reWord.sub(subWord,script_rec.script_source)
             if newText != script_rec.script_source:
@@ -675,9 +678,10 @@ class EditorIds(_HandleAliases):
                 # len(script_rec.eid))) # unused - bug ?
                 script_rec.script_source = newText
                 script_rec.setChanged()
-                changed.append((_(u'Script'),script_rec.eid))
+                changed.append((_(u'Script'), reid))
         #--Quest Scripts
-        for quest in sorted(modFile.tops[b'QUST'].records, key=attrgetter(u'eid')):
+        qust_recs = modFile.tops[b'QUST'].iter_present_records(rec_key=u'eid')
+        for reid, quest in sorted(qust_recs, key=itemgetter(0)): # sort by eid
             questChanged = False
             for stage in quest.stages:
                 for entry in stage.entries:
@@ -688,7 +692,7 @@ class EditorIds(_HandleAliases):
                         entry.script_source = newScript
                         questChanged = True
             if questChanged:
-                changed.append((_(u'Quest'),quest.eid))
+                changed.append((_(u'Quest'), reid))
                 quest.setChanged()
         #--Done
         return changed
@@ -834,8 +838,8 @@ class FidReplacer(_HandleAliases):
                 return oldId
         #--Do swap on all records
         for top_grup_sig in self._parser_sigs:
-            for record in modFile.tops[top_grup_sig].getActiveRecords():
-                if changeBase: record.fid = swapper(record.fid)
+            for rfid, record in modFile.tops[top_grup_sig].iter_present_records():
+                if changeBase: record.fid = swapper(rfid)
                 record.mapFids(swapper, save=True)
                 record.setChanged()
         #--Done
@@ -867,19 +871,6 @@ class FullNames(_HandleAliases):
         full = record.full or (record.rec_sig == b'LIGH' and u'NO NAME')
         if record.eid and full: # never used from patcher
             id_data[record.fid] = {u'eid': record.eid, u'full': full}
-
-    def writeToMod(self,modInfo):
-        """Exports id_stored_data to specified mod."""
-        modFile = self._load_plugin(modInfo)
-        changed = {}
-        for type_ in self._parser_sigs:
-            id_name = self.id_stored_data.get(type_, None)
-            typeBlock = modFile.tops.get(type_,None)
-            if not id_name or not typeBlock: continue
-            for record in typeBlock.records:
-                self._write_record(record, id_name, changed)
-        if changed: modFile.safeSave()
-        return changed
 
     def _write_record(self, record, id_name, changed):
         longid = record.fid
@@ -928,29 +919,24 @@ class ItemStats(_HandleAliases):
         id_data[record.fid].update(
             izip(atts, (getattr(record, a) for a in atts)))
 
-    def writeToMod(self,modInfo):
+    _changed_type = Counter #--changed[modName] = numChanged
+    def _write_record(self, record, id_levels, changed):
         """Writes stats to specified mod."""
-        modFile = self._load_plugin(modInfo)
-        changed = Counter() #--changed[modName] = numChanged
-        for top_grup_sig, fid_attr_value in self.id_stored_data.iteritems():
-            for record in modFile.tops[top_grup_sig].getActiveRecords():
-                longid = record.fid
-                itemStats = fid_attr_value.get(longid,None)
-                if not itemStats: continue
-                change = False
-                for stat_key, n_stat in itemStats.iteritems():
-                    if change:
-                        setattr(record, stat_key, n_stat)
-                        continue
-                    o_stat = getattr(record, stat_key)
-                    change = o_stat != n_stat
-                    if change:
-                        setattr(record, stat_key, n_stat)
-                if change:
-                    record.setChanged()
-                    changed[longid[0]] += 1
-        if changed: modFile.safeSave()
-        return changed
+        longid = record.fid
+        itemStats = id_levels.get(longid,None)
+        if not itemStats: return
+        change = False
+        for stat_key, n_stat in itemStats.iteritems():
+            if change:
+                setattr(record, stat_key, n_stat)
+                continue
+            o_stat = getattr(record, stat_key)
+            change = o_stat != n_stat
+            if change:
+                setattr(record, stat_key, n_stat)
+        if change:
+            record.setChanged()
+            changed[longid[0]] += 1
 
     def _parse_line(self, csv_fields):
         """Reads stats from specified text file."""
@@ -1049,11 +1035,11 @@ class ScriptText(CsvParser):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         with Progress(_(u'Export Scripts')) as progress:
-            records = modFile.tops[b'SCPT'].getActiveRecords()
+            records = list(modFile.tops[b'SCPT'].iter_present_records())
             y = len(records)
-            for z, record in enumerate(records):
+            for z, (rfid, record) in enumerate(records):
                 progress(((0.5/y) * z), _(u'Reading scripts in %s.') % modInfo)
-                eid_data[record.eid] = (record.script_source, record.fid)
+                eid_data[record.eid] = (record.script_source, rfid)
 
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
@@ -1063,7 +1049,7 @@ class ScriptText(CsvParser):
         loadFactory = LoadFactory(True, by_sig=[b'SCPT'])
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        for record in modFile.tops[b'SCPT'].getActiveRecords():
+        for record in modFile.tops[b'SCPT'].iter_present_records():
             eid = record.eid
             data_ = eid_data.get(eid,None)
             if data_ is not None:
@@ -1277,7 +1263,7 @@ class _UsesEffectsMixin(_HandleAliases):
         fid_stats = self.fid_stats
         modFile = self._load_plugin(modInfo)
         changed = [] #eids
-        for record in modFile.tops[self._parser_sigs[0]].getActiveRecords():
+        for record in modFile.tops[self._parser_sigs[0]].iter_present_records():
             newStats = fid_stats.get(record.fid, None)
             if not newStats: continue
             imported = False
@@ -1346,7 +1332,7 @@ class ItemPrices(_HandleAliases):
         modFile = self._load_plugin(modInfo)
         changed = Counter() #--changed[modName] = numChanged
         for top_grup_sig, fid_stats in self.id_stored_data.iteritems():
-            for record in modFile.tops[top_grup_sig].getActiveRecords():
+            for record in modFile.tops[top_grup_sig].iter_present_records():
                 longid = record.fid
                 stats = fid_stats.get(longid,None)
                 if not stats: continue

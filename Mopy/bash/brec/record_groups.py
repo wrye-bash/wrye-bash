@@ -131,11 +131,13 @@ class MobBase(object):
         """Returns a ModReader wrapped around self.data."""
         return ModReader(self.inName, io.BytesIO(self.data))
 
-    def iter_present_records(self, include_ignored=False):
+    def iter_present_records(self, include_ignored=False, rec_key=u'fid',
+                             __attrgetters=attrgetter_cache):
         """Filters iter_records, returning only records that have not set
         the deleted flag and/or the ignore flag if include_ignored is False."""
-        return (r for r in self.iter_records() if not r.flags1.deleted and (
-                include_ignored or not r.flags1.ignored))
+        return ((__attrgetters[rec_key](r), r) for r in self.iter_records()
+                if not r.flags1.deleted
+                and (include_ignored or not r.flags1.ignored))
 
     # Abstract methods --------------------------------------------------------
     def get_all_signatures(self):
