@@ -85,9 +85,8 @@ reVersion = re.compile(
 
 #--Mod Extensions
 __exts = r'((\.(' + u'|'.join(ext[1:] for ext in readExts) + u'))|)$'
-reTesNexus = re.compile(u'' r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)'
-    r'?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?'
-    + __exts, re.I | re.U)
+reTesNexus = re.compile(u'' r'(.*?)-(\d{1,7})(?:-\w*){0,3}(?:-\d{1,16})?'
+                        + __exts, re.I | re.U)
 reTESA = re.compile(u'' r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?'
     + __exts, re.I | re.U)
 del __exts
