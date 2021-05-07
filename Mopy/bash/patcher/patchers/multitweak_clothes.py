@@ -126,14 +126,14 @@ class _AClothesTweak_Unblock(_AClothesTweak):
 class ClothesTweak_UnlimitedAmulets(_AClothesTweak_Unblock):
     tweak_name = _(u'Unlimited Amulets')
     tweak_tip = _(u"Wear unlimited number of amulets - but they won't "
-                  u'display.')
+                  u'display. Will affect all clothes flagged as amulets.')
     tweak_key = u'amulets.unblock.amulets'
 
 #------------------------------------------------------------------------------
 class ClothesTweak_UnlimitedRings(_AClothesTweak_Unblock):
     tweak_name = _(u'Unlimited Rings')
     tweak_tip = _(u"Wear unlimited number of rings - but they won't "
-                  u'display.')
+                  u'display. Will affect all clothes flagged as rings.')
     tweak_key = u'rings.unblock.rings'
 
 #------------------------------------------------------------------------------
