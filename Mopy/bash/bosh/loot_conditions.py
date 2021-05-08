@@ -31,9 +31,10 @@ __author__ = u'Infernio'
 import operator
 import os
 import re
+from distutils.version import LooseVersion
 
 from .. import bass, bush
-from ..bolt import GPath, Path
+from ..bolt import GPath, Path, deprint
 from ..env import get_file_version
 from ..exception import AbstractError, EvalError, FileError
 from ..load_order import cached_active_tuple, cached_is_active, in_master_block
@@ -86,9 +87,17 @@ class ConditionFunc(_ACondition):
         # Call the appropriate function, wrapping the error to make a nicer
         # error message if no appropriate function was found
         try:
-            return _function_mapping[self.func_name](*self.func_args)
+            wanted_func = _function_mapping[self.func_name]
         except KeyError:
             raise EvalError(u"Unknown function '%s'" % self.func_name)
+        try:
+            return wanted_func(*self.func_args)
+        except EvalError: raise
+        except Exception:
+            # Reraise because we can gracefully handle this by skipping the
+            # tags for this plugin
+            deprint(u'Error while evaluating function', traceback=True)
+            raise EvalError(u'Error while evaluating function')
 
     def __repr__(self):
         fmt_args = []
@@ -213,6 +222,8 @@ def _fn_many_active(path_regex):
     # Check if we have more than one matching active plugin
     return len([x for x in cached_active_tuple() if file_regex.match(x.s)]) > 1
 
+##: Maybe tweak the implementation to match LOOT's by adding some params to
+# env.get_file_version?
 def _fn_product_version(file_path, expected_ver, comparison):
     # type: (unicode, unicode, Comparison) -> bool
     """Takes a file path, an expected version and a comparison operator.
@@ -234,19 +245,18 @@ def _fn_product_version(file_path, expected_ver, comparison):
     :param expected_ver: The version to check against.
     :param comparison: The comparison operator to use."""
     file_path = _process_path(file_path)
-    actual_ver = [0]
+    actual_ver = LooseVersion(u'0')
     if file_path.isfile():
         if file_path.cext in (u'.exe', u'.dll'):
             # Read version from executable fields
-            actual_ver = list(get_file_version(file_path.s))
+            actual_ver = LooseVersion(u'.'.join(
+                unicode(s) for s in get_file_version(file_path.s)))
         else:
             raise FileError(file_path.s, u'Product version query was '
                                          u'requested, but the file is not an '
                                          u'executable.')
-    return comparison.compare(
-        actual_ver, [int(x) for x in expected_ver.split(u'.')])
+    return comparison.compare(actual_ver, LooseVersion(expected_ver))
 
-_VERSION_REGEX = re.compile(u'Version: ([\\d.]+)', re.I | re.U)
 def _fn_version(file_path, expected_ver, comparison):
     # type: (unicode, unicode, Comparison) -> bool
     """Behaves like product_version, but extends its behavior to also allow
@@ -263,24 +273,22 @@ def _fn_version(file_path, expected_ver, comparison):
     :param expected_ver: The version to check against.
     :param comparison: The comparison operator to use."""
     file_path = _process_path(file_path)
-    actual_ver = [0]
+    actual_ver = LooseVersion(u'0')
     if file_path.isfile():
         if file_path.cext in bush.game.espm_extensions:
             # Read version from the description
             from . import modInfos
-            ver_match = _VERSION_REGEX.search(
-                modInfos[file_path.tail].header.description)
-            if ver_match:
-                actual_ver = [int(x) for x in ver_match.group(1).split(u'.')]
+            actual_ver = LooseVersion(
+                modInfos.getVersion(file_path.tail) or u'0')
         elif file_path.cext in (u'.exe', u'.dll'):
             # Read version from executable fields
-            actual_ver = list(get_file_version(file_path.s))
+            actual_ver = LooseVersion(u'.'.join(
+                unicode(s) for s in get_file_version(file_path.s)))
         else:
             raise FileError(file_path.s, u'Version query was requested, but '
                                          u'the file is not a plugin or '
                                          u'executable.')
-    return comparison.compare(
-        actual_ver, [int(x) for x in expected_ver.split(u'.')])
+    return comparison.compare(actual_ver, LooseVersion(expected_ver))
 
 # Maps the function names used in conditions to the functions implementing them
 _function_mapping = {
