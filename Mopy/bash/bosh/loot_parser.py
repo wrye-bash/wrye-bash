@@ -569,7 +569,7 @@ def _parse_atom(tokens):
     elif ttag == _NOT:
         # 'not' is unary, so can't be handled by the regular algorithm
         _pop_token(tokens, _NOT)
-        return ConditionNot(_parse_function(tokens))
+        return ConditionNot(_parse_atom(tokens))
     else:
         raise ParserError(
             u'Unexpected token %s - expected one of %s' % (

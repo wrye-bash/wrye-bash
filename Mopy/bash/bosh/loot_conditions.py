@@ -165,7 +165,7 @@ def _fn_file(path_or_regex):
         # Note that we don't have to error check here due to the +1 offset
         file_regex = re.compile(path_or_regex[final_sep + 1:])
         parent_dir = _process_path(path_or_regex[:final_sep + 1])
-        return any(file_regex.match(x.s) for x in parent_dir.list())
+        return any(file_regex.match(f) for f in _iter_dir(parent_dir))
     else:
         return _process_path(path_or_regex).exists()
 
@@ -191,7 +191,7 @@ def _fn_many(path_regex):
     file_regex = re.compile(path_regex[final_sep + 1:])
     parent_dir = _process_path(path_regex[:final_sep + 1])
     # Check if we have more than one matching file
-    return len([x for x in parent_dir.list() if file_regex.match(x.s)]) > 1
+    return len([x for x in _iter_dir(parent_dir) if file_regex.match(x.s)]) > 1
 
 def _fn_many_active(path_regex):
     # type: (unicode) -> bool
@@ -330,6 +330,11 @@ def _process_path(file_path):
     for x in xrange(parents):
         relative_path = relative_path.head
     return relative_path.join(*child_components)
+
+def _iter_dir(parent_dir):
+    """Takes a path and returns an iterator of the filenames (as strings) of
+    files in that folder. .ghost extensions will be chopped off."""
+    return (f.sroot if f.cext == u'.ghost' else f.s for f in parent_dir.list())
 
 class Comparison(object):
     """Implements a comparison operator. Takes a unicode string containing the
