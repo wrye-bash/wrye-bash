@@ -29,12 +29,13 @@ https://loot-api.readthedocs.io/en/latest/metadata/conditions.html."""
 __author__ = u'Infernio'
 
 import operator
+import os
 import re
 
 from .. import bass, bush
 from ..bolt import GPath, Path
 from ..env import get_file_version
-from ..exception import AbstractError, ParserError, FileError
+from ..exception import AbstractError, EvalError, FileError
 from ..load_order import cached_active_tuple, cached_is_active, in_master_block
 
 # Conditions
@@ -87,11 +88,20 @@ class ConditionFunc(_ACondition):
         try:
             return _function_mapping[self.func_name](*self.func_args)
         except KeyError:
-            raise ParserError(u"Unknown function '%s'" % self.func_name)
+            raise EvalError(u"Unknown function '%s'" % self.func_name)
 
     def __repr__(self):
+        fmt_args = []
+        for a in self.func_args:
+            if isinstance(a, unicode): # String
+                fmt_a = u'"%s"' % a
+            elif isinstance(a, (int, long)): # Checksum
+                fmt_a = u'%X' % a
+            else: # Comparison
+                fmt_a = u'%r' % a
+            fmt_args.append(fmt_a)
         return u'%s(%s)' % (
-            self.func_name, u', '.join([u'%r' % a for a in self.func_args]))
+            self.func_name, u', '.join(fmt_args))
 
 class ConditionNot(_ACondition):
     """Evaluates to True iff the specified condition evaluates to False."""
@@ -313,13 +323,13 @@ def _process_path(file_path):
     parents_done = False
     child_components = []
     for path_component in file_path.split(u'/'):
+        if not path_component: continue # skip empty components
         if path_component == u'..':
-            if not path_component: continue # skip empty components
             # Check if this is a misplaced parent specifier
             if parents_done:
-                raise ParserError(
-                    u"Illegal file path: Unexpected '..' (may only be at the "
-                    u'start of the path).', file_path)
+                raise EvalError(u"Illegal file path: Unexpected '..' (may "
+                                u'only be at the start of the path).',
+                                file_path)
             parents += 1
         else:
             # Remember that we're done parsing any parent specifiers
@@ -329,6 +339,10 @@ def _process_path(file_path):
     # Move up by the number of requested parents
     for x in xrange(parents):
         relative_path = relative_path.head
+    # If that put us outside the game folder, the path is invalid
+    if not os.path.realpath(relative_path.s).startswith(bass.dirs[u'app'].s):
+        raise EvalError(u'Illegal file path: May not specify paths that '
+                        u'resolve to outside the game folder.', file_path)
     return relative_path.join(*child_components)
 
 def _iter_dir(parent_dir):
@@ -365,10 +379,9 @@ class Comparison(object):
             return self._cmp_functions[self.cmp_operator](
                 first_val, second_val)
         except KeyError:
-            raise ParserError(
-                u"Invalid comparison operator '%s', expected one of [%s]" % (
-                    self.cmp_operator,
-                    u', '.join([u'%s' % x for x in self._cmp_functions])))
+            raise EvalError(u"Invalid comparison operator '%s', expected one "
+                            u"of [%s]" % (self.cmp_operator, u', '.join([
+                u'%s' % x for x in self._cmp_functions])))
 
     def __repr__(self):
-        return u'Comparison(%r)' % self.cmp_operator
+        return u'%s' % self.cmp_operator

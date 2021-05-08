@@ -39,7 +39,7 @@ from collections import deque
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
     ConditionFunc, ConditionNot, ConditionOr, is_regex
 from ..bolt import deprint, LowerDict, Path, AFile
-from ..exception import LexerError, ParserError, BoltError
+from ..exception import LexerError, ParserError, BoltError, EvalError
 
 # Try to use the C version (way faster), if that isn't possible fall back to
 # the pure Python version
@@ -136,7 +136,7 @@ class LOOTParser(object):
             try:
                 return (_ConditionalTag.resolve_tags(res_entry.tags_added),
                         _ConditionalTag.resolve_tags(res_entry.tags_removed))
-            except (LexerError, ParserError):
+            except (LexerError, ParserError, EvalError):
                 if not catch_errors:
                     raise
                 deprint(u'Error while evaluating LOOT condition',
@@ -228,8 +228,8 @@ class LOOTParser(object):
         try:
             return self._tagCache[modName]
         except KeyError:
-            self._tagCache[modName] = self.get_plugin_tags(modName)
-            return self._tagCache[modName]
+            self._tagCache[modName] = ca_tags = self.get_plugin_tags(modName)
+            return ca_tags
 
 # Implementation
 def _loot_decode(raw_str): # PY3: drop entirely, pyyaml is fully unicode on py3
@@ -426,7 +426,7 @@ _token_regexes = (
     (re.compile(u','),                      _COMMA),
     (re.compile(u'(?:(?:<|>)=?)|(?:!|=)='), _COMPARISON),
     ##: Verify that we don't have to worry about escapes
-    # This is not a typo: empty strings forbidden by the grammar
+    # This is not a typo: empty strings are forbidden by the grammar
     (re.compile(u'"[^"]+"'),                _STRING),
     (re.compile(u'[0-9ABCDEF]+'),           _CHECKSUM),
     (re.compile(u'[a-z_]+'),                _FUNCTION),
@@ -586,7 +586,7 @@ def _parse_function(tokens):
     :return: The parsed function call.
     :rtype: ConditionFunc"""
     func_args = []
-    token = _pop_token(tokens, _FUNCTION)
+    func_name = _pop_token(tokens, _FUNCTION).token_text
     _pop_token(tokens, _LPAREN)
     # One argument is required
     func_args.append(_parse_argument(tokens))
@@ -595,7 +595,7 @@ def _parse_function(tokens):
         _pop_token(tokens, _COMMA)
         func_args.append(_parse_argument(tokens))
     _pop_token(tokens, _RPAREN)
-    return ConditionFunc(token.token_text, func_args)
+    return ConditionFunc(func_name, func_args)
 
 def _parse_argument(tokens):
     """Parses the specified deque of tokens, returning an argument (which is
