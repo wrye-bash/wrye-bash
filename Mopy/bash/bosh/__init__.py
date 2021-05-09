@@ -517,8 +517,8 @@ class ModInfo(FileInfo):
         """Changes this file's ESM flag to the specified value. Recalculates
         ONAM info if necessary."""
         self.header.flags1.esm = new_esm_flag
-        self.update_onam()
         self._recalc_esm()
+        self.update_onam()
         self.writeHeader()
 
     def _recalc_esm(self):
