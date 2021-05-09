@@ -241,28 +241,21 @@ settingDefaults = { # keep current naming format till refactored
         u'Cell': _(u'Cell'),
         u'CRC': _(u'CRC'),
         u'Current Order': _(u'Current LO'),
-        u'Date': _(u'Date'),
-        u'Day': _(u'Day'),
         u'File': _(u'File'),
         u'Files': _(u'Files'),
         u'Group': _(u'Group'),
-        u'Header': _(u'Header'),
-        u'Indices': _(u'Indices'),
+        u'Indices': _(u'Index'),
         u'Installer': _(u'Installer'),
-        u'Karma': _(u'Karma'),
         u'Load Order': _(u'Load Order'),
         u'Modified': _(u'Modified'),
-        u'Name': _(u'Name'),
         u'Num': _(u'MI'),
         u'Order': _(u'Order'),
         u'Package': _(u'Package'),
         u'PlayTime': _(u'Hours'),
         u'Player': _(u'Player'),
         u'Rating': _(u'Rating'),
-        u'Save Order': _(u'Save Order'),
         u'Size': _(u'Size'),
         u'Status': _(u'Status'),
-        u'Subject': _(u'Subject'),
     },
     #--Wrye Bash: Masters
     u'bash.masters.cols': [u'File', u'Num', u'Current Order'],
@@ -420,7 +413,7 @@ if bush.game.Esp.check_master_sizes:
     settingDefaults[u'bash.colors'][u'mods.bkgd.size_mismatch'] = (255, 238,
                                                                    217)
 
-if bush.game.has_esl: # Enable Indices by default for ESL games
+if bush.game.has_esl: # Enable Index column by default for ESL games
     settingDefaults[u'bash.mods.cols'].insert(2, u'Indices')
 
 # Images ----------------------------------------------------------------------

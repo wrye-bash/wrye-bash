@@ -848,7 +848,7 @@ class ModList(_ModsUIList):
         u'Installer' : lambda self, a: self.data_store[a].get_table_prop(
                             u'installer', u''),
         u'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
-        u'Indices'  : lambda self, a: self.data_store[a].real_index(),
+        u'Indices'   : lambda self, a: self.data_store[a].real_index(),
         u'Modified'  : lambda self, a: self.data_store[a].mtime,
         u'Size'      : lambda self, a: self.data_store[a].fsize,
         u'Status'    : lambda self, a: self.data_store[a].getStatus(),
