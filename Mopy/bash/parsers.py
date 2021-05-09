@@ -519,19 +519,14 @@ class ActorLevels(_HandleAliases):
 
     def writeToMod(self, modInfo):
         """Exports actor levels to specified mod."""
-        mod_id_levels = self.mod_id_levels
-        modFile = self._load_plugin(modInfo)
-        changed = 0
-        id_levels = mod_id_levels.get(modInfo.ci_key,
-                                      mod_id_levels.get(GPath(u'Unknown'),
-                                                        None))
+        id_levels = self.mod_id_levels.get(modInfo.ci_key,
+            self.mod_id_levels.get(GPath(u'Unknown'), None))
         if id_levels:
-            for rfid_, record in modFile.tops[b'NPC_'].iter_present_records():
-                changed = self._write_record(record, id_levels, changed)
-        #--Done
-        if changed: modFile.safeSave()
-        return changed
+            self.id_stored_data = {b'NPC_': id_levels}
+            return super(ActorLevels, self).writeToMod(modInfo)
+        return 0
 
+    _changed_type = list
     def _write_record(self, record, id_levels, changed, __getter=itemgetter(
             u'level_offset', u'calcMin', u'calcMax')):
         longfid = record.fid
@@ -542,8 +537,10 @@ class ActorLevels(_HandleAliases):
                 (record.level_offset,record.calcMin,record.calcMax) = (
                     level_offset,calcMin,calcMax)
                 record.setChanged()
-                changed += 1
-        return changed
+                changed.append(longfid)
+
+    def _additional_processing(self, changed, modFile):
+        return len(changed)
 
     def _parse_line(self, csv_fields):
         source, fidMod = csv_fields[0], csv_fields[2]
