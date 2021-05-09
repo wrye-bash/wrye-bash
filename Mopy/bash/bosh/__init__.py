@@ -813,25 +813,20 @@ class ModInfo(FileInfo):
         except UnicodeEncodeError:
             return True
 
-    @property
-    def _modname(self):
-        return modInfos.file_pattern.sub(u'', self.name.s)
-
     def mod_bsas(self, bsa_infos=None):
-        """Returns a list of all BSAs that the game will attach to this
-        plugin. bsa_infos is optional and will default to bosh.bsaInfos."""
+        """Returns a list of all BSAs that the game will attach to this plugin.
+        bsa_infos is optional and will default to bosh.bsaInfos."""
         if bush.game.fsName == u'Morrowind':
             # Morrowind does not load attached BSAs at all - they all have to
             # be registered via the INI
             return []
-        bsa_pattern = (re.escape(self._modname) +
+        bsa_pattern = (re.escape(self.ci_key.sroot) +
                        bush.game.Bsa.attachment_regex +
-                       re.escape(bush.game.Bsa.bsa_extension))
+                       u'\\' + bush.game.Bsa.bsa_extension)
         is_attached = re.compile(bsa_pattern, re.I | re.U).match
         # bsaInfos must be updated and contain all existing bsas
         if bsa_infos is None: bsa_infos = bsaInfos
-        return [inf for bsa, inf in bsa_infos.iteritems()
-                if is_attached(bsa.s)]
+        return [i for b, i in bsa_infos.iteritems() if is_attached(b.s)]
 
     def hasBsa(self):
         """Returns True if plugin has an associated BSA."""
@@ -844,12 +839,12 @@ class ModInfo(FileInfo):
         return GPath_no_norm(self._file_key.s[:-3] + u'ini') # ignore .ghost
 
     def _string_files_paths(self, lang):
-        # type: (unicode) -> Iterable[Path]
-        sbody, ext = self.name.sbody, self.get_extension()
-        for join, format_str in bush.game.Esp.stringsFiles:
-            fname = format_str % {u'body': sbody, u'ext': ext, u'language': lang}
-            assetPath = empty_path.join(*join).join(fname)
-            yield assetPath
+        # type: (unicode) -> Iterable[unicode]
+        str_f_body = self.ci_key.sbody
+        str_f_ext = self.get_extension()
+        for str_format in bush.game.Esp.stringsFiles:
+            yield os.path.join(u'Strings', str_format % {
+                u'body': str_f_body, u'ext': str_f_ext, u'language': lang})
 
     def getStringsPaths(self, lang=u'English'):
         """If Strings Files are available as loose files, just point to
@@ -860,7 +855,7 @@ class ModInfo(FileInfo):
         #--Check for Loose Files first
         for filepath in self._string_files_paths(lang):
             loose = baseDirJoin(filepath)
-            if not loose.exists():
+            if not loose.isfile():
                 extract.add(filepath)
             else:
                 paths.add(loose)
@@ -876,8 +871,7 @@ class ModInfo(FileInfo):
                     continue
                 if not found_assets: continue
                 bsa_assets[bsa_info] = found_assets
-                #extract contains Paths that compare equal to lowercase strings
-                extract -= {x.lower() for x in found_assets}
+                extract -= set(found_assets)
                 if not extract:
                     break
             else:
@@ -906,26 +900,37 @@ class ModInfo(FileInfo):
                 paths.update(imap(out_path.join, assets))
         return paths
 
+    # Heuristics for _find_string_bsas. Patch before interface because the
+    # patch BSA (which only exists in SSE) will always load after the interface
+    # BSA and hence should win all conflicts (including strings).
+    _bsa_heuristics = list(enumerate((u'main', u'patch', u'interface')))
     def _find_string_bsas(self):
         """Return a list of BSAs to get strings files from. Note that this is
         *only* meant for strings files. It sorts the list in such a way as to
         prioritize files that are likely to contain the strings, instead of
         returning the true BSA order."""
-        # Use heuristics to sort the BSAs that most commonly contain our
-        # wanted strings to the front
-        heuristics = list(enumerate([self.name.csbody, u'main', u'patch',
-                                     u'interface']))
+        ret_bsas = list(reversed(list( # PY3: drop second list
+            modInfos.get_bsa_lo(for_plugins=[self.ci_key])[0])))
+        # First heuristic sorting pass: sort 'main', 'patch' and 'interface' to
+        # the front. This avoids parsing expensive BSAs at startup for the game
+        # master (e.g. Skyrim.esm -> Skyrim - Textures0.bsa).
+        heuristics = self._bsa_heuristics
         last_index = len(heuristics) # last place to sort unwanted BSAs
         def _bsa_heuristic(b_name):
-            b_lower = b_name.name.csbody
+            b_lower = b_name.ci_key.csbody
             for i, h in heuristics:
                 if h in b_lower:
                     return i
             return last_index
-        return sorted(modInfos.get_bsa_lo(for_plugins=[self.ci_key])[0],
-                      key=_bsa_heuristic)
+        ret_bsas.sort(key=_bsa_heuristic)
+        # Second heuristic sorting pass: sort BSAs that begin with the body of
+        # this plugin before others. This avoids parsing vanilla BSAs for third
+        # party plugins, while being a noop for vanilla plugins (stable sort).
+        plugin_prefix = self.ci_key.csbody
+        ret_bsas.sort(key=lambda b: not b.ci_key.cs.startswith(plugin_prefix))
+        return ret_bsas
 
-    def isMissingStrings(self, __debug=0):
+    def isMissingStrings(self):
         """True if the mod says it has .STRINGS files, but the files are
         missing."""
         if not self.header.flags1.hasStrings: return False
@@ -933,22 +938,17 @@ class ModInfo(FileInfo):
         bsa_infos = self._find_string_bsas()
         for assetPath in self._string_files_paths(lang):
             # Check loose files first
-            if self.dir.join(assetPath).exists():
+            if self.dir.join(assetPath).isfile():
                 continue
             # Check in BSA's next
-            if __debug == 1:
-                deprint(u'Scanning BSAs for string files for %s' % self)
-                __debug = 2
             for bsa_info in bsa_infos:
                 try:
-                    if bsa_info.has_assets({assetPath}):
+                    if bsa_info.has_assets((assetPath,)):
                         break # found
                 except (BSAError, OverflowError):
                     print(u'Failed to parse %s:\n%s' % (
                         bsa_info, traceback.format_exc()))
                     continue
-                if __debug == 2:
-                    deprint(u'Asset %s not in %s' % (assetPath, bsa_info))
             else: # not found
                 return True
         return False

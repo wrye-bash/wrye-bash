@@ -525,8 +525,8 @@ class Path(object):
     def __init__(self, norm_str):
         # type: (unicode) -> None
         """Initialize with unicode - call only in GPath."""
-        self._s = _s = norm_str # path must be normalized
-        self._cs = _s.lower()
+        self._s = norm_str # path must be normalized
+        self._cs = norm_str.lower()
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
