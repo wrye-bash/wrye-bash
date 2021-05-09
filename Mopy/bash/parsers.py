@@ -194,15 +194,21 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
     _changed_type = dict # used in writeToMod to report changed records
     def writeToMod(self,modInfo):
         """Hasty writeToMod implementation - export id_stored_data to specified
-        mod."""
-        modFile = self._load_plugin(modInfo)
+        mod.
+
+        :param modInfo: The ModInfo instance to write to.
+        :return: info on number of changed records, usually per record type."""
+        modFile = self._load_plugin(modInfo, target_types=self.id_stored_data)
         changed = self._changed_type()
-        for top_grup_sig, id_data in self.id_stored_data.iteritems():
-            typeBlock = modFile.tops.get(top_grup_sig,None)
-            if not id_data or not typeBlock: continue
-            for rfid_, record in typeBlock.iter_present_records():
-                self._write_record(record, id_data, changed)
+        # We know that the loaded mod only has the tops loaded that we need
+        for top_grup_sig, stored_rec_info in self.id_stored_data.iteritems():
+            rec_block = modFile.tops.get(top_grup_sig, None)
+            # Check if this record type makes any sense to patch
+            if not stored_rec_info or not rec_block: continue
+            for rfid, record in rec_block.iter_present_records():
+                self._write_record(record, stored_rec_info, changed)
         changed = self._additional_processing(changed, modFile)
+        # Check if we've actually changed something, otherwise skip saving
         if changed: modFile.safeSave()
         return changed
 
@@ -370,64 +376,7 @@ class _AParser(_HandleAliases):
         self._current_mod = None
 
     # Writing to plugins
-    def _do_write_plugin(self, loaded_mod):
-        """Writes the information stored in id_stored_data into the specified
-        plugin.
-
-        :param loaded_mod: The loaded mod to write to.
-        :return: A dict mapping record types to the number of changed records
-            in them."""
-        # Counts the number of records that were changed in each record type
-        num_changed_records = Counter()
-        # We know that the loaded mod only has the tops loaded that we need
-        for rec_type, stored_rec_info in self.id_stored_data.iteritems():
-            rec_block = loaded_mod.tops.get(rec_type, None)
-            # Check if this record type makes any sense to patch
-            if not stored_rec_info or not rec_block: continue
-            for rfid, record in rec_block.iter_present_records():
-                if rfid not in stored_rec_info: continue
-                # Compare the stored information to the information currently
-                # in the plugin
-                new_info = stored_rec_info[rfid]
-                cur_info = self._get_cur_record_info(record)
-                if self._should_write_record(new_info, cur_info):
-                    # It's different, ask the parser to write it out
-                    self._write_record(record, new_info, cur_info)
-                    record.setChanged()
-                    num_changed_records[rec_type] += 1
-        # Check if we've actually changed something, otherwise skip saving
-        if num_changed_records:
-            loaded_mod.safeSave()
-        return num_changed_records
-
-    def _get_cur_record_info(self, record):
-        """Reads current information for the specified record in order to
-        compare it with the stored information to determine if we need to write
-        out. Falls back to the regular _read_record_sp method if it's
-        implemented, since most parsers will want to do the same thing here,
-        but you may want to override this e.g. if your parser can write, but
-        not read plugins.
-
-        :param record: The record to read.
-        :return: Whatever representation you want to convert this record
-            into."""
-        return self._read_record_sp(record)
-
-    @staticmethod
-    def _should_write_record(new_info, cur_info):
-        """Checks if we should write out information for the current record,
-        based on the 'new' information (i.e. the info stored in id_stored_data)
-        and the 'current' information (i.e. the info stored in the record
-        itself). By default, this returns True if they are different. However,
-        you may want to override this if you e.g. only care about the contents
-        of a list and not its order.
-
-        :param new_info: The new record info.
-        :param cur_info: The current record info.
-        :return: True if _write_record should be called."""
-        return new_info != cur_info
-
-    def _write_record(self, record, new_info, cur_info):
+    def _write_record_2(self, record, new_info, cur_info):
         """This is where your parser should perform the actual work of writing
         out the necessary changes to the record, using the given record
         information to determine what to change.
@@ -435,17 +384,26 @@ class _AParser(_HandleAliases):
         :param record: The record to write to.
         :param new_info: The new record info.
         :param cur_info: The current record info."""
-        raise AbstractError(u'_write_record not implemented')
+        raise AbstractError(u'_write_record_2 not implemented')
 
-    def writeToMod(self, mod_info):
+    def _write_record(self, record, stored_rec_info, changed):
         """Asks this parser to write its stored information to the specified
         ModInfo instance.
 
         :param mod_info: The ModInfo instance to write to.
         :return: A dict mapping record types to the number of changed records
             in them."""
-        return self._do_write_plugin(
-            self._load_plugin(mod_info, target_types=self.id_stored_data))
+        rec_fid = record.fid
+        if rec_fid not in stored_rec_info: return
+        # Compare the stored information to the information currently
+        # in the plugin
+        new_info = stored_rec_info[rec_fid]
+        cur_info = self._read_record_sp(record)
+        if new_info != cur_info:
+            # It's different, ask the parser to write it out
+            self._write_record_2(record, new_info, cur_info)
+            record.setChanged()
+            changed[record.sig] += 1
 
     # Other API
     @property
@@ -482,7 +440,7 @@ class ActorFactions(_AParser):
     def _read_record_sp(self, record):
         return {f.faction: f.rank for f in record.factions}
 
-    def _write_record(self, record, new_info, cur_info):
+    def _write_record_2(self, record, new_info, cur_info):
         for faction, rank in set(new_info.iteritems()) - set(cur_info.iteritems()):
             # Check if this an addition or a change
             for entry in record.factions:
@@ -755,7 +713,7 @@ class FactionRelations(_AParser):
             relations[other_fac] = rel_attrs[1:]
         return relations
 
-    def _write_record(self, record, new_info, cur_info):
+    def _write_record_2(self, record, new_info, cur_info):
         for rel_fac, rel_attributes in set(new_info.iteritems()) - set(cur_info.iteritems()):
             # See if this is a new relation or a change to an existing one
             for entry in record.relations:
@@ -874,14 +832,14 @@ class FullNames(_HandleAliases):
 
     def _write_record(self, record, id_name, changed):
         longid = record.fid
-        full = record.full
         di = id_name.get(longid, None)
         if di is None: return
-        eid, newFull = di[u'eid'], di[u'full']
+        full = record.full
+        newFull = di[u'full']
         if newFull and newFull not in (full, u'NO NAME'):
             record.full = newFull
             record.setChanged()
-            changed[eid] = (full, newFull)
+            changed[di[u'eid']] = (full, newFull)
 
     def _parse_line(self, csv_fields):
         top_grup, mod, objectIndex = csv_fields[:3]
@@ -1258,26 +1216,21 @@ class _UsesEffectsMixin(_HandleAliases):
                 output.append(noscriptEffectFiller)
         return u''.join(output)
 
-    def writeToMod(self, modInfo, __attrgetters=attrgetter_cache):
+    _changed_type = list
+    def _write_record(self, record, id_eid, changed, __attrgetters=attrgetter_cache):
         """Writes stats to specified mod."""
-        fid_stats = self.fid_stats
-        modFile = self._load_plugin(modInfo)
-        changed = [] #eids
-        for record in modFile.tops[self._parser_sigs[0]].iter_present_records():
-            newStats = fid_stats.get(record.fid, None)
-            if not newStats: continue
-            imported = False
-            for att, val in newStats.iteritems():
-                old_val = __attrgetters[att](record)
-                if att == u'eid': old_eid = old_val
-                if old_val != val:
-                    imported = True
-                    setattr_deep(record, att, val)
-            if imported:
-                changed.append(old_eid)
-                record.setChanged()
-        if changed: modFile.safeSave()
-        return changed
+        newStats = id_eid.get(record.fid, None)
+        if not newStats: return
+        imported = False
+        for att, val in newStats.iteritems():
+            old_val = __attrgetters[att](record)
+            if att == u'eid': old_eid = old_val
+            if old_val != val:
+                imported = True
+                setattr_deep(record, att, val)
+        if imported:
+            changed.append(old_eid)
+            record.setChanged()
 
     def _write_rows(self, out):
         """Exports stats to specified text file."""
@@ -1327,22 +1280,17 @@ class ItemPrices(_HandleAliases):
         id_data[record.fid] = {a: getattr(record, a) for a in
                                self.item_prices_attrs}
 
-    def writeToMod(self,modInfo):
-        """Writes stats to specified mod."""
-        modFile = self._load_plugin(modInfo)
-        changed = Counter() #--changed[modName] = numChanged
-        for top_grup_sig, fid_stats in self.id_stored_data.iteritems():
-            for record in modFile.tops[top_grup_sig].iter_present_records():
-                longid = record.fid
-                stats = fid_stats.get(longid,None)
-                if not stats: continue
-                value = stats[u'value']
-                if record.value != value:
-                    record.value = value
-                    changed[longid[0]] += 1
-                    record.setChanged()
-        if changed: modFile.safeSave()
-        return changed
+    _changed_type = Counter
+    def _write_record(self, record, id_eid, changed):
+        """Writes stats to specified record."""
+        longid = record.fid
+        stats = id_eid.get(longid,None)
+        if not stats: return
+        value = stats[u'value']
+        if record.value != value:
+            record.value = value
+            changed[longid[0]] += 1
+            record.setChanged()
 
     def _parse_line(self, csv_fields):
         mmod, mobj, value, eid, itm_name, top_grup = csv_fields[:6]
