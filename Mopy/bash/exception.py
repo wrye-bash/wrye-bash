@@ -268,6 +268,9 @@ class LexerError(_ALPError):
 class ParserError(_ALPError):
     """An error that ocurred during parsing."""
 
+class EvalError(_ALPError):
+    """An error that occurred during the evaluation of some parsed code."""
+
 # Misc exceptions -------------------------------------------------------------
 class StateError(BoltError):
     """Error: Object is corrupted."""

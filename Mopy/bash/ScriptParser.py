@@ -211,6 +211,7 @@ class FlowControl(object):
 #  problem with the parser, or a problem with the
 #  script
 #--------------------------------------------------
+##: Refactor to use exception.ParserError instead?
 class ParserError(SyntaxError): pass
 gParser = None
 def error(msg):
