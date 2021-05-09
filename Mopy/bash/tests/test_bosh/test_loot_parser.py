@@ -218,3 +218,7 @@ class TestParserRejectsMissingArgR(_ATestParserRejects):
 class TestParserRejectsDoubleBinary(_ATestParserRejects):
     """Tests if the parser rejects a double binary operator."""
     _condition = u'foo("bar") and and bar("foo")'
+
+class TestParserRejectsDoubleNot(_ATestParserRejects):
+    """Tests if the parser rejects a double 'not' expression."""
+    _condition = u'not not foo("bar")'

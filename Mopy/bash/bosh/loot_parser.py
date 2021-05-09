@@ -548,13 +548,15 @@ def _parse_condition(tokens, min_prec=1):
     # operator that eventually resolves down to atoms)
     return lhs
 
-def _parse_atom(tokens):
+def _parse_atom(tokens, accept_not=True):
     """Parses the specified deque of tokens, returning an atom (which is either
     a function call, a parenthesized condition or a negated function call (e.g.
     'not file("foo.esp")')).
 
     :param tokens: The deque of tokens that should be parsed.
     :type tokens: deque[_Token]
+    :param accept_not: Whether or not to accept 'not' expressions as atoms.
+        Used to avoid accepting 'not not' expressions.
     :return: The parsed atom.
     :rtype: _ACondition"""
     ttag = _peek_token(tokens)
@@ -566,10 +568,10 @@ def _parse_atom(tokens):
         ret_cond = _parse_condition(tokens)
         _pop_token(tokens, _RPAREN)
         return ret_cond
-    elif ttag == _NOT:
+    elif accept_not and ttag == _NOT:
         # 'not' is unary, so can't be handled by the regular algorithm
         _pop_token(tokens, _NOT)
-        return ConditionNot(_parse_atom(tokens))
+        return ConditionNot(_parse_atom(tokens, accept_not=False))
     else:
         raise ParserError(
             u'Unexpected token %s - expected one of %s' % (
