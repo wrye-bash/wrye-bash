@@ -63,14 +63,14 @@ class MasterMap(object):
                 mast_map[index] = -1
         self._mast_map = mast_map
 
-    def __call__(self,fid,default=-1):
+    def __call__(self, short_fid, default=-1):
         """Maps a fid from first set of masters to second. If no mapping
         is possible, then either returns default (if defined) or raises MasterMapError."""
-        if not fid: return fid
-        inIndex = int(fid >> 24)
+        if not short_fid: return short_fid
+        inIndex = int(short_fid >> 24)
         outIndex = self._mast_map.get(inIndex, -2)
         if outIndex >= 0:
-            return (int(outIndex) << 24 ) | (fid & 0xFFFFFF)
+            return (int(outIndex) << 24 ) | (short_fid & 0xFFFFFF)
         elif default != -1:
             return default
         else:
@@ -328,11 +328,11 @@ class ModFile(object):
         """Returns a mapping function to map short fids to long fids."""
         masters_list = self.augmented_masters()
         maxMaster = len(masters_list)-1
-        def mapper(fid):
-            if fid is None: return None
-            if isinstance(fid, tuple): return fid
+        def mapper(short_fid):
+            if short_fid is None: return None
+            if isinstance(short_fid, tuple): return short_fid
             # PY3: drop the int() calls
-            mod,object = int(fid >> 24),int(fid & 0xFFFFFF)
+            mod,object = int(short_fid >> 24), int(short_fid & 0xFFFFFF)
             return masters_list[min(mod, maxMaster)], object # clamp HITMEs
         return mapper
 
@@ -355,10 +355,10 @@ class ModFile(object):
             # 0x000-0x800 are reserved for hardcoded (engine) records
             def _master_index(m_name, obj_id):
                 return indices[m_name] if obj_id >= 0x800 else 0
-        def mapper(fid):
-            if fid is None: return None
-            if isinstance(fid, (int, long)): return fid
-            modName, object_id = fid
+        def mapper(long_fid):
+            if long_fid is None: return None
+            if isinstance(long_fid, (int, long)): return long_fid
+            modName, object_id = long_fid
             return (_master_index(modName, object_id) << 24) | object_id
         return mapper
 

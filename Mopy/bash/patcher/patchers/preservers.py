@@ -222,14 +222,14 @@ class APreserver(ImportPatcher):
                     __attrgetters=attrgetter_cache):
         loop_setattr = setattr_deep if self._deep_attrs else setattr
         id_data = self.id_data
-        for rec_fid, record in records:
-            if rec_fid not in id_data: continue
-            for attr, value in id_data[rec_fid].iteritems():
+        for rfid, record in records:
+            if rfid not in id_data: continue
+            for attr, value in id_data[rfid].iteritems():
                 if __attrgetters[attr](record) != value: break
             else: continue
-            for attr, value in id_data[rec_fid].iteritems():
+            for attr, value in id_data[rfid].iteritems():
                 loop_setattr(record, attr, value)
-            keep(rec_fid)
+            keep(rfid)
             type_count[top_mod_rec] += 1
 
     def buildPatch(self, log, progress):
@@ -391,12 +391,12 @@ class ImportCellsPatcher(ImportPatcher):
             when creating cell_data.
             """
             if not cellBlock.cell.flags1.ignored:
-                fid = cellBlock.cell.fid
+                cfid = cellBlock.cell.fid
                 # If we're in an interior, see if we have to ignore any attrs
                 actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
                                 if cellBlock.cell.flags.isInterior else attrs)
                 for attr in actual_attrs:
-                    tempCellData[fid][attr] = __attrgetters[attr](
+                    tempCellData[cfid][attr] = __attrgetters[attr](
                         cellBlock.cell)
         def checkMasterCellBlockData(cellBlock):
             """
@@ -407,15 +407,15 @@ class ImportCellsPatcher(ImportPatcher):
             update these records where the value is different.
             """
             if not cellBlock.cell.flags1.ignored:
-                rec_fid = cellBlock.cell.fid
-                if rec_fid not in tempCellData: return
+                cfid = cellBlock.cell.fid
+                if cfid not in tempCellData: return
                 # If we're in an interior, see if we have to ignore any attrs
                 actual_attrs = ((attrs - bush.game.cell_skip_interior_attrs)
                                 if cellBlock.cell.flags.isInterior else attrs)
                 for attr in actual_attrs:
                     master_attr = __attrgetters[attr](cellBlock.cell)
-                    if tempCellData[rec_fid][attr] != master_attr:
-                        cellData[rec_fid][attr] = tempCellData[rec_fid][attr]
+                    if tempCellData[cfid][attr] != master_attr:
+                        cellData[cfid][attr] = tempCellData[cfid][attr]
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         minfs = self.patchFile.p_file_minfos

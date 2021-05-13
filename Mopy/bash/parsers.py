@@ -476,16 +476,16 @@ class ActorFactions(_AParser):
     def _parse_line(self, csv_fields):
         top_grup, _aed, amod, aobj, _fed, fmod, fobj, rank = csv_fields[:8]
         aid = self._coerce_fid(amod, aobj)
-        fid = self._coerce_fid(fmod, fobj)
+        lfid = self._coerce_fid(fmod, fobj)
         rank = int(rank)
         top_grup_sig = top_grup.encode(u'ascii')
         if self._called_from_patcher:
             ret_obj = MreRecord.type_class[top_grup_sig].getDefault(u'factions')
-            ret_obj.faction = fid
+            ret_obj.faction = lfid
             ret_obj.rank = rank
             self.id_stored_data[top_grup_sig][aid][u'factions'].append(ret_obj)
         else:
-            self.id_stored_data[top_grup_sig][aid][fid] = rank
+            self.id_stored_data[top_grup_sig][aid][lfid] = rank
 
     def _write_rows(self, out):
         """Exports faction data to specified text file."""
@@ -559,10 +559,10 @@ class ActorLevels(_HandleAliases):
         source, fidMod = csv_fields[0], csv_fields[2]
         if (source.lower() in self._skip_mods) or fidMod.lower() == u'none':
             return
-        fid = self._coerce_fid(fidMod, csv_fields[3])
+        lfid = self._coerce_fid(fidMod, csv_fields[3])
         attr_dex = self._update_from_csv(csv_fields)
         attr_dex[u'flags.pcLevelOffset'] = True
-        self.mod_id_levels[source][fid] = attr_dex
+        self.mod_id_levels[source][lfid] = attr_dex
 
     def _write_rows(self, out, __getter=itemgetter(u'eid',
             u'flags.pcLevelOffset', u'level_offset', u'calcMin', u'calcMax')):
@@ -1307,10 +1307,10 @@ class ItemPrices(_HandleAliases):
         for top_grup_sig, fid_stats in _key_sort(self.id_stored_data):
             if not fid_stats: continue
             top_grup = top_grup_sig.decode(u'ascii')
-            for fid in sorted(fid_stats,key=lambda x:(
+            for lfid in sorted(fid_stats,key=lambda x:(
                     fid_stats[x][u'eid'].lower(), fid_stats[x][u'value'])):
-                out.write(self._row_fmt_str % ((fid[0], fid[1]) + __getter(
-                    fid_stats[fid]) + (top_grup,)))
+                out.write(self._row_fmt_str % ((lfid[0], lfid[1]) + __getter(
+                    fid_stats[lfid]) + (top_grup,)))
 
 #------------------------------------------------------------------------------
 class SpellRecords(_UsesEffectsMixin):
