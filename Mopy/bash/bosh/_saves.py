@@ -302,14 +302,12 @@ class SaveFile(object):
                 siz = unpack_short(ins)
                 insCopy(buff, siz, 2)
             self.preRecords = buff.getvalue()
-
             #--Records
             for count in xrange(recordsNum):
                 progress(ins.tell(),_(u'Reading records...'))
                 (rec_id, rec_kind, flags, version, siz) = unpack_many(ins,u'=IBIBH')
                 data = ins.read(siz)
                 self.records.append((rec_id,rec_kind,flags,version,data))
-
             #--Temp Effects, fids, worldids
             progress(ins.tell(),_(u'Reading fids, worldids...'))
             tmp_effects_size = unpack_int(ins)
@@ -317,14 +315,16 @@ class SaveFile(object):
             #--Fids
             num = unpack_int(ins)
             self.fids = array.array(u'I')
-            self.fids.fromfile(ins,num)
+            # PY3: self.fids.fromfile(ins, num)
+            self.fids.fromstring(ins.read(num * self.fids.itemsize))
             for iref,fid in enumerate(self.fids):
                 self.irefs[fid] = iref
-
             #--WorldSpaces
             num = unpack_int(ins)
             self.worldSpaces = array.array(u'I')
-            self.worldSpaces.fromfile(ins,num)
+            # PY3: self.worldSpaces.fromfile(ins, num)
+            self.worldSpaces.fromstring(
+                ins.read(num * self.worldSpaces.itemsize))
         #--Done
         progress(progress.full,_(u'Finished reading.'))
 
