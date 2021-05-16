@@ -494,7 +494,7 @@ class PCFaces(object):
         npc.fgga_p = face.fgga_p
         npc.fgts_p = face.fgts_p
         #--Stats
-        npc.level = face.level
+        npc.level_offset = face.level
         npc.baseSpell = face.baseSpell
         npc.fatigue = face.fatigue
         if face.skills: npc.skills = face.skills

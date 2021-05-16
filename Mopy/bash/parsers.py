@@ -34,25 +34,21 @@ from __future__ import division, print_function
 import csv
 import re
 from collections import defaultdict, Counter, OrderedDict
-from itertools import izip, chain
-from operator import attrgetter, itemgetter
+from itertools import izip
+from operator import itemgetter
 
 # Internal
 from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import GPath, decoder, deprint, csvFormat, setattr_deep, \
-    attrgetter_cache, str_or_none, int_or_none, nonzero_or_none, \
-    structs_cache, float_or_none, int_or_zero
-from .brec import MreRecord, MelObject, genFid, RecHeader, null4
+    attrgetter_cache, str_or_none, int_or_none, structs_cache, int_or_zero
+from .brec import MreRecord, MelObject, genFid, RecHeader, null4, \
+    attr_csv_struct
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
 # Utils ##: absorb in CsvParser
-def _str_to_bool(value, __falsy=frozenset(
-    [u'', u'none', u'false', u'no', u'0', u'0.0'])):
-    return value.strip().lower() not in __falsy
-
 class _CsvReader(object):
     """For reading csv files. Handles comma, semicolon and tab separated (excel) formats.
        CSV files must be encoded in UTF-8"""
@@ -87,16 +83,16 @@ class _CsvReader(object):
         self.ins.close()
 
 #------------------------------------------------------------------------------
-def _key_sort(di, id_eid_=None, keys_dex=(), values_dex=(), by_value=False):
+def _key_sort(di, id_eid_=None, keys_dex=(), values_key=u'', by_value=False):
     """Adapted to current uses"""
     if id_eid_ is not None: # we passed id_eid in sort by eid
         key_f=lambda k: id_eid_.get(k, u'unknown').lower()
         for k in sorted(di, key=key_f):
             yield k, di[k], id_eid_[k]
     else:
-        if keys_dex or values_dex: # TODO(ut): drop below when keys are CIStr
+        if keys_dex or values_key: # TODO(ut): drop below when keys are CIStr
             key_f = lambda k: tuple((u'%s' % k[x]).lower() for x in keys_dex
-                        ) + tuple(di[k][x].lower() for x in values_dex)
+                        ) + (di[k][values_key].lower(),)
         elif by_value:
             key_f = lambda k: di[k].lower()
         else:
@@ -143,9 +139,64 @@ class CsvParser(object):
     def _header_row(self, out):
         out.write(u'"%s"\n' % u'","'.join(self._csv_header))
 
+    def _update_from_csv(self, csv_fields, index_dict=None):
+        return MreRecord.parse_csv_line(index_dict or self._attr_dex,
+            csv_fields, reuse=index_dict is not None)
+
+    # Load plugin -------------------------------------------------------------
+    def _load_plugin(self, mod_info, keepAll=True, target_types=None):
+        """Loads the specified record types in the specified ModInfo and
+        returns the result.
+
+        :param mod_info: The ModInfo object to read.
+        :param target_types: An iterable yielding record signatures to load.
+        :return: An object representing the loaded plugin."""
+        mod_file = ModFile(mod_info, self._load_factory(keepAll, target_types))
+        mod_file.load(do_unpack=True)
+        return mod_file
+
+    def _load_factory(self, keepAll=True, target_types=None):
+        return LoadFactory(keepAll, by_sig=target_types or self._parser_sigs)
+
+    _changed_type = dict # used in writeToMod to report changed records
+    def writeToMod(self,modInfo):
+        """Hasty writeToMod implementation - export id_stored_data to specified
+        mod.
+
+        :param modInfo: The ModInfo instance to write to.
+        :return: info on number of changed records, usually per record type."""
+        modFile = self._load_plugin(modInfo, target_types=self.id_stored_data)
+        changed = self._changed_type()
+        # We know that the loaded mod only has the tops loaded that we need
+        for top_grup_sig, stored_rec_info in self.id_stored_data.iteritems():
+            rec_block = modFile.tops.get(top_grup_sig, None)
+            # Check if this record type makes any sense to patch
+            if not stored_rec_info or not rec_block: continue
+            for rfid, record in rec_block.iter_present_records():
+                self._check_write_record(rfid, record, stored_rec_info,
+                                         changed)
+        changed = self._additional_processing(changed, modFile)
+        # Check if we've actually changed something, otherwise skip saving
+        if changed: modFile.safeSave()
+        return changed
+
+    def _additional_processing(self, changed, modFile):
+        return changed
+
+    def _check_write_record(self, rfid, record, stored_rec_info, changed):
+        """Check if we have stored data for this record usually based on its
+        fid."""
+        stored_data = stored_rec_info.get(rfid)
+        if stored_data:
+            self._write_record(record, stored_data, changed)
+
 class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
     """WIP aliases handling."""
     _parser_sigs = [] # record signatures this parser recognises
+    # the indexes of the csv fields that will create the id in id_stored_data
+    _id_indexes = ()
+    # the index of the csv field that contains the group type
+    _grup_index = None
 
     def __init__(self, aliases_, called_from_patcher=False):
         # Automatically set in _parse_csv_sources to the patch file's aliases -
@@ -164,19 +215,13 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
         modname = GPath(modname)
         return GPath(self.aliases.get(modname, modname)), int(hex_fid, 0)
 
-    def _load_plugin(self, mod_info, keepAll=True, target_types=None):
-        """Loads the specified record types in the specified ModInfo and
-        returns the result.
-
-        :param mod_info: The ModInfo object to read.
-        :param target_types: An iterable yielding record signatures to load.
-        :return: An object representing the loaded plugin."""
-        mod_file = ModFile(mod_info, self._load_factory(keepAll, target_types))
-        mod_file.load(do_unpack=True)
-        return mod_file
-
-    def _load_factory(self, keepAll=True, target_types=None):
-        return LoadFactory(keepAll, by_sig=target_types or self._parser_sigs)
+    def _parse_line(self, csv_fields):
+        top_grup_sig = csv_fields[self._grup_index].encode(u'ascii')
+        longid = self._coerce_fid(csv_fields[self._id_indexes[0]],
+                                  csv_fields[self._id_indexes[1]])
+        self.id_stored_data[top_grup_sig][longid] = self._update_from_csv(
+            csv_fields)
+        return top_grup_sig, longid
 
     def readFromMod(self, modInfo):
         """Hasty readFromMod implementation."""
@@ -185,7 +230,7 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
             typeBlock = modFile.tops.get(top_grup_sig)
             if not typeBlock: continue
             id_data = self.id_stored_data[top_grup_sig]
-            for record in typeBlock.getActiveRecords():
+            for rfid, record in typeBlock.iter_present_records():
                 self._read_record(record, id_data)
 
     def _read_record(self, record, id_data):
@@ -261,9 +306,8 @@ class _AParser(_HandleAliases):
             for block_type in self._fp_types:
                 rec_block = mod_to_read.tops.get(block_type, None)
                 if not rec_block: continue
-                for record in rec_block.getActiveRecords():
-                    self.id_context[record.fid] = \
-                        self._read_record_fp(record)
+                for rfid, record in rec_block.iter_present_records():
+                    self.id_context[rfid] = self._read_record_fp(record)
             self._fp_mods.add(mod_to_read.fileInfo.ci_key)
         # Process the mod's masters first, but see if we need to sort them
         master_names = loaded_mod.tes4.masters
@@ -298,16 +342,14 @@ class _AParser(_HandleAliases):
         for rec_type in self._sp_types:
             rec_block = loaded_mod.tops.get(rec_type, None)
             if not rec_block: continue
-            for record in rec_block.getActiveRecords():
+            for rfid, record in rec_block.iter_present_records():
                 # Check if we even want this record first
                 if self._is_record_useful(record):
-                    rec_fid = record.fid
-                    self.id_stored_data[rec_type][rec_fid] = \
+                    self.id_stored_data[rec_type][rfid] = \
                         self._read_record_sp(record)
                     # Check if we need to follow up on the first pass info
                     if self._context_needs_followup:
-                        self.id_context[rec_fid] = \
-                            self._read_record_fp(record)
+                        self.id_context[rfid] = self._read_record_fp(record)
 
     def _is_record_useful(self, record):
         """The parser should check if the specified record would be useful to
@@ -355,67 +397,7 @@ class _AParser(_HandleAliases):
         self._current_mod = None
 
     # Writing to plugins
-    def _do_write_plugin(self, loaded_mod):
-        """Writes the information stored in id_stored_data into the specified
-        plugin.
-
-        :param loaded_mod: The loaded mod to write to.
-        :return: A dict mapping record types to the number of changed records
-            in them."""
-        # Counts the number of records that were changed in each record type
-        num_changed_records = Counter()
-        # We know that the loaded mod only has the tops loaded that we need
-        for rec_type, stored_rec_info in self.id_stored_data.iteritems():
-            rec_block = loaded_mod.tops.get(rec_type, None)
-            # Check if this record type makes any sense to patch
-            if not stored_rec_info or not rec_block: continue
-            # TODO(inf) Copied from implementations below, may have to be
-            #  getActiveRecords()?
-            for record in rec_block.records:
-                rec_fid = record.fid
-                if rec_fid not in stored_rec_info: continue
-                # Compare the stored information to the information currently
-                # in the plugin
-                new_info = stored_rec_info[rec_fid]
-                cur_info = self._get_cur_record_info(record)
-                if self._should_write_record(new_info, cur_info):
-                    # It's different, ask the parser to write it out
-                    self._write_record(record, new_info, cur_info)
-                    record.setChanged()
-                    num_changed_records[rec_type] += 1
-        # Check if we've actually changed something, otherwise skip saving
-        if num_changed_records:
-            loaded_mod.safeSave()
-        return num_changed_records
-
-    def _get_cur_record_info(self, record):
-        """Reads current information for the specified record in order to
-        compare it with the stored information to determine if we need to write
-        out. Falls back to the regular _read_record_sp method if it's
-        implemented, since most parsers will want to do the same thing here,
-        but you may want to override this e.g. if your parser can write, but
-        not read plugins.
-
-        :param record: The record to read.
-        :return: Whatever representation you want to convert this record
-            into."""
-        return self._read_record_sp(record)
-
-    @staticmethod
-    def _should_write_record(new_info, cur_info):
-        """Checks if we should write out information for the current record,
-        based on the 'new' information (i.e. the info stored in id_stored_data)
-        and the 'current' information (i.e. the info stored in the record
-        itself). By default, this returns True if they are different. However,
-        you may want to override this if you e.g. only care about the contents
-        of a list and not its order.
-
-        :param new_info: The new record info.
-        :param cur_info: The current record info.
-        :return: True if _write_record should be called."""
-        return new_info != cur_info
-
-    def _write_record(self, record, new_info, cur_info):
+    def _write_record_2(self, record, new_info, cur_info):
         """This is where your parser should perform the actual work of writing
         out the necessary changes to the record, using the given record
         information to determine what to change.
@@ -423,17 +405,21 @@ class _AParser(_HandleAliases):
         :param record: The record to write to.
         :param new_info: The new record info.
         :param cur_info: The current record info."""
-        raise AbstractError(u'_write_record not implemented')
+        raise AbstractError(u'_write_record_2 not implemented')
 
-    def writeToMod(self, mod_info):
+    def _write_record(self, record, new_info, changed):
         """Asks this parser to write its stored information to the specified
         ModInfo instance.
 
         :param mod_info: The ModInfo instance to write to.
         :return: A dict mapping record types to the number of changed records
             in them."""
-        return self._do_write_plugin(
-            self._load_plugin(mod_info, target_types=self.id_stored_data))
+        cur_info = self._read_record_sp(record)
+        if new_info != cur_info:
+            # It's different, ask the parser to write it out
+            self._write_record_2(record, new_info, cur_info)
+            record.setChanged()
+            changed[record.sig] += 1
 
     # Other API
     @property
@@ -470,7 +456,7 @@ class ActorFactions(_AParser):
     def _read_record_sp(self, record):
         return {f.faction: f.rank for f in record.factions}
 
-    def _write_record(self, record, new_info, cur_info):
+    def _write_record_2(self, record, new_info, cur_info):
         for faction, rank in set(new_info.iteritems()) - set(cur_info.iteritems()):
             # Check if this an addition or a change
             for entry in record.factions:
@@ -526,6 +512,8 @@ class ActorLevels(_HandleAliases):
         self.mod_id_levels = defaultdict(dict) #--levels = mod_id_levels[mod][longid]
         self.gotLevels = set()
         self._skip_mods = {u'none', bush.game.master_file.lower()}
+        self._attr_dex = {u'eid': 1, u'level_offset': 4, u'calcMin': 5,
+                          u'calcMax': 6}
 
     def readFromMod(self,modInfo):
         """Imports actor level data from the specified mod and its masters."""
@@ -536,46 +524,48 @@ class ActorLevels(_HandleAliases):
             if modName in gotLevels: continue
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)
-            for record in modFile.tops[b'NPC_'].getActiveRecords():
-                mod_id_levels[modName][record.fid] = (
-                    record.eid, bool(record.flags.pcLevelOffset), record.level,
-                    record.calcMin, record.calcMax)
+            for rfid, record in modFile.tops[b'NPC_'].iter_present_records():
+                items = izip((u'eid', u'flags.pcLevelOffset', u'level_offset',
+                          u'calcMin', u'calcMax'), (record.eid,
+                         bool(record.flags.pcLevelOffset), record.level_offset,
+                         record.calcMin, record.calcMax))
+                mod_id_levels[modName][rfid] = dict(items)
             gotLevels.add(modName)
 
-    def writeToMod(self,modInfo):
+    def writeToMod(self, modInfo):
         """Exports actor levels to specified mod."""
-        mod_id_levels = self.mod_id_levels
-        modFile = self._load_plugin(modInfo)
-        changed = 0
-        id_levels = mod_id_levels.get(modInfo.ci_key,
-                                      mod_id_levels.get(GPath(u'Unknown'),
-                                                        None))
+        id_levels = self.mod_id_levels.get(modInfo.ci_key,
+            self.mod_id_levels.get(GPath(u'Unknown'), None))
         if id_levels:
-            for record in modFile.tops[b'NPC_'].records:
-                fid = record.fid
-                if fid in id_levels:
-                    eid,isOffset,level,calcMin,calcMax = id_levels[fid]
-                    if ((record.level,record.calcMin,record.calcMax) != (
-                            level,calcMin,calcMax)):
-                        (record.level,record.calcMin,record.calcMax) = (
-                            level,calcMin,calcMax)
-                        record.setChanged()
-                        changed += 1
-        #--Done
-        if changed: modFile.safeSave()
-        return changed
+            self.id_stored_data = {b'NPC_': id_levels}
+            return super(ActorLevels, self).writeToMod(modInfo)
+        return 0
+
+    _changed_type = list
+    def _write_record(self, record, levels, changed, __getter=itemgetter(
+            u'level_offset', u'calcMin', u'calcMax')):
+        level_offset, calcMin, calcMax = __getter(levels)
+        if ((record.level_offset,record.calcMin,record.calcMax) != (
+                level_offset,calcMin,calcMax)):
+            (record.level_offset,record.calcMin,record.calcMax) = (
+                level_offset,calcMin,calcMax)
+            record.setChanged()
+            changed.append(record.fid)
+
+    def _additional_processing(self, changed, modFile):
+        return len(changed)
 
     def _parse_line(self, csv_fields):
-        source, eid, fidMod, fidObject, offset, calcMin, calcMax = csv_fields[:7]
+        source, fidMod = csv_fields[0], csv_fields[2]
         if (source.lower() in self._skip_mods) or fidMod.lower() == u'none':
             return
-        fid = self._coerce_fid(fidMod, fidObject)
-        offset = int_or_zero(offset)
-        calcMin = int_or_zero(calcMin)
-        calcMax = int_or_zero(calcMax)
-        self.mod_id_levels[source][fid] = (eid, 1, offset, calcMin, calcMax)
+        fid = self._coerce_fid(fidMod, csv_fields[3])
+        attr_dex = self._update_from_csv(csv_fields)
+        attr_dex[u'flags.pcLevelOffset'] = True
+        self.mod_id_levels[source][fid] = attr_dex
 
-    def _write_rows(self, out):
+    def _write_rows(self, out, __getter=itemgetter(u'eid',
+            u'flags.pcLevelOffset', u'level_offset', u'calcMin', u'calcMax')):
         """Export NPC level data to specified text file."""
         extendedRowFormat = u',"%d","%d","%d","%d"\n'
         blankExtendedRow = u',,,,\n'
@@ -583,9 +573,9 @@ class ActorLevels(_HandleAliases):
         obId_levels = self.mod_id_levels[GPath(bush.game.master_file)]
         for mod, id_levels in _key_sort(self.mod_id_levels):
             if mod.s.lower() == bush.game.master_file.lower(): continue
-            sor = _key_sort(id_levels, keys_dex=[0], values_dex=[0])
-            for (fidMod, fidObject), (
-                    eid, isOffset, offset, calcMin, calcMax) in sor:
+            sor = _key_sort(id_levels, keys_dex=[0], values_key=u'eid')
+            for (fidMod, fidObject), di in sor:
+                eid, isOffset, offset, calcMin, calcMax = __getter(di)
                 if isOffset:
                     out.write(self._row_fmt_str % (
                         mod, eid, fidMod, fidObject, offset, calcMin,
@@ -606,6 +596,8 @@ class EditorIds(_HandleAliases):
     _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
                    _(u'Editor Id'))
     _row_fmt_str = u'"%s","%s","0x%06X","%s"\n'
+    _id_indexes = (1, 2)
+    _grup_index = 0
 
     def __init__(self, aliases_=None, questionableEidsSet=None,
                  badEidsList=None, called_from_patcher=False):
@@ -619,28 +611,20 @@ class EditorIds(_HandleAliases):
     def _read_record(self, record, id_data):
         if record.eid: id_data[record.fid] = record.eid
 
-    def writeToMod(self,modInfo):
-        """Exports eids to specified mod."""
-        modFile = self._load_plugin(modInfo)
-        changed = []
-        for type_ in self._parser_sigs:
-            id_eid = self.id_stored_data.get(type_, None)
-            typeBlock = modFile.tops.get(type_, None)
-            if not id_eid or not typeBlock: continue
-            for record in typeBlock.records:
-                newEid = id_eid.get(record.fid)
-                oldEid = record.eid
-                if newEid and record.eid and newEid != oldEid:
-                    record.eid = newEid
-                    record.setChanged()
-                    changed.append((oldEid,newEid))
+    def _additional_processing(self, changed, modFile):
         #--Update scripts
         old_new = dict(self.old_new)
         old_new.update({oldEid.lower(): newEid for oldEid, newEid in changed})
         changed.extend(self.changeScripts(modFile,old_new))
-        #--Done
-        if changed: modFile.safeSave()
         return changed
+
+    _changed_type = list
+    def _write_record(self, record, newEid, changed):
+        oldEid = record.eid
+        if oldEid and newEid != oldEid:
+            record.eid = newEid
+            record.setChanged()
+            changed.append((oldEid, newEid))
 
     def changeScripts(self,modFile,old_new):
         """Changes scripts in modfile according to changed."""
@@ -655,7 +639,8 @@ class EditorIds(_HandleAliases):
             else:
                 return newWord
         #--Scripts
-        for script_rec in sorted(modFile.tops[b'SCPT'].records, key=attrgetter(u'eid')):
+        scpt_recs = modFile.tops[b'SCPT'].iter_present_records(rec_key=u'eid')
+        for reid, script_rec in sorted(scpt_recs, key=itemgetter(0)): # by eid
             if not script_rec.script_source: continue
             newText = reWord.sub(subWord,script_rec.script_source)
             if newText != script_rec.script_source:
@@ -663,9 +648,10 @@ class EditorIds(_HandleAliases):
                 # len(script_rec.eid))) # unused - bug ?
                 script_rec.script_source = newText
                 script_rec.setChanged()
-                changed.append((_(u'Script'),script_rec.eid))
+                changed.append((_(u'Script'), reid))
         #--Quest Scripts
-        for quest in sorted(modFile.tops[b'QUST'].records, key=attrgetter(u'eid')):
+        qust_recs = modFile.tops[b'QUST'].iter_present_records(rec_key=u'eid')
+        for reid, quest in sorted(qust_recs, key=itemgetter(0)): # sort by eid
             questChanged = False
             for stage in quest.stages:
                 for entry in stage.entries:
@@ -676,27 +662,29 @@ class EditorIds(_HandleAliases):
                         entry.script_source = newScript
                         questChanged = True
             if questChanged:
-                changed.append((_(u'Quest'),quest.eid))
+                changed.append((_(u'Quest'), reid))
                 quest.setChanged()
         #--Done
         return changed
 
-    def _parse_line(self, csv_fields,
-                    __reValidEid=re.compile(u'^[a-zA-Z0-9]+$'),
-                    __reGoodEid=re.compile(u'^[a-zA-Z]')):
-        top_grup, mod, objectIndex, eid = csv_fields[:4]  ##: debug: top_grup??
-        longid = self._coerce_fid(mod, objectIndex)
-        eid = str_or_none(eid)
+    def _parse_line(self, csv_fields):
+        top_grup_sig, longid = super(EditorIds, self)._parse_line(csv_fields)
+        #--Explicit old to new def? (Used for script updating.)
+        if len(csv_fields) > 4:
+            self.old_new[csv_fields[4].lower()] = \
+                self.id_stored_data[top_grup_sig][longid]
+
+    def _update_from_csv(self, csv_fields,
+                 __reValidEid=re.compile(u'^[a-zA-Z0-9]+$'),
+                __reGoodEid=re.compile(u'^[a-zA-Z]')):
+        eid = str_or_none(csv_fields[3])
         if not __reValidEid.match(eid):
             if self.badEidsList is not None:
                 self.badEidsList.append(eid)
-            return
+            raise ValueError # exit _parse_line
         if self.questionableEidsSet is not None and not __reGoodEid.match(eid):
             self.questionableEidsSet.add(eid)
-        #--Explicit old to new def? (Used for script updating.)
-        if len(csv_fields) > 4:
-            self.old_new[csv_fields[4].lower()] = eid
-        self.id_stored_data[top_grup.encode(u'ascii')][longid] = eid
+        return eid
 
     def _write_rows(self, out):
         for top_grup_sig, id_eid in _key_sort(self.id_stored_data):
@@ -739,7 +727,7 @@ class FactionRelations(_AParser):
             relations[other_fac] = rel_attrs[1:]
         return relations
 
-    def _write_record(self, record, new_info, cur_info):
+    def _write_record_2(self, record, new_info, cur_info):
         for rel_fac, rel_attributes in set(new_info.iteritems()) - set(cur_info.iteritems()):
             # See if this is a new relation or a change to an existing one
             for entry in record.relations:
@@ -822,8 +810,8 @@ class FidReplacer(_HandleAliases):
                 return oldId
         #--Do swap on all records
         for top_grup_sig in self._parser_sigs:
-            for record in modFile.tops[top_grup_sig].getActiveRecords():
-                if changeBase: record.fid = swapper(record.fid)
+            for rfid, record in modFile.tops[top_grup_sig].iter_present_records():
+                if changeBase: record.fid = swapper(rfid)
                 record.mapFids(swapper, save=True)
                 record.setChanged()
         #--Done
@@ -842,53 +830,38 @@ class FullNames(_HandleAliases):
     _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
                    _(u'Editor Id'), _(u'Name'))
     _row_fmt_str = u'"%s","%s","0x%06X","%s","%s"\n'
+    _id_indexes = (1, 2)
+    _grup_index = 0
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(FullNames, self).__init__(aliases_, called_from_patcher)
         #--id_stored_data[top_grup_sig][longid] = (eid,name)
         self.id_stored_data = defaultdict(dict)
         self._parser_sigs = bush.game.namesTypes
+        self._attr_dex = {u'full': 4} if self._called_from_patcher else {
+            u'eid': 3, u'full': 4}
 
     def _read_record(self, record, id_data):
         full = record.full or (record.rec_sig == b'LIGH' and u'NO NAME')
-        if record.eid and full:
-            id_data[record.fid] = (record.eid, full)
+        if record.eid and full: # never used from patcher
+            id_data[record.fid] = {u'eid': record.eid, u'full': full}
 
-    def writeToMod(self,modInfo):
-        """Exports id_stored_data to specified mod."""
-        modFile = self._load_plugin(modInfo)
-        changed = {}
-        for type_ in self._parser_sigs:
-            id_name = self.id_stored_data.get(type_, None)
-            typeBlock = modFile.tops.get(type_,None)
-            if not id_name or not typeBlock: continue
-            for record in typeBlock.records:
-                longid = record.fid
-                full = record.full
-                eid,newFull = id_name.get(longid,(0,0))
-                if newFull and newFull not in (full,u'NO NAME'):
-                    record.full = newFull
-                    record.setChanged()
-                    changed[eid] = (full,newFull)
-        if changed: modFile.safeSave()
-        return changed
-
-    def _parse_line(self, csv_fields):
-        top_grup, mod, objectIndex, eid, full = csv_fields[:5]
-        longid = self._coerce_fid(mod, objectIndex)
-        eid = str_or_none(eid)
-        full = str_or_none(full)
-        self.id_stored_data[top_grup.encode(u'ascii')][longid] = {
-            # Discard the Editor ID and turn the tuples into dictionaries
-            u'full': full} if self._called_from_patcher else (eid, full)
+    def _write_record(self, record, di, changed):
+        full = record.full
+        newFull = di[u'full']
+        if newFull and newFull not in (full, u'NO NAME'):
+            record.full = newFull
+            record.setChanged()
+            changed[di[u'eid']] = (full, newFull)
 
     def _write_rows(self, out):
         """Exports id_stored_data to specified text file."""
         for top_grup_sig, id_name in _key_sort(self.id_stored_data):
-            for longid, (eid, rec_name) in _key_sort(id_name, keys_dex=[0],
-                                                     values_dex=[0]):
-                out.write(self._row_fmt_str % (top_grup_sig.decode(u'ascii'),
-                    longid[0], longid[1], eid, rec_name.replace(u'"', u'""')))
+            top_grup = top_grup_sig.decode(u'ascii')
+            for longid, di in _key_sort(id_name, keys_dex=[0],
+                                        values_key=u'eid'):
+                out.write(self._row_fmt_str % (top_grup, longid[0], longid[1],
+                    di[u'eid'], di[u'full'].replace(u'"', u'""')))
 
 #------------------------------------------------------------------------------
 class ItemStats(_HandleAliases):
@@ -898,54 +871,34 @@ class ItemStats(_HandleAliases):
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ItemStats, self).__init__(aliases_, called_from_patcher)
-        self.sig_stats_attrs = bush.game.statsTypes
+        if self._called_from_patcher:
+            self.sig_stats_attrs = {r: tuple(x for x in a if x != u'eid') for
+                                    r, a in bush.game.statsTypes.iteritems()}
+        else:
+            self.sig_stats_attrs = bush.game.statsTypes
         self.id_stored_data = defaultdict(lambda : defaultdict(dict))
         self._parser_sigs = set(self.sig_stats_attrs)
-        # Populate _attr_serializer per attribute
-        def _create_lambda(k):
-            stype = nonzero_or_none if k == u'enchantPoints' else \
-                bush.game.stats_attrs_desers[k][0] # previous behavior
-            def _serialize(c):
-                val = stype(c[k])
-                tval = type(val)
-                if val is None or tval is unicode:
-                    return u'"%s"' % val
-                elif tval is int:
-                    return u'"%d"' % val
-                elif tval is float:
-                    return u'"%f"' % val
-            return _serialize
-        self._attr_serializer = {att: _create_lambda(att) for att in set(
-            chain.from_iterable(self.sig_stats_attrs.viewvalues()))}
 
     def _read_record(self, record, id_data):
         atts = self.sig_stats_attrs[record.rec_sig]
         id_data[record.fid].update(
             izip(atts, (getattr(record, a) for a in atts)))
 
-    def writeToMod(self,modInfo):
+    _changed_type = Counter #--changed[modName] = numChanged
+    def _write_record(self, record, itemStats, changed):
         """Writes stats to specified mod."""
-        modFile = self._load_plugin(modInfo)
-        changed = Counter() #--changed[modName] = numChanged
-        for top_grup_sig, fid_attr_value in self.id_stored_data.iteritems():
-            for record in modFile.tops[top_grup_sig].getActiveRecords():
-                longid = record.fid
-                itemStats = fid_attr_value.get(longid,None)
-                if not itemStats: continue
-                change = False
-                for stat_key, n_stat in itemStats.iteritems():
-                    if change:
-                        setattr(record, stat_key, n_stat)
-                        continue
-                    o_stat = getattr(record, stat_key)
-                    change = o_stat != n_stat
-                    if change:
-                        setattr(record, stat_key, n_stat)
-                if change:
-                    record.setChanged()
-                    changed[longid[0]] += 1
-        if changed: modFile.safeSave()
-        return changed
+        change = False
+        for stat_key, n_stat in itemStats.iteritems():
+            if change:
+                setattr(record, stat_key, n_stat)
+                continue
+            o_stat = getattr(record, stat_key)
+            change = o_stat != n_stat
+            if change:
+                setattr(record, stat_key, n_stat)
+        if change:
+            record.setChanged()
+            changed[record.fid[0]] += 1
 
     def _parse_line(self, csv_fields):
         """Reads stats from specified text file."""
@@ -953,11 +906,11 @@ class ItemStats(_HandleAliases):
         longid = self._coerce_fid(modName, objectStr) # blow and exit on header
         top_grup_sig = top_grup.encode(u'ascii')
         attrs = self.sig_stats_attrs[top_grup_sig]
-        attr_value = {att: bush.game.stats_attrs_desers[att][0](value) for
-                      att, value in izip(attrs, csv_fields[3:3 + len(attrs)])}
-        if self._called_from_patcher:
-            del attr_value[u'eid']
-        self.id_stored_data[top_grup_sig][longid].update(attr_value)
+        eid_or_next = 3 + self._called_from_patcher
+        attr_dex = {att: dex for att, dex in
+                    izip(attrs, xrange(eid_or_next, eid_or_next + len(attrs)))}
+        attr_val = self._update_from_csv(csv_fields, index_dict=attr_dex)
+        self.id_stored_data[top_grup_sig][longid].update(attr_val)
 
     def _header_row(self, out): pass # different header per sig
 
@@ -965,27 +918,27 @@ class ItemStats(_HandleAliases):
         """Writes stats to specified text file."""
         for top_grup_sig, fid_attr_value in _key_sort(self.id_stored_data):
             if not fid_attr_value: continue
-            sers = [self._attr_serializer[x] for x in
-                    self.sig_stats_attrs[top_grup_sig]]
+            atts = self.sig_stats_attrs[top_grup_sig]
+            sers = [attr_csv_struct[x][2] for x in atts]
             out.write(u'"%s"\n' % u'","'.join( # Py3: unpack
                 (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex')) + tuple(
-                    bush.game.stats_attrs_desers[a][1] for a in
-                    self.sig_stats_attrs[top_grup_sig])))
+                    attr_csv_struct[a][1] for a in atts)))
             top_grup = top_grup_sig.decode(u'ascii')
-            for longid in sorted(fid_attr_value, key=lambda lid: (
-                    lid, fid_attr_value[lid][u'eid'].lower())):
-                attr_value = fid_attr_value[longid]
+            for longid, attr_value in _key_sort(fid_attr_value,
+                    keys_dex=(0, 1), values_key=u'eid'):
                 output = self._row_fmt_str % (top_grup, longid[0], longid[1],
-                    u','.join(ser(attr_value) for ser in sers))
+                    u','.join(ser(attr_value[x]) for x, ser in izip(atts, sers)))
                 out.write(output)
 
 #------------------------------------------------------------------------------
 class ScriptText(CsvParser):
     #todo(ut): maybe standardize script line endings (read both write windows)?
     """import & export functions for script text."""
+    _parser_sigs = [b'SCPT']
 
     def __init__(self):
         self.eid_data = {}
+        self.id_stored_data = {b'SCPT': self.eid_data}
 
     def export_scripts(self, folder, progress, skip, deprefix, skipcomments):
         """Writes scripts to specified folder."""
@@ -1042,38 +995,44 @@ class ScriptText(CsvParser):
     def readFromMod(self, modInfo):
         """Reads stats from specified mod."""
         eid_data = self.eid_data
-        loadFactory = LoadFactory(False, by_sig=[b'SCPT'])
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
+        modFile = self._load_plugin(modInfo, keepAll=False)
         with Progress(_(u'Export Scripts')) as progress:
-            records = modFile.tops[b'SCPT'].getActiveRecords()
+            records = list(modFile.tops[b'SCPT'].iter_present_records())
             y = len(records)
-            for z, record in enumerate(records):
+            for z, (rfid, record) in enumerate(records):
                 progress(((0.5/y) * z), _(u'Reading scripts in %s.') % modInfo)
-                eid_data[record.eid] = (record.script_source, record.fid)
+                eid_data[record.eid] = (record.script_source, rfid)
 
+    _changed_type = list
     def writeToMod(self, modInfo, makeNew=False):
         """Writes scripts to specified mod."""
-        eid_data = self.eid_data
-        changed = []
+        self.makeNew = makeNew
+        changed = super(ScriptText, self).writeToMod(modInfo)
+        if changed is None:
+            return [], []
+        return changed
+
+    def _check_write_record(self, _rfid, record, eid_data, changed):
+        # the keys are eids here!
+        eid = record.eid
+        data_ = eid_data.get(eid,None)
+        if data_:
+            self._write_record(record, data_, changed)
+
+    def _write_record(self, record, data_, changed):
+        newText, longid = data_
+        oldText = record.script_source
+        if oldText.lower() != newText.lower():
+            record.script_source = newText
+            record.setChanged()
+            changed.append(record.eid)
+        del self.eid_data[record.eid]
+
+    def _additional_processing(self, changed, modFile):
         added = []
-        loadFactory = LoadFactory(True, by_sig=[b'SCPT'])
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        for record in modFile.tops[b'SCPT'].getActiveRecords():
-            eid = record.eid
-            data_ = eid_data.get(eid,None)
-            if data_ is not None:
-                newText, longid = data_
-                oldText = record.script_source
-                if oldText.lower() != newText.lower():
-                    record.script_source = newText
-                    record.setChanged()
-                    changed.append(eid)
-                del eid_data[eid]
-        if makeNew and eid_data:
+        if self.makeNew and self.eid_data:
             tes4 = modFile.tes4
-            for eid, (newText, longid) in eid_data.iteritems():
+            for eid, (newText, longid) in self.eid_data.iteritems():
                 scriptFid = genFid(tes4.num_masters, tes4.getNextObject())
                 newScript = MreRecord.type_class[b'SCPT'](
                     RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0))
@@ -1082,8 +1041,8 @@ class ScriptText(CsvParser):
                 newScript.setChanged()
                 modFile.tops[b'SCPT'].records.append(newScript)
                 added.append(eid)
-        if changed or added: modFile.safeSave()
-        return changed, added
+        if changed or added: return changed, added
+        return None
 
     def read_script_folder(self, textPath, progress):
         """Reads scripts from files in specified mods' directory in bashed
@@ -1136,47 +1095,37 @@ class _UsesEffectsMixin(_HandleAliases):
     schoolTypeName_Number = {y.lower(): x for x, y
                              in schoolTypeNumber_Name.iteritems()
                              if x is not None}
-    _float_attrs = frozenset([u'model.modb', u'weight'])
-    _int_attrs = ()
     _row_fmt_str = u'"%s","0x%06X",%s\n'
 
     def __init__(self, aliases_, atts, called_from_patcher=False):
         super(_UsesEffectsMixin, self).__init__(aliases_, called_from_patcher)
-        self._get_csv_serializers(atts)
         self.fid_stats = {}
         self.id_stored_data = {self._parser_sigs[0]: self.fid_stats}
-
-    def _parse_line(self, mid): # common operations for Sigil/Ingredients
-        for att in self._float_attrs:
-            self.fid_stats[mid][att] = float_or_none(self.fid_stats[mid][att])
-        for att in self._int_attrs:
-            self.fid_stats[mid][att] = int_or_none(self.fid_stats[mid][att])
-        for att in [u'eid', u'full', u'model.modPath', u'iconPath']:
-            self.fid_stats[mid][att] = str_or_none(self.fid_stats[mid][att])
-
-    def _get_csv_serializers(self, atts): ##: technically belongs to records
-        """Return encoders per attribute - each encoder should return a
-        string corresponding to a csv column."""
-        # we need to capture k otherwise it will point to atts[-1]
-        _create_lambda = lambda k: (lambda c: u'"%s"' % c[k])
-        self._attr_serializer = OrderedDict(
-            (k, _create_lambda(k)) for k in atts)
+        # Get encoders per attribute - each encoder should return a string
+        # corresponding to a csv column
+        self._attr_serializer = OrderedDict( # None for script_fid/effects
+            (k, attr_csv_struct[k][2] if k in attr_csv_struct else None) for k
+            in atts)
         # special handling for script_fid - used to be exception based...
         if u'script_fid' in atts:
-            def _handle_script_fid(c):
-                fid_tuple = c[u'script_fid']
-                if fid_tuple is not None:
-                    return u'"%s","0x%06X"' % fid_tuple
-                return u'"None","None"'
-            self._attr_serializer[u'script_fid'] = _handle_script_fid
-        # int attributes
-        for k in self._int_attrs: ##: make sure %d works even for flags
-            self._attr_serializer[k] = (lambda k: (lambda c: u'"%d"' % c[k]))(
-                k)
+            self._attr_serializer[u'script_fid'] = lambda val: (
+                u'"None","None"' if val is None else u'"%s","0x%06X"' % val)
         # effects
         if u'effects' in atts:
-            self._attr_serializer[u'effects'] = lambda c: self.writeEffects(
-                c[u'effects'])[1:] # chop off the first comma...
+            self._attr_serializer[u'effects'] = lambda val: self.writeEffects(
+                val)[1:] # chop off the first comma...
+
+    def _parse_line(self, csv_fields):
+        """Common code for Sigil/Ingredients."""
+        mid = self._coerce_fid(csv_fields[0], csv_fields[1])
+        smod = str_or_none(csv_fields[7])
+        if smod is None: sid = None
+        else: sid = self._coerce_fid(smod, csv_fields[8])
+        attr_val = self._update_from_csv(csv_fields)
+        attr_val[u'script_fid'] = sid
+        effects_start = len(self._attr_serializer) + 4 # for the two long fids
+        attr_val[u'effects'] = self.readEffects(csv_fields[effects_start:])
+        self.fid_stats[mid] = attr_val
 
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
         id_data[record.fid] = {att: __attrgetters[att](record) for att in
@@ -1279,33 +1228,27 @@ class _UsesEffectsMixin(_HandleAliases):
                 output.append(noscriptEffectFiller)
         return u''.join(output)
 
-    def writeToMod(self, modInfo, __attrgetters=attrgetter_cache):
+    _changed_type = list
+    def _write_record(self, record, newStats, changed,
+                      __attrgetters=attrgetter_cache):
         """Writes stats to specified mod."""
-        fid_stats = self.fid_stats
-        modFile = self._load_plugin(modInfo)
-        changed = [] #eids
-        for record in modFile.tops[self._parser_sigs[0]].getActiveRecords():
-            newStats = fid_stats.get(record.fid, None)
-            if not newStats: continue
-            imported = False
-            for att, val in newStats.iteritems():
-                old_val = __attrgetters[att](record)
-                if att == u'eid': old_eid = old_val
-                if old_val != val:
-                    imported = True
-                    setattr_deep(record, att, val)
-            if imported:
-                changed.append(old_eid)
-                record.setChanged()
-        if changed: modFile.safeSave()
-        return changed
+        imported = False
+        for att, val in newStats.iteritems():
+            old_val = __attrgetters[att](record)
+            if att == u'eid': old_eid = old_val
+            if old_val != val:
+                imported = True
+                setattr_deep(record, att, val)
+        if imported:
+            changed.append(old_eid)
+            record.setChanged()
 
     def _write_rows(self, out):
         """Exports stats to specified text file."""
         stats, row_fmt_str = self.fid_stats, self._row_fmt_str
-        for rfid in sorted(stats, key=lambda x: stats[x][u'eid'].lower()): ##: , x[0]) ??
-            output = row_fmt_str % (rfid[0], rfid[1], u','.join(
-                ser(stats[rfid]) for ser in self._attr_serializer.itervalues()))
+        for rfid, fstats in _key_sort(stats, values_key=u'eid'): ##: , x[0]) ??
+            output = row_fmt_str % (rfid[0], rfid[1], u','.join(ser(fstats[k])
+                for k, ser in self._attr_serializer.iteritems()))
             out.write(output)
 
 #------------------------------------------------------------------------------
@@ -1318,7 +1261,6 @@ class SigilStoneDetails(_UsesEffectsMixin):
                    _(u'Script ObjectIndex'), _(u'Uses'), _(u'Value'),
                    _(u'Weight'),) + _UsesEffectsMixin.effect_headers * 2 + (
                       _(u'Additional Effects (Same format)'),)
-    _int_attrs = (u'uses', u'value')
     _parser_sigs = [b'SGST']
 
     def __init__(self, aliases_=None, called_from_patcher=False):
@@ -1326,19 +1268,9 @@ class SigilStoneDetails(_UsesEffectsMixin):
             [u'eid', u'full', u'model.modPath', u'model.modb', u'iconPath',
              u'script_fid', u'uses', u'value', u'weight', u'effects'],
             called_from_patcher)
-
-    def _parse_line(self, csv_fields):
-        """Imports stats from specified text file."""
-        mmod, mobj, eid, full, modPath, modb, iconPath, smod, sobj, uses, \
-            value, weight = csv_fields[:12]
-        mid = self._coerce_fid(mmod, mobj)
-        smod = str_or_none(smod)
-        if smod is None: sid = None
-        else: sid = self._coerce_fid(smod, sobj)
-        vals = [eid, full, modPath, modb, iconPath, sid, uses, value, weight,
-                self.readEffects(csv_fields[12:])]
-        self.fid_stats[mid] = dict(izip(self._attr_serializer, vals))
-        super(SigilStoneDetails, self)._parse_line(mid)
+        self._attr_dex = {u'eid': 2, u'full': 3, u'model.modPath': 4,
+                          u'model.modb': 5, u'iconPath': 6, u'uses': 9,
+                          u'value': 10, u'weight': 11}
 
 #------------------------------------------------------------------------------
 class ItemPrices(_HandleAliases):
@@ -1348,51 +1280,37 @@ class ItemPrices(_HandleAliases):
     _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Value'),
                    _(u'Editor Id'), _(u'Name'), _(u'Type'))
     _row_fmt_str = u'"%s","0x%06X",' + csvFormat(u'iss') + u',%s\n'
+    _id_indexes = (0, 1)
+    _grup_index = 5
 
     def __init__(self, aliases_=None):
         super(ItemPrices, self).__init__(aliases_)
         self.id_stored_data = defaultdict(dict)
         self._parser_sigs = set(bush.game.pricesTypes)
+        self._attr_dex = {u'value': 2, u'eid': 3, u'full': 4}
 
     def _read_record(self, record, id_data):
-        id_data[record.fid] = [getattr(record, a) for a in
-                               self.item_prices_attrs]
+        id_data[record.fid] = {a: getattr(record, a) for a in
+                               self.item_prices_attrs}
 
-    def writeToMod(self,modInfo):
-        """Writes stats to specified mod."""
-        modFile = self._load_plugin(modInfo)
-        changed = Counter() #--changed[modName] = numChanged
-        for top_grup_sig, fid_stats in self.id_stored_data.iteritems():
-            for record in modFile.tops[top_grup_sig].getActiveRecords():
-                longid = record.fid
-                stats = fid_stats.get(longid,None)
-                if not stats: continue
-                value = stats[0]
-                if record.value != value:
-                    record.value = value
-                    changed[longid[0]] += 1
-                    record.setChanged()
-        if changed: modFile.safeSave()
-        return changed
+    _changed_type = Counter
+    def _write_record(self, record, stats, changed):
+        """Writes stats to specified record."""
+        value = stats[u'value']
+        if record.value != value:
+            record.value = value
+            changed[record.fid[0]] += 1
+            record.setChanged()
 
-    def _parse_line(self, csv_fields):
-        mmod, mobj, value, eid, itm_name, top_grup = csv_fields[:6]
-        longid = self._coerce_fid(mmod, mobj)
-        value = int_or_zero(value)
-        eid = str_or_none(eid)
-        itm_name = str_or_none(itm_name)
-        self.id_stored_data[top_grup.encode(u'ascii')][longid] = [value, eid,
-                                                                  itm_name]
-
-    def _write_rows(self, out):
+    def _write_rows(self, out, __getter=itemgetter(u'value', u'eid', u'full')):
         """Writes item prices to specified text file."""
         for top_grup_sig, fid_stats in _key_sort(self.id_stored_data):
             if not fid_stats: continue
             top_grup = top_grup_sig.decode(u'ascii')
             for fid in sorted(fid_stats,key=lambda x:(
-                    fid_stats[x][1].lower(),fid_stats[x][0])):
-                out.write(self._row_fmt_str % ((fid[0], fid[1]) +
-                    tuple(fid_stats[fid]) + (top_grup,)))
+                    fid_stats[x][u'eid'].lower(), fid_stats[x][u'value'])):
+                out.write(self._row_fmt_str % ((fid[0], fid[1]) + __getter(
+                    fid_stats[fid]) + (top_grup,)))
 
 #------------------------------------------------------------------------------
 class SpellRecords(_UsesEffectsMixin):
@@ -1406,8 +1324,6 @@ class SpellRecords(_UsesEffectsMixin):
     _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
                   _(u'Editor Id'), _(u'Cost'), _(u'Level Type'),
                   _(u'Spell Type'), _(u'Spell Flags'))
-    _float_attrs = frozenset()
-    _int_attrs = (u'cost', u'flags')
     _row_fmt_str = u'"SPEL","%s","0x%06X",%s\n'
     _parser_sigs = [b'SPEL']
 
@@ -1417,76 +1333,29 @@ class SpellRecords(_UsesEffectsMixin):
                 else self._csv_attrs)
         self.detailed = detailed
         if detailed:
-            atts += self.__class__._extra_attrs
-            self._csv_header += (
-                _(u'Manual Cost'), _(u'Start Spell'), _(u'Immune To Silence'),
-                _(u'Area Effect Ignores LOS'), _(u'Script Always Applies'),
-                _(u'Disallow Absorb and Reflect'), _(
-                    u'Touch Explodes Without Target'),
-            ) + _UsesEffectsMixin.effect_headers * 2 + (
+            atts += self.__class__._extra_attrs # Py3 remove effects from attr_csv_struct
+            self._csv_header += tuple(attr_csv_struct[x][1] for x in
+                self.__class__._extra_attrs[:-1]) + \
+                _UsesEffectsMixin.effect_headers * 2 + (
                          _(u'Additional Effects (Same format)'),)
-        self.spellTypeNumber_Name = {None: u'NONE',
-                                     0   : u'Spell',
-                                     1   : u'Disease',
-                                     2   : u'Power',
-                                     3   : u'LesserPower',
-                                     4   : u'Ability',
-                                     5   : u'Poison',}
-        self.spellTypeName_Number = {y.lower(): x for x, y
-                                     in self.spellTypeNumber_Name.iteritems()
-                                     if x is not None}
-        self.levelTypeNumber_Name = {None : u'NONE',
-                                     0    : u'Novice',
-                                     1    : u'Apprentice',
-                                     2    : u'Journeyman',
-                                     3    : u'Expert',
-                                     4    : u'Master',}
-        self.levelTypeName_Number = {y.lower(): x for x, y
-                                     in self.levelTypeNumber_Name.iteritems()
-                                     if x is not None}
         super(SpellRecords, self).__init__(aliases_, atts, called_from_patcher)
-
-    def _get_csv_serializers(self, atts):
-        super(SpellRecords, self)._get_csv_serializers(atts)
-        level_name = self.levelTypeNumber_Name
-        spell_name = self.spellTypeNumber_Name
-        if u'level' in self._attr_serializer:
-            self._attr_serializer[u'level'] = lambda c: \
-                u'"%s"' % level_name.get(c[u'level'], c[u'level'])
-        if u'spellType' in self._attr_serializer:
-            self._attr_serializer[u'spellType'] = lambda c: \
-                u'"%s"' % spell_name.get(c[u'spellType'], c[u'spellType'])
 
     def _parse_line(self, fields):
         """Imports stats from specified text file."""
+        if fields[0].lower() != u'spel': return
+        mid = self._coerce_fid(fields[1], fields[2])
         if int_or_none(fields[4]) is None:  # Index 4 was FULL now cost
-            group, mmod, mobj, eid, _full, cost, levelType, spellType = \
-                fields[:8] # FULL was dropped and flags added
-            spell_flags = 0
-        else:
-            group, mmod, mobj, eid, cost, levelType, spellType, spell_flags = \
-                fields[:8]
-        if group.lower() != u'spel': return
-        mid = self._coerce_fid(mmod, mobj)
-        eid = str_or_none(eid)
-        cost = int_or_zero(cost)
-        levelType = self.levelTypeName_Number.get(levelType.lower(),
-                                                  int_or_zero(levelType))
-        spellType = self.spellTypeName_Number.get(spellType.lower(),
-                                                  int_or_zero(spellType))
-        ##: HACK, 'flags' needs to be a Flags instance on dump
-        spell_flags = MreRecord.type_class[b'SPEL']._SpellFlags(
-            int_or_zero(spell_flags))
-        vals = [eid, cost, levelType, spellType, spell_flags]
-        self.fid_stats[mid] = dict( ##: this won't work for other games
-            izip(self._csv_attrs, vals))
-        if not self.detailed:  # or len(fields) < 7: ValueError
-            return
-        mc, ss, its, aeil, saa, daar, tewt = [_str_to_bool(f) for f in
-                                              fields[8:15]] #py3: map
-        vals = [mc, ss, its, aeil, saa, daar, tewt,
-                self.readEffects(fields[15:])]
-        self.fid_stats[mid].update(izip(self.__class__._extra_attrs, vals))
+            attr_dex = {u'eid': 3, u'cost': 5, u'level': 6, u'spellType': 7}
+        else: # FULL was dropped and flags added
+            attr_dex = {u'eid': 3, u'cost': 4, u'level': 5, u'spellType': 6,
+                        u'flags': 7}
+        self.fid_stats[mid] = self._update_from_csv(fields,index_dict=attr_dex)
+        if self.detailed:  # and not len(fields) < 7: IndexError
+            attr_dex = dict(
+                izip(self.__class__._extra_attrs[:-1], xrange(8, 15)))
+            attr_val = self._update_from_csv(fields, index_dict=attr_dex)
+            attr_val[u'effects'] = self.readEffects(fields[15:])
+            self.fid_stats[mid].update(attr_val)
 
 #------------------------------------------------------------------------------
 class IngredientDetails(_UsesEffectsMixin):
@@ -1497,7 +1366,6 @@ class IngredientDetails(_UsesEffectsMixin):
         _(u'Script Mod Name'), _(u'Script ObjectIndex'), _(u'Value'),
         _(u'Weight'),) + _UsesEffectsMixin.effect_headers * 2 + \
                   (_(u'Additional Effects (Same format)'),)
-    _int_attrs = (u'value',)
     _parser_sigs = [b'INGR']
 
     def __init__(self, aliases_=None, called_from_patcher=False):
@@ -1505,15 +1373,6 @@ class IngredientDetails(_UsesEffectsMixin):
         super(IngredientDetails, self).__init__(aliases_, [u'eid', u'full',
             u'model.modPath', u'model.modb', u'iconPath', u'script_fid',
             u'value', u'weight', u'effects'], called_from_patcher)
-
-    def _parse_line(self, csv_fields):
-        mmod, mobj, eid, full, modPath, modb, iconPath, smod, sobj, value,\
-        weight = csv_fields[:11]
-        mid = self._coerce_fid(mmod, mobj)
-        smod = str_or_none(smod)
-        if smod is None: sid = None
-        else: sid = self._coerce_fid(smod, sobj)
-        self.fid_stats[mid] = dict(izip(self._attr_serializer, [eid, full,
-            modPath, modb, iconPath, sid, value, weight, self.readEffects(
-                csv_fields[11:])]))
-        super(IngredientDetails, self)._parse_line(mid)
+        self._attr_dex = {u'eid': 2, u'full': 3, u'model.modPath': 4,
+                          u'model.modb': 5, u'iconPath': 6, u'value': 9,
+                          u'weight': 10}

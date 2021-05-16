@@ -133,7 +133,7 @@ class APreserver(ImportPatcher):
                 attrs for t, attrs in recAttrs.iteritems() if t in mod_tags))
             fid_attrs = set(chain.from_iterable(
                 attrs for t, attrs in fid_attrs.iteritems() if t in mod_tags))
-        for record in srcFile.tops[top_grup_sig].iter_present_records():
+        for rfid, record in srcFile.tops[top_grup_sig].iter_present_records():
             # If we have FormID attributes, check those before importing
             if fid_attrs:
                 fid_attr_values = [__attrgetters[a](record) for a in fid_attrs]
@@ -144,8 +144,8 @@ class APreserver(ImportPatcher):
                     self.patchFile.patcher_mod_skipcount[
                         self._patcher_name][srcMod] += 1
                     continue
-            mod_id_data[record.fid] = {attr: __attrgetters[attr](record)
-                                       for attr in recAttrs}
+            mod_id_data[rfid] = {attr: __attrgetters[attr](record) for attr in
+                                 recAttrs}
 
     # noinspection PyDefaultArgument
     def initData(self, progress, __attrgetters=attrgetter_cache):
@@ -184,15 +184,14 @@ class APreserver(ImportPatcher):
                 for rsig in self.rec_type_attrs:
                     if rsig not in masterFile.tops or rsig not in mod_sigs:
                         continue
-                    for record in masterFile.tops[rsig].iter_present_records():
-                        fid = record.fid
-                        if fid not in mod_id_data: continue
-                        for attr, value in mod_id_data[fid].iteritems():
+                    for rfid, record in masterFile.tops[rsig].iter_present_records():
+                        if rfid not in mod_id_data: continue
+                        for attr, value in mod_id_data[rfid].iteritems():
                             try:
                                 if value == __attrgetters[attr](record):
                                     continue
                                 else:
-                                    id_data[fid][attr] = value
+                                    id_data[rfid][attr] = value
                             except AttributeError:
                                 raise ModSigMismatchError(master, record)
             progress.plus()
@@ -209,12 +208,11 @@ class APreserver(ImportPatcher):
             # Records that have been copied into the BP once will automatically
             # be updated by update_patch_records_from_mod/mergeModFile
             copied_records = patchBlock.id_records
-            for record in modFile.tops[rsig].iter_present_records():
-                fid = record.fid
+            for rfid, record in modFile.tops[rsig].iter_present_records():
                 # Skip if we've already copied this record or if we're not
                 # interested in it
-                if fid in copied_records or fid not in id_data: continue
-                for attr, value in id_data[fid].iteritems():
+                if rfid in copied_records or rfid not in id_data: continue
+                for attr, value in id_data[rfid].iteritems():
                     if __attrgetters[attr](record) != value:
                         patchBlock.setRecord(record.getTypeCopy())
                         break
@@ -224,8 +222,7 @@ class APreserver(ImportPatcher):
                     __attrgetters=attrgetter_cache):
         loop_setattr = setattr_deep if self._deep_attrs else setattr
         id_data = self.id_data
-        for record in records:
-            rec_fid = record.fid
+        for rec_fid, record in records:
             if rec_fid not in id_data: continue
             for attr, value in id_data[rec_fid].iteritems():
                 if __attrgetters[attr](record) != value: break
@@ -558,10 +555,9 @@ class ImportGraphicsPatcher(APreserver):
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
         id_data = self.id_data
-        for record in records:
-            fid = record.fid
-            if fid not in id_data: continue
-            for attr, value in id_data[fid].iteritems():
+        for rfid, record in records:
+            if rfid not in id_data: continue
+            for attr, value in id_data[rfid].iteritems():
                 rec_attr = __attrgetters[attr](record)
                 if isinstance(rec_attr, unicode) and isinstance(
                         value, unicode):
@@ -577,9 +573,9 @@ class ImportGraphicsPatcher(APreserver):
                         # aren't __both__ NONE)
                 if rec_attr != value: break
             else: continue
-            for attr, value in id_data[fid].iteritems():
+            for attr, value in id_data[rfid].iteritems():
                 setattr(record, attr, value)
-            keep(fid)
+            keep(rfid)
             type_count[top_mod_rec] += 1
 
 #------------------------------------------------------------------------------
@@ -591,10 +587,9 @@ class ImportRacesPatcher(APreserver):
                     __attrgetters=attrgetter_cache):
         loop_setattr = setattr_deep if self._deep_attrs else setattr
         id_data = self.id_data
-        for record in records:
-            rec_fid = record.fid
-            if rec_fid not in id_data: continue
-            for attr, value in id_data[rec_fid].iteritems():
+        for rfid, record in records:
+            if rfid not in id_data: continue
+            for attr, value in id_data[rfid].iteritems():
                 record_val = __attrgetters[attr](record)
                 if attr in (u'eyes', u'hairs'):
                     if set(record_val) != set(value): break
@@ -604,7 +599,7 @@ class ImportRacesPatcher(APreserver):
                             record.full, attr))
                     elif record_val != value: break
             else: continue
-            for attr, value in id_data[rec_fid].iteritems():
+            for attr, value in id_data[rfid].iteritems():
                 loop_setattr(record, attr, value)
-            keep(rec_fid)
+            keep(rfid)
             type_count[top_mod_rec] += 1

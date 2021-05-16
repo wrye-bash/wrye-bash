@@ -25,7 +25,6 @@
 import importlib
 
 from . import GameInfo
-from ..bolt import float_or_none, int_or_zero, str_or_none
 
 class PatchGame(GameInfo):
     """Game that supports a Bashed patch. Provides record related values used
@@ -102,71 +101,6 @@ class PatchGame(GameInfo):
         u'text_types',
     }
 
-    # WIP attribute to csv deserializer/csv column header - see StatsPatcher
-    stats_attrs_desers = {
-        u'weight': (float_or_none, _(u'Weight')),
-        u'rumbleRightMotorStrength': (
-            float_or_none, _(u'Rumble - Right Motor Strength')),
-        u'criticalDamage': (int_or_zero, _(u'Critical Damage')),
-        u'aimArc': (float_or_none, _(u'Aim Arc')),
-        u'dr': (int_or_zero, _(u'Damage Resistance')),
-        u'duration': (int_or_zero, _(u'Duration')),
-        u'attackShotsPerSec': (float_or_none, _(u'Attack Shots Per Second')),
-        u'speed': (float_or_none, _(u'Speed')),
-        u'semiAutomaticFireDelayMin': (
-            float_or_none, _(u'Minumum Semi-Automatic Fire Delay')),
-        u'minSpread': (float_or_none, _(u'Minimum Spread')),
-        u'minRange': (float_or_none, _(u'Minimum Range')),
-        u'baseVatsToHitChance': (int_or_zero, _(u'Base VATS To-Hit Chance')),
-        u'clipsize': (int_or_zero, _(u'Clip Size')),
-        u'reloadTime': (float_or_none, _(u'Reload Time')),
-        u'rumbleDuration': (float_or_none, _(u'Rumble - Duration')),
-        u'damage': (int_or_zero, _(u'Damage')),
-        u'sightUsage': (float_or_none, _(u'Sight Usage')),
-        u'sightFov': (float_or_none, _(u'Sight Fov')),
-        u'strengthReq': (int_or_zero, _(u'Strength Requirement')),
-        u'fireRate': (float_or_none, _(u'Fire Rate')),
-        u'skillReq': (int_or_zero, _(u'Skill Requirement')),
-        u'projPerShot': (int_or_zero, _(u'Projectiles Per Shot')),
-        u'regenRate': (float_or_none, _(u'Regeneration Rate')),
-        u'animationMultiplier': (float_or_none, _(u'Animation Multiplier')),
-        u'spread': (float_or_none, _(u'Spread')),
-        u'health': (int_or_zero, _(u'Health')),
-        u'semiAutomaticFireDelayMax': (
-            float_or_none, _(u'Maximum Semi-Automatic Fire Delay')),
-        u'rumbleWavelength': (float_or_none, _(u'Rumble - Wavelength')),
-        u'vatsSkill': (float_or_none, _(u'VATS Skill')),
-        u'vatsDamMult': (float_or_none, _(u'VATS Damage Multiplier')),
-        u'projectileCount': (int_or_zero, _(u'Projectile Count')),
-        u'limbDmgMult': (float_or_none, _(u'Limb Damage Multiplier')),
-        u'killImpulse': (float_or_none, _(u'Kill Impulse')),
-        u'reach': (float_or_none, _(u'Reach')),
-        u'vatsAp': (float_or_none, _(u'VATS AP')),
-        u'clipRounds': (int_or_zero, _(u'Clip Rounds')),
-        u'jamTime': (float_or_none, _(u'Jam Time')),
-        u'dt': (float_or_none, _(u'Damage Threshold')),
-        u'criticalMultiplier': (float_or_none, _(u'Critical Multiplier')),
-        u'maxRange': (float_or_none, _(u'Maximum Range')),
-        u'rumbleLeftMotorStrength': (
-            float_or_none, _(u'Rumble - Left Motor Strength')),
-        u'ammoUse': (int_or_zero, _(u'Ammunition Use')),
-        u'value': (int_or_zero, _(u'Value')),
-        u'eid': (str_or_none, u'EditorID'),
-        u'animationAttackMultiplier': (
-            float_or_none, _(u'Animation Attack Multiplier')),
-        u'overrideActionPoint': (float_or_none, _(u'Override - Action Point')),
-        u'impulseDist': (float_or_none, _(u'Impulse Distance')),
-        u'overrideDamageToWeaponMult': (
-            float_or_none, _(u'Override - Damage To Weapon Multiplier')),
-        u'strength': (int_or_zero, _(u'Strength')),
-        u'quality': (float_or_none, _(u'Quality')),
-        u'enchantPoints': (int_or_zero, _(u'Enchantment Points')),
-        u'uses': (int_or_zero, _(u'Uses')),
-        u'armorRating': (int_or_zero, _(u'Armor Rating')),
-        u'stagger': (float_or_none, _(u'Stagger')),
-        u'critDamage': (int_or_zero, _(u'Critical Damage')),
-        u'criticalEffect': (int_or_zero, _(u'Critical Effect')),
-    }
     _patcher_package = u'' # read the patcher of another (parent) game
     @classmethod
     def _dynamic_import_modules(cls, package_name):

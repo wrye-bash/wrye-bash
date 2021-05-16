@@ -264,12 +264,6 @@ def int_or_none(uni_str):
     except ValueError:
         return None
 
-def nonzero_or_none(uni_str):
-    try:
-        return int(uni_str) or None
-    except (ValueError, TypeError):
-        return None
-
 def int_or_zero(uni_str):
     try:
         return int(uni_str)
@@ -2530,7 +2524,6 @@ class WryeText(object):
         reCssTag = re.compile(u'' r'\s*{{CSS:(.+?)}}\s*$',re.U)
         #--Defaults ----------------------------------------------------------
         title = u''
-        level = 1
         spaces = u''
         cssName = None
         #--Init
@@ -2634,7 +2627,7 @@ class WryeText(object):
                 text = re.sub(u' *=*#?$', u'', text.strip())
                 anchor = unicode(quote(reWd.sub(u'', text).encode(u'utf8')),
                                  u'cp1252')
-                level = len(lead)
+                level_ = len(lead)
                 if anchorHeaders:
                     if re.match(u'' r'\d', anchor):
                         anchor = u'_' + anchor
@@ -2646,12 +2639,12 @@ class WryeText(object):
                         else:
                             anchor = anchor[:-1] + unicode(count)
                     anchorlist.append(anchor)
-                    line = (headFormatNA,headFormat)[anchorHeaders] % (level,anchor,text,level)
-                    if addContents: contents.append((level,anchor,text))
+                    line = (headFormatNA,headFormat)[anchorHeaders] % (level_,anchor,text,level_)
+                    if addContents: contents.append((level_,anchor,text))
                 else:
-                    line = headFormatNA % (level,text,level)
+                    line = headFormatNA % (level_,text,level_)
                 #--Title?
-                if not title and level <= 2: title = text
+                if not title and level_ <= 2: title = text
             #--Paragraph
             elif maPar and not states[u'code']:
                 line = u'<p>'+line+u'</p>\n'
@@ -2662,8 +2655,8 @@ class WryeText(object):
                 text = maList.group(3)
                 if bullet == u'.': bullet = u'&nbsp;'
                 elif bullet == u'*': bullet = u'&bull;'
-                level = len(spaces)//2 + 1
-                line = spaces+u'<p class="list-%i">'%level+bullet+u'&nbsp; '
+                level_ = len(spaces)//2 + 1
+                line = spaces+u'<p class="list-%i">'%level_+bullet+u'&nbsp; '
                 line = line + text + u'</p>\n'
             #--Empty line
             elif maEmpty:
@@ -2705,11 +2698,11 @@ class WryeText(object):
         for line in outLines:
             if reContentsTag.match(line):
                 if contents and not didContents:
-                    baseLevel = min([level for (level,name_,text) in contents])
-                    for (level,name_,text) in contents:
-                        level = level - baseLevel + 1
-                        if level <= addContents:
-                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name_,text))
+                    baseLevel = min([level_ for (level_,name_,text) in contents])
+                    for (level_,name_,text) in contents:
+                        level_ = level_ - baseLevel + 1
+                        if level_ <= addContents:
+                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level_,name_,text))
                     didContents = True
             else:
                 outWrite(line)
