@@ -23,7 +23,7 @@
 """This module houses the entry point for reading and writing plugin files
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
-from __future__ import division, print_function
+from __future__ import division
 
 from collections import defaultdict
 from itertools import chain

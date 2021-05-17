@@ -22,9 +22,6 @@
 # =============================================================================
 """Encapsulates Windows-specific classes and methods."""
 
-from __future__ import print_function
-
-import itertools
 import os
 import re
 import sys
@@ -360,7 +357,7 @@ class _WindowsStoreFinder(object):
             # Parsing error, or the file doesn't exist
             pass
         return version, entry_point
-    
+
     def get_app_info(self, app_name, publisher_name=None, publisher_id=None):
         """Public interface: returns a WinAppInfo object with all applicable
            information about the application."""

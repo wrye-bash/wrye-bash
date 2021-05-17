@@ -23,7 +23,7 @@
 """Houses very low-level classes for reading and writing bytes in plugin
 files."""
 
-from __future__ import division, print_function
+from __future__ import division
 import os
 from io import BytesIO
 

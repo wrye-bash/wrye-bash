@@ -23,7 +23,7 @@
 """Houses basic building blocks for creating record definitions. Somewhat
 higher-level building blocks can be found in common_subrecords.py."""
 
-from __future__ import division, print_function
+from __future__ import division
 
 from itertools import izip
 

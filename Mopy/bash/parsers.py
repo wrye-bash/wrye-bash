@@ -29,7 +29,7 @@ that has to be done when reading mods.
 However, not all parsers fit this pattern - some have to read mods twice,
 others barely even fit into the pattern at all (e.g. FidReplacer)."""
 
-from __future__ import division, print_function
+from __future__ import division
 
 import csv
 import re
@@ -1356,6 +1356,10 @@ class SpellRecords(_UsesEffectsMixin):
             attr_val = self._update_from_csv(fields, index_dict=attr_dex)
             attr_val[u'effects'] = self.readEffects(fields[15:])
             self.fid_stats[mid].update(attr_val)
+
+    def _update_from_csv(self, csv_fields, index_dict):
+        return MreRecord.type_class[b'SPELL'].parse_csv_line( ##: move to base
+            index_dict, csv_fields, reuse=True)
 
 #------------------------------------------------------------------------------
 class IngredientDetails(_UsesEffectsMixin):

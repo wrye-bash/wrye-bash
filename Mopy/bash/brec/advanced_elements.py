@@ -26,7 +26,7 @@ this file involve conditional loading and are much less commonly used. Relies
 on some of the elements defined in basic_elements, e.g. MelBase, MelObject and
 MelStruct."""
 
-from __future__ import division, print_function
+from __future__ import division
 
 __author__ = u'Infernio'
 

@@ -23,7 +23,7 @@
 """Houses the parts of brec that didn't fit anywhere else or were needed by
 almost all other parts of brec."""
 
-from __future__ import division, print_function
+from __future__ import division
 
 from .. import bolt
 from ..bolt import cstrip, decoder, Flags, structs_cache, attrgetter_cache

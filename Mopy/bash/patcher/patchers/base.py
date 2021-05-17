@@ -20,9 +20,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module contains base patcher classes."""
-from __future__ import print_function
+
 from collections import Counter, defaultdict
 from itertools import chain
 # Internal
