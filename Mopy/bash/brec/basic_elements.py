@@ -572,21 +572,22 @@ class MelStruct(MelBase):
     def setDefault(self,record):
         for attr, value, action in izip(self.attrs, self.defaults,
                                         self.actions):
-            if action: value = action(value)
+            if callable(action): value = action(value)
             setattr(record, attr, value)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         unpacked = ins.unpack(self._unpacker, size_, *debug_strs)
         for attr, value, action in izip(self.attrs, unpacked, self.actions):
-            setattr(record, attr, action(value) if action else value)
+            setattr(record, attr, action(value) if callable(action) else value)
 
     def pack_subrecord_data(self, record):
         # Apply the action to itself before dumping to handle e.g. a
         # FixedString getting assigned a unicode value. Worst case, this is
         # just a noop - it is needed however when we read a flag say from a csv
         values = [
-            action(value).dump() if action else value for value, action in
-            izip((getattr(record, a) for a in self.attrs), self.actions)]
+            action(value).dump() if callable(action) else value
+            for value, action in izip((getattr(record, a) for a in self.attrs),
+                                      self.actions)]
         return self._packer(*values)
 
     def mapFids(self,record,function,save=False):

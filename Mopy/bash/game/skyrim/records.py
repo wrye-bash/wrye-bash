@@ -3043,7 +3043,7 @@ class MreLgtm(MelRecord):
                                 + unpacked_val[20:])
                 for attr, value, action in izip(self.attrs, unpacked_val,
                                                 self.actions):
-                    if action: value = action(value)
+                    if callable(action): value = action(value)
                     setattr(record, attr, value)
             else:
                 raise ModSizeError(ins.inName, debug_strs, (92, 84), size_)

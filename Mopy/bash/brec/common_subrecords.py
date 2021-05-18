@@ -452,14 +452,15 @@ class MelRaceData(MelTruncatedStruct):
         record.skills = unpacked[:14]
         for attr, value, action in izip(self.attrs[1:], unpacked[14:],
                                         self.actions[1:]):
-            setattr(record, attr, action(value) if action else value)
+            setattr(record, attr, action(value) if callable(action) else value)
 
     def pack_subrecord_data(self, record):
         values = list(record.skills)
         values.extend(
-            action(value).dump() if action else value for value, action in
-            izip((getattr(record, a) for a in self.attrs[1:]),
-                 self.actions[1:]))
+            action(value).dump() if callable(action) else value
+            for value, action in izip(
+                (getattr(record, a) for a in self.attrs[1:]),
+                self.actions[1:]))
         return self._packer(*values)
 
 #------------------------------------------------------------------------------
