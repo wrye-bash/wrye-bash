@@ -289,12 +289,12 @@ class MobObjects(MobBase):
         for record in self.records:
             self.id_records[record.fid] = record
 
-    def getRecord(self,fid,default=None):
+    def getRecord(self, rec_fid):
         """Gets record with corresponding id.
         If record doesn't exist, returns None."""
-        if not self.records: return default
+        if not self.records: return None
         if not self.id_records: self.indexRecords()
-        return self.id_records.get(fid,default)
+        return self.id_records.get(rec_fid, None)
 
     def setRecord(self,record):
         """Adds record to record list and indexed."""

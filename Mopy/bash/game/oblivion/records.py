@@ -29,7 +29,7 @@ from collections import OrderedDict
 from itertools import chain
 
 from ... import brec
-from ...bolt import Flags
+from ...bolt import Flags, int_or_zero
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, \
     MelFids, MreHeaderBase, MelBase, MelFidList, MelBodyParts, MelAnimations, \
@@ -1853,14 +1853,15 @@ class MreSoun(MelRecord):
 class MreSpel(MelRecord,MreHasEffects):
     """Spell."""
     rec_sig = b'SPEL'
-    spellTypeNumber_Name = {None: u'NONE', ##: TODO do I ever get None ?
+    ##: use LowerDict and get rid of the lower() in callers
+    spellTypeNumber_Name = {None: u'NONE',
                             0   : u'Spell',
                             1   : u'Disease',
                             2   : u'Power',
                             3   : u'LesserPower',
                             4   : u'Ability',
                             5   : u'Poison'}
-    spellTypeName_Number = {y.lower(): x for x, y in
+    spellTypeName_Number = {y.lower(): x for x, y in # if name is None it will
                             spellTypeNumber_Name.iteritems() if x is not None}
     levelTypeNumber_Name = {None : u'NONE',
                             0    : u'Novice',
@@ -1899,14 +1900,19 @@ class MreSpel(MelRecord,MreHasEffects):
     __slots__ = melSet.getSlotsUsed()
 
     @classmethod
-    def parse_csv_line(cls, index_dict, csv_fields, reuse=False):
-        attr_dict = super(MreSpel, cls).parse_csv_line(index_dict, csv_fields,
+    def parse_csv_line(cls, csv_fields, index_dict, reuse=False):
+        attr_dict = super(MreSpel, cls).parse_csv_line(csv_fields, index_dict,
                                                        reuse)
-        attr_dict[u'level'] = cls.levelTypeName_Number.get(
-            attr_dict[u'level'].lower(), attr_dict[u'level'])
-        attr_dict[u'spellType'] = cls.spellTypeName_Number.get(
-            attr_dict[u'spellType'].lower(), attr_dict[u'spellType'])
-        attr_dict[u'flags'] = cls._SpellFlags(attr_dict.get(u'flags', 0))
+        try:
+            lvl = attr_dict[u'level'] # KeyError on 'detailed' pass
+            attr_dict[u'level'] = cls.levelTypeName_Number.get(lvl.lower(),
+                int_or_zero(lvl))
+            stype = attr_dict[u'spellType']
+            attr_dict[u'spellType'] = cls.spellTypeName_Number.get(
+                stype.lower(), int_or_zero(stype))
+            attr_dict[u'flags'] = cls._SpellFlags(attr_dict.get(u'flags', 0))
+        except KeyError:
+            """We are called for reading the 'detailed' attributes"""
         return attr_dict
 
 class MreStat(MelRecord):

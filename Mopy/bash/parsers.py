@@ -139,9 +139,9 @@ class CsvParser(object):
     def _header_row(self, out):
         out.write(u'"%s"\n' % u'","'.join(self._csv_header))
 
-    def _update_from_csv(self, csv_fields, index_dict=None):
-        return MreRecord.parse_csv_line(index_dict or self._attr_dex,
-            csv_fields, reuse=index_dict is not None)
+    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
+        return MreRecord.type_class[top_grup_sig].parse_csv_line(csv_fields,
+            index_dict or self._attr_dex, reuse=index_dict is not None)
 
     # Load plugin -------------------------------------------------------------
     def _load_plugin(self, mod_info, keepAll=True, target_types=None):
@@ -216,11 +216,14 @@ class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
         return GPath(self.aliases.get(modname, modname)), int(hex_fid, 0)
 
     def _parse_line(self, csv_fields):
-        top_grup_sig = csv_fields[self._grup_index].encode(u'ascii')
+        if self._grup_index is not None:
+            top_grup_sig = csv_fields[self._grup_index].encode(u'ascii')
+        else:
+            top_grup_sig = self._parser_sigs[0] # one rec type
         longid = self._coerce_fid(csv_fields[self._id_indexes[0]],
                                   csv_fields[self._id_indexes[1]])
         self.id_stored_data[top_grup_sig][longid] = self._update_from_csv(
-            csv_fields)
+            top_grup_sig, csv_fields)
         return top_grup_sig, longid
 
     def readFromMod(self, modInfo):
@@ -407,6 +410,7 @@ class _AParser(_HandleAliases):
         :param cur_info: The current record info."""
         raise AbstractError(u'_write_record_2 not implemented')
 
+    _changed_type = Counter
     def _write_record(self, record, new_info, changed):
         """Asks this parser to write its stored information to the specified
         ModInfo instance.
@@ -419,7 +423,7 @@ class _AParser(_HandleAliases):
             # It's different, ask the parser to write it out
             self._write_record_2(record, new_info, cur_info)
             record.setChanged()
-            changed[record.sig] += 1
+            changed[record.rec_sig] += 1
 
     # Other API
     @property
@@ -560,7 +564,7 @@ class ActorLevels(_HandleAliases):
         if (source.lower() in self._skip_mods) or fidMod.lower() == u'none':
             return
         lfid = self._coerce_fid(fidMod, csv_fields[3])
-        attr_dex = self._update_from_csv(csv_fields)
+        attr_dex = self._update_from_csv(b'NPC_', csv_fields)
         attr_dex[u'flags.pcLevelOffset'] = True
         self.mod_id_levels[source][lfid] = attr_dex
 
@@ -675,10 +679,11 @@ class EditorIds(_HandleAliases):
             self.old_new[csv_fields[4].lower()] = \
                 self.id_stored_data[top_grup_sig][longid]
 
-    def _update_from_csv(self, csv_fields, index_dict=None,
+    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None,
                  __reValidEid=re.compile(u'^[a-zA-Z0-9]+$'),
                 __reGoodEid=re.compile(u'^[a-zA-Z]')):
-        eid = super(EditorIds, self)._update_from_csv(csv_fields)[u'eid']
+        eid = super(EditorIds, self)._update_from_csv(top_grup_sig,
+            csv_fields, index_dict)[u'eid']
         if not __reValidEid.match(eid):
             if self.badEidsList is not None:
                 self.badEidsList.append(eid)
@@ -910,7 +915,8 @@ class ItemStats(_HandleAliases):
         eid_or_next = 3 + self._called_from_patcher
         attr_dex = {att: dex for att, dex in
                     izip(attrs, xrange(eid_or_next, eid_or_next + len(attrs)))}
-        attr_val = self._update_from_csv(csv_fields, index_dict=attr_dex)
+        attr_val = self._update_from_csv(top_grup_sig, csv_fields,
+                                         index_dict=attr_dex)
         self.id_stored_data[top_grup_sig][longid].update(attr_val)
 
     def _header_row(self, out): pass # different header per sig
@@ -1122,9 +1128,9 @@ class _UsesEffectsMixin(_HandleAliases):
         smod = str_or_none(csv_fields[7])
         if smod is None: sid = None
         else: sid = self._coerce_fid(smod, csv_fields[8])
-        attr_val = self._update_from_csv(csv_fields)
+        attr_val = self._update_from_csv(self._parser_sigs[0], csv_fields)
         attr_val[u'script_fid'] = sid
-        effects_start = len(self._attr_serializer) + 4 # for the two long fids
+        effects_start = len(self._attr_dex) + 4 # for the two long fids
         attr_val[u'effects'] = self.readEffects(csv_fields[effects_start:])
         self.fid_stats[mid] = attr_val
 
@@ -1349,17 +1355,15 @@ class SpellRecords(_UsesEffectsMixin):
         else: # FULL was dropped and flags added
             attr_dex = {u'eid': 3, u'cost': 4, u'level': 5, u'spellType': 6,
                         u'flags': 7}
-        self.fid_stats[mid] = self._update_from_csv(fields,index_dict=attr_dex)
+        self.fid_stats[mid] = super(_UsesEffectsMixin, self)._update_from_csv(
+            b'SPEL', fields, index_dict=attr_dex)
         if self.detailed:  # and not len(fields) < 7: IndexError
             attr_dex = dict(
                 izip(self.__class__._extra_attrs[:-1], xrange(8, 15)))
-            attr_val = self._update_from_csv(fields, index_dict=attr_dex)
+            attr_val = super(_UsesEffectsMixin, self)._update_from_csv(
+                b'SPEL', fields, index_dict=attr_dex)
             attr_val[u'effects'] = self.readEffects(fields[15:])
             self.fid_stats[mid].update(attr_val)
-
-    def _update_from_csv(self, csv_fields, index_dict):
-        return MreRecord.type_class[b'SPELL'].parse_csv_line( ##: move to base
-            index_dict, csv_fields, reuse=True)
 
 #------------------------------------------------------------------------------
 class IngredientDetails(_UsesEffectsMixin):

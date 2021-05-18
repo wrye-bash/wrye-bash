@@ -410,14 +410,13 @@ class SaveFile(object):
         """Fills out self.fid_recNum."""
         self.fid_recNum = {r[0]: i for i, r in enumerate(self.records)}
 
-    def getRecord(self,fid,default=None):
+    def getRecord(self, rec_fid):
         """Returns recNum and record with corresponding fid."""
         if self.fid_recNum is None: self.indexRecords()
-        recNum = self.fid_recNum.get(fid)
+        recNum = self.fid_recNum.get(rec_fid)
         if recNum is None:
-            return default
-        else:
-            return self.records[recNum]
+            return None
+        return self.records[recNum]
 
     def setRecord(self,record):
         """Sets records where record = (rec_id,rec_kind,flags,version,data)."""

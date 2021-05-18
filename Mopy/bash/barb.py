@@ -247,9 +247,8 @@ class RestoreSettings(object):
             for f in fs:
                 if f == u'bash.ini':
                     self._bash_ini_path = jo(r, f)
-                    break
+                    return self._bash_ini_path
         else: self._bash_ini_path = None
-        return self._bash_ini_path
 
     def restore_settings(self, bak_name, mg_name, root_prefix, mods_folder):
         if self._bash_ini_path is self.__unset: raise BoltError(

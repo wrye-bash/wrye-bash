@@ -114,8 +114,8 @@ attr_csv_struct = {
     u'model.modb': [float_or_none, _(u'Bound Radius')],
     u'iconPath': [str_or_none, _(u'Icon Path')],
     u'cost': [int_or_zero, _(u'Manual Cost')],
-    u'level': [int_or_zero, _(u'Level Type')],
-    u'spellType': [int_or_zero, _(u'Spell Type')],
+    u'level': [str_or_none, _(u'Level Type')],
+    u'spellType': [str_or_none, _(u'Spell Type')],
     u'flags': [int_or_zero, _(u'Spell Flags')],
     u'level_offset': [int_or_zero, _(u'Offset')],
     u'flags.ignoreLOS': [_str_to_bool, _(u'Area Effect Ignores LOS')],
@@ -550,7 +550,7 @@ class MreRecord(object):
 
     # Classmethods ------------------------------------------------------------
     @classmethod
-    def parse_csv_line(cls, index_dict, csv_fields, reuse=False):
+    def parse_csv_line(cls, csv_fields, index_dict, reuse=False):
         if not reuse:
             attr_dict = {att: attr_csv_struct[att][0](csv_fields[dex]) for
                          att, dex in index_dict.iteritems()}
