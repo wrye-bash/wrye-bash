@@ -583,7 +583,8 @@ def _select_game_popup(game_infos):
     from .balt import Resources
     from .gui import Label, TextAlignment, WindowFrame, VLayout, \
         ImageDropDown, LayoutOptions, SearchBar, VBoxedLayout, TextField, \
-        HLayout, QuitButton, ImageButton, HorizontalLine, Stretch, DropDown
+        HLayout, QuitButton, ImageButton, HorizontalLine, Stretch, DropDown, \
+        CENTER
     ##: Decouple game icon paths and move to popups.py once balt is refactored
     # enough
     class SelectGamePopup(WindowFrame):
@@ -623,13 +624,17 @@ def _select_game_popup(game_infos):
                 game_search, self._game_dropdown,
                 (VBoxedLayout(self, title=_(u'Game Details'), item_expand=True,
                               spacing=12, items=[
-                    HLayout(spacing=6, item_expand=True, items=[
-                        Label(self, _(u'Variant:')),
-                        (self._lang_dropdown, LayoutOptions(weight=1)),
+                    HLayout(spacing=6, items=[
+                        (Label(self, _(u'Variant:')),
+                         LayoutOptions(v_align=CENTER)),
+                        (self._lang_dropdown,
+                         LayoutOptions(expand=True, weight=1)),
                     ]),
-                    HLayout(spacing=6, item_expand=True, items=[
-                        Label(self, _(u'Install Path:')),
-                        (self._game_path, LayoutOptions(weight=1)),
+                    HLayout(spacing=6, items=[
+                        (Label(self, _(u'Install Path:')),
+                         LayoutOptions(v_align=CENTER)),
+                        (self._game_path,
+                         LayoutOptions(expand=True, weight=1)),
                     ]),
                 ]), LayoutOptions(weight=3)),
                 HorizontalLine(self),
