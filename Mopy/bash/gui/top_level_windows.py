@@ -159,7 +159,8 @@ class DialogWindow(_TopLevelWin):
     def __init__(self, parent=None, title=None, icon_bundle=None,
                  sizes_dict=None, caption=False, size_key=None, pos_key=None,
                  style=0, **kwargs):
-        self._size_key = size_key or self.__class__.__name__
+        # PY3: drop the unicode()
+        self._size_key = size_key or unicode(self.__class__.__name__)
         self._pos_key = pos_key
         self.title = title or self.__class__.title
         style |= _wx.DEFAULT_DIALOG_STYLE

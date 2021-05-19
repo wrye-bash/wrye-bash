@@ -2490,8 +2490,7 @@ class ModInfos(FileInfos):
                         if skip_active and load_order.cached_is_active(
                                 modName): continue
                         merged_.add(modName)
-            imp_mods = patchConfigs.get(u'ImportedMods', ()) or \
-                       patchConfigs.get(b'ImportedMods', ())
+            imp_mods = patchConfigs.get(u'ImportedMods', ())
             for imp_name in imp_mods:
                 if imp_name in self:
                     if skip_active and load_order.cached_is_active(

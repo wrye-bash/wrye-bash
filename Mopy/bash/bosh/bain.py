@@ -1768,8 +1768,8 @@ class InstallersData(DataStore):
         self.dictFile.load()
         self.converters_data.load()
         pickl_data = self.dictFile.pickled_data
-        self._data = pickl_data.get(u'installers', {}) or pickl_data.get(b'installers', {})
-        pickle = pickl_data.get(u'sizeCrcDate', {}) or pickl_data.get(b'sizeCrcDate', {})
+        self._data = pickl_data.get(u'installers', {})
+        pickle = pickl_data.get(u'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
         # fixup: all markers had their archive attribute set to u'===='

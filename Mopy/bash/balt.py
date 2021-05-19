@@ -531,8 +531,8 @@ class ListEditor(DialogWindow):
         self._list_items = lid_data.getItemList()
         #--GUI
         super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
-        # overrides DialogWindow.sizesKey
-        self._size_key = self._listEditorData.__class__.__name__
+        # PY3: Drop the unicode()
+        self._size_key = unicode(self._listEditorData.__class__.__name__)
         #--List Box
         self.listBox = ListBox(self, choices=self._list_items)
         self.listBox.set_min_size(125, 150)

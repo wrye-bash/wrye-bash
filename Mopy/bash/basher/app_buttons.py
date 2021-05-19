@@ -72,7 +72,8 @@ class StatusBar_Button(ItemLink):
         self.canHide = canHide
         self.gButton = None
         self._tip = button_tip or self.__class__._tip
-        if uid is None: uid = (self.__class__.__name__, self._tip)
+        # PY3: drop the unicode()
+        if uid is None: uid = (unicode(self.__class__.__name__), self._tip)
         self.uid = uid
 
     def IsPresent(self):

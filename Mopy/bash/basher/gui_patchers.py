@@ -124,7 +124,7 @@ class _PatcherPanel(object):
         self._was_present = self.__class__._config_key in configs
         config = (configs[self.__class__._config_key]
                   if self._was_present else {})
-        self.isEnabled = config.get('isEnabled',
+        self.isEnabled = config.get(u'isEnabled',
                                     self.__class__.default_isEnabled)
         # return the config dict for this patcher to read additional values
         return config
@@ -136,7 +136,7 @@ class _PatcherPanel(object):
         _ListPatcherPanel subclasses - which save their choices - and the
         AliasModNames that saves the aliases."""
         config = configs[self.__class__._config_key] = {}
-        config['isEnabled'] = self.isEnabled
+        config[u'isEnabled'] = self.isEnabled
         return config # return the config dict for this patcher to further edit
 
     def log_config(self, config, clip, log):
@@ -146,7 +146,7 @@ class _PatcherPanel(object):
         if ckey not in config: return
         # Patcher active?
         conf = config[ckey]
-        if not conf.get('isEnabled',False): return
+        if not conf.get(u'isEnabled', False): return
         # Active
         log.setHeader(u'== ' + humanName)
         clip.write(u'\n')
@@ -154,11 +154,11 @@ class _PatcherPanel(object):
         self._log_config(conf, config, clip, log)
 
     def _log_config(self, conf, config, clip, log):
-        items = conf.get('configItems', [])
+        items = conf.get(u'configItems', [])
         if len(items) == 0:
             log(u' ')
-        for item in conf.get('configItems', []):
-            checks = conf.get('configChecks', {})
+        for item in conf.get(u'configItems', []):
+            checks = conf.get(u'configChecks', {})
             checked = checks.get(item, False)
             if checked:
                 log(u'* __%s__' % item)
@@ -225,7 +225,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         #--Update old configs to use Paths instead of strings.
         self._ci_aliases = dict(
             [GPath(i) for i in item] for item in
-            (config.get(u'aliases', {}) or config.get(b'aliases', {})).iteritems())
+            config.get(u'aliases', {}).iteritems())
         return config
 
     def saveConfig(self, configs):
@@ -236,7 +236,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         return config
 
     def _log_config(self, conf, config, clip, log):
-        aliases = config.get(u'aliases', {}) or config.get(b'aliases', {})
+        aliases = config.get(u'aliases', {})
         for mod, alias in aliases.iteritems():
             log(u'* __%s__ >> %s' % (mod, alias))
             clip.write(u'  %s >> %s\n' % (mod, alias))
@@ -415,16 +415,16 @@ class _ListPatcherPanel(_PatcherPanel):
         """Get config from configs dictionary and/or set to default."""
         config = super(_ListPatcherPanel, self).getConfig(configs)
         self.autoIsChecked = self.forceAuto or config.get(
-            'autoIsChecked', self.__class__.default_autoIsChecked)
+            u'autoIsChecked', self.__class__.default_autoIsChecked)
         self.remove_empty_sublists = config.get(
-            'remove_empty_sublists',
+            u'remove_empty_sublists',
             self.__class__.default_remove_empty_sublists)
         self.configItems = copy.deepcopy(
-            config.get('configItems', self.__class__.default_configItems))
+            config.get(u'configItems', self.__class__.default_configItems))
         self.configChecks = copy.deepcopy(
-            config.get('configChecks', self.__class__.default_configChecks))
+            config.get(u'configChecks', self.__class__.default_configChecks))
         self.configChoices = copy.deepcopy(
-            config.get('configChoices', self.__class__.default_configChoices))
+            config.get(u'configChoices', self.__class__.default_configChoices))
         #--Verify file existence
         newConfigItems = []
         for srcPath in self.configItems:
@@ -442,13 +442,13 @@ class _ListPatcherPanel(_PatcherPanel):
         #--Toss outdated configCheck data.
         config = super(_ListPatcherPanel, self).saveConfig(configs)
         listSet = set(self.configItems)
-        self.configChecks = config['configChecks'] = {
+        self.configChecks = config[u'configChecks'] = {
             k: v for k, v in self.configChecks.iteritems() if k in listSet}
-        self.configChoices = config['configChoices'] = {
+        self.configChoices = config[u'configChoices'] = {
             k: v for k, v in self.configChoices.iteritems() if k in listSet}
-        config['configItems'] = self.configItems
-        config['autoIsChecked'] = self.autoIsChecked
-        config['remove_empty_sublists'] = self.remove_empty_sublists
+        config[u'configItems'] = self.configItems
+        config[u'autoIsChecked'] = self.autoIsChecked
+        config[u'remove_empty_sublists'] = self.remove_empty_sublists
         return config
 
     def getItemLabel(self,item):
@@ -893,8 +893,8 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         links.popup_menu(self.gList, None)
 
     def _log_config(self, conf, config, clip, log):
-        self.configChoices = conf.get('configChoices', {})
-        for item in conf.get('configItems', []):
+        self.configChoices = conf.get(u'configChoices', {})
+        for item in conf.get(u'configItems', []):
             log(u'. __%s__' % self.getItemLabel(item))
             clip.write(u'    %s\n' % self.getItemLabel(item))
 
