@@ -248,7 +248,7 @@ class RestoreSettings(object):
                 if f == u'bash.ini':
                     self._bash_ini_path = jo(r, f)
                     break
-        else: self.bash_ini_path = None
+        else: self._bash_ini_path = None
         return self._bash_ini_path
 
     def restore_settings(self, bak_name, mg_name, root_prefix, mods_folder):

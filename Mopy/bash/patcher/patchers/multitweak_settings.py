@@ -28,10 +28,14 @@ from itertools import izip
 from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak
 from ... import bush  # for game
 
-class _AGlobalsTweak(CustomChoiceTweak):
+class _ASettingsTweak(MultiTweakItem):
+    """Shared code of GLOB and GMST tweaks."""
+    tweak_log_msg = u'' # not logged for GMST tweaks
+    show_key_for_custom = True
+
+class _AGlobalsTweak(_ASettingsTweak, CustomChoiceTweak):
     """Sets a global to specified value."""
     tweak_read_classes = b'GLOB',
-    show_key_for_custom = True
 
     @property
     def chosen_value(self):
@@ -121,10 +125,9 @@ class GlobalsTweak_Crime_ForceJail(_AGlobalsTweak):
     default_choice = u'5000'
 
 #------------------------------------------------------------------------------
-class _AGmstTweak(MultiTweakItem):
+class _AGmstTweak(_ASettingsTweak):
     """Sets a GMST to specified value."""
     tweak_read_classes = b'GMST',
-    show_key_for_custom = True
 
     @property
     def chosen_eids(self):

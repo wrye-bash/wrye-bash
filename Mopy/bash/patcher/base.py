@@ -196,7 +196,8 @@ class AMultiTweakItem(object):
 
     def __init__(self):
         # Don't check tweak_log_msg, settings tweaks don't use it
-        for tweak_attr in (u'tweak_name', u'tweak_tip', u'tweak_key'):
+        for tweak_attr in (u'tweak_name', u'tweak_tip', u'tweak_key',
+                           u'tweak_log_msg'):
             if getattr(self, tweak_attr) == u'OVERRIDE':
                 self._raise_tweak_syntax_error(u"A '%s' attribute is still "
                                                u'set to the default '

@@ -43,7 +43,6 @@ _ignored_chars = frozenset(u'+-=.()[]<>')
 
 class _ANamesTweak(CustomChoiceTweak):
     """Shared code of names tweaks."""
-    tweak_log_msg = _(u'Items Renamed: %(total_changed)d')
     _tweak_mgef_hostiles = set()
     _tweak_mgef_school = {}
     _choice_formats = [] # The default formats for this tweak
@@ -183,6 +182,7 @@ class NamesTweak_BodyPartCodes(CustomChoiceTweak): # loads no records
     tweak_name = _(u'Body Part Codes')
     tweak_tip = _(u'Sets body part codes used by Armor/Clothes name tweaks.')
     tweak_key = u'bodyTags'
+    tweak_log_msg = u'' # we log nothing
     tweak_choices = [(c, c) for c in bush.game.body_part_codes]
     tweak_order = 9 # Run before all other tweaks
 
@@ -569,6 +569,7 @@ class _ANamesTweak_AmmoWeight(_ANamesTweak):
     tweak_tip = _(u'Appends the weight of ammunition to the end of the '
                   u'ammunition name.')
     tweak_key = u'AmmoWeight'
+    tweak_log_msg = _(u'Ammunition Renamed: %(total_changed)d')
     _choice_formats = [u' (WG %s)', u' (%s)']
     _example_item = _(u'Iron Arrow')
     _example_code = u'0.01'
@@ -667,6 +668,7 @@ class _ATextReplacer(MultiTweakItem):
         b'WEAP': (u'full',),
     }
     tweak_read_classes = tuple(_match_replace_rpaths)
+    tweak_log_msg = _(u'Items Renamed: %(total_changed)d')
     # Will be passed to OrderedDict to construct a dict that maps regexes we
     # want to match to replacement strings. Those replacements will be passed
     # to re.sub, so they will apply in order and may use the results of their
