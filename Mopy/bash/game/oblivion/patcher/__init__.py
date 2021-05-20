@@ -736,10 +736,6 @@ settings_tweaks = {
 # Import Relations
 #------------------------------------------------------------------------------
 relations_attrs = (u'faction', u'mod') ##: mod?
-relations_csv_header = (
-    _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
-    _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'))
-relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
 
 #------------------------------------------------------------------------------
 # Import Enchantment Stats

@@ -126,6 +126,8 @@ attr_csv_struct = {
         _str_to_bool, _(u'Touch Explodes Without Target')],
     u'flags.scriptEffectAlwaysApplies': [
         _str_to_bool, _(u'Script Always Applies')],
+    u'mod': [str_or_none, _(u'Modifier')],
+    u'group_combat_reaction': [str_or_none, _(u'Group Combat Reaction')],
 }
 
 for _k, _v in attr_csv_struct.items():
