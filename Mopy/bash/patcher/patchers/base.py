@@ -231,7 +231,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            try: self.readFromText(getPatchesPath(srcFile))
+            try: self.read_csv(getPatchesPath(srcFile))
             except OSError: deprint(
                 u'%s is no longer in patches set' % srcPath, traceback=True)
             progress.plus()

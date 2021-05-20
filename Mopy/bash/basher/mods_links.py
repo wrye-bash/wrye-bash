@@ -425,7 +425,7 @@ class Mods_ImportBashTags(_Mods_BashTags):
         self.first_line = True
         self.plugins_imported = []
         try:
-            self.readFromText(imp_path)
+            self.read_csv(imp_path)
         except exception.BoltError:
             self._showError(_(u'The selected file is not a valid '
                               u'bash tags CSV export.'))

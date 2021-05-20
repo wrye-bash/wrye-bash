@@ -146,7 +146,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
         if not self.isActive: return
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
-            try: self.readFromText(getPatchesPath(srcFile))
+            try: self.read_csv(getPatchesPath(srcFile))
             except OSError: deprint(
                 u'%s is no longer in patches set' % srcFile, traceback=True)
             progress.plus()
@@ -235,7 +235,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         """Get names from source files."""
         if not self.isActive: return
         for srcFile in self.srcs:
-            try: self.readFromText(getPatchesPath(srcFile))
+            try: self.read_csv(getPatchesPath(srcFile))
             except OSError: deprint(
                 u'%s is no longer in patches set' % srcFile, traceback=True)
             progress.plus()

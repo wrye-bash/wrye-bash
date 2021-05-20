@@ -63,41 +63,9 @@ def _key_sort(di, id_eid_=None, keys_dex=(), values_key=u'', by_value=False):
             yield k, di[k]
 
 #------------------------------------------------------------------------------
-class CsvParser(object):
+class _TextParser(object):
     """Basic read/write csv functionality - ScriptText handles script files
     not csvs though."""
-    _csv_header = ()
-    _row_fmt_str = u''
-
-    def readFromText(self, csv_path):
-        """Reads information from the specified CSV file and stores the result
-        in id_stored_data. You must override _parse_line for this method to
-        work. ScriptText is a special case.
-
-        :param csv_path: The path to the CSV file that should be read."""
-        ##: drop utf-8-sig? backwards compat?
-        with GPath(csv_path).open(u'r',encoding=u'utf-8-sig') as ins:
-            first_line = ins.readline()
-            ##: drop 'excel-tab' format and delimiter = ';'? backwards compat?
-            excel_fmt = 'excel-tab' if '\t' in first_line else 'excel'
-            ins.seek(0)
-            if excel_fmt == 'excel':
-                delimiter = ';' if ';' in first_line else ','
-                reader = csv.reader(ins, excel_fmt, delimiter=delimiter)
-            else:
-                reader = csv.reader(ins, excel_fmt)
-            for fields in reader:
-                try:
-                    self._parse_line(fields)
-                except (IndexError, ValueError, TypeError):
-                    """TypeError/ValueError trying to unpack None/few values"""
-
-    def _parse_line(self, csv_fields):
-        """Parse the specified CSV line and update the parser's instance
-        id_stored_data - both id and stored_data vary in type and meaning.
-
-        :param csv_fields: A line in a CSV file, already split into fields."""
-        raise AbstractError(u'%s must implement _parse_line' % type(self))
 
     def write_text_file(self, textPath):
         """Export ____ to specified text file. You must override _write_rows.
@@ -107,14 +75,10 @@ class CsvParser(object):
             self._write_rows(out)
 
     def _write_rows(self, out):
-        raise AbstractError(u'%s must implement _write_rows' % type(self))
+        raise AbstractError(f'{type(self)} must implement _write_rows')
 
     def _header_row(self, out):
-        out.write(u'"%s"\n' % u'","'.join(self._csv_header))
-
-    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
-        return MreRecord.type_class[top_grup_sig].parse_csv_line(csv_fields,
-            index_dict or self._attr_dex, reuse=index_dict is not None)
+        raise AbstractError(f'{type(self)} must implement _header_row')
 
     # Load plugin -------------------------------------------------------------
     def _load_plugin(self, mod_info, keepAll=True, target_types=None):
@@ -131,6 +95,7 @@ class CsvParser(object):
     def _load_factory(self, keepAll=True, target_types=None):
         return LoadFactory(keepAll, by_sig=target_types or self._parser_sigs)
 
+    # Write plugin ------------------------------------------------------------
     _changed_type = dict # used in writeToMod to report changed records
     def writeToMod(self,modInfo):
         """Hasty writeToMod implementation - export id_stored_data to specified
@@ -163,7 +128,50 @@ class CsvParser(object):
         if stored_data:
             self._write_record(record, stored_data, changed)
 
-class _HandleAliases(CsvParser):##: Py3 move to bolt after absorbing _CsvReader
+class CsvParser(_TextParser):
+    _csv_header = ()
+    _row_fmt_str = u''
+
+    # Write csv functionality -------------------------------------------------
+    def _header_row(self, out):
+        out.write(u'"%s"\n' % u'","'.join(self._csv_header))
+
+    # Read csv functionality --------------------------------------------------
+    def read_csv(self, csv_path):
+        """Reads information from the specified CSV file and stores the result
+        in id_stored_data. You must override _parse_line for this method to
+        work. ScriptText is a special case.
+
+        :param csv_path: The path to the CSV file that should be read."""
+        ##: drop utf-8-sig? backwards compat?
+        with GPath(csv_path).open(u'r', encoding=u'utf-8-sig') as ins:
+            first_line = ins.readline()
+            ##: drop 'excel-tab' format and delimiter = ';'? backwards compat?
+            excel_fmt = 'excel-tab' if '\t' in first_line else 'excel'
+            ins.seek(0)
+            if excel_fmt == 'excel':
+                delimiter = ';' if ';' in first_line else ','
+                reader = csv.reader(ins, excel_fmt, delimiter=delimiter)
+            else:
+                reader = csv.reader(ins, excel_fmt)
+            for fields in reader:
+                try:
+                    self._parse_line(fields)
+                except (IndexError, ValueError, TypeError):
+                    """TypeError/ValueError trying to unpack None/few values"""
+
+    def _parse_line(self, csv_fields):
+        """Parse the specified CSV line and update the parser's instance
+        id_stored_data - both id and stored_data vary in type and meaning.
+
+        :param csv_fields: A line in a CSV file, already split into fields."""
+        raise AbstractError(u'%s must implement _parse_line' % type(self))
+
+    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
+        return MreRecord.type_class[top_grup_sig].parse_csv_line(csv_fields,
+            index_dict or self._attr_dex, reuse=index_dict is not None)
+
+class _HandleAliases(CsvParser):
     """WIP aliases handling."""
     _parser_sigs = [] # record signatures this parser recognises
     # the indexes of the csv fields that will create the id in id_stored_data
@@ -908,7 +916,7 @@ class ItemStats(_HandleAliases):
                 out.write(output)
 
 #------------------------------------------------------------------------------
-class ScriptText(CsvParser):
+class ScriptText(_TextParser):
     #todo(ut): maybe standardize script line endings (read both write windows)?
     """import & export functions for script text."""
     _parser_sigs = [b'SCPT']
@@ -970,7 +978,7 @@ class ScriptText(CsvParser):
         out.write(scpt_txt)
 
     def readFromMod(self, modInfo):
-        """Reads stats from specified mod."""
+        """Reads scripts from specified mod."""
         eid_data = self.eid_data
         modFile = self._load_plugin(modInfo, keepAll=False)
         with Progress(_(u'Export Scripts')) as progress:
@@ -1031,10 +1039,10 @@ class ScriptText(CsvParser):
                     progress(((1 / y) * z), _(u'Skipping file %s.') % f)
                     continue
                 progress(((1 / y) * z), _(u'Reading file %s.') % f)
-                self.readFromText(root_dir.join(f))
+                self._read_script(root_dir.join(f))
         return bool(self.eid_data)
 
-    def readFromText(self, textPath):
+    def _read_script(self, textPath):
         with textPath.open(u'r', encoding=u'utf-8-sig') as ins:
             modName = FormID = eid = u''
             try:

@@ -523,7 +523,7 @@ class _Mod_Groups_Import(ItemLink):
             return
         #--Import
         modGroups = _ModGroups()
-        modGroups.readFromText(textPath)
+        modGroups.read_csv(textPath)
         changed = modGroups.writeToModInfos(self.selected)
         bosh.modInfos.refresh()
         self.window.RefreshUI(refreshSaves=False) # was True (importing groups)
@@ -1702,7 +1702,7 @@ class Mod_Fids_Replace(OneItemLink):
         with balt.Progress(_(u'Import Form IDs')) as progress:
             replacer = self._parser()
             progress(0.1,_(u'Reading') + u' %s.' % textName)
-            replacer.readFromText(textPath)
+            replacer.read_csv(textPath)
             progress(0.2, _(u'Applying to') + u' %s.' % self._selected_item)
             changed = replacer.updateMod(self._selected_info)
             progress(1.0,_(u'Done.'))
@@ -1801,7 +1801,7 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             parser = self._parser()
             progress(0.1, _(u'Reading') + u' %s.' % textName)
             if ext == u'.csv':
-                parser.readFromText(textPath)
+                parser.read_csv(textPath)
             else:
                 srcInfo = bosh.ModInfo(GPath(textDir).join(textName))
                 parser.readFromMod(srcInfo)
@@ -2313,7 +2313,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
             with balt.Progress(self.__class__.progressTitle) as progress:
                 editorIds = self._parser(questionableEidsSet, badEidsList)
                 progress(0.1, _(u'Reading') + u' %s.' % textName)
-                editorIds.readFromText(textPath)
+                editorIds.read_csv(textPath)
                 progress(0.2, _(u'Applying to %s.') % self._selected_item)
                 changed = editorIds.writeToMod(self._selected_info)
                 progress(1.0,_(u'Done.'))

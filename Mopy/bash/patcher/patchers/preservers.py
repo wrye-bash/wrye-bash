@@ -98,7 +98,7 @@ class APreserver(ImportPatcher):
                                            called_from_patcher=True)
         for src_path in self.csv_srcs:
             try:
-                parser_instance.readFromText(getPatchesPath(src_path))
+                parser_instance.read_csv(getPatchesPath(src_path))
             except OSError:
                 deprint(u'%s is no longer in patches set' % src_path,
                     traceback=True)
