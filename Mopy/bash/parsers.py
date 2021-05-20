@@ -70,6 +70,8 @@ def _key_sort(di, keys_dex=(), values_key='', by_value=False):
     for k in sorted(di, key=key_f):
         yield k, di[k]
 
+def _fid_str(fid_tuple): return '"%s","0x%06X"' % fid_tuple
+
 #------------------------------------------------------------------------------
 class _TextParser(object):
     """Basic read/write csv functionality - ScriptText handles script files
@@ -513,10 +515,9 @@ class ActorFactions(_AParser):
     def _row_out(self, aid, stored_data, top_grup):
         """Exports faction data to specified text file."""
         factions, actorEid = stored_data
-        return '\n'.join('"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n' % (
-            top_grup, actorEid, *aid, factionEid, *faction, rank) for
-                         faction, (rank, factionEid) in
-                         self._row_sorter(factions))
+        return '\n'.join('"%s","%s",%s,"%s",%s,"%s"\n' % (top_grup, actorEid,
+            _fid_str(aid), factionEid, _fid_str(faction), rank)
+            for faction, (rank, factionEid) in self._row_sorter(factions))
 
 #------------------------------------------------------------------------------
 class ActorLevels(_HandleAliases):
@@ -527,6 +528,7 @@ class ActorLevels(_HandleAliases):
         _(u'Old IsPCLevelOffset'), _(u'Old Offset'), _(u'Old CalcMin'),
         _(u'Old CalcMax'))
     _parser_sigs = [b'NPC_']
+    _attr_dex = {'eid': 1, 'level_offset': 4, 'calcMin': 5, 'calcMax': 6}
     _key2_getter = itemgetter(2, 3)
     _row_sorter = partial(_key_sort, keys_dex=[0], values_key='eid')
 
@@ -534,8 +536,6 @@ class ActorLevels(_HandleAliases):
         super(ActorLevels, self).__init__(aliases_, called_from_patcher)
         self.gotLevels = set()
         self._skip_mods = {u'none', bush.game.master_file.s.lower()}
-        self._attr_dex = {u'eid': 1, u'level_offset': 4, u'calcMin': 5,
-                          u'calcMax': 6}
 
     def readFromMod(self,modInfo):
         """Imports actor level data from the specified mod and its masters."""
@@ -607,8 +607,8 @@ class ActorLevels(_HandleAliases):
         """Export NPC level data to specified text file."""
         eid, isOffset, offset, calcMin, calcMax = __getter(di)
         if isOffset:
-            out = '"%s","%s","%s","0x%06X","%d","%d","%d"' % (
-                fn_mod, eid, *longfid, offset, calcMin, calcMax)
+            out = '"%s","%s",%s,"%d","%d","%d"' % (
+                fn_mod, eid, _fid_str(longfid), offset, calcMin, calcMax)
             oldLevels = obId_levels.get(longfid, None)
             if oldLevels:
                 oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = \
@@ -719,7 +719,7 @@ class EditorIds(_HandleAliases):
         return eid
 
     def _row_out(self, lfid, stored_data, top_grup):
-        return '"%s","%s","0x%06X","%s"\n' % (top_grup, *lfid, stored_data)
+        return '"%s",%s,"%s"\n' % (top_grup, _fid_str(lfid), stored_data)
 
 #------------------------------------------------------------------------------
 class FactionRelations(_AParser):
@@ -783,10 +783,10 @@ class FactionRelations(_AParser):
     def _row_out(self, lfid, stored_data, top_grup):
         """Exports faction relations to specified text file."""
         rel, main_eid = stored_data
-        return '\n'.join('"%s","%s","0x%06X","%s","%s","0x%06X",%s\n' % (
-                main_eid, *lfid, oth_eid, *oth_fid, ','.join(
-                    attr_csv_struct[a][2](x) for a, x in
-                    zip(self.__class__.cls_rel_attrs[1:], relation_obj)))
+        return '\n'.join('"%s",%s,"%s",%s,%s\n' % (
+            main_eid, _fid_str(lfid), oth_eid, _fid_str(oth_fid), ','.join(
+                attr_csv_struct[a][2](x) for a, x in
+                zip(self.__class__.cls_rel_attrs[1:], relation_obj)))
         for oth_fid, (relation_obj, oth_eid) in self._row_sorter(rel))
 
 #------------------------------------------------------------------------------
@@ -881,8 +881,8 @@ class FullNames(_HandleAliases):
             changed[di[u'eid']] = (full, newFull)
 
     def _row_out(self, lfid, stored_data, top_grup):
-        return ('"%s","%s","0x%06X","%s","%s"\n' % (
-            top_grup, *lfid, stored_data['eid'],
+        return ('"%s",%s,"%s","%s"\n' % (
+            top_grup, _fid_str(lfid), stored_data['eid'],
             stored_data['full'].replace('"', '""')))
 
 #------------------------------------------------------------------------------
@@ -949,7 +949,7 @@ class ItemStats(_HandleAliases):
 
     def _row_out(self, longid, attr_value, top_grup, attrs_sers):
         """Writes stats to specified text file."""
-        return '"%s","%s","0x%06X",%s\n' % (top_grup, *longid, ','.join(
+        return '"%s",%s,%s\n' % (top_grup, _fid_str(longid), ','.join(
             ser(attr_value[x]) for x, ser in attrs_sers))
 
 #------------------------------------------------------------------------------
@@ -1095,6 +1095,38 @@ class ScriptText(_TextParser):
                         f'lines:\n{u"".join((modName, FormID, eid))}')
 
 #------------------------------------------------------------------------------
+class ItemPrices(_HandleAliases):
+    """Function for importing/exporting from/to mod/text file only the
+    value, name and eid of records."""
+    _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Value'),
+                   _(u'Editor Id'), _(u'Name'), _(u'Type'))
+    _key2_getter = itemgetter(0, 1)
+    _grup_index = 5
+    _attr_dex = {u'value': 2, u'eid': 3, u'full': 4}
+    _row_sorter = partial(_key_sort, values_key=['eid', 'value'])
+
+    def __init__(self, aliases_=None):
+        super(ItemPrices, self).__init__(aliases_)
+        self._parser_sigs = set(bush.game.pricesTypes)
+
+    def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
+        id_data[record.fid] = {att: __attrgetters[att](record) for att in
+                               self._attr_dex}
+
+    _changed_type = Counter
+    def _write_record(self, record, stats, changed):
+        """Writes stats to specified record."""
+        value = stats[u'value']
+        if record.value != value:
+            record.value = value
+            changed[record.fid[0]] += 1
+            record.setChanged()
+
+    def _row_out(self, lfid, stored_data, top_grup,
+                 __getter=itemgetter(*_attr_dex)):
+        return '%s,"%d","%s","%s",%s\n' % (_fid_str(lfid), *__getter(stored_data), top_grup)
+
+#------------------------------------------------------------------------------
 class _UsesEffectsMixin(_HandleAliases):
     """Mixin class to support reading/writing effect data to/from csv files"""
     effect_headers = (
@@ -1132,7 +1164,7 @@ class _UsesEffectsMixin(_HandleAliases):
         # special handling for script_fid - used to be exception based...
         if u'script_fid' in atts:
             self._attr_serializer[u'script_fid'] = lambda val: (
-                u'"None","None"' if val is None else u'"%s","0x%06X"' % val)
+                '"None","None"' if val is None else _fid_str(val))
         # effects
         if u'effects' in atts:
             self._attr_serializer[u'effects'] = lambda val: self.writeEffects(
@@ -1264,7 +1296,7 @@ class _UsesEffectsMixin(_HandleAliases):
             record.setChanged()
 
     def _row_out(self, lfid, stored_data, top_grup):
-        return '"%s","0x%06X",%s\n' % (*lfid, u','.join(
+        return '%s,%s\n' % (_fid_str(lfid), ','.join(
             ser(stored_data[k]) for k, ser in self._attr_serializer.items()))
 
 #------------------------------------------------------------------------------
@@ -1286,38 +1318,6 @@ class SigilStoneDetails(_UsesEffectsMixin):
             [u'eid', u'full', u'model.modPath', u'model.modb', u'iconPath',
              u'script_fid', u'uses', u'value', u'weight', u'effects'],
             called_from_patcher)
-
-#------------------------------------------------------------------------------
-class ItemPrices(_HandleAliases):
-    """Function for importing/exporting from/to mod/text file only the
-    value, name and eid of records."""
-    _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Value'),
-                   _(u'Editor Id'), _(u'Name'), _(u'Type'))
-    _key2_getter = itemgetter(0, 1)
-    _grup_index = 5
-    _attr_dex = {u'value': 2, u'eid': 3, u'full': 4}
-    _row_sorter = partial(_key_sort, values_key=['eid', 'value'])
-
-    def __init__(self, aliases_=None):
-        super(ItemPrices, self).__init__(aliases_)
-        self._parser_sigs = set(bush.game.pricesTypes)
-
-    def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
-        id_data[record.fid] = {att: __attrgetters[att](record) for att in
-                               self._attr_dex}
-
-    _changed_type = Counter
-    def _write_record(self, record, stats, changed):
-        """Writes stats to specified record."""
-        value = stats[u'value']
-        if record.value != value:
-            record.value = value
-            changed[record.fid[0]] += 1
-            record.setChanged()
-
-    def _row_out(self, lfid, stored_data, top_grup,
-                 __getter=itemgetter(*_attr_dex)):
-        return '"%s","0x%06X","%d","%s","%s",%s\n' % (*lfid, *__getter(stored_data), top_grup)
 
 #------------------------------------------------------------------------------
 class SpellRecords(_UsesEffectsMixin):
