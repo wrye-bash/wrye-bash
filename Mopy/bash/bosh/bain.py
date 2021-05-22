@@ -2429,7 +2429,7 @@ class InstallersData(DataStore):
         refresh_ui[1] |= bool(inis)
         # refresh modInfos, iniInfos adding new/modified mods
         from . import bsaInfos, modInfos, iniInfos
-        for mod in mods:
+        for mod in mods.copy(): # size may change during iteration
             try:
                 modInfos.new_info(mod, owner=installer.archive)
             except FileError:
@@ -2441,7 +2441,7 @@ class InstallersData(DataStore):
             try:
                 bsaInfos.new_info(bsa, owner=installer.archive)
             except FileError:
-                bsas.discard(bsa)
+                pass # corrupt, but we won't need the bsas set again, so ignore
         modInfos.cached_lo_append_if_missing(mods)
         modInfos.refreshLoadOrder(unlock_lo=True)
         # now that we saved load order update missing mtimes for mods:
