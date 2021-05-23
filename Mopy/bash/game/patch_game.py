@@ -81,7 +81,7 @@ class PatchGame(GameInfo):
     _constants_members = {
         # patcher and tweaks constants
         u'actor_importer_attrs', u'actor_tweaks', u'actor_types',
-        u'actor_values', u'assorted_tweaks', u'names_tweaks', u'cc_passes',
+        u'assorted_tweaks', u'names_tweaks', u'cc_passes',
         'cc_valid_types', 'cellRecAttrs', 'spell_types',
         u'cell_skip_interior_attrs', u'condition_function_data',
         u'default_eyes', u'destructible_types', u'ench_stats_attrs',
@@ -308,6 +308,3 @@ class PatchGame(GameInfo):
     mgef_basevalue = {}
     mgef_name = {}
     mgef_school = {}
-
-    # Human-readable names for each actor value
-    actor_values = []

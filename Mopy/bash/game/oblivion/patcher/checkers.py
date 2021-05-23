@@ -90,7 +90,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         for mgef in alt_names:
             alt_names[mgef] = re.sub(attr_or_skill, u'', alt_names[mgef])
         actorEffects = bush.game.generic_av_effects
-        actorNames = bush.game.actor_values
+        from ..records import actor_values
         keep = self.patchFile.getKeeper()
         #--Book generator
         def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
@@ -133,7 +133,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
                 for mgef, actorValue in effects[:num]:
                     effectName = alt_names[mgef]
                     if mgef in actorEffects:
-                        effectName += actorNames[actorValue]
+                        effectName += actor_values[actorValue]
                     buffWrite(u'  ' + effectName + u'\r\n')
                 buffWrite(u'\r\n')
             book.book_text = re.sub(u'\r\n', u'<br>\r\n', buff.getvalue())
@@ -142,7 +142,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         for _fid,(eid,full,effects) in id_ingred.items():
             for index,(mgef,actorValue) in enumerate(effects):
                 effectName = alt_names[mgef]
-                if mgef in actorEffects: effectName += actorNames[actorValue]
+                if mgef in actorEffects: effectName += actor_values[actorValue]
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs
         iconPath, modPath, modb_p = (u'Clutter\\IconBook7.dds',

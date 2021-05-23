@@ -27,7 +27,8 @@ from collections import OrderedDict
 from itertools import chain
 
 from ... import brec
-from ...bolt import Flags, int_or_zero
+from ...bolt import Flags, int_or_zero, structs_cache, str_or_none, \
+    int_or_none, str_to_sig, sig_to_str
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, \
     MelFids, MreHeaderBase, MelBase, MelFidList, MelBodyParts, MelAnimations, \
@@ -42,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, \
     SignatureDecider, MelRaceData, MelFactions, MelActorSounds, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
-    MelEnchantment, MelValueWeight
+    MelEnchantment, MelValueWeight, null4
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -416,10 +417,127 @@ class MelSpellsTes4(MelFids): ##: HACKy workaround, see docstring
 
 #------------------------------------------------------------------------------
 ##: Could technically be reworked for non-Oblivion games, but is broken and
-# unused outside of Oblivion right now
+# unused outside of Oblivion right now - for actor values in particular see
+# FO3/FNV: https://geck.bethsoft.com/index.php?title=Actor_Value_Codes
+# TES5: https://en.uesp.net/wiki/Tes5Mod:Actor_Value_Indices
+actor_values = [ # Human-readable names for each actor value
+    _('Strength'), #--00
+    _('Intelligence'),
+    _('Willpower'),
+    _('Agility'),
+    _('Speed'),
+    _('Endurance'),
+    _('Personality'),
+    _('Luck'),
+    _('Health'),
+    _('Magicka'),
+    _('Fatigue'), #--10
+    _('Encumbrance'),
+    _('Armorer'),
+    _('Athletics'),
+    _('Blade'),
+    _('Block'),
+    _('Blunt'),
+    _('Hand To Hand'),
+    _('Heavy Armor'),
+    _('Alchemy'),
+    _('Alteration'), #--20
+    _('Conjuration'),
+    _('Destruction'),
+    _('Illusion'),
+    _('Mysticism'),
+    _('Restoration'),
+    _('Acrobatics'),
+    _('Light Armor'),
+    _('Marksman'),
+    _('Mercantile'),
+    _('Security'), #--30
+    _('Sneak'),
+    _('Speechcraft'),
+    'Aggression', # TODO(inf) Why do the translations stop here??
+    'Confidence',
+    'Energy',
+    'Responsibility',
+    'Bounty',
+    'UNKNOWN 38',
+    'UNKNOWN 39',
+    'MagickaMultiplier', #--40
+    'NightEyeBonus',
+    'AttackBonus',
+    'DefendBonus',
+    'CastingPenalty',
+    'Blindness',
+    'Chameleon',
+    'Invisibility',
+    'Paralysis',
+    'Silence',
+    'Confusion', #--50
+    'DetectItemRange',
+    'SpellAbsorbChance',
+    'SpellReflectChance',
+    'SwimSpeedMultiplier',
+    'WaterBreathing',
+    'WaterWalking',
+    'StuntedMagicka',
+    'DetectLifeRange',
+    'ReflectDamage',
+    'Telekinesis', #--60
+    'ResistFire',
+    'ResistFrost',
+    'ResistDisease',
+    'ResistMagic',
+    'ResistNormalWeapons',
+    'ResistParalysis',
+    'ResistPoison',
+    'ResistShock',
+    'Vampirism',
+    'Darkness', #--70
+    'ResistWaterDamage',
+]
+
 class MreHasEffects(object):
     """Mixin class for magic items."""
     __slots__ = []
+    recipientTypeNumber_Name = {None: 'NONE', 0: 'Self', 1: 'Touch',
+                                2: 'Target'}
+    recipientTypeName_Number = {y.lower(): x for x, y
+                                in recipientTypeNumber_Name.items()
+                                if x is not None}
+    actorValueNumber_Name = {x: y for x, y in enumerate(actor_values)}
+    actorValueName_Number = {y.lower(): x for x, y
+                             in actorValueNumber_Name.items()}
+    actorValueNumber_Name[None] = 'NONE'
+    schoolTypeNumber_Name = {None: 'NONE', 0: 'Alteration', 1: 'Conjuration',
+                             2: 'Destruction', 3: 'Illusion', 4: 'Mysticism',
+                             5: 'Restoration'}
+    schoolTypeName_Number = {y.lower(): x for x, y
+                             in schoolTypeNumber_Name.items()
+                             if x is not None}
+    # Add 'effects/script_fid' to attr_csv_struct (column headers are tuples!)
+    _effect_headers = (
+        _('Effect'), _('Name'), _('Magnitude'), _('Area'), _('Duration'),
+        _('Range'), _('Actor Value'), _('SE Mod Name'), _('SE ObjectIndex'),
+        _('SE school'), _('SE visual'), _('SE Is Hostile'), _('SE Name'))
+    _effect_headers = (
+        *_effect_headers * 2, _('Additional Effects (Same format)'))
+    attr_csv_struct['effects'] = [None, _effect_headers, lambda val:
+        MreHasEffects._write_effects(val)[1:]] # chop off the first comma...
+    attr_csv_struct['script_fid'] = [None, (_('Script Mod Name'),
+        _('Script ObjectIndex')), lambda val:(
+    '"None","None"' if val is None else '"%s","0x%06X"' % val)]
+
+    @classmethod
+    def parse_csv_line(cls, csv_fields, index_dict, reuse=False):
+        effects_tuple = index_dict.pop('effects', None)
+        attr_dex = super(MreHasEffects, cls).parse_csv_line(csv_fields,
+                                                            index_dict, reuse)
+        if effects_tuple is not None:
+            effects_start, coerce_fid = effects_tuple
+            attr_dex['effects'] = cls._read_effects(csv_fields[effects_start:],
+                                                    coerce_fid)
+            if not reuse:
+                index_dict['effects'] = effects_tuple
+        return attr_dex
 
     def getEffects(self):
         """Returns a summary of effects. Useful for alchemical catalog."""
@@ -455,7 +573,7 @@ class MreHasEffects(object):
         from ... import bush
         buff = io.StringIO()
         avEffects = bush.game.generic_av_effects
-        aValues = bush.game.actor_values
+        aValues = actor_values
         buffWrite = buff.write
         if self.effects:
             school = self._get_spell_school()
@@ -474,6 +592,102 @@ class MreHasEffects(object):
             if effect.duration > 1: buffWrite(f' {effect.duration}d')
             buffWrite(u'\n')
         return buff.getvalue()
+
+    @classmethod
+    def _read_effects(cls, _effects, _coerce_fid, *,
+                      __packer=structs_cache['I'].pack):
+        schoolTypeName_Number = cls.schoolTypeName_Number
+        recipientTypeName_Number = cls.recipientTypeName_Number
+        actorValueName_Number = cls.actorValueName_Number
+        effects = []
+        while len(_effects) >= 13:
+            _effect,_effects = _effects[1:13],_effects[13:]
+            eff_name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
+            seschool,sevisual,seflags,sename = _effect
+            eff_name = str_or_none(eff_name) #OBME not supported
+            # (support requires adding a mod/objectid format to the
+            # csv, this assumes all MGEFCodes are raw)
+            magnitude, area, duration = map(int_or_none,
+                                            (magnitude, area, duration))
+            range_ = str_or_none(range_)
+            if range_:
+                range_ = recipientTypeName_Number.get(range_.lower(),
+                                                      int_or_zero(range_))
+            actorvalue = str_or_none(actorvalue)
+            if actorvalue:
+                actorvalue = actorValueName_Number.get(actorvalue.lower(),
+                                                       int_or_zero(actorvalue))
+            if None in (eff_name,magnitude,area,duration,range_,actorvalue):
+                continue
+            eff = cls.getDefault('effects')
+            effects.append(eff)
+            eff.effect_sig = str_to_sig(eff_name)
+            eff.magnitude = magnitude
+            eff.area = area
+            eff.duration = duration
+            eff.recipient = range_
+            eff.actorValue = actorvalue
+            # script effect
+            semod = str_or_none(semod)
+            if semod is None or not seobj.startswith('0x'):
+                continue
+            seschool = str_or_none(seschool)
+            if seschool:
+                seschool = schoolTypeName_Number.get(seschool.lower(),
+                                                     int_or_zero(seschool))
+            seflags = int_or_none(seflags)
+            sename = str_or_none(sename)
+            if any(x is None for x in (seschool, seflags, sename)):
+                continue
+            eff.scriptEffect = se = cls.getDefault('effects.scriptEffect')
+            se.full = sename
+            se.script_fid = _coerce_fid(semod, seobj)
+            se.school = seschool
+            sevisuals = int_or_none(sevisual) #OBME not
+            # supported (support requires adding a mod/objectid format to
+            # the csv, this assumes visual MGEFCode is raw)
+            if sevisuals is None: # it was no int try to read unicode MGEF Code
+                sevisuals = str_or_none(sevisual)
+                if sevisuals == u'' or sevisuals is None:
+                    sevisuals = null4
+                else:
+                    sevisuals = str_to_sig(sevisuals)
+            else: # pack int to bytes
+                sevisuals = __packer(sevisuals)
+            sevisual = sevisuals
+            se.visual = sevisual
+            se.flags = MelEffects.se_flags(seflags) # TODO TEST
+        return effects
+
+    @classmethod
+    def _write_effects(cls, effects):
+        schoolTypeNumber_Name = cls.schoolTypeNumber_Name
+        recipientTypeNumber_Name = cls.recipientTypeNumber_Name
+        actorValueNumber_Name = cls.actorValueNumber_Name
+        effectFormat = ',,"%s","%d","%d","%d","%s","%s"'
+        scriptEffectFormat = ',"%s","0x%06X","%s","%s","%s","%s"'
+        noscriptEffectFiller = ',"None","None","None","None","None","None"'
+        output = []
+        for effect in effects:
+            efname, magnitude, area, duration, range_, actorvalue = \
+                sig_to_str(effect.effect_sig), effect.magnitude, effect.area, \
+                effect.duration, effect.recipient, effect.actorValue
+            range_ = recipientTypeNumber_Name.get(range_,range_)
+            actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
+            output.append(effectFormat % (
+                efname,magnitude,area,duration,range_,actorvalue))
+            if effect.scriptEffect: ##: #480 - setDefault commit - return None
+                se = effect.scriptEffect
+                longid, seschool, sevisual, seflags, sename = \
+                    se.script_fid, se.school, se.visual, se.flags, se.full
+                sevisual = 'NONE' if sevisual == null4 else sig_to_str(
+                    sevisual)
+                seschool = schoolTypeNumber_Name.get(seschool,seschool)
+                output.append(scriptEffectFormat % (*longid,
+                    seschool, sevisual, bool(int(seflags)), sename))
+            else:
+                output.append(noscriptEffectFiller)
+        return ''.join(output)
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
@@ -542,7 +756,7 @@ class MreActi(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreAlch(MelRecord,MreHasEffects):
+class MreAlch(MreHasEffects, MelRecord):
     """Potion."""
     rec_sig = b'ALCH'
 
@@ -960,7 +1174,7 @@ class MreEfsh(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreEnch(MelRecord,MreHasEffects):
+class MreEnch(MreHasEffects, MelRecord):
     """Enchantment."""
     rec_sig = b'ENCH'
 
@@ -1115,7 +1329,7 @@ class MreInfo(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreIngr(MelRecord,MreHasEffects):
+class MreIngr(MreHasEffects, MelRecord):
     """Ingredient."""
     rec_sig = b'INGR'
 
@@ -1755,7 +1969,7 @@ class MreScpt(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreSgst(MelRecord,MreHasEffects):
+class MreSgst(MreHasEffects, MelRecord):
     """Sigil Stone."""
     rec_sig = b'SGST'
 
@@ -1828,7 +2042,7 @@ class MreSoun(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreSpel(MelRecord,MreHasEffects):
+class MreSpel(MreHasEffects, MelRecord):
     """Spell."""
     rec_sig = b'SPEL'
     ##: use LowerDict and get rid of the lower() in callers

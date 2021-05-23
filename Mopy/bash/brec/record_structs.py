@@ -61,7 +61,7 @@ attr_csv_struct = {
     'dr': [int_or_zero, _('Damage Resistance')],
     'dt': [float_or_none, _('Damage Threshold')],
     'duration': [int_or_zero, _('Duration')],
-    'eid': [str_or_none, _('EditorID')],
+    'eid': [str_or_none, _('Editor Id')],
     'enchantPoints': [int_or_zero, _('Enchantment Points')],
     'fireRate': [float_or_none, _('Fire Rate')],
     'flags': [int_or_zero, _('Spell Flags')],
