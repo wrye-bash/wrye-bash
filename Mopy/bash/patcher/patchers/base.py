@@ -20,9 +20,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module contains base patcher classes."""
-from __future__ import print_function
+
 from collections import Counter, defaultdict
 from itertools import chain
 # Internal
@@ -33,7 +32,7 @@ from ...bolt import GPath, deprint
 from ...brec import MreRecord
 from ...exception import AbstractError
 from ...mod_files import LoadFactory, ModFile
-from ...parsers import _HandleAliases
+from ...parsers import FidReplacer
 
 # Patchers 1 ------------------------------------------------------------------
 class MultiTweakItem(AMultiTweakItem):
@@ -81,18 +80,31 @@ class MultiTweakItem(AMultiTweakItem):
         np_flag_attr, np_flag_name = bush.game.not_playable_flag
         return getattr(getattr(record, np_flag_attr), np_flag_name)
 
+# HACK - and what an ugly one - we need a general API to express to the BP that
+# a patcher/tweak wants it to index all records for certain record types in
+# some central place (and NOT by forwarding all records into the BP!)
 class IndexingTweak(MultiTweakItem):
-    """See HACK notes in NamesTweak_Scrolls.prepare_for_tweaking."""
     _index_sigs = []
 
     def __init__(self):
         super(IndexingTweak, self).__init__()
         self.loadFactory = LoadFactory(keepAll=False, by_sig=self._index_sigs)
+        self._indexed_records = defaultdict(dict)
 
     def _mod_file_read(self, modInfo):
         modFile = ModFile(modInfo, self.loadFactory)
         modFile.load(do_unpack=True)
         return modFile
+
+    def prepare_for_tweaking(self, patch_file):
+        pf_minfs = patch_file.p_file_minfos
+        for pl_path in patch_file.allMods:
+            index_plugin = self._mod_file_read(pf_minfs[pl_path])
+            for index_sig in self._index_sigs:
+                id_dict = self._indexed_records[index_sig]
+                for record in index_plugin.tops[index_sig].getActiveRecords():
+                    id_dict[record.fid] = record
+        super(IndexingTweak, self).prepare_for_tweaking(patch_file)
 
 class CustomChoiceTweak(MultiTweakItem):
     """Base class for tweaks that have a custom choice with the 'Custom'
@@ -195,27 +207,23 @@ class MergePatchesPatcher(ListPatcher):
         # first - ensured through its group of 'General'
         p_file.set_mergeable_mods(self.srcs)
 
-class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
+class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""
     patcher_group = u'General'
     patcher_order = 15
-    _read_sigs = MreRecord.simpleTypes | (
+    _read_sigs = _parser_sigs = MreRecord.simpleTypes | (
         {b'CELL', b'WRLD', b'REFR', b'ACHR', b'ACRE'})
 
     def __init__(self, p_name, p_file, p_sources):
         super(ReplaceFormIDsPatcher, self).__init__(p_file.pfile_aliases)
+        self._parser_sigs = self._read_sigs ##: yak due to parsers being imported early
         ListPatcher.__init__(self, p_name, p_file, p_sources)
-        self.old_new = {} #--Maps old fid to new fid
-        self.old_eid = {} #--Maps old fid to old editor id
-        self.new_eid = {} #--Maps new fid to new editor id
 
     def _parse_line(self, csv_fields):
         oldMod, oldObj, oldEid, newEid, newMod, newObj = csv_fields[1:7]
         oldId = self._coerce_fid(oldMod, oldObj)
         newId = self._coerce_fid(newMod, newObj)
         self.old_new[oldId] = newId
-        self.old_eid[oldId] = oldEid
-        self.new_eid[newId] = newEid
 
     def initData(self,progress):
         """Get names from source files."""
@@ -241,43 +249,51 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
         if b'CELL' in modFile.tops:
             for cellBlock in modFile.tops[b'CELL'].cellBlocks:
                 cellImported = False
-                if cellBlock.cell.fid in patchCells.id_cellBlock:
-                    patchCells.id_cellBlock[cellBlock.cell.fid].cell = cellBlock.cell
+                cfid = cellBlock.cell.fid
+                if cfid in patchCells.id_cellBlock:
+                    patchCells.id_cellBlock[cfid].cell = cellBlock.cell
                     cellImported = True
                 for record in cellBlock.temp_refs:
                     if record.base in self.old_new:
                         if not cellImported:
                             patchCells.setCell(cellBlock.cell)
                             cellImported = True
-                        for newRef in patchCells.id_cellBlock[cellBlock.cell.fid].temp_refs:
+                        for newRef in patchCells.id_cellBlock[cfid].temp_refs:
                             if newRef.fid == record.fid:
-                                loc = patchCells.id_cellBlock[cellBlock.cell.fid].temp_refs.index(newRef)
-                                patchCells.id_cellBlock[cellBlock.cell.fid].temp_refs[loc] = record
+                                loc = patchCells.id_cellBlock[
+                                    cfid].temp_refs.index(newRef)
+                                patchCells.id_cellBlock[cfid].temp_refs[loc] = record
                                 break
                         else:
-                            patchCells.id_cellBlock[cellBlock.cell.fid].temp_refs.append(record)
+                            patchCells.id_cellBlock[
+                                cfid].temp_refs.append(record)
                 for record in cellBlock.persistent_refs:
                     if record.base in self.old_new:
                         if not cellImported:
                             patchCells.setCell(cellBlock.cell)
                             cellImported = True
-                        for newRef in patchCells.id_cellBlock[cellBlock.cell.fid].persistent_refs:
+                        for newRef in patchCells.id_cellBlock[cfid].persistent_refs:
                             if newRef.fid == record.fid:
-                                loc = patchCells.id_cellBlock[cellBlock.cell.fid].persistent_refs.index(newRef)
-                                patchCells.id_cellBlock[cellBlock.cell.fid].persistent_refs[loc] = record
+                                loc = patchCells.id_cellBlock[
+                                    cfid].persistent_refs.index(newRef)
+                                patchCells.id_cellBlock[cfid].persistent_refs[loc] = record
                                 break
                         else:
-                            patchCells.id_cellBlock[cellBlock.cell.fid].persistent_refs.append(record)
+                            patchCells.id_cellBlock[
+                                cfid].persistent_refs.append(record)
         if b'WRLD' in modFile.tops:
             for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
                 worldImported = False
-                if worldBlock.world.fid in patchWorlds.id_worldBlocks:
-                    patchWorlds.id_worldBlocks[worldBlock.world.fid].world = worldBlock.world
+                wfid = worldBlock.world.fid
+                if wfid in patchWorlds.id_worldBlocks:
+                    patchWorlds.id_worldBlocks[wfid].world = worldBlock.world
                     worldImported = True
                 for cellBlock in worldBlock.cellBlocks:
                     cellImported = False
-                    if worldBlock.world.fid in patchWorlds.id_worldBlocks and cellBlock.cell.fid in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock:
-                        patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].cell = cellBlock.cell
+                    wcfid = cellBlock.cell.fid
+                    if wfid in patchWorlds.id_worldBlocks and wcfid in patchWorlds.id_worldBlocks[wfid].id_cellBlock:
+                        patchWorlds.id_worldBlocks[
+                            wfid].id_cellBlock[wcfid].cell = cellBlock.cell
                         cellImported = True
                     for record in cellBlock.temp_refs:
                         if record.base in self.old_new:
@@ -285,35 +301,44 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
                                 patchWorlds.setWorld(worldBlock.world)
                                 worldImported = True
                             if not cellImported:
-                                patchWorlds.id_worldBlocks[worldBlock.world.fid].setCell(cellBlock.cell)
+                                patchWorlds.id_worldBlocks[
+                                    wfid].setCell(cellBlock.cell)
                                 cellImported = True
-                            for newRef in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp_refs:
+                            for newRef in patchWorlds.id_worldBlocks[wfid].id_cellBlock[wcfid].temp_refs:
                                 if newRef.fid == record.fid:
-                                    loc = patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp_refs.index(newRef)
-                                    patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp_refs[loc] = record
+                                    loc = patchWorlds.id_worldBlocks[wfid].id_cellBlock[
+                                        wcfid].temp_refs.index(newRef)
+                                    patchWorlds.id_worldBlocks[wfid].id_cellBlock[
+                                        wcfid].temp_refs[loc] = record
                                     break
                             else:
-                                patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].temp_refs.append(record)
+                                patchWorlds.id_worldBlocks[wfid].id_cellBlock[
+                                    wcfid].temp_refs.append(record)
                     for record in cellBlock.persistent_refs:
                         if record.base in self.old_new:
                             if not worldImported:
                                 patchWorlds.setWorld(worldBlock.world)
                                 worldImported = True
                             if not cellImported:
-                                patchWorlds.id_worldBlocks[worldBlock.world.fid].setCell(cellBlock.cell)
+                                patchWorlds.id_worldBlocks[
+                                    wfid].setCell(cellBlock.cell)
                                 cellImported = True
-                            for newRef in patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent_refs:
+                            for newRef in patchWorlds.id_worldBlocks[wfid].id_cellBlock[
+                                wcfid].persistent_refs:
                                 if newRef.fid == record.fid:
-                                    loc = patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent_refs.index(newRef)
-                                    patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent_refs[loc] = record
+                                    loc = patchWorlds.id_worldBlocks[wfid].id_cellBlock[
+                                        wcfid].persistent_refs.index(newRef)
+                                    patchWorlds.id_worldBlocks[wfid].id_cellBlock[
+                                        wcfid].persistent_refs[loc] = record
                                     break
                             else:
-                                patchWorlds.id_worldBlocks[worldBlock.world.fid].id_cellBlock[cellBlock.cell.fid].persistent_refs.append(record)
+                                patchWorlds.id_worldBlocks[wfid].id_cellBlock[
+                                    wcfid].persistent_refs.append(record)
 
     def buildPatch(self,log,progress):
         """Adds merged fids to patchfile."""
         if not self.isActive: return
-        old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
+        old_new = self.old_new
         keep = self.patchFile.getKeeper()
         count = Counter()
         def swapper(oldId):
@@ -328,27 +353,29 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
 ##                    record.setChanged()
 ##                    keep(record.fid)
         for cellBlock in self.patchFile.tops[b'CELL'].cellBlocks:
+            cfid = cellBlock.cell.fid
             for record in cellBlock.temp_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
-                    count[cellBlock.cell.fid[0]] += 1
+                    count[cfid[0]] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
             for record in cellBlock.persistent_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
-                    count[cellBlock.cell.fid[0]] += 1
+                    count[cfid[0]] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
         for worldBlock in self.patchFile.tops[b'WRLD'].worldBlocks:
             keepWorld = False
             for cellBlock in worldBlock.cellBlocks:
+                cfid = cellBlock.cell.fid
                 for record in cellBlock.temp_refs:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
-                        count[cellBlock.cell.fid[0]] += 1
+                        count[cfid[0]] += 1
 ##                        record.mapFids(swapper,True)
                         record.setChanged()
                         keep(record.fid)
@@ -356,7 +383,7 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
                 for record in cellBlock.persistent_refs:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
-                        count[cellBlock.cell.fid[0]] += 1
+                        count[cfid[0]] += 1
 ##                        record.mapFids(swapper,True)
                         record.setChanged()
                         keep(record.fid)
@@ -369,3 +396,10 @@ class ReplaceFormIDsPatcher(_HandleAliases, ListPatcher):
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in load_order.get_ordered(count):
             log(u'* %s: %d' % (srcMod,count[srcMod]))
+
+#------------------------------------------------------------------------------
+def is_templated(record, flag_name):
+    """Checks if the specified record has a template record and the
+    appropriate template flag set."""
+    return (getattr(record, u'template', None) is not None and
+            getattr(record.templateFlags, flag_name))

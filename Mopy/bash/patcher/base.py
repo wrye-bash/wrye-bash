@@ -196,7 +196,8 @@ class AMultiTweakItem(object):
 
     def __init__(self):
         # Don't check tweak_log_msg, settings tweaks don't use it
-        for tweak_attr in (u'tweak_name', u'tweak_tip', u'tweak_key'):
+        for tweak_attr in (u'tweak_name', u'tweak_tip', u'tweak_key',
+                           u'tweak_log_msg'):
             if getattr(self, tweak_attr) == u'OVERRIDE':
                 self._raise_tweak_syntax_error(u"A '%s' attribute is still "
                                                u'set to the default '
@@ -225,6 +226,9 @@ class AMultiTweakItem(object):
             self.default = 0 # no explicit default item, so default to first
         # Create the custom choice if a label was specified for it
         if self.custom_choice is not None:
+            # Add a separator right before the custom choice
+            self.choiceLabels.append(u'----')
+            self.choiceValues.append(u'----')
             self.choiceLabels.append(self.custom_choice)
             self.choiceValues.append(self.choiceValues[self.default])
         #--Config
@@ -238,14 +242,14 @@ class AMultiTweakItem(object):
         """Logs the total changes and details for each plugin."""
         log.setHeader(u'=== ' + self.tweak_log_header)
         log(u'* ' + self.tweak_log_msg % {
-            u'total_changed': sum(count.values())})
+            u'total_changed': sum(count.itervalues())})
         for src_plugin in load_order.get_ordered(count):
             log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
 
     def init_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled, self.chosen = self.default_enabled, 0
-        self._isNew = not (self.tweak_key in configs)
+        self._isNew = self.tweak_key not in configs
         if not self._isNew:
             self.isEnabled,value = configs[self.tweak_key]
             if value in self.choiceValues:
@@ -342,6 +346,8 @@ class ImportPatcher(ListPatcher, ModLoader):
         self._srcMods(log)
         self._plog(log,type_count)
 
+    ##: Unify these - decide which one looks best in the end and make all
+    # patchers use that one
     def _plog(self,log,type_count):
         """Most common logging pattern - override as needed."""
         log(self.__class__.logMsg)
@@ -350,15 +356,6 @@ class ImportPatcher(ListPatcher, ModLoader):
                 % {u'type': top_grup_sig.decode(u'ascii'), u'count': count})
 
     def _plog1(self,log,mod_count): # common logging variation
-        log(self.__class__.logMsg % sum(mod_count.values()))
+        log(self.__class__.logMsg % sum(mod_count.itervalues()))
         for mod in load_order.get_ordered(mod_count):
             log(u'* %s: %3d' % (mod, mod_count[mod]))
-
-    def _plog2(self,log,allCounts):
-        log(self.__class__.logMsg)
-        for top_rec_type, count, counts in allCounts:
-            if not count: continue
-            typeName = bush.game.record_type_name[top_rec_type]
-            log(u'* %s: %d' % (typeName, count))
-            for modName, type_counts in dict_sort(counts):
-                log(u'  * %s: %d' % (modName, type_counts))

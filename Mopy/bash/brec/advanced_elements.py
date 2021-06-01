@@ -26,7 +26,7 @@ this file involve conditional loading and are much less commonly used. Relies
 on some of the elements defined in basic_elements, e.g. MelBase, MelObject and
 MelStruct."""
 
-from __future__ import division, print_function
+from __future__ import division
 
 __author__ = u'Infernio'
 
@@ -34,9 +34,10 @@ import copy
 from collections import OrderedDict
 from itertools import chain, izip
 
-from .basic_elements import MelBase, MelNull, MelObject, MelStruct
+from .basic_elements import MelBase, MelNull, MelObject, MelStruct, \
+    MelSequential
 from .. import exception
-from ..bolt import GPath, structs_cache
+from ..bolt import GPath, structs_cache, attrgetter_cache
 
 #------------------------------------------------------------------------------
 class _MelDistributor(MelNull):
@@ -340,8 +341,8 @@ class MelArray(MelBase):
         self._element = element
         self._element_has_fids = False
         # Underscore means internal usage only - e.g. distributor state
-        self._element_attrs = [s for s in element.getSlotsUsed() if
-                               not s.startswith(u'_')]
+        self.array_element_attrs = [s for s in element.getSlotsUsed() if
+                                    not s.startswith(u'_')]
         if prelude and prelude.mel_sig != element.mel_sig:
             raise SyntaxError(u'MelArray preludes must have the same '
                               u'signature as the main element')
@@ -384,7 +385,7 @@ class MelArray(MelBase):
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         append_entry = getattr(record, self.attr).append
-        entry_slots = self._element_attrs
+        entry_slots = self.array_element_attrs
         entry_size = self._element_size
         load_entry = self._element.load_mel
         if self._prelude:
@@ -887,9 +888,163 @@ class MelUnion(MelBase):
 
     @property
     def static_size(self):
-        all_elements = self.element_mapping.values() + (
-            [self.fallback] if self.fallback else [])
+        all_elements = list(self.element_mapping.itervalues())
+        if self.fallback:
+            all_elements.append(self.fallback)
         first_size = all_elements[0].static_size # pick arbitrary element size
         if any(element.static_size != first_size for element in all_elements):
             raise exception.AbstractError() # The sizes are not all identical
         return first_size
+
+#------------------------------------------------------------------------------
+# Counters and Sorting
+class _MelWrapper(MelBase):
+    """Base class for classes like MelCounter and MelSorted that wrap another
+    element."""
+    def __init__(self, wrapped_mel):
+        self._wrapped_mel = wrapped_mel
+
+    def getSlotsUsed(self):
+        return self._wrapped_mel.getSlotsUsed()
+
+    def getDefaulters(self, defaulters, base):
+        self._wrapped_mel.getDefaulters(defaulters, base)
+
+    def getDefault(self):
+        return self._wrapped_mel.getDefault()
+
+    def getLoaders(self, loaders):
+        temp_loaders = {}
+        self._wrapped_mel.getLoaders(temp_loaders)
+        for l in temp_loaders:
+            loaders[l] = self
+
+    def hasFids(self, formElements):
+        self._wrapped_mel.hasFids(formElements)
+
+    def setDefault(self, record):
+        self._wrapped_mel.setDefault(record)
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        self._wrapped_mel.load_mel(record, ins, sub_type, size_, *debug_strs)
+
+    def dumpData(self, record, out):
+        self._wrapped_mel.dumpData(record, out)
+
+    def pack_subrecord_data(self, record):
+        self._wrapped_mel.pack_subrecord_data(record)
+
+    def mapFids(self, record, function, save=False):
+        self._wrapped_mel.mapFids(record, function, save)
+
+    @property
+    def signatures(self):
+        return self._wrapped_mel.signatures
+
+    @property
+    def static_size(self):
+        return self._wrapped_mel.static_size
+
+#------------------------------------------------------------------------------
+class MelCounter(_MelWrapper):
+    """Wraps a _MelField-derived object (meaning that it is compatible with
+    e.g. MelUInt32). Just before writing, the wrapped element's value is
+    updated to the len() of another element's value, e.g. a MelGroups instance.
+    Additionally, dumping is skipped if the counter is falsy after updating.
+
+    Does not support anything that seems at odds with that goal, in particular
+    fids and defaulters. See also MelPartialCounter, which targets mixed
+    structs."""
+    def __init__(self, counter_mel, counts):
+        """Creates a new MelCounter.
+
+        :param counter_mel: The element that stores the counter's value.
+        :type counter_mel: _MelField
+        :param counts: The attribute name that this counter counts.
+        :type counts: unicode"""
+        super(MelCounter, self).__init__(counter_mel)
+        self.counted_attr = counts
+
+    def dumpData(self, record, out):
+        # Count the counted type first, then check if we should even dump
+        val_len = len(getattr(record, self.counted_attr, []))
+        setattr(record, self._wrapped_mel.attr, val_len)
+        if val_len:
+            super(MelCounter, self).dumpData(record, out)
+
+class MelPartialCounter(MelCounter):
+    """Extends MelCounter to work for MelStruct's that contain more than just a
+    counter. This means adding behavior for mapping fids, but dropping the
+    conditional dumping behavior."""
+    def __init__(self, counter_mel, counter, counts):
+        """Creates a new MelPartialCounter.
+
+        :param counter_mel: The element that stores the counter's value.
+        :type counter_mel: MelStruct
+        :param counter: The attribute name of the counter.
+        :type counter: unicode
+        :param counts: The attribute name that this counter counts.
+        :type counts: unicode"""
+        super(MelPartialCounter, self).__init__(counter_mel, counts)
+        self.counter_attr = counter
+
+    def dumpData(self, record, out):
+        # Count the counted type, then update and dump unconditionally
+        setattr(record, self.counter_attr,
+                len(getattr(record, self.counted_attr, [])))
+        super(MelCounter, self).dumpData(record, out) # skip MelCounter!
+
+#------------------------------------------------------------------------------
+class MelSorted(_MelWrapper):
+    """Wraps a MelBase-derived element with a list as its single attribute and
+    sorts that list right before dumping."""
+    def __init__(self, sorted_mel, sort_by_attrs=(), sort_special=None):
+        """Creates a new MelSorted instance with the specified parameters.
+
+        :param sorted_mel: The element that needs sorting.
+        :type sorted_mel: MelBase
+        :param sort_by_attrs: May either be a tuple or a string. Specifies the
+            attribute(s) of the list entries that should be used as the sort
+            key(s). If left empty, the entire list entry will be used as the
+            sort key (same as specifying key=None for a sort).
+        :param sort_special: Allows specifying a completely custom key function
+            for sorting.
+        :type sort_special: callable"""
+        super(MelSorted, self).__init__(sorted_mel)
+        if sort_special:
+            # Special key function given, use that
+            self._attr_key_func = sort_special
+        elif sort_by_attrs:
+            # One or more attributes given, verify they exist and make an
+            # attrgetter out of them to use as the key function
+            ##: This is pretty hacky - a MelBase method a la all_leaf_attrs
+            # would be very useful here
+            if isinstance(sorted_mel, MelSequential):
+                all_child_attrs = set()
+                for e in sorted_mel.elements:
+                    all_child_attrs.update(e.getSlotsUsed())
+            elif isinstance(sorted_mel, MelArray):
+                all_child_attrs = set(sorted_mel.array_element_attrs)
+            else:
+                raise SyntaxError(u'sort_by_attrs is not supported for %s '
+                                  u'instances' % type(sorted_mel))
+            # Note that sort_by_attrs could be either a single attr or a tuple
+            # of attrs
+            wanted_attrs = set(sort_by_attrs) if isinstance(
+                sort_by_attrs, tuple) else {sort_by_attrs}
+            missing_attrs = wanted_attrs - all_child_attrs
+            if missing_attrs:
+                raise SyntaxError(u'The following attributes passed to '
+                                  u'sort_by_attrs do not exist: %s'
+                                  % sorted(missing_attrs))
+            self._attr_key_func = attrgetter_cache[sort_by_attrs]
+        else:
+            # Simply use the default key function (whole list entries)
+            self._attr_key_func = None
+
+    def dumpData(self, record, out):
+        # Sort the entries right before dumping, using the key func if present
+        to_sort_val = getattr(record, self._wrapped_mel.attr)
+        if to_sort_val:
+            to_sort_val.sort(key=self._attr_key_func)
+        super(MelSorted, self).dumpData(record, out)

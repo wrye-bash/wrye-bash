@@ -22,8 +22,6 @@
 # =============================================================================
 """BAIN backbone classes."""
 
-from __future__ import print_function
-
 import collections
 import copy
 import errno
@@ -346,7 +344,6 @@ class Installer(ListInfo):
             self.extras_dict = {}
             if self.fileRootIdex: # need to add 'root_path' key to extras_dict
                 rescan = True
-        self.extras_dict = {unicode(k): v for k, v in self.extras_dict.iteritems()}
         if not self.abs_path.exists(): # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
@@ -1022,7 +1019,7 @@ class Installer(ListInfo):
             else: status = 30
         #--Clean Dirty
         dirty_sizeCrc = self.dirty_sizeCrc
-        for filename,sizeCrc in dirty_sizeCrc.items():
+        for filename, sizeCrc in list(dirty_sizeCrc.iteritems()):
             sizeCrcDate = data_sizeCrcDate.get(filename)
             if (not sizeCrcDate or sizeCrc != sizeCrcDate[:2] or
                 sizeCrc == data_sizeCrc.get(filename)
@@ -1053,6 +1050,7 @@ class Installer(ListInfo):
         project = outDir.join(project)
         with project.unicodeSafe() as projectDir:
             #--Dump file list
+            ##: We don't use a BOM for tempList in unpackToTemp...
             with self.tempList.open(u'w', encoding=u'utf-8-sig') as out:
                 if release:
                     out.write(u'*thumbs.db\n')
@@ -1226,6 +1224,23 @@ class Installer(ListInfo):
         :type delta_files: set[bolt.CIstr]"""
         raise AbstractError
 
+    # Factory -----------------------------------------------------------------
+    @classmethod
+    def refresh_installer(cls, package, idata, progress, install_order=None,
+                          do_refresh=False, _index=None, _fullRefresh=False):
+        installer = idata.get(package)
+        if not installer:
+            installer = idata[package] = cls(package)
+            if install_order is not None:
+                idata.moveArchives([package], install_order)
+        if _index is not None:
+            progress = SubProgress(progress, _index, _index + 1)
+        installer.refreshBasic(progress, recalculate_project_crc=_fullRefresh)
+        if progress: progress(1.0, _(u'Done'))
+        if do_refresh:
+            idata.irefresh(what=u'NS')
+        return installer
+
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
     """Represents a marker installer entry."""
@@ -1386,7 +1401,7 @@ class InstallerArchive(Installer):
     def _install(self, dest_src, progress):
         #--Extract
         progress(0, (u'%s\n' % self) + _(u'Extracting files...'))
-        unpackDir = self.unpackToTemp(dest_src.values(),
+        unpackDir = self.unpackToTemp(list(dest_src.itervalues()),
                                       SubProgress(progress, 0, 0.9))
         #--Rearrange files
         progress(0.9, (u'%s\n' % self) + _(u'Organizing files...'))
@@ -1652,8 +1667,8 @@ def projects_walk_cache(func): ##: HACK ! Profile
         try:
             return func(self, *args, **kwargs)
         finally:
-            it = self.itervalues() if isinstance(self, InstallersData) else \
-                self.listData.itervalues()
+            it = (self.viewvalues() if isinstance(self, InstallersData) else
+                  self.listData.viewvalues())
             for project in it:
                 if project.is_project():
                     project._dir_dirs_files = None
@@ -1752,8 +1767,8 @@ class InstallersData(DataStore):
         self.dictFile.load()
         self.converters_data.load()
         pickl_data = self.dictFile.pickled_data
-        self._data = pickl_data.get(u'installers', {}) or pickl_data.get(b'installers', {})
-        pickle = pickl_data.get(u'sizeCrcDate', {}) or pickl_data.get(b'sizeCrcDate', {})
+        self._data = pickl_data.get(u'installers', {})
+        pickle = pickl_data.get(u'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
         # fixup: all markers had their archive attribute set to u'===='
@@ -1867,32 +1882,16 @@ class InstallersData(DataStore):
             self.pop(deleted)
         pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
-        for subPending, is_project_type in izip(
-                (pending - projects, pending & projects), (False, True)):
+        for subPending, inst_type in izip(
+                (pending - projects, pending & projects), self._inst_types):
             if not subPending: continue
             progress(0,_(u'Scanning Packages...'))
             progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
                 progress(index, _(u'Scanning Packages...') + u'\n%s' % package)
-                self.refresh_installer(package, is_project_type, progress,
-                                       _index=index, _fullRefresh=fullRefresh)
+                inst_type.refresh_installer(package, self, progress,
+                    _index=index, _fullRefresh=fullRefresh)
         return changed
-
-    def refresh_installer(self, package, is_project, progress,
-                          install_order=None, do_refresh=False, _index=None,
-                          _fullRefresh=False):
-        installer = self.get(package)
-        if not installer:
-            installer = self[package] = self._inst_types[is_project](package)
-            if install_order is not None:
-                self.moveArchives([package], install_order)
-        if _index is not None:
-            progress = SubProgress(progress, _index, _index + 1)
-        installer.refreshBasic(progress, recalculate_project_crc=_fullRefresh)
-        if progress: progress(1.0, _(u'Done'))
-        if do_refresh:
-            self.irefresh(what=u'NS')
-        return installer
 
     def applyEmbeddedBCFs(self, installers=None, destArchives=None,
                           progress=bolt.Progress()):
@@ -2077,7 +2076,7 @@ class InstallersData(DataStore):
         new_sizeCrcDate, pending, pending_size = \
             self._process_data_dir(dirDirsFiles, progress)
         #--Remove empty dirs?
-        if not bass.settings[u'bash.installers.removeEmptyDirs']:
+        if bass.settings[u'bash.installers.removeEmptyDirs']:
             for empty in emptyDirs:
                 try: empty.removedirs()
                 except OSError: pass
@@ -2267,7 +2266,7 @@ class InstallersData(DataStore):
             InstallersData._externally_updated)
         InstallersData._externally_updated.clear()
         InstallersData._externally_deleted.clear()
-        for abspath, tracked in InstallersData._miscTrackedFiles.items():
+        for abspath, tracked in list(InstallersData._miscTrackedFiles.iteritems()):
             if not abspath.exists(): # untrack - runs on first run !!
                 InstallersData._miscTrackedFiles.pop(abspath, None)
                 deleted.add(abspath)
@@ -2343,7 +2342,7 @@ class InstallersData(DataStore):
         in the new ini."""
         removed = set()
         from . import iniInfos
-        pseudosections = set(OBSEIniFile.ci_pseudosections.values())
+        pseudosections = set(OBSEIniFile.ci_pseudosections.itervalues())
         for (tweakPath, iniAbsDataPath) in tweaksCreated:
             iniFile = BestIniFile(iniAbsDataPath)
             currSection = None
@@ -2372,12 +2371,14 @@ class InstallersData(DataStore):
                 removed.add((tweakPath, iniAbsDataPath))
                 tweakPath.remove()
                 continue
-            # Re-write the tweak
-            with tweakPath.open(u'w') as ini_:
-                ini_.write(u'; INI Tweak created by Wrye Bash, using settings '
-                           u'from old file.\n\n')
+            # Re-write the tweak. Use UTF-8 so that we can localize the
+            # comment at the top
+            with tweakPath.open(u'w', encoding=u'utf-8') as ini_:
+                ini_.write(u'; %s\n\n' % (_(u'INI Tweak created by Wrye Bash '
+                                            u'%s, using settings from old '
+                                            u'file.') % bass.AppVersion))
                 ini_.writelines(lines)
-            # we notify BAIN below, although highly improbable the created ini
+            # We notify BAIN below, although highly improbable the created ini
             # is included to a package
             iniInfos.new_info(tweakPath.tail, notify_bain=True)
         tweaksCreated -= removed
@@ -2427,7 +2428,7 @@ class InstallersData(DataStore):
         refresh_ui[1] |= bool(inis)
         # refresh modInfos, iniInfos adding new/modified mods
         from . import bsaInfos, modInfos, iniInfos
-        for mod in mods:
+        for mod in mods.copy(): # size may change during iteration
             try:
                 modInfos.new_info(mod, owner=installer.archive)
             except FileError:
@@ -2439,7 +2440,7 @@ class InstallersData(DataStore):
             try:
                 bsaInfos.new_info(bsa, owner=installer.archive)
             except FileError:
-                bsas.discard(bsa)
+                pass # corrupt, but we won't need the bsas set again, so ignore
         modInfos.cached_lo_append_if_missing(mods)
         modInfos.refreshLoadOrder(unlock_lo=True)
         # now that we saved load order update missing mtimes for mods:
@@ -2469,7 +2470,7 @@ class InstallersData(DataStore):
         :type package_keys: None | collections.Iterable[Path]
         :rtype: list[Installer]
         """
-        if package_keys is None: values = self.values()
+        if package_keys is None: values = self.viewvalues()
         else: values = [self[k] for k in package_keys]
         return sorted(values, key=attrgetter('order'), reverse=reverse)
 
@@ -2588,7 +2589,7 @@ class InstallersData(DataStore):
 
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
-        if unArchives == u'ALL': unArchives = frozenset(self.itervalues())
+        if unArchives == u'ALL': unArchives = frozenset(self.viewvalues())
         else: unArchives = frozenset(self[x] for x in unArchives)
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
@@ -3013,5 +3014,5 @@ class InstallersData(DataStore):
             srcJoin(norm_ghost.get(filename, filename)).copyTo(
                 dstJoin(filename))
         # Refresh, so we can manipulate the InstallerProject item
-        self.refresh_installer(projectPath, True, progress, do_refresh=True,
-                               install_order=len(self)) # install last
+        self._inst_types[1].refresh_installer(projectPath, self, progress,
+            do_refresh=True, install_order=len(self)) # install last

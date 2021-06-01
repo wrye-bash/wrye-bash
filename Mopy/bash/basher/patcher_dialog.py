@@ -33,11 +33,11 @@ from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
 from ..bolt import SubProgress, GPath, Path
 from ..exception import BoltError, CancelError, FileEditError, \
-    PluginsFullError, SkipError
+    PluginsFullError, SkipError, BPConfigError
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
     LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
     SaveAsButton, SelectAllButton, Stretch, VLayout, DialogWindow, \
-    CheckListBox, HorizontalLine, EventResult
+    CheckListBox, HorizontalLine, EventResult, FileOpen
 from ..patcher import exportConfig, list_patches_dir
 from ..patcher.patch_files import PatchFile
 
@@ -58,7 +58,8 @@ class PatchDialog(DialogWindow):
         title = _(u'Update ') + u'%s' % patchInfo
         super(PatchDialog, self).__init__(parent, title=title,
             icon_bundle=Resources.bashBlue, sizes_dict=balt.sizes,
-            size=balt.sizes.get(self.__class__.__name__, (500, 600)))
+            # PY3: drop the unicode()
+            size=balt.sizes.get(unicode(self.__class__.__name__), (500, 600)))
         #--Data
         list_patches_dir() # refresh cached dir
         patchConfigs = patchInfo.get_table_prop(u'bash.patch.configs', {})
@@ -87,7 +88,6 @@ class PatchDialog(DialogWindow):
         self.gDeselectAll = DeselectAllButton(self)
         self.gDeselectAll.on_clicked.subscribe(
             lambda: self._mass_select_recursive(False))
-        cancelButton = CancelButton(self)
         self.gPatchers = CheckListBox(self, choices=patcherNames,
                                       isSingle=True, onSelect=self.OnSelect)
         self.gPatchers.on_box_checked.subscribe(self.OnCheck)
@@ -102,12 +102,13 @@ class PatchDialog(DialogWindow):
         self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
         for index,patcher in enumerate(self._gui_patchers):
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
-        self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
+        self.defaultTipText = _(u'Items that are new since the last time this '
+                                u'patch was built are displayed in bold.')
         self.gTipText = Label(self,self.defaultTipText)
         #--Events
         self.gPatchers.on_mouse_leaving.subscribe(self._mouse_leaving)
         self.gPatchers.on_mouse_motion.subscribe(self.handle_mouse_motion)
-        self.gPatchers.on_key_pressed.subscribe(self._on_char)
+        self.gPatchers.on_key_down.subscribe(self._on_char)
         self.mouse_dex = -1
         #--Layout
         self.config_layout = VLayout(item_expand=True, item_weight=1)
@@ -120,10 +121,12 @@ class PatchDialog(DialogWindow):
             HorizontalLine(self),
             HLayout(spacing=4, items=[
                 Stretch(), self.gExportConfig, self.gImportConfig,
-                self.gRevertConfig, self.gRevertToDefault]),
+                self.gRevertConfig, self.gRevertToDefault,
+            ]),
             HLayout(spacing=4, items=[
                 Stretch(), self.gExecute, self.gSelectAll, self.gDeselectAll,
-                cancelButton])
+                CancelButton(self),
+            ]),
         ]).apply_to(self)
         #--Patcher panels
         for patcher in self._gui_patchers:
@@ -157,7 +160,7 @@ class PatchDialog(DialogWindow):
         self.accept_modal()
         progress = None
         try:
-            patch_name = self.patchInfo.name
+            patch_name = self.patchInfo.ci_key
             patch_size = self.patchInfo.fsize
             progress = balt.Progress(patch_name.s,(u' '*60+u'\n'), abort=True)
             timer1 = time.clock()
@@ -196,9 +199,9 @@ class PatchDialog(DialogWindow):
             timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
             readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.sroot + u'.txt')
-            docsDir = bass.settings.get(u'balt.WryeLog.cssDir', GPath(u''))
+            docsDir = bass.dirs[u'mopy'].join(u'Docs')
             tempReadmeDir = Path.tempDir().join(u'Docs')
-            tempReadme = tempReadmeDir.join(patch_name.sroot+u'.txt')
+            tempReadme = tempReadmeDir.join(patch_name.sroot + u'.txt')
             #--Write log/readme to temp dir first
             with tempReadme.open(u'w', encoding=u'utf-8-sig') as file:
                 file.write(logValue)
@@ -252,20 +255,20 @@ class PatchDialog(DialogWindow):
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
         except CancelError:
             pass
-        except FileEditError as error:
-            self._error(_(u'File Edit Error'), error)
-        except BoltError as error:
-            self._error(_(u'Processing Error'), error)
-        except:
-            self._error()
+        except BPConfigError as e: # User configured BP incorrectly
+            self._error(_(u'The configuration of the Bashed Patch is '
+                          u'incorrect.') + u'\n' + e.message)
+        except (BoltError, FileEditError) as e: # Nonfatal error
+            self._error(u'%s' % e)
+        except Exception as e: # Fatal error
+            self._error(u'%s' % e)
             raise
         finally:
             if progress: progress.Destroy()
 
-    def _error(self, msg=None, error=None):
+    def _error(self, e_msg):
         balt.playSound(self.parent, bass.inisettings[u'SoundError'])
-        if msg:
-            balt.showError(self, u'%s' % error, _(u'File Edit Error'))
+        balt.showError(self, e_msg, _(u'Bashed Patch Error'))
         bolt.deprint(u'Exception during Bashed Patch building:',
                      traceback=True)
 
@@ -304,20 +307,20 @@ class PatchDialog(DialogWindow):
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
-        exportConfig(patch_name=self.patchInfo.name, config=config,
-            win=self.parent, outDir=bass.dirs[u'patches'])
+        exportConfig(patch_name=self.patchInfo.ci_key, config=config,
+                     win=self.parent, outDir=bass.dirs[u'patches'])
 
     __old_key = GPath(u'Saved Bashed Patch Configuration')
     __new_key = u'Saved Bashed Patch Configuration (%s)'
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
-        config_dat = self.patchInfo.name + u'_Configuration.dat'
+        config_dat = self.patchInfo.ci_key + u'_Configuration.dat'
         textDir = bass.dirs[u'patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.parent,
-                                _(u'Import Bashed Patch configuration from:'),
-                                textDir, config_dat, u'*.dat', mustExist=True)
+        textPath = FileOpen.display_dialog(self.parent, _(
+            u'Import Bashed Patch configuration from:'), textDir, config_dat,
+            u'*.dat')
         if not textPath: return
         table = bolt.DataTable(bolt.PickleDict(textPath))
         # try the current Bashed Patch mode.
@@ -384,10 +387,12 @@ class PatchDialog(DialogWindow):
             self._gui_patchers.index(patcher), enable_patcher)
         self._update_ok_btn()
 
-    def BoldPatcher(self, patcher):
-        """Set the patcher label to bold font.  Called from a patcher when
-        it realizes it has something new in its list"""
-        self.gPatchers.lb_bold_font_at_index(self._gui_patchers.index(patcher))
+    def style_patcher(self, patcher, bold=False, slant=False):
+        """Set the patcher label to bold and/or italicized font. Called from a
+        patcher when it's new or detects that it has something new in its
+        list."""
+        self.gPatchers.lb_style_font_at_index(
+            self._gui_patchers.index(patcher), bold=bold, slant=slant)
 
     def OnCheck(self, lb_selection_dex):
         """Toggle patcher activity state."""
@@ -415,7 +420,9 @@ class PatchDialog(DialogWindow):
 
     def _on_char(self, wrapped_evt):
         """Keyboard input to the patchers list box"""
-        if wrapped_evt.key_code == 1 and wrapped_evt.is_cmd_down: # Ctrl+'A'
+        # Ctrl+'A' - select all items of the current patchers (or deselect them
+        # if Shift is also held)
+        if wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord(u'A'):
             patcher = self.currentPatcher
             if patcher is not None:
                 patcher.mass_select(select=not wrapped_evt.is_shift_down)

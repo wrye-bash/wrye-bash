@@ -20,11 +20,9 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""This package contains the SSE-specific patchers. This module contains the
+data structures that are dynamically set on a per game basis in bush."""
 
-"""This package contains the Skyrim SE specific patchers. This module
-contains the data structures that are dynamically set on a per game basis in
-bush."""
+from ...skyrim.patcher import *
 
-gameSpecificPatchers = {}
-gameSpecificListPatchers = {}
-game_specific_import_patchers = {}
+assorted_tweaks |= {u'AssortedTweak_ArrowWeight'}

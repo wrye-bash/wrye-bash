@@ -31,24 +31,20 @@ Please also read the [relevant page in our wiki](https://github.com/wrye-bash/wr
 I'm really glad you're reading this, because we need volunteer developers to
 help advance this project.
 
-Good starting points are the ['good first issues'](https://github.com/wrye-bash/wrye-bash/issues?q=sort%3Aupdated-desc+is%3Aopen+label%3AM-good-first-issue).
-See also [issue 200](https://github.com/wrye-bash/wrye-bash/issues/200) for
-some refactoring tasks we need help with.
+Good starting points are  [issue 200](https://github.com/wrye-bash/wrye-bash/issues/200) and the ['good first issues'](https://github.com/wrye-bash/wrye-bash/issues?q=sort%3Aupdated-desc+is%3Aopen+label%3AM-good-first-issue).
 
 #### Set up
 
-To contribute to the code, fork the repo and set your fork up as detailed in
-[[git] Syncing a Fork with the main repository](https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Syncing-a-Fork-with-the-main-repository).
-The recommended way to code for Bash is Pycharm
-([set up instructions](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Set-up-Pycharm-for-wrye-bash)).
+To contribute, set up a fork and PyCharm [as detailed here](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Set-up-Pycharm-for-wrye-bash).
+
 Our wiki contains dev, git and github labelled articles to get you started with
 setting up the repository and git basics. Please read at least:
 
-* [[github] Branching Model & Using The Repository](https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&-Using-The-Repository)
-* [[github] Branching and merging to dev using rebase](https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase)
 * [[dev] Coding Style](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style)
 * [[dev] Deciphering Source Filenames](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Deciphering-Source-Filenames)
-* [[git] Commit guidelines](https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Commit-guidelines)
+* [[dev] Commit guidelines](https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Commit-guidelines)
+* [[git] Syncing a Fork with the main repository](https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Syncing-a-Fork-with-the-main-repository).
+* [[github] Branching Model & Using The Repository](/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&-Using-The-Repository)
 
 When ready: do not issue a pull request - contact instead a member of the team
 in the relevant issue or mentioning them on your commit and let them review.

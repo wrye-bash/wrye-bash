@@ -27,10 +27,10 @@ to the Actors Multitweaker - as well as the TweakActors itself."""
 import random
 import re
 # Internal
+from .base import MultiTweakItem, MultiTweaker, is_templated
 from ... import bass, bush
 from ...bolt import GPath
 from ...exception import AbstractError
-from .base import MultiTweakItem, MultiTweaker
 
 class _AActorTweak(MultiTweakItem):
     """Base for all actor tweaks."""
@@ -43,13 +43,6 @@ class _AActorTweak(MultiTweakItem):
         except AttributeError:
             # Some weird plugins have NPCs with no skeleton assigned to them
             return None
-
-    @staticmethod
-    def _is_templated(record, flag_name):
-        """Checks if the specified record has a template record and the
-        appropriate template flag set."""
-        return (getattr(record, u'template', None) is not None
-                and getattr(record.templateFlags, flag_name))
 
 class _ANpcTweak(_AActorTweak):
     """Base for all NPC_ tweaks."""
@@ -122,7 +115,7 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
                   u"Requires VadersApp's Oblivion Real Bodies.")
     tweak_key = u'VORB'
     tweak_log_header = _(u"VadersApp's Oblivion Real Bodies")
-    _skeleton_dir = GPath(u'Characters').join(u'_male')
+    _skeleton_dir = u'Characters\\_male'
 
     def _get_skeleton_collections(self):
         """construct skeleton mesh collections. skeleton_list gets files that
@@ -155,11 +148,11 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
             return self._get_skeleton_path(record) # leave unchanged
         special_skel_mesh = u'skel_special_%X.nif' % record.fid[1]
         if special_skel_mesh in skeleton_specials:
-            return self._skeleton_dir.join(special_skel_mesh)
+            return u'%s\\%s' % (self._skeleton_dir, special_skel_mesh)
         else:
             random.seed(record.fid[1]) # make it deterministic
-            rand_index = random.randint(1, len(skeleton_list)) - 1
-            return self._skeleton_dir.join(skeleton_list[rand_index]).s
+            rand_index = random.randint(1, len(skeleton_list)) - 1 ##: choice?
+            return u'%s\\%s' % (self._skeleton_dir, skeleton_list[rand_index])
 
 #------------------------------------------------------------------------------
 class VanillaNPCSkeletonPatcher(_ASkeletonTweak):
@@ -327,7 +320,7 @@ class QuietFeetPatcher(_ACreatureTweak):
 
     def wants_record(self, record):
         # Check if we're templated first (only relevant on FO3/FNV)
-        if self._is_templated(record, u'useModelAnimation'): return False
+        if is_templated(record, u'useModelAnimation'): return False
         chosen_target = self.choiceValues[self.chosen][0]
         if chosen_target == u'partial' and not any(
                 s.type in (2, 3) for s in record.sounds):
@@ -355,7 +348,7 @@ class IrresponsibleCreaturesPatcher(_ACreatureTweak):
         # Must not be templated (FO3/FNV only), the creature must not be
         # irresponsible already, and if we're in 'only horses' mode, the
         # creature must be a horse
-        return (not self._is_templated(record, u'useAIData')
+        return (not is_templated(record, u'useAIData')
                 and record.responsibility != 0
                 and (self.choiceValues[self.chosen][0] == u'all'
                      or record.creatureType == 4))

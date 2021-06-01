@@ -27,12 +27,15 @@ from itertools import izip
 
 from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak
 from ... import bush  # for game
-from ...bolt import floats_equal
 
-class _AGlobalsTweak(CustomChoiceTweak):
+class _ASettingsTweak(MultiTweakItem):
+    """Shared code of GLOB and GMST tweaks."""
+    tweak_log_msg = u'' # not logged for GMST tweaks
+    show_key_for_custom = True
+
+class _AGlobalsTweak(_ASettingsTweak, CustomChoiceTweak):
     """Sets a global to specified value."""
     tweak_read_classes = b'GLOB',
-    show_key_for_custom = True
 
     @property
     def chosen_value(self):
@@ -122,10 +125,9 @@ class GlobalsTweak_Crime_ForceJail(_AGlobalsTweak):
     default_choice = u'5000'
 
 #------------------------------------------------------------------------------
-class _AGmstTweak(MultiTweakItem):
+class _AGmstTweak(_ASettingsTweak):
     """Sets a GMST to specified value."""
     tweak_read_classes = b'GMST',
-    show_key_for_custom = True
 
     @property
     def chosen_eids(self):
@@ -170,7 +172,7 @@ class _AGmstTweak(MultiTweakItem):
                     return _(u"The value chosen for GMST '%s' must be a "
                              u'float, but is currently of type %s (%s).') % (
                         target_eid, type(target_value).__name__, target_value)
-        return None
+        return super(_AGmstTweak, self).validate_values(chosen_values)
 
     def wants_record(self, record):
         if record.fid[0] not in bush.game.bethDataFiles:
@@ -178,10 +180,7 @@ class _AGmstTweak(MultiTweakItem):
         rec_eid = record.eid.lower()
         if rec_eid not in self.eid_was_itpo: return False # not needed
         target_val = self._find_chosen_value(rec_eid)
-        if rec_eid.startswith(u'f'):
-            ret_val = not floats_equal(record.value, target_val)
-        else:
-            ret_val = record.value != target_val
+        ret_val = record.value != target_val
         # Remember whether the last entry was ITPO or not
         self.eid_was_itpo[rec_eid] = not ret_val
         return ret_val
@@ -1708,6 +1707,13 @@ class GmstTweak_Prompt_Talk(_AGmstCCTweak):
 
 class GmstTweak_Prompt_Talk_Tes4(GmstTweak_Prompt_Talk):
     tweak_key = (u'sTargetTypeTalk',)
+
+#------------------------------------------------------------------------------
+class GmstTweak_Msg_NoSoulGemLargeEnough(_AMsgTweak):
+    tweak_name = _(u'Msg: No Soul Gem Large Enough')
+    tweak_tip = _(u'Message when there is no soul gem large enough for a '
+                  u'captured soul.')
+    tweak_key = (u'sSoulGemTooSmall',)
 
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):

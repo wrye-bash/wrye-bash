@@ -39,7 +39,7 @@ from collections import deque
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
     ConditionFunc, ConditionNot, ConditionOr, is_regex
 from ..bolt import deprint, LowerDict, Path, AFile
-from ..exception import LexerError, ParserError, BoltError
+from ..exception import LexerError, ParserError, BoltError, EvalError
 
 # Try to use the C version (way faster), if that isn't possible fall back to
 # the pure Python version
@@ -80,6 +80,10 @@ class LOOTParser(object):
         self._cached_masterlist = {}
         self._cached_regexes = {}
         self._cached_merges = {}
+        deprint(u'Using these LOOT paths:')
+        deprint(u' Masterlist: %s' % masterlist_path)
+        deprint(u' Userlist: %s' % userlist_path)
+        deprint(u' Taglist (fallback): %s' % taglist_path)
         self._masterlist  = AFile(masterlist_path)
         self._userlist  = AFile(userlist_path)
         self._taglist  = AFile(taglist_path)
@@ -132,7 +136,7 @@ class LOOTParser(object):
             try:
                 return (_ConditionalTag.resolve_tags(res_entry.tags_added),
                         _ConditionalTag.resolve_tags(res_entry.tags_removed))
-            except (LexerError, ParserError):
+            except (LexerError, ParserError, EvalError):
                 if not catch_errors:
                     raise
                 deprint(u'Error while evaluating LOOT condition',
@@ -224,8 +228,8 @@ class LOOTParser(object):
         try:
             return self._tagCache[modName]
         except KeyError:
-            self._tagCache[modName] = self.get_plugin_tags(modName)
-            return self._tagCache[modName]
+            self._tagCache[modName] = ca_tags = self.get_plugin_tags(modName)
+            return ca_tags
 
 # Implementation
 def _loot_decode(raw_str): # PY3: drop entirely, pyyaml is fully unicode on py3
@@ -339,12 +343,11 @@ class _ConditionalTag(object):
         :rtype: set[unicode]"""
         resulting_tags = set()
         for tag in tag_set:
-            try:
+            # Most tags are unconditional, so avoid try-except
+            if isinstance(tag, _ConditionalTag):
                 if tag.eval_condition():
-                    # Conditional tag, and the condition is valid
                     resulting_tags.add(tag.tag_name)
-            except AttributeError:
-                # Unconditional tag
+            else:
                 resulting_tags.add(tag)
         return resulting_tags
 
@@ -423,7 +426,7 @@ _token_regexes = (
     (re.compile(u','),                      _COMMA),
     (re.compile(u'(?:(?:<|>)=?)|(?:!|=)='), _COMPARISON),
     ##: Verify that we don't have to worry about escapes
-    # This is not a typo: empty strings forbidden by the grammar
+    # This is not a typo: empty strings are forbidden by the grammar
     (re.compile(u'"[^"]+"'),                _STRING),
     (re.compile(u'[0-9ABCDEF]+'),           _CHECKSUM),
     (re.compile(u'[a-z_]+'),                _FUNCTION),
@@ -545,13 +548,15 @@ def _parse_condition(tokens, min_prec=1):
     # operator that eventually resolves down to atoms)
     return lhs
 
-def _parse_atom(tokens):
+def _parse_atom(tokens, accept_not=True):
     """Parses the specified deque of tokens, returning an atom (which is either
     a function call, a parenthesized condition or a negated function call (e.g.
     'not file("foo.esp")')).
 
     :param tokens: The deque of tokens that should be parsed.
     :type tokens: deque[_Token]
+    :param accept_not: Whether or not to accept 'not' expressions as atoms.
+        Used to avoid accepting 'not not' expressions.
     :return: The parsed atom.
     :rtype: _ACondition"""
     ttag = _peek_token(tokens)
@@ -563,10 +568,10 @@ def _parse_atom(tokens):
         ret_cond = _parse_condition(tokens)
         _pop_token(tokens, _RPAREN)
         return ret_cond
-    elif ttag == _NOT:
+    elif accept_not and ttag == _NOT:
         # 'not' is unary, so can't be handled by the regular algorithm
         _pop_token(tokens, _NOT)
-        return ConditionNot(_parse_function(tokens))
+        return ConditionNot(_parse_atom(tokens, accept_not=False))
     else:
         raise ParserError(
             u'Unexpected token %s - expected one of %s' % (
@@ -583,7 +588,7 @@ def _parse_function(tokens):
     :return: The parsed function call.
     :rtype: ConditionFunc"""
     func_args = []
-    token = _pop_token(tokens, _FUNCTION)
+    func_name = _pop_token(tokens, _FUNCTION).token_text
     _pop_token(tokens, _LPAREN)
     # One argument is required
     func_args.append(_parse_argument(tokens))
@@ -592,7 +597,7 @@ def _parse_function(tokens):
         _pop_token(tokens, _COMMA)
         func_args.append(_parse_argument(tokens))
     _pop_token(tokens, _RPAREN)
-    return ConditionFunc(token.token_text, func_args)
+    return ConditionFunc(func_name, func_args)
 
 def _parse_argument(tokens):
     """Parses the specified deque of tokens, returning an argument (which is
@@ -683,13 +688,7 @@ def _parse_list(list_path):
     :return: A LowerDict representing the list's contents.
     :rtype: LowerDict[unicode, _PluginEntry]"""
     with list_path.open(u'r', encoding=u'utf-8') as ins:
-        # HACK! https://github.com/yaml/pyyaml/issues/373
-        if u'fallout4' in list_path.cs:
-            yaml_data = ins.read().replace(u'incWithPatchVersion1.5.157.0',
-                                           u'incWithPatchVersion1_5_157_0')
-            list_contents = yaml.load(yaml_data, Loader=SafeLoader)
-        else:
-            list_contents = yaml.load(ins, Loader=SafeLoader)
+        list_contents = yaml.load(ins, Loader=SafeLoader)
     # The list contents may be None if the list file exists, but is an entirely
     # empty YAML file. Just return an empty dict in that case.
     if not list_contents:

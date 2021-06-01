@@ -23,13 +23,13 @@
 """Builds on the rest of brec to provide full definitions and base classes for
 some commonly needed records."""
 
-from __future__ import division, print_function
+from __future__ import division
 
 from itertools import izip
 from operator import attrgetter
 
 from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
-    MelUnion
+    MelUnion, MelSorted
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
     MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString, \
     MelUnicode
@@ -37,7 +37,8 @@ from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID
 from .. import bolt, exception
-from ..bolt import decoder, GPath, struct_pack, structs_cache
+from ..bolt import decoder, GPath, struct_pack, structs_cache, \
+    remove_newlines, to_unix_newlines
 from ..exception import StateError
 
 #------------------------------------------------------------------------------
@@ -101,16 +102,16 @@ class MreHeaderBase(MelRecord):
 
     @property
     def description(self):
-        return self.description_pstr or u''
+        return to_unix_newlines(self.description_pstr or u'')
     @description.setter
     def description(self, new_desc):
         self.description_pstr = new_desc
     @property
     def author(self):
-        return self.author_pstr
+        return remove_newlines(self.author_pstr or u'')
     @author.setter
-    def author(self, val):
-        self.author_pstr = val
+    def author(self, new_author):
+        self.author_pstr = new_author
 
     def loadData(self, ins, endPos):
         super(MreHeaderBase, self).loadData(ins, endPos)
@@ -138,7 +139,7 @@ class MreFlst(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFids(b'LNAM', u'formIDInList'),
+        MelFids(b'LNAM', u'formIDInList'), # do *not* sort!
     )
 
     __slots__ = melSet.getSlotsUsed() + [u'mergeOverLast', u'mergeSources',
@@ -239,7 +240,7 @@ class MreLand(MelRecord):
         MelBase(b'VNML', u'vertex_normals'),
         MelBase(b'VHGT', u'vertex_height_map'),
         MelBase(b'VCLR', u'vertex_colors'),
-        MelGroups(u'layers',
+        MelSorted(MelGroups(u'layers',
             # Start a new layer each time we hit one of these
             MelUnion({
                 b'ATXT': MelStruct(b'ATXT', [u'I', u'B', u's', u'h'], (FID, u'atxt_texture'),
@@ -249,10 +250,10 @@ class MreLand(MelRecord):
             }),
             # VTXT only exists for ATXT layers, i.e. if ATXT's FormID is valid
             MelUnion({
-                True:  MelBase(b'VTXT', u'alpha_layer_data'),
+                True:  MelBase(b'VTXT', u'alpha_layer_data'), # sorted
                 False: MelNull(b'VTXT'),
             }, decider=FidNotNullDecider(u'atxt_texture')),
-        ),
+        ), sort_by_attrs=(u'quadrant', u'layer')),
         MelArray(u'vertex_textures',
             MelFid(b'VTEX', u'vertex_texture'),
         ),

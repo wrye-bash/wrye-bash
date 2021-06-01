@@ -59,10 +59,8 @@ class ConvertersData(DataDict):
     def load(self):
         self.converterFile.load()
         convertData = self.converterFile.pickled_data
-        self.bcfCRC_converter = convertData.get(u'bcfCRC_converter', {}) or \
-                                convertData.get(b'bcfCRC_converter', {})
-        self.srcCRC_converters = convertData.get(u'srcCRC_converters', {}) or \
-                                 convertData.get(b'srcCRC_converters', {})
+        self.bcfCRC_converter = convertData.get(u'bcfCRC_converter', {})
+        self.srcCRC_converters = convertData.get(u'srcCRC_converters', {})
         return True
 
     def save(self):
@@ -580,6 +578,7 @@ class InstallerConverter(object):
         tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
         #--Dump file list
         try:
+            ##: We don't use a BOM for tempList in unpackToTemp...
             with tempList.open(u'w', encoding=u'utf-8-sig') as out:
                 out.write(u'\n'.join(fileNames))
         except Exception as e:
@@ -587,10 +586,8 @@ class InstallerConverter(object):
                                % e), sys.exc_info()[2]
         #--Determine settings for 7z
         installerCRC = srcInstaller.crc
-        if isinstance(srcInstaller, Path):
-            apath = srcInstaller
-        elif srcInstaller.is_archive():
-            apath = srcInstaller.abs_path
+        apath = srcInstaller if isinstance(srcInstaller,
+                                           Path) else srcInstaller.abs_path
         subTempDir = tmpDir.join(u'%08X' % installerCRC)
         if progress:
             progress(0, u'%s\n' % apath + _(u'Extracting files...'))

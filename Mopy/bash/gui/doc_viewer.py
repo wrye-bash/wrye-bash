@@ -32,7 +32,12 @@ except ImportError:
     _wx_html2 = None
 # Try to import the PDF viewer, may not be available everywhere
 try:
-    from wx.lib.pdfviewer import pdfViewer as _PdfViewer
+    # wx.lib.pdfviewer uses a raw print statment, UGH!.  We cannot directly
+    # override this on Python 2, so instead redirect stdout temporarily to
+    # our deprint
+    from ..bolt import redirect_stdout_to_deprint
+    with redirect_stdout_to_deprint():
+        from wx.lib.pdfviewer import pdfViewer as _PdfViewer
 except ImportError:
     _PdfViewer = None
 import wx as _wx
@@ -46,7 +51,7 @@ from .buttons import BackwardButton, ForwardButton, ReloadButton
 from .text_components import TextArea
 from .layouts import VLayout
 from .. import bass ##: drop this
-from ..bolt import decoder
+from ..bolt import decoder, deprint
 from ..exception import StateError
 
 def web_viewer_available():
@@ -326,8 +331,13 @@ class DocumentViewer(_AComponent):
         """Load a PDF file if PDFViewer is available, or load the text.
 
         :param file_path: A bolt.Path instance or a unicode string."""
-        if pdf_viewer_available():
-            self._pdf_ctrl.open_file(u'%s' % file_path)
+        pdf_path = u'%s' % file_path
+        with open(pdf_path, u'rb') as ins:
+            pdf_valid = ins.read(4) == b'%PDF'
+        if not pdf_valid:
+            deprint(u'%s is not a valid PDF' % pdf_path)
+        if pdf_valid and pdf_viewer_available():
+            self._pdf_ctrl.open_file(pdf_path)
             self.switch_to_pdf()
         else:
             self.try_load_text(file_path)

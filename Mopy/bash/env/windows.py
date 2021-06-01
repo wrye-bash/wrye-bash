@@ -22,11 +22,12 @@
 # =============================================================================
 """Encapsulates Windows-specific classes and methods."""
 
-from __future__ import print_function
-
 import os
 import re
 import sys
+import datetime
+import struct
+import xml.etree.ElementTree as xml
 import _winreg as winreg  # PY3
 from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes, WINFUNCTYPE, c_uint, c_long, Union, c_ushort, c_int, \
@@ -39,10 +40,10 @@ import win32gui
 
 from ..bolt import GPath, deprint, Path
 from ..exception import AccessDeniedError, BoltError, NonExistentDriveError
-from .common import get_env_var
+from .common import get_env_var, WinAppInfo, WinAppVersionInfo
 
 # API - Constants =============================================================
-isUAC = False # True if the game is under UAC protection
+_isUAC = False
 
 from ctypes.wintypes import MAX_PATH
 from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, \
@@ -187,6 +188,9 @@ def _query_string_field_version(file_name, version_prefix):
     ver_query = u'\\StringFileInfo\\%04X%04X\\%s' % (lang, codepage,
                                                      version_prefix)
     full_ver = win32api.GetFileVersionInfo(file_name, ver_query)
+    return _parse_version_string(full_ver)
+
+def _parse_version_string(full_ver):
     # xSE uses commas in its version fields, so use this 'heuristic'
     split_on = u',' if u',' in full_ver else u'.'
     try:
@@ -214,6 +218,184 @@ def _query_fixed_field_version(file_name, version_prefix):
     ls = info[u'%sLS' % version_prefix]
     return win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), \
            win32api.LOWORD(ls)
+
+def _datetime_from_windows_filetime(filetime):
+    """Convert a Windows 64-bit FileTime to a Python datetime object."""
+    ## Maybe belongs in bolt?
+    # Starting time for Windows FileTime is Jan 1, 1601, midnight
+    time_zero = datetime.datetime(1601, 1, 1, 0, 0, 0)
+    # FileTime is stored as 100's of nanoseconds
+    delta = datetime.timedelta(microseconds=filetime / 10)
+    try:
+        return time_zero + delta
+    except OverflowError:
+        # Can occur if delta is very large
+        return time_zero
+
+class _WindowsStoreFinder(object):
+    developer_ids = {
+        u'Bethesda': u'3275kfvn8vcwc'
+    }
+
+    def __init__(self):
+        self.info_cache = {} # app_name -> WinAppInfo
+
+    @staticmethod
+    def _read_registry_string(reg_key, string_name):
+        string_value, string_type = winreg.QueryValueEx(reg_key, string_name)
+        if string_type == winreg.REG_SZ:
+            return string_value
+        else:
+            return None
+
+    @staticmethod
+    def _read_registry_filetime(reg_key, filetime_name):
+        filetime, value_type = winreg.QueryValueEx(reg_key, filetime_name)
+        if value_type == 11: # REG_QWORD on Python 3.6+
+            try:
+                filetime, = struct.unpack('q', filetime)
+            except struct.error:
+                return datetime.datetime(0)
+            return _datetime_from_windows_filetime(filetime)
+        return datetime.datetime(0)
+
+    @classmethod
+    def _get_package_locations(cls, package_index):
+        """Get all applicable information we wish to cache about a package."""
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                    r'SOFTWARE\Microsoft\Windows\CurrentVersion\AppModel'
+                    r'\StateRepository\Cache\Package\Data') as pfn_key:
+                with winreg.OpenKey(pfn_key, package_index) as index_key:
+                    install_location = cls._read_registry_string(index_key,
+                        u'InstalledLocation')
+                    mutable_location = cls._read_registry_string(index_key,
+                        u'MutableLocation')
+                    return install_location, mutable_location
+        except WindowsError:
+            # Either on a windows version without windows apps, or the
+            # specific app is not installed
+            return None, None
+
+    @staticmethod
+    def _get_package_index(package_full_name):
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                r'SOFTWARE\Microsoft\Windows\CurrentVersion\AppModel'
+                r'\StateRepository\Cache\Package\Index'
+                r'\PackageFullName') as pfn_key:
+                with winreg.OpenKey(pfn_key, package_full_name) as index_key:
+                    return winreg.EnumKey(index_key, 0)
+        except WindowsError:
+            # Windows version without apps, or not installed
+            return None
+
+    @staticmethod
+    def _get_package_full_names(package_name):
+        """Get all `package_full_name`s for this app."""
+        try:
+            full_names = []
+            with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,
+                r'Local Settings\Software\Microsoft\Windows\CurrentVersion'
+                r'\AppModel\Repository\Families') as families_key:
+                with winreg.OpenKey(families_key, package_name) as family_key:
+                    num_families = winreg.QueryInfoKey(family_key)[0]
+                    return [winreg.EnumKey(family_key, i)
+                            for i in xrange(num_families)]
+        except WindowsError:
+            # Windows version without apps, or not installed
+            return []
+
+    @classmethod
+    def _get_package_install_time(cls, package_name, full_name):
+        try:
+            with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,
+                r'Local Settings\Software\Microsoft\Windows\CurrentVersion'
+                r'\AppModel\Repository\Families') as families_key:
+                with winreg.OpenKey(families_key, package_name) as p_key:
+                    with winreg.OpenKey(p_key, full_name) as pfn_key:
+                        return cls._read_registry_filetime(pfn_key,
+                                                           u'InstallTime')
+        except (WindowsError, ValueError):
+            # Windows version without the app store, or not installed
+            # or InstallTime value wasn't of the right type
+            pass
+        return datetime.datetime.fromtimestamp(0)
+
+    @staticmethod
+    def _get_package_version_from_full_name(package_full_name):
+        parts = package_full_name.split(u'_')
+        # Expected format is {package_name}_{version}_{platform}__{publisher_id}
+        if len(parts) != 5:
+            return u'0.0.0.0'
+        return parts[1]
+
+    @staticmethod
+    def _get_manifest_info(mutable_location, app_name):
+        version = None
+        entry_point = u''
+        try:
+            manifest = mutable_location.join(u'appxmanifest.xml')
+            tree = xml.parse(manifest.s)
+            root = tree.getroot()
+            # AppxManifest.xml uses XML namespaces, don't try to hard to
+            # extract the applicable namespace
+            namespace = root.tag.split(u'}')[0].strip(u'{')
+            version_template = u"{%s}Identity[@Version][@Name='%s']"
+            entry_template = u'./{%s}Applications/{%s}Application[@Id]' \
+                             u'[@EntryPoint][@Executable]'
+            # First get the version
+            identity = root.find(version_template % (namespace, app_name))
+            if identity is not None:
+                # NOTE: `if identity` throws a FutureWarning
+                version = identity.get(u'Version')
+            # Next get the entry point
+            entry = root.find(entry_template % (namespace, namespace))
+            if entry is not None:
+                entry_point = entry.get(u'Id')
+        except (xml.ParseError, IOError):
+            # Parsing error, or the file doesn't exist
+            pass
+        return version, entry_point
+
+    def get_app_info(self, app_name, publisher_name=None, publisher_id=None):
+        """Public interface: returns a WinAppInfo object with all applicable
+           information about the application."""
+        if not publisher_id:
+            publisher_id = self.developer_ids.get(publisher_name)
+        if not publisher_id:
+            # Not a common publisher name, need the publisher id
+            return WinAppInfo()
+        package_name = app_name + '_' + publisher_id
+        try:
+            return self.info_cache[package_name]
+        except KeyError:
+            # Not cached, look everything up
+            pass
+        app_info = WinAppInfo(publisher_name, publisher_id, package_name)
+        # Gather all versions of the app
+        package_full_names = self._get_package_full_names(package_name)
+        for full_name in package_full_names:
+            package_index = self._get_package_index(full_name)
+            install_location, mutable_location = \
+                self._get_package_locations(package_index)
+            install_location = GPath(install_location)
+            mutable_location = GPath(mutable_location)
+            install_time = self._get_package_install_time(package_name,
+                                                          full_name)
+            version, entry_point = self._get_manifest_info(mutable_location,
+                                                           app_name)
+            if not version:
+                version = self._get_package_version_from_full_name(full_name)
+            version = _parse_version_string(version)
+            version_info = WinAppVersionInfo(
+                full_name, install_location, mutable_location, version,
+                install_time, entry_point)
+            app_info.versions[full_name] = version_info
+        self.info_cache[package_name] = app_info
+        return app_info
+
+_win_store_finder = _WindowsStoreFinder()
 
 # All code starting from the 'BEGIN MIT-LICENSED PART' comment and until the
 # 'END MIT-LICENSED PART' comment is based on
@@ -356,8 +538,9 @@ def _get_known_path(known_folder_id, user_handle=_UserHandle.current):
     S_OK = 0
     if _SHGetKnownFolderPath(byref(kf_id), 0, user_handle,
                              byref(pPath)) != S_OK:
-        raise RuntimeError(u"Failed to retrieve known folder path '%r'" %
-                           known_folder_id)
+        raise RuntimeError(u"Failed to retrieve known folder path '%r' - this "
+                           u"is most likely caused by OneDrive, see General "
+                           u"Readme" % known_folder_id)
     path = pPath.value
     _CoTaskMemFree(pPath)
     return path
@@ -430,14 +613,17 @@ _PFTASKDIALOGCALLBACK = WINFUNCTYPE(c_void_p, c_void_p, c_uint, c_uint, c_long,
 #-------Win32 Stucts/Unions--------#
 # Callers do not have to worry about using these.
 class _TASKDIALOG_BUTTON(Structure):
+    _pack_ = 1
     _fields_ = [(u'nButtonID', c_int),
                 (u'pszButtonText', c_wchar_p)]
 
 class _FOOTERICON(Union):
+    _pack_ = 1
     _fields_ = [(u'hFooterIcon', c_void_p),
                 (u'pszFooterIcon', c_ushort)]
 
 class _MAINICON(Union):
+    _pack_ = 1
     _fields_ = [(u'hMainIcon', c_void_p),
                 (u'pszMainIcon', c_ushort)]
 
@@ -577,6 +763,7 @@ _SHGSI_LINKOVERLAY   = 0x00008000 # get icon with a link overlay on it
 _SHGSI_SELECTED      = 0x00010000 # get icon in selected state
 
 class _SHSTOCKICONINFO(Structure):
+    _pack_ = 1
     _fields_ = [(u'cbSize', c_ulong),
                 (u'hIcon', c_void_p),
                 (u'iSysImageIndex', c_int),
@@ -601,7 +788,7 @@ _HEADING = 3
 # END TASKDIALOG PART =========================================================
 
 # API - Functions =============================================================
-def get_registry_path(subkey, entry, detection_file):
+def get_registry_path(subkey, entry, test_path_callback):
     """Check registry for a path to a program."""
     if not winreg: return None
     for hkey in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
@@ -616,15 +803,26 @@ def get_registry_path(subkey, entry, detection_file):
             if reg_val[1] != winreg.REG_SZ: continue
             installPath = GPath(reg_val[0])
             if not installPath.exists(): continue
-            exePath = installPath.join(detection_file)
-            if not exePath.exists(): continue
+            if not test_path_callback(installPath): continue
             return installPath
     return None
 
-def get_registry_game_path(submod):
-    """Check registry supplied game paths for the game detection file."""
-    subkey, entry = submod.regInstallKeys
-    return get_registry_path(subkey, entry, submod.game_detect_file)
+def get_registry_game_paths(submod):
+    """Check registry-supplied game paths for the game detection file(s)."""
+    reg_keys = submod.regInstallKeys
+    if not reg_keys:
+        return [] # Game is not detectable via registry
+    subkey, entry = reg_keys
+    reg_path = get_registry_path(subkey, entry, submod.test_game_path)
+    return [] if not reg_path else [reg_path]
+
+def get_win_store_game_info(submod):
+    """Get all information about a Windows Store application."""
+    publisher_name = submod.Ws.publisher_name
+    publisher_id = submod.Ws.publisher_id
+    app_name = submod.Ws.win_store_name
+    return _win_store_finder.get_app_info(
+        app_name, publisher_name, publisher_id)
 
 def get_personal_path():
     return (GPath(_get_known_path(_FOLDERID.Documents)),
@@ -638,7 +836,8 @@ def init_app_links(apps_dir, badIcons, iconList):
     init_params = []
     for path, (target, icon, shortcut_descr) in _get_app_links(
             apps_dir).iteritems():
-        if target.lower().find(u'' r'installer\{') != -1: # msi shortcuts: dc0c8de
+        # msi shortcuts: dc0c8de
+        if target.lower().find(u'' r'installer\{') != -1:
             target = path
         else:
             target = GPath(target)
@@ -702,7 +901,7 @@ def get_file_version(filename):
     return _query_string_field_version(filename, u'FileVersion')
 
 def testUAC(gameDataPath):
-    print(u'testing UAC')
+    deprint(u'Testing if game folder is UAC-protected')
     tmpDir = Path.tempDir()
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
@@ -711,15 +910,15 @@ def testUAC(gameDataPath):
     try: # to move it into the Data directory
         shellMove(tempFile, dest, silent=True)
     except AccessDeniedError:
-        global isUAC
-        isUAC = True
+        global _isUAC
+        _isUAC = True
     finally:
         shellDeletePass(tmpDir)
         shellDeletePass(dest)
 
 def setUAC(handle, uac=True):
     """Calls the Windows API to set a button as UAC"""
-    if isUAC and win32gui:
+    if _isUAC and win32gui:
         win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
 def getJava(): # PY3: cache this
@@ -749,6 +948,10 @@ def getJava(): # PY3: cache this
         java_bin_path = sys_root.join(u'syswow64', u'javaw.exe')
     return java_bin_path
 
+def is_uac():
+    """Returns True if the game is under UAC protection."""
+    return _isUAC
+
 def fixup_taskbar_icon():
     """On Windows 7+, if taskbar settings for taskbar buttons is set to 'Always
     combine, hide labels', then the taskbar icon will be grouped as a
@@ -773,7 +976,7 @@ def mark_high_dpi_aware():
 def python_tools_dir():
     """Returns the absolute path to the Tools directory of the currently used
     Python installation."""
-    return os.path.join(sys.prefix, u'lib', u'Tools') # easy on Windows
+    return os.path.join(sys.prefix, u'Tools') # easy on Windows
 
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
@@ -900,8 +1103,8 @@ class TaskDialog(object):
         return self
 
     def set_expander(self, expander_data, expanded=False, at_footer=False):
-        """Set up a collapsible control that can reveal further information about
-           the task that the dialog performs."""
+        """Set up a collapsible control that can reveal further information
+        about the task that the dialog performs."""
         if len(expander_data) != 3: return self
         self._expander_data = expander_data
         self._expander_expanded = expanded
@@ -909,13 +1112,15 @@ class TaskDialog(object):
         return self
 
     def set_rangeless_progress_bar(self, ticks=50):
-        """Set the progress bar on the task dialog as a marquee progress bar."""
+        """Set the progress bar on the task dialog as a marquee progress
+        bar."""
         self._marquee_progress_bar = True
         self._marquee_speed = ticks
         return self
 
     def set_progress_bar(self, callback, low=0, high=100, pos=0):
-        """Set the progress bar on the task dialog as a marquee progress bar."""
+        """Set the progress bar on the task dialog as a marquee progress
+        bar."""
         _range = (high << 16) | low
         self._progress_bar = {u'func':callback, u'range': _range, u'pos':pos}
         return self
@@ -943,9 +1148,9 @@ class TaskDialog(object):
         if button.value >= _BUTTONID_OFFSET:
             button = self.__custom_buttons[button.value - _BUTTONID_OFFSET][0]
         else:
-            for key, value in self.stock_button_ids.items():
-                if value == button.value:
-                    button = key
+            for stock_btn, stock_val in self.stock_button_ids.iteritems():
+                if stock_val == button.value:
+                    button = stock_btn
                     break
             else:
                 button = 0
@@ -980,7 +1185,8 @@ class TaskDialog(object):
         conf.pszMainInstruction = self._heading
         conf.pszContent = self._content
 
-        attributes = dir(self) # FIXME(ut): unpythonic, as the builder pattern above
+        # FIXME(ut): unpythonic, as the builder pattern above
+        attributes = dir(self)
 
         if u'_width' in attributes:
             conf.cxWidth = self._width
@@ -1105,9 +1311,9 @@ class TaskDialog(object):
                 button = self.__custom_buttons[wparam - _BUTTONID_OFFSET][0]
                 args.append(button)
             else:
-                for key, value in self.stock_button_ids.items():
-                    if value == wparam:
-                        button = key
+                for stock_btn, stock_val in self.stock_button_ids.iteritems():
+                    if stock_val == wparam:
+                        button = stock_btn
                         break
                 else:
                     button = 0

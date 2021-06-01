@@ -243,20 +243,11 @@ def download_redists():
     present."""
     if not os.path.isdir(REDIST_PATH):
         os.makedirs(REDIST_PATH)
-    msvc_2010_x86 = os.path.join(REDIST_PATH, u'vcredist_2010_x86.exe')
-    if not os.path.isfile(msvc_2010_x86):
-        LOGGER.info(u'MSVC 2010 x86 redistributable not found, downloading')
-        utils.download_file(u'https://download.microsoft.com/download/5/B/C/'
-                            u'5BC5DBB3-652D-4DCE-B14A-475AB85EEF6E/'
-                            u'vcredist_x86.exe', msvc_2010_x86)
-        LOGGER.debug(u'MSVC 2010 x86 redistributable downloaded successfully')
-    else:
-        LOGGER.debug(u'MSVC 2010 x86 redistributable found')
     msvc_2010_x64 = os.path.join(REDIST_PATH, u'vcredist_2010_x64.exe')
     if not os.path.isfile(msvc_2010_x64):
         LOGGER.info(u'MSVC 2010 x64 redistributable not found, downloading')
-        utils.download_file(u'https://download.microsoft.com/download/3/2/2/'
-                            u'3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/'
+        utils.download_file(u'https://download.microsoft.com/download/1/6/5/'
+                            u'165255E7-1014-4D0A-B094-B6A430A6BFFC/'
                             u'vcredist_x64.exe', msvc_2010_x64)
         LOGGER.debug(u'MSVC 2010 x64 redistributable downloaded successfully')
     else:
@@ -277,12 +268,12 @@ def pack_manual(version):
         u'Mopy/bash/tests',
         u'Mopy/redist',
     )
-    for orig, target in files_to_include.items():
+    for orig, target in files_to_include.iteritems():
         cpy(orig, target)
     try:
         pack_7z(archive_, *[u'-xr!' + a for a in ignores])
     finally:
-        for path in files_to_include.values():
+        for path in files_to_include.itervalues():
             rm(path)
 
 @contextmanager
@@ -536,14 +527,14 @@ def hold_files(*files):
     try:
         yield
     finally:
-        for orig, target in file_map.items():
+        for orig, target in file_map.iteritems():
             mv(target, orig)
         rm(tmpdir)
 
 @contextmanager
 def clean_repo():
     repo = pygit2.Repository(ROOT_PATH)
-    if any(v != pygit2.GIT_STATUS_IGNORED for v in repo.status().values()):
+    if any(v != pygit2.GIT_STATUS_IGNORED for v in repo.status().itervalues()):
         print(u'Your repository is dirty (you have uncommitted changes).')
     branch_name = repo.head.shorthand
     if not branch_name.startswith((u'rel-', u'release-', u'nightly')):

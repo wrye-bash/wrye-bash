@@ -31,9 +31,13 @@ from ...brec import MreGlob, MreLand
 
 class NehrimGameInfo(OblivionGameInfo):
     displayName = u'Nehrim'
+    game_icon = u'nehrim_%u.png'
     bash_root_prefix = u'Nehrim'
-    game_detect_file = _j(u'Data', u'Nehrim.esm')
+    bak_game_name = u'Nehrim'
+    game_detect_includes = [u'NehrimLauncher.exe']
     master_file = u'Nehrim.esm'
+    loot_dir = u'Nehrim'
+    boss_game_name = u'Nehrim'
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
     nexusName = u'Nehrim Nexus'
     nexusKey = u'bash.installers.openNehrimNexus.continue'
@@ -76,10 +80,33 @@ class NehrimGameInfo(OblivionGameInfo):
         0x224fd:  0x1da83, #--Nor
     }
 
+    bethDataFiles = {
+        u'nehrim.esm',
+        u'translation.esp',
+        u'l - misc.bsa',
+        u'l - voices.bsa',
+        u'n - meshes.bsa',
+        u'n - misc.bsa',
+        u'n - sounds.bsa',
+        u'n - textures1.bsa',
+        u'n - textures2.bsa',
+    }
+
+    nirnroots = _(u'Vynroots')
+
+    @classmethod
+    def _dynamic_import_modules(cls, package_name):
+        # bypass setting the patchers in super class
+        super(OblivionGameInfo, cls)._dynamic_import_modules(package_name)
+        # Only Import Roads is of any interest
+        from ..oblivion.patcher import preservers
+        cls.game_specific_import_patchers = {
+            u'ImportRoads': preservers.ImportRoadsPatcher, }
+
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, \
+        from ..oblivion.records import MreActi, MreAlch, MreAmmo, MreAnio, \
             MreArmo, MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, \
             MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor, MreFurn, \
             MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, \
@@ -88,7 +115,7 @@ class NehrimGameInfo(OblivionGameInfo):
             MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, \
             MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
             MreGmst, MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo, \
-            MrePgrd
+            MrePgrd, MreAppa
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
             MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,

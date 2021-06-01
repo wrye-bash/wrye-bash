@@ -44,7 +44,7 @@ class Button(_AComponent):
     # The label to use when no label was explicitly specified. Set per class.
     _default_label = u''
 
-    def __init__(self, parent, btn_label=u'', btn_tooltip=None, default=False,
+    def __init__(self, parent, btn_label=u'', btn_tooltip=u'', default=False,
                  exact_fit=False, no_border=False):
         """Creates a new Button with the specified properties.
 
@@ -79,11 +79,17 @@ class Button(_AComponent):
 
 class OkButton(Button):
     """A button with the label 'OK'. Applies pending changes and closes the
-    dialog or shows that the user consented to something.
+    dialog or shows that the user consented to something. Note that if you use
+    this button, it will be set as the default as soon as you initialize it. If
+    you want a different button to be the default, initialize that button after
+    this button and pass default=True for it.
 
     See Button for documentation on button events."""
     _id = _wx.ID_OK
     _default_label = _(u'OK')
+
+    def __init__(self, *args, **kwargs):
+        super(OkButton, self).__init__(*args, default=True, **kwargs)
 
 class CancelButton(Button):
     """A button with the label 'Cancel'. Rejects pending changes or aborts a
@@ -177,28 +183,12 @@ class ImageButton(Button):
     See Button for documentation on button events. Note: this implementation
     locks us into wx 2.9+, since wx 2.8 can't do bitmaps with a regular button.
     """
-    def __init__(self, parent, init_image=None, btn_label=u'',
-                 btn_tooltip=None, default=False, exact_fit=False,
-                 no_border=False):
-        """Creates a new _AImageButton with the specified properties.
+    def __init__(self, parent, init_image=None, **kwargs):
+        """Creates a new _AImageButton with the specified properties. See
+        Button for documentation on all other keyword arguments.
 
-        :param parent: The object that this button belongs to. May be a wx
-                       object or a component.
-        :param init_image: The image shown on this button.
-        :param btn_label: The text shown on this button.
-        :param btn_tooltip: A tooltip to show when the user hovers over this
-                            button.
-        :param default: If set to True, this button will be the 'default',
-                        meaning that if a user selects nothing else and hits
-                        Enter, this button will activate.
-        :param exact_fit: If set to True, will fit the size of this button
-                          exactly to its contents.
-        :param no_border: If set to True, the borders of this button will be
-                          hidden."""
-        super(ImageButton, self).__init__(parent, btn_label=btn_label,
-                                          btn_tooltip=btn_tooltip,
-                                          default=default, exact_fit=exact_fit,
-                                          no_border=no_border)
+        :param init_image: The image shown on this button."""
+        super(ImageButton, self).__init__(parent, **kwargs)
         if init_image:
             self.image = init_image
 
@@ -243,12 +233,6 @@ class BackwardButton(_StdImageButton):
         super(BackwardButton, self).__init__(parent, exact_fit=True,
                                              btn_tooltip=_(u'Go Back'))
 
-class CancelImageButton(_StdImageButton):
-    """Version of CancelButton with a"""
-    _id = _wx.ID_CANCEL
-    _wx_icon = _wx.ART_ERROR
-    _dip_size = (32, 32)
-
 class ForwardButton(_StdImageButton):
     """An image button with no text that displays an arrow pointing to the
     right. Used for navigation, e.g. in a browser.
@@ -259,6 +243,12 @@ class ForwardButton(_StdImageButton):
     def __init__(self, parent):
         super(ForwardButton, self).__init__(parent, exact_fit=True,
                                             btn_tooltip=_(u'Go Forwards'))
+
+class QuitButton(_StdImageButton, CancelButton):
+    """Similar to CancelButton, also has a standard image shown on it."""
+    _default_label =_(u'Quit')
+    _wx_icon = _wx.ART_ERROR
+    _dip_size = (32, 32)
 
 class ReloadButton(ImageButton):
     """An image button with no text that displays two arrows in a circle. Used
@@ -278,7 +268,7 @@ class ClickableImage(ImageButton):
     """An image that acts like a button. Has no text and no borders.
 
     See Button for documentation on button events."""
-    def __init__(self, parent, image, btn_tooltip=None):
+    def __init__(self, parent, image, btn_tooltip=None, no_border=True):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
@@ -286,6 +276,6 @@ class ClickableImage(ImageButton):
         :param image: The image shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
                             button."""
-        super(ClickableImage, self).__init__(parent, image,
-                                             btn_tooltip=btn_tooltip,
-                                             exact_fit=True, no_border=True)
+        super(ClickableImage, self).__init__(
+            parent, image, btn_tooltip=btn_tooltip, exact_fit=True,
+            no_border=no_border)

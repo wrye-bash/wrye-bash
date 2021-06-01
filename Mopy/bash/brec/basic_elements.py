@@ -23,15 +23,14 @@
 """Houses basic building blocks for creating record definitions. Somewhat
 higher-level building blocks can be found in common_subrecords.py."""
 
-from __future__ import division, print_function
+from __future__ import division
 
 from itertools import izip
 
 from .utils_constants import FID, null1, _make_hashable, FixedString, \
     _int_unpacker, get_structs
 from .. import bolt, exception
-from ..bolt import decoder, encode, structs_cache, struct_calcsize, \
-    struct_error
+from ..bolt import decoder, encode, structs_cache, struct_calcsize, Rounder
 
 #------------------------------------------------------------------------------
 class MelObject(object):
@@ -101,26 +100,18 @@ class Subrecord(object):
                                                               lenData))
         outWrite(binary_data)
 
-def unpackSubHeader(ins, rsig=b'----', expType=None, expSize=0,  # PY3: ,*,
+def unpackSubHeader(ins, rsig=b'----', # PY3: ,*,
                     __unpacker=_int_unpacker, __sr=Subrecord):
     """Unpack a subrecord header. Optionally checks for match with expected
     type and size."""
-    ins_unpack = ins.unpack
-    mel_sig, mel_size = ins_unpack(__sr.sub_header_unpack,
+    mel_sig, mel_size = ins.unpack(__sr.sub_header_unpack,
                                    __sr.sub_header_size, rsig, u'SUB_HEAD')
-    #--Extended storage?
+    # Extended storage - very rare, so don't optimize inlines etc. for it
     if mel_sig == b'XXXX':
+        ins_unpack = ins.unpack
         mel_size = ins_unpack(__unpacker, 4, rsig, u'XXXX.SIZE')[0]
         mel_sig = ins_unpack(__sr.sub_header_unpack, __sr.sub_header_size,
                              rsig, u'XXXX.TYPE')[0] # Throw away size here (always == 0)
-    #--Match expected name?
-    if expType and expType != mel_sig:
-        raise exception.ModError(ins.inName, u'%s: Expected %s subrecord, '
-            u'but found %s instead.' % (rsig, expType, mel_sig))
-    #--Match expected size?
-    if expSize and expSize != mel_size:
-        raise exception.ModSizeError(ins.inName, (rsig , mel_sig),
-                                     (expSize,), mel_size)
     return mel_sig, mel_size
 
 class SubrecordBlob(Subrecord):
@@ -207,7 +198,9 @@ class MelBase(Subrecord):
     def mapFids(self,record,function,save=False):
         """Applies function to fids. If save is True, then fid is set
         to result of function."""
-        raise exception.AbstractError(u'%r does not have FormIDs' % record)
+        raise exception.AbstractError(u'mapFids called on subrecord without '
+                                      u'FormIDs (signatures: %s)'
+                                      % sorted(self.signatures))
 
     @property
     def signatures(self):
@@ -241,79 +234,6 @@ class _MelNum(MelBase):
         """Will only be dumped if set by load_mel."""
         attr = getattr(record, self.attr)
         return None if attr is None else self._packer(attr)
-
-#------------------------------------------------------------------------------
-class MelCounter(MelBase):
-    """Wraps a MelStruct-derived object with one numeric element (meaning that
-    it is compatible with e.g. MelUInt32). Just before writing, the wrapped
-    element's value is updated to the len() of another element's value, e.g. a
-    MelGroups instance. Additionally, dumping is skipped if the counter is
-    falsy after updating.
-
-    Does not support anything that seems at odds with that goal, in particular
-    fids and defaulters. See also MelPartialCounter, which targets mixed
-    structs."""
-    def __init__(self, counter_mel, counts):
-        """Creates a new MelCounter.
-
-        :param counter_mel: The element that stores the counter's value.
-        :type counter_mel: _MelField
-        :param counts: The attribute name that this counter counts.
-        :type counts: unicode"""
-        self._counter_mel = counter_mel
-        self.counted_attr = counts
-
-    def getSlotsUsed(self):
-        return self._counter_mel.getSlotsUsed()
-
-    def getLoaders(self, loaders):
-        loaders[self._counter_mel.mel_sig] = self
-
-    def setDefault(self, record):
-        self._counter_mel.setDefault(record)
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        self._counter_mel.load_mel(record, ins, sub_type, size_, *debug_strs)
-
-    def dumpData(self, record, out):
-        # Count the counted type first, then check if we should even dump
-        val_len = len(getattr(record, self.counted_attr, []))
-        setattr(record, self._counter_mel.attr, val_len)
-        if val_len:
-            self._counter_mel.dumpData(record, out)
-
-    @property
-    def signatures(self):
-        return self._counter_mel.signatures
-
-    @property
-    def static_size(self):
-        return self._counter_mel.static_size
-
-class MelPartialCounter(MelCounter):
-    """Extends MelCounter to work for MelStruct's that contain more than just a
-    counter. This means adding behavior for mapping fids, but dropping the
-    conditional dumping behavior."""
-    def __init__(self, counter_mel, counter, counts):
-        """Creates a new MelPartialCounter.
-
-        :param counter_mel: The element that stores the counter's value.
-        :type counter_mel: MelStruct
-        :param counter: The attribute name of the counter.
-        :type counter: unicode
-        :param counts: The attribute name that this counter counts.
-        :type counts: unicode"""
-        super(MelPartialCounter, self).__init__(counter_mel, counts)
-        self.counter_attr = counter
-
-    def hasFids(self, formElements):
-        self._counter_mel.hasFids(formElements)
-
-    def dumpData(self, record, out):
-        # Count the counted type, then update and dump unconditionally
-        setattr(record, self.counter_attr,
-                len(getattr(record, self.counted_attr, [])))
-        self._counter_mel.dumpData(record, out)
 
 #------------------------------------------------------------------------------
 # TODO(inf) DEPRECATED! - don't use for new usages -> MelGroups(MelFid)
@@ -387,7 +307,9 @@ class MelSequential(MelBase):
     delegate loading to multiple other record elements. It basically behaves
     like MelGroup, but does not assign to an attribute."""
     def __init__(self, *elements):
-        self.elements, self.form_elements = elements, set()
+        # Filter out None, produced by static deciders like fnv_only
+        self.elements = [e for e in elements if e is not None]
+        self.form_elements = set()
         self._possible_sigs = {s for element in self.elements for s
                                in element.signatures}
         self._sub_loaders = {}
@@ -650,21 +572,22 @@ class MelStruct(MelBase):
     def setDefault(self,record):
         for attr, value, action in izip(self.attrs, self.defaults,
                                         self.actions):
-            if action: value = action(value)
+            if callable(action): value = action(value)
             setattr(record, attr, value)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         unpacked = ins.unpack(self._unpacker, size_, *debug_strs)
         for attr, value, action in izip(self.attrs, unpacked, self.actions):
-            setattr(record, attr, action(value) if action else value)
+            setattr(record, attr, action(value) if callable(action) else value)
 
     def pack_subrecord_data(self, record):
-        # Just in case, apply the action to itself before dumping to handle
-        # e.g. a FixedString getting assigned a unicode value. Worst case,
-        # this is just a noop.
+        # Apply the action to itself before dumping to handle e.g. a
+        # FixedString getting assigned a unicode value. Worst case, this is
+        # just a noop - it is needed however when we read a flag say from a csv
         values = [
-            action(value).dump() if action else value for value, action in
-            izip((getattr(record, a) for a in self.attrs), self.actions)]
+            action(value).dump() if callable(action) else value
+            for value, action in izip((getattr(record, a) for a in self.attrs),
+                                      self.actions)]
         return self._packer(*values)
 
     def mapFids(self,record,function,save=False):
@@ -699,6 +622,8 @@ class MelStruct(MelBase):
                 attrs[index] = element
                 if type(fmt_str) is int and fmt_str: # 0 for weird subclasses
                     defaults[index] = fmt_str * null1
+                elif fmt_str == u'f':
+                    actions[index] = Rounder
             else:
                 el_0 = element[0]
                 attrIndex = el_0 == 0
@@ -708,6 +633,8 @@ class MelStruct(MelBase):
                 elif callable(el_0):
                     actions[index] = el_0
                     attrIndex = 1
+                elif fmt_str == u'f':
+                    actions[index] = Rounder # note this overrides action
                 attrs[index] = element[attrIndex]
                 if len(element) - attrIndex == 2:
                     defaults[index] = element[-1] # else leave to 0
@@ -744,6 +671,10 @@ class MelFloat(_MelNum):
     """Float."""
     _unpacker, _packer, static_size = get_structs(u'=f')
 
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        float_val = ins.unpack(self._unpacker, size_, *debug_strs)[0]
+        setattr(record, self.attr, Rounder(float_val)) ##: note we dont round on dump
+
 class MelSInt8(_MelNum):
     """Signed 8-bit integer."""
     _unpacker, _packer, static_size = get_structs(u'=b')
@@ -770,22 +701,23 @@ class MelUInt32(_MelNum):
 
 class _MelFlags(_MelNum):
     """Integer flag field."""
-    __slots__ = (u'_flag_type',)
+    __slots__ = (u'_flag_type', u'_flag_default')
 
     def __init__(self, mel_sig, attr, flags_type):
         super(_MelFlags, self).__init__(mel_sig, attr)
         self._flag_type = flags_type
+        self._flag_default = self._flag_type(self.default)
 
     def setDefault(self, record):
-        setattr(record, self.attr, self._flag_type(self.default))
+        setattr(record, self.attr, self._flag_default())
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         setattr(record, self.attr, self._flag_type(ins.unpack(
             self._unpacker, size_, *debug_strs)[0]))
 
     def pack_subrecord_data(self, record):
-        attr = getattr(record, self.attr)
-        return self._packer(attr.dump()) if attr is not None else None
+        flag_val = getattr(record, self.attr)
+        return self._packer(flag_val.dump()) if flag_val is not None else None
 
 class MelUInt8Flags(MelUInt8, _MelFlags): pass
 class MelUInt16Flags(MelUInt16, _MelFlags): pass

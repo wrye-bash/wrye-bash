@@ -28,6 +28,7 @@ __author__ = u'nycz, Utumno'
 from itertools import izip
 
 import wx as _wx
+import wx.adv as _adv
 
 from .base_components import _AComponent, Color, WithCharEvents, \
     WithMouseEvents
@@ -68,10 +69,6 @@ class DropDown(_AComponent):
             self._on_size_changed.subscribe(self._set_tooltip)
             self._on_text_changed.subscribe(self._set_tooltip)
 
-    def unsubscribe_handler_(self):
-        # PY3: TODO(inf) needed for wx3, check if needed in Phoenix
-        self._on_size_changed.unsubscribe(self._set_tooltip)
-
     def _set_tooltip(self):
         """Set the tooltip"""
         cb = self._native_widget
@@ -90,6 +87,16 @@ class DropDown(_AComponent):
 
     def get_value(self):
         return self._native_widget.GetValue()
+
+class ImageDropDown(DropDown):
+    """A version of DropDown that shows a bitmap in front of each entry."""
+    _wx_widget_type = _adv.BitmapComboBox
+
+    def set_bitmaps(self, bitmaps):
+        """Changes the bitmaps shown in the dropdown."""
+        with self.pause_drawing():
+            for i, bitmap in enumerate(bitmaps):
+                self._native_widget.SetItemBitmap(i, bitmap)
 
 class ColorPicker(_AComponent):
     """A button with a color that launches a color picker dialog.
@@ -167,10 +174,11 @@ class ListBox(WithMouseEvents):
 
     def lb_clear(self): self._native_widget.Clear()
 
-    def lb_bold_font_at_index(self, lb_selection_dex):
-        get_font = self._native_widget.GetFont()
-        self._native_widget.SetItemFont(lb_selection_dex,
-                                        Font.Style(get_font, bold=True))
+    def lb_style_font_at_index(self, lb_selection_dex, bold=False,
+                               slant=False):
+        curr_font = self._native_widget.GetFont()
+        styled_font = Font.Style(curr_font, bold=bold, slant=slant)
+        self._native_widget.SetItemFont(lb_selection_dex, styled_font)
 
     # Getters - we should encapsulate index access
     def lb_get_next_item(self, item, geometry=_wx.LIST_NEXT_ALL,
@@ -185,7 +193,6 @@ class ListBox(WithMouseEvents):
 
     def lb_get_selections(self): return self._native_widget.GetSelections()
 
-
     def lb_index_for_str_item(self, str_item):
         return self._native_widget.FindString(str_item)
 
@@ -195,12 +202,20 @@ class ListBox(WithMouseEvents):
     def lb_get_items_count(self):
         return self._native_widget.GetCount()
 
-    def lb_clear_selection(self):
-        self.lb_select_index(_wx.NOT_FOUND)
-
     def lb_get_selected_strings(self):
         return [self.lb_get_str_item_at_index(i)
                 for i in self.lb_get_selections()]
+
+    def lb_select_none(self):
+        """Entirely clears the selection of this ListBox."""
+        self.lb_select_index(_wx.NOT_FOUND)
+
+    def lb_select_all(self):
+        """Selects all items in the ListBox. Pointless if isSingle=True was
+        passed to this ListBox."""
+        with self.pause_drawing():
+            for i in xrange(self.lb_get_items_count()):
+                self.lb_select_index(i)
 
 class CheckListBox(ListBox, WithCharEvents):
     """A list of checkboxes, of which one or more can be selected.
@@ -240,21 +255,23 @@ class CheckListBox(ListBox, WithCharEvents):
     def set_all_checkmarks(self, checked):
         """Sets all checkmarks to the specified state - checked if True,
         unchecked if False."""
-        for i in xrange(self.lb_get_items_count()):
-            self.lb_check_at_index(i, checked)
+        with self.pause_drawing():
+            for i in xrange(self.lb_get_items_count()):
+                self.lb_check_at_index(i, checked)
 
     def get_checked_strings(self):
         """Returns a list of string representations of all checked items."""
         return self._native_widget.GetCheckedStrings()
 
-    def set_all_items(self, all_keys, all_values):
+    def set_all_items(self, all_keys, all_values): # PY3: dict (sorted!)
         """Completely clears the list and repopulates it using the specified
         key and value lists. Much faster than set_all_items_keep_pos, but
         discards the current scroll position."""
-        self.lb_clear()
-        for i, (k, v) in enumerate(izip(all_keys, all_values)):
-            self.lb_append(k)
-            self.lb_check_at_index(i, v)
+        with self.pause_drawing():
+            self.lb_clear()
+            for i, (k, v) in enumerate(izip(all_keys, all_values)):
+                self.lb_append(k)
+                self.lb_check_at_index(i, v)
 
     ##: Test that the claim below is actually accurate
     def set_all_items_keep_pos(self, names, checkmarks):
@@ -266,14 +283,16 @@ class CheckListBox(ListBox, WithCharEvents):
         if not names:
             self.lb_clear()
             return
-        for index, (lab, ch) in enumerate(izip(names, checkmarks)):
-            if index >= self.lb_get_items_count():
-                self.lb_append(lab)
-            else:
-                if index == -1:
-                    deprint(u'index = -1, label = %s, check = %s' % (lab, ch))
-                    continue
-                self.lb_set_label_at_index(index, lab)
-            self.lb_check_at_index(index, ch)
-        for index in xrange(self.lb_get_items_count(), len(names), -1):
-            self.lb_delete_at_index(index - 1)
+        with self.pause_drawing():
+            for index, (lab, ch) in enumerate(izip(names, checkmarks)):
+                if index >= self.lb_get_items_count():
+                    self.lb_append(lab)
+                else:
+                    if index == -1:
+                        deprint(u'index = -1, label = %s, '
+                                u'check = %s' % (lab, ch))
+                        continue
+                    self.lb_set_label_at_index(index, lab)
+                self.lb_check_at_index(index, ch)
+            for index in xrange(self.lb_get_items_count(), len(names), -1):
+                self.lb_delete_at_index(index - 1)

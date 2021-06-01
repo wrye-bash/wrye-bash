@@ -26,11 +26,11 @@
 from __future__ import division, print_function
 
 import cPickle as pickle  # PY3
-import codecs
 import collections
 import copy
 import datetime
 import errno
+import io
 import os
 import re
 import shutil
@@ -48,6 +48,7 @@ from itertools import chain, izip
 from keyword import iskeyword
 from operator import attrgetter
 from urllib import quote
+from contextlib import contextmanager
 
 import chardet
 
@@ -222,6 +223,31 @@ def encode_complex_string(string_val, max_size=None, min_size=None,
         string_val += b'\x00' * (min_size - len(string_val))
     return string_val
 
+def to_unix_newlines(s): # type: (unicode) -> unicode
+    """Replaces non-UNIX newlines in the specified string with Unix newlines.
+    Handles both CR-LF (Windows) and pure CR (macOS)."""
+    return s.replace(u'\r\n', u'\n').replace(u'\r', u'\n')
+
+def remove_newlines(s): # type: (unicode) -> unicode
+    """Removes all newlines (whether they are in LF, CR-LF or CR form) from the
+    specified string."""
+    return to_unix_newlines(s).replace(u'\n', u'')
+
+def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
+    """Converts an object containing bytestrings to an equivalent object that
+    contains decoded versions of those bytestrings instead. Decoding is done
+    by trying the specified encoding first, then falling back on the regular
+    'guess and try' logic."""
+    if isinstance(o, dict):
+        return type(o)(((conv_obj(k, conv_enc), conv_obj(v, conv_enc))
+                        for k, v in o.iteritems()))
+    elif type(o) in __list_types:
+        return type(o)(conv_obj(e, conv_enc) for e in o)
+    elif isinstance(o, bytes):
+        return decoder(o, encoding=conv_enc)
+    else:
+        return o
+
 def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
 ##: Keep an eye on https://bugs.python.org/issue31749
@@ -243,6 +269,27 @@ def round_size(size_bytes):
 def sortFiles(files, __split=os.path.split):
     """Utility function. Sorts files by directory, then file name."""
     return sorted(files, key=lambda x: __split(x.lower()))
+
+def str_or_none(uni_str):
+    return None if uni_str.lower() == u'none' else uni_str
+
+def int_or_none(uni_str):
+    try:
+        return int(uni_str)
+    except ValueError:
+        return None
+
+def int_or_zero(uni_str):
+    try:
+        return int(uni_str)
+    except ValueError:
+        return 0
+
+def float_or_none(uni_str):
+    try: ##: is this needed (elsewhere also?)?
+        return Rounder(float(uni_str))
+    except ValueError:
+        return None
 
 # PY3: Dicts are ordered by default on py3.7, so drop this in favor of just
 # collections.defaultdict
@@ -380,8 +427,9 @@ class OrderedLowerDict(LowerDict, collections.OrderedDict):
 #------------------------------------------------------------------------------
 # cache attrgetter objects
 class _AttrGettersCache(dict):
-    def __missing__(self, attr_name):
-        return self.setdefault(attr_name, attrgetter(attr_name))
+    def __missing__(self, ag_key):
+        return self.setdefault(ag_key, attrgetter(ag_key) if isinstance(
+            ag_key, unicode) else attrgetter(*ag_key))
 
 attrgetter_cache = _AttrGettersCache()
 
@@ -492,8 +540,8 @@ class Path(object):
     def __init__(self, norm_str):
         # type: (unicode) -> None
         """Initialize with unicode - call only in GPath."""
-        self._s = _s = norm_str # path must be normalized
-        self._cs = _s.lower()
+        self._s = norm_str # path must be normalized
+        self._cs = norm_str.lower()
 
     def __getstate__(self):
         """Used by pickler. _cs is redundant,so don't include."""
@@ -795,13 +843,10 @@ class Path(object):
                         try: chmod(rootJoin(filename),stat_flags)
                         except: pass
 
-    def open(self,*args,**kwdargs): # PY3: drop - open() accepts encoding now
+    def open(self,*args,**kwdargs):
         if self.shead and not os.path.exists(self.shead):
             os.makedirs(self.shead)
-        if u'encoding' in kwdargs:
-            return codecs.open(self._s,*args,**kwdargs)
-        else:
-            return open(self._s,*args,**kwdargs)
+        return io.open(self._s, *args, **kwdargs)
     def makedirs(self):
         try:
             os.makedirs(self._s)
@@ -912,7 +957,7 @@ class Path(object):
         """Safely check whether a file is editable."""
         delete = not os.path.exists(self._s)
         try:
-            with open(self._s,u'ab'):
+            with open(self._s, u'ab'):
                 return True
         except:
             return False
@@ -1142,17 +1187,21 @@ class DataDict(object):
     def __iter__(self):
         return iter(self._data)
     def values(self):
-        return self._data.values()
+        return self._data.viewvalues()
+    def itervalues(self): # PY3: Drop
+        return self.values()
+    def viewvalues(self): # PY3: Drop
+        return self.values()
     def items(self):
-        return self._data.items()
+        return self._data.viewitems()
+    def iteritems(self): # PY3: Drop
+        return self.items()
+    def viewitems(self): # PY3: Drop
+        return self.items()
     def get(self,key,default=None):
         return self._data.get(key, default)
     def pop(self,key,default=None):
         return self._data.pop(key, default)
-    def iteritems(self):
-        return self._data.iteritems()
-    def itervalues(self):
-        return self._data.itervalues()
 
 #------------------------------------------------------------------------------
 class AFile(object):
@@ -1241,15 +1290,15 @@ class MainFunctions(object):
         """Main function. Call this in __main__ handler."""
         #--Get func
         args = sys.argv[1:]
-        attrs = args.pop(0).split(u'.')
-        func_key = attrs.pop(0)
+        attrs_ = args.pop(0).split(u'.')
+        func_key = attrs_.pop(0)
         func = self.funcs.get(func_key)
         if not func:
             msg = _(u'Unknown function/object: %s') % func_key
             try: print(msg)
             except UnicodeError: print(msg.encode(u'mbcs'))
             return
-        for attr in attrs:
+        for attr in attrs_:
             func = getattr(func,attr)
         #--Separate out keywords args
         keywords = {}
@@ -1320,11 +1369,15 @@ class PickleDict(object):
         self.vdata.clear()
         self.pickled_data.clear()
         cor = cor_name =  None
+        def _perform_load():
+            self.vdata.update(pickle.load(ins))
+            self.pickled_data.update(pickle.load(ins))
         for path in (self._pkl_path, self.backup):
             if cor is not None:
                 cor.moveTo(cor_name)
                 cor = None
             try:
+                resave = False
                 with path.open(u'rb') as ins:
                     try:
                         firstPickle = pickle.load(ins)
@@ -1335,11 +1388,23 @@ class PickleDict(object):
                         deprint(u'Unable to load %s (will be moved to "%s")' %(
                                 path, cor_name.tail), traceback=True)
                         continue  # file corrupt - try next file
-                    if firstPickle == b'VDATA2':
-                        self.vdata.update(pickle.load(ins))
-                        self.pickled_data.update(pickle.load(ins))
+                    if firstPickle == u'VDATA3':
+                        _perform_load() # new format, simply load
+                    elif firstPickle == b'VDATA2':
+                        # old format, load and convert
+                        _perform_load()
+                        self.vdata = conv_obj(self.vdata)
+                        self.pickled_data = conv_obj(self.pickled_data)
+                        deprint(u'Converted %s to VDATA3 format' % path)
+                        resave = True
                     else:
                         raise PickleDict.Mold(path)
+                # Check if we need to resave the settings after conversion
+                if resave:
+                    # Make a permanent backup copy of the VDATA2 version before
+                    # saving over it
+                    path.copyTo(path.root + u'-vdata2.dat.bak')
+                    self.save()
                 return 1 + (path == self.backup)
             except (OSError, IOError, EOFError, ValueError,
                     pickle.UnpicklingError): #PY3:FileNotFound
@@ -1359,7 +1424,7 @@ class PickleDict(object):
         if self.readOnly: return False
         #--Pickle it
         with self._pkl_path.temp.open(u'wb') as out:
-            for pkl in (b'VDATA2', self.vdata, self.pickled_data):
+            for pkl in (u'VDATA3', self.vdata, self.pickled_data):
                 pickle.dump(pkl, out, -1)
         self._pkl_path.untemp(doBackup=True)
         return True
@@ -1543,11 +1608,24 @@ class DataTableColumn(object):
         column = self.column
         return (key for key, col_dict in self._table.iteritems() if
                 column in col_dict)
+    def values(self):
+        """Dictionary emulation."""
+        tableData = self._table._data
+        column = self.column
+        return (tableData[k][column] for k in self)
+    def itervalues(self): # PY3: drop, 2to3 will have made it unused
+        return self.values()
+    def viewvalues(self): # PY3: drop, 2to3 will have made it unused
+        return self.values()
     def items(self):
         """Dictionary emulation."""
         tableData = self._table._data
         column = self.column
-        return [(key,tableData[key][column]) for key in self]
+        return ((k, tableData[k][column]) for k in self)
+    def iteritems(self): # PY3: Drop
+        return self.items()
+    def viewitems(self): # PY3: Drop
+        return self.items()
     def clear(self):
         """Dictionary emulation."""
         self._table.delColumn(self.column)
@@ -1625,9 +1703,10 @@ class DataTable(DataDict):
             del self._data[row]
             self.hasChanged = True
 
+    ##: DataTableColumn.clear is the only usage, and that seems unused too
     def delColumn(self,column):
         """Deletes column of data."""
-        for rowData in self._data.values():
+        for rowData in self._data.itervalues():
             if column in rowData:
                 del rowData[column]
                 self.hasChanged = True
@@ -1663,25 +1742,47 @@ def cmp_(x, y):
     # TODO(lojack): Hunt down and rewrite any usages of this
     return (x > y) - (x < y)
 
-def isclose_(a, b, rel_tol=1e-09, abs_tol=0.0):
-    """Inexact float comparison. PY3: drop in favor of math.isclose."""
-    try:
-        return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
-    except TypeError:
-        if a is b is None: return True
-        return False
+class Rounder(float):
+    """Float wrapper used for inexact comparison of float record elements."""
+    __slots__ = ()
 
-def floats_equal(a, b):
-    """Checks if the two floats are equal to the sixth place (relatively) or to
-    the twelfth place (absolutely). Used for inexact comparisons in tweaks,
-    etc. Note that these parameters were picked fairly arbitrarily, so feel
-    free to tweak them if they turn out to be a problem."""
-    return isclose_(a, b, rel_tol=1e-06, abs_tol=1e-12)
+    #--Hash/Compare
+    def __hash__(self):
+        raise exception.AbstractError(
+            u'%s does not define __hash__' % type(self))
+    def __eq__(self, b, rel_tol=1e-06, abs_tol=1e-12):
+        """Check if the two floats are equal to the sixth place (relatively)
+        or to the twelfth place (absolutely). Note that these parameters
+        were picked fairly arbitrarily, so feel free to tweak them if they
+        turn out to be a problem.""" # PY3: drop in favor of math.isclose
+        try:
+            return abs(self - b) <= max(rel_tol * max(abs(self), abs(b)),
+                                        abs_tol)
+        except TypeError:
+            return super(Rounder, self).__eq__(b)
+    def __ne__(self, b, rel_tol=1e-06, abs_tol=1e-12):
+        try:
+            return abs(self - b) > max(rel_tol * max(abs(self), abs(b)),
+                                       abs_tol)
+        except TypeError:
+            return super(Rounder, self).__ne__(b)
+    def __lt__(self, other):
+        return self != other and super(Rounder, self).__lt__(other)
+    def __gt__(self, other):
+        return self != other and super(Rounder, self).__gt__(other)
+    def __le__(self, other):
+        return self == other or super(Rounder, self).__lt__(other)
+    def __ge__(self, other):
+        return self == other or super(Rounder, self).__gt__(other)
+    #--repr
+    def __repr__(self):
+        return u'%s(%s)' % (
+            type(self).__name__, super(Rounder, self).__repr__())
+    def __str__(self):
+        return u'%.6f' % round(self, 6) # for writing out in csv
 
-def copyattrs(source,dest,attrs):
-    """Copies specified attrbutes from source object to dest object."""
-    for attr in attrs:
-        setattr(dest,attr,getattr(source,attr))
+    # Action API --------------------------------------------------------------
+    def dump(self): return self  ##: TODO round?
 
 def cstrip(inString): # TODO(ut): hunt down and deprecate - it's O(n)+
     """Convert c-string (null-terminated string) to python string."""
@@ -1706,11 +1807,20 @@ deprintOn = False
 
 import inspect
 def deprint(*args,**keyargs):
-    """Prints message along with file and line location."""
+    """Prints message along with file and line location.
+       Available keyword arguements:
+       trace: (default True) - if a Truthy value, displays the module,
+              line number, and function this was used from
+       traceback: (default False) - if a Truthy value, prints any tracebacks
+              for exceptions that have occurred.
+       frame: (default 1) - With `trace`, determines the function caller's
+              frame for getting the function name
+    """
     if not deprintOn and not keyargs.get(u'on'): return
     if keyargs.get(u'trace', True):
+        frame = keyargs.get(u'frame', 1)
         stack = inspect.stack()
-        file_, line, function = stack[1][1:4]
+        file_, line, function = stack[frame][1:4]
         msg = u'%s %4d %s: ' % (GPath(file_).tail, line, function)
     else:
         msg = u''
@@ -1741,6 +1851,22 @@ def deprint(*args,**keyargs):
     except UnicodeError:
         # Nope, it's going somewhere else
         print(msg.encode(Path.sys_fs_enc))
+
+@contextmanager
+def redirect_stdout_to_deprint(use_bytes=True): # PY3: redirect_stdout
+    old_stdout = sys.stdout
+    io_type = (io.StringIO, io.BytesIO)[use_bytes]
+    with io_type() as io_stream:
+        sys.stdout = io_stream
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+            # 1 = this function's frame
+            # 2 = @contextmanager's frame
+            # 3 = caller's frame
+            # rstrip to remove newlines due to using io.<*>IO
+            deprint(io_stream.getvalue().rstrip(), frame=3)
 
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""
@@ -2216,14 +2342,25 @@ def natural_key():
 def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
     """WIP wrap common dict sorting patterns - key_f if passed takes
     precedence."""
-    if key_f is not None:
-        pass
-    elif values_dex:
-        key_f = lambda k: tuple(di[k][x] for x in values_dex)
-    elif by_value:
-        key_f = lambda k: di[k]
+    if key_f is None:
+        if values_dex:
+            key_f = lambda k: tuple(di[k][x] for x in values_dex)
+        elif by_value:
+            key_f = lambda k: di[k]
     for k_ in sorted(di, key=key_f, reverse=reverse):
         yield k_, di[k_]
+
+#------------------------------------------------------------------------------
+def readme_url(mopy, advanced=False, skip_local=False):
+    readme_name = (u'Wrye Bash Advanced Readme.html' if advanced else
+                   u'Wrye Bash General Readme.html')
+    readme = mopy.join(u'Docs', readme_name)
+    if not skip_local and readme.isfile():
+        readme = u'file:///' + readme.s.replace(u'\\', u'/')
+    else:
+        # Fallback to Git repository
+        readme = u'http://wrye-bash.github.io/docs/' + readme_name
+    return readme.replace(u' ', u'%20')
 
 # WryeText --------------------------------------------------------------------
 codebox = None
@@ -2252,7 +2389,7 @@ class WryeText(object):
       bullet, and the * produces a bullet character.
 
     Styles:
-      __Text__
+      __Bold__
       ~~Italic~~
       **BoldItalic**
     Notes:
@@ -2304,21 +2441,21 @@ class WryeText(object):
 
     # Conversion ---------------------------------------------------------------
     @staticmethod
-    def genHtml(ins,out=None,*cssDirs):
+    def genHtml(ins, out=None, *css_dirs):
         """Reads a wtxt input stream and writes an html output stream."""
         # Path or Stream? -----------------------------------------------
         if isinstance(ins, (Path, unicode)):
             srcPath = GPath(ins)
             outPath = GPath(out) or srcPath.root+u'.html'
-            cssDirs = (srcPath.head,) + cssDirs
-            ins = srcPath.open(encoding=u'utf-8-sig')
-            out = outPath.open(u'w',encoding=u'utf-8-sig')
+            css_dirs = (srcPath.head,) + css_dirs
+            ins = srcPath.open(u'r', encoding=u'utf-8-sig')
+            out = outPath.open(u'w', encoding=u'utf-8-sig')
         else:
             srcPath = outPath = None
         # Setup
         outWrite = out.write
 
-        cssDirs = (GPath(d) for d in cssDirs)
+        css_dirs = (GPath(d) for d in css_dirs)
         # Setup ---------------------------------------------------------
         #--Headers
         reHead = re.compile(u'(=+) *(.+)',re.U)
@@ -2418,7 +2555,6 @@ class WryeText(object):
         reCssTag = re.compile(u'' r'\s*{{CSS:(.+?)}}\s*$',re.U)
         #--Defaults ----------------------------------------------------------
         title = u''
-        level = 1
         spaces = u''
         cssName = None
         #--Init
@@ -2522,7 +2658,7 @@ class WryeText(object):
                 text = re.sub(u' *=*#?$', u'', text.strip())
                 anchor = unicode(quote(reWd.sub(u'', text).encode(u'utf8')),
                                  u'cp1252')
-                level = len(lead)
+                level_ = len(lead)
                 if anchorHeaders:
                     if re.match(u'' r'\d', anchor):
                         anchor = u'_' + anchor
@@ -2534,12 +2670,12 @@ class WryeText(object):
                         else:
                             anchor = anchor[:-1] + unicode(count)
                     anchorlist.append(anchor)
-                    line = (headFormatNA,headFormat)[anchorHeaders] % (level,anchor,text,level)
-                    if addContents: contents.append((level,anchor,text))
+                    line = (headFormatNA,headFormat)[anchorHeaders] % (level_,anchor,text,level_)
+                    if addContents: contents.append((level_,anchor,text))
                 else:
-                    line = headFormatNA % (level,text,level)
+                    line = headFormatNA % (level_,text,level_)
                 #--Title?
-                if not title and level <= 2: title = text
+                if not title and level_ <= 2: title = text
             #--Paragraph
             elif maPar and not states[u'code']:
                 line = u'<p>'+line+u'</p>\n'
@@ -2550,8 +2686,8 @@ class WryeText(object):
                 text = maList.group(3)
                 if bullet == u'.': bullet = u'&nbsp;'
                 elif bullet == u'*': bullet = u'&bull;'
-                level = len(spaces)//2 + 1
-                line = spaces+u'<p class="list-%i">'%level+bullet+u'&nbsp; '
+                level_ = len(spaces)//2 + 1
+                line = spaces+u'<p class="list-%i">'%level_+bullet+u'&nbsp; '
                 line = line + text + u'</p>\n'
             #--Empty line
             elif maEmpty:
@@ -2578,7 +2714,7 @@ class WryeText(object):
         else:
             if cssName.ext != u'.css':
                 raise exception.BoltError(u'Invalid Css file: %s' % cssName)
-            for css_dir in cssDirs:
+            for css_dir in css_dirs:
                 cssPath = GPath(css_dir).join(cssName)
                 if cssPath.exists(): break
             else:
@@ -2593,11 +2729,11 @@ class WryeText(object):
         for line in outLines:
             if reContentsTag.match(line):
                 if contents and not didContents:
-                    baseLevel = min([level for (level,name_,text) in contents])
-                    for (level,name_,text) in contents:
-                        level = level - baseLevel + 1
-                        if level <= addContents:
-                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level,name_,text))
+                    baseLevel = min([level_ for (level_,name_,text) in contents])
+                    for (level_,name_,text) in contents:
+                        level_ = level_ - baseLevel + 1
+                        if level_ <= addContents:
+                            outWrite(u'<p class="list-%d">&bull;&nbsp; <a href="#%s">%s</a></p>\n' % (level_,name_,text))
                     didContents = True
             else:
                 outWrite(line)
@@ -2606,6 +2742,11 @@ class WryeText(object):
         if srcPath:
             ins.close()
             out.close()
+
+def convert_wtext_to_html(logPath, logText, *css_dirs):
+    ins = io.StringIO(logText + u'\n{{CSS:wtxt_sand_small.css}}')
+    with logPath.open(u'w', encoding=u'utf-8-sig') as out:
+        WryeText.genHtml(ins, out, *css_dirs)
 
 # Main -------------------------------------------------------------------------
 if __name__ == u'__main__' and len(sys.argv) > 1:

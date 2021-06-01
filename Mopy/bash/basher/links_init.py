@@ -42,7 +42,7 @@ from .. import bass, balt, bush
 from ..balt import MenuLink, SeparatorLink, UIList_OpenItems, \
     UIList_OpenStore, UIList_Hide
 from ..env import init_app_links
-from ..game import GameInfo
+from ..game.patch_game import PatchGame
 from ..gui import ImageWrapper
 
 #------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ def InitStatusBar():
         Game_Button(
             bass.dirs[u'app'].join(bush.game.launch_exe),
             bass.dirs[u'app'].join(bush.game.version_detect_file),
-            imageList(u'%s%%s.png' % bush.game.displayName),
+            imageList(bush.game.game_icon),
             u' '.join((_(u'Launch'), bush.game.displayName)),
             u' '.join((_(u'Launch'), bush.game.displayName, u'%(version)s'))))
     BashStatusBar.buttons.append( #TESCS/CreationKit
@@ -103,12 +103,12 @@ def InitStatusBar():
             imageList(u'tools/tes4view%s.png'),
             _(u'Launch TES4View'),
             uid=u'TES4View'))
-    for game_class in GameInfo.supported_games(): # TODO(ut): don't save those for all games!
+    for game_class in PatchGame.supported_games(): # TODO(ut): don't save those for all games!
         xe_name = game_class.Xe.full_name
         BashStatusBar.buttons.append(App_Tes4View(
             (bass.tooldirs[xe_name + u'Path'],
              u'-%s -edit' % xe_name[:-4]), # chop off edit
-            imageList(u'tools/tes4edit%s.png'), _(u'Launch %s' % xe_name),
+            imageList(u'tools/tes4edit%s.png'), _(u'Launch %s') % xe_name,
             uid=xe_name))
     BashStatusBar.buttons.append(  #TesVGecko
         app_button_factory((bass.tooldirs[u'Tes5GeckoPath']),
@@ -122,11 +122,10 @@ def InitStatusBar():
         App_Tes4View((bass.tooldirs[u'Tes4LodGenPath'], u'-TES4 -lodgen'),
                      imageList(u'tools/tes4lodgen%s.png'),
                      _(u"Launch Tes4LODGen"), uid=u'TES4LODGen'))
-    BashStatusBar.buttons.append( #BOSS
-        App_BOSS((bass.tooldirs[u'boss']),
-                imageList(u'boss%s.png'),
-                _(u'Launch BOSS'),
-                uid=u'BOSS'))
+    if bush.game.boss_game_name:
+        BashStatusBar.buttons.append( #BOSS
+            App_BOSS((bass.tooldirs[u'boss']), imageList(u'boss%s.png'),
+                     _(u'Launch BOSS'), uid=u'BOSS'))
     if bass.inisettings[u'ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons
         for mb in modeling_tools_buttons:
@@ -163,7 +162,7 @@ def InitStatusBar():
                 app_button_factory((pth,()), icon, shortcut_descr, canHide=False))
     #--Final couple
     BashStatusBar.buttons.append(App_DocBrowser(uid=u'DocBrowser'))
-    BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))
+    BashStatusBar.buttons.append(App_PluginChecker(uid=u'ModChecker'))
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
     BashStatusBar.buttons.append(App_Help(uid=u'Help',canHide=False))
     if bass.inisettings[u'ShowDevTools']:
@@ -247,7 +246,7 @@ def InitInstallerLinks():
         file_menu.links.append(balt.UIList_Delete())
         InstallersList.context_links.append(file_menu)
     if True: #--Open At...
-        openAtMenu = InstallerOpenAt_MainMenu(oneDatumOnly=True)
+        openAtMenu = MenuLink(_(u'Open at..'), oneDatumOnly=True)
         openAtMenu.links.append(Installer_OpenSearch())
         openAtMenu.links.append(Installer_OpenNexus())
         openAtMenu.links.append(Installer_OpenTESA())
@@ -461,7 +460,7 @@ def InitModLinks():
     ModList.column_links.append(Mods_ScanDirty())
     ModList.column_links.append(SeparatorLink())
     ModList.column_links.append(Mods_CrcRefresh())
-    ModList.column_links.append(Mods_ModChecker())
+    ModList.column_links.append(Mods_PluginChecker())
     #--ModList: Item Links
     if bass.inisettings[u'ShowDevTools'] and bush.game.Esp.canBash:
         ModList.context_links.append(Mod_FullLoad())
@@ -631,7 +630,7 @@ def InitModLinks():
     view_menu.append(Mods_ListMods())
     if bush.game.allTags:
         view_menu.append(Mods_ListBashTags())
-    view_menu.append(Mods_ModChecker())
+    view_menu.append(Mods_PluginChecker())
     # Settings Menu
     settings_menu = ModList.global_links[_(u'Settings')]
     settings_menu.append(Mods_AutoGhost())
@@ -697,7 +696,8 @@ def InitSaveLinks():
         SaveList.context_links.append(copyMenu)
     #--------------------------------------------
     SaveList.context_links.append(SeparatorLink())
-    SaveList.context_links.append(Save_LoadMasters())
+    SaveList.context_links.append(Save_ActivateMasters())
+    SaveList.context_links.append(Save_ReorderMasters())
     SaveList.context_links.append(File_ListMasters())
     SaveList.context_links.append(Save_DiffMasters())
     if bush.game.Ess.canEditMore:

@@ -23,15 +23,19 @@
 """This module houses the entry point for reading and writing plugin files
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
-from __future__ import print_function
+from __future__ import division
+
 from collections import defaultdict
 from itertools import chain
+from zlib import decompress as zlib_decompress, error as zlib_error
 
 from . import bolt, bush, env, load_order
-from .bolt import deprint, GPath, SubProgress, structs_cache, struct_error
-from .brec import MreRecord, ModReader, RecordHeader, RecHeader, \
-    TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds
-from .exception import MasterMapError, ModError, StateError
+from .bolt import deprint, GPath, SubProgress, structs_cache, struct_error,\
+    decoder
+from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
+    TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds, \
+    unpack_header, FastModReader, Subrecord
+from .exception import MasterMapError, ModError, StateError, ModReadError
 
 class MasterSet(set):
     """Set of master names."""
@@ -59,14 +63,14 @@ class MasterMap(object):
                 mast_map[index] = -1
         self._mast_map = mast_map
 
-    def __call__(self,fid,default=-1):
+    def __call__(self, short_fid, default=-1):
         """Maps a fid from first set of masters to second. If no mapping
         is possible, then either returns default (if defined) or raises MasterMapError."""
-        if not fid: return fid
-        inIndex = int(fid >> 24)
+        if not short_fid: return short_fid
+        inIndex = int(short_fid >> 24)
         outIndex = self._mast_map.get(inIndex, -2)
         if outIndex >= 0:
-            return (int(outIndex) << 24 ) | (fid & 0xFFFFFF)
+            return (int(outIndex) << 24 ) | (short_fid & 0xFFFFFF)
         elif default != -1:
             return default
         else:
@@ -130,9 +134,8 @@ class LoadFactory(object):
     def getCellTypeClass(self):
         """Returns type_class dictionary for cell objects."""
         if not self.cellType_class:
-            types = (b'REFR',b'ACHR',b'ACRE',b'PGRD',b'LAND',b'CELL',b'ROAD')
-            getterRecClass = self.getRecClass
-            self.cellType_class.update((x,getterRecClass(x)) for x in types)
+            self.cellType_class.update((x, self.getRecClass(x)) for x in (
+                b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND', b'CELL', b'ROAD'))
         return self.cellType_class
 
     def getUnpackCellBlocks(self,topType):
@@ -177,9 +180,9 @@ class _RecGroupDict(dict):
             raise KeyError(u'Invalid top group type: ' + top_grup_sig)
         topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
         if topClass is None:
-                raise ModError(self._mod_file.fileInfo.name,
-               u'Failed to retrieve top class for %s; load factory is '
-               u'%r' % (top_grup_sig, self._mod_file.loadFactory))
+                raise ModError(self._mod_file.fileInfo.ci_key,
+                   u'Failed to retrieve top class for %s; load factory is '
+                   u'%r' % (top_grup_sig, self._mod_file.loadFactory))
         self[top_grup_sig] = topClass(TopGrupHeader(0, top_grup_sig, 0),
                                       self._mod_file.loadFactory)
         self[top_grup_sig].setChanged()
@@ -204,7 +207,7 @@ class ModFile(object):
         """Load file."""
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
-        with ModReader(self.fileInfo.name,self.fileInfo.getPath().open(
+        with ModReader(self.fileInfo.ci_key, self.fileInfo.getPath().open(
                 u'rb')) as ins:
             insRecHeader = ins.unpackRecHeader
             # Main header of the mod file - generally has 'TES4' signature
@@ -220,7 +223,7 @@ class ModFile(object):
                 #--Get record info and handle it
                 header = insRecHeader()
                 if not header.is_top_group_header:
-                    raise ModError(self.fileInfo.name,u'Improperly grouped file.')
+                    raise ModError(self.fileInfo.ci_key, u'Improperly grouped file.')
                 label = header.label
                 topClass = self.loadFactory.getTopClass(label)
                 try:
@@ -305,13 +308,14 @@ class ModFile(object):
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
         if self.tes4.num_masters > bush.game.Esp.master_limit:
-            raise ModError(self.fileInfo.name,
+            raise ModError(self.fileInfo.ci_key,
                 u'Attempting to write a file with too many masters (>%u).'
                 % bush.game.Esp.master_limit)
         with outPath.open(u'wb') as out:
             #--Mod Record
             self.tes4.setChanged()
-            self.tes4.numRecords = sum(block.getNumRecords() for block in self.tops.values())
+            self.tes4.numRecords = sum(block.getNumRecords()
+                                       for block in self.tops.itervalues())
             self.tes4.getSize()
             self.tes4.dump(out)
             #--Blocks
@@ -322,18 +326,23 @@ class ModFile(object):
 
     def getLongMapper(self):
         """Returns a mapping function to map short fids to long fids."""
-        masters_list = self.tes4.masters+[self.fileInfo.name]
+        masters_list = self.augmented_masters()
         maxMaster = len(masters_list)-1
-        def mapper(fid):
-            if fid is None: return None
-            if isinstance(fid, tuple): return fid
-            mod,object = int(fid >> 24),int(fid & 0xFFFFFF)
+        def mapper(short_fid):
+            if short_fid is None: return None
+            if isinstance(short_fid, tuple): return short_fid
+            # PY3: drop the int() calls
+            mod,object = int(short_fid >> 24), int(short_fid & 0xFFFFFF)
             return masters_list[min(mod, maxMaster)], object # clamp HITMEs
         return mapper
 
+    def augmented_masters(self):
+        """List of plugin masters with the plugin's own name appended."""
+        return self.tes4.masters + [self.fileInfo.ci_key] # Py3: unpack
+
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
-        masters_list = self.tes4.masters + [self.fileInfo.name]
+        masters_list = self.augmented_masters()
         indices = {mname: index for index, mname in enumerate(masters_list)}
         has_expanded_range = bush.game.Esp.expanded_plugin_range
         if (has_expanded_range and len(masters_list) > 1
@@ -346,10 +355,10 @@ class ModFile(object):
             # 0x000-0x800 are reserved for hardcoded (engine) records
             def _master_index(m_name, obj_id):
                 return indices[m_name] if obj_id >= 0x800 else 0
-        def mapper(fid):
-            if fid is None: return None
-            if isinstance(fid, (int, long)): return fid
-            modName, object_id = fid
+        def mapper(long_fid):
+            if long_fid is None: return None
+            if isinstance(long_fid, (int, long)): return long_fid
+            modName, object_id = long_fid
             return (_master_index(modName, object_id) << 24) | object_id
         return mapper
 
@@ -365,10 +374,10 @@ class ModFile(object):
         """Updates set of master names according to masters actually used."""
         if not self.longFids: raise StateError(u"ModFile fids not in long form.")
         masters_set = MasterSet([GPath(bush.game.master_file)])
-        for block in self.tops.values():
+        for block in self.tops.itervalues():
             block.updateMasters(masters_set.add)
         # The file itself is always implicitly available, so discard it here
-        masters_set.discard(self.fileInfo.name)
+        masters_set.discard(self.fileInfo.ci_key)
         return masters_set.getOrdered()
 
     def _index_mgefs(self):
@@ -383,11 +392,17 @@ class ModFile(object):
         unpack_eid = structs_cache[u'I'].unpack
         if b'MGEF' in self.tops:
             for record in self.tops[b'MGEF'].getActiveRecords():
+                ##: Skip OBME records, at least for now
+                if record.obme_record_version is not None: continue
                 m_school[record.eid] = record.school
                 target_set = (hostile_recs if record.flags.hostile
                               else nonhostile_recs)
                 target_set.add(record.eid)
-                target_set.add(unpack_eid(record.eid.encode(u'ascii'))[0])
+                try:
+                    target_set.add(unpack_eid(record.eid.encode(u'ascii'))[0])
+                except struct_error:
+                    raise ModError(None, u'Failed to unpack EDID for '
+                                         u'%r' % record)
                 m_names[record.eid] = record.full or u'' # could this be None?
         self.cached_mgef_school = m_school
         self.cached_mgef_hostiles = m_hostiles - nonhostile_recs | hostile_recs
@@ -435,15 +450,10 @@ class ModHeaderReader(object):
     """Allows very fast reading of a plugin's headers, skipping reading and
     decoding of anything but the headers."""
     @staticmethod
-    def read_mod_headers(mod_info):
-        """Reads the headers of every record in the specified mod, returning
-        them as a dict, mapping record signature to a list of the headers of
-        every record with that signature. Note that the flags are not processed
-        either - if you need that, manually call MreRecord.flags1_() on them.
-
-        :rtype: defaultdict[bytes, list[RecordHeader]]"""
-        ret_headers = defaultdict(list)
-        with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
+    def formids_in_esl_range(mod_info):
+        """Checks if all FormIDs in the specified mod are in the ESL range."""
+        num_masters = len(mod_info.masterNames)
+        with ModReader(mod_info.ci_key, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
             try:
@@ -452,14 +462,138 @@ class ModHeaderReader(object):
                     # Skip GRUPs themselves, only process their records
                     header_rec_sig = header.recType
                     if header_rec_sig != b'GRUP':
-                        ret_headers[header_rec_sig].append(header)
+                        header_fid = header.fid
+                        if (header_fid >> 24 >= num_masters and
+                                (header_fid & 0xFFFFFF) > 0xFFF):
+                            return False # FormID out of range
                         header.skip_blob(ins)
             except (OSError, struct_error) as e:
                 raise ModError(ins.inName, u'Error scanning %s, file read '
                     u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
-        return ret_headers
+        return True
 
-    ##: The method above has to be very fast, but this one can afford to be
+    @staticmethod
+    def extract_mod_data(mod_info, progress, skip_tes4=True,
+                         __unpacker=structs_cache[u'I'].unpack):
+        """Reads the headers and EDIDs of every record in the specified mod,
+        returning them as a dict, mapping record signature to a dict mapping
+        FormIDs to a list of tuples containing the headers and EDIDs of every
+        record with that signature. Note that the flags are not processed
+        either - if you need that, manually call MreRecord.flags1_() on them.
+
+        :rtype: defaultdict[bytes, defaultdict[int, tuple[RecHeader, unicode]]]"""
+        # This method is *heavily* optimized for performance. Inlines and other
+        # ugly code ahead
+        progress = progress or bolt.Progress()
+        # Store a bunch of repeatedly used constants/methods/etc. because
+        # accessing via dot is slow
+        wanted_encoding = bolt.pluginEncoding
+        avoided_encodings = (u'utf8', u'utf-8')
+        minf_size = mod_info.fsize
+        minf_ci_key = mod_info.ci_key
+        sh_unpack = Subrecord.sub_header_unpack
+        sh_size = Subrecord.sub_header_size
+        main_progress_msg = _(u'Loading: %s') % minf_ci_key
+        # Where we'll store all the collected record data
+        group_records = defaultdict(lambda: defaultdict(tuple))
+        # The current top GRUP label - starts out as TES4/TES3
+        tg_label = bush.game.Esp.plugin_header_sig
+        # The dict we'll use to store records from the current top GRUP
+        records = group_records[tg_label]
+        ##: Uncomment these variables and the block below that uses them once
+        # all of FO4's record classes have been written
+        # The record types that can even contain EDIDs
+        #records_with_eids = MreRecord.subrec_sig_to_record_sig[b'EDID']
+        # Whether or not we can skip looking for EDIDs for  the current record
+        # type because it doesn't even have any
+        #skip_eids = tg_label not in records_with_eids
+        with mod_info.abs_path.open(u'rb') as ins:
+            initial_bytes = ins.read()
+        with FastModReader(minf_ci_key, initial_bytes) as ins:
+            # More local methods to avoid repeated dot access
+            ins_tell = ins.tell
+            ins_seek = ins.seek
+            ins_read = ins.read
+            ins_size = ins.size
+            while ins_tell() != ins_size:
+                # Unpack the headers - these can be either GRUPs or regular
+                # records
+                header = unpack_header(ins)
+                _rsig = header.recType
+                if _rsig == b'GRUP':
+                    # Nothing special to do for non-top GRUPs
+                    if not header.is_top_group_header: continue
+                    tg_label = header.label
+                    progress(ins_tell() / minf_size, u'%s\n%s' % (
+                        main_progress_msg, tg_label.decode(u'ascii')))
+                    records = group_records[tg_label]
+                #     skip_eids = tg_label not in records_with_eids
+                # elif skip_eids:
+                #     # This record type has no EDIDs, skip directly to the next
+                #     # record (can't use skip_blob because that passes
+                #     # debug_strs to seek()...)
+                #     records[header.fid] = (header, u'')
+                #     ins_seek(ins_tell() + header.blob_size())
+                else:
+                    # This is a regular record, look for the EDID subrecord
+                    eid = u''
+                    blob_siz = header.blob_size()
+                    next_record = ins_tell() + blob_siz
+                    if header.flags1 & 0x00040000: # 'compressed' flag
+                        size_check = __unpacker(ins_read(4))[0]
+                        try:
+                            new_rec_data = zlib_decompress(ins_read(
+                                blob_siz - 4))
+                        except zlib_error:
+                            if minf_ci_key == u'FalloutNV.esm':
+                                # Yep, FalloutNV.esm has a record with broken
+                                # zlib data. Just skip it.
+                                ins_seek(next_record)
+                                continue
+                            raise
+                        if len(new_rec_data) != size_check:
+                            raise ModError(ins.inName,
+                                u'Mis-sized compressed data. Expected %d, got '
+                                u'%d.' % (blob_siz, len(new_rec_data)))
+                    else:
+                        new_rec_data = ins_read(blob_siz)
+                    recs = FastModReader(minf_ci_key, new_rec_data)
+                    recs_seek = recs.seek
+                    recs_read = recs.read
+                    recs_tell = recs.tell
+                    recs_size = recs.size
+                    recs_unpack = recs.unpack
+                    while recs_tell() != recs_size:
+                        # Inlined from unpackSubHeader & FastModReader.unpack
+                        read_data = recs_read(sh_size)
+                        if len(read_data) != sh_size:
+                            raise ModReadError(
+                                minf_ci_key, [_rsig, u'SUB_HEAD'],
+                                recs_tell() - len(read_data), recs_size)
+                        mel_sig, mel_size = sh_unpack(read_data)
+                        # Extended storage - very rare, so don't optimize
+                        # inlines etc. for it
+                        if mel_sig == b'XXXX':
+                            # Throw away size here (always == 0)
+                            mel_size = recs_unpack(__unpacker, 4, _rsig,
+                                                   u'XXXX.SIZE')[0]
+                            mel_sig = recs_unpack(sh_unpack, sh_size,
+                                                  _rsig, u'XXXX.TYPE')[0]
+                        if mel_sig == b'EDID':
+                            # No need to worry about newlines, these are Editor
+                            # IDs and so won't contain any
+                            eid = decoder(recs_read(mel_size).rstrip(null1),
+                                          wanted_encoding, avoided_encodings)
+                            break
+                        else:
+                            recs_seek(mel_size, 1)
+                    records[header.fid] = (header, eid)
+                    ins_seek(next_record) # we may have break'd at EDID
+        if skip_tes4:
+            del group_records[bush.game.Esp.plugin_header_sig]
+        return group_records
+
+    ##: The methods above have to be very fast, but this one can afford to be
     # much slower. Should eventually be absorbed by refactored ModFile API.
     @staticmethod
     def read_temp_child_headers(mod_info):
@@ -471,10 +605,9 @@ class ModHeaderReader(object):
         # We want to read only the children of these, so skip their tops
         interested_sigs = {b'CELL', b'WRLD'}
         tops_to_skip = interested_sigs | {bush.game.Esp.plugin_header_sig}
-        with ModReader(mod_info.name, mod_info.abs_path.open(u'rb')) as ins:
+        with ModReader(mod_info.ci_key, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
-            ins_seek = ins.seek
             try:
                 while not ins_at_end():
                     header = ins_unpack_rec_header()

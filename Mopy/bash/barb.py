@@ -48,22 +48,23 @@ from .bass import dirs, AppVersion
 from .bolt import GPath, deprint
 from .exception import BoltError, StateError, raise_bolt_error
 
-def _init_settings_files(fsName_, root_prefix, mods_folder):
+def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder):
     """Construct a dict mapping directory paths to setting files. Keys are
     tuples of absolute paths to directories, paired with the relative paths
     in the backup file. Values are sets of setting files in those paths,
     or empty, meaning we have to list those paths and backup everything.
 
-    :param fsName_: bush.game.fsName
+    :param bak_name: bush.game.bak_game_name
+    :param mg_name: bush.game.my_games_name
     :param root_prefix: bush.game.bash_root_prefix
     :param mods_folder: bush.game.mods_dir"""
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'_init_settings_files: Bash dirs are not initialized')
     settings_info = {
-        (dirs[u'mopy'], jo(fsName_, u'Mopy')): {u'bash.ini', },
-        (dirs[u'mods'].join(u'Bash'), jo(fsName_, mods_folder, u'Bash')): {
+        (dirs[u'mopy'], jo(bak_name, u'Mopy')): {u'bash.ini', },
+        (dirs[u'mods'].join(u'Bash'), jo(bak_name, mods_folder, u'Bash')): {
             u'Table.dat', },
-        (dirs[u'mods'].join(u'Docs'), jo(fsName_, mods_folder, u'Docs')): {
+        (dirs[u'mods'].join(u'Docs'), jo(bak_name, mods_folder, u'Docs')): {
             u'Bash Readme Template.txt', u'Bash Readme Template.html',
             u'My Readme Template.txt', u'My Readme Template.html',
             u'wtxt_sand_small.css', u'wtxt_teal.css', },
@@ -75,17 +76,17 @@ def _init_settings_files(fsName_, root_prefix, mods_folder):
         (dirs[u'bainData'],
          jo(root_prefix + u' Mods', u'Bash Installers', u'Bash')): {
            u'Converters.dat', u'Installers.dat', },
-        (dirs[u'saveBase'], jo(u'My Games', fsName_)): {
+        (dirs[u'saveBase'], jo(u'My Games', mg_name)): {
             u'BashProfiles.dat', u'BashSettings.dat', u'BashLoadOrders.dat'},
         # backup all files in Mopy\bash\l10n, Data\Bash Patches\,
         # Data\BashTags\ and Data\INI Tweaks\
-        (dirs[u'l10n'], jo(fsName_, u'Mopy', u'bash', u'l10n')): {},
+        (dirs[u'l10n'], jo(bak_name, u'Mopy', u'bash', u'l10n')): {},
         (dirs[u'mods'].join(u'Bash Patches'),
-         jo(fsName_, mods_folder, u'Bash Patches')): {},
+         jo(bak_name, mods_folder, u'Bash Patches')): {},
         (dirs[u'mods'].join(u'BashTags'),
-         jo(fsName_, mods_folder, u'BashTags')): {},
+         jo(bak_name, mods_folder, u'BashTags')): {},
         (dirs[u'mods'].join(u'INI Tweaks'),
-         jo(fsName_, mods_folder, u'INI Tweaks')): {},
+         jo(bak_name, mods_folder, u'INI Tweaks')): {},
     }
     for setting_files in settings_info.itervalues():
         for settings_file in set(setting_files):
@@ -100,11 +101,12 @@ class BackupSettings(object):
     settings we backup (bass.settings[u'bash.version']). Creates a backup.dat
     file that stores those versions."""
 
-    def __init__(self, settings_file, fsName, root_prefix, mods_folder):
+    def __init__(self, settings_file, bak_name, mg_name, root_prefix,
+                 mods_folder):
         self._backup_dest_file = GPath(settings_file) # absolute path to dest 7z file
         self.files = {}
         for (bash_dir, tmpdir), setting_files in _init_settings_files(
-                fsName, root_prefix, mods_folder).iteritems():
+                bak_name, mg_name, root_prefix, mods_folder).iteritems():
             if not setting_files: # we have to backup everything in there
                 setting_files = bash_dir.list()
             tmp_dir = GPath(tmpdir)
@@ -113,7 +115,7 @@ class BackupSettings(object):
                 if fpath.exists():
                     self.files[tmp_dir.join(fname)] = fpath
         # backup save profile settings
-        savedir = GPath(u'My Games').join(fsName)
+        savedir = GPath(u'My Games').join(mg_name)
         profiles = [u''] + initialization.getLocalSaveDirs()
         for profile in profiles:
             pluginsTxt = (u'Saves', profile, u'plugins.txt')
@@ -142,9 +144,9 @@ class BackupSettings(object):
               u'they are overwritten?')]), title=_(u'Create backup?'))
 
     @staticmethod
-    def backup_filename(displayName_):
+    def backup_filename(bak_name):
         return u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
-            displayName_, bolt.timestamp(), bass.settings[u'bash.version'],
+            bak_name, bolt.timestamp(), bass.settings[u'bash.version'],
             AppVersion)
 
     @staticmethod
@@ -245,21 +247,20 @@ class RestoreSettings(object):
             for f in fs:
                 if f == u'bash.ini':
                     self._bash_ini_path = jo(r, f)
-                    break
-        else: self.bash_ini_path = None
-        return self._bash_ini_path
+                    return self._bash_ini_path
+        else: self._bash_ini_path = None
 
-    def restore_settings(self, fsName, root_prefix, mods_folder):
+    def restore_settings(self, bak_name, mg_name, root_prefix, mods_folder):
         if self._bash_ini_path is self.__unset: raise BoltError(
             u'restore_settings: you must handle bash ini first')
         if self._extract_dir is self.__unset: raise BoltError(
             u'restore_settings: you must extract the settings file first')
         try:
-            self._restore_settings(fsName, root_prefix, mods_folder)
+            self._restore_settings(bak_name, mg_name, root_prefix, mods_folder)
         finally:
             self.remove_extract_dir(self._extract_dir)
 
-    def _restore_settings(self, fsName, root_prefix, mods_folder):
+    def _restore_settings(self, bak_name, mg_name, root_prefix, mods_folder):
         deprint(u'')
         deprint(u'RESTORE BASH SETTINGS: %s' % self._settings_file)
         # backup previous Bash ini if it exists
@@ -276,15 +277,15 @@ class RestoreSettings(object):
             deprint(u'%s --> %s' % (back_path_.join(*end_path), dest_dir_.join(
                 *end_path)))
             full_back_path.join(*end_path).copyTo(dest_dir_.join(*end_path))
-        restore_paths = list(_init_settings_files(fsName, root_prefix,
-            mods_folder))
+        restore_paths = list(_init_settings_files(bak_name, mg_name,
+                                                  root_prefix, mods_folder))
         for dest_dir, back_path in restore_paths:
             full_back_path = self._extract_dir.join(back_path)
             for fname in full_back_path.list():
                 if full_back_path.join(fname).isfile():
                     _restore_file(dest_dir, GPath(back_path), fname)
         # restore savegame profile settings
-        back_path = GPath(u'My Games').join(fsName, u'Saves')
+        back_path = GPath(u'My Games').join(mg_name, u'Saves')
         saves_dir = dirs[u'saveBase'].join(u'Saves')
         full_back_path = self._extract_dir.join(back_path)
         if full_back_path.exists():
@@ -295,7 +296,7 @@ class RestoreSettings(object):
                     _restore_file(saves_dir, back_path, root_dir, fname)
 
     # Validation --------------------------------------------------------------
-    def incompatible_backup_error(self, current_game):
+    def incompatible_backup_error(self, curr_bak_name):
         saved_settings_version, settings_saved_with = \
             self._get_settings_versions()
         if saved_settings_version > bass.settings[u'bash.version']:
@@ -310,7 +311,7 @@ class RestoreSettings(object):
                 u'Error: Settings are from newer Bash version')
         else:
             game_name = self._get_backup_game()
-            if game_name != current_game:
+            if game_name != curr_bak_name:
                 return u'\n'.join(
                     [_(u'The selected backup file is for %(game_name)s while '
                        u'your current game is %(current_game)s') % locals(),

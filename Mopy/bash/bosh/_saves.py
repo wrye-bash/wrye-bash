@@ -78,7 +78,7 @@ class SreNPC(object):
         acbs = SreNPC.ACBS()
         (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
                 acbs.calcMin, acbs.calcMax) = (0,0,0,0,1,0,0)
-        acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
+        acbs.flags = MreRecord.type_class[b'NPC_']._flags(acbs.flags)
         return acbs
 
     def load(self, sr_flags, data_):
@@ -95,7 +95,7 @@ class SreNPC(object):
             acbs = self.acbs = SreNPC.ACBS()
             (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
              acbs.level, acbs.calcMin, acbs.calcMax) = _unpack(u'=I3Hh2H', 16)
-            acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
+            acbs.flags = MreRecord.type_class[b'NPC_']._flags(acbs.flags)
         if sr_flags.factions:
             num = unpack_short(ins)
             self.factions = list(starmap(_unpack, repeat((u'=Ib', 5), num)))
@@ -266,14 +266,13 @@ class SaveFile(object):
             progress.setFull(self.fileInfo.fsize)
             #--Header
             progress(0,_(u'Reading Header.'))
-            del self._masters[:]
             self.header = OblivionSaveHeader(self.fileInfo.abs_path,
                                              load_image=True, ins=ins)
+            self._masters = self.header.masters
             #--Pre-Records copy buffer
             def insCopy(buff, siz, backSize=0):
                 if backSize: ins.seek(-backSize,1)
                 buff.write(ins.read(siz + backSize))
-
             #--"Globals" block
             fidsPointer,recordsNum = unpack_many(ins, u'2I')
             #--Pre-globals
@@ -292,7 +291,7 @@ class SaveFile(object):
             insCopy(buff, 4)
             self.preCreated = buff.getvalue()
             #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
-            modReader = ModReader(self.fileInfo.name,ins)
+            modReader = ModReader(self.fileInfo.ci_key, ins)
             createdNum = unpack_int(ins)
             for count in xrange(createdNum):
                 progress(ins.tell(),_(u'Reading created...'))
@@ -303,14 +302,12 @@ class SaveFile(object):
                 siz = unpack_short(ins)
                 insCopy(buff, siz, 2)
             self.preRecords = buff.getvalue()
-
             #--Records
             for count in xrange(recordsNum):
                 progress(ins.tell(),_(u'Reading records...'))
                 (rec_id, rec_kind, flags, version, siz) = unpack_many(ins,u'=IBIBH')
                 data = ins.read(siz)
                 self.records.append((rec_id,rec_kind,flags,version,data))
-
             #--Temp Effects, fids, worldids
             progress(ins.tell(),_(u'Reading fids, worldids...'))
             tmp_effects_size = unpack_int(ins)
@@ -318,14 +315,16 @@ class SaveFile(object):
             #--Fids
             num = unpack_int(ins)
             self.fids = array.array(u'I')
-            self.fids.fromfile(ins,num)
+            # PY3: self.fids.fromfile(ins, num)
+            self.fids.fromstring(ins.read(num * self.fids.itemsize))
             for iref,fid in enumerate(self.fids):
                 self.irefs[fid] = iref
-
             #--WorldSpaces
             num = unpack_int(ins)
             self.worldSpaces = array.array(u'I')
-            self.worldSpaces.fromfile(ins,num)
+            # PY3: self.worldSpaces.fromfile(ins, num)
+            self.worldSpaces.fromstring(
+                ins.read(num * self.worldSpaces.itemsize))
         #--Done
         progress(progress.full,_(u'Finished reading.'))
 
@@ -392,11 +391,6 @@ class SaveFile(object):
         filePath.untemp()
         self.fileInfo.setmtime()
 
-    def addMaster(self,master):
-        """Adds master to masters list."""
-        if master not in self._masters:
-            self._masters.append(master)
-
     def indexCreated(self):
         """Fills out self.fid_recNum."""
         self.fid_createdNum = {x.fid: i for i, x in enumerate(self.created)}
@@ -416,14 +410,13 @@ class SaveFile(object):
         """Fills out self.fid_recNum."""
         self.fid_recNum = {r[0]: i for i, r in enumerate(self.records)}
 
-    def getRecord(self,fid,default=None):
+    def getRecord(self, rec_fid):
         """Returns recNum and record with corresponding fid."""
         if self.fid_recNum is None: self.indexRecords()
-        recNum = self.fid_recNum.get(fid)
+        recNum = self.fid_recNum.get(rec_fid)
         if recNum is None:
-            return default
-        else:
-            return self.records[recNum]
+            return None
+        return self.records[recNum]
 
     def setRecord(self,record):
         """Sets records where record = (rec_id,rec_kind,flags,version,data)."""
@@ -451,7 +444,7 @@ class SaveFile(object):
         """Returns fid corresponding to iref."""
         if not iref: return default
         if iref >> 24 == 0xFF: return iref
-        if iref >= len(self.fids): raise ModError(self.fileInfo.name,
+        if iref >= len(self.fids): raise ModError(self.fileInfo.ci_key,
                                                   u'IRef from Mars.')
         return self.fids[iref]
 
@@ -471,9 +464,9 @@ class SaveFile(object):
         doUnknownTypes = False
         def getMaster(modIndex):
             if modIndex < len(self._masters):
-                return self._masters[modIndex].s
+                return self._masters[modIndex]
             elif modIndex == 0xFF:
-                return self.fileInfo.name.s
+                return self.fileInfo.name
             else:
                 return _(u'Missing Master ')+hex(modIndex)
         #--ABomb
@@ -483,7 +476,7 @@ class SaveFile(object):
         log(_(u'  Float:\t%.2f') % abombFloat)
         #--FBomb
         log.setHeader(_(u'Fbomb Counter'))
-        log(_(u'  Next in-game object: %08X') % struct_unpack('I', self.preGlobals[:4]))
+        log(_(u'  Next in-game object: %08X') % struct_unpack(u'I', self.preGlobals[:4]))
         #--Array Sizes
         log.setHeader(u'Array Sizes')
         log(u'  %d\t%s' % (len(self.created),_(u'Created Items')))
@@ -529,7 +522,7 @@ class SaveFile(object):
             #--Unknown type?
             if doUnknownTypes and rec_kind not in knownTypes:
                 if mod < 255:
-                    print(rec_kind,hex(rec_id),getMaster(mod))
+                    print(rec_kind,hex(rec_id), u'%s' % getMaster(mod))
                     knownTypes.add(rec_kind)
                 elif rec_id in id_created:
                     print(rec_kind, hex(rec_id), id_created[rec_id]._rec_sig)
@@ -561,7 +554,7 @@ class SaveFile(object):
                 rec_kind, rec_type_map.get(rec_kind, _(u'Unknown'))))
             for modIndex,count in dict_sort(modHisto):
                 log(u'  %d\t%s' % (count,getMaster(modIndex)))
-            log(u'  %d\tTotal' % (sum(modHisto.values()),))
+            log(u'  %d\tTotal' % sum(modHisto.itervalues()))
         objRefBases = {k: v for k, v in objRefBases.iteritems() if v[0] > 100}
         log.setHeader(_(u'New ObjectRef Bases'))
         if objRefNullBases:
@@ -691,7 +684,7 @@ class SaveSpells(object):
                 self.importMod(modInfos[master])
         #--Extract created spells
         allSpells = self.allSpells
-        saveName = self.saveInfo.name
+        saveName = self.saveInfo.ci_key
         progress(progress.full-1,saveName.s)
         for record in saveFile.created:
             if record._rec_sig == b'SPEL':
@@ -734,7 +727,7 @@ class SaveSpells(object):
                 fid = saveFile.fids[iref]
             modIndex,objectIndex = getFormIndices(fid)
             if modIndex == 255:
-                master = self.saveInfo.name
+                master = self.saveInfo.ci_key
             elif modIndex <= maxMasters:
                 master = masters_copy[modIndex]
             else: #--Bad fid?
@@ -770,7 +763,7 @@ class SaveEnchantments(object):
         saveFile = self.saveFile = SaveFile(self.saveInfo)
         saveFile.load(SubProgress(progress,0,0.4))
         #--Extract created enchantments
-        saveName = self.saveInfo.name
+        saveName = self.saveInfo.ci_key
         progress(progress.full-1,saveName.s)
         for index,record in enumerate(saveFile.created):
             if record._rec_sig == b'ENCH':

@@ -27,11 +27,9 @@ from itertools import chain
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bolt # for type hints
-from ..balt import readme_url
-from .. import load_order
-from .. import bass
+from .. import load_order, bass
 from ..brec import MreRecord, RecHeader
-from ..bolt import GPath, SubProgress, deprint, Progress, dict_sort
+from ..bolt import GPath, SubProgress, deprint, Progress, dict_sort, readme_url
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import ModFile, LoadFactory
@@ -69,10 +67,9 @@ class PatchFile(ModFile):
                   u'work properly. If this was not intentional, rebuild the '
                   u'patch after either deactivating the imported mods listed '
                   u'below or activating the missing mod(s).'))
-            for patcher, mod_skipcount in \
-                    self.patcher_mod_skipcount.iteritems():
+            for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
                 log(u'* ' + _(u'%s skipped %d records:') % (
-                patcher, sum(mod_skipcount.values())))
+                patcher, sum(mod_skipcount.itervalues())))
                 for mod, skipcount in mod_skipcount.iteritems():
                     log(u'  * ' + _(
                         u'The imported mod, %s, skipped %d records.') % (
@@ -158,11 +155,11 @@ class PatchFile(ModFile):
         self.compiledAllMods = []
         self.patcher_mod_skipcount = defaultdict(Counter)
         #--Config
-        self.bodyTags = bush.game.body_tags
+        self.bodyTags = u''
         #--Mods
         # checking for files to include in patch, investigate
         loadMods = [m for m in load_order.cached_lower_loading(
-            modInfo.name) if load_order.cached_is_active(m)]
+            modInfo.ci_key) if load_order.cached_is_active(m)]
         if not loadMods:
             raise BoltError(u"No active mods loading before the bashed patch")
         self.loadMods = tuple(loadMods)
@@ -180,7 +177,7 @@ class PatchFile(ModFile):
         gmst_rec.eid = gmst_eid
         gmst_rec.value = gmst_val
         gmst_rec.longFids = True
-        gmst_rec.fid = (self.fileInfo.name, self.tes4.getNextObject())
+        gmst_rec.fid = (self.fileInfo.ci_key, self.tes4.getNextObject())
         self.keepIds.add(gmst_rec.fid)
         self.tops[b'GMST'].setRecord(gmst_rec)
 
@@ -280,7 +277,7 @@ class PatchFile(ModFile):
         """Completes merge process. Use this when finished using
         scanLoadMods."""
         if not self._patcher_instances: return
-        self._log_header(log, self.fileInfo.name)
+        self._log_header(log, self.fileInfo.ci_key)
         # Run buildPatch on each patcher
         self.keepIds |= self.mergeIds
         subProgress = SubProgress(progress, 0, 0.9, len(self._patcher_instances))
@@ -290,15 +287,15 @@ class PatchFile(ModFile):
             patcher.buildPatch(log,SubProgress(subProgress,index))
         # Trim records to only keep ones we actually changed
         progress(0.9,_(u'Completing')+u'\n'+_(u'Trimming records...'))
-        for block in self.tops.values():
+        for block in self.tops.itervalues():
             block.keepRecords(self.keepIds)
         progress(0.95,_(u'Completing')+u'\n'+_(u'Converting fids...'))
         # Convert masters to short fids
         self.tes4.masters = self.getMastersUsed()
         progress(1.0, _(u'Compiled.'))
         # Build the description
-        numRecords = sum(
-            x.getNumRecords(includeGroups=False) for x in self.tops.values())
+        numRecords = sum(x.getNumRecords(includeGroups=False)
+                         for x in self.tops.itervalues())
         self.tes4.description = (
                 _(u'Updated: ') + format_date(time.time()) + u'\n\n' + _(
                 u'Records Changed: %d') % numRecords)

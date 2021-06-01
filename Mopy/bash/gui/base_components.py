@@ -341,6 +341,16 @@ class _AComponent(object):
         to this component while in the with statement."""
         return _ACFrozen(self._native_widget)
 
+    def to_absolute_position(self, relative_pos): # type: (tuple) -> tuple
+        """Converts the specified position that is relative to the center of
+        this component into absolute coordinates, i.e. relative to the top left
+        of the screen."""
+        return tuple(self._native_widget.ClientToScreen(relative_pos))
+
+    def to_relative_position(self, absolute_pos): # type: (tuple) -> tuple
+        """The inverse of to_absolute_position."""
+        return tuple(self._native_widget.ScreenToClient(absolute_pos))
+
 # Events Mixins ---------------------------------------------------------------
 class WithMouseEvents(_AComponent):
     """An _AComponent that handles mouse events.
@@ -376,7 +386,7 @@ class WithMouseEvents(_AComponent):
 
         @property
         def evt_pos(self):
-            return self.__mouse_evt.GetPosition()
+            return tuple(self.__mouse_evt.GetPosition())
 
         @property
         def is_alt_down(self):
@@ -412,9 +422,15 @@ class WithCharEvents(_AComponent):
     """An _AComponent that handles key presses events.
 
     Key events.
-      - on_key_pressed(wrapped_evt: _WrapKeyEvt): key pressed
-      - on_key_up(wrapped_evt: _WrapKeyEvt, self: WithCharEvents): key
-        released"""
+      - on_key_down(wrapped_evt: _WrapKeyEvt): Posted when a key is starting to
+        be pressed, before OS handlers have had a chance to handle it. That
+        means you can override behavior like jumping to a list item when a
+        letter is pressed by using this. Note that you have to return
+        EventResult.FINISH if you override behavior for a particular key code,
+        otherwise the OS behavior will also be executed.
+      - on_key_up(wrapped_evt: _WrapKeyEvt, self: WithCharEvents): Posted when
+        a key is starting to be released. OS handlers for this key have run if
+        they weren't overriden by an on_key_down subscription."""
     class _WrapKeyEvt(object):
         def __init__(self, mouse_evt):
             self.__key_evt = mouse_evt # type: _wx.KeyEvent
@@ -438,7 +454,7 @@ class WithCharEvents(_AComponent):
     def __init__(self, *args, **kwargs):
         super(WithCharEvents, self).__init__(*args, **kwargs)
         wrap_processor = lambda event: [self._WrapKeyEvt(event)]
-        self.on_key_pressed = self._evt_handler(_wx.EVT_CHAR, wrap_processor)
+        self.on_key_down = self._evt_handler(_wx.EVT_KEY_DOWN, wrap_processor)
         self.on_key_up = self._evt_handler(_wx.EVT_KEY_UP, wrap_processor)
 
 class ImageWrapper(object):

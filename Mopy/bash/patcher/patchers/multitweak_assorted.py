@@ -27,9 +27,10 @@ from __future__ import division
 import random
 import re
 # Internal
-from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak, IndexingTweak
-from ... import bush, load_order
-from ...bolt import GPath, deprint, floats_equal
+from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak, \
+    IndexingTweak
+from ... import bush, load_order, bolt
+from ...bolt import GPath, deprint
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):
@@ -160,10 +161,10 @@ class _APlayableTweak(MultiTweakItem):
                 _remaining_checks.search(test_str))
 
     def wants_record(self, record):
-        # 'script' does not exist for later games, so use getattr
+        # 'script_fid' does not exist for later games, so use getattr
         if (not self._is_nonplayable(record) or
             not self._any_body_flag_set(record) or
-                getattr(record, u'script', None)): return False
+                getattr(record, u'script_fid', None)): return False
         # Later games mostly have these 'non-playable indicators' in the EDID
         clothing_eid = record.eid
         if clothing_eid and self._should_skip(clothing_eid.lower()):
@@ -290,7 +291,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
         # All of these floats must be approximately equal to 0
         for fog_attr in (u'fogNear', u'fogFar', u'fogClip'):
             fog_val = getattr(record, fog_attr)
-            if fog_val is not None and not floats_equal(fog_val, 0.0):
+            if fog_val is not None and fog_val != 0.0: # type: bolt.Rounder
                 return False
         return True
 
@@ -302,9 +303,9 @@ class AssortedTweak_FogFix(MultiTweakItem):
         should_add_cell = self.wants_record
         add_cell = patch_file.tops[b'CELL'].setCell
         for cell_block in mod_file.tops[b'CELL'].cellBlocks:
-            curr_cell = cell_block.cell
-            if should_add_cell(curr_cell):
-                add_cell(curr_cell)
+            current_cell = cell_block.cell
+            if should_add_cell(current_cell):
+                add_cell(current_cell)
 
     def tweak_build_patch(self, log, count, patch_file):
         """Adds merged lists to patchfile."""
@@ -347,13 +348,12 @@ class _AWeightTweak(CustomChoiceTweak):
         log.setHeader(u'=== ' + self.tweak_log_header)
         log(self._log_weight_value % self.chosen_weight)
         log(u'* ' + self.tweak_log_msg % {
-            u'total_changed': sum(count.values())})
+            u'total_changed': sum(count.itervalues())})
         for src_plugin in load_order.get_ordered(count):
             log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
 
     def wants_record(self, record):
-        return (record.weight > self.chosen_weight and
-                not floats_equal(record.weight, self.chosen_weight))
+        return record.weight > self.chosen_weight # type: bolt.Rounder
 
     def tweak_record(self, record):
         record.weight = self.chosen_weight
@@ -388,7 +388,8 @@ class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
             return _(u'Maximum potion weight cannot exceed 1.0. Potions with '
                      u'higher weight are ignored by this tweak (since they '
                      u"are usually special 'potion in name only' items).")
-        return None
+        return super(AssortedTweak_PotionWeight, self).validate_values(
+            chosen_values)
 
     def wants_record(self, record):
         return record.weight < 1.0 and super(
@@ -421,8 +422,7 @@ class AssortedTweak_PotionWeightMinimum(_AWeightTweak):
     _log_weight_value = _(u'Ingestibles set to minimum weight of %f.')
 
     def wants_record(self, record): ##: no SEFF condition - intended?
-        return (record.weight < self.chosen_weight and
-                not floats_equal(record.weight, self.chosen_weight))
+        return record.weight < self.chosen_weight
 
 #------------------------------------------------------------------------------
 class AssortedTweak_StaffWeight(_AWeightTweak):
@@ -552,7 +552,7 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
     tweak_log_msg = _(u'Grasses Normalized: %(total_changed)d')
 
     def wants_record(self, record):
-        return not floats_equal(record.heightRange, 0.0)
+        return record.heightRange != 0.0 # type: bolt.Rounder
 
     def tweak_record(self, record):
         record.heightRange = 0.0
@@ -876,7 +876,7 @@ class AssortedTweak_AllWaterDamages(MultiTweakItem):
         record.flags.causesDamage = True
 
 #------------------------------------------------------------------------------
-class AssortedTweak_AbsorbSummonFix(IndexingTweak,MultiTweakItem):
+class AssortedTweak_AbsorbSummonFix(IndexingTweak):
     """Adds the 'No Absorb/Reflect' flag to summoning spells."""
     tweak_read_classes = b'SPEL',
     tweak_name = _(u'Magic: Summoning Absorption Fix')
@@ -889,12 +889,9 @@ class AssortedTweak_AbsorbSummonFix(IndexingTweak,MultiTweakItem):
     _index_sigs = [b'MGEF']
 
     def prepare_for_tweaking(self, patch_file):
-        ##: Same HACK as in NamesTweak_Scrolls.prepare_for_tweaking
-        self._look_up_mgef = id_mgef = {}
-        for pl_path in patch_file.loadMods:
-            ench_plugin = self._mod_file_read(patch_file.p_file_minfos[pl_path])
-            for record in ench_plugin.tops[b'MGEF'].getActiveRecords():
-                id_mgef[record.fid] = record
+        super(AssortedTweak_AbsorbSummonFix, self).prepare_for_tweaking(
+            patch_file)
+        self._look_up_mgef = self._indexed_records[b'MGEF']
 
     def wants_record(self, record):
         if record.dataFlags.noAbsorbReflect: return False

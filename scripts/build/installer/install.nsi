@@ -10,10 +10,6 @@
 
         ; Install MSVC 2010, needed for python-lz4
         SetOutPath "$TEMP"
-        DetailPrint "Running Visual C++ 2010 x86 Redistributable Setup..."
-        File "${WB_CLEAN_MOPY}\redist\vcredist_2010_x86.exe"
-        ExecWait '"$TEMP\vcredist_2010_x86.exe" /quiet /norestart'
-        DetailPrint "Finished Visual C++ 2010 x86 Redistributable Setup"
         DetailPrint "Running Visual C++ 2010 x64 Redistributable Setup..."
         File "${WB_CLEAN_MOPY}\redist\vcredist_2010_x64.exe"
         ExecWait '"$TEMP\vcredist_2010_x64.exe" /quiet /norestart'
@@ -76,6 +72,13 @@
             ; Install resources:
             ${If} $Path_Enderal != $Empty
                 !insertmacro InstallBashFiles "Enderal" "Enderal" "$Path_Enderal" "Enderal Path"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_EnderalSE == ${BST_CHECKED}
+            ; Install resources:
+            ${If} $Path_EnderalSE != $Empty
+                !insertmacro InstallBashFiles "EnderalSE" "EnderalSE" "$Path_EnderalSE" "EnderalSE Path"
             ${EndIf}
         ${EndIf}
 
@@ -173,6 +176,14 @@
                 SetOutPath $Path_Enderal\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Enderal.lnk" "$Path_Enderal\Mopy\Wrye Bash.exe"
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Enderal (Debug Log).lnk" "$Path_Enderal\Mopy\Wrye Bash.exe" "-d"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_EnderalSE == ${BST_CHECKED}
+            ${If} $Path_EnderalSE != $Empty
+                SetOutPath $Path_EnderalSE\Mopy
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - EnderalSE.lnk" "$Path_EnderalSE\Mopy\Wrye Bash.exe"
+                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - EnderalSE (Debug Log).lnk" "$Path_EnderalSE\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 

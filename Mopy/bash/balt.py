@@ -26,16 +26,11 @@ now. See #190, its code should be refactored and land in basher and/or gui."""
 # Imports ---------------------------------------------------------------------
 from __future__ import division
 
-import io
-import re
-
 from . import bass # for dirs - try to avoid
-#--Localization
-#..Handled by bolt, so import that.
 from . import bolt
-from .bolt import GPath, deprint
-from .exception import AbstractError, AccessDeniedError, ArgumentError, \
-    BoltError, CancelError, SkipError, StateError
+from .bolt import GPath, deprint, readme_url
+from .exception import AbstractError, AccessDeniedError, BoltError, \
+    CancelError, SkipError, StateError
 #--Python
 import time
 import threading
@@ -48,8 +43,10 @@ import wx.adv
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, ImageWrapper, \
-    BusyCursor, GlobalMenu, WrappingTextMixin
+    Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, \
+    ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
+    staticBitmap, bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, \
+    FileSave
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -181,29 +178,6 @@ class ColorChecks(ImageList):
             else: shortKey = u'red.off'
         return self.indices[shortKey]
 
-# Elements --------------------------------------------------------------------
-def bell(arg=None):
-    """"Rings the system bell and returns the input argument (useful for return bell(value))."""
-    wx.Bell()
-    return arg
-
-def ok_and_cancel_group(parent, on_ok=None):
-    ok_button = OkButton(parent)
-    ok_button.on_clicked.subscribe(on_ok)
-    return HLayout(spacing=4, items=[ok_button, CancelButton(parent)])
-
-def staticBitmap(parent, bitmap=None, size=(32, 32), special=u'warn'):
-    """Tailored to current usages - IAW: do not use."""
-    if bitmap is None:
-        bmp = wx.ArtProvider.GetBitmap
-        if special == u'warn':
-            bitmap = bmp(wx.ART_WARNING,wx.ART_MESSAGE_BOX, size)
-        elif special == u'undo':
-            return bmp(wx.ART_UNDO,wx.ART_TOOLBAR,size)
-        else: raise ArgumentError(
-            u'special must be either warn or undo: %r given' % special)
-    return wx.StaticBitmap(_AComponent._resolve(parent), bitmap=bitmap)
-
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
 def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
@@ -246,17 +220,22 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
     return False
 
 class _ContinueDialog(DialogWindow):
-    def __init__(self, parent, message, title, checkBoxText):
-        super(_ContinueDialog, parent).__init__(parent, title, sizes_dict=sizes, size=(350, -1))
-        self.gCheckBox = CheckBox(self, checkBoxText)
+    _def_size = _min_size = (360, 150)
+
+    def __init__(self, parent, message, title, checkBoxTxt):
+        super(_ContinueDialog, self).__init__(parent, title, sizes_dict=sizes)
+        self.gCheckBox = CheckBox(self, checkBoxTxt)
         #--Layout
         VLayout(border=6, spacing=6, item_expand=True, items=[
             (HLayout(spacing=6, items=[
                 (staticBitmap(self), LayoutOptions(border=6, v_align=TOP)),
                 (Label(self, message), LayoutOptions(expand=True, weight=1))]),
              LayoutOptions(weight=1)),
-            self.gCheckBox,
-            ok_and_cancel_group(self)
+            Stretch(),
+            HorizontalLine(self),
+            HLayout(spacing=4, item_expand=True, items=[
+                self.gCheckBox, Stretch(), OkButton(self), CancelButton(self),
+            ]),
         ]).apply_to(self)
 
     def show_modal(self):
@@ -273,38 +252,6 @@ class _ContinueDialog(DialogWindow):
         else:
             return super(_ContinueDialog, cls).display_dialog(*args, **kwargs)
         return result, check
-
-#------------------------------------------------------------------------------
-# TODO(inf) de-wx! move all the ask* methods to gui? Then we can easily
-#  resolve wrapped parents
-def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OPEN,mustExist=False):
-    """Show as file dialog and return selected path(s)."""
-    defaultDir,defaultFile = [GPath(x).s for x in (defaultDir,defaultFile)]
-    dialog = wx.FileDialog(_AComponent._resolve(parent), title, defaultDir,
-                           defaultFile, wildcard, style)
-    if dialog.ShowModal() != wx.ID_OK:
-        result = False
-    elif style & wx.FD_MULTIPLE:
-        result = [GPath(path) for path in dialog.GetPaths()]
-        if mustExist:
-            for returned_path in result:
-                if not returned_path.exists():
-                    result = False
-                    break
-    else:
-        result = GPath(dialog.GetPath())
-        if mustExist and not result.exists():
-            result = False
-    dialog.Destroy()
-    return result
-
-def askOpenMulti(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_FILE_MUST_EXIST):
-    """Show as open dialog and return selected path(s)."""
-    return askOpen(parent,title,defaultDir,defaultFile,wildcard,wx.FD_OPEN|wx.FD_MULTIPLE|style)
-
-def askSave(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=wx.FD_OVERWRITE_PROMPT):
-    """Show as save dialog and return selected path(s)."""
-    return askOpen(parent,title,defaultDir,defaultFile,wildcard,wx.FD_SAVE|style)
 
 #------------------------------------------------------------------------------
 def askText(parent, message, title=u'', default=u'', strip=True):
@@ -335,7 +282,7 @@ def vistaDialog(parent, message, title, checkBoxTxt=None,
     buttons = buttons if buttons is not None else (
         (BTN_OK, u'ok'), (BTN_CANCEL, u'cancel'))
     heading = heading if heading is not None else title
-    title = title if heading is not None else u'Wrye Bash'
+    title = title if title is not None else u'Wrye Bash'
     dialog = TaskDialog(title, heading, message,
                         buttons=[x[1] for x in buttons], main_icon=icon,
                         parenthwnd=parent.GetHandle() if parent else None,
@@ -474,7 +421,7 @@ class Log(_Log):
             fixedStyle.SetFont(fixedFont)
             # txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
         #--Layout
-        ok_button = OkButton(self.window, default=True)
+        ok_button = OkButton(self.window)
         ok_button.on_clicked.subscribe(self.window.close_win)
         VLayout(border=2, items=[
             (txtCtrl, LayoutOptions(expand=True, weight=1, border=2)),
@@ -492,15 +439,15 @@ class WryeLog(_Log):
         if isinstance(logText, bolt.Path):
             logPath = logText
         else:
-            logPath = _settings.get(u'balt.WryeLog.temp',
-                bolt.Path.getcwd().join(u'WryeLogTemp.html'))
-            convert_wtext_to_html(logPath, logText)
+            logPath = bass.dirs[u'saveBase'].join(u'WryeLogTemp.html')
+            css_dir = bass.dirs[u'mopy'].join(u'Docs')
+            bolt.convert_wtext_to_html(logPath, logText, css_dir)
         super(WryeLog, self).__init__(parent, title, asDialog, log_icons)
         #--Text
         self._html_ctrl = DocumentViewer(self.window)
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
-        gOkButton = OkButton(self.window, default=True)
+        gOkButton = OkButton(self.window)
         gOkButton.on_clicked.subscribe(self.window.close_win)
         if not asDialog:
             self.window.set_background_color(gOkButton.get_background_color())
@@ -512,12 +459,6 @@ class WryeLog(_Log):
              LayoutOptions(border=2))
         ]).apply_to(self.window)
         self.ShowLog()
-
-def convert_wtext_to_html(logPath, logText):
-    cssDir = _settings.get(u'balt.WryeLog.cssDir', GPath(u''))
-    ins = io.StringIO(logText + u'\n{{CSS:wtxt_sand_small.css}}')
-    with logPath.open(u'w', encoding=u'utf-8-sig') as out:
-        bolt.WryeText.genHtml(ins, out, cssDir)
 
 def playSound(parent,sound):
     if not sound: return
@@ -590,8 +531,8 @@ class ListEditor(DialogWindow):
         self._list_items = lid_data.getItemList()
         #--GUI
         super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
-        # overrides DialogWindow.sizesKey
-        self._size_key = self._listEditorData.__class__.__name__
+        # PY3: Drop the unicode()
+        self._size_key = unicode(self._listEditorData.__class__.__name__)
         #--List Box
         self.listBox = ListBox(self, choices=self._list_items)
         self.listBox.set_min_size(125, 150)
@@ -611,7 +552,7 @@ class ListEditor(DialogWindow):
             (lid_data.showSave, _(u'Save'), self.DoSave),
             (lid_data.showCancel, _(u'Cancel'), self.DoCancel),
             ]
-        for k,v in (orderedDict or {}).items():
+        for k, v in (orderedDict or {}).iteritems():
             buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
             def _btn(btn_label, btn_callback):
@@ -959,7 +900,7 @@ class UIList(wx.Panel):
         self.__gList.on_context_menu.subscribe(self.DoItemMenu)
         self.__gList.on_lst_col_click.subscribe(self.OnColumnClick)
         self.__gList.on_key_up.subscribe(self._handle_key_up)
-        self.__gList.on_key_pressed.subscribe(self.OnChar)
+        self.__gList.on_key_down.subscribe(self._handle_key_down)
         #--Events: Columns
         self.__gList.on_lst_col_end_drag.subscribe(self.OnColumnResize)
         #--Events: Items
@@ -1173,29 +1114,25 @@ class UIList(wx.Panel):
 
     def _handle_key_up(self, wrapped_evt):
         """Char event: select all items, delete selected items, rename."""
-        code = wrapped_evt.key_code
+        kcode = wrapped_evt.key_code
         cmd_down = wrapped_evt.is_cmd_down
-        if cmd_down and code == ord(u'A'): # Ctrl+A
+        if cmd_down and kcode == ord(u'A'): # Ctrl+A
             if wrapped_evt.is_shift_down: # de-select all
                 self.ClearSelected(clear_details=True)
             else: # select all
-                try:
-                    self.__gList.on_item_selected.unsubscribe(
-                        self._handle_select)
+                with self.__gList.on_item_selected.pause_subscription(
+                    self._handle_select):
                     # omit below to leave displayed details
                     self.panel.ClearDetails()
                     self.__gList.lc_select_item_at_index(-1) # -1 indicates 'all items'
-                finally:
-                    self.__gList.on_item_selected.subscribe(
-                        self._handle_select)
-        elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
-        elif code in wxDelete:
+        elif self.__class__._editLabels and kcode == wx.WXK_F2: self.Rename()
+        elif kcode in _wx_delete:
             with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
-        elif cmd_down and code == ord(u'O'): # Ctrl+O
+        elif cmd_down and kcode == ord(u'O'): # Ctrl+O
             self.open_data_store()
         # Ctrl+C: Copy file(s) to clipboard
-        elif self.__class__._copy_paths and cmd_down and code == ord(u'C'):
-            copyListToClipboard(
+        elif self.__class__._copy_paths and cmd_down and kcode == ord(u'C'):
+            copy_files_to_clipboard(
                 [x.abs_path.s for x in self.GetSelectedInfos()])
 
     # Columns callbacks
@@ -1226,7 +1163,7 @@ class UIList(wx.Panel):
     #--Events skipped
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags): pass
     def OnDClick(self, lb_dex_and_flags): pass
-    def OnChar(self, wrapped_evt): pass
+    def _handle_key_down(self, wrapped_evt): pass
     #--Edit labels - only registered if _editLabels != False
     def _rename_type(self):
         """Check if the operation is allowed and return the item type of the
@@ -1240,7 +1177,7 @@ class UIList(wx.Panel):
             # Nothing selected / rename mixed installer types / last marker
             return EventResult.CANCEL
         uilist_ctrl.ec_set_selection(*rename_type.rename_area_idxs(evt_label))
-        uilist_ctrl.ec_set_on_char_handler(self._on_f2_handler)
+        uilist_ctrl.ec_set_f2_handler(self._on_f2_handler)
         return EventResult.FINISH  ##: needed?
     def OnLabelEdited(self, is_edit_cancelled, evt_label, evt_index, evt_item):
         # should only be subscribed if _editLabels==True and overridden
@@ -1262,7 +1199,7 @@ class UIList(wx.Panel):
                 else:
                     selection_span = sel_start, _sel_stop
             uilist_ctrl.ec_set_selection(*selection_span)
-            return EventResult.FINISH  ##: needed?
+            return EventResult.FINISH
 
     def try_rename(self, info, newFileName): # Mods/BSAs
         return self._try_rename(info, newFileName)
@@ -1329,11 +1266,9 @@ class UIList(wx.Panel):
 
     def SelectItemsNoCallback(self, items, deselectOthers=False):
         if deselectOthers: self.ClearSelected()
-        try:
-            self.__gList.on_item_selected.unsubscribe(self._handle_select)
+        with self.__gList.on_item_selected.pause_subscription(
+            self._handle_select):
             for item in items: self.SelectItem(item)
-        finally:
-            self.__gList.on_item_selected.subscribe(self._handle_select)
 
     def ClearSelected(self, clear_details=False):
         """Unselect all items."""
@@ -1593,16 +1528,16 @@ class UIList(wx.Panel):
 
     def hide(self, items):
         deletd = []
-        for ci_key, inf in items:
+        for ci_key_, inf in items:
             destDir = inf.get_hide_dir()
-            if destDir.join(ci_key).exists():
+            if destDir.join(ci_key_).exists():
                 message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % ci_key)
+                             u'files directory. Overwrite it?') % ci_key_)
                 if not askYes(self, message, _(u'Hide Files')): continue
             #--Do it
             with BusyCursor():
-                self.data_store.move_info(ci_key, destDir)
-                deletd.append(ci_key)
+                self.data_store.move_info(ci_key_, destDir)
+                deletd.append(ci_key_)
         #--Refresh stuff
         self.data_store.delete_refresh(deletd, None, check_existence=True)
 
@@ -1612,8 +1547,8 @@ class UIList(wx.Panel):
         srcDir = self.data_store.hidden_dir
         wildcard = self._unhide_wildcard()
         destDir = self.data_store.store_dir
-        srcPaths = askOpenMulti(self, _(u'Unhide files:'), defaultDir=srcDir,
-                                wildcard=wildcard)
+        srcPaths = FileOpenMultiple.display_dialog(self, _(u'Unhide files:'),
+            defaultDir=srcDir, wildcard=wildcard)
         return destDir, srcDir, srcPaths
 
     # Global Menu -------------------------------------------------------------
@@ -1740,10 +1675,9 @@ class Link(object):
         return askContinue(self.window, message, continueKey, title=title)
 
     def _askOpen(self, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u'', mustExist=False):
-        return askOpen(self.window, title=title, defaultDir=defaultDir,
-                       defaultFile=defaultFile, wildcard=wildcard,
-                       mustExist=mustExist)
+                 wildcard=u''):
+        return FileOpen.display_dialog(self.window, title=title,
+            defaultDir=defaultDir, defaultFile=defaultFile, wildcard=wildcard)
 
     def _showOk(self, message, title=u''):
         if not title: title = self._text
@@ -1761,9 +1695,9 @@ class Link(object):
         return showError(self.window, message, title)
 
     def _askSave(self, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u'', style=wx.FD_OVERWRITE_PROMPT):
-        return askSave(self.window, title, defaultDir, defaultFile, wildcard,
-                       style)
+                 wildcard=u''):
+        return FileSave.display_dialog(self.window, title, defaultDir,
+                                       defaultFile, wildcard)
 
     _default_icons = object()
     def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,
@@ -2092,45 +2026,11 @@ class UIList_Hide(ItemLink):
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-def copyToClipboard(text_to_copy):
-    if wx.TheClipboard.Open():
-        wx.TheClipboard.SetData(wx.TextDataObject(text_to_copy))
-        wx.TheClipboard.Close()
-
-def copyListToClipboard(selected):
-    if selected and not wx.TheClipboard.IsOpened():
-        wx.TheClipboard.Open()
-        clipData = wx.FileDataObject()
-        for abspath in selected: clipData.AddFile(abspath)
-        wx.TheClipboard.SetData(clipData)
-        wx.TheClipboard.Close()
-
-def clipboardDropFiles(millis, callable_):
-    if wx.TheClipboard.Open():
-        if wx.TheClipboard.IsSupported(wx.DataFormat(wx.DF_FILENAME)):
-            obj = wx.FileDataObject()
-            wx.TheClipboard.GetData(obj)
-            wx.CallLater(millis, callable_, 0, 0, obj.GetFilenames())
-        wx.TheClipboard.Close()
-
-def read_from_clipboard():
-    """Returns any text data that is currently in the system clipboard, or an
-    empty string if none is stored."""
-    text_data = wx.TextDataObject()
-    was_sucessful = False
-    if wx.TheClipboard.Open():
-        was_sucessful = wx.TheClipboard.GetData(text_data)
-        wx.TheClipboard.Close()
-    return text_data.GetText() if was_sucessful else u''
-
-def getKeyState(key): return wx.GetKeyState(key)
-def getKeyState_Shift(): return wx.GetKeyState(wx.WXK_SHIFT)
-
-wxArrowUp = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
+_wx_arrow_up = {wx.WXK_UP, wx.WXK_NUMPAD_UP}
 wxArrowDown = {wx.WXK_DOWN, wx.WXK_NUMPAD_DOWN}
-wxArrows = wxArrowUp | wxArrowDown
+wxArrows = _wx_arrow_up | wxArrowDown
 wxReturn = {wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER}
-wxDelete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
+_wx_delete = {wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE}
 
 # ListBoxes -------------------------------------------------------------------
 class _CheckList_SelectAll(ItemLink):
@@ -2214,7 +2114,7 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
             layout.add((HBoxedLayout(self, item_expand=True, title=title,
                                      item_weight=1, items=[checksCtrl]),
                         LayoutOptions(expand=True, weight=1)))
-        btns = [OkButton(self, btn_label=bOk, default=True),
+        btns = [OkButton(self, btn_label=bOk),
                 CancelButton(self, btn_label=bCancel) if canCancel else None]
         layout.add((HLayout(spacing=5, items=btns),
                     LayoutOptions(h_align=RIGHT)))
@@ -2250,10 +2150,9 @@ def ask_uac_restart(message, title, mopy):
         return askYes(None, message + u'\n\n' + _(
             u'Start Wrye Bash with Administrator Privileges?'), title)
     admin = _(u'Run with Administrator Privileges')
-    readme = readme_url(mopy)
-    readme += u'#trouble-permissions'
+    readme = readme_url(mopy) + u'#trouble-permissions'
     return vistaDialog(None, message=message,
-        buttons=[(True, u'+' + admin), (False, _(u'Run normally'))],
+        buttons=[(BTN_YES, u'+' + admin), (BTN_NO, _(u'Run normally'))],
         title=title, expander=[_(u'How to avoid this message in the future'),
             _(u'Less information'),
             _(u'Use one of the following command line switches:') +
@@ -2261,17 +2160,6 @@ def ask_uac_restart(message, title, mopy):
             u'\n' + _(u'--uac: always run with Admin Privileges') +
             u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
                 u'for more information.') % {u'readmePath': readme}])[0]
-
-def readme_url(mopy, advanced=False, skip_local=False):
-    readme_name = (u'Wrye Bash Advanced Readme.html' if advanced else
-                   u'Wrye Bash General Readme.html')
-    readme = mopy.join(u'Docs', readme_name)
-    if not skip_local and readme.isfile():
-        readme = u'file:///' + readme.s.replace(u'\\', u'/')
-    else:
-        # Fallback to Git repository
-        readme = u'http://wrye-bash.github.io/docs/' + readme_name
-    return readme.replace(u' ', u'%20')
 
 class INIListCtrl(wx.ListCtrl):
 

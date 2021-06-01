@@ -124,14 +124,16 @@
 </ul>
 <p>It currently supports the following games:</p>
 <ul>
-    <li>Oblivion</li>
+    <li>Morrowind (very early support, Steam and Windows Store versions)</li>
+    <li>Oblivion (Steam and Windows Store versions)</li>
     <li>Nehrim&colon; At Fate's Edge</li>
     <li>Fallout 3</li>
     <li>Fallout&colon; New Vegas</li>
     <li>Skyrim</li>
     <li>Enderal&colon; Forgotten Stories</li>
-    <li>Fallout 4</li>
-    <li>Skyrim&colon; Special Edition</li>
+    <li>Fallout 4 (Steam and Windows Store versions)</li>
+    <li>Skyrim&colon; Special Edition (Steam and Windows Store versions)</li>
+    <li>Enderal&colon; Forgotten Stories&colon; Special Edition</li>
 </ul>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
 <p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.</p>
@@ -140,6 +142,7 @@
 <p>Modding for Creation Engine games has a wonderful history of confusing terminology. The list below details some terms commonly used when dealing with mods.
 <ul>
     <li><strong>The game</strong> is the game that Wrye Bash is managing, one of the ones listed above.</li>
+    <li><strong>Windows Store</strong> refers to a game installed with the Windows Store.  This could also be referred to as a Game Pass, Xbox App, or Microsoft Store game.</li>
     <li><strong>CTD</strong> is an acronym for Crash To Desktop. Used to describe the game crashing.</li>
     <li><strong>DLC</strong> refers to any of the official downloadable content for the game.</li>
     <li><strong>Mod</strong> refers to any unofficial user-made modification to the game.</li>
@@ -156,6 +159,7 @@
     <table>
         <thead><tr><th>Game</th><th>Master File</th></tr></thead>
         <tbody>
+            <tr><td>Morrowind</td><td>Morrowind.esm</td></tr>
             <tr><td>Oblivion</td><td>Oblivion.esm</td></tr>
             <tr><td>Nehrim&colon; At Fate's Edge</td><td>Nehrim.esm</td></tr>
             <tr><td>Fallout 3</td><td>Fallout3.esm</td></tr>
@@ -164,6 +168,7 @@
             <tr><td>Enderal&colon; Forgotten Stories</td><td>Skyrim.esm</td></tr>
             <tr><td>Fallout 4</td><td>Fallout4.esm</td></tr>
             <tr><td>Skyrim&colon; Special Edition</td><td>Skyrim.esm</td></tr>
+            <tr><td>Enderal&colon; Forgotten Stories&colon; Special Edition</td><td>Skyrim.esm</td></tr>
         </tbody>
     </table>
     <li><strong>Conflicts</strong> occur when two different mods try to change the same game variable or resource, which could be anything from a specific object in game to a script or a texture. Conflicts can cause problems, including CTDs or save game corruption, but they are not inherently bad, and most modding is the result of purposeful conflicts.</li>
@@ -176,7 +181,11 @@
 <p>This readme will also use the placeholder <strong>[Game]</strong>. Replace this with the game that you're managing with Wrye Bash. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img alt="External Link Icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII="/> go to pages that are not part of the Wrye Bash documentation.</p>
 
 <h2 id="install">Installation <a class="back2top" href="#contents">Back to top</a></h2>
-<p>The simplest way to install Wrye Bash is using the installer, as it installs Wrye Bash and its dependencies automatically. However, the instructions below are provided if a manual install method is preferred.
+<p>The simplest way to install Wrye Bash is using the installer, as it installs
+    Wrye Bash and its dependencies automatically. <strong>Note:</strong> If you
+    want to manage a Windows Store game (since the installer does not and
+    cannot support Windows Store games) or prefer to manually install Wrye Bash
+    for any other reason, read the instructions below.</p>
 <p><strong>Note:</strong> There are two versions of Wrye Bash available: the Python version and the Standalone version. Both are the same program, but the Standalone version has fewer dependencies and so is recommended for most people.
 <p><strong>Windows Vista, 7, 8 &amp; 10 users:</strong> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Installation:
@@ -188,8 +197,8 @@
         <li>Extract the downloaded Wrye Bash archive into the game folder (e.g. <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q>, depending on the game) so that the Mopy
         directory appears in the game folder.
     </ul>
-    <li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder. If you chose the second option above, Wrye Bash will now simply open. However, you will have to repeat the procedure for each new game you install.
-        If you chose the second option, you will see a game select screen. Simply select one of the listed games to continue:</li>
+    <li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder. If you chose the second option above, Wrye Bash will now open. However, you will have to repeat the procedure for each new game you install.
+        If you chose the first option, you will see a game select screen. Simply select one of the listed games to continue:</li>
     <img alt="Game Select Screen" src="../bash/images/readme/game-select.png"/>
 </ol>
 <p>Manual Python Version Installation:
@@ -198,7 +207,7 @@
         See the <a href="Wrye%20Bash%20Advanced%20Readme.html#install-components">Python Components</a> section of the Advanced readme
         for the list of included libraries and their versions. If you have previously installed Python and any Python libraries,
         you may not need to install them again.
-    <li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
+    <li>Download and install the <a href="https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe">MSVC 2010 Redistributable (x64)</a>.
     <li>Extract the downloaded Wrye Bash archive into your game folder (e.g. <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q>, depending on the game) so that the Mopy
     directory appears by the game executable. See the
     <a href="Wrye%20Bash%20Advanced%20Readme.html#install-alternate">Alternative Install Locations</a> if you wish to install to a different directory.
@@ -221,7 +230,7 @@
     <li><code>[Game]\Data\Docs</code>
     <li><code>[Game]\Data\INI Tweaks</code>
     <li><code>Documents\My Games\[Game]</code> - Only delete the <code>BashProfiles.dat</code>, <code>BashProfiles.dat.bak</code>, <code>BashSettings.dat</code>, <code>BashSettings.dat.bak</code>, <code>Messages.dat</code>, <code>Messages.dat.bak</code>, <code>People.dat</code> and <code>People.dat.bak</code> files and the <code>Saves\Bash</code> folder.
-    <li><code>[Game] Mods</code> (in the same folder as [Game]) - The <code>Bash Installers</code> folder stores the mods you've installed via BAIN.
+    <li><code>[Game] Mods</code> (in the same folder as [Game] for most games, in <code>Documents\Wrye Bash</code> for Windows Store games) - The <code>Bash Installers</code> folder stores the mods you've installed via BAIN.
 </ul>
 
 <h2 id="bain">Installing Mods <a class="back2top" href="#contents">Back to top</a></h2>
@@ -242,17 +251,20 @@
 The first time the Installers tab is opened, a dialog will appear asking if BAIN should be initialized.
 If you click <q>Yes</q>, BAIN will be initialised, which can take some time.
 After that, the information refresh performed when the Installers tab is opened is much faster.</p>
-<p>BAIN's primary function is to install mod packages. <strong>BAIN Packages</strong> can be <code>.zip</code>,
-    <code>.7z</code> or <code>.rar</code> archives or uncompressed directories. Uncompressed directories are called <strong>Projects</strong> while archives are usually called
-    <strong>packages</strong>, abusing terminology. When we refer to projects and packages together we will be also using the collective term <strong>installers</strong>.
+<p>BAIN's primary function is to install mod packages. <strong>BAIN
+    Packages</strong> can be compressed archives (<code>.zip</code>,
+    <code>.7z</code>, <code>.rar</code>, <code>.001</code>, <code>.tar</code>) or uncompressed
+directories. Uncompressed directories are called <strong>projects</strong>.
+When we refer to projects and archives together we will also be using the
+collective term <strong>packages</strong> or <strong>installers</strong>.</p>
 <p>If BAIN is disabled, ie. if you clicked <q>No</q> on the dialog that was displayed the first time you selected the Installers tab, it can be re-enabled by right clicking on a column header in the Installers tab and selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainEnabled">Enabled</a>.
 
-<p>Installers need to be placed in the <code>Bash Installers</code> directory which is created the first time Bash runs inside the <code>"Game" Mods</code> directory. This directory is by default
+<p>Packages need to be placed in the <code>Bash Installers</code> directory which is created the first time Bash runs inside the <code>"Game" Mods</code> directory. This directory is by default
     created on the same level as your game directory (that is, if your game exe is located in "C:\GAMES\TESIV\Oblivion", then by default Bash will create the "C:\GAMES\TESIV\Oblivion Mods\"
     directory on first run), but you can point Bash to create this "Game" Mods directory wherever you want (or point it to an existing one) via the <code>sOblivionMods</code> ini setting. Do
     <em>not</em> however put it inside the game Data directory, as the game may well be confused and scan it adding to performance deterioration, mods thrashing.
 <p>To add an installer to Wrye Bash Installers, you can either manually copy and paste the zip to the Bash Installers Directory, or just drag and drop the zip onto the Installers tab.
-<p>Bash will scan the Bash Installers directory and pick up all subfolders and all <code>.zip</code>, <code>.7z</code> or <code>.rar</code> archives - except for:
+<p>Bash will scan the Bash Installers directory and pick up all subfolders and all archives - except for:
 
 <ol>
     <li>folders or files that begin with <code>--</code> will be skipped
@@ -293,7 +305,7 @@ be restructured.</p>
         <tr><td>Fallout&colon; New Vegas</td><td>config, distantlod, facegen, fonts, menus, nvse, uio, scripts, shaders, trees</td></tr>
         <tr><td>Skyrim &amp; Enderal&colon; Forgotten Stories</td><td>asi, calientetools, dialogueviews, dyndolod, grass, interface, lodsettings, scripts, seq, shadersfx, skse, skyproc patchers, strings, tools</td></tr>
         <tr><td>Fallout 4</td><td>f4se, interface, lodsettings, materials, mcm, misc, programs, scripts, seq, shadersfx, strings, tools, vis</td></tr>
-        <tr><td>Skyrim&colon; Special Edition</td><td>asi, calientetools, dialogueviews, dyndolod, grass, interface, lodsettings, scripts, seq, shadersfx, skse, skyproc patchers, source, strings, tools</td></tr>
+        <tr><td>Skyrim&colon; Special Edition &amp; Enderal&colon; Forgotten Stories&colon; Special Edition</td><td>asi, calientetools, dialogueviews, dyndolod, grass, interface, lodsettings, scripts, seq, shadersfx, skse, skyproc patchers, source, strings, tools</td></tr>
     </tbody>
 </table>
 
@@ -320,7 +332,7 @@ will be skipped (and their content listed in Skipped tab). There are also some d
 <p>The easiest way to tell if a package needs manual converting to be compatible with BAIN is to try installing it. If it is listed in the Package list with a grey checkbox and name, then BAIN cannot install it. Due to BAIN's flexibility, many mods are already packaged in ways that are compatible, but for those that are not, there are a few possible cases:
 <ul>
     <li>The mod has a <abbr title="BAIN Conversion File">BCF</abbr>. BCFs are special packages that tell BAIN how to restructure the mod to be compatible with BAIN without the user having to do any work.
-    <li>The mod is distributed as an OMOD (ie. has file extension <code>.omod</code>). These mods are intended for installation with the Oblivion Mod Manager or Nexus Mod Manager. Such mods usually have a non-OMOD download option: if one is available, download that instead as it is more likely to be compatible. Otherwise, OMOD files can be converted to Projects automatically by dragging and dropping them into the Installers tab.
+    <li>The mod is distributed as an OMOD (ie. has file extension <code>.omod</code> or <code>.fomod</code>). These mods are intended for installation with the Oblivion Mod Manager or Nexus Mod Manager. Such mods usually have a non-OMOD download option: if one is available, download that instead as it is more likely to be compatible. Otherwise, OMOD files can be converted to Projects automatically by dragging and dropping them into the Installers tab.
     <li>The mod is distributed as an archive, or is a converted OMOD Project, but doesn't have a folder structure that BAIN recognises. It will need manual restructuring.
     <li>The mod is distributed as an executable (ie. has file extension <code>.exe</code>). This is very rare, as mods do not require the complexity of executables, and the greater security risk executables represent makes their use unpopular. BAIN cannot install mods distributed in this way: often the only way to install them is to run the executable. You can often run the installer, installing to a dummy folder, and then repack the <q>installed</q> files into a BAIN-compatible format.
 </ul>
@@ -685,7 +697,15 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <tr><td>Files..<td>New Bashed Patch...</td><td>Creates a new <a href="#patch">Bashed
             Patch</a> plugin. Useful if you accidentally delete your current one or wish to
             have more than one.</td></tr>
-        <tr><td colspan="2" id="modsListMods">List Mods<td>This lists the load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
+        <tr>
+            <td colspan="2" id="modsListMods">List Mods</td>
+            <td>This lists the load order, including version information,
+                activation status and major load order errors. It can be useful
+                for debugging a broken load order. If the Shift key is held
+                when this command is selected, the CRCs of plugins will also
+                be displayed in the output. If the Ctrl key is held, then the
+                versions of plugins will not be shown in the output.</td>
+        </tr>
         <tr><td colspan="2" id="modsListBashTags">List Bash Tags<td>This lists all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
         <tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The Oblivion game engine has a bug where it reads all the plugins in the Data folder,
             and this can affect performance when the number of plugins is around 300+. In Skyrim there is a different problem, namely if you have over
@@ -747,7 +767,12 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <h3 id="patch-configuration">Bash Configuration <a class="back2top" href="#contents">Back to top</a></h3>
 <p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><strong>Bashed Patch, 0.esp</strong></q>. It is configured using the plugin context menu command <a href="#modsRebuildPatch">Rebuild Patch...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
 <p>The configuration dialog consists of a list of major sections to the left, and the contents of the selected section to the right, with the build and save buttons at the bottom. The sections and their items have checkboxes: checking a section will include all its checked items in the Bashed Patch. Unchecked sections and items will not be included. Some sections don't have any items, and so just need the section checkbox checked.
-<p>A short description of each section and some items is displayed near the bottom of the window if the section/item is hovered over. Bolded items are new since the last time the Bashed Patch was built. Wrye Bash will try to auto-configure most sections, but some will still need tweaking.
+<p>A short description of each section and some items is displayed near the
+    bottom of the window if the section/item is hovered over. Bolded items are
+    new since the last time the Bashed Patch was built, italicized items will
+    not run because they have no active sources (e.g. no mods to import). Wrye
+    Bash will usually do a good job auto-configuring most sections, but you may
+    want to alter options, especially in the Tweak section.</p>
 <table>
     <thead>
         <tr><th colspan="2">Bashed Patch Configuration Buttons
@@ -777,61 +802,444 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <p>Plugins can be tagged with Bash Tags that tell Wrye Bash that they contain certain changes that should be preserved even if another mod also changes the same things. This is usually because the changes are important to the functionality of the mod. Wrye Bash then allows you to choose which plugins should have which types of changes preserved, by selecting from the various Import sections when building a Bashed Patch.
 <p>If a section's description in the table below begins with <q>Preserves</q> and two or more mods in its list change the same thing, then the later-loading plugin will override the other plugin(s). Otherwise changes are merged.
 <table>
-    <thead><tr><th>Section<th>Description<th>When You Should Use It
+    <thead>
+        <tr>
+            <th>Section</th>
+            <th>Description</th>
+            <th>When You Should Use It</th>
+            <th>Available For</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Import Actors</td><td><em>All but Fallout 4.</em> Preserves changes made to actors (ie. NPCs and creatures) by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportActorsAIPackages">Import Actors: AI Packages</td><td><em>All but Fallout 4.</em> Merges the changes made to actor AI packages by all the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Actors: Animations</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Merges the changes made to actor animations by all the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Actors: Death Items</td><td><em>All but Fallout 4.</em> Preserves the changes made to the items added to an actor when it dies by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportActorsFaces">Import Actors: Faces</td><td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves the changes made to NPC faces by the mods selected.</td><td>The decision is entirely based on user preference. Choose whichever mods' NPC faces you prefer.</td>
-        <tr><td id="patchImportActorsFactions">Import Actors: Factions</td><td><em>All but Fallout 4.</em> Preserves the changes made to the factions an actor belongs to by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportActorsSpells">Import Actors: Spells</td><td><em>All but Fallout 4.</em> Preserves the changes made to the spells actors have by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportCells">Import Cells<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to cell settings such as lighting, climate, music, name, owner, water and more.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Destructible</td><td><em>All but Oblivion, Nehrim&colon; At Fate's Edge &amp; Fallout 4.</em> Preserves the changes made to the ability to destroy certain parts of the environment.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Effect Stats</td><td><em>All but Fallout 4.</em> Preserves the changes made to the stats of magic / base effects.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Enchantment Stats</td><td><em>All but Fallout 4.</em> Preserves the changes made to the effect data of enchantments / object effects.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportGraphics">Import Graphics<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various textures and models throughout the game.<td>The decision is entirely based on user preference. Choose whichever mods' graphics you prefer.
-        <tr><td id="patchImportInventory">Import Inventory<td><em>All but Fallout 4.</em> Merges the changes made to the items in an actor's inventory by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Keywords</td><td><em>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only.</em> Preserves the changes made to the keywords attached to various things throughout the game by the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportNames">Import Names<td><em>All but Fallout 4.</em> Preserves the changes made to various names throughout the game by the mods selected.<td>The decision is entirely based on user preference. Choose whichever mods' names you prefer.
-        <tr><td>Import Object Bounds</td><td><em>All but Oblivion &amp; Nehrim&colon; At Fate's Edge.</em> Preserves the changes made by the mods selected to the bounds of many types of objects throughout the world.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Outfits</td><td><em>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only.</em> Merges the changes made to the items in NPC outfits by all the mods selected.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td id="patchImportRelations">Import Relations</td><td><em>All but Fallout 4.</em> Merges additions and deletions to faction relations, but preserves changes made to them. Deletions are prioritized over changes.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
-        <tr><td>Import Roads<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Preserves the changes made by the mods selected to the landscape's roads.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Scripts<td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</em> Preserves the changes made by the mods selected to the scripts attached to things in the game.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td id="patchImportSounds">Import Sounds<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various sounds in the game.<td>The decision is entirely based on user preference. Choose whichever mods' sounds you prefer.
-        <tr><td id="patchImportSpellStats">Import Spell Stats</td><td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to spells / actor effects in order to fix bugs or rebalance them.</td><td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that overhaul spell stats. In such cases, choose whichever mods' stats you prefer.</td></tr>
-        <tr><td>Import Stats<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to items in order to fix bugs or rebalance them.<td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that overhaul item stats. In such cases, choose whichever mods' stats you prefer.
-        <tr><td>Import Text</td><td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various types of long-form text (e.g. text in a book, descriptions of armor, spells, weapons, etc.).</td><td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that change book texts. In such cases, choose whichever mods' text you prefer.</td></tr>
-        <tr><td>Import Weapon Modifications</td><td><em>Fallout&colon; New Vegas only.</em> Merges the changes made by the mods selected to weapon modifications.</td><td>Always, unless you are told otherwise by a mod's readme.</td></tr>
+        <tr>
+            <td>Import Actors</td>
+            <td>Preserves changes made to actors (ie. NPCs and creatures) by
+                the mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportActorsAIPackages">Import Actors: AI
+                Packages</td>
+            <td>Merges the changes made to actor AI packages by all the mods
+                selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Actors: Animations</td>
+            <td>Preserves the changes made to actor animations by all the mods
+                selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Import Actors: Death Items</td>
+            <td>Preserves the changes made to the items added to an actor when
+                it dies by the mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportActorsFaces">Import Actors: Faces</td>
+            <td>Preserves the changes made to NPC faces by the mods
+                selected.</td>
+            <td>The decision is entirely based on user preference. Choose
+                whichever mods' NPC faces you prefer.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td id="patchImportActorsFactions">Import Actors: Factions</td>
+            <td>Preserves the changes made to the factions an actor belongs to
+                by the mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Actors: Perks</td>
+            <td>Merges the changes made to the perk list of NPCs by the mods
+                selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+        <tr>
+            <td id="patchImportActorsSpells">Import Actors: Spells</td>
+            <td>Merges the changes made to the spells actors have by the mods
+                selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportCells">Import Cells</td>
+            <td>Preserves the changes made by the mods selected to cell
+                settings such as lighting, climate, music, name, owner, water
+                and more.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Destructible</td>
+            <td>Preserves the changes made to the ability to destroy certain
+                parts of the environment.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Oblivion, Nehrim&colon; At Fate's Edge &amp;
+                Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Effect Stats</td>
+            <td>Preserves the changes made to the stats of magic / base
+                effects.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Enchantment Stats</td>
+            <td>Preserves the changes made to the effect data of enchantments
+                / object effects.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportGraphics">Import Graphics</td>
+            <td>Preserves the changes made by the mods selected to various
+                textures and models throughout the game.</td>
+            <td>The decision is entirely based on user preference. Choose
+                whichever mods' graphics you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportInventory">Import Inventory</td>
+            <td>Merges the changes made to the items in an actor's inventory by
+                all the mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Keywords</td>
+            <td>Preserves the changes made to the keywords attached to various
+                things throughout the game by the mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+        <tr>
+            <td id="patchImportNames">Import Names</td>
+            <td>Preserves the changes made to various names throughout the game
+                by the mods selected.</td>
+            <td>The decision is entirely based on user preference. Choose
+                whichever mods' names you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Object Bounds</td>
+            <td>Preserves the changes made by the mods selected to the bounds
+                of many types of objects throughout the world.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Import Outfits</td>
+            <td>Merges the changes made to the items in NPC outfits by all the
+                mods selected.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+        <tr>
+            <td>Import Races</td>
+            <td>Preserves changes made by the mods selected to various race
+                attributes such as height, eyes, hair and voice.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Import Races: Relations</td>
+            <td>Merges additions, changes and deletions to race-faction
+                relations.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Import Races: Spells</td>
+            <td>Merges additions, changes and deletions to race abilities and
+                spells.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
+            <td id="patchImportRelations">Import Relations</td>
+            <td>Merges additions, changes and deletions to faction
+                relations.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Roads</td>
+            <td>Preserves the changes made by the mods selected to the
+                landscape's roads.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Import Scripts</td>
+            <td>Preserves the changes made by the mods selected to the scripts
+                attached to things in the game.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td id="patchImportSounds">Import Sounds</td>
+            <td>Preserves the changes made by the mods selected to various
+                sounds in the game.</td>
+            <td>The decision is entirely based on user preference. Choose
+                whichever mods' sounds you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchImportSpellStats">Import Spell Stats</td>
+            <td>Preserves the changes made by the mods selected to spells /
+                actor effects in order to fix bugs or rebalance them.</td>
+            <td>Always, unless you are told otherwise by a mod's readme. There
+                is an element of user preference, for instance if you are using
+                several mods that overhaul spell stats. In such cases, choose
+                whichever mods' stats you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Stats</td>
+            <td>Preserves the changes made by the mods selected to items in
+                order to fix bugs or rebalance them.
+            <td>Always, unless you are told otherwise by a mod's readme. There
+                is an element of user preference, for instance if you are using
+                several mods that overhaul spell stats. In such cases, choose
+                whichever mods' stats you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Text</td>
+            <td>Preserves the changes made by the mods selected to various
+                types of long-form text (e.g. text in a book, descriptions of
+                armor, spells, weapons, etc.).</td>
+            <td>Always, unless you are told otherwise by a mod's readme. There
+                is an element of user preference, for instance if you are using
+                several mods that overhaul spell stats. In such cases, choose
+                whichever mods' stats you prefer.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Weapon Modifications</td>
+            <td>Preserves the changes made by the mods selected to weapon
+                modifications.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>Fallout&colon; New Vegas</td>
+        </tr>
+    </tbody>
 </table>
 
 <h3 id="patch-tweaking">Applying Tweaks <a class="back2top" href="#contents">Back to top</a></h3>
-<p>The Bashed Patch lets you independently tweak a large number of game settings. Each tweak has a description that is visible when you select it. Some tweaks have several possible values, with the current value given in [square brackets] in the tweak name. Right-clicking these tweaks will display a menu from which you can selected a different value. The tweaks are catagorised into different sections.
+<p>The Bashed Patch lets you independently tweak a large number of game
+    settings. Each tweak has a description that is visible when you select it.
+    Some tweaks have several possible values, with the current value given in
+    [square brackets] in the tweak name. Right-clicking these tweaks will
+    display a menu from which you can select a different value. The tweaks are
+    grouped into different sections:</p>
 <table>
-    <thead><tr><th>Section<th>Description<th>When You Should Use It
+    <thead>
+        <tr>
+            <th>Section</th>
+            <th>Description</th>
+            <th>When You Should Use It</th>
+            <th>Available For</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td id="patchTweakActors">Tweak Actors</td><td><em>All but Fallout 4.</em> Allows you to change a number of the game's settings relating to actors (i.e. NPCs).</td><td>The decision is entirely based on user preference.</td></tr>
-        <tr><td id="patchTweakAssorted">Tweak Assorted</td><td><em>All but Fallout 4.</em> Contains a set of miscellaneous tweaks to the game.</td><td>In Oblivion, the <strong>Bow Reach Fix</strong> and <strong>Nvidia Fog Fix</strong> are recommended for all users, as they fix bugs that may be uncovered by mods. Also in Oblivion, the <strong>DarNified Books</strong> option is recommended for users of DarNified UI. Beyond that, the decision is entirely based on user preference.</td></tr>
-        <tr><td id="patchTweakClothes">Tweak Clothes<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Contains a set of tweaks that changes settings relating to the game's clothing.<td>The decision is entirely based on user preference.
-        <tr><td id="patchTweakNames">Tweak Names<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Contains a set of tweaks that changes the names of things in the game. Most change the names to change how they are sorted in your inventory.<td>The decision is entirely based on user preference.
-        <tr><td id="patchTweakSettings">Tweak Settings<td><em>All but Fallout 4.</em> Contains a set of tweaks that changes various global and non-global game settings. <td>In Oblivion, the <strong>UOP Vampire Aging and Face Fix.esp</strong> tweak is recommended for all users. Beyond that, the decision is entirely based on user preference.
+        <tr>
+            <td id="patchTweakActors">Tweak Actors</td>
+            <td>Allows you to change a number of the game's settings relating
+                to actors (i.e. NPCs).</td>
+            <td>The decision is entirely based on user preference.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchTweakAssorted">Tweak Assorted</td>
+            <td>Contains a set of miscellaneous tweaks to the game.</td>
+            <td>In Oblivion, the <strong>Bow Reach Fix</strong> and
+                <strong>Nvidia Fog Fix</strong> are recommended for all users,
+                as they fix bugs that may be uncovered by mods. Also in
+                Oblivion, the <strong>DarNified Books</strong> option is
+                recommended for users of DarNified UI. In Skyrim and games
+                based on it, the <strong>Magic: Summoning Absorption
+                    Fix</strong> is recommended for all users as it fixes an
+                issue that affects many mods. Beyond that, the decision is
+                entirely based on user preference.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchTweakClothes">Tweak Clothes</td>
+            <td>Contains a set of tweaks that change settings relating to the
+                game's clothing.</td>
+            <td>The decision is entirely based on user preference.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td id="patchTweakNames">Tweak Names</td>
+            <td>Contains a set of tweaks that change the names of things in
+                the game. Most change the names to change how they are sorted
+                in your inventory.</td>
+            <td>The decision is entirely based on user preference.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr><td id="patchTweakRaces">Tweak Races</td>
+            <td>Contains a set of tweaks that alter race-related things (e.g.
+                height, eyes, hairs, etc.).</td>
+            <td>The decision is entirely based on user preference.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchTweakSettings">Tweak Settings</td>
+            <td>Contains a set of tweaks that change various global and
+                non-global game settings.</td>
+            <td>In Oblivion, the <strong>UOP Vampire Aging and Face
+                Fix.esp</strong> tweak is recommended for all users. Beyond
+                that, the decision is entirely based on user preference.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+    </tbody>
 </table>
 
 <h3 id="patch-other">Other Bashed Patch Options <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The Bashed Patch also gives you a number of other sections providing additional functionality besides the above merging, importing and tweaking. These options are described below.
 <table>
-    <thead><tr><th>Section<th>Description<th>When You Should Use It
+    <thead>
+        <tr>
+            <th>Section</th>
+            <th>Description</th>
+            <th>When You Should Use It</th>
+            <th>Available For</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td id="patchAliasModNames">Alias Mod Names</td><td><em>All but Fallout 4.</em> Allows Wrye Bash to recognise some common renamings of plugins that are referenced in .csv data files that it imports as part of some Bashed Patch sections. Renamings should be listed in the text box for this section. The format is <code>Old.esp =&gt; New.esp</code>.</td><td>If you have renamed a plugin that is referenced in a CSV file you have selected in the Bashed Patch's configuration. It is recommended that you refrain from renaming plugins, as it can break parts of Wrye Bash and other utilities.</td></tr>
-        <tr><td id="patchReplaceFormIDs">Replace Form IDs<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Replaces a set of formIDs with another set of formIDs defined by a .csv file.<td>If you use a mod that tells you to use it.
-        <tr><td id="patchCoblCatalogs">Cobl Catalogs<td><em>Oblivion only.</em> Updates Cobl's ingredient and effect catalogs to take into account those added by mods you use.<td>If you use Cobl (a.k.a. Common Oblivion).
-        <tr><td>Cobl Exhaustion<td><em>Oblivion only.</em> Updates greater powers added by the mods that are listed in the selected .csv file options so that they're compatible with Cobl's Exhaustion feature.<td>If you use Cobl's Exhaustion feature.
-        <tr><td>Contents Checker</td><td><em>All but Fallout 4.</em> Checks that leveled lists, outfits, recipes and inventories contain the correct types of entries, and removes any incorrect entries.</td><td>Always.</td></tr>
-        <tr><td id="patchLeveledLists">Leveled Lists<td>Merges changes made to leveled lists by mods to increase compatibility between them.<td>Always. If you don't have any mods that alter leveled lists, the option won't do anything, in which case it doesn't hurt to have it enabled.
-        <tr><td id="patchMorphFactions">Morph Factions<td><em>Oblivion only.</em> Updates factions so that they are more likely to work with Wrye Morph.<td>If you use Cobl and Wrye Morph.
-        <tr><td id="patchRaceRecords">Race Records<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Some mods make changes to races and want those changes to be preserved even if another mod changes the same race. This ensures that those changes are kept. It also checks for and fixes various errors such as googly eyes and missing hair or eyes. It also has a section of race tweaks which the user can select as desired.<td>Always, even if there are no mods listed on the right.
-        <tr><td id="patchSEWorldTests">SEWorld Tests<td><em>Oblivion only.</em> Fixes quests that aren't suspended while your character is in the Shivering Isles. This doesn't apply to mod-added quests, it only restores suspension to vanilla quests where mods have removed it.<td>Always. If you don't have Shivering Isles, the option won't do anything, in which case it doesn't hurt to have it enabled.
+        <tr>
+            <td id="patchAliasModNames">Alias Mod Names</td>
+            <td>Allows Wrye Bash to recognise some common renamings of plugins
+                that are referenced in .csv data files that it imports as part
+                of some Bashed Patch sections. Renamings should be listed in
+                the text box for this section. The format is <code>Old.esp =&gt;
+                    New.esp</code>.</td>
+            <td>If you have renamed a plugin that is referenced in a CSV file
+                you have selected in the Bashed Patch's configuration. It is
+                recommended that you refrain from renaming plugins, as it can
+                break parts of Wrye Bash and other utilities.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td id="patchReplaceFormIDs">Replace Form IDs</td>
+            <td>Replaces a set of formIDs with another set of formIDs defined
+                by a .csv file.</td>
+            <td>If you use a mod that tells you to use it.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td id="patchCoblCatalogs">Cobl Catalogs</td>
+            <td>Updates Cobl's ingredient and effect catalogs to take into
+                account those added by mods you use.</td>
+            <td>If you use Cobl (a.k.a. Common Oblivion).</td>
+            <td>Oblivion</td>
+        </tr>
+        <tr>
+            <td>Cobl Exhaustion</td>
+            <td>Updates greater powers added by the mods that are listed in the
+                selected .csv file options so that they're compatible with
+                Cobl's Exhaustion feature.</td>
+            <td>If you use Cobl's Exhaustion feature.</td>
+            <td>Oblivion</td>
+        </tr>
+        <tr>
+            <td>Contents Checker</td>
+            <td>Checks that leveled lists, outfits, recipes and inventories
+                contain the correct types of entries, and removes any incorrect
+                entries.</td>
+            <td>Always.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Eye Checker</td>
+            <td>Filters eyes from races in order to fix the 'googly eyes'
+                bug.</td>
+            <td>Always.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td id="patchLeveledLists">Leveled Lists</td>
+            <td>Merges changes made to leveled lists by mods to increase
+                compatibility between them.</td>
+            <td>Always. If you don't have any mods that alter leveled lists,
+                the option won't do anything, in which case it doesn't hurt to
+                have it enabled.</td>
+            <td>All games</td>
+        </tr>
+        <tr>
+            <td id="patchMorphFactions">Morph Factions</td>
+            <td>Updates factions so that they are more likely to work with Wrye
+                Morph.</td>
+            <td>If you use Cobl and Wrye Morph.</td>
+            <td>Oblivion</td>
+        </tr>
+        <tr>
+            <td>NPC Checker</td>
+            <td>Assigns hair and eyes to NPCs that are otherwise missing
+                them.</td>
+            <td>Always.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Race Checker</td>
+            <td>Sorts race hairs and eyes. Note that the output of this patcher
+                will appear as an ITM in xEdit. <strong>It is not an ITM. Do
+                    not clean it.</strong> The xEdit team cannot fix this
+                problem because of the number of mods that would show as
+                conflicts if it were fixed. See
+                <a href="../bash/images/readme/race-checker-itm.png">this
+                    discussion</a> with ElminsterAU, xEdit's developer, from
+                the xEdit discord.</td>
+            <td>Always.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td id="patchSEWorldTests">SEWorld Tests</td>
+            <td>Fixes quests that aren't suspended while your character is in
+                the Shivering Isles. This doesn't apply to mod-added quests, it
+                only restores suspension to vanilla quests where mods have
+                removed it.</td>
+            <td>Always. If you don't have Shivering Isles, the option won't do
+                anything, in which case it doesn't hurt to have it
+                enabled.</td>
+            <td>Oblivion</td>
+        </tr>
+        <tr>
+            <td>Timescale Checker</td>
+            <td>Adjusts the wave period of grasses to match changes in the
+                timescale. Note that this patcher is incompatible with plugins
+                that change  grass wave periods to match a different timescale.
+                Uninstall such plugins before using it, as their functionality
+                will otherwise be duplicated by this patcher.</td>
+            <td>Always. Does nothing if you are not using a nonstandard
+                timescale, in which case it doesn't hurt to have it
+                enabled.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+    </tbody>
 </table>
 
 <h2 id="ini">Applying Ini File Edits <a class="back2top" href="#contents">Back to top</a></h2>
@@ -991,14 +1399,14 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     </thead>
     <tbody>
         <tr>
-            <td><img alt="Oblivion Icon" src="../bash/images/Oblivion32.png" width="32" height="32"/></td><td>Oblivion</td>
-            <td><img alt="Nehrim Icon" src="../bash/images/Nehrim32.png" width="32" height="32"/></td><td>Nehrim&colon; At Fate's Edge</td>
-            <td><img alt="Fallout 3 Icon" src="../bash/images/Fallout 332.png" width="32" height="32"/></td><td>Fallout 3</td>
-            <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/Fallout New Vegas32.png" width="32" height="32"/></td><td>Fallout&colon; New Vegas</td>
-            <td><img alt="Skyrim Icon" src="../bash/images/Skyrim32.png" width="32" height="32"/></td><td>Skyrim</td>
-            <td><img alt="Enderal Icon" src="../bash/images/Enderal32.png" width="32" height="32"/></td><td>Enderal&colon; Forgotten Stories</td>
-            <td><img alt="Fallout 4 Icon" src="../bash/images/Fallout 432.png" width="32" height="32"/></td><td>Fallout 4</td>
-            <td><img alt="Skyrim&colon; Special Edition Icon" src="../bash/images/Skyrim Special Edition32.png" width="32" height="32"/></td><td>Skyrim&colon; Special Edition</td>
+            <td><img alt="Oblivion Icon" src="../bash/images/oblivion_32.png" width="32" height="32"/></td><td>Oblivion</td>
+            <td><img alt="Nehrim Icon" src="../bash/images/nehrim_32.png" width="32" height="32"/></td><td>Nehrim&colon; At Fate's Edge</td>
+            <td><img alt="Fallout 3 Icon" src="../bash/images/fallout3_32.png" width="32" height="32"/></td><td>Fallout 3</td>
+            <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/falloutnv_32.png" width="32" height="32"/></td><td>Fallout&colon; New Vegas</td>
+            <td><img alt="Skyrim Icon" src="../bash/images/skyrim_32.png" width="32" height="32"/></td><td>Skyrim</td>
+            <td><img alt="Enderal Icon" src="../bash/images/enderal_32.png" width="32" height="32"/></td><td>Enderal&colon; Forgotten Stories</td>
+            <td><img alt="Fallout 4 Icon" src="../bash/images/fallout4_32.png" width="32" height="32"/></td><td>Fallout 4</td>
+            <td><img alt="Skyrim&colon; Special Edition Icon" src="../bash/images/skyrim_32.png" width="32" height="32"/></td><td>Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td><img alt="Oblivion CS Icon" src="../bash/images/tescs32.png" width="32" height="32"/></td><td><a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">TES Construction Set</a></td>
@@ -1031,7 +1439,6 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
      when BOSS is run from its application launcher in the status bar, to allow BOSS to set the load order, re-enabling it after BOSS has finished running. It has no effect when BOSS
      is run from outside Wrye Bash, or when Wrye Bash is managing Skyrim or a newer game.
  <li>Right-clicking the BOSS icon and selecting the <q>Launch using GUI</q> will cause Wrye Bash to launch BOSS's GUI instead of its command line interface.
-    <li>If <strong>V</strong> is pressed, it will disable version parsing.
     <li>If <strong>R</strong> is pressed, it will do a level 1 revert (to the state just prior to the last sort).
     <li>If <strong>Shift-R</strong> is pressed, it will do a level 2 revert (to the state just prior to the 2nd last sort).
     <li>If <strong>S</strong> is pressed, it will run BOSS in its silent mode, so that the BOSS Log does not automatically open once it has finished running.
@@ -1207,9 +1614,11 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
         <tr><td><img alt="tool image" src="../bash/images/docbrowser32.png" width="32" height="32"/>
             <td>Doc Browser
             <td>Show the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-docs">Doc Browser</a>. (You can also view the doc browser by double clicking on any mod file in the Mods tab.)
-        <tr><td id="launchersModChecker"><img alt="tool image" src="../bash/images/modchecker32.png" width="32" height="32"/>
-            <td>Mod Checker
-            <td>Show the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Mod Checker</a>.
+        <tr>
+            <td id="launchersPluginChecker"><img alt="tool image" src="../bash/images/modchecker32.png" width="32" height="32"/></td>
+            <td>Plugin Checker</td>
+            <td>Show the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Plugin Checker</a>.</td>
+        </tr>
         <tr><td id="launchersSettingsMenu"><img alt="tool image" src="../bash/images/settingsbutton32.png" width="32" height="32"/>
             <td>Settings
             <td>Brings up the <a href="Wrye%20Bash%20Advanced%20Readme.html#settings">Settings Menu</a>.
@@ -1239,7 +1648,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <p>The log file will detail the cause of the problem that is stopping Wrye Bash from starting. Read it and the rest of this section to see if the problem is something you can fix yourself. If not, report it to an official Wrye Bash thread for support.</p>
 
 <h3 id="trouble-permissions">File Permissions <a class="back2top" href="#contents">Back to top</a></h3>
-<p>If you are running Windows Vista or later, Wrye Bash (and other modding programs) may be prevented from working correctly by the UAC security feature.  There are four common workarounds to this problem:
+<p>If you are running Windows Vista or later, Wrye Bash (and other modding programs) may be prevented from working correctly by the UAC security feature.  For Windows Store games, there are no workarounds to this, if you receive errors you must launch as as Administrator (workaround 4). There are four common workarounds to this problem:
 <ol>
     <li>Install the game outside <q>Program Files</q> or <q>Program Files (x86)</q>. UAC prevents unauthorised edits to these folders, so by installing the game outside of them, you remove it from UAC's reach, allowing you to use mods more easily. Steam users can move their Steam installation and games using <a href="https://support.steampowered.com/kb_article.php?ref=7418-YUBN-8129">these instructions</a>.
     <li>Deactivate UAC. This can be done from the Control Panel, and will turn UAC off across the whole of your computer. It is up to you whether you feel that you have adequate security measures in place to do this without risk.
@@ -1281,6 +1690,21 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     <li>In the lower box, check the box opposite <q>Full Control</q> in the <q>Allow</q> column. Press OK to exit. If a UAC prompt appears, allow the change.
     <li>In the <q>Properties</q> window, select OK to exit. You should now have Full Control permissions over your chosen folder.
 </ol>
+<p>If your game is a Windows Store game (Installed via the Windows Store or
+    Xbox App), then there are additional permissions to deal with:</p>
+<ol>
+    <li>Wrye Bash will by default use a different writable location to store
+        your installers, as well as metadata about those installers: Your
+        <code>My Documents\Wrye Bash</code> folder.</li>
+    <li>Wrye Bash may need to redate plugins and/or BSAs. Unfortunately, we
+        don't currently have a way to do this in non-admin mode, so for these
+        operations you need to either run Wrye Bash as admin, or grant <q>Full
+            Control</q> as described above for the game folder. Specifically,
+        Oblivion requires this on a regular basis to redate plugins for Load
+        Order configuraion. Later games do not usually need this, so they are
+        for the most part safe to run in non-admin mode and without changing
+        file permissions.</li>
+</ol>
 
 <h3 id="trouble-backup">Backing Up &amp; Restoring Settings <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The easiest method is to just run the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools">Backup Settings</a> and/or <a href="Wrye%20Bash%20Advanced%20Readme.html#tools">Restore Settings</a> commands, which are available in the <a href="Wrye%20Bash%20Advanced%20Readme.html#settings">Settings menu</a>. These commands do not backup/restore any mod files or saves, just the Wrye Bash settings/data. When run, the commands ask you for the location you wish to back up to or restore from.
@@ -1288,12 +1712,12 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <table>
     <thead><tr><th>Directory<th>Contents
     <tbody>
-        <tr><td>[Game]\Mopy								<td>Main Bash files. If you're working on any localisation files in <code>Mopy\l10n</code> you may want to back them up.
-        <tr><td>[Game]\Data\Bash Patches					<td>Contains CSV files used by the import/export functions. Back up any CSV files you've exported and want to keep.
-        <tr><td>[Game]\Data\BashTags					<td>Contains text files with Bash Tag overrides. Only needs backing up if you added any custom files (i.e. ones not installed through BAIN).</td></tr>
-        <tr><td>[Game]\Data\Docs							<td>Contains mod readmes. Doesn't need backing up.
-        <tr><td>[Game]\Data\INI Tweaks					<td>Contains ini tweaks. Only needs backing up if you've added custom ini tweaks.
-        <tr><td>Documents\My Games\[Game]					<td>Contains Wrye Bash settings. It is important to back this up.
+        <tr><td>[Game]\Mopy                             <td>Main Bash files. If you're working on any localisation files in <code>Mopy\l10n</code> you may want to back them up.
+        <tr><td>[Game]\Data\Bash Patches                    <td>Contains CSV files used by the import/export functions. Back up any CSV files you've exported and want to keep.
+        <tr><td>[Game]\Data\BashTags                    <td>Contains text files with Bash Tag overrides. Only needs backing up if you added any custom files (i.e. ones not installed through BAIN).</td></tr>
+        <tr><td>[Game]\Data\Docs                            <td>Contains mod readmes. Doesn't need backing up.
+        <tr><td>[Game]\Data\INI Tweaks                  <td>Contains ini tweaks. Only needs backing up if you've added custom ini tweaks.
+        <tr><td>Documents\My Games\[Game]                   <td>Contains Wrye Bash settings. It is important to back this up.
         <tr><td>[Game] Mods (in the same folder as [Game])<td>Contains BAIN packages and other Wrye Bash settings. it is important to back this up.
 </table>
 
@@ -1316,7 +1740,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 
 <h3 id="trouble-known">Known Bugs <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Wrye Bash, being a complex program, has its share of bugs.
-    Visit our <a href="https://github.com/wrye-bash/wrye-bash/issues">issue tracker</a> for know bugs and enhancement requests.
+    Visit our <a href="https://github.com/wrye-bash/wrye-bash/issues">issue tracker</a> for known bugs and enhancement requests.
 Respect developer's time - keep discussions there short, sweet and technical. No walls of text or forum chit chat.
 
 <h3 id="trouble-mistakes">Common Issues <a class="back2top" href="#contents">Back to top</a></h3>
@@ -1330,6 +1754,22 @@ Respect developer's time - keep discussions there short, sweet and technical. No
         <tr><td>The NTVDM CPU has encountered an illegal instruction.<td>This is a Python issue that causes the installation of PyWin32 (part of the Wrye Python bundle) to fail.<td> One workaround is to use the Standalone version of Wrye Bash. The alternative is to <a href="https://pypi.org/project/pywin32/">install it seperately</a>, after installing Wrye Bash.
         <tr><td>Wrye Bash will not start, and no Bug Dump can be generated<td>Wrye Bash is installed in a directory with unicode characters, and the Python interpreter has problems importing files in such directories.<td>Reinstall Wrye Bash to a directory without unicode characters.
         <tr><td>File not found errors<td>Mapped paths and junction links can confuse Wrye Bash, leading to file not found errors.<td>Avoid using mapped paths and junction links for your game install.
+        <tr>
+            <td>Failed to retrieve known folder path</td>
+            <td>This is almost always caused by OneDrive taking control of your
+                My Documents folder.</td>
+            <td>Follow the directions found in
+                <a href="https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057">this link</a>
+                and remove the Documents folder from OneDrive.</td>
+        </tr>
+        <tr>
+            <td>IOError: [Errno 22] Invalid argument</td>
+            <td>This is almost always caused by OneDrive taking control of your
+                My Documents folder.</td>
+            <td>Follow the directions found in
+                <a href="https://support.microsoft.com/en-us/office/back-up-your-documents-pictures-and-desktop-folders-with-onedrive-d61a7930-a6fb-4b95-b28a-6552e77c3057">this link</a>
+                and remove the Documents folder from OneDrive.</td>
+        </tr>
 </table>
 
 
@@ -1369,9 +1809,10 @@ Respect developer's time - keep discussions there short, sweet and technical. No
   <li><img class="smallcred" alt="Ralgor's Icon" src="../bash/images/people/genpavi32.png"><span><a href="https://github.com/Ralgor">Ralgor:</a> Cell support and Import Cells</span></li>
   <li><img class="smallcred" alt="Raziel23x's Icon" src="../bash/images/people/raziavi32.png"><span><a href="https://github.com/Raziel23x">Raziel23x:</a> new tweaks etc.</span></li>
   <li><img class="smallcred" alt="Sharlikran's Icon" src="../bash/images/people/sharavi32.jpg"><span><a href="https://github.com/Sharlikran">Sharlikran:</a> Fallout 3/NV support, initial ESL support, save game/module header restructuring, form version recognition, patcher updates, heavyweight contender of the community</span></li>
+  <li><img class="smallcred" alt="Sibir's Icon" src="../bash/images/people/sibravi32.png"><span><a href="https://github.com/sibir-ine">sibir:</a> Improved and added tweaks</span></li>
   <li><img class="smallcred" alt="Warmfrost85's Icon" src="../bash/images/people/wrmfavi32.jpg"><span><a href="https://github.com/warmfrost85">Warmfrost85:</a> Improvements to Clean Data &amp; Sync From Data</span></li>
   <li><img class="smallcred" alt="Waruddar's Icon" src="../bash/images/people/waruavi32.gif"><span><a href="https://www.nexusmods.com/users/456936">Waruddar:</a> Maintainer from 261-296: CBash, Bain Conversion Files (BCFs), etc.</span></li>
-  <li><img class="smallcred" alt="Valda's Icon" src="../bash/images/people/vldaavi32.png"><span><a href="https://github.com/valda">Valda:</a> Assisted with Fallout 3/New Vegas support, including new patchers</span></li>
+  <li><img class="smallcred" alt="Valda's Icon" src="../bash/images/people/vldaavi32.png"><span><a href="https://github.com/valda">Valda:</a> Assisted with Fallout 3/New Vegas support, including new patchers and tweaks</span></li>
 </ul>
 <h3>Additional Credits <a class="back2top" href="#contents">Back to top</a></h3>
 <ul class="nodot">
@@ -1547,7 +1988,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
     <li>How to customise which launchers are displayed, including adding your own new launchers.
     <li>How to use Wrye Bash's Settings menu to customise its general behaviour.
     <li>How to use the Docs Browser to view mod readmes through Wrye Bash.
-    <li>What the Mod Checker is and how to use it to detect issues with your installed mods and more.
+    <li>What the Plugin Checker is and how to use it to detect issues with your installed mods and more.
     <li>What Oblivion.esm swapping is, and how it can be used and why.
     <li>What Wrye Bash's keyboard shortcuts are.
     <li>How to translate Wrye Bash into other languages.
@@ -1558,7 +1999,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
 </div>
 
 <div id="footer">
-	<div id="version">Wrye Bash v308</div>
+    <div id="version">Wrye Bash v309</div>
     General&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

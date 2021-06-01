@@ -29,6 +29,7 @@ loop."""
 from __future__ import print_function
 import atexit
 import codecs
+import io
 import os
 import platform
 import shutil
@@ -64,7 +65,10 @@ def _early_setup(debug):
         # Also, setup stdout/stderr to the debug log if debug mode /
         # standalone before wxPython is up
         global _bugdump_handle
-        # _bugdump_handle = io.open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w',encoding=u'utf-8')
+        # PY3: Replace with this
+        # _bugdump_handle = io.open(
+        #     os.path.join(os.getcwdu(), u'BashBugDump.log'), u'w', buffering=1,
+        #     encoding=u'utf-8')
         _bugdump_handle = codecs.getwriter(u'utf-8')(
             open(os.path.join(os.getcwdu(), u'BashBugDump.log'), u'w',
                  buffering=0))
@@ -118,16 +122,17 @@ def _import_deps():
             # means an MSVC redist is missing
             deps_msg += _(u'This most likely means you are missing a certain '
                           u'version of the Microsoft Visual C++ '
-                          u'Redistributable. Try installing some older ones.')
+                          u'Redistributable. Try installing the 2010 x64 '
+                          u'version.')
         else:
             deps_msg += _(u'Ensure you have installed these dependencies '
                           u'properly. Should the error still occur, check '
                           u'your installed Microsoft Visual C++ '
-                          u'Redistributables and try installing some older '
-                          u'ones.')
+                          u'Redistributables and try installing the 2010 x64 '
+                          u'version.')
         _close_dialog_windows()
-        _show_boot_popup(_(u'The following dependencies could not be located or '
-                         u'failed to load:') + u'\n\n' + deps_msg)
+        _show_boot_popup(_(u'The following dependencies could not be located '
+                           u'or failed to load:') + u'\n\n' + deps_msg)
 
 #------------------------------------------------------------------------------
 def assure_single_instance(instance):
@@ -199,7 +204,7 @@ def dump_environment():
     import wx as _wx
     import lz4
     import yaml
-    fse = sys.getfilesystemencoding()
+    fse = bolt.Path.sys_fs_enc
     msg = [
         u'Using Wrye Bash Version %s%s' % (bass.AppVersion,
             u' (Standalone)' if bass.is_standalone else u''),
@@ -232,7 +237,7 @@ def _bash_ini_parser(bash_ini_path):
         # bash.ini is always compatible with UTF-8 (Russian INI is UTF-8,
         # English INI is ASCII)
         # PY3: use read(bash_ini_path, encoding='utf-8') instead
-        with codecs.open(bash_ini_path, encoding=u'utf-8') as bash_ini:
+        with io.open(bash_ini_path, u'r', encoding=u'utf-8') as bash_ini:
             bash_ini_parser.readfp(bash_ini)
     return bash_ini_parser
 
@@ -336,7 +341,8 @@ def _main(opts, wx_locale):
         if not bush_game: return
         if restore_:
             try:
-                restore_.restore_settings(bush_game.fsName,
+                restore_.restore_settings(
+                    bush_game.bak_game_name, bush_game.my_games_name,
                     bush_game.bash_root_prefix, bush_game.mods_dir)
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
@@ -379,11 +385,13 @@ def _main(opts, wx_locale):
             app = basher.BashApp(False)
     else:
         app = basher.BashApp(True)
+    # Set the window title for stdout/stderr messages
+    app.SetOutputWindowAttributes(u'Wrye Bash stdout/stderr:')
     # Need to reference the locale object somewhere, so let's do it on the App
     app.locale = wx_locale
     if not bass.is_standalone and (
         not _rightWxVersion() or not _rightPythonVersion()): return
-    if env.isUAC:
+    if env.is_uac():
         uacRestart = opts.uac
         if not opts.noUac and not opts.uac:
             # Show a prompt asking if we should restart in Admin Mode
@@ -411,14 +419,16 @@ def _main(opts, wx_locale):
         base_dir = bass.settings[u'bash.backupPath'] or bass.dirs[u'modsBash']
         settings_file = (opts.backup and opts.filename) or None
         if not settings_file:
-            bak_f = barb.BackupSettings.backup_filename(bush_game.displayName)
-            settings_file = balt.askSave(
+            bkf = barb.BackupSettings.backup_filename(bush_game.bak_game_name)
+            settings_file = gui.FileSave.display_dialog(
                 frame, title=_(u'Backup Bash Settings'), defaultDir=base_dir,
-                wildcard=u'*.7z', defaultFile=bak_f)
+                wildcard=u'*.7z', defaultFile=bkf)
         if settings_file:
             with gui.BusyCursor():
-                backup = barb.BackupSettings(settings_file, bush_game.fsName,
-                    bush_game.bash_root_prefix, bush_game.mods_dir)
+                backup = barb.BackupSettings(
+                    settings_file, bush_game.bak_game_name,
+                    bush_game.my_games_name, bush_game.bash_root_prefix,
+                    bush_game.mods_dir)
             try:
                 with gui.BusyCursor():
                     backup.backup_settings(balt)
@@ -468,28 +478,27 @@ def _detect_game(opts, backup_bash_ini):
     return bashIni, bush_game, game_ini_path
 
 def _import_bush_and_set_game(opts, bashIni):
-    from . import bush
+    from . import bush, balt
     bolt.deprint(u'Searching for game to manage:')
-    game_icons = bush.detect_and_set_game(opts.oblivionPath, bashIni)
-    if game_icons is not None:  # None == success
-        if len(game_icons) == 0:
-            msgtext = _(u'Wrye Bash could not find a game to manage. Please '
-                        u'use the -o command line argument to specify the '
-                        u'game path.')
-        else:
-            msgtext = (_(u'Wrye Bash could not determine which game to '
-                         u'manage. The following games have been detected, '
-                         u'please select one to manage.') + u'\n\n' +
-                       _(u'To prevent this message in the future, use the -o '
-                         u'command line argument or the bash.ini to specify '
-                         u'the game path.'))
-        retCode = _select_game_popup(game_icons, bolt.text_wrap(msgtext, 65))
-        if retCode is None:
+    game_infos = bush.detect_and_set_game(opts.oblivionPath, bashIni)
+    if game_infos is not None:  # None == success
+        if len(game_infos) == 0:
+            _show_boot_popup(_(
+                u'Wrye Bash could not find a game to manage. Make sure to '
+                u'launch games you installed through Steam once and enable '
+                u'mods on games you installed through the Windows '
+                u'Store.') + u'\n\n' + _(
+                u'You can also use the -o command line argument or bash.ini '
+                u'to specify the path manually.'))
+            return None
+        retCode = _select_game_popup(game_infos)
+        if not retCode:
             bolt.deprint(u'No games were found or selected. Aborting.')
             return None
         # Add the game to the command line, so we use it if we restart
-        bass.update_sys_argv([u'--oblivionPath', bush.game_path(retCode).s])
-        bush.detect_and_set_game(opts.oblivionPath, bashIni, retCode)
+        gname, gm_path = retCode
+        bass.update_sys_argv([u'--oblivionPath', u'%s' % gm_path])
+        bush.detect_and_set_game(opts.oblivionPath, bashIni, gname, gm_path)
     return bush.game
 
 def _show_boot_popup(msg, is_critical=True):
@@ -554,57 +563,158 @@ def _close_dialog_windows():
     This will not close the main bash window (BashFrame) because closing that
     results in virtual function call exceptions."""
     import wx as _wx
+    import wx.adv as _adv
     for window in _wx.GetTopLevelWindows():
         if basher is None or not isinstance(window, basher.BashFrame):
             if isinstance(window, _wx.Dialog):
                 window.Destroy()
-            window.Close()
+            ##: Skip for SplashScreen because it may hard-crash Python with
+            # code -1073740771 (0xC000041D) when we call anything on it
+            if not isinstance(window, _adv.SplashScreen):
+                window.Close()
 
 class _AppReturnCode(object):
     def __init__(self): self.value = None
     def get(self): return self.value
     def set(self, value): self.value = value
 
-def _select_game_popup(game_icons, msgtext):
+def _select_game_popup(game_infos):
     import wx as _wx
     from .balt import Resources
-    from .gui import CancelImageButton, ImageButton, Label, ScrollableWindow, \
-        TextAlignment, WindowFrame, VLayout
-    class GameSelect(WindowFrame):
-        def __init__(self, game_icons, callback):
-            super(GameSelect, self).__init__(None, u'Wrye Bash',
-                                             icon_bundle=Resources.bashRed)
-            self.callback = callback
-            # Setup the size - we give each button 38 pixels, 32 for the image
-            # plus 6 for the borders. However, we limit the total size of the
-            # display list at 600 pixels, where the scrollbar takes over
-            self.set_min_size(420, 200)
-            self.component_size = (420, min(600, 200 + len(game_icons) * 38))
-            # Construct the window and add the static text
-            scrl_win = ScrollableWindow(self)
-            layout = VLayout(item_border=3, item_expand=True, items=[
-                Label(scrl_win, msgtext, alignment=TextAlignment.CENTER),
-            ])
-            # Add the game buttons to the window
-            for game_name, game_icon in sorted(game_icons.iteritems(),
-                                               key=lambda k: k[0].lower()):
-                layout.add(ImageButton(scrl_win, _wx.Bitmap(game_icon),
-                                       btn_label=game_name))
-            # Finally, append the 'Quit' button
-            layout.add(CancelImageButton(scrl_win, btn_label=_(u'Quit')))
-            layout.apply_to(scrl_win)
-            # TODO(inf) de-wx! Probably best to rewrite this entirely
-            self._native_widget.Bind(_wx.EVT_BUTTON, self.OnButton)
+    from .gui import Label, TextAlignment, WindowFrame, VLayout, \
+        ImageDropDown, LayoutOptions, SearchBar, VBoxedLayout, TextField, \
+        HLayout, QuitButton, ImageButton, HorizontalLine, Stretch, DropDown, \
+        CENTER
+    ##: Decouple game icon paths and move to popups.py once balt is refactored
+    # enough
+    class SelectGamePopup(WindowFrame):
+        _def_size = (500, 400)
 
-        def OnButton(self, event):
-            if event.GetId() != _wx.ID_CANCEL:
-                self.callback(self._native_widget.FindWindowById(
-                    event.GetId()).GetLabel())
-            self.close_win(True)
+        def __init__(self, game_infos, callback):
+            super(SelectGamePopup, self).__init__(
+                None, title=_(u'Select Game'), icon_bundle=Resources.bashRed)
+            self._callback = callback
+            self._sorted_games = sorted(g.displayName for g in game_infos)
+            self._game_to_paths = {g.displayName: ps for g, ps
+                                  in game_infos.iteritems()}
+            self._game_to_info = {g.displayName: g for g in game_infos}
+            self._game_to_bitmap = {
+                g.displayName: _wx.Bitmap(bass.dirs[u'images'].join(
+                    g.game_icon % 32).s) for g in game_infos}
+            # Construction of the actual GUI begins here
+            game_search = SearchBar(self)
+            game_search.on_text_changed.subscribe(self._perform_search)
+            self._game_dropdown = ImageDropDown(self, value=u'', choices=[u''])
+            self._game_dropdown.on_combo_select.subscribe(self._select_game)
+            self._lang_dropdown = DropDown(self, value=u'', choices=[u''])
+            self._lang_dropdown.on_combo_select.subscribe(self._select_lang)
+            self._game_path = TextField(self, editable=False)
+            quit_button = QuitButton(self)
+            quit_button.on_clicked.subscribe(self._handle_quit)
+            launch_img = bass.dirs[u'images'].join(u'bash_32_2.png').s
+            self._launch_button = ImageButton(self, _wx.Bitmap(launch_img),
+                                              btn_label=_(u'Launch'))
+            self._launch_button.on_clicked.subscribe(self._handle_launch)
+            # Start out with an empty search and the alphabetically first game
+            # selected
+            self._perform_search(search_str=u'')
+            VLayout(item_expand=True, border=6, spacing=12, items=[
+                Label(self, _(u'Please choose a game to manage.'),
+                      alignment=TextAlignment.CENTER),
+                game_search, self._game_dropdown,
+                (VBoxedLayout(self, title=_(u'Game Details'), item_expand=True,
+                              spacing=12, items=[
+                    HLayout(spacing=6, items=[
+                        (Label(self, _(u'Variant:')),
+                         LayoutOptions(v_align=CENTER)),
+                        (self._lang_dropdown,
+                         LayoutOptions(expand=True, weight=1)),
+                    ]),
+                    HLayout(spacing=6, items=[
+                        (Label(self, _(u'Install Path:')),
+                         LayoutOptions(v_align=CENTER)),
+                        (self._game_path,
+                         LayoutOptions(expand=True, weight=1)),
+                    ]),
+                ]), LayoutOptions(weight=3)),
+                HorizontalLine(self),
+                (HLayout(item_expand=True, item_weight=1, items=[
+                    quit_button, Stretch(), self._launch_button,
+                ]), LayoutOptions(weight=1)),
+            ]).apply_to(self)
+
+        @property
+        def _chosen_path(self):
+            avail_paths = self._game_to_paths[self._game_dropdown.get_value()]
+            if len(avail_paths) == 1:
+                return avail_paths[0]
+            else:
+                chosen_lang = self._lang_dropdown.get_value()
+                for p in avail_paths:
+                    if chosen_lang in p.s:
+                        return p
+                return None # Should never happen
+
+        def _perform_search(self, search_str):
+            prev_choice = self._game_dropdown.get_value()
+            search_lower = search_str.lower().strip()
+            filtered_games = [g for g in self._sorted_games
+                              if search_lower in g.lower()]
+            with self._game_dropdown.pause_drawing():
+                self._game_dropdown.set_choices(filtered_games)
+                self._game_dropdown.set_bitmaps([self._game_to_bitmap[g]
+                                                 for g in filtered_games])
+                # Check if the previous choice can be restored now, otherwise
+                # select the first game
+                try:
+                    new_choice = filtered_games.index(prev_choice)
+                except ValueError:
+                    new_choice = 0
+                self._game_dropdown.set_selection(new_choice)
+            # Enable the Launch button only if a game is selected
+            new_selection = self._game_dropdown.get_value()
+            self._launch_button.enabled = bool(new_selection)
+            # Finally, update the game details to match the newly active game
+            self._select_game(new_selection)
+
+        def _select_game(self, selected_game):
+            if not selected_game:
+                # No game selected, clear the details
+                self._lang_dropdown.set_choices([_(u'N/A')])
+                self._lang_dropdown.set_selection(0)
+                self._lang_dropdown.enabled = False
+                self._game_path.text_content = u''
+            else:
+                # Enable the Language dropdown only if we >1 path for the newly
+                # active game
+                available_paths = self._game_to_paths[selected_game]
+                if len(available_paths) > 1:
+                    self._lang_dropdown.set_choices([p.stail for p
+                                                     in available_paths])
+                    self._lang_dropdown.set_selection(0)
+                    self._lang_dropdown.enabled = True
+                else:
+                    self._lang_dropdown.set_choices([_(u'N/A')])
+                    self._lang_dropdown.set_selection(0)
+                    self._lang_dropdown.enabled = False
+                # Set the path based on the default language
+                self._select_lang()
+
+        def _select_lang(self, _selected_lang=None):
+            self._game_path.text_content = self._chosen_path.s
+
+        def _handle_quit(self):
+            self._callback(None)
+            self.close_win(force_close=True)
+
+        def _handle_launch(self):
+            self._callback((self._game_dropdown.get_value(),
+                            self._chosen_path))
+            self.close_win(force_close=True)
     _app = _wx.App(False)
     _app.locale = _wx.Locale(_wx.LANGUAGE_DEFAULT)
     retCode = _AppReturnCode()
-    frame = GameSelect(game_icons, retCode.set)
+    frame = SelectGamePopup(game_infos, retCode.set)
     frame.show_frame()
     frame._native_widget.Center() # TODO(inf) de-wx!
     _app.MainLoop()

@@ -25,20 +25,32 @@ import struct as _struct
 from collections import defaultdict
 from os.path import join as _j
 
-from .. import GameInfo
+from ..patch_game import GameInfo, PatchGame
+from .. import WS_COMMON
 from ... import brec
 from ...brec import MreGlob, MreLand
 
-class OblivionGameInfo(GameInfo):
+class OblivionGameInfo(PatchGame):
     displayName = u'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
+    game_icon = u'oblivion_%u.png'
     bash_root_prefix = u'Oblivion'
+    bak_game_name = u'Oblivion'
+    template_dir = u'Oblivion'
+    bash_patches_dir = u'Oblivion'
+    my_games_name = u'Oblivion'
+    appdata_name = u'Oblivion'
     launch_exe = u'Oblivion.exe'
-    game_detect_file = _j(u'Data', u'Oblivion.esm')
+    # Set to this because that file does not exist in Nehrim, whereas
+    # OblivionLauncher.exe and Oblivion.exe do
+    game_detect_includes = [_j(u'Data', u'Oblivion.esm')]
+    game_detect_excludes = WS_COMMON
     version_detect_file = u'Oblivion.exe'
     master_file = u'Oblivion.esm'
     taglist_dir = u'Oblivion'
+    loot_dir = u'Oblivion'
+    boss_game_name = u'Oblivion'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/oblivion/'
     nexusName = u'Oblivion Nexus'
@@ -153,26 +165,9 @@ class OblivionGameInfo(GameInfo):
                             u'hand', u'foot', u'rightRing', u'leftRing',
                             u'amulet', u'weapon', u'backWeapon', u'sideWeapon',
                             u'quiver', u'shield', u'torch', u'tail')
+        reference_types = {b'ACHR', b'ACRE', b'REFR'}
 
-    allTags = {
-        u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
-        u'Actors.AIPackagesForceAdd', u'Actors.Anims', u'Actors.CombatStyle',
-        u'Actors.DeathItem', u'Actors.RecordFlags', u'Actors.Skeleton',
-        u'Actors.Spells', u'Actors.SpellsForceAdd', u'Actors.Stats', u'Body-F',
-        u'Body-M', u'Body-Size-F', u'Body-Size-M', u'C.Climate', u'C.Light',
-        u'C.MiscFlags', u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
-        u'C.Regions', u'C.Water', u'Creatures.Blood', u'Creatures.Type',
-        u'Deactivate', u'Delev', u'EffectStats', u'EnchantmentStats', u'Eyes',
-        u'Factions', u'Filter', u'Graphics', u'Hair', u'IIM', u'Invent.Add',
-        u'Invent.Change', u'Invent.Remove', u'MustBeActiveIfImported',
-        u'Names', u'NoMerge', u'NPC.Class', u'NPC.Eyes', u'NPC.FaceGen',
-        u'NPC.Hair', u'NPC.Race', u'NpcFacesForceFullImport', u'R.AddSpells',
-        u'R.Attributes-F', u'R.Attributes-M', u'R.ChangeSpells',
-        u'R.Description', u'R.Ears', u'R.Head', u'R.Mouth', u'R.Relations',
-        u'R.Skills', u'R.Teeth', u'Relations.Add', u'Relations.Change',
-        u'Relations.Remove', u'Relev', u'Roads', u'Scripts', u'Sound',
-        u'SpellStats', u'Stats', u'Text', u'Voice-F', u'Voice-M',
-    }
+    allTags = PatchGame.allTags | {u'IIM', u'NoMerge'}
 
     patchers = {
         u'AliasModNames', u'CoblCatalogs', u'CoblExhaustion',
@@ -183,9 +178,11 @@ class OblivionGameInfo(GameInfo):
         u'ImportGraphics', u'ImportInventory', u'ImportNames',
         u'ImportRelations', u'ImportRoads', u'ImportScripts', u'ImportSounds',
         u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
-        u'MergePatches', u'MorphFactions', u'RaceRecords', u'ReplaceFormIDs',
+        u'MergePatches', u'MorphFactions', u'NpcChecker', u'ReplaceFormIDs',
         u'SEWorldTests', u'TweakActors', u'TweakAssorted', u'TweakClothes',
-        u'TweakNames', u'TweakSettings',
+        u'TweakNames', u'TweakSettings', u'ImportRaces', u'ImportRacesSpells',
+        u'ImportRacesRelations', u'EyeChecker', u'TweakRaces', u'RaceChecker',
+        u'TimescaleChecker',
     }
 
     weaponTypes = (
@@ -246,6 +243,43 @@ class OblivionGameInfo(GameInfo):
         0x00d43 : 0x64210, #--Red
         0x223c8 : 0x69473, #--Bos
         }
+
+    bethDataFiles = {
+        #--Vanilla
+        u'oblivion.esm',
+        u'oblivion_1.1.esm',
+        u'oblivion_si.esm',
+        u'oblivion - meshes.bsa',
+        u'oblivion - misc.bsa',
+        u'oblivion - sounds.bsa',
+        u'oblivion - textures - compressed.bsa',
+        u'oblivion - textures - compressed.bsa.orig',
+        u'oblivion - voices1.bsa',
+        u'oblivion - voices2.bsa',
+        #--Shivering Isles
+        u'dlcshiveringisles.esp',
+        u'dlcshiveringisles - meshes.bsa',
+        u'dlcshiveringisles - sounds.bsa',
+        u'dlcshiveringisles - textures.bsa',
+        u'dlcshiveringisles - voices.bsa',
+        #--Knights of the Nine - shipped with all WS versions
+        u'knights.esp',
+        u'knights.bsa',
+    }
+
+    @classmethod
+    def _dynamic_import_modules(cls, package_name):
+        super(OblivionGameInfo, cls)._dynamic_import_modules(package_name)
+        # Do the imports *after setting the _constants_members*
+        from .patcher import checkers, preservers
+        cls.gameSpecificPatchers = {
+            u'CoblCatalogs': checkers.CoblCatalogsPatcher,
+            u'SEWorldTests': checkers.SEWorldTestsPatcher, }
+        cls.gameSpecificListPatchers = {
+            u'CoblExhaustion': preservers.CoblExhaustionPatcher,
+            u'MorphFactions': preservers.MorphFactionsPatcher, }
+        cls.game_specific_import_patchers = {
+            u'ImportRoads': preservers.ImportRoadsPatcher, }
 
     @classmethod
     def init(cls):

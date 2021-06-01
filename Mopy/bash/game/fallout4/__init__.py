@@ -24,19 +24,26 @@
 
 from os.path import join as _j
 
-from .. import GameInfo
+from ..patch_game import GameInfo, PatchGame
+from .. import WS_COMMON
 from ... import brec
 
-class Fallout4GameInfo(GameInfo):
+class Fallout4GameInfo(PatchGame):
     displayName = u'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
+    game_icon = u'fallout4_%u.png'
     bash_root_prefix = u'Fallout4'
+    bak_game_name = u'Fallout4'
+    my_games_name = u'Fallout4'
+    appdata_name = u'Fallout4'
     launch_exe = u'Fallout4.exe'
-    game_detect_file = u'Fallout4.exe'
+    game_detect_includes = [u'Fallout4.exe']
+    game_detect_excludes = WS_COMMON
     version_detect_file = u'Fallout4.exe'
     master_file = u'Fallout4.esm'
     taglist_dir = u'Fallout4'
+    loot_dir = u'Fallout4'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'
@@ -105,10 +112,11 @@ class Fallout4GameInfo(GameInfo):
             u'tools', # bodyslide
             u'vis',
         }
-        no_skip_dirs = {
+        no_skip_dirs = GameInfo.Bain.no_skip_dirs.copy() # PY3: dict join
+        no_skip_dirs.update({
             # This rule is to allow mods with string translation enabled.
             _j(u'interface', u'translations'): [u'.txt']
-        }
+        })
         skip_bain_refresh = {u'fo4edit backups', u'fo4edit cache'}
 
     class Esp(GameInfo.Esp):
@@ -117,39 +125,77 @@ class Fallout4GameInfo(GameInfo):
         validHeaderVersions = (0.95, 1.0)
         expanded_plugin_range = True
         max_lvl_list_size = 255
-
-    allTags = {
-        u'Deactivate', u'Delev', u'Filter', u'ObjectBounds', u'Relev',
-    }
+        reference_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON',
+                           b'PFLA', b'PGRE', b'PHZD', b'PMIS', b'REFR'}
 
     patchers = {
         u'ImportObjectBounds', u'LeveledLists',
     }
 
-    # ---------------------------------------------------------------------
-    # --Imported - MreGlob is special import, not in records.py
-    # ---------------------------------------------------------------------
+    bethDataFiles = {
+        #--Vanilla
+        u'fallout4.esm',
+        u'fallout4.cdx',
+        u'fallout4 - animations.ba2',
+        u'fallout4 - geometry.csg',
+        u'fallout4 - interface.ba2',
+        u'fallout4 - materials.ba2',
+        u'fallout4 - meshes.ba2',
+        u'fallout4 - meshesextra.ba2',
+        u'fallout4 - misc.ba2',
+        u'fallout4 - nvflex.ba2',
+        u'fallout4 - shaders.ba2',
+        u'fallout4 - sounds.ba2',
+        u'fallout4 - startup.ba2',
+        u'fallout4 - textures1.ba2',
+        u'fallout4 - textures2.ba2',
+        u'fallout4 - textures3.ba2',
+        u'fallout4 - textures4.ba2',
+        u'fallout4 - textures5.ba2',
+        u'fallout4 - textures6.ba2',
+        u'fallout4 - textures7.ba2',
+        u'fallout4 - textures8.ba2',
+        u'fallout4 - textures9.ba2',
+        u'fallout4 - voices.ba2',
+        u'dlcrobot.esm',
+        u'dlcrobot.cdx',
+        u'dlcrobot - geometry.csg',
+        u'dlcrobot - main.ba2',
+        u'dlcrobot - textures.ba2',
+        u'dlcrobot - voices_en.ba2',
+        u'dlcworkshop01.esm',
+        u'dlcworkshop01.cdx',
+        u'dlcworkshop01 - geometry.csg',
+        u'dlcworkshop01 - main.ba2',
+        u'dlcworkshop01 - textures.ba2',
+        u'dlccoast.esm',
+        u'dlccoast.cdx',
+        u'dlccoast - geometry.csg',
+        u'dlccoast - main.ba2',
+        u'dlccoast - textures.ba2',
+        u'dlccoast - voices_en.ba2',
+        u'dlcworkshop02.esm',
+        u'dlcworkshop02 - main.ba2',
+        u'dlcworkshop02 - textures.ba2',
+        u'dlcworkshop03.esm',
+        u'dlcworkshop03.cdx',
+        u'dlcworkshop03 - geometry.csg',
+        u'dlcworkshop03 - main.ba2',
+        u'dlcworkshop03 - textures.ba2',
+        u'dlcworkshop03 - voices_en.ba2',
+        u'dlcnukaworld.esm',
+        u'dlcnukaworld.cdx',
+        u'dlcnukaworld - geometry.csg',
+        u'dlcnukaworld - main.ba2',
+        u'dlcnukaworld - textures.ba2',
+        u'dlcnukaworld - voices_en.ba2',
+    }
+
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        # First import from fallout4.records file, so MelModel is set correctly
         from .records import MreGmst, MreTes4, MreLvli, MreLvln
-        # ---------------------------------------------------------------------
-        # These Are normally not mergable but added to brec.MreRecord.type_class
-        #
-        #       MreCell,
-        # ---------------------------------------------------------------------
-        # These have undefined FormIDs Do not merge them
-        #
-        #       MreNavi, MreNavm,
-        # ---------------------------------------------------------------------
-        # These need syntax revision but can be merged once that is corrected
-        #
-        #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
-        # ---------------------------------------------------------------------
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
-            # -- Imported from Skyrim/SkyrimSE
-            # Added to records.py
             MreGmst, MreLvli, MreLvln
         )}
         # Setting RecordHeader class variables --------------------------------
@@ -181,8 +227,7 @@ class Fallout4GameInfo(GameInfo):
              b'DIAL', b'INFO'})
         header_type.plugin_form_version = 131
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreTes4, #--Always present
-            MreGmst, MreLvli, MreLvln, # Added to records.py
+            MreTes4, MreGmst, MreLvli, MreLvln,
         )}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES4'})

@@ -24,9 +24,8 @@
 import re
 import time
 from .. import balt, bosh, bush, bolt, exception
-from ..bosh import ListInfo
 from ..balt import ItemLink, ChoiceLink, OneItemLink
-from ..gui import BusyCursor
+from ..gui import BusyCursor, copy_text_to_clipboard
 from ..localize import format_date, unformat_date
 
 __all__ = [u'Files_Unhide', u'File_Backup', u'File_Duplicate',
@@ -86,32 +85,23 @@ class File_Duplicate(ItemLink):
     _text = _(u'Duplicate...')
     _help = _(u'Make a copy of the selected file(s).')
 
-    _bsaAndBlocking = _(u'This mod has an associated archive (%s' +
-                        bush.game.Bsa.bsa_extension + u') and an '
-        u'associated plugin-name-specific directory (e.g. Sound\\Voice\\%s), '
-        u'which will not be attached to the duplicate mod.') + u'\n\n' + \
-        _(u'Note that the BSA archive may also contain a plugin-name-specific '
+    _bsaAndBlocking = _(
+        u'This mod has an associated archive (%s) and an associated '
+        u'plugin-name-specific directory (e.g. Sound\\Voice\\%s), which will '
+        u'not be attached to the duplicate mod.') + u'\n\n' + _(
+        u'Note that the BSA archive may also contain a plugin-name-specific '
         u'directory, which would remain detached even if a duplicate archive '
         u'were also created.')
-    _bsa = _(u'This mod has an associated archive (%s' +
-             bush.game.Bsa.bsa_extension + u'), which will not be '
-        u'attached to the duplicate mod.') + u'\n\n' + _(u'Note that this BSA '
-        u'archive may contain a plugin-name-specific directory'
-        u' (e.g. Sound\\Voice\\%s), which would remain detached even if a '
-        u'duplicate archive were also created.'
-    )
-    _blocking = _(u'This mod has an associated plugin-name-specific directory '
-                  u'(e.g. Sound\\Voice\\%s), which will not be attached to '
-                  u'the duplicate mod.')
-
-    def _askResourcesOk(self, fileInfo):
-        msg = bosh.modInfos.askResourcesOk(fileInfo,
-                                           bsaAndBlocking=self._bsaAndBlocking,
-                                           bsa=self._bsa,
-                                           blocking=self._blocking)
-        if not msg: return True  # resources ok
-        return balt.askWarning(self.window, msg,
-                               _(u'Duplicate ') + fileInfo.name.s)
+    _bsa = _(
+        u'This mod has an associated archive (%s), which will not be attached '
+        u'to the duplicate mod.') + u'\n\n' + _(
+        u'Note that this BSA archive may contain a plugin-name-specific '
+        u'directory (e.g. Sound\\Voice\\%s), which would remain detached even '
+        u'if a duplicate archive were also created.')
+    _blocking = _(
+        u'This mod has an associated plugin-name-specific directory (e.g. '
+        u'Sound\\Voice\\%s), which will not be attached to the duplicate '
+        u'mod.')
 
     @balt.conversation
     def Execute(self):
@@ -119,7 +109,11 @@ class File_Duplicate(ItemLink):
         fileInfos = self.window.data_store
         for to_duplicate, fileInfo in self.iselected_pairs():
             #--Mod with resources? Warn on rename if file has bsa and/or dialog
-            if not self._askResourcesOk(fileInfo): continue
+            msg = fileInfo.askResourcesOk(fileInfo,
+                bsaAndBlocking=self._bsaAndBlocking, bsa=self._bsa,
+                blocking=self._blocking)
+            if msg and not self._askWarning(msg, _(
+                u'Duplicate %s') % fileInfo): continue
             #--Continue copy
             r, e = to_duplicate.root, to_duplicate.ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
@@ -162,7 +156,7 @@ class File_ListMasters(OneItemLink):
 
     def Execute(self):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)
-        balt.copyToClipboard(list_of_mods)
+        copy_text_to_clipboard(list_of_mods)
         self._showLog(list_of_mods, title=self._selected_item.s,
                       fixedFont=False)
 
@@ -222,8 +216,7 @@ class File_RevertToSnapshot(OneItemLink):
         #--File dialog
         srcDir.makedirs()
         snapPath = self._askOpen(_(u'Revert %s to snapshot:') % fileName,
-                                 defaultDir=srcDir, wildcard=wildcard,
-                                 mustExist=True)
+                                 defaultDir=srcDir, wildcard=wildcard)
         if not snapPath: return
         snapName = snapPath.tail
         #--Warning box

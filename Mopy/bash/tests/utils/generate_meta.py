@@ -31,13 +31,13 @@ catch it."""
 
 from __future__ import print_function
 import argparse
+import io
 import os
 import sys
 
 from .. import resource_to_displayName, set_game
 from ... import bush
-from ...bosh.cosaves import get_cosave_types, xSECosave, _xSEHeader, \
-    _xSEPluginChunk, _xSEChunk
+from ...bosh.cosaves import get_cosave_types, xSECosave, _xSEHeader
 
 def generate_meta_bsa(target_file):
     print(u"Skipping '%s': bsa .meta generation not implemented yet" %
@@ -56,7 +56,7 @@ def generate_meta_cosave_xse(target_file):
                      bush.game.Se.cosave_ext)
     test_cosave = xSECosave(target_file)
     test_cosave.read_cosave()
-    with open(target_file + u'.meta', u'w') as out:
+    with io.open(target_file + u'.meta', u'w', encoding=u'utf-8') as out:
         # xSE cosave header ---------------------------------------------------
         cosv_header = test_cosave.cosave_header # type: _xSEHeader
         out.write(u'[cosave_header]\n')

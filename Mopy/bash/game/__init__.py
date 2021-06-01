@@ -36,24 +36,53 @@ class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
     # Name of the game to use in UI.
     displayName = u'' ## Example: u'Skyrim'
-    # Name of the game's filesystem folder.
+    # A name used throughout the codebase for identifying the current game in
+    # various situations, e.g. to decide which BSAs to use, which save header
+    # types to use, etc.
     fsName = u'' ## Example: u'Skyrim'
     # Alternate display name of Wrye Bash when managing this game
     altName = u'' ## Example: u'Wrye Smash'
+    # Name of the icon to use for the game, including a %u specifier for the
+    # icon size (16/24/32)
+    game_icon = u'' ## Example: u'skyrim_%u.png'
     # Name of the prefix of the '<X> Mods' folder, i.e. <X> is this string.
-    # Preferably pick a single word here, equal to fsName if possible.
+    # Preferably pick a single word without spaces here, but don't change it
+    # once set due to backwards compatibility (duh)
     bash_root_prefix = u'' ## Example: u'Skyrim'
+    # Name of the prefix for the game folder inside created backups and for
+    # naming backups. Should not be changed once set, otherwise restoring old
+    # backups will no longer work
+    bak_game_name = u''
+    # The name of the directory, relative to Mopy/templates, in which the BSA
+    # redirection template for this game is placed. This folder is
+    # *deprecated*, see issue #519
+    template_dir = u''
+    # The name of the directory, relative to Mopy/Bash Patches, in which
+    # default Bashed Patch resource files (e.g. CSV files) are stored. If
+    # empty, indicates that WB does not come with any such files for this game
+    bash_patches_dir = u''
     # True if the game uses the 'My Documents' folder, False to just use the
     # game path
     uses_personal_folders = True
+    # Name of the folder in My Documents\My Games that holds this game's data
+    # (saves, INIs, etc.)
+    my_games_name = u''
+    # Name of the game's AppData folder, relative to %LocalAppData%
+    appdata_name = u''
     # The exe to use when launching the game (without xSE present)
     launch_exe = u'' ## Example: u'TESV.exe'
-    # Path to a file to look for to see if this is the right game when joined
-    # with the -o parameter. Must be unique among all games. As a rule of
-    # thumb, use the file you specified in launch_exe, unless that file is
-    # shared by multiple games, in which case you MUST find unique files - see
-    # Skyrim and Enderal, which share TESV.exe.
-    game_detect_file = u''
+    # Path to one or more files to look for to see if this is the right game
+    # when joined with the game's root path (i.e. the one above the Data
+    # folder). The combination of these files must be unique among all games.
+    # As a rule of thumb, use the file you specified in launch_exe, unless that
+    # file is shared by multiple games, in which case you MUST find unique
+    # files - for an example, see Enderal and Skyrim (and the SE versions of
+    # both).
+    game_detect_includes = []
+    # Path to one or more files to look for to see if this is *not* the right
+    # game when joined with the game's root path. Used to differentia between
+    # versions of the game distributed on different platforms (Windows Store).
+    game_detect_excludes = []
     # Path to a file to pass to env.get_file_version to determine the game's
     # version. Usually the same as launch_exe, but some games need different
     # ones here (e.g. Enderal, which has Skyrim's version in the launch_exe,
@@ -64,9 +93,15 @@ class GameInfo(object):
     # The directory in which mods and other data files reside. This is relative
     # to the game directory.
     mods_dir = u'Data'
-    # The directory containing the taglist for this game, relative to
-    # 'Mopy/taglists'
+    # The name of the directory containing the taglist for this game, relative
+    # to 'Mopy/taglists'
     taglist_dir = u''
+    # The name of the directory that LOOT writes its masterlist into, relative
+    # to '%LocalAppData%\LOOT'
+    loot_dir = u''
+    # The name that this game has on the BOSS command line. If empty, indicates
+    # that BOSS does not support this game
+    boss_game_name = u''
     # Registry keys to read to find the install location
     # These are relative to:
     #  HKLM\Software
@@ -106,6 +141,25 @@ class GameInfo(object):
     def __init__(self, gamePath):
         self.gamePath = gamePath # absolute bolt Path to the game directory
         self.has_esl = u'.esl' in self.espm_extensions
+
+    class Ws(object):
+        """Information about this game on the Windows Store."""
+        # A list of directory names for different language versions that ship
+        # with this game. Each one acts as a separate game installation under
+        # the main Windows Store path. If empty, indicates that the Windows
+        # Store location is the game installtion
+        game_language_dirs = []
+        # The publisher name for common games. Currently only 'Bethesda' is
+        # allowed for Bethesda games. If specified, publisher_id is not
+        # required
+        publisher_name = u''
+        # The publisher ID for the publisher of the game. Required except for
+        # common publishers supported above. For example, Bethesda's publisher
+        # ID is '3275kfvn8vcwc'
+        publisher_id = u''
+        # The internal name used by the Windows Store to identify the game.
+        # For example, Morrowind is 'BethesdaSofworks.TESMorrowind-PC'
+        win_store_name = u''
 
     class Ck(object):
         """Information about the official plugin editor (generally called some
@@ -240,6 +294,9 @@ class GameInfo(object):
         # An INI key listing BSAs that will override all plugin BSAs. Blank if
         # it doesn't exist for this game
         resource_override_key = u''
+        # The default value for resource_override_key if it's missing from the
+        # game INI
+        resource_override_defaults = []
         # Whether this game supports mod ini files aka ini fragments
         supports_mod_inis = True
 
@@ -277,9 +334,6 @@ class GameInfo(object):
         # before all mod BSAs, and all BSAs before loose files by choosing
         # dates older than the game's release date.
         redate_dict = defaultdict(lambda: u'2006-01-01')
-        # The default value for Ini.resource_override_key if it's missing from
-        # the game INI
-        resource_override_defaults = []
         # All BSA versions accepted by this game. If empty, indicates that this
         # game does not use BSA versions and so BSA version checks will be
         # skipped entirely.
@@ -324,7 +378,10 @@ class GameInfo(object):
         # Files BAIN shouldn't skip
         no_skip = ()
         # Directories where specific file extensions should not be skipped
-        no_skip_dirs = {}
+        no_skip_dirs = {
+            # BashTags files are obviously not docs, so don't skip them
+            u'bashtags': [u'.txt'],
+        }
         # Folders BAIN should never CRC check in the Data directory
         skip_bain_refresh = set(
             # Use lowercase names
@@ -347,9 +404,9 @@ class GameInfo(object):
         validHeaderVersions = tuple()
         # used to locate string translation files
         stringsFiles = [
-            ((u'Strings',), u'%(body)s_%(language)s.STRINGS'),
-            ((u'Strings',), u'%(body)s_%(language)s.DLSTRINGS'),
-            ((u'Strings',), u'%(body)s_%(language)s.ILSTRINGS'),
+            u'%(body)s_%(language)s.STRINGS',
+            u'%(body)s_%(language)s.DLSTRINGS',
+            u'%(body)s_%(language)s.ILSTRINGS',
         ]
         # Signature of the main plugin header record type
         plugin_header_sig = b'TES4'
@@ -372,30 +429,10 @@ class GameInfo(object):
         biped_flag_names = ()
         # The maximum number of masters that a plugin can have for this game.
         master_limit = 255 # 256 - 1 for the plugin itself
-
-    # Bash Tags supported by this game
-    allTags = set()
-
-    # Patchers available when building a Bashed Patch (referenced by GUI class
-    # name, see gui_patchers.py for their definitions).
-    patchers = set()
-
-    # Magic Info
-    weaponTypes = ()
-
-    # Race Info, used in faces.py
-    raceNames = {}
-    raceShortNames = {}
-    raceHairMale = {}
-    raceHairFemale = {}
-
-    # Record information - set in cls.init ------------------------------------
-    # Mergeable record types
-    mergeable_sigs = {}
-    # Extra read classes: these record types will always be loaded, even if
-    # patchers don't need them directly (for example, for MGEF info)
-    readClasses = ()
-    writeClasses = ()
+        # All 'reference' types, i.e. record types that occur in CELL/WLRD
+        # groups and place some sort of thing into the cell (e.g. ACHR, REFR,
+        # PMIS, etc.)
+        reference_types = set()
 
     # Class attributes moved to constants module, set dynamically at init
     #--Game ESM/ESP/BSA files
@@ -403,194 +440,9 @@ class GameInfo(object):
     ## These filenames need to be in lowercase,
     bethDataFiles = set()  # initialize with literal
 
-    # Function Info -----------------------------------------------------------
-    # CTDA Data for the game. Maps function ID to tuple with name of function
-    # and the parameter types of the function.
-    # 0: no param; 1: int param; 2: formid param; 3: float param
-    # Note that each line must have the same number of parameters after the
-    # function name - so pad out functions with fewer parameters with zeroes
-    condition_function_data = {}
-    # The function index for the GetVATSValue function. This function is
-    # special, because the type of its second parameter depends on the value of
-    # the first parameter.
-    getvatsvalue_index = 0
-
     # Known record types - maps integers from the save format to human-readable
     # names for the record types. Used in save editing code.
     save_rec_types = {}
-
-    #--------------------------------------------------------------------------
-    # Leveled Lists
-    #--------------------------------------------------------------------------
-    listTypes = ()
-
-    #--------------------------------------------------------------------------
-    # Import Names
-    #--------------------------------------------------------------------------
-    namesTypes = set()  # initialize with literal
-
-    #--------------------------------------------------------------------------
-    # Import Prices
-    #--------------------------------------------------------------------------
-    pricesTypes = {}
-
-    #--------------------------------------------------------------------------
-    # Import Stats
-    #--------------------------------------------------------------------------
-    statsTypes = {}
-    statsHeaders = ()
-
-    #--------------------------------------------------------------------------
-    # Import Sounds
-    #--------------------------------------------------------------------------
-    soundsTypes = {}
-
-    #--------------------------------------------------------------------------
-    # Import Cells
-    #--------------------------------------------------------------------------
-    cellRecAttrs = {}
-    cell_float_attrs = set()
-    cell_skip_interior_attrs = set()
-
-    #--------------------------------------------------------------------------
-    # Import Graphics
-    #--------------------------------------------------------------------------
-    graphicsTypes = {}
-    graphicsFidTypes = {}
-    graphicsModelAttrs = ()
-
-    #--------------------------------------------------------------------------
-    # Import Inventory
-    #--------------------------------------------------------------------------
-    inventoryTypes = ()
-
-    #--------------------------------------------------------------------------
-    # Race Records
-    #--------------------------------------------------------------------------
-    default_eyes = {}
-
-    #--------------------------------------------------------------------------
-    # Import Keywords
-    #--------------------------------------------------------------------------
-    keywords_types = ()
-
-    #--------------------------------------------------------------------------
-    # Import Text
-    #--------------------------------------------------------------------------
-    text_types = {}
-
-    #--------------------------------------------------------------------------
-    # Import Object Bounds
-    #--------------------------------------------------------------------------
-    object_bounds_types = set()
-
-    #--------------------------------------------------------------------------
-    # Contents Checker
-    #--------------------------------------------------------------------------
-    cc_valid_types = {}
-    # (targeted types, structs/groups name, entry/item name)
-    # OR (targeted types, fid list name)
-    cc_passes = ()
-
-    #--------------------------------------------------------------------------
-    # Import Scripts
-    #--------------------------------------------------------------------------
-    scripts_types = set()
-
-    #--------------------------------------------------------------------------
-    # Import Destructible
-    #--------------------------------------------------------------------------
-    destructible_types = set()
-
-    #--------------------------------------------------------------------------
-    # Import Actors
-    #--------------------------------------------------------------------------
-    actor_importer_attrs = {}
-    actor_types = ()
-
-    #--------------------------------------------------------------------------
-    # Import Spell Stats
-    #--------------------------------------------------------------------------
-    spell_stats_attrs = ()
-    spell_stats_types = {b'SPEL'}
-
-    #--------------------------------------------------------------------------
-    # Tweak Actors
-    #--------------------------------------------------------------------------
-    actor_tweaks = set()
-
-    #--------------------------------------------------------------------------
-    # Tweak Assorted
-    #--------------------------------------------------------------------------
-    nirnroots = _(u'Nirnroots')
-
-    #--------------------------------------------------------------------------
-    # Tweak Names
-    #--------------------------------------------------------------------------
-    body_tags = u''
-
-    #--------------------------------------------------------------------------
-    # Tweak Settings
-    #--------------------------------------------------------------------------
-    settings_tweaks = set()
-
-    #--------------------------------------------------------------------------
-    # Import Relations
-    #--------------------------------------------------------------------------
-    relations_attrs = ()
-    relations_csv_header = u''
-    relations_csv_row_format = u''
-
-    #--------------------------------------------------------------------------
-    # Import Enchantment Stats
-    #--------------------------------------------------------------------------
-    ench_stats_attrs = ()
-
-    #--------------------------------------------------------------------------
-    # Import Effect Stats
-    #--------------------------------------------------------------------------
-    mgef_stats_attrs = ()
-
-    #--------------------------------------------------------------------------
-    # Tweak Assorted
-    #--------------------------------------------------------------------------
-    assorted_tweaks = set()
-    # Only allow the 'mark playable' tweaks to mark a piece of armor/clothing
-    # as playable if it has at least one biped flag that is not in this set.
-    nonplayable_biped_flags = set()
-    # The record attribute and flag name needed to find out if a piece of armor
-    # is non-playable. Locations differ in TES4, FO3/FNV and TES5.
-    not_playable_flag = (u'flags1', u'isNotPlayable')
-    # Tuple containing the name of the attribute and the value it has to be set
-    # to in order for a weapon to count as a staff for reweighing purposes
-    staff_condition = ()
-    # The record type that contains the static attenuation field tweaked by the
-    # static attenuation tweaks. SNDR on newer games, SOUN on older games.
-    static_attenuation_rec_type = b'SNDR'
-
-    #--------------------------------------------------------------------------
-    # Magic Effects - Oblivion-specific
-    #--------------------------------------------------------------------------
-    # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
-    # generic name.
-    # Ex: Absorb Attribute becomes Absorb Magicka if the effect's actorValue
-    #     field contains 9, but it is actually using an attribute rather than
-    #     an actor value
-    # Ex: Burden uses an actual actor value (encumbrance) but it isn't listed
-    #     since its name doesn't change
-    generic_av_effects = set()
-    # MGEFs that are considered hostile
-    hostile_effects = set()
-    # Maps MGEF signatures to certain MGEF properties
-    mgef_basevalue = {}
-    mgef_name = {}
-    mgef_school = {}
-
-    # Human-readable names for each actor value
-    actor_values = []
-
-    # Record type to name dictionary
-    record_type_name = {}
 
     # Set in game/*/default_tweaks.py, this is a dictionary mapping names for
     # 'default' INI tweaks (i.e. ones that we ship with WB and that can't be
@@ -608,32 +460,6 @@ class GameInfo(object):
     @property
     def plugin_header_class(self):
         return brec.MreRecord.type_class[self.Esp.plugin_header_sig]
-
-    # Set in game/*/patcher.py used in Mopy/bash/basher/gui_patchers.py
-    gameSpecificPatchers = {}
-    gameSpecificListPatchers = {}
-    game_specific_import_patchers = {}
-
-    # Import from the constants module ----------------------------------------
-    # Class attributes moved to constants module, set dynamically at init
-    _constants_members = {
-        u'actor_tweaks', u'actor_types', u'actor_values', u'bethDataFiles',
-        u'body_tags', u'cc_valid_types', u'cc_passes',
-        u'cell_float_attrs', u'cellRecAttrs', u'actor_importer_attrs',
-        u'cell_skip_interior_attrs', u'condition_function_data',
-        u'default_eyes', u'destructible_types', u'ench_stats_attrs',
-        u'generic_av_effects', u'getvatsvalue_index',
-        u'graphicsFidTypes', u'graphicsModelAttrs', u'graphicsTypes',
-        u'hostile_effects', u'inventoryTypes', u'keywords_types', u'listTypes',
-        u'mgef_basevalue', u'mgef_name', u'mgef_school', u'mgef_stats_attrs',
-        u'namesTypes', u'nirnroots', u'object_bounds_types', u'pricesTypes',
-        u'record_type_name', u'relations_attrs', u'relations_csv_header',
-        u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
-        u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'spell_stats_types', u'statsHeaders', u'statsTypes', u'text_types',
-        u'assorted_tweaks', u'staff_condition', u'static_attenuation_rec_type',
-        u'nonplayable_biped_flags', u'not_playable_flag', u'settings_tweaks',
-    }
 
     @classmethod
     def init(cls):
@@ -657,33 +483,22 @@ class GameInfo(object):
         Currently populates the GameInfo namespace with the members defined in
         the relevant constants.py and imports default_tweaks.py and
         vanilla_files.py."""
-        constants = importlib.import_module(u'.constants',
-            package=package_name)
-        for k in dir(constants):
-            if k.startswith(u'_'): continue
-            if k not in cls._constants_members:
-                raise SyntaxError(u"Unexpected game constant '%s', check for "
-                                  u'typos or update _constants_members' % k)
-            setattr(cls, k, getattr(constants, k))
         tweaks_module = importlib.import_module(u'.default_tweaks',
             package=package_name)
         cls.default_tweaks = tweaks_module.default_tweaks
         vf_module = importlib.import_module(u'.vanilla_files',
             package=package_name)
         cls.vanilla_files = vf_module.vanilla_files
-        patchers_module = importlib.import_module(u'.patcher',
-            package=package_name)
-        cls.gameSpecificPatchers = patchers_module.gameSpecificPatchers
-        cls.gameSpecificListPatchers = patchers_module.gameSpecificListPatchers
-        cls.game_specific_import_patchers = \
-            patchers_module.game_specific_import_patchers
 
     @staticmethod
     def _validate_records():
         """Performs validation on the record syntax for all decoded records."""
+        sr_to_r = brec.MreRecord.subrec_sig_to_record_sig
         for rec_class in brec.MreRecord.type_class.itervalues():
             if issubclass(rec_class, brec.MelRecord):
                 rec_class.validate_record_syntax()
+                for sr_sig in rec_class.melSet.loaders:
+                    sr_to_r[sr_sig].add(rec_class.rec_sig)
 
     @classmethod
     def supported_games(cls):
@@ -691,5 +506,16 @@ class GameInfo(object):
         game_types.update(
             chain.from_iterable(c.__subclasses__() for c in list(game_types)))
         return game_types
+
+    @classmethod
+    def test_game_path(cls, test_path):
+        """Helper method to determine if required game detection files are
+           present, and no excluded files are present, in the test path."""
+        return (all(test_path.join(p).exists()
+                for p in cls.game_detect_includes) and not
+                any(test_path.join(p).exists()
+                for p in cls.game_detect_excludes))
+
+WS_COMMON = [u'appxmanifest.xml']
 
 GAME_TYPE = None

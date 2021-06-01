@@ -25,14 +25,15 @@ points to BashFrame.modList singleton."""
 
 import re
 from .dialogs import CreateNewPlugin
-from .frames import ModChecker
+from .frames import PluginChecker
 from .. import bass, bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link, MultiLink
 from ..bolt import GPath, dict_sort
-from ..gui import BusyCursor
+from ..gui import BusyCursor, copy_text_to_clipboard, get_shift_down, \
+    get_ctrl_down
 from ..parsers import CsvParser
 
 __all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
@@ -40,7 +41,7 @@ __all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
            u'Mods_CreateBlank', u'Mods_ListMods', u'Mods_ListBashTags',
            u'Mods_CleanDummyMasters', u'Mods_AutoGhost', u'Mods_LockLoadOrder',
            u'Mods_ScanDirty', u'Mods_CrcRefresh', u'Mods_AutoESLFlagBP',
-           u'Mods_LockActivePlugins', u'Mods_ModChecker',
+           u'Mods_LockActivePlugins', u'Mods_PluginChecker',
            u'Mods_ExportBashTags', u'Mods_ImportBashTags',
            u'Mods_ClearManualBashTags', u'Mods_OpenLOFileMenu']
 
@@ -145,8 +146,8 @@ class Mods_LoadList(ChoiceLink):
                 self._selectExact(mods)
             @property
             def link_help(self):
-                return _(u'Activate mods in the %(list_name)s list' % {
-                    u'list_name': self._text})
+                return _(u'Activate mods in the %(list_name)s list.') % {
+                    u'list_name': self._text}
         self.__class__.choiceLinkType = _LoListLink
 
     @property
@@ -248,8 +249,9 @@ class Mods_ListMods(ItemLink):
 
     def Execute(self):
         #--Get masters list
-        list_txt = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
-        balt.copyToClipboard(list_txt)
+        list_txt = bosh.modInfos.getModList(showCRC=get_shift_down(),
+                                            showVersion=not get_ctrl_down())
+        copy_text_to_clipboard(list_txt)
         self._showLog(list_txt, title=_(u'Active Mod Files'), fixedFont=False)
 
 #------------------------------------------------------------------------------
@@ -261,7 +263,7 @@ class Mods_ListBashTags(ItemLink):
 
     def Execute(self):
         tags_text = bosh.modInfos.getTagList()
-        balt.copyToClipboard(tags_text)
+        copy_text_to_clipboard(tags_text)
         self._showLog(tags_text, title=_(u'Bash Tags'), fixedFont=False)
 
 #------------------------------------------------------------------------------
@@ -271,7 +273,7 @@ class Mods_CleanDummyMasters(EnabledLink):
     _help = _(u"Clean up after using a 'Create Dummy Masters...' command")
 
     def _enable(self):
-        for fileInfo in bosh.modInfos.values():
+        for fileInfo in bosh.modInfos.itervalues():
             if fileInfo.header.author == u'BASHED DUMMY':
                 return True
         return False
@@ -363,15 +365,15 @@ class Mods_CrcRefresh(ItemLink):
         self._showWryeLog(message)
 
 #------------------------------------------------------------------------------
-class Mods_ModChecker(ItemLink):
-    """Launches the Mod Checker. More discoverable alternative to the teensy
+class Mods_PluginChecker(ItemLink):
+    """Launches the Plugin Checker. More discoverable alternative to the teensy
     icon at the bottom."""
-    _text = _(u'Mod Checker...')
-    _help = _(u'Checks your loaded plugins for certain problems and shows a '
+    _text = _(u'Plugin Checker...')
+    _help = _(u'Checks your loaded plugins for various problems and shows a '
               u'configurable report.')
 
     def Execute(self):
-        ModChecker.create_or_raise()
+        PluginChecker.create_or_raise()
 
 #------------------------------------------------------------------------------
 class _Mods_BashTags(ItemLink, CsvParser):
@@ -389,7 +391,7 @@ class Mods_ExportBashTags(_Mods_BashTags):
             wildcard=u'*.csv')
         if not exp_path: return
         self.plugins_exported = 0
-        self.writeToText(exp_path)
+        self.write_text_file(exp_path)
         self._showOk(_(u'Exported tags for %(exp_num)u plugin(s) to '
                        u'%(exp_path)s.') % {u'exp_num': self.plugins_exported,
                                             u'exp_path': exp_path})

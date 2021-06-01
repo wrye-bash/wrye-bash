@@ -44,11 +44,12 @@ from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap
+from ..bosh import InstallerArchive, InstallerProject
 from ..exception import CancelError, SkipError, StateError
-from ..gui import BusyCursor
+from ..gui import BusyCursor, copy_text_to_clipboard
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
-           u'InstallerOpenAt_MainMenu', u'Installer_OpenSearch',
+           u'Installer_OpenSearch',
            u'Installer_OpenTESA', u'Installer_Hide', u'Installer_Rename',
            u'Installer_Refresh', u'Installer_Move', u'Installer_HasExtraData',
            u'Installer_OverrideSkips', u'Installer_SkipVoices',
@@ -77,8 +78,8 @@ class _InstallerLink(Installers_Link, EnabledLink):
 
     def isSingleArchive(self):
         """Indicates whether or not is single archive."""
-        if len(self.selected) != 1: return False
-        else: return next(self.iselected_infos()).is_archive()
+        return len(self.selected) == 1 and next(
+            self.iselected_infos()).is_archive()
 
     ##: Methods below should be in archives.py
     def _promptSolidBlockSize(self, title, value=0):
@@ -107,8 +108,8 @@ class _InstallerLink(Installers_Link, EnabledLink):
                                     SubProgress(progress, 0, 0.8),
                                     release=release)
             #--Add the new archive to Bash
-            iArchive = self.idata.refresh_installer(archive_path,
-                is_project=False, progress=progress,
+            iArchive = InstallerArchive.refresh_installer(
+                archive_path, self.idata, progress=progress,
                 install_order=installer.order + 1, do_refresh=True)
             iArchive.blockSize = blockSize
         self.window.RefreshUI(detail_item=archive_path)
@@ -600,7 +601,7 @@ class Installer_ListStructure(OneItemLink, _InstallerLink):
     def Execute(self):
         source_list_txt = self._selected_info.listSource()
         #--Get masters list
-        balt.copyToClipboard(source_list_txt)
+        copy_text_to_clipboard(source_list_txt)
         self._showLog(source_list_txt, title=_(u'Package Structure'),
                       fixedFont=False)
 
@@ -620,7 +621,10 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
         info_dir = bass.dirs[u'app'].join(self.__class__._mode_info_dir)
         info_dir.makedirs()
         achlist = info_dir.join(self._selected_info.archive + u'.achlist')
-        with BusyCursor(), open(achlist.s, u'w') as out:
+        ##: Windows-1252 is a guess. The CK is able to decode non-ASCII
+        # characters encoded with it correctly, at the very least (UTF-8/UTF-16
+        # both fail), but the encoding might depend on the game language?
+        with BusyCursor(), achlist.open(u'w', encoding=u'cp1252') as out:
             out.write(u'[\n\t"')
             lines = u'",\n\t"'.join(
                 u'\\'.join((bush.game.mods_dir, d)).replace(u'\\', u'\\\\')
@@ -673,20 +677,22 @@ class _Installer_OpenAt(_InstallerLink):
     _open_at_continue = u'OVERRIDE'
 
     def _enable(self):
+        # The menu won't even be enabled if >1 plugin is selected
         x = self.__class__.regexp.search(self.selected[0].s)
-        if not bool(self.isSingleArchive() and x): return False
+        if not x: return False
         self.mod_url_id = x.group(self.__class__.group)
         return bool(self.mod_url_id)
 
     def _url(self): return self.__class__.baseUrl + self.mod_url_id
 
     def Execute(self):
-        if self._askContinue(self.message, self._open_at_continue, self.askTitle):
+        if self._askContinue(self.message, self._open_at_continue,
+                             self.askTitle):
             webbrowser.open(self._url())
 
 class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
     regexp = bosh.reTesNexus
-    _text = _(bush.game.nexusName)
+    _text = u'%s...' % bush.game.nexusName
     _help = _(u"Opens this mod's page at the %(nexusName)s.") % \
             {u'nexusName': bush.game.nexusName}
     message = _(
@@ -704,7 +710,7 @@ class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
 class Installer_OpenSearch(_Installer_OpenAt):
     group = 1
     regexp = bosh.reTesNexus
-    _text = _(u'Google...')
+    _text = u'Google...'
     _help = _(u"Searches for this mod's title on Google.")
     _open_at_continue = u'bash.installers.opensearch.continue'
     askTitle = _(u'Open a search')
@@ -716,7 +722,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
 
 class Installer_OpenTESA(_Installer_OpenAt):
     regexp = bosh.reTESA
-    _text = _(u'TES Alliance...')
+    _text = u'TES Alliance...'
     _help = _(u"Opens this mod's page at TES Alliance.")
     _open_at_continue = u'bash.installers.openTESA.continue'
     askTitle = _(u'Open at TES Alliance')
@@ -854,9 +860,8 @@ class Installer_CopyConflicts(_SingleInstallable):
                 g_path = GPath(u'%03d - %s' % (
                     order if order < src_order else order + 1, package.s))
                 curFile = _copy_conflicts(curFile)
-        self.idata.refresh_installer(destDir, is_project=True, progress=None,
-                                     install_order=src_order + 1,
-                                     do_refresh=True)
+        InstallerProject.refresh_installer(destDir, self.idata, progress=None,
+            install_order=src_order + 1, do_refresh=True)
         self.window.RefreshUI(detail_item=destDir)
 
 #------------------------------------------------------------------------------
@@ -953,7 +958,7 @@ class Installer_Espm_List(_Installer_Details_Link):
             subs += [u'   ',u'** '][espm_list.lb_is_checked_at_index(index)] + \
                     espm_list.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
-        balt.copyToClipboard(subs)
+        copy_text_to_clipboard(subs)
         self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
 
 class Installer_Espm_JumpToMod(_Installer_Details_Link):
@@ -1027,7 +1032,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
             subs += [u'   ', u'** '][self.window.gSubList.lb_is_checked_at_index(
                 index)] + self.window.gSubList.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
-        balt.copyToClipboard(subs)
+        copy_text_to_clipboard(subs)
         self._showLog(subs, title=_(u'Sub-Package Lists'), fixedFont=False)
 
 #------------------------------------------------------------------------------
@@ -1075,7 +1080,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
             projects = []
             for installer, project in to_unpack:
                 installer.unpackToProject(project,SubProgress(progress,0,0.8))
-                self.idata.refresh_installer(project, is_project=True,
+                InstallerProject.refresh_installer(project, self.idata,
                     progress=SubProgress(progress, 0.8, 0.99),
                     install_order=installer.order + 1, do_refresh=False)
                 projects.append(project)
@@ -1160,8 +1165,8 @@ class Installer_SyncFromData(_SingleInstallable):
             if was_rar:
                 final_package = self._selected_info.writable_archive_name()
                 # Move the new archive directly underneath the old archive
-                self.idata.refresh_installer(
-                    final_package, is_project=False, do_refresh=False,
+                InstallerArchive.refresh_installer(
+                    final_package, self.idata, do_refresh=False,
                     progress=SubProgress(progress, 0.8, 0.9),
                     install_order=self._selected_info.order + 1)
                 self.idata[final_package].is_active = True
@@ -1303,8 +1308,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         readTypes = u'*%s' % u';*'.join(archives.readExts)
         #--Select target archive
         destArchive = self._askOpen(title=_(u"Select the BAIN'ed Archive:"),
-                                    defaultDir=self.idata.store_dir,
-                                    wildcard=readTypes, mustExist=True)
+            defaultDir=self.idata.store_dir, wildcard=readTypes)
         if not destArchive: return
         #--Error Checking
         BCFArchive = destArchive = destArchive.tail
@@ -1390,13 +1394,6 @@ class InstallerConverter_Create(_InstallerConverter_Link):
 #------------------------------------------------------------------------------
 # Installer Submenus ----------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerOpenAt_MainMenu(balt.MenuLink):
-    """Main Open At Menu"""
-    _text = _(u'Open at')
-    def _enable(self):
-        return super(InstallerOpenAt_MainMenu, self)._enable() and (
-            self._first_selected().is_archive())
-
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
     _text = _(u'Apply')

@@ -20,13 +20,13 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from .. import balt, bolt, bass
+from .. import bolt, bass, gui
 
 def exportConfig(patch_name, config, win, outDir):
     outFile = patch_name + u'_Configuration.dat'
     outDir.makedirs()
     #--File dialog
-    outPath = balt.askSave(win,
+    outPath = gui.FileSave.display_dialog(win,
         title=_(u'Export Bashed Patch configuration to:'),
         defaultDir=outDir, defaultFile=outFile,
         wildcard=u'*_Configuration.dat')
@@ -49,8 +49,9 @@ _patches_set = None
 def list_patches_dir():
     """Get a basic list of potential Bash Patches csv sources."""
     global _patches_set
-    _patches_set = set(bass.dirs[u'patches'].list()) | set(
-        bass.dirs[u'defaultPatches'].list())
+    _patches_set = set(bass.dirs[u'patches'].list())
+    if bass.dirs[u'defaultPatches']:
+        _patches_set.update(bass.dirs[u'defaultPatches'].list())
 
 def patches_set():
     if _patches_set is None: list_patches_dir()

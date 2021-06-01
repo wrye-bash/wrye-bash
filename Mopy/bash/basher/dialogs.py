@@ -26,13 +26,13 @@ from itertools import izip
 from . import bEnableWizard, BashFrame
 from .constants import installercons
 from .. import bass, balt, bosh, bolt, bush, env, load_order
-from ..balt import colors, bell
+from ..balt import colors
 from ..bosh import faces, ModInfo
-from ..gui import BOTTOM, Button, CancelButton, CENTER, CheckBox, GridLayout, \
+from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
     VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
     HBoxedLayout, SelectAllButton, DeselectAllButton, VBoxedLayout, \
-    TextAlignment, SearchBar
+    TextAlignment, SearchBar, bell
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -69,7 +69,7 @@ class ImportFaceDialog(DialogWindow):
         self.statsText  = Label(self,u'')
         self.classText  = Label(self,u'')
         #--Other
-        importButton = Button(self, btn_label=_(u'Import'), default=True)
+        importButton = OkButton(self, btn_label=_(u'Import'))
         importButton.on_clicked.subscribe(self.DoImport)
         self.picture = Picture(self, 350, 210, scaling=2) ##: unused
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
@@ -122,7 +122,7 @@ class ImportFaceDialog(DialogWindow):
         bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],
                                         pc_flags)
-        balt.showOk(self, _(u'Face imported.'), self.fileInfo.name)
+        balt.showOk(self, _(u'Face imported.'), self.fileInfo.ci_key)
         self.accept_modal()
 
 #------------------------------------------------------------------------------
@@ -170,7 +170,6 @@ class CreateNewProject(DialogWindow):
     def OnCheckProjectsColorTextCtrl(self, new_text):
         projectName = bolt.GPath(new_text)
         if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
-            # PY3: See note in basher/constants.py
             self.textName.set_background_color(colors[u'default.warn'])
             self.textName.tooltip = _(u'There is already a project with that name!')
             self.ok_button.enabled = False
@@ -208,10 +207,10 @@ class CreateNewProject(DialogWindow):
         tmpDir = bolt.Path.tempDir()
         tempProject = tmpDir.join(projectName)
         if self.checkEsp.is_checked:
-            fileName = u'Blank, %s.esp' % bush.game.fsName
+            fileName = u'Blank, %s.esp' % bush.game.displayName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject)
         if self.checkEspMasterless.is_checked:
-            fileName = u'Blank, %s (masterless).esp' % bush.game.fsName
+            fileName = u'Blank, %s (masterless).esp' % bush.game.displayName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject,
                                          wanted_masters=[])
         if self.checkWizard.is_checked:
@@ -368,7 +367,7 @@ class CreateNewPlugin(DialogWindow):
     def _handle_search(self, search_str):
         """Internal callback used to repopulate the masters box whenever the
         text in the search bar changes."""
-        lower_search_str = search_str.lower()
+        lower_search_str = search_str.lower().strip()
         new_m_keys, new_m_values = [], []
         # Case-insensitively filter based on the keys, then update the box
         for k, v in self._masters_dict.iteritems():

@@ -476,7 +476,7 @@ def _makedirs_exists_ok(target_dir):
 class ABsa(AFile):
     """:type bsa_folders: collections.OrderedDict[unicode, BSAFolder]"""
     _header_type = BsaHeader
-    _assets = frozenset()
+    _assets = None # type: frozenset
     _compression_type = _Bsa_zlib # type: _BsaCompressionType
 
     def __init__(self, fullpath, load_cache=False, names_only=True):
@@ -603,20 +603,27 @@ class ABsa(AFile):
 
     # API - delegates to abstract methods above
     def has_assets(self, asset_paths):
-        return {a.cs for a in asset_paths} & self.assets
+        cached_assets = self.assets
+        matched_assets = []
+        add_asset = matched_assets.append
+        for a in asset_paths:
+            if a.lower() in cached_assets:
+                add_asset(a)
+        return matched_assets
 
     @property
     def assets(self):
         """Set of full paths in the bsa in lowercase.
         :rtype: frozenset[unicode]
         """
-        from ..env import convert_separators
-        if self._assets is self.__class__._assets:
+        wanted_assets = self._assets
+        if wanted_assets is None:
             self.__load(names_only=True)
-            self._assets = frozenset(convert_separators(f.lower())
-                                     for f in self._filenames)
+            from ..env import convert_separators
+            self._assets = wanted_assets = frozenset(
+                convert_separators(f.lower()) for f in self._filenames)
             del self._filenames[:]
-        return self._assets
+        return wanted_assets
 
 class BSA(ABsa):
     """Bsa file. Notes:
@@ -993,9 +1000,11 @@ def get_bsa_type(game_fsName):
         return OblivionBsa
     elif game_fsName in (u'Enderal', u'Fallout3', u'FalloutNV', u'Skyrim'):
         return BSA
-    elif game_fsName in (u'Skyrim Special Edition', u'Skyrim VR'):
+    elif game_fsName in (u'Skyrim Special Edition', u'Skyrim VR',
+                         u'Enderal Special Edition',
+                         u'Skyrim Special Edition MS'):
         return SkyrimSeBsa
-    elif game_fsName in (u'Fallout4', u'Fallout4VR'):
+    elif game_fsName in (u'Fallout4', u'Fallout4VR', u'Fallout4 MS'):
         # Hashes are I not Q in BA2s!
         _HashedRecord.formats = [(u'I', struct_calcsize(u'I'))]
         return BA2

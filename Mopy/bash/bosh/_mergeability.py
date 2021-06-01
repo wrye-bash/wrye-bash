@@ -48,9 +48,9 @@ def _is_mergeable_no_load(modInfo, reasons):
                 blocking_dir = _format_blocking_dir(pnd)
                 if blocking_dir:
                     dir_list += u'\n  - ' + blocking_dir
-            reasons.append(_(u'Has plugin-specific directory - one of the '
-                             u'following:' + dir_list) %
-                           ({u'plugin_name': modInfo.name}))
+            reasons.append((_(u'Has plugin-specific directory - one of the '
+                              u'following:') + dir_list) % {
+                u'plugin_name': modInfo.ci_key})
     # Client must make sure NoMerge tag not in tags - if in tags
     # don't show up as mergeable.
     return False if reasons else True
@@ -99,16 +99,16 @@ def isPBashMergeable(modInfo, minfos, reasons):
         reasons.append(_(u'Empty mod.'))
     #--New record
     newblocks = []
-    self_name = modInfo.name
+    self_name = modInfo.ci_key
     for top_type,block in modFile.tops.iteritems():
-        for record in block.iter_present_records(): # skip deleted/ignored
-            if record.fid[0] == self_name:
+        for rfid, record in block.iter_present_records(): # skip deleted/ignored
+            if rfid[0] == self_name:
                 if not verbose: return False
                 newblocks.append(top_type)
                 break
     if newblocks: reasons.append(
         _(u'New record(s) in block(s): ') + u'%s.' % _join_sigs(newblocks))
-    dependent = _dependent(modInfo, minfos)
+    dependent = _dependent(self_name, minfos)
     if dependent:
         if not verbose: return False
         reasons.append(_(u'Is a master of non-mergeable mod(s): ')+u', '.join(sorted(dependent))+u'.')
@@ -117,11 +117,11 @@ def isPBashMergeable(modInfo, minfos, reasons):
 def _join_sigs(modFile):
     return u', '.join(x.decode(u'ascii') for x in sorted(modFile))
 
-def _dependent(modInfo, minfos):
+def _dependent(minfo_key, minfos):
     """Get mods for which modInfo is a master mod (excluding BPs and
     mergeable)."""
     dependent = [mname.s for mname, info in minfos.iteritems() if
-                 not info.isBP() and modInfo.name in info.masterNames and
+                 not info.isBP() and minfo_key in info.masterNames and
                  mname not in minfos.mergeable]
     return dependent
 
@@ -137,23 +137,13 @@ def is_esl_capable(modInfo, _minfos, reasons):
                     return value of this method is of interest.
     :return: True if the specified mod could be flagged as ESL."""
     verbose = reasons is not None
-    record_headers = {}
+    formids_valid = True
     try:
-        record_headers = ModHeaderReader.read_mod_headers(modInfo)
+        formids_valid = ModHeaderReader.formids_in_esl_range(modInfo)
     except ModError as e:
         if not verbose: return False
         reasons.append(u'%s.' % e)
-    # Check for new FormIDs greater then 0xFFF
-    num_masters = len(modInfo.masterNames)
-    has_new_recs = False
-    for _rec_type, rec_headers in record_headers.iteritems():
-        for header in rec_headers:
-            if header.fid >> 24 >= num_masters:
-                if (header.fid & 0xFFFFFF) > 0xFFF:
-                    has_new_recs = True
-                    break
-        if has_new_recs:
-            if not verbose: return False
-            reasons.append(_(u'New FormIDs greater than 0xFFF.'))
-            break
+    if not formids_valid:
+        if not verbose: return False
+        reasons.append(_(u'New FormIDs greater than 0xFFF.'))
     return False if reasons else True

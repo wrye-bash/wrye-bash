@@ -20,7 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-import codecs
+import io
 import re
 import time
 from collections import OrderedDict, Counter
@@ -282,8 +282,7 @@ class IniFile(AFile):
         """Write to ourselves respecting windows newlines and out_encoding.
         Note content to be writen (if coming from ini tweaks) must be encodable
         to out_encoding."""
-        return codecs.getwriter(self.out_encoding)(
-            open(self.abs_path.temp.s, u'w'))
+        return io.open(self.abs_path.temp.s, u'w', encoding=self.out_encoding)
 
     def target_ini_exists(self, msg=_(
         u'The target ini must exist to apply a tweak to it.')):
@@ -333,7 +332,7 @@ class IniFile(AFile):
             # This will occur for the last INI section in the ini file
             _add_remaining_new_items()
             # Add remaining new entries
-            for section, sectionSettings in ini_settings.items():
+            for section, sectionSettings in list(ini_settings.iteritems()):
                 # _add_remaining_new_items may modify ini_settings
                 if sectionSettings:
                     tmpFileWrite(u'[%s]\n' % section)
@@ -660,8 +659,8 @@ class GameIni(IniFile):
             msg = _(u'The game INI must exist to apply a tweak to it.')
         target_exists = super(GameIni, self).target_ini_exists()
         if target_exists: return True
-        msg = _(u'%(ini_path)s does not exist.' % {
-            u'ini_path': self.abs_path}) + u'\n\n' + msg + u'\n\n'
+        msg = _(u'%(ini_path)s does not exist.') % {
+            u'ini_path': self.abs_path} + u'\n\n' + msg + u'\n\n'
         return msg
 
     #--BSA Redirection --------------------------------------------------------
@@ -681,7 +680,8 @@ class GameIni(IniFile):
         if doRedirect == is_bsa_redirection_active:
             return
         if doRedirect and not aiBsa.exists():
-            source = dirs[u'templates'].join(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
+            source = dirs[u'templates'].join(
+                bush.game.template_dir, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
             try:
                 env.shellCopy(source, aiBsa, allowUndo=True, autoRename=True)

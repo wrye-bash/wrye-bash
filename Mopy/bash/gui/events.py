@@ -133,6 +133,18 @@ class EventResult(object):
     events that clearly state so in their documentation may be canceled, all
     others will raise a RuntimeError instead."""
 
+class _EHPauseSubcription(object):
+    """Helper for EventHandler.pause_subscription."""
+    def __init__(self, event_handler, listener):
+        self._event_handler = event_handler
+        self._listener = listener
+
+    def __enter__(self):
+        self._event_handler.unsubscribe(self._listener)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._event_handler.subscribe(self._listener)
+
 class EventHandler(object):
     """This class implements the actual event processing, catching native wx
     events, applying processors to them and posting the results to all relevant
@@ -204,6 +216,13 @@ class EventHandler(object):
             raise UnknownListener(
                 u'Listener %s not subscribed on %r' % (listener, self))
         self._update_wx_binding()
+
+    def pause_subscription(self, listener):
+        """Unsubscribe to the specified listener for this event handler,
+           for use with a context manager (with statement).
+
+           :param listener: The listener to unsubscribe."""
+        return _EHPauseSubcription(self, listener)
 
     def _update_wx_binding(self):
         """Creates or removes a wx binding if necessary. If we have listeners

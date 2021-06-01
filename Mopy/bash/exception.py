@@ -268,6 +268,9 @@ class LexerError(_ALPError):
 class ParserError(_ALPError):
     """An error that ocurred during parsing."""
 
+class EvalError(_ALPError):
+    """An error that occurred during the evaluation of some parsed code."""
+
 # Misc exceptions -------------------------------------------------------------
 class StateError(BoltError):
     """Error: Object is corrupted."""
@@ -295,6 +298,11 @@ class EnvError(Exception):
     def __init__(self, env_feature):
         super(EnvError, self).__init__(u"'%s' is not available on %s" % (
             env_feature, platform.system()))
+
+class BPConfigError(Exception):
+    """The configuration of the Bashed Patch is invalid in some way. Note that
+    the error messages raised by this will be shown to the user in the GUI and
+    so should be translated."""
 
 # gui package exceptions ------------------------------------------------------
 class GuiError(Exception):

@@ -32,12 +32,18 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     displayName = u'Fallout New Vegas'
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'
+    game_icon = u'falloutnv_%u.png'
     bash_root_prefix = u'FalloutNV'
+    bak_game_name = u'FalloutNV'
+    my_games_name = u'FalloutNV'
+    appdata_name = u'FalloutNV'
     launch_exe = u'FalloutNV.exe'
-    game_detect_file = u'FalloutNV.exe'
+    game_detect_includes = [u'FalloutNV.exe']
     version_detect_file = u'FalloutNV.exe'
     master_file = u'FalloutNV.esm'
     taglist_dir = u'FalloutNV'
+    loot_dir = u'FalloutNV'
+    boss_game_name = u'FalloutNV'
     regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/newvegas/'
     nexusName = u'New Vegas Nexus'
@@ -79,19 +85,60 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     allTags = Fallout3GameInfo.allTags | {u'WeaponMods'}
     patchers = Fallout3GameInfo.patchers | {u'ImportWeaponMods'}
 
+    bethDataFiles = {
+        #--Vanilla
+        u'falloutnv.esm',
+        u'fallout - invalidation.bsa',
+        u'fallout - meshes.bsa',
+        u'fallout - meshes2.bsa',
+        u'fallout - misc.bsa',
+        u'fallout - sound.bsa',
+        u'fallout - textures.bsa',
+        u'fallout - textures2.bsa',
+        u'fallout - voices1.bsa',
+        #--Preorder Packs
+        u'caravanpack.esm',
+        u'caravanpack - main.bsa',
+        u'classicpack.esm',
+        u'classicpack - main.bsa',
+        u'mercenarypack.esm',
+        u'mercenarypack - main.bsa',
+        u'tribalpack.esm',
+        u'tribalpack - main.bsa',
+        #--DLCs
+        u'deadmoney.esm',
+        u'deadmoney - main.bsa',
+        u'deadmoney - sounds.bsa',
+        u'gunrunnersarsenal.esm',
+        u'gunrunnersarsenal - main.bsa',
+        u'gunrunnersarsenal - sounds.bsa',
+        u'honesthearts.esm',
+        u'honesthearts - main.bsa',
+        u'honesthearts - sounds.bsa',
+        u'oldworldblues.esm',
+        u'oldworldblues - main.bsa',
+        u'oldworldblues - sounds.bsa',
+        u'lonesomeroad.esm',
+        u'lonesomeroad - main.bsa',
+        u'lonesomeroad - sounds.bsa',
+    }
+
+    @classmethod
+    def _dynamic_import_modules(cls, package_name):
+        super(FalloutNVGameInfo, cls)._dynamic_import_modules(package_name)
+        from .patcher import preservers
+        cls.game_specific_import_patchers = {
+            u'ImportWeaponMods': preservers.WeaponModsPatcher, }
+
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        # First import from our record file
-        from .records import MreActi, MreAloc, MreAmef, MreAmmo, MreArma, \
-            MreArmo, MreAspc, MreCcrd, MreCdck, MreChal, MreChip, MreCmny, \
-            MreCont, MreCsno, MreCsty, MreDehy, MreDobj, MreEnch, MreFact, \
-            MreHdpt, MreHung, MreImad, MreImod, MreIpct, MreKeym, MreLigh, \
-            MreLscr, MreLsct, MreMisc, MreMset, MreMusc, MreProj, MreRcct, \
-            MreRcpe, MreRegn, MreRepu, MreSlpd, MreSoun, MreStat, MreTact, \
-            MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, MreGmst, \
-            MreInfo, MrePgre, MrePmis, MreRefr, MreTes4
-        # then from fallout3.records
+        # First import from our records file
+        from .records import MreTes4, MreAloc, MreAmef, MreCcrd, MreCdck, \
+            MreChal, MreChip, MreCmny, MreCsno, MreDehy, MreDial, MreHung, \
+            MreImod, MreLsct, MreMset, MreRcct, MreRcpe, MreRepu, MreSlpd, \
+            MreWthr
+        # Then from fallout3.records
         from ..fallout3.records import MreCpth, MreIdle, MreMesg, MrePack, \
             MrePerk, MreQust, MreSpel, MreTerm, MreNpc, MreAddn, MreAnio, \
             MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt, MreCobj, \
@@ -100,22 +147,26 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MreIpds, MreLgtm, MreLtex, MreLvlc, MreLvli, MreLvln, MreMgef, \
             MreMicn, MreMstt, MreNavi, MreNavm, MreNote, MrePwat, MreRads, \
             MreRgdl, MreScol, MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, \
-            MreWrld, MreAlch
+            MreWrld, MreAlch, MreActi, MreAmmo, MreArma, MreArmo, MreAspc, \
+            MreCont, MreAchr, MreAcre, MreCell, MreCsty, MreDobj, MreEnch, \
+            MreFact, MreGmst, MreHdpt, MreImad, MreInfo, MreIpct, MreKeym, \
+            MreLigh, MreLscr, MreMisc, MreMusc, MrePgre, MrePmis, MreProj, \
+            MreRefr, MreRegn, MreSoun, MreStat, MreTact, MreWeap
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
-                MreActi, MreAddn, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio,
-                MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams,
-                MreCcrd, MreCdck, MreChal, MreChip, MreClas, MreClmt, MreCmny,
-                MreCobj, MreCont, MreCpth, MreCrea, MreCsno, MreCsty, MreDebr,
-                MreDehy, MreDobj, MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl,
-                MreEyes, MreFact, MreFlst, MreFurn, MreGlob, MreGras, MreHair,
-                MreHdpt, MreHung, MreIdle, MreIdlm, MreImad, MreImgs, MreImod,
-                MreIngr, MreIpct, MreIpds, MreKeym, MreLgtm, MreLigh, MreLscr,
-                MreLsct, MreLtex, MreLvlc, MreLvli, MreLvln, MreMesg, MreMgef,
-                MreMicn, MreMisc, MreMset, MreMstt, MreMusc, MreNote, MreNpc,
-                MrePack, MrePerk, MreProj, MrePwat, MreQust, MreRace, MreRads,
-                MreRcct, MreRcpe, MreRegn, MreRepu, MreRgdl, MreScol, MreScpt,
-                MreSlpd, MreSoun, MreSpel, MreStat, MreTact, MreTerm, MreTree,
-                MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr, MreGmst,
+            MreActi, MreAddn, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio,
+            MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams,
+            MreCcrd, MreCdck, MreChal, MreChip, MreClas, MreClmt, MreCmny,
+            MreCobj, MreCont, MreCpth, MreCrea, MreCsno, MreCsty, MreDebr,
+            MreDehy, MreDobj, MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl,
+            MreEyes, MreFact, MreFlst, MreFurn, MreGlob, MreGras, MreHair,
+            MreHdpt, MreHung, MreIdle, MreIdlm, MreImad, MreImgs, MreImod,
+            MreIngr, MreIpct, MreIpds, MreKeym, MreLgtm, MreLigh, MreLscr,
+            MreLsct, MreLtex, MreLvlc, MreLvli, MreLvln, MreMesg, MreMgef,
+            MreMicn, MreMisc, MreMset, MreMstt, MreMusc, MreNote, MreNpc,
+            MrePack, MrePerk, MreProj, MrePwat, MreQust, MreRace, MreRads,
+            MreRcct, MreRcpe, MreRegn, MreRepu, MreRgdl, MreScol, MreScpt,
+            MreSlpd, MreSoun, MreSpel, MreStat, MreTact, MreTerm, MreTree,
+            MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr, MreGmst,
         )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader

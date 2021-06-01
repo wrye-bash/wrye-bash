@@ -89,8 +89,10 @@ def initialize_load_order_files():
 def initialize_load_order_handle(mod_infos):
     global _game_handle
     _game_handle = _games_lo.game_factory(bush.game.fsName, mod_infos,
-                                          _plugins_txt_path, _loadorder_txt_path)
+                                          _plugins_txt_path,
+                                          _loadorder_txt_path)
     _game_handle.parse_ccc_file()
+    _game_handle.print_lo_paths()
     __load_pickled_load_orders()
 
 class LoadOrder(object):

@@ -31,10 +31,15 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     displayName = u'Skyrim VR'
     fsName = u'Skyrim VR'
     altName = u'Wrye VRash'
+    game_icon = u'skyrimvr_%u.png'
     bash_root_prefix = u'Skyrim VR' # backwards compat :(
+    bak_game_name = u'Skyrim VR'
+    my_games_name = u'Skyrim VR'
+    appdata_name = u'Skyrim VR'
     launch_exe = u'SkyrimVR.exe'
-    game_detect_file = u'SkyrimVR.exe'
+    game_detect_includes = [u'SkyrimVR.exe']
     version_detect_file = u'SkyrimVR.exe'
+    loot_dir = u'Skyrim VR'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim VR', u'Installed Path')
 
     espm_extensions = SkyrimSEGameInfo.espm_extensions - {u'.esl'}
@@ -50,8 +55,6 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
         default_ini_file = u'Skyrim.ini' # yes, that's the default one
         dropdown_inis = [u'SkyrimVR.ini', u'SkyrimPrefs.ini']
         resource_override_key = u'sVrResourceArchiveList'
-
-    class Bsa(SkyrimSEGameInfo.Bsa):
         resource_override_defaults = [u'Skyrim_VR - Main.bsa']
 
     class Xe(SkyrimSEGameInfo.Xe):
@@ -64,11 +67,39 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     allTags = SkyrimSEGameInfo.allTags | {u'NoMerge'}
     patchers = SkyrimSEGameInfo.patchers | {u'MergePatches'}
 
+    bethDataFiles = {
+        u'skyrim.esm',
+        u'update.esm',
+        u'dawnguard.esm',
+        u'dragonborn.esm',
+        u'hearthfires.esm',
+        u'skyrimvr.esm',
+        u'skyrim - animations.bsa',
+        u'skyrim - interface.bsa',
+        u'skyrim - meshes0.bsa',
+        u'skyrim - meshes1.bsa',
+        u'skyrim - misc.bsa',
+        u'skyrim - patch.bsa',
+        u'skyrim - shaders.bsa',
+        u'skyrim - sounds.bsa',
+        u'skyrim - textures0.bsa',
+        u'skyrim - textures1.bsa',
+        u'skyrim - textures2.bsa',
+        u'skyrim - textures3.bsa',
+        u'skyrim - textures4.bsa',
+        u'skyrim - textures5.bsa',
+        u'skyrim - textures6.bsa',
+        u'skyrim - textures7.bsa',
+        u'skyrim - textures8.bsa',
+        u'skyrim - voices_en0.bsa',
+        u'skyrim_vr - main.bsa'
+    }
+
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
         # First import from skyrimse.records file
-        from .records import MreVoli, MreLens
+        from ..skyrimse.records import MreVoli, MreLens
         # then import rest of records from skyrim.records
         from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
             MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \

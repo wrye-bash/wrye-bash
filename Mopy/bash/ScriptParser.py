@@ -211,6 +211,7 @@ class FlowControl(object):
 #  problem with the parser, or a problem with the
 #  script
 #--------------------------------------------------
+##: Refactor to use exception.ParserError instead?
 class ParserError(SyntaxError): pass
 gParser = None
 def error(msg):
@@ -480,7 +481,7 @@ class Parser(object):
             fn += u']'
             return eval(fn)
         except:
-            error(_(u'IndexError'))
+            error(_(u'Index out of bounds.'))
 
     def SetOperator(self, op_name, *args, **kwdargs):
         type_ = getType(op_name, self)
@@ -706,7 +707,7 @@ class Parser(object):
                 rpn.extend(temp_tokens)
                 stack[-1].numArgs += numArgs + 1
                 if stack[-1].numArgs == 1:
-                    error(_(u'IndexError'))
+                    error(_(u'Index out of bounds.'))
                 rpn.append(stack.pop())
             else:
                 error(_(u"Unrecognized token: '%s', type: %s") % (i.text, Types[i.type]))

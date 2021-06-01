@@ -32,8 +32,8 @@ from operator import itemgetter, attrgetter
 
 # Wrye Bash imports
 from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
-from .utils_constants import group_types
-from ..bolt import GPath, pack_int, structs_cache
+from .utils_constants import group_types, fid_key
+from ..bolt import GPath, pack_int, structs_cache, attrgetter_cache
 from ..exception import AbstractError, ModError, ModFidMismatchError
 
 class MobBase(object):
@@ -131,11 +131,13 @@ class MobBase(object):
         """Returns a ModReader wrapped around self.data."""
         return ModReader(self.inName, io.BytesIO(self.data))
 
-    def iter_present_records(self, include_ignored=False):
+    def iter_present_records(self, include_ignored=False, rec_key=u'fid',
+                             __attrgetters=attrgetter_cache):
         """Filters iter_records, returning only records that have not set
         the deleted flag and/or the ignore flag if include_ignored is False."""
-        return (r for r in self.iter_records() if not r.flags1.deleted and (
-                include_ignored or not r.flags1.ignored))
+        return ((__attrgetters[rec_key](r), r) for r in self.iter_records()
+                if not r.flags1.deleted
+                and (include_ignored or not r.flags1.ignored))
 
     # Abstract methods --------------------------------------------------------
     def get_all_signatures(self):
@@ -180,6 +182,11 @@ class MobBase(object):
         from ..bolt import deprint
         deprint(u'merge_records missing for %s' % self.label)
         raise AbstractError(u'merge_records not implemented')
+
+    def _sort_group(self):
+        """Performs any sorting of records that has to be done in this record
+        group."""
+        raise AbstractError(u'_sort_group not implemented')
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
@@ -255,8 +262,13 @@ class MobObjects(MobBase):
             size = self.getSize()
             if size == RecordHeader.rec_header_size: return
             out.write(TopGrupHeader(size, self.label, self.stamp).pack_head())
+            self._sort_group()
             for record in self.records:
                 record.dump(out)
+
+    def _sort_group(self):
+        """Sorts records by FormID."""
+        self.records.sort(key=fid_key)
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
@@ -277,12 +289,12 @@ class MobObjects(MobBase):
         for record in self.records:
             self.id_records[record.fid] = record
 
-    def getRecord(self,fid,default=None):
+    def getRecord(self, rec_fid):
         """Gets record with corresponding id.
         If record doesn't exist, returns None."""
-        if not self.records: return default
+        if not self.records: return None
         if not self.id_records: self.indexRecords()
-        return self.id_records.get(fid,default)
+        return self.id_records.get(rec_fid, None)
 
     def setRecord(self,record):
         """Adds record to record list and indexed."""
@@ -442,8 +454,6 @@ class MobDial(MobObjects):
             out.write(self.data)
         else:
             if not self.records: return
-            # Sort our INFOs by PNAM just before writing them out
-            self.records = self._sort_by_pnam()
             # Now we're ready to dump out the headers and each INFO child
             hsize = RecordHeader.rec_header_size
             infos_size = hsize + sum(hsize + i.getSize() for i in self.records)
@@ -451,6 +461,7 @@ class MobDial(MobObjects):
             # bytes to read for all the INFOs), then dump all the INFOs
             out.write(GrupHeader(infos_size, self.dial.fid, 7, self.stamp,
                 self.stamp2).pack_head())
+            self._sort_group()
             for info in self.records:
                 info.dump(out)
 
@@ -524,12 +535,12 @@ class MobDial(MobObjects):
             mergeIds.discard(src_dial_fid)
         super(MobDial, self).updateRecords(srcBlock, mergeIds)
 
-    def _sort_by_pnam(self):
-        """Returns a list of the INFOs of this DIAL record, sorted by their
-        (PNAM) Previous Info. These do not simply describe a linear list, but a
-        directed graph - e.g. you can have edges B->A and C->A, which would
-        leave both C->B->A and B->C->A as valid orders. To decide in such
-        cases, we stick to low->high FormIDs.
+    def _sort_group(self):
+        """Sorts the INFOs of this DIAL record by their (PNAM) Previous Info.
+        These do not simply describe a linear list, but a directed graph - e.g.
+        you can have edges B->A and C->A, which would leave both C->B->A and
+        B->C->A as valid orders. To decide in such cases, we stick with
+        whatever the previous order was.
 
         Note: We assume the PNAM graph is acyclic - cyclic graphs are errors
         in plugins anyways, so the behavior of PBash when encountering such
@@ -537,16 +548,19 @@ class MobDial(MobObjects):
         # First gather a list of all 'orphans', i.e. INFOs that have no PNAM.
         # We'll start with these and insert non-orphans into the list at the
         # right spot based on their PNAM
-        sorted_infos = sorted((o for o in self.records if not o.prevInfo),
-            key=lambda x: x.fid)
-        remaining_infos = deque(sorted(set(self.records) - set(sorted_infos),
-            key=lambda x: x.fid))
+        sorted_infos = []
+        remaining_infos = deque()
+        for r in self.records:
+            if not r.prev_info:
+                sorted_infos.append(r)
+            else:
+                remaining_infos.append(r)
         visited_fids = set()
         while remaining_infos:
-            # Pop from the right to maintain a low->high sort order of FormIDs
-            # when inserting multiple INFOs with the same PNAM
+            # Pop from the right to maintain the original sort order when
+            # inserting multiple INFOs with the same PNAM
             curr_info = remaining_infos.pop()
-            wanted_prev_fid = curr_info.prevInfo
+            wanted_prev_fid = curr_info.prev_info
             # Look if a record matching the PNAM has already been inserted
             for i, prev_candidate in enumerate(sorted_infos):
                 if prev_candidate.fid == wanted_prev_fid:
@@ -560,27 +574,19 @@ class MobDial(MobObjects):
                     # file (which is fine and happens all the time), or this
                     # INFO is in a cycle, or the PNAM points to a non-existent
                     # record.
-                    # To handle this situation, we basically do a single
-                    # iteration of insertion sort to find a suitable spot to
-                    # put it.
+                    # To handle this situation, we simply append it to the end
+                    # of our sorted INFOs.
                     # We don't warn here because trying to differentiate the
                     # valid and common case from the two error cases would be
-                    # too slow. xEdit can do this much better
-                    for i in xrange(len(sorted_infos)):
-                        if curr_info.fid <= sorted_infos[i].fid:
-                            # We found a suitable spot, insert it and break
-                            sorted_infos.insert(i, curr_info)
-                            break
-                    else:
-                        # List is either empty or the fid is >= all fids in the
-                        # list. Either way, just append to the end
-                        sorted_infos.append(curr_info)
+                    # too slow. xEdit can do this much better.
+                    sorted_infos.append(curr_info)
                 else:
                     # We'll have to revisit this INFO later when its PNAM may
-                    # have been added, so move it to the end of the queue
+                    # have been added, so move it to the end (== left side) of
+                    # the queue
                     visited_fids.add(curr_info.fid)
                     remaining_infos.appendleft(curr_info)
-        return sorted_infos
+        self.records = sorted_infos
 
     def __repr__(self):
         return u'<DIAL (%r): %u INFO record(s)>' % (self.dial,
@@ -661,6 +667,7 @@ class MobDials(MobBase):
             if dial_size == RecordHeader.rec_header_size: return
             out.write(TopGrupHeader(dial_size, self.label,
                                     self.stamp).pack_head())
+            self._sort_group()
             for dialogue in self.dialogues:
                 dialogue.dump(out)
 
@@ -751,6 +758,10 @@ class MobDials(MobBase):
             dial_block.setChanged()
             self.dialogues.append(dial_block)
             self.id_dialogues[dial_fid] = dial_block
+
+    def _sort_group(self):
+        """Sorts DIAL groups by the FormID of the DIAL record."""
+        self.dialogues.sort(key=attrgetter_cache[u'dial.fid'])
 
     def updateMasters(self, masterset_add):
         for dialogue in self.dialogues:
@@ -901,17 +912,20 @@ class MobCell(MobBase):
         self.cell.dump(out)
         childrenSize = self.getChildrenSize()
         if not childrenSize: return
+        self._sort_group()
         self._write_group_header(out, childrenSize, 6)
+        # The order is persistent -> temporary -> distant
         if self.persistent_refs:
             self._write_group_header(out, self.getPersistentSize(), 8)
             for record in self.persistent_refs:
                 record.dump(out)
         if self.temp_refs or self.pgrd or self.land:
             self._write_group_header(out, self.getTempSize(), 9)
-            if self.pgrd:
-                self.pgrd.dump(out)
+            # The order is LAND -> PGRD -> temporary references
             if self.land:
                 self.land.dump(out)
+            if self.pgrd:
+                self.pgrd.dump(out)
             for record in self.temp_refs:
                 record.dump(out)
         if self.distant_refs:
@@ -948,6 +962,12 @@ class MobCell(MobBase):
         if self.land: cell_sigs.add(self.land._rec_sig)
         if self.pgrd: cell_sigs.add(self.pgrd._rec_sig)
         return cell_sigs
+
+    def _sort_group(self):
+        """Sort temporary/persistent/distant references by FormID."""
+        self.persistent_refs.sort(key=fid_key)
+        self.temp_refs.sort(key=fid_key)
+        self.distant_refs.sort(key=fid_key)
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
@@ -1120,10 +1140,11 @@ class MobCells(MobBase):
         self.cellBlocks.remove(cell)
         del self.id_cellBlock[cell.fid]
 
-    def getBsbSizes(self):
+    def getBsbSizes(self): ##: This is the _sort_group for MobCells
         """Returns the total size of the block, but also returns a
         dictionary containing the sizes of the individual block,subblocks."""
         bsbCellBlocks = [(x.getBsb(),x) for x in self.cellBlocks]
+        # First sort by the CELL FormID, then by the block they belong to
         bsbCellBlocks.sort(key=lambda y: y[1].cell.fid)
         bsbCellBlocks.sort(key=itemgetter(0))
         bsb_size = {}
@@ -1486,6 +1507,7 @@ class MobWorld(MobCells):
             self.header.label = self.world.fid
             self.header.groupType = 1
             out.write(self.header.pack_head())
+            # The order is ROAD -> persistent CELL -> blocks
             if self.road:
                 self.road.dump(out)
             if self.worldCellBlock:
@@ -1711,6 +1733,8 @@ class MobWorlds(MobBase):
             worldHeaderPos = out.tell()
             header = TopGrupHeader(0, self.label, self.stamp)
             out.write(header.pack_head())
+            self._sort_group()
+            ##: Why not use getSize here?
             totalSize = RecordHeader.rec_header_size + sum(
                 x.dump(out) for x in self.worldBlocks)
             out.seek(worldHeaderPos + 4)
@@ -1736,6 +1760,10 @@ class MobWorlds(MobBase):
     def indexRecords(self):
         """Indexes records by fid."""
         self.id_worldBlocks = {x.world.fid: x for x in self.worldBlocks}
+
+    def _sort_group(self):
+        """Sorts WRLD groups by the FormID of the WRLD record."""
+        self.worldBlocks.sort(key=attrgetter_cache[u'world.fid'])
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""

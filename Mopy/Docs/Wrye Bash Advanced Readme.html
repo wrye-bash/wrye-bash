@@ -118,7 +118,7 @@
                 <li class="list"><a href="#tools">Miscellaneous Tools</a>
                     <ol class="items">
                         <li><a href="#tools-docs">Doc Browser</a>
-                        <li><a href="#tools-checker">Mod Checker</a>
+                        <li><a href="#tools-checker">Plugin Checker</a>
                         <li><a href="#tools-swapping">Oblivion.esm Swapping</a>
                         <li><a href="#tools-shortcuts">Keyboard Shortcuts</a>
                         <li><a href="#tools-arguments">Command Line Arguments</a>
@@ -668,10 +668,6 @@ tab. The directories skipped are:
             <td>Attempts to perform a Google search for the selected package's name.</td>
         </tr>
         <tr>
-            <td>TES Nexus...</td>
-            <td>Attempts to open the selected package's page on TES Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
-        </tr>
-        <tr>
             <td>[Game] Nexus...</td>
             <td>Attempts to open the selected package's page on the game's matching Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
         </tr>
@@ -874,16 +870,18 @@ tab. The directories skipped are:
     <thead><tr><th>Item<th>Description
     <tbody>
         <tr><td>File Name<td>The filename of the selected plugin. Note that changing this does not change the filename in the Masters Lists of any dependent plugins.
-        <tr><td>Modification Time<td>This field is editable, by clicking in the box. After changes are made, click the Save button to commit
-            your changes to the plugin, or Cancel to discard them. Note: For Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon;
-            New Vegas this affects the load order of the selected plugin. For Skyrim, it has no effect, except that if it is changed for a plugin
-            obtained from Steam Workshop, it will cause the plugin to be redownloaded as Steam Workshop uses modification time to detect file
-            versions. For Skyrim&colon; Special Edition, there was a bug at some point, with DLC Load Order being set by Date / Time Stamp (only the
-            DLCs were affected by this). The only way to re-arrange your Skyrim&colon; Special Edition DLC plugins Load Order was to edit their
-            modification time, so that they follow each other by for example one minute. The bug was fixed in a later patch - but anyway Bash won't
-            let you change the load order or the modification times of the DLCs. The game always loads them before other masters and in the following
-            order: Dawnguard -> Hearthfire -> Dragonborn. Bash will timestamp them in one minute intervals following Skyrim/Update esms, so even
-            the buggy patch behaves correctly.
+        <tr>
+            <td>Modification Time</td>
+            <td>This field is editable, by clicking in the box. After changes
+                are made, click the Save button to commit your changes to the
+                plugin, or Cancel to discard them. Note: For Oblivion,
+                Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon;
+                New Vegas this affects the load order of the selected plugin.
+                For Skyrim, it has no effect, except that if it is changed for
+                a plugin obtained from Steam Workshop, it will cause the plugin
+                to be redownloaded as Steam Workshop uses modification time to
+                detect file versions.</td>
+        </tr>
         <tr><td>Author<td>Who made the selected plugin.
         <tr><td>Description<td>Commonly used for a short description of what the selected plugin does, plus the version number and any Bash Tags the author sets.
         <tr><td>Masters List<td>The Masters list shows the plugins that the currently selected plugin depends on, the load order
@@ -994,7 +992,16 @@ tab. The directories skipped are:
                 <tr><td>[Active Mods List]</td><td>[Active Mods List] items are listed below the separator in the Active Mods submenu. Clicking a
                     list name will apply the list, trying to activate exactly the plugins that are listed in it.</td></tr>
             <tr><td colspan="2">Oblivion.esm</td><td><em>Oblivion only.</em> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.</td></tr>
-            <tr><td colspan="2" id="modsListMods">List Mods<td>This outputs a BBCode-formatted load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
+            <tr>
+                <td colspan="2" id="modsListMods">List Mods</td>
+                <td>This outputs a BBCode-formatted load order, including
+                    version information, activation status and major load order
+                    errors. It can be useful for debugging a broken load order.
+                    If the Shift key is held when this command is selected, the
+                    CRCs of plugins will also be displayed in the output. If
+                    the Ctrl key is held, then the versions of plugins will not
+                    be shown in the output.</td>
+            </tr>
             <tr>
                 <td colspan="2">List Bash Tags...</td>
                 <td>This outputs a BBCode-formatted list of all the Bash Tags
@@ -1035,8 +1042,8 @@ tab. The directories skipped are:
             <tr><td colspan="2" id="refreshCRCs">Recalculate CRCs<td>Clean stale CRCs from cache. Workaround for buggy CRC updates in previous
                 versions of Bash. Use for instance when plugins show as mismatched in BAIN when they are not.
             <tr>
-                <td colspan="2">Mod Checker...</td>
-                <td>Launches the <a href="#tools-checker">Mod Checker</a>.</td>
+                <td colspan="2" id="modsPluginChecker">Plugin Checker...</td>
+                <td>Launches the <a href="#tools-checker">Plugin Checker</a>.</td>
             </tr>
         </tbody>
     </table>
@@ -1448,12 +1455,48 @@ C.Location, -C.LockList
     </thead>
     <tbody>
         <tr>
+            <td>Body-F</td>
+            <td>Older name for R.Body-F.</td>
+        </tr>
+        <tr>
+            <td>Body-M</td>
+            <td>Older name for R.Body-M.</td>
+        </tr>
+        <tr>
+            <td>Body-Size-F</td>
+            <td>Older name for R.Body-Size-F.</td>
+        </tr>
+        <tr>
+            <td>Body-Size-M</td>
+            <td>Older name for R.Body-Size-M.</td>
+        </tr>
+        <tr>
             <td>C.GridFlags</td>
             <td>Older name for C.ForceHideLand.</td>
         </tr>
         <tr>
             <td>Derel</td>
             <td>Older name for Relations.Remove.</td>
+        </tr>
+        <tr>
+            <td>Eyes</td>
+            <td>Older name for R.Eyes.</td>
+        </tr>
+        <tr>
+            <td>Eyes-D</td>
+            <td>Older name for R.Eyes.</td>
+        </tr>
+        <tr>
+            <td>Eyes-E</td>
+            <td>Older name for R.Eyes.</td>
+        </tr>
+        <tr>
+            <td>Eyes-R</td>
+            <td>Older name for R.Eyes.</td>
+        </tr>
+        <tr>
+            <td>Hair</td>
+            <td>Older name for R.Hair.</td>
         </tr>
         <tr>
             <td>Invent</td>
@@ -1488,6 +1531,12 @@ C.Location, -C.LockList
                 but thankfully no mods seem to have made this mistake.</td>
         </tr>
         <tr>
+            <td>R.Relations</td>
+            <td>Split into R.Relations.Add, R.Relations.Change and
+                R.Relations.Remove. The behavior of the old R.Relations tag is
+                equivalent to all three tags combined.</td>
+        </tr>
+        <tr>
             <td>Relations</td>
             <td>Split into Relations.Add and Relations.Change. The behavior of
                 the old Relations tag is equivalent to Relations.Add combined
@@ -1502,7 +1551,7 @@ C.Location, -C.LockList
 <table>
     <thead>
         <tr>
-            <th colspan="3">Common Bash Tags</th>
+            <th colspan="3">Bash Tags Shared Between Games</th>
         </tr>
         <tr>
             <th>Tag</th>
@@ -1526,7 +1575,6 @@ C.Location, -C.LockList
                         See the <a href="#ActorsACBSSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Actors.ACBS</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1545,7 +1593,6 @@ C.Location, -C.LockList
                         See the <a href="#ActorsAIDataSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Actors.AIData</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1559,7 +1606,6 @@ C.Location, -C.LockList
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1573,7 +1619,6 @@ C.Location, -C.LockList
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1585,7 +1630,6 @@ C.Location, -C.LockList
                     <li>(CREA) Creature</li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <br>
                 <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
@@ -1599,7 +1643,6 @@ C.Location, -C.LockList
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1613,8 +1656,40 @@ C.Location, -C.LockList
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.Perks.Add</td>
+            <td>Adds new perks to actors.</td>
+            <td>Addition of new (PRKR) Perk objects to the perk list of (NPC_)
+                Non-Player Characters.
+                <br>
+                <br>
+                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
+                    Skyrim&colon; Special Edition only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.Perks.Change</td>
+            <td>Changes the rank of actor perks.</td>
+            <td>Change of ranks in (PRKR) Perk objects in the perk list of
+                (NPC_) Non-Player Characters.
+                <br>
+                <br>
+                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
+                    Skyrim&colon; Special Edition only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.Perks.Remove</td>
+            <td>Removes perks from actors.</td>
+            <td>Removal of (PRKR) Perk objects from the perk list of (NPC_)
+                Non-Player Characters.
+                <br>
+                <br>
+                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
+                    Skyrim&colon; Special Edition only.</strong>
             </td>
         </tr>
         <tr>
@@ -1627,7 +1702,6 @@ C.Location, -C.LockList
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1640,7 +1714,6 @@ C.Location, -C.LockList
                     <li>(MODB) Bound Radius.</li>
                     <li>(MODT) Texture File Hashes.</li>
                 </ul>
-                <br>
                 <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
@@ -1654,7 +1727,6 @@ C.Location, -C.LockList
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1668,7 +1740,6 @@ C.Location, -C.LockList
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1687,8 +1758,22 @@ C.Location, -C.LockList
                         See the <a href="#ActorsStatsSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Actors.Stats</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.Voice</td>
+            <td>Changes the voices of actors.</td>
+            <td>The (VTCK) Voice subrecord in the following record types:
+                <ul>
+                    <li>(CREA) Creature &mdash;
+                        <strong>Fallout 3 &amp; Fallout&colon; New Vegas
+                            only</strong>
+                    </li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <strong>Not available for Oblivion, Nehrim&colon; At Fate's
+                    Edge &amp; Fallout 4.</strong>
             </td>
         </tr>
         <tr>
@@ -1716,8 +1801,6 @@ C.Location, -C.LockList
                     <li>(XCCM) Sky/Weather from Region</li>
                     <li>(DATA - Flags) Show Sky</li>
                 </ul>
-                <br>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1798,8 +1881,6 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
-                <br>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1836,8 +1917,6 @@ C.Location, -C.LockList
                     </li>
                     <li>Hand Changed</li>
                 </ul>
-                <br>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1853,8 +1932,6 @@ C.Location, -C.LockList
                         <strong>All but Oblivion, Nehrim&colon; At Fate's Edge &amp; Fallout 4.</strong>
                     </li>
                 </ul>
-                <br>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1884,8 +1961,6 @@ C.Location, -C.LockList
                     </li>
                     <li>(DATA - Flags) Public Place</li>
                 </ul>
-                <br>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1931,8 +2006,6 @@ C.Location, -C.LockList
                         <strong>Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon; Special Edition only.</strong>
                     </li>
                 </ul>
-                <br>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -1951,7 +2024,6 @@ C.Location, -C.LockList
                         <strong>Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
                     </li>
                 </ul>
-                <br>
                 <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
@@ -1990,7 +2062,6 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
-                <br>
                 <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
@@ -2005,7 +2076,6 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
-                <br>
                 <strong>Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
@@ -2039,7 +2109,6 @@ C.Location, -C.LockList
                         See the <a href="#DestructibleSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Destructible</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2099,7 +2168,6 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2130,7 +2198,6 @@ C.Location, -C.LockList
                     <li>Base Enchantment</li>
                     <li>Worn Restrictions</li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2146,8 +2213,6 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
-                <br>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2166,7 +2231,6 @@ C.Location, -C.LockList
                         See the <a href="#GraphicsSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Graphics</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2203,8 +2267,6 @@ C.Location, -C.LockList
                     </li>
                     <li>(NPC_) Non-Player Character</li>
                 </ul>
-                <br>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2255,7 +2317,6 @@ C.Location, -C.LockList
                     <li>(TACT) Talking Activator</li>
                     <li>(WEAP) Weapon</li>
                 </ul>
-                <br>
                 <strong>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only.</strong>
             </td>
         </tr>
@@ -2274,13 +2335,12 @@ C.Location, -C.LockList
                         See the <a href="#NamesSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Names</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
             <td>NPC.AIPackageOverrides</td>
-            <td>Changes </td>
+            <td>Changes the package override lists of NPCs.</td>
             <td>The following (NPC_) Non-Player Character subrecords:
                 <ul>
                     <li>(SPOR) Spectator Override Package List</li>
@@ -2288,6 +2348,16 @@ C.Location, -C.LockList
                     <li>(GWOR) Guard Warn Override Package List</li>
                     <li>(ECOR) Combat Override Package List</li>
                 </ul>
+                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
+                    Skyrim&colon; Special Edition only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>NPC.AttackRace</td>
+            <td>Changes the attack race of NPCs.</td>
+            <td>The (ATKR) Attack Race subrecord of (NPC_) Non-Player Character
+                records.
+                <br>
                 <br>
                 <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
                     Skyrim&colon; Special Edition only.</strong>
@@ -2296,19 +2366,44 @@ C.Location, -C.LockList
         <tr>
             <td>NPC.Class</td>
             <td>Changes the classes of NPCs.</td>
-            <td>The (CNAM) Class subrecord of (NPC_) Non-Player Character records.
+            <td>The (CNAM) Class subrecord of (NPC_) Non-Player Character
+                records.
                 <br>
                 <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
         <tr>
+            <td>NPC.CrimeFaction</td>
+            <td>Changes the crime factions of NPCs.</td>
+            <td>The (CRIF) Crime Faction subrecord of (NPC_) Non-Player
+                Character records.
+                <br>
+                <br>
+                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
+                    Skyrim&colon; Special Edition only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>NPC.DefaultOutfit</td>
+            <td>Changes the default outfits of NPCs.</td>
+            <td>The (DOFT) Default Outfit subrecord of (NPC_) Non-Player
+                Character records.
+                <br>
+                <br>
+                <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
+                    Skyrim&colon; Special Edition only.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>NPC.Eyes</td>
             <td>Modifies Non-Player Character eyes.</td>
-            <td>The (ENAM) Eyes subrecord of (NPC_) Non-Player Character records.
+            <td>The (ENAM) Eyes subrecord of (NPC_) Non-Player Character
+                records.
                 <br>
                 <br>
-                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                    Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
         <tr>
@@ -2320,23 +2415,26 @@ C.Location, -C.LockList
                     <li>(FGGA) FaceGen Geometry-Asymmetric</li>
                     <li>(FGTS) FaceGen Texture-Symmetry </li>
                 </ul>
-                <br>
-                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                    Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
         <tr>
             <td>NPC.Hair</td>
             <td>Modifies Non-Player Character hair.</td>
-            <td>The (HNAM) Hair subrecord of (NPC_) Non-Player Character records.
+            <td>The (HNAM) Hair subrecord of (NPC_) Non-Player Character
+                records.
                 <br>
                 <br>
-                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                    Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
         <tr>
             <td>NPC.Race</td>
             <td>Changes the races of NPCs.</td>
-            <td>The (RNAM) Race subrecord of (NPC_) Non-Player Character records.
+            <td>The (RNAM) Race subrecord of (NPC_) Non-Player Character
+                records.
                 <br>
                 <br>
                 <strong>Not available for Fallout 4.</strong>
@@ -2360,7 +2458,6 @@ C.Location, -C.LockList
                     <li>(LNAM) Hair Length</li>
                     <li>(HCLR) Hair Color</li>
                 </ul>
-                <br>
                 Note: If you have applied this tag, there is no more need to
                 apply NPC.Eyes, NPC.FaceGen or NPC.Hair as well. This tag
                 already does everything those tags do.
@@ -2384,7 +2481,6 @@ C.Location, -C.LockList
                         See the <a href="#ObjectBoundsFO4">Fallout 4</a> <q>ObjectBounds</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Not available for Oblivion &amp; Nehrim&colon; At Fate's Edge.</strong>
             </td>
         </tr>
@@ -2409,6 +2505,243 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>R.AddSpells</td>
+            <td>Adds spells to racial spell list(s). Either R.ChangeSpells or
+                R.AddSpells should be used for a plugin, not both.</td>
+            <td>Additions to the spell list of (RACE) Race records.
+                <br>
+                <br>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                    Enderal&colon; Forgotten Stories &amp;
+                    Skyrim&colon; Special Edition only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Body-F</td>
+            <td>Modifies female body mesh/texture definitions in (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>Female Body Data
+                        <ul>
+                            <li>Model</li>
+                            <li>Parts</li>
+                        </ul>
+                    </li>
+                </ul>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Body-M</td>
+            <td>Modifies male body mesh/texture definitions in (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>Male Body Data
+                        <ul>
+                            <li>Model</li>
+                            <li>Parts</li>
+                        </ul>
+                    </li>
+                </ul>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Body-Size-F</td>
+            <td>Modifies female body weight/height definitions in (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>(DATA) Female Height</li>
+                    <li>(DATA) Female Weight</li>
+                </ul>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Body-Size-M</td>
+            <td>Modifies male body weight/height definitions in (RACE) Race
+                record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>(DATA) Male Height</li>
+                    <li>(DATA) Male Weight</li>
+                </ul>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.ChangeSpells</td>
+            <td>Modifies racial spell list(s) (beyond adding spells). Either
+                R.ChangeSpells or R.AddSpells should be used for a plugin, not
+                both.</td>
+            <td>Additions or removals to the (SPLO) spell list of (RACE) Race
+                records.
+                <br>
+                <br>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                    Enderal&colon; Forgotten Stories &amp;
+                    Skyrim&colon; Special Edition only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Description</td>
+            <td>Modifies race descriptions.</td>
+            <td>The (DESC) description subrecord of (RACE) Race records.
+                <br>
+                <br>
+                <strong>All but Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Ears</td>
+            <td>Modifies race ears.</td>
+            <td>The following (RACE) Race subrecords:
+                <ul>
+                    <li>Face Data Part: Ear (Male)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Ear (Female)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                </ul>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Eyes</td>
+            <td>Adds eyes to races.</td>
+            <td>See the game-specific sections below for record types:
+                <ul>
+                    <li>
+                        See the <a href="#REyesOblivion">Oblivion &amp; Nehrim&colon; At Fate's Edge</a> <q>R.Eyes</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#REyesFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>R.Eyes</q> section for more information.
+                    </li>
+                </ul>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Hair</td>
+            <td>Adds hairs to races.</td>
+            <td>The (HNAM) Hairs subrecord of (RACE) Race records.
+                <br>
+                <br>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Head</td>
+            <td>Modifies race heads.</td>
+            <td>See the game-specific sections below for record types:
+                <ul>
+                    <li>
+                        See the <a href="#RHeadOblivion">Oblivion &amp; Nehrim&colon; At Fate's Edge</a> <q>R.Head</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#RHeadFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>R.Head</q> section for more information.
+                    </li>
+                </ul>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Mouth</td>
+            <td>Modifies race mouths.</td>
+            <td>See the game-specific sections below for record types:
+                <ul>
+                    <li>
+                        See the <a href="#RMouthOblivion">Oblivion &amp; Nehrim&colon; At Fate's Edge</a> <q>R.Mouth</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#RMouthFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>R.Mouth</q> section for more information.
+                    </li>
+                </ul>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Relations.Add</td>
+            <td>Adds race-faction relationships.</td>
+            <td>The (XNAM) faction list of (RACE) Race records.
+            <br>
+            <br>
+            <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Relations.Change</td>
+            <td>Changes race-faction relationships.</td>
+            <td>The (XNAM) faction list of (RACE) Race records.
+            <br>
+            <br>
+            <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Relations.Remove</td>
+            <td>Removes race-faction relationships.</td>
+            <td>The (XNAM) faction list of (RACE) Race records.
+            <br>
+            <br>
+            <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Skills</td>
+            <td>Modifies race skill bonuses.</td>
+            <td>The (DATA) skills and skill boosts of (RACE) Race records.
+                <br>
+                <br>
+                <strong>All but Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Teeth</td>
+            <td>Modifies race upper or lower teeth.</td>
+            <td>See the game-specific sections below for record types:
+                <ul>
+                    <li>
+                        See the <a href="#RTeethOblivion">Oblivion &amp; Nehrim&colon; At Fate's Edge</a> <q>R.Teeth</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#RTeethFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>R.Teeth</q> section for more information.
+                    </li>
+                </ul>
+                <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Voice-F</td>
+            <td>Modifies female voice definitions.</td>
+            <td>The (VNAM / VTCK) female voice of (RACE) Race records.
+            <br>
+            <br>
+            <strong>All but Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Voice-M</td>
+            <td>Modifies male voice definitions.</td>
+            <td>The (VNAM / VTCK) male voice of (RACE) Race records.
+            <br>
+            <br>
+            <strong>All but Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>Relations.Add</td>
             <td>Adds faction relationships.</td>
             <td>Additions of (XNAM) Relation subrecords in (FACT) Faction
@@ -2428,8 +2761,6 @@ C.Location, -C.LockList
                     <li>Group Combat Reaction &mdash;
                         <strong>Not available for Oblivion.</strong></li>
                 </ul>
-                <br>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2473,7 +2804,6 @@ C.Location, -C.LockList
                         See the <a href="#ScriptsFO3">Fallout 3 &amp; Fallout&colon; New Vegas</a> <q>Scripts</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
@@ -2492,7 +2822,6 @@ C.Location, -C.LockList
                         See the <a href="#SoundSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Sound</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2524,7 +2853,6 @@ C.Location, -C.LockList
                     <li>(SPIT) Range</li>
                     <li>(SPIT) Target Type</li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2544,7 +2872,6 @@ C.Location, -C.LockList
                         See the <a href="#StatsSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Stats</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Not available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2563,7 +2890,6 @@ C.Location, -C.LockList
                         See the <a href="#TextSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Text</q> section for more information.
                     </li>
                 </ul>
-                <br>
                 <strong>Not Available for Fallout 4.</strong>
             </td>
         </tr>
@@ -2732,59 +3058,6 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Body-F</td>
-            <td>Modifies female body mesh/texture definitions in (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>Female Body Data
-                        <ul>
-                            <li>Model</li>
-                            <li>Parts</li>
-                        </ul>
-                    </li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Body-M</td>
-            <td>Modifies male body mesh/texture definitions in (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>Male Body Data
-                        <ul>
-                            <li>Model</li>
-                            <li>Parts</li>
-                        </ul>
-                    </li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Body-Size-F</td>
-            <td>Modifies female body weight/height definitions (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>(DATA): Female Height</li>
-                    <li>(DATA): Female Weight</li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Body-Size-M</td>
-            <td>Modifies male body weight/height definitions (RACE) Race record.</td>
-            <td>Changes to the following subrecords:
-                <ul>
-                    <li>(DATA): Male Height</li>
-                    <li>(DATA): Male Weight</li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Eyes</td>
-            <td>Adds eyes to races.</td>
-            <td>The Eyes (ENAM) subrecord of Race (RACE) records.</td>
-        </tr>
-        <tr>
             <td id="GraphicsOblivion">Graphics</td>
             <td>Is a graphics replacer.</td>
             <td>The following subrecords:
@@ -2873,11 +3146,6 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>Hair</td>
-            <td>Adds hairs to races.</td>
-            <td>The Hairs (HNAM) subrecord of Race (RACE) records.</td>
-        </tr>
-        <tr>
             <td id="NamesOblivion">Names</td>
             <td>Changes the names of things.</td>
             <td>The (FULL) Name subrecord in the following record types:
@@ -2915,69 +3183,54 @@ C.Location, -C.LockList
         <tr>
             <td>Roads</td>
             <td>Modifies road records.</td>
-            <td>The Road (ROAD) subrecord of Worldspace (WRLD) records.</td>
-        </tr>
-        <tr>
-            <td>R.AddSpells</td>
-            <td>Adds spells to racial spell list(s). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.
-            </td>
-            <td>Additions to the spell list of Race (RACE) records.</td>
+            <td>The (ROAD) Road subrecord of (WRLD) Worldspace records.</td>
         </tr>
         <tr>
             <td>R.Attributes-F</td>
             <td>Modifies racial attributes for females.</td>
-            <td>The following Race (RACE) subrecords (ATTR) Base Attributes:
+            <td>The following (RACE) Race subrecords:
                 <ul>
-                    <li>Female Strength</li>
-                    <li>Female Intelligence</li>
-                    <li>Female Willpower</li>
-                    <li>Female Agility</li>
-                    <li>Female Speed</li>
-                    <li>Female Endurance</li>
-                    <li>Female Personality</li>
-                    <li>Female Luck</li>
+                    <li>(ATTR) Female Strength</li>
+                    <li>(ATTR) Female Intelligence</li>
+                    <li>(ATTR) Female Willpower</li>
+                    <li>(ATTR) Female Agility</li>
+                    <li>(ATTR) Female Speed</li>
+                    <li>(ATTR) Female Endurance</li>
+                    <li>(ATTR) Female Personality</li>
+                    <li>(ATTR) Female Luck</li>
                 </ul>
             </td>
         </tr>
         <tr>
             <td>R.Attributes-M</td>
             <td>Modifies racial attributes for males.</td>
-            <td>The following Race (RACE) subrecords (ATTR) Base Attributes:
+            <td>The following (RACE) Race subrecords:
                 <ul>
-                    <li>Male Strength</li>
-                    <li>Male Intelligence</li>
-                    <li>Male Willpower</li>
-                    <li>Male Agility</li>
-                    <li>Male Speed</li>
-                    <li>Male Endurance</li>
-                    <li>Male Personality</li>
-                    <li>Male Luck</li>
+                    <li>(ATTR) Male Strength</li>
+                    <li>(ATTR) Male Intelligence</li>
+                    <li>(ATTR) Male Willpower</li>
+                    <li>(ATTR) Male Agility</li>
+                    <li>(ATTR) Male Speed</li>
+                    <li>(ATTR) Male Endurance</li>
+                    <li>(ATTR) Male Personality</li>
+                    <li>(ATTR) Male Luck</li>
                 </ul>
             </td>
         </tr>
         <tr>
-            <td>R.ChangeSpells</td>
-            <td>Modifies racial spell list(s) (beyond adding spells). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.</td>
-            <td>Additions or removals to the spell list (SPLO) of Race (RACE) records.</td>
-        </tr>
-        <tr>
-            <td>R.Description</td>
-            <td>Modifies race descriptions.</td>
-            <td>The Description (DESC) subrecord of Race (RACE) records.</td>
-        </tr>
-        <tr>
-            <td>R.Ears</td>
-            <td>Modifies race ears.</td>
-            <td>The following Race (RACE) subrecords:
+            <td id="REyesOblivion">R.Eyes</td>
+            <td>Adds eyes to races.</td>
+            <td>The following (RACE) Race subrecords:
                 <ul>
-                    <li>Face Data Part: Ear (Male) (1)
+                    <li>(ENAM) Eyes</li>
+                    <li>Face Data Part: Left Eye
                         <ul>
                             <li>(MODL) Model Filename</li>
                             <li>(MODB) Bound Radius</li>
                             <li>(ICON) Icon Filename</li>
                         </ul>
                     </li>
-                    <li>Face Data Part: Ear (Female) (2)
+                    <li>Face Data Part: Right Eye
                         <ul>
                             <li>(MODL) Model Filename</li>
                             <li>(MODB) Bound Radius</li>
@@ -2988,40 +3241,33 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>R.Head</td>
+            <td id="RHeadOblivion">R.Head</td>
             <td>Modifies race heads.</td>
-            <td>The following Race (RACE) subrecords:
+            <td>The following (RACE) Race subrecords:
                 <ul>
-                    <li>Face Data Part: Head (0)
+                    <li>Face Data Part: Head
                         <ul>
                             <li>(MODL) Model Filename</li>
                             <li>(MODB) Bound Radius</li>
                             <li>(ICON) Icon Filename</li>
                         </ul>
                     </li>
-                    <li>FaceGen Data
-                        <ul>
-                            <li>(FGGS) Geometry-Symmetric</li>
-                            <li>(FGGA) Geometry-Asymmetric</li>
-                            <li>(FGTS) Texture-Symmetry </li>
-                        </ul>
-                    </li>
                 </ul>
             </td>
         </tr>
         <tr>
-            <td>R.Mouth</td>
+            <td id="RMouthOblivion">R.Mouth</td>
             <td>Modifies race mouths.</td>
-            <td>The following Race (RACE) subrecords:
+            <td>The following (RACE) Race subrecords:
                 <ul>
-                    <li>Face Data Part: Mouth (3)
+                    <li>Face Data Part: Mouth
                         <ul>
                             <li>(MODL) Model Filename</li>
                             <li>(MODB) Bound Radius</li>
                             <li>(ICON) Icon Filename</li>
                         </ul>
                     </li>
-                    <li>Face Data Part: Tongue (6)
+                    <li>Face Data Part: Tongue
                         <ul>
                             <li>(MODL) Model Filename</li>
                             <li>(MODB) Bound Radius</li>
@@ -3032,28 +3278,18 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>R.Relations</td>
-            <td>Modifies race relationships.</td>
-            <td>The faction list (XNAM) of Race (RACE) records.</td>
-        </tr>
-        <tr>
-            <td>R.Skills</td>
-            <td>Modifies race skill bonuses.</td>
-            <td>The skill boosts (DATA) of Race (RACE) records.</td>
-        </tr>
-        <tr>
-            <td>R.Teeth</td>
+            <td id="RTeethOblivion">R.Teeth</td>
             <td>Modifies race upper or lower teeth.</td>
-            <td>The following Race (RACE) subrecords:
+            <td>The following (RACE) Race subrecords:
                 <ul>
-                    <li>Face Data Part: Teeth (Lower) (4)
+                    <li>Face Data Part: Teeth (Lower)
                         <ul>
                             <li>(MODL) Model Filename</li>
                             <li>(MODB) Bound Radius</li>
                             <li>(ICON) Icon Filename</li>
                         </ul>
                     </li>
-                    <li>Face Data Part: Teeth (Upper) (5)
+                    <li>Face Data Part: Teeth (Upper)
                         <ul>
                             <li>(MODL) Model Filename</li>
                             <li>(MODB) Bound Radius</li>
@@ -3261,19 +3497,8 @@ C.Location, -C.LockList
                     <li>(MGEF) Magic Effect: Description</li>
                     <li>(SKIL) Skill: Description</li>
                 </ul>
-                <br>
                 <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
             </td>
-        </tr>
-        <tr>
-            <td>Voice-F</td>
-            <td>Modifies female voice definitions.</td>
-            <td>The male voice (VNAM) of Race (RACE) records.</td>
-        </tr>
-        <tr>
-            <td>Voice-M</td>
-            <td>Modifies male voice definitions.</td>
-            <td>The female voice (VNAM) of Race (RACE) records.</td>
         </tr>
     </tbody>
 </table>
@@ -3357,13 +3582,11 @@ C.Location, -C.LockList
                             <li>Not Pushable</li>
                             <li>PC Level Mult</li>
                             <li>Respawn</li>
-                            <li>Use Template</li>
                         </ul>
                     </li>
                     <li>Karma (Alignment)</li>
                     <li>Level</li>
                     <li>Speed Multiplier</li>
-                    <li>Template Flags</li>
                 </ul>
             </td>
         </tr>
@@ -3528,6 +3751,7 @@ C.Location, -C.LockList
                             <li>(ICO2) Female Icon Filename</li>
                             <li>(MIC2) Female Small Icon Filename</li>
                             <li>(DNAM) 'Modulates Voice' Flag</li>
+                            <li>(BMDT) Biped Flags</li>
                         </ul>
                     </li>
                     <li>(ARMO) Armor:
@@ -3542,6 +3766,7 @@ C.Location, -C.LockList
                             <li>(MIC2) Female Small Icon Filename</li>
                             <li>(DNAM) 'Modulates Voice' Flag</li>
                             <li>(EITM) Object Effect</li>
+                            <li>(BMDT) Biped Flags</li>
                         </ul>
                     </li>
                     <li>(AVIF) Actor Value Information:
@@ -4027,6 +4252,137 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td id="REyesFO3">R.Eyes</td>
+            <td>Adds eyes to races.</td>
+            <td>The following (RACE) Race subrecords:
+                <ul>
+                    <li>(ENAM) Eyes</li>
+                    <li>Face Data Part: Left Eye (Female)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Right Eye (Female)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Left Eye (Male)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Right Eye (Male)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="RHeadFO3">R.Head</td>
+            <td>Modifies race heads.</td>
+            <td>The following (RACE) Race subrecords:
+                <ul>
+                    <li>Face Data Part: Head (Female)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Head (Male)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="RMouthFO3">R.Mouth</td>
+            <td>Modifies race mouths.</td>
+            <td>The following (RACE) Race subrecords:
+                <ul>
+                    <li>Face Data Part: Mouth (Female)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Mouth (Male)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Tongue (Female)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Tongue (Male)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="RTeethFO3">R.Teeth</td>
+            <td>Modifies race upper or lower teeth.</td>
+            <td>The following (RACE) Race subrecords:
+                <ul>
+                    <li>Face Data Part: Teeth (Lower, Female)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Teeth (Upper, Female)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Teeth (Lower, Male)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Teeth (Upper, Male)
+                        <ul>
+                            <li>(MODL) Model Filename</li>
+                            <li>(MODB) Bound Radius</li>
+                            <li>(ICON) Icon Filename</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
             <td id="ScriptsFO3">Scripts</td>
             <td>Modifies scripts attached to various things.</td>
             <td>The Script (SCRI) subrecord in the following record types:
@@ -4240,7 +4596,7 @@ C.Location, -C.LockList
                             <li>(DATA) Weight</li>
                             <li>(DATA) Value</li>
                             <li>(DATA) Max Condition</li>
-                            <li>(DNAM) AR</li>
+                            <li>(DNAM) DR</li>
                             <li>(DNAM) DT - <strong>Fallout&colon; New Vegas only</strong></li>
                         </ul>
                     </li>
@@ -4249,7 +4605,7 @@ C.Location, -C.LockList
                             <li>(DATA) Weight</li>
                             <li>(DATA) Value</li>
                             <li>(DATA) Max Condition</li>
-                            <li>(DNAM) AR</li>
+                            <li>(DNAM) DR</li>
                             <li>(DNAM) DT - <strong>Fallout&colon; New Vegas only</strong></li>
                         </ul>
                     </li>
@@ -4409,10 +4765,7 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
-                <!-- TODO(inf) Once R.Description is ported, uncomment
-                <br>
                 <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
-                -->
             </td>
         </tr>
     </tbody>
@@ -4459,7 +4812,6 @@ C.Location, -C.LockList
                             <li>Simple Actor</li>
                             <li>Summonable</li>
                             <li>Unique</li>
-                            <li>Use Template</li>
                         </ul>
                     </li>
                     <li>Health Offset</li>
@@ -4467,7 +4819,6 @@ C.Location, -C.LockList
                     <li>Magicka Offset</li>
                     <li>Speed Multiplier</li>
                     <li>Stamina Offset</li>
-                    <li>Template Flags</li>
                 </ul>
             </td>
         </tr>
@@ -4581,6 +4932,8 @@ C.Location, -C.LockList
                             <li>(MOD3) Female World Model</li>
                             <li>(MOD4) Male 1st Person</li>
                             <li>(MOD5) Female 1st Person</li>
+                            <li>(BODT) First Person Flags</li>
+                            <li>(BOD2) First Person Flags</li>
                         </ul>
                     </li>
                     <li>(ARMO) Armor:
@@ -4590,6 +4943,8 @@ C.Location, -C.LockList
                             <li>(MOD3) Female World Model</li>
                             <li>(ICO2) Female Icon Filename</li>
                             <li>(MODL) Armature</li>
+                            <li>(BODT) First Person Flags</li>
+                            <li>(BOD2) First Person Flags</li>
                         </ul>
                     </li>
                     <li>(BOOK) Book: (ICON) Icon, (MODL) Model,(INAM) Inventory Art.</li>
@@ -4677,6 +5032,7 @@ C.Location, -C.LockList
                     <li>(MSTT) Movable Static</li>
                     <li>(NPC_) Non Player Character</li>
                     <li>(PERK) Perk</li>
+                    <li>(RACE) Race</li>
                     <li>(SCRL) Scroll</li>
                     <li>(SHOU) Shout</li>
                     <li>(SLGM) Soul Gem</li>
@@ -4733,6 +5089,23 @@ C.Location, -C.LockList
                     <li>(TREE) Tree</li>
                     <li>(TXST) Texture Set</li>
                     <li>(WEAP) Weapon</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Stats</td>
+            <td>Modifies race stats like health and stamina.</td>
+            <td>The following (RACE) Race subrecords:
+                <ul>
+                    <li>(DATA) Starting Health</li>
+                    <li>(DATA) Starting Magicka</li>
+                    <li>(DATA) Starting Stamina</li>
+                    <li>(DATA) Base Carry Weight</li>
+                    <li>(DATA) Health Regen</li>
+                    <li>(DATA) Magicka Regen</li>
+                    <li>(DATA) Stamina Regen</li>
+                    <li>(DATA) Unarmed Damage</li>
+                    <li>(DATA) Unarmed Reach</li>
                 </ul>
             </td>
         </tr>
@@ -5162,10 +5535,7 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
-                <!-- TODO(inf) Once R.Description is ported, uncomment
-                <br>
                 <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
-                -->
             </td>
         </tr>
     </tbody>
@@ -5334,20 +5704,6 @@ C.Location, -C.LockList
     available, they are only available for Oblivion.</p>
 <table>
     <thead>
-        <tr><th colspan="2">Race Tweaks
-        <tr><th>Tweak<th>Description
-    <tbody>
-        <tr><td>Bigger Nords and Orcs<td>Adjusts the Orc and Nord race records (including mod added races named Orc/Nord) to be taller/heavier - to be more lore friendly. Three choices available - MMM settings, RBP settings or standalone Bigger Nords and Orcs settings.
-        <tr><td>Merge Eyes From Similar Races<td>Merges eye lists from similar races ie RBP Khajiit eyes to Elsweyr Khajiits etc.
-        <tr><td>Merge Hairs From Similar Races<td>Merges hair lists from similar races ie RBP Khajiit hair to Elsweyr Khajiits etc.
-        <tr><td>Playable Eyes<td>Sets all eyes to be playable.
-        <tr><td>Playable Hairs<td>Sets all hairs to be playable.
-        <tr><td>Races Have All Eyes<td>Gives all races all eyes - although Googly Eye scanning/removal takes place after this so the final patch will not have all eyes for all races.
-        <tr><td>Races Have All Hairs<td>Gives all races all hairs.
-        <tr><td>Sexless Hairs<td>Sets all hairs to be useable by both male and female characters.
-</table>
-<table>
-    <thead>
         <tr><th colspan="3">Tweak Actors</th></tr>
         <tr><th>Tweak</th><th>Description</th><th>Available For</th></tr>
     </thead>
@@ -5357,8 +5713,26 @@ C.Location, -C.LockList
         <tr><td>Irresponsible Creatures</td><td>Sets responsibility to 0 for all/specified creatures - so they can't report you for crimes.</td><td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas</td></tr>
         <tr><td>Mayu's Animation Overhaul Skeleton Tweaker</td><td>Sets NPC skeletons paths to match that required for MAO to work. <strong>Requires</strong> Mayu's Animation Overhaul or it will almost certainly cause CTDs.</td><td>Oblivion</td></tr>
         <tr><td>No Bloody Creatures</td><td>Nulls the blood records of all creatures; acts like 'Mart's Monster Mod - No Blood.esp' except it is universal and doesn't work with MMM (MMM uses a different system - it won't cause any harm if used with MMM, it will just have pretty much no effect).</td><td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td></tr>
-        <tr><td>Opposite Gender Anims: Female</td><td>Enables or disables the 'Opposite Gender Anims' flag for all female NPCs. Similar to the 'Feminine Females' mod, but applies to your whole load order.</td><td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</td></tr>
-        <tr><td>Opposite Gender Anims: Male</td><td>Enables or disables the 'Opposite Gender Anims' flag for all male NPCs. Similar to the 'Feminine Females' mod, but applies to your whole load order.</td><td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</td></tr>
+        <tr>
+            <td id="patch-tweak-actors-ogaf">Opposite Gender Anims: Female</td>
+            <td>Enables or disables the 'Opposite Gender Anims' flag for all
+                female NPCs. Similar to the 'Feminine Females' mod, but applies
+                to your whole load order. If you're using this, you probably
+                want <a href="#patch-tweak-races-fbggf">Force Behavior Graph
+                    Gender: Female</a> as well.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special
+                Edition</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-actors-ogam">Opposite Gender Anims: Male</td>
+            <td>Enables or disables the 'Opposite Gender Anims' flag for all
+                male NPCs. Similar to the 'Feminine Females' mod, but applies
+                to your whole load order. If you're using this, you probably
+                want <a href="#patch-tweak-races-fbggm">Force Behavior Graph
+                    Gender: Male</a> as well.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special
+                Edition</td>
+        </tr>
         <tr><td>Quiet Feet</td><td>Removes all/some 'foot' sounds from creatures; on some computers can have a significant performance boost.</td><td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas</td></tr>
         <tr><td>Real Walk for female NPCs</td><td>Changes all female NPCs to use Mur Zuk's Real Walk. <strong>Requires</strong> Mur Zuk's Real Walk animation file.</td><td>Oblivion</td></tr>
         <tr><td>Redguard FGTS Nuller</td><td>Sets Redguard NPC FGTS subrecords to null; for use with Better Redguards.</td><td>Oblivion</td></tr>
@@ -5556,14 +5930,21 @@ C.Location, -C.LockList
             <td>Ensures that cells have at least one non-zero fog value. For
                 avoiding the Nvidia fog-related black screen. This feature is
                 based on <a href="https://www.nexusmods.com/oblivion/mods/11167/?">Quarn's Nvidia Black Screen Fix</a>.</td>
-            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
                 Fallout&colon; New Vegas</td>
         </tr>
         <tr>
             <td>Reweigh: Ammunition</td>
             <td>Reweighs ammunition (e.g. arrows, bullets, etc.) to a maximum
-                weight.</td>
-            <td>All but Fallout 3 &amp; Fallout 4</td>
+                weight.
+                <br>
+                <br>
+                <em>Note:</em> In Skyrim&colon; Special Edition, arrow weight
+                is only used if you have the
+                <a href="https://en.uesp.net/wiki/Skyrim:Survival_Mode">Survival Mode</a>
+                creation installed.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout&colon;
+                New Vegas &amp; Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Reweigh: Books</td>
@@ -5655,67 +6036,669 @@ C.Location, -C.LockList
 </table>
 <table>
     <thead>
-        <tr><th colspan="2">Tweak Clothes
-        <tr><th>Tweak<th>Description
+        <tr>
+            <th colspan="3">Tweak Clothes</th>
+        </tr>
+        <tr>
+            <th>Tweak</th>
+            <th>Description</th>
+            <th>Available For</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Gloves Show Rings<td>Prevents gloves from hiding rings.
-        <tr><td>Max Weight Amulets<td>Sets the maximum weight of amulets in the game. Amulets with higher weights will have their weight set to this value.
-        <tr><td>Max Weight Hoods<td>Sets the maximum weight of hoods in the game. Hoods with higher weights will have their weight set to this value.
-        <tr><td>Max Weight Rings<td>Sets the maximum weight of rings in the game. Rings with higher weights will have their weight set to this value.
-        <tr><td>Robes Show Amulets<td>Forces all robes to show amulets.
-        <tr><td>Robes Show Pants<td>Allows you to wear pants/skirts/greaves with robes. This is useful for armor and enchantment. Not recommended because graphics clipping is common.
-        <tr><td>Unlimited Amulets<td>Allows you to wear an unlimited number of amulets. Not recommended because it is unbalancing and it prevents amulets from displaying (i.e., they won't appear around your or NPC's necks).
-        <tr><td>Unlimited Rings<td>Allows you to wear an unlimited number of rings. Not recommended because it is unbalancing and it prevents rings from displaying (i.e., they won't appear on your or NPC's fingers).
+        <tr>
+            <td>Gloves Show Rings</td>
+            <td>Prevents gloves from hiding rings.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Max Weight Amulets</td>
+            <td>Sets the maximum weight of amulets in the game. Amulets with
+                higher weights will have their weight set to this value.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Max Weight Hoods</td>
+            <td>Sets the maximum weight of hoods in the game. Hoods with higher
+                weights will have their weight set to this value.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Max Weight Rings</td>
+            <td>Sets the maximum weight of rings in the game. Rings with higher
+                weights will have their weight set to this value.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Robes Show Amulets</td>
+            <td>Forces all robes to show amulets.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Robes Show Pants</td>
+            <td>Allows you to wear pants/skirts/greaves with robes. This is
+                useful for armor and enchantment. Not recommended because
+                graphics clipping is common.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Unlimited Amulets</td>
+            <td>Allows you to wear an unlimited number of amulets. Not
+                recommended because it is unbalancing and it prevents amulets
+                from displaying (i.e., they won't appear around your or NPC's
+                necks). Note also that this will affect any and all clothes
+                that are flagged as amulets, whether they really are amulets
+                or not (e.g. many capes from Hemingwey's Capes are
+                affected).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Unlimited Rings</td>
+            <td>Allows you to wear an unlimited number of rings. Not
+                recommended because it is unbalancing and it prevents rings
+                from displaying (i.e., they won't appear on your or NPC's
+                fingers). Note also that this will affect any and all clothes
+                that are flagged as rings, whether they really are rings or
+                not.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+    </tbody>
 </table>
+<p id="patch-tweak-names-note"><strong>Note regarding Tweak Names:</strong>
+Almost all the <em>Sort: </em> tweaks will skip records whose (FULL) Name
+starts with one of the following characters: <code>+</code>, <code>-</code>,
+<code>=</code>, <code>.</code>, <code>(</code>, <code>)</code>, <code>[</code>,
+<code>]</code>, <code>&lt;</code>, <code>&gt;</code>. The reason for this is because
+items with names that start with such characters are almost always special,
+mod-added items that should not be touched by these tweaks. Exceptions will be
+noted in the description of the tweak.</p>
 <table>
     <thead>
-        <tr><th colspan="2">Tweak Names
-        <tr><th>Tweak<th>Description
+        <tr>
+            <th colspan="3">Tweak Names</th>
+        </tr>
+        <tr>
+            <th>Tweak</th>
+            <th>Description</th>
+            <th>Available For</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Body Part Codes<td>This determines what code will be used for tweaking armor and clothes covering various body parts. There are two versions. Each code letter is assigned in order to: Amulets, Rings, Gloves, Helmets, Tail items, Robes (upper+lower body), Chest, Pants/Greaves, Boots/Shoes, Shields.
-        <tr><td>Armor<td>Tweaks names of armors to make them sort more easily in inventory. There is a choice of formats and whether you want armor rating to be shown.
-        <tr><td>Clothes<td>Tweaks names of clothes to make them sort more easily in inventory. There is a choice of formats.
+        <tr>
+            <td>Append Ammunition Weight</td>
+            <td>Appends the ammunition weight of (AMMO) Ammunition records to
+                the end of their name. Weight is formatted using exactly two
+                decimal places, i.e. <q>0.1</q> will be shown as <q>0.10</q>,
+                while <q>0.001</q> will be shown as <q>0.00</q>.
+                <br>
+                For <strong>Fallout 3</strong>, this tweak does nothing unless
+                you have
+                <a href="https://www.nexusmods.com/fallout3/mods/2761">FO3
+                    Wanderers Edition (FWE)</a> installed. If you do have it
+                installed, it uses the FWE ammo weight to rename.
+                <br>
+                <br>
+                You can also specify a custom format. It must contain a single
+                <code>%s</code> specifier, which will be replaced by the
+                ammunition weight. For example, the custom format
+                <code>&nbsp;%s</code> would rename ammunition called <q>BB</q>
+                with a weight of 0.01 to <q>BB 0.01</q>.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-names-bpc">Body Part Codes</td>
+            <td>This determines what codes will be used for tweaking armor and
+                clothes covering various body parts. What types of items the
+                code letters are assigned to varies from game to game. They are
+                assigned in the following order:
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Oblivion &amp; Nehrim&colon; At Fate's
+                                Edge</th>
+                            <th>Fallout 3 &amp; Fallout&colon; New Vegas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                10 categories of items:
+                                <ul>
+                                    <li>Amulets</li>
+                                    <li>Rings (left or right ring)</li>
+                                    <li>Gloves</li>
+                                    <li>Helmets (head or hair)</li>
+                                    <li>Tail items</li>
+                                    <li>Robes (upper and lower body)</li>
+                                    <li>Chest</li>
+                                    <li>Pants/Greaves</li>
+                                    <li>Boots/Shoes</li>
+                                    <li>Shields</li>
+                                </ul>
+                                For example, the value <code>ARGHTCCPBS</code>
+                                will assign <q>A</q> to amulets, <q>R</q> to
+                                rings, <q>G</q> to gloves, etc.
+                            </td>
+                            <td>
+                                7 categories of items:
+                                <ul>
+                                    <li>Head (head, hair, headband or
+                                        hair)</li>
+                                    <li>Body</li>
+                                    <li>Gloves (left or right hand)</li>
+                                    <li>Pipboy</li>
+                                    <li>Backpack</li>
+                                    <li>Fancy (necklace, eyeglasses, nose ring,
+                                        earrings, mask, coker or mouth
+                                        object)</li>
+                                    <li>Accessory (body addon 1, 2 or 3)</li>
+                                </ul>
+                                For example, the value <code>HAGPBFE</code>
+                                will assign <q>H</q> to head armor, <q>A</q> to
+                                body armor, <q>G</q> to gloves, etc.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                You can specify a custom value as well. It is specified as a
+                string that must have the same length as the number of codes.
+                See the examples in the table up above.
+            </td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
         <tr>
             <td>Lore Friendly Text: Dwarven -&gt; Dwemer</td>
-            <td>Changes nearly any usage of the word Dwarven to use Dwemer
-                instead in order to better follow lore.</td>
+            <td>Changes any usage of the word <q>Dwarven</q> or <q>Dwarf</q> to
+                use <q>Dwemer</q> instead in order to better follow lore
+                (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
-        <tr><td>Notes and Scrolls<td>Tweaks names of notes and scrolls to make them sort more easily in inventory. There is a choice of formats and whether you want enchanted scrolls at top (~) or the bottom (.) of list. (Note that the "~" will not display in the inventory.)
-        <tr><td>Potions<td>Tweaks names of potions to make them sort more easily in inventory. There is a choice of formats.
         <tr>
             <td>Proper English Text: Dwarfs -&gt; Dwarves</td>
-            <td>Renames any instances of dwarfs to dwarves.</td>
+            <td>Renames any instances of <q>Dwarfs</q> to <q>Dwarves</q>
+                (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
         <tr>
             <td>Proper English Text: Staffs -&gt; Staves</td>
-            <td>Renames any instances of staffs to staves.</td>
+            <td>Renames any instances of <q>Staffs</q> to <q>Staves</q>
+                (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
         <tr>
             <td>Skyrim-style Text: Fatigue -&gt; Stamina</td>
-            <td>Renames any instances of fatigue to stamina.</td>
+            <td>Renames any instances of <q>Fatigue</q> to <q>Stamina</q>
+                (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
         <tr>
             <td>Skyrim-style Text: Marksman -&gt; Archery</td>
-            <td>Renames any instances of marksman to archery or archer,
-                depending on whether or not they are preceded by an article
-                ('a' and 'the').</td>
+            <td>Renames any instances of <q>Marksman</q> to <q>Archery</q> or
+                <q>Archer</q>, depending on whether or not they are preceded by
+                an article (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
         <tr>
             <td>Skyrim-style Text: Security -&gt; Lockpicking</td>
-            <td>Renames any instances of security to lockpicking (except in
-                books, because of the huge number of false positives).</td>
+            <td>Renames any instances of <q>Security</q> to <q>Lockpicking</q>,
+                except in books because of the huge number of false positives
+                (case-insensitive, but preserves case).</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
-        <tr><td>Spells<td> There is a choice of formats and whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
-        <tr><td>Weapons<td> There is a choice of formats and whether you want damage to be shown.
+        <tr>
+            <td id="patch-tweak-names-sa">Sort: Armor</td>
+            <td>Tweaks names of armors to make them sort more easily in the
+                inventory. The tweak options specify the format used to change
+                armor names. They prepend two letters and optionally the armor
+                rating to the armor name. The first letter is one of the ones
+                from the <a href="#patch-tweak-names-bpc">Body Part Codes</a>
+                tweak, the second one is an <q>L</q> if the armor is light and
+                an <q>H</q> if the armor is heavy.
+                <br>
+                <br>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> format specifier, which will be replaced
+                by the two letters mentioned above. It may contain a single
+                <code>%02d</code> format specifier, which will be replaced with
+                the armor rating. For example, the custom format
+                <code>[%s: %02d]&nbsp;</code> would rename an armor called
+                <q>Leather Boots</q> with an armor rating of 2 to
+                <q>[BL: 02] Leather Boots</q>.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Sort: Armor/Clothes</td>
+            <td>Same as the <a href="#patch-tweak-names-sa">Sort: Armor</a> and
+                <a href="#patch-tweak-names-sc">Sort: Clothes</a> tweaks
+                combined. In newer games, there is no real distinction between
+                the two anymore.
+                <br>
+                <br>
+                For Fallout 3 &amp; Fallout&colon; New Vegas, the second letter
+                can also be <q>P</q>, which indicates power armor.
+                <br>
+                For Fallout&colon; New Vegas, it can also be <q>M</q>, which
+                indicates medium armor.</td>
+            <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-names-sc">Sort: Clothes</td>
+            <td>Tweaks names of clothes to make them sort more easily in the
+                inventory. Works similarly to the
+                <a href="#patch-tweak-names-sa">Sort: Armor</a> tweak, but the
+                second letter does not exist (since there are no light or heavy
+                clothes) and there is no way to display armor rating (since
+                clothes do not have armor rating).
+                <br>
+                <br>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> format specifier, which will be replaced
+                by the two letters mentioned above. For example, the custom
+                format <code>%s*&nbsp;</code> would rename a piece of clothing
+                called <q>Grey Trousers</q> to <q>P* Grey Trousers</q>.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Sort: Ingestibles</td>
+            <td>Tweaks names of ingestibles (potions and drinks, as well as
+                food in newer games than Oblivion) to make them sort more
+                easily in the inventory. This tweak behaves quite differently,
+                depending on the game:
+                <ul>
+                    <li><strong>Oblivion &amp; Nehrim&colon; At Fate's
+                        Edge:</strong>
+                        <br>
+                        Always prepends a <q>.</q> if the ingestible is marked
+                        as food, regardless of the chosen format. For example,
+                        a drink called <q>Beer</q> would be renamed to
+                        <q>.Beer</q>.
+                        <br>
+                        Poisons (potions with only harmful effects) will have
+                        two letters prepended: an <q>X</q> and a letter
+                        corresponding to the primary effect's school:
+                        <table id="patch-tweak-names-schools">
+                            <thead>
+                                <tr>
+                                    <th>School</th>
+                                    <th>Code</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Alteration</td>
+                                    <td>A</td>
+                                </tr>
+                                <tr>
+                                    <td>Conjuration</td>
+                                    <td>C</td>
+                                </tr>
+                                <tr>
+                                    <td>Destruction</td>
+                                    <td>D</td>
+                                </tr>
+                                <tr>
+                                    <td>Illusion</td>
+                                    <td>I</td>
+                                </tr>
+                                <tr>
+                                    <td>Mysticism</td>
+                                    <td>M</td>
+                                </tr>
+                                <tr>
+                                    <td>Restoration</td>
+                                    <td>R</td>
+                                </tr>
+                                <tr>
+                                    <td>Unknown</td>
+                                    <td>U</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        For example, using the format <code>%s:&nbsp;</code>, a
+                        poison called called <q>Poison of Weakness</q> with a
+                        primary effect from the school of Destruction would be
+                        renamed to <q>XD: Poison of Weakness</q>.
+                        <br>
+                        Potions (all ALCH records that don't fall into the two
+                        categories above) will only have the primary effect
+                        letter prepended. For example, using the format from
+                        above, a potion called <q>Potion of Regeneration</q>
+                        with an effect from the school of Restoration would be
+                        renamed to <q>R: Potion of Regeneration</q>.
+                    </li>
+                    <li><strong>Fallout 3 &amp; Fallout&colon; New
+                        Vegas:</strong>
+                        Every ingestible will have a single letter prepended,
+                        based on its (ETYP) Equipment Type and whether or not
+                        the Food Item flag is set in (ENIT) Effect Data:
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Condition</th>
+                                    <th>Code</th>
+                                </tr>
+                            </thead>
+                            <tbod>
+                                <tr>
+                                    <td>Equipment Type is Chems (10)</td>
+                                    <td>C</td>
+                                </tr>
+                                <tr>
+                                    <td>Equipment Type is Stimpak (11)</td>
+                                    <td>S</td>
+                                </tr>
+                                <tr>
+                                    <td>Equipment Type is Food (12), Food Item
+                                        flag is set</td>
+                                    <td>F</td>
+                                </tr>
+                                <tr>
+                                    <td>Equipment Type is Food (12), Food Item
+                                        flag is not set
+                                        <br>
+                                        <em>(Other, includes e.g. skill
+                                        magazines)</em></td>
+                                    <td>O</td>
+                                </tr>
+                                <tr>
+                                    <td>Equipment Type is Alcohol (13)</td>
+                                    <td>A</td>
+                                </tr>
+                                <tr>
+                                    <td>None of the previous conditions hold
+                                        <br>
+                                        <em>(Unknown, probably a special mod
+                                            item)</em></td>
+                                    <td>U</td>
+                                </tr>
+                            </tbod>
+                        </table>
+                        For example, using the format <code>#%s&nbsp;</code>,
+                        an item called <q>Radroach Meat</q> with an Equipment
+                        Type of Food (12) and the Food Item flag set would be
+                        renamed to <q>#F Radroach Meat</q>.
+                    </li>
+                </ul>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> format specifier, which will be replaced
+                by the letter codes detailed above, and may contain any other
+                characters. See the examples listed above.
+            </td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Sort: Notes/Scrolls</td>
+            <td>Tweaks names of notes and scrolls to make them sort more easily
+                in the inventory. Each note/scroll will have a <q>~</q> or a
+                <q>.</q> as prepended (note that the <q>~</q> will not display
+                in the inventory). Formats that start with a <q>~</q> will
+                prepend the <q>~</q> to enchanted scrolls and the <q>.</q> to
+                notes. Formats that start with a <q>.</q> function in reverse.
+                You can also choose to include a letter denoting the magic
+                school that the first effect on the scroll belongs to.
+                <br>
+                <br>
+                You can specify a custom value as well. It must start with
+                either <q>~</q> or <q>.</q>, as described above, and may
+                contain a single <code>%s</code> specifier, which will be
+                replaced by a letter matching the primary effect's school (see
+                <a href="#patch-tweak-names-schools">the table from above</a>).
+                For example, the custom format <code>~&lt;%s&gt;&nbsp;</code> would rename
+                an enchanted scroll called <q>Fireball</q> to <q>~&lt;D&gt;
+                    Fireball</q> and a regular note called <q>Handwritten
+                    Note</q> to <q>.Handwritten Note</q>.
+            </td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Sort: Spells</td>
+            <td>Tweaks names of spells to make them sort more easily in the
+                menu. Each spell can have a letter denoting its primary school
+                (see <a href="#patch-tweak-names-schools">the table from
+                    above</a>) and/or the spell level prepended.
+                <br>
+                <br>
+                You can specify a custom value as well. It may contain a single
+                <code>%s</code> specifier, a single <code>%02d</code>
+                specifier, both, or neither. For example, the custom format
+                <code>%s|%02d&nbsp;</code> would rename a spell called
+                <q>Fireball</q> from the school of Destruction with a level of
+                2 to <q>D|02 Fireball</q>.
+            </td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-names-swa">Sort: Weapons/Ammunition</td>
+            <td>Tweaks names of weapons and ammunition to make them sort more
+                easily in the inventory. For (WEAP) Weapon records, a single
+                letter indicating the weapon type is prepended:
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Weapon Type</th>
+                            <th>Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Blade One Hand (0)</td>
+                            <td>C</td>
+                        </tr>
+                        <tr>
+                            <td>Blade Two Hand (1)</td>
+                            <td>D</td>
+                        </tr>
+                        <tr>
+                            <td>Blunt One Hand (2)</td>
+                            <td>E</td>
+                        </tr>
+                        <tr>
+                            <td>Blunt Two Hand (3)</td>
+                            <td>F</td>
+                        </tr>
+                        <tr>
+                            <td>Staff (4)</td>
+                            <td>G</td>
+                        </tr>
+                        <tr>
+                            <td>Bow (5)</td>
+                            <td>B</td>
+                        </tr>
+                        <tr>
+                            <td>Other (any other value)</td>
+                            <td>O</td>
+                        </tr>
+                    </tbody>
+                </table>
+                For (AMMO) Ammunition records, an <q>A</q> is used instead.
+                In either case, you can also choose to include the damage dealt
+                by the weapon/ammunition.
+                <br>
+                <strong>Note:</strong> This tweak does not ignore records
+                starting with the <a href="#patch-tweak-names-note">special
+                    characters</a> outlined in the note above.
+                <br>
+                <br>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> specifier and may contain a single
+                <code>%02d</code> specifier. For example, the custom format
+                <code>W%s%02d&nbsp;</code> would rename a weapon called
+                <q>Elven Bow</q> with a damage of 14 to <q>WB14 Elven Bow</q>.
+            </td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Sort: Weapons</td>
+            <td>Similar to <a href="#patch-tweak-names-swa">Sort:
+                Weapons/Ammunition</a>. Does not support ammunition (since AMMO
+                records do not have damage in these games) and uses a different
+                set of codes based on the (ETYP) Equipment Type:
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Equipment Type</th>
+                            <th>Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Big Guns (0)</td>
+                            <td>B</td>
+                        </tr>
+                        <tr>
+                            <td>Energy Weapons (1)</td>
+                            <td>E</td>
+                        </tr>
+                        <tr>
+                            <td>Small Guns (2)</td>
+                            <td>S</td>
+                        </tr>
+                        <tr>
+                            <td>Melee Weapons (3)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>Unarmed Weapons (4)</td>
+                            <td>U</td>
+                        </tr>
+                        <tr>
+                            <td>Thrown Weapons (5)</td>
+                            <td>T</td>
+                        </tr>
+                        <tr>
+                            <td>Mine (6)</td>
+                            <td>L</td>
+                        </tr>
+                        <tr>
+                            <td>Other (any other value)</td>
+                            <td>O</td>
+                        </tr>
+                    </tbody>
+                </table>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> specifier and may contain a single
+                <code>%02d</code> specifier. For example, the custom format
+                <code>%s%02d$&nbsp;</code> would rename a weapon called
+                <q>BB Gun</q> with a damage of 10 to <q>S10$ BB Gun</q>.</td>
+            <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
+        </tr>
+    </tbody>
 </table>
-<p><strong>Note regarding Tweak Settings</strong>: In some cases for newer games the following Tweaks may become a permanent part of your saves,
-    and so should be set prior to starting a new game.<br>
-    Trying to change the same settings in a continued game by rebuilding your bashed patch may fail
-    for games newer than Oblivion &amp; Nehrim&colon; At Fate's Edge, because the game setting will always be loaded from your ongoing save files ( which the game loads last,
-    after the Bashed Patch ).<br>
-    For example, <em>World: Timescale</em>, once changed, is known to become permanently baked in your save game for
-    Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition. It can be set once, but thereafter is part of your saves, and can only be
-    changed by console command or by starting a new game.</p>
+<p><strong>Note regarding Tweak Settings:</strong> In some cases for newer
+    games the following Tweaks may become a permanent part of your saves, and
+    so should be set prior to starting a new game.
+    <br>
+    Trying to change settings in a continued game by rebuilding your Bashed
+    Patch may fail for games newer than Oblivion &amp; Nehrim&colon; At Fate's Edge,
+    because the setting will be loaded from your save file (which the game
+    loads last, after the Bashed Patch).
+    <br>
+    For example, <em>World: Timescale</em>, once changed, is known to become
+    permanently baked in your save game for Skyrim, Enderal&colon; Forgotten Stories
+    &amp; Skyrim&colon; Special Edition. It can be set once, but thereafter is part of
+    your saves, and can only be changed by console command or by starting a new
+    game.</p>
+<table>
+    <thead>
+        <tr><th colspan="3">Tweak Races</th></tr>
+        <tr><th>Tweak</th><th>Description</th><th>Available For</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Bigger Nords and Orcs</td>
+            <td>Adjusts the Orc and Nord race records (including mod added
+                races named Orc/Nord) to be taller/heavier - to be more lore
+                friendly. Three choices available - MMM settings, RBP settings
+                or standalone Bigger Nords and Orcs settings.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Merge Eyes From Similar Races</td>
+            <td>Merges eye lists from similar races, e.g. RBP Khajiit eyes to
+                Elsweyr Khajiits.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Merge Hairs From Similar Races</td>
+            <td>Merges hair lists from similar races, e.g. RBP Khajiit hair to
+                Elsweyr Khajiits.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Playable Eyes</td>
+            <td>Sets all eyes to be playable.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Playable Hairs</td>
+            <td>Sets all hairs to be playable.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Playable Head Parts</td>
+            <td>Sets all head parts to be playable.</td>
+            <td>All but Oblivion, Nehrim&colon; At Fate's Edge &amp;
+                Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Races Have All Eyes</td>
+            <td>Gives all races all eyes - although Googly Eye scanning/removal
+                takes place after this so the final patch will not have all
+                eyes for all races.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Races Have All Hairs</td>
+            <td>Gives all races all hairs.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Genderless Hairs</td>
+            <td>Sets all hairs to be useable regardless of gender.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Genderless Head Parts</td>
+            <td>Sets all head parts to be useable regardless of gender. The
+                only exceptions are eyes and faces, which look extremely broken
+                when used by a character with a different gender.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-races-fbggf">Force Behavior Graph Gender:
+                Female</td>
+            <td>Changes whether or not female NPCs of certain races should use
+                inverted gender animations (e.g. orcs). If you're using this,
+                you probably want
+                <a href="#patch-tweak-actors-ogaf">Opposite Gender Anims:
+                    Female</a> as well.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+        <tr>
+            <td id="patch-tweak-races-fbggm">Force Behavior Graph Gender:
+                Male</td>
+            <td>Changes whether or not male NPCs of certain races should use
+                inverted gender animations (e.g. orcs). If you're using this,
+                you probably want
+                <a href="#patch-tweak-actors-ogam">Opposite Gender Anims:
+                    Male</a> as well.</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                Special Edition</td>
+        </tr>
+    </tbody>
+</table>
 <table>
     <thead>
         <tr><th colspan="3">Tweak Settings</th></tr>
@@ -6262,6 +7245,15 @@ C.Location, -C.LockList
                 Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
+            <td>Msg: No Soul Gem Large Enough</td>
+            <td>Sets the message when there is no soul gem large enough for a
+                captured soul to blank or either "." or "Hmm..." or a custom
+                value entered by user.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
+                Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
             <td>Msg: Not Enough Charge</td>
             <td>Sets the message on attempting to use an enchanted item with
                 insufficient charge to blank or either "." or "Hmm..." or a
@@ -6528,7 +7520,7 @@ C.Location, -C.LockList
         <tr><td>TI to Cobl_Formids<td>Replaces ingredients added by Tamrielic Ingredients with equivalents added by Cobl.
         <tr><td rowspan="5">Import Names<td>Guard_Names<td>Based on <a href="https://www.nexusmods.com/oblivion/mods/2326">Flak's Complete Names Project</a>, this CSV file gives unique names to guards, legion soldiers, couriers and a few other NPCs and creatures with generic names. It covers both vanilla Oblivion and Oscuro's Oblivion Overhaul.
         <tr><td>OOO_Potion_Names<td>Renames the alcoholic beverages back to vanilla names for those that don't like OOO's method of renaming them.
-        <tr><td>Random_NPC_Alternate_Names<td>Does the same as <a href="#patchRandomNPCNames">Random NPC Names</a> above, but using different names.
+        <tr><td>Random_NPC_Alternate_Names<td>Does the same as <a href="#patchRandomNPCNames">Random NPC Names</a> below, but using different names.
         <tr><td id="patchRandomNPCNames">Random_NPC_Names<td>Gives unique names to generically named NPCs and renames some others from the following mods:
             <ul>
                 <li>Crowded Roads Revamped by Spotty42
@@ -6607,13 +7599,45 @@ C.Location, -C.LockList
 <h3 id="saves-symbols">Color scheme for Save Game Files <a class="back2top" href="#contents">Back to top</a></h3>
 <table>
     <thead>
-        <tr><th>Checkbox Colour<th>Meaning
+        <tr>
+            <th>Checkbox Colour</th>
+            <th>Meaning</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td><img alt="Purple" src="../bash/images/checkbox_purple_on.png"/><td>Excellent. Exactly synced with the current load order.
-        <tr><td><img alt="Blue" src="../bash/images/checkbox_blue_on.png"/><td>Good. Compatible with the current load order. However, the current load order includes some plugins that are not used by this save game.
-        <tr><td><img alt="Green" src="../bash/images/checkbox_green_on.png"/><td>Good, but not in sync with the current load order. Use <a href="#savesLoadMasters">Load Masters</a> to sync load order to this save.
-        <tr><td><img alt="Orange" src="../bash/images/checkbox_orange_on.png"/><td>Some plugins have changed order. the game and the Construction Set/Creation Kit will adjust for this when loaded. However, if some of the plugins that you depend made conflicting changes to the same item, a different plugin may now dominate because of the reordering.
-        <tr><td><img alt="Red" src="../bash/images/checkbox_red_on.png"/><td>A master is missing. You should check to make sure that you have not inadvertently renamed or removed the plugin.
+        <tr>
+            <td><img alt="Purple" src="../bash/images/checkbox_purple_on.png"/></td>
+            <td>Excellent. Exactly synced with the current load order.</td>
+        </tr>
+        <tr>
+            <td><img alt="Blue" src="../bash/images/checkbox_blue_on.png"/></td>
+            <td>Good. Compatible with the current load order. However, the
+                current load order includes some plugins that are not used by
+                this save game. You can use <a href="#savesActivateMasters">
+                    Activate Masters</a> to sync active plugins to this
+                save.</td>
+        </tr>
+        <tr>
+            <td><img alt="Green" src="../bash/images/checkbox_green_on.png"/></td>
+            <td>Good, but not in sync with the current active mods. You can use
+                <a href="#savesActivateMasters">Activate Masters</a> to sync
+                active plugins to this save.</td>
+        </tr>
+        <tr>
+            <td><img alt="Orange" src="../bash/images/checkbox_orange_on.png"/></td>
+            <td>Some plugins have changed order. The game and the TESCS/GECK/CK
+                will adjust for this when loaded. However, if some of the
+                plugins that you use made conflicting changes to the same item,
+                a different plugin may now dominate because of the reordering.
+                You can use <a href="#savesReorderMasters">Reorder Masters</a>
+                to sync load order to this save.</td>
+        </tr>
+        <tr>
+            <td><img alt="Red" src="../bash/images/checkbox_red_on.png"/></td>
+            <td>A master is missing. You should check to make sure that you
+                have not inadvertently renamed or removed the plugin.</td>
+        </tr>
+    </tbody>
 </table>
 
 <h3 id="saves-masters-symbols">Color scheme for Save Game Masters (MI &amp; Current LO) <a class="back2top" href="#contents">Back to top</a></h3>
@@ -6718,158 +7742,283 @@ C.Location, -C.LockList
     </figure>
     <table>
         <thead>
-            <tr><th colspan="3">Save Context Menu</th></tr>
-            <tr><th colspan="2">Command</th><th>Description</th></tr>
+            <tr>
+                <th colspan="3">Save Context Menu</th>
+            </tr>
+            <tr>
+                <th colspan="2">Command</th>
+                <th>Description</th>
+            </tr>
         </thead>
         <tbody>
-            <tr><td rowspan="7">File..</td>
-                <td>Rename...</td><td>Rename the selected save file. <code>.bak</code> files
-                    are not supported and you can't change the extension (specifying another
-                    extension will make the rename fail).</td></tr>
-                <tr><td>Duplicate...</td><td>Creates a duplicate of the selected save file in
-                    the saves folder.</td></tr>
-                <tr><td>Hide...</td><td>Moves the selected save file to the
-                    <code>My Games\[Game]\Saves\[optional profile dir\]Bash\Hidden</code>
-                    directory.</td></tr>
-                <tr>
-                    <td>Delete</td>
-                    <td>Deletes the selected save(s) and any backups of them.
-                        Deleted saves are sent to the Recycling Bin.</td>
-                </tr>
-                <tr><td>Backup</td><td>Creates a backup of the selected save file in
-                    <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up
-                    save file has <code>f</code> appended to its file extension, giving
-                    <code>.essf</code> or <code>.fosf</code>.</td></tr>
-                <tr><td>Revert to Backup...</td><td>Reverts the selected save file to the last
-                    backup made of it.</td></tr>
-                <tr><td>Revert to First Backup...</td><td>Reverts the selected save file to the
-                    first backup made of it.</td></tr>
-            <tr><td colspan="2" id="savesMoveTo">Move To</td><td>This submenu allows you to
-                specify a save profile to move the selected save(s) to from the active save
-                profile.</td></tr>
-            <tr><td colspan="2" id="savesCopyTo">Copy To</td><td>This submenu allows you to
-                specify a save profile to copy the selected save(s) to, so that it is present
-                in both the active and specified save profiles.</td></tr>
-            <tr><td colspan="2" id="savesLoadMasters">Load Masters</td><td>Synchronizes
-                activated plugins to savegame's masters.</td></tr>
-            <tr><td colspan="2" id="savesListMasters">List Masters...</td><td>Lists savegame
-                masters in load order and copies the list to the clipboard. Version numbers
-                are displayed if detected.</td></tr>
-            <tr><td colspan="2" id="savesDiffMasters">Diff Masters...</td><td>If two savegames
-                are selected, then this will compare the masters of the new save to those of
-                the older save. If one savegame is selected, then this will compare the
-                currently active plugins to the masters of the selected savegame. The
-                comparison details masters that have been removed and added in the newer save
-                since the older save, or removed and added in the load order since the
-                selected save.</td></tr>
-            <tr><td colspan="2" id="savesStatistics">Statistics</td><td><em>Oblivion &amp;  &amp; Nehrim&colon; At Fate's Edge only.</em>
-                This produces a set of various technical statistics for the selected savegame.
-                The following information is produced:
-                <ul>
-                    <li>Array sizes. These arrays are for each of the major sections in the
-                        save file.</li>
-                    <li>Created items. These are items created in-game, through scripting or
-                        some sort of crafting skill (eg. alchemy, spellmaking).</li>
-                    <li>Form IDs. This is a breakdown of the Form ID table in the savegame,
-                        sorted by source plugin. The Form ID table maps savegame reference
-                        numbers to the Form ID of the referenced record. If a reference is
-                        made to a record from a mod that is no longer loaded, the Form ID is
-                        replaced with a 0.</li>
-                    <li>Record details. This gives a breakdown of the different types of
-                        records stored in the save file. The type is given as a number and as
-                        text (eg. <code>48 Cell</code>), and then the number of records
-                        referenced from each plugin is given below.</li>
-                    <li>New ObjectRef Bases. These are objects that belong to the savegame, for
-                        example arrows dropped on the ground in-game. They generally are
-                        created and destroyed by the game as required, though bad scripting
-                        techniques can cause some of them to stick around. The "Base" of an
-                        objectRef is the baseid of the object (e.g., the formid of a steel
-                        arrow from Oblivion.esm). The objectRef refers to these indirectly
-                        through an "iref". Usually this will map back to a formid, but if the
-                        original mod has been removed from the load order, then the formid is
-                        set to zero. If this has happened, then a count of such "Null Bases"
-                        will be shown. After the "Null Base" count (if present) is a list of
-                        New ObjectRef Bases where the count is over 100 (e.g., if there are
-                        over 100 new arrows lying around). Show is the count, the iref and the
-                        base formid. Formid beginning with FF is reference to an object defined
-                        by the savegame. Otherwise, the formid will map back to a mod. The
-                        first two digits are the modindex, and can be matched to a mod through
-                        the "MI" column in the list of savegame masters.</li>
-                </ul></td></tr>
-            <tr><td colspan="2" id="saveDumpSE">Dump .**se Contents</td><td>This is similar to
-                <a href="#savesStatistics">Statistics</a> above, but reports statistics for the
-                <code>.**se</code> cosave file (e.g. <code>.obse</code> for Oblivion or
-                <code>.skse</code> for Skyrim) associated with the selected save.</td></tr>
-            <tr><td colspan="2">Dump .pluggy Contents</td><td><em>Oblivion &amp;  &amp; Nehrim&colon; At Fate's Edge only.</em> Behaves
-                like <a href="#saveDumpSE">Dump .**se Contents</a>, but for the Pluggy cosave
-                file associated with the selected save.</td></tr>
-            <tr><td colspan="2" id="savesDeleteSpells">Delete Spells...</td><td>
-                <em>Oblivion &amp;  &amp; Nehrim&colon; At Fate's Edge only.</em> This allows you to delete unused spells from your spell
-                list in the selected save. <strong>Warning:</strong> This cannot be undone. Most
-                spells may be repurchased or recreated, but quest and other special spells will
-                likely have to be added using the console.</td></tr>
-            <tr><td colspan="2">Rename Player...</td><td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Renames the
-                player's character in the selected save.</td></tr>
-            <tr><td colspan="2">Set Number of Uses for Weapon Enchantments...</td><td>
-                <em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you to set the number of casts available to any
-                enchanted weapon you created in-game, or that has otherwise been recorded in
-                your savegame.</td></tr>
-            <tr><td colspan="2">Import Face...</td><td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Relates to
-                <a href="#saves-face">Face Importing</a>. This command allows you to import a
-                face for the save file's player character (and possibly some NPCs) from another
-                save file or from an NPC in a mod.</td></tr>
-            <tr><td colspan="2">Rename Enchanted...</td><td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you
-                to rename any enchanted items that you have created in-game for the selected
-                save.</td></tr>
-            <tr><td colspan="2" id="savesRenamePotions">Rename Potions...</td><td>
-                <em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you to rename any potions that you have created
-                in-game for the selected save.</td></tr>
-            <tr><td colspan="2">Rename Spells...</td><td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you to
-                rename any spells that you have created in-game for the selected save.</td></tr>
-            <tr><td colspan="2" id="savesReweighPotions">Reweigh Potions...</td><td>
-                <em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Potions created in-game are given a weight that is
-                somewhat arbitrarily selected and potentially high. This command may be used to
-                set all created potions to have a specific weight. Potions created after the use
-                of this command with new names, new effects or new durations will not be
-                affected.</td></tr>
-            <tr><td colspan="2" id="savesUpdateNPCLevels">Update NPC Levels...</td><td>
-                <em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Updates the level information for NPCs stored in the
-                selected savegame to reflect the active load order's NPC level settings. This is
-                required because although NPC levels are set via plugins, once an NPC is
-                encountered its level is stored in the save file, which overrides the plugin
-                levels.</td></tr>
-            <tr><td colspan="2">Export Screenshot...</td><td>Allows you to save the image used
-                as the save file's screenshot as a JPEG.</td></tr>
-            <tr><td colspan="2">Re-number Save(s)...<td>Allows the re-numbering of the selected
-                save file(s). If more than one file is selected, the first will be renumbered to
-                the given number and the others will be numbered in increments of one from the
-                given number. The save name must be of the form
-                <code>&lt;Save (case insensitive)&gt;&lt;space&gt;&lt;some digits&gt;&lt;optional text&gt;.&lt;save extension&gt;</code>.</td></tr>
-            <tr><td colspan="2" id="savesRemoveBloat">Remove Bloat...<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
-                <strong>This is an experimental command. It is recommended that saves are backed
-                up before using it on them.</strong> It attempts to determine how much bloating
-                there is in the selected save file and then optionally remove it. If the command
-                reports a large number of created objects, there could be a problem with one of
-                your mods, and such mods should be removed or updated. There are two common
-                types of bloat:
-                <ul>
-                    <li>Excess created objects can occur through the use of scripting by a mod
-                        to duplicate existing objects in-game and a failure by the mod to clean
-                        up the duplicates after their use.</li>
-                    <li>Null references are caused when objects from a mod that is removed are
-                        present in the game world. These objects then get replaced with null
-                        references when the game is next saved with the mod missing.</li>
-                </ul></td></tr>
-            <tr><td colspan="2" id="savesRepairAbomb">Repair Abomb<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
-                <q>Abomb Animation Slowing</q> is a slowing of animations that typically occurs
-                around 225 hours into the game, though it may occur earlier or later. This is
-                an engine bug, and this command avoids its effects by resetting a related
-                counter (TesClass Abomb counter is reset to 0x41000000).</td></tr>
-            <tr><td colspan="2">Repair Hair<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Oblivion has a bug that
-                will cause a crash if your PC's hair comes from a mod that has been removed and
-                you then run showRaceMenu. This command resets your hair to the default for that
-                race and gender, so you can then use showRaceMenu to select a new hair again if
-                you wish.</td></tr>
+            <tr>
+                <td rowspan="7">File..</td>
+                <td>Rename...</td>
+                <td>Rename the selected save file.</td>
+            </tr>
+            <tr>
+                <td>Duplicate...</td>
+                <td>Creates a duplicate of the selected save file in the saves
+                    folder.</td>
+            </tr>
+            <tr>
+                <td>Hide...</td>
+                <td>Moves the selected save file to the <code>My Games\[Game]\
+                    Saves\[optional profile dir\]Bash\Hidden</code>
+                    directory.</td>
+            </tr>
+            <tr>
+                <td>Delete</td>
+                <td>Deletes the selected save(s) and any associated backups.
+                    Deleted saves are sent to the Recycling Bin.</td>
+            </tr>
+            <tr>
+                <td>Backup</td>
+                <td>Creates a backup of the selected save file in
+                    <code>[Game] Mods\Bash Mod Data\Backups</code>. On first
+                    run, the backed-up save file has <code>f</code> appended to
+                    its file extension, giving <code>.essf</code> or
+                    <code>.fosf</code>.</td>
+            </tr>
+            <tr>
+                <td>Revert to Backup...</td>
+                <td>Reverts the selected save file to the last backup made of
+                    it.</td>
+            </tr>
+            <tr>
+                <td>Revert to First Backup...</td>
+                <td>Reverts the selected save file to the first backup made of
+                    it.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesMoveTo">Move To</td>
+                <td>This submenu allows you to specify a save profile to move
+                    the selected save(s) to from the active save profile.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesCopyTo">Copy To</td>
+                <td>This submenu allows you to specify a save profile to copy
+                    the selected save(s) to, so that it is present in both the
+                    active and specified save profiles.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesActivateMasters">Activate Masters</td>
+                <td>Activates exactly the plugins present in the selected
+                    savegame's masters.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesReorderMasters">Reorder Masters</td>
+                <td>Reorders plugins in the load order to match the order of
+                    the selected savegame's masters.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesListMasters">List Masters...</td>
+                <td>Lists savegame masters in load order and copies the list to
+                    the clipboard. Version numbers are displayed if
+                    detected.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesDiffMasters">Diff Masters...</td>
+                <td>If two savegames are selected, then this will compare the
+                    masters of the new save to those of the older save. If one
+                    savegame is selected, then this will compare the currently
+                    active plugins to the masters of the selected savegame. The
+                    comparison details masters that have been removed and added
+                    in the newer save since the older save, or removed and
+                    added in the load order since the selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesStatistics">Statistics</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> This
+                    produces a set of various technical statistics for the
+                    selected savegame. The following information is produced:
+                    <ul>
+                        <li>Array sizes. These arrays are for each of the major
+                            sections in the save file.</li>
+                        <li>Created items. These are items created in-game,
+                            through scripting or some sort of crafting skill
+                            (e.g. alchemy, spellmaking).</li>
+                        <li>FormIDs. This is a breakdown of the FormID table in
+                            the savegame, sorted by source plugin. The FormID
+                            table maps savegame reference numbers to the FormID
+                            of the referenced record. If a reference is made to
+                            a record from a mod that is no longer loaded, the
+                            FormID is replaced with a 0.</li>
+                        <li>Record details. This gives a breakdown of the
+                            different types of records stored in the save file.
+                            The type is given as a number and as text
+                            (e.g. <code>48 Cell</code>), and then the number of
+                            records referenced from each plugin is given
+                            below.</li>
+                        <li>New ObjectRef Bases. These are objects that belong
+                            to the savegame, for example arrows dropped on the
+                            ground in-game. They generally are created and
+                            destroyed by the game as required, though bad
+                            scripting techniques can cause some of them to
+                            stick around. The "Base" of an objectRef is the
+                            BaseID of the object (e.g., the FormID of a steel
+                            arrow from Oblivion.esm). The ObjectRef refers to
+                            these indirectly through an "iref". Usually this
+                            will map back to a FormID, but if the original mod
+                            has been removed from the load order, then the
+                            FormID is set to zero. If this has happened, then a
+                            count of such "Null Bases" will be shown. After the
+                            "Null Base" count (if present) is a list of New
+                            ObjectRef Bases where the count is over 100
+                            (e.g. if there are over 100 new arrows lying
+                            around). Shown is the count, the iref and the base
+                            FormID. FormIDs beginning with FF are references to
+                            an object defined by the savegame. Otherwise, the
+                            FormID will map back to a mod. The first two digits
+                            are the modindex, and can be matched to a mod
+                            through the "MI" column in the list of savegame
+                            masters.</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" id="saveDumpSE">Dump .**se Contents</td>
+                <td>This is similar to
+                    <a href="#savesStatistics">Statistics</a> above, but
+                    reports statistics for the <code>.**se</code> cosave file
+                    (e.g. <code>.obse</code> for Oblivion or <code>.skse</code>
+                    for Skyrim) associated with the selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Dump .pluggy Contents</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
+                    Behaves like <a href="#saveDumpSE">Dump .**se Contents</a>,
+                    but for the Pluggy cosave associated with the selected
+                    save.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesDeleteSpells">Delete Spells...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> This
+                    allows you to delete unused spells from your spell list in
+                    the selected save. <strong>Warning:</strong> This cannot be
+                    undone. Most spells may be repurchased or recreated, but
+                    quest and other special spells can most likely only be
+                    readded using the console.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Rename Player...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Renames
+                    the player's character in the selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Set Number of Uses for Weapon
+                    Enchantments...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you
+                    to set the number of casts available to any enchanted
+                    weapon you created in-game, or that has otherwise been
+                    recorded in your savegame.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Import Face...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Relates to
+                    <a href="#saves-face">Face Importing</a>. This command
+                    allows you to import a face for the save file's player
+                    character (and possibly some NPCs) from another save file
+                    or from an NPC in a mod.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Rename Enchanted...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you
+                    to rename any enchanted items that you have created in-game
+                    for the selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesRenamePotions">Rename Potions...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you
+                    to rename any potions that you have created in-game for the
+                    selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Rename Spells...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Allows you
+                    to rename any spells that you have created in-game for the
+                    selected save.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesReweighPotions">Reweigh
+                    Potions...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Potions
+                    created in-game are given a weight that is somewhat
+                    arbitrarily selected and potentially high. This command may
+                    be used to set all created potions to have a specific
+                    weight. Potions created after the use of this command with
+                    new names, new effects or new durations will not be
+                    affected.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesUpdateNPCLevels">Update NPC
+                    Levels...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Updates
+                    the level information for NPCs stored in the selected
+                    savegame to reflect the active load order's NPC level
+                    settings. This is required because although NPC levels are
+                    set via plugins, once an NPC is encountered its level is
+                    stored in the save file, which overrides the plugin
+                    levels.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Export Screenshot...</td>
+                <td>Allows you to save the image used as the save file's
+                    screenshot as a JPEG.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Re-number Save(s)...</td>
+                <td>Allows the re-numbering of the selected save file(s). If
+                    more than one file is selected, the first will be
+                    renumbered to the given number and the others will be
+                    numbered in increments of one from the given number. The
+                    save name must be of the form <code>&lt;Save (case
+                        insensitive)&gt; &lt;some digits&gt;&lt;optional text&gt;.&lt;save
+                        extension&gt;</code>.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesRemoveBloat">Remove Bloat...</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
+                    <strong>This is an experimental command. It is recommended
+                        that saves are backed up before using it on
+                        them.</strong> It attempts to determine how much
+                    bloating there is in the selected save file and then
+                    optionally remove it. If the command reports a large number
+                    of created objects, there could be a problem with one of
+                    your mods, and such mods should be removed or updated.
+                    There are two common types of bloat:
+                    <ul>
+                        <li>Excess created objects can occur through the use of
+                            scripting by a mod to duplicate existing objects
+                            in-game and a failure by the mod to clean up the
+                            duplicates after their use.</li>
+                        <li>Null references are caused when objects from a mod
+                            that is removed are present in the game world.
+                            These objects then get replaced with null
+                            references when the game is next saved with the mod
+                            missing.</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" id="savesRepairAbomb">Repair Abomb</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
+                    <q>Abomb Animation Slowing</q> is a slowing of animations
+                    that typically occurs around 225 hours into the game,
+                    though it may occur earlier or later. This is an engine
+                    bug, and this command avoids its effects by resetting a
+                    related counter (TesClass Abomb counter is reset to
+                    0x41000000).</td>
+            </tr>
+            <tr>
+                <td colspan="2">Repair Hair</td>
+                <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Oblivion
+                    has a bug that will cause a crash if your PC's hair comes
+                    from a mod that has been removed and you then run
+                    showRaceMenu. This command resets your hair to the default
+                    for that race and gender, so you can then use showRaceMenu
+                    to select a new hair again if you wish.</td>
+            </tr>
         </tbody>
     </table>
 </div>
@@ -7450,7 +8599,14 @@ C.Location, -C.LockList
 <img alt="doc browser" src="../bash/images/readme/doc-browser-set-doc-dialogue.png">
 <figcaption class="tools-docs-figcap">Wrye Bash's Doc Browser.</figcaption>
 </figure>
-<p>The Doc Browser allows you to quickly and easily scan through your mods' documentation. The supported document types are: text files, HTML files and MHT files (HTML archives). To display the Doc Browser, double click any plugin in the main list of the Mods tab.
+<p>The Doc Browser allows you to quickly and easily scan through your mods' documentation. The supported document types are:</p>
+<ul>
+    <li>Text files (<code>.txt</code> and similar)</li>
+    <li>HTML files (<code>.html</code> or <code>.htm</code>)</li>
+    <li>HTML archives (<code>.mht</code> or <code>.mhtml</code>)</li>
+    <li>PDF files (<code>.pdf</code>)</li>
+</ul>
+<p>To display the Doc Browser, double click any plugin in the main list of the Mods tab.</p>
 <p>When you double-click a plugin, Wrye Bash will open the Doc Browser and attempt to determine which document to associate with it. If it can determine one, it will display it. Otherwise, a blank page will be displayed. To associate a document with a plugin, use the <q>Set Doc...</q> button in the Doc Browser. To disassociate a document with a plugin, use the <q>Forget Doc</q> button in the Doc Browser.
 <p>You can also rename an associated document using the <q>Rename Doc...</q> button to select a new name and/or location. The document will be renamed and/or moved to this location.
 <p>You can edit a document by ticking the <q>Allow Editing</q> checkbox. The document can then be edited in the viewing window. To finish editing, uncheck the <q>Allow Editing</q> checkbox again. Changes are automatically saved when you select a new plugin, close the Doc Browser or finish editing.
@@ -7467,32 +8623,58 @@ C.Location, -C.LockList
 </ul>
 
 
-<h3 class="clearfb" id="tools-checker">Mod Checker <a class="back2top" href="#contents">Back to top</a></h3>
-<p>The Mod Checker checks your active and merged plugins for errors, and provides warnings for any found, as well as configuration recaps and suggestions. It can be opened by clicking the <a href="Wrye%20Bash%20General%20Readme.html#launchersModChecker">Mod Checker button</a> in the status bar.
-<p>At the top of the report is the Active Mod Files section, which lists your load order. It also displays any warnings that are applicable beneath the plugin(s) that they are applicable to. These warnings are either regarding missing masters or delinquent masters.
+<h3 class="clearfb" id="tools-checker">Plugin Checker <a class="back2top" href="#contents">Back to top</a></h3>
+<p>The Plugin Checker checks your active and merged plugins for errors, and
+    provides warnings for any found, as well as configuration recaps and
+    suggestions. It can be opened by clicking the
+    <a href="Wrye%20Bash%20General%20Readme.html#launchersPluginChecker">Plugin
+        Checker button</a> in the status bar or by using the
+    <a href="#modsPluginChecker">Plugin Checker menu option</a>.
+<p>At the top of the report is the Active Mod Files section, which lists your
+    load order if you enabled it using the
+    <a href="#pluginCheckerPluginList">Plugin List</a> toggle. After that comes
+    a report of all problems that were detected. A full list of problems
+    detected by the Plugin Checker follows:</p>
 <ul>
-    <li>Missing masters occur when a plugin that an active plugin depends on is not active. This results in an immediate CTD when the game is launched.
-    <li>Delinquent masters occur when a plugin's master loads after the plugin itself. This should be fixed to prevent issues in-game.
+    <li>Corrupted plugins</li>
+    <li>ESL-capable plugins</li>
+    <li>Incorrectly ESL-flagged plugins</li>
+    <li>Mergeable plugins</li>
+    <li>Deactivate-tagged plugins that are active</li>
+    <li>MustBeActiveIfImported-tagged plugins that are imported, but
+        inactive</li>
+    <li>Plugins with missing masters</li>
+    <li>Plugins with delinquent masters, i.e. masters that load after their
+        dependent plugins</li>
+    <li>Plugins with unknown header versions</li>
+    <li>For SSE and games based on it, plugins with Form Version <=43</li>
+    <li>Cleaning information retrieved from LOOT</li>
+    <li>Deleted references</li>
+    <li>Deleted navmeshes</li>
+    <li>Deleted base records</li>
+    <li>HITMEs</li>
+    <li>Record type collisions</li>
+    <li>Probable injected collisions</li>
 </ul>
 <div class="prlflex clearf">
   <figure class="slideshow" style="width: 576px; min-height: 596px">
-    <img alt="Mod Checker" src="../bash/images/readme/mod-checker-1.png">
-        <img alt="Mod Checker" src="../bash/images/readme/mod-checker-2.png">
+    <img alt="Plugin Checker" src="../bash/images/readme/mod-checker-1.png">
+        <img alt="Plugin Checker" src="../bash/images/readme/mod-checker-2.png">
     <figcaption class="tools-checker-figcap">
-      Wrye Bash's Mod Checker
+      Wrye Bash's Plugin Checker
     </figcaption>
   </figure>
   <table>
     <thead>
-        <tr><th colspan="2">Mod Checker Controls
+        <tr><th colspan="2">Plugin Checker Controls
         <tr><th>Control<th>Function
     <tbody>
-        <tr><td>Forward/Back Arrows<td>The Mod Checker report may contain links to other pages. These two buttons allow navigation between pages viewed, similar to the forward/back buttons in a web browser.
+        <tr><td>Forward/Back Arrows<td>The Plugin Checker report may contain links to other pages. These two buttons allow navigation between pages viewed, similar to the forward/back buttons in a web browser.
         <tr><td>Reload</td><td>Reloads the current page. Works identically to a browser's reload button.</td></tr>
-        <tr><td>Mod List<td>Toggles the display of the Active Mod Files list.
+        <tr><td id="pluginCheckerPluginList">Plugin List<td>Toggles the display of the Active Mod Files list.
         <tr><td>Version Numbers<td>Toggles display of version numbers where found for the plugins in the Active Mod Files list.
         <tr><td>CRCs<td>Toggles display of the CRCs for the plugins in the Active Mod Files list.
-        <tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Mod Checker's report.
+        <tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Plugin Checker's report.
         <tr><td>Copy Text<td>Copies the text of the report to the clipboard. Useful for posting on forums.
         <tr><td>Update<td>Forces a refresh of the report.
   </table>
@@ -7747,7 +8929,7 @@ msgstr "Möchten Sie das Profil %s und die %d saves, die es enthält, löschen?"
 </div>
 
 <div id="footer">
-	<div id="version">Wrye Bash v308</div>
+    <div id="version">Wrye Bash v309</div>
     <a href="Wrye Bash General Readme.html">General</a>&#160;&#x2726;&#160;Advanced&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

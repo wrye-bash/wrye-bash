@@ -84,6 +84,7 @@ def iter_resources(resource_subfolder, filter_by_game=frozenset()):
 # Maps the resource subfolder game names back to displayNames
 resource_to_displayName = {
     u'enderal': u'Enderal',
+    u'enderalse': u'Enderal Special Edition',
     u'fallout3': u'Fallout 3',
     u'fallout4': u'Fallout 4',
     u'fallout4vr': u'Fallout 4 VR',
@@ -93,6 +94,10 @@ resource_to_displayName = {
     u'skyrim': u'Skyrim',
     u'skyrimse': u'Skyrim Special Edition',
     u'skyrimvr': u'Skyrim VR',
+    u'ws_fallout4': u'Fallout 4 (WS)',
+    u'ws_morrowind': u'Morrowind (WS)',
+    u'ws_oblivion': u'Oblivion (WS)',
+    u'ws_skyrimse': u'Skyrim Special Edition (WS)',
 }
 # Cache for created and initialized GameInfos
 _game_cache = {}
@@ -108,9 +113,6 @@ def set_game(game_fsName):
         brec.MelModel = None
         new_game.init()
         _game_cache[game_fsName] = new_game
-    bush.game_mod = bush._allModules[game_fsName]
-    from .. import brec
-    brec.MelModel = bush.game_mod.records._MelModel
 
 def _emulate_startup():
     """Emulates a normal Wrye Bash startup, but without launching basher

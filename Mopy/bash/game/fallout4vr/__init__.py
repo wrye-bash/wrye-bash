@@ -29,12 +29,17 @@ from ... import brec
 class Fallout4VRGameInfo(Fallout4GameInfo):
     displayName = u'Fallout 4 VR'
     fsName = u'Fallout4VR'
+    game_icon = u'fallout4vr_%u.png'
     altName = u'Wrye VRash'
     bash_root_prefix = u'Fallout4VR'
+    bak_game_name = u'Fallout4VR'
+    my_games_name = u'Fallout4VR'
+    appdata_name = u'Fallout4VR'
     launch_exe = u'Fallout4VR.exe'
-    game_detect_file = u'Fallout4VR.exe'
+    game_detect_includes = [u'Fallout4VR.exe']
     version_detect_file = u'Fallout4VR.exe'
     master_file = u'Fallout4.esm'
+    loot_dir = u'Fallout4VR'
     regInstallKeys = (u'Bethesda Softworks\\Fallout 4 VR', u'Installed Path')
 
     espm_extensions = Fallout4GameInfo.espm_extensions - {u'.esl'}
@@ -65,31 +70,48 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     allTags = Fallout4GameInfo.allTags | {u'NoMerge'}
     patchers = Fallout4GameInfo.patchers | {u'MergePatches'}
 
+    bethDataFiles = {
+        u'fallout4.esm',
+        u'fallout4.cdx',
+        u'fallout4 - animations.ba2',
+        u'fallout4 - geometry.csg',
+        u'fallout4 - interface.ba2',
+        u'fallout4 - materials.ba2',
+        u'fallout4 - meshes.ba2',
+        u'fallout4 - meshesextra.ba2',
+        u'fallout4 - misc.ba2',
+        u'fallout4 - shaders.ba2',
+        u'fallout4 - sounds.ba2',
+        u'fallout4 - startup.ba2',
+        u'fallout4 - textures1.ba2',
+        u'fallout4 - textures2.ba2',
+        u'fallout4 - textures3.ba2',
+        u'fallout4 - textures4.ba2',
+        u'fallout4 - textures5.ba2',
+        u'fallout4 - textures6.ba2',
+        u'fallout4 - textures7.ba2',
+        u'fallout4 - textures8.ba2',
+        u'fallout4 - textures9.ba2',
+        u'fallout4 - voices.ba2',
+        u'fallout4_vr.esm',
+        u'fallout4_vr - main.ba2',
+        u'fallout4_vr - shaders.ba2',
+        u'fallout4_vr - textures.ba2',
+    }
+
     # ---------------------------------------------------------------------
     # --Imported - MreGlob is special import, not in records.py
     # ---------------------------------------------------------------------
+    _patcher_package = u'bash.game.fallout4'
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        # First import from fallout4.records file, so MelModel is set correctly
-        from .records import MreTes4, MreLvli, MreLvln
-        # ---------------------------------------------------------------------
-        # These Are normally not mergable but added to brec.MreRecord.type_class
-        #
-        #       MreCell,
-        # ---------------------------------------------------------------------
-        # These have undefined FormIDs Do not merge them
-        #
-        #       MreNavi, MreNavm,
-        # ---------------------------------------------------------------------
-        # These need syntax revision but can be merged once that is corrected
-        #
-        #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
-        # ---------------------------------------------------------------------
+        # First import FO4VR-specific record classes
+        from .records import MreTes4
+        # Then import from fallout4.records file
+        from ..fallout4.records import MreGmst, MreLvli, MreLvln
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
-            # -- Imported from Skyrim/SkyrimSE
-            # Added to records.py
-            MreLvli, MreLvln
+            MreGmst, MreLvli, MreLvln
         )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
@@ -114,15 +136,16 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
             b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN', b'STAG',
             b'NOCM', b'LENS', b'GDRY', b'OVIS',
         ]
-        header_type.valid_header_sigs = (set(header_type.top_grup_sigs) | {
-            b'GRUP', b'TES4', b'REFR', b'ACHR', b'PMIS', b'PARW', b'PGRE',
-            b'PBEA', b'PFLA', b'PCON', b'PBAR', b'PHZD', b'LAND', b'NAVM',
-            b'DIAL', b'INFO'})
+        header_type.valid_header_sigs = (set(header_type.top_grup_sigs) |
+            {b'GRUP', b'TES4', b'REFR', b'ACHR', b'PMIS', b'PARW', b'PGRE',
+             b'PBEA', b'PFLA', b'PCON', b'PBAR', b'PHZD', b'LAND', b'NAVM',
+             b'DIAL', b'INFO'})
         header_type.plugin_form_version = 131
-        brec.MreRecord.type_class = {x.rec_sig: x for x in
-                                     (MreTes4, MreLvli, MreLvln,)}
+        brec.MreRecord.type_class = {x.rec_sig: x for x in (
+            MreTes4, MreGmst, MreLvli, MreLvln,
+        )}
         brec.MreRecord.simpleTypes = (
-                set(brec.MreRecord.type_class) - {b'TES4'})
+            set(brec.MreRecord.type_class) - {b'TES4'})
         cls._validate_records()
 
 GAME_TYPE = Fallout4VRGameInfo

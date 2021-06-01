@@ -30,6 +30,7 @@ import wx as _wx
 import wx.adv as _adv
 
 from .base_components import _AComponent, csf
+from .events import EventResult
 
 # Text Input ------------------------------------------------------------------
 class TextAlignment(object): # PY3: enum
@@ -177,13 +178,28 @@ class TextArea(_ATextInput):
             **kwargs)
 
 class TextField(_ATextInput):
-    """A single-line text edit widget. See the documentation for _ATextInput
-    for a list of the events this component offers."""
+    """A single-line text edit widget. Pressing Enter while it is focused will
+    send an event to the parent's OK button if it exists. See the documentation
+    for _ATextInput for a list of the events this component offers."""
     def __init__(self, parent, *args, **kwargs):
         """Creates a new TextField instance with the specified properties.
         See _ATextInput for documentation on kwargs."""
+        self._wx_parent = self._resolve(parent)
         super(TextField, self).__init__(parent, *args, multiline=False,
-            **kwargs)
+            style=_wx.TE_PROCESS_ENTER, **kwargs)
+        # Handle Enter -> OK button event to parent
+        self._on_enter = self._evt_handler(_wx.EVT_TEXT_ENTER)
+        self._on_enter.subscribe(self._handle_enter)
+
+    def _handle_enter(self):
+        """Internal callback. Sends a click event to the OK button of the
+        parent window, if it has one."""
+        ok_btn = self._wx_parent.FindWindowById(_wx.ID_OK)
+        if ok_btn:
+            new_evt = _wx.PyCommandEvent(_wx.EVT_BUTTON.typeId, ok_btn.GetId())
+            # Schedule this to run after we've finished handling this event
+            _wx.CallAfter(_wx.PostEvent, ok_btn, new_evt)
+        return EventResult.FINISH
 
 class SearchBar(TextField):
     """A variant of TextField that looks like a typical search bar."""

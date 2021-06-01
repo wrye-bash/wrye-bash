@@ -24,9 +24,30 @@
 """This package contains the Nehrim specific patchers. This module
 contains the data structures that are dynamically set on a per game basis in
 bush."""
-from ...oblivion import patcher
+from ...oblivion.patcher import *
 
-# Only Import Roads is of any interest
-gameSpecificPatchers = {}
-gameSpecificListPatchers = {}
-game_specific_import_patchers = patcher.game_specific_import_patchers
+#------------------------------------------------------------------------------
+# NPC Checker
+#------------------------------------------------------------------------------
+# Note that we use _x to avoid exposing these to the dynamic importer
+def _fid(_x): return None, _x # None <=> game master
+_standard_eyes = [_fid(_x) for _x in (0x27306, 0x27308, 0x27309)]
+default_eyes = {
+    _fid(0x224FC): _standard_eyes, # Alemanne
+    _fid(0x18D9E5): [_fid(_x) for _x in (
+        0x47EF, 0x18D9D9, 0x18D9DA, 0x18D9DB, 0x18D9DC, 0x18D9DD, 0x18D9DE,
+        0x18D9DF, 0x18D9E0, 0x18D9E1, 0x18D9E2)], # Half-Aeterna
+    _fid(0x224FD): _standard_eyes, # Normanne
+}
+# Clean this up, no need to keep it around now
+del _fid
+
+#------------------------------------------------------------------------------
+# Tweak Actors
+#------------------------------------------------------------------------------
+actor_tweaks = {
+    u'VanillaNPCSkeletonPatcher',
+    u'NoBloodCreaturesPatcher',
+    u'QuietFeetPatcher',
+    u'IrresponsibleCreaturesPatcher',
+}

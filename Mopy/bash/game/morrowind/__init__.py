@@ -24,21 +24,27 @@
 import struct as _struct
 from collections import defaultdict
 
-from .. import GameInfo
+from ..patch_game import GameInfo, PatchGame
+from .. import WS_COMMON
 from ... import brec
 
-class MorrowindGameInfo(GameInfo):
+class MorrowindGameInfo(PatchGame):
     displayName = u'Morrowind'
     fsName = u'Morrowind'
     altName = u'Wrye Mash'
+    game_icon = u'morrowind_%u.png'
     bash_root_prefix = u'Morrowind'
+    bak_game_name = u'Morrowind'
     uses_personal_folders = False
+    appdata_name = u'Morrowind'
     launch_exe = u'Morrowind.exe'
-    game_detect_file = u'Morrowind.exe'
+    game_detect_includes = [u'Morrowind.exe']
+    game_detect_excludes = WS_COMMON
     version_detect_file = u'Morrowind.exe'
     master_file = u'Morrowind.esm'
     mods_dir = u'Data Files'
     taglist_dir = u'Morrowind'
+    loot_dir = u'Morrowind'
     # This is according to xEdit's sources, but it doesn't make that key for me
     regInstallKeys = (u'Bethesda Softworks\\Morrowind', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/morrowind/'
@@ -100,6 +106,21 @@ class MorrowindGameInfo(GameInfo):
         plugin_header_sig = b'TES3'
         stringsFiles = []
         validHeaderVersions = (1.2, 1.3)
+
+    bethDataFiles = {
+        #--Vanilla
+        u'morrowind.esm',
+        u'morrowind.bsa',
+        u'tribunal.esm',
+        u'tribunal.bsa',
+        u'bloodmoon.esm',
+        u'bloodmoon.bsa',
+    }
+
+    @classmethod
+    def _dynamic_import_modules(cls, package_name):
+        """morrowind has no patcher currently - read tweaks, vanilla_files"""
+        super(PatchGame, cls)._dynamic_import_modules(package_name)
 
     @classmethod
     def init(cls):

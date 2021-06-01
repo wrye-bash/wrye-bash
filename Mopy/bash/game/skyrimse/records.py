@@ -22,36 +22,14 @@
 # =============================================================================
 """This module contains the skyrim SE record classes. The great majority are
 imported from skyrim."""
+from __future__ import unicode_literals
+
 from ...bolt import Flags
 from ...brec import MelRecord, MelGroups, MelStruct, MelString, MelSet, \
     MelFloat, MelUInt32, MelCounter, MelEdid
-# Those are unused here, but need be in this file as are accessed via it
-from ..skyrim.records import _MelModel # HACK - needed for tests
 
 #------------------------------------------------------------------------------
 # Added in SSE ----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class MreVoli(MelRecord):
-    """Volumetric Lighting."""
-    rec_sig = b'VOLI'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFloat(b'CNAM', 'intensity'),
-        MelFloat(b'DNAM', 'customColorContribution'),
-        MelFloat(b'ENAM', 'red'),
-        MelFloat(b'FNAM', 'green'),
-        MelFloat(b'GNAM', 'blue'),
-        MelFloat(b'HNAM', 'densityContribution'),
-        MelFloat(b'INAM', 'densitySize'),
-        MelFloat(b'JNAM', 'densityWindSpeed'),
-        MelFloat(b'KNAM', 'densityFallingSpeed'),
-        MelFloat(b'LNAM', 'phaseFunctionContribution'),
-        MelFloat(b'MNAM', 'phaseFunctionScattering'),
-        MelFloat(b'NNAM', 'samplingRepartitionRangeFactor'),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
 #------------------------------------------------------------------------------
 class MreLens(MelRecord):
     """Lens Flare."""
@@ -81,4 +59,26 @@ class MreLens(MelRecord):
             b'DNAM': u'lensFlareSprites',
         },
     })
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreVoli(MelRecord):
+    """Volumetric Lighting."""
+    rec_sig = b'VOLI'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFloat(b'CNAM', 'intensity'),
+        MelFloat(b'DNAM', 'customColorContribution'),
+        MelFloat(b'ENAM', 'red'),
+        MelFloat(b'FNAM', 'green'),
+        MelFloat(b'GNAM', 'blue'),
+        MelFloat(b'HNAM', 'densityContribution'),
+        MelFloat(b'INAM', 'densitySize'),
+        MelFloat(b'JNAM', 'densityWindSpeed'),
+        MelFloat(b'KNAM', 'densityFallingSpeed'),
+        MelFloat(b'LNAM', 'phaseFunctionContribution'),
+        MelFloat(b'MNAM', 'phaseFunctionScattering'),
+        MelFloat(b'NNAM', 'samplingRepartitionRangeFactor'),
+    )
     __slots__ = melSet.getSlotsUsed()

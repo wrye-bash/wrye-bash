@@ -20,23 +20,24 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from __future__ import division, print_function
+from __future__ import division
 
 import os
 import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
-from .frames import ModChecker, DocBrowser
+from .frames import PluginChecker, DocBrowser
 from .settings_dialog import SettingsDialog
 from .. import bass, bosh, bolt, balt, bush, load_order
-from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink, staticBitmap
-from ..env import getJava
+from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink
+from ..env import getJava, get_game_version_fallback
 from ..exception import AbstractError
-from ..gui import ClickableImage, EventResult
+from ..gui import ClickableImage, EventResult, staticBitmap, get_key_down, \
+    get_shift_down
 
 __all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
-           u'TESCS_Button', u'App_Tes4View', u'App_BOSS',
-           u'App_DocBrowser', u'App_ModChecker', u'App_Settings', u'App_Help',
+           u'TESCS_Button', u'App_Tes4View', u'App_BOSS', u'App_Help',
+           u'App_DocBrowser', u'App_PluginChecker', u'App_Settings',
            u'App_Restart', u'app_button_factory']
 
 #------------------------------------------------------------------------------
@@ -71,7 +72,8 @@ class StatusBar_Button(ItemLink):
         self.canHide = canHide
         self.gButton = None
         self._tip = button_tip or self.__class__._tip
-        if uid is None: uid = (self.__class__.__name__, self._tip)
+        # PY3: drop the unicode()
+        if uid is None: uid = (unicode(self.__class__.__name__), self._tip)
         self.uid = uid
 
     def IsPresent(self):
@@ -194,8 +196,7 @@ class _App_Button(StatusBar_Button):
         if not self.IsPresent():
             balt.showError(Link.Frame,
                            _(u'Application missing: %s') % self.exePath,
-                           _(u"Could not launch '%s'" % self.exePath.stail)
-                           )
+                           _(u"Could not launch '%s'") % self.exePath.stail)
             return
         self._app_button_execute()
 
@@ -440,17 +441,19 @@ class App_BOSS(_ExeButton):
             self.exePath = self.boss_path
         self.wait = bool(bass.settings[u'BOSS.ClearLockTimes'])
         extraArgs = []
-        if balt.getKeyState(82) and balt.getKeyState_Shift():
-            extraArgs.append(u'-r 2',) # Revert level 2 - BOSS version 1.6+
-        elif balt.getKeyState(82):
-            extraArgs.append(u'-r 1',) # Revert level 1 - BOSS version 1.6+
-        if balt.getKeyState(83):
-            extraArgs.append(u'-s',) # Silent Mode - BOSS version 1.6+
-        if balt.getKeyState(67): #c - print crc calculations in BOSS log.
-            extraArgs.append(u'-c',)
+        ##: These should become right click options instead
+        if get_key_down(u'R'):
+            if get_shift_down():
+                extraArgs.append(u'-r 2') # Revert level 2 - BOSS version 1.6+
+            else:
+                extraArgs.append(u'-r 1') # Revert level 1 - BOSS version 1.6+
+        if get_key_down(u'S'):
+            extraArgs.append(u'-s') # Silent Mode - BOSS version 1.6+
+        if get_key_down(u'C'): # Print crc calculations in BOSS log.
+            extraArgs.append(u'-c')
         if bass.tooldirs[u'boss'].version >= (2, 0, 0, 0):
             # After version 2.0, need to pass in the -g argument
-            extraArgs.append(u'-g%s' % bush.game.fsName,)
+            extraArgs.append(u'-g%s' % bush.game.boss_game_name)
         self.extraArgs = tuple(extraArgs)
         super(App_BOSS, self).Execute()
         if bass.settings[u'BOSS.ClearLockTimes']:
@@ -492,31 +495,51 @@ class Game_Button(_ExeButton):
         return tip_
 
     def _app_button_execute(self):
-        exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
-        exe_laa = bass.dirs[u'app'].join(bush.game.Laa.exe)
-        exe_path = self.exePath # Default to the regular launcher
-        if BashStatusBar.laaButton.button_state:
-            # Should use the LAA Launcher if it's present
-            exe_path = (exe_laa if exe_laa.isfile() else exe_path)
-        elif BashStatusBar.obseButton.button_state:
-            # OBSE refuses to start when its EXE is launched on a Steam
-            # installation
-            if bush.game.fsName != u'Oblivion' or not bass.dirs[u'app'].join(
-                    u'installscript.vdf').isfile():
-                # Should use the xSE launcher if it's present
-                exe_path = (exe_xse if exe_xse.isfile() else exe_path)
-        self._run_exe(exe_path, [exe_path.s])
+        if bush.ws_info.installed:
+            version_info = bush.ws_info.get_installed_version()
+            # Windows Store apps have to be launched entirely differently
+            gm_cmd = u'shell:AppsFolder\\%s!%s' % (
+                bush.ws_info.app_name, version_info.entry_point)
+            subprocess.Popen([u'start', gm_cmd], shell=True)
+        else:
+            exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
+            exe_laa = bass.dirs[u'app'].join(bush.game.Laa.exe)
+            exe_path = self.exePath # Default to the regular launcher
+            if BashStatusBar.laaButton.button_state:
+                # Should use the LAA Launcher if it's present
+                exe_path = (exe_laa if exe_laa.isfile() else exe_path)
+            elif BashStatusBar.obseButton.button_state:
+                # OBSE refuses to start when its EXE is launched on a Steam
+                # installation
+                if (bush.game.fsName != u'Oblivion'
+                        or u'steam' not in bass.dirs[u'app'].cs):
+                    # Should use the xSE launcher if it's present
+                    exe_path = (exe_xse if exe_xse.isfile() else exe_path)
+            self._run_exe(exe_path, [exe_path.s])
         if bass.settings.get(u'bash.autoQuit.on', False):
             Link.Frame.close_win(True)
 
     @property
     def version(self):
         if not bass.settings[u'bash.statusbar.showversion']: return u''
-        version = self._version_path.strippedVersion
+        try:
+            version = self._version_path.strippedVersion
+            if version == (0,) and bush.ws_info.installed:
+                version = get_game_version_fallback(self._version_path,
+                                                    bush.ws_info)
+        except OSError:
+            version = get_game_version_fallback(
+                self._version_path, bush.ws_info)
         if version != (0,):
-            version = u'.'.join([u'%s'%x for x in version])
+            version = u'.'.join([u'%s' % x for x in version])
             return version
         return u''
+
+    def IsPresent(self):
+        if bush.ws_info.installed:
+            # Always possible to run, even if the EXE is missing/inaccessible
+            return True
+        return super(Game_Button, self).IsPresent()
 
 #------------------------------------------------------------------------------
 class TESCS_Button(_ExeButton):
@@ -678,7 +701,7 @@ class App_Help(StatusBar_Button):
     imageKey, _tip = u'help.%s', _(u'Help File')
 
     def Execute(self):
-        webbrowser.open(balt.readme_url(mopy=bass.dirs[u'mopy']))
+        webbrowser.open(bolt.readme_url(mopy=bass.dirs[u'mopy']))
 
 #------------------------------------------------------------------------------
 class App_DocBrowser(StatusBar_Button):
@@ -717,9 +740,10 @@ class App_Restart(StatusBar_Button):
     def Execute(self): Link.Frame.Restart()
 
 #------------------------------------------------------------------------------
-class App_ModChecker(StatusBar_Button):
-    """Show mod checker."""
-    imageKey, _tip = u'modchecker.%s', _(u'Mod Checker')
+class App_PluginChecker(StatusBar_Button):
+    """Show plugin checker."""
+    _tip = _(u'Plugin Checker')
+    imageKey = u'modchecker.%s'
 
     def Execute(self):
-        ModChecker.create_or_raise()
+        PluginChecker.create_or_raise()

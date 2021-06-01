@@ -23,13 +23,14 @@
 """Functions for initializing Bash data structures on boot. For now exports
 functions to initialize bass.dirs that need be initialized high up into the
 boot sequence to be able to backup/restore settings."""
+import io
 import os
 from ConfigParser import ConfigParser, MissingSectionHeaderError
-# Local - don't import anything else
-from . import env
+# Local - make sure that all imports here are carefully done in bash.py first
 from .bass import dirs, get_ini_option
-from .bolt import GPath, Path, getbestencoding
-from .env import get_personal_path, get_local_app_data_path
+from .bolt import GPath, Path, decoder, deprint
+from .env import get_personal_path, get_local_app_data_path, \
+    get_win_store_game_info, shellMakeDirs
 from .exception import BoltError, NonExistentDriveError
 
 mopy_dirs_initialized = bash_dirs_initialized = False
@@ -88,12 +89,20 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
 
 def getOblivionModsPath(bash_ini_, game_info):
     ob_mods_path = get_path_from_ini(bash_ini_, u'sOblivionMods')
+    ws_info = get_win_store_game_info(game_info)
     if ob_mods_path:
         src = [u'[General]', u'sOblivionMods']
-    else:
+    elif not ws_info.installed:
+        # Currently the standard location, next to the game install
         ob_mods_path = GPath(GPath(u'..').join(u'%s Mods'
                                                % game_info.bash_root_prefix))
         src = u'Relative Path'
+    else:
+        # New location for Windows Store games,
+        # Documents\Wrye Bash\{game} Mods
+        ob_mods_path = dirs[u'personal'].join(
+            u'Wrye Bash', u'%s Mods' % game_info.bash_root_prefix)
+        src = u'My Documents'
     if not ob_mods_path.isabs(): ob_mods_path = dirs[u'app'].join(ob_mods_path)
     return ob_mods_path, src
 
@@ -107,15 +116,15 @@ def getBainDataPath(bash_ini_):
         src = u'Relative Path'
     return idata_path, src
 
-def getBashModDataPath(bash_ini_, game_info):
+def getBashModDataPath(bash_ini_):
     mod_data_path = get_path_from_ini(bash_ini_, u'sBashModData')
     if mod_data_path:
         if not mod_data_path.isabs():
             mod_data_path = dirs[u'app'].join(mod_data_path)
         src = [u'[General]', u'sBashModData']
     else:
-        mod_data_path, src = getOblivionModsPath(bash_ini_, game_info)
-        mod_data_path = mod_data_path.join(u'Bash Mod Data')
+        mod_data_path = dirs[u'bash_root'].join(u'Bash Mod Data')
+        src = u'Relative Path'
     return mod_data_path, src
 
 def getLegacyPath(newPath, oldPath):
@@ -139,18 +148,30 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     init_warnings = []
     #--Oblivion (Application) Directories
     dirs[u'app'] = game_info.gamePath
-    dirs[u'defaultPatches'] = dirs[u'mopy'].join(u'Bash Patches',
-        game_info.fsName)
+    dirs[u'defaultPatches'] = (
+        dirs[u'mopy'].join(u'Bash Patches', game_info.bash_patches_dir)
+        if game_info.bash_patches_dir else u'')
     dirs[u'taglists'] = dirs[u'mopy'].join(u'taglists', game_info.taglist_dir)
     #  Personal
+    dirs[u'personal'] = personal = getPersonalPath(bashIni_, personal)
     if game_info.uses_personal_folders:
-        personal = getPersonalPath(bashIni_, personal)
-        dirs[u'saveBase'] = personal.join(u'My Games', game_info.fsName)
+        dirs[u'saveBase'] = personal.join(u'My Games', game_info.my_games_name)
     else:
         dirs[u'saveBase'] = dirs[u'app']
+    deprint(u'My Games location set to %s' % dirs[u'saveBase'])
     #  Local Application Data
-    localAppData = getLocalAppDataPath(bashIni_, localAppData)
-    dirs[u'userApp'] = localAppData.join(game_info.fsName)
+    dirs[u'local_appdata'] = localAppData = getLocalAppDataPath(bashIni_,
+                                                                localAppData)
+    # AppData for the game, depends on if it's a WS game or not.
+    ws_info = get_win_store_game_info(game_info)
+    if ws_info.installed:
+        version_info = ws_info.get_installed_version()
+        dirs[u'userApp'] = localAppData.join(
+            u'Packages', version_info.full_name, u'LocalCache', u'Local',
+            game_info.appdata_name)
+    else:
+        dirs[u'userApp'] = localAppData.join(game_info.appdata_name)
+    deprint(u'LocalAppData location set to %s' % dirs[u'userApp'])
     # Use local copy of the oblivion.ini if present
     # see: http://en.uesp.net/wiki/Oblivion:Ini_Settings
     # Oblivion reads the Oblivion.ini in the directory where it exists
@@ -174,9 +195,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
             except UnicodeDecodeError:
                 # No good, this is a nonstandard encoding
                 with data_oblivion_ini.open(u'rb') as ins:
-                    ini_enc = getbestencoding(ins.read())[0]
-                with data_oblivion_ini.open(u'r', encoding=ini_enc) as ins:
-                    oblivionIni.readfp(ins)
+                    ini_contents = ins.read()
+                oblivionIni.readfp(io.StringIO(decoder(ini_contents)))
         except MissingSectionHeaderError:
             # Probably not actually a game INI - might be reshade
             init_warnings.append(
@@ -199,32 +219,40 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     dirs[u'ini_tweaks'] = dirs[u'mods'].join(u'INI Tweaks')
     #--Mod Data, Installers
     oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni_, game_info)
-    dirs[u'modsBash'], modsBashSrc = getBashModDataPath(bashIni_, game_info)
+    dirs[u'bash_root'] = oblivionMods
+    deprint(u'Game Mods location set to %s' % oblivionMods)
+    dirs[u'modsBash'], modsBashSrc = getBashModDataPath(bashIni_)
     dirs[u'modsBash'], modsBashSrc = getLegacyPathWithSource(
         dirs[u'modsBash'], dirs[u'app'].join(game_info.mods_dir, u'Bash'),
         modsBashSrc, u'Relative Path')
+    deprint(u'Bash Mod Data location set to %s' % dirs[u'modsBash'])
     dirs[u'installers'] = oblivionMods.join(u'Bash Installers')
     dirs[u'installers'] = getLegacyPath(dirs[u'installers'],
                                         dirs[u'app'].join(u'Installers'))
+    deprint(u'Installers location set to %s' % dirs[u'installers'])
     dirs[u'bainData'], bainDataSrc = getBainDataPath(bashIni_)
     dirs[u'bsaCache'] = dirs[u'bainData'].join(u'BSA Cache')
     dirs[u'converters'] = dirs[u'installers'].join(u'Bain Converters')
     dirs[u'dupeBCFs'] = dirs[u'converters'].join(u'--Duplicates')
     dirs[u'corruptBCFs'] = dirs[u'converters'].join(u'--Corrupt')
     # create bash user folders, keep these in order
-    keys = (u'modsBash', u'installers', u'converters', u'dupeBCFs',
-            u'corruptBCFs', u'bainData', u'bsaCache')
+    dir_keys = (u'modsBash', u'installers', u'converters', u'dupeBCFs',
+                u'corruptBCFs', u'bainData', u'bsaCache')
+    deprint(u'Checking if WB directories exist and creating them if needed:')
     try:
-        env.shellMakeDirs([dirs[key] for key in keys])
+        for dir_key in dir_keys:
+            wanted_dir = dirs[dir_key]
+            deprint(u' - %s' % wanted_dir)
+            shellMakeDirs([wanted_dir])
     except NonExistentDriveError as e:
         # NonExistentDriveError is thrown by shellMakeDirs if any of the
         # directories cannot be created due to residing on a non-existing
         # drive. Find which keys are causing the errors
         badKeys = set()     # List of dirs[key] items that are invalid
         # First, determine which dirs[key] items are causing it
-        for key in keys:
-            if dirs[key] in e.failed_paths:
-                badKeys.add(key)
+        for dir_key in dir_keys:
+            if dirs[dir_key] in e.failed_paths:
+                badKeys.add(dir_key)
         # Now, work back from those to determine which setting created those
         msg = _(u'Error creating required Wrye Bash directories.') + u'  ' + _(
             u'Please check the settings for the following paths in your '

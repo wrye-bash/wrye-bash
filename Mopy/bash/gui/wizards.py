@@ -41,11 +41,12 @@ class WizardDialog(DialogWindow):
         self._sep_line = HorizontalLine(self)
         self._back_button = BackButton(self)
         self._back_button.on_clicked.subscribe(self._move_prev)
+        # Create before the Next button! Otherwise it becomes the default.
+        self._finish_button = OkButton(self, btn_label=_(u'Finish'))
         self._next_button = NextButton(self, default=True)
         self._next_button.on_clicked.subscribe(self._move_next)
         self._cancel_button = CancelButton(self)
         self._cancel_button.on_clicked.subscribe(self._cancel_wizard)
-        self._finish_button = OkButton(self, btn_label=_(u'Finish'))
         self._wiz_layout = VLayout(item_expand=True, item_border=4, items=[
             (self._curr_page, LayoutOptions(weight=1)), self._sep_line,
             HLayout(item_expand=True, item_border=4, items=[

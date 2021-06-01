@@ -32,6 +32,7 @@ from .buttons import Button
 from .events import EventResult
 from .layouts import HBoxedLayout, HLayout, LayoutOptions, Spacer, Stretch, \
     VLayout
+from .misc_components import HorizontalLine
 from .multi_choices import ListBox
 from .text_components import Label, HyperlinkLabel
 from .top_level_windows import _APageComponent, PanelWin
@@ -110,7 +111,7 @@ class DoubleListBox(PanelWin):
             other_list = self._left_list
             my_btn = self._move_left_btn
             other_btn = self._move_right_btn
-        other_list.lb_clear_selection()
+        other_list.lb_select_none()
         my_btn.enabled = True
         other_btn.enabled = False
 
@@ -218,10 +219,11 @@ class TreePanel(_APageComponent):
                     parent_page_name, subpage_name), always_unvisited=True)
                 new_link.on_link_clicked.subscribe(select_page_callback)
                 return new_link
-            layout_items = [self._panel_text, Spacer(6)]
+            layout_items = [self._panel_text, HorizontalLine(self)]
             layout_items.extend(HLayout(items=[Spacer(6), make_link(p)])
                                 for p in sorted(sub_pages))
-            VLayout(border=6, spacing=3, items=layout_items).apply_to(self)
+            VLayout(border=6, spacing=4, item_expand=True,
+                    items=layout_items).apply_to(self)
 
     def __init__(self, parent, tree_geometry, page_descriptions):
         """Creates a new TreePanel with the specified tree geometry and page

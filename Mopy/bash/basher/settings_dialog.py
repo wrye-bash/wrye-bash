@@ -20,6 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import io
 import os
 import subprocess
 import webbrowser
@@ -30,14 +31,14 @@ from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import colors, Link, Resources
-from ..bolt import deprint, GPath
+from ..bolt import deprint, GPath, readme_url
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
     WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox, \
     TextField, OpenButton, ScrollableWindow, ClickableImage, RevertButton, \
     SaveButton, SaveAsButton, DoubleListBox, ATreeMixin, CheckListBox, \
-    VBoxedLayout
+    VBoxedLayout, FileOpen, FileSave
 from ..localize import dump_translator
 
 class SettingsDialog(DialogWindow):
@@ -80,11 +81,7 @@ class SettingsDialog(DialogWindow):
                           u'settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)
         ok_btn = OkButton(self)
-        ok_btn.on_clicked.subscribe(self._send_ok)
-        cancel_btn = CancelButton(self)
-        # This will automatically be picked up for the top-right close button
-        # by wxPython, due to us using CancelButton
-        cancel_btn.on_clicked.subscribe(self._send_closing)
+        ok_btn.on_clicked.subscribe(self._send_apply)
         self._apply_btn = ApplyButton(self)
         self._apply_btn.enabled = False
         self._apply_btn.on_clicked.subscribe(self._send_apply)
@@ -93,7 +90,8 @@ class SettingsDialog(DialogWindow):
             (self._tab_tree, LayoutOptions(weight=1)),
             HorizontalLine(self),
             HLayout(spacing=5, items=[
-                help_btn, Stretch(), ok_btn, cancel_btn, self._apply_btn,
+                help_btn, Stretch(), ok_btn, CancelButton(self),
+                self._apply_btn,
             ]),
         ]).apply_to(self)
 
@@ -111,8 +109,8 @@ class SettingsDialog(DialogWindow):
     def _open_readme(self):
         """Handles a click on the help button by opening the readme."""
         ##: skip_local because webbrowser.open eats anchors on Windows
-        advanced_radme = balt.readme_url(mopy=bass.dirs[u'mopy'],
-                                         advanced=True, skip_local=True)
+        advanced_radme = readme_url(mopy=bass.dirs[u'mopy'], advanced=True,
+                                    skip_local=True)
         help_anchor = _page_anchors[self._tab_tree.get_selected_page_path()]
         webbrowser.open(advanced_radme + u'#' + help_anchor)
 
@@ -134,16 +132,6 @@ class SettingsDialog(DialogWindow):
                 # User denied the restart, don't bother them again
                 self._requesting_restart.clear()
                 del self._restart_params[:]
-
-    def _send_closing(self):
-        """Propagates a Cancel button click to all child pages."""
-        for leaf_page in self._tab_tree.get_leaf_pages():
-            leaf_page.on_page_closing()
-
-    def _send_ok(self):
-        """Propagates an OK button click to all child pages."""
-        self._send_closing()
-        self._send_apply()
 
 class _ASettingsPage(WrappingTextMixin, ATreeMixin):
     """Abstract class for all settings pages."""
@@ -200,9 +188,6 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
             self._setting_states[setting_key] = False
         self._mark_changed(self, False)
 
-    def on_page_closing(self):
-        """Called when the settings dialog is about to be closed."""
-
     def _rename_op(self, chosen_file, parent_dir, msg_title, msg):
         new_fname = balt.askText(self, msg, title=msg_title,
                                  default=chosen_file)
@@ -228,20 +213,20 @@ class _AFixedPage(_ASettingsPage, PanelWin): pass
 class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
     """Color configuration page."""
     _keys_to_tabs = {
-        u'mods': _(u'[Mods] '),
-        u'screens': _(u'[Saves, Screens] '),
-        u'installers': _(u'[Installers] '),
-        u'ini': _(u'[INI Edits] '),
-        u'tweak': _(u'[INI Edits] '),
-        u'default': _(u'[All] '),
+        u'mods': _(u'[Mods] %s'),
+        u'screens': _(u'[Saves, Screens] %s'),
+        u'installers': _(u'[Installers] %s'),
+        u'ini': _(u'[INI Edits] %s'),
+        u'tweak': _(u'[INI Edits] %s'),
+        u'default': _(u'[All] %s'),
     }
 
     def __init__(self, parent, page_desc):
         super(ColorsPage, self).__init__(parent, page_desc)
-        self.changes = dict()
+        self.changes = {}
         #--DropDown
         def _display_text(k):
-            return _(self._keys_to_tabs[k.split(u'.')[0]]) + colorInfo[k][0]
+            return self._keys_to_tabs[k.split(u'.')[0]] % colorInfo[k][0]
         self._txt_key = {_display_text(x): x for x in colors}
         colored = sorted(self._txt_key, key=unicode.lower)
         combo_text = colored[0]
@@ -265,8 +250,9 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         #--Events
         self.picker.on_color_picker_evt.subscribe(self.OnColorPicker)
         #--Layout
-        VLayout(border=6, item_expand=True, spacing=5, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             HLayout(items=[
                 (self.comboBox, LayoutOptions(expand=True, weight=1)),
                 self.picker]),
@@ -293,27 +279,27 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
 
     def UpdateUIButtons(self):
         # Apply All and Default All
-        for key, val in self.changes.items():
-            if val == colors[key]:
-                del self.changes[key]
+        for col_key, changed_color in list(self.changes.iteritems()):
+            if changed_color == colors[col_key]:
+                del self.changes[col_key]
         anyChanged = bool(self.changes)
         allDefault = True
-        for key in colors:
-            if key in self.changes:
-                color = self.changes[key]
+        for col_key in colors:
+            if col_key in self.changes:
+                color = self.changes[col_key]
             else:
-                color = colors[key]
-            default = color == Color(*settingDefaults[u'bash.colors'][key])
+                color = colors[col_key]
+            default = color == Color(*settingDefaults[u'bash.colors'][col_key])
             if not default:
                 allDefault = False
                 break
         # Apply and Default
-        color_key = self.GetColorKey()
-        if color_key in self.changes:
-            color = self.changes[color_key]
+        col_key = self.GetColorKey()
+        if col_key in self.changes:
+            color = self.changes[col_key]
         else:
-            color = colors[color_key]
-        default = color == Color(*settingDefaults[u'bash.colors'][color_key])
+            color = colors[col_key]
+        default = color == Color(*settingDefaults[u'bash.colors'][col_key])
         # Update the Buttons, DropDown, and ColorPicker
         if self._mark_changed:
             # If _mark_changed is None, then we're still in the construction
@@ -350,11 +336,12 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         outDir = bass.dirs[u'patches']
         outDir.makedirs()
         #--File dialog
-        outPath = balt.askSave(self, _(u'Export color configuration to:'),
-                               outDir, _(u'Colors.txt'), u'*.txt')
+        outPath = FileSave.display_dialog(
+            self, _(u'Export color configuration to:'), outDir,
+            _(u'Colors.txt'), u'*.txt')
         if not outPath: return
         try:
-            with outPath.open(u'w') as out:
+            with outPath.open(u'w', encoding=u'utf-8') as out:
                 for key in sorted(colors):
                     if key in self.changes:
                         color = self.changes[key]
@@ -369,12 +356,12 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         inDir = bass.dirs[u'patches']
         inDir.makedirs()
         #--File dialog
-        inPath = balt.askOpen(self, _(u'Import color configuration from:'),
-                              inDir, _(u'Colors.txt'), u'*.txt',
-                              mustExist=True)
+        inPath = FileOpen.display_dialog(self,
+            _(u'Import color configuration from:'), inDir, _(u'Colors.txt'),
+            u'*.txt')
         if not inPath: return
         try:
-            with inPath.open(u'r') as ins:
+            with inPath.open(u'r', encoding=u'utf-8') as ins:
                 for line in ins:
                     # Format validation
                     if u':' not in line:
@@ -418,9 +405,6 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.changes[color_key] = newColor
         self.UpdateUIButtons()
 
-    def on_page_closing(self):
-        self.comboBox.unsubscribe_handler_()
-
 # Languages -------------------------------------------------------------------
 class ConfigureEditorDialog(DialogWindow):
     """A dialog for configuring a localization file editor."""
@@ -459,10 +443,10 @@ class ConfigureEditorDialog(DialogWindow):
     def _handle_browse(self):
         """Opens a file dialog to choose the editor."""
         # Don't use mustExist, we want to show an error message for that below
-        chosen_editor = balt.askOpen(self, title=_(u'Choose Editor'),
+        chosen_editor = FileOpen.display_dialog(self,
+            title=_(u'Choose Editor'),
             defaultDir=env.get_env_var(u'ProgramFiles', u''),
-            wildcard=u'*.exe',
-            mustExist=True)
+            wildcard=u'*.exe')
         if chosen_editor:
             self._editor_location.text_content = chosen_editor.s
 
@@ -505,7 +489,7 @@ class LanguagePage(_AScrollablePage):
         # If the user has an unknown language active
         active_lang = self._internal_to_localized[u'en_US']
         for internal_name, localized_name in sorted(izip(
-                all_langs, localized_langs), key=lambda l: l[1]):
+                all_langs, localized_langs), key=lambda x: x[1]):
             if self._is_active_lang(internal_name):
                 active_lang = localized_name
                 break
@@ -546,8 +530,9 @@ class LanguagePage(_AScrollablePage):
         # Populate the list and disable the context buttons by default
         self._populate_l10n_list()
         self._set_context_buttons(btns_enabled=False)
-        VLayout(border=6, item_expand=True, spacing=4, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             HBoxedLayout(self, title=_(u'Change Language'),
                 items=[self._lang_dropdown]),
             (VBoxedLayout(self, title=_(u'Manage Localizations'),
@@ -655,7 +640,7 @@ class LanguagePage(_AScrollablePage):
             # parameterless restart request, with us having saved the
             # new language to some 'early boot' info file
             self._request_restart(_(u'Language: %s') % selected_lang,
-                [u'--Language', internal_name])
+                [(u'--Language', internal_name)])
 
     def _populate_l10n_list(self):
         """Clears and repopulates the localization list."""
@@ -709,8 +694,9 @@ class StatusBarPage(_AScrollablePage):
             right_btn_tooltip=_(u'Hide the selected button.'))
         self._icon_lists.move_btn_callback = self._on_move_btn
         self._populate_icon_lists()
-        VLayout(border=6, spacing=6, item_expand=True, items=[
-            self._panel_text, Spacer(3),
+        VLayout(border=6, spacing=4, item_expand=True, items=[
+            self._panel_text,
+            HorizontalLine(self),
             VBoxedLayout(self, title=_(u'General'), item_border=3, spacing=6,
                 items=[
                     self._show_app_ver_chk,
@@ -850,8 +836,9 @@ class BackupsPage(_AFixedPage):
         # These start out disabled, because nothing is selected by default
         self._set_context_buttons(btns_enabled=False)
         self._populate_backup_list()
-        VLayout(border=6, spacing=3, item_expand=True, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             (HLayout(spacing=4, item_expand=True, items=[
                 (self._backup_list, LayoutOptions(weight=1)),
                 VLayout(item_expand=True, spacing=4, items=[
@@ -896,14 +883,16 @@ class BackupsPage(_AFixedPage):
     def _new_backup(self):
         """Saves the current settings and data to create a new backup."""
         with BusyCursor(): Link.Frame.SaveSettings()
-        settings_file = balt.askSave(self,
+        settings_file = FileSave.display_dialog(self,
             title=_(u'Backup Bash Settings'), defaultDir=self._backup_dir,
             wildcard=u'*.7z', defaultFile=barb.BackupSettings.backup_filename(
-                bush.game.displayName))
+                bush.game.bak_game_name))
         if not settings_file: return
         with BusyCursor():
-            backup = barb.BackupSettings(settings_file, bush.game.fsName,
-                bush.game.bash_root_prefix, bush.game.mods_dir)
+            backup = barb.BackupSettings(
+                settings_file, bush.game.bak_game_name,
+                bush.game.my_games_name, bush.game.bash_root_prefix,
+                bush.game.mods_dir)
         try:
             with BusyCursor(): backup.backup_settings(balt)
         except exception.StateError:
@@ -952,7 +941,7 @@ class BackupsPage(_AFixedPage):
             with BusyCursor():
                 backup_dir = restore_.extract_backup()
             error_msg, error_title = restore_.incompatible_backup_error(
-                bush.game.fsName)
+                bush.game.bak_game_name)
             if error_msg:
                 balt.showError(self, error_msg, error_title)
                 return
@@ -1101,8 +1090,9 @@ class ConfirmationsPage(_AFixedPage):
                                              u'Installers tab.')
         self._file_drop_dropdown.on_combo_select.subscribe(self._on_file_drop)
         self._populate_confirmations()
-        VLayout(border=6, spacing=3, item_expand=True, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             HLayout(spacing=6, items=[
                 Label(self, _(u'Drop Action:')), self._file_drop_dropdown,
             ]),
@@ -1144,8 +1134,8 @@ class ConfirmationsPage(_AFixedPage):
     def _populate_confirmations(self):
         """Repopulates the list of confirmations and ticks them according to
         bass.settings."""
-        sorted_confs = sorted(self._confirmations.iteritems(),
-            key=lambda c: c[0])
+        sorted_confs = sorted(self._confirmations.viewitems(),
+                              key=lambda x: x[0])
         if self._show_keys_checkbox.is_checked:
             conf_names = [u'%s (%s)' % c for c in sorted_confs]
         else:
@@ -1236,6 +1226,8 @@ class GeneralPage(_AScrollablePage):
                             u'be accessible by right-clicking the columns.'),
             checked=bass.settings[u'bash.show_global_menu'])
         self._global_menu_checkbox.on_checked.subscribe(self._on_global_menu)
+        # Hide the option on Linux - see refresh_global_menu_visibility
+        self._global_menu_checkbox.visible = os.name == u'nt'
         self._alt_name_checkbox = CheckBox(self,
             _(u'Use Alternate Wrye Bash Name'),
             chkbx_tooltip=_(u'Use an alternate display name for Wrye Bash '
@@ -1255,9 +1247,10 @@ class GeneralPage(_AScrollablePage):
             chkbx_tooltip=_(u'Restart Wrye Bash with administrator '
                             u'privileges.'))
         self._uac_restart_checkbox.on_checked.subscribe(self._on_uac_restart)
-        self._uac_restart_checkbox.visible = env.isUAC
-        VLayout(border=6, spacing=3, item_expand=True, items=[
+        self._uac_restart_checkbox.visible = env.is_uac()
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             VBoxedLayout(self, title=_(u'Game'), spacing=6, items=[
                 HLayout(spacing=6, items=[
                     Label(self, _(u'Managed Game:')), self._managed_game,
@@ -1313,9 +1306,10 @@ class GeneralPage(_AScrollablePage):
                       u'the status bar will not change after switching.'),
                     u'bash.switch_games_warning.continue'):
             chosen_game = self._managed_game.get_value()
+            ##: The [0] here is ugly, doesn't allow changing WS variations
             self._request_restart(
                 _(u'Managed Game: %s') % chosen_game,
-                [u'--oblivionPath', bush.game_path(chosen_game).s])
+                [(u'--oblivionPath', bush.game_path(chosen_game)[0].s)])
         # Plugin Encoding
         if self._is_changed(u'plugin_encoding'):
             chosen_encoding = self._plugin_encoding.get_value()
@@ -1370,8 +1364,9 @@ class TrustedBinariesPage(_AFixedPage):
                           u'control over trusted binary versions.'))
         export_btn.on_clicked.subscribe(self._export_lists)
         self._populate_binaries()
-        VLayout(border=6, spacing=3, item_expand=True, items=[
+        VLayout(border=6, spacing=4, item_expand=True, items=[
             self._panel_text,
+            HorizontalLine(self),
             (self._binaries_list, LayoutOptions(weight=1)),
             HLayout(spacing=4, items=[Stretch(), import_btn, export_btn]),
         ]).apply_to(self)
@@ -1391,24 +1386,36 @@ class TrustedBinariesPage(_AFixedPage):
         #--File dialog
         title = _(u'Export list of allowed/disallowed plugin DLLs to:')
         file_ = bush.game.Se.se_abbrev + u' ' + _(u'DLL permissions') + u'.txt'
-        textPath = balt.askSave(self, title=title, defaultDir=textDir,
-            defaultFile=file_, wildcard=u'*.txt')
+        textPath = FileSave.display_dialog(self, title=title,
+            defaultDir=textDir, defaultFile=file_, wildcard=u'*.txt')
         if not textPath: return
-        with textPath.open(u'w', encoding=u'utf-8-sig') as out:
-            out.write(u'goodDlls '+_(u'(those dlls that you have chosen to allow to be installed)')+u'\r\n')
+        with textPath.open(u'w', encoding=u'utf-8') as out:
+            # Stick a header in there and include the version. Should always be
+            # a comment anyways, but to be sure, put a '#' in front of it
+            out.write(u'# %s\n' % (_(u'Exported by Wrye Bash v%s')
+                                   % bass.AppVersion))
+            out.write(u'goodDlls # %s\n' % _(u'Binaries whose installation '
+                                             u'you have allowed'))
             if bass.settings[u'bash.installers.goodDlls']:
                 for dll in bass.settings[u'bash.installers.goodDlls']:
-                    out.write(u'dll:'+dll+u':\r\n')
-                    for index, version in enumerate(bass.settings[u'bash.installers.goodDlls'][dll]):
-                        out.write(u'version %02d: %s\r\n' % (index, version))
-            else: out.write(u'None\r\n') # will be treated as a comment
-            out.write(u'badDlls '+_(u'(those dlls that you have chosen to NOT allow to be installed)')+u'\r\n')
+                    out.write(u'dll: %s:\n' % dll)
+                    for i, version in enumerate(
+                            bass.settings[u'bash.installers.goodDlls'][dll]):
+                        v_name, v_size, v_crc = version
+                        out.write(u"version %02d: ['%s', %d, %d]\n" % (
+                            i, v_name, v_size, v_crc))
+            else: out.write(u'# %s\n' % _(u'None')) # Treated as a comment
+            out.write(u'badDlls # %s\n' % _(u'Binaries whose installation you '
+                                            u'have forbidden'))
             if bass.settings[u'bash.installers.badDlls']:
                 for dll in bass.settings[u'bash.installers.badDlls']:
-                    out.write(u'dll:'+dll+u':\r\n')
-                    for index, version in enumerate(bass.settings[u'bash.installers.badDlls'][dll]):
-                        out.write(u'version %02d: %s\r\n' % (index, version))
-            else: out.write(u'None\r\n') # will be treated as a comment
+                    out.write(u'dll: %s:\n' % dll)
+                    for i, version in enumerate(
+                            bass.settings[u'bash.installers.badDlls'][dll]):
+                        v_name, v_size, v_crc = version
+                        out.write(u"version %02d: ['%s', %d, %d]\n" % (
+                            i, v_name, v_size, v_crc))
+            else: out.write(u'# %s\n' % _(u'None')) # Treated as a comment
 
     def _import_lists(self):
         textDir = bass.dirs[u'patches']
@@ -1417,8 +1424,8 @@ class TrustedBinariesPage(_AFixedPage):
         defFile = bush.game.Se.se_abbrev + u' ' + _(
             u'dll permissions') + u'.txt'
         title = _(u'Import list of allowed/disallowed plugin DLLs from:')
-        textPath = balt.askOpen(self, title=title, defaultDir=textDir,
-            defaultFile=defFile, wildcard=u'*.txt', mustExist=True)
+        textPath = FileOpen.display_dialog(self,title=title,
+            defaultDir=textDir, defaultFile=defFile, wildcard=u'*.txt')
         if not textPath: return
         message = (_(u'Merge permissions from file with current dll permissions?')
                    + u'\n' +
@@ -1439,7 +1446,12 @@ class TrustedBinariesPage(_AFixedPage):
                 i = i[:-1]
             return int(i)
         try:
-            with textPath.open(u'r', encoding=u'utf-8-sig') as ins:
+            with textPath.open(u'rb') as ins:
+                contents = ins.read()
+            # WB versions before 309 wrote a BOM into these files
+            if contents.startswith(b'\xef\xbb\xbf'):
+                contents = contents[3:]
+            with io.StringIO(contents.decode(u'utf-8')) as ins:
                 Dlls = {u'goodDlls':{}, u'badDlls':{}}
                 current, dll = None, None
                 for line in ins:
@@ -1466,7 +1478,7 @@ class TrustedBinariesPage(_AFixedPage):
                             raise SyntaxError(u'Invalid format: expected '
                                               u'"version: [name, size, crc]"')
                         # Strip any spacing due to the repr used when exporting
-                        ver_components = [s.strip() for s in ver_components]
+                        ver_components = [c.strip() for c in ver_components]
                         inst_name, inst_size, inst_crc = ver_components
                         current[dll].append((
                             parse_path(inst_name), parse_int(inst_size),

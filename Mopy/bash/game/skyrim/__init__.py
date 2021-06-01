@@ -24,21 +24,27 @@
 
 from os.path import join as _j
 
-from .. import GameInfo
+from ..patch_game import GameInfo, PatchGame
 from ... import brec
 from ...brec import MreFlst, MreGlob
 
-class SkyrimGameInfo(GameInfo):
+class SkyrimGameInfo(PatchGame):
     displayName = u'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
+    game_icon = u'skyrim_%u.png'
     bash_root_prefix = u'Skyrim'
+    bak_game_name = u'Skyrim'
+    my_games_name = u'Skyrim'
+    appdata_name = u'Skyrim'
     launch_exe = u'TESV.exe'
     # Set to this because TESV.exe also exists for Enderal
-    game_detect_file = u'SkyrimLauncher.exe'
+    game_detect_includes = [u'SkyrimLauncher.exe']
     version_detect_file = u'TESV.exe'
     master_file = u'Skyrim.esm'
     taglist_dir = u'Skyrim'
+    loot_dir = u'Skyrim'
+    boss_game_name = u'Skyrim'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'
@@ -143,10 +149,11 @@ class SkyrimGameInfo(GameInfo):
             u'keyboard_spanish.txt',
             u'keyboard_italian.txt',
         )
-        no_skip_dirs = {
+        no_skip_dirs = GameInfo.Bain.no_skip_dirs.copy() # PY3: dict join
+        no_skip_dirs.update({
             # This rule is to allow mods with string translation enabled.
             _j(u'interface', u'translations'): [u'.txt']
-        }
+        })
         skip_bain_refresh = {u'tes5edit backups', u'tes5edit cache'}
 
     class Esp(GameInfo.Esp):
@@ -164,35 +171,22 @@ class SkyrimGameInfo(GameInfo):
             u'bodyaddon10', u'bodyaddon11', u'bodyaddon12', u'bodyaddon13',
             u'bodyaddon14', u'bodyaddon15', u'bodyaddon16', u'bodyaddon17',
             u'fx01')
+        reference_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON',
+                           b'PFLA', b'PGRE', b'PHZD', b'PMIS', b'REFR'}
 
-    allTags = {
-        u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
-        u'Actors.AIPackagesForceAdd', u'Actors.CombatStyle',
-        u'Actors.DeathItem', u'Actors.RecordFlags', u'Actors.Spells',
-        u'Actors.SpellsForceAdd', u'Actors.Stats', u'C.Acoustic', u'C.Climate',
-        u'C.Encounter', u'C.ForceHideLand', u'C.ImageSpace', u'C.Light',
-        u'C.Location', u'C.LockList', u'C.MiscFlags', u'C.Music', u'C.Name',
-        u'C.Owner', u'C.RecordFlags', u'C.Regions', u'C.SkyLighting',
-        u'C.Water', u'Deactivate', u'Delev', u'Destructible', u'EffectStats',
-        u'EnchantmentStats', u'Factions', u'Filter', u'Graphics',
-        u'Invent.Add', u'Invent.Change', u'Invent.Remove', u'Keywords',
-        u'MustBeActiveIfImported', u'Names', u'NoMerge',
-        u'NPC.AIPackageOverrides', u'NPC.Class', u'NPC.Race', u'ObjectBounds',
-        u'Outfits.Add', u'Outfits.Remove', u'Relations.Add',
-        u'Relations.Change', u'Relations.Remove', u'Relev', u'Sound',
-        u'SpellStats', u'Stats', u'Text',
-    }
+    allTags = PatchGame.allTags | {u'NoMerge'}
 
     patchers = {
-        u'AliasModNames', u'ContentsChecker', u'ImportActors',
+        u'AliasModNames', u'ContentsChecker', u'ImportActors', u'ImportRaces',
         u'ImportActorsAIPackages', u'ImportActorsDeathItems',
         u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats',
+        u'ImportDestructible', u'ImportEffectsStats', u'ImportRacesSpells',
         u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
         u'ImportKeywords', u'ImportNames', u'ImportObjectBounds',
         u'ImportOutfits', u'ImportRelations', u'ImportSounds',
         u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
         u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
+        u'TweakRaces', u'ImportActorsPerks', u'TimescaleChecker',
     }
 
     weaponTypes = (
@@ -253,6 +247,35 @@ class SkyrimGameInfo(GameInfo):
         0x13749 : 0x69473, #--Bos
         }
 
+    bethDataFiles = {
+        #--Vanilla
+        u'skyrim.esm',
+        u'update.esm',
+        u'update.bsa',
+        u'dawnguard.esm',
+        u'dawnguard.bsa',
+        u'hearthfires.bsa',
+        u'hearthfires.esm',
+        u'dragonborn.esm',
+        u'dragonborn.bsa',
+        u'skyrim - animations.bsa',
+        u'skyrim - interface.bsa',
+        u'skyrim - meshes.bsa',
+        u'skyrim - misc.bsa',
+        u'skyrim - shaders.bsa',
+        u'skyrim - sounds.bsa',
+        u'skyrim - textures.bsa',
+        u'skyrim - voices.bsa',
+        u'skyrim - voicesextra.bsa',
+        u'highrestexturepack01.esp',
+        u'highrestexturepack02.esp',
+        u'highrestexturepack03.esp',
+        u'highrestexturepack01.bsa',
+        u'highrestexturepack02.bsa',
+        u'highrestexturepack03.bsa',
+    }
+
+    _patcher_package = u'bash.game.skyrim'
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

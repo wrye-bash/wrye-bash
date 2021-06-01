@@ -25,20 +25,27 @@
 from collections import defaultdict
 from os.path import join as _j
 
-from .. import GameInfo
+from ..patch_game import GameInfo, PatchGame
 from ... import brec
 from ...brec import MreFlst, MreGlob
 
-class Fallout3GameInfo(GameInfo):
+class Fallout3GameInfo(PatchGame):
     displayName = u'Fallout 3'
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
+    game_icon = u'fallout3_%u.png'
     bash_root_prefix = u'Fallout3'
+    bak_game_name = u'Fallout3'
+    template_dir = u'Fallout3'
+    my_games_name = u'Fallout3'
+    appdata_name = u'Fallout3'
     launch_exe = u'Fallout3.exe'
-    game_detect_file = u'Fallout3.exe'
+    game_detect_includes = [u'Fallout3.exe']
     version_detect_file = u'Fallout3.exe'
     master_file = u'Fallout3.esm'
     taglist_dir = u'Fallout3'
+    loot_dir = u'Fallout3'
+    boss_game_name = u'Fallout3'
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout3/'
     nexusName = u'Fallout 3 Nexus'
@@ -134,42 +141,23 @@ class Fallout3GameInfo(GameInfo):
                             u'noseRing', u'earrings', u'mask', u'choker',
                             u'mouthObject', u'bodyAddOn1', u'bodyAddOn2',
                             u'bodyAddOn3')
+        reference_types = {b'ACHR', b'ACRE', b'PBEA', b'PGRE', b'PMIS',
+                           b'REFR'}
 
-    # Remaining to add:
-    # 'Body-F', 'Body-M', 'Body-Size-F', 'Body-Size-M', 'Eyes', 'Hair',
-    # 'R.Attributes-F', 'R.Attributes-M', 'R.Description', 'R.Ears', 'R.Head',
-    # 'R.Mouth', 'R.Relations', 'R.Skills', 'R.Teeth', 'Voice-F', 'Voice-M'
-    allTags = {
-        u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
-        u'Actors.AIPackagesForceAdd', u'Actors.Anims', u'Actors.CombatStyle',
-        u'Actors.DeathItem', u'Actors.RecordFlags', u'Actors.Skeleton',
-        u'Actors.Spells', u'Actors.SpellsForceAdd', u'Actors.Stats',
-        u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ForceHideLand',
-        u'C.ImageSpace', u'C.Light', u'C.MiscFlags', u'C.Music', u'C.Name',
-        u'C.Owner', u'C.RecordFlags', u'C.Regions', u'C.Water',
-        u'Creatures.Blood', u'Creatures.Type', u'Deactivate', u'Deflst',
-        u'Delev', u'Destructible', u'EffectStats', u'EnchantmentStats',
-        u'Factions', u'Filter', u'Graphics', u'Invent.Add', u'Invent.Change',
-        u'Invent.Remove', u'MustBeActiveIfImported', u'Names', u'NoMerge',
-        u'NPC.Class', u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
-        u'NpcFacesForceFullImport', u'ObjectBounds', u'Relations.Add',
-        u'Relations.Change', u'Relations.Remove', u'Relev', u'Scripts',
-        u'Sound', u'SpellStats', u'Stats', u'Text',
-    }
+    allTags = PatchGame.allTags | {u'NoMerge'}
 
-    # Remaining to add:
-    #  TweakNames, RaceRecords, ReplaceFormIDs
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
-        u'ImportActorsAIPackages', u'ImportActorsAnimations',
-        u'ImportActorsDeathItems', u'ImportActorsFaces',
+        u'ImportActorsAIPackages', u'ImportActorsAnimations', u'NpcChecker',
+        u'ImportActorsDeathItems', u'ImportActorsFaces', u'RaceChecker',
         u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
-        u'ImportDestructible', u'ImportEffectsStats',
+        u'ImportDestructible', u'ImportEffectsStats', u'ImportRaces',
         u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
         u'ImportNames', u'ImportObjectBounds', u'ImportRelations',
         u'ImportScripts', u'ImportSounds', u'ImportSpellStats', u'ImportStats',
         u'ImportText', u'LeveledLists', u'MergePatches', u'TweakActors',
-        u'TweakAssorted', u'TweakSettings',
+        u'TweakAssorted', u'TweakSettings', u'ImportRacesRelations',
+        u'TweakRaces', u'TimescaleChecker', u'TweakNames',
     }
 
     weaponTypes = (
@@ -277,6 +265,33 @@ class Fallout3GameInfo(GameInfo):
         0x0987de : 0x044529, #--FOA
         0x0987df : 0x044529, #--COA
         }
+
+    bethDataFiles = {
+        #--Vanilla
+        u'fallout3.esm',
+        u'fallout - menuvoices.bsa',
+        u'fallout - meshes.bsa',
+        u'fallout - misc.bsa',
+        u'fallout - sound.bsa',
+        u'fallout - textures.bsa',
+        u'fallout - voices.bsa',
+        #-- DLC
+        u'anchorage.esm',
+        u'anchorage - main.bsa',
+        u'anchorage - sounds.bsa',
+        u'thepitt.esm',
+        u'thepitt - main.bsa',
+        u'thepitt - sounds.bsa',
+        u'brokensteel.esm',
+        u'brokensteel - main.bsa',
+        u'brokensteel - sounds.bsa',
+        u'pointlookout.esm',
+        u'pointlookout - main.bsa',
+        u'pointlookout - sounds.bsa',
+        u'zeta.esm',
+        u'zeta - main.bsa',
+        u'zeta - sounds.bsa',
+    }
 
     @classmethod
     def init(cls):

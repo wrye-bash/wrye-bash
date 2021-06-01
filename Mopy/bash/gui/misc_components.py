@@ -34,6 +34,7 @@ from itertools import chain, imap
 from .base_components import _AComponent, Color, WithMouseEvents, \
     ImageWrapper, WithCharEvents
 from .events import EventResult
+from .functions import copy_text_to_clipboard, read_from_clipboard
 from ..bolt import Path, dict_sort
 
 class Font(_wx.Font):
@@ -188,8 +189,8 @@ class Table(WithCharEvents):
 
     def _on_table_key_up(self, wrapped_evt):
         """Internal handler, implements copy and paste, select all, etc."""
-        kcode = wrapped_evt.key_code
         if wrapped_evt.is_cmd_down:
+            kcode = wrapped_evt.key_code
             if kcode == ord(u'A'):
                 if wrapped_evt.is_shift_down:
                     # Ctrl+Shift+A - unselect all cells
@@ -200,16 +201,15 @@ class Table(WithCharEvents):
                         self._native_widget.SelectCol(c, True)
             elif kcode == ord(u'C'):
                 # Ctrl+C - copy contents of selected cells
-                from .. import balt # TODO(inf) de-wx! move this to gui
-                balt.copyToClipboard(self._format_selected_cells(
+                copy_text_to_clipboard(self._format_selected_cells(
                     self.get_selected_cells()))
             elif kcode == ord(u'V'):
                 # Ctrl+V - paste contents of selected cells
                 if not self._native_widget.IsEditable(): return
-                from .. import balt # TODO(inf) de-wx! move these to gui
                 parsed_clipboard = self._parse_clipboard_contents(
-                    balt.read_from_clipboard())
+                    read_from_clipboard())
                 if not parsed_clipboard:
+                    from .. import balt # TODO(inf) de-wx! move this to gui
                     balt.showWarning(self, _(u'Could not parse the pasted '
                                              u'contents as a valid table.'))
                     return
@@ -240,7 +240,7 @@ class Table(WithCharEvents):
             max_col_lengths = {}
             for col_label, col_cells in sel_cells.iteritems():
                 max_col_lengths[col_label] = max(
-                    imap(len, col_cells.itervalues()))
+                    imap(len, col_cells.viewvalues()))
             # We now have enough info to format the header, so do that
             first_header_line = u' ' * max_row_length + u' | '
             first_header_line += u' | '.join(l.ljust(max_col_lengths[l])
@@ -346,17 +346,6 @@ class Table(WithCharEvents):
                     self.set_cell_value(col_label, row_label, target_val)
 
 # Other -----------------------------------------------------------------------
-class BusyCursor(object):
-    """To be used with 'with' statements - changes the user's cursor to the
-    system's 'busy' cursor style. Useful to signal that a running operation is
-    making progress, but won't take long enough to be worth a progress
-    dialog."""
-    def __enter__(self):
-        _wx.BeginBusyCursor()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        _wx.EndBusyCursor()
-
 class GlobalMenu(_AComponent):
     """A global menu bar that populates JIT by repopulating its contents right
     before the menu is opened by the user. The menus are called 'categories' to
@@ -418,10 +407,10 @@ class GlobalMenu(_AComponent):
         if not isinstance(wx_menu, self._GMCategory):
             return # skip all regular context menus that were opened
         # If we don't pause here, the GUI will flicker like crazy
-        with Link.Frame.global_menu.pause_drawing():
+        with self.pause_drawing():
             # Clear the menu and repopulate it. Have to do this JIT, since the
-            # checked/enabled/appended state of links will depend on the current
-            # state of WB itself.
+            # checked/enabled/appended state of links will depend on the
+            # current state of WB itself.
             for old_menu_item in wx_menu.GetMenuItems():
                 wx_menu.DestroyItem(old_menu_item)
             # Need to set this, otherwise help text won't be shown

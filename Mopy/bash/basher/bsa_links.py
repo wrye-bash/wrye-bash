@@ -23,9 +23,10 @@
 """Menu items for the _item_ menu of the BSAs tab - their window attribute
 points to BashFrame.bsaList singleton."""
 
-from .. import archives, bass, balt
+from .. import archives, bass
 from ..balt import ItemLink, Progress
 from ..bolt import GPath, SubProgress
+from ..gui import copy_text_to_clipboard
 
 __all__ = [u'BSA_ExtractToProject', u'BSA_ListContents']
 
@@ -100,5 +101,5 @@ class BSA_ListContents(ItemLink):
             full_text += u'\n\n* %s:\n' % bsa_inf.abs_path.tail
             full_text += u'\n'.join(sorted(bsa_inf.assets))
         full_text += u'\n[/spoiler]'
-        balt.copyToClipboard(full_text)
+        copy_text_to_clipboard(full_text)
         self._showLog(full_text, _(u'BSA Contents'))

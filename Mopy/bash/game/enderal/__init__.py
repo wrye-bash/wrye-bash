@@ -20,9 +20,8 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This modules defines static data for use by bush, when Enderal is set as the
-   active game."""
+active game."""
 
 from ..skyrim import SkyrimGameInfo
 from ... import brec
@@ -31,14 +30,24 @@ from ...brec import MreFlst, MreGlob
 class EnderalGameInfo(SkyrimGameInfo):
     displayName = u'Enderal'
     fsName = u'Enderal'
+    game_icon = u'enderal_%u.png'
     bash_root_prefix = u'Enderal'
-    # Set to this because TESV.exe also exists for Enderal
-    game_detect_file = u'Enderal Launcher.exe'
+    bak_game_name = u'Enderal'
+    my_games_name = u'Enderal'
+    appdata_name = u'Enderal'
+    # Enderal SE also has an Enderal Launcher.exe, but no TESV.exe. Skyrim LE
+    # has TESV.exe, but no Enderal Launcher.exe
+    game_detect_includes = [u'Enderal Launcher.exe', u'TESV.exe']
     # This isn't exact (currently 1.5.0 when it should be 1.5.7), but it's the
     # closest we're going to get
     version_detect_file = u'Enderal Launcher.exe'
     taglist_dir = u'Enderal'
+    loot_dir = u'Enderal'
+    boss_game_name = u'' # BOSS does not support Enderal
     regInstallKeys = (u'SureAI\\Enderal', u'Install_Path')
+    nexusUrl = u'https://www.nexusmods.com/enderal/'
+    nexusName = u'Enderal Nexus'
+    nexusKey = u'bash.installers.openEnderalNexus.continue'
 
     class Ini(SkyrimGameInfo.Ini):
         default_ini_file = u'enderal_default.ini'
@@ -51,10 +60,6 @@ class EnderalGameInfo(SkyrimGameInfo):
 
     class Bain(SkyrimGameInfo.Bain):
         skip_bain_refresh = {u'enderaledit backups', u'enderaledit cache'}
-
-    nexusUrl = u'https://www.nexusmods.com/enderal/'
-    nexusName = u'Enderal Nexus'
-    nexusKey = u'bash.installers.openEnderalNexus.continue'
 
     raceNames = {
         0x13741 : _(u'Half Kilénian'),
@@ -87,11 +92,35 @@ class EnderalGameInfo(SkyrimGameInfo):
         0x13748 : 0x64210, #--Qyr
     }
 
+    bethDataFiles = {
+        u'skyrim.esm',
+        u'update.esm',
+        u'update.bsa',
+        u'enderal - forgotten stories.esm',
+        u'e - meshes.bsa',
+        u'e - music.bsa',
+        u'e - scripts.bsa',
+        u'e - sounds.bsa',
+        u'e - textures1.bsa',
+        u'e - textures2.bsa',
+        u'e - textures3.bsa',
+        u'l - textures.bsa',
+        u'l - voices.bsa',
+        u'skyrim - animations.bsa',
+        u'skyrim - interface.bsa',
+        u'skyrim - meshes.bsa',
+        u'skyrim - misc.bsa',
+        u'skyrim - shaders.bsa',
+        u'skyrim - sounds.bsa',
+        u'skyrim - textures.bsa',
+    }
+
+    nirnroots = _(u'Vynroots')
     @classmethod
     def init(cls):
         # Copy-pasted from Skyrim
         cls._dynamic_import_modules(__name__)
-        from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, \
+        from ..skyrim.records import MreCell, MreWrld, MreFact, MreAchr, \
             MreInfo, MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, \
             MreLvsp, MreEnch, MreProj, MreDlbr, MreRfct, MreMisc, MreActi, \
             MreEqup, MreCpth, MreDoor, MreAnio, MreHazd, MreIdlm, MreEczn, \
@@ -106,23 +135,8 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MreRace
-        # ---------------------------------------------------------------------
-        # Unused records, they have empty GRUP in skyrim.esm-------------------
-        # CLDC HAIR PWAT RGDL SCOL SCPT
-        # ---------------------------------------------------------------------
-        # These Are normally not mergeable but added to brec.MreRecord.type_class
-        #
-        #       MreCell,
-        # ---------------------------------------------------------------------
-        # These have undefined FormIDs Do not merge them
-        #
-        #       MreNavi, MreNavm,
-        # ---------------------------------------------------------------------
-        # These need syntax revision but can be merged once that is corrected
-        #
-        #       MreAchr, MreDial, MreInfo,
-        # ---------------------------------------------------------------------
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MreRace, \
+            MreDial
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (# MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
@@ -141,10 +155,6 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, MreFact,
             MreRace,
         )}
-
-        # MreScpt is Oblivion/FO3/FNV Only
-        # MreMgef, has not been verified to be used here for Skyrim
-
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
@@ -166,7 +176,6 @@ class EnderalGameInfo(SkyrimGameInfo):
             b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
             b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
         ]
-        #-> this needs updating for Skyrim
         header_type.valid_header_sigs = set(
             header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
                                          b'ACRE', b'LAND', b'INFO', b'NAVM',

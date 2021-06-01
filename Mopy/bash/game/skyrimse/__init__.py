@@ -23,20 +23,30 @@
 """GameInfo override for TES V: Skyrim Special Edition."""
 
 from ..skyrim import SkyrimGameInfo
+from .. import WS_COMMON
 from ... import brec
 from ...brec import MreFlst, MreGlob
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
     fsName = u'Skyrim Special Edition'
+    game_icon = u'skyrimse_%u.png'
     bash_root_prefix = u'Skyrim Special Edition' # backwards compat :(
+    bak_game_name = u'Skyrim Special Edition'
+    my_games_name = u'Skyrim Special Edition'
+    appdata_name = u'Skyrim Special Edition'
     launch_exe = u'SkyrimSE.exe'
-    game_detect_file = u'SkyrimSE.exe'
+    # Set to this because SkyrimSE.exe also exists for Enderal SE
+    game_detect_includes = [u'SkyrimSELauncher.exe']
+    # Steam/GOG SkyrimSE has SkyrimSELauncher.exe, but no appxmanifest.xml
+    # Windows Store SkryimSE has SkyrimSELauncher.exe and appxmanifest.xml
+    game_detect_excludes = WS_COMMON
     version_detect_file = u'SkyrimSE.exe'
     taglist_dir = u'SkyrimSE'
+    loot_dir = u'Skyrim Special Edition'
+    boss_game_name = u'' # BOSS does not support SSE
     regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',
                       u'Installed Path')
-
     nexusUrl = u'https://www.nexusmods.com/skyrimspecialedition/'
     nexusName = u'Skyrim SE Nexus'
     nexusKey = u'bash.installers.openSkyrimSeNexus.continue'
@@ -72,6 +82,33 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
     patchers = SkyrimGameInfo.patchers - {u'MergePatches'}
 
+    bethDataFiles = {
+        u'skyrim.esm',
+        u'update.esm',
+        u'dawnguard.esm',
+        u'dragonborn.esm',
+        u'hearthfires.esm',
+        u'skyrim - animations.bsa',
+        u'skyrim - interface.bsa',
+        u'skyrim - meshes0.bsa',
+        u'skyrim - meshes1.bsa',
+        u'skyrim - misc.bsa',
+        u'skyrim - patch.bsa',
+        u'skyrim - shaders.bsa',
+        u'skyrim - sounds.bsa',
+        u'skyrim - textures0.bsa',
+        u'skyrim - textures1.bsa',
+        u'skyrim - textures2.bsa',
+        u'skyrim - textures3.bsa',
+        u'skyrim - textures4.bsa',
+        u'skyrim - textures5.bsa',
+        u'skyrim - textures6.bsa',
+        u'skyrim - textures7.bsa',
+        u'skyrim - textures8.bsa',
+        u'skyrim - voices_en0.bsa',
+    }
+
+    _patcher_package = u'bash.game.skyrimse' # We need to override tweaks
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)

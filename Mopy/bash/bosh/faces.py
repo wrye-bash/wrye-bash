@@ -178,17 +178,18 @@ class PCFaces(object):
             saveFile = SaveFile(saveInfo)
             saveFile.load()
         face = PCFaces.PCFace()
-        face.pcName = saveFile.pcName
+        face.pcName = saveFile.header.pcName
         face.face_masters = saveFile._masters
         #--Player ACHR
         record = saveFile.getRecord(0x14)
         data = record[-1]
-        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.name,data,encode(saveFile.pcName))
+        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.ci_key, data,
+                                          encode(saveFile.header.pcName))
         (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair, face.eye,
             face.hairLength, face.hairRed, face.hairBlue, face.hairGreen, face.unused3, face.gender) = struct_unpack(
-            '=200s120s200s3If3BsB',data[namePos-542:namePos-1])
-        classPos = namePos+len(saveFile.pcName)+1
-        face.iclass, = struct_unpack('I', data[classPos:classPos+4])
+            u'=200s120s200s3If3BsB',data[namePos-542:namePos-1])
+        classPos = namePos + len(saveFile.header.pcName) + 1
+        face.iclass, = struct_unpack(u'I', data[classPos:classPos+4])
         #--Iref >> fid
         getFid = saveFile.getFid
         face.race = getFid(face.race)
@@ -306,7 +307,8 @@ class PCFaces(object):
                 buff.seek(4,1)
         oldRecord = saveFile.getRecord(0x14)
         oldData = oldRecord[-1]
-        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.name,oldData,encode(saveFile.pcName))
+        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.ci_key, oldData,
+                                          encode(saveFile.header.pcName))
         buff.write(oldData)
         #--Modify buffer with face data.
         buff.seek(namePos-542)
@@ -327,15 +329,16 @@ class PCFaces(object):
             buff.seek(1,1)
         #--Name?
         if pcf_flags.pcf_name:
-            postName = buff.getvalue()[buff.tell()+len(saveFile.pcName)+2:]
+            postName = buff.getvalue()[buff.tell() +
+                                       len(saveFile.header.pcName) + 2:]
             pack_byte(buff,len(face.pcName)+1)
             buff.write(encode(face.pcName, firstEncoding=Path.sys_fs_enc))
             buff.write(b'\x00')
             buff.write(postName)
             buff.seek(-len(postName),1)
-            saveFile.pcName = face.pcName
+            saveFile.header.pcName = face.pcName
         else:
-            buff.seek(len(saveFile.pcName)+2,1)
+            buff.seek(len(saveFile.header.pcName) + 2, 1)
         #--Class?
         if pcf_flags.iclass and face.iclass:
             pos = buff.tell()
@@ -384,7 +387,8 @@ class PCFaces(object):
         saveFile.load()
         record = saveFile.getRecord(0x14)
         data = record[-1]
-        namePos = PCFaces.save_getNamePos(saveInfo.name,data,encode(saveFile.pcName))
+        namePos = PCFaces.save_getNamePos(saveInfo.ci_key, data,
+                                          encode(saveFile.header.pcName))
         raceRef,hairRef = struct_unpack(u'2I', data[namePos-22:namePos-14])
         if hairRef != 0: return False
         raceForm = raceRef and saveFile.fids[raceRef]
@@ -417,7 +421,7 @@ class PCFaces(object):
         faces = {}
         for npc in modFile.tops[b'NPC_'].getActiveRecords():
             face = PCFaces.PCFace()
-            face.face_masters = modFile.tes4.masters + [modInfo.name]
+            face.face_masters = modFile.augmented_masters()
             for a in (u'eid', u'race', u'eye', u'hair', u'hairLength',
                       u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
                       u'fggs_p', u'fgga_p', u'fgts_p', u'level', u'skills',
@@ -461,7 +465,7 @@ class PCFaces(object):
         from . import modInfos ##: put it here so I know it's initialized...
         if modInfos.masterName not in tes4.masters:
             tes4.masters.append(modInfos.masterName)
-        masterMap = MasterMap(face.face_masters,tes4.masters+[modInfo.name])
+        masterMap = MasterMap(face.face_masters, modFile.augmented_masters())
         #--Eid
         npcEids = {record.eid for record in modFile.tops[b'NPC_'].records}
         eidForm = u''.join((u'sg', bush.game.raceShortNames.get(face.race, u'Unk'),
@@ -490,7 +494,7 @@ class PCFaces(object):
         npc.fgga_p = face.fgga_p
         npc.fgts_p = face.fgts_p
         #--Stats
-        npc.level = face.level
+        npc.level_offset = face.level
         npc.baseSpell = face.baseSpell
         npc.fatigue = face.fatigue
         if face.skills: npc.skills = face.skills
