@@ -44,6 +44,7 @@ Skyrim Special Edition are supported as well.
 * [Enderal Nexus][22]
 * [Fallout 4 Nexus][6]
 * [Skyrim Special Edition Nexus][7]
+* [Enderal Special Edition Nexus][25]
 * [Github][8] (all releases)
 
 Docs are included in the download but we are setting them up also online
