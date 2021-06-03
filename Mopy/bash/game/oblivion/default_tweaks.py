@@ -127,5 +127,9 @@ default_tweaks = {
     u'Sound, Disabled [Oblivion].ini': OrderedDict(
         [(u'Audio', OrderedDict([(u'bSoundEnabled', u'0')]))]),
     u'Sound, ~Enabled [Oblivion].ini': OrderedDict(
-        [(u'Audio', OrderedDict([(u'bSoundEnabled', u'1')]))])
+        [(u'Audio', OrderedDict([(u'bSoundEnabled', u'1')]))]),
+    u'Static Menu Background, Disabled [Oblivion].ini': OrderedDict(
+        [(u'Display', OrderedDict([(u'bStaticMenuBackground', u'0')]))]),
+    u'Static Menu Background, ~Enabled [Oblivion].ini': OrderedDict(
+        [(u'Display', OrderedDict([(u'bStaticMenuBackground', u'1')]))]),
 }
