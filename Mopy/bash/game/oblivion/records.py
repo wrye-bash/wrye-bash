@@ -1485,7 +1485,10 @@ class MrePgrd(MelRecord):
                 u'mapping_points', MelUInt32(b'PGRL', u'm_point'),
                 prelude=MelFid(b'PGRL', u'mapping_reference')
             ), sort_by_attrs='m_point'),
-        ), sort_special=lambda e: tuple(p.m_point for p in e)),
+        ##: This will sort *before* the sort above, it should be the other way
+        # around. Maybe do all this pre-dump processing (sorting, updating
+        # counters, etc.) in a new recursive method called before dumpData?
+        ), sort_special=lambda e: tuple(p.m_point for p in e.mapping_points)),
     )
     __slots__ = melSet.getSlotsUsed()
 
