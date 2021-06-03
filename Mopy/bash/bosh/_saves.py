@@ -65,7 +65,7 @@ class SreNPC(object):
 
     class ACBS(object):
         __slots__ = (u'flags', u'baseSpell', u'fatigue', u'barterGold',
-                     u'level', u'calcMin', u'calcMax')
+                     u'level_offset', u'calcMin', u'calcMax')
 
     def __init__(self, sre_flags=0, data_=None):
         for attr in self.__slots__:
@@ -76,8 +76,8 @@ class SreNPC(object):
         """Returns a default version. Only supports acbs."""
         assert attr == u'acbs'
         acbs = SreNPC.ACBS()
-        (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
-                acbs.calcMin, acbs.calcMax) = (0,0,0,0,1,0,0)
+        (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
+         acbs.level_offset, acbs.calcMin, acbs.calcMax) = (0,0,0,0,1,0,0)
         acbs.flags = MreRecord.type_class[b'NPC_']._flags(acbs.flags)
         return acbs
 
@@ -94,7 +94,8 @@ class SreNPC(object):
         if sr_flags.acbs:
             acbs = self.acbs = SreNPC.ACBS()
             (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
-             acbs.level, acbs.calcMin, acbs.calcMax) = _unpack(u'=I3Hh2H', 16)
+             acbs.level_offset, acbs.calcMin,
+             acbs.calcMax) = _unpack(u'=I3Hh2H', 16)
             acbs.flags = MreRecord.type_class[b'NPC_']._flags(acbs.flags)
         if sr_flags.factions:
             num = unpack_short(ins)
@@ -120,7 +121,7 @@ class SreNPC(object):
         for attr in SreNPC.__slots__:
             if attr != u'unused2':
                 setattr(sr_flags, attr, getattr(self, attr) is not None)
-        return int(sr_flags)
+        return sr_flags.dump()
 
     def getData(self):
         """Returns self.data."""
@@ -136,8 +137,9 @@ class SreNPC(object):
         #--Acbs
         if self.acbs is not None:
             acbs = self.acbs
-            _pack(u'=I3Hh2H',int(acbs.flags), acbs.baseSpell, acbs.fatigue,
-                  acbs.barterGold, acbs.level, acbs.calcMin, acbs.calcMax)
+            _pack(u'=I3Hh2H', acbs.flags.dump(), acbs.baseSpell, acbs.fatigue,
+                  acbs.barterGold, acbs.level_offset, acbs.calcMin,
+                  acbs.calcMax)
         #--Factions
         if self.factions is not None:
             pack_short(out, len(self.factions))
@@ -376,10 +378,12 @@ class SaveFile(object):
             _pack(u'I',fidsPos)
             out.seek(fidsPos)
             _pack(u'I',len(self.fids))
-            self.fids.tofile(out)
+            # PY3: self.fids.tofile(out)
+            out.write(self.fids.tostring())
             #--Worldspaces
             _pack(u'I',len(self.worldSpaces))
-            self.worldSpaces.tofile(out)
+            # PY3: self.worldSpaces.tofile(out)
+            out.write(self.worldSpaces.tostring())
             #--Done
             progress(1.0,_(u'Writing complete.'))
 
