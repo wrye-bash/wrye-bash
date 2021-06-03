@@ -56,11 +56,17 @@ default_tweaks = {
         [(u'Grass', OrderedDict(
         [(u'iMinGrassSize', u'80'), (u'fGrassStartFadeDistance', u'2000.0000'),
          (u'fGrassEndDistance', u'3000.0000')]))]),
-    u'Intro Movies, Disabled [Oblivion].ini': OrderedDict(
+    u'Intro Movies, All Disabled [Oblivion].ini': OrderedDict(
         [(u'General', OrderedDict(
             [(u'SCreditsMenuMovie', u''), (u'SMainMenuMovieIntro', u''),
              (u'SMainMenuMovie', u''), (u'SIntroSequence', u'')]))]),
-    u'Intro Movies, ~Normal [Oblivion].ini': OrderedDict(
+    u'Intro Movies, Intro Sequence Disabled [Oblivion].ini': OrderedDict(
+        [(u'General', OrderedDict(
+            [(u'SCreditsMenuMovie', u'CreditsMenu.bik'),
+             (u'SMainMenuMovieIntro', u'Oblivion iv logo.bik'),
+             (u'SMainMenuMovie', u'Map loop.bik'),
+             (u'SIntroSequence', u'')]))]),
+    u'Intro Movies, ~All Enabled [Oblivion].ini': OrderedDict(
         [(u'General', OrderedDict(
             [(u'SCreditsMenuMovie', u'CreditsMenu.bik'),
              (u'SMainMenuMovieIntro', u'Oblivion iv logo.bik'),
