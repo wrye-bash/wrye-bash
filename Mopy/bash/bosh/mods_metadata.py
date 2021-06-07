@@ -28,7 +28,7 @@ from collections import defaultdict, OrderedDict
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import dict_sort, structs_cache, SubProgress
-from ..brec import ModReader, SubrecordBlob
+from ..brec import ModReader, SubrecordBlob, RecordHeader
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
 
@@ -198,6 +198,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     all_deleted_refs = defaultdict(list) # ci_key -> list[fid]
     all_deleted_navms = defaultdict(list) # ci_key -> list[fid]
     all_deleted_others = defaultdict(list) # ci_key -> list[fid]
+    old_weapon_records = defaultdict(list) # ci_key -> list[fid]
     # fid -> (is_injected, orig_plugin, list[(eid, sig, plugin)])
     record_type_collisions = {}
     # fid -> (orig_plugin, list[(eid, sig, plugin)])
@@ -226,6 +227,8 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
             all_ref_types = bush.game.Esp.reference_types
             # Temporary place to collect (eid, sig, plugin)-lists
             all_record_versions = defaultdict(list)
+            # Whether or not the game uses SSE's form version (44)
+            game_has_v44 = RecordHeader.plugin_form_version == 44
             for i, (p_ci_key, ext_data) in enumerate(
                     all_extracted_data.iteritems()):
                 scan_progress(i, (_(u'Scanning: %s') % p_ci_key))
@@ -244,19 +247,26 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                 # harmless (if the plugin really is inactive) or will show up
                 # in the BP (if the plugin is actually merged into the BP).
                 scan_overrides = p_ci_key in all_active_plugins
+                # Skip checking for old WEAP records if the game is not based
+                # on SSE or the plugin is one of the vanilla masters (none of
+                # the vanilla masters have old weapon records, plus they
+                # couldn't be fixed even if they did)
+                scan_old_weapons = (game_has_v44 and
+                                    p_ci_key not in vanilla_masters)
                 add_deleted_ref = all_deleted_refs[p_ci_key].append
                 add_deleted_navm = all_deleted_navms[p_ci_key].append
                 add_deleted_rec = all_deleted_others[p_ci_key].append
+                add_old_weapon = old_weapon_records[p_ci_key].append
                 add_hitme = all_hitmes[p_ci_key].append
                 p_masters = modInfos[p_ci_key].masterNames + (p_ci_key,)
                 p_num_masters = len(p_masters)
                 for r, d in ext_data.iteritems():
                     for r_fid, (r_header, r_eid) in d.iteritems():
+                        w_rec_type = r_header.recType
                         if scan_deleted:
                             # Check the deleted flag - unpacking flags is too
                             # expensive
                             if r_header.flags1 & 0x00000020:
-                                w_rec_type = r_header.recType
                                 if w_rec_type == b'NAVM':
                                     add_deleted_navm(r_fid)
                                 elif w_rec_type in all_ref_types:
@@ -279,6 +289,9 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                                               else r_mod_index]] << 24)
                             all_record_versions[lo_fid].append(
                                 (r_eid, r_header.recType, p_ci_key))
+                        if (scan_old_weapons and w_rec_type == b'WEAP' and
+                                r_header.form_version < 44):
+                            add_old_weapon(r_fid)
             # Check for record type collisions, i.e. overrides where the record
             # type of at least one override does not match the base record's
             # type and probable injected collisions, i.e. injected records
@@ -382,6 +395,19 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                 else:
                     del_msg = _(u'%d deleted base records') % num_deleted
                 deleted_base_recs[p_ci_key] = del_msg
+    # -------------------------------------------------------------------------
+    # Check for old (form version < 44) WEAP records, which the game can't load
+    # properly and which cannot be converted safely by the CK
+    old_weaps = {}
+    if old_weapon_records:
+        for p_ci_key, weap_recs in old_weapon_records.iteritems():
+            if weap_recs:
+                num_weaps = len(weap_recs)
+                if num_weaps == 1:
+                    weap_msg = _(u'1 old weapon record')
+                else:
+                    weap_msg = _(u'%d old weapon records') % num_weaps
+                old_weaps[p_ci_key] = weap_msg
     # -------------------------------------------------------------------------
     # Check for HITMEs, i.e. records with a mod index that is > the number of
     # masters that the containing plugin has
@@ -549,6 +575,19 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
               u'which should usually be done by the mod author. Failing that, '
               u'the safest course of action is to uninstall the plugin.'))
         log_plugin_messages(deleted_base_recs)
+    if old_weaps:
+        log.setHeader(u'=== ' + _(u'Old Weapon Records'))
+        log(_(u'The following plugins have old weapon (WEAP) records. These '
+              u'cannot be loaded by %(game_name)s and the %(ck_name)s cannot '
+              u'automatically fix them by resaving. They have to be manually '
+              u'fixed in the %(ck_name)s by changing the critical data (CRDT) '
+              u'subrecord to restore the correct data, which should usally be '
+              u'done by the mod author. Failing that, the safest course of '
+              u'action is to uninstall the plugin.') % {
+            u'game_name': bush.game.displayName,
+            u'ck_name': bush.game.Ck.long_name,
+        })
+        log_plugin_messages(old_weaps)
     if hitmes:
         log.setHeader(u'=== ' + u'HITMEs')
         log(_(u'The following plugins have HITMEs (%(hitme_acronym)s), which '
