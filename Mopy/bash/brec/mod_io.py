@@ -62,6 +62,7 @@ class RecordHeader(object):
     is_top_group_header = False
     __slots__ = (u'recType', u'size', u'extra')
 
+    ##: The way we represent form versions in memory needs rethinking
     @property
     def form_version(self):
         if self.plugin_form_version == 0 : return 0

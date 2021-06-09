@@ -152,8 +152,11 @@ def _fn_active(path_or_regex):
     if is_regex(path_or_regex):
         # Regex means we have to look at each active plugin - plugins can
         # obviously only be in Data, no need to process the path here
-        file_regex = re.compile(path_or_regex)
-        return any(file_regex.match(x.s) for x in cached_active_tuple())
+        matches_regex = re.compile(path_or_regex).match
+        for p in cached_active_tuple():
+            if matches_regex(p.s):
+                return True
+        return False
     else:
         return cached_is_active(GPath(path_or_regex))
 
@@ -182,9 +185,12 @@ def _fn_file(path_or_regex):
         # to check every step of the way
         final_sep = path_or_regex.rfind(u'/')
         # Note that we don't have to error check here due to the +1 offset
-        file_regex = re.compile(path_or_regex[final_sep + 1:])
+        matches_regex = re.compile(path_or_regex[final_sep + 1:]).match
         parent_dir = _process_path(path_or_regex[:final_sep + 1])
-        return any(file_regex.match(f) for f in _iter_dir(parent_dir))
+        for f in _iter_dir(parent_dir):
+            if matches_regex(f):
+                return True
+        return False
     else:
         return _process_path(path_or_regex).exists()
 
@@ -207,10 +213,16 @@ def _fn_many(path_regex):
     :param path_regex: The regex to check."""
     # Same idea as in _fn_file
     final_sep = path_regex.rfind(u'/')
-    file_regex = re.compile(path_regex[final_sep + 1:])
+    matches_regex = re.compile(path_regex[final_sep + 1:]).match
     parent_dir = _process_path(path_regex[:final_sep + 1])
     # Check if we have more than one matching file
-    return len([x for x in _iter_dir(parent_dir) if file_regex.match(x.s)]) > 1
+    matching_count = 0
+    for f in _iter_dir(parent_dir):
+        if matches_regex(f):
+            matching_count += 1
+            if matching_count > 1:
+                return True
+    return False
 
 def _fn_many_active(path_regex):
     # type: (unicode) -> bool
@@ -218,9 +230,15 @@ def _fn_many_active(path_regex):
     specified regex.
 
     :param path_regex: The regex to check."""
-    file_regex = re.compile(path_regex)
+    matches_regex = re.compile(path_regex).match
     # Check if we have more than one matching active plugin
-    return len([x for x in cached_active_tuple() if file_regex.match(x.s)]) > 1
+    matching_count = 0
+    for p in cached_active_tuple():
+        if matches_regex(p.s):
+            matching_count += 1
+            if matching_count > 1:
+                return True
+    return False
 
 ##: Maybe tweak the implementation to match LOOT's by adding some params to
 # env.get_file_version?
@@ -313,7 +331,10 @@ def is_regex(string_to_check):
     for the details.
 
     :param string_to_check: The string to check for regex characters."""
-    return any(x in string_to_check for x in u':\\*?|')
+    for regex_char in r':\*?|':
+        if regex_char in string_to_check:
+            return True
+    return False
 
 def _process_path(file_path):
     # type: (unicode) -> Path

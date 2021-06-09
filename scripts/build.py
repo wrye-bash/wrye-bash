@@ -158,7 +158,7 @@ def get_version_info(version):
     Returns the a string used for the 'File Version' property of the built WBSA.
     For example, a version of 291 would with default padding would return '291.0.0.0'
     """
-    production_regex = r'\d{3,}$'
+    production_regex = r'\d{3,}(?:\.\d)?$'
     nightly_regex = r'(\d{3,})\.(\d{12})$'
     version = unicode(version)
     if re.match(production_regex, version) is not None:

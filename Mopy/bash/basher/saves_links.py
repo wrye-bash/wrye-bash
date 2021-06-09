@@ -902,7 +902,8 @@ class Save_UpdateNPCLevels(EnabledLink):
                 for npc in modFile.tops[b'NPC_'].getActiveRecords():
                     fid = mapToOrdered(short_mapper(npc.fid), None)
                     if not fid: continue
-                    npc_info[fid] = (npc.eid, npc.level, npc.calcMin, npc.calcMax, npc.flags.pcLevelOffset)
+                    npc_info[fid] = (npc.eid, npc.level_offset, npc.calcMin,
+                                     npc.calcMax, npc.flags.pcLevelOffset)
             #--Loop over savefiles
             subProgress = SubProgress(progress,0.4,1.0,len(self.selected))
             message = _(u'NPCs Releveled:')
@@ -918,17 +919,18 @@ class Save_UpdateNPCLevels(EnabledLink):
                         enumerate(records):
                     orderedRecId = mapToOrdered(recId,None)
                     if recType_ != 35 or recId == 7 or orderedRecId not in npc_info: continue
-                    (eid,level,calcMin,calcMax,pcLevelOffset) = npc_info[orderedRecId]
+                    (eid, level_offset, calcMin, calcMax,
+                     pcLevelOffset) = npc_info[orderedRecId]
                     npc = bosh._saves.SreNPC(recFlags, data_)
                     acbs = npc.acbs
                     if acbs and (
-                        (acbs.level != level) or
+                        (acbs.level_offset != level_offset) or
                         (acbs.calcMin != calcMin) or
                         (acbs.calcMax != calcMax) or
                         (acbs.flags.pcLevelOffset != pcLevelOffset)
                         ):
                         acbs.flags.pcLevelOffset = pcLevelOffset
-                        acbs.level = level
+                        acbs.level_offset = level_offset
                         acbs.calcMin = calcMin
                         acbs.calcMax = calcMax
                         (recId,recType_,recFlags,version,data_) = saveFile.records[recNum]

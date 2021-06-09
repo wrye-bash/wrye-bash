@@ -239,8 +239,11 @@ def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
     by trying the specified encoding first, then falling back on the regular
     'guess and try' logic."""
     if isinstance(o, dict):
-        return type(o)(((conv_obj(k, conv_enc), conv_obj(v, conv_enc))
-                        for k, v in o.iteritems()))
+        new_dict = o.copy()
+        new_dict.clear()
+        new_dict.update(((conv_obj(k, conv_enc), conv_obj(v, conv_enc))
+                         for k, v in o.iteritems()))
+        return new_dict
     elif type(o) in __list_types:
         return type(o)(conv_obj(e, conv_enc) for e in o)
     elif isinstance(o, bytes):

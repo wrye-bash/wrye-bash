@@ -45,7 +45,7 @@ class PCFaces(object):
         __slots__ = (
             u'face_masters', u'eid', u'pcName', u'race', u'gender', u'eye',
             u'hair', u'hairLength', u'hairRed', u'hairBlue', u'hairGreen',
-            u'unused3', u'fggs_p', u'fgga_p', u'fgts_p', u'level',
+            u'unused3', u'fggs_p', u'fgga_p', u'fgts_p', u'level_offset',
             u'attributes', u'skills', u'health', u'unused2', u'baseSpell',
             u'fatigue', u'iclass', u'factions', u'modifiers', u'spells')
 
@@ -55,7 +55,8 @@ class PCFaces(object):
             self.fggs_p = self.fgts_p = b'\x00'*4*50
             self.fgga_p = b'\x00'*4*30
             self.unused2 = null2
-            self.health = self.unused3 = self.baseSpell = self.fatigue = self.level = 0
+            self.health = self.unused3 = self.baseSpell = self.fatigue = 0
+            self.level_offset = 0
             self.skills = self.attributes = self.iclass = None
             self.factions = []
             self.modifiers = []
@@ -132,9 +133,9 @@ class PCFaces(object):
             face.face_masters = saveFile._masters
             for a in (u'eid', u'race', u'eye', u'hair', u'hairLength',
                       u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
-                      u'fggs_p', u'fgga_p', u'fgts_p', u'level', u'skills',
-                      u'health', u'unused2', u'baseSpell', u'fatigue',
-                      u'attributes', u'iclass'):
+                      u'fggs_p', u'fgga_p', u'fgts_p', u'level_offset',
+                      u'skills', u'health', u'unused2', u'baseSpell',
+                      u'fatigue', u'attributes', u'iclass'):
                 setattr(face, a, getattr(npc, a))
             face.gender = (0,1)[npc.flags.female]
             face.pcName = npc.full
@@ -153,7 +154,7 @@ class PCFaces(object):
         npc = SreNPC(recFlags,data)
         if npc.acbs:
             face.gender = npc.acbs.flags.female
-            face.level = npc.acbs.level
+            face.level_offset = npc.acbs.level_offset
             face.baseSpell = npc.acbs.baseSpell
             face.fatigue = npc.acbs.fatigue
         for a in (u'attributes', u'skills', u'health', u'unused2'):
@@ -267,7 +268,7 @@ class PCFaces(object):
         npc = SreNPC(recFlags,data)
         if not npc.acbs: npc.acbs = npc.getDefault(u'acbs')
         npc.acbs.flags.female = face.gender
-        npc.acbs.level = face.level
+        npc.acbs.level_offset = face.level_offset
         npc.acbs.baseSpell = face.baseSpell
         npc.acbs.fatigue = face.fatigue
         npc.modifiers = face.modifiers[:]
@@ -360,7 +361,7 @@ class PCFaces(object):
             npc.acbs.flags.female = face.gender
         #--Stats
         if pcf_flags.stats and npc.acbs:
-            npc.acbs.level = face.level
+            npc.acbs.level_offset = face.level_offset
             npc.acbs.baseSpell = face.baseSpell
             npc.acbs.fatigue = face.fatigue
             npc.attributes = face.attributes
@@ -424,9 +425,9 @@ class PCFaces(object):
             face.face_masters = modFile.augmented_masters()
             for a in (u'eid', u'race', u'eye', u'hair', u'hairLength',
                       u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
-                      u'fggs_p', u'fgga_p', u'fgts_p', u'level', u'skills',
-                      u'health', u'unused2', u'baseSpell', u'fatigue',
-                      u'attributes', u'iclass'):
+                      u'fggs_p', u'fgga_p', u'fgts_p', u'level_offset',
+                      u'skills', u'health', u'unused2', u'baseSpell',
+                      u'fatigue', u'attributes', u'iclass'):
                 npc_val = getattr(npc, a)
                 if isinstance(npc_val, tuple): # Hacky check for FormIDs
                     npc_val = short_mapper(npc_val)
@@ -494,7 +495,7 @@ class PCFaces(object):
         npc.fgga_p = face.fgga_p
         npc.fgts_p = face.fgts_p
         #--Stats
-        npc.level_offset = face.level
+        npc.level_offset = face.level_offset
         npc.baseSpell = face.baseSpell
         npc.fatigue = face.fatigue
         if face.skills: npc.skills = face.skills
