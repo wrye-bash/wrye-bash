@@ -872,7 +872,6 @@ class _ATextReplacer(MultiTweakItem):
             return record.eid[0] == u's' and can_change(record.value or u'')
         else:
             for rp in self._match_replace_rpaths[record_sig]: # type: RecPath
-                if not rp.rp_exists(record): continue ##: add except AttributeError in rp_eval
                 for val in rp.rp_eval(record):
                     if can_change(val or u''): return True
             return False

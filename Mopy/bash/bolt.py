@@ -2186,9 +2186,6 @@ class _ARP_Subpath(object):
     def rp_eval(self, record) -> list:
         raise exception.AbstractError(u'rp_eval not implemented')
 
-    def rp_exists(self, record) -> bool:
-        raise exception.AbstractError(u'rp_exists not implemented')
-
     def rp_map(self, record, func, *args) -> None:
         raise exception.AbstractError(u'rp_map not implemented')
 
@@ -2196,14 +2193,11 @@ class _RP_Subpath(_ARP_Subpath):
     """A simple, intermediate subpath. Simply forwards all calls to the next
     part of the record path."""
     def rp_eval(self, record) -> Iterable:
-        return self._next_subpath.rp_eval(getattr(record, self._subpath_attr))
-
-    def rp_exists(self, record) -> bool:
         try:
-            return self._next_subpath.rp_exists(getattr(
+            return self._next_subpath.rp_eval(getattr(
                 record, self._subpath_attr))
-        except AttributeError:
-            return False
+        except AttributeError: # if getattr returns None next rp_eval will blow
+            return []
 
     def rp_map(self, record, func, *args) -> None:
         self._next_subpath.rp_map(getattr(record, self._subpath_attr), func,
@@ -2213,13 +2207,12 @@ class _RP_Subpath(_ARP_Subpath):
         return f'{self._subpath_attr}.{self._next_subpath!r}'
 
 class _RP_LeafSubpath(_ARP_Subpath):
-    """The final part of a record path. This the part that actually gets and
-    sets values."""
-    def rp_eval(self, record) -> list:
-        return [getattr(record, self._subpath_attr)]
+    """The final part of a record path. This is the part that actually gets
+    and sets values. Those values must be str instances."""
 
-    def rp_exists(self, record) -> bool:
-        return hasattr(record, self._subpath_attr)
+    def rp_eval(self, record):
+        rec_val = getattr(record, self._subpath_attr, None)
+        return [rec_val] if rec_val is not None else []
 
     def rp_map(self, record, func, *args) -> None:
         s_attr = self._subpath_attr
@@ -2231,7 +2224,8 @@ class _RP_LeafSubpath(_ARP_Subpath):
         return self._subpath_attr
 
 class _RP_IteratedSubpath(_ARP_Subpath):
-    """An iterated part of a record path. A record path can't resolve to more
+    """An iterated part of a record path, corresponding to a record attribute
+    that holds a list of (Mel) objects. A record path can't resolve to more
     than one value unless it involves at least one of these."""
     def __init__(self, sub_rpath, rest_rpath):
         if not rest_rpath: raise SyntaxError(u'A RecPath may not end with an '
@@ -2242,19 +2236,10 @@ class _RP_IteratedSubpath(_ARP_Subpath):
         eval_next = self._next_subpath.rp_eval
         return chain(*map(eval_next, getattr(record, self._subpath_attr)))
 
-    def rp_exists(self, record) -> bool:
-        num_iterated = 0
-        next_exists = self._next_subpath.rp_exists
-        for iter_attr in getattr(record, self._subpath_attr):
-            if not next_exists(iter_attr):
-                return False # short-circuit
-            num_iterated += 1
-        return num_iterated > 0 # faster than bool()
-
     def rp_map(self, record, func, *args) -> None:
         map_next = self._next_subpath.rp_map
-        for iter_attr in getattr(record, self._subpath_attr):
-            map_next(iter_attr, func, *args)
+        for rec_element in getattr(record, self._subpath_attr):
+            map_next(rec_element, func, *args)
 
     def __repr__(self):
         return f'{self._subpath_attr}[i].{self._next_subpath!r}'
@@ -2288,7 +2273,9 @@ class RecPath(object):
     complex (e.g. contains repeated or optional attributes). Does quite a bit
     of validation and preprocessing, making it much faster and safer than a
     'naive' solution. See the wiki page '[dev] Record Paths' for a full
-    overview of syntax and usage."""
+    overview of syntax and usage. Curent implementation supports paths to
+    record attributes of type str, using None to signal the absence of the
+    attribute."""
     __slots__ = (u'_root_subpath',)
 
     def __init__(self, rpath_str): # type: (str) -> None
@@ -2298,11 +2285,6 @@ class RecPath(object):
         """Evaluates this record path for the specified record, returning a
         list of all attribute values that it resolved to."""
         return self._root_subpath.rp_eval(record)
-
-    def rp_exists(self, record) -> bool:
-        """Returns True if this record path will resolve to a non-empty list
-        for the specified record."""
-        return self._root_subpath.rp_exists(record)
 
     def rp_map(self, record, func, *args) -> None:
         """Maps the specified function over all the values that this record
