@@ -31,8 +31,6 @@ __author__ = u'Infernio'
 import binascii
 import io
 import string
-from itertools import imap
-
 from ..bolt import decoder, encode, struct_unpack, unpack_string, \
     unpack_int, unpack_short, unpack_4s, unpack_byte, unpack_str16, \
     unpack_float, unpack_double, unpack_int_signed, unpack_str32, AFile, \
@@ -273,7 +271,7 @@ class _xSEModListChunk(_xSEChunk, _Dumpable, _Remappable):
 
         :param ins: The input stream to read from.
         :param mod_count: The number of mod names to read."""
-        for x in xrange(mod_count):
+        for x in range(mod_count):
             self.mod_names.append(_unpack_cosave_str16(ins))
 
     def write_mod_names(self, out):
@@ -286,7 +284,7 @@ class _xSEModListChunk(_xSEChunk, _Dumpable, _Remappable):
     def chunk_length(self):
         # 2 bytes per mod name (for the length)
         total_len = len(self.mod_names) * 2
-        total_len += sum(imap(len, self.mod_names))
+        total_len += sum(map(len, self.mod_names))
         return total_len
 
     def dump_to_log(self, log, save_masters):
@@ -392,10 +390,10 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
         if self.chunk_version >= 1:
             num_references = unpack_int(ins)
             self.references = []
-            for x in xrange(num_references):
+            for x in range(num_references):
                 self.references.append(unpack_byte(ins))
         num_elements = unpack_int(ins)
-        for x in xrange(num_elements):
+        for x in range(num_elements):
             self.elements.append(self._xSEEntryARVR(ins, self.key_type))
 
     @property
@@ -435,7 +433,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
         if self.chunk_version >= 1:
             # Every reference is a byte
             total_len += 4 + len(self.references)
-        total_len += sum(imap(lambda e: e.entry_length(), self.elements))
+        total_len += sum(map(lambda e: e.entry_length(), self.elements))
         return total_len
 
     def dump_to_log(self, log, save_masters):
@@ -488,10 +486,10 @@ class _xSEChunkDATA(_xSEModListChunk):
             # again, the number of mods is stored literally as a string of
             # digits, e.g. '153'.
             num_plugins = int(_unpack_cosave_space_str(ins))
-            for x in xrange(num_plugins):
+            for x in range(num_plugins):
                 self.mod_names.append(_unpack_cosave_space_str(ins))
         else:
-            for x in xrange(256):
+            for x in range(256):
                 # This chunk always has 256 mods listed, any excess ones
                 # just get the string 'nomod' stored.
                 read_string = _unpack_cosave_space_str(ins)
@@ -508,11 +506,11 @@ class _xSEChunkDATA(_xSEModListChunk):
         if self.chunk_version > 3:
             total_len += len(self.mod_names) # space separators between mods
             # the mod count as a string & space separator between it and mods
-            total_len += len(unicode(len(self.mod_names))) + 1
+            total_len += len(str(len(self.mod_names))) + 1
         else:
             total_len += 256 # space seperators between mods
             total_len += len(u'nomod') * (256 - len(self.mod_names)) # 'nomod's
-        total_len += sum(imap(len, self.mod_names)) # all present mods
+        total_len += sum(map(len, self.mod_names)) # all present mods
         return total_len + len(self.remaining_data) # all other data
 
     def write_chunk(self, out):
@@ -520,7 +518,7 @@ class _xSEChunkDATA(_xSEModListChunk):
         _pack_cosave_space_str(out, self.sos_version)
         # Avoid write_mod_names, see reasoning above
         if self.chunk_version > 3:
-            _pack_cosave_space_str(out, unicode(len(self.mod_names)))
+            _pack_cosave_space_str(out, str(len(self.mod_names)))
             for mod_name in self.mod_names:
                 _pack_cosave_space_str(out, mod_name)
         else:
@@ -658,7 +656,7 @@ class _xSEChunkPLGN(_xSEChunk, _Dumpable, _Remappable):
     def __init__(self, ins, chunk_type):
         super(_xSEChunkPLGN, self).__init__(ins, chunk_type)
         self.mod_entries = []
-        for x in xrange(unpack_short(ins)):
+        for x in range(unpack_short(ins)):
             self.mod_entries.append(self._xSEEntryPLGN(ins))
 
     def write_chunk(self, out):
@@ -668,7 +666,7 @@ class _xSEChunkPLGN(_xSEChunk, _Dumpable, _Remappable):
             mod_entry.write_entry(out)
 
     def chunk_length(self):
-        return 2 + sum(imap(lambda e: e.entry_length(), self.mod_entries))
+        return 2 + sum(map(lambda e: e.entry_length(), self.mod_entries))
 
     def dump_to_log(self, log, save_masters):
         log(_(u'   Current load order (%u plugins):') % len(self.mod_entries))
@@ -768,7 +766,7 @@ class _xSEPluginChunk(_AChunk, _Remappable):
         if light:
             self._read_chunk(ins)
         else:
-            for x in xrange(num_chunks):
+            for x in range(num_chunks):
                 self._read_chunk(ins)
 
     def _read_chunk(self, ins):
@@ -870,7 +868,7 @@ class _PluggyPluginBlock(_PluggyBlock, _Remappable):
         super(_PluggyPluginBlock, self).__init__(record_type)
         plugin_count = unpack_int(ins)
         self.plugins = []
-        for x in xrange(plugin_count):
+        for x in range(plugin_count):
             self.plugins.append(self._PluggyEntryPlugin(ins))
 
     def write_chunk(self, out):
@@ -926,7 +924,7 @@ class _PluggyStringBlock(_PluggyBlock):
         super(_PluggyStringBlock, self).__init__(record_type)
         string_count = unpack_int(ins)
         self.stored_strings = []
-        for x in xrange(string_count):
+        for x in range(string_count):
             self.stored_strings.append(self._PluggyEntryString(ins))
 
     def write_chunk(self, out):
@@ -999,7 +997,7 @@ class _PluggyArrayBlock(_PluggyBlock):
         self.array_flags = unpack_byte(ins)
         self.max_size = unpack_int(ins)
         self.array_entries = []
-        for x in xrange(unpack_int(ins)):
+        for x in range(unpack_int(ins)):
             self.array_entries.append(self._PluggyEntryArray(ins))
 
     def write_chunk(self, out):
@@ -1055,7 +1053,7 @@ class _PluggyNameBlock(_PluggyBlock):
         super(_PluggyNameBlock, self).__init__(record_type)
         name_count = unpack_int(ins)
         self.stored_names = []
-        for x in xrange(name_count):
+        for x in range(name_count):
             self.stored_names.append(self._PluggyEntryName(ins))
 
     def write_chunk(self, out):
@@ -1160,7 +1158,7 @@ class _PluggyHudSBlock(_PluggyBlock):
     def __init__(self, ins, record_type):
         super(_PluggyHudSBlock, self).__init__(record_type)
         self.hud_entries = []
-        for x in xrange(unpack_int(ins)):
+        for x in range(unpack_int(ins)):
             self.hud_entries.append(self._PluggyEntryHudS(ins))
 
     def write_chunk(self, out):
@@ -1274,7 +1272,7 @@ class _PluggyHudTBlock(_PluggyBlock):
     def __init__(self, ins, record_type):
         super(_PluggyHudTBlock, self).__init__(record_type)
         self.hud_entries = []
-        for x in xrange(unpack_int(ins)):
+        for x in range(unpack_int(ins)):
             self.hud_entries.append(self._PluggyEntryHudT(ins))
 
     def write_chunk(self, out):
@@ -1459,7 +1457,7 @@ class xSECosave(ACosave):
         if light:
             self._add_cosave_chunk(_xSEPluginChunk(ins, light))
         else:
-            for x in xrange(my_header.num_plugin_chunks):
+            for x in range(my_header.num_plugin_chunks):
                 self._add_cosave_chunk(_xSEPluginChunk(ins, light))
 
     def write_cosave(self, out_path):
@@ -1546,7 +1544,7 @@ class xSECosave(ACosave):
         :param shift: By how much (in bits) to shift.
         :return: The unichr representation of the result, or an empty
             string."""
-        temp_char = unichr(target_int >> shift & 0xFF)
+        temp_char = chr(target_int >> shift & 0xFF)
         if temp_char not in string.printable:
             temp_char = u''
         return temp_char

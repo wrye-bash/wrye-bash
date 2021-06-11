@@ -112,11 +112,10 @@ class Fallout4GameInfo(PatchGame):
             u'tools', # bodyslide
             u'vis',
         }
-        no_skip_dirs = GameInfo.Bain.no_skip_dirs.copy() # PY3: dict join
-        no_skip_dirs.update({
+        no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.
             _j(u'interface', u'translations'): [u'.txt']
-        })
+        }
         skip_bain_refresh = {u'fo4edit backups', u'fo4edit cache'}
 
     class Esp(GameInfo.Esp):

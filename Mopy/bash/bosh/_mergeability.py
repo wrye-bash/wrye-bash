@@ -100,7 +100,7 @@ def isPBashMergeable(modInfo, minfos, reasons):
     #--New record
     newblocks = []
     self_name = modInfo.ci_key
-    for top_type,block in modFile.tops.iteritems():
+    for top_type,block in modFile.tops.items():
         for rfid, record in block.iter_present_records(): # skip deleted/ignored
             if rfid[0] == self_name:
                 if not verbose: return False
@@ -120,7 +120,7 @@ def _join_sigs(modFile):
 def _dependent(minfo_key, minfos):
     """Get mods for which modInfo is a master mod (excluding BPs and
     mergeable)."""
-    dependent = [mname.s for mname, info in minfos.iteritems() if
+    dependent = [mname.s for mname, info in minfos.items() if
                  not info.isBP() and minfo_key in info.masterNames and
                  mname not in minfos.mergeable]
     return dependent

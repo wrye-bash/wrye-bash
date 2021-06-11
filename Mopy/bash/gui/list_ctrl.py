@@ -25,7 +25,7 @@ mods, saves, inis, installers etc"""
 
 __author__ = u'Lojack, Utumno'
 
-import cPickle as pickle  # PY3
+import pickle
 
 import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -68,7 +68,8 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                     return _wx.DragResult.DragCopy
                 elif dtype == self.dataList.GetFormat().GetType():
                     # ListCtrl indexes
-                    _data = pickle.loads(self.dataList.GetData().tobytes())
+                    _data = pickle.loads(self.dataList.GetData().tobytes(),
+                                         encoding='bytes')
                     self.window._OnDropList(x, y, _data)
                     return _wx.DragResult.DragCopy
             return _wx.DragResult.DragNone
@@ -118,7 +119,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
         if not self.fnDndAllow(event): return
         indices = []
         start = stop = -1
-        for index in xrange(self.GetItemCount()):
+        for index in range(self.GetItemCount()):
             if self.GetItemState(index, _wx.LIST_STATE_SELECTED):
                 if stop >= 0 and self.dndOnlyCont:
                     # Only allow moving selections if they are in a
@@ -224,8 +225,8 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
                 lambda event: [event.IsEditCancelled(), event.GetLabel(),
                     event.GetIndex(), self.FindItemAt(event.GetIndex())])
         #--Item/Id mapping
-        self._item_itemId = {} # :type: dict[bolt.Path | unicode | int, int]
-        self._itemId_item = {} # :type: dict[int, bolt.Path | unicode | int]
+        self._item_itemId = {} # :type: dict[bolt.Path | str | int, int]
+        self._itemId_item = {} # :type: dict[int, bolt.Path | str | int]
 
     # API (beta) -------------------------------------------------------------
     # Internal id <-> item mappings used in wx._controls.ListCtrl.SortItems

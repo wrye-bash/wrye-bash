@@ -22,8 +22,6 @@
 # =============================================================================
 """This module contains the Fallout 4 record classes. The great majority are
 imported from skyrim, but only after setting MelModel to the FO4 format."""
-from __future__ import unicode_literals
-
 from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelFidList, MreLeveledListBase, MelFid, \

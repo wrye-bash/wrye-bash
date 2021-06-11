@@ -21,8 +21,6 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
-from __future__ import unicode_literals
-
 import io
 import re
 from collections import OrderedDict
@@ -1387,8 +1385,8 @@ class MreNpc(MreActorBase):
         MelAnimations(),
         MelFid(b'CNAM','iclass'),
         MelNpcData(b'DATA', [u'21B', u'H', u'2s', u'8B'],
-                   (u'skills', [0 for _x in xrange(21)]), u'health',
-                   u'unused2', (u'attributes', [0 for _y in xrange(8)])),
+                   (u'skills', [0 for _x in range(21)]), u'health',
+                   u'unused2', (u'attributes', [0 for _y in range(8)])),
         MelFid(b'HNAM', 'hair'),
         MelFloat(b'LNAM', u'hairLength'),
         ##: This is a FormID array in xEdit, but I haven't found any NPC_
@@ -1865,7 +1863,7 @@ class MreSpel(MelRecord,MreHasEffects):
                             4   : u'Ability',
                             5   : u'Poison'}
     spellTypeName_Number = {y.lower(): x for x, y in
-                            spellTypeNumber_Name.iteritems() if x is not None}
+                            spellTypeNumber_Name.items() if x is not None}
     levelTypeNumber_Name = {None : u'NONE',
                             0    : u'Novice',
                             1    : u'Apprentice',
@@ -1873,7 +1871,7 @@ class MreSpel(MelRecord,MreHasEffects):
                             3    : u'Expert',
                             4    : u'Master'}
     levelTypeName_Number = {y.lower(): x for x, y in
-                            levelTypeNumber_Name.iteritems() if x is not None}
+                            levelTypeNumber_Name.items() if x is not None}
     attr_csv_struct[u'level'][2] = \
         lambda val: u'"%s"' % MreSpel.levelTypeNumber_Name.get(val, val)
     attr_csv_struct[u'spellType'][2] = \

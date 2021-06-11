@@ -24,8 +24,6 @@
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to BashFrame.iniList singleton.
 """
-
-from itertools import imap
 from .. import bass, bosh, balt
 from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
 from ..gui import copy_text_to_clipboard
@@ -73,7 +71,7 @@ class INI_ListErrors(EnabledLink):
     _help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
     def _enable(self):
-        return any(imap(lambda inf: inf.tweak_status() < 0,
+        return any(map(lambda inf: inf.tweak_status() < 0,
                         self.iselected_infos()))
 
     def Execute(self):
@@ -145,7 +143,7 @@ class INI_Apply(EnabledLink):
             u'ini': self.window.current_ini_name}
 
     def _enable(self):
-        return all(imap(bosh.INIInfo.is_applicable, self.iselected_infos()))
+        return all(map(bosh.INIInfo.is_applicable, self.iselected_infos()))
 
     def Execute(self):
         """Handle applying INI Tweaks."""

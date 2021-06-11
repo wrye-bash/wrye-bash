@@ -70,12 +70,12 @@ def setup_locale(cli_lang):
     # it - so check that next
     target_locale = _wx.Locale(target_language)
     target_name = target_locale.GetCanonicalName()
-    trans_path = os.path.join(os.getcwdu(), u'bash', u'l10n')
+    trans_path = os.path.join(os.getcwd(), u'bash', u'l10n')
     if not os.path.exists(trans_path):
         # HACK: the CI has to run tests from the top dir, which causes us to
         # have a non-Mopy working dir here. Real fix is ditching the fake
         # startup and adding a real headless mode to WB (see #568 and #554)
-        trans_path = os.path.join(os.getcwdu(), u'Mopy', u'bash', u'l10n')
+        trans_path = os.path.join(os.getcwd(), u'Mopy', u'bash', u'l10n')
     supported_l10ns = [l[:-3] for l in os.listdir(trans_path)
                        if l[-3:] == u'.po']
     if target_name not in supported_l10ns:
@@ -156,8 +156,7 @@ def setup_locale(cli_lang):
             trans = gettext.NullTranslations()
     # Everything has gone smoothly, install the translation and remember what
     # we ended up with as the final locale
-    # PY3: drop the unicode=True, gone in py3 (this is always unicode now)
-    trans.install(unicode=True)
+    trans.install()
     bass.active_locale = target_name
     del _temp_app
     return target_locale
@@ -172,7 +171,7 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
     :param cur_dir: The directory to look for modules in. Defaults to cwd.
     :param _files: Internal parameter used to collect file recursively."""
     if bash_path is None: bash_path = u''
-    if cur_dir is None: cur_dir = os.getcwdu()
+    if cur_dir is None: cur_dir = os.getcwd()
     if _files is None: _files = []
     _files.extend([os.path.join(bash_path, m) for m in os.listdir(cur_dir)
                    if m.lower().endswith((u'.py', u'.pyw'))]) ##: glob?
@@ -219,8 +218,8 @@ def dump_translator(out_path, lang):
     try:
         re_msg_ids_start = re.compile(u'#:')
         re_encoding = re.compile(
-            u'' r'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$', re.I)
-        re_non_escaped_quote = re.compile(u'' r'([^\\])"')
+            r'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$', re.I)
+        re_non_escaped_quote = re.compile(r'([^\\])"')
         def sub_quote(regex_match):
             return regex_match.group(1) + r'\"'
         target_enc = None
@@ -235,7 +234,7 @@ def dump_translator(out_path, lang):
                             old_line.rstrip(b'\r\n'))
                         if encoding_match:
                             # Encoding names are all ASCII, so this is safe
-                            target_enc = unicode(encoding_match.group(1),
+                            target_enc = str(encoding_match.group(1),
                                                  u'ascii')
                     if re_msg_ids_start.match(old_line):
                         break # Break once we hit the first translatable string
@@ -254,7 +253,7 @@ def dump_translator(out_path, lang):
                         continue
                     elif new_line.startswith(b'msgid "'):
                         # Decode the line and retrieve only the msgid contents
-                        stripped_line = unicode(new_line, target_enc)
+                        stripped_line = str(new_line, target_enc)
                         stripped_line = stripped_line.strip(u'\r\n')[7:-1]
                         # Replace escape sequences - Quote, Tab, Backslash
                         stripped_line = stripped_line.replace(u'\\"', u'"')
@@ -287,7 +286,7 @@ def dump_translator(out_path, lang):
                         continue
                     else:
                         out.write(new_line)
-    except (OSError, IOError, UnicodeError):
+    except (OSError, UnicodeError):
         bolt.deprint(u'Error while dumping translation file:', traceback=True)
         try: os.remove(tmp_po)
         except OSError: pass
@@ -305,23 +304,23 @@ def dump_translator(out_path, lang):
 
 #------------------------------------------------------------------------------
 # Formatting
-def format_date(secs): # type: (float) -> unicode
+def format_date(secs): # type: (float) -> str
     """Convert time to string formatted to to locale's default date/time.
 
     :param secs: Formats the specified number of seconds into a string."""
     try:
         local = time.localtime(secs)
-    except ValueError: # local time in windows can't handle negative values
+    except (OSError, ValueError):
+        # local time in windows can't handle negative values
         local = time.gmtime(secs)
-    return bolt.decoder(time.strftime(u'%c', local), ##: decoder?
-                        locale.getpreferredencoding(do_setlocale=False))
+    return time.strftime(u'%c', local)
 
 # PY3: Probably drop in py3?
 def unformat_date(date_str):
     """Basically a wrapper around time.strptime. Exists to get around bug in
     strptime for Japanese locale.
 
-    :type date_str: unicode"""
+    :type date_str: str"""
     try:
         return time.strptime(date_str, u'%c')
     except ValueError:

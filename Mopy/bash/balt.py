@@ -24,8 +24,6 @@
 now. See #190, its code should be refactored and land in basher and/or gui."""
 
 # Imports ---------------------------------------------------------------------
-from __future__ import division
-
 from . import bass # for dirs - try to avoid
 from . import bolt
 from .bolt import GPath, deprint, readme_url
@@ -139,7 +137,7 @@ class ColorChecks(ImageList):
                 shortKey = status + u'.' + state
                 image_key = u'checkbox.' + shortKey
                 img = bass.dirs[u'images'].join(
-                    u'checkbox_%s_%s.png' % (status, state))
+                    f'checkbox_{status}_{state}.png')
                 image = images[image_key] = ImageWrapper(img, ImageWrapper.typesDict[u'png'])
                 self.images.append((shortKey, image))
 
@@ -289,7 +287,7 @@ def vistaDialog(parent, message, title, checkBoxTxt=None,
     if checkBoxTxt:
         if isinstance(checkBoxTxt, bytes):
             raise RuntimeError(u'Do not pass bytes to vistaDialog!')
-        elif isinstance(checkBoxTxt, unicode):
+        elif isinstance(checkBoxTxt, str):
             dialog.set_check_box(checkBoxTxt,False)
         else:
             dialog.set_check_box(checkBoxTxt[0],checkBoxTxt[1])
@@ -528,8 +526,7 @@ class ListEditor(DialogWindow):
         self._list_items = lid_data.getItemList()
         #--GUI
         super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
-        # PY3: Drop the unicode()
-        self._size_key = unicode(self._listEditorData.__class__.__name__)
+        self._size_key = self._listEditorData.__class__.__name__
         #--List Box
         self.listBox = ListBox(self, choices=self._list_items)
         self.listBox.set_min_size(125, 150)
@@ -549,7 +546,7 @@ class ListEditor(DialogWindow):
             (lid_data.showSave, _(u'Save'), self.DoSave),
             (lid_data.showCancel, _(u'Cancel'), self.DoCancel),
             ]
-        for k, v in (orderedDict or {}).iteritems():
+        for k, v in (orderedDict or {}).items():
             buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
             def _btn(btn_label, btn_callback):
@@ -721,10 +718,10 @@ class TabDragMixin(object):
                 else:
                     left,right,step = oldPos+1,newPos+1,-1
                 insert = left+step
-                addPages = [(self.GetPage(x),self.GetPageText(x)) for x in xrange(left,right)]
+                addPages = [(self.GetPage(x),self.GetPageText(x)) for x in range(left,right)]
                 addPages.reverse()
                 num = right - left
-                for i in xrange(num):
+                for i in range(num):
                     self.RemovePage(left)
                 for page,title in addPages:
                     self.InsertPage(insert,page,title)
@@ -1153,7 +1150,7 @@ class UIList(wx.Panel):
     # gList columns autosize---------------------------------------------------
     def autosizeColumns(self):
         if self.autoColWidths:
-            colCount = xrange(self.__gList.lc_get_columns_count())
+            colCount = range(self.__gList.lc_get_columns_count())
             for i in colCount:
                 self.__gList.lc_set_column_width(i, -self.autoColWidths)
 
@@ -1207,9 +1204,8 @@ class UIList(wx.Panel):
     def _try_rename(self, info, newFileName):
         try:
             return self.data_store.rename_operation(info, newFileName)
-        except (CancelError, OSError, IOError):
-            deprint(u'Renaming %s to %s failed' % (info, newFileName),
-                    traceback=True)
+        except (CancelError, OSError):
+            deprint(f'Renaming {info} to {newFileName} failed', traceback=True)
             # When using moveTo I would get "WindowsError:[Error 32]The process
             # cannot access ..." -  the code below was reverting the changes.
             # With shellMove I mostly get CancelError so below not needed -
@@ -1299,8 +1295,7 @@ class UIList(wx.Panel):
             try:
                 sel_inf.abs_path.start()
             except OSError:
-                deprint(u'Failed to open %s' % sel_inf.abs_path,
-                        traceback=True)
+                deprint(f'Failed to open {sel_inf.abs_path}', traceback=True)
 
     #--Sorting ----------------------------------------------------------------
     def SortItems(self, column=None, reverse=u'CURRENT'):
@@ -1379,7 +1374,7 @@ class UIList(wx.Panel):
     #--Item/Index Translation -------------------------------------------------
     def GetItem(self,index):
         """Return item (key in self.data_store) for specified list index.
-        :rtype: bolt.Path | unicode | int
+        :rtype: bolt.Path | str | int
         """
         return self.__gList.FindItemAt(index)
 
@@ -1489,7 +1484,7 @@ class UIList(wx.Panel):
                 try:
                     self.data_store.delete([i], doRefresh=False,
                                            recycle=recycle)
-                except BoltError as e: showError(self, u'%s' % e)
+                except BoltError as e: showError(self, f'{e}')
                 except (AccessDeniedError, CancelError, SkipError): pass
             else:
                 self.data_store.delete_refresh(items, None,
@@ -1519,7 +1514,7 @@ class UIList(wx.Panel):
             self.data_store.store_dir.start()
             return
         except OSError:
-            deprint(u'Creating %s' % self.data_store.store_dir)
+            deprint(f'Creating {self.data_store.store_dir}')
             self.data_store.store_dir.makedirs()
         self.data_store.store_dir.start()
 
@@ -1635,7 +1630,7 @@ class Link(object):
         the column clicked on or the first column. Set in Links.popup_menu().
         :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
             gui.misc_components.CheckListBox
-        :type selection: list[Path | unicode | int] | int | None
+        :type selection: list[Path | str | int] | int | None
         """
         self.window = window
         self.selected = selection
@@ -2050,7 +2045,7 @@ class TreeCtrl(_AComponent):
                   wx.TR_HIDE_ROOT)
         root = self._native_widget.AddRoot(title)
         self._native_widget.Bind(wx.EVT_MOTION, self.OnMotion)
-        for item, subitems in items_dict.iteritems():
+        for item, subitems in items_dict.items():
             child = self._native_widget.AppendItem(root, item.s)
             for subitem in subitems:
                 self._native_widget.AppendItem(child, subitem.s)

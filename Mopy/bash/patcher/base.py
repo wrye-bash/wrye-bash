@@ -242,7 +242,7 @@ class AMultiTweakItem(object):
         """Logs the total changes and details for each plugin."""
         log.setHeader(u'=== ' + self.tweak_log_header)
         log(u'* ' + self.tweak_log_msg % {
-            u'total_changed': sum(count.itervalues())})
+            u'total_changed': sum(count.values())})
         for src_plugin in load_order.get_ordered(count):
             log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
 
@@ -356,6 +356,6 @@ class ImportPatcher(ListPatcher, ModLoader):
                 % {u'type': top_grup_sig.decode(u'ascii'), u'count': count})
 
     def _plog1(self,log,mod_count): # common logging variation
-        log(self.__class__.logMsg % sum(mod_count.itervalues()))
+        log(self.__class__.logMsg % sum(mod_count.values()))
         for mod in load_order.get_ordered(mod_count):
             log(u'* %s: %3d' % (mod, mod_count[mod]))

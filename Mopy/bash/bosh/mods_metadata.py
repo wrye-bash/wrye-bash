@@ -20,8 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from __future__ import division
-
 import io
 from collections import defaultdict, OrderedDict
 
@@ -141,7 +139,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     # Check for ESL-flagged plugins that aren't ESL-capable.
     remove_esl_flag = set()
     if bush.game.check_esl:
-        for m, modinf in modInfos.iteritems():
+        for m, modinf in modInfos.items():
             if not modinf.is_esl():
                 continue # we check .esl extension and ESL flagged mods
             if not is_esl_capable(modinf, modInfos, reasons=None):
@@ -230,7 +228,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
             # Whether or not the game uses SSE's form version (44)
             game_has_v44 = RecordHeader.plugin_form_version == 44
             for i, (p_ci_key, ext_data) in enumerate(
-                    all_extracted_data.iteritems()):
+                    all_extracted_data.items()):
                 scan_progress(i, (_(u'Scanning: %s') % p_ci_key))
                 # Two situations where we can skip checking deleted records:
                 # 1. The game master can't have deleted records (deleting a
@@ -260,8 +258,8 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                 add_hitme = all_hitmes[p_ci_key].append
                 p_masters = modInfos[p_ci_key].masterNames + (p_ci_key,)
                 p_num_masters = len(p_masters)
-                for r, d in ext_data.iteritems():
-                    for r_fid, (r_header, r_eid) in d.iteritems():
+                for r, d in ext_data.items():
+                    for r_fid, (r_header, r_eid) in d.items():
                         w_rec_type = r_header.recType
                         if scan_deleted:
                             # Check the deleted flag - unpacking flags is too
@@ -282,11 +280,9 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                             # Convert into a load order FormID - ugly but fast,
                             # inlined and hand-optmized from various methods.
                             # Calling them would be way too slow.
-                            # PY3: drop the int() call
-                            lo_fid = int(
-                                r_fid & 0xFFFFFF | plugin_to_acti_index[
-                                    p_masters[p_num_masters - 1 if is_hitme
-                                              else r_mod_index]] << 24)
+                            lo_fid = (r_fid & 0xFFFFFF | plugin_to_acti_index[
+                                p_masters[p_num_masters - 1 if is_hitme else
+                                r_mod_index]] << 24)
                             all_record_versions[lo_fid].append(
                                 (r_eid, r_header.recType, p_ci_key))
                         if (scan_old_weapons and w_rec_type == b'WEAP' and
@@ -305,7 +301,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
             prog_msg = u'{}\n%s'.format(_(u'Looking for collisions...'))
             num_collisions = 0
             collision_progress(num_collisions, prog_msg % game_master_name)
-            for r_fid, r_versions in all_record_versions.iteritems():
+            for r_fid, r_versions in all_record_versions.items():
                 first_eid, first_sig, first_plugin = r_versions[0]
                 # These FormIDs are whole-LO and HITMEs are truncated, so this
                 # is safe
@@ -346,7 +342,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     # -------------------------------------------------------------------------
     # Check for deleted references
     if all_deleted_refs:
-        for p_ci_key, deleted_refrs in all_deleted_refs.iteritems():
+        for p_ci_key, deleted_refrs in all_deleted_refs.items():
             # Rely on LOOT for detecting deleted references in vanilla files
             plugin_is_vanilla = p_ci_key in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
@@ -363,7 +359,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     # Check for deleted navmeshes
     deleted_navmeshes = {}
     if all_deleted_navms:
-        for p_ci_key, deleted_navms in all_deleted_navms.iteritems():
+        for p_ci_key, deleted_navms in all_deleted_navms.items():
             # Deleted navmeshes can't and shouldn't be fixed in vanilla files,
             # so don't show warnings for them
             plugin_is_vanilla = p_ci_key in vanilla_masters
@@ -381,7 +377,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     # Check for deleted base records
     deleted_base_recs = {}
     if all_deleted_others:
-        for p_ci_key, deleted_others in all_deleted_others.iteritems():
+        for p_ci_key, deleted_others in all_deleted_others.items():
             # Deleted navmeshes can't and shouldn't be fixed in vanilla files,
             # so don't show warnings for them
             plugin_is_vanilla = p_ci_key in vanilla_masters
@@ -400,7 +396,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     # properly and which cannot be converted safely by the CK
     old_weaps = {}
     if old_weapon_records:
-        for p_ci_key, weap_recs in old_weapon_records.iteritems():
+        for p_ci_key, weap_recs in old_weapon_records.items():
             if weap_recs:
                 num_weaps = len(weap_recs)
                 if num_weaps == 1:
@@ -413,7 +409,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
     # masters that the containing plugin has
     hitmes = {}
     if all_hitmes:
-        for p_ci_key, found_hitmes in all_hitmes.iteritems():
+        for p_ci_key, found_hitmes in all_hitmes.items():
             # HITMEs can't and shouldn't be fixed in vanilla files, so don't
             # show warnings for them
             plugin_is_vanilla = p_ci_key in vanilla_masters
@@ -531,7 +527,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
         # Always an ASCII byte string, so this is fine
         p_header_sig = bush.game.Esp.plugin_header_sig.decode(u'ascii')
         ver_list = u', '.join(
-            sorted(unicode(v) for v in bush.game.Esp.validHeaderVersions))
+            sorted(str(v) for v in bush.game.Esp.validHeaderVersions))
         log.setHeader(u'=== ' + _(u'Invalid %s versions') % p_header_sig)
         log(_(u"The following plugins have a %s version that isn't "
               u'recognized as one of the standard versions (%s). This is '

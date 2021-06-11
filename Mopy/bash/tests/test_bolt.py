@@ -346,8 +346,8 @@ class TestPath(object):
 
     def test__eq__(self):
         # reminder
-        assert u'' == b'' # Py3 False!
-        assert u'123' == b'123' # Py3 False!
+        assert u'' != b''
+        assert u'123' != b'123'
         assert not (u'' == [])
         assert not (u'' == [1])
         assert not (u'' == None)
@@ -356,14 +356,16 @@ class TestPath(object):
         # paths and unicode
         p = GPath(u'c:/random/path.txt')
         assert u'c:/random/path.txt' == p
-        assert u'' r'c:\random\path.txt' == p
+        assert r'c:\random\path.txt' == p
         assert GPath(u'c:/random/path.txt') == p
-        assert GPath(u'' r'c:\random\path.txt') == p
+        assert GPath(r'c:\random\path.txt') == p
         # paths and bytes
         assert b'c:/random/path.txt' == p
-        assert b'' r'c:\random\path.txt' == p
-        assert GPath(b'c:/random/path.txt') == p
-        assert GPath(b'' r'c:\random\path.txt') == p
+        with pytest.raises(SyntaxError):
+            eval(r"assert b'' r'c:\random\path.txt' == p")
+        assert GPath(b'c:/random/path.txt') != p
+        with pytest.raises(SyntaxError):
+            eval(r"assert GPath(b'' r'c:\random\path.txt') == p")
         # paths and None
         assert not (None == p)
         # test comp with Falsy - previously assertions passed
@@ -382,27 +384,29 @@ class TestPath(object):
 
     def test__le__(self):
         # reminder
-        assert u'' <= b'' # Py3 False!
-        assert u'123' <= b'123' # Py3 False!
-        assert  (None <= u'') ## !
-        assert not (u'' <= [])
-        assert not (u'' <= [1])
-        assert not (u'' <= None)
-        assert not (u'' <= True)
-        assert not (u'' <= 55)
+        with pytest.raises(TypeError): assert (u'' <= b'')
+        with pytest.raises(TypeError): assert (u'123' <= b'123')
+        with pytest.raises(TypeError): assert (None <= u'')
+        with pytest.raises(TypeError): assert not (u'' <= [])
+        with pytest.raises(TypeError): assert not (u'' <= [1])
+        with pytest.raises(TypeError): assert not (u'' <= None)
+        with pytest.raises(TypeError): assert not (u'' <= True)
+        with pytest.raises(TypeError): assert not (u'' <= 55)
         # paths and unicode
         p = GPath(u'c:/random/path.txt')
         assert u'c:/random/path.txt' <= p
-        assert u'' r'c:\random\path.txt' <= p
+        assert r'c:\random\path.txt' <= p
         assert GPath(u'c:/random/path.txt') <= p
-        assert GPath(u'' r'c:\random\path.txt') <= p
+        assert GPath(r'c:\random\path.txt') <= p
         # paths and bytes
         assert b'c:/random/path.txt' <= p
-        assert b'' r'c:\random\path.txt' <= p
-        assert GPath(b'c:/random/path.txt') <= p
-        assert GPath(b'' r'c:\random\path.txt') <= p
+        with pytest.raises(SyntaxError):
+            eval(r"assert b'' r'c:\random\path.txt' <= p")
+        with pytest.raises(TypeError): assert GPath(b'c:/random/path.txt') <= p
+        with pytest.raises(SyntaxError):
+            eval(r"assert GPath(b'' r'c:\random\path.txt') <= p")
         # test comp with None
-        assert (None <= p)
+        with pytest.raises(TypeError): assert (None <= p)
         # unrelated types - previously assertions passed
         with pytest.raises(TypeError): assert not (p <= [])
         with pytest.raises(TypeError): assert not (p <= False)
@@ -412,8 +416,8 @@ class TestPath(object):
         assert empty <= Path(u'')
         assert empty <= u''
         assert empty <= b''
-        assert (None <= p)  ## !
-        assert not (p <= None)
+        with pytest.raises(TypeError): assert (None <= p)
+        with pytest.raises(TypeError): assert not (p <= None)
         with pytest.raises(TypeError): assert empty <= []
         with pytest.raises(TypeError): assert empty <= False
         with pytest.raises(TypeError): assert not (empty <= [1])
@@ -421,12 +425,12 @@ class TestPath(object):
     def test_dict_keys(self):
         d = {GPath(u'c:/random/path.txt'): 1}
         assert not (u'c:/random/path.txt' in d) ## oops
-        assert u'' r'c:\random\path.txt' in d
+        assert r'c:\random\path.txt' in d
         assert GPath(u'c:/random/path.txt') in d
-        assert GPath(u'' r'c:\random\path.txt') in d
+        assert GPath(r'c:\random\path.txt') in d
         dd = {u'c:/random/path.txt': 1}
         assert not GPath(u'c:/random/path.txt') in dd
-        assert not GPath(u'' r'c:\random\path.txt') in dd
+        assert not GPath(r'c:\random\path.txt') in dd
 
 class TestRounder(object):
 

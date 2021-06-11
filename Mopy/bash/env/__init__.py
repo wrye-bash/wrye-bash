@@ -24,11 +24,8 @@
 central import point, always import directly from here to get the right
 implementations for the current OS."""
 
-import errno
 import platform
 import shutil
-from itertools import izip
-
 # First import the shared API
 from .common import *
 
@@ -53,7 +50,7 @@ from ..exception import CancelError, SkipError, AccessDeniedError, \
     DirectoryFileCollisionError, FileOperationError
 
 # NOTE(lojack): AccessDenied can be a result of many error codes,
-# According to 
+# According to
 # https://msdn.microsoft.com/en-us/library/windows/desktop/bb762164%28v=vs.85%29.aspx
 # If you recieve an error code not on that list, then you assume it is one of
 # the default WinError.h error codes, in this case 5 is `ERROR_ACCESS_DENIED`.
@@ -74,7 +71,7 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
     # renameOnCollision - if True auto-rename on moving collision, else ask
     # TODO(241): renameOnCollision NOT IMPLEMENTED
     doIt = shutil.copytree if operation == FO_COPY else shutil.move
-    for fileFrom, fileTo in izip(source, target):
+    for fileFrom, fileTo in zip(source, target):
         if fileFrom.isdir():
             dest_dir = fileTo.join(fileFrom.tail)
             if dest_dir.exists():
@@ -94,8 +91,7 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
             # overwrite as needed
             try:
                 shutil.copy2(fileFrom.s, fileTo.s)
-            except IOError as e:
-                if e.errno != errno.ENOENT: raise
+            except FileNotFoundError:
                 # probably directory path does not exist, create it.
                 fileTo.head.makedirs()
                 shutil.copy2(fileFrom.s, fileTo.s)
@@ -125,13 +121,13 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         return {}
     abspath = os.path.abspath
     # source may be anything - see SHFILEOPSTRUCT - accepts list or item
-    if isinstance(source, (Path, (unicode, bytes))):
+    if isinstance(source, (Path, (str, bytes))):
         source = [abspath(u'%s' % source)]
     else:
         source = [abspath(u'%s' % x) for x in source]
     # target may be anything ...
     target = target if target else u'' # abspath(u''): cwd (must be Mopy/)
-    if isinstance(target, (Path, (unicode, bytes))):
+    if isinstance(target, (Path, (str, bytes))):
         target = [abspath(u'%s' % target)]
     else:
         target = [abspath(u'%s' % x) for x in target]

@@ -275,7 +275,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                     wizard.ensureDisplayed()
                 ret = wizard.Run()
                 if ret.canceled:
-                    if isinstance(ret.canceled, unicode):
+                    if isinstance(ret.canceled, str):
                         self._showWarning(ret.canceled)
                     idetails.refreshCurrent(sel_package)
                     continue
@@ -283,7 +283,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                 # Switch away from FOMOD mode, then check the sub-packages that
                 # were selected by the wizard
                 idetails.set_fomod_mode(fomod_enabled=False)
-                for index in xrange(len(sel_package.subNames[1:])):
+                for index in range(len(sel_package.subNames[1:])):
                     select = (sel_package.subNames[index + 1] in
                               ret.select_sub_packages)
                     idetails.gSubList.lb_check_at_index(index, select)
@@ -317,7 +317,7 @@ class Installer_Wizard(_Installer_AWizardLink):
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         new_targets = {}
-        for iniFile, wizardEdits in ret.ini_edits.iteritems():
+        for iniFile, wizardEdits in ret.ini_edits.items():
             basen = os.path.basename(os.path.splitext(iniFile)[0])
             outFile = bass.dirs[u'ini_tweaks'].join(
                 u'%s - Wizard Tweak [%s].ini' % (installer, basen))
@@ -646,7 +646,7 @@ class Installer_Move(_InstallerLink):
                    _(u'Enter position number.') + u'\n' +
                    _(u'Last: -1; First of Last: -2; Semi-Last: -3.')
                    )
-        newPos = self._askText(message, default=unicode(curPos))
+        newPos = self._askText(message, default=str(curPos))
         if not newPos: return
         try:
             newPos = int(newPos)
@@ -718,7 +718,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
 
     def _url(self):
         return u'http://www.google.com/search?hl=en&q=' + u'+'.join(
-            re.split(u'' r'\W+|_+', self.mod_url_id))
+            re.split(r'\W+|_+', self.mod_url_id))
 
 class Installer_OpenTESA(_Installer_OpenAt):
     regexp = bosh.reTESA
@@ -816,7 +816,7 @@ class Installer_CopyConflicts(_SingleInstallable):
             for i,(package, installer) in enumerate(self.idata.sorted_pairs()):
                 curConflicts = set()
                 progress(i, _(u'Scanning Packages...') + u'\n%s' % package)
-                for z, y in installer.refreshDataSizeCrc().iteritems():
+                for z, y in installer.refreshDataSizeCrc().items():
                     if z in src_sizeCrc and installer.ci_dest_sizeCrc[z] != \
                             src_sizeCrc[z]:
                         curConflicts.add(y)
@@ -954,7 +954,7 @@ class Installer_Espm_List(_Installer_Details_Link):
     def Execute(self):
         subs = _(u'Plugin List for %s:') % self._installer + u'\n[spoiler]\n'
         espm_list = self.window.gEspmList
-        for index in xrange(espm_list.lb_get_items_count()):
+        for index in range(espm_list.lb_get_items_count()):
             subs += [u'   ',u'** '][espm_list.lb_is_checked_at_index(index)] + \
                     espm_list.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
@@ -1012,7 +1012,7 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
     _help = _(u'Deselects all selected sub-packages and vice versa.')
 
     def Execute(self):
-        for index in xrange(self.window.gSubList.lb_get_items_count()):
+        for index in range(self.window.gSubList.lb_get_items_count()):
             # + 1 due to empty string included in subActives by BAIN
             check = not self._installer.subActives[index + 1]
             self.window.gSubList.lb_check_at_index(index, check)
@@ -1028,7 +1028,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
     def Execute(self):
         subs = _(u'Sub-Packages List for %s:') % self._installer
         subs += u'\n[spoiler]\n'
-        for index in xrange(self.window.gSubList.lb_get_items_count()):
+        for index in range(self.window.gSubList.lb_get_items_count()):
             subs += [u'   ', u'** '][self.window.gSubList.lb_is_checked_at_index(
                 index)] + self.window.gSubList.lb_get_str_item_at_index(index) + u'\n'
         subs += u'[/spoiler]'
@@ -1211,7 +1211,7 @@ class _InstallerConverter_Link(_InstallerLink):
         for inst in self.iselected_infos():
             crcs_dict[inst.crc].add(inst)
         duplicates = []
-        for crc_, installers in crcs_dict.iteritems():
+        for crc_, installers in crcs_dict.items():
             if len(installers) > 1:
                 duplicates.append((crc_, u'  \n* ' + u'  \n* '.join(
                     sorted(x.archive for x in installers))))

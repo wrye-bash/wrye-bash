@@ -482,7 +482,7 @@ installercons.images.extend({
     u'on.yellow.dir.wiz': _png(u'diamond_yellow_inc_wiz.png'),
     #--Broken
     u'corrupt':   _png(u'red_x.png'),
-}.viewitems())
+}.items())
 
 #--Buttons
 def imageList(template):

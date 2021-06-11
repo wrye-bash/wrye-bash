@@ -29,11 +29,9 @@ load_order.py."""
 
 __author__ = u'Utumno'
 
-import errno
 import re
 import time
 from collections import defaultdict, OrderedDict
-from itertools import izip
 
 # Local
 from . import bass, bolt, env, exception
@@ -44,7 +42,7 @@ def _write_plugins_txt_(path, lord, active, _star):
     try:
         with path.open(u'wb') as out:
             __write_plugins(out, lord, active, _star)
-    except IOError:
+    except OSError:
         env.clear_read_only(path)
         with path.open(u'wb') as out:
             __write_plugins(out, lord, active, _star)
@@ -92,7 +90,7 @@ def _parse_plugins_txt_(path, mod_infos, _star):
             try:
                 test = bolt.decoder(modname, encoding=u'cp1252')
             except UnicodeError:
-                bolt.deprint(u'%r failed to properly decode' % modname)
+                bolt.deprint(f'{modname!r} failed to properly decode')
                 continue
             mod_g_path = GPath_no_norm(test)
             if mod_g_path not in mod_infos: # TODO(ut): is this really needed??
@@ -101,7 +99,7 @@ def _parse_plugins_txt_(path, mod_infos, _star):
                 # have a way to double check: modInfos.data
                 for encoding in bolt.encodingOrder:
                     try:
-                        test2 = unicode(modname, encoding)
+                        test2 = str(modname, encoding)
                         mod_gpath_2 = GPath_no_norm(test2)
                         if mod_gpath_2 in mod_infos:
                             mod_g_path = mod_gpath_2
@@ -148,14 +146,13 @@ class FixInfo(object):
         if not self.lo_changed(): return
         added = _pl(self.lo_added) or u'None'
         removed = _pl(self.lo_removed) or u'None'
-        duplicates = (u'lo_duplicates(%s), ' % _pl(self.lo_duplicates)) \
+        duplicates = f'lo_duplicates({_pl(self.lo_duplicates)}), ' \
             if self.lo_duplicates else u''
         reordered = u'(No)' if not any(self.lo_reordered) else _pl(
             self.lo_reordered[0], u'from:\n', joint=u'\n') + _pl(
             self.lo_reordered[1], u'\nto:\n', joint=u'\n')
-        msg = u'Fixed Load Order: added(%s), removed(%s), %sreordered %s' % (
-            added, removed, duplicates, reordered)
-        bolt.deprint(msg)
+        bolt.deprint(f'Fixed Load Order: added({added}), removed({removed}), '
+                     f'{duplicates}reordered {reordered}')
 
     def warn_active(self):
         if not self.act_header: return
@@ -165,7 +162,7 @@ class FixInfo(object):
                    u'directory, invalid and/or corrupted: '
             msg += _pl(self.act_removed) + u'\n'
         if self.master_not_active:
-            msg += u'%s not present in active mods\n' % self.master_not_active
+            msg += f'{self.master_not_active} not present in active mods\n'
         for path in self.missing_must_be_active:
             msg += (u'%s not present in active list while present in Data '
                     u'folder' % path) + u'\n'
@@ -307,7 +304,7 @@ class Game(object):
                 deleted = prev - new
                 common = prev & new
                 reordered = any(x != y for x, y in
-                                izip((x for x in previous_lord if x in common),
+                                zip((x for x in previous_lord if x in common),
                                     (x for x in lord if x in common)))
                 setting_active = self._must_update_active(deleted, reordered)
             if setting_active: active = list(previous_active) # active was None
@@ -441,9 +438,8 @@ class Game(object):
         active_filtered = self._filter_actives(active, rem_from_acti)
         active_dropped = set(active) - set(active_filtered)
         if active_dropped:
-            bolt.deprint(u'Removed %s from %s' % (
-                u', '.join(u'%s' % s for s in sorted(active_dropped)),
-                self.get_acti_file()))
+            bolt.deprint(f'Removed {sorted(active_dropped)} from '
+                         f'{self.get_acti_file()}')
             # We removed plugins that don't belong here, back up first
             self._backup_active_plugins()
             self._persist_active_plugins(active_filtered, active_filtered)
@@ -507,11 +503,10 @@ class Game(object):
         except ValueError:
             if not master_name in cached_minfs:
                 raise exception.BoltError(
-                    u'%s is missing or corrupted' % master_name)
+                    f'{master_name} is missing or corrupted')
             fix_lo.lo_added = {master_name}
         if master_dex > 0:
-            bolt.deprint(
-                u'%s has index %d (must be 0)' % (master_name, master_dex))
+            bolt.deprint(f'{master_name} has index {master_dex} (must be 0)')
             lord.remove(master_name)
             lord.insert(0, master_name)
             lo_order_changed = True
@@ -666,13 +661,12 @@ class Game(object):
         if lo_file or acti_file:
             bolt.deprint(u'Using the following load order files:')
             if acti_file == lo_file:
-                bolt.deprint(u' - Load order and active '
-                             u'plugins: %s' % acti_file)
+                bolt.deprint(f' - Load order and active plugins: {acti_file}')
             else:
                 if lo_file:
-                    bolt.deprint(u' - Load order: %s' % lo_file)
+                    bolt.deprint(f' - Load order: {lo_file}')
                 if acti_file:
-                    bolt.deprint(u' - Active plugins: %s' % acti_file)
+                    bolt.deprint(f' - Active plugins: {acti_file}')
 
 class INIGame(Game):
     """Class for games which use an INI section to determine parts of the load
@@ -736,9 +730,9 @@ class INIGame(Game):
         absent section gracefully.
 
         :type cached_ini: bosh.ini_files.IniFile
-        :type ini_key: tuple[unicode, unicode, unicode]
+        :type ini_key: tuple[str, str, str]
         :rtype: list[bolt.Path]"""
-        # Returned format is dict[CIstr, tuple[unicode, int]], we want the
+        # Returned format is dict[CIstr, tuple[str, int]], we want the
         # unicode (i.e. the mod names)
         section_mapping = cached_ini.get_setting_values(ini_key[1], {})
         # Sort by line number, then convert the values to paths and return
@@ -750,7 +744,7 @@ class INIGame(Game):
         """Writes out the specified INI using the specified key and mod list.
 
         :type cached_ini: bosh.ini_files.IniFile
-        :type ini_key: tuple[unicode, unicode, unicode]
+        :type ini_key: tuple[str, str, str]
         :type mod_list: list[bolt.Path]"""
         # Remove any existing section - also prevents duplicate sections with
         # different case
@@ -767,9 +761,9 @@ class INIGame(Game):
             ini_path = self._cached_ini_actives.abs_path
             try:
                 ini_path.copyTo(ini_path.backup)
-            except IOError:
-                bolt.deprint(u'Tried to back up %s, but it did not '
-                             u'exist' % ini_path)
+            except OSError:
+                bolt.deprint(
+                    f'Tried to back up {ini_path}, but it did not exist')
         else: super(INIGame, self)._backup_active_plugins()
 
     def _backup_load_order(self):
@@ -777,9 +771,9 @@ class INIGame(Game):
             ini_path = self._cached_ini_lo.abs_path
             try:
                 ini_path.copyTo(ini_path.backup)
-            except IOError:
-                bolt.deprint(u'Tried to back up %s, but it did not '
-                             u'exist' % ini_path)
+            except OSError:
+                bolt.deprint(
+                    f'Tried to back up {ini_path}, but it did not exist')
         else: super(INIGame, self)._backup_load_order()
 
     # Reading from INI
@@ -911,7 +905,7 @@ class TimestampGame(Game):
             (self._mtime_mods[mtime] - {mod_name}) & active)
 
     def get_free_time(self, start_time, end_time=None):
-        all_mtimes = {x.mtime for x in self.mod_infos.itervalues()}
+        all_mtimes = {x.mtime for x in self.mod_infos.values()}
         end_time = end_time or (start_time + 1000) # 1000 (seconds) is an arbitrary limit
         while start_time < end_time:
             if not start_time in all_mtimes:
@@ -936,9 +930,9 @@ class TimestampGame(Game):
     def _backup_active_plugins(self):
         try:
             self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
-        except IOError:
-            bolt.deprint(u'Tried to back up %s, but it did not '
-                         u'exist' % self.plugins_txt_path)
+        except OSError:
+            bolt.deprint(f'Tried to back up {self.plugins_txt_path}, '
+                         f'but it did not exist')
 
     def _backup_load_order(self):
         pass # timestamps, no file to backup
@@ -968,7 +962,7 @@ class TimestampGame(Game):
                 older += 60.0
                 info.setmtime(older)
         restamp = []
-        for ordered, mod in izip(lord, current):
+        for ordered, mod in zip(lord, current):
             if ordered == mod: continue
             restamp.append((ordered, self.mod_infos[mod].mtime))
         for ordered, mtime in restamp:
@@ -978,7 +972,7 @@ class TimestampGame(Game):
 
     def _rebuild_mtimes_cache(self):
         self._mtime_mods.clear()
-        for mod, info in self.mod_infos.iteritems():
+        for mod, info in self.mod_infos.items():
             self._mtime_mods[int(info.mtime)] |= {mod}
 
     def _persist_active_plugins(self, active, lord):
@@ -1071,16 +1065,16 @@ class TextfileGame(Game):
     def _backup_active_plugins(self):
         try:
             self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
-        except IOError:
-            bolt.deprint(u'Tried to back up %s, but it did not '
-                         u'exist' % self.plugins_txt_path)
+        except OSError:
+            bolt.deprint(f'Tried to back up {self.plugins_txt_path}, '
+                         f'but it did not exist')
 
     def _backup_load_order(self):
         try:
             self.loadorder_txt_path.copyTo(self.loadorder_txt_path.backup)
-        except IOError:
-            bolt.deprint(u'Tried to back up %s, but it did not '
-                         u'exist' % self.loadorder_txt_path)
+        except OSError:
+            bolt.deprint(f'Tried to back up {self.loadorder_txt_path},'
+                         f' but it did not exist')
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from loadorder.txt file. If loadorder.txt does not
@@ -1096,12 +1090,12 @@ class TextfileGame(Game):
             if (cached_active is not None
                     and not self.plugins_txt_path.exists()):
                 self._write_plugins_txt(cached_active, cached_active)
-                bolt.deprint(u'Created %s based on cached '
-                             u'info' % self.plugins_txt_path)
+                bolt.deprint(
+                    f'Created {self.plugins_txt_path} based on cached info')
             elif cached_active is None and self.plugins_txt_path.exists():
                 mods = self._fetch_active_plugins() # will add Skyrim.esm
             self._persist_load_order(mods, mods)
-            bolt.deprint(u'Created %s' % self.loadorder_txt_path)
+            bolt.deprint(f'Created {self.loadorder_txt_path}')
             return mods
         #--Read file
         _acti, lo = self._parse_modfile(self.loadorder_txt_path)
@@ -1114,7 +1108,7 @@ class TextfileGame(Game):
             while active_in_lo:
                 # Use list(), we may modify cached_active_copy and active_in_lo
                 for i, (ordered, current) in list(enumerate(
-                        izip(cached_active_copy, active_in_lo))):
+                        zip(cached_active_copy, active_in_lo))):
                     if ordered != current:
                         if ordered not in lo:
                             # Mod is in plugins.txt, but not in loadorder.txt;
@@ -1128,7 +1122,7 @@ class TextfileGame(Game):
                             to = w[ordered] + 1 + j
                             # make room
                             w = {x: (i if i < to else i + 1) for x, i in
-                                 w.iteritems()}
+                                 w.items()}
                             w[x] = to # bubble them up !
                         active_in_lo.remove(ordered)
                         cached_active_copy = cached_active_copy[i + 1:]
@@ -1141,9 +1135,9 @@ class TextfileGame(Game):
                 # We fixed a desync, make a backup and write the load order
                 self._backup_load_order()
                 self._persist_load_order(lo, lo)
-                bolt.deprint(u'Corrected %s (order of mods differed from '
-                             u'their order in %s)' % (
-                        self.loadorder_txt_path, self.plugins_txt_path))
+                bolt.deprint(f'Corrected {self.loadorder_txt_path} (order of '
+                             f'mods differed from their order in '
+                             f'{self.plugins_txt_path})')
         self.__update_lo_cache_info()
         return lo
 
@@ -1174,8 +1168,8 @@ class TextfileGame(Game):
         old = acti[:]
         acti.sort(key=dex_dict.__getitem__) # all present in lord
         if acti != old: # active mods order that disagrees with lord ?
-            return (u'Active list order of plugins (%s) differs from supplied '
-                    u'load order (%s)') % (_pl(old), _pl(acti))
+            return f'Active list order of plugins ({_pl(old)}) differs from ' \
+                   f'supplied load order ({_pl(acti)})'
         return u''
 
 class AsteriskGame(Game):
@@ -1229,7 +1223,7 @@ class AsteriskGame(Game):
     def _backup_active_plugins(self):
         try:
             self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
-        except IOError:
+        except OSError:
             bolt.deprint(u'Tried to back up %s, but it did not '
                          u'exist' % self.plugins_txt_path)
 
@@ -1319,8 +1313,8 @@ class AsteriskGame(Game):
                                      % ccc_line)
                         continue
                 cls.must_be_active_if_present += tuple(ccc_contents)
-        except (OSError, IOError) as e:
-            if e.errno != errno.ENOENT:
+        except OSError as e:
+            if not isinstance(e, FileNotFoundError):
                 bolt.deprint(u'Failed to open %s' % ccc_path, traceback=True)
             bolt.deprint(u'%s does not exist or could not be read, falling '
                          u'back to hardcoded CCC list' % cls._ccc_filename)

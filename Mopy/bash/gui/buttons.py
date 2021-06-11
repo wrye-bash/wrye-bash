@@ -221,7 +221,6 @@ class _StdImageButton(ImageButton): ##: deprecate? makes us wx dependent
             self._wx_icon, _wx.ART_HELP_BROWSER,
             self._native_widget.FromDIP(self._dip_size))
 
-
 class BackwardButton(_StdImageButton):
     """An image button with no text that displays an arrow pointing to the
     right. Used for navigation, e.g. in a browser.

@@ -20,8 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from __future__ import division
-
 import os
 import subprocess
 import webbrowser
@@ -72,8 +70,7 @@ class StatusBar_Button(ItemLink):
         self.canHide = canHide
         self.gButton = None
         self._tip = button_tip or self.__class__._tip
-        # PY3: drop the unicode()
-        if uid is None: uid = (unicode(self.__class__.__name__), self._tip)
+        if uid is None: uid = (self.__class__.__name__, self._tip)
         self.uid = uid
 
     def IsPresent(self):
@@ -181,9 +178,9 @@ class _App_Button(StatusBar_Button):
 
     def ShowError(self,error):
         balt.showError(Link.Frame,
-                       (u'%s'%error + u'\n\n' +
-                        _(u'Used Path: ') + u'%s\n' % self.exePath +
-                        _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
+                       (f'{error}\n\n' +
+                        _(u'Used Path: ') + f'{self.exePath}\n' +
+                        _(u'Used Arguments: ') + f'{self.exeArgs}'),
                        _(u"Could not launch '%s'") % self.exePath.stail)
 
     def _showUnicodeError(self):
@@ -201,9 +198,9 @@ class _App_Button(StatusBar_Button):
         self._app_button_execute()
 
     def _app_button_execute(self):
-        dir_ = os.getcwdu()
-        args = u'"%s"' % self.exePath
-        args += u' '.join([u'%s' % arg for arg in self.exeArgs])
+        dir_ = os.getcwd()
+        args = f'"{self.exePath}"'
+        args += u' '.join([f'{arg}' for arg in self.exeArgs])
         try:
             import win32api
             r, executable = win32api.FindExecutable(self.exePath.s)
@@ -388,8 +385,8 @@ class App_Tes4View(_ExeButton):
             self.mainMenu.append(_Mods_xEditExpert())
             self.mainMenu.append(_Mods_xEditSkipBSAs())
 
-    def IsPresent(self): # FIXME(inf) What on earth is this? What's the point??
-        if self.exePath in bosh.undefinedPaths or not self.exePath.exists():
+    def IsPresent(self): # FIXME(inf) What on earth is this? What's the point?? --> check C:\not\a\valid\path.exe in default.ini
+        if not super().IsPresent():
             testPath = bass.tooldirs[u'Tes4ViewPath']
             if testPath not in bosh.undefinedPaths and testPath.exists():
                 self.exePath = testPath

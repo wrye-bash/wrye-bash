@@ -23,9 +23,7 @@
 """Builds on the rest of brec to provide full definitions and base classes for
 some commonly needed records."""
 
-from __future__ import division
 
-from itertools import izip
 from operator import attrgetter
 
 from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
@@ -83,7 +81,7 @@ class MreHeaderBase(MelRecord):
             num_sizes = len(record.master_sizes)
             record.master_sizes = record.master_sizes[:num_masters] + [0] * (
                     num_masters - num_sizes)
-            for master_name, master_size in izip(record.masters,
+            for master_name, master_size in zip(record.masters,
                                                  record.master_sizes):
                 MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
                     out, master_name.s)
@@ -183,7 +181,7 @@ class MreFlst(MelRecord):
         if len(self.formIDInList) != len(other.formIDInList):
             self.mergeOverLast = True
         else:
-            for selfEntry, otherEntry in izip(self.formIDInList,
+            for selfEntry, otherEntry in zip(self.formIDInList,
                                               other.formIDInList):
                 if selfEntry != otherEntry:
                     self.mergeOverLast = True
@@ -363,7 +361,7 @@ class MreLeveledListBase(MelRecord):
                 # Then, check the sort-attributes, same story
                 otherlist = other.entries
                 otherlist.sort(key=entry_copy_attrs_key)
-                for selfEntry, otherEntry in izip(self.entries, otherlist):
+                for selfEntry, otherEntry in zip(self.entries, otherlist):
                     for attr in self.__class__.entry_copy_attrs:
                         if getattr(selfEntry, attr) != getattr(
                                 otherEntry, attr):

@@ -24,8 +24,6 @@
 """Menu items for the main and item menus of the saves tab - their window
 attribute points to BashFrame.saveList singleton."""
 
-from __future__ import division
-
 import io
 import re
 import shutil
@@ -375,7 +373,7 @@ class Save_Renumber(EnabledLink):
     _text = _(u'Re-number Save(s)...')
     _help = _(u'Renumber a whole lot of save files. Savename must be of the '
               u'form "Save <some number><optional text>"')
-    _re_numbered_save = re.compile(u'' r'^(save ?)(\d*)(.*)', re.I | re.U)
+    _re_numbered_save = re.compile(r'^(save ?)(\d*)(.*)', re.I | re.U)
 
     def _enable(self):
         self._matches = []
@@ -495,7 +493,7 @@ class Save_EditCreatedData(balt.ListEditorData):
         else:
             self.changed = False #--Allows graceful effort if close fails.
             count = 0
-            for newName,(oldName,records) in self.name_nameRecords.iteritems():
+            for newName,(oldName,records) in self.name_nameRecords.items():
                 if newName == oldName: continue
                 for record in records:
                     record.full = newName
@@ -792,12 +790,13 @@ class Save_Stats(OneItemLink):
 #------------------------------------------------------------------------------
 class _Save_StatCosave(AppendableLink, OneItemLink):
     """Base for xSE and pluggy cosaves stats menus"""
-    _cosave_get = SaveInfo.get_xse_cosave
-
     def _enable(self):
         if not super(_Save_StatCosave, self)._enable(): return False
-        self._cosave = self._cosave_get(self._selected_info)
+        self._cosave = self._get_cosave()
         return bool(self._cosave)
+
+    def _get_cosave(self):
+        raise AbstractError(u'_get_cosave not implemented')
 
     def Execute(self):
         with BusyCursor():
@@ -814,6 +813,9 @@ class Save_StatObse(_Save_StatCosave):
     _help = _(u'Dumps contents of associated %s cosave into a log.') % \
             bush.game.Se.se_abbrev
 
+    def _get_cosave(self):
+        return self._selected_info.get_xse_cosave()
+
     def _append(self, window): return bool(bush.game.Se.se_abbrev)
 
 #------------------------------------------------------------------------------
@@ -821,7 +823,9 @@ class Save_StatPluggy(_Save_StatCosave):
     """Dump Pluggy blocks from .pluggy files."""
     _text = _(u'Dump .pluggy Contents')
     _help = _(u'Dumps contents of associated Pluggy cosave into a log.')
-    _cosave_get = SaveInfo.get_pluggy_cosave
+
+    def _get_cosave(self):
+        return self._selected_info.get_pluggy_cosave()
 
     def _append(self, window): return bush.game.has_standalone_pluggy
 
@@ -846,7 +850,7 @@ class Save_Unbloat(OneItemLink):
         message = [_(u'Remove savegame bloating?')]
         if createdCounts:
             for (created_item_rec_type, rec_full), count_ in sorted(
-                    createdCounts.iteritems()):
+                    createdCounts.items()):
                 message.append(u'  %s %s: %u' % (
                     created_item_rec_type, rec_full, count_))
         if nullRefCount:

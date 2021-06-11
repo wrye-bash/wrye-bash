@@ -36,8 +36,8 @@ the settings were created with
 the backup
 """
 
-import cPickle as pickle  # PY3
 import os
+import pickle
 from os.path import join as jo
 
 from . import archives
@@ -46,7 +46,7 @@ from . import bolt
 from . import initialization
 from .bass import dirs, AppVersion
 from .bolt import GPath, deprint
-from .exception import BoltError, StateError, raise_bolt_error
+from .exception import BoltError, StateError
 
 def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder):
     """Construct a dict mapping directory paths to setting files. Keys are
@@ -88,7 +88,7 @@ def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder):
         (dirs[u'mods'].join(u'INI Tweaks'),
          jo(bak_name, mods_folder, u'INI Tweaks')): {},
     }
-    for setting_files in settings_info.itervalues():
+    for setting_files in settings_info.values():
         for settings_file in set(setting_files):
             if settings_file.endswith(u'.dat'): # add corresponding bak file
                 setting_files.add(settings_file + u'.bak')
@@ -106,7 +106,7 @@ class BackupSettings(object):
         self._backup_dest_file = GPath(settings_file) # absolute path to dest 7z file
         self.files = {}
         for (bash_dir, tmpdir), setting_files in _init_settings_files(
-                bak_name, mg_name, root_prefix, mods_folder).iteritems():
+                bak_name, mg_name, root_prefix, mods_folder).items():
             if not setting_files: # we have to backup everything in there
                 setting_files = bash_dir.list()
             tmp_dir = GPath(tmpdir)
@@ -138,16 +138,15 @@ class BackupSettings(object):
         # return True if not same app version and user opts to backup settings
         return balt_.askYes(balt_.Link.Frame, u'\n'.join([
             _(u'A different version of Wrye Bash was previously installed.'),
-            _(u'Previous Version: ') + (u'%s' % previous_bash_version),
-            _(u'Current Version: ') + (u'%s' % AppVersion),
+            _(u'Previous Version: ') + f'{previous_bash_version}',
+            _(u'Current Version: ') + f'{AppVersion}',
             _(u'Do you want to create a backup of your Bash settings before '
               u'they are overwritten?')]), title=_(u'Create backup?'))
 
     @staticmethod
     def backup_filename(bak_name):
-        return u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
-            bak_name, bolt.timestamp(), bass.settings[u'bash.version'],
-            AppVersion)
+        return f'Backup Bash Settings {bak_name} ({bolt.timestamp()}) v' \
+               f'{bass.settings[u"bash.version"]}-{AppVersion}.7z'
 
     @staticmethod
     def is_backup(backup_path):
@@ -168,8 +167,8 @@ class BackupSettings(object):
 
     def _backup_settings(self, temp_dir):
         # copy all files to ~tmp backup dir
-        for tpath, fpath in self.files.iteritems():
-            deprint(u'%s <-- %s' % (tpath, fpath))
+        for tpath, fpath in self.files.items():
+            deprint(f'{tpath} <-- {fpath}')
             fpath.copyTo(temp_dir.join(tpath))
         # dump the version info and file listing
         with temp_dir.join(u'backup.dat').open(u'wb') as out:
@@ -234,7 +233,7 @@ class RestoreSettings(object):
             self._extract_dir = self._settings_file
         else:
             raise BoltError(
-                u'%s is not a valid backup location' % self._settings_file)
+                f'{self._settings_file} is not a valid backup location')
         return self._extract_dir
 
     def backup_ini_path(self):
@@ -243,7 +242,7 @@ class RestoreSettings(object):
         initialize bass.dirs."""
         if self._extract_dir is self.__unset: raise BoltError(
             u'backup_ini_path: you must extract the settings file first')
-        for r, d, fs in bolt.walkdir(u'%s' % self._extract_dir):
+        for r, d, fs in os.walk(u'%s' % self._extract_dir):
             for f in fs:
                 if f == u'bash.ini':
                     self._bash_ini_path = jo(r, f)
@@ -262,20 +261,20 @@ class RestoreSettings(object):
 
     def _restore_settings(self, bak_name, mg_name, root_prefix, mods_folder):
         deprint(u'')
-        deprint(u'RESTORE BASH SETTINGS: %s' % self._settings_file)
+        deprint(f'RESTORE BASH SETTINGS: {self._settings_file}')
         # backup previous Bash ini if it exists
         old_bash_ini = dirs[u'mopy'].join(u'bash.ini')
         self._timestamped_old = u''.join(
             [old_bash_ini.root.s, u'(', bolt.timestamp(), u').ini'])
         try:
             old_bash_ini.moveTo(self._timestamped_old)
-            deprint(u'Existing bash.ini moved to %s' % self._timestamped_old)
+            deprint(f'Existing bash.ini moved to {self._timestamped_old}')
         except StateError: # does not exist
             self._timestamped_old = None
         # restore all the settings files
         def _restore_file(dest_dir_, back_path_, *end_path):
-            deprint(u'%s --> %s' % (back_path_.join(*end_path), dest_dir_.join(
-                *end_path)))
+            deprint(f'{back_path_.join(*end_path)} --> '
+                    f'{dest_dir_.join(*end_path)}')
             full_back_path.join(*end_path).copyTo(dest_dir_.join(*end_path))
         restore_paths = list(_init_settings_files(bak_name, mg_name,
                                                   root_prefix, mods_folder))
@@ -341,11 +340,13 @@ class RestoreSettings(object):
             try:
                 with backup_dat.open(u'rb') as ins:
                     # version of Bash that created the backed up settings
-                    self._saved_settings_version = pickle.load(ins)
+                    self._saved_settings_version = pickle.load(
+                        ins, encoding='bytes')
                     # version of Bash that created the backup
-                    self._settings_saved_with = pickle.load(ins)
-            except (OSError, IOError, pickle.UnpicklingError, EOFError):
-                raise_bolt_error(u'Failed to read %s' % backup_dat)
+                    self._settings_saved_with = pickle.load(
+                        ins, encoding='bytes')
+            except (OSError, pickle.UnpicklingError, EOFError) as e:
+                raise BoltError(f'Failed to read {backup_dat}') from e
         return self._saved_settings_version, self._settings_saved_with
 
     def _get_backup_game(self):
@@ -354,7 +355,7 @@ class RestoreSettings(object):
             if node != u'My Games' and not node.endswith(
                     u'Mods') and os.path.isdir(self._extract_dir.join(node).s):
                 return node
-        raise BoltError(u'%s does not contain a game dir' % self._extract_dir)
+        raise BoltError(f'{self._extract_dir} does not contain a game dir')
 
     # Dialogs and cleanup/error handling --------------------------------------
     @staticmethod

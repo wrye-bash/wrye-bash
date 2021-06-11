@@ -100,7 +100,7 @@ def get_ctrl_down(): # type: () -> bool
     """Returns True if the Ctrl key is currently down."""
     return _wx.GetKeyState(_wx.WXK_CONTROL)
 
-def get_key_down(key_char): # type: (unicode) -> bool
+def get_key_down(key_char): # type: (str) -> bool
     """Returns True if the key corresponding to the specified character is
     currently down."""
     return _wx.GetKeyState(ord(key_char))

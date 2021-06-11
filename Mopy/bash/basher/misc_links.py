@@ -43,7 +43,7 @@ class Screens_NextScreenShot(EnabledLink):
     """Sets screenshot base name and number."""
     _text = _(u'Next Shot...')
     _help = _(u'Set screenshot base name and number')
-    rePattern = re.compile(u'' r'^(.+?)(\d*)$', re.I | re.U)
+    rePattern = re.compile(r'^(.+?)(\d*)$', re.I | re.U)
 
     def _enable(self):
         return not bosh.oblivionIni.isCorrupted \

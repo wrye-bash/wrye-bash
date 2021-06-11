@@ -25,8 +25,6 @@ through a list, a dropdown, or even a color picker."""
 
 __author__ = u'nycz, Utumno'
 
-from itertools import izip
-
 import wx as _wx
 import wx.adv as _adv
 
@@ -123,7 +121,7 @@ class ListBox(WithMouseEvents):
     """A list of options, of which one or more can be selected.
 
     Events:
-      - on_list_box(lb_dex: int, item_text: unicode): Posted when user selects
+      - on_list_box(lb_dex: int, item_text: str): Posted when user selects
       an item from list. The default arg processor extracts the index of the
       event and the list item label
       - Mouse events - see gui.base_components.WithMouseEvents"""
@@ -214,7 +212,7 @@ class ListBox(WithMouseEvents):
         """Selects all items in the ListBox. Pointless if isSingle=True was
         passed to this ListBox."""
         with self.pause_drawing():
-            for i in xrange(self.lb_get_items_count()):
+            for i in range(self.lb_get_items_count()):
                 self.lb_select_index(i)
 
 class CheckListBox(ListBox, WithCharEvents):
@@ -256,20 +254,20 @@ class CheckListBox(ListBox, WithCharEvents):
         """Sets all checkmarks to the specified state - checked if True,
         unchecked if False."""
         with self.pause_drawing():
-            for i in xrange(self.lb_get_items_count()):
+            for i in range(self.lb_get_items_count()):
                 self.lb_check_at_index(i, checked)
 
     def get_checked_strings(self):
         """Returns a list of string representations of all checked items."""
         return self._native_widget.GetCheckedStrings()
 
-    def set_all_items(self, all_keys, all_values): # PY3: dict (sorted!)
+    def set_all_items(self, keys_values):
         """Completely clears the list and repopulates it using the specified
         key and value lists. Much faster than set_all_items_keep_pos, but
         discards the current scroll position."""
         with self.pause_drawing():
             self.lb_clear()
-            for i, (k, v) in enumerate(izip(all_keys, all_values)):
+            for i, (k, v) in enumerate(keys_values.items()):
                 self.lb_append(k)
                 self.lb_check_at_index(i, v)
 
@@ -284,7 +282,7 @@ class CheckListBox(ListBox, WithCharEvents):
             self.lb_clear()
             return
         with self.pause_drawing():
-            for index, (lab, ch) in enumerate(izip(names, checkmarks)):
+            for index, (lab, ch) in enumerate(zip(names, checkmarks)):
                 if index >= self.lb_get_items_count():
                     self.lb_append(lab)
                 else:
@@ -294,5 +292,5 @@ class CheckListBox(ListBox, WithCharEvents):
                         continue
                     self.lb_set_label_at_index(index, lab)
                 self.lb_check_at_index(index, ch)
-            for index in xrange(self.lb_get_items_count(), len(names), -1):
+            for index in range(self.lb_get_items_count(), len(names), -1):
                 self.lb_delete_at_index(index - 1)

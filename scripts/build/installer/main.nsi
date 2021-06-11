@@ -354,7 +354,6 @@ ManifestDPIAware true
   !insertmacro MUI_LANGUAGE "English"
   LangString DESC_Main ${LANG_ENGLISH} "The main Wrye Bash files."
   LangString DESC_Shortcuts_SM ${LANG_ENGLISH} "Start Menu shortcuts for the uninstaller and each launcher."
-  LangString DESC_Prereq ${LANG_ENGLISH} "The files that Wrye Bash requires to run."
 
   LangString PAGE_INSTALLLOCATIONS_ES_TITLE ${LANG_ENGLISH} "Elder Scrolls Installation Location(s)"
   LangString PAGE_INSTALLLOCATIONS_ES_SUBTITLE ${LANG_ENGLISH} "Please select installation path(s) for Wrye Bash."
@@ -367,8 +366,6 @@ ManifestDPIAware true
 
   LangString PAGE_CHECK_LOCATIONS_TITLE ${LANG_ENGLISH} "Installation Location Check"
   LangString PAGE_CHECK_LOCATIONS_SUBTITLE ${LANG_ENGLISH} "A risky installation location has been detected."
-  LangString PAGE_REQUIREMENTS_TITLE ${LANG_ENGLISH} "Installation Prerequisites"
-  LangString PAGE_REQUIREMENTS_SUBTITLE ${LANG_ENGLISH} "Checking for requirements"
   LangString unPAGE_SELECT_GAMES_ES_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Bash from."
   LangString unPAGE_SELECT_GAMES_FALLOUT_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Flash from."
   LangString unPAGE_SELECT_GAMES_EXTRA_SUBTITLE ${LANG_ENGLISH} "Please select which additional locations you want to uninstall Wrye Bash/Flash from."

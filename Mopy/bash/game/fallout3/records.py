@@ -23,8 +23,6 @@
 """This module contains the fallout3 record classes. You must import from it
 __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
-from __future__ import unicode_literals
-
 from collections import OrderedDict
 
 from ... import brec, bush

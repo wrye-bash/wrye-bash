@@ -38,7 +38,7 @@ def _to_lower(ini_settings):
         ret_type = OrderedLowerDict if isinstance(input_dict,
                                                   OrderedDict) else LowerDict
         return ret_type(input_dict)
-    return LowerDict((x, _mk_dict(y)) for x, y in ini_settings.iteritems())
+    return LowerDict((x, _mk_dict(y)) for x, y in ini_settings.items())
 
 def get_ini_type_and_encoding(abs_ini_path):
     """Return ini type (one of IniFile, OBSEIniFile) and inferred encoding
@@ -71,9 +71,9 @@ def get_ini_type_and_encoding(abs_ini_path):
 class IniFile(AFile):
     """Any old ini file."""
     reComment = re.compile(u';.*',re.U)
-    reDeletedSetting = re.compile(u'' r';-\s*(\w.*?)\s*(;.*$|=.*$|$)', re.U)
-    reSection = re.compile(u'' r'^\[\s*(.+?)\s*\]$', re.U)
-    reSetting = re.compile(u'' r'(.+?)\s*=(.*)', re.U)
+    reDeletedSetting = re.compile(r';-\s*(\w.*?)\s*(;.*$|=.*$|$)', re.U)
+    reSection = re.compile(r'^\[\s*(.+?)\s*\]$', re.U)
+    reSetting = re.compile(r'(.+?)\s*=(.*)', re.U)
     formatRes = (reSetting, reSection)
     out_encoding = 'cp1252' # when opening a file for writing force cp1252
     __empty_settings = LowerDict()
@@ -123,7 +123,7 @@ class IniFile(AFile):
                     self.isCorrupted = (_(u'Your %s seems to have unencodable '
                         u'characters:') + u'\n\n%s') % (self.abs_path, e)
                     return ({}, {}) if with_deleted else {}
-        except (OSError, IOError):
+        except OSError:
             return ({}, {}) if with_deleted else {}
         if with_deleted:
             return self._ci_settings_cache_linenum, self._deleted_cache
@@ -136,7 +136,7 @@ class IniFile(AFile):
             if self._deleted: # restored
                 self._deleted = False
             return self.updated
-        except (OSError, IOError):
+        except OSError:
             # check if we already know it's deleted (used for main game ini)
             update = not self._deleted
             if update:
@@ -194,12 +194,12 @@ class IniFile(AFile):
         """Return a list of the decoded lines in the ini file, if as_unicode
         is True, or the raw bytes in the ini file, if as_unicode is False.
         Note we strip line endings at the end of the line in unicode mode.
-        :rtype: list[unicode]|bytes"""
+        :rtype: list[str]|bytes"""
         try:
             with self.abs_path.open(u'rb') as f:
                 content = f.read()
             if not as_unicode: return content
-            decoded = unicode(content, self.ini_encoding)
+            decoded = str(content, self.ini_encoding)
             return decoded.splitlines(False) # keepends=False
         except UnicodeDecodeError:
             deprint(u'Failed to decode %s using %s' % (
@@ -293,7 +293,7 @@ class IniFile(AFile):
         Values in settings dictionary must be actual (setting, value) pairs."""
         ini_settings = _to_lower(ini_settings)
         deleted_settings = LowerDict((x, {CIstr(u) for u in y}) for x, y in
-                                     deleted_settings.iteritems())
+                                     deleted_settings.items())
         reDeleted = self.reDeletedSetting
         reComment = self.reComment
         reSection = self.reSection
@@ -306,7 +306,7 @@ class IniFile(AFile):
             def _add_remaining_new_items():
                 if section in ini_settings: del ini_settings[section]
                 if not sectionSettings: return
-                for sett, val in sectionSettings.iteritems():
+                for sett, val in sectionSettings.items():
                     tmpFileWrite(u'%s=%s\n' % (sett, val))
                 tmpFileWrite(u'\n')
             for line in self.read_ini_content(as_unicode=True):
@@ -332,7 +332,7 @@ class IniFile(AFile):
             # This will occur for the last INI section in the ini file
             _add_remaining_new_items()
             # Add remaining new entries
-            for section, sectionSettings in list(ini_settings.iteritems()):
+            for section, sectionSettings in list(ini_settings.items()):
                 # _add_remaining_new_items may modify ini_settings
                 if sectionSettings:
                     tmpFileWrite(u'[%s]\n' % section)
@@ -366,7 +366,7 @@ class IniFile(AFile):
         self.saveSettings(ini_settings,deleted_settings)
         return True
 
-    def remove_section(self, target_section): # type: (unicode) -> None
+    def remove_section(self, target_section): # type: (str) -> None
         """Removes a section and all its contents from the INI file. Note that
         this will only remove the first matching section. If you want to remove
         multiple, you will have to call this in a loop and check if the section
@@ -403,11 +403,11 @@ class DefaultIniFile(IniFile):
         #--Settings cache
         self.lines, current_line = [], 0
         self._ci_settings_cache_linenum = OrderedLowerDict()
-        for sect, setts in settings_dict.iteritems():
+        for sect, setts in settings_dict.items():
             self.lines.append(u'[%s]' % sect)
             self._ci_settings_cache_linenum[sect] = OrderedLowerDict()
             current_line += 1
-            for sett, val in setts.iteritems():
+            for sett, val in setts.items():
                 self.lines.append(u'%s=%s' % (sett, val))
                 self._ci_settings_cache_linenum[sect][sett] = (
                     val, current_line)
@@ -442,10 +442,10 @@ class DefaultIniFile(IniFile):
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
     handle 'set', 'setGS', and 'SetNumericGameSetting' statements."""
-    reDeleted = re.compile(u'' r';-(\w.*?)$', re.U)
-    reSet     = re.compile(u'' r'\s*set\s+(.+?)\s+to\s+(.*)', re.I | re.U)
-    reSetGS   = re.compile(u'' r'\s*setGS\s+(.+?)\s+(.*)', re.I | re.U)
-    reSetNGS  = re.compile(u'' r'\s*SetNumericGameSetting\s+(.+?)\s+(.*)', re.I | re.U)
+    reDeleted = re.compile(r';-(\w.*?)$', re.U)
+    reSet     = re.compile(r'\s*set\s+(.+?)\s+to\s+(.*)', re.I | re.U)
+    reSetGS   = re.compile(r'\s*setGS\s+(.+?)\s+(.*)', re.I | re.U)
+    reSetNGS  = re.compile(r'\s*SetNumericGameSetting\s+(.+?)\s+(.*)', re.I | re.U)
     out_encoding = 'utf-8' # FIXME: ask
     formatRes = (reSet, reSetGS, reSetNGS)
     defaultSection = u'' # Change the default section to something that
@@ -566,7 +566,7 @@ class OBSEIniFile(IniFile):
                         if isinstance(value, bytes):
                             raise RuntimeError(u'Do not pass bytes into '
                                                u'saveSettings!')
-                        if isinstance(value, unicode) and value[-1:] == u'\n':
+                        if isinstance(value, str) and value[-1:] == u'\n':
                             line = value.rstrip(u'\n\r') # removes just \n too
                         else:
                             line = format_string % (setting, value)
@@ -607,7 +607,7 @@ class OBSEIniFile(IniFile):
         return True
 
     def remove_section(self, target_section, do_backup=False):
-        # type: (unicode, bool) -> None
+        # type: (str, bool) -> None
         re_comment = self.reComment
         re_section = self.reSection
         # Tri-State: If None, we haven't hit the section yet. If True, then

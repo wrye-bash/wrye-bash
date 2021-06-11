@@ -28,7 +28,9 @@ Bash to use, so must be imported and run high up in the booting sequence.
 
 # Imports ---------------------------------------------------------------------
 import collections
+import pkgutil
 import textwrap
+
 from . import bass
 from . import game as game_init
 from .bolt import GPath, Path, deprint, dict_sort
@@ -77,14 +79,18 @@ def _supportedGames():
     """Set games supported by Bash and return their paths from the registry."""
     # rebuilt cache
     reset_bush_globals()
-    import pkgutil
     # Detect known games from the registry and Windows Store
-    for importer, modname, ispkg in pkgutil.iter_modules(game_init.__path__):
+    for _importer, modname, ispkg in pkgutil.iter_modules(game_init.__path__):
         if not ispkg: continue # game support modules are packages
         # Equivalent of "from game import <modname>"
         try:
-            module = __import__(u'game',globals(),locals(),[modname],-1)
-            game_type = getattr(module, modname).GAME_TYPE
+            module = __import__(u'game', globals(), locals(), [modname], 1)
+            module_container = getattr(module, modname)
+            if not hasattr(module_container, 'GAME_TYPE'):
+                # PyInstaller's iter_modules gives us an __init__.py file with
+                # ispkg=True, skip it
+                continue
+            game_type = module_container.GAME_TYPE
             _allGames[game_type.displayName] = game_type
         except (ImportError, AttributeError):
             deprint(u'Error in game support module %s' % modname,
@@ -108,8 +114,6 @@ def _supportedGames():
             if win_store_paths:
                 _win_store_games[game_type.displayName] = win_store_paths
         del module
-    # unload some modules, _supportedGames is meant to run once
-    del pkgutil
     # Dump out info about all games that we *could* launch, but wrap it
     deprint(u'The following games are supported by this version of Wrye Bash:')
     all_supported_games = u', '.join(sorted(_allGames))
@@ -143,7 +147,7 @@ def _supportedGames():
         deprint(u'  ' + wrapped_line)
     # Merge the dicts of games we found from all global sources
     all_found_games = _registryGames.copy()
-    for found_game, found_paths in _win_store_games.iteritems():
+    for found_game, found_paths in _win_store_games.items():
         if found_game in all_found_games:
             all_found_games[found_game].extend(found_paths)
         else:
@@ -206,8 +210,8 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     deprint(u'Detecting games via the -o argument, bash.ini and relative '
             u'path:')
     # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
-    for test_path, foundMsg, errorMsg in installPaths.itervalues():
-        for gamename, info in _allGames.iteritems():
+    for test_path, foundMsg, errorMsg in installPaths.values():
+        for gamename, info in _allGames.items():
             if info.test_game_path(test_path):
                 # Must be this game
                 deprint(foundMsg % {u'gamename': gamename}, test_path)
@@ -248,6 +252,6 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, gname=None,
     # No match found, return the list of possible games (may be empty if
     # nothing is found in registry)
     return {_allGames[found_game]: fg_path for found_game, fg_path
-            in foundGames.iteritems()}
+            in foundGames.items()}
 
 def game_path(display_name): return foundGames[display_name]

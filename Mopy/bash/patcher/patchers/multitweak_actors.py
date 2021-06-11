@@ -226,7 +226,7 @@ class AsIntendedImpsPatcher(_ACreatureTweak):
                      (_(u'Only fullsize imps'), u'big'),
                      (_(u'Only implings'), u'small')]
     tweak_log_msg = _(u'Imps Tweaked: %(total_changed)d')
-    _imp_mod_path = re.compile(u'' r'(imp(?!erial)|gargoyle)\\.', re.I | re.U)
+    _imp_mod_path = re.compile(r'(imp(?!erial)|gargoyle)\\.', re.I | re.U)
     _imp_part  = re.compile(u'(imp(?!erial)|gargoyle)', re.I | re.U)
     _imp_spell = (GPath(bush.game.master_file), 0x02B53F)
 
@@ -254,7 +254,7 @@ class AsIntendedBoarsPatcher(_ACreatureTweak):
     tweak_key = u'vicious boars!'
     tweak_choices = [(u'1.0', u'1.0')]
     tweak_log_msg = _(u'Boars Tweaked: %(total_changed)d')
-    _boar_mod_path = re.compile(u'' r'(boar)\\.', re.I | re.U)
+    _boar_mod_path = re.compile(r'(boar)\\.', re.I | re.U)
     _boar_part  = re.compile(u'(boar)', re.I | re.U)
     _boar_spell = (GPath(bush.game.master_file), 0x02B54E)
 

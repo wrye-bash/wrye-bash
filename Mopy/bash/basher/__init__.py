@@ -51,24 +51,21 @@ has its own data store)."""
 
 # Imports ---------------------------------------------------------------------
 #--Python
-from __future__ import division
-
 import collections
 import io
 import os
 import sys
 import time
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, namedtuple, defaultdict
 from functools import partial, reduce
-from itertools import izip
+from typing import Optional
 
 #--wxPython
 import wx
 
 #--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
-from ..bolt import GPath, SubProgress, deprint, round_size, \
-    OrderedDefaultDict, dict_sort
+from ..bolt import GPath, SubProgress, deprint, round_size, dict_sort
 from ..bosh import omods, ModInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
@@ -102,26 +99,12 @@ except ImportError:
     deprint(u'Error initializing installer wizards:', traceback=True)
 
 #  - Make sure that python root directory is in PATH, so can access dll's.
-# NOTE: See:
-# https://docs.python.org/3/library/os.html#file-names-command-line-arguments-and-environment-variables
-# and here:
-# https://docs.python.org/2.7/library/os.html#os.environ
-# It's not obvious from the 2.7 version, but environment variables
-# are bytes encoded using the filesystem encoding.  On Python 3, these are
-# actually unicode and encoded/decoded using the file system encoding.
-# We now automatically handle encoding/decoding of values, but
-# on Python 2 sys.prefix is still a bytes object.
-# PY3: Remove the version used for python 2.7
-if sys.version_info >= (3,0):
-    _prefix = sys.prefix
-else:
-    _prefix = sys.prefix.decode(bolt.Path.sys_fs_enc)
-_env_path = env.get_env_var(u'PATH')
+_env_path = os.environ[u'PATH']
 if sys.prefix not in set(_env_path.split(u';')):
-    env.set_env_var(u'PATH', _env_path + u';' + _prefix)
+    os.environ[u'PATH'] = _env_path + u';' + sys.prefix
 
 # Settings --------------------------------------------------------------------
-settings = None # type: bolt.Settings
+settings = None # type: Optional[bolt.Settings]
 
 # Utils
 def configIsCBash(patchConfigs):
@@ -205,7 +188,7 @@ class SashPanel(NotebookPanel):
         """Unfortunately can't use EVT_SHOW, as the panel needs to be
         populated for position to be set correctly."""
         if self._firstShow:
-            for key, ui_set in self._ui_settings.iteritems():
+            for key, ui_set in self._ui_settings.items():
                 sashPos = settings.get(self.__class__.keyPrefix + key,
                                        ui_set.default_(self))
                 ui_set.set_(self, sashPos)
@@ -213,7 +196,7 @@ class SashPanel(NotebookPanel):
 
     def ClosePanel(self, destroy=False):
         if not self._firstShow and destroy: # if the panel was shown
-            for key, ui_set in self._ui_settings.iteritems():
+            for key, ui_set in self._ui_settings.items():
                 settings[self.__class__.keyPrefix + key] = ui_set.get_(self)
 
 class SashUIListPanel(SashPanel):
@@ -388,10 +371,12 @@ class MasterList(_ModsUIList):
     def _handle_key_up(self, wrapped_evt): pass
 
     def OnDClick(self, lb_dex_and_flags):
-        if self.mouse_index < 0: return # nothing was clicked
-        curr_name = self.data_store[self.mouse_index].curr_name
-        if not curr_name in bosh.modInfos: return
-        balt.Link.Frame.notebook.SelectPage(u'Mods', curr_name)
+        if self.mouse_index is None or self.mouse_index < 0:
+            return # Nothing was clicked
+        sel_curr_name = self.data_store[self.mouse_index].curr_name
+        if sel_curr_name not in bosh.modInfos:
+            return # Master that is not installed was clicked
+        balt.Link.Frame.notebook.SelectPage(u'Mods', sel_curr_name)
 
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
@@ -509,7 +494,7 @@ class MasterList(_ModsUIList):
 
     #--Relist
     def _reList(self):
-        fileOrderNames = [v.curr_name for v in self.data_store.itervalues()]
+        fileOrderNames = [v.curr_name for v in self.data_store.values()]
         self.loadOrderNames = {p: i for i, p in enumerate(
             load_order.get_ordered(fileOrderNames))}
 
@@ -517,7 +502,7 @@ class MasterList(_ModsUIList):
     def InitEdit(self):
         #--Pre-clean
         edited = False
-        for mi, masterInfo in self.data_store.iteritems():
+        for mi, masterInfo in self.data_store.items():
             newName = settings[u'bash.mods.renames'].get(
                 masterInfo.curr_name, None)
             #--Rename?
@@ -580,7 +565,7 @@ class MasterList(_ModsUIList):
 class INIList(balt.UIList):
     column_links = Links()  #--Column menu
     context_links = Links()  #--Single item menu
-    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
+    global_links = defaultdict(lambda: Links()) # Global menu
     _shellUI = True
     _sort_keys = {
         u'File'     : None,
@@ -610,7 +595,7 @@ class INIList(balt.UIList):
         mismatch = 0
         not_applied = 0
         invalid = 0
-        for ini_info in self.data_store.itervalues():
+        for ini_info in self.data_store.values():
             status = ini_info.tweak_status()
             if status == -10: invalid += 1
             elif status == 0: not_applied += 1
@@ -729,7 +714,7 @@ class INIList(balt.UIList):
             else:
                 bosh.iniInfos.refresh(refresh_infos=False)
             return True
-        except (OSError, IOError):
+        except OSError:
             error_msg = u'Failed to copy %s to %s' % (
                 default_ini, target_ini_file.abs_path)
             deprint(error_msg, traceback=True)
@@ -791,7 +776,7 @@ class INITweakLineCtrl(INIListCtrl):
                 updated_line_nums.add(lineNo)
         #--Reset line color for other iniContents lines
         background_color = self.iniContents.GetBackgroundColour()
-        for i in xrange(self.iniContents.GetItemCount()):
+        for i in range(self.iniContents.GetItemCount()):
             if i in updated_line_nums: continue
             if self.iniContents.GetItemBackgroundColour(i) != background_color:
                 self.iniContents.SetItemBackgroundColour(i, background_color)
@@ -827,7 +812,7 @@ class TargetINILineCtrl(INIListCtrl):
                 Link.Frame.oblivionIniMissing = False
             for i, line in enumerate(sel_ini_lines):
                 self.InsertItem(i, line.rstrip())
-        except IOError:
+        except OSError:
             if main_ini_selected:
                 Link.Frame.oblivionIniMissing = True
         self.fit_column_to_header(0)
@@ -837,7 +822,7 @@ class ModList(_ModsUIList):
     #--Class Data
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
-    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
+    global_links = defaultdict(lambda: Links()) # Global menu
     _sort_keys = {
         u'File'      : None,
         u'Author'    : lambda self, a:self.data_store[a].header.author.lower(),
@@ -908,7 +893,7 @@ class ModList(_ModsUIList):
             pinned = load_order.filter_pinned(self.GetSelected())
             if pinned:
                 msg = (_(u"You can't reorder the following mods:") + u'\n' +
-                       u', '.join(unicode(s) for s in pinned))
+                       u', '.join(str(s) for s in pinned))
                 continue_key = u'bash.mods.dnd.pinned.continue'
         if msg:
             balt.askContinue(self, msg, continue_key)
@@ -1292,7 +1277,7 @@ class _DetailsMixin(object):
     # Details panel API
     def SetFile(self, fileName=u'SAME'):
         """Set file to be viewed. Leave fileName empty to reset.
-        :type fileName: unicode | bolt.Path | None"""
+        :type fileName: str | bolt.Path | None"""
         #--Reset?
         if fileName == u'SAME':
             if self.displayed_item not in self.file_infos:
@@ -1890,13 +1875,13 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     @property
     def current_ini_path(self):
         """Return path of currently chosen ini."""
-        return list(self.target_inis.itervalues())[
+        return list(self.target_inis.values())[
             settings[u'bash.ini.choice']]
 
     @property
     def target_inis(self):
         """Return settings[u'bash.ini.choices'], set in IniInfos#__init__.
-        :rtype: OrderedDict[unicode, bolt.Path]"""
+        :rtype: OrderedDict[str, bolt.Path]"""
         return settings[u'bash.ini.choices']
 
     @property
@@ -1928,7 +1913,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     def _combo_reset(self): self._inis_combo_box.set_choices(self._ini_keys)
 
     def _clean_targets(self):
-        for ini_fname, ini_path in self.target_inis.iteritems():
+        for ini_fname, ini_path in self.target_inis.items():
             if ini_path is not None and not ini_path.isfile():
                 if not bosh.get_game_ini(ini_path):
                     self.__remove(ini_fname)
@@ -2058,7 +2043,7 @@ class SaveList(balt.UIList):
     #--Class Data
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
-    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
+    global_links = defaultdict(lambda: Links()) # Global menu
     _editLabels = _copy_paths = True
     _sort_keys = {
         u'File'    : None, # just sort by name
@@ -2354,7 +2339,7 @@ class SavePanel(BashTab):
 class InstallersList(balt.UIList):
     column_links = Links()
     context_links = Links()
-    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
+    global_links = defaultdict(lambda: Links()) # Global menu
     icons = installercons
     _sunkenBorder = False
     _shellUI = True
@@ -2470,7 +2455,7 @@ class InstallersList(balt.UIList):
                 refreshNeeded = modsRefresh = iniRefresh = False
                 if len(refreshes) > 1:
                     refreshNeeded, modsRefresh, iniRefresh = [
-                        any(grouped) for grouped in izip(*refreshes)]
+                        any(grouped) for grouped in zip(*refreshes)]
             #--Refresh UI
             if refreshNeeded or ex: # refresh the UI in case of an exception
                 if modsRefresh: BashFrame.modList.RefreshUI(refreshSaves=False,
@@ -2640,7 +2625,7 @@ class InstallersList(balt.UIList):
             sorted_ = sorted(selected, key=orderKey, reverse=(moveMod == 1))
             # get the index two positions after the last or before the first
             visibleIndex = self.GetIndex(sorted_[0]) + moveMod * 2
-            maxPos = max(x.order for x in self.data_store.itervalues())
+            maxPos = max(x.order for x in self.data_store.values())
             for thisFile in sorted_:
                 newPos = self.data_store[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
@@ -3029,7 +3014,7 @@ class InstallersDetails(_SashDetailsPanel):
         """Handle check/uncheck of item."""
         installer = self.file_info
         self.gSubList.lb_select_index(lb_selection_dex)
-        for lb_selection_dex in xrange(self.gSubList.lb_get_items_count()):
+        for lb_selection_dex in range(self.gSubList.lb_get_items_count()):
             installer.subActives[lb_selection_dex+1] = self.gSubList.lb_is_checked_at_index(lb_selection_dex)
         if not get_shift_down():
             self.refreshCurrent(installer)
@@ -3076,7 +3061,7 @@ class InstallersDetails(_SashDetailsPanel):
         """Checks or unchecks all subpackage checkmarks and propagates that
         information to BAIN."""
         self.gSubList.set_all_checkmarks(checked=checked)
-        for index in xrange(self.gSubList.lb_get_items_count()):
+        for index in range(self.gSubList.lb_get_items_count()):
             # + 1 due to empty string included in subActives by BAIN
             self.file_info.subActives[index + 1] = checked
 
@@ -3303,7 +3288,7 @@ class InstallersPanel(BashTab):
                         continue
 
     def _sbCount(self):
-        active = sum(x.is_active for x in self.listData.itervalues())
+        active = sum(x.is_active for x in self.listData.values())
         return _(u'Packages:') + u' %d/%d' % (active, len(self.listData))
 
     def RefreshUIMods(self, mods_changed, inis_changed):
@@ -3324,7 +3309,7 @@ class InstallersPanel(BashTab):
 class ScreensList(balt.UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
-    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
+    global_links = defaultdict(lambda: Links()) # Global menu
     _shellUI = True
     _editLabels = _copy_paths = True
 
@@ -3369,7 +3354,7 @@ class ScreensList(balt.UIList):
                 if not self.try_rename(scrinf, root, numStr, to_select, to_del,
                                        item_edited): break
                 num += 1
-                numStr = unicode(num).zfill(digits)
+                numStr = str(num).zfill(digits)
             if to_select:
                 self.RefreshUI(redraw=to_select, to_del=to_del,
                                detail_item=item_edited[0])
@@ -3426,7 +3411,6 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
         else:
             self.screenshot_control.set_bitmap(self.file_info.cached_bitmap)
 
-
     def RefreshUIColors(self):
         self.screenshot_control.SetBackground(colors[u'screens.bkgd.image'])
 
@@ -3453,7 +3437,7 @@ class ScreensPanel(BashTab):
 class BSAList(balt.UIList):
     column_links = Links() #--Column menu
     context_links = Links() #--Single item menu
-    global_links = OrderedDefaultDict(lambda: Links()) # Global menu
+    global_links = defaultdict(lambda: Links()) # Global menu
     _sort_keys = {u'File'    : None,
                   u'Modified': lambda self, a: self.data_store[a].mtime,
                   u'Size'    : lambda self, a: self.data_store[a].fsize,
@@ -3567,7 +3551,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
             iMods = None
             iInstallers = None
             iDelete = None
-            for i in xrange(Link.Frame.notebook.GetPageCount()):
+            for i in range(Link.Frame.notebook.GetPageCount()):
                 pageTitle = Link.Frame.notebook.GetPageText(i)
                 if pageTitle == tabInfo[u'Mods'][1]:
                     iMods = i
@@ -3590,7 +3574,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
         else:
             # It was disabled, enable it
             insertAt = 0
-            for k, k_enabled in bass.settings[u'bash.tabs.order'].iteritems():
+            for k, k_enabled in bass.settings[u'bash.tabs.order'].items():
                 if k == self.tabKey: break
                 insertAt += k_enabled
             className,title,panel = tabInfo[self.tabKey]
@@ -3644,7 +3628,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         balt.TabDragMixin.__init__(self)
         #--Pages
         iInstallers = iMods = -1
-        for page, enabled in self._tabOrder().iteritems():
+        for page, enabled in self._tabOrder().items():
             if not enabled: continue
             className, title, item = tabInfo[page]
             panel = globals().get(className,None)
@@ -3688,7 +3672,7 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
     def SelectPage(self, page_title, item):
         ind = 0
-        for title, enabled in settings[u'bash.tabs.order'].iteritems():
+        for title, enabled in settings[u'bash.tabs.order'].items():
             if title == page_title:
                 if not enabled: return
                 break
@@ -3817,7 +3801,7 @@ class BashStatusBar(DnDStatusBar):
             self._addButton(link)
             button = self.buttons.pop()
             thisIndex, insertBefore = order.index(link.uid), 0
-            for i in xrange(len(self.buttons)):
+            for i in range(len(self.buttons)):
                 otherlink = self.GetLink(index=i)
                 indexOther = order.index(otherlink.uid)
                 if indexOther > thisIndex:
@@ -4087,7 +4071,7 @@ class BashFrame(WindowFrame):
             message.append(m)
             self.knownCorrupted |= corruptSaves
         valid_vers = bush.game.Esp.validHeaderVersions
-        invalidVersions = {ck for ck, x in bosh.modInfos.iteritems() if
+        invalidVersions = {ck for ck, x in bosh.modInfos.items() if
                            all(x.header.version != v for v in valid_vers)}
         if warn_mods and not invalidVersions <= self.knownInvalidVerions:
             m = [_(u'Unrecognized Versions'),
@@ -4184,7 +4168,7 @@ class BashFrame(WindowFrame):
         settings[u'bash.frameMax'] = self.is_maximized
         settings[u'bash.page'] = self.notebook.GetSelection()
         # use tabInfo below so we save settings of panels that the user closed
-        for _k, (_cname, tab_name, panel) in tabInfo.iteritems():
+        for _k, (_cname, tab_name, panel) in tabInfo.items():
             if panel is None: continue
             try:
                 panel.ClosePanel(destroy)
@@ -4201,7 +4185,7 @@ class BashFrame(WindowFrame):
         modNames.update(bosh.modInfos.table)
         renames = bass.settings.getChanged(u'bash.mods.renames')
         # Make a copy, we may alter it in the loop
-        for old_mname, new_mname in list(renames.iteritems()):
+        for old_mname, new_mname in list(renames.items()):
             if new_mname not in modNames:
                 del renames[old_mname]
         #--Clean colors dictionary
@@ -4341,7 +4325,7 @@ def InitSettings(): # this must run first !
     settings.loadDefaults(settingDefaults)
     # The colors dictionary only gets copied into settings if it is missing
     # entirely, copy new entries if needed
-    for color_key, color_val in settingDefaults[u'bash.colors'].iteritems():
+    for color_key, color_val in settingDefaults[u'bash.colors'].items():
         if color_key not in settings[u'bash.colors']:
             settings[u'bash.colors'][color_key] = color_val
     # Import/Export DLL permissions was broken and stored DLLs with a ':'
@@ -4351,7 +4335,7 @@ def InitSettings(): # this must run first !
     for key_suffix in (u'goodDlls', u'badDlls'):
         dict_key = u'bash.installers.' + key_suffix
         bass.settings[dict_key] = {k: v for k, v
-                                   in bass.settings[dict_key].iteritems()
+                                   in bass.settings[dict_key].items()
                                    if not k.endswith(u':')}
     bosh.bain.Installer.init_global_skips() # must be after loadDefaults - grr #178
     bosh.bain.Installer.init_attributes_process()
@@ -4370,7 +4354,7 @@ def InitImages():
         b'WHITE': (255, 255, 255),
     }
     # Setup the colors dictionary
-    for color_key, color_val in settings[u'bash.colors'].iteritems():
+    for color_key, color_val in settings[u'bash.colors'].items():
         # Convert any colors that were stored as bytestrings into tuples
         if isinstance(color_val, bytes):
             color_val = _conv_dict[color_val]

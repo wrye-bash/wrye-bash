@@ -21,11 +21,7 @@
 #
 # =============================================================================
 """This module contains the skyrim record classes."""
-from __future__ import unicode_literals
-
 from collections import OrderedDict
-from itertools import izip
-
 from ... import brec, bolt, bush
 from ...bolt import Flags, struct_pack, structs_cache, unpack_str16
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
@@ -435,8 +431,7 @@ class _AVmadComponent(object):
     after or before 'processors' has been evaluated, just be sure to call
     super(...).{dump,load}_data(...) when appropriate.
 
-    :type processors: OrderedDict[unicode, tuple[callable, callable, int] |
-        unicode]"""
+    :type processors: OrderedDict[str, tuple[callable, callable, int] | str]"""
     processors = OrderedDict()
 
     def dump_frag(self, record):
@@ -444,7 +439,7 @@ class _AVmadComponent(object):
         returns the result as a string, ready for writing to an output
         stream."""
         out_data = b''
-        for attr, fmt in self.__class__.processors.iteritems():
+        for attr, fmt in self.__class__.processors.items():
             attr_val = getattr(record, attr)
             if fmt != u'str16':
                 out_data += fmt[1](attr_val)
@@ -456,7 +451,7 @@ class _AVmadComponent(object):
         """Loads data for this fragment from the specified input stream and
         attaches it to the specified record. The version of VMAD and the object
         format are also given."""
-        for attr, fmt in self.__class__.processors.iteritems():
+        for attr, fmt in self.__class__.processors.items():
             if fmt != u'str16':
                 setattr(record, attr, ins.unpack(fmt[0], fmt[2],
                                                  *debug_strs)[0])
@@ -527,7 +522,7 @@ class _AFixedContainer(_AVmadComponent):
         new_child = self.child_loader.make_new
         load_child = self.child_loader.load_frag
         for flag_attr, child_attr in \
-                self.__class__.flags_to_children.iteritems():
+                self.__class__.flags_to_children.items():
             cont_child = None
             if getattr(child_flags, flag_attr):
                 cont_child = new_child()
@@ -542,7 +537,7 @@ class _AFixedContainer(_AVmadComponent):
         child_flags = getattr(record, self.__class__.flags_attr)
         store_child = children.append
         for flag_attr, child_attr in \
-                self.__class__.flags_to_children.iteritems():
+                self.__class__.flags_to_children.items():
             cont_child = getattr(record, child_attr)
             write_child = cont_child is not None
             # No need to store children we won't be writing out
@@ -558,7 +553,7 @@ class _AFixedContainer(_AVmadComponent):
 
     @property
     def used_slots(self):
-        return list(self.__class__.flags_to_children.itervalues()) + super(
+        return list(self.__class__.flags_to_children.values()) + super(
             _AFixedContainer, self).used_slots
 
 class _AVariableContainer(_AVmadComponent):
@@ -585,7 +580,7 @@ class _AVariableContainer(_AVmadComponent):
         new_child = self.child_loader.make_new
         load_child = self.child_loader.load_frag
         append_child = children.append
-        for x in xrange(getattr(record, self.__class__.counter_attr)):
+        for x in range(getattr(record, self.__class__.counter_attr)):
             cont_child = new_child()
             load_child(cont_child, ins, vmad_version, obj_format, *debug_strs)
             append_child(cont_child)
@@ -645,7 +640,7 @@ class ObjectRef(object):
         __unpacker=structs_cache[u'I'].unpack
         make_ref = cls.from_file
         return [make_ref(ins, obj_format, *debug_strs) for _x in
-                xrange(ins.unpack(__unpacker, 4, *debug_strs)[0])]
+                range(ins.unpack(__unpacker, 4, *debug_strs)[0])]
 
     @staticmethod
     def dump_array(target_list, __packer=structs_cache[u'I'].pack):
@@ -813,7 +808,7 @@ class MelVmad(MelBase):
             load_alias = self._alias_loader.load_frag
             append_alias = record.qust_aliases.append
             __unpacker=structs_cache[u'H'].unpack
-            for x in xrange(ins.unpack(__unpacker, 2, *debug_strs)[0]):
+            for x in range(ins.unpack(__unpacker, 2, *debug_strs)[0]):
                 alias = new_alias()
                 load_alias(alias, ins, vmad_version, obj_format, *debug_strs)
                 append_alias(alias)
@@ -873,7 +868,7 @@ class MelVmad(MelBase):
             new_fragment = self._phase_loader.make_new
             load_fragment = self._phase_loader.load_frag
             append_fragment = record.phase_fragments.append
-            for x in xrange(frag_count):
+            for x in range(frag_count):
                 phase_fragment = new_fragment()
                 load_fragment(phase_fragment, ins, vmad_version, obj_format,
                               *debug_strs)
@@ -985,7 +980,7 @@ class MelVmad(MelBase):
                                                              *debug_strs)
             elif property_type == 12: # string array
                 record.prop_data = [_read_vmad_str16(ins) for _x in
-                                    xrange(ins.unpack(
+                                    range(ins.unpack(
                                         __unpackers[u'I'], 4, *debug_strs)[0])]
             elif property_type == 13: # sint32 array
                 array_len = ins.unpack(__unpackers[u'I'], 4, *debug_strs)[0]
@@ -1045,20 +1040,17 @@ class MelVmad(MelBase):
             elif property_type == 13: # sint32 array
                 array_len = len(property_data)
                 out_data += __packers[u'I'](array_len)
-                return out_data + struct_pack(
-                    u'=' + repr(array_len) + u'i', *property_data)
+                return out_data + struct_pack(f'={array_len}i', *property_data)
             elif property_type == 14: # float array
                 array_len = len(property_data)
                 out_data += __packers[u'I'](array_len)
-                return out_data + struct_pack(
-                    u'=' + repr(array_len) + u'f', *property_data)
+                return out_data + struct_pack(f'={array_len}f', *property_data)
             elif property_type == 15: # bool array (stored as uint8 array)
                 array_len = len(property_data)
                 out_data += __packers[u'I'](array_len)
                 # Faster than [int(x) for x in property_data]
-                return out_data + struct_pack(
-                    u'=' + repr(array_len) + u'B', *[x != 0 for x
-                                                     in property_data])
+                return out_data + struct_pack(f'={array_len}B',
+                                              *[x != 0 for x in property_data])
             else:
                 # TODO(inf) Dumped file name! Please!
                 raise ModError(u'', u'Unrecognized VMAD property type: %u' %
@@ -1199,7 +1191,7 @@ class MelVmad(MelBase):
         new_script = self._script_loader.make_new
         load_script = self._script_loader.load_frag
         append_script = vmad.scripts.append
-        for i in xrange(script_count):
+        for i in range(script_count):
             script_ = new_script()
             load_script(script_, ins, vmad_version, obj_format, *debug_strs)
             append_script(script_)
@@ -3041,7 +3033,7 @@ class MreLgtm(MelRecord):
                 unpacked_val = (unpacked_val[:19]
                                 + (unpacked_val[19] + null4 * 2,)
                                 + unpacked_val[20:])
-                for attr, value, action in izip(self.attrs, unpacked_val,
+                for attr, value, action in zip(self.attrs, unpacked_val,
                                                 self.actions):
                     if callable(action): value = action(value)
                     setattr(record, attr, value)

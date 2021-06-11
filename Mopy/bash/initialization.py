@@ -25,7 +25,7 @@ functions to initialize bass.dirs that need be initialized high up into the
 boot sequence to be able to backup/restore settings."""
 import io
 import os
-from ConfigParser import ConfigParser, MissingSectionHeaderError
+from configparser import ConfigParser, MissingSectionHeaderError
 # Local - make sure that all imports here are carefully done in bash.py first
 from .bass import dirs, get_ini_option
 from .bolt import GPath, Path, decoder, deprint
@@ -190,13 +190,12 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         try:
             try:
                 # Try UTF-8 first, will also work for ASCII-encoded files
-                with data_oblivion_ini.open(u'r', encoding=u'utf8') as ins:
-                    oblivionIni.readfp(ins)
+                oblivionIni.read(data_oblivion_ini.s, encoding='utf8')
             except UnicodeDecodeError:
                 # No good, this is a nonstandard encoding
                 with data_oblivion_ini.open(u'rb') as ins:
                     ini_contents = ins.read()
-                oblivionIni.readfp(io.StringIO(decoder(ini_contents)))
+                oblivionIni.read_file(io.StringIO(decoder(ini_contents)))
         except MissingSectionHeaderError:
             # Probably not actually a game INI - might be reshade
             init_warnings.append(
@@ -220,7 +219,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     #--Mod Data, Installers
     oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni_, game_info)
     dirs[u'bash_root'] = oblivionMods
-    deprint(u'Game Mods location set to %s' % oblivionMods)
+    deprint(f'Game Mods location set to {oblivionMods}')
     dirs[u'modsBash'], modsBashSrc = getBashModDataPath(bashIni_)
     dirs[u'modsBash'], modsBashSrc = getLegacyPathWithSource(
         dirs[u'modsBash'], dirs[u'app'].join(game_info.mods_dir, u'Bash'),
@@ -229,8 +228,9 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     dirs[u'installers'] = oblivionMods.join(u'Bash Installers')
     dirs[u'installers'] = getLegacyPath(dirs[u'installers'],
                                         dirs[u'app'].join(u'Installers'))
-    deprint(u'Installers location set to %s' % dirs[u'installers'])
+    deprint(f'Installers location set to {dirs[u"installers"]}')
     dirs[u'bainData'], bainDataSrc = getBainDataPath(bashIni_)
+    deprint(f'Installers bash data location set to {dirs[u"bainData"]}')
     dirs[u'bsaCache'] = dirs[u'bainData'].join(u'BSA Cache')
     dirs[u'converters'] = dirs[u'installers'].join(u'Bain Converters')
     dirs[u'dupeBCFs'] = dirs[u'converters'].join(u'--Duplicates')
@@ -260,15 +260,13 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         relativePathError = []
         if u'modsBash' in badKeys:
             if isinstance(modsBashSrc, list):
-                msg += (u' '.join(modsBashSrc) + u'\n    %s\n' % dirs[
-                    u'modsBash'])
+                msg += (' '.join(modsBashSrc) + f'\n    {dirs[u"modsBash"]}\n')
             else:
                 relativePathError.append(dirs[u'modsBash'])
         if {u'installers', u'converters', u'dupeBCFs', u'corruptBCFs'} & badKeys:
             # All derived from oblivionMods -> getOblivionModsPath
             if isinstance(oblivionModsSrc, list):
-                msg += (u' '.join(oblivionModsSrc) + u'\n    %s\n' %
-                        oblivionMods)
+                msg += (u' '.join(oblivionModsSrc) + f'\n    {oblivionMods}\n')
             else:
                 relativePathError.append(oblivionMods)
         if {u'bainData', u'bsaCache'} & badKeys:

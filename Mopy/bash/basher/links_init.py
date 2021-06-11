@@ -813,7 +813,7 @@ def InitScreenLinks():
     #--JPEG Quality
     if True:
         qualityMenu = MenuLink(_(u'JPEG Quality'))
-        for i in xrange(100, 80, -5):
+        for i in range(100, 80, -5):
             qualityMenu.links.append(Screens_JpgQuality(i))
         qualityMenu.links.append(Screens_JpgQualityCustom())
         ScreensList.column_links.append(SeparatorLink())
@@ -845,7 +845,7 @@ def InitScreenLinks():
     settings_menu = ScreensList.global_links[_(u'Settings')]
     settings_menu.append(Screens_NextScreenShot())
     jpeg_quality_menu = MenuLink(_(u'JPEG Quality'))
-    for i in xrange(100, 80, -5):
+    for i in range(100, 80, -5):
         jpeg_quality_menu.links.append(Screens_JpgQuality(i))
     jpeg_quality_menu.links.append(Screens_JpgQualityCustom())
     settings_menu.append(qualityMenu)

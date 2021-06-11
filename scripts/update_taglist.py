@@ -25,8 +25,6 @@
 """This script generates taglist.yaml files in 'Mopy/taglists' game
 subdirectories using the LOOT masterlists."""
 
-from __future__ import absolute_import
-
 import argparse
 import logging
 import os
@@ -81,7 +79,7 @@ def download_masterlist(repository, version, dl_path):
     utils.download_file(url, dl_path)
 
 def all_taglists_present():
-    for game_name, _repository in GAME_DATA.iteritems():
+    for game_name, _repository in GAME_DATA.items():
         taglist_path = os.path.join(MOPY_PATH, u'taglists', game_name,
             u'taglist.yaml')
         if not os.path.isfile(taglist_path):
@@ -91,7 +89,7 @@ def all_taglists_present():
 def main(verbosity=logging.INFO, logfile=LOGFILE,
          masterlist_version=MASTERLIST_VERSION):
     utils.setup_log(LOGGER, verbosity=verbosity, logfile=logfile)
-    for game_name, repository in GAME_DATA.iteritems():
+    for game_name, repository in GAME_DATA.items():
         game_dir = os.path.join(MOPY_PATH, u'taglists', game_name)
         taglist_path = os.path.join(game_dir, u'taglist.yaml')
         if not os.path.exists(game_dir):

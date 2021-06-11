@@ -29,8 +29,6 @@ import copy
 import io
 import re
 import traceback
-from itertools import izip
-
 # Local
 from . import configIsCBash
 from .constants import settingDefaults
@@ -443,13 +441,13 @@ class _ModGroups(CsvParser):
         column = bosh.modInfos.table.getColumn(u'group')
         mods = mods or list(column) # if mods are None read groups for all mods
         groups = tuple(column.get(x) for x in mods)
-        self.mod_group.update((x, y) for x, y in izip(mods, groups) if y)
+        self.mod_group.update((x, y) for x, y in zip(mods, groups) if y)
 
     @staticmethod
     def assignedGroups():
         """Return all groups that are currently assigned to mods."""
         column = bosh.modInfos.table.getColumn(u'group')
-        return {x for x in column.itervalues() if x}
+        return {x for x in column.values() if x}
 
     def writeToModInfos(self,mods=None):
         """Exports mod groups to modInfos."""
@@ -549,7 +547,7 @@ class Mod_Groups(_Mod_Labels):
         super(Mod_Groups, self)._initData(window, selection)
         selection = set(selection)
         mod_group = bosh.modInfos.table.getColumn(u'group')
-        modGroup = {x[1] for x in mod_group.iteritems() if x[0] in selection}
+        modGroup = {x[1] for x in mod_group.items() if x[0] in selection}
         class _CheckGroup(CheckLink, self.__class__.choiceLinkType):
             def _check(self):
                 """Check the Link if any of the selected mods belongs to it."""
@@ -616,7 +614,7 @@ class Mod_Details(OneItemLink):
                     buff.write(u'  %s\n\n' % _(u'(Details not provided for '
                                                u'this record type.)'))
                     continue
-                records = [(f, e) for f, (_h, e) in group_records.iteritems()]
+                records = [(f, e) for f, (_h, e) in group_records.items()]
                 records.sort(key=lambda r: r[1].lower())
                 for f, e in records:
                     buff.write(u'  %08X %s\n' % (f, e))
@@ -917,7 +915,7 @@ class Mod_MarkMergeable(ItemLink):
         yes = [x for x in self.selected if
                x not in tagged_no_merge and x in bosh.modInfos.mergeable]
         no = set(self.selected) - set(yes)
-        no = [u'%s:%s' % (x, y) for x, y in result.iteritems() if x in no]
+        no = [u'%s:%s' % (x, y) for x, y in result.items() if x in no]
         if bush.game.check_esl:
             message = u'== %s\n\n' % _(
                 u'Plugins that qualify for ESL flagging.')
@@ -1576,7 +1574,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
     def _already_flagged(self): return not self.toEsm
 
     def _initData(self, window, selection,
-            __reEspExt=re.compile(u'' r'\.esp(.ghost)?$', re.I | re.U)):
+            __reEspExt=re.compile(r'\.esp(.ghost)?$', re.I | re.U)):
         present_mods = window.data_store
         modinfo_masters = present_mods[selection[0]].masterNames
         if len(selection) == 1 and len(modinfo_masters) > 1:
@@ -1921,7 +1919,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
 
     def _log(self, changed, fileName):
         log_out = ((u'* %s : %03d  %s\n' % (grp_name, v, fileName)) for
-                   grp_name, v in sorted(changed.iteritems()))
+                   grp_name, v in sorted(changed.items()))
         self._showLog(u''.join(log_out))
 
 #------------------------------------------------------------------------------

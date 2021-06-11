@@ -22,10 +22,8 @@
 # =============================================================================
 """Builds on the basic elements defined in base_elements.py to provide
 definitions for some commonly needed subrecords."""
-
-from __future__ import division
 from collections import defaultdict
-from itertools import chain, izip
+from itertools import chain
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, PartialLoadDecider, FlagDecider, MelSorted
@@ -106,7 +104,7 @@ class MelCtda(MelUnion):
         :param old_suffix_fmts: A set of old versions to pass to
             MelTruncatedStruct. Must conform to the same syntax as suffix_fmt.
             May be empty.
-        :type old_suffix_fmts: set[unicode]"""
+        :type old_suffix_fmts: set[str]"""
         if old_suffix_fmts is None: old_suffix_fmts = set()
         if suffix_elements is None: suffix_elements = []
         from .. import bush
@@ -115,14 +113,14 @@ class MelCtda(MelUnion):
             func_index: self._build_struct(func_data, ctda_sub_sig, suffix_fmt,
                                            suffix_elements, old_suffix_fmts)
             for func_index, func_data
-            in bush.game.condition_function_data.iteritems()
+            in bush.game.condition_function_data.items()
         }, decider=PartialLoadDecider(
             # Skip everything up to the function index in one go, we'll be
             # discarding this once we rewind anyways.
             loader=MelStruct(ctda_sub_sig, [u'8s', u'H'], u'ctda_ignored', u'ifunc'),
             decider=AttrValDecider(u'ifunc'),
         ))
-        self._ctda_mel = next(self.element_mapping.itervalues()) # type: MelStruct
+        self._ctda_mel = next(iter(self.element_mapping.values())) # type: MelStruct
 
     # Helper methods - Note that we skip func_data[0]; the first element is
     # the function name, which is only needed for puny human brains
@@ -189,17 +187,17 @@ class MelCtda(MelUnion):
     # To avoid having to ask 100s of unions to each set their defaults,
     # declare they have fids, etc. Wastes a *lot* of time.
     def hasFids(self, formElements):
-        self.fid_elements = list(self.element_mapping.itervalues())
+        self.fid_elements = list(self.element_mapping.values())
         formElements.add(self)
 
     def getLoaders(self, loaders):
         loaders[self._ctda_mel.mel_sig] = self
 
-    def getSlotsUsed(self): # PY3: unpack
-        return (self.decider_result_attr,) + self._ctda_mel.getSlotsUsed()
+    def getSlotsUsed(self):
+        return self.decider_result_attr, *self._ctda_mel.getSlotsUsed()
 
     def setDefault(self, record):
-        next(self.element_mapping.itervalues()).setDefault(record)
+        next(iter(self.element_mapping.values())).setDefault(record)
 
 class MelCtdaFo3(MelCtda):
     """Version of MelCtda that handles the additional complexities that were
@@ -450,7 +448,7 @@ class MelRaceData(MelTruncatedStruct):
         unpacked = ins.unpack(target_unpacker, size_, *debug_strs)
         unpacked = self._pre_process_unpacked(unpacked)
         record.skills = unpacked[:14]
-        for attr, value, action in izip(self.attrs[1:], unpacked[14:],
+        for attr, value, action in zip(self.attrs[1:], unpacked[14:],
                                         self.actions[1:]):
             setattr(record, attr, action(value) if callable(action) else value)
 
@@ -458,7 +456,7 @@ class MelRaceData(MelTruncatedStruct):
         values = list(record.skills)
         values.extend(
             action(value).dump() if callable(action) else value
-            for value, action in izip(
+            for value, action in zip(
                 (getattr(record, a) for a in self.attrs[1:]),
                 self.actions[1:]))
         return self._packer(*values)
@@ -476,7 +474,7 @@ class MelRaceParts(MelNull):
         :param indx_to_attr: A mapping from the INDX values to the final
             record attributes that will be used for the subsequent
             subrecords.
-        :type indx_to_attr: dict[int, unicode]
+        :type indx_to_attr: dict[int, str]
         :param group_loaders: A callable that takes the INDX value and
             returns an iterable with one or more MelBase-derived subrecord
             loaders. These will be loaded and dumped directly after each
@@ -486,24 +484,24 @@ class MelRaceParts(MelNull):
         # Create loaders for use at runtime
         self._indx_to_loader = {
             part_indx: MelGroup(part_attr, *group_loaders(part_indx))
-            for part_indx, part_attr in indx_to_attr.iteritems()
+            for part_indx, part_attr in indx_to_attr.items()
         }
         self._possible_sigs = {s for element
-                               in self._indx_to_loader.itervalues()
+                               in self._indx_to_loader.values()
                                for s in element.signatures}
 
     def getLoaders(self, loaders):
         temp_loaders = {}
-        for element in self._indx_to_loader.itervalues():
+        for element in self._indx_to_loader.values():
             element.getLoaders(temp_loaders)
         for signature in temp_loaders:
             loaders[signature] = self
 
     def getSlotsUsed(self):
-        return tuple(self._indx_to_attr.itervalues())
+        return tuple(self._indx_to_attr.values())
 
     def setDefault(self, record):
-        for element in self._indx_to_loader.itervalues():
+        for element in self._indx_to_loader.values():
             element.setDefault(record)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
@@ -603,7 +601,7 @@ class MelMODS(MelBase):
         count, = insUnpack(__unpacker, 4, *debug_strs)
         mods_data = []
         dataAppend = mods_data.append
-        for x in xrange(count):
+        for x in range(count):
             string = insRead32(*debug_strs)
             fid = ins.unpackRef()
             index, = insUnpack(__unpacker, 4, *debug_strs)
@@ -713,11 +711,11 @@ class MelDebrData(MelStruct):
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         byte_data = ins.read(size_, *debug_strs)
-        (record.percentage,) = unpack_byte(ins, byte_data[0:1])
+        record.percentage = unpack_byte(ins, byte_data[0:1])[0]
         record.modPath = byte_data[1:-2]
         if byte_data[-2] != null1:
-            raise ModError(ins.inName,u'Unexpected subrecord: %s' % (debug_strs,))
-        (record.flags,) = struct_unpack(u'B',byte_data[-1])
+            raise ModError(ins.inName, f'Unexpected subrecord: {debug_strs}')
+        record.flags = struct_unpack(u'B', byte_data[-1])[0]
 
     def pack_subrecord_data(self, record):
         return b''.join(

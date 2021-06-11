@@ -3,19 +3,6 @@
 
 ;-------------------------------- The Installation Sections:
 
-    Section "Prerequisites" Prereq
-        SectionIn RO
-
-        ClearErrors
-
-        ; Install MSVC 2010, needed for python-lz4
-        SetOutPath "$TEMP"
-        DetailPrint "Running Visual C++ 2010 x64 Redistributable Setup..."
-        File "${WB_CLEAN_MOPY}\redist\vcredist_2010_x64.exe"
-        ExecWait '"$TEMP\vcredist_2010_x64.exe" /quiet /norestart'
-        DetailPrint "Finished Visual C++ 2010 x64 Redistributable Setup"
-    SectionEnd
-
     Section "Wrye Bash" Main
         SectionIn RO
 

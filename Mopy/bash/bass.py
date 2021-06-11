@@ -77,7 +77,7 @@ def rmTempDir():
         _tempDir.rmtree(safety=_tempDir.stail)
     except OSError:
         from .bolt import deprint
-        deprint(u'Failed to remove %s' % _tempDir, traceback=True)
+        deprint(f'Failed to remove {_tempDir}', traceback=True)
     _tempDir = None
 
 def newTempDir():

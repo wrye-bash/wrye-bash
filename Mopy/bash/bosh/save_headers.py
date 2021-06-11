@@ -26,12 +26,11 @@
 - rework encoding/decoding
 """
 
-from __future__ import division
-
 __author__ = u'Utumno'
 
 import copy
 import io
+import sys
 import zlib
 from collections import OrderedDict
 from functools import partial
@@ -45,7 +44,7 @@ from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short, \
     pack_float, pack_string, pack_str8, pack_bzstr8, structs_cache, \
     struct_error, remove_newlines
-from ..exception import SaveHeaderError, raise_bolt_error, AbstractError
+from ..exception import SaveHeaderError, AbstractError
 
 # Utilities -------------------------------------------------------------------
 def _pack_c(out, value, __pack=structs_cache[u'=c'].pack):
@@ -78,17 +77,17 @@ class SaveFileHeader(object):
             else:
                 self.load_header(ins, load_image)
         #--Errors
-        except (OSError, IOError, struct_error, OverflowError):
-            err_msg = u'Failed to read %s' % self._save_info.abs_path
+        except (OSError, struct_error, OverflowError) as e:
+            err_msg = f'Failed to read {self._save_info.abs_path}'
             bolt.deprint(err_msg, traceback=True)
-            raise_bolt_error(err_msg, SaveHeaderError)
+            raise SaveHeaderError(err_msg) from e
 
     def load_header(self, ins, load_image=False):
         save_magic = unpack_string(ins, len(self.__class__.save_magic))
         if save_magic != self.__class__.save_magic:
-            raise SaveHeaderError(u'Magic wrong: %r (expected %r)' % (
-                save_magic, self.__class__.save_magic))
-        for attr, (__pack, _unpack) in self.__class__.unpackers.iteritems():
+            raise SaveHeaderError(f'Magic wrong: {save_magic!r} (expected '
+                                  f'{self.__class__.save_magic!r})')
+        for attr, (__pack, _unpack) in self.__class__.unpackers.items():
             setattr(self, attr, _unpack(ins))
         self.load_image_data(ins, load_image)
         self.load_masters(ins)
@@ -117,7 +116,7 @@ class SaveFileHeader(object):
         self._mastersStart = ins.tell()
         self.masters = []
         numMasters = unpack_byte(ins)
-        for count in xrange(numMasters):
+        for count in range(numMasters):
             self.masters.append(unpack_str8(ins))
 
     def calc_time(self): pass
@@ -154,7 +153,7 @@ class SaveFileHeader(object):
         #--Offsets
         offset = out.tell() - ins.tell()
         #--File Location Table
-        for i in xrange(6):
+        for i in range(6):
             # formIdArrayCount offset, unkownTable3Offset,
             # globalDataTable1Offset, globalDataTable2Offset,
             # changeFormsOffset, globalDataTable3Offset
@@ -164,7 +163,7 @@ class SaveFileHeader(object):
 
     def _dump_masters(self, ins, numMasters, out):
         oldMasters = []
-        for x in xrange(numMasters):
+        for x in range(numMasters):
             oldMasters.append(unpack_str16(ins))
         #--Write new masters
         pack_byte(out, len(self.masters))
@@ -215,7 +214,7 @@ class OblivionSaveHeader(SaveFileHeader):
         #--Skip old masters
         numMasters = unpack_byte(ins)
         oldMasters = []
-        for x in xrange(numMasters):
+        for x in range(numMasters):
             oldMasters.append(unpack_str8(ins))
         #--Write new masters
         self.__write_masters_ob(out)
@@ -233,7 +232,7 @@ class OblivionSaveHeader(SaveFileHeader):
     def dump_header(self, out):
         out.write(self.__class__.save_magic)
         var_fields_size = 0
-        for attr, (_pack, __unpack) in self.unpackers.iteritems():
+        for attr, (_pack, __unpack) in self.unpackers.items():
             ret = _pack(out, getattr(self, attr))
             if ret is not None:
                 var_fields_size += ret
@@ -288,9 +287,9 @@ class SkyrimSaveHeader(SaveFileHeader):
     def load_image_data(self, ins, load_image=False):
         if self.__is_sse():
             self._compressType = unpack_short(ins)
-        if ins.tell() != self.header_size + 17: raise SaveHeaderError(
-            u'New Save game header size (%s) not as expected (%s).' % (
-                ins.tell() - 17, self.header_size))
+        if (actual := ins.tell() - 17) != self.header_size:
+            raise SaveHeaderError(f'New Save game header size ({actual}) not '
+                                  f'as expected ({self.header_size}).')
         super(SkyrimSaveHeader, self).load_image_data(ins, load_image)
 
     def load_masters(self, ins):
@@ -316,23 +315,22 @@ class SkyrimSaveHeader(SaveFileHeader):
         mastersSize = unpack_int(ins)
         self.masters = []
         numMasters = unpack_byte(ins)
-        for count in xrange(numMasters):
+        for count in range(numMasters):
             self.masters.append(unpack_str16(ins))
         # SSE / FO4 save format with esl block
         if self._esl_block():
             _num_esl_masters = unpack_short(ins)
             # Remember if we had ESL masters for the inacurracy warning
             self.has_esl_masters = _num_esl_masters > 0
-            for count in xrange(_num_esl_masters):
+            for count in range(_num_esl_masters):
                 self.masters.append(unpack_str16(ins))
         else:
             self.has_esl_masters = False
         # Check for master's table size
-        if ins.tell() + sse_offset != self._mastersStart + mastersSize + 4:
-            raise SaveHeaderError(
-                u'Save game masters size (%i) not as expected (%i).' % (
-                    ins.tell() + sse_offset - self._mastersStart - 4,
-                    mastersSize))
+        masters_size = ins.tell() + sse_offset - self._mastersStart - 4
+        if masters_size != mastersSize:
+            raise SaveHeaderError(f'Save game masters size ({masters_size}) '
+                                  f'not as expected ({mastersSize}).')
 
     def _sse_compress(self, to_compress):
         """Compresses the specified data using either LZ4 or zlib, depending on
@@ -347,7 +345,7 @@ class SkyrimSaveHeader(SaveFileHeader):
                 # SSE uses zlib level 1
                 return zlib.compress(to_compress.getvalue(), 1)
         except (zlib.error, lz4.block.LZ4BlockError) as e:
-            raise SaveHeaderError(u'Failed to compress header: %r' % e)
+            raise SaveHeaderError(f'Failed to compress header: {e!r}')
 
     def _sse_decompress(self, ins, compressed_size, decompressed_size,
             light_decompression=False):
@@ -367,12 +365,12 @@ class SkyrimSaveHeader(SaveFileHeader):
         try:
             decompressed_data = zlib.decompress(ins.read(compressed_size))
         except zlib.error as e:
-            raise SaveHeaderError(u'zlib error while decompressing '
-                                  u'zlib-compressed header: %r' % e)
+            raise SaveHeaderError(f'zlib error while decompressing '
+                                  f'zlib-compressed header: {e!r}')
         if len(decompressed_data) != decompressed_size:
-            raise SaveHeaderError(u'zlib-decompressed header size incorrect - '
-                                  u'expected %u, but got %u.' % (
-                decompressed_size, len(decompressed_data)))
+            raise SaveHeaderError(
+                f'zlib-decompressed header size incorrect - expected '
+                f'{decompressed_size}, but got {len(decompressed_data)}.')
         return io.BytesIO(decompressed_data)
 
     @staticmethod
@@ -381,12 +379,11 @@ class SkyrimSaveHeader(SaveFileHeader):
             decompressed_data = lz4.block.decompress(
                 ins.read(compressed_size), uncompressed_size=decompressed_size * 2)
         except lz4.block.LZ4BlockError as e:
-            raise SaveHeaderError(u'LZ4 error while decompressing '
-                                  u'lz4-compressed header: %r' % e)
-        if len(decompressed_data) != decompressed_size:
-            raise SaveHeaderError(u'lz4-decompressed header size incorrect - '
-                                  u'expected %u, but got %u.' % (
-                decompressed_size, len(decompressed_data)))
+            raise SaveHeaderError(f'LZ4 error while decompressing '
+                                  f'lz4-compressed header: {e!r}')
+        if (len_data := len(decompressed_data)) != decompressed_size:
+            raise SaveHeaderError(f'lz4-decompressed header size incorrect - '
+                f'expected {decompressed_size}, but got {len_data}.')
         return io.BytesIO(decompressed_data)
 
     @staticmethod
@@ -485,13 +482,13 @@ class SkyrimSaveHeader(SaveFileHeader):
         # status just from the name
         regular_masters = []
         esl_masters = []
-        for x in xrange(numMasters):
+        for x in range(numMasters):
             regular_masters.append(unpack_str16(ins))
         # SSE/FO4 format has separate ESL block
         has_esl_block = self._esl_block()
         if has_esl_block:
             _num_esl_masters = unpack_short(ins)
-            for count in xrange(_num_esl_masters):
+            for count in range(_num_esl_masters):
                 esl_masters.append(unpack_str16(ins))
         # Write out the (potentially altered) masters - note that we have to
         # encode here, since we may be writing to BytesIO instead of a file
@@ -523,9 +520,9 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         return True
 
     def load_image_data(self, ins, load_image=False):
-        if ins.tell() != self.header_size + 16: raise SaveHeaderError(
-            u'New Save game header size (%s) not as expected (%s).' % (
-                ins.tell() - 16, self.header_size))
+        if (actual := ins.tell() - 16) != self.header_size:
+            raise SaveHeaderError(f'New Save game header size ({actual}) not '
+                                  f'as expected ({self.header_size}).')
         super(SkyrimSaveHeader, self).load_image_data(ins, load_image)
 
     def load_masters(self, ins):
@@ -541,7 +538,9 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         # So handle it by concatenating digits until we hit a non-digit char
         def parse_int(gd_bytes):
             int_data = b''
-            for c in gd_bytes:
+            ##: PY3.10: Use iterbytes (PEP 467)
+            for i in gd_bytes:
+                c = i.to_bytes(1, sys.byteorder)
                 if c.isdigit():
                     int_data += c
                 else:
@@ -583,14 +582,14 @@ class FalloutNVSaveHeader(SaveFileHeader):
         self._master_list_size(ins)
         self.masters = []
         numMasters = unpack_str_byte_delim(ins)
-        for count in xrange(numMasters):
+        for count in range(numMasters):
             self.masters.append(unpack_str16_delim(ins))
 
     def _master_list_size(self, ins):
         formVersion, masterListSize = unpack_many(ins, '=BI')
         if formVersion != self._masters_unknown_byte: raise SaveHeaderError(
-            u'Unknown byte at position %d is %r not 0x%X' % (
-                ins.tell() - 4, formVersion, self._masters_unknown_byte))
+            f'Unknown byte at position {ins.tell() - 4} is {formVersion!r} '
+            f'not 0x{self._masters_unknown_byte:X}')
         return masterListSize
 
     def _write_masters(self, ins, out):
@@ -603,7 +602,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
         #--Offsets
         offset = out.tell() - ins.tell()
         #--File Location Table
-        for i in xrange(5):
+        for i in range(5):
             # formIdArrayCount offset and 5 others
             oldOffset = unpack_int(ins)
             pack_int(out, oldOffset + offset)
@@ -611,7 +610,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
 
     def _dump_masters(self, ins, numMasters, out):
         oldMasters = []
-        for count in xrange(numMasters):
+        for count in range(numMasters):
             oldMasters.append(unpack_str16_delim(ins))
         # Write new masters - note the silly delimiters
         pack_byte(out, len(self.masters))
