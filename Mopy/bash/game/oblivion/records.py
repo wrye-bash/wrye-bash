@@ -1864,7 +1864,7 @@ class MreSpel(MelRecord,MreHasEffects):
                             3   : u'LesserPower',
                             4   : u'Ability',
                             5   : u'Poison'}
-    spellTypeName_Number = {y.lower(): x for x, y in # if name is None it will
+    spellTypeName_Number = {y.lower(): x for x, y in
                             spellTypeNumber_Name.iteritems() if x is not None}
     levelTypeNumber_Name = {None : u'NONE',
                             0    : u'Novice',

@@ -35,7 +35,7 @@ Mopy/redist/
 
 # translation files
 Mopy/bash/l10n/*.mo
-Mopy/bash/l10n/*NEW.txt
+Mopy/bash/l10n/*NEW.po
 
 # IDE files
 .idea/

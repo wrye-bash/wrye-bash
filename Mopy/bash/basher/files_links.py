@@ -109,7 +109,7 @@ class File_Duplicate(ItemLink):
         fileInfos = self.window.data_store
         for to_duplicate, fileInfo in self.iselected_pairs():
             #--Mod with resources? Warn on rename if file has bsa and/or dialog
-            msg = fileInfo.askResourcesOk(fileInfo,
+            msg = fileInfo.askResourcesOk(
                 bsaAndBlocking=self._bsaAndBlocking, bsa=self._bsa,
                 blocking=self._blocking)
             if msg and not self._askWarning(msg, _(
