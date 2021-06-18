@@ -179,7 +179,8 @@ class EnderalGameInfo(SkyrimGameInfo):
         header_type.valid_header_sigs = set(
             header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
                                          b'ACRE', b'LAND', b'INFO', b'NAVM',
-                                         b'PHZD', b'PGRE'])
+                                         b'PARW', b'PBAR', b'PBEA', b'PCON',
+                                         b'PFLA', b'PGRE', b'PHZD', b'PMIS'])
         header_type.plugin_form_version = 43
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,

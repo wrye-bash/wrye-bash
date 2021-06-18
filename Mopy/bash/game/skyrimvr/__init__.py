@@ -158,11 +158,11 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
             b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS', b'VOLI',
         ]
-        #-> this needs updating for Skyrim
         header_type.valid_header_sigs = set(
             header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
                                          b'ACRE', b'LAND', b'INFO', b'NAVM',
-                                         b'PHZD', b'PGRE'])
+                                         b'PARW', b'PBAR', b'PBEA', b'PCON',
+                                         b'PFLA', b'PGRE', b'PHZD', b'PMIS'])
         header_type.plugin_form_version = 44
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,
