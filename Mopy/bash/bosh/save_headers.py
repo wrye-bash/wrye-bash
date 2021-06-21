@@ -557,7 +557,7 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
 
     def writeMasters(self, ins, out):
         # Call the SaveFileHeader version - *not* the Skyrim one
-        super(SkyrimSaveHeader, self).writeMasters(ins, out)
+        return super(SkyrimSaveHeader, self).writeMasters(ins, out)
 
 class FalloutNVSaveHeader(SaveFileHeader):
     save_magic = b'FO3SAVEGAME'
