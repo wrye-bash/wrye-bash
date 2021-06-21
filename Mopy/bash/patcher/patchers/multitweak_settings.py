@@ -1716,6 +1716,21 @@ class GmstTweak_Msg_NoSoulGemLargeEnough(_AMsgTweak):
     tweak_key = (u'sSoulGemTooSmall',)
 
 #------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnAttackChance(_AGmstTweak):
+    tweak_name = _(u'Combat: Speak on Attack Chance')
+    tweak_tip = _(u'The chance that an actor will speak after performing an '
+                  u'attack.')
+    tweak_key = (u'fCombatSpeakAttackChance',)
+    tweak_choices = [(_(u'0% (Disabled)'), 0.0),
+                     (u'8%',              0.08),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (u'75%',             0.75),
+                     (_(u'100% (Always)'), 1.0)]
+    default_choice = u'8%'
+    custom_choice = _(u'Custom (Max: 1.0)')
+
+#------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):
     """Tweaks GLOB and GMST records in various ways."""
     _tweak_classes = {globals()[t] for t in bush.game.settings_tweaks}
