@@ -1366,8 +1366,8 @@ class GmstTweak_Combat_CriticalHitChance(_AGmstTweak):
     tweak_tip = _(u'The chance of a strike being a critical hit.')
     tweak_key = (u'fWeaponConditionCriticalChanceMult',)
     tweak_choices = [(_(u'0% (Disabled)'), 0.0),
-                     (u'1%',               0.1),
-                     (u'5%',               0.5),
+                     (u'1%',              0.01),
+                     (u'5%',              0.05),
                      (u'10%',              0.1),
                      (u'25%',             0.25),
                      (u'50%',              0.5),
