@@ -1789,6 +1789,19 @@ class GmstTweak_Combat_SpeakOnPowerAttackChance_Tes4(
     default_choice = _(u'100% (Always)')
 
 #------------------------------------------------------------------------------
+class GmstTweak_Combat_RandomTauntChance(_AGmstTweak):
+    tweak_name = _(u'Combat: Random Taunt Chance')
+    tweak_tip = _(u'Determines how often actors randomly taunt during combat.')
+    tweak_key = (u'fCombatSpeakTauntChance',)
+    tweak_choices = [(_(u'0% (Disabled)'), 0.0),
+                     (u'10%',              0.1),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (u'75%',             0.75),
+                     (_(u'100% (Always)'), 1.0)]
+    custom_choice = _(u'Custom (Max: 1.0)')
+
+#------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):
     """Tweaks GLOB and GMST records in various ways."""
     _tweak_classes = {globals()[t] for t in bush.game.settings_tweaks}
