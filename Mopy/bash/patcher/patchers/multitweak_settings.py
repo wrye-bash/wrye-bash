@@ -1751,6 +1751,26 @@ class GmstTweak_Combat_SpeakOnHitChance_Tes4(
     default_choice = u'20%'
 
 #------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnHitThreshold(_AGmstTweak):
+    tweak_name = _(u'Combat: Speak on Hit Threshold')
+    tweak_tip = _(u"The percentage of an actor's health an attack must deal "
+                  u'for the actor to speak when hit.')
+    tweak_key = (u'fCombatSpeakHitThreshold',)
+    tweak_choices = [(_(u'0% (Always)'), 0.0),
+                     (u'1%',              0.01),
+                     (u'10%',              0.1),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (u'75%',             0.75),
+                     (_(u'100% (Disabled)'), 1.0)]
+    default_choice = u'1%'
+    custom_choice = _(u'Custom (Max: 1.0)')
+
+class GmstTweak_Combat_SpeakOnHitThreshold_Tes4(
+    GmstTweak_Combat_SpeakOnHitThreshold):
+    default_choice = u'10%'
+
+#------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):
     """Tweaks GLOB and GMST records in various ways."""
     _tweak_classes = {globals()[t] for t in bush.game.settings_tweaks}

@@ -697,6 +697,7 @@ settings_tweaks = {
     u'GmstTweak_Prompt_Take_Tes4',
     u'GmstTweak_Prompt_Talk_Tes4',
     u'GmstTweak_Combat_SpeakOnHitChance',
+    u'GmstTweak_Combat_SpeakOnHitThreshold',
 }
 
 #------------------------------------------------------------------------------
