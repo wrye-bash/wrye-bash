@@ -905,6 +905,7 @@ settings_tweaks = {
     u'GmstTweak_Prompt_Take',
     u'GmstTweak_Prompt_Talk',
     u'GmstTweak_Msg_NoSoulGemLargeEnough',
+    u'GmstTweak_Combat_SpeakOnHitChance',
 }
 
 #------------------------------------------------------------------------------

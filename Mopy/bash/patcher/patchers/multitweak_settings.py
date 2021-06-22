@@ -1731,6 +1731,26 @@ class GmstTweak_Combat_SpeakOnAttackChance(_AGmstTweak):
     custom_choice = _(u'Custom (Max: 1.0)')
 
 #------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnHitChance(_AGmstTweak):
+    tweak_name = _(u'Combat: Speak on Hit Chance')
+    tweak_tip = _(u'The chance that an actor will speak after being hit with '
+                  u'a weapon.')
+    tweak_key = (u'fCombatSpeakHitChance',)
+    tweak_choices = [(_(u'0% (Disabled)'), 0.0),
+                     (u'1%',              0.01),
+                     (u'20%',              0.2),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (u'75%',             0.75),
+                     (_(u'100% (Always)'), 1.0)]
+    default_choice = u'1%'
+    custom_choice = _(u'Custom (Max: 1.0)')
+
+class GmstTweak_Combat_SpeakOnHitChance_Tes4(
+    GmstTweak_Combat_SpeakOnHitChance):
+    default_choice = u'20%'
+
+#------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):
     """Tweaks GLOB and GMST records in various ways."""
     _tweak_classes = {globals()[t] for t in bush.game.settings_tweaks}
