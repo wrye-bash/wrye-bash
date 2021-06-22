@@ -681,6 +681,7 @@ settings_tweaks = {
     u'GmstTweak_Combat_SpeakOnHitThreshold_Tes4',
     u'GmstTweak_Combat_SpeakOnPowerAttackChance_Tes4',
     u'GmstTweak_Combat_RandomTauntChance',
+    u'GmstTweak_LevelUp_SkillCount',
 }
 
 #------------------------------------------------------------------------------

@@ -1802,6 +1802,18 @@ class GmstTweak_Combat_RandomTauntChance(_AGmstTweak):
     custom_choice = _(u'Custom (Max: 1.0)')
 
 #------------------------------------------------------------------------------
+class GmstTweak_LevelUp_SkillCount(_AGmstCCTweak):
+    tweak_name = _(u'Level Up: Skill Count')
+    tweak_tip = _(u'The number of major skill point increases needed to level '
+                  u'up.')
+    tweak_key = (u'iLevelUpSkillCount',)
+    tweak_choices = [(u'1',   1),
+                     (u'5',   5),
+                     (u'10', 10),
+                     (u'20', 20)]
+    default_choice = u'10'
+
+#------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):
     """Tweaks GLOB and GMST records in various ways."""
     _tweak_classes = {globals()[t] for t in bush.game.settings_tweaks}
