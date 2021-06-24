@@ -274,12 +274,8 @@ class MreLeveledListBase(MelRecord):
           chanceNone
           flags
     """
-    _flags = bolt.Flags(0,bolt.Flags.getNames(
-        (0, u'calcFromAllLevels'),
-        (1, u'calcForEachItem'),
-        (2, u'useAllSpells'),
-        (3, u'specialLoot'),
-        ))
+    _flags = bolt.Flags.from_names(u'calcFromAllLevels', u'calcForEachItem',
+                                   u'useAllSpells', u'specialLoot')
     top_copy_attrs = ()
     # TODO(inf) Only overriden for FO3/FNV right now - Skyrim/FO4?
     entry_copy_attrs = (u'listId', u'level', u'count')
@@ -309,7 +305,7 @@ class MreLeveledListBase(MelRecord):
         if other.re_records:
             for attr in self.__class__.top_copy_attrs:
                 setattr(self, attr, getattr(other, attr))
-            self.flags = other.flags()
+            self.flags = other.flags() # Flags copy!
         else:
             for attr in self.__class__.top_copy_attrs:
                 otherAttr = getattr(other, attr)

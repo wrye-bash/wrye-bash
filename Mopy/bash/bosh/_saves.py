@@ -48,7 +48,7 @@ class SreNPC(object):
     __slots__ = (u'form', u'health', u'unused2', u'attributes', u'acbs',
                  u'spells', u'factions', u'full', u'ai', u'skills',
                  u'modifiers')
-    sre_flags = Flags(0, Flags.getNames(
+    sre_flags = Flags.from_names(
         (0,u'form'),
         (2,u'health'),
         (3,u'attributes'),
@@ -59,7 +59,7 @@ class SreNPC(object):
         (8,u'ai'),
         (9,u'skills'),
         (28,u'modifiers'),
-        ))
+    )
 
     class ACBS(object):
         __slots__ = (u'flags', u'baseSpell', u'fatigue', u'barterGold',
@@ -223,13 +223,13 @@ class SreNPC(object):
 # Save File -------------------------------------------------------------------
 class SaveFile(object):
     """Represents a Tes4 Save file."""
-    recordFlags = Flags(0, Flags.getNames(u'form', u'baseid', u'moved',
+    recordFlags = Flags.from_names(u'form', u'baseid', u'moved',
         u'havocMoved', u'scale', u'allExtra', u'lock', u'owner', u'unk8',
         u'unk9', u'mapMarkerFlags', u'hadHavokMoveFlag', u'unk12', u'unk13',
         u'unk14', u'unk15', u'emptyFlag', u'droppedItem', u'doorDefaultState',
         u'doorState', u'teleport', u'extraMagic', u'furnMarkers',
         u'oblivionFlag', u'movementExtra', u'animation', u'script',
-        u'inventory', u'created', u'unk29', u'enabled'))
+        u'inventory', u'created', u'unk29', u'enabled')
 
     def __init__(self,saveInfo=None,canSave=True):
         self.fileInfo = saveInfo

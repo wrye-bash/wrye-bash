@@ -33,14 +33,14 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelStrings, MelUInt8, MelFidList
 from .utils_constants import _int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
-    dict_sort
+    dict_sort, TrimmedFlags
 from ..exception import ModError, ModSizeError
 
 #------------------------------------------------------------------------------
 class MelActionFlags(MelUInt32Flags):
     """XACT (Action Flags) subrecord for REFR records."""
-    _act_flags = Flags(0, Flags.getNames(u'act_use_default', u'act_activate',
-        u'act_open', u'act_open_by_default'))
+    _act_flags = Flags.from_names(u'act_use_default', u'act_activate',
+                                  u'act_open', u'act_open_by_default')
 
     def __init__(self):
         super(MelActionFlags, self).__init__(b'XACT', u'action_flags',
@@ -56,8 +56,7 @@ class MelActionFlags(MelUInt32Flags):
 #------------------------------------------------------------------------------
 class MelActivateParents(MelGroup):
     """XAPD/XAPR (Activate Parents) subrecords for REFR records."""
-    _ap_flags = Flags(0, Flags.getNames(u'parent_activate_only'),
-        unknown_is_unused=True)
+    _ap_flags = TrimmedFlags.from_names(u'parent_activate_only')
 
     def __init__(self):
         super(MelActivateParents, self).__init__(u'activate_parents',
@@ -87,9 +86,9 @@ class MelCtda(MelUnion):
     # This is technically a lot more complex (the highest three bits also
     # encode the comparison operator), but we only care about use_global, so we
     # can treat the rest as unknown flags and just carry them forward
-    _ctda_type_flags = Flags(0, Flags.getNames(
+    _ctda_type_flags = Flags.from_names(
         u'do_or', u'use_aliases', u'use_global', u'use_packa_data',
-        u'swap_subject_and_target'))
+        u'swap_subject_and_target')
 
     def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=[],
                  suffix_elements=None, old_suffix_fmts=None):
@@ -253,12 +252,12 @@ class MelCtdaFo3(MelCtda):
 
 #------------------------------------------------------------------------------
 class MelDecalData(MelOptStruct):
-    _decal_data_flags = Flags(0, Flags.getNames(
+    _decal_data_flags = TrimmedFlags.from_names(
         u'parallax',
         u'alphaBlending',
         u'alphaTesting',
         u'noSubtextures', # Skyrim+, will just be ignored for earlier games
-    ), unknown_is_unused=True)
+    )
 
     def __init__(self):
         super(MelDecalData, self).__init__(b'DODT',
@@ -554,7 +553,7 @@ class MelEnableParent(MelOptStruct):
     """Enable Parent struct for a reference record (REFR, ACHR, etc.)."""
     # The pop_in flag doesn't technically exist for all XESP subrecords, but it
     # will just be ignored for those where it doesn't exist, so no problem.
-    _parent_flags = Flags(0, Flags.getNames(u'opposite_parent', u'pop_in'))
+    _parent_flags = Flags.from_names(u'opposite_parent', u'pop_in')
 
     def __init__(self):
         super(MelEnableParent, self).__init__(
@@ -566,8 +565,8 @@ class MelMapMarker(MelGroup):
     """Map marker struct for a reference record (REFR, ACHR, etc.). Also
     supports the WMI1 subrecord from FNV."""
     # Same idea as above - show_all_hidden is FO3+, but that's no problem.
-    _marker_flags = Flags(0, Flags.getNames(
-        u'visible', u'can_travel_to', u'show_all_hidden'))
+    _marker_flags = Flags.from_names('visible', 'can_travel_to',
+                                     'show_all_hidden')
 
     def __init__(self, with_reputation=False):
         group_elems = [
@@ -810,7 +809,7 @@ class MelLscrLocations(MelSorted):
 #------------------------------------------------------------------------------
 class MelReflectedRefractedBy(MelSorted):
     """Reflected/Refracted By for a reference record (REFR, ACHR, etc.)."""
-    _watertypeFlags = Flags(0, Flags.getNames(u'reflection', u'refraction'))
+    _watertypeFlags = Flags.from_names(u'reflection', u'refraction')
 
     def __init__(self):
         super(MelReflectedRefractedBy, self).__init__(

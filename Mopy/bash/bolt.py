@@ -970,59 +970,53 @@ reUnixNewLine = re.compile(r'(?<!\r)\n', re.U)
 #------------------------------------------------------------------------------
 class Flags(object):
     """Represents a flag field."""
-    __slots__ = [u'_names', u'_field', u'_unknown_is_unused']
+    __slots__ = [u'_field']
+    _names = {}
 
-    @staticmethod
-    def getNames(*names):
-        """Returns dictionary mapping names to indices.
+    @classmethod
+    def from_names(cls, *names):
+        """Return Flag subtype with specified names to index dictionary.
         Indices range may not be contiguous.
         Names are either strings or (index,name) tuples.
-        E.g., Flags.getNames('isQuest','isHidden',None,(4,'isDark'),(7,'hasWater'))"""
+        E.g., Flags.from_names('isQuest', 'isHidden', None, (4, 'isDark'),
+        (7, 'hasWater'))."""
         namesDict = {}
         for index,flg_name in enumerate(names):
             if isinstance(flg_name,tuple):
                 namesDict[flg_name[1]] = flg_name[0]
             elif flg_name: #--skip if "name" is 0 or None
                 namesDict[flg_name] = index
-        return namesDict
+        class __Flags(cls):
+            __slots__ = []
+            _names = namesDict
+        return __Flags
 
     #--Generation
-    def __init__(self, value=0, names=None, unknown_is_unused=False):
-        """Initialize. Attrs, if present, is mapping of attribute names to
-        indices. unknown_is_unused will discard unknown flags."""
-        object.__setattr__(self, u'_names', names or {})
+    def __init__(self, value=0):
+        """Set the internal int value."""
         object.__setattr__(self, u'_field', int(value))
-        object.__setattr__(self, u'_unknown_is_unused', unknown_is_unused)
-        self._clean_unused_flags()
 
-    def __call__(self,newValue=None):
+    def __call__(self,newValue=None): ##: ideally drop in favor of copy (explicit)
         """Returns a clone of self, optionally with new value."""
         if newValue is not None:
-            return Flags(int(newValue), self._names, self._unknown_is_unused)
+            return self.__class__(int(newValue))
         else:
-            return Flags(self._field, self._names, self._unknown_is_unused)
+            return self.__class__(self._field)
 
     def __deepcopy__(self, memo):
-        newFlags = Flags(self._field, self._names, self._unknown_is_unused)
+        newFlags = self.__class__(self._field)
         memo[id(self)] = newFlags ##: huh?
         return newFlags
 
-    def _clean_unused_flags(self):
-        """Removes all unknown flags if that option was set in __init__."""
-        if self._unknown_is_unused:
-            final_flags = 0
-            for flg_name, flg_idx in self._names.items():
-                if getattr(self, flg_name):
-                    final_flags |= 1 << flg_idx
-            self._field = final_flags
+    def __copy__(self):
+        return self.__class__(self._field)
 
     #--As hex string
     def hex(self):
         """Returns hex string of value."""
-        return u'%08X' % (self._field,)
+        return f'{self._field:08X}'
     def dump(self):
         """Returns value for packing"""
-        self._clean_unused_flags()
         return self._field
 
     #--As int
@@ -1032,13 +1026,6 @@ class Flags(object):
     def __index__(self):
         """Same as __int__, needed for packing in python3."""
         return self._field
-    def __getstate__(self): ##: do we even use this?
-        """Return values for pickling."""
-        return self._field, self._names
-    def __setstate__(self,fields):
-        """Used by unpickler."""
-        self._field = fields[0]
-        self._names = fields[1]
 
     #--As list
     def __getitem__(self, index):
@@ -1055,18 +1042,17 @@ class Flags(object):
     def __getattr__(self, attr_key):
         """Get value by flag name. E.g. flags.isQuestItem"""
         try:
-            names = object.__getattribute__(self, u'_names')
-            index = names[attr_key]
+            index = self.__class__._names[attr_key]
             return (object.__getattribute__(self, u'_field') >> index) & 1 == 1
         except KeyError:
             raise AttributeError(attr_key)
 
     def __setattr__(self, attr_key, value):
         """Set value by flag name. E.g., flags.isQuestItem = False"""
-        if attr_key in (u'_field', u'_names'):
+        if attr_key == u'_field':
             object.__setattr__(self, attr_key, value)
         else:
-            self.__setitem__(self._names[attr_key], value)
+            self.__setitem__(self.__class__._names[attr_key], value)
 
     #--Native operations
     def __eq__( self, other):
@@ -1086,32 +1072,53 @@ class Flags(object):
     def __and__(self,other):
         """Bitwise and."""
         if isinstance(other,Flags): other = other._field
-        return self(self._field & other)
+        return self.__class__(self._field & other)
 
     def __invert__(self):
         """Bitwise inversion."""
-        return self(~self._field)
+        return self.__class__(~self._field)
 
     def __or__(self,other):
         """Bitwise or."""
         if isinstance(other,Flags): other = other._field
-        return self(self._field | other)
+        return self.__class__(self._field | other)
 
     def __xor__(self,other):
         """Bitwise exclusive or."""
         if isinstance(other,Flags): other = other._field
-        return self(self._field ^ other)
+        return self.__class__(self._field ^ other)
 
     def getTrueAttrs(self):
         """Returns attributes that are true."""
-        trueNames = [flname for flname in self._names if getattr(self, flname)]
-        trueNames.sort(key=lambda xxx: self._names[xxx])
+        trueNames = [flname for flname in self.__class__._names if
+                     getattr(self, flname)]
         return tuple(trueNames)
 
     def __repr__(self):
         """Shows all set flags."""
         all_flags = u', '.join(self.getTrueAttrs()) if self._field else u'None'
         return u'0x%s (%s)' % (self.hex(), all_flags)
+
+class TrimmedFlags(Flags):
+    """Flag subtype that will discard unnamed flags on __init__ and dump
+    (or perform other kind of trimming)."""
+    __slots__ = []
+
+    def __init__(self, value=0):
+        super().__init__(value)
+        self._clean_flags()
+
+    def _clean_flags(self):
+        """Remove all unnamed flags."""
+        final_flags = 0
+        for flg_name, flg_idx in self.__class__._names.items():
+            if getattr(self, flg_name):
+                final_flags |= 1 << flg_idx
+        self._field = final_flags
+
+    def dump(self):
+        self._clean_flags()
+        return super(TrimmedFlags, self).dump()
 
 #------------------------------------------------------------------------------
 class DataDict(object):
