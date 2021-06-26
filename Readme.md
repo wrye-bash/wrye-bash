@@ -1,3 +1,5 @@
+<img align="left" src="Mopy/bash/images/bash.svg" width="120" alt="Wrye Bash Icon">
+
 Wrye Bash
 =========
 
