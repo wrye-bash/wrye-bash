@@ -39,8 +39,9 @@ import win32com.client as win32client
 import win32gui
 
 from ..bolt import GPath, deprint, Path
-from ..exception import AccessDeniedError, BoltError, NonExistentDriveError
-from .common import get_env_var, WinAppInfo, WinAppVersionInfo
+from ..exception import AccessDeniedError, BoltError
+from .common import get_env_var, WinAppInfo, WinAppVersionInfo, \
+    real_sys_prefix
 
 # API - Constants =============================================================
 _isUAC = False
@@ -976,7 +977,7 @@ def mark_high_dpi_aware():
 def python_tools_dir():
     """Returns the absolute path to the Tools directory of the currently used
     Python installation."""
-    return os.path.join(sys.prefix, u'Tools') # easy on Windows
+    return os.path.join(real_sys_prefix(), u'Tools') # easy on Windows
 
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""

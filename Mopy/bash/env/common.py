@@ -208,3 +208,11 @@ def get_win_store_game_paths(submod):
             return [first_location]
     else:
         return []
+
+def real_sys_prefix():
+    if hasattr(sys, 'real_prefix'):  # running in virtualenv
+        return sys.real_prefix
+    elif hasattr(sys, 'base_prefix'):  # running in venv
+        return sys.base_prefix
+    else:
+        return sys.prefix

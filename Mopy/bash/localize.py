@@ -211,7 +211,8 @@ def dump_translator(out_path, lang):
     else:
         # pygettext is only in Tools, so call it explicitly
         gt_args[0] = sys.executable
-        gt_args.insert(1, os.path.join(sys.prefix, u'Tools', u'i18n',
+        from .env import python_tools_dir
+        gt_args.insert(1, os.path.join(python_tools_dir(), u'i18n',
                                        u'pygettext.py'))
         subprocess.call(gt_args, shell=True)
     # Fill in any already translated stuff...?
