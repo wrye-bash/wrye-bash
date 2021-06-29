@@ -5411,9 +5411,15 @@ class MreWrld(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelGroups('unusedRNAM', # leftover
-            MelBase(b'RNAM','unknown',),
-        ),
+        if_sse(le_version=MelNull(b'RNAM'), # unused
+               # This formatting is hideous, not sure how to improve it though
+               se_version=MelGroups(
+                   u'large_references', MelArray(
+                       u'large_refs', MelStruct(
+                           b'RNAM', [u'3I'], (FID, u'lr_ref'), u'lr_x',
+                           u'lr_y'),
+                       prelude=MelStruct(b'RNAM', [u'2I'], u'lr_grid_x',
+                                         u'lr_grid_y')))),
         MelBase(b'MHDT','maxHeightData'),
         MelFull(),
         # Fixed Dimensions Center Cell
