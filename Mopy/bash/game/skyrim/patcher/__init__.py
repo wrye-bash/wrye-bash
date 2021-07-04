@@ -908,6 +908,8 @@ settings_tweaks = {
     u'GmstTweak_Msg_NoSoulGemLargeEnough',
     u'GmstTweak_Combat_SpeakOnHitChance',
     u'GmstTweak_Combat_SpeakOnHitThreshold',
+    u'GmstTweak_Combat_MaxFriendHitsInCombat',
+    u'GmstTweak_Combat_MaxFriendHitsOutOfCombat',
 }
 
 #------------------------------------------------------------------------------

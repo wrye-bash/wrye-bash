@@ -772,6 +772,38 @@ class GmstTweak_Combat_MaxAllyHitsOutOfCombat(_AHitsTweak):
     default_choice = u'3'
 
 #------------------------------------------------------------------------------
+class GmstTweak_Combat_MaxFriendHitsInCombat(_AHitsTweak):
+    tweak_name = _(u'Combat: Max Friend Hits In Combat')
+    tweak_tip = _(u'Number of hits allowed by non-ally friends in combat '
+                  u'before attacking the player.')
+    tweak_key = (u'iFriendHitCombatAllowed',)
+    default_choice = u'4'
+
+class GmstTweak_Combat_MaxFriendHitsInCombat_Tes4(
+    GmstTweak_Combat_MaxFriendHitsInCombat):
+    tweak_tip = _(u'Maximum number of hits on a non-ally friend allowed in '
+                  u'combat before the friend will attack the hitting '
+                  u'character.')
+    tweak_key = (u'iFriendHitAllowed',)
+    tweak_choices = [(u'1',            1),
+                     (u'3',            3),
+                     (u'5',            5),
+                     (u'8',            8),
+                     (u'10',          10),
+                     (u'15',          15),
+                     (_(u'Unlimited'), 0)]
+    default_choice = u'3'
+    custom_choice = _(u'Custom (Unlimited: 0)')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_MaxFriendHitsOutOfCombat(_AHitsTweak):
+    tweak_name = _(u'Combat: Max Friend Hits Out Of Combat')
+    tweak_tip = _(u'Number of hits allowed by non-ally friends out of combat '
+                  u'before attacking the player.')
+    tweak_key = (u'iFriendHitNonCombatAllowed',)
+    default_choice = u'0'
+
+#------------------------------------------------------------------------------
 class GmstTweak_Magic_MaxNPCSummons(_AGmstCCTweak):
     tweak_name = _(u'Magic: Max NPC Summons')
     tweak_tip = _(u'Maximum number of creatures that each NPC can summon')

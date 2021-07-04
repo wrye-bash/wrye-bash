@@ -704,6 +704,8 @@ settings_tweaks = {
     u'GmstTweak_Combat_SpeakOnPowerAttackChance',
     u'GmstTweak_Combat_MaxAllyHitsInCombat',
     u'GmstTweak_Combat_MaxAllyHitsOutOfCombat',
+    u'GmstTweak_Combat_MaxFriendHitsInCombat',
+    u'GmstTweak_Combat_MaxFriendHitsOutOfCombat',
 }
 
 #------------------------------------------------------------------------------
