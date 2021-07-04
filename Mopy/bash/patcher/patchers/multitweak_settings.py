@@ -265,6 +265,20 @@ class _ATauntTweak(_AGmstTweak):
     custom_choice = _(u'Custom (Max: 1.0)')
 
 #------------------------------------------------------------------------------
+class _AHitsTweak(_AGmstTweak):
+    """Base class for tweaks that change the amount of hits on a friendly actor
+    before they return the attack."""
+    tweak_choices = [(u'0',               0),
+                     (u'3',               3),
+                     (u'4',               4),
+                     (u'5',               5),
+                     (u'8',               8),
+                     (u'10',             10),
+                     (u'15',             15),
+                     (_(u'Unlimited'), 1000)]
+    custom_choice = _(u'Custom (Unlimited: 1000 or higher)')
+
+#------------------------------------------------------------------------------
 class GmstTweak_Arrow_LitterCount(_AGmstCCTweak):
     tweak_name = _(u'Arrow: Litter Count')
     tweak_tip = _(u'Maximum number of spent arrows allowed in cell.')
@@ -727,20 +741,31 @@ class GmstTweak_Magic_MaxPlayerSummons(_AGmstCCTweak):
     default_choice = u'1'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_MaxAllyHits(_AGmstCCTweak):
-    tweak_name = _(u'Combat: Max Ally Hits')
+class GmstTweak_Combat_MaxAllyHitsInCombat(_AHitsTweak):
+    tweak_name = _(u'Combat: Max Ally Hits In Combat')
+    tweak_tip = _(u'Number of hits allowed by allies in combat before '
+                  u'attacking the player.')
+    tweak_key = (u'iAllyHitCombatAllowed',)
+    default_choice = _(u'Unlimited')
+
+class GmstTweak_Combat_MaxAllyHitsInCombat_Tes4(
+    GmstTweak_Combat_MaxAllyHitsInCombat):
     tweak_tip = _(u'Maximum number of hits on an ally allowed in combat '
                   u'before the ally will attack the hitting character.')
     tweak_key = (u'iAllyHitAllowed',)
-    tweak_choices = [(u'0',   0),
-                     (u'3',   3),
-                     (u'5',   5),
-                     (u'8',   8),
-                     (u'10', 10),
-                     (u'15', 15)]
+    tweak_choices = [(u'1',            1),
+                     (u'3',            3),
+                     (u'5',            5),
+                     (u'8',            8),
+                     (u'10',          10),
+                     (u'15',          15),
+                     (_(u'Unlimited'), 0)]
     default_choice = u'5'
+    custom_choice = _(u'Custom (Unlimited: 0)')
 
-class GmstTweak_Combat_MaxAllyHits_Tes5(GmstTweak_Combat_MaxAllyHits):
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_MaxAllyHitsOutOfCombat(_AHitsTweak):
+    tweak_name = _(u'Combat: Max Ally Hits Out Of Combat')
     tweak_tip = _(u'Number of hits allowed by allies out of combat before '
                   u'attacking the player.')
     tweak_key = (u'iAllyHitNonCombatAllowed',)

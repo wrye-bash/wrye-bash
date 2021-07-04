@@ -640,7 +640,7 @@ settings_tweaks = {
     u'GmstTweak_CostMultiplier_SpellMaking',
     u'GmstTweak_AI_MaxActiveActors',
     u'GmstTweak_Magic_MaxPlayerSummons',
-    u'GmstTweak_Combat_MaxAllyHits',
+    u'GmstTweak_Combat_MaxAllyHitsInCombat_Tes4',
     u'GmstTweak_Magic_MaxNPCSummons',
     u'GmstTweak_Bounty_Assault',
     u'GmstTweak_Bounty_HorseTheft',
