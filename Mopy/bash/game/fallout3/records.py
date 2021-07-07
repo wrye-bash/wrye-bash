@@ -3356,7 +3356,7 @@ class MreWeap(MelRecord):
         fnv_only(MelTruncatedStruct(
             b'VATS', ['I', '3f', '2B', '2s'], (FID, 'vatsEffect'),
             'vatsSkill', 'vatsDamMult', 'vatsAp', 'vatsSilent',
-            'vatsModReqiured', 'weapVats1', old_versions={'I3f'},
+            'vats_mod_required', 'weapVats1', old_versions={'I3f'},
             is_optional=True)),
         MelBase(b'VNAM','soundLevel'),
     )

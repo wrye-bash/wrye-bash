@@ -4126,7 +4126,12 @@ C.Location, -C.LockList
                             <li>(MOD3) Scope Model</li>
                             <li>(EFSD) Scope Effect</li>
                             <li>(MOD4) World Model</li>
-                            <li>Model With Mods - <strong>Fallout&colon; New Vegas only</strong>
+                            <li>Model With Mods - <strong>Note:</strong>
+                                these are shared with
+                                <a href="#WeaponMods">WeaponMods</a> for
+                                backwards compatibility reasons. Please use the
+                                more specific WeaponMods for these subrecords.
+                                <strong>Fallout&colon; New Vegas only</strong>.
                                 <ul>
                                     <li>(MWD1) Mod 1</li>
                                     <li>(MWD2) Mod 2</li>
@@ -4139,7 +4144,12 @@ C.Location, -C.LockList
                             </li>
                             <li>(INAM) Impact Dataset</li>
                             <li>(WNAM) First Person Model</li>
-                            <li>First Person Model With Mods - <strong>Fallout&colon; New Vegas only</strong>
+                            <li>First Person Model With Mods -
+                                <strong>Note:</strong> These are shared with
+                                <a href="#WeaponMods">WeaponMods</a> for
+                                backwards compatibility reasons. Please use the
+                                more specific WeaponMods for these subrecords.
+                                <strong>Fallout&colon; New Vegas only</strong>.
                                 <ul>
                                     <li>(WNM1) Mod 1</li>
                                     <li>(WNM2) Mod 2</li>
@@ -4549,8 +4559,18 @@ C.Location, -C.LockList
                             <li>(UNAM) Sound - Idle</li>
                             <li>(NAM9) Sound - Equip</li>
                             <li>(NAM8) Sound - Unequip</li>
-                            <li>(WMS1) Sound - Mod 1 - Shoot 3D - <strong>Fallout&colon; New Vegas only</strong></li>
-                            <li>(WMS1) Sound - Mod 1 - Shoot Dist - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>Sound - Mod 1 - <strong>Note:</strong> These
+                                are shared with
+                                <a href="#WeaponMods">WeaponMods</a> for
+                                backwards compatibility reasons. Please use the
+                                more specific WeaponMods for these subrecords.
+                                <strong>Fallout&colon; New Vegas only</strong>
+                                <ul>
+                                    <li>(WMS1) Shoot 3D</li>
+                                    <li>(WMS1) Shoot Dist</li>
+                                    <li>(WMS2) Shoot 2D</li>
+                                </ul>
+                            </li>
                             <li>(VNAM) Sound Level</li>
                         </ul>
                     </li>
@@ -4766,6 +4786,74 @@ C.Location, -C.LockList
                     </li>
                 </ul>
                 <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
+            </td>
+        </tr>
+        <tr>
+            <td id="WeaponMods">WeaponMods</td>
+            <td>Modifies weapon modifications.
+                <br>
+                <br>
+                <strong>Note:</strong> Several subrecords listed here are
+                shared with <a href="#GraphicsFO3">Graphics</a> and
+                <a href="#SoundFO3">Sound</a> for backwards compatibility
+                reasons. Please use the more specific WeaponMods in those
+                cases.</td>
+            <td>The following (WEAP) Weapon subrecords:
+                <ul>
+                    <li>Model With Mods
+                        <ul>
+                            <li>(MWD1) Mod 1</li>
+                            <li>(MWD2) Mod 2</li>
+                            <li>(MWD3) Mod 1 and 2</li>
+                            <li>(MWD4) Mod 3</li>
+                            <li>(MWD5) Mod 1 and 3</li>
+                            <li>(MWD6) Mod 2 and 3</li>
+                            <li>(MWD7) Mod 1, 2 and 3</li>
+                        </ul>
+                    </li>
+                    <li>First Person Model With Mods
+                        <ul>
+                            <li>(WNM1) Mod 1</li>
+                            <li>(WNM2) Mod 2</li>
+                            <li>(WNM3) Mod 1 and 2</li>
+                            <li>(WNM4) Mod 3</li>
+                            <li>(WNM5) Mod 1 and 3</li>
+                            <li>(WNM6) Mod 2 and 3</li>
+                            <li>(WNM7) Mod 1, 2 and 3</li>
+                        </ul>
+                    </li>
+                    <li>Weapon Mods
+                        <ul>
+                            <li>(WMI1) Weapon Mod 1</li>
+                            <li>(WMI2) Weapon Mod 2</li>
+                            <li>(WMI3) Weapon Mod 3</li>
+                        </ul>
+                    </li>
+                    <li>Sound - Mod 1
+                        <ul>
+                            <li>(WMS1) Shoot 3D</li>
+                            <li>(WMS1) Shoot Dist</li>
+                            <li>(WMS2) Shoot 2D</li>
+                        </ul>
+                    </li>
+                    <li>(DNAM) Data 2
+                        <ul>
+                            <li>Flags 2 - Scope From Mod</li>
+                            <li>Effect - Mod 1</li>
+                            <li>Effect - Mod 2</li>
+                            <li>Effect - Mod 3</li>
+                            <li>Value A - Mod 1</li>
+                            <li>Value A - Mod 2</li>
+                            <li>Value A - Mod 3</li>
+                            <li>Reload Animation - Mod</li>
+                            <li>Value B - Mod 1</li>
+                            <li>Value B - Mod 2</li>
+                            <li>Value B - Mod 3</li>
+                        </ul>
+                    </li>
+                    <li>(VATS) VATS - Mod Required</li>
+                </ul>
+                <strong>Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
     </tbody>

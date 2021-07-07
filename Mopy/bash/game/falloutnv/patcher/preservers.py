@@ -22,7 +22,7 @@
 # =============================================================================
 from ....patcher.patchers.preservers import APreserver
 
-class WeaponModsPatcher(APreserver):
+class ImportWeaponModificationsPatcher(APreserver):
     """Merge changes to weapon modifications for FalloutNV."""
     patcher_name = _(u'Import Weapon Modifications')
     patcher_desc = _(u'Merges changes to weapon modifications.')
@@ -34,8 +34,8 @@ class WeaponModsPatcher(APreserver):
         u'soundMod1Shoot3Ds', u'soundMod1Shoot2D', u'effectMod1',
         u'effectMod2', u'effectMod3', u'valueAMod1', u'valueAMod2',
         u'valueAMod3', u'valueBMod1', u'valueBMod2', u'valueBMod3',
-        u'reloadAnimationMod', u'vatsModReqiured', u'scopeModel',
-        u'dnamFlags1.hasScope', u'dnamFlags2.scopeFromMod')}
+        u'reloadAnimationMod', u'vats_mod_required',
+        u'dnamFlags2.scopeFromMod')}
 
     @classmethod
     def gui_cls_vars(cls):
