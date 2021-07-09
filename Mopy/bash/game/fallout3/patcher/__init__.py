@@ -336,6 +336,7 @@ soundsTypes = {
     b'ACTI': (u'soundLooping', u'soundActivation'),
     b'ADDN': (u'ambientSound',),
     b'ALCH': (u'dropSound', u'pickupSound', u'soundConsume'),
+    b'ARMO': (u'pickupSound', u'dropSound'),
     b'ASPC': (u'soundLooping', u'useSoundFromRegion'),
     b'COBJ': (u'pickupSound', u'dropSound'),
     b'CONT': (u'soundOpen', u'soundClose'),
