@@ -690,8 +690,11 @@ def _parse_list(list_path):
     with list_path.open(u'r', encoding=u'utf-8') as ins:
         list_contents = yaml.load(ins, Loader=SafeLoader)
     # The list contents may be None if the list file exists, but is an entirely
-    # empty YAML file. Just return an empty dict in that case.
-    if not list_contents:
+    # empty YAML file. Just return an empty dict in that case. Similarly, if
+    # parsing the contents does not result in a dict (e.g. if the file is just
+    # a long string of random characters), return an empty dict as well.
+    if not isinstance(list_contents, dict):
+        deprint(u'Masterlist file %s is empty or invalid' % list_path)
         return LowerDict()
     return LowerDict({_loot_decode(p[u'name']): _PluginEntry(p) for p
                       in list_contents.get(u'plugins', ())})
