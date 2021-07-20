@@ -304,7 +304,6 @@ def init_dirs_mopy():
     from . import archives
     if os.name == u'nt': # don't add local directory to binaries on linux
         archives.exe7z = dirs[u'compiled'].join(archives.exe7z).s
-        archives.pngcrush = dirs[u'compiled'].join(archives.pngcrush).s
     global mopy_dirs_initialized
     mopy_dirs_initialized = True
 

@@ -589,8 +589,8 @@
         ; As of 308, the license file is named LICENSE.md
         Delete "${Path}\Mopy\license.txt"
         ; As of 308, taglists now reside in Mopy\taglists
-        ; NOTE: If we ever end up using Mopy\Bash Patches outside Oblivion,
-        ; change these to 'Delete's similar to Oblivion's
+        ; NOTE: Once/If we hardcode the Mopy\Bash Patches folder's contents,
+        ; replace all these with a single RMDir (see #605)
         RMDir /r "${Path}\Mopy\Bash Patches\Fallout3"
         RMDir /r "${Path}\Mopy\Bash Patches\Fallout4"
         RMDir /r "${Path}\Mopy\Bash Patches\FalloutNV"
@@ -648,6 +648,8 @@
         Delete "${Path}\Mopy\bash\images\Skyrim VR16.png"
         Delete "${Path}\Mopy\bash\images\Skyrim VR24.png"
         Delete "${Path}\Mopy\bash\images\Skyrim VR32.png"
+        ; As of 310, pngcrush.exe is gone
+        Delete "${Path}\Mopy\bash\compiled\pngcrush.exe"
     !macroend
 
 

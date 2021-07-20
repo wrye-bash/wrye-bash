@@ -29,8 +29,6 @@ from .bolt import startupinfo, GPath, deprint, walkdir
 from .exception import StateError
 
 exe7z = u'7z.exe' if os.name == u'nt' else u'7z'
-# TODO(inf) stuck it here for now - should probably go somewhere else
-pngcrush = u'pngcrush.exe' if os.name == u'nt' else u'pngcrush'
 defaultExt = u'.7z'
 writeExts = {u'.7z': u'7z', u'.zip': u'zip'}
 readExts = {u'.rar', u'.001'}
