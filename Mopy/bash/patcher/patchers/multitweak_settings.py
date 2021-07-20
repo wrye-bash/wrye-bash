@@ -254,6 +254,18 @@ class _ASoulTrapTweak(_AGmstCCTweak):
                      (u'28', 28),
                      (u'38', 38)]
 
+class _ATauntTweak(_AGmstTweak):
+    """Base class for tweaks that change the chance of actors taunting or
+    speaking when certain events (e.g. being hit) occur."""
+    tweak_choices = [(_(u'0% (Disabled)'), 0.0),
+                     (u'1%',              0.01),
+                     (u'20%',              0.2),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (u'75%',             0.75),
+                     (_(u'100% (Always)'), 1.0)]
+    custom_choice = _(u'Custom (Max: 1.0)')
+
 #------------------------------------------------------------------------------
 class GmstTweak_Arrow_LitterCount(_AGmstCCTweak):
     tweak_name = _(u'Arrow: Litter Count')
@@ -1366,8 +1378,8 @@ class GmstTweak_Combat_CriticalHitChance(_AGmstTweak):
     tweak_tip = _(u'The chance of a strike being a critical hit.')
     tweak_key = (u'fWeaponConditionCriticalChanceMult',)
     tweak_choices = [(_(u'0% (Disabled)'), 0.0),
-                     (u'1%',               0.1),
-                     (u'5%',               0.5),
+                     (u'1%',              0.01),
+                     (u'5%',              0.05),
                      (u'10%',              0.1),
                      (u'25%',             0.25),
                      (u'50%',              0.5),
@@ -1714,6 +1726,80 @@ class GmstTweak_Msg_NoSoulGemLargeEnough(_AMsgTweak):
     tweak_tip = _(u'Message when there is no soul gem large enough for a '
                   u'captured soul.')
     tweak_key = (u'sSoulGemTooSmall',)
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnAttackChance(_ATauntTweak):
+    tweak_name = _(u'Combat: Speak on Attack Chance')
+    tweak_tip = _(u'The chance that an actor will speak after performing an '
+                  u'attack.')
+    tweak_key = (u'fCombatSpeakAttackChance',)
+    tweak_choices = [(_(u'0% (Disabled)'), 0.0),
+                     (u'8%',              0.08),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (u'75%',             0.75),
+                     (_(u'100% (Always)'), 1.0)]
+    default_choice = u'8%'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnHitChance(_ATauntTweak):
+    tweak_name = _(u'Combat: Speak on Hit Chance')
+    tweak_tip = _(u'The chance that an actor will speak after being hit with '
+                  u'a weapon.')
+    tweak_key = (u'fCombatSpeakHitChance',)
+    default_choice = u'1%'
+
+class GmstTweak_Combat_SpeakOnHitChance_Tes4(
+    GmstTweak_Combat_SpeakOnHitChance):
+    default_choice = u'20%'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnHitThreshold(_ATauntTweak):
+    tweak_name = _(u'Combat: Speak on Hit Threshold')
+    tweak_tip = _(u"The percentage of an actor's health an attack must deal "
+                  u'for the actor to speak when hit.')
+    tweak_key = (u'fCombatSpeakHitThreshold',)
+    tweak_choices = [(_(u'0% (Always)'), 0.0),
+                     (u'1%',              0.01),
+                     (u'10%',              0.1),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (u'75%',             0.75),
+                     (_(u'100% (Disabled)'), 1.0)]
+    default_choice = u'1%'
+
+class GmstTweak_Combat_SpeakOnHitThreshold_Tes4(
+    GmstTweak_Combat_SpeakOnHitThreshold):
+    default_choice = u'10%'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnPowerAttackChance(_ATauntTweak):
+    tweak_name = _(u'Combat: Speak on Power Attack Chance')
+    tweak_tip = _(u'The chance that an actor will speak after performing a '
+                  u'power attack.')
+    tweak_key = (u'fCombatSpeakPowerAttackChance',)
+
+class GmstTweak_Combat_SpeakOnPowerAttackChance_Tes4(
+    GmstTweak_Combat_SpeakOnPowerAttackChance):
+    default_choice = _(u'100% (Always)')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_RandomTauntChance(_ATauntTweak):
+    tweak_name = _(u'Combat: Random Taunt Chance')
+    tweak_tip = _(u'Determines how often actors randomly taunt during combat.')
+    tweak_key = (u'fCombatSpeakTauntChance',)
+
+#------------------------------------------------------------------------------
+class GmstTweak_LevelUp_SkillCount(_AGmstCCTweak):
+    tweak_name = _(u'Level Up: Skill Count')
+    tweak_tip = _(u'The number of major skill point increases needed to level '
+                  u'up.')
+    tweak_key = (u'iLevelUpSkillCount',)
+    tweak_choices = [(u'1',   1),
+                     (u'5',   5),
+                     (u'10', 10),
+                     (u'20', 20)]
+    default_choice = u'10'
 
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):

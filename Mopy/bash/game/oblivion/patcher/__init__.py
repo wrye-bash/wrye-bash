@@ -676,6 +676,12 @@ settings_tweaks = {
     u'GmstTweak_Prompt_Take_Tes4',
     u'GmstTweak_Prompt_Talk_Tes4',
     u'GmstTweak_Msg_NoSoulGemLargeEnough',
+    u'GmstTweak_Combat_SpeakOnAttackChance',
+    u'GmstTweak_Combat_SpeakOnHitChance_Tes4',
+    u'GmstTweak_Combat_SpeakOnHitThreshold_Tes4',
+    u'GmstTweak_Combat_SpeakOnPowerAttackChance_Tes4',
+    u'GmstTweak_Combat_RandomTauntChance',
+    u'GmstTweak_LevelUp_SkillCount',
 }
 
 #------------------------------------------------------------------------------
