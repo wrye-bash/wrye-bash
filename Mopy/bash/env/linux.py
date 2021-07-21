@@ -230,8 +230,3 @@ class TaskDialog(object):
     def __init__(self, _title, _heading, _content, _buttons=(),
                  _main_icon=None, _parenthwnd=None, _footer=None):
         raise EnvError(u'TaskDialog')
-
-# Linux is still mostly broken, so raise on import
-raise ImportError(u'Wrye Bash only partially supports Linux at the moment. If '
-                  u"you know what you're doing, edit linux.py to remove this "
-                  u'raise statement.')

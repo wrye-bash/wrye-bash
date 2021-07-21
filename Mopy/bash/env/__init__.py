@@ -34,12 +34,16 @@ from .common import *
 
 # Then check which OS we are running on and import *only* from there
 shfo = None
-if platform.system() == u'Windows':
+op_system = platform.system()
+if op_system == u'Windows':
     from .windows import *
-elif platform.system() == u'Linux':
+elif op_system == u'Linux':
+    from .linux import *
+elif op_system == u'Darwin':
+    # let's not have a separate file yet
     from .linux import *
 else:
-    raise ImportError(u'Wrye Bash does not support %s yet' % platform.system())
+    raise ImportError(f'Wrye Bash does not support {op_system} yet')
 
 # File operations WIP ---------------------------------------------------------
 def __copyOrMove(operation, source, target, renameOnCollision, parent):
