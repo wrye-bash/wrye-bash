@@ -22,7 +22,9 @@
 # =============================================================================
 """Tmp module to get mergeability stuff out of bosh.__init__.py."""
 import os
+
 from .. import bush
+from ..bolt import sig_to_str
 from ..exception import ModError
 from ..mod_files import LoadFactory, ModHeaderReader, ModFile
 
@@ -91,8 +93,8 @@ def isPBashMergeable(modInfo, minfos, reasons):
     #--Skipped over types?
     if modFile.topsSkipped:
         if not verbose: return False
-        reasons.append(_(u'Unsupported types: ') + u'%s.' % _join_sigs(
-            modFile.topsSkipped))
+        reasons.append(
+            _(u'Unsupported types: ') + f'{_join_sigs(modFile.topsSkipped)}.')
     #--Empty mod
     elif not modFile.tops:
         if not verbose: return False
@@ -107,15 +109,15 @@ def isPBashMergeable(modInfo, minfos, reasons):
                 newblocks.append(top_type)
                 break
     if newblocks: reasons.append(
-        _(u'New record(s) in block(s): ') + u'%s.' % _join_sigs(newblocks))
+        _(u'New record(s) in block(s): ') + f'{_join_sigs(newblocks)}.')
     dependent = _dependent(self_name, minfos)
     if dependent:
         if not verbose: return False
         reasons.append(_(u'Is a master of non-mergeable mod(s): ')+u', '.join(sorted(dependent))+u'.')
     return False if reasons else True
 
-def _join_sigs(modFile):
-    return u', '.join(x.decode(u'ascii') for x in sorted(modFile))
+def _join_sigs(sigs):
+    return ', '.join(map(sig_to_str, sorted(sigs)))
 
 def _dependent(minfo_key, minfos):
     """Get mods for which modInfo is a master mod (excluding BPs and

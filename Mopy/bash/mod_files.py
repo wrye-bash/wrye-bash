@@ -28,7 +28,8 @@ from itertools import chain
 from zlib import decompress as zlib_decompress, error as zlib_error
 
 from . import bolt, bush, env, load_order
-from .bolt import deprint, SubProgress, structs_cache, struct_error, decoder
+from .bolt import deprint, SubProgress, structs_cache, struct_error, decoder, \
+    sig_to_str, str_to_sig
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds, \
     unpack_header, FastModReader, Subrecord
@@ -153,11 +154,9 @@ class LoadFactory(object):
             return MobBase if self.keepAll else None
 
     def __repr__(self):
-        return u'<LoadFactory: load %u types (%s), %s others>' % (
-            len(self.recTypes),
-            u', '.join([r.decode('ascii') for r in self.recTypes]),
-            u'keep' if self.keepAll else u'discard',
-        )
+        return f'<LoadFactory: load {len(self.recTypes)} types ' \
+               f'({", ".join(map(sig_to_str, self.recTypes))}), ' \
+               f'{u"keep" if self.keepAll else u"discard"} others>'
 
 class _RecGroupDict(dict):
     """dict subclass holding ModFile's collection of top groups key'd by sig"""
@@ -171,12 +170,13 @@ class _RecGroupDict(dict):
         """Return top block of specified topType, creating it, if necessary.
         :raise ModError KeyError"""
         if top_grup_sig not in __rh.top_grup_sigs:
-            raise KeyError(u'Invalid top group type: ' + top_grup_sig)
+            raise KeyError(f'Invalid top group type: '
+                           f'{sig_to_str(top_grup_sig)}')
         topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
         if topClass is None:
-                raise ModError(self._mod_file.fileInfo.ci_key,
-                   u'Failed to retrieve top class for %s; load factory is '
-                   u'%r' % (top_grup_sig, self._mod_file.loadFactory))
+            raise ModError(self._mod_file.fileInfo.ci_key,
+                f'Failed to retrieve top class for {sig_to_str(top_grup_sig)};'
+                f' load factory is {self._mod_file.loadFactory!r}')
         self[top_grup_sig] = topClass(TopGrupHeader(0, top_grup_sig, 0),
                                       self._mod_file.loadFactory)
         self[top_grup_sig].setChanged()
@@ -396,10 +396,10 @@ class ModFile(object):
                               else nonhostile_recs)
                 target_set.add(record.eid)
                 try:
-                    target_set.add(unpack_eid(record.eid.encode(u'ascii'))[0])
+                    target_set.add(unpack_eid(str_to_sig(record.eid))[0])
                 except struct_error:
-                    raise ModError(None, u'Failed to unpack EDID for '
-                                         u'%r' % record)
+                    raise ModError(None, f'Failed to unpack EDID for '
+                                         f'{record!r}')
                 m_names[record.eid] = record.full or u'' # could this be None?
         self.cached_mgef_school = m_school
         self.cached_mgef_hostiles = m_hostiles - nonhostile_recs | hostile_recs
@@ -521,8 +521,8 @@ class ModHeaderReader(object):
                     # Nothing special to do for non-top GRUPs
                     if not header.is_top_group_header: continue
                     tg_label = header.label
-                    progress(ins_tell() / minf_size, u'%s\n%s' % (
-                        main_progress_msg, tg_label.decode(u'ascii')))
+                    progress(ins_tell() / minf_size,
+                             f'{main_progress_msg}\n{sig_to_str(tg_label)}')
                     records = group_records[tg_label]
                 #     skip_eids = tg_label not in records_with_eids
                 # elif skip_eids:

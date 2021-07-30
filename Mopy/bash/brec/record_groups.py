@@ -31,7 +31,7 @@ from operator import itemgetter, attrgetter
 # Wrye Bash imports
 from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
 from .utils_constants import group_types, fid_key
-from ..bolt import pack_int, structs_cache, attrgetter_cache
+from ..bolt import pack_int, structs_cache, attrgetter_cache, sig_to_str
 from ..exception import AbstractError, ModError, ModFidMismatchError
 
 class MobBase(object):
@@ -59,12 +59,6 @@ class MobBase(object):
         self.loadFactory = loadFactory
         self.inName = ins and ins.inName
         if ins: self.load_rec_group(ins, do_unpack)
-
-    def _mk_err_label(self, expType):
-        """Creates an error label for the specified expected record type."""
-        if isinstance(expType, bytes):
-            return f'{expType.decode("ascii")} Top Block'
-        return f'{expType} Top Block'
 
     def load_rec_group(self, ins=None, do_unpack=False):
         """Load data from ins stream or internal data buffer."""
@@ -222,16 +216,17 @@ class MobObjects(MobBase):
         """Loads data from input stream. Called by load()."""
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
-        errLabel = self._mk_err_label(expType)
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
         recordsAppend = self.records.append
+        errLabel = f'{(exp_str := sig_to_str(expType))} Top Block'
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
             header = insRecHeader()
             if header.recType != expType:
-                raise ModError(ins.inName,u'Unexpected %s record in %s group.'
-                               % (header.recType, expType))
+                header_str = sig_to_str(header.recType)
+                msg = f'Unexpected {header_str} record in {exp_str} group.'
+                raise ModError(ins.inName, msg)
             recordsAppend(recClass(header, ins, True))
         self.setChanged()
 
@@ -394,7 +389,7 @@ class MobObjects(MobBase):
         return iter(self.records)
 
     def __repr__(self):
-        return (f'<{self.label.decode("ascii")} GRUP: {len(self.records)} '
+        return (f'<{sig_to_str(self.label)} GRUP: {len(self.records)} '
                 f'record(s)>')
 
 #------------------------------------------------------------------------------
@@ -604,12 +599,12 @@ class MobDials(MobBase):
         ins_seek = ins.seek
         if not dial_class: ins_seek(endPos) # skip the whole group
         expType = self.label
-        errLabel = self._mk_err_label(expType)
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
         append_dialogue = self.dialogues.append
         loadFactory = self.loadFactory
-        while not insAtEnd(endPos,errLabel):
+        while not insAtEnd(endPos,
+                           errLabel := f'{sig_to_str(expType)} Top Block'):
             #--Get record info and handle it
             dial_header = insRecHeader()
             if dial_header.recType == expType:
@@ -633,11 +628,12 @@ class MobDials(MobBase):
                         ins_seek(-RecordHeader.rec_header_size, 1)
                     else:
                         raise ModError(ins.inName,
-                            u'Unexpected %r in %s block.' % (next_header,
-                                                             expType))
+                                       f'Unexpected {next_header!r} in '
+                                       f'{sig_to_str(expType)} block.')
             else:
                 raise ModError(ins.inName,
-                    u'Unexpected %r in %s top block.' % (dial_header, expType))
+                               f'Unexpected {dial_header!r} in '
+                               f'{sig_to_str(expType)} top block.')
         self.id_dialogues.clear()
         self.setChanged()
 
@@ -814,18 +810,18 @@ class MobCell(MobBase):
                 groupType = header.groupType
                 if groupType not in (8, 9, 10):
                     raise ModError(self.inName,
-                                   u'Unexpected subgroup %d in cell children '
-                                   u'group.' % groupType)
+                                   f'Unexpected subgroup {groupType:d} in '
+                                   f'cell children group.')
                 if subgroupLoaded[groupType - 8]:
                     raise ModError(self.inName,
-                                   u'Extra subgroup %d in cell children '
-                                   u'group.' % groupType)
+                                   f'Extra subgroup {groupType:d} in cell '
+                                   f'children group.')
                 else:
                     subgroupLoaded[groupType - 8] = True
             elif _rsig not in cellType_class:
                 raise ModError(self.inName,
-                               u'Unexpected %s record in cell children '
-                               u'group.' % _rsig)
+                               f'Unexpected {sig_to_str(_rsig)} record in '
+                               f'cell children group.')
             elif not recClass:
                 header.skip_blob(ins)
             elif _rsig in (b'REFR',b'ACHR',b'ACRE'):
@@ -1289,7 +1285,6 @@ class MobICells(MobCells):
         recCellClass = self.loadFactory.getRecClass(expType)
         insSeek = ins.seek
         if not recCellClass: insSeek(endPos) # skip the whole group
-        errLabel = self._mk_err_label(expType)
         cell = None
         endBlockPos = endSubblockPos = 0
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks(b'CELL')
@@ -1308,7 +1303,7 @@ class MobICells(MobCells):
                 if skip_delta:
                     insSeek(delta, 1)
             cellBlocksAppend(cellBlock)
-        while not insAtEnd(endPos,errLabel):
+        while not insAtEnd(endPos, f'{sig_to_str(expType)} Top Block'):
             header = insRecHeader()
             _rsig = header.recType
             if _rsig == expType:
@@ -1318,9 +1313,8 @@ class MobICells(MobCells):
                 cell = recCellClass(header,ins,True)
                 if insTell() > endBlockPos or insTell() > endSubblockPos:
                     raise ModError(self.inName,
-                                   u'Interior cell <%X> %s outside of block '
-                                   u'or subblock.' % (
-                                       cell.fid,cell.eid))
+                                   f'Interior cell <{cell.fid:X}> {cell.eid} '
+                                   f'outside of block or subblock.')
             elif _rsig == b'GRUP':
                 groupFid,groupType = header.label, header.groupType
                 delta = header.blob_size()
@@ -1332,24 +1326,21 @@ class MobICells(MobCells):
                     if cell:
                         if groupFid != cell.fid:
                             raise ModError(self.inName,
-                                           u'Cell subgroup (%X) does not '
-                                           u'match CELL <%X> %s.' %
-                                           (groupFid,cell.fid,cell.eid))
+                                f'Cell subgroup ({groupFid:X}) does not match '
+                                f'CELL <{cell.fid:X}> {cell.eid}.')
                         build_cell_block(unpack_block=unpackCellBlocks,
                             skip_delta=True)
                         cell = None
                     else:
                         raise ModError(self.inName,
-                                       u'Extra subgroup %d in CELL group.' %
-                                       groupType)
+                            f'Extra subgroup {groupType:d} in CELL group.')
                 else:
                     raise ModError(self.inName,
-                                   u'Unexpected subgroup %d in CELL group.'
-                                   % groupType)
+                        f'Unexpected subgroup {groupType:d} in CELL group.')
             else:
                 raise ModError(self.inName,
-                               u'Unexpected %s record in %s group.' % (
-                                   _rsig,expType))
+                               f'Unexpected {sig_to_str(_rsig)} record in '
+                               f'{sig_to_str(expType)} group.')
         if cell:
             # We have a CELL without children left over, finish it
             build_cell_block()
@@ -1434,8 +1425,7 @@ class MobWorld(MobCells):
                 if block and (
                         insTell() > endBlockPos or insTell() > endSubblockPos):
                         raise ModError(self.inName,
-                            u'Exterior cell %r after block or subblock.'
-                            % cell)
+                            f'Exterior cell {cell!r} after block or subblock.')
             elif _rsig == b'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
@@ -1453,8 +1443,8 @@ class MobWorld(MobCells):
                     if cell:
                         if groupFid != cell.fid:
                             raise ModError(self.inName,
-                                u'Cell subgroup (%s) does not match CELL %r.'
-                                % (hex(groupFid), cell))
+                                           f'Cell subgroup ({hex(groupFid)}) '
+                                           f'does not match CELL {cell!r}.')
                         build_cell_block(unpack_block=unpackCellBlocks,
                             skip_delta=True)
                         cell = None
@@ -1464,12 +1454,12 @@ class MobWorld(MobCells):
                                        u'world children group.')
                 else:
                     raise ModError(self.inName,
-                                   u'Unexpected subgroup %d in world '
-                                   u'children group.' % groupType)
+                                   f'Unexpected subgroup {groupType:d} in '
+                                   f'world children group.')
             else:
                 raise ModError(self.inName,
-                               u'Unexpected %s record in world children '
-                               u'group.' % _rsig)
+                               f'Unexpected {sig_to_str(_rsig)} record in'
+                               f'world children group.')
         if cell:
             # We have a CELL without children left over, finish it
             build_cell_block()
@@ -1673,7 +1663,6 @@ class MobWorlds(MobBase):
         recWrldClass = self.loadFactory.getRecClass(expType)
         insSeek = ins.seek
         if not recWrldClass: insSeek(endPos) # skip the whole group
-        errLabel = self._mk_err_label(expType)
         worldBlocks = self.worldBlocks
         world = None
         insAtEnd = ins.atEnd
@@ -1684,7 +1673,7 @@ class MobWorlds(MobBase):
         isFallout = bush.game.fsName != u'Oblivion'
         worlds = {}
         header = None
-        while not insAtEnd(endPos,errLabel):
+        while not insAtEnd(endPos, f'{sig_to_str(expType)} Top Block'):
             #--Get record info and handle it
             prev_header = header
             header = insRecHeader()
@@ -1702,8 +1691,8 @@ class MobWorlds(MobBase):
                 groupFid,groupType = header.label,header.groupType
                 if groupType != 1:
                     raise ModError(ins.inName,
-                                   u'Unexpected subgroup %d in CELL group.'
-                                   % groupType)
+                                   f'Unexpected subgroup {groupType:d} in '
+                                   f'CELL group.')
                 if isFallout: world = worlds.get(groupFid,None)
                 if not world:
                     #raise ModError(ins.inName,'Extra subgroup %d in WRLD
@@ -1714,15 +1703,15 @@ class MobWorlds(MobBase):
                     continue
                 if groupFid != world.fid:
                     raise ModError(ins.inName,
-                                   u'WRLD subgroup (%s) does not match WRLD '
-                                   u'%r.' % (hex(groupFid), world))
+                                   f'WRLD subgroup ({hex(groupFid)}) does '
+                                   f'not match WRLD {world!r}.')
                 worldBlock = MobWorld(header,selfLoadFactory,world,ins,True)
                 worldBlocksAppend(worldBlock)
                 world = None
             else:
                 raise ModError(ins.inName,
-                               u'Unexpected %s record in %s group.' % (
-                                   _rsig,expType))
+                               f'Unexpected {sig_to_str(_rsig)} record in'
+                               f'{expType} group.')
         if world:
             # We have a last WRLD without children lying around, finish it
             self.setWorld(world)

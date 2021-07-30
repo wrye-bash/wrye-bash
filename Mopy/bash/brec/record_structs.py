@@ -32,7 +32,7 @@ from .basic_elements import SubrecordBlob, unpackSubHeader
 from .mod_io import ModReader
 from .utils_constants import strFid, _int_unpacker
 from .. import bolt, exception
-from ..bolt import decoder, struct_pack
+from ..bolt import decoder, struct_pack, sig_to_str
 from ..bolt import float_or_none, int_or_zero, str_or_none
 
 def _str_to_bool(value, __falsy=frozenset(
@@ -471,8 +471,8 @@ class MreRecord(object):
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        raise exception.AbstractError(u'updateMasters called on skipped type '
-                                      u'%s' % self.rec_str)
+        raise exception.AbstractError(
+            f'updateMasters called on skipped type {self.rec_str}')
 
     def setChanged(self,value=True):
         """Sets changed attribute to value. [Default = True.]"""
@@ -482,8 +482,7 @@ class MreRecord(object):
         """Return size of self.data, after, if necessary, packing it."""
         if not self.changed: return self.size
         if self.longFids: raise exception.StateError(
-            u'Packing Error: %s %s: Fids in long format.'
-            % (self.rec_str, self.fid))
+            f'Packing Error: {self.rec_str} {self.fid}: Fids in long format.')
         #--Pack data and return size.
         out = io.BytesIO()
         self.dumpData(out)
@@ -500,24 +499,24 @@ class MreRecord(object):
         """Dumps state into data. Called by getSize(). This default version
         just calls subrecords to dump to out."""
         if self.data is None:
-            raise exception.StateError(u'Dumping empty record. [%s: %s %08X]' %
-                                       (self.inName, self.rec_str, self.fid))
+            raise exception.StateError(
+                f'Dumping empty record. [{self.inName}: {self.rec_str} '
+                f'{self.fid:08X}]')
         for subrecord in self.iterate_subrecords():
             subrecord.packSub(out, subrecord.mel_data)
 
     @property
     def rec_str(self):
         """Decoded record signature - **only** use in exceptions and co."""
-        return self._rec_sig.decode(u'ascii')
+        return sig_to_str(self._rec_sig)
 
     def dump(self,out):
         """Dumps all data to output stream."""
         if self.changed:
-            raise exception.StateError(
-                u'Data changed: %s' % self.rec_str)
+            raise exception.StateError(f'Data changed: {self.rec_str}')
         if not self.data and not self.flags1.deleted and self.size > 0:
-            raise exception.StateError(u'Data undefined: %s %s' % (
-                self.rec_str, hex(self.fid)))
+            raise exception.StateError(
+                f'Data undefined: {self.rec_str} {hex(self.fid)}')
         #--Update the header so it 'packs' correctly
         self.header.size = self.size
         if self._rec_sig != b'GRUP':
@@ -597,26 +596,27 @@ class MelRecord(MreRecord):
         while not ins_at_end(endPos, self._rec_sig):
             sub_type, sub_size = unpackSubHeader(ins, self._rec_sig)
             try:
-                loaders[sub_type].load_mel(self, ins, sub_type, sub_size,
-                    self._rec_sig, sub_type)# *debug_strs
-            except KeyError:
+                loader = loaders[sub_type]
+                try:
+                    loader.load_mel(self, ins, sub_type, sub_size,
+                                    self._rec_sig, sub_type) # *debug_strs
+                    continue
+                except Exception as er:
+                    error = er
+            except KeyError: # loaders[sub_type]
                 # Wrap this error to make it more understandable
-                self.handle_load_error(exception.ModError(ins.inName,
-                    u'Unexpected subrecord: %s.%s' % (
-                        self.rec_str, sub_type.decode(u'ascii'))),
-                    ins, sub_type, sub_size)
-            except Exception as error:
-                self.handle_load_error(error, ins, sub_type, sub_size)
-
-    def handle_load_error(self, error, ins, sub_type, sub_size):
-        eid = getattr(self, u'eid', u'<<NO EID>>')
-        bolt.deprint(u'Error loading %r record and/or subrecord: %08X' %
-                     (self.rec_str, self.fid))
-        bolt.deprint(u'  eid = %r' % eid)
-        bolt.deprint(u'  subrecord = %r' % sub_type)
-        bolt.deprint(u'  subrecord size = %d' % sub_size)
-        bolt.deprint(u'  file pos = %d' % ins.tell(), traceback=True)
-        raise exception.ModError(ins.inName, repr(error))
+                error = f'Unexpected subrecord: {self.rec_str}.' \
+                        f'{sig_to_str(sub_type)}'
+            bolt.deprint('\n'.join([
+                f'Error loading {self.rec_str} record '
+                f'and/or subrecord: {self.fid:08X}',
+                f'  eid = {getattr(self, "eid", "<<NO EID>>")!r}',
+                f'  subrecord = {sig_to_str(sub_type)}',
+                f'  subrecord size = {sub_size}',
+                f'  file pos = {ins.tell()}']), traceback=True) ## todo test what is the traceback here
+            if isinstance(error, str):
+                raise exception.ModError(ins.inName, error)
+            raise exception.ModError(ins.inName, f'{error!r}') from error
 
     def dumpData(self,out):
         """Dumps state into out. Called by getSize()."""

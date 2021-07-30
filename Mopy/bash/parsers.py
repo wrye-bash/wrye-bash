@@ -38,7 +38,8 @@ from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import GPath, decoder, deprint, setattr_deep, attrgetter_cache, \
-    str_or_none, int_or_none, structs_cache, int_or_zero
+    str_or_none, int_or_none, structs_cache, int_or_zero, sig_to_str, \
+    str_to_sig
 from .brec import MreRecord, MelObject, genFid, RecHeader, null4, \
     attr_csv_struct
 from .exception import AbstractError
@@ -198,7 +199,7 @@ class _HandleAliases(CsvParser):
 
     def _parse_line(self, csv_fields):
         if self._grup_index is not None:
-            top_grup_sig = csv_fields[self._grup_index].encode(u'ascii')
+            top_grup_sig = str_to_sig(csv_fields[self._grup_index])
         else:
             top_grup_sig = self._parser_sigs[0] # one rec type
         longid = self._coerce_fid(csv_fields[self._id_indexes[0]],
@@ -463,7 +464,7 @@ class ActorFactions(_AParser):
         aid = self._coerce_fid(amod, aobj)
         lfid = self._coerce_fid(fmod, fobj)
         rank = int(rank)
-        top_grup_sig = top_grup.encode(u'ascii')
+        top_grup_sig = str_to_sig(top_grup)
         if self._called_from_patcher:
             ret_obj = MreRecord.type_class[top_grup_sig].getDefault(u'factions')
             ret_obj.faction = lfid
@@ -476,7 +477,7 @@ class ActorFactions(_AParser):
         """Exports faction data to specified text file."""
         type_id_factions,id_eid = self.id_stored_data, self.id_context
         for top_grup_sig, id_factions in _key_sort(type_id_factions):
-            top_grup = top_grup_sig.decode(u'ascii')
+            top_grup = sig_to_str(top_grup_sig)
             for aid, factions, actorEid in _key_sort(id_factions, id_eid):
                 for faction, rank, factionEid in _key_sort(factions, id_eid):
                     out.write(self._row_fmt_str % (
@@ -675,7 +676,7 @@ class EditorIds(_HandleAliases):
 
     def _write_rows(self, out):
         for top_grup_sig, id_eid in _key_sort(self.id_stored_data):
-            top_grup = top_grup_sig.decode(u'ascii')
+            top_grup = sig_to_str(top_grup_sig)
             for id_, eid_ in _key_sort(id_eid, by_value=True):
                 out.write(self._row_fmt_str % (top_grup, *id_, eid_))
 
@@ -842,7 +843,7 @@ class FullNames(_HandleAliases):
     def _write_rows(self, out):
         """Exports id_stored_data to specified text file."""
         for top_grup_sig, id_name in _key_sort(self.id_stored_data):
-            top_grup = top_grup_sig.decode(u'ascii')
+            top_grup = sig_to_str(top_grup_sig)
             for longid, di in _key_sort(id_name, keys_dex=[0],
                                         values_key=u'eid'):
                 out.write(self._row_fmt_str % (top_grup, *longid,
@@ -889,7 +890,7 @@ class ItemStats(_HandleAliases):
         """Reads stats from specified text file."""
         top_grup, modName, objectStr = csv_fields[:3]
         longid = self._coerce_fid(modName, objectStr) # blow and exit on header
-        top_grup_sig = top_grup.encode(u'ascii')
+        top_grup_sig = str_to_sig(top_grup)
         attrs = self.sig_stats_attrs[top_grup_sig]
         eid_or_next = 3 + self._called_from_patcher
         attr_dex = {att: dex for att, dex in
@@ -909,7 +910,7 @@ class ItemStats(_HandleAliases):
             out.write(u'"%s"\n' % u'","'.join(
                 (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'), *(
                     attr_csv_struct[a][1] for a in atts))))
-            top_grup = top_grup_sig.decode(u'ascii')
+            top_grup = sig_to_str(top_grup_sig)
             for longid, attr_value in _key_sort(fid_attr_value,
                     keys_dex=(0, 1), values_key=u'eid'):
                 output = self._row_fmt_str % (top_grup, *longid, u','.join(
@@ -1144,7 +1145,7 @@ class _UsesEffectsMixin(_HandleAliases):
             rec_type = MreRecord.type_class[self._parser_sigs[0]]
             eff = rec_type.getDefault(u'effects')
             effects.append(eff)
-            eff.effect_sig = eff_name.encode(u'ascii')
+            eff.effect_sig = str_to_sig(eff_name)
             eff.magnitude = magnitude
             eff.area = area
             eff.duration = duration
@@ -1175,7 +1176,7 @@ class _UsesEffectsMixin(_HandleAliases):
                 if sevisuals == u'' or sevisuals is None:
                     sevisuals = null4
                 else:
-                    sevisuals = sevisuals.encode(u'ascii')
+                    sevisuals = str_to_sig(sevisuals)
             else: # pack int to bytes
                 sevisuals = __packer(sevisuals)
             sevisual = sevisuals
@@ -1194,9 +1195,8 @@ class _UsesEffectsMixin(_HandleAliases):
         output = []
         for effect in effects:
             efname, magnitude, area, duration, range_, actorvalue = \
-                effect.effect_sig.decode(u'ascii'), effect.magnitude, \
-                effect.area, effect.duration, effect.recipient, \
-                effect.actorValue
+                sig_to_str(effect.effect_sig), effect.magnitude, effect.area, \
+                effect.duration, effect.recipient, effect.actorValue
             range_ = recipientTypeNumber_Name.get(range_,range_)
             actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
             output.append(effectFormat % (
@@ -1205,8 +1205,8 @@ class _UsesEffectsMixin(_HandleAliases):
                 se = effect.scriptEffect
                 longid, seschool, sevisual, seflags, sename = \
                     se.script_fid, se.school, se.visual, se.flags, se.full
-                sevisual = u'NONE' if sevisual == null4 else sevisual.decode(
-                    u'ascii')
+                sevisual = u'NONE' if sevisual == null4 else sig_to_str(
+                    sevisual)
                 seschool = schoolTypeNumber_Name.get(seschool,seschool)
                 output.append(scriptEffectFormat % (longid[0], longid[1],
                     seschool, sevisual, bool(int(seflags)), sename))
@@ -1291,7 +1291,7 @@ class ItemPrices(_HandleAliases):
         """Writes item prices to specified text file."""
         for top_grup_sig, fid_stats in _key_sort(self.id_stored_data):
             if not fid_stats: continue
-            top_grup = top_grup_sig.decode(u'ascii')
+            top_grup = sig_to_str(top_grup_sig)
             for lfid in sorted(fid_stats,key=lambda x:(
                     fid_stats[x][u'eid'].lower(), fid_stats[x][u'value'])):
                 out.write(self._row_fmt_str % (

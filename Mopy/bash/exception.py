@@ -84,8 +84,8 @@ class ModError(FileError):
 
 def _join_sigs(debug_str):
     if isinstance(debug_str, (tuple, list)):
-        debug_str = u'.'.join( # use iso-8859-1 we don't want decoding to fail
-            s.decode(u'iso-8859-1') if type(s) is bytes else s for s in debug_str)
+        from .bolt import sig_to_str # don't mind this we are in exception code
+        debug_str = u'.'.join(map(sig_to_str, debug_str))
     return debug_str
 
 class ModReadError(ModError):

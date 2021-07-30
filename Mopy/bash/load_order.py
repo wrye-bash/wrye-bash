@@ -46,6 +46,7 @@ import time
 
 # Internal
 from . import bass, bolt, bush, exception
+from .bolt import sig_to_str
 # Game instance providing load order operations API
 from . import _games_lo
 
@@ -142,8 +143,7 @@ class LoadOrder(object):
 
     def __setstate__(self, dct):
         if not all(isinstance(k, str) for k in dct): # bytes keys from older versions
-            dct = {(k if isinstance(k, str) else k.decode(u'ascii')): v for
-                   k, v in dct.items()}
+            dct = {sig_to_str(k): v for k, v in dct.items()}
         for k in ('_activeOrdered', '_loadOrder'):
             if k not in dct:
                 bolt.deprint(f'Unpickling {dct} missing "{k}"')

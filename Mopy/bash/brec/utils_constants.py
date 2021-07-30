@@ -74,9 +74,9 @@ class AutoFixedString(FixedString):
 def strFid(form_id):
     """Return a string representation of the fid."""
     if isinstance(form_id, tuple):
-        return u'(%s, %06X)' % (form_id[0], form_id[1])
+        return f'({form_id[0]}, {form_id[1]:06X})'
     else:
-        return u'%08X' % form_id
+        return f'{form_id:08X}'
 
 def genFid(modIndex,objectIndex):
     """Generates a fid from modIndex and ObjectIndex."""

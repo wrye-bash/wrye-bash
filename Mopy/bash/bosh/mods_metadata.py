@@ -25,7 +25,7 @@ from collections import defaultdict, OrderedDict
 
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
-from ..bolt import dict_sort, structs_cache, SubProgress
+from ..bolt import dict_sort, structs_cache, SubProgress, sig_to_str
 from ..brec import ModReader, SubrecordBlob, RecordHeader
 from ..exception import CancelError
 from ..mod_files import ModHeaderReader
@@ -538,14 +538,14 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
         log_plugins(p_delinquent_masters)
     if invalid_tes4_versions:
         # Always an ASCII byte string, so this is fine
-        p_header_sig = bush.game.Esp.plugin_header_sig.decode(u'ascii')
+        p_header_str = sig_to_str(bush.game.Esp.plugin_header_sig)
         ver_list = u', '.join(
             sorted(str(v) for v in bush.game.Esp.validHeaderVersions))
-        log.setHeader(u'=== ' + _(u'Invalid %s versions') % p_header_sig)
+        log.setHeader(u'=== ' + _(u'Invalid %s versions') % p_header_str)
         log(_(u"The following plugins have a %s version that isn't "
               u'recognized as one of the standard versions (%s). This is '
               u'undefined behavior. It can possibly be corrected by resaving '
-              u'the plugins in the %s.') % (p_header_sig, ver_list,
+              u'the plugins in the %s.') % (p_header_str, ver_list,
                                             bush.game.Ck.long_name))
         log_plugin_messages(invalid_tes4_versions)
     if old_fvers:

@@ -260,6 +260,30 @@ def round_size(size_bytes):
         size_bytes /= 1024
     return _(u'<very large>') # ;)
 
+# Decode/encode dicts
+class SigToStr(dict):
+    """Dict of decoded record signatures - will decode unknown keys."""
+    __slots__ = ()
+
+    def __missing__(self, key):
+        try:
+            return self.setdefault(key, key.decode('iso-8859-1'))
+        except AttributeError:
+            return key
+
+_sig_to_str = SigToStr()
+sig_to_str = _sig_to_str.__getitem__
+
+class StrToSig(dict):
+    """Dict of encoded record strings - will encode unknown keys."""
+    __slots__ = ()
+
+    def __missing__(self, key):
+        return self.setdefault(key, key.encode('ascii'))
+
+_str_to_sig = StrToSig()
+str_to_sig = _str_to_sig.__getitem__
+
 # Helpers ---------------------------------------------------------------------
 def sortFiles(files, __split=os.path.split):
     """Utility function. Sorts files by directory, then file name."""

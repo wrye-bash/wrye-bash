@@ -32,7 +32,7 @@ from itertools import chain
 from .base import is_templated
 from ..base import Patcher, ModLoader
 from ... import bush, bolt
-from ...bolt import GPath, deprint, dict_sort
+from ...bolt import GPath, deprint, dict_sort, sig_to_str
 from ...brec import strFid
 from ...mod_files import LoadFactory
 
@@ -142,7 +142,7 @@ class ContentsCheckerPatcher(Patcher):
                         keep(record.fid)
                 # Log the result if we removed at least one entry
                 if id_removed:
-                    log(u'\n=== ' + rec_type.decode('ascii'))
+                    log(u'\n=== ' + sig_to_str(rec_type))
                     for contId in sorted(id_removed):
                         log(u'* ' + id_eid[contId])
                         for removedId in sorted(id_removed[contId]):

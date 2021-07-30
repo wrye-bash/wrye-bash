@@ -32,7 +32,7 @@ from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
 from ..bolt import Flags, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
-    structs_cache, unpack_str8, dict_sort
+    structs_cache, unpack_str8, dict_sort, sig_to_str
 from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
     unpack_header
 from ..exception import ModError, StateError
@@ -494,8 +494,8 @@ class SaveFile(object):
             created_counts[citem._rec_sig] += 1
             id_created[citem.fid] = citem
         for rsig, csize in dict_sort(created_sizes):
-            log(u'  %d\t%d kb\t%s' % (
-                created_counts[rsig], csize // 1024, rsig.decode(u'ascii')))
+            log(f'  {created_counts[rsig]}\t{csize // 1024} kb\t'
+                f'{sig_to_str(rsig)}')
         #--Fids
         lostRefs = 0
         idHist = [0]*256

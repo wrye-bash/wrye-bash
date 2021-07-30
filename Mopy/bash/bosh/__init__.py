@@ -45,7 +45,8 @@ from .. import bass, bolt, balt, bush, env, load_order, initialization, \
     archives
 from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
-    GPath_no_norm, struct_error, dict_sort, top_level_files, os_name
+    GPath_no_norm, struct_error, dict_sort, top_level_files, os_name, \
+    sig_to_str
 from ..brec import ModReader, RecordHeader
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
@@ -746,10 +747,10 @@ class ModInfo(FileInfo):
     #--Header Editing ---------------------------------------------------------
     def _read_tes4_record(self, ins):
         tes4_rec_header = ins.unpackRecHeader()
-        if tes4_rec_header.recType != bush.game.Esp.plugin_header_sig:
-            raise ModError(self.ci_key, u'Expected %s, but got %s' % (
-                str(bush.game.Esp.plugin_header_sig, encoding=u'ascii'),
-                str(tes4_rec_header.recType, encoding=u'ascii')))
+        if (rs := tes4_rec_header.recType) != (
+                hs := bush.game.Esp.plugin_header_sig):
+            raise ModError(self.ci_key, f'Expected {sig_to_str(hs)}, but got '
+                                        f'{sig_to_str(rs)}')
         return tes4_rec_header
 
     def readHeader(self):

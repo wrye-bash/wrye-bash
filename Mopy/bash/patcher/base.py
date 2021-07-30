@@ -29,8 +29,8 @@ from this module outside of the patcher package."""
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
-from .. import load_order, bush
-from ..bolt import dict_sort
+from .. import load_order
+from ..bolt import dict_sort, sig_to_str
 from ..exception import AbstractError
 from ..mod_files import LoadFactory, ModFile
 
@@ -360,7 +360,7 @@ class ImportPatcher(ListPatcher, ModLoader):
         log(self.__class__.logMsg)
         for top_grup_sig, count in dict_sort(type_count):
             if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')
-                % {u'type': top_grup_sig.decode(u'ascii'), u'count': count})
+                % {u'type': sig_to_str(top_grup_sig), u'count': count})
 
     def _plog1(self,log,mod_count): # common logging variation
         log(self.__class__.logMsg % sum(mod_count.values()))

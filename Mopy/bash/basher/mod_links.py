@@ -39,7 +39,7 @@ from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
     TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
-from ..bolt import GPath, SubProgress, dict_sort
+from ..bolt import GPath, SubProgress, dict_sort, sig_to_str
 from ..bosh import faces
 from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError
@@ -126,8 +126,8 @@ class Mod_RecalcRecordCounts(OneItemLink, _LoadLink):
     def Execute(self):
         modFile = self._load_mod(self._selected_info, do_map_fids=False)
         for top_grup_sig, block in dict_sort(modFile.tops):
-            bolt.deprint(u'%s GRUP has %u records' % (
-                top_grup_sig.decode(u'ascii'), block.getNumRecords()))
+            bolt.deprint(f'{sig_to_str(top_grup_sig)} GRUP has '
+                         f'{block.getNumRecords()} records')
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py
@@ -602,24 +602,23 @@ class Mod_Details(OneItemLink):
         with balt.Progress(_(u'Details')) as progress:
             sel_info_data = ModHeaderReader.extract_mod_data(
                 self._selected_info, SubProgress(progress, 0.1, 0.7))
-            buff = io.StringIO()
+            buff = []
             complex_groups = {b'CELL', b'WRLD', b'DIAL'}
-            if bush.game.fsName in (u'Fallout4', u'Fallout4VR',
-                                    u'Fallout4 MS'):
+            if bush.game.fsName in ('Fallout4', 'Fallout4VR', 'Fallout4 MS'):
                 complex_groups.add(b'QUST')
             progress(0.7, _(u'Sorting records.'))
             for group, group_records in dict_sort(sel_info_data):
-                buff.write(group.decode(u'ascii') + u'\n')
+                buff.append(sig_to_str(group))
                 if group in complex_groups:
-                    buff.write(u'  %s\n\n' % _(u'(Details not provided for '
+                    buff.append(u'  %s\n' % _(u'(Details not provided for '
                                                u'this record type.)'))
                     continue
                 records = [(f, e) for f, (_h, e) in group_records.items()]
                 records.sort(key=lambda r: r[1].lower())
                 for f, e in records:
-                    buff.write(u'  %08X %s\n' % (f, e))
-                buff.write(u'\n')
-            self._showLog(buff.getvalue(), title=self._selected_item,
+                    buff.append(f'  {f:08X} {e}')
+                buff.append(u'') # an empty line
+            self._showLog('\n'.join(buff), title=self._selected_item,
                           fixedFont=True)
 
 class Mod_ShowReadme(OneItemLink):
