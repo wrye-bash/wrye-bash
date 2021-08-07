@@ -2418,9 +2418,10 @@ class InstallersList(balt.UIList):
         item_format.icon_key = u'on' if inst.is_active else u'off'
         item_format.icon_key += u'.' + self._status_color[inst.status]
         if inst.type < 0: item_format.icon_key = u'corrupt'
-        elif inst.is_project(): item_format.icon_key += u'.dir'
-        if settings[u'bash.installers.wizardOverlay'] and inst.hasWizard:
-            item_format.icon_key += u'.wiz'
+        else:
+            if inst.is_project(): item_format.icon_key += u'.dir'
+            if settings[u'bash.installers.wizardOverlay'] and inst.hasWizard:
+                item_format.icon_key += u'.wiz'
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
         #    text += _(u'Marker Package. Use for grouping installers together')
         #--TODO: add mouse  mouse tips

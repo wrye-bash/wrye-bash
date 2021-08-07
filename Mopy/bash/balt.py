@@ -114,9 +114,6 @@ class ImageList(object):
         self.indices = {}
         self.imageList = None
 
-    def Add(self,image,key):
-        self.images.append((key,image))
-
     def GetImageList(self):
         if not self.imageList:
             indices = self.indices
@@ -144,7 +141,7 @@ class ColorChecks(ImageList):
                 img = bass.dirs[u'images'].join(
                     u'checkbox_%s_%s.png' % (status, state))
                 image = images[image_key] = ImageWrapper(img, ImageWrapper.typesDict[u'png'])
-                self.Add(image, shortKey)
+                self.images.append((shortKey, image))
 
     def Get(self,status,on):
         self.GetImageList()
@@ -820,7 +817,7 @@ def conversation(func):
     def _conversation_wrapper(*args, **kwargs):
         global _depth
         try:
-            with _lock: _depth += 1 # hack: allow sequences of conversations
+            with _lock: _depth += 1 # hack: allow nested conversations
             refresh_bound = Link.Frame.bind_refresh(bind=False)
             return func(*args, **kwargs)
         finally:
@@ -1596,7 +1593,7 @@ class Link(object):
     """Link is a command to be encapsulated in a graphic element (menu item,
     button, etc.).
 
-    Subclasses MUST define a text attribute (the menu label) preferably as a
+    Subclasses MUST define a _text attribute (the menu label) preferably as a
     class attribute, or if it depends on current state by overriding
     _initData().
     Link objects are _not_ menu items. They are instantiated _once_ in

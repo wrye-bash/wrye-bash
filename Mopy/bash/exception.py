@@ -263,10 +263,10 @@ class _ALPError(Exception):
         super(_ALPError, self).__init__(final_msg)
 
 class LexerError(_ALPError):
-    """An error that ocurred during lexical analysis (lexing)."""
+    """An error that occurred during lexical analysis (lexing)."""
 
 class ParserError(_ALPError):
-    """An error that ocurred during parsing."""
+    """An error that occurred during parsing."""
 
 class EvalError(_ALPError):
     """An error that occurred during the evaluation of some parsed code."""
