@@ -28,7 +28,7 @@ from .utils_constants import FID, null1, _make_hashable, FixedString, \
     int_unpacker, get_structs
 from .. import bolt, exception
 from ..bolt import decoder, encode, structs_cache, struct_calcsize, Rounder, \
-    sig_to_str
+    sig_to_str, struct_error
 
 #------------------------------------------------------------------------------
 class MelObject(object):
@@ -698,6 +698,14 @@ class MelSInt16(_MelNum):
 class MelSInt32(_MelNum):
     """Signed 32-bit integer."""
     _unpacker, _packer, static_size = get_structs(u'=i')
+
+    def pack_subrecord_data(self, record):
+        """Will only be dumped if set by load_mel."""
+        attr = getattr(record, self.attr)
+        try:
+            return None if attr is None else self._packer(attr)
+        except struct_error: ##: TODO HACK: fix the records code
+            return self._packer(int(attr))
 
 class MelUInt8(_MelNum):
     """Unsigned 8-bit integer."""
