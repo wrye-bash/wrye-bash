@@ -66,6 +66,14 @@ def _get_error_info():
 
 # API - Functions =============================================================
 ##: Several of these should probably raise instead
+def drive_exists(dir_path):
+    """Check if a drive exists by trying to create a dir."""
+    try:
+        dir_path.makedirs() # exist_ok=True - will create the directories!
+        return True # TODO drive detection in posix - test in linux
+    except PermissionError: # as e: # PE on mac
+        return False # [Errno 13] Permission denied: '/Volumes/Samsung_T5'
+
 def get_registry_path(_subkey, _entry, _test_path_callback):
     return None # no registry on Linux
 

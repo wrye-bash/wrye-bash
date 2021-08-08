@@ -3244,7 +3244,7 @@ class InstallersPanel(BashTab):
                 env.shellMove(failed, dests, parent=self._native_widget)
             try:
                 omodMoves = list(omodMoves)
-                env.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))
+                env.shellMakeDirs([dirInstallersJoin('Bash', 'Failed OMODs')])
                 _move_omods(omodMoves)
             except (CancelError, SkipError):
                 while balt.askYes(self, _(
