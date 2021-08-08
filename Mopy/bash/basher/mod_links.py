@@ -24,18 +24,19 @@
 """Menu items for the _item_ menu of the mods tab - their window attribute
 points to BashFrame.modList singleton."""
 
-import collections
 import copy
 import io
 import re
 import traceback
+from collections import defaultdict, OrderedDict
+
 # Local
 from . import configIsCBash
 from .constants import settingDefaults
 from .files_links import File_Redate
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
-from .. import bass, bosh, bolt, balt, bush, mod_files, load_order
+from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
     TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
 from ..bolt import GPath, SubProgress, dict_sort
@@ -45,6 +46,7 @@ from ..exception import AbstractError, BoltError, CancelError
 from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
     OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
     ImageWrapper, BusyCursor, copy_text_to_clipboard
+from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import CsvParser
 from ..patcher import exportConfig, patch_files
 
@@ -77,11 +79,11 @@ class _LoadLink(ItemLink):
     _load_sigs = ()
 
     def _load_fact(self, keepAll=True):
-        return mod_files.LoadFactory(keepAll, by_sig=self._load_sigs)
+        return LoadFactory(keepAll, by_sig=self._load_sigs)
 
     def _load_mod(self, mod_info, keepAll=True, **kwargs):
         loadFactory = self._load_fact(keepAll=keepAll)
-        modFile = mod_files.ModFile(mod_info, loadFactory)
+        modFile = ModFile(mod_info, loadFactory)
         modFile.load(True, **kwargs)
         return modFile
 
@@ -157,7 +159,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             newInfo = bosh.ModInfo(self._selected_info.dir.join(master))
             to_refresh.append((master, newInfo, previous_master))
             previous_master = master
-            newFile = mod_files.ModFile(newInfo, self._load_fact())
+            newFile = ModFile(newInfo, self._load_fact())
             newFile.tes4.author = u'BASHED DUMMY'
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
@@ -536,7 +538,7 @@ class Mod_Groups(_Mod_Labels):
     """Add mod group links."""
 
     def __init__(self):
-        self.extraButtons = collections.OrderedDict([
+        self.extraButtons = OrderedDict([
             (_(u'Refresh'), self._doRefresh), (_(u'Sync'), self._doSync),
             (_(u'Reset'), self._doReset)] )
         super(Mod_Groups, self).__init__()
@@ -600,7 +602,7 @@ class Mod_Details(OneItemLink):
 
     def Execute(self):
         with balt.Progress(_(u'Details')) as progress:
-            sel_info_data = mod_files.ModHeaderReader.extract_mod_data(
+            sel_info_data = ModHeaderReader.extract_mod_data(
                 self._selected_info, SubProgress(progress, 0.1, 0.7))
             buff = io.StringIO()
             complex_groups = {b'CELL', b'WRLD', b'DIAL'}
@@ -1001,8 +1003,8 @@ class Mod_Patch_Update(_Mod_BP_Link):
         if not bush.game.check_esl:
             self._ask_deactivate_mergeable(active_prior_to_patch)
         previousMods = set()
-        missing = collections.defaultdict(list)
-        delinquent = collections.defaultdict(list)
+        missing = defaultdict(list)
+        delinquent = defaultdict(list)
         for mod in load_order.cached_active_tuple():
             if mod == self._selected_item: break
             for master in bosh.modInfos[mod].masterNames:
@@ -1209,77 +1211,112 @@ class Mod_SkipDirtyCheck(TransLink):
 #------------------------------------------------------------------------------
 class Mod_ScanDirty(ItemLink):
     """Give detailed printout of what Wrye Bash is detecting as UDR records."""
-    _text = _(u'Scan for UDRs')
-    _help = _(u'Give detailed printout of what Wrye Bash is detecting as UDR '
-              u'records')
+    _text = _(u'Scan for Deleted Records')
+    _help = _(u'Gives a detailed printout of deleted records in the selected '
+              u'plugin(s).')
 
     def Execute(self):
         """Handle execution"""
-        selected_infs = [x for x in self.iselected_infos()]
+        all_present_minfs = list(self.iselected_infos())
+        # This part of the method shares a lot of code with
+        # mods_metadata.checkMods, but we can't deduplicate because the
+        # performance hit to checkMods would be too great :(
+        # I kept the names unchanged so that it's easier to see what's just
+        # copy-pasted in case refactoring becomes possible in the future. See
+        # there for comments on what this is doing as well.
+        game_master_name = bush.game.master_file
+        all_deleted_refs = defaultdict(list) # ci_key -> list[fid]
+        all_deleted_navms = defaultdict(list) # ci_key -> list[fid]
+        all_deleted_others = defaultdict(list) # ci_key -> list[fid]
         try:
-            with balt.Progress(_(u'Dirty Edits'),u'\n'+u' '*60,abort=True) as progress:
-                ret = bosh.mods_metadata.ModCleaner.scan_Many(selected_infs, progress=progress, detailed=True)
+            with balt.Progress(_(u'Deleted Records'), u'\n' + u' ' * 60,
+                               abort=True) as progress:
+                progress.setFull(len(all_present_minfs))
+                load_progress = SubProgress(progress, 0, 0.7)
+                load_progress.setFull(len(all_present_minfs))
+                all_extracted_data = OrderedDict() # PY3: dict?
+                for i, present_minf in enumerate(all_present_minfs):
+                    if present_minf.ci_key == game_master_name:
+                        continue # The game master can't have deleted records
+                    mod_progress = SubProgress(load_progress, i, i + 1)
+                    ext_data = ModHeaderReader.extract_mod_data(present_minf,
+                                                                mod_progress)
+                    all_extracted_data[present_minf.ci_key] = ext_data
+                scan_progress = SubProgress(progress, 0.7, 0.9)
+                scan_progress.setFull(len(all_extracted_data))
+                all_ref_types = bush.game.Esp.reference_types
+                for i, (p_ci_key, ext_data) in enumerate(
+                        all_extracted_data.items()):
+                    scan_progress(i, (_(u'Scanning: %s') % p_ci_key))
+                    add_deleted_ref = all_deleted_refs[p_ci_key].append
+                    add_deleted_navm = all_deleted_navms[p_ci_key].append
+                    add_deleted_rec = all_deleted_others[p_ci_key].append
+                    for r, d in ext_data.items():
+                        for r_fid, (r_header, r_eid) in d.items():
+                            w_rec_type = r_header.recType
+                            if r_header.flags1 & 0x00000020:
+                                if w_rec_type == b'NAVM':
+                                    add_deleted_navm(r_fid)
+                                elif w_rec_type in all_ref_types:
+                                    add_deleted_ref(r_fid)
+                                else:
+                                    add_deleted_rec(r_fid)
         except CancelError:
             return
         log = bolt.LogFile(io.StringIO())
-        log.setHeader(u'= '+_(u'Scan Mods'))
-        log(_(u'This is a report of records that were detected as a deleted '
-              u'reference (UDR).') + u'\n')
+        log.setHeader(u'= '+_(u'Deleted Records'))
+        log(_(u'This is a report of deleted records that were found in the '
+              u'selected plugin(s).') + u'\n')
         # Change a FID to something more useful for displaying
         def strFid(form_id):
-            modId = (0xFF000000 & form_id) >> 24
-            modName = modInfo.masterNames[modId]
-            id_ = 0x00FFFFFF & form_id
-            return u'%s: %06X' % (modName,id_)
-        dirty = []
-        clean = []
-        error = []
-        for i,modInfo in enumerate(selected_infs):
-            udrs, fog = ret[i]
-            if udrs:
-                pos = len(dirty)
-                dirty.append(u'* __%s__:\n' % modInfo)
-                dirty[pos] += u'  * %s: %i\n' % (_(u'UDR'),len(udrs))
-                for udr in sorted(udrs):
-                    if udr.parentEid:
-                        parentStr = u"%s '%s'" % (strFid(udr.parentFid),udr.parentEid)
-                    else:
-                        parentStr = strFid(udr.parentFid)
-                    if udr.parentType == 0:
-                        # Interior CELL
-                        item = u'%s -  %s attached to Interior CELL (%s)' % (
-                            strFid(udr.fid),udr.type,parentStr)
-                    else:
-                        # Exterior CELL
-                        if udr.parentParentEid:
-                            parentParentStr = u"%s '%s'" % (strFid(udr.parentParentFid),udr.parentParentEid)
-                        else:
-                            parentParentStr = strFid(udr.parentParentFid)
-                        if udr.pos is None:
-                            atPos = u''
-                        else:
-                            atPos = u' at %s' % (udr.pos,)
-                        item = u'%s - %s attached to Exterior CELL (%s), attached to WRLD (%s)%s' % (
-                            strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
-                    dirty[pos] += u'    * %s\n' % item
-            elif udrs is None:
-                error.append(u'* __%s__' % modInfo)
+            mod_masters = modInfo.masterNames
+            modName = mod_masters[min(form_id >> 24, len(mod_masters) - 1)]
+            return u'%08X (from master %s)' % (form_id, modName)
+        def log_fids(del_title, del_fids):
+            nonlocal full_dirty_msg
+            full_dirty_msg += u'  * %s: %i\n' % (del_title, len(del_fids))
+            for d_fid in sorted(del_fids):
+                full_dirty_msg += u'    * %s\n' % strFid(d_fid)
+        dirty_plugins = []
+        clean_plugins = []
+        skipped_plugins = []
+        for i, modInfo in enumerate(all_present_minfs):
+            m_ci_key = modInfo.ci_key
+            del_navms = all_deleted_navms[m_ci_key]
+            del_refs = all_deleted_refs[m_ci_key]
+            del_others = all_deleted_others[m_ci_key]
+            if m_ci_key == game_master_name or m_ci_key.cext == u'.esu':
+                skipped_plugins.append(u'* __%s__' % modInfo)
+            elif del_navms or del_refs or del_others:
+                full_dirty_msg = u'* __%s__:\n' % modInfo
+                if del_navms:
+                    log_fids(_(u'Deleted Navmeshes'), del_navms)
+                if del_refs:
+                    log_fids(_(u'Deleted References'), del_refs)
+                if del_others:
+                    log_fids(_(u'Deleted Base Records'), del_others)
+                dirty_plugins.append(full_dirty_msg)
             else:
-                clean.append(u'* __%s__' % modInfo)
-        #-- Show log
-        if dirty:
-            log(_(u'Detected %d dirty mods:') % len(dirty))
-            for mod in dirty: log(mod)
+                clean_plugins.append(u'* __%s__' % modInfo)
+        if dirty_plugins:
+            log(_(u'Detected %d plugin(s) with deleted '
+                  u'records:') % len(dirty_plugins))
+            for p in dirty_plugins:
+                log(p)
             log(u'\n')
-        if clean:
-            log(_(u'Detected %d clean mods:') % len(clean))
-            for mod in clean: log(mod)
+        if clean_plugins:
+            log(_(u'Detected %d plugin(s) without deleted '
+                  u'records:') % len(clean_plugins))
+            for p in clean_plugins:
+                log(p)
             log(u'\n')
-        if error:
-            log(_(u'The following %d mods had errors while scanning:') % len(error))
-            for mod in error: log(mod)
+        if skipped_plugins:
+            log(_(u'Skipped %d plugin(s):') % len(skipped_plugins))
+            for p in skipped_plugins:
+                log(p)
+            log(u'\n')
         self._showWryeLog(log.out.getvalue(),
-                          title=_(u'Dirty Edit Scan Results'), asDialog=False)
+                          title=_(u'Dirty Record Results'), asDialog=False)
 
 #------------------------------------------------------------------------------
 class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
@@ -1432,8 +1469,8 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                 if scpt_grp.getNumRecords(includeGroups=False):
                     master_factory = self._load_fact(keepAll=False)
                     for master in modFile.tes4.masters:
-                        masterFile = mod_files.ModFile(bosh.modInfos[master],
-                                                       master_factory)
+                        masterFile = ModFile(bosh.modInfos[master],
+                                             master_factory)
                         masterFile.load(True)
                         for rfid, r in masterFile.tops[b'SCPT'].iter_present_records():
                             id_text[rfid] = r.script_source

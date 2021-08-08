@@ -2519,7 +2519,7 @@ class ModInfos(FileInfos):
                 present.add(fileInfo.ci_key)
             merged, imported = self.getSemiActive(present)
         else:
-            log.setHeader(head + _(u'Active Mod Files:'))
+            log.setHeader(head + _(u'Active Plugins:'))
             masters_set = set(load_order.cached_active_tuple())
             merged, imported = self.merged, self.imported
         all_mods = (masters_set | merged | imported) & set(self)

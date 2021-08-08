@@ -212,7 +212,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                 parent=mc_parent, abort=True)
             load_progress = SubProgress(progress, 0, 0.7)
             load_progress.setFull(len(all_present_minfs))
-            all_extracted_data = OrderedDict() # PY3: dict
+            all_extracted_data = OrderedDict() # PY3: dict?
             for i, present_minf in enumerate(all_present_minfs):
                 mod_progress = SubProgress(load_progress, i, i + 1)
                 ext_data = ModHeaderReader.extract_mod_data(present_minf,

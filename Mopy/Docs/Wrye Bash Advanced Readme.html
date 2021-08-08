@@ -1221,9 +1221,18 @@ tab. The directories skipped are:
                 </ol>
                 <p>If you've completely swapped from one base plugin to another, you may wish to remove the old dependency. This can be done using TES4Edit's <q>Clean Masters</q> command or TES4Gecko's <q>Edit Master List</q> command. The former only removes totally unused masters while the latter can remove used masters with the appropriate cleanup, and is not an automated procedure.</p>
                 <strong>Note:</strong> You can also use TES4Edit to change the Form IDs using its <q>Batch Change Referencing Records</q> command together with the CSV file created. TES4Edit will also change the definition of a Form ID, rather than just any references to it, unlike Wrye Bash.
-            <tr><td rowspan="6">Mod Cleaning<td>Don't check against LOOT's dirty mod list<td>Overrides the setting in the column header context menu for the specific plugin(s) selected.
-            <tr><td id="modsScanForDirtyEdits">Scan for Dirty Edits<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Scans the selected plugin for Identical To Master records and deleted references, outputting counts of the dirty edits found. The dirty edit counts may differ from the output provided by TES4Edit as that includes other "junk" records in the <abbr title="Identical To Master record">ITM</abbr> count. Wrye Bash does not count these junk records as they are non-harmful.
-            <tr><td>Scan for <abbr title="Undeleted and Disabled Reference">UDR</abbr>'s</td><td><em>All but Oblivion &amp; Nehrim&colon; At Fate's Edge.</em> Behaves as the above <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a>, but only for deleted references.</td></tr>
+            <tr><td rowspan="4">Mod Cleaning<td>Don't check against LOOT's dirty mod list<td>Overrides the setting in the column header context menu for the specific plugin(s) selected.
+            <tr>
+                <td>Scan for Deleted Records</td>
+                <td>Scans the selected plugin(s) for deleted records (i.e.
+                    deleted references, deleted base records and, for games
+                    that have them, deleted navmeshes), outputting counts and
+                    FormIDs of the found records. This will skip the game
+                    master (since it cannot contain deleted records) and
+                    plugins with the <code>.esu</code> extension, since those
+                    use deleted records on purpose to mark a record existing in
+                    one version of the plugin but not in the other one.</td>
+            </tr>
             <tr><td id="modsRemoveWorldOrphans">Remove World Orphans<td>Some plugins have a mild form of corruption where exterior cells of new worldspaces in an esp master of the plugin are included in the plugin even if they are not edited, but the parent worldspace is not included, creating "orphaned" cells. This command removes these "orphans".
             <tr>
                 <td id="modsNvidiaFogFix">Nvidia Fog Fix</td>
@@ -1235,8 +1244,6 @@ tab. The directories skipped are:
                     <br><br><strong>It is advised that mod authors use this on
                         their mods before release.</strong></td>
             </tr>
-            <tr><td id="modsUndeleteRefs">Undelete Refs<td><strong>Removed.</strong> Use xEdit for cleaning.</td></tr>
-            <tr><td colspan="2">Add Master...<td><strong>Removed.</strong> Use xEdit for such low-level editing.</td></tr>
             <tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
             <tr><td colspan="2" id="modsEsmifySelf">Add/Remove ESM Flag<td>The distinction between esp and esm plugins is not dependent on their file
                 extensions, but on a bit in the file. This command toggles this bit so that .esp files behave as .esm files and vice versa. It is
@@ -8772,7 +8779,7 @@ noted in the description of the tweak.</p>
     <a href="Wrye%20Bash%20General%20Readme.html#launchersPluginChecker">Plugin
         Checker button</a> in the status bar or by using the
     <a href="#modsPluginChecker">Plugin Checker menu option</a>.
-<p>At the top of the report is the Active Mod Files section, which lists your
+<p>At the top of the report is the Active Plugins section, which lists your
     load order if you enabled it using the
     <a href="#pluginCheckerPluginList">Plugin List</a> toggle. After that comes
     a report of all problems that were detected. A full list of problems
@@ -8808,18 +8815,52 @@ noted in the description of the tweak.</p>
     </figcaption>
   </figure>
   <table>
-    <thead>
-        <tr><th colspan="2">Plugin Checker Controls
-        <tr><th>Control<th>Function
-    <tbody>
-        <tr><td>Forward/Back Arrows<td>The Plugin Checker report may contain links to other pages. These two buttons allow navigation between pages viewed, similar to the forward/back buttons in a web browser.
-        <tr><td>Reload</td><td>Reloads the current page. Works identically to a browser's reload button.</td></tr>
-        <tr><td id="pluginCheckerPluginList">Plugin List<td>Toggles the display of the Active Mod Files list.
-        <tr><td>Version Numbers<td>Toggles display of version numbers where found for the plugins in the Active Mod Files list.
-        <tr><td>CRCs<td>Toggles display of the CRCs for the plugins in the Active Mod Files list.
-        <tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Plugin Checker's report.
-        <tr><td>Copy Text<td>Copies the text of the report to the clipboard. Useful for posting on forums.
-        <tr><td>Update<td>Forces a refresh of the report.
+      <thead>
+          <tr><th colspan="2">Plugin Checker Controls</th></tr>
+          <tr><th>Control</th><th>Function</th></tr>
+      </thead>
+      <tbody>
+          <tr>
+              <td>Forward/Back Arrows</td>
+              <td>The Plugin Checker report may contain links to other pages.
+                  These two buttons allow navigation between pages viewed,
+                  similar to the forward/back buttons in a web browser.</td>
+          </tr>
+          <tr>
+              <td>Reload</td>
+              <td>Reloads the current page. Works identically to a browser's
+                  reload button.</td>
+          </tr>
+          <tr>
+              <td id="pluginCheckerPluginList">Plugin List</td>
+              <td>Toggles the display of the Active Plugins list.</td>
+          </tr>
+          <tr>
+              <td>Version Numbers</td>
+              <td>Toggles display of version numbers (where found) for the
+                  plugins in the Active Plugins list.</td>
+          </tr>
+          <tr>
+              <td>CRCs</td>
+              <td>Toggles display of the CRCs for the plugins in the Active
+                  Plugins list.</td>
+          </tr>
+          <tr>
+              <td>Load Plugins</td>
+              <td>Toggles the full loading and scanning of plugins. Much
+                  slower, but many more advanced types of problems can be found
+                  when this is enabled.</td>
+          </tr>
+          <tr>
+              <td>Copy Text</td>
+              <td>Copies the text of the report to the clipboard. Useful for
+                  posting on forums.</td>
+          </tr>
+          <tr>
+              <td>Update</td>
+              <td>Forces a refresh of the report.</td>
+          </tr>
+      </tbody>
   </table>
 </div>
 
