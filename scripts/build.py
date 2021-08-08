@@ -85,7 +85,7 @@ TO_PRESERVE = [NSIS_PATH, REDIST_PATH, TAGLISTS_PATH, TAGINFO,
 sys.path.insert(0, MOPY_PATH)
 from bash import bass
 
-NSIS_VERSION = u'3.06.1'
+NSIS_VERSION = u'3.08'
 if sys.platform.lower().startswith(u'linux'):
     EXE_7z = u'7z'
 else:
