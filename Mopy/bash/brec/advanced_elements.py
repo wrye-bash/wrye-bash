@@ -334,16 +334,23 @@ class MelArray(MelBase):
             raise SyntaxError(u'MelArray may only be used with elements that '
                               u'resolve to exactly one signature')
         # Use this instead of element.mel_sig to support e.g. unions
-        super(MelArray, self).__init__(next(iter(element.signatures)),
-            array_attr)
+        element_sig = next(iter(element.signatures))
+        super(MelArray, self).__init__(element_sig, array_attr)
         self._element = element
         self._element_has_fids = False
         # Underscore means internal usage only - e.g. distributor state
         self.array_element_attrs = [s for s in element.getSlotsUsed() if
                                     not s.startswith(u'_')]
-        if prelude and prelude.mel_sig != element.mel_sig:
-            raise SyntaxError(u'MelArray preludes must have the same '
-                              u'signature as the main element')
+        # Validate that the prelude is valid if it's present (i.e. it must have
+        # only one signature and it must match the element's signature)
+        if prelude:
+            prelude_sigs = prelude.signatures
+            if len(prelude_sigs) != 1:
+                raise SyntaxError(u'MelArray preludes must have exactly one '
+                                  u'signature')
+            if next(iter(prelude_sigs)) != element_sig:
+                raise SyntaxError(u'MelArray preludes must have the same '
+                                  u'signature as the main element')
         self._prelude = prelude
         self._prelude_has_fids = False
         try:

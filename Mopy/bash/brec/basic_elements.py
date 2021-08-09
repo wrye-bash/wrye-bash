@@ -438,8 +438,6 @@ class MelGroups(MelGroup):
         """Creates a new MelObject, initializes it and appends it to this
         MelGroups' attribute."""
         target = self.getDefault()
-        target.__slots__ = [s for element in self.elements for s in
-                            element.getSlotsUsed()]
         getattr(record, self.attr).append(target)
         return target
 

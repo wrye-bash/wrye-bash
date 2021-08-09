@@ -5408,10 +5408,12 @@ class MreWrld(MelRecord):
                se_version=MelGroups(
                    u'large_references', MelArray(
                        u'large_refs', MelStruct(
-                           b'RNAM', [u'3I'], (FID, u'lr_ref'), u'lr_x',
-                           u'lr_y'),
-                       prelude=MelStruct(b'RNAM', [u'2I'], u'lr_grid_x',
-                                         u'lr_grid_y')))),
+                           b'RNAM', ['I', 'h', 'h'], (FID, u'lr_ref'),
+                           u'lr_y', u'lr_x'),
+                       prelude=MelPartialCounter(
+                           MelStruct(b'RNAM', ['h', 'h', 'I'], 'lr_grid_y',
+                                     'lr_grid_x', 'large_refs_count'),
+                           counter='large_refs_count', counts='large_refs')))),
         MelBase(b'MHDT','maxHeightData'),
         MelFull(),
         # Fixed Dimensions Center Cell
