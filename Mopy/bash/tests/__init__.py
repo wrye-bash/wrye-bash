@@ -25,9 +25,9 @@ quite hacky, but running tests for WB is going to be a bit hacky no matter
 what."""
 import gettext
 import os
-import toml
 import traceback
 
+import tomli
 import wx as _wx
 
 # set in _emulate_startup used in set_game - we need to init translations
@@ -48,10 +48,11 @@ def get_meta_value(base_file_path, meta_key):
         parsed_meta = _meta_cache[base_file_path]
     except KeyError:
         try:
-            parsed_meta = _meta_cache[base_file_path] = toml.load(meta_file)
-        except TypeError: # File is missing
+            with open(meta_file, 'rb') as ins:
+                parsed_meta = _meta_cache[base_file_path] = tomli.load(ins)
+        except FileNotFoundError:
             raise FailedTest(u'%s is missing a .meta file.' % base_file_path)
-        except toml.TomlDecodeError: # File has incorrect syntax
+        except tomli.TOMLDecodeError:
             traceback.print_exc()
             raise FailedTest(u'%s has malformed TOML syntax. Check the log '
                              u'for a traceback pointing to the '
