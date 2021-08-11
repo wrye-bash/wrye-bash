@@ -21,7 +21,7 @@
 #
 # =============================================================================
 """Top level windows in wx is Frame and Dialog. I added some more like Panels
-and the wx.wiz stuff."""
+and the wx.adv (wizards) stuff."""
 __author__ = u'Utumno, Infernio'
 
 import wx as _wx

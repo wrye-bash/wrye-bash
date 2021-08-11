@@ -1386,10 +1386,11 @@ class _EditableMixinOnFileInfos(_EditableMixin):
 
 class _SashDetailsPanel(_DetailsMixin, SashPanel):
     """Details panel with two splitters"""
-    _ui_settings = {u'.subSplitterSashPos' : _UIsetting(lambda self: 0,
+    _ui_settings = {**SashPanel._ui_settings, **{
+        u'.subSplitterSashPos': _UIsetting(lambda self: 0,
         lambda self: self.subSplitter.get_sash_pos(),
         lambda self, sashPos: self.subSplitter.set_sash_pos(sashPos))}
-    _ui_settings.update(SashPanel._ui_settings)
+    }
 
     def __init__(self, parent):
         # call the init of SashPanel - _DetailsMixin hasn't any init
@@ -2732,10 +2733,11 @@ class InstallersDetails(_SashDetailsPanel):
     keyPrefix = u'bash.installers.details'
     defaultSashPos = - 32 # negative so it sets bottom panel's (comments) size
     minimumSize = 32 # so comments dont take too much space
-    _ui_settings = {u'.checkListSplitterSashPos' : _UIsetting(lambda self: 0,
+    _ui_settings = {**_SashDetailsPanel._ui_settings, **{
+        u'.checkListSplitterSashPos' : _UIsetting(lambda self: 0,
         lambda self: self.checkListSplitter.get_sash_pos(),
         lambda self, sashPos: self.checkListSplitter.set_sash_pos(sashPos))}
-    _ui_settings.update(_SashDetailsPanel._ui_settings)
+    }
 
     @property
     def displayed_item(self): return self._displayed_installer
@@ -4270,8 +4272,8 @@ class BashApp(object):
             splash_screen.stop_splash()
         self.bash_app.SetTopWindow(frame._native_widget)
         frame.show_frame()
+        frame.RefreshData(booting=True)
         frame.is_maximized = settings[u'bash.frameMax']
-        frame.RefreshData(booting=True) # used to bind RefreshData
         # Moved notebook.Bind() callback here as OnShowPage() is explicitly
         # called in RefreshData
         frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
