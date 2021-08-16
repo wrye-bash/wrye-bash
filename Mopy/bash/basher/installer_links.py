@@ -266,6 +266,9 @@ class Installer_Wizard(_Installer_AWizardLink):
                     # Select the package we want to install - posts events to
                     # set details and update GUI
                     self.window.SelectItem(GPath(sel_package.archive))
+                    # Switch away from FOMOD mode, the wizard may need plugin
+                    # data from BAIN
+                    idetails.set_fomod_mode(fomod_enabled=False)
                     idetails.refreshCurrent(sel_package)
                     try:
                         wizard = InstallerWizard(self.window, sel_package,
@@ -280,9 +283,6 @@ class Installer_Wizard(_Installer_AWizardLink):
                     idetails.refreshCurrent(sel_package)
                     continue
                 sel_package.resetAllEspmNames()
-                # Switch away from FOMOD mode, then check the sub-packages that
-                # were selected by the wizard
-                idetails.set_fomod_mode(fomod_enabled=False)
                 for index in range(len(sel_package.subNames[1:])):
                     select = (sel_package.subNames[index + 1] in
                               ret.select_sub_packages)
