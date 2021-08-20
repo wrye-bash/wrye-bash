@@ -725,7 +725,8 @@ class _AAttenuationTweak(CustomChoiceTweak):
     @classmethod
     def _is_nirnroot(cls, record):
         """Helper method for checking whether a record is a nirnroot."""
-        return any(x in record.eid.lower() for x in cls._nirnroot_words)
+        return (reid := record.eid) and any(
+            x in reid.lower() for x in cls._nirnroot_words)
 
     @property
     def chosen_atten(self): return self.choiceValues[self.chosen][0] / 100
