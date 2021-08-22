@@ -186,6 +186,7 @@ soundsTypes.update({
 graphicsTypes.update({
     b'CCRD': (u'iconPath', u'smallIconPath', u'model', u'textureFace',
               u'textureBack'),
+    b'CHAL': (u'iconPath', u'smallIconPath'),
     b'CHIP': (u'iconPath', u'smallIconPath', u'model'),
     b'CMNY': (u'iconPath', u'smallIconPath', u'model'),
     b'CSNO': (u'chipModels', u'slotMachineModel', u'blackjackTableModel',

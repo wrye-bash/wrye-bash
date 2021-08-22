@@ -138,6 +138,7 @@ class MreChal(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
+        MelIcons(),
         MelScript(),
         MelDescription(),
         MelStruct(b'DATA', [u'4I', u'2s', u'2s', u'4s'],'type','threshold','flags','interval',
