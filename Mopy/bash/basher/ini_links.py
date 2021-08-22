@@ -166,7 +166,7 @@ class INI_CreateNew(OneItemLink):
                 u'tweak': (self.selected[0]), u'ini': self.window.current_ini_name}
 
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
-                              self._selected_info.tweak_status >= 0
+                              self._selected_info.tweak_status() >= 0
 
     @balt.conversation
     def Execute(self):
