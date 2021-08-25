@@ -377,7 +377,7 @@ class Installer(ListInfo):
     # Those files/folders will be always skipped by refreshDataSizeCrc()
     _silentSkipsStart = (
         u'--', u'omod conversion data' + os_sep, u'wizard images' + os_sep)
-    _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'meta.ini', u'config',
+    _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'meta.ini',
                        u'__folder_managed_by_vortex')
 
     # global skips that can be overridden en masse by the installer
