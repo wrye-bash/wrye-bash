@@ -764,6 +764,10 @@ class MelUnion(MelBase):
         :param fallback: The fallback element to use. Defaults to None, which
             will raise an error if the decider returns an unknown value.
         :type fallback: MelBase"""
+        # Decide on the decider
+        if not isinstance(decider, ADecider):
+            raise exception.ArgumentError('decider must be an ADecider')
+        self.decider = decider
         # Preprocess the element mapping to split tuples
         processed_mapping = {}
         for decider_val, element in element_mapping.items():
@@ -776,10 +780,8 @@ class MelUnion(MelBase):
                 processed_mapping[split_val] = element
         self.element_mapping = processed_mapping
         self.fid_elements = set()
-        if not isinstance(decider, ADecider):
-            raise exception.ArgumentError(u'decider must be an ADecider')
-        self.decider = decider
-        self.decider_result_attr = u'_union_type_%u' % MelUnion._union_index
+        # Create a unique attribute name to dynamically cache decider result
+        self.decider_result_attr = f'_union_type_{MelUnion._union_index}'
         MelUnion._union_index += 1
         self.fallback = fallback
         self._possible_sigs = {s for element

@@ -2043,7 +2043,12 @@ class _MelNpcData(MelLists):
 
     def __init__(self, struct_formats):
         super(_MelNpcData, self).__init__(b'DATA', struct_formats, u'health',
-                                          (u'attributes', [0] * 21))
+            (u'attributes', [0] * int(struct_formats[-1][:-1])))
+
+class _MelNpcDecider(SizeDecider):
+    can_decide_at_dump = True
+    def decide_dump(self, record):
+        return len(record.attributes) + 4
 
 class MreNpc(MreActor):
     """Non-Player Character."""
@@ -2118,7 +2123,7 @@ class MreNpc(MreActor):
         MelUnion({
             11: _MelNpcData([u'I', u'7B']),
             25: _MelNpcData([u'I', u'21B'])
-        }, decider=SizeDecider()),
+        }, decider=_MelNpcDecider()),
         MelSorted(MelFids(b'PNAM', 'headParts')),
         MelNpcDnam(b'DNAM', [u'14B', u'14B'], (u'skillValues', [0] * 14),
                    (u'skillOffsets', [0] * 14)),
