@@ -362,55 +362,46 @@ class LowerDict(dict):
 
     def __init__(self, mapping=(), **kwargs):
         # dicts take a mapping or iterable as their optional first argument
-        super(LowerDict, self).__init__(self._process_args(mapping, **kwargs))
+        super().__init__(self._process_args(mapping, **kwargs))
 
     def __getitem__(self, k):
-        return super(LowerDict, self).__getitem__(
-            CIstr(k) if type(k) is str else k)
+        return super().__getitem__(CIstr(k) if type(k) is str else k)
 
     def __setitem__(self, k, v):
-        return super(LowerDict, self).__setitem__(
-            CIstr(k) if type(k) is str else k, v)
+        return super().__setitem__(CIstr(k) if type(k) is str else k, v)
 
     def __delitem__(self, k):
-        return super(LowerDict, self).__delitem__(
-            CIstr(k) if type(k) is str else k)
+        return super().__delitem__(CIstr(k) if type(k) is str else k)
 
     def copy(self): # don't delegate w/ super - dict.copy() -> dict :(
         return type(self)(self)
 
     def get(self, k, default=None):
-        return super(LowerDict, self).get(
-            CIstr(k) if type(k) is str else k, default)
+        return super().get(CIstr(k) if type(k) is str else k, default)
 
     def setdefault(self, k, default=None):
-        return super(LowerDict, self).setdefault(
-            CIstr(k) if type(k) is str else k, default)
+        return super().setdefault(CIstr(k) if type(k) is str else k, default)
 
     __no_default = object()
     def pop(self, k, v=__no_default):
         if v is LowerDict.__no_default:
             # super will raise KeyError if no default and key does not exist
-            return super(LowerDict, self).pop(
-                CIstr(k) if type(k) is str else k)
-        return super(LowerDict, self).pop(
-            CIstr(k) if type(k) is str else k, v)
+            return super().pop(CIstr(k) if type(k) is str else k)
+        return super().pop(CIstr(k) if type(k) is str else k, v)
 
     def update(self, mapping=(), **kwargs):
-        super(LowerDict, self).update(self._process_args(mapping, **kwargs))
+        super().update(self._process_args(mapping, **kwargs))
 
     def __contains__(self, k):
-        return super(LowerDict, self).__contains__(
-            CIstr(k) if type(k) is str else k)
+        return super().__contains__(CIstr(k) if type(k) is str else k)
 
     @classmethod
     def fromkeys(cls, keys, v=None):
-        return super(LowerDict, cls).fromkeys((CIstr(k) if type(
-            k) is str else k for k in keys), v)
+        return super().fromkeys(
+            (CIstr(k) if type(k) is str else k for k in keys), v)
 
     def __repr__(self):
-        return u'%s(%s)' % (
-            type(self).__name__, super(LowerDict, self).__repr__())
+        return f'{type(self).__name__}({super().__repr__()})'
 
 class DefaultLowerDict(LowerDict, collections.defaultdict):
     """LowerDict that inherits from defaultdict."""
@@ -959,41 +950,67 @@ class Path(os.PathLike):
                     pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
-    # directly compare to str|bytes|Path|None and will blow for anything
-    # else
+    # directly compare to str|Path|None and will blow for anything else
     def __hash__(self):
         return hash(self._cs)
     def __eq__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs == other._cs
-        # get unicode or None - will blow on most other types - identical below
-        dec = other if isinstance(other, str) else decoder(other)
-        return self._cs == (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            # Only compare with unicode or None - will blow on other types -
+            # similar code in rest of the methods below
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            elif other is not None:
+                raise TypeError(
+                    f'Comparing Path with {typ} not supported: {other!r}')
+        return self._cs == other
     def __ne__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs != other._cs
-        dec = other if isinstance(other, str) else decoder(other)
-        return self._cs != (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            elif other is not None:
+                raise TypeError(
+                    f'Comparing Path with {typ} not supported: {other!r}')
+        return self._cs != other
     def __lt__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs < other._cs
-        dec = other if isinstance(other, str) else decoder(other)
-        return self._cs < (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            else: raise TypeError(f'Comparing Path with {typ} not supported: '
+                                  f'{other!r}')
+        return self._cs < other
     def __ge__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs >= other._cs
-        dec = other if isinstance(other, str) else decoder(other)
-        return self._cs >= (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            else: raise TypeError(f'Comparing Path with {typ} not supported: '
+                                  f'{other!r}')
+        return self._cs >= other
     def __gt__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs > other._cs
-        dec = other if isinstance(other, str) else decoder(other)
-        return self._cs > (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            else: raise TypeError(f'Comparing Path with {typ} not supported: '
+                                  f'{other!r}')
+        return self._cs > other
     def __le__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs <= other._cs
-        dec = other if isinstance(other, str) else decoder(other)
-        return self._cs <= (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            else: raise TypeError(f'Comparing Path with {typ} not supported: '
+                                  f'{other!r}')
+        return self._cs <= other
 
     # avoid setstate/getstate round trip
     def __deepcopy__(self, memodict={}):

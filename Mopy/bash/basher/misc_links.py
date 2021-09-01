@@ -195,7 +195,7 @@ class Master_ChangeTo(_Master_EditList):
         master_name = masterInfo.curr_name
         #--File Dialog
         wildcard = bosh.modInfos.plugin_wildcard()
-        newPath = self._askOpen(title=_(u'Change master name to:'),
+        newPath = self._askOpen(title=_('Change master name to:'),
                                 defaultDir=bosh.modInfos.store_dir,
                                 defaultFile=master_name, wildcard=wildcard)
         if not newPath: return

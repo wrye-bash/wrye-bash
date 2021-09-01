@@ -266,8 +266,8 @@ def generateTweakLines(wizardEdits, target):
             modFormat = u'%(setting)s=%(value)s%(comment)s'
             delFormat = u';-%(setting)s'
         for realSetting in values[1]:
-            setting,value,comment,deleted = values[1][realSetting]
-            fmt = delFormat if deleted else modFormat
+            setting,value,comment,is_deleted = values[1][realSetting]
+            fmt = delFormat if is_deleted else modFormat
             lines.append(fmt % {u'setting': setting, u'value': value,
                                 u'comment': comment})
     return lines

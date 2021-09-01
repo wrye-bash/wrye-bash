@@ -522,8 +522,8 @@ class _Mod_Groups_Import(ItemLink):
                                  _(u'Import Groups')): return
         textDir = bass.dirs[u'patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import names from:'), textDir, u'',
-                                 u'*_Groups.csv')
+        textPath = self._askOpen(_('Import names from:'), textDir, '',
+                                 '*_Groups.csv')
         if not textPath: return
         #--Extension error check
         if textPath.cext != u'.csv':
@@ -1675,8 +1675,8 @@ class Mod_Fids_Replace(OneItemLink):
                                  _(u'Import Form IDs')): return
         textDir = bass.dirs[u'patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Form ID mapper file:'), textDir, u'',
-                                 u'*_Formids.csv')
+        textPath = self._askOpen(_('Form ID mapper file:'), textDir, '',
+                                 '*_Formids.csv')
         if not textPath: return
         #--Extension error check
         if textPath.cext != u'.csv':
@@ -1711,7 +1711,7 @@ class Mod_Face_Import(OneItemLink):
             u'save_ext_off': bush.game.Ess.ext[:-1] + u'r',
         }
         #--File dialog
-        srcPath = self._askOpen(_(u'Face Source:'), defaultDir=srcDir,
+        srcPath = self._askOpen(_('Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard)
         if not srcPath: return
         #--Get face

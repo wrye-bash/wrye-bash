@@ -178,14 +178,14 @@ class _FileDialog(_AComponent):
     _native_widget: _wx.FileDialog
     _dialog_style = _wx.FD_OPEN | _wx.FD_FILE_MUST_EXIST
 
-    def __init__(self, parent, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u'', allow_create=False):
-        defaultDir,defaultFile = [GPath(x).s for x in (defaultDir,defaultFile)]
+    def __init__(self, parent, title='', defaultDir='', defaultFile='',
+                 wildcard='', allow_create=False):
+        defaultDir, defaultFile = map(str, (defaultDir, defaultFile))
         style_ = self.__class__._dialog_style
         if allow_create and style_ & _wx.FD_FILE_MUST_EXIST:
             style_ ^= _wx.FD_FILE_MUST_EXIST
-        super(_FileDialog, self).__init__(parent, title, defaultDir,
-                                          defaultFile, wildcard, style=style_)
+        super().__init__(parent, title, defaultDir, defaultFile, wildcard,
+                         style=style_)
 
     def __enter__(self): return self
     def __exit__(self, exc_type, exc_val, exc_tb): self.destroy_component()
@@ -208,10 +208,9 @@ class FileOpenMultiple(_FileDialog):
     """'Open files' dialog that returns a *list* of files to open."""
     _dialog_style = _wx.FD_OPEN | _wx.FD_MULTIPLE | _wx.FD_FILE_MUST_EXIST
 
-    def __init__(self, parent, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u''): ##:mustExist seems True given the FD_FILE_MUST_EXIST?
-        super(FileOpenMultiple, self).__init__(parent, title, defaultDir,
-                                               defaultFile, wildcard)
+    def __init__(self, parent, title='', defaultDir='', defaultFile='',
+                 wildcard=''): ##:mustExist seems True given the FD_FILE_MUST_EXIST?
+        super().__init__(parent, title, defaultDir, defaultFile, wildcard)
 
     def _validate_input(self):
         return [GPath(p) for p in self._native_widget.GetPaths()]
@@ -226,8 +225,9 @@ class DirOpen(_FileDialog):
     _native_widget: _wx.DirDialog
     _dialog_style = _wx.DD_DEFAULT_STYLE | _wx.DD_SHOW_HIDDEN
 
-    def __init__(self, parent, title=u'', defaultPath=u'', create_dir=False):
+    def __init__(self, parent, title='', defaultPath='', create_dir=False):
         st = self.__class__._dialog_style
         st |= _wx.DD_NEW_DIR_BUTTON if create_dir else _wx.DD_DIR_MUST_EXIST
+        # we call _FileDialog parent in mro so we need to stringify defaultPath
         super(_FileDialog, self).__init__(parent, title, '%s' % defaultPath,
                                           style=st)

@@ -267,7 +267,7 @@ class Save_ImportFace(OneItemLink):
         wildcard = _(u'%s Files') % bush.game.displayName + \
                    u' (*' + exts + u')|*' + exts
         #--File dialog
-        srcPath = self._askOpen(title=_(u'Face Source:'), defaultDir=srcDir,
+        srcPath = self._askOpen(title=_('Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard)
         if not srcPath: return
         fname = srcPath.tail.s

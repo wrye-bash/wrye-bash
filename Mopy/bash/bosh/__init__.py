@@ -1747,7 +1747,8 @@ class FileInfos(TableFileInfos):
                                              check_existence)
         if not deleted: return deleted
         for del_fn in deleted:
-            self.pop(del_fn, None); self.corrupted.pop(del_fn, None)
+            self.pop(del_fn, None)
+            self.corrupted.pop(del_fn, None)
             self.table.pop(del_fn, None)
         return deleted
 
@@ -3744,12 +3745,10 @@ def initBosh(bashIni, game_ini_path):
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):
     """Init user settings from files and load the defaults (also in basher)."""
-
     def _load(dat_file=_dat):
     # bolt.PickleDict.load() handles EOFError, ValueError falling back to bak
         return bolt.Settings( # calls PickleDict.load() and copies loaded data
             bolt.PickleDict(dirs[u'saveBase'].join(dat_file), readOnly))
-
     _dat = dirs[u'saveBase'].join(_dat)
     _bak = dirs[u'saveBase'].join(_bak)
     def _loadBakOrEmpty(delBackup=False, ignoreBackup=False):

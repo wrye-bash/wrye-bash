@@ -215,7 +215,7 @@ class File_RevertToSnapshot(OneItemLink):
         wildcard = self._selected_info.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()
-        snapPath = self._askOpen(_(u'Revert %s to snapshot:') % fileName,
+        snapPath = self._askOpen(_('Revert %s to snapshot:') % fileName,
                                  defaultDir=srcDir, wildcard=wildcard)
         if not snapPath: return
         snapName = snapPath.tail

@@ -1541,7 +1541,7 @@ class UIList(wx.Panel):
         self.data_store.store_dir.start()
 
     def hide(self, items):
-        deletd = []
+        hidden_ = []
         for ci_key_, inf in items:
             destDir = inf.get_hide_dir()
             if destDir.join(ci_key_).exists():
@@ -1551,9 +1551,9 @@ class UIList(wx.Panel):
             #--Do it
             with BusyCursor():
                 self.data_store.move_info(ci_key_, destDir)
-                deletd.append(ci_key_)
+                hidden_.append(ci_key_)
         #--Refresh stuff
-        self.data_store.delete_refresh(deletd, None, check_existence=True)
+        self.data_store.delete_refresh(hidden_, None, check_existence=True)
 
     @staticmethod
     def _unhide_wildcard(): raise AbstractError

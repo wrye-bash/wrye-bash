@@ -387,9 +387,9 @@ class Mods_ExportBashTags(_Mods_BashTags):
     _csv_header = u'Plugin', u'Tags'
 
     def Execute(self):
-        exp_path = self._askSave(title=_(u'Export bash tags to CSV file:'),
-            defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
-            wildcard=u'*.csv')
+        exp_path = self._askSave(title=_('Export bash tags to CSV file:'),
+            defaultDir=bass.dirs['patches'], defaultFile='SavedTags.csv',
+            wildcard='*.csv')
         if not exp_path: return
         self.plugins_exported = 0
         self.write_text_file(exp_path)
@@ -418,9 +418,9 @@ class Mods_ImportBashTags(_Mods_BashTags):
               u'listed in the CSV file will not be touched.') + u'\n\n' +
             _(u'Are you sure you want to proceed?')):
             return
-        imp_path = self._askOpen(title=_(u'Import bash tags from CSV file:'),
-            defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
-            wildcard=u'*.csv')
+        imp_path = self._askOpen(title=_('Import bash tags from CSV file:'),
+            defaultDir=bass.dirs['patches'], defaultFile='SavedTags.csv',
+            wildcard='*.csv')
         if not imp_path: return
         self.first_line = True
         self.plugins_imported = []

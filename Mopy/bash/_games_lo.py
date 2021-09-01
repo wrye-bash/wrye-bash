@@ -303,12 +303,12 @@ class LoGame(object):
             if not setting_active: # does active need change due to lo changes?
                 prev = set(previous_lord)
                 new = set(lord)
-                deleted = prev - new
+                dltd = prev - new
                 common = prev & new
                 reordered = any(x != y for x, y in
                                 zip((x for x in previous_lord if x in common),
                                     (x for x in lord if x in common)))
-                setting_active = self._must_update_active(deleted, reordered)
+                setting_active = self._must_update_active(dltd, reordered)
             if setting_active: active = list(previous_active) # active was None
         if setting_active:
             if lord is previous_lord is None:
@@ -345,7 +345,7 @@ class LoGame(object):
         raise exception.AbstractError
 
     @classmethod
-    def _must_update_active(cls, deleted, reordered):
+    def _must_update_active(cls, deleted_plugins, reordered):
         raise exception.AbstractError
 
     def active_changed(self): return self._plugins_txt_modified()
@@ -829,11 +829,12 @@ class INIGame(LoGame):
 
     # Misc overrides
     @classmethod
-    def _must_update_active(cls, deleted, reordered):
+    def _must_update_active(cls, deleted_plugins, reordered):
         # Can't use _handles_active here, need to duplicate the logic
         if cls.ini_key_actives != (u'', u'', u''):
             return True # Assume order is important for the INI
-        return super(INIGame, cls)._must_update_active(deleted, reordered)
+        return super(INIGame, cls)._must_update_active(deleted_plugins,
+                                                       reordered)
 
     def active_changed(self):
         if self._handles_actives:
@@ -895,7 +896,7 @@ class TimestampGame(LoGame):
     _get_free_time_step = 1.0 # step by one second intervals
 
     @classmethod
-    def _must_update_active(cls, deleted, reordered): return deleted
+    def _must_update_active(cls, deleted_plugins, reordered): return deleted_plugins
 
     # Timestamp games write everything into plugins.txt, including game master
     def _active_entries_to_remove(self): return set()
@@ -1034,8 +1035,8 @@ class TextfileGame(LoGame):
             self.loadorder_txt_path.size_mtime()
 
     @classmethod
-    def _must_update_active(cls, deleted, reordered):
-        return deleted or reordered
+    def _must_update_active(cls, deleted_plugins, reordered):
+        return deleted_plugins or reordered
 
     def swap(self, old_dir, new_dir):
         super().swap(old_dir, new_dir)
@@ -1198,7 +1199,7 @@ class AsteriskGame(LoGame):
         return self._fetch_load_order(cached_load_order, cached_active)
 
     @classmethod
-    def _must_update_active(cls, deleted, reordered): return True
+    def _must_update_active(cls, deleted_plugins, reordered): return True
 
     def get_acti_file(self):
         return self.plugins_txt_path

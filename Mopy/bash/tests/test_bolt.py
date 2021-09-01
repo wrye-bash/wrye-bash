@@ -379,7 +379,8 @@ class TestPath(object):
         assert GPath('c:/random/path.txt') == p
         assert GPath(r'c:\random\path.txt') == p
         # paths and bytes
-        assert b'c:/random/path.txt' == p
+        with pytest.raises(TypeError): assert b'c:/random/path.txt' == p
+        with pytest.raises(TypeError): assert p == b'c:/random/path.txt'
         with pytest.raises(SyntaxError):
             eval(r"assert b'' r'c:\random\path.txt' == p")
         assert GPath(b'c:/random/path.txt') != p
@@ -395,7 +396,8 @@ class TestPath(object):
         empty = GPath('')
         assert empty == Path('')
         assert empty == ''
-        assert empty == b''
+        with pytest.raises(TypeError): assert empty == b''
+        with pytest.raises(TypeError): assert b'' == empty
         assert not (None == empty)
         with pytest.raises(TypeError): assert empty == []
         with pytest.raises(TypeError): assert empty == False
@@ -409,7 +411,7 @@ class TestPath(object):
         assert GPath('c:/random/path.txt') <= p
         assert GPath(r'c:\random\path.txt') <= p
         # paths and bytes
-        assert b'c:/random/path.txt' <= p
+        with pytest.raises(TypeError): assert b'c:/random/path.txt' <= p
         with pytest.raises(SyntaxError):
             eval(r"assert b'' r'c:\random\path.txt' <= p")
         with pytest.raises(TypeError): assert GPath(b'c:/random/path.txt') <= p
@@ -425,7 +427,7 @@ class TestPath(object):
         empty = GPath('')
         assert empty <= Path('')
         assert empty <= ''
-        assert empty <= b''
+        with pytest.raises(TypeError): assert empty <= b''
         with pytest.raises(TypeError): assert (None <= p)
         with pytest.raises(TypeError): assert not (p <= None)
         with pytest.raises(TypeError): assert empty <= []

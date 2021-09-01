@@ -26,10 +26,11 @@ import io
 import re
 import time
 from datetime import timedelta
+
 from . import BashFrame  ##: drop this - decouple !
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
-from ..bolt import SubProgress, GPath, Path, GPath_no_norm
+from ..bolt import SubProgress, Path, GPath_no_norm
 from ..exception import BoltError, CancelError, FileEditError, \
     PluginsFullError, SkipError, BPConfigError
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
@@ -181,7 +182,8 @@ class PatchDialog(DialogWindow):
             progress(0.9)
             self._save_pbash(patchFile, patch_name)
             #--Done
-            progress.Destroy(); progress = None
+            progress.Destroy()
+            progress = None
             timer2 = time.process_time()
             #--Readme and log
             log.setHeader(None)
@@ -303,7 +305,7 @@ class PatchDialog(DialogWindow):
     __new_key = u'Saved Bashed Patch Configuration (%s)'
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
-        config_dat = self.patchInfo.ci_key + u'_Configuration.dat'
+        config_dat = f'{self.patchInfo.ci_key}_Configuration.dat'
         textDir = bass.dirs[u'patches']
         textDir.makedirs()
         #--File dialog

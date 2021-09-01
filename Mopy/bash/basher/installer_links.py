@@ -1289,7 +1289,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         #--Generate allowable targets
         readTypes = u'*%s' % u';*'.join(archives.readExts)
         #--Select target archive
-        destArchive = self._askOpen(title=_(u"Select the BAIN'ed Archive:"),
+        destArchive = self._askOpen(title=_("Select the BAIN'ed Archive:"),
             defaultDir=self.idata.store_dir, wildcard=readTypes)
         if not destArchive: return
         #--Error Checking

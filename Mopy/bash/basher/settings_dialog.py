@@ -1432,8 +1432,7 @@ class TrustedBinariesPage(_AFixedPage):
         textDir = bass.dirs[u'patches']
         textDir.makedirs()
         #--File dialog
-        defFile = bush.game.Se.se_abbrev + u' ' + _(
-            u'dll permissions') + u'.txt'
+        defFile = f'{bush.game.Se.se_abbrev} {_("dll permissions")}.txt'
         title = _(u'Import list of allowed/disallowed plugin DLLs from:')
         textPath = FileOpen.display_dialog(self,title=title,
             defaultDir=textDir, defaultFile=defFile, wildcard=u'*.txt')

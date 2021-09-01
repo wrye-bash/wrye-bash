@@ -213,9 +213,9 @@ class DocBrowser(WindowFrame):
             (docs_dir, file_name) = self._db_doc_paths[mod_name].headTail
         else:
             docs_dir = bass.settings[u'bash.modDocs.dir'] or bass.dirs[u'mods']
-            file_name = GPath_no_norm('')
+            file_name = ''
         doc_path = FileOpen.display_dialog(self,
-            _(u'Select doc for %s:') % mod_name, docs_dir, file_name, u'*.*',
+            _('Select doc for %s:') % mod_name, docs_dir, file_name, '*.*',
             allow_create=True)
         if not doc_path: return
         bass.settings[u'bash.modDocs.dir'] = doc_path.head

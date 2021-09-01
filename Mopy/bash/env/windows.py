@@ -72,7 +72,8 @@ try:
              confirm=True, renameOnCollision=False, silent=False,
              parent=None):
         """Wrapper around (deprecated!) SHFileOperation."""
-        _source = source; _target = target # copy to display in debug messages
+        _source = source # copy to display in debug messages
+        _target = target
         # flags
         flgs = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
         flgs |= FOF_NOCONFIRMMKDIR # never ask user for creating dirs
