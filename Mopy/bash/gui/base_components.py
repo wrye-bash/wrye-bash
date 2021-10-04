@@ -460,7 +460,7 @@ class WithCharEvents(_AComponent):
 class ImageWrapper(object):
     """Wrapper for images, allowing access in various formats/classes.
 
-    Allows image to be specified before wx.App is initialized."""
+    Allows image to be specified before wx.App is initialized.""" # TODO: unneeded?
 
     typesDict = {u'png': _wx.BITMAP_TYPE_PNG, u'jpg': _wx.BITMAP_TYPE_JPEG,
                  u'jpeg': _wx.BITMAP_TYPE_JPEG, u'ico': _wx.BITMAP_TYPE_ICO,

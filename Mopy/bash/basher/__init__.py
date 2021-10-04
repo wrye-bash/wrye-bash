@@ -4241,8 +4241,13 @@ class BashFrame(WindowFrame):
                                        if show_gm else None)
 
 #------------------------------------------------------------------------------
-class BashApp(wx.App):
-    """Bash Application class."""
+class BashApp(object):
+    """Wrapper around a wx Application."""
+    __slots__ = ('bash_app',)
+
+    def __init__(self, bash_app):
+        self.bash_app = bash_app
+
     def Init(self): # not OnInit(), we need to initialize _after_ the app has been instantiated
         """Initialize the application data and create the BashFrame."""
         #--OnStartup SplashScreen and/or Progress
@@ -4266,7 +4271,7 @@ class BashApp(wx.App):
             progress(1.0, _(u'Done'))
         if splash_screen:
             splash_screen.stop_splash()
-        self.SetTopWindow(frame._native_widget)
+        self.bash_app.SetTopWindow(frame._native_widget)
         frame.show_frame()
         frame.is_maximized = settings[u'bash.frameMax']
         frame.RefreshData(booting=True) # used to bind RefreshData

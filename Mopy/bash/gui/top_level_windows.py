@@ -139,7 +139,9 @@ class WindowFrame(_TopLevelWin):
                                              lambda event: [event.GetActive()])
         self.set_background_color(self._bkg_color())
 
-    def show_frame(self): self._native_widget.Show()
+    def show_frame(self, center=False):
+        self._native_widget.Show()
+        if center: self._native_widget.Center()
 
     def raise_frame(self): self._native_widget.Raise()
 

@@ -41,7 +41,7 @@ from . import bass, bolt
 
 #------------------------------------------------------------------------------
 # Locale Detection & Setup
-def setup_locale(cli_lang):
+def setup_locale(cli_lang, _wx):
     """Sets up wx and Wrye Bash locales, ensuring they match or falling back
     to English if that is impossible. Also considers cli_lang as an override,
     installs the gettext translation and remembers the locale we end up with
@@ -56,8 +56,6 @@ def setup_locale(cli_lang):
         None.
     :return: The wx.Locale object we ended up using."""
     # We need a throwaway wx.App so that the calls below work
-    import wx as _wx
-    _temp_app = _wx.App(False)
     # Set the wx language - otherwise we will crash when loading any images
     cli_target = cli_lang and _wx.Locale.FindLanguageInfo(cli_lang)
     if cli_target:
@@ -70,12 +68,7 @@ def setup_locale(cli_lang):
     # it - so check that next
     target_locale = _wx.Locale(target_language)
     target_name = target_locale.GetCanonicalName()
-    trans_path = os.path.join(os.getcwd(), u'bash', u'l10n')
-    if not os.path.exists(trans_path):
-        # HACK: the CI has to run tests from the top dir, which causes us to
-        # have a non-Mopy working dir here. Real fix is ditching the fake
-        # startup and adding a real headless mode to WB (see #568 and #554)
-        trans_path = os.path.join(os.getcwd(), u'Mopy', u'bash', u'l10n')
+    trans_path = __get_translations_dir()
     supported_l10ns = [l[:-3] for l in os.listdir(trans_path)
                        if l[-3:] == u'.po']
     if target_name not in supported_l10ns:
@@ -158,8 +151,16 @@ def setup_locale(cli_lang):
     # we ended up with as the final locale
     trans.install()
     bass.active_locale = target_name
-    del _temp_app
     return target_locale
+
+def __get_translations_dir():
+    trans_path = os.path.join(os.getcwd(), u'bash', u'l10n')
+    if not os.path.exists(trans_path):
+        # HACK: the CI has to run tests from the top dir, which causes us to
+        # have a non-Mopy working dir here. Real fix is ditching the fake
+        # startup and adding a real headless mode to WB (see #568 and #554)
+        trans_path = os.path.join(os.getcwd(), u'Mopy', u'bash', u'l10n')
+    return trans_path
 
 #------------------------------------------------------------------------------
 # Internationalization
