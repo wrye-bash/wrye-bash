@@ -76,11 +76,6 @@ __all__ = [u'Installer_Open', u'Installer_Duplicate',
 class _InstallerLink(Installers_Link, EnabledLink):
     """Common functions for installer links..."""
 
-    def isSingleArchive(self):
-        """Indicates whether or not is single archive."""
-        return len(self.selected) == 1 and next(
-            self.iselected_infos()).is_archive()
-
     ##: Methods below should be in archives.py
     def _promptSolidBlockSize(self, title, value=0):
         return self._askNumber(
@@ -229,8 +224,8 @@ class Installer_EditWizard(_SingleInstallable):
 
     @property
     def link_text(self):
-        return _(u'View Wizard...') if self.isSingleArchive() else _(
-            u'Edit Wizard...')
+        return _(u'View Wizard...') if next(
+            self.iselected_infos()).is_archive() else _(u'Edit Wizard...')
 
     def _enable(self):
         return super(Installer_EditWizard, self)._enable() and bool(
@@ -1055,7 +1050,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         to_unpack = []
         for iname, installer in self.idata.sorted_pairs(self.selected):
             project = iname.root
-            if self.isSingleArchive():
+            if len(self.selected) == 1:
                 result = self._askText(_(u'Unpack %s to Project:') % iname,
                                        default=project.s)
                 if not result: return

@@ -38,7 +38,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
-import traceback
+import traceback as _traceback
 from binascii import crc32
 from contextlib import contextmanager, redirect_stdout
 from functools import partial
@@ -1711,10 +1711,9 @@ def text_wrap(text_to_wrap, width=60):
 
 deprintOn = False
 
-import inspect
-def deprint(*args,**keyargs):
+def deprint(*args, traceback=False, trace=True, frame=1, on=False):
     """Prints message along with file and line location.
-       Available keyword arguements:
+       Available keyword arguments:
        trace: (default True) - if a Truthy value, displays the module,
               line number, and function this was used from
        traceback: (default False) - if a Truthy value, prints any tracebacks
@@ -1722,19 +1721,19 @@ def deprint(*args,**keyargs):
        frame: (default 1) - With `trace`, determines the function caller's
               frame for getting the function name
     """
-    if not deprintOn and not keyargs.get(u'on'): return
-    if keyargs.get(u'trace', True):
+    if not deprintOn and not on: return
+    if trace:
         # Warning: This may be CPython-only due to _getframe usage - if we ever
         # want to run on something besides CPython, add a fallback path that
         # uses the (much slower) inspect.stack() API
-        parent_frame = sys._getframe(keyargs.get('frame', 1))
+        parent_frame = sys._getframe(frame)
         code_obj = parent_frame.f_code
-        msg = u'%s %4d %s: ' % (os.path.basename(code_obj.co_filename),
-                                parent_frame.f_lineno, code_obj.co_name)
+        msg = f'{os.path.basename(code_obj.co_filename)} ' \
+              f'{parent_frame.f_lineno:4d} {code_obj.co_name}: '
     else:
         msg = u''
     try:
-        msg += u' '.join([u'%s'%x for x in args]) # OK, even with unicode args
+        msg += ' '.join(['%s' % x for x in args]) # OK, even with unicode args
     except UnicodeError:
         # If the args failed to convert to unicode for some reason
         # we still want the message displayed any way we can
@@ -1743,12 +1742,12 @@ def deprint(*args,**keyargs):
                 msg += u' %s' % x
             except UnicodeError:
                 msg += u' %r' % x
-    if keyargs.get(u'traceback',False):
-        exc_fmt = traceback.format_exc()
+    if traceback:
+        exc_fmt = _traceback.format_exc()
         msg += f'\n{exc_fmt}'
     try:
         # Should work if stdout/stderr is going to wxPython output
-        print(msg)
+        print(msg, flush=True)
     except UnicodeError:
         # Nope, it's going somewhere else
         print(msg.encode(Path.sys_fs_enc))

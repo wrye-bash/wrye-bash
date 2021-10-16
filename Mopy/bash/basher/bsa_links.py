@@ -64,9 +64,9 @@ class BSA_ExtractToProject(ItemLink):
                 self._showWarning(_(u'%s is a file.') % project)
                 return
             if proj_path.isdir():
-                if not self._askYes(
-                        _(u'%s already exists. Overwrite it?') % project,
-                        default=False): return
+                question = _(u'%s already exists. Overwrite it?') % project
+                if not self._askYes(question, default=False):
+                    return
                 # Clear existing project, user wanted to overwrite it
                 proj_path.rmtree(safety=u'Installers')
         # All error checking is done, proceed to extract
@@ -98,7 +98,7 @@ class BSA_ListContents(ItemLink):
         full_text = u'=== Selected BSA Contents:'
         full_text += u'\n[spoiler]'
         for bsa_inf in self.iselected_infos():
-            full_text += u'\n\n* %s:\n' % bsa_inf.abs_path.tail
+            full_text += f'\n\n* {bsa_inf.ci_key}:\n'
             full_text += u'\n'.join(sorted(bsa_inf.assets))
         full_text += u'\n[/spoiler]'
         copy_text_to_clipboard(full_text)
