@@ -35,7 +35,7 @@ from itertools import chain
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct, \
     MelSequential
 from .. import exception
-from ..bolt import GPath, structs_cache, attrgetter_cache
+from ..bolt import GPath, structs_cache, attrgetter_cache, deprint
 
 #------------------------------------------------------------------------------
 class _MelDistributor(MelNull):
@@ -409,6 +409,10 @@ class MelArray(MelBase):
         if not array_val: return None # don't dump out empty arrays
         if self._prelude:
             sub_data = self._prelude.pack_subrecord_data(record)
+            if sub_data is None:
+                deprint(f'{record}: prelude={self._prelude} '
+                        f'for attr={self.attr} returned None packed data')
+                sub_data = b''
         else:
             sub_data = b''
         sub_data += b''.join([self._element.pack_subrecord_data(arr_entry)
