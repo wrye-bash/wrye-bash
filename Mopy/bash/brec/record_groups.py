@@ -1123,15 +1123,15 @@ class MobCells(MobBase):
         """Adds record to record list and indexed."""
         if self.cellBlocks and not self.id_cellBlock:
             self.indexRecords()
-        fid = cell.fid
-        if fid in self.id_cellBlock:
-            self.id_cellBlock[fid].cell = cell
+        cfid = cell.fid
+        if cfid in self.id_cellBlock:
+            self.id_cellBlock[cfid].cell = cell
         else:
             cellBlock = MobCell(GrupHeader(0, 0, 6, self.stamp), ##: Note label is 0 here - specialized GrupHeader subclass?
                                 self.loadFactory, cell)
             cellBlock.setChanged()
             self.cellBlocks.append(cellBlock)
-            self.id_cellBlock[fid] = cellBlock
+            self.id_cellBlock[cfid] = cellBlock
 
     def remove_cell(self, cell):
         """Removes the specified cell from this block. The exact cell object

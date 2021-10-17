@@ -44,7 +44,7 @@ class BSA_ExtractToProject(ItemLink):
             bsa_path = selected_bsas[0].abs_path
             result = self._askText(
                 _(u'Extract %s to Project:') % bsa_path.tail,
-                default=bsa_path.body.s)
+                default=bsa_path.sbody)
             if not result: return
             # Error checking
             project = GPath(result).tail

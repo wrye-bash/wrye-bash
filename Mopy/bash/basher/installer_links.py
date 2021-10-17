@@ -178,7 +178,7 @@ class _Installer_AWizardLink(_InstallerLink):
             title = _(u'Installing...')
             do_it = self.window.data_store.bain_install
         with balt.Progress(title, u'\n'+u' '*60) as progress:
-            do_it([GPath(sel_package.archive)], ui_refresh, progress)
+            do_it([sel_package.ci_key], ui_refresh, progress)
 
 class Installer_Fomod(_Installer_AWizardLink):
     """Runs the FOMOD installer"""

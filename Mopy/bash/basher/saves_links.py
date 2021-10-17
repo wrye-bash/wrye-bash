@@ -151,8 +151,8 @@ class Saves_ProfilesData(balt.ListEditorData):
                 return False
         #--Remove directory
         if GPath(bush.game.my_games_name).join(u'Saves').s not in profileDir.s:
-            raise BoltError(u'Sanity check failed: No "%s\\Saves" in %s.' % (
-                bush.game.my_games_name, profileDir))
+            raise BoltError(f'Sanity check failed: No '
+                f'"{bush.game.my_games_name}\\Saves" in {profileDir}.')
         shutil.rmtree(profileDir.s) #--DO NOT SCREW THIS UP!!!
         bosh.saveInfos.profiles.delRow(profileSaves)
         return True

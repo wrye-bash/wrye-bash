@@ -87,7 +87,7 @@ def read_from_clipboard():
 
 def read_files_from_clipboard_cb(files_callback):
     """Reads file paths from the clipboard and passes them to the specified
-    callback once the current even chain is done executing."""
+    callback once the current event chain is done executing."""
     if not files_callback: return
     with _OpenClipboard() as clip_opened:
         if not clip_opened: return

@@ -245,7 +245,7 @@ class PatchFile(ModFile):
                 for patcher in sorted(self._patcher_instances,
                         key=attrgetter(u'patcher_order')):
                     if iiMode and not patcher.iiMode: continue
-                    progress(pstate, u'%s\n%s' % (modName, patcher.getName()))
+                    progress(pstate, f'{modName}\n{patcher.getName()}')
                     patcher.scan_mod_file(modFile,nullProgress)
             except CancelError:
                 raise

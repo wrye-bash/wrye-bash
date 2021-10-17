@@ -1322,9 +1322,9 @@ class AsteriskGame(Game):
                 cls.must_be_active_if_present += tuple(ccc_contents)
         except OSError as e:
             if not isinstance(e, FileNotFoundError):
-                bolt.deprint(u'Failed to open %s' % ccc_path, traceback=True)
-            bolt.deprint(u'%s does not exist or could not be read, falling '
-                         u'back to hardcoded CCC list' % cls._ccc_filename)
+                bolt.deprint(f'Failed to open {ccc_path}', traceback=True)
+            bolt.deprint(f'{cls._ccc_filename} does not exist or could not be '
+                         f'read, falling back to hardcoded CCC list')
             cls.must_be_active_if_present += cls._ccc_fallback
 
 class WindowsStoreGame(Game):

@@ -108,7 +108,6 @@ class _AMerger(ImportPatcher):
         self.isActive = bool(self._present_sigs)
 
     def scanModFile(self, modFile, progress):
-        if not self.isActive: return
         touched = self.touched
         id_deltas = self.id_deltas
         mod_id_entries = self.mod_id_entries

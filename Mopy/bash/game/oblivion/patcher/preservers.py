@@ -61,7 +61,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
 
     def scanModFile(self, modFile, progress): # scanModFile3 ?
         """Add lists from modFile."""
-        if not self.isActive or b'WRLD' not in modFile.tops: return
+        if b'WRLD' not in modFile.tops: return
         patchWorlds = self.patchFile.tops[b'WRLD']
         for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
             if worldBlock.road:

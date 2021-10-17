@@ -38,8 +38,8 @@ def exportConfig(patch_name, config, win, outDir):
 
 def getPatchesPath(fileName):
     """Choose the correct Bash Patches path for the file."""
-    if bass.dirs[u'patches'].join(fileName).isfile():
-        return bass.dirs[u'patches'].join(fileName)
+    if (patches_fpath := bass.dirs[u'patches'].join(fileName)).isfile():
+        return patches_fpath
     else:
         return bass.dirs[u'defaultPatches'].join(fileName)
 
