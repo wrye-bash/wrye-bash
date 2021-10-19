@@ -22,32 +22,97 @@
 # =============================================================================
 """Encapsulates Windows-specific classes and methods."""
 
+import datetime
+import functools
 import os
 import re
-import sys
-import datetime
-import xml.etree.ElementTree as xml
 import winreg
+import xml.etree.ElementTree as xml
 from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes, WINFUNCTYPE, c_uint, c_long, Union, c_ushort, c_int, \
     c_longlong, c_ulong, c_wchar, sizeof, wstring_at, ARRAY
-import functools
 from uuid import UUID
 
 import win32api
 import win32com.client as win32client
 import win32gui
 
-from ..bolt import GPath, deprint, Path
-from ..exception import AccessDeniedError, BoltError
-from .common import  WinAppInfo, WinAppVersionInfo, real_sys_prefix
+from .common import WinAppInfo, WinAppVersionInfo, real_sys_prefix
+# some hiding as pycharm is confused in __init__.py by the import *
+from ..bolt import Path as _Path
+from ..bolt import GPath as _GPath
+from ..bolt import deprint as _deprint
+from ..exception import AccessDeniedError, BoltError, SkipError, \
+    FileOperationError
+from ..exception import CancelError as _CancelError
+
+# File operations -------------------------------------------------------------
+try:
+    from win32com.shell import shell, shellcon
+    from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, \
+        FO_RENAME, FOF_NOCONFIRMMKDIR
+
+    # NOTE(lojack): AccessDenied can be a result of many error codes,
+    # According to
+    # https://msdn.microsoft.com/en-us/library/windows/desktop/bb762164%28v=vs.85%29.aspx
+    # If you receive an error code not on that list, then you assume it is
+    # one of the default WinError.h error codes, in this case 5 is
+    # `ERROR_ACCESS_DENIED`. I actually DO get error code 5, when the game
+    # detection for WS games wasn't including the language directories (
+    # which caused us to attempt one directory too high in the tree).
+    _file_op_error_map = {
+        # Returned for Windows Store games that need admin access
+        5: AccessDeniedError,    # ERROR_ACCESS_DENIED
+        17: AccessDeniedError,   # ERROR_INVALID_ACCESS
+        120: AccessDeniedError,  # DE_ACCESSDENIEDSRC -> source AccessDenied
+        # https://msdn.microsoft.com/en-us/library/windows/desktop/ms681383%28v=vs.85%29.aspx
+        1223: _CancelError,
+    }
+    def shfo(operation, source, target=None, allowUndo=True,
+             confirm=True, renameOnCollision=False, silent=False,
+             parent=None):
+        """Wrapper around (deprecated!) SHFileOperation."""
+        _source = source; _target = target # copy to display in debug messages
+        # flags
+        flgs = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
+        flgs |= FOF_NOCONFIRMMKDIR # never ask user for creating dirs
+        flgs |= (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
+        if allowUndo: flgs |= shellcon.FOF_ALLOWUNDO
+        if not confirm: flgs |= shellcon.FOF_NOCONFIRMATION
+        if renameOnCollision: flgs |= shellcon.FOF_RENAMEONCOLLISION
+        if silent: flgs |= shellcon.FOF_SILENT
+        # null terminated strings
+        source = u'\x00'.join(source) # don't add a null! # + u'\x00'
+        target = u'\x00'.join(target)
+        # get the handle to parent window to feed to win api
+        parent = parent.GetHandle() if parent else None
+        # See SHFILEOPSTRUCT for deciphering return values
+        # result: a windows error code (or 0 for success)
+        # aborted: True if any operations aborted, False otherwise
+        # mapping: maps the old and new names of the renamed files
+        result, aborted, mapping = shell.SHFileOperation(
+            (parent, operation, source, target, flgs, None, None))
+        if result == 0:
+            if aborted: raise SkipError()
+            return dict(mapping)
+        elif result == 2 and operation == FO_DELETE:
+            # Delete failed because file didnt exist
+            return dict(mapping)
+        else:
+            if result == 124:
+                src_list = u'\n'.join(_source)
+                trg_list = u'\n'.join(_target)
+                _deprint(f"Invalid paths:\nsource: {src_list}"
+                        f"\ntarget: {trg_list}\nRetrying")
+                return None
+            raise _file_op_error_map.get(result, FileOperationError(result))
+except ImportError:
+    shell = shellcon = shfo = None
 
 # API - Constants =============================================================
 _isUAC = False
 
 from ctypes.wintypes import MAX_PATH
-from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, \
-    FO_RENAME, FOF_NOCONFIRMMKDIR
 
 try:
     _indirect = windll.comctl32.TaskDialogIndirect
@@ -112,7 +177,7 @@ def _get_default_app_icon(idex, target):
             file_association = winreg.QueryValue(winreg.HKEY_CLASSES_ROOT,
                                                  target.cext)
             pathKey = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,
-                                     u'%s\\DefaultIcon' % file_association)
+                                     f'{file_association}\\DefaultIcon')
             filedata = winreg.EnumValue(pathKey, 0)[1]
             winreg.CloseKey(pathKey)
         if os.path.isabs(filedata) and os.path.isfile(filedata):
@@ -128,7 +193,7 @@ def _get_default_app_icon(idex, target):
                     icon = test
                     break
     except: # TODO(ut) comment the code above - what exception can I get here?
-        deprint(u'Error finding icon for %s:' % target, traceback=True)
+        _deprint(f'Error finding icon for {target}:', traceback=True)
         icon = u'not\\a\\path'
     return icon, idex
 
@@ -154,7 +219,7 @@ def _get_app_links(apps_dir):
                               # shortcut.WorkingDirectory, shortcut.Arguments,
                               shortcut_descr)
     except:
-        deprint(u'Error initializing links:', traceback=True)
+        _deprint(u'Error initializing links:', traceback=True)
     return links
 
 def _should_ignore_ver(test_ver):
@@ -185,8 +250,7 @@ def _query_string_field_version(file_name, version_prefix):
     except win32api.error:
         # File does not have a string field section
         return 0, 0, 0, 0
-    ver_query = u'\\StringFileInfo\\%04X%04X\\%s' % (lang, codepage,
-                                                     version_prefix)
+    ver_query = f'\\StringFileInfo\\{lang:04X}{codepage:04X}\\{version_prefix}'
     full_ver = win32api.GetFileVersionInfo(file_name, ver_query)
     return _parse_version_string(full_ver)
 
@@ -214,8 +278,8 @@ def _query_fixed_field_version(file_name, version_prefix):
     except win32api.error:
         # File does not have a fixed field section
         return 0, 0, 0, 0
-    ms = info[u'%sMS' % version_prefix]
-    ls = info[u'%sLS' % version_prefix]
+    ms = info[f'{version_prefix}MS']
+    ls = info[f'{version_prefix}LS']
     return win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), \
            win32api.LOWORD(ls)
 
@@ -374,8 +438,8 @@ class _WindowsStoreFinder(object):
             package_index = self._get_package_index(full_name)
             install_location, mutable_location = \
                 self._get_package_locations(package_index)
-            install_location = GPath(install_location)
-            mutable_location = GPath(mutable_location)
+            install_location = _GPath(install_location)
+            mutable_location = _GPath(mutable_location)
             install_time = self._get_package_install_time(package_name,
                                                           full_name)
             version, entry_point = self._get_manifest_info(mutable_location,
@@ -533,9 +597,9 @@ def _get_known_path(known_folder_id, user_handle=_UserHandle.current):
     S_OK = 0
     if _SHGetKnownFolderPath(byref(kf_id), 0, user_handle,
                              byref(pPath)) != S_OK:
-        raise RuntimeError(u"Failed to retrieve known folder path '%r' - this "
-                           u"is most likely caused by OneDrive, see General "
-                           u"Readme" % known_folder_id)
+        raise RuntimeError(
+            f"Failed to retrieve known folder path '{known_folder_id!r}' - "
+            f"this is most likely caused by OneDrive, see General Readme")
     path = pPath.value
     _CoTaskMemFree(pPath)
     return path
@@ -790,13 +854,13 @@ def get_registry_path(subkey, entry, test_path_callback):
         for wow6432 in (u'', u'Wow6432Node\\'):
             try:
                 reg_key = winreg.OpenKey(
-                    hkey, u'Software\\%s%s' % (wow6432, subkey), 0,
+                    hkey, f'Software\\{wow6432}{subkey}', 0,
                     winreg.KEY_READ | winreg.KEY_WOW64_64KEY)
                 reg_val = winreg.QueryValueEx(reg_key, entry)
             except OSError:
                 continue
             if reg_val[1] != winreg.REG_SZ: continue
-            installPath = GPath(reg_val[0])
+            installPath = _GPath(reg_val[0])
             if not installPath.exists(): continue
             if not test_path_callback(installPath): continue
             return installPath
@@ -820,11 +884,11 @@ def get_win_store_game_info(submod):
         app_name, publisher_name, publisher_id)
 
 def get_personal_path():
-    return (GPath(_get_known_path(_FOLDERID.Documents)),
+    return (_GPath(_get_known_path(_FOLDERID.Documents)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
 def get_local_app_data_path():
-    return (GPath(_get_known_path(_FOLDERID.LocalAppData)),
+    return (_GPath(_get_known_path(_FOLDERID.LocalAppData)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
 def init_app_links(apps_dir, badIcons, iconList):
@@ -835,11 +899,11 @@ def init_app_links(apps_dir, badIcons, iconList):
         if target.lower().find(r'installer\{') != -1:
             target = path
         else:
-            target = GPath(target)
+            target = _GPath(target)
         if not target.exists(): continue
         # Target exists - extract path, icon and shortcut_descr
         # First try a custom icon #TODO(ut) docs - also comments methods here!
-        fileName = u'%s%%i.png' % path.sbody
+        fileName = f'{path.sbody}%i.png'
         customIcons = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
         if customIcons[0].exists():
             icon = customIcons
@@ -856,10 +920,10 @@ def init_app_links(apps_dir, badIcons, iconList):
                             u'%SystemRoot%\\System32\\shell32.dll'), u'2'
                 else:
                     icon, idex = _get_default_app_icon(idex, target)
-            icon = GPath(icon)
+            icon = _GPath(icon)
             if icon.exists():
                 fileName = u';'.join((icon.s, idex))
-                icon = iconList(GPath(fileName))
+                icon = iconList(_GPath(fileName))
                 # Last, use the 'x' icon
             else:
                 icon = badIcons
@@ -896,8 +960,8 @@ def get_file_version(filename):
     return _query_string_field_version(filename, u'FileVersion')
 
 def testUAC(gameDataPath):
-    deprint(u'Testing if game folder is UAC-protected')
-    tmpDir = Path.tempDir()
+    _deprint(u'Testing if game folder is UAC-protected')
+    tmpDir = _Path.tempDir()
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
     with tempFile.open(u'wb'): pass # create the file
@@ -920,12 +984,12 @@ def setUAC(handle, uac=True):
 def getJava():
     """Locate javaw.exe to launch jars from Bash."""
     try:
-        java_home = GPath(os.environ[u'JAVA_HOME'])
+        java_home = _GPath(os.environ[u'JAVA_HOME'])
         java_bin_path = java_home.join(u'bin', u'javaw.exe')
         if java_bin_path.isfile(): return java_bin_path
     except KeyError: # no JAVA_HOME
         pass
-    sys_root = GPath(os.environ[u'SYSTEMROOT'])
+    sys_root = _GPath(os.environ[u'SYSTEMROOT'])
     # Default location: Windows\System32\javaw.exe
     java_bin_path = sys_root.join(u'system32', u'javaw.exe')
     if not java_bin_path.isfile():

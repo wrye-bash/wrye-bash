@@ -28,14 +28,18 @@ import sys
 import functools
 
 from .common import WinAppInfo
-from ..bolt import deprint, GPath, structs_cache, Path, dict_sort
+# some hiding as pycharm is confused in __init__.py by the import *
+from ..bolt import Path as _Path
+from ..bolt import GPath as _GPath
+from ..bolt import deprint as _deprint
+from ..bolt import structs_cache, dict_sort
 from ..exception import EnvError
 
 # API - Constants =============================================================
 try:
     MAX_PATH = int(subprocess.check_output([u'getconf', u'PATH_MAX', u'/']))
 except (ValueError, subprocess.CalledProcessError, OSError):
-    deprint(u'calling getconf failed - error:', traceback=True)
+    _deprint(u'calling getconf failed - error:', traceback=True)
     MAX_PATH = 4096
 
 FO_MOVE = 1
@@ -54,8 +58,8 @@ GOOD_EXITS = (BTN_OK, BTN_YES)
 # Internals ===================================================================
 def _getShellPath(folderKey): ##: mkdirs
     home = os.path.expanduser(u'~')
-    return GPath({u'Personal': home,
-                  u'Local AppData': home + u'/.local/share'}[folderKey])
+    return _GPath({u'Personal': home,
+                   u'Local AppData': home + u'/.local/share'}[folderKey])
 
 def _get_error_info():
     return '\n'.join(f'  {k}: {v}' for k, v in dict_sort(os.environ))
@@ -97,7 +101,7 @@ def is_uac():
 @functools.lru_cache(maxsize=None) ##: cached in py 3.9
 def getJava():
     try:
-        java_home = GPath(os.environ[u'JAVA_HOME'])
+        java_home = _GPath(os.environ[u'JAVA_HOME'])
         java_bin_path = java_home.join(u'bin', u'java')
         if java_bin_path.isfile(): return java_bin_path
     except KeyError: # no JAVA_HOME
@@ -105,12 +109,12 @@ def getJava():
     try:
         java_bin_path = subprocess.check_output(
             u'command -v java', shell=True,
-            encoding=Path.sys_fs_enc).rstrip(u'\n')
+            encoding=_Path.sys_fs_enc).rstrip(u'\n')
     except subprocess.CalledProcessError:
         # Fall back to the likely correct path on most distros - but probably
         # Java is missing entirely if command can't find it
         java_bin_path = u'/usr/bin/java'
-    return GPath(java_bin_path)
+    return _GPath(java_bin_path)
 
 # TODO(inf) This method needs support for string fields and product versions
 def get_file_version(filename):
@@ -206,9 +210,9 @@ def python_tools_dir():
         if all(os.path.isfile(p) for p in try_paths):
             return tools_path
     # Fall back on /usr/lib/python*.* - this should never happen
-    deprint(u'Failed to find Python Tools dir on sys.path')
-    return u'/usr/lib/python%d.%d' % (sys.version_info.major,
-                                      sys.version_info.minor)
+    _deprint(u'Failed to find Python Tools dir on sys.path')
+    return f'/usr/lib/python{sys.version_info.major:d}.' \
+           f'{sys.version_info.minor:d}'
 
 def convert_separators(p):
     return p.replace(u'\\', u'/')

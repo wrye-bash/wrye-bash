@@ -30,6 +30,10 @@ from typing import Union
 
 from .. import bolt
 
+__all__ = ['clear_read_only', 'WinAppVersionInfo', 'WinAppInfo',
+           'get_game_version_fallback', 'get_win_store_game_paths',
+           'real_sys_prefix']
+
 def clear_read_only(filepath): # copied from bolt
     os.chmod(u'%s' % filepath, stat.S_IWUSR | stat.S_IWOTH)
 
