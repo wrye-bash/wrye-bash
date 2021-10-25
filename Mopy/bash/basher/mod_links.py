@@ -1454,8 +1454,7 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
         if not self._askContinue(message, u'bash.decompileAll.continue',
                                  _(u'Decompile All')): return
         with BusyCursor():
-            for fileName, fileInfo in self.iselected_pairs():
-                file_name_s = fileName.s
+            for fileInfo in self.iselected_infos():
                 if fileInfo.match_oblivion_re():
                     self._showWarning(_(u'Skipping %s') % fileInfo,
                                       _(u'Decompile All'))
@@ -1491,15 +1490,16 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                     scpt_grp.setChanged()
                 if len(removed) >= 50 or badGenericLore:
                     modFile.safeSave()
-                    self._showOk((_(u'Scripts removed: %d.') + u'\n' +
-                                  _(u'Scripts remaining: %d')) % (
-                        len(removed), len(scpt_grp.records)), file_name_s)
+                    m =(_(u'Scripts removed: %d.') + u'\n' +
+                        _(u'Scripts remaining: %d')) % (
+                        len(removed), len(scpt_grp.records))
                 elif removed:
-                    self._showOk(_(u'Only %d scripts were identical.  This is '
-                                   u'probably intentional, so no changes have '
-                                   u'been made.') % len(removed), file_name_s)
+                    m = _(u'Only %d scripts were identical.  This is probably '
+                          u'intentional, so no changes have been made.'
+                          ) % len(removed)
                 else:
-                    self._showOk(_(u'No changes required.'), file_name_s)
+                    m = _(u'No changes required.')
+                self._showOk(m, fileInfo.ci_key)
 
 #------------------------------------------------------------------------------
 class _Esm_Esl_Flip(EnabledLink):

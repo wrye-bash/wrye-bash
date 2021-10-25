@@ -396,11 +396,11 @@ class DefaultLowerDict(LowerDict, collections.defaultdict):
         return type(self)(self.default_factory, self)
 
     def __repr__(self):
-        return u'%s(%s, %s)' % (type(self).__name__, self.default_factory,
-            super(collections.defaultdict, self).__repr__())
+        return f'{type(self).__name__}({self.default_factory}, ' \
+               f'{super(collections.defaultdict, self).__repr__()})'
 
 class OrderedLowerDict(LowerDict, collections.OrderedDict):
-    """LowerDict that inherits from OrdererdDict."""
+    """LowerDict that inherits from OrderedDict."""
     __slots__ = () # no __dict__ - that would be redundant
 
 #------------------------------------------------------------------------------
@@ -1129,7 +1129,7 @@ class Flags(object):
 #------------------------------------------------------------------------------
 class DataDict(object):
     """Mixin class that handles dictionary emulation, assuming that
-    dictionary is its 'data' attribute."""
+    dictionary is its '_data' attribute."""
 
     def __contains__(self,key):
         return key in self._data

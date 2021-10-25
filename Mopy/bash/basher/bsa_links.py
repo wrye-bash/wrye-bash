@@ -54,7 +54,7 @@ class BSA_ExtractToProject(ItemLink):
                 return
             to_unpack = [(project.s, selected_bsas[0])]
         else:
-            to_unpack = [(bsa_inf.abs_path.body.s, bsa_inf) for bsa_inf
+            to_unpack = [(bsa_inf.abs_path.sbody, bsa_inf) for bsa_inf
                          in selected_bsas]
         # More error checking
         # TODO(inf) Maybe create bosh.installers_data singleton?

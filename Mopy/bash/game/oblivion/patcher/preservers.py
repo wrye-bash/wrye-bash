@@ -147,8 +147,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             try: self.read_csv(getPatchesPath(srcFile))
-            except OSError: deprint(
-                u'%s is no longer in patches set' % srcFile, traceback=True)
+            except OSError: deprint(f'{srcFile} is no longer in patches set',
+                                    traceback=True)
             progress.plus()
 
     def scanModFile(self,modFile,progress): # if b'SPEL' not in modFile.tops: return

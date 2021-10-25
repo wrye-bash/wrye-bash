@@ -96,7 +96,7 @@ class Installer(ListInfo):
     _re_top_extensions = re.compile(u'(?:' + u'|'.join(
         re.escape(ext) for ext in _top_files_extensions) + u')$', re.I)
     # Extensions of strings files - automatically built from game constants
-    _strings_extensions = {os.path.splitext(x[1].lower())[1]
+    _strings_extensions = {os.path.splitext(x[1])[1].lower()
                            for x in bush.game.Esp.stringsFiles}
     # InstallersData singleton - consider this tmp
     instData = None # type: InstallersData
@@ -307,15 +307,7 @@ class Installer(ListInfo):
 
     def __reduce__(self):
         """Used by pickler to save object state."""
-        raise AbstractError(u'%s must define __reduce__' % type(self))
-
-    def _fixme_drop__fomod_backwards_compat(self):
-        # Keys and values in the fomod dict got inverted, name changed to
-        # reflect this FIXME backwards compat
-        if u'fomod_files_dict' in self.extras_dict:
-            self.extras_dict[u'fomod_dict'] = LowerDict({
-                v: k for k, v
-                in self.extras_dict.pop(u'fomod_files_dict').items()})
+        raise AbstractError(f'{type(self)} must define __reduce__')
 
     def __setstate__(self,values):
         """Used by unpickler to recreate object."""
@@ -686,8 +678,6 @@ class Installer(ListInfo):
         #--Scan over fileSizeCrcs
         root_path = self.extras_dict.get(u'root_path', u'')
         rootIdex = len(root_path)
-        # For backwards compatibility - drop on VDATA3
-        self._fixme_drop__fomod_backwards_compat()
         fm_active = self.extras_dict.get(u'fomod_active', False)
         fm_dict = self.extras_dict.get(u'fomod_dict', {})
         module_config = os.path.join(u'fomod', u'moduleconfig.xml')
@@ -1366,7 +1356,7 @@ class InstallerArchive(Installer):
                 list_archive(tempArch, _parse_archive_line)
                 self.crc = cumCRC & 0xFFFFFFFF
             except:
-                archive_msg = u"Unable to read archive '%s'." % self.abs_path
+                archive_msg = f"Unable to read archive '{self.abs_path}'."
                 deprint(archive_msg, traceback=True)
                 raise InstallerArchiveError(archive_msg)
 
@@ -2197,11 +2187,11 @@ class InstallersData(DataStore):
         :param dest_paths: set of paths relative to Data/ - may not exist.
         :type dest_paths: set[str]"""
         root_files = []
-        norm_ghost = Installer.getGhosted()
+        norm_ghost_get = Installer.getGhosted().get
         for data_path in dest_paths:
             sp = data_path.rsplit(os.sep, 1) # split into ['rel_path, 'file']
             if len(sp) == 1: # top level file
-                data_path = norm_ghost.get(data_path, data_path)
+                data_path = norm_ghost_get(data_path, data_path)
                 root_files.append((bass.dirs[u'mods'].s, data_path))
             else:
                 root_files.append((bass.dirs[u'mods'].join(sp[0]).s, sp[1]))
@@ -2525,9 +2515,9 @@ class InstallersData(DataStore):
         removedPlugins = set()
         removedInis = set()
         #--Construct list of files to delete
-        norm_ghost = Installer.getGhosted()
+        norm_ghost_get = Installer.getGhosted().get
         for ci_relPath in removes:
-            path = modsDirJoin(norm_ghost.get(ci_relPath, ci_relPath))
+            path = modsDirJoin(norm_ghost_get(ci_relPath, ci_relPath))
             if path.exists():
                 if reModExtSearch(ci_relPath):
                     removedPlugins.add(GPath(ci_relPath))
@@ -2732,10 +2722,10 @@ class InstallersData(DataStore):
         try:
             from . import modInfos
             emptyDirs, mods = set(), set()
-            norm_ghost = Installer.getGhosted()
+            norm_ghost_get = Installer.getGhosted().get
             for filename in removes:
                 full_path = bass.dirs[u'mods'].join(
-                    norm_ghost.get(filename, filename))
+                    norm_ghost_get(filename, filename))
                 try:
                     full_path.moveTo(destDir.join(filename)) # will drop .ghost
                     if modInfos.rightFileType(full_path):
@@ -3006,13 +2996,13 @@ class InstallersData(DataStore):
 
     def createFromData(self, projectPath, ci_files, progress):
         if not ci_files: return
-        norm_ghost = Installer.getGhosted()
+        norm_ghost_get = Installer.getGhosted().get
         subprogress = SubProgress(progress, 0, 0.8, full=len(ci_files))
         srcJoin = bass.dirs[u'mods'].join
         dstJoin = self.store_dir.join(projectPath).join
         for i,filename in enumerate(ci_files):
             subprogress(i, filename)
-            srcJoin(norm_ghost.get(filename, filename)).copyTo(
+            srcJoin(norm_ghost_get(filename, filename)).copyTo(
                 dstJoin(filename))
         # Refresh, so we can manipulate the InstallerProject item
         self._inst_types[1].refresh_installer(projectPath, self, progress,

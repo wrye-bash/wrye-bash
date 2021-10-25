@@ -296,9 +296,8 @@ class Installer_Wizard(_Installer_AWizardLink):
                         sel_package.espmNots.add(espm)
                 idetails.refreshCurrent(sel_package)
                 #Rename the espms that need renaming
-                for oldName in ret.rename_plugins:
-                    sel_package.setEspmName(oldName,
-                                            ret.rename_plugins[oldName])
+                for oldName, renamed in ret.rename_plugins.items():
+                    sel_package.setEspmName(oldName, renamed)
                 idetails.refreshCurrent(sel_package)
                 #Install if necessary
                 if ret.should_install:
@@ -1360,25 +1359,26 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             log = LogFile(io.StringIO())
             log.setHeader(u'== '+_(u'Overview')+u'\n')
 ##            log('{{CSS:wtxt_sand_small.css}}')
-            log(u'. '+_(u'Name')+u': %s'%BCFArchive)
-            log(u'. ' + _(u'Size') +u': %s' % round_size(converter.fullPath.psize))
-            log(u'. ' + _(u'Remapped: %u file(s)') %
-                len(converter.convertedFiles))
+            log(f". {_(u'Name')}: {BCFArchive}")
+            log(f". {_(u'Size')}: {round_size(converter.fullPath.psize)}")
+            log(f". {_(u'Remapped: %u file(s)') % len(converter.convertedFiles)}")
             log.setHeader(u'. ' + _(u'Requires: %u file(s)') %
                           len(converter.srcCRCs))
-            log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, crc_installer[x]) for x in converter.srcCRCs if x in crc_installer)))
+            log(u'  * ' +u'\n  * '.join(sorted(
+                f'({x:08X}) - {crc_installer[x]}' for x in converter.srcCRCs
+                if x in crc_installer)))
             log.setHeader(u'. '+_(u'Options:'))
-            log(u'  * '+_(u'Skip Voices')+u'   = %s'%bool(converter.skipVoices))
-            log(u'  * '+_(u'Solid Archive')+u' = %s'%bool(converter.isSolid))
+            log(f"  *  {_(u'Skip Voices')}   = {bool(converter.skipVoices)}")
+            log(f"  *  {_(u'Solid Archive')} = {bool(converter.isSolid)}")
             if converter.isSolid:
                 if converter.blockSize:
-                    log(u'    *  '+_(u'Solid Block Size')+u' = %d'%converter.blockSize)
+                    log(f"    *  {_(u'Solid Block Size')} = {converter.blockSize:d}")
                 else:
-                    log(u'    *  '+_(u'Solid Block Size')+u' = 7z default')
-            log(u'  *  '+_(u'Has Comments')+u'  = %s'%bool(converter.comments))
-            log(u'  *  '+_(u'Has Extra Directories')+u' = %s'%bool(converter.hasExtraData))
-            log(u'  *  '+_(u'Has Esps Unselected')+u'   = %s'%bool(converter.espmNots))
-            log(u'  *  '+_(u'Has Packages Selected')+u' = %s'%bool(converter.subActives))
+                    log(f"    *  {_(u'Solid Block Size')} = 7z default")
+            log(f"  *  {_(u'Has Comments')}  = {bool(converter.comments)}")
+            log(f"  *  {_(u'Has Extra Directories')} = {bool(converter.hasExtraData)}")
+            log(f"  *  {_(u'Has Esps Unselected')}   = {bool(converter.espmNots)}")
+            log(f"  *  {_(u'Has Packages Selected')} = {bool(converter.subActives)}")
             log.setHeader(u'. ' + _(u'Contains: %u file(s)') %
                           len(converter.bcf_missing_files))
             log(u'  * ' +u'\n  * '.join(sorted(u'%s' % x for x in converter

@@ -232,8 +232,7 @@ class PCFaces(object):
             maxMaster = len(face.face_masters) - 1
             mod = getModIndex(fid)
             master = face.face_masters[min(mod, maxMaster)]
-            if master not in saveFile._masters:
-                saveFile._masters.append(master)
+            saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
         #--Set face
         npc.full = face.pcName
@@ -288,8 +287,7 @@ class PCFaces(object):
             maxMaster = len(face.face_masters) - 1
             mod = getModIndex(fid)
             master = face.face_masters[min(mod, maxMaster)]
-            if master not in saveFile._masters:
-                saveFile._masters.append(master)
+            saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
 
         #--Player ACHR

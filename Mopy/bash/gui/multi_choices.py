@@ -286,10 +286,6 @@ class CheckListBox(ListBox, WithCharEvents):
                 if index >= self.lb_get_items_count():
                     self.lb_append(lab)
                 else:
-                    if index == -1:
-                        deprint(u'index = -1, label = %s, '
-                                u'check = %s' % (lab, ch))
-                        continue
                     self.lb_set_label_at_index(index, lab)
                 self.lb_check_at_index(index, ch)
             for index in range(self.lb_get_items_count(), len(names), -1):

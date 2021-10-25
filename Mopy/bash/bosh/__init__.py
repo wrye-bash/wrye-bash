@@ -233,7 +233,7 @@ class MasterInfo(object):
         return 30 if not self.mod_info else 0
 
     def __repr__(self):
-        return u'%s<%r>' % (self.__class__.__name__, self.curr_name)
+        return f'{self.__class__.__name__}<{self.curr_name!r}>'
 
 #------------------------------------------------------------------------------
 class FileInfo(AFile, ListInfo):
@@ -401,7 +401,7 @@ class FileInfo(AFile, ListInfo):
         separator = u'-'
         snapLast = [u'00']
         #--Look for old snapshots.
-        reSnap = re.compile(u'^%s'%root+u'[ -]([0-9.]*[0-9]+)'+ext+u'$',re.U)
+        reSnap = re.compile(f'^{root}[ -]([0-9.]*[0-9]+){ext}$')
         for fileName in destDir.list():
             maSnap = reSnap.match(fileName.s)
             if not maSnap: continue
@@ -2946,7 +2946,7 @@ class ModInfos(FileInfos):
                         u"Cannot delete the game's master file(s).")
                 else:
                     filenames.remove(f)
-        self.lo_deactivate(filenames, doSave=False)
+        self.lo_deactivate(filenames, doSave=False) ##: do this *after* deletion?
         return super(ModInfos, self).files_to_delete(filenames)
 
     def delete_refresh(self, deleted, paths_to_keys, check_existence,
@@ -3042,7 +3042,7 @@ class ModInfos(FileInfos):
             raise StateError(u"Can't swap: %s already exists." % oldName)
         newName = GPath(baseName.sbody + u'_' + newVersion + u'.esm')
         if newName not in self:
-            raise StateError(u"Can't swap: %s doesn't exist." % newName)
+            raise StateError(f"Can't swap: {newName} doesn't exist.")
         return newName, oldName
 
     def setOblivionVersion(self,newVersion):
@@ -3058,10 +3058,10 @@ class ModInfos(FileInfos):
         is_master_active = load_order.cached_is_active(self.masterName)
         is_new_info_active = load_order.cached_is_active(newName)
         # can't use ModInfos rename cause it will mess up the load order
-        rename_operation = super(ModInfos, self).rename_operation
+        file_info_rename_op = super(ModInfos, self).rename_operation
         while True:
             try:
-                rename_operation(baseInfo, oldName)
+                file_info_rename_op(baseInfo, oldName)
                 break
             except PermissionError: ##: can only occur if SHFileOperation
                 # isn't called, yak - file operation API badly needed
@@ -3073,17 +3073,17 @@ class ModInfos(FileInfos):
                 return
         while True:
             try:
-                rename_operation(newInfo, self.masterName)
+                file_info_rename_op(newInfo, self.masterName)
                 break
-            except PermissionError as werr:
+            except PermissionError:
                 if self._retry(newInfo.getPath(), baseInfo.getPath()):
                     continue
                 #Undo any changes
-                rename_operation(oldName, self.masterName)
+                file_info_rename_op(oldName, self.masterName)
                 raise
             except CancelError:
                 #Undo any changes
-                rename_operation(oldName, self.masterName)
+                file_info_rename_op(oldName, self.masterName)
                 return
         # set mtimes to previous respective values
         self[self.masterName].setmtime(master_time)
