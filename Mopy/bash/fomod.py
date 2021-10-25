@@ -45,7 +45,7 @@ __author__ = u'Ganda'
 import functools
 from enum import Enum
 
-from . import bass, bush, env
+from . import bass, bush, env, bosh # for modInfos
 from .bolt import GPath, Path, LooseVersion
 from .exception import XMLParsingError
 from .fomod_schema import schema_string
@@ -63,7 +63,6 @@ class FailedCondition(Exception):
     """Exception used to signal when a dependencies check is failed. Message
     passed to it should be human-readable and proper for a user to
     understand."""
-    pass
 
 class FileState(Enum):
     """The various states that a file can have. Implements the XML simpleType
@@ -562,11 +561,10 @@ class FomodInstaller(object):
         target_type = _str_to_fs[condition.get('state')]
         # Check if it's missing, ghosted or (in)active
         if not self.dst_dir.join(test_file).exists():
-            actual_type = FileState.MISSING
-        ##: Needed? Shouldn't this be handled by cached_is_active?
-        elif (test_file.cext in bush.game.espm_extensions and
-              self.dst_dir.join(test_file + u'.ghost').exists()):
-            actual_type = FileState.INACTIVE
+            if test_file not in bosh.modInfos:
+                actual_type = FileState.MISSING
+            else: # file in modInfos - its ghost must exist
+                actual_type = FileState.INACTIVE
         else:
             actual_type = (FileState.ACTIVE if cached_is_active(test_file)
                            else FileState.INACTIVE)

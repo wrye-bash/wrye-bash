@@ -1263,7 +1263,7 @@ class ModList(_ModsUIList):
                     activated = [x for x in activated if x != inact]
                     changes[self.__activated_key][inact] = activated
             except BoltError as e:
-                balt.showError(self, u'%s' % e)
+                balt.showError(self, f'{e}')
                 break
         # Show warnings to the user if they attempted to deactivate mods that
         # can't be deactivated (e.g. vanilla masters on newer games) and/or
@@ -1271,14 +1271,14 @@ class ModList(_ModsUIList):
         # plugins).
         if illegal_deactivations:
             balt.askContinue(self,
-                _(u"You can't deactivate the following mods:")
-                + u'\n%s' % u', '.join(illegal_deactivations),
-                u'bash.mods.dnd.illegal_deactivation.continue')
+                             _("You can't deactivate the following mods:") +
+                             f"\n{u', '.join(illegal_deactivations)}",
+                             'bash.mods.dnd.illegal_deactivation.continue')
         if illegal_activations:
             balt.askContinue(self,
-                _(u"You can't activate the following mods:")
-                + u'\n%s' % u', '.join(illegal_activations),
-                u'bash.mods.dnd.illegal_activation.continue')
+                             _("You can't activate the following mods:") +
+                             f"\n{u', '.join(illegal_activations)}",
+                             'bash.mods.dnd.illegal_activation.continue')
         if touched:
             bosh.modInfos.cached_lo_save_active()
             self.__toggle_active_msg(changes)

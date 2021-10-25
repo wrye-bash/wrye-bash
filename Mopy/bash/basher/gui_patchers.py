@@ -37,8 +37,6 @@ from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     SearchBar
 from ..patcher import patch_files, patches_set, base
 
-reCsvExt = re.compile(r'\.csv$', re.I | re.U)
-
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""
     patcher_name = u'UNDEFINED'
@@ -205,7 +203,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
     def SetAliasText(self):
         """Sets alias text according to current aliases."""
         self.gAliases.text_content = u'\n'.join([
-            u'%s >> %s' % (alias_target, alias_repl)
+            f'{alias_target} >> {alias_repl}'
             for alias_target, alias_repl in dict_sort(self._ci_aliases)])
 
     def OnEditAliases(self):
@@ -464,8 +462,8 @@ class _ListPatcherPanel(_PatcherPanel):
         #--Verify file existence
         self.configItems = [ # fix regression where these became strings
             srcPath for srcPath in map(GPath_no_norm,
-            self.configItems) if (srcPath in bosh.modInfos or (reCsvExt.search(
-            srcPath.s) and srcPath in patches_set()))]
+            self.configItems) if (srcPath in bosh.modInfos or (
+            srcPath.cext == 'csv' and srcPath in patches_set()))]
         if self.__class__.forceItemCheck:
             for item in self.configItems:
                 self.configChecks[item] = True
@@ -879,7 +877,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         # Note that we do *not* want to escape the & here - that puts *two*
         # ampersands in the resulting ListBox for some reason
         choice = ''.join(
-            sorted(i[0] for i in self.configChoices.get(item) if i))
+            sorted(i[0] for i in self.configChoices.get(item, ()) if i))
         return f'{item}{f" [{choice}]" if choice else ""}'
 
     def GetConfigPanel(self, parent, config_layout, gTipText):

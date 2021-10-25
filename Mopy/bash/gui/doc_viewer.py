@@ -328,13 +328,12 @@ class DocumentViewer(_AComponent):
         """Load a PDF file if PDFViewer is available, or load the text.
 
         :param file_path: A bolt.Path instance or a unicode string."""
-        pdf_path = u'%s' % file_path
-        with open(pdf_path, u'rb') as ins:
+        with open(file_path, u'rb') as ins:
             pdf_valid = ins.read(4) == b'%PDF'
         if not pdf_valid:
-            deprint(u'%s is not a valid PDF' % pdf_path)
+            deprint(f'{file_path} is not a valid PDF')
         if pdf_valid and pdf_viewer_available():
-            self._pdf_ctrl.open_file(pdf_path)
+            self._pdf_ctrl.open_file('%s' % file_path)
             self.switch_to_pdf()
         else:
             self.try_load_text(file_path)

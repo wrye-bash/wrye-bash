@@ -218,7 +218,6 @@ class PageInstaller(WizardPage):
 
     def on_next(self):
         """Create flow control objects etc, implemented by sub-classes."""
-        pass
 
 class PageSelect(PageInstaller):
     """A Page that shows a message up top, with a selection box on the left
@@ -530,7 +529,7 @@ class PageFinish(PageInstaller):
     @staticmethod
     def display_files(file_dict):
         if not file_dict: return u''
-        lines = [u'{} -> {}'.format(v, k) for k, v in file_dict.items()]
+        lines = [f'{v} -> {k}' for k, v in file_dict.items()]
         lines.sort(key=str.lower)
         return u'\n'.join(lines)
 

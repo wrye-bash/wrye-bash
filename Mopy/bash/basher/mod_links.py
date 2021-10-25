@@ -802,20 +802,17 @@ class _GhostLink(ItemLink):
     def getAllow(filename):
         return bosh.modInfos.table.getItem(filename, u'allowGhosting', True)
 
-    def _loop(self):
+    def Execute(self):
         """Loop selected files applying allow ghosting settings and
         (un)ghosting as needed."""
-        files = []
+        changed = []
+        set_allow = self.__class__.setAllow
+        to_ghost = self.__class__.toGhost
         for fileName, fileInfo in self.iselected_pairs():
-            fileInfo.set_table_prop(u'allowGhosting',
-                                    self.__class__.setAllow(fileName))
+            fileInfo.set_table_prop(u'allowGhosting', set_allow(fileName))
             oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(self.__class__.toGhost(fileName)) != oldGhost:
-                files.append(fileName)
-        return files
-
-    def Execute(self):
-        changed = self._loop()
+            if fileInfo.setGhost(to_ghost(fileName), itsa_ghost=oldGhost) != oldGhost:
+                changed.append(fileName)
         self.window.RefreshUI(redraw=changed, refreshSaves=False)
 
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):

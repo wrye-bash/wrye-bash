@@ -2173,7 +2173,7 @@ class ModInfos(FileInfos):
         ourselves so ctime of the unghosted mods is not set."""
         load_order.save_lo(load_order.cached_lo_tuple(),
             load_order.cached_lord.lorder(
-                active if active is not None else self._active_wip))
+                self._active_wip if active is None else active))
 
     @_lo_cache
     def cached_lo_save_lo(self):
@@ -2716,7 +2716,7 @@ class ModInfos(FileInfos):
             espms_extra, esls_extra = load_order.check_active_limit(
                 self._active_wip + [fileName])
             if espms_extra or esls_extra:
-                msg = u'%s: Trying to activate more than ' % fileName
+                msg = f'{fileName}: Trying to activate more than '
                 if espms_extra:
                     msg += f'{load_order.max_espms():d} espms'
                 else:
