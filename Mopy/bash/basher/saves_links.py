@@ -33,7 +33,7 @@ from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, load_order, initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, UIList_Rename
-from ..bolt import GPath, SubProgress, Path
+from ..bolt import GPath, SubProgress, Path, FName
 from ..bosh import faces, _saves
 from ..exception import ArgumentError, BoltError, ModError, AbstractError
 from ..gui import BusyCursor, ImageWrapper, FileSave
@@ -73,9 +73,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     def getItemList(self):
         """Returns load list keys in alpha order."""
         #--Get list of directories in Hidden, but do not include default.
-        items = [x.s for x in initialization.getLocalSaveDirs()]
-        items.sort(key=lambda a: a.lower())
-        return items
+        return initialization.getLocalSaveDirs()
 
     #--Info box
     def getInfo(self,item):
@@ -146,7 +144,7 @@ class Saves_ProfilesData(balt.ListEditorData):
             return False
         #--Get file count. If > zero, verify with user.
         profileDir = bass.dirs[u'saveBase'].join(profileSaves)
-        files = [save_file for save_file in profileDir.list() if
+        files = [save_file for save_file in profileDir.ilist() if
                  bosh.SaveInfos.rightFileType(save_file)]
         if files:
             message = _(u'Delete profile %s and the %d save files it contains?') % (profile,len(files))
@@ -169,7 +167,7 @@ class Saves_Profiles(ChoiceLink):
     _my_games = GPath(_my_games)
 
     @property
-    def _choices(self): return [x.s for x in initialization.getLocalSaveDirs()]
+    def _choices(self): return initialization.getLocalSaveDirs()
 
     class _ProfileLink(CheckLink, EnabledLink):
         @property
@@ -278,7 +276,7 @@ class Save_ImportFace(OneItemLink):
                 saveFile = _saves.SaveFile(srcInfo)
                 saveFile.load(progress)
             srcFaces = faces.PCFaces.save_getFaces(saveFile)
-        elif bosh.ModInfos.rightFileType(srcPath): # Import from a mod
+        elif bosh.ModInfos.rightFileType(fname): # Import from a mod
             #--Get faces
             srcInfo = bosh.ModInfo(srcPath)
             srcFaces = faces.PCFaces.mod_getFaces(srcInfo)
@@ -360,11 +358,11 @@ class Save_DiffMasters(EnabledLink):
             message = u''
             if missing:
                 message += u'=== '+_(u'Removed Masters')+u' (%s):\n* ' % oldName
-                message += u'\n* '.join(x.s for x in load_order.get_ordered(missing))
+                message += u'\n* '.join(load_order.get_ordered(missing))
                 if added: message += u'\n\n'
             if added:
                 message += u'=== ' + _(u'Added Masters') + f' ({newName}):\n* '
-                message += u'\n* '.join(x.s for x in load_order.get_ordered(added))
+                message += u'\n* '.join(load_order.get_ordered(added))
             self._showWryeLog(message, title=_(u'Diff Masters'))
 
 #------------------------------------------------------------------------------
@@ -397,13 +395,12 @@ class Save_Renumber(EnabledLink):
         if newNumber is None: return
         old_names = set()
         new_names = set()
-        for old_file_path, maPattern, sinf in self._matches:
+        for fn_save, maPattern, sinf in self._matches:
             s_groups = maPattern.groups()
             if not s_groups[1]: continue
-            newFileName = f'{s_groups[0]}{newNumber:d}{s_groups[2]}'
-            if newFileName != old_file_path: # FIXME ci comp
-                new_file_path = GPath(newFileName)
-                if self.window.try_rename(sinf, new_file_path, new_names,
+            newFileName = FName(f'{s_groups[0]}{newNumber:d}{s_groups[2]}')
+            if newFileName != fn_save:
+                if self.window.try_rename(sinf, newFileName, new_names,
                                           old_names):
                     break
                 newNumber += 1
@@ -622,7 +619,7 @@ class Save_Move(ChoiceLink):
             u'Move save(s) to %s')
 
     @property
-    def _choices(self): return [x.s for x in initialization.getLocalSaveDirs()]
+    def _choices(self): return initialization.getLocalSaveDirs()
 
     def _initData(self, window, selection):
         super(Save_Move, self)._initData(window, selection)

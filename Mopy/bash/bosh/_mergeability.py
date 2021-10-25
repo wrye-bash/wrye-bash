@@ -80,7 +80,7 @@ def _pbash_mergeable_no_load(modInfo, reasons):
         if not verbose: return False
         from . import oblivionIni
         reasons.append(_(u'Missing String Translation Files (Strings\\%s_%s.STRINGS, etc).') % (
-            modInfo.name.sbody, oblivionIni.get_ini_language()))
+            modInfo.ci_key.ci_body, oblivionIni.get_ini_language()))
     return False if reasons else True
 
 def isPBashMergeable(modInfo, minfos, reasons):
@@ -129,9 +129,9 @@ def _join_sigs(sigs):
 def _dependent(minfo_key, minfos):
     """Get mods for which modInfo is a master mod (excluding BPs and
     mergeable)."""
-    dependent = [mname.s for mname, info in minfos.items() if
-                 not info.isBP() and minfo_key in info.masterNames and
-                 mname not in minfos.mergeable]
+    dependent = [mname for mname, info in minfos.items() if not info.isBP() and
+                 minfo_key in info.masterNames and mname not in
+                 minfos.mergeable]
     return dependent
 
 def is_esl_capable(modInfo, _minfos, reasons):

@@ -47,7 +47,7 @@ import time
 # Internal
 from . import bass, bolt, exception
 from . import _games_lo # LoGame instance providing load order operations API
-from .bolt import sig_to_str
+from .bolt import sig_to_str, forward_compat_path_to_fn_list
 
 _game_handle = None # type: _games_lo.LoGame
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
@@ -97,12 +97,12 @@ class LoadOrder(object):
     def __init__(self, loadOrder=__empty, active=__none):
         """:type loadOrder: list | set | tuple
         :type active: list | set | tuple"""
-        if set(active) - set(loadOrder):
+        set_act = frozenset(active)
+        if missing := (set_act - set(loadOrder)):
             raise exception.BoltError(
-                u'Active mods with no load order: ' + u', '.join(
-                    [x.s for x in (set(active) - set(loadOrder))]))
+                u'Active mods with no load order: ' + u', '.join(missing))
         self._loadOrder = tuple(loadOrder)
-        self._active = frozenset(active)
+        self._active = set_act
         self.__mod_loIndex = {a: i for i, a in enumerate(loadOrder)}
         # below would raise key error if active have no loadOrder
         self._activeOrdered = tuple(
@@ -386,6 +386,13 @@ def __load_pickled_load_orders():
     if b'Bethesda ESMs' in _active_mods_lists: ##: backwards compat
         _active_mods_lists[u'Vanilla'] = _active_mods_lists[b'Bethesda ESMs']
         del _active_mods_lists[b'Bethesda ESMs']
+    # transform load orders to FName
+    _saved_load_orders = [lo_entry(date, LoadOrder(
+        forward_compat_path_to_fn_list(lo.loadOrder),
+        forward_compat_path_to_fn_list(lo.active, ret_type=set)))
+                          for (date, lo) in _saved_load_orders]
+    _active_mods_lists = {k: forward_compat_path_to_fn_list(v) for k, v in
+                          _active_mods_lists.items()}
     locked = bass.settings.get(u'bosh.modInfos.resetMTimes', False)
 
 def get_active_mods_lists():

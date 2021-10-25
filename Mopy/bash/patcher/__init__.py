@@ -49,9 +49,9 @@ _patches_set = None
 def list_patches_dir():
     """Get a basic list of potential Bash Patches csv sources."""
     global _patches_set
-    _patches_set = set(bass.dirs[u'patches'].list())
+    _patches_set = set(bass.dirs[u'patches'].ilist())
     if bass.dirs[u'defaultPatches']:
-        _patches_set.update(bass.dirs[u'defaultPatches'].list())
+        _patches_set.update(bass.dirs[u'defaultPatches'].ilist())
 
 def patches_set():
     if _patches_set is None: list_patches_dir()

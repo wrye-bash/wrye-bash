@@ -638,9 +638,9 @@ def top_level_dirs(directory): # faster than listdir then isdir
 def top_level_items(directory):
     try:
         _directory, folders, files = next(os.walk(directory))
-    except StopIteration:
+    except StopIteration: # thrown also if directory does not exist
         return [], []
-    return folders, files
+    return map(FName, folders), map(FName, files)
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -807,10 +807,6 @@ class Path(os.PathLike):
         except AttributeError:
             self._sbody = os.path.basename(self.sroot)
             return self._sbody
-    @property
-    def csbody(self):
-        """For alpha\beta.gamma returns beta as string in normalized case."""
-        return self.sbody.lower()
 
     #--Head, tail
     @property
@@ -949,10 +945,11 @@ class Path(os.PathLike):
         norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
-    def list(self):
-        """For directory: Returns list of files."""
+    def ilist(self):
+        """For directory: Return list of files - bit weird this returns
+        FName but let's say Path and FName are friend classes."""
         try:
-            return [GPath_no_norm(x) for x in os.listdir(self._s)]
+            return map(FName, os.listdir(self._s))
         except FileNotFoundError:
             return []
 
@@ -1442,6 +1439,9 @@ class DataDict(object):
     """Mixin class that handles dictionary emulation, assuming that
     dictionary is its '_data' attribute."""
 
+    def __init__(self, data_dict):
+        self._data = data_dict # not final - see for instance InstallersData
+
     def __contains__(self,key):
         return key in self._data
     def __getitem__(self,key):
@@ -1708,10 +1708,10 @@ class Settings(DataDict):
         if self.dictFile:
             res = dictFile.load()
             self.vdata = dictFile.vdata.copy()
-            self._data = dictFile.pickled_data.copy()
+            super().__init__(dictFile.pickled_data.copy())
         else:
             self.vdata = {}
-            self._data = {}
+            super().__init__({})
         self.defaults = {}
 
     def loadDefaults(self, default_settings):
@@ -1886,16 +1886,19 @@ class DataTable(DataDict):
 
     def __init__(self,dictFile):
         """Initialize and read data from dictFile, if available."""
-        self.dictFile = dictFile
+        self.dictFile = dictFile # type: PickleDict
         dictFile.load()
         self.vdata = dictFile.vdata
-        self._data = dictFile.pickled_data
+        self.dictFile.pickled_data = _data = forward_compat_path_to_fn(
+            self.dictFile.pickled_data)
+        super().__init__(_data)
         self.hasChanged = False ##: move to PickleDict
 
     def save(self):
         """Saves to pickle file."""
         dictFile = self.dictFile
         if self.hasChanged and not dictFile.readOnly:
+            dictFile.pickled_data = self._data # note we reassign pickled_data
             self.hasChanged = not dictFile.save()
 
     def getItem(self,row,column,default=None):

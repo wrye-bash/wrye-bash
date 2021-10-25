@@ -45,7 +45,7 @@ from . import bass # for settings (duh!)
 from . import bolt
 from . import initialization
 from .bass import dirs, AppVersion
-from .bolt import GPath, deprint, top_level_files
+from .bolt import GPath, deprint, top_level_files, FName
 from .exception import BoltError, StateError
 
 def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder):
@@ -111,7 +111,7 @@ class BackupSettings(object):
             if not setting_files: # we have to backup everything in there
                 self.files.update(
                     (tjoin(fname), bash_dir.join(fname)) for fname in
-                    bash_dir.list())
+                    bash_dir.ilist())
             else:
                 self.files.update(
                     (tjoin(fname), fpath) for fname in setting_files if
@@ -172,7 +172,7 @@ class BackupSettings(object):
             pickle.dump(AppVersion, out, -1)
         # create the backup archive in 7z format WITH solid compression
         # may raise StateError
-        dest7z = self._backup_dest_file.tail
+        dest7z = FName(self._backup_dest_file.stail)
         archives.compress7z(self._backup_dest_file, dest7z, temp_dir)
         bass.settings[u'bash.backupPath'] = self._backup_dest_file.head
 
@@ -193,7 +193,7 @@ class BackupSettings(object):
 def is_backup(backup_path):
     """Return True if the specified path is a backup. Currently only
     checks if the file extension is 7z."""
-    return backup_path.cext == u'.7z'
+    return backup_path.ci_ext == u'.7z'
 
 #------------------------------------------------------------------------------
 class RestoreSettings(object):

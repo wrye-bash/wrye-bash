@@ -22,7 +22,6 @@
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
 import struct as _struct
-from collections import defaultdict
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
@@ -47,7 +46,7 @@ class OblivionGameInfo(PatchGame):
     game_detect_includes = [_j(u'Data', u'Oblivion.esm')]
     game_detect_excludes = WS_COMMON
     version_detect_file = u'Oblivion.exe'
-    master_file = bolt.GPath_no_norm(u'Oblivion.esm')
+    master_file = bolt.FName(u'Oblivion.esm')
     taglist_dir = u'Oblivion'
     loot_dir = u'Oblivion'
     boss_game_name = u'Oblivion'
@@ -109,7 +108,7 @@ class OblivionGameInfo(PatchGame):
         # Oblivion accepts the base name and literally *anything* after
         # that. E.g. MyModMeshes.bsa will load from a MyMod.esp plugin
         attachment_regex = u'.*'
-        redate_dict = defaultdict(lambda: 1136066400, { # '2006-01-01',
+        redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01',
             u'Oblivion - Voices1.bsa': 1104616800, # '2005-01-02'
             u'Oblivion - Voices2.bsa': 1104703200, # '2005-01-03'
             u'Oblivion - Meshes.bsa': 1104789600,  # '2005-01-04'

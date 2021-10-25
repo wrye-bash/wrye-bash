@@ -38,7 +38,7 @@ from copy import deepcopy
 
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
     ConditionFunc, ConditionNot, ConditionOr, is_regex
-from .bolt import deprint, LowerDict, Path, AFile
+from .bolt import deprint, LowerDict, Path, AFile, FNDict
 from .exception import LexerError, ParserError, BoltError, EvalError
 
 # Try to use the C version (way faster), if that isn't possible fall back to
@@ -77,7 +77,7 @@ class LOOTParser(object):
             must always exist.
         :type taglist_path: Path
         """
-        self._cached_masterlist = {}
+        self._cached_masterlist = FNDict()
         self._cached_regexes = {}
         self._cached_merges = {}
         deprint(u'Using these LOOT paths:')
@@ -144,10 +144,9 @@ class LOOTParser(object):
                 deprint(u'Error while evaluating LOOT condition',
                     traceback=True)
                 return set(), set()
-        plugin_s = plugin_name.s
-        if plugin_s in self._cached_merges:
-            return get_resolved_tags(self._cached_merges[plugin_s])
-        return get_resolved_tags(self._perform_merge(plugin_s))
+        if plugin_name in self._cached_merges:
+            return get_resolved_tags(self._cached_merges[plugin_name])
+        return get_resolved_tags(self._perform_merge(plugin_name))
 
     def load_lists(self, masterlist_path, userlist_path=None,
                    catch_errors=True):
@@ -187,10 +186,9 @@ class LOOTParser(object):
         def check_dirty(res_entry):
             return (res_entry and mod_infos[plugin_name].cached_mod_crc()
                     in res_entry.dirty_crcs)
-        plugin_s = plugin_name.s
-        if plugin_s in self._cached_merges:
-            return check_dirty(self._cached_merges[plugin_s])
-        return check_dirty(self._perform_merge(plugin_s))
+        if plugin_name in self._cached_merges:
+            return check_dirty(self._cached_merges[plugin_name])
+        return check_dirty(self._perform_merge(plugin_name))
 
     def _perform_merge(self, plugin_s):
         """Checks the masterlist and all regexes for a match with the spcified
@@ -692,6 +690,6 @@ def _parse_list(list_path):
     # a long string of random characters), return an empty dict as well.
     if not isinstance(list_contents, dict):
         deprint(f'Masterlist file {list_path} is empty or invalid')
-        return LowerDict()
-    return LowerDict({p[u'name']: _PluginEntry(p) for p
-                      in list_contents.get(u'plugins', ())})
+        return FNDict()
+    return FNDict({p[u'name']: _PluginEntry(p) for p in
+                   list_contents.get(u'plugins', ())})

@@ -31,7 +31,7 @@ from itertools import chain
 # Internal
 from ..base import ImportPatcher, ListPatcher
 from ... import bush, load_order
-from ...bolt import GPath
+from ...bolt import FName
 from ...exception import AbstractError, BoltError, ModSigMismatchError
 
 #------------------------------------------------------------------------------
@@ -608,19 +608,20 @@ class _AListsMerger(ListPatcher):
     _sig_to_label = {}
     _de_re_header = None
 
-    def _overhaul_compat(self, mods, _skip_id):
-        OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
-                   GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
-        FransMods = {GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),
-                     GPath(u'Francesco.esp')}
-        WCMods = {GPath(u'Oblivion Warcry.esp'),
-                  GPath(u'Oblivion Warcry EV.esp')}
-        TIEMods = {GPath(u'TIE.esp')}
-        OverhaulCompat = GPath(u'Unofficial Oblivion Patch.esp') in mods and (
+    def _overhaul_compat(self, mods):
+        OOOMods = {*map(FName, (f"Oscuro's_Oblivion_Overhaul.{x}" for x in
+                                ('esm', 'esp')))}
+        FransMods = {*map(FName, (
+            'Francesco.esp', "Francesco's Leveled Creatures-Items Mod.esm"))}
+        WCMods = {FName('Oblivion Warcry.esp'),
+                  FName('Oblivion Warcry EV.esp')}
+        TIEMods = FName('TIE.esp')
+        OverhaulCompat = FName('Unofficial Oblivion Patch.esp') in mods and (
                 (OOOMods | WCMods) & mods) or (
-                                 FransMods & mods and not (TIEMods & mods))
+                                 FransMods & mods and not (TIEMods in mods))
         if OverhaulCompat:
-            self.OverhaulUOPSkips = {_skip_id(x) for x in [
+            self.OverhaulUOPSkips = {*map(
+                lambda x: (bush.game.master_file, x), [
                     0x03AB5D,  # VendorWeaponBlunt
                     0x03C7F1,  # LL0LootWeapon0Magic4Dwarven100
                     0x03C7F2,  # LL0LootWeapon0Magic7Ebony100
@@ -646,7 +647,7 @@ class _AListsMerger(ListPatcher):
                     0x053D82,  # LL0LootArmor0MagicLight5Elven100
                     0x053D83,  # LL0LootArmor0MagicLight6Glass100
                     0x052D89,  # LL0LootArmor0MagicLight4Mithril100
-                ]}
+                ])}
         else:
             self.OverhaulUOPSkips = set()
 
@@ -846,8 +847,7 @@ class LeveledListsPatcher(_AListsMerger):
         super(LeveledListsPatcher, self).__init__(p_name, p_file, p_sources,
                                           remove_empty, tag_choices)
         self.empties = set()
-        _skip_id = lambda x: (bush.game.master_file, x)
-        self._overhaul_compat(self.srcs, _skip_id)
+        self._overhaul_compat(self.srcs)
 
     def _check_list(self, record, log):
         # Emit a warning for lists that may have exceeded 255 - note that

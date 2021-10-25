@@ -29,8 +29,7 @@ from configparser import ConfigParser, MissingSectionHeaderError
 
 # Local - make sure that all imports here are carefully done in bash.py first
 from .bass import dirs, get_ini_option
-from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs, \
-    GPath_no_norm
+from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs
 from .env import get_personal_path, get_local_app_data_path, \
     get_win_store_game_info, shellMakeDirs
 from .exception import BoltError, NonExistentDriveError
@@ -337,14 +336,14 @@ def getLocalSaveDirs():
     """Return a list of possible local save directories, NOT including the
     base directory."""
     baseSaves = dirs[u'saveBase'].join(u'Saves')
-    # Path.list returns [] for non existent dirs
-    localSaveDirs = [GPath_no_norm(x) for x in top_level_dirs(baseSaves) if
-                     x.lower() not in ('bash', 'mash')]
+    # Path.ilist returns [] for non existent dirs
+    localSaveDirs = [x for x in top_level_dirs(baseSaves) if
+                     x not in (u'Bash', u'Mash')]
     # Filter out non-encodable names
     bad = set()
     for folder in localSaveDirs:
         try:
-            folder.s.encode(u'cp1252')
+            folder.encode(u'cp1252')
         except UnicodeEncodeError:
             bad.add(folder)
     localSaveDirs = sorted(x for x in localSaveDirs if x not in bad)

@@ -32,7 +32,7 @@ from itertools import chain
 from .base import is_templated
 from ..base import Patcher, ModLoader
 from ... import bush, bolt
-from ...bolt import GPath, deprint, dict_sort, sig_to_str
+from ...bolt import FName, deprint, dict_sort, sig_to_str
 from ...brec import strFid
 from ...mod_files import LoadFactory
 
@@ -325,7 +325,7 @@ def _find_vanilla_eyes():
         rc_file, rc_obj = rc_fid
         if rc_file is None: # special case: None = game master
             rc_file = bush.game.master_file
-        return GPath(rc_file), rc_obj
+        return FName(rc_file), rc_obj
     ret = {}
     for race_fid, race_eyes in bush.game.default_eyes.items():
         new_key = _conv_fid(race_fid)

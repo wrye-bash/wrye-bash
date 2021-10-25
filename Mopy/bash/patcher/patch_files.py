@@ -28,7 +28,7 @@ from operator import attrgetter
 from .. import bolt # for type hints
 from .. import bush # for game etc
 from .. import load_order, bass
-from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url
+from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url, FName
 from ..brec import MreRecord, RecHeader
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
@@ -117,7 +117,7 @@ class PatchFile(ModFile):
             if version:
                 message += _(u'%s  [Version %s]') % (mname,version)
             else:
-                message += mname.s
+                message += mname
             log(message)
         #--Load Mods and error mods
         if self.pfile_aliases:
@@ -157,8 +157,8 @@ class PatchFile(ModFile):
         # checking for files to include in patch, investigate
         self.all_plugins = load_order.cached_lower_loading(modInfo.ci_key)
         # exclude moding esms (those tend to be huge)
-        b, e = bush.game.master_file.csbody, bush.game.master_file.cext
-        excluded = {bolt.GPath_no_norm(f'{b}_{ver}{e}') for ver in
+        b, e = bush.game.master_file.ci_body, bush.game.master_file.ci_ext
+        excluded = {FName(f'{b}_{ver}{e}') for ver in
                     p_file_minfos.voAvailable}
         self.all_plugins = [k for k in self.all_plugins if k not in excluded]
         loadMods = [m for m in self.all_plugins

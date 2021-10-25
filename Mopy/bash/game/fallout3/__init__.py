@@ -22,7 +22,6 @@
 # =============================================================================
 """GameInfo override for Fallout 3."""
 
-from collections import defaultdict
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
@@ -42,7 +41,7 @@ class Fallout3GameInfo(PatchGame):
     launch_exe = u'Fallout3.exe'
     game_detect_includes = [u'Fallout3.exe']
     version_detect_file = u'Fallout3.exe'
-    master_file = bolt.GPath_no_norm(u'Fallout3.esm')
+    master_file = bolt.FName(u'Fallout3.esm')
     taglist_dir = u'Fallout3'
     loot_dir = u'Fallout3'
     boss_game_name = u'Fallout3'
@@ -93,7 +92,7 @@ class Fallout3GameInfo(PatchGame):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
-        redate_dict = defaultdict(lambda: 1136066400, { # '2006-01-01'
+        redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
             'Fallout - MenuVoices.bsa': 1104530400,  # '2005-01-01',
             'Fallout - Meshes.bsa': 1104616800,      # '2005-01-02',
             'Fallout - Misc.bsa': 1104703200,        # '2005-01-03',

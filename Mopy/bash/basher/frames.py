@@ -27,7 +27,7 @@ from collections import OrderedDict
 
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import Link, Resources
-from ..bolt import GPath, GPath_no_norm
+from ..bolt import GPath, FName
 from ..bosh import mods_metadata, empty_path, omods
 from ..exception import StateError
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
@@ -61,9 +61,8 @@ class DocBrowser(WindowFrame):
         mod_list_window, main_window = root_window.make_panes(250,
                                                               vertically=True)
         # Mod Name
-        self._full_lo = sorted((p.s for p in load_order.cached_lo_tuple()),
-            key=str.lower)
-        self._full_lo.insert(0, '') # == no plugin selected
+        self._full_lo = [FName(''), # == no plugin selected
+                         *sorted(load_order.cached_lo_tuple())]
         self._lower_lo = {}
         self._plugin_search = SearchBar(mod_list_window,
             hint=_('Search Plugins'))
@@ -74,7 +73,7 @@ class DocBrowser(WindowFrame):
         # Start out with an empty search -> everything shown
         self._search_plugins(search_str='', boot_search=True)
         self._mod_list = ListBox(mod_list_window,
-             choices=sorted(x.s for x in self._db_doc_paths),
+             choices=sorted(self._db_doc_paths),
              isSort=True, onSelect=self._do_select_existing)
         # Buttons
         self._set_btn = Button(main_window, _(u'Set Doc...'),
@@ -124,8 +123,8 @@ class DocBrowser(WindowFrame):
 
     @property
     def _mod_name(self):
-        """Returns a path representation of the currently selected plugin."""
-        return GPath_no_norm(self._plugin_dropdown.get_value())
+        """Return the currently selected plugin."""
+        return FName(self._plugin_dropdown.get_value())
 
     @staticmethod
     def _get_is_wtxt(doc_path):
@@ -184,7 +183,7 @@ class DocBrowser(WindowFrame):
         for the current plugin."""
         if self._mod_name not in self._db_doc_paths:
             return
-        p_index = self._mod_list.lb_index_for_str_item(self._mod_name.s)
+        p_index = self._mod_list.lb_index_for_str_item(self._mod_name)
         if p_index is not None:
             self._mod_list.lb_delete_at_index(p_index)
         del self._db_doc_paths[self._mod_name]
@@ -207,7 +206,7 @@ class DocBrowser(WindowFrame):
     def _do_set(self):
         """Handle "Set Doc" button click."""
         #--Already have mod data?
-        mod_name = GPath_no_norm(self._plugin_dropdown.get_value())
+        mod_name = FName(self._plugin_dropdown.get_value())
         if mod_name in self._db_doc_paths:
             (docs_dir, file_name) = self._db_doc_paths[mod_name].headTail
         else:
@@ -219,7 +218,7 @@ class DocBrowser(WindowFrame):
         if not doc_path: return
         bass.settings[u'bash.modDocs.dir'] = doc_path.head
         if mod_name not in self._db_doc_paths:
-            self._mod_list.lb_append(mod_name.s)
+            self._mod_list.lb_append(mod_name)
         self._db_doc_paths[mod_name] = doc_path
         self.SetMod(mod_name)
 
@@ -285,11 +284,10 @@ class DocBrowser(WindowFrame):
         # defaults
         self._edit_box.is_checked = False
         self._doc_ctrl.set_text_editable(False)
-        mod_name = GPath_no_norm(mod_name)
         if not mod_name:
             self._clear_doc()
             return
-        plugin_lower = mod_name.s.lower()
+        plugin_lower = mod_name.lower()
         search_lower = self._plugin_search.text_content.strip().lower()
         if search_lower not in plugin_lower:
             # Clear the search since we ended up selecting something outside
@@ -298,7 +296,8 @@ class DocBrowser(WindowFrame):
             self._plugin_search.text_content = ''
         self._plugin_dropdown.set_selection(self._lower_lo[plugin_lower])
         self._set_btn.enabled = True
-        self._mod_list.lb_select_index(self._mod_list.lb_index_for_str_item(mod_name.s))
+        self._mod_list.lb_select_index(
+            self._mod_list.lb_index_for_str_item(mod_name))
         # Doc path
         doc_path = self._db_doc_paths.get(mod_name, empty_path)
         self._doc_name_box.text_content = doc_path.stail
@@ -320,7 +319,7 @@ class DocBrowser(WindowFrame):
                 template = f'= $modName {u"=" * (74 - len(mod_name))}#\n' \
                            f'{doc_path}'
             self._load_data(uni_str=string.Template(template).substitute(
-                modName=mod_name.s))
+                modName=mod_name))
             # Start edit mode
             self._edit_box.is_checked = True
             self._doc_ctrl.set_text_editable(True)
@@ -495,7 +494,7 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         self.config = config = omods.OmodConfig.getOmodConfig(project)
         #--GUI
         super(InstallerProject_OmodConfigDialog, self).__init__(parent,
-            title=_(u'Omod Config: ') + project.s,
+            title=_(u'Omod Config: ') + project,
             icon_bundle=Resources.bashBlue, sizes_dict=bass.settings,
             caption=True, clip_children=True, tab_traversal=True)
         #--Fields

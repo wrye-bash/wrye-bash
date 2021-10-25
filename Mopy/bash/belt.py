@@ -20,15 +20,17 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """Specific parser for Wrye Bash."""
+from __future__ import annotations
 
 import os
 import traceback
 from collections import OrderedDict, defaultdict
+
 from . import ScriptParser  # generic parser class
 from . import bass, bolt, bosh, bush, load_order
 from .ScriptParser import error
+from .bolt import FNDict, FName
 from .env import get_file_version, get_game_version_fallback
 from .gui import CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
     Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout, HyperlinkLabel, \
@@ -280,10 +282,9 @@ class PageFinish(PageInstaller):
                  notes, iniedits):
         PageInstaller.__init__(self, parent)
         subs = sorted(sublist)
-        plugins = sorted(plugin_enabled)
         #--make the list that will be displayed
         displayed_plugins = [f'{x} -> {plugin_renames[x]}'
-                             if x in plugin_renames else x for x in plugins]
+            if x in plugin_renames else x for x in plugin_enabled]
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _(u'The installer script has finished, and '
                                   u'will apply the following settings:'))
@@ -298,8 +299,8 @@ class PageFinish(PageInstaller):
         self.plugin_selection = CheckListBox(self, choices=displayed_plugins,
                                              ampersand=True)
         self.plugin_selection.on_box_checked.subscribe(self._on_select_plugin)
-        for index,key in enumerate(plugins):
-            if plugin_enabled[key]:
+        for index, (key, do_enable) in enumerate(plugin_enabled.items()):
+            if do_enable:
                 self.plugin_selection.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_plugins.append(key)
         self._wiz_parent.ret.rename_plugins = plugin_renames
@@ -580,7 +581,7 @@ class WryeParser(ScriptParser.Parser):
             self._wiz_parent = wiz_parent
             self.installer = installer
             self.bArchive = installer.is_archive
-            self._path = installer.archive if installer else None
+            self._path = installer.ci_key if installer else None
             if installer and installer.fileRootIdex:
                 root_path = installer.extras_dict.get(u'root_path', u'')
                 self._path = os.path.join(self._path, root_path)
@@ -591,11 +592,12 @@ class WryeParser(ScriptParser.Parser):
             self.parser_finished = False
             ##: Figure out why BAIN insists on including an empty sub-package
             # everywhere. Broke this part of the code, hence the 'if s' below.
-            self.sublist = bolt.LowerDict({
-                s: False for s in installer.subNames if s})
-            self._plugin_enabled = bolt.LowerDict({
-                p: False for sub_plugins in installer.espmMap.values()
-                for p in sub_plugins})
+            self.sublist = bolt.LowerDict.fromkeys( # FIXME FNDict??
+                (s for s in installer.subNames if s), False)
+            # all plugins mapped to their must-install state - initially False
+            self._plugin_enabled = FNDict.fromkeys( # type:FNDict[(f:=FName),f]
+                sorted(fn_ for sub_plugins in installer.espmMap.values()
+                       for fn_ in sub_plugins), False)
         #--Constants
         self.SetConstant(u'SubPackages',u'SubPackages')
         #--Operators
@@ -800,12 +802,9 @@ class WryeParser(ScriptParser.Parser):
                     return True
         return False
 
-    def _resolve_plugin_rename(self, plugin_name):
-        plugin_name = plugin_name.lower()
-        for i in self._plugin_enabled:
-            if plugin_name == i.lower():
-                return i
-        return None
+    def _resolve_plugin_rename(self, plugin_name: str) -> FName | None:
+        return fn if (fn := FName(plugin_name)) in self._plugin_enabled \
+            else None
 
     # Assignment operators
     def Ass(self, l, r):
@@ -947,19 +946,19 @@ class WryeParser(ScriptParser.Parser):
         for filename in filenames:
             if not bass.dirs[u'mods'].join(filename).exists():
                 # Check for ghosted mods
-                if bolt.GPath(filename) in bosh.modInfos:
+                if filename in bosh.modInfos:
                     return True # It's a ghosted mod
                 return False
         return True
 
     def fn_get_plugin_lo(self, filename, default_val=-1):
         try:
-            return load_order.cached_lo_index(bolt.GPath(filename))
+            return load_order.cached_lo_index(FName(filename))
         except KeyError: # has no LO
             return default_val
 
     def fn_get_plugin_status(self, filename):
-        p_name = bolt.GPath(filename)
+        p_name = FName(filename)
         if p_name in bosh.modInfos.merged: return 3   # Merged
         if load_order.cached_is_active(p_name): return 2  # Active
         if p_name in bosh.modInfos.imported: return 1 # Imported (not active/merged)
@@ -1423,7 +1422,7 @@ class WryeParser(ScriptParser.Parser):
         plugin_name = self._resolve_plugin_rename(plugin_name)
         if plugin_name:
             # Keep same extension
-            if plugin_name.lower()[-4:] != new_plugin_name.lower()[-4:]:
+            if plugin_name.ci_ext != new_plugin_name[-4:]:
                 raise ScriptParser.ParserError(_(u'Cannot rename %s to %s: '
                                                  u'the extensions must '
                                                  u'match.') %

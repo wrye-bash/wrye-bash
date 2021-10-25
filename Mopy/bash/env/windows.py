@@ -208,7 +208,7 @@ def _get_app_links(apps_dir):
     links = {}
     try:
         sh = win32client.Dispatch(u'WScript.Shell')
-        for lnk in apps_dir.list():
+        for lnk in apps_dir.ilist():
             lnk = apps_dir.join(lnk)
             if lnk.cext == u'.lnk' and lnk.is_file():
                 shortcut = sh.CreateShortCut(lnk.s)

@@ -46,7 +46,7 @@ def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
     :return: A tuple containing two sets of added and deleted tags."""
     tag_file = None
     # Check if the file even exists first, using the cache if possible
-    bt_file_name = plugin_name.sbody + '.txt'
+    bt_file_name = f'{plugin_name.ci_body}.txt'
     if ci_cached_bt_contents is not None:
         if bt_file_name.lower() not in ci_cached_bt_contents:
             return set(), set()
@@ -88,7 +88,7 @@ def save_tags_to_dir(plugin_name, plugin_tag_diff):
         by its description and the LOOT masterlist / userlist.."""
     tag_files_dir = bass.dirs[u'tag_files']
     tag_files_dir.makedirs()
-    tag_file = tag_files_dir.join(plugin_name.sbody + u'.txt')
+    tag_file = tag_files_dir.join(f'{plugin_name.ci_body}.txt')
     # Calculate the diff and ignore the minus when sorting the result
     tag_diff_add, tag_diff_del = plugin_tag_diff
     processed_diff = sorted(tag_diff_add | {u'-' + t for t in tag_diff_del},
@@ -359,7 +359,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             plugin_is_vanilla = p_ci_key in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
             # mark records that exist in one plugin but not in the other
-            plugin_is_esu = p_ci_key.cext == u'.esu'
+            plugin_is_esu = p_ci_key.ci_ext == u'.esu'
             if deleted_refrs and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_refrs)
                 if num_deleted == 1: # I hate natural languages :/
@@ -377,7 +377,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             plugin_is_vanilla = p_ci_key in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
             # mark records that exist in one plugin but not in the other
-            plugin_is_esu = p_ci_key.cext == u'.esu'
+            plugin_is_esu = p_ci_key.ci_ext == u'.esu'
             if deleted_navms and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_navms)
                 if num_deleted == 1:
@@ -395,7 +395,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             plugin_is_vanilla = p_ci_key in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
             # mark records that exist in one plugin but not in the other
-            plugin_is_esu = p_ci_key.cext == u'.esu'
+            plugin_is_esu = p_ci_key.ci_ext == u'.esu'
             if deleted_others and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_others)
                 if num_deleted == 1:

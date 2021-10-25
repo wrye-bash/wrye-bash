@@ -20,10 +20,9 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 import re
 import time
-from .. import balt, bosh, bush, bolt, exception
+from .. import balt, bosh, bolt, exception
 from ..balt import ItemLink, ChoiceLink, OneItemLink
 from ..gui import BusyCursor, copy_text_to_clipboard
 from ..localize import format_date, unformat_date
@@ -107,7 +106,9 @@ class File_Duplicate(ItemLink):
     def Execute(self):
         dests = []
         fileInfos = self.window.data_store
-        for to_duplicate, fileInfo in self.iselected_pairs():
+        pairs = [*self.iselected_pairs()]
+        last = len(pairs) - 1
+        for dex, (to_duplicate, fileInfo) in enumerate(pairs):
             #--Mod with resources? Warn on rename if file has bsa and/or dialog
             msg = fileInfo.askResourcesOk(
                 bsaAndBlocking=self._bsaAndBlocking, bsa=self._bsa,
@@ -115,30 +116,25 @@ class File_Duplicate(ItemLink):
             if msg and not self._askWarning(msg, _(
                 u'Duplicate %s') % fileInfo): continue
             #--Continue copy
-            r, e = to_duplicate.root, to_duplicate.ext
+            r, e = to_duplicate.ci_body, to_duplicate.ci_ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
             destDir = fileInfo.info_dir
-            if len(self.selected) == 1:
+            if len(self.selected) == 1: # ask the user for a filename
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
-                    defaultFile=destName.s, wildcard=u'*%s' %e)
+                    defaultFile=destName, wildcard=f'*{e}')
                 if not destPath: return
-                destDir, destName = destPath.headTail
-                # FIXME validate (or ask save does that)?
-                if destDir == fileInfo.info_dir:
-                    if destName == to_duplicate:
-                        self._showError(
-                            _(u'Files cannot be duplicated to themselves!'))
-                        continue
-                    elif destName in fileInfos:
-                        self._showError(_(u'%s exists!') % destPath)
-                        continue
-            fileInfos.copy_info(to_duplicate, destDir, destName)
-            if fileInfo.isMod(): ##: move this inside copy_info
-                fileInfos.cached_lo_insert_after(to_duplicate, destName)
+                destDir, destName = destPath.head, bolt.FName(destPath.stail)
+                destName, root = fileInfo.validate_name(destName,
+                    # check if exists if we duplicate into the store dir
+                    check_store=destDir == fileInfo.info_dir)
+                if root is None:
+                    self._showError(destName)
+                    return
+            fileInfos.copy_info(to_duplicate, destDir, destName,
+                                save_lo_cache=dex == last)
             dests.append(destName)
         if dests:
-            if fileInfo.isMod(): fileInfos.cached_lo_save_lo()
             ##: refresh_infos=True for saves - would love to specify something
             # like refresh_only=dests - #353
             fileInfos.refresh()
@@ -158,7 +154,7 @@ class File_ListMasters(OneItemLink):
     def Execute(self):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)
         copy_text_to_clipboard(list_of_mods)
-        self._showLog(list_of_mods, title=self._selected_item.s,
+        self._showLog(list_of_mods, title=self._selected_item,
                       fixedFont=False)
 
 class File_Snapshot(ItemLink):
@@ -181,13 +177,13 @@ class File_Snapshot(ItemLink):
                 if not destPath: return
                 (destDir,destName) = destPath.headTail
             #--Extract version number
-            fileRoot = fileName.root
+            fileRoot = fileName.ci_body
             destRoot = destName.sroot
             fileVersion = bolt.getMatch(
-                re.search(r'[ _]+v?([.\d]+)$', fileRoot.s, re.U), 1)
+                re.search(r'[ _]+v?([.\d]+)$', fileRoot), 1)
             snapVersion = bolt.getMatch(re.search(r'-[\d.]+$', destRoot))
             fileHedr = fileInfo.header
-            if fileInfo.isMod() and (fileVersion or snapVersion) and bosh.reVersion.search(fileHedr.description):
+            if (fileVersion or snapVersion) and bosh.reVersion.search(fileHedr.description):
                 if fileVersion and snapVersion:
                     newVersion = fileVersion+snapVersion
                 elif snapVersion:

@@ -23,14 +23,14 @@
 
 from __future__ import annotations
 
-import copy
 import re
 from collections import defaultdict
 from itertools import chain
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt, exception
 from ..balt import Links, SeparatorLink, CheckLink
-from ..bolt import GPath, text_wrap, dict_sort, GPath_no_norm
+from ..bolt import FName, text_wrap, dict_sort, \
+    forward_compat_path_to_fn_list, forward_compat_path_to_fn
 from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     Spacer, TextArea, TOP, VLayout, EventResult, PanelWin, ListBox, \
     CheckListBox, DeselectAllButton, SelectAllButton, FileOpenMultiple, \
@@ -212,7 +212,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         for line in aliases_text.split(u'\n'):
             fields = [s.strip() for s in line.split(u'>>')]
             if len(fields) != 2 or not fields[0] or not fields[1]: continue
-            self._ci_aliases[GPath(fields[0])] = GPath(fields[1])
+            self._ci_aliases[fields[0]] = FName(fields[1])
         self.SetAliasText()
 
     #--Config Phase -----------------------------------------------------------
@@ -220,8 +220,9 @@ class _AliasesPatcherPanel(_PatcherPanel):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
         #--Update old configs to use Paths instead of strings.
-        self._ci_aliases = {GPath(k): GPath(v) for k, v
-                            in config.get('aliases', {}).items()}
+        # call str twice in case v._s was a str subtype
+        self._ci_aliases = forward_compat_path_to_fn(config.get('aliases', {}),
+            value_type=lambda v: FName(str('%s' % v)))
         return config
 
     def saveConfig(self, configs):
@@ -259,11 +260,11 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def __init__(self):
         super().__init__()
-        self.configItems: list[bolt.Path] = []
+        self.configItems: list[FName] = []
         # List of items that are currently visible (according to the search)
-        self._curr_items: list[bolt.Path] = []
+        self._curr_items: list[FName] = []
         # Set of items that are new and hence need to remain bolded
-        self._new_items: set[bolt.Path] = set()
+        self._new_items: set[FName] = set()
 
     def _sort_and_update_items(self, unsorted_items):
         """Helper for LO-sorting items and updating the internal caches for
@@ -332,8 +333,8 @@ class _ListPatcherPanel(_PatcherPanel):
         """Internal callback used to repopulate the item list whenever the
         text in the search bar changes."""
         lower_search_str = search_str.strip().lower()
-        self._curr_items = [i for i in self.configItems
-                             if lower_search_str in i.cs]
+        self._curr_items = [i for i in self.configItems if
+                            lower_search_str in i.lower()]
         self._populate_item_list()
         if not self.forceAuto:
             self._update_manual_buttons()
@@ -429,8 +430,8 @@ class _ListPatcherPanel(_PatcherPanel):
         #--Get new items
         for srcPath in srcPaths:
             folder, fname = srcPath.headTail
-            if folder == srcDir and fname not in self.configItems:
-                self.configItems.append(fname)
+            if folder == srcDir and (fn := FName(fname.s)) not in \
+                    self.configItems: self.configItems.append(fn)
         self._sort_and_update_items(self.configItems)
 
     def OnRemove(self):
@@ -456,14 +457,15 @@ class _ListPatcherPanel(_PatcherPanel):
         self.remove_empty_sublists = config.get(
             u'remove_empty_sublists',
             self.__class__.default_remove_empty_sublists)
-        self.configItems = copy.deepcopy(config.get(u'configItems', []))
-        self.configChecks = copy.deepcopy(config.get(u'configChecks', {}))
-        self.configChoices = copy.deepcopy(config.get(u'configChoices', {}))
+        self.configItems = forward_compat_path_to_fn_list(
+            config.get('configItems', []))
+        compat_path_to_fn = forward_compat_path_to_fn
+        self.configChecks = compat_path_to_fn(config.get('configChecks', {}))
+        self.configChoices = compat_path_to_fn(config.get('configChoices', {}))
         #--Verify file existence
-        self.configItems = [ # fix regression where these became strings
-            srcPath for srcPath in map(GPath_no_norm,
-            self.configItems) if (srcPath in bosh.modInfos or (
-            srcPath.cext == 'csv' and srcPath in patches_set()))]
+        self.configItems = [srcPath for srcPath in self.configItems if (
+                srcPath in bosh.modInfos or (srcPath.fn_ext == '.csv' and
+                                             srcPath in patches_set()))]
         if self.__class__.forceItemCheck:
             for item in self.configItems:
                 self.configChecks[item] = True
@@ -474,10 +476,10 @@ class _ListPatcherPanel(_PatcherPanel):
         config = super(_ListPatcherPanel, self).saveConfig(configs)
         #--Toss outdated configCheck data.
         listSet = set(self.configItems)
-        self.configChecks = config[u'configChecks'] = {
-            k: v for k, v in self.configChecks.items() if k in listSet}
-        self.configChoices = config[u'configChoices'] = {
-            k: v for k, v in self.configChoices.items() if k in listSet}
+        config['configChecks'] = {k: v for k, v in self.configChecks.items()
+                                  if k in listSet}
+        config['configChoices'] = {k: v for k, v in self.configChoices.items()
+                                   if k in listSet}
         config[u'configItems'] = self.configItems
         config[u'autoIsChecked'] = self.autoIsChecked
         config[u'remove_empty_sublists'] = self.remove_empty_sublists
@@ -977,7 +979,7 @@ class _AListPanelCsv(_ListPatcherPanel):
         auto_items = super(_AListPanelCsv, self).getAutoItems()
         csv_ending = f'_{self._csv_key}.csv'
         for fileName in sorted(patches_set()):
-            if fileName.s.endswith(csv_ending):
+            if fileName.endswith(csv_ending):
                 auto_items.append(fileName)
         return auto_items
 
@@ -1126,7 +1128,7 @@ class ImportActorsFaces(_ImporterPatcherPanel):
         """Pick TNR esp if present in addition to appropriately tagged mods."""
         mods_prior_to_patch = load_order.cached_lower_loading(
             patch_files.executing_patch)
-        return [mod for mod in mods_prior_to_patch if autoRe.match(mod.s) or (
+        return [mod for mod in mods_prior_to_patch if autoRe.match(mod) or (
             self.__class__.autoKey & bosh.modInfos[mod].getBashTags())]
 
 # -----------------------------------------------------------------------------
