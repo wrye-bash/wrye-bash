@@ -20,11 +20,11 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 from . import bEnableWizard, BashFrame
 from .constants import installercons
 from .. import bass, balt, bosh, bolt, bush, env, load_order
 from ..balt import colors
+from ..bolt import GPath_no_norm, top_level_dirs
 from ..bosh import faces, ModInfo
 from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
@@ -129,8 +129,8 @@ class CreateNewProject(DialogWindow):
         super(CreateNewProject, self).__init__(parent)
         # Build a list of existing directories. The text control will use this
         # to change background color when name collisions occur.
-        self.existingProjects = {x for x in bass.dirs[u'installers'].list()
-                                 if bass.dirs[u'installers'].join(x).isdir()}
+        self.existingProjects = {GPath_no_norm(x) for x in ##: use idata?
+                                 top_level_dirs(bass.dirs[u'installers'].s)}
         #--Attributes
         self.textName = TextField(self, _(u'New Project Name-#####'))
         self.textName.on_text_changed.subscribe(

@@ -1335,13 +1335,13 @@ class InstallerConverter_Create(_InstallerConverter_Link):
                       u' be discarded.') % (
                               archives.defaultExt, BCFArchive.cext))
             BCFArchive = GPath(BCFArchive.sbody + archives.defaultExt).tail
-        if bass.dirs[u'converters'].join(BCFArchive).exists():
+        if (conv_path := bass.dirs[u'converters'].join(BCFArchive)).exists():
             if not self._askYes(_(
                     u'%s already exists. Overwrite it?') % BCFArchive,
                                 title=self.dialogTitle, default=False): return
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.
-            self.idata.converters_data.removeConverter(BCFArchive)
+            self.idata.converters_data.removeConverter(conv_path)
         destInstaller = self.idata[destArchive]
         blockSize = None
         if destInstaller.isSolid:

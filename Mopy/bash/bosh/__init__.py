@@ -45,7 +45,7 @@ from .. import bass, bolt, balt, bush, env, load_order, initialization
 from ..archives import readExts
 from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
-    GPath_no_norm, struct_error, dict_sort
+    GPath_no_norm, struct_error, dict_sort, top_level_files
 from ..brec import ModReader, RecordHeader
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
@@ -1556,12 +1556,9 @@ class TableFileInfos(DataStore):
     def _names(self): # performance intensive
         # Simple addition is safe because both store_dir and files will have
         # been normpath'd
-        store_dir_prefix = self.store_dir.s + os.path.sep
-        file_in_store = os.path.isfile
         file_matches_store = self.rightFileType
-        return {x for x in self.store_dir.list() if
-                file_in_store(store_dir_prefix + x.s)
-                and file_matches_store(x)}
+        return {GPath_no_norm(x) for x in top_level_files(self.store_dir.s)
+                if file_matches_store(x)}
 
     #--Right File Type?
     @classmethod
@@ -2225,7 +2222,7 @@ class ModInfos(FileInfos):
         names = super(ModInfos, self)._names()
         unghosted_names = set()
         for mname in sorted(names, key=lambda x: x.cext == u'.ghost'):
-            if mname.cs[-6:] == u'.ghost': mname = GPath(mname.s[:-6])
+            if mname.cext == u'.ghost': mname = GPath_no_norm(mname.s[:-6])
             if mname in unghosted_names:
                 deprint(u'Both %s and its ghost exist. The ghost will be '
                         u'ignored but this may lead to undefined behavior - '

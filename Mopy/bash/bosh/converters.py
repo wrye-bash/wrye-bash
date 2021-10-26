@@ -29,7 +29,7 @@ import re
 from .. import bolt, archives, bass
 from ..archives import defaultExt, readExts, compressionSettings, \
     compressCommand
-from ..bolt import DataDict, PickleDict, GPath, Path, SubProgress, \
+from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files, \
     GPath_no_norm
 from ..exception import ArgumentError, StateError
 
@@ -74,10 +74,9 @@ class ConvertersData(DataDict):
         converterGet = self.bcfPath_sizeCrcDate.get
         archivesAdd = archives_set.add
         scannedAdd = scanned.add
-        for bcf_archive in converters_dir.list():
-            apath = convertersJoin(bcf_archive)
-            if apath.isfile() and self.validConverterName(bcf_archive):
-                scannedAdd(apath)
+        for bcf_archive in top_level_files(converters_dir.s): # scan only files
+            if self.validConverterName(GPath_no_norm(bcf_archive)): ##: drop GPath here!
+                scannedAdd(convertersJoin(bcf_archive))
         if len(scanned) != len(self.bcfPath_sizeCrcDate):
             return True
         for bcf_archive in scanned:
@@ -105,10 +104,10 @@ class ConvertersData(DataDict):
         if fullRefresh:
             self.bcfPath_sizeCrcDate.clear()
             self.srcCRC_converters.clear()
-        for bcf_archive in converters_dir.list():
-            bcfPath = convJoin(bcf_archive)
-            if bcfPath.isdir(): continue
-            if self.validConverterName(bcf_archive):
+        for bcf_archive in top_level_files(converters_dir.s):
+            if self.validConverterName(bcf_archive := GPath_no_norm(
+                    bcf_archive)):  ##: drop GPath here!
+                bcfPath = convJoin(bcf_archive)
                 size, crc, modified = self.bcfPath_sizeCrcDate.get(bcfPath, (
                     None, None, None))
                 size_mtime = bcfPath.size_mtime()
@@ -120,7 +119,7 @@ class ConvertersData(DataDict):
                         self.bcfPath_sizeCrcDate.pop(bcfPath, None)
                         if bcfCRC_converter[crc].fullPath.exists():
                             bcfPath.moveTo(
-                                    self.dup_bcfs_dir.join(bcfPath.tail))
+                                self.dup_bcfs_dir.join(bcfPath.tail))
                         continue
                 self.bcfPath_sizeCrcDate[bcfPath] = (size, crc, modified)
                 if fullRefresh or crc not in bcfCRC_converter:
@@ -150,13 +149,10 @@ class ConvertersData(DataDict):
 
     def addConverter(self, converter):
         """Links the new converter to installers"""
-        if isinstance(converter, (str, bytes)): ##: investigate
-            #--Adding a new file
-            converter = GPath(converter).tail
         if isinstance(converter, InstallerConverter):
             #--Adding a new InstallerConverter
             newConverter = converter
-        else:
+        elif isinstance(converter, Path):
             #--Adding a new file
             try:
                 newConverter = InstallerConverter(converter)
@@ -165,6 +161,9 @@ class ConvertersData(DataDict):
                 fullPath.moveTo(self.corrupt_bcfs_dir.join(converter.tail))
                 del self.bcfPath_sizeCrcDate[fullPath]
                 return False
+        else:
+            raise ArgumentError(
+                f'{converter!r} must be a Path or InstallerConverter')
         #--Check if overriding an existing converter
         oldConverter = self.bcfCRC_converter.get(newConverter.crc)
         if oldConverter:
@@ -184,20 +183,16 @@ class ConvertersData(DataDict):
 
     def removeConverter(self, converter):
         """Unlink the old converter from installers and delete it."""
-        if isinstance(converter, Path):
-            #--Removing by filepath
-            converter = converter.stail
         if isinstance(converter, InstallerConverter):
             #--Removing existing converter
             oldConverter = self.bcfCRC_converter.pop(converter.crc, None)
             self.bcfPath_sizeCrcDate.pop(converter.fullPath, None)
         else:
             #--Removing by filepath
-            bcfPath = converters_dir.join(converter)
-            size, crc, modified = self.bcfPath_sizeCrcDate.pop(bcfPath, (
+            size, crc, modified = self.bcfPath_sizeCrcDate.pop(converter, (
                 None, None, None))
-            if crc is not None:
-                oldConverter = self.bcfCRC_converter.pop(crc, None)
+            oldConverter = None if crc is None else self.bcfCRC_converter.pop(
+                crc, None)
         #--Sanity check
         if oldConverter is None: return
         #--Unlink the converter from Bash

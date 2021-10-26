@@ -429,6 +429,19 @@ def setattr_deep(obj, attr, value, __attrgetters=attrgetter_cache,
     setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
         leaf_attr, value)
 
+def top_level_files(directory): # faster than listdir then isfile
+    return top_level_items(directory)[1]
+
+def top_level_dirs(directory): # faster than listdir then isdir
+    return top_level_items(directory)[0]
+
+def top_level_items(directory):
+    try:
+        _directory, folders, files = next(os.walk(directory))
+    except StopIteration:
+        return [], []
+    return folders, files
+
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}

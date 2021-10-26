@@ -2561,11 +2561,12 @@ class InstallersList(balt.UIList):
     @balt.conversation
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
+        dirs = {x for x in filenames if x.isdir()}
         omodnames = [x for x in filenames if
-                     not x.isdir() and x.cext in archives.omod_exts]
+                     not x in dirs and x.cext in archives.omod_exts]
         converters = [x for x in filenames if
                       bosh.converters.ConvertersData.validConverterName(x)]
-        filenames = [x for x in filenames if x.isdir()
+        filenames = [x for x in filenames if x in dirs
                      or x.cext in archives.readExts and x not in converters]
         if omodnames:
             with balt.Progress(_(u'Extracting OMODs...'), u'\n' + u' ' * 60,

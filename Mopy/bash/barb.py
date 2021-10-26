@@ -45,7 +45,7 @@ from . import bass # for settings (duh!)
 from . import bolt
 from . import initialization
 from .bass import dirs, AppVersion
-from .bolt import GPath, deprint
+from .bolt import GPath, deprint, top_level_files
 from .exception import BoltError, StateError
 
 def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder):
@@ -280,9 +280,8 @@ class RestoreSettings(object):
                                                   root_prefix, mods_folder))
         for dest_dir, back_path in restore_paths:
             full_back_path = self._extract_dir.join(back_path)
-            for fname in full_back_path.list():
-                if full_back_path.join(fname).isfile():
-                    _restore_file(dest_dir, GPath(back_path), fname)
+            for fname in top_level_files(full_back_path.s):
+                _restore_file(dest_dir, GPath(back_path), fname)
         # restore savegame profile settings
         back_path = GPath(u'My Games').join(mg_name, u'Saves')
         saves_dir = dirs[u'saveBase'].join(u'Saves')
