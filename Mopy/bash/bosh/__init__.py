@@ -1001,11 +1001,10 @@ class ModInfo(FileInfo):
 
     def getDirtyMessage(self):
         """Returns a dirty message from LOOT."""
-        if self.get_table_prop(u'ignoreDirty', False):
+        if self.get_table_prop(u'ignoreDirty', False) or \
+                not lootDb.is_plugin_dirty(self.ci_key, modInfos):
             return False, u''
-        if lootDb.is_plugin_dirty(self.ci_key, modInfos):
-            return True, _(u'Contains dirty edits, needs cleaning.')
-        return False, u''
+        return True, _(u'Contains dirty edits, needs cleaning.')
 
     def match_oblivion_re(self):
         return reOblivion.match(self.ci_key.s)
@@ -2360,18 +2359,18 @@ class ModInfos(FileInfos):
         name_mergeInfo = self.table.getColumn(u'mergeInfo')
         #--Add known/unchanged and esms - we need to scan dependent mods
         # first to account for mergeability of their masters
-        for mpath, modInfo in dict_sort(self, key_f=lambda
-                k: load_order.cached_lo_index(k), reverse=True):
-            size, canMerge = name_mergeInfo.get(mpath, (None, None))
+        for fn_mod, modInfo in dict_sort(self, reverse=True,
+                                         key_f=load_order.cached_lo_index):
+            size, canMerge = name_mergeInfo.get(fn_mod, (None, None))
             # if esm/esl bit was flipped size won't change, so check this first
             if modInfo.is_esl() or modInfo.has_esm_flag():
                 # esl don't mark as esl capable - modInfo must have its header set
-                name_mergeInfo[mpath] = (modInfo.fsize, False)
-                self.mergeable.discard(mpath)
+                name_mergeInfo[fn_mod] = (modInfo.fsize, False)
+                self.mergeable.discard(fn_mod)
             elif size == modInfo.fsize:
-                if canMerge: self.mergeable.add(mpath)
+                if canMerge: self.mergeable.add(fn_mod)
             else:
-                newMods.append(mpath)
+                newMods.append(fn_mod)
         return newMods
 
     def rescanMergeable(self, names, prog=None, return_results=False):
@@ -2473,9 +2472,9 @@ class ModInfos(FileInfos):
         for patch in patches & self.bashed_patches:
             patchConfigs = self.table.getItem(patch, u'bash.patch.configs')
             if not patchConfigs: continue
-            pm_config_key = u'PatchMerger'
-            if patchConfigs.get(pm_config_key,{}).get(u'isEnabled'):
-                config_checked = patchConfigs[pm_config_key][u'configChecks']
+            if (merger_conf := patchConfigs.get('PatchMerger', {})).get(
+                    u'isEnabled'):
+                config_checked = merger_conf[u'configChecks']
                 for modName, is_merged in config_checked.items():
                     if is_merged and modName in self:
                         if skip_active and load_order.cached_is_active(

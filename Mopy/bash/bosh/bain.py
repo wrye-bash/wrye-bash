@@ -322,7 +322,7 @@ class Installer(ListInfo):
         try:
             self.__setstate(values)
         except:
-            deprint(u'Failed loading %s' % values[0], traceback=True)
+            deprint(f'Failed loading {values[0]}', traceback=True)
             # init to default values and let it be picked for refresh in
             # InstallersData#scan_installers_dir
             self.initDefault()
@@ -1038,8 +1038,7 @@ class Installer(ListInfo):
         """Packs project to build directory. Release filters out development
         material from the archive. Needed for projects and to repack archives
         when syncing from Data."""
-        length = len(self.fileSizeCrcs)
-        if not length: return
+        if not self.num_of_files: return
         archive, archiveType, solid = compressionSettings(archive, blockSize,
                                                           isSolid)
         outDir = bass.dirs[u'installers']
@@ -1320,7 +1319,7 @@ class InstallerArchive(Installer):
                               use_default_ext=False, __7z=archives.defaultExt):
         r, e = os.path.splitext(name_str)
         if allowed_exts and e.lower() not in allowed_exts:
-            if not use_default_ext:
+            if not use_default_ext: # renaming as opposed to creating the file
                 return _(u'%s does not have correct extension (%s).') % (
                     name_str, u', '.join(allowed_exts)), None
             msg = _(u'The %s extension is unsupported. Using %s instead.') % (
@@ -1820,17 +1819,15 @@ class InstallersData(DataStore):
         elif markers:
             self.refreshOrder()
 
-    def copy_installer(self,item,destName,destDir=None):
+    def copy_installer(self, item, destName):
         """Copies archive to new location."""
         if item == self.lastKey: return
-        destDir = destDir or self.store_dir
         apath = self.store_dir.join(item)
-        apath.copyTo(destDir.join(destName))
-        if destDir == self.store_dir:
-            self[destName] = installer = copy.copy(self[item])
-            installer.archive = destName.s
-            installer.is_active = False
-            self.moveArchives([destName], self[item].order + 1)
+        apath.copyTo(self.store_dir.join(destName))
+        self[destName] = installer = copy.copy(self[item])
+        installer.archive = destName.s
+        installer.is_active = False
+        self.moveArchives([destName], self[item].order + 1)
 
     def move_info(self, filename, destDir):
         # hasty method to use in UIList.hide(), see FileInfos.move_info()
