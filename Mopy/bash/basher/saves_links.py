@@ -377,7 +377,7 @@ class Save_Renumber(EnabledLink):
 
     def _enable(self):
         self._matches = []
-        for sinf in self.window.GetSelectedInfos(self.selected):
+        for sinf in self.iselected_infos():
             save_match = self._re_numbered_save.match(u'%s' % sinf)
             if save_match:
                 self._matches.append((u'%s' % sinf, save_match, sinf))
@@ -395,7 +395,7 @@ class Save_Renumber(EnabledLink):
         for old_file_path, maPattern, sinf in self._matches:
             s_groups = maPattern.groups()
             if not s_groups[1]: continue
-            newFileName = u'%s%d%s' % (s_groups[0], newNumber, s_groups[2])
+            newFileName = f'{s_groups[0]}{newNumber:d}{s_groups[2]}'
             if newFileName != old_file_path: # FIXME ci comp
                 new_file_path = GPath(newFileName)
                 if self.window.try_rename(sinf, new_file_path, new_names,

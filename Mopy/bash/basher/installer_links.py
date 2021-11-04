@@ -173,10 +173,10 @@ class _Installer_AWizardLink(_InstallerLink):
     def _perform_install(self, sel_package, ui_refresh):
         if sel_package.is_active: # If it's currently installed, anneal
             title = _(u'Annealing...')
-            do_it = self.window.data_store.bain_anneal
+            do_it = self.idata.bain_anneal
         else: # Install if it's not installed
             title = _(u'Installing...')
-            do_it = self.window.data_store.bain_install
+            do_it = self.idata.bain_install
         with balt.Progress(title, u'\n'+u' '*60) as progress:
             do_it([sel_package.ci_key], ui_refresh, progress)
 

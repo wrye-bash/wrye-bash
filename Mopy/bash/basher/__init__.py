@@ -3192,28 +3192,27 @@ class InstallersPanel(BashTab):
         with balt.Progress(_(u'Extracting OMODs...'),
                            u'\n' + u' ' * 60) as progress:
             dirInstallersJoin = bass.dirs[u'installers'].join
-            ompaths = list(map(dirInstallersJoin, omds))
-            progress.setFull(max(len(ompaths), 1))
+            progress.setFull(max(len(omds), 1))
             omodMoves, omodRemoves = set(), set()
-            for i, omod in enumerate(ompaths):
-                progress(i, omod.stail)
+            for i, omod in enumerate(omds):
+                progress(i, omod.s)
                 pr_name = bosh.InstallerProject.unique_name(omod.body,
                                                             check_exists=True)
                 outDir = dirInstallersJoin(pr_name)
                 try:
-                    bosh.omods.OmodFile(omod).extractToProject(
+                    omod_path = dirInstallersJoin(omod)
+                    bosh.omods.OmodFile(omod_path).extractToProject(
                         outDir, SubProgress(progress, i))
-                    omodRemoves.add(omod)
+                    omodRemoves.add(omod_path)
                     omod_projects.append(pr_name.s)
                 except (CancelError, SkipError):
-                    omodMoves.add(omod)
+                    omodMoves.add(omod_path)
                 except:
-                    deprint(f"Error extracting OMOD '{omod.stail}':",
-                            traceback=True)
+                    deprint(f"Error extracting OMOD '{omod}':", traceback=True)
                     # Ensure we don't infinitely refresh if moving the omod
                     # fails
-                    bosh.omods.failedOmods.add(omod.tail)
-                    omodMoves.add(omod)
+                    bosh.omods.failedOmods.add(omod)
+                    omodMoves.add(omod_path)
             # Cleanup
             dialog_title = _(u'OMOD Extraction - Cleanup Error')
             # Delete extracted omods

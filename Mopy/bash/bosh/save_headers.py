@@ -43,7 +43,7 @@ from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_str_int_delim, unpack_str16_delim, unpack_str_byte_delim, \
     unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short, \
     pack_float, pack_string, pack_str8, pack_bzstr8, structs_cache, \
-    struct_error, remove_newlines
+    struct_error, remove_newlines, deprint
 from ..exception import SaveHeaderError, AbstractError
 
 # Utilities -------------------------------------------------------------------
@@ -79,7 +79,7 @@ class SaveFileHeader(object):
         #--Errors
         except (OSError, struct_error, OverflowError) as e:
             err_msg = f'Failed to read {self._save_info.abs_path}'
-            bolt.deprint(err_msg, traceback=True)
+            deprint(err_msg, traceback=True)
             raise SaveHeaderError(err_msg) from e
 
     def load_header(self, ins, load_image=False):
