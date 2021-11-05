@@ -41,11 +41,11 @@ from typing import Iterable
 from ._mergeability import isPBashMergeable, is_esl_capable
 from .loot_parser import LOOTParser, libloot_version
 from .mods_metadata import get_tags_from_dir
-from .. import bass, bolt, balt, bush, env, load_order, initialization
-from ..archives import readExts
+from .. import bass, bolt, balt, bush, env, load_order, initialization, \
+    archives
 from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
-    GPath_no_norm, struct_error, dict_sort, top_level_files
+    GPath_no_norm, struct_error, dict_sort, top_level_files, os_name
 from ..brec import ModReader, RecordHeader
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
@@ -81,7 +81,7 @@ reVersion = re.compile(
   re.M | re.I)
 
 #--Mod Extensions
-__exts = r'((\.(' + u'|'.join(ext[1:] for ext in readExts) + u'))|)$'
+__exts = r'((\.(' + u'|'.join(ext[1:] for ext in archives.readExts) + u'))|)$'
 reTesNexus = re.compile(r'(.*?)-(\d{1,7})(?:-\w*){0,3}(?:-\d{1,16})?' + __exts,
                         re.I | re.U)
 reTESA = re.compile(r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?' + __exts,
@@ -3644,6 +3644,7 @@ def initDefaultSettings():
     inisettings[u'PromptActivateBashedPatch'] = True
     inisettings[u'WarnTooManyFiles'] = True
     inisettings[u'SkippedBashInstallersDirs'] = u''
+    inisettings[u'Command7z'] = '7z'
 
 __type_key_preffix = {  # Path is tooldirs only int does not appear in either!
     bolt.Path: u's', str: u's', list: u's', int: u'i', bool: u'b'}
@@ -3683,6 +3684,8 @@ def initOptions(bashIni):
                     compDefaultValue = compDefaultValue[0]
                 if comp_val != compDefaultValue:
                     usedSettings[usedKey] = value
+    if os_name != 'nt':
+        archives.exe7z = inisettings[u'Command7z']
     bass.tooldirs[u'Tes4ViewPath'] = bass.tooldirs[u'Tes4EditPath'].head.join(u'TES4View.exe')
     bass.tooldirs[u'Tes4TransPath'] = bass.tooldirs[u'Tes4EditPath'].head.join(u'TES4Trans.exe')
 

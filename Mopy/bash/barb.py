@@ -175,9 +175,7 @@ class BackupSettings(object):
         # create the backup archive in 7z format WITH solid compression
         # may raise StateError
         backup_dir, dest7z = self._backup_dest_file.head, self._backup_dest_file.tail
-        command = archives.compressCommand(
-            safe_dest := backup_dir.join(dest7z), backup_dir, temp_dir)
-        archives.compress7z(command, safe_dest, dest7z, temp_dir)
+        archives.compress7z(backup_dir, self._backup_dest_file, dest7z, temp_dir)
         bass.settings[u'bash.backupPath'] = backup_dir
 
     def _backup_success(self, balt_):

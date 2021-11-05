@@ -1045,12 +1045,10 @@ class Installer(ListInfo):
                 out.write(u'*meta.ini\n')
                 out.write(u'--*\\')
         #--Compress
-        command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
-                   u'-x@%s -scsUTF-8 -sccUTF-8' % (
-                       archives.exe7z, realOutFile.temp, archiveType, solid,
-                       outDir, project, self.tempList))
         try:
-            compress7z(command, realOutFile, fn_archive, project, progress)
+            compress7z(outDir, realOutFile, fn_archive, project, progress,
+                       solid=solid, archiveType=archiveType,
+                       temp_list=self.tempList)
         finally:
             self.tempList.remove()
 

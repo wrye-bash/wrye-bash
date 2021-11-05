@@ -27,8 +27,7 @@ import pickle
 import re
 
 from .. import bolt, archives, bass
-from ..archives import defaultExt, readExts, compressionSettings, \
-    compressCommand
+from ..archives import defaultExt, readExts, compressionSettings
 from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files, \
     GPath_no_norm
 from ..exception import ArgumentError, StateError
@@ -307,10 +306,8 @@ class InstallerConverter(object):
                                  pickle.load(translator, encoding='bytes')):
                     setattr(self, a, v)
         # Temp rename if its name wont encode correctly
-        command = f'"{archives.exe7z}" x "{self.fullPath}" BCF.dat -y ' \
-                  f'-so -sccUTF-8'
         err_msg = f'\nLoading {self.fullPath}:\nBCF extraction failed.'
-        archives.wrapPopenOut(command, translate, errorMsg=err_msg)
+        archives.wrapPopenOut(self.fullPath, translate, errorMsg=err_msg)
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
@@ -544,10 +541,8 @@ class InstallerConverter(object):
         #--Determine settings for 7z
         destArchive, archiveType, solid = compressionSettings(destArchive,
                 self.blockSize, self.isSolid)
-        command = compressCommand(self.fullPath, outDir, srcFolder, solid,
-                                  archiveType)
-        archives.compress7z(command, self.fullPath, destArchive, srcFolder,
-                            progress)
+        archives.compress7z(outDir, self.fullPath, destArchive, srcFolder,
+                            progress, solid=solid, archiveType=archiveType)
         bass.rmTempDir()
 
     def _unpack(self, srcInstaller, fileNames, progress=None):

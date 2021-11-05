@@ -38,11 +38,18 @@ reSolid = re.compile(r'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(r'Compressing\s+(.+)', re.U).match
 regExtractMatch = re.compile(u'- (.+)', re.U).match
 regErrMatch = re.compile(u'^(Error:.+|.+ {5}Data Error?|Sub items Errors:.+)',
-    re.U).match
+    re.U).match ##: does not catch all errors like \n\nCommand Line Error:\nToo short switch:\n-o\n
 reListArchive = re.compile(
     r'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
 
-def compress7z(command, full_dest, rel_dest, srcDir, progress=None):
+def compress7z(dest_dir, full_dest, rel_dest, srcDir, progress=None, *,
+               solid=u'-ms=on', archiveType=u'7z', temp_list=None):
+    join_star = srcDir.join(u'*').s # add a wildcard at the end of the path
+    out_args = [join_star] if temp_list is None else [f'-i!{join_star}',
+                                                      f'-x@{temp_list}']
+    command = [exe7z, u'a', full_dest.temp.s, f'-t{archiveType}',
+        *solid.split(), u'-y', u'-r', f'-o{dest_dir}', # quiet, recursive
+        *out_args, u'-scsUTF-8', u'-sccUTF-8']  # encode output in unicode
     if progress is not None: #--Used solely for the progress bar
         length = sum(map(len, (files for x, y, files in os.walk(srcDir.s))))
         progress(0, f'{rel_dest}\n' + _(u'Compressing files...'))
@@ -74,8 +81,10 @@ def compress7z(command, full_dest, rel_dest, srcDir, progress=None):
 
 def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
               recursive=False, filelist_to_extract=None):
-    command = _extract_command(src_archive, extract_dir, recursive,
-                               filelist_to_extract)
+    command = [exe7z, 'x', src_archive.s, '-y', '-bb1', f'-o{extract_dir}',
+               '-scsUTF-8', '-sccUTF-8']
+    if recursive: command.append('-r')
+    if filelist_to_extract: command.append(f'@{filelist_to_extract}')
     proc = popen_common(command, bufsize=1, encoding='utf-8')
     # Error checking, progress feedback and subArchives for recursive unpacking
     index, errorLine, subArchives = 0, u'', []
@@ -99,14 +108,15 @@ def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
                          f'7z.exe return value: {returncode:d}\n{errorLine}')
     return subArchives
 
-def wrapPopenOut(command, wrapper, errorMsg):
+def wrapPopenOut(fullPath, wrapper, errorMsg):
+    command = [exe7z, 'x', f'{fullPath}', 'BCF.dat', '-y', '-so', '-sccUTF-8']
     # No encoding, this is *supposed* to return bytes!
     proc = popen_common(command, bufsize=-1)
     out, unused_err = proc.communicate()
     wrapper(out)
     returncode = proc.returncode
     if returncode:
-        raise StateError(errorMsg + u'\nPopen return value: %d' + returncode)
+        raise StateError(f'{errorMsg}\nPopen return value: {returncode:d}')
 
 #  WIP: http://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
 def compressionSettings(fn_archive, blockSize, isSolid):
@@ -139,24 +149,10 @@ def compressionSettings(fn_archive, blockSize, isSolid):
             solid += userArgs
     return fn_archive, archiveType, solid
 
-def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
-                    archiveType=u'7z'): # WIP - note solid on by default (7z)
-    return [exe7z, u'a', destArchive.temp.s, f'-t{archiveType}',
-        *solid.split(), u'-y', u'-r',  # quiet, recursive
-        f'-o"{destDir}"', u'-scsUTF-8', u'-sccUTF-8',# encode output in unicode
-        srcFolder.join(u'*').s] # add a wildcard at the end of the path
-
-def _extract_command(archivePath, outDirPath, recursive, filelist_to_extract):
-    command = f'"{exe7z}" x "{archivePath}" -y -bb1 -o"{outDirPath}" ' \
-              f'-scsUTF-8 -sccUTF-8'
-    if recursive: command += u' -r'
-    if filelist_to_extract: command += f' @"{filelist_to_extract}"'
-    return command
-
 def list_archive(archive_path, parse_archive_line, __reList=reListArchive):
     """Client is responsible for closing the file ! See uses for
     _parse_archive_line examples."""
-    command = f'"{exe7z}" l -slt -sccUTF-8 "{archive_path}"'
+    command = [exe7z, 'l', '-slt', '-sccUTF-8', f'{archive_path}']
     proc = popen_common(command, encoding='utf-8')
     ins, _err = proc.communicate()
     for line in ins.splitlines(True): # keepends=True
