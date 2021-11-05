@@ -1168,7 +1168,7 @@ class UIList(wx.Panel):
             to_rename = self.GetSelectedInfos()
             renaming_type = type(to_rename[0])
             start, stop = uilist_ctrl.ec_get_selection()
-            if start == stop: # if start==stop there is no selection
+            if start == stop: # if start==stop there is no selection ##: we may need to return?
                 selection_span = 0, len(ec_value)
             else:
                 sel_start, _sel_stop = renaming_type.rename_area_idxs(

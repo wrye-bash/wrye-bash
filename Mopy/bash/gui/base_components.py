@@ -241,6 +241,7 @@ class _AComponent(object):
 
     def reset_background_color(self):
         """Resets the background color of this component to the default one."""
+        if _wx.Platform == '__WXMAC__': return ##: check what we need to do on linux
         self._native_widget.SetBackgroundColour(_wx.NullColour)
         self._native_widget.Refresh()
 

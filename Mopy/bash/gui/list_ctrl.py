@@ -273,19 +273,23 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         self._native_widget.SortItems(lambda x, y: bolt.cmp_(sortDict[x], sortDict[y]))
 
     # native edit control wrappers
+    def __ec(self): # may return None on mac
+        return self._native_widget.GetEditControl()
+
     def ec_set_selection(self, start, stop):
-        return self._native_widget.GetEditControl().SetSelection(start, stop)
+        (ec := self.__ec()) and ec.SetSelection(start, stop)
 
     def ec_get_selection(self):
-        return self._native_widget.GetEditControl().GetSelection()
+        return (ec := self.__ec()) and ec.GetSelection()
 
     def ec_set_f2_handler(self, on_char_handler):
         """Sets a handler for when the F2 key is pressed. Note that you have to
         return EventResult.FINISH when handling this event."""
-        on_char = EventHandler(self._native_widget.GetEditControl(),
-            _wx.EVT_KEY_DOWN, lambda event: [
-                event.GetKeyCode() == _wx.WXK_F2,
-                self._native_widget.GetEditControl().GetValue(), self])
+        ec = self.__ec()
+        if ec is None: return
+        on_char = EventHandler(ec, _wx.EVT_KEY_DOWN,
+                               lambda event: [event.GetKeyCode() == _wx.WXK_F2,
+                                              ec.GetValue(), self])
         on_char.subscribe(on_char_handler)
 
     ##: column wrappers - belong to a superclass that wraps ListCtrl
