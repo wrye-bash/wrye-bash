@@ -1968,7 +1968,7 @@ class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
 
     def Execute(self): # overrides _Mod_Export_Link
         fileInfo = next(self.iselected_infos()) # first selected info
-        defaultPath = bass.dirs[u'patches'].join(u'%s Exported Scripts' % fileInfo)
+        defaultPath = bass.dirs[u'patches'].join(f'{fileInfo} Exported Scripts')
         def OnOk():
             dialog.accept_modal()
             bass.settings[u'bash.mods.export.deprefix'] = gdeprefix.text_content.strip()

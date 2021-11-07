@@ -590,9 +590,9 @@ class LanguagePage(_AScrollablePage):
         # Now we can move on to actually opening the editor
         selected_l10n = bass.dirs[u'l10n'].join(self._chosen_l10n)
         # Construct the final command and pass it to subprocess
-        subprocess.Popen([chosen_editor.s] + [
-            (a % selected_l10n if u'%s' in a else a)
-            for a in editor_arg_fmt.split(u' ')], close_fds=True)
+        subprocess.Popen(
+            [chosen_editor.s, *((a % selected_l10n if '%s' in a else a)
+            for a in editor_arg_fmt.split(u' '))], close_fds=True)
 
     @staticmethod
     def _gather_l10n():

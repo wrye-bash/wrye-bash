@@ -109,7 +109,7 @@ class ATestACosave(object):
         """Tests that dump_to_log is correctly implemented."""
         def _check_dump_to_log(curr_cosave): # type: (xSECosave) -> None
             test_log = LogFile(io.StringIO())
-            # This wouldn't work on SSE/FO4, but save_masters is only used for
+            # This wouldn't work on SSE/FO4, but save_masters_ is only used for
             # ARVR and STVR, which don't exist in SKSE/F4SE
             sv_masters = [GPath(m) for m in curr_cosave.get_master_list()]
             curr_cosave.dump_to_log(test_log, sv_masters)
