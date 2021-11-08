@@ -106,13 +106,6 @@ if sys.prefix not in set(_env_path.split(u';')):
 # Settings --------------------------------------------------------------------
 settings = None # type: Optional[bolt.Settings]
 
-# Utils
-def configIsCBash(patchConfigs):
-    for config_key in patchConfigs:
-        if u'CBash' in config_key:
-            return True
-    return False
-
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 ##: DEPRECATED: Tank link mixins to access the Tank data. They should be

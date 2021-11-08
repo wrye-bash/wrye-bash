@@ -26,7 +26,7 @@ import io
 import re
 import time
 from datetime import timedelta
-from . import BashFrame, configIsCBash  ##: drop this - decouple !
+from . import BashFrame  ##: drop this - decouple !
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
 from ..bolt import SubProgress, GPath, Path
@@ -50,24 +50,22 @@ class PatchDialog(DialogWindow):
     """
     _min_size = (400, 300)
 
-    def __init__(self, parent, patchInfo, mods_to_reselect):
+    def __init__(self, parent, patchInfo, mods_to_reselect, patchConfigs):
         self.mods_to_reselect = mods_to_reselect
         self.parent = parent
-        title = _(u'Update ') + u'%s' % patchInfo
+        title = _(u'Update ') + f'{patchInfo}'
         super(PatchDialog, self).__init__(parent, title=title,
             icon_bundle=Resources.bashBlue, sizes_dict=balt.sizes,
             size=balt.sizes.get(self.__class__.__name__, (500, 600)))
         #--Data
         list_patches_dir() # refresh cached dir
-        patchConfigs = patchInfo.get_table_prop(u'bash.patch.configs', {})
-        if configIsCBash(patchConfigs):
-            patchConfigs = {}
+        self.patchConfigs = patchConfigs
         isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
         self._gui_patchers = [copy.deepcopy(p) for p in all_gui_patchers]
         for patcher in self._gui_patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
-            patcher.SetIsFirstLoad(isFirstLoad)
+            patcher.is_first_load = isFirstLoad
         self.currentPatcher = None
         patcherNames = [patcher.patcher_name for patcher in self._gui_patchers]
         #--GUI elements
@@ -183,7 +181,7 @@ class PatchDialog(DialogWindow):
                     % bush.game.Esp.master_limit)
                 return # Abort, we'll just blow up on saving it
             #--Save
-            progress.setCancel(False, u'%s\n' % patch_name + _(u'Saving...'))
+            progress.setCancel(False, f'{patch_name}\n' + _(u'Saving...'))
             progress(0.9)
             self._save_pbash(patchFile, patch_name)
             #--Done
@@ -317,18 +315,18 @@ class PatchDialog(DialogWindow):
             u'Import Bashed Patch configuration from:'), textDir, config_dat,
             u'*.dat')
         if not textPath: return
-        table = bolt.DataTable(bolt.PickleDict(textPath))
+        table_get = bolt.DataTable(bolt.PickleDict(textPath)).getItem
         # try the current Bashed Patch mode.
-        patchConfigs = table.getItem(GPath(self.__new_key % u'Python'),
-            u'bash.patch.configs', {})
+        config_key = u'bash.patch.configs'
+        patchConfigs = table_get(GPath(self.__new_key % u'Python'), config_key,
+                                 {})
         convert = False
         if not patchConfigs: # try the non-current Bashed Patch mode
-            patchConfigs = table.getItem(GPath(self.__new_key % u'CBash'),
-                u'bash.patch.configs', {})
+            patchConfigs = table_get(GPath(self.__new_key % u'CBash'),
+                                     config_key, {})
             convert = bool(patchConfigs)
         if not patchConfigs: # try the old format
-            patchConfigs = table.getItem(self.__old_key, u'bash.patch.configs',
-                {})
+            patchConfigs = table_get(self.__old_key, config_key, {})
             convert = bool(patchConfigs)
         if not patchConfigs:
             balt.showWarning(self,
@@ -355,8 +353,7 @@ class PatchDialog(DialogWindow):
 
     def RevertConfig(self):
         """Revert configuration back to saved"""
-        patchConfigs = self.patchInfo.get_table_prop(u'bash.patch.configs', {})
-        self._load_config(patchConfigs)
+        self._load_config(self.patchConfigs)
 
     def DefaultConfig(self):
         """Revert configuration back to default"""

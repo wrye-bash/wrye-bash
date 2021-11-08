@@ -66,9 +66,6 @@ class _PatcherPanel(object):
         return re.sub(r'\..*', u'.', self.patcher_desc.split(u'\n')[0],
                       flags=re.U)
 
-    def SetIsFirstLoad(self,isFirstLoad):
-        self.is_first_load = isFirstLoad
-
     def _enable_self(self, self_enabled=True):
         """Enables or disables this patcher and notifies the patcher dialog."""
         self.isEnabled = self_enabled
@@ -155,20 +152,21 @@ class _PatcherPanel(object):
 
     def _log_config(self, conf, config, clip, log):
         items = conf.get(u'configItems', [])
-        if len(items) == 0:
+        if not items:
             log(u' ')
-        for item in conf.get(u'configItems', []):
-            checks = conf.get(u'configChecks', {})
+            return
+        checks = conf.get(u'configChecks', {})
+        for item in items:
             checked = checks.get(item, False)
             if checked:
-                log(u'* __%s__' % item)
-                clip.write(u' ** %s\n' % item)
+                log(f'* __{item}__')
+                clip.write(f' ** {item}\n')
             else:
-                log(u'. ~~%s~~' % item)
-                clip.write(u'    %s\n' % item)
+                log(f'. ~~{item}~~')
+                clip.write(f'    {item}\n')
 
     def import_config(self, patchConfigs, set_first_load=False, default=False):
-        self.SetIsFirstLoad(set_first_load)
+        self.is_first_load = set_first_load
         self.getConfig(patchConfigs) # set isEnabled and load additional config
         self._import_config(default)
 
@@ -237,8 +235,8 @@ class _AliasesPatcherPanel(_PatcherPanel):
     def _log_config(self, conf, config, clip, log):
         aliases = config.get(u'aliases', {})
         for mod, alias in aliases.items():
-            log(u'* __%s__ >> %s' % (mod, alias))
-            clip.write(u'  %s >> %s\n' % (mod, alias))
+            log(f'* __{mod}__ >> {alias}')
+            clip.write(f'  {mod} >> {alias}\n')
 
     def get_patcher_instance(self, patch_file):
         """Set patch_file aliases dict"""
@@ -481,8 +479,7 @@ class _ListPatcherPanel(_PatcherPanel):
                                  patcher_sources)
 
     def _get_list_patcher_srcs(self):
-        patcher_sources = [x for x in self.configItems if self.configChecks[x]]
-        return patcher_sources
+        return [x for x in self.configItems if self.configChecks[x]]
 
 #------------------------------------------------------------------------------
 class _ChoiceMenuMixin(object):
@@ -768,11 +765,11 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 label = tweak.getListLabel().replace(u'[[', u'[').replace(
                     u']]', u']')
                 if enabled:
-                    log(u'* __%s__' % label)
-                    clip.write(u' ** %s\n' % label)
+                    log(f'* __{label}__')
+                    clip.write(f' ** {label}\n')
                 else:
-                    log(u'. ~~%s~~' % label)
-                    clip.write(u'    %s\n' % label)
+                    log(f'. ~~{label}~~')
+                    clip.write(f'    {label}\n')
 
     def _import_config(self, default=False):
         super(_TweakPatcherPanel, self)._import_config(default)
@@ -781,9 +778,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 self.gTweakList.lb_check_at_index(index, tweakie.isEnabled)
                 self.gTweakList.lb_set_label_at_index(index, tweakie.getListLabel())
             except KeyError: pass # no such key don't spam the log
-            except: bolt.deprint(u'Error importing Bashed Patch '
-                                 u'configuration. Item %s skipped.' % tweakie,
-                                 traceback=True)
+            except: bolt.deprint('Error importing Bashed Patch configuration. '
+                                 f'Item {tweakie} skipped.', traceback=True)
 
     def get_patcher_instance(self, patch_file):
         enabledTweaks = [t for t in self._all_tweaks if t.isEnabled]
@@ -886,9 +882,9 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
 
     def _log_config(self, conf, config, clip, log):
         self.configChoices = conf.get(u'configChoices', {})
-        for item in conf.get(u'configItems', []):
-            log(u'. __%s__' % self.getItemLabel(item))
-            clip.write(u'    %s\n' % self.getItemLabel(item))
+        for item in map(self.getItemLabel, conf.get(u'configItems', [])):
+            log(f'. __{item}__')
+            clip.write(f'    {item}\n')
 
     def _import_config(self, default=False): # TODO(ut):non default not handled
         if default:

@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from collections import OrderedDict
 
 from . import bEnableWizard, BashFrame
 from .constants import installercons
@@ -31,7 +30,7 @@ from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
     VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
     HBoxedLayout, SelectAllButton, DeselectAllButton, VBoxedLayout, \
-    TextAlignment, SearchBar, bell
+    TextAlignment, SearchBar, bell, EventResult
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -192,26 +191,26 @@ class CreateNewProject(DialogWindow):
 
     def OnClose(self):
         """ Create the New Project and add user specified extras. """
-        projectName = bolt.GPath(self.textName.text_content.strip())
+        projectName = self.textName.text_content.strip()
+        # Destination project directory in installers dir
         projectDir = bass.dirs[u'installers'].join(projectName)
-
         if projectDir.exists():
             balt.showError(self, _(
                 u'There is already a project with that name!') + u'\n' + _(
                 u'Pick a different name for the project and try again.'))
             return
-
         # Create project in temp directory, so we can move it via
-        # Shell commands (UAC workaround)
+        # Shell commands (UAC workaround) ##: TODO(ut) needed?
         tmpDir = bolt.Path.tempDir()
         tempProject = tmpDir.join(projectName)
-        if self.checkEsp.is_checked:
-            fileName = u'Blank, %s.esp' % bush.game.displayName
-            bosh.modInfos.create_new_mod(fileName, directory=tempProject)
-        if self.checkEspMasterless.is_checked:
-            fileName = u'Blank, %s (masterless).esp' % bush.game.displayName
-            bosh.modInfos.create_new_mod(fileName, directory=tempProject,
-                                         wanted_masters=[])
+        if (masterless := self.checkEspMasterless.is_checked) or \
+                self.checkEsp.is_checked:
+            file_body, wanted_masters = f'Blank, {bush.game.displayName}', None
+            if masterless:
+                file_body = f'{file_body} (masterless)'
+                wanted_masters = []
+            bosh.modInfos.create_new_mod(f'{file_body}.esp',
+                directory=tempProject, wanted_masters=wanted_masters)
         if self.checkWizard.is_checked:
             # Create empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')
@@ -336,16 +335,14 @@ class CreateNewPlugin(DialogWindow):
     def _handle_plugin_ext(self, new_p_ext):
         """Internal callback to handle a change in extension."""
         # Enable the flags by default, but don't mess with their checked state
-        self._esl_flag.enabled = True
         self._esm_flag.enabled = True
-        if new_p_ext == u'.esl':
-            # For .esl files, force-check the ESL flag
-            self._esl_flag.enabled = False
-            self._esl_flag.is_checked = True
-        if new_p_ext in (u'.esm', u'.esl'):
+        if (isesl := new_p_ext == u'.esl') or new_p_ext == u'.esm':
             # For .esm and .esl files, force-check the ESM flag
             self._esm_flag.enabled = False
             self._esm_flag.is_checked = True
+        # For .esl files, force-check the ESL flag
+        if isesl: self._esl_flag.is_checked = True
+        self._esl_flag.enabled = not isesl
 
     def _handle_mass_select(self, mark_active):
         """Internal callback to handle the Select/Deselect All buttons."""
@@ -374,8 +371,12 @@ class CreateNewPlugin(DialogWindow):
     def _handle_ok(self):
         """Internal callback to handle the OK button."""
         pw = self._parent_window
-        chosen_name = ModInfo.unique_name(
-            self._plugin_name.text_content + self._plugin_ext.get_value())
+        pl_name = self._plugin_name.text_content + self._plugin_ext.get_value()
+        newName, root = ModInfo.validate_filename_str(pl_name)
+        if root is None:
+            balt.showError(self, newName)
+            return EventResult.CANCEL
+        chosen_name = ModInfo.unique_name(newName)
         windowSelected = pw.GetSelected()
         pw.data_store.create_new_mod(chosen_name, windowSelected,
             esm_flag=self._esm_flag.is_checked,

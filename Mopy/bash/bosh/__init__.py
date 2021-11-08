@@ -2810,7 +2810,7 @@ class ModInfos(FileInfos):
         if wanted_masters is None:
             wanted_masters = [self.masterName]
         directory = directory or self.store_dir
-        new_mod_name = GPath(newName)
+        new_mod_name = GPath_no_norm(newName)
         newInfo = self.factory(directory.join(new_mod_name))
         newFile = ModFile(newInfo)
         newFile.tes4.masters = wanted_masters
@@ -3542,7 +3542,9 @@ def initTooldirs():
     tooldirs[u'Freeplane'] = pathlist(u'Freeplane',u'freeplane.exe')
 
 def initDefaultSettings():
-    #other settings from the INI:
+    # *some* settings from the INI - note we get some ini settings (such as
+    # sOblivionMods) via get_ini_option/get_path_from_ini we never store those
+    # in bass.inisettings
     inisettings[u'ScriptFileExt'] = u'.txt'
     inisettings[u'ResetBSATimestamps'] = True
     inisettings[u'EnsurePatchExists'] = True

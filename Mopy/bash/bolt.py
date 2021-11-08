@@ -485,7 +485,7 @@ class Path(object):
 
     #--Class Vars/Methods -------------------------------------------
     sys_fs_enc = sys.getfilesystemencoding() or u'mbcs'
-    invalid_chars_re = re.compile(r'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
+    invalid_chars_re = re.compile(r'(.*)([/\\:*?"<>|]+)(.*)', re.I) # \\ needed
 
     @staticmethod
     def getNorm(str_or_path):
