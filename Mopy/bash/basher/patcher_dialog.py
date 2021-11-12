@@ -59,13 +59,8 @@ class PatchDialog(DialogWindow):
             size=balt.sizes.get(self.__class__.__name__, (500, 600)))
         #--Data
         list_patches_dir() # refresh cached dir
-        self.patchConfigs = patchConfigs
-        isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
         self._gui_patchers = [copy.deepcopy(p) for p in all_gui_patchers]
-        for patcher in self._gui_patchers:
-            patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
-            patcher.is_first_load = isFirstLoad
         self.currentPatcher = None
         patcherNames = [patcher.patcher_name for patcher in self._gui_patchers]
         #--GUI elements
@@ -95,8 +90,6 @@ class PatchDialog(DialogWindow):
         self.gRevertToDefault = RevertButton(self,
                                              btn_label=_(u'Revert To Default'))
         self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
-        for index,patcher in enumerate(self._gui_patchers):
-            self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this '
                                 u'patch was built are displayed in bold.')
         self.gTipText = Label(self,self.defaultTipText)
@@ -124,6 +117,10 @@ class PatchDialog(DialogWindow):
             ]),
         ]).apply_to(self)
         #--Patcher panels
+        # load the config
+        self.patchConfigs = patchConfigs
+        isFirstLoad = 0 == len(patchConfigs)
+        self._load_config(patchConfigs, isFirstLoad, _decouple=True) ##: _decouple == True to short circuit _import_config
         for patcher in self._gui_patchers:
             patcher.GetConfigPanel(self, self.config_layout,
                 self.gTipText).visible = False
@@ -131,7 +128,6 @@ class PatchDialog(DialogWindow):
         if initial_select >= 0:
             self.gPatchers.lb_select_index(initial_select) # callback not fired
             self.ShowPatcher(self._gui_patchers[initial_select]) # so this is needed
-        self._update_ok_btn()
 
     #--Core -------------------------------
     def _update_ok_btn(self):
@@ -339,10 +335,11 @@ class PatchDialog(DialogWindow):
             return
         self._load_config(patchConfigs)
 
-    def _load_config(self, patchConfigs, set_first_load=False, default=False):
+    def _load_config(self, patchConfigs, set_first_load=False, default=False,
+                     _decouple=False): ##: hacky param due to SetItems/GetConfigPanel overlap
         for index, patcher in enumerate(self._gui_patchers):
             patcher.import_config(patchConfigs, set_first_load=set_first_load,
-                                  default=default)
+                                  default=default, _decouple=_decouple)
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self._update_ok_btn()
 

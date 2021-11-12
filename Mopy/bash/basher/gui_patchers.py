@@ -109,7 +109,7 @@ class _PatcherPanel(object):
         self.patch_dialog.gPatchers.set_focus_from_kb()
 
     #--Config Phase -----------------------------------------------------------
-    def getConfig(self, configs):
+    def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default.
 
         Called in basher.patcher_dialog.PatchDialog#__init__, before the
@@ -165,10 +165,11 @@ class _PatcherPanel(object):
                 log(f'. ~~{item}~~')
                 clip.write(f'    {item}\n')
 
-    def import_config(self, patchConfigs, set_first_load=False, default=False):
+    def import_config(self, patchConfigs, set_first_load=False, default=False,
+                      _decouple=False):
         self.is_first_load = set_first_load
-        self.getConfig(patchConfigs) # set isEnabled and load additional config
-        self._import_config(default)
+        self._getConfig(patchConfigs) # set isEnabled and load additional config
+        if not _decouple: self._import_config(default)
 
     def _import_config(self, default=False): pass
 
@@ -217,9 +218,9 @@ class _AliasesPatcherPanel(_PatcherPanel):
         self.SetAliasText()
 
     #--Config Phase -----------------------------------------------------------
-    def getConfig(self, configs):
+    def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
-        config = super(_AliasesPatcherPanel, self).getConfig(configs)
+        config = super()._getConfig(configs)
         #--Update old configs to use Paths instead of strings.
         self._ci_aliases = dict(
             [GPath(i) for i in item] for item in
@@ -405,9 +406,9 @@ class _ListPatcherPanel(_PatcherPanel):
         self._set_focus()
 
     #--Config Phase -----------------------------------------------------------
-    def getConfig(self, configs):
+    def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
-        config = super(_ListPatcherPanel, self).getConfig(configs)
+        config = super()._getConfig(configs)
         self.autoIsChecked = self.forceAuto or config.get(
             u'autoIsChecked', self.__class__.default_autoIsChecked)
         self.remove_empty_sublists = config.get(
@@ -736,9 +737,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         self._set_focus()
 
     #--Config Phase -----------------------------------------------------------
-    def getConfig(self, configs):
+    def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
-        config = super(_TweakPatcherPanel, self).getConfig(configs)
+        config = super()._getConfig(configs)
         self._all_tweaks = self.patcher_type.tweak_instances()
         for tweak in self._all_tweaks:
             tweak.init_tweak_config(config)
@@ -752,7 +753,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         return config
 
     def _log_config(self, conf, config, clip, log):
-        self.getConfig(config) # set self._all_tweaks and load their config
+        self._getConfig(config) # set self._all_tweaks and load their config
         for tweak in self._all_tweaks:
             if tweak.tweak_key in conf:
                 enabled, value = conf.get(tweak.tweak_key, (False, u''))
@@ -827,9 +828,9 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         self._bind_mouse_events(self.gList)
         return gConfigPanel
 
-    def getConfig(self, configs):
+    def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
-        config = super(_ListsMergerPanel, self).getConfig(configs)
+        config = super()._getConfig(configs)
         #--Make sure configChoices are set (as choiceMenu exists).
         for item in self.configItems:
             self._get_set_choice(item)
