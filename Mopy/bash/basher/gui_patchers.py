@@ -230,7 +230,6 @@ class _AliasesPatcherPanel(_PatcherPanel):
 
     def saveConfig(self, configs):
         """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
         config = super(_AliasesPatcherPanel, self).saveConfig(configs)
         config[u'aliases'] = self._ci_aliases
         return config

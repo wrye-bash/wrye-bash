@@ -44,7 +44,7 @@ reListArchive = re.compile(
 
 def compress7z(command, full_dest, rel_dest, srcDir, progress=None):
     if progress is not None: #--Used solely for the progress bar
-        length = sum([len(files) for x, y, files in os.walk(srcDir.s)])
+        length = sum(map(len, (files for x, y, files in os.walk(srcDir.s))))
         progress(0, f'{rel_dest}\n' + _(u'Compressing files...'))
         progress.setFull(1 + length)
     #--Pack the files

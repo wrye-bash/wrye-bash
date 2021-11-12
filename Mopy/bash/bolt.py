@@ -740,7 +740,7 @@ class Path(object):
         except FileNotFoundError:
             return []
 
-    def walk(self,topdown=True,onerror=None,relative=False):
+    def walk(self, topdown=True, onerror=None, *, relative=False):
         """Like os.walk."""
         if relative:
             start = len(self._s)
@@ -750,7 +750,7 @@ class Path(object):
                        [GPath_no_norm(x) for x in files])
         else:
             for root_dir,dirs,files in os.walk(self._s, topdown, onerror):
-                yield (GPath(root_dir),
+                yield (GPath(root_dir), ##: leaves the leading path separator?
                        [GPath_no_norm(x) for x in dirs],
                        [GPath_no_norm(x) for x in files])
 
@@ -973,8 +973,6 @@ def clearReadOnly(dirPath):
 # TMP functions to deprecate Paths functionality for simple filenames - SLOW!
 def cext_(string_val):
     return os.path.splitext(string_val)[-1].lower()
-def body_(string_val):
-    return os.path.basename(os.path.splitext(string_val)[0])
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines

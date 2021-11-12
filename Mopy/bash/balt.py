@@ -173,14 +173,6 @@ class ColorChecks(ImageList):
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
-    """Shows a modal directory dialog and return the resulting path, or None if canceled."""
-    with wx.DirDialog(parent, message, defaultPath.s,
-                      style=wx.DD_NEW_DIR_BUTTON) as dialog:
-        if dialog.ShowModal() != wx.ID_OK: return None
-        return GPath(dialog.GetPath())
-
-#------------------------------------------------------------------------------
 def askContinue(parent, message, continueKey, title=_(u'Warning')):
     """Show a modal continue query if value of continueKey is false. Return
     True to continue.
@@ -1705,7 +1697,12 @@ class Link(object):
 
     def _askDirectory(self, message=_(u'Choose a directory.'),
                       defaultPath=u''):
-        return askDirectory(self.window, message, defaultPath)
+        """Show a modal directory dialog and return the resulting path,
+        or None if canceled."""
+        with wx.DirDialog(self.window, message, defaultPath.s,
+                          style=wx.DD_NEW_DIR_BUTTON) as dialog:
+            if dialog.ShowModal() != wx.ID_OK: return None
+            return GPath(dialog.GetPath())
 
     def _askContinueShortTerm(self, message, title=_(u'Warning')):
         return askContinueShortTerm(self.window, message, title=title)

@@ -1248,7 +1248,7 @@ class AsteriskGame(Game):
         if not exists:
             # Create it if it doesn't exist
             self._persist_load_order(lo, active)
-            bolt.deprint(u'Created %s' % self.plugins_txt_path)
+            bolt.deprint(f'Created {self.plugins_txt_path}')
         return lo, active
 
     def _persist_load_order(self, lord, active):

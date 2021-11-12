@@ -1215,9 +1215,9 @@ class WryeParser(ScriptParser.Parser):
                 List = []
                 if self.installer.is_project():
                     sub = bass.dirs[u'installers'].join(self._path, subpackage)
-                    for root_dir, dirs, files in sub.walk():
+                    for root_dir, dirs, files in sub.walk(relative=True):
                         for file_ in files:
-                            rel = root_dir.join(file_).relpath(sub)
+                            rel = root_dir[1:].join(file_) # chop off path sep
                             List.append(rel.s)
                 else:
                     # Archive
@@ -1226,16 +1226,19 @@ class WryeParser(ScriptParser.Parser):
                         if not rel.s.startswith(u'..'):
                             List.append(rel.s)
                 List.sort()
-            if len(List) == 0:
+            if not List:
                 self.variables[varname.text] = u''
                 self.PushFlow(u'For', False, [u'For',u'EndFor'])
             else:
                 self.variables[varname.text] = List[0]
-                self.PushFlow(u'For', True, [u'For',u'EndFor'], ForType=1, cLine=self.cLine, varname=varname.text, List=List, index=0)
+                self.PushFlow(u'For', True, [u'For', u'EndFor'], ForType=1,
+                              cLine=self.cLine, varname=varname.text,
+                              List=List, index=0)
         else:
             error(_(u"Invalid syntax for 'For' statement.  Expected format:")
-                  +u'\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name'
-                  )
+                + u'\n For var_name from value_start to value_end [by '
+                  u'value_increment]\n For var_name in SubPackages\n For '
+                  u'var_name in subpackage_name')
 
     def kwdEndFor(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != u'For':

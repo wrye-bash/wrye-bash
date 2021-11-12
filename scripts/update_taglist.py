@@ -58,15 +58,15 @@ def setup_parser(parser):
         u'-l',
         u'--logfile',
         default=LOGFILE,
-        help=u'Where to store the log. '
-             u'[default: {}]'.format(utils.relpath(LOGFILE)),
+        help=f'Where to store the log. [default: '
+             f'{os.path.relpath(LOGFILE, os.getcwd())}]',
     )
     parser.add_argument(
         u'-mv',
         u'--masterlist-version',
         default=MASTERLIST_VERSION,
-        help=u'Which loot masterlist version to download '
-             u'[default: {}].'.format(MASTERLIST_VERSION),
+        help=f'Which loot masterlist version to download [default: '
+             f'{MASTERLIST_VERSION}].',
     )
 
 def download_masterlist(repository, version, dl_path):
