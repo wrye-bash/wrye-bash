@@ -592,8 +592,7 @@ class FidNotNullDecider(ACommonDecider):
         ##: Wasteful, but bush imports brec which uses this decider, so we
         # can't import bush in __init__...
         from .. import bush
-        return getattr(record, self._target_attr) != (
-            GPath(bush.game.master_file), 0)
+        return getattr(record, self._target_attr) != (bush.game.master_file, 0)
 
 class AttrValDecider(ACommonDecider):
     """Decider that returns an attribute value (may optionally apply a function

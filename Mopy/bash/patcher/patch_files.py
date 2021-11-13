@@ -25,11 +25,11 @@ import time
 from collections import defaultdict, Counter
 from itertools import chain
 from operator import attrgetter
-from .. import bush # for game etc
 from .. import bolt # for type hints
+from .. import bush # for game etc
 from .. import load_order, bass
+from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url
 from ..brec import MreRecord, RecHeader
-from ..bolt import GPath, SubProgress, deprint, Progress, dict_sort, readme_url
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import ModFile, LoadFactory
@@ -143,7 +143,7 @@ class PatchFile(ModFile):
         """Initialization."""
         ModFile.__init__(self,modInfo,None)
         self.tes4.author = u'BASHED PATCH'
-        self.tes4.masters = [p_file_minfos.masterName]
+        self.tes4.masters = [bush.game.master_file]
         self.longFids = True
         self.keepIds = set()
         # Aliases from one mod name to another. Used by text file patchers.
@@ -226,8 +226,7 @@ class PatchFile(ModFile):
                     self.worldOrphanMods.append(modName)
                 # TODO adapt for other games
                 if bush.game.fsName == u'Oblivion' and b'SCPT' in \
-                        modFile.tops and \
-                        modName != GPath(bush.game.master_file):
+                        modFile.tops and modName != bush.game.master_file:
                     gls = modFile.tops[b'SCPT'].getRecord(0x00025811)
                     if gls and gls.compiled_size == 4 and gls.last_index == 0:
                         self.compiledAllMods.append(modName)

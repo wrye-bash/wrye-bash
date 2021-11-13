@@ -150,7 +150,7 @@ class ContentsCheckerPatcher(Patcher):
                                                    removedId[1]))
 
 #------------------------------------------------------------------------------
-_main_master = GPath(bush.game.master_file)
+_main_master = bush.game.master_file
 class EyeCheckerPatcher(Patcher):
     patcher_group = u'Special'
     patcher_order = 29 # Run before Tweak Races

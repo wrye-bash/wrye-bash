@@ -1473,7 +1473,7 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                         for rfid, r in masterFile.tops[b'SCPT'].iter_present_records():
                             id_text[rfid] = r.script_source
                     newRecords = []
-                    generic_lore_fid = (bosh.modInfos.masterName, 0x025811)
+                    generic_lore_fid = (bush.game.master_file, 0x025811)
                     for rfid, record in scpt_grp.iter_present_records():
                         #--Special handling for genericLoreScript
                         if (rfid in id_text and rfid == generic_lore_fid and

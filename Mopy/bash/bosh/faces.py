@@ -459,9 +459,8 @@ class PCFaces(object):
             tes4.author = u'[wb]'
         if not tes4.description:
             tes4.description = _(u'Face dump from save game.')
-        from . import modInfos ##: put it here so I know it's initialized...
-        if modInfos.masterName not in tes4.masters:
-            tes4.masters.append(modInfos.masterName)
+        if bush.game.master_file not in tes4.masters:
+            tes4.masters.append(bush.game.master_file)
         masterMap = MasterMap(face.face_masters, modFile.augmented_masters())
         #--Eid
         npcEids = {record.eid for record in modFile.tops[b'NPC_'].records}

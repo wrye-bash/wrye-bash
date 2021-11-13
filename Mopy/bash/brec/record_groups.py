@@ -31,7 +31,7 @@ from operator import itemgetter, attrgetter
 # Wrye Bash imports
 from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
 from .utils_constants import group_types, fid_key
-from ..bolt import GPath, pack_int, structs_cache, attrgetter_cache
+from ..bolt import pack_int, structs_cache, attrgetter_cache
 from ..exception import AbstractError, ModError, ModFidMismatchError
 
 class MobBase(object):
@@ -208,8 +208,11 @@ class MobObjects(MobBase):
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         self.records = []
         self.id_records = {}
-        from .. import bosh
-        self._null_fid = (bosh.modInfos.masterName, 0)
+        from .. import bush
+        self._null_fid = (bush.game.master_file, 0)
+        # DarkPCB record
+        self._bad_form = bush.game.displayName == u'Oblivion' and (
+            bush.game.master_file, 0xA31D) or None
         super(MobObjects, self).__init__(header, loadFactory, ins, do_unpack)
 
     def get_all_signatures(self):
@@ -349,12 +352,7 @@ class MobObjects(MobBase):
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
         # YUCK, drop these local imports!
-        from .. import bush
-        from ..bosh import modInfos
         from ..mod_files import MasterSet
-        bad_form = (GPath(bush.game.master_file), 0xA31D) # DarkPCB record
-        is_oblivion = bush.game.displayName == u'Oblivion'
-        _null_fid = (modInfos.masterName, 0)
         filtered = []
         filteredAppend = filtered.append
         loadSetIsSuperset = loadSet.issuperset
@@ -362,7 +360,7 @@ class MobObjects(MobBase):
         copy_to_self = self.setRecord
         for record in block.getActiveRecords():
             fid = record.fid
-            if is_oblivion and fid == bad_form: continue
+            if fid == self._bad_form: continue
             #--Include this record?
             if doFilter:
                 # If we're Filter-tagged, perform merge filtering. Then, check
@@ -381,7 +379,7 @@ class MobObjects(MobBase):
             if iiSkipMerge: continue
             # We're past all hurdles - stick a copy of this record into
             # ourselves and mark it as merged
-            if record.isKeyedByEid and fid == _null_fid:
+            if record.isKeyedByEid and fid == self._null_fid:
                 mergeIdsAdd(record.eid)
             else:
                 mergeIdsAdd(fid)

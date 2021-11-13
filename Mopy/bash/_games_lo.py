@@ -201,7 +201,7 @@ class Game(object):
         super(Game, self).__init__()
         self.plugins_txt_path = plugins_txt_path # type: bolt.Path
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
-        self.master_path = mod_infos.masterName # type: bolt.Path
+        self.master_path = mod_infos._master_esm # type: bolt.Path
         self.mtime_plugins_txt = 0.0
         self.size_plugins_txt = 0
 

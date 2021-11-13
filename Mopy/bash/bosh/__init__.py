@@ -2034,13 +2034,11 @@ class ModInfos(FileInfos):
         FileInfos.__init__(self, dirs[u'mods'], factory=ModInfo)
         #--Info lists/sets
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        game_master = bush.game.master_file
-        if dirs[u'mods'].join(game_master).isfile():
-            ##: This needs to be moved elsewhere, then drop a bunch of GPaths
-            self.masterName = GPath(game_master)
+        if dirs[u'mods'].join(bush.game.master_file).isfile():
+            self._master_esm = bush.game.master_file
         else:
-            raise FileError(game_master, u'File is required, but could not be '
-                                         u'found')
+            raise FileError(bush.game.master_file,
+                            u'File is required, but could not be found')
         # Maps plugins to 'real indices', i.e. the ones the game will assign.
         self.real_indices = collections.defaultdict(lambda: sys.maxsize)
         # Maps each plugin to a set of all plugins that have it as a master
@@ -2159,7 +2157,7 @@ class ModInfos(FileInfos):
         self._lo_wip[previous_index + 1:previous_index + 1] = [new_mod]
 
     def cached_lo_last_esm(self):
-        last_esm = self.masterName
+        last_esm = self._master_esm
         for mod in self._lo_wip[1:]:
             if not load_order.in_master_block(self[mod]): return last_esm
             last_esm = mod
@@ -2212,8 +2210,7 @@ class ModInfos(FileInfos):
         start = order.index(firstItem)
         stop = order.index(lastItem) + 1  # excluded
         # Can't move the game's master file anywhere else but position 0
-        master = self.masterName
-        if master in order[start:stop]: return False
+        if self._master_esm in order[start:stop]: return False
         # List of names to move removed and then reinserted at new position
         toMove = order[start:stop]
         del order[start:stop]
@@ -2808,7 +2805,7 @@ class ModInfos(FileInfos):
             directory=empty_path, bashed_patch=False, esm_flag=False,
             esl_flag=False):
         if wanted_masters is None:
-            wanted_masters = [self.masterName]
+            wanted_masters = [self._master_esm]
         directory = directory or self.store_dir
         new_mod_name = GPath_no_norm(newName)
         newInfo = self.factory(directory.join(new_mod_name))
@@ -3011,9 +3008,8 @@ class ModInfos(FileInfos):
             maOblivion = reOblivion.match(name.s)
             if maOblivion and info.fsize in self.size_voVersion:
                 self.voAvailable.add(self.size_voVersion[info.fsize])
-        if self.masterName in self:
-            self.voCurrent = self.size_voVersion.get(
-                self[self.masterName].fsize, None)
+        if _master_esm := self.get(self._master_esm):
+            self.voCurrent = self.size_voVersion.get(_master_esm.fsize, None)
         else: self.voCurrent = None # just in case
 
     def _retry(self, old, new):  ##: we should check *before* writing the patch
@@ -3030,7 +3026,7 @@ class ModInfos(FileInfos):
         _(u'File in use'))
 
     def _get_version_paths(self, newVersion):
-        baseName = self.masterName # Oblivion.esm, say it's currently SI one
+        baseName = self._master_esm # Oblivion.esm, say it's currently SI one
         newSize = self.version_voSize[newVersion]
         oldSize = self[baseName].fsize
         if newSize == oldSize: return None, None
@@ -3052,10 +3048,10 @@ class ModInfos(FileInfos):
         if newName is None: return
         newInfo = self[newName]
         #--Rename
-        baseInfo = self[self.masterName]
+        baseInfo = self[self._master_esm]
         master_time = baseInfo.mtime
         new_info_time = newInfo.mtime
-        is_master_active = load_order.cached_is_active(self.masterName)
+        is_master_active = load_order.cached_is_active(self._master_esm)
         is_new_info_active = load_order.cached_is_active(newName)
         # can't use ModInfos rename cause it will mess up the load order
         file_info_rename_op = super(ModInfos, self).rename_operation
@@ -3073,20 +3069,20 @@ class ModInfos(FileInfos):
                 return
         while True:
             try:
-                file_info_rename_op(newInfo, self.masterName)
+                file_info_rename_op(newInfo, self._master_esm)
                 break
             except PermissionError:
                 if self._retry(newInfo.getPath(), baseInfo.getPath()):
                     continue
                 #Undo any changes
-                file_info_rename_op(oldName, self.masterName)
+                file_info_rename_op(oldName, self._master_esm)
                 raise
             except CancelError:
                 #Undo any changes
-                file_info_rename_op(oldName, self.masterName)
+                file_info_rename_op(oldName, self._master_esm)
                 return
         # set mtimes to previous respective values
-        self[self.masterName].setmtime(master_time)
+        self[self._master_esm].setmtime(master_time)
         self[oldName].setmtime(new_info_time)
         oldIndex = self._lo_wip.index(newName)
         self._lo_caches_remove_mods([newName])
@@ -3097,7 +3093,7 @@ class ModInfos(FileInfos):
                 self.lo_activate(mod, doSave=False)
             else: self.lo_deactivate(mod, doSave=False)
         _activate(is_new_info_active, oldName)
-        _activate(is_master_active, self.masterName)
+        _activate(is_master_active, self._master_esm)
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all() # sets ghost as needed iff autoGhost is True
         self.voCurrent = newVersion

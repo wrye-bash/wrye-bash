@@ -26,7 +26,7 @@ from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
 from .. import WS_COMMON
-from ... import brec
+from ... import brec, bolt
 
 class Fallout4GameInfo(PatchGame):
     displayName = u'Fallout 4'
@@ -41,7 +41,7 @@ class Fallout4GameInfo(PatchGame):
     game_detect_includes = [u'Fallout4.exe']
     game_detect_excludes = WS_COMMON
     version_detect_file = u'Fallout4.exe'
-    master_file = u'Fallout4.esm'
+    master_file = bolt.GPath_no_norm(u'Fallout4.esm')
     taglist_dir = u'Fallout4'
     loot_dir = u'Fallout4'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')

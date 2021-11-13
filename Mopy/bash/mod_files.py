@@ -28,8 +28,7 @@ from itertools import chain
 from zlib import decompress as zlib_decompress, error as zlib_error
 
 from . import bolt, bush, env, load_order
-from .bolt import deprint, GPath, SubProgress, structs_cache, struct_error,\
-    decoder
+from .bolt import deprint, SubProgress, structs_cache, struct_error, decoder
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds, \
     unpack_header, FastModReader, Subrecord
@@ -371,7 +370,7 @@ class ModFile(object):
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""
         if not self.longFids: raise StateError(u"ModFile fids not in long form.")
-        masters_set = MasterSet([GPath(bush.game.master_file)])
+        masters_set = MasterSet([bush.game.master_file])
         for block in self.tops.values():
             block.updateMasters(masters_set.add)
         # The file itself is always implicitly available, so discard it here

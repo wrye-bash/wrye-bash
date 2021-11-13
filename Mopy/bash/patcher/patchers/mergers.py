@@ -28,7 +28,6 @@ to eventually absorb all of them under the _AMerger base class."""
 import copy
 from collections import defaultdict, Counter
 from itertools import chain
-from operator import attrgetter
 # Internal
 from ..base import ImportPatcher, ListPatcher
 from ... import bush
@@ -829,7 +828,7 @@ class LeveledListsPatcher(_AListsMerger):
         super(LeveledListsPatcher, self).__init__(p_name, p_file, p_sources,
                                           remove_empty, tag_choices)
         self.empties = set()
-        _skip_id = lambda x: (GPath(bush.game.master_file), x)
+        _skip_id = lambda x: (bush.game.master_file, x)
         self._overhaul_compat(self.srcs, _skip_id)
 
     def _check_list(self, record, log):

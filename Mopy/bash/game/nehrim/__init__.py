@@ -26,7 +26,7 @@ from collections import defaultdict
 from os.path import join as _j
 
 from ..oblivion import OblivionGameInfo
-from ... import brec
+from ... import brec, bolt
 from ...brec import MreGlob, MreLand
 
 class NehrimGameInfo(OblivionGameInfo):
@@ -35,7 +35,7 @@ class NehrimGameInfo(OblivionGameInfo):
     bash_root_prefix = u'Nehrim'
     bak_game_name = u'Nehrim'
     game_detect_includes = [u'NehrimLauncher.exe']
-    master_file = u'Nehrim.esm'
+    master_file = bolt.GPath_no_norm(u'Nehrim.esm')
     loot_dir = u'Nehrim'
     boss_game_name = u'Nehrim'
     nexusUrl = u'https://www.nexusmods.com/nehrim/'

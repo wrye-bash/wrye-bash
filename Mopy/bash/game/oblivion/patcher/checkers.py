@@ -29,7 +29,6 @@ from collections import defaultdict
 
 from ._shared import cobl_main, ExSpecial
 from .... import bush
-from ....bolt import GPath
 from ....brec import MreRecord, RecHeader
 from ....patcher.base import ModLoader, Patcher
 
@@ -173,7 +172,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
 
 #------------------------------------------------------------------------------
-_ob_path = GPath(bush.game.master_file)
+_ob_path = bush.game.master_file
 class SEWorldTestsPatcher(ExSpecial, ModLoader):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     patcher_name = _(u'SEWorld Tests')

@@ -30,7 +30,7 @@ from collections import defaultdict
 from itertools import chain
 from os.path import join as _j
 
-from .. import brec
+from .. import brec, bolt
 
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
@@ -89,7 +89,7 @@ class GameInfo(object):
     # and therefore needs a different file here).
     version_detect_file = u''
     # The main plugin Wrye Bash should look for
-    master_file = u''
+    master_file = bolt.GPath_no_norm('')
     # The directory in which mods and other data files reside. This is relative
     # to the game directory.
     mods_dir = u'Data'
