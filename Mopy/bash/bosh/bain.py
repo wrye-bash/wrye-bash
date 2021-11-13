@@ -1421,19 +1421,21 @@ class InstallerArchive(Installer):
         destDir = bass.dirs[u'installers'].join(project)
         destDir.rmtree(safety=u'Installers')
         #--Extract
-        progress(0,u'%s\n'%project+_(u'Extracting files...'))
+        progress(0, f'{project}\n' + _(u'Extracting files...'))
         unpack_dir = self.unpackToTemp(files, SubProgress(progress, 0, 0.9))
         #--Move
-        progress(0.9,u'%s\n'%project+_(u'Moving files...'))
+        progress(0.9, f'{project}\n' + _(u'Moving files...'))
         count = 0
         tempDirJoin = unpack_dir.join
         destDirJoin = destDir.join
         for file_ in files:
             srcFull = tempDirJoin(file_)
             destFull = destDirJoin(file_)
-            if srcFull.exists():
+            try:
                 srcFull.moveTo(destFull) # will try and clean read only flag
                 count += 1
+            except StateError: # Path does not exist
+                pass
         bass.rmTempDir()
         return count
 
@@ -2741,10 +2743,10 @@ class InstallersData(DataStore):
                         refresh_ui[0] = True
                     self.data_sizeCrcDate.pop(filename, None)
                     emptyDirs.add(full_path.head)
-                except OSError:
+                except (StateError, OSError):
                     #It's not imperative that files get moved, so ignore errors
-                    deprint(u'Clean Data: moving %s to %s failed' % (
-                                full_path, destDir), traceback=True)
+                    deprint(f'Clean Data: moving {full_path} to {destDir} '
+                            f'failed', traceback=True)
             modInfos.delete_refresh(mods, None, check_existence=False)
             for emptyDir in emptyDirs:
                 if emptyDir.isdir() and not emptyDir.list():

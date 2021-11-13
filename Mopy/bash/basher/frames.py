@@ -31,6 +31,7 @@ from ..balt import Link, Resources
 from ..bolt import GPath
 from ..bosh import omods
 from ..bosh import mods_metadata
+from ..exception import StateError
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
     web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
@@ -192,8 +193,8 @@ class DocBrowser(WindowFrame):
         old_path.moveTo(dest_path)
         if self._doc_is_wtxt:
             old_html, new_html = (x.root+u'.html' for x in (old_path,dest_path))
-            if old_html.exists(): old_html.moveTo(new_html)
-            else: new_html.remove()
+            try: old_html.moveTo(new_html)
+            except StateError: new_html.remove()
         #--Remember change
         self._db_doc_paths[self._mod_name] = dest_path
         self._doc_name_box.text_content = dest_path.stail

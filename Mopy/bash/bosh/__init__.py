@@ -3648,7 +3648,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         if delBackup: _bak.remove()
         # bolt machinery will automatically load the backup - bypass it if
         # user did, by temporarily renaming the .bak file
-        if ignoreBackup: _bak.moveTo(u'%s.ignore' % _bak)
+        if ignoreBackup: _bak.moveTo(f'{_bak}.ignore')
         # load the .bak file, or an empty settings dict saved to disc at exit
         loaded = _load()
         if ignoreBackup: GPath(u'%s.ignore' % _bak).moveTo(_bak)

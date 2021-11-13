@@ -406,24 +406,28 @@ class Game(object):
         raise exception.AbstractError
 
     # MODFILES PARSING --------------------------------------------------------
-    def _parse_modfile(self, path):
+    def _parse_modfile(self, path, do_raise=False):
         """:rtype: (list[bolt.Path], list[bolt.Path])"""
-        if not path.exists(): return [], []
         #--Read file
-        acti, _lo = _parse_plugins_txt_(path, self.mod_infos, _star=self._star)
-        return acti, _lo
+        try:
+            return _parse_plugins_txt_(path, self.mod_infos, _star=self._star)
+        except FileNotFoundError:
+            if do_raise: raise
+            return [], []
 
     def _write_modfile(self, path, lord, active):
         _write_plugins_txt_(path, lord, active, _star=self._star)
 
     # PLUGINS TXT -------------------------------------------------------------
     def _parse_plugins_txt(self):
-        """:rtype: (list[bolt.Path], list[bolt.Path])"""
-        if not self.plugins_txt_path.exists(): return [], []
-        #--Read file
-        acti, _lo = self._parse_modfile(self.plugins_txt_path)
-        self.__update_plugins_txt_cache_info()
-        return acti, _lo
+        """Read plugins.txt file and return a tuple of (active, loadorder).
+        :rtype: (list[bolt.Path], list[bolt.Path])"""
+        try:
+            acti_lo = self._parse_modfile(self.plugins_txt_path, do_raise=True)
+            self.__update_plugins_txt_cache_info()
+            return acti_lo
+        except FileNotFoundError:
+            return [], []
 
     def _write_plugins_txt(self, lord, active):
         self._write_modfile(self.plugins_txt_path, lord, active)
@@ -1238,14 +1242,13 @@ class AsteriskGame(Game):
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from plugins.txt file. If plugins.txt does not exist
         create it. Discards information read if cached is passed in."""
-        exists = self.plugins_txt_path.exists()
         active, lo = self._parse_modfile(self.plugins_txt_path) # empty if not exists
         lo = lo if cached_load_order is None else cached_load_order
         if cached_active is None:  # we fetched it, clean it up
             active, lo = self._clean_actives(active, lo)
         else:
             active = cached_active
-        if not exists:
+        if not self.plugins_txt_path.exists():
             # Create it if it doesn't exist
             self._persist_load_order(lo, active)
             bolt.deprint(f'Created {self.plugins_txt_path}')

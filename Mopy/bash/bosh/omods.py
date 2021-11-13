@@ -28,6 +28,7 @@ from .. import env, bolt, bass, archives
 from ..bolt import decoder, encode, Path, startupinfo, unpack_int_signed, \
     unpack_byte, unpack_short, unpack_int64_signed, pack_byte_signed, \
     pack_byte, pack_int_signed, popen_common
+from ..exception import StateError
 
 def _readNetString(open_file):
     """Read a .net string. THIS CODE IS DUBIOUS!"""
@@ -198,8 +199,8 @@ class OmodFile(object):
                 with ocdDir.join(u'readme.rtf').open(u'wb') as output:
                     output.write(_readNetString(ins))
         progress(0.49, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscreenshot')
-        if extractDir.join(u'image').exists():
-            extractDir.join(u'image').moveTo(ocdDir.join(u'screenshot'))
+        try: extractDir.join(u'image').moveTo(ocdDir.join(u'screenshot'))
+        except StateError: pass # image file does not exist
         progress(0.5, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nconfig')
         extractDir.join(u'config').moveTo(ocdDir.join(u'config'))
         # Extract the files

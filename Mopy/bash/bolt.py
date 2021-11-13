@@ -845,9 +845,10 @@ class Path(object):
                 os.makedirs(destName.shead)
             shutil.copyfile(self._s,destName._s)
             destName.mtime = self.mtime
-    def moveTo(self,destName):
-        if not self.exists():
-            raise exception.StateError(self._s + u' cannot be moved because it does not exist.')
+    def moveTo(self, destName, check_exist=True):
+        if check_exist and not self.exists():
+            raise exception.StateError(f'{self._s} cannot be moved because it '
+                                       f'does not exist.')
         destPath = GPath(destName)
         if destPath._cs == self._cs: return
         if destPath.shead and not os.path.exists(destPath.shead):
