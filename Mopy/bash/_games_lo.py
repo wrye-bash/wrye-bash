@@ -1225,9 +1225,12 @@ class AsteriskGame(Game):
     def _backup_active_plugins(self):
         try:
             self.plugins_txt_path.copyTo(self.plugins_txt_path.backup)
+        except FileNotFoundError:
+            bolt.deprint(f'Tried to back up {self.plugins_txt_path}, but it '
+                         f'did not exist')
         except OSError:
-            bolt.deprint(u'Tried to back up %s, but it did not '
-                         u'exist' % self.plugins_txt_path)
+            bolt.deprint(f'Failed to back up {self.plugins_txt_path}',
+                         traceback=True)
 
     def _backup_load_order(self):
         self._backup_active_plugins() # same thing for asterisk games
@@ -1237,9 +1240,11 @@ class AsteriskGame(Game):
         create it. Discards information read if cached is passed in."""
         exists = self.plugins_txt_path.exists()
         active, lo = self._parse_modfile(self.plugins_txt_path) # empty if not exists
-        active = active if cached_active is None else cached_active
         lo = lo if cached_load_order is None else cached_load_order
-        active, lo = self._clean_actives(active, lo)
+        if cached_active is None:  # we fetched it, clean it up
+            active, lo = self._clean_actives(active, lo)
+        else:
+            active = cached_active
         if not exists:
             # Create it if it doesn't exist
             self._persist_load_order(lo, active)
