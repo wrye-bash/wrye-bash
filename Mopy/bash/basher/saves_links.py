@@ -34,7 +34,7 @@ from .. import bass, bosh, bolt, balt, bush, load_order, initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, UIList_Rename
 from ..bolt import GPath, SubProgress
-from ..bosh import faces, SaveInfo
+from ..bosh import faces
 from ..exception import ArgumentError, BoltError, ModError, AbstractError
 from ..gui import BusyCursor, ImageWrapper, FileSave
 from ..mod_files import LoadFactory, MasterMap, ModFile
@@ -358,7 +358,7 @@ class Save_DiffMasters(EnabledLink):
                 message += u'\n* '.join(x.s for x in load_order.get_ordered(missing))
                 if added: message += u'\n\n'
             if added:
-                message += u'=== '+_(u'Added Masters')+u' (%s):\n* ' % newName
+                message += u'=== ' + _(u'Added Masters') + f' ({newName}):\n* '
                 message += u'\n* '.join(x.s for x in load_order.get_ordered(added))
             self._showWryeLog(message, title=_(u'Diff Masters'))
 

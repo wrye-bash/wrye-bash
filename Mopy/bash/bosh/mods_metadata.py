@@ -423,10 +423,10 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                 hitmes[p_ci_key] = hitme_msg
     # -------------------------------------------------------------------------
     # Some helpers for building the log
-    def log_plugins(plugin_list):
+    def log_plugins(plugin_list_):
         """Logs a simple list of plugins."""
-        for p in sorted(plugin_list):
-            log(u'* __%s__' % p)
+        for p in sorted(plugin_list_):
+            log(f'* __{p}__')
     def log_plugin_messages(plugin_dict):
         """Logs a list of plugins with a message after each plugin."""
         for p, p_msg in dict_sort(plugin_dict):

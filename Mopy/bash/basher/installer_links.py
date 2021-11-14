@@ -554,14 +554,14 @@ class Installer_InstallSmart(_NoMarkerLink):
     _help = _(u'Installs selected installer(s), preferring a visual method if '
               u'available.')
 
-    def _try_installer(self, sel_package, inst_instance):
+    def _try_installer(self, sel_package, link_instance):
         """Checks if the specified installer link is enabled and, if so, runs
         it.
 
-        :type inst_instance: EnabledLink"""
-        inst_instance._initData(self.window, [GPath(sel_package.archive)])
-        if inst_instance._enable():
-            inst_instance.Execute()
+        :type link_instance: EnabledLink"""
+        link_instance._initData(self.window, [sel_package.ci_key])
+        if link_instance._enable():
+            link_instance.Execute()
             return True
         return False
 
@@ -807,7 +807,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                            u'\n' + u' ' * 60) as progress:
             progress.setFull(len(self.idata))
             numFiles = 0
-            destDir = GPath(u'Conflicts - %03d' % src_order)
+            fn_conflicts_dir = GPath(f'Conflicts - {src_order:03d}')
             for i,(package, installer) in enumerate(self.idata.sorted_pairs()):
                 curConflicts = set()
                 progress(i, _(u'Scanning Packages...') + u'\n%s' % package)
@@ -831,9 +831,9 @@ class Installer_CopyConflicts(_SingleInstallable):
             if inst.is_project():
                 for src in curConflicts:
                     srcFull = ijoin(package, src)
-                    destFull = ijoin(destDir, g_path, src)
+                    destFull = ijoin(fn_conflicts_dir, g_path, src)
                     if srcFull.exists():
-                        progress(curFile, u'%s\n' % self._selected_item + _(
+                        progress(curFile, f'{self._selected_item}\n' + _(
                             u'Copying files...') + u'\n' + src)
                         srcFull.copyTo(destFull)
                         curFile += 1
@@ -841,7 +841,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                 unpack_dir = inst.unpackToTemp(curConflicts,
                     SubProgress(progress, curFile, curFile + len(curConflicts),
                                 len(curConflicts)))
-                unpack_dir.moveTo(ijoin(destDir, g_path))
+                unpack_dir.moveTo(ijoin(fn_conflicts_dir, g_path))
                 curFile += len(curConflicts)
             return curFile
         with balt.Progress(_(u'Copying Conflicts...'),
@@ -855,9 +855,9 @@ class Installer_CopyConflicts(_SingleInstallable):
                 g_path = GPath(u'%03d - %s' % (
                     order if order < src_order else order + 1, package.s))
                 curFile = _copy_conflicts(curFile)
-        InstallerProject.refresh_installer(destDir, self.idata, progress=None,
-            install_order=src_order + 1, do_refresh=True)
-        self.window.RefreshUI(detail_item=destDir)
+        InstallerProject.refresh_installer(fn_conflicts_dir, self.idata,
+            progress=None, install_order=src_order + 1, do_refresh=True)
+        self.window.RefreshUI(detail_item=fn_conflicts_dir)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Plugin Filter Links ----------------------------------------

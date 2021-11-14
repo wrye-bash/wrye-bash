@@ -283,8 +283,8 @@ class Installer(ListInfo):
             self.resetEspmName(self.remaps[espm])
 
     def getEspmName(self,currentName):
-        for old in self.remaps:
-            if self.remaps[old] == currentName:
+        for old, renamed in self.remaps.items():
+            if renamed == currentName:
                 return old
         return currentName
 
@@ -1270,8 +1270,8 @@ class InstallerMarker(Installer):
             return 2, len(text_str) - 2
         return 0, len(text_str)
 
-    def __init__(self,archive):
-        Installer.__init__(self,archive)
+    def __init__(self, marker_key):
+        Installer.__init__(self, marker_key)
         self.modified = time.time()
 
     def __reduce__(self):
@@ -1529,7 +1529,7 @@ class InstallerProject(Installer):
 
     @staticmethod
     def _new_name(base_name, count):
-        return base_name + ((u' (%d)' % count) if count else u'')
+        return f'{base_name} ({count})' if count else base_name
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
@@ -1905,8 +1905,8 @@ class InstallersData(DataStore):
                             in installers]
         progress.setFull(len(installers))
         pending = []
-        for i, (installer, destArchive) in list(enumerate(zip(
-                installers, destArchives))): # we may modify installers below
+        for i, (installer, destArchive) in [*enumerate(zip(installers,
+                destArchives))]: # we may modify installers below
             progress(i, installer.archive)
             #--Extract the embedded BCF and move it to the Converters folder
             unpack_dir = installer.unpackToTemp([installer.hasBCF],

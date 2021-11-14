@@ -29,7 +29,7 @@ from .exception import StateError
 
 exe7z = u'7z.exe' if os.name == u'nt' else u'7z'
 defaultExt = u'.7z'
-writeExts = {u'.7z': u'7z', u'.zip': u'zip'}
+writeExts = {defaultExt: u'7z', u'.zip': u'zip'}
 readExts = {u'.rar', u'.001'}
 readExts.update(writeExts)
 omod_exts = {u'.omod', u'.fomod'}
@@ -109,13 +109,13 @@ def wrapPopenOut(command, wrapper, errorMsg):
         raise StateError(errorMsg + u'\nPopen return value: %d' + returncode)
 
 #  WIP: http://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
-def compressionSettings(archive_path, blockSize, isSolid):
-    archiveType = writeExts.get(archive_path.cext)
+def compressionSettings(fn_archive, blockSize, isSolid):
+    archiveType = writeExts.get(fn_archive.cext)
     if not archiveType:
         #--Always fall back to using the defaultExt
-        archive_path = GPath(archive_path.sbody + defaultExt).tail
-        archiveType = writeExts.get(archive_path.cext)
-    if archive_path.cext in noSolidExts: # zip
+        fn_archive = GPath(fn_archive.sbody + defaultExt).tail
+        archiveType = writeExts[defaultExt]
+    if fn_archive.cext in noSolidExts: # zip
         solid = u''
     else:
         if isSolid:
@@ -132,12 +132,12 @@ def compressionSettings(archive_path, blockSize, isSolid):
                 old = userArgs
                 userArgs = reSolid.sub(u'', userArgs).strip()
                 if old != userArgs: deprint(
-                    u'%s: 7zExtraCompressionArguments ini option "%s" -> '
-                    u'"%s"' % (archive_path, old, userArgs))
+                    f'{fn_archive}: 7zExtraCompressionArguments ini option '
+                    f'"{old}" -> "{userArgs}"')
             solid = userArgs
         else:
             solid += userArgs
-    return archive_path, archiveType, solid
+    return fn_archive, archiveType, solid
 
 def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
                     archiveType=u'7z'): # WIP - note solid on by default (7z)

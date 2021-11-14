@@ -1210,11 +1210,15 @@ class UIList(wx.Panel):
                     new.remove()  # return None # break
             return None # maybe a msg if really really needed
 
-    def _getItemClicked(self, lb_dex_and_flags, on_icon=False):
+    def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):
         (hitItem, hitFlag) = lb_dex_and_flags
         if hitItem < 0 or (on_icon and hitFlag != wx.LIST_HITTEST_ONITEMICON):
             return None
         return self.GetItem(hitItem)
+
+    def _get_info_clicked(self, lb_dex_and_flags, *, on_icon=False):
+        item_key = self._getItemClicked(lb_dex_and_flags, on_icon=on_icon)
+        return self.data_store[item_key] if item_key else item_key
 
     #--Item selection ---------------------------------------------------------
     def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
