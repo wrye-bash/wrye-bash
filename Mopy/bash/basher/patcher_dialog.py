@@ -154,7 +154,7 @@ class PatchDialog(DialogWindow):
         try:
             patch_name = self.patchInfo.ci_key
             patch_size = self.patchInfo.fsize
-            progress = balt.Progress(patch_name.s,(u' '*60+u'\n'), abort=True)
+            progress = balt.Progress(patch_name.s, abort=True)
             timer1 = time.process_time()
             #--Save configs
             config = self.__config()

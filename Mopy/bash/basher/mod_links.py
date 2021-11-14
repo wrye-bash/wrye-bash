@@ -1210,8 +1210,7 @@ class Mod_ScanDirty(ItemLink):
         all_deleted_navms = defaultdict(list) # ci_key -> list[fid]
         all_deleted_others = defaultdict(list) # ci_key -> list[fid]
         try:
-            with balt.Progress(_(u'Deleted Records'), u'\n' + u' ' * 60,
-                               abort=True) as progress:
+            with balt.Progress(_('Deleted Records'), abort=True) as progress:
                 progress.setFull(len(all_present_minfs))
                 load_progress = SubProgress(progress, 0, 0.7)
                 load_progress.setFull(len(all_present_minfs))

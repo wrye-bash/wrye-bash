@@ -270,7 +270,7 @@ class CreateNewProject(DialogWindow):
         if sel_installers:
             new_installer_order = sel_installers[-1].order + 1
         ##: This is mostly copy-pasted from InstallerArchive_Unpack
-        with balt.Progress(_('Creating Project...'), '\n' + ' ' * 60) as prog:
+        with balt.Progress(_('Creating Project...')) as prog:
             InstallerProject.refresh_installer(
                 result_proj, self._parent.data_store, progress=prog,
                 install_order=new_installer_order, do_refresh=False)

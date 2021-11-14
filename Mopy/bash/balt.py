@@ -729,8 +729,8 @@ class Progress(bolt.Progress):
     """Progress as progress dialog."""
     _style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_SMOOTH
 
-    def __init__(self, title=_(u'Progress'), message=u' '*60, parent=None,
-                 abort=False, elapsed=True, __style=_style):
+    def __init__(self, title=_('Progress'), message=f'\n{" " * 60}',
+                 parent=None, abort=False, elapsed=True, __style=_style):
         if abort: __style |= wx.PD_CAN_ABORT
         if elapsed: __style |= wx.PD_ELAPSED_TIME
         # TODO(inf) de-wx? Or maybe stop using None as parent for Progress?

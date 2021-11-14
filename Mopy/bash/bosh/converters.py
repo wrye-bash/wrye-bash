@@ -110,7 +110,6 @@ class ConvertersData(DataDict):
                 size_mtime = bcfPath.size_mtime()
                 if crc is None or (size, mod_time) != size_mtime:
                     crc = bcfPath.crc
-                    (size, mod_time) = size_mtime
                     if crc in bcfCRC_converter and bcfPath != bcfCRC_converter[
                         crc].fullPath:
                         self.bcfPath_sizeCrcDate.pop(bcfPath, None)
@@ -118,7 +117,8 @@ class ConvertersData(DataDict):
                             bcfPath.moveTo(
                                 self.dup_bcfs_dir.join(bcfPath.tail))
                         continue
-                self.bcfPath_sizeCrcDate[bcfPath] = (size, crc, mod_time)
+                    self.bcfPath_sizeCrcDate[bcfPath] = (size_mtime[0], crc,
+                                                         size_mtime[1])
                 if fullRefresh or crc not in bcfCRC_converter:
                     pending.add(bcf_archive)
                 else:
@@ -132,8 +132,7 @@ class ConvertersData(DataDict):
             progress(0, _(u'Scanning Converters...'))
             progress.setFull(len(pending))
             for index, bcf_archive in enumerate(sorted(pending)):
-                progress(index,
-                         _(u'Scanning Converter...') + f'\n{bcf_archive}')
+                progress(index,_('Scanning Converter...') + f'\n{bcf_archive}')
                 pendingChanged |= self.addConverter(bcf_archive)
         changed = pendingChanged or (len(newData) != len(bcfCRC_converter))
         self._prune_converters()

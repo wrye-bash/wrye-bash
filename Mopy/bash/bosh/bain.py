@@ -1499,16 +1499,13 @@ class InstallerArchive(Installer):
                 pass
 
     def _extract_wizard_files(self, wizard_file_name, wizard_prog_title):
-        with balt.Progress(wizard_prog_title, u'\n' + u' ' * 60,
-                           abort=True) as progress:
+        with balt.Progress(wizard_prog_title, abort=True) as progress:
             # Extract the wizard, and any images as well
             files_to_extract = [wizard_file_name]
+            image_exts = ('bmp', 'jpg', 'jpeg', 'png', 'gif', 'pcx', 'pnm',
+                'tif', 'tiff', 'tga', 'iff', 'xpm', 'ico', 'cur', 'ani')
             files_to_extract.extend(x for (x, _s, _c) in self.fileSizeCrcs if
-                                    x.lower().endswith((
-                                        u'bmp', u'jpg', u'jpeg', u'png',
-                                        u'gif', u'pcx', u'pnm', u'tif',
-                                        u'tiff', u'tga', u'iff', u'xpm',
-                                        u'ico', u'cur', u'ani',)))
+                                    x.lower().endswith(image_exts))
             unpack_dir = self.unpackToTemp(files_to_extract, progress,
                                            recurse=True)
         return unpack_dir.join(wizard_file_name)
@@ -1761,7 +1758,6 @@ class InstallersData(DataStore):
 
     def irefresh(self, progress=None, what=u'DIONSC', fullRefresh=False,
                  refresh_info=None, deleted=None, pending=None, projects=None):
-        progress = progress or bolt.Progress()
         #--Archive invalidation
         from . import oblivionIni, InstallerMarker, modInfos
         if bass.settings[u'bash.bsaRedirection'] and oblivionIni.abs_path.exists():
@@ -1788,6 +1784,7 @@ class InstallersData(DataStore):
         return changed
 
     def __load(self, progress):
+        progress = progress or bolt.Progress()
         progress(0, _(u'Loading Data...'))
         self.dictFile.load()
         pickl_data = self.dictFile.pickled_data
