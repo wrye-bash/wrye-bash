@@ -20,7 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
+from __future__ import annotations
 import time
 from collections import defaultdict, Counter
 from itertools import chain
@@ -37,7 +37,7 @@ from ..mod_files import ModFile, LoadFactory
 # the currently executing patch set in _Mod_Patch_Update before showing the
 # dialog - used in getAutoItems, to get mods loading before the patch
 ##: HACK ! replace with method param once gui_patchers are refactored
-executing_patch = None # type: bolt.Path
+executing_patch: bolt.FName | None = None
 
 class PatchFile(ModFile):
     """Base class of patch files. Wraps an executing bashed Patch."""

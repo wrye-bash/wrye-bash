@@ -38,7 +38,7 @@ from ..bolt import decoder, encode, struct_unpack, unpack_string, \
     unpack_float, unpack_double, unpack_int_signed, unpack_str32, AFile, \
     unpack_spaced_string, pack_int, pack_short, pack_double, pack_byte, \
     pack_int_signed, pack_float, pack_4s, struct_error, GPath, struct_pack, \
-    deprint
+    deprint, Path
 from ..exception import AbstractError, BoltError, CosaveError, \
     InvalidCosaveError, UnsupportedCosaveError
 
@@ -1419,15 +1419,14 @@ class ACosave(_Dumpable, _Remappable, AFile):
             cosave_chunk.remap_plugins(plugin_renames)
 
     @classmethod
-    def get_cosave_path(cls, save_path):
+    def get_cosave_path(cls, save_path: Path) -> Path:
         """Return the cosave path corresponding to save_path. The save_path
         may be located in the backup directory and so it may end with an 'f'
         (for first backup) which should be appended to the cosave path also.
 
         :param save_path: The path to the save file that a cosave could belong
             to.
-        :return: The path at which the cosave could exist.
-        :rtype: bolt.Path"""
+        :return: The path at which the cosave could exist."""
         sa_root, sa_ext = cls.parse_save_path(u'%s' % save_path)
         if sa_root and sa_ext:
             final_cs_path = sa_root + cls.cosave_ext

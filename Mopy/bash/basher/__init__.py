@@ -128,7 +128,7 @@ class Installers_Link(ItemLink):
                      disallow_overwrite=False, no_dir=True, base_dir=None,
                      allowed_exts=archives.writeExts, use_default_ext=True,
                      check_exists=True, no_file=False):
-        """:rtype: bolt.Path"""
+        """:rtype: bolt.FName"""
         result = self._askText(message, title=self._dialog_title,
                                default=f'{filename}') # accept Path and str
         if not result: return
@@ -1349,7 +1349,7 @@ class _DetailsMixin(object):
     # Details panel API
     def SetFile(self, fileName=u'SAME'):
         """Set file to be viewed. Leave fileName empty to reset.
-        :type fileName: str | bolt.Path | None"""
+        :type fileName: str | FName | None"""
         #--Reset?
         if fileName == u'SAME':
             if self.displayed_item not in self.file_infos:

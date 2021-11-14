@@ -126,7 +126,7 @@ class LoadOrder(object):
     def lorder(self, paths):
         """Return a tuple containing the given paths in their load order.
         :param paths: iterable of paths that must all have a load order
-        :type paths: collections.Iterable[bolt.Path]
+        :type paths: collections.Iterable[FName]
         :rtype: tuple
         """
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
@@ -195,14 +195,14 @@ def _keep_max(max_to_keep, length):
 def cached_active_tuple():
     """Return the currently cached active mods in load order as a tuple.
 
-    :rtype: tuple[bolt.Path]"""
+    :rtype: tuple[FName, ...]"""
     return cached_lord.activeOrdered
 
 def cached_lo_tuple():
     """Return the currently cached load order (including inactive mods) as a
     tuple.
 
-    :rtype: tuple[bolt.Path]"""
+    :rtype: tuple[FName, ...]"""
     return cached_lord.loadOrder
 
 def cached_is_active(mod):
@@ -232,8 +232,8 @@ def get_ordered(mod_paths):
     If some elements do not have a load order they are appended to the list
     in alphabetical, case insensitive order (used also to resolve
     modification time conflicts).
-    :type mod_paths: collections.Iterable[bolt.Path]
-    :rtype : list[bolt.Path]
+    :type mod_paths: collections.Iterable[FName]
+    :rtype : list[FName]
     """
     # resolve time conflicts or no load order
     mod_paths = sorted(mod_paths)
@@ -303,8 +303,8 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
 
 def _update_cache(lord=None, acti_sorted=None, __index_move=0):
     """
-    :type lord: tuple[bolt.Path] | list[bolt.Path]
-    :type acti_sorted: tuple[bolt.Path] | list[bolt.Path]
+    :type lord: tuple[FName, ...] | list[FName]
+    :type acti_sorted: tuple[FName, ...] | list[FName]
     """
     global cached_lord
     try:

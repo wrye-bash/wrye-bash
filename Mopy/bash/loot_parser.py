@@ -182,7 +182,7 @@ class LOOTParser(object):
 
         :param plugin_name: The name of the plugin whose dirty info should be
             checked.
-        :type plugin_name: Path
+        :type plugin_name: FName
         :param mod_infos: bosh.modInfos. Must be up to date."""
         def check_dirty(res_entry):
             return (res_entry and mod_infos[plugin_name].cached_mod_crc()
@@ -665,9 +665,9 @@ def _merge_lists(first_list, second_list):
     entries are simply copied over instead of merged.
 
     :param first_list: The list to merge information into.
-    :type first_list: LowerDict[str, _PluginEntry]
+    :type first_list: FNDict[str, _PluginEntry]
     :param second_list: The list to merge information from.
-    :type second_list: LowerDict[str, _PluginEntry]"""
+    :type second_list: FNDict[str, _PluginEntry]"""
     for plugin_name, second_entry in second_list.items():
         try:
             first_list[plugin_name].merge_with(second_entry)
@@ -676,14 +676,14 @@ def _merge_lists(first_list, second_list):
             first_list[plugin_name] = second_entry
 
 def _parse_list(list_path):
-    """Parses the specified masterlist or userlist and returns a LowerDict
+    """Parses the specified masterlist or userlist and returns a FNDict
     mapping plugins to _PluginEntry instances. To parse the YAML, PyYAML is
     used - the C version if possible.
 
     :param list_path: The path to the list that should be parsed.
     :type list_path: Path
-    :return: A LowerDict representing the list's contents.
-    :rtype: LowerDict[str, _PluginEntry]"""
+    :return: A FNDict representing the list's contents.
+    :rtype: FNDict[str, _PluginEntry]"""
     with list_path.open(u'r', encoding=u'utf-8') as ins:
         list_contents = yaml.load(ins, Loader=SafeLoader)
     # The list contents may be None if the list file exists, but is an entirely

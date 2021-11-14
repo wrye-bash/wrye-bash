@@ -74,7 +74,7 @@ def _parse_plugins_txt_(path, mod_infos, _star):
     :type path: bolt.Path
     :type mod_infos: bosh.ModInfos
     :type _star: bool
-    :rtype: (list[bolt.Path], list[bolt.Path])
+    :rtype: (list[FName], list[FName])
     """
     with path.open(u'rb') as ins:
         #--Load Files
@@ -201,7 +201,7 @@ class LoGame(object):
         super().__init__()
         self.plugins_txt_path = plugins_txt_path # type: bolt.Path
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
-        self.master_path = mod_infos._master_esm # type: bolt.Path
+        self.master_path = mod_infos._master_esm # type: bolt.FName
         self.mtime_plugins_txt = 0.0
         self.size_plugins_txt = 0
 
@@ -224,9 +224,9 @@ class LoGame(object):
         pass a cached value for either parameter this value will be returned
         unchanged, possibly validating the other one based on stale data.
         NOTE: modInfos must exist and be up to date for validation.
-        :type cached_load_order: tuple[bolt.Path]
-        :type cached_active_ordered: tuple[bolt.Path]
-        :rtype: (tuple[bolt.Path], tuple[bolt.Path])
+        :type cached_load_order: tuple[FName, ...]
+        :type cached_active_ordered: tuple[FName, ...]
+        :rtype: (tuple[FName, ...], tuple[FName, ...])
         """
         if cached_load_order is not None and cached_active_ordered is not None:
             return cached_load_order, cached_active_ordered # NOOP
@@ -381,12 +381,12 @@ class LoGame(object):
         raise exception.AbstractError
 
     def _fetch_load_order(self, cached_load_order, cached_active):
-        """:type cached_load_order: tuple[bolt.Path] | None
-        :type cached_active: tuple[bolt.Path]"""
+        """:type cached_load_order: tuple[FName, ...] | None
+        :type cached_active: tuple[FName, ...]"""
         raise exception.AbstractError
 
     def _fetch_active_plugins(self): # no override for AsteriskGame
-        """:rtype: list[bolt.Path]"""
+        """:rtype: list[FName]"""
         raise exception.AbstractError
 
     def _persist_load_order(self, lord, active, *, _cleaned=False):
@@ -408,7 +408,7 @@ class LoGame(object):
 
     # MODFILES PARSING --------------------------------------------------------
     def _parse_modfile(self, path, do_raise=False):
-        """:rtype: (list[bolt.Path], list[bolt.Path])"""
+        """:rtype: (list[FName], list[FName])"""
         #--Read file
         try:
             return _parse_plugins_txt_(path, self.mod_infos, _star=self._star)
@@ -422,7 +422,7 @@ class LoGame(object):
     # PLUGINS TXT -------------------------------------------------------------
     def _parse_plugins_txt(self):
         """Read plugins.txt file and return a tuple of (active, loadorder).
-        :rtype: (list[bolt.Path], list[bolt.Path])"""
+        :rtype: (list[FName], list[FName])"""
         try:
             acti_lo = self._parse_modfile(self.plugins_txt_path, do_raise=True)
             self.__update_plugins_txt_cache_info()
@@ -495,7 +495,7 @@ class LoGame(object):
         set_load_order() to check if a load order passed in is valid. Needs
         rethinking as save load and active should be an atomic operation -
         leads to hacks (like the _selected parameter).
-        :type lord: list[bolt.Path]
+        :type lord: list[FName]
         """
         if fix_lo is None: fix_lo = FixInfo() # discard fix info
         old_lord = lord[:]
@@ -643,7 +643,7 @@ class LoGame(object):
 
     @staticmethod
     def _check_for_duplicates(plugins_list):
-        """:type plugins_list: list[bolt.Path]"""
+        """:type plugins_list: list[FName]"""
         mods, duplicates, j = set(), set(), 0
         mods_add = mods.add
         duplicates_add = duplicates.add
@@ -733,13 +733,13 @@ class INIGame(LoGame):
     @staticmethod
     def _read_ini(cached_ini, ini_key):
         """Reads a section specified INI using the specified key and returns
-        all its values, as bolt.Path objects. Handles missing INI file and an
+        all its values, as bolt.FName objects. Handles missing INI file and an
         absent section gracefully.
 
         :type cached_ini: bosh.ini_files.IniFile
         :type ini_key: tuple[str, str, str]
-        :rtype: list[bolt.Path]"""
-        # Returned format is dict[CIstr, tuple[str, int]], we want the
+        :rtype: list[bolt.FName]"""
+        # Returned format is dict[FName, tuple[str, int]], we want the
         # unicode (i.e. the mod names)
         section_mapping = cached_ini.get_setting_values(ini_key[1], {})
         # Sort by line number, then convert the values to paths and return
@@ -752,7 +752,7 @@ class INIGame(LoGame):
 
         :type cached_ini: bosh.ini_files.IniFile
         :type ini_key: tuple[str, str, str]
-        :type mod_list: list[bolt.Path]"""
+        :type mod_list: list[FName]"""
         # Remove any existing section - also prevents duplicate sections with
         # different case
         cached_ini.remove_section(ini_key[1])

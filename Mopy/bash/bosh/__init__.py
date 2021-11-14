@@ -25,6 +25,8 @@
 are the DataStore singletons and bolt.AFile subclasses populating the data
 stores. bush.game must be set, to properly instantiate the data stores."""
 
+from __future__ import annotations
+
 # Imports ---------------------------------------------------------------------
 #--Python
 import collections
@@ -36,10 +38,13 @@ import sys
 import traceback
 from collections import OrderedDict
 from functools import wraps, partial
-from typing import Iterable
+from typing import Iterable, Optional, Type
 #--Local
+from . import cosaves
 from ._mergeability import isPBashMergeable, is_esl_capable
+from .cosaves import PluggyCosave, xSECosave
 from .mods_metadata import get_tags_from_dir
+from .save_headers import get_save_header_type, SaveFileHeader
 from .. import bass, bolt, balt, bush, env, load_order, initialization, \
     archives
 from ..bass import dirs, inisettings
@@ -86,6 +91,9 @@ reTESA = re.compile(r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?' + __exts,
                     re.I)
 del __exts
 imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
+
+#--Typing
+_CosaveDict = dict[Type[cosaves.ACosave], cosaves.ACosave]
 
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
@@ -1227,7 +1235,7 @@ class INIInfo(IniFile):
                         if self_installer is None: continue
                         for ini_info in infos.values():
                             if self is ini_info: continue
-                            if self_installer != ini_info.get_table_prop(
+                            if self_installer != ini_info.get_table_prop( ##: case sensitive??
                                     u'installer'): continue
                             # It's from the same installer
                             if self._incompatible(ini_info): continue
@@ -1296,15 +1304,12 @@ class INIInfo(IniFile):
         return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
-from .save_headers import get_save_header_type, SaveFileHeader
-from .cosaves import PluggyCosave, xSECosave
-from . import cosaves
-
 class SaveInfo(FileInfo):
     cosave_types = () # cosave types for this game - set once in SaveInfos
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
     _valid_exts_re = r'(\.(?:' + '|'.join(
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r', 'bak']) + '))'
+    _co_saves: _CosaveDict
 
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
         # Dict of cosaves that may come with this save file. Need to get this
@@ -1436,11 +1441,9 @@ class SaveInfo(FileInfo):
             return None
 
     @staticmethod
-    def get_cosaves_for_path(save_path):
+    def get_cosaves_for_path(save_path: Path) -> _CosaveDict:
         """Get ACosave instances for save_path if those paths exist.
-        Return a dict of those instances keyed by their type.
-
-        :rtype: dict[type, cosaves.ACosave]"""
+        Return a dict of those instances keyed by their type."""
         result = {}
         for co_type in SaveInfo.cosave_types:
             new_cosave = SaveInfo.make_cosave(
@@ -1584,7 +1587,7 @@ class TableFileInfos(DataStore):
         self.store_dir.makedirs()
         self.bash_dir.makedirs() # self.store_dir may need be set
         self._data = {} # populated in refresh ()
-        # the type of the table keys is always bolt.Path
+        # the type of the table keys is always bolt.FName
         self.table = bolt.DataTable(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
 
@@ -1614,10 +1617,8 @@ class TableFileInfos(DataStore):
 
     #--Right File Type?
     @classmethod
-    def rightFileType(cls, fileName):
+    def rightFileType(cls, fileName: bolt.FName | str):
         """Check if the filetype (extension) is correct for subclass.
-
-        :type fileName: bolt.Path | str
         :rtype: _sre.SRE_Match | None"""
         ##: This shouldn't take bytes, ensure it doesn't (especially wrt. to
         # pickle-related usages)

@@ -1908,9 +1908,9 @@ class InstallersData(DataStore):
         :type progress: bolt.Progress | None
         :type fullRefresh: bool
         :type refresh_info: InstallersData._RefreshInfo | None
-        :type deleted: collections.Iterable[bolt.Path] | None
-        :type pending: collections.Iterable[bolt.Path] | None
-        :type projects: collections.Iterable[bolt.Path] | None
+        :type deleted: collections.Iterable[FName] | None
+        :type pending: collections.Iterable[FName] | None
+        :type projects: collections.Iterable[FName] | None
         """
         # TODO(ut):we need to return the refresh_info for more granular control
         # in irefresh and also add extra processing for deleted files
@@ -3010,8 +3010,8 @@ class InstallersData(DataStore):
 
     def ipackages(self, installerKeys):
         """Remove markers from installerKeys.
-        :type installerKeys: collections.Iterable[bolt.Path]
-        :rtype: list[bolt.Path]
+        :type installerKeys: collections.Iterable[bolt.FName]
+        :rtype: list[bolt.FName]
         """
         return (x for x in installerKeys if not self[x].is_marker)
 

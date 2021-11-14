@@ -956,8 +956,7 @@ class UIList(wx.Panel):
         specified.
         :param itemDex: the index of the item in the list - must be given if
         item is None
-        :param item: a bolt.Path or an int (Masters) or a string (People),
-        the key in self.data
+        :param item: an FName or an int (Masters), the key in self.data
         """
         insert = False
         gl_set_item = self.__gList._native_widget.SetItem
@@ -1410,7 +1409,7 @@ class UIList(wx.Panel):
     #--Item/Index Translation -------------------------------------------------
     def GetItem(self,index):
         """Return item (key in self.data_store) for specified list index.
-        :rtype: bolt.Path | str | int
+        :rtype: bolt.FName | int
         """
         return self.__gList.FindItemAt(index)
 
@@ -1662,7 +1661,7 @@ class Link(object):
         the column clicked on or the first column. Set in Links.popup_menu().
         :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
             gui.misc_components.CheckListBox
-        :type selection: list[Path | str | int] | int | None
+        :type selection: list[FName | int] | int | None
         """
         self.window = window
         self.selected = selection
