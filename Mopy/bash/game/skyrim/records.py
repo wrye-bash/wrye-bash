@@ -2710,21 +2710,13 @@ class MreImad(MelRecord):
     """Image Space Adapter."""
     rec_sig = b'IMAD'
 
-    _ImadDofFlags = Flags(0, Flags.getNames(
-        (0, 'useTarget'),
-        (1, 'unknown2'),
-        (2, 'unknown3'),
-        (3, 'unknown4'),
-        (4, 'unknown5'),
-        (5, 'unknown6'),
-        (6, 'unknown7'),
-        (7, 'unknown8'),
-        (8, 'modeFront'),
-        (9, 'modeBack'),
-        (10, 'noSky'),
-        (11, 'blurRadiusBit2'),
-        (12, 'blurRadiusBit1'),
-        (13, 'blurRadiusBit0'),
+    _imad_dof_flags = Flags(0, Flags.getNames(
+        'mode_front',
+        'mode_back',
+        'no_sky',
+        'blur_radius_bit_2',
+        'blur_radius_bit_1',
+        'blur_radius_bit_0',
     ))
     _ImadRadialBlurFlags = Flags(0, Flags.getNames(
         (0, 'useTarget')
@@ -2732,7 +2724,8 @@ class MreImad(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DNAM', [u'I', u'f', u'49I', u'2f', u'8I'], u'animatable', u'duration',
+        MelStruct(b'DNAM', ['I', 'f', '49I', '2f', '3I', '2B', '2s', '4I'],
+                  'animatable', 'duration',
                   u'eyeAdaptSpeedMult', u'eyeAdaptSpeedAdd',
                   u'bloomBlurRadiusMult', u'bloomBlurRadiusAdd',
                   u'bloomThresholdMult', u'bloomThresholdAdd',
@@ -2753,7 +2746,8 @@ class MreImad(MelRecord):
                   u'radialBlurStart',
                   (_ImadRadialBlurFlags, u'radialBlurFlags'),
                   u'radialBlurCenterX', u'radialBlurCenterY', u'dofStrength',
-                  u'dofDistance', u'dofRange', (_ImadDofFlags, u'dofFlags'),
+                  u'dofDistance', u'dofRange', 'dof_use_target',
+                  (_imad_dof_flags, 'dof_flags'), 'unused1',
                   u'radialBlurRampDown', u'radialBlurDownStart', u'fadeColor',
                   u'motionBlurStrength'),
         MelValueInterpolator(b'BNAM', 'blurRadiusInterp'),

@@ -544,13 +544,10 @@ class MelScript(MelFid):
 #------------------------------------------------------------------------------
 class MelScriptVars(MelSorted):
     """Handles SLSD and SCVR combos defining script variables."""
-    _var_flags = Flags(0, Flags.getNames(u'is_long_or_short'))
-
     def __init__(self):
         super(MelScriptVars, self).__init__(MelGroups(u'script_vars',
             MelStruct(b'SLSD', [u'I', u'12s', u'B', u'7s'], u'var_index',
-                      u'unused1', (self._var_flags, u'var_flags'),
-                      u'unused2'),
+                      'unused1', 'var_type', 'unused2'),
             MelString(b'SCVR', u'var_name'),
         ), sort_by_attrs=u'var_index')
 
