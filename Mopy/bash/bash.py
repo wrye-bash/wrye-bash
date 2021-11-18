@@ -82,11 +82,7 @@ def _import_wx(debug):
         # moved/deleted wx modules
         from wx import _core
         sys.modules[u'wx._gdi'] = _core
-        # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
-        class _LocaleApp(_wx.App):
-            def InitLocale(self):
-                if sys.platform.startswith('win') and sys.version_info > (3,8):
-                    locale.setlocale(locale.LC_ALL, 'C')
+        class _BaseApp(_wx.App):
             def MainLoop(self, restore_stdio=True):
                 """Not sure what RestoreStdio does so I omit the call in game
                 selection dialog.""" # TODO: check standalone also
@@ -95,7 +91,7 @@ def _import_wx(debug):
                 return rv
         # Initialize the App instance once
         global bash_app
-        bash_app = _LocaleApp(not debug) # redirect std out
+        bash_app = _BaseApp(not debug) # redirect std out
         # Disable image loading errors - wxPython is missing the actual flag
         # constants for some reason, so just use 0 (no flags)
         _wx.Image.SetDefaultLoadFlags(0)
@@ -274,6 +270,9 @@ def main(opts):
         # message if WB crashes
         from . import localize
         wx_locale = localize.setup_locale(opts.language, _wx)
+        # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
+        if sys.platform.startswith('win') and sys.version_info > (3, 8):
+            locale.setlocale(locale.LC_ALL, 'C')
         if not bass.is_standalone and (not _rightWxVersion(wxver) or
                                        not _rightPythonVersion()): return
         # Both of these must come early, before we begin showing wx-based GUI
