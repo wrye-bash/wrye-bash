@@ -58,6 +58,10 @@ class Abstract_Patcher(object):
 class Patcher(Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
+    # Whether or not this patcher will get inactive plugins passed to its
+    # scanModFile method
+    ##: Once _AMerger is rewritten, this may become obsolete
+    _scan_inactive = False
 
     @property
     def active_read_sigs(self):
@@ -78,6 +82,9 @@ class Patcher(Abstract_Patcher):
         mod, but won't alter it. If adds record, should first convert it to
         long fids."""
         if not self.isActive: return # TODO(ut) raise
+        if (modFile.fileInfo.ci_key not in self.patchFile.merged_or_loaded and
+                not self._scan_inactive):
+            return # Skip if inactive and inactives should not be scanned
         self.scanModFile(modFile, progress)
 
     def scanModFile(self,modFile,progress):

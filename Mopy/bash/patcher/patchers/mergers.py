@@ -52,10 +52,10 @@ class _AMerger(ImportPatcher):
     _remove_tag = None
     # Dict mapping each record type to the subrecord we want to merge for it
     _wanted_subrecord = {}
+    # We want inactives since we process our sources in scanModFiles
+    _scan_inactive = True
 
     def __init__(self, p_name, p_file, p_sources):
-        p_sources = [x for x in p_sources if
-                     x in p_file.p_file_minfos and x in p_file.allSet]
         super(_AMerger, self).__init__(p_name, p_file, p_sources)
         self.id_deltas = defaultdict(list)
         merger_masters = set(chain.from_iterable(
@@ -659,7 +659,7 @@ class _AListsMerger(ListPatcher):
         self.masterItems = defaultdict(dict)
         # Calculate levelers/de_masters first, using unmodified self.srcs
         self.levelers = [leveler for leveler in self.srcs if
-                         leveler in self.patchFile.allSet]
+                         leveler in self.patchFile.merged_or_loaded]
         # de_masters is a set of all the masters of each leveler, i.e. each
         # tagged plugin. These are the masters we have to consider records from
         # when determining whether or not to carry forward removals done by a

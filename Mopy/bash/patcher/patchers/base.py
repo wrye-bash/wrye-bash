@@ -98,7 +98,7 @@ class IndexingTweak(MultiTweakItem):
 
     def prepare_for_tweaking(self, patch_file):
         pf_minfs = patch_file.p_file_minfos
-        for pl_path in patch_file.allMods:
+        for pl_path in patch_file.merged_or_loaded_ord: ##: all_plugins?
             index_plugin = self._mod_file_read(pf_minfs[pl_path])
             for index_sig in self._index_sigs:
                 id_dict = self._indexed_records[index_sig]

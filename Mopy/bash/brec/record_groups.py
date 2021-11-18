@@ -398,7 +398,8 @@ class MobObjects(MobBase):
         return iter(self.records)
 
     def __repr__(self):
-        return f'<{self.label} GRUP: {len(self.records)} record(s)>'
+        return (f'<{self.label.decode("ascii")} GRUP: {len(self.records)} '
+                f'record(s)>')
 
 #------------------------------------------------------------------------------
 ##: MobDial, MobCell and MobWorld need a base class; same with MobDials,

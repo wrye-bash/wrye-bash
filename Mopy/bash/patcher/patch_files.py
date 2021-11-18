@@ -43,11 +43,11 @@ class PatchFile(ModFile):
     """Base class of patch files. Wraps an executing bashed Patch."""
 
     def set_mergeable_mods(self, mergeMods):
-        """Set `mergeSet` attribute to the srcs of MergePatchesPatcher. Update
-        allMods and allSet to include the mergeMods"""
+        """Set `mergeSet` attribute to the srcs of MergePatchesPatcher."""
         self.mergeSet = set(mergeMods)
-        self.allMods = load_order.get_ordered(self.loadSet | self.mergeSet)
-        self.allSet = frozenset(self.allMods)
+        self.merged_or_loaded = self.mergeSet | self.loadSet
+        self.merged_or_loaded_ord = load_order.get_ordered(
+            self.merged_or_loaded)
 
     def _log_header(self, log, patch_name):
         log.setHeader((u'= %s' % patch_name) + u' ' + u'=' * 30 + u'#', True)
@@ -109,7 +109,7 @@ class PatchFile(ModFile):
                   ) % ((bush.game.master_file,) + _link(u'modsDecompileAll')))
             for mod in self.compiledAllMods: log(u'* %s' % mod)
         log.setHeader(u'=== ' + _(u'Active Mods'), True)
-        for mname in self.allMods:
+        for mname in self.merged_or_loaded_ord:
             version = self.p_file_minfos.getVersion(mname)
             if mname in self.loadSet:
                 message = u'* %02X ' % (self.loadMods.index(mname),)
@@ -158,8 +158,9 @@ class PatchFile(ModFile):
         self.bodyTags = u''
         #--Mods
         # checking for files to include in patch, investigate
-        loadMods = [m for m in load_order.cached_lower_loading(
-            modInfo.ci_key) if load_order.cached_is_active(m)]
+        self.all_plugins = load_order.cached_lower_loading(modInfo.ci_key)
+        loadMods = [m for m in self.all_plugins
+                    if load_order.cached_is_active(m)]
         if not loadMods:
             raise BoltError(u"No active mods loading before the bashed patch")
         self.loadMods = tuple(loadMods)
@@ -196,11 +197,19 @@ class PatchFile(ModFile):
     def scanLoadMods(self,progress):
         """Scans load+merge mods."""
         nullProgress = Progress()
-        progress = progress.setFull(len(self.allMods))
-        for index,modName in enumerate(self.allMods):
+        progress = progress.setFull(len(self.all_plugins))
+        for index,modName in enumerate(self.all_plugins):
             modInfo = self.p_file_minfos[modName]
+            # Check some commonly needed properties of the current plugin
             bashTags = modInfo.getBashTags()
-            if modName in self.loadSet and u'Filter' in bashTags:
+            is_loaded = modName in self.loadSet
+            is_merged = modName in self.mergeSet
+            should_filter = 'Filter' in bashTags
+            doFilter = is_merged and should_filter
+            # iiMode is a hack to support Item Interchange. Actual key used is
+            # IIM.
+            iiMode = is_merged and 'IIM' in bashTags
+            if is_loaded and should_filter:
                 self.unFilteredMods.append(modName)
             try:
                 loadFactory = (self.readFactory,self.mergeFactory)[modName in self.mergeSet]
@@ -223,14 +232,14 @@ class PatchFile(ModFile):
                     if gls and gls.compiled_size == 4 and gls.last_index == 0:
                         self.compiledAllMods.append(modName)
                 pstate = index+0.5
-                isMerged = modName in self.mergeSet
-                doFilter = isMerged and u'Filter' in bashTags
-                #--iiMode is a hack to support Item Interchange. Actual key used is IIM.
-                iiMode = isMerged and u'IIM' in bashTags
-                if isMerged:
+                if is_merged:
+                    # If the plugin is to be merged, merge it
                     progress(pstate, u'%s\n' % modName + _(u'Merging...'))
                     self.mergeModFile(modFile, doFilter, iiMode)
-                else:
+                elif is_loaded:
+                    # Else, if the plugin is active, update records from it. If
+                    # the plugin is inactive, we only want to import from it,
+                    # so do nothing here
                     progress(pstate, u'%s\n' % modName + _(u'Scanning...'))
                     self.update_patch_records_from_mod(modFile)
                 for patcher in sorted(self._patcher_instances,
@@ -264,12 +273,15 @@ class PatchFile(ModFile):
 
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""
-        #--Keep all MGEFs
+        shared_rec_types = set(self.tops) & set(modFile.tops)
+        # Keep and update all MGEFs no matter what
         if b'MGEF' in modFile.tops:
+            shared_rec_types.discard(b'MGEF')
+            add_mgef_to_patch = self.tops[b'MGEF'].setRecord
             for record in modFile.tops[b'MGEF'].getActiveRecords():
-                self.tops[b'MGEF'].setRecord(record.getTypeCopy())
-        #--Merger, override.
-        for block_type in set(self.tops) & set(modFile.tops):
+                add_mgef_to_patch(record.getTypeCopy())
+        # Update all other record types
+        for block_type in shared_rec_types:
             self.tops[block_type].updateRecords(modFile.tops[block_type],
                                                 self.mergeIds)
 
