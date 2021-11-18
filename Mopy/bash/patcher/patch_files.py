@@ -276,15 +276,20 @@ class PatchFile(ModFile):
     def buildPatch(self,log,progress):
         """Completes merge process. Use this when finished using
         scanLoadMods."""
-        if not self._patcher_instances: return
+        # Do *not* skip this method, ever - it needs to be called before we
+        # save the patch since it trims records and sets up the necessary
+        # masters. Without it, we may blow up due to being unable to resolve
+        # FormIDs while saving.
         self._log_header(log, self.fileInfo.ci_key)
         # Run buildPatch on each patcher
         self.keepIds |= self.mergeIds
-        subProgress = SubProgress(progress, 0, 0.9, len(self._patcher_instances))
-        for index,patcher in enumerate(sorted(self._patcher_instances,
-                key=attrgetter(u'patcher_order'))):
-            subProgress(index,_(u'Completing')+u'\n%s...' % patcher.getName())
-            patcher.buildPatch(log,SubProgress(subProgress,index))
+        if self._patcher_instances:
+            subProgress = SubProgress(progress, 0, 0.9,
+                len(self._patcher_instances))
+            for i, patcher in enumerate(sorted(self._patcher_instances,
+                    key=attrgetter(u'patcher_order'))):
+                subProgress(i, _(u'Completing')+u'\n%s...' % patcher.getName())
+                patcher.buildPatch(log, SubProgress(subProgress, i))
         # Trim records to only keep ones we actually changed
         progress(0.9,_(u'Completing')+u'\n'+_(u'Trimming records...'))
         for block in self.tops.values():
