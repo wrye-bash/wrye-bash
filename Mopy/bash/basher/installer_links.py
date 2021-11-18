@@ -285,15 +285,14 @@ class Installer_Wizard(_Installer_AWizardLink):
                     sel_package.subActives[index + 1] = select
                 idetails.refreshCurrent(sel_package)
                 # Check the plugins that were selected by the wizard
-                espms = idetails.gEspmList.lb_get_str_items()
-                espms = [x.replace(u'&&',u'&') for x in espms]
+                espm_strs = idetails.gEspmList.lb_get_str_items()
+                # don't chop off the leading star if there but replace && ##: do this in lb_get_str_items
+                espm_strs = [x.replace(u'&&',u'&') for x in espm_strs]
                 sel_package.espmNots = set()
-                for index, espm in enumerate(idetails.espms):
-                    if espms[index] in ret.select_plugins:
-                        idetails.gEspmList.lb_check_at_index(index, True)
-                    else:
-                        idetails.gEspmList.lb_check_at_index(index, False)
-                        sel_package.espmNots.add(espm)
+                for index, espm in enumerate(idetails.espm_checklist_fns):
+                    do_check = espm_strs[index] in ret.select_plugins or bool(
+                        sel_package.espmNots.add(espm)) # bool(None) == False
+                    idetails.gEspmList.lb_check_at_index(index, do_check)
                 idetails.refreshCurrent(sel_package)
                 #Rename the espms that need renaming
                 for oldName, renamed in ret.rename_plugins.items():
@@ -863,7 +862,7 @@ class Installer_CopyConflicts(_SingleInstallable):
 #------------------------------------------------------------------------------
 class _Installer_Details_Link(EnabledLink):
 
-    def _enable(self): return len(self.window.espms) != 0
+    def _enable(self): return len(self.window.espm_checklist_fns) != 0
 
     def _initData(self, window, selection):
         """:type window: bosh.InstallersDetails
@@ -887,7 +886,7 @@ class Installer_Espm_DeselectAll(_Installer_Details_Link):
     _help = _(u'Deselects all plugin files in the selected sub-packages.')
 
     def Execute(self):
-        self._installer.espmNots = set(self.window.espms)
+        self._installer.espmNots = set(self.window.espm_checklist_fns)
         self.window.gEspmList.set_all_checkmarks(checked=False)
         self.window.refreshCurrent(self._installer)
 
@@ -899,16 +898,13 @@ class Installer_Espm_Rename(_Installer_Details_Link):
     def _enable(self): return self.selected != -1
 
     def Execute(self):
-        curName = self.window.gEspmList.lb_get_str_item_at_index(self.selected).replace(u'&&',
-                                                                         u'&')
-        if curName[0] == u'*':
-            curName = curName[1:]
-        _file = GPath(curName)
+        _file = self.window.get_espm(self.selected)
         newName = self._askText(_(u'Enter new name (without the extension):'),
                                 title=_(u'Rename Plugin'), default=_file.sbody)
         if not newName: return
-        if newName in self.window.espms: return
-        self._installer.setEspmName(curName, newName + _file.cext)
+        if (newName := newName + _file.cext) in self.window.espm_checklist_fns:
+            return
+        self._installer.setEspmName(_file.s, newName)
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_Reset(_Installer_Details_Link):
@@ -919,11 +915,8 @@ class Installer_Espm_Reset(_Installer_Details_Link):
 
     def _enable(self):
         if self.selected == -1: return False
-        curName = self.window.gEspmList.lb_get_str_item_at_index(self.selected).replace(u'&&',
-                                                                         u'&')
-        if curName[0] == u'*': curName = curName[1:]
-        self.curName = curName
-        return self._installer.isEspmRenamed(curName)
+        self.curName = self.window.get_espm(self.selected)
+        return self._installer.isEspmRenamed(self.curName)
 
     def Execute(self):
         self._installer.resetEspmName(self.curName)
@@ -949,8 +942,8 @@ class Installer_Espm_List(_Installer_Details_Link):
         subs = _(u'Plugin List for %s:') % self._installer + u'\n[spoiler]\n'
         espm_list = self.window.gEspmList
         for index in range(espm_list.lb_get_items_count()):
-            subs += [u'   ',u'** '][espm_list.lb_is_checked_at_index(index)] + \
-                    espm_list.lb_get_str_item_at_index(index) + u'\n'
+            subs += [u'   ', u'** '][espm_list.lb_is_checked_at_index(
+                index)] + self.window.get_espm(index) + u'\n'
         subs += u'[/spoiler]'
         copy_text_to_clipboard(subs)
         self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
@@ -965,10 +958,7 @@ class Installer_Espm_JumpToMod(_Installer_Details_Link):
         if self.selected == -1: return False
         ##: Maybe refactor all this plugin logic (especially the renamed plugin
         # (asterisk) handling) to a property inside a base class?
-        selected_plugin = self.window.gEspmList.lb_get_str_item_at_index(
-            self.selected).replace(u'&&', u'&')
-        if selected_plugin[0] == u'*': selected_plugin = selected_plugin[1:]
-        self.target_plugin = GPath(selected_plugin)
+        self.target_plugin = self.window.get_espm(self.selected)
         return self.target_plugin in bosh.modInfos
 
     def Execute(self):

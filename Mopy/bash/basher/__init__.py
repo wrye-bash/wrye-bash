@@ -57,7 +57,7 @@ import sys
 import time
 from collections import OrderedDict, namedtuple, defaultdict
 from functools import partial, reduce
-from typing import Optional
+from typing import Optional, List
 
 #--wxPython
 import wx
@@ -2782,7 +2782,8 @@ class InstallersDetails(_SashDetailsPanel):
         self.sp_label = Label(self.sp_panel, _(u'Sub-Packages'))
         self._update_fomod_state()
         #--Espms
-        self.espms = []
+        # sorted list of the displayed installer espm names - esms sorted first
+        self.espm_checklist_fns = [] # type: List[bolt.Path]
         self.gEspmList = CheckListBox(espmsPanel, isExtended=True)
         self.gEspmList.on_box_checked.subscribe(self._on_check_plugin)
         self.gEspmList.on_mouse_left_dclick.subscribe(
@@ -2844,7 +2845,7 @@ class InstallersDetails(_SashDetailsPanel):
             self._save_comments()
         fileName = super(InstallersDetails, self).SetFile(fileName)
         self._displayed_installer = fileName
-        del self.espms[:]
+        del self.espm_checklist_fns[:]
         if fileName:
             installer = self._idata[fileName]
             #--Name
@@ -2860,21 +2861,21 @@ class InstallersDetails(_SashDetailsPanel):
             if len(installer.subNames) <= 2:
                 self.gSubList.lb_clear()
             else:
-                sub_names_ = [x.replace(u'&', u'&&') for x in
-                              installer.subNames[1:]]
-                vals = installer.subActives[1:]
-                self.gSubList.set_all_items_keep_pos(sub_names_, vals)
+                ##: TODO(ut) subNames/subActives should be a dict really no?
+                sub_isactive = zip(installer.subNames, installer.subActives)
+                next(sub_isactive) # pop empty subpackage, duh
+                sub_isactive = {k: v for k, v in sub_isactive}
+                self.gSubList.set_all_items_keep_pos(sub_isactive)
             self._update_fomod_state()
             #--Espms
             if not installer.espms:
                 self.gEspmList.lb_clear()
             else:
-                names = self.espms = sorted(installer.espms)
-                names.sort(key=lambda x: x.cext != u'.esm')
-                names_ = [[u'', u'*'][installer.isEspmRenamed(x.s)] +
-                          x.s.replace(u'&', u'&&') for x in names]
-                vals = [x not in installer.espmNots for x in names]
-                self.gEspmList.set_all_items_keep_pos(names_, vals)
+                fns = self.espm_checklist_fns = sorted(installer.espms, key=lambda x: (
+                    x.cext != u'.esm', x)) # esms first then alphabetically
+                espm_acti = {['', '*'][installer.isEspmRenamed(
+                    x)] + x.s: x not in installer.espmNots for x in fns}
+                self.gEspmList.set_all_items_keep_pos(espm_acti)
             #--Comments
             self.gComments.text_content = installer.comments
 
@@ -2996,28 +2997,28 @@ class InstallersDetails(_SashDetailsPanel):
     def _on_check_plugin(self, lb_selection_dex):
         """Handle check/uncheck of item."""
         espmNots = self.file_info.espmNots
-        plugin_name = self.gEspmList.lb_get_str_item_at_index(
-            lb_selection_dex).replace(u'&&', u'&')
-        if plugin_name[0] == u'*':
-            plugin_name = plugin_name[1:]
-        espm = GPath(plugin_name)
+        plugin_name = self.get_espm(lb_selection_dex)
         if self.gEspmList.lb_is_checked_at_index(lb_selection_dex):
-            espmNots.discard(espm)
+            espmNots.discard(plugin_name)
         else:
-            espmNots.add(espm)
+            espmNots.add(plugin_name)
         self.gEspmList.lb_select_index(lb_selection_dex)    # so that (un)checking also selects (moves the highlight)
         if not get_shift_down():
             self.refreshCurrent(self.file_info)
 
+    def get_espm(self, lb_selection_dex):
+        plugin_name = self.gEspmList.lb_get_str_item_at_index(
+            lb_selection_dex).replace(u'&&', u'&')
+        if plugin_name[0] == u'*':
+            plugin_name = plugin_name[1:]
+        return GPath_no_norm(plugin_name)
+
     def _on_plugin_filter_dclick(self, selected_index):
         """Handles double-clicking on a plugin in the plugin filter."""
         if selected_index < 0: return
-        selected_name = self.gEspmList.lb_get_str_item_at_index(
-            selected_index).replace(u'&&', u'&')
-        if selected_name[0] == u'*': selected_name = selected_name[1:]
-        selected_plugin = GPath(selected_name)
-        if selected_plugin not in bosh.modInfos: return
-        balt.Link.Frame.notebook.SelectPage(u'Mods', selected_plugin)
+        selected_name = self.get_espm(selected_index)
+        if selected_name not in bosh.modInfos: return
+        balt.Link.Frame.notebook.SelectPage(u'Mods', selected_name)
 
     def set_subpackage_checkmarks(self, checked):
         """Checks or unchecks all subpackage checkmarks and propagates that

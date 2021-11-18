@@ -282,22 +282,21 @@ class PageFinish(PageInstaller):
         subs = sorted(subsList)
         plugins = sorted(plugin_list)
         #--make the list that will be displayed
-        displayed_plugins = [x.replace(u'&', u'&&') + (
-            u' -> ' + plugin_renames[x] if x in plugin_renames else u'')
-                             for x in plugins]
+        displayed_plugins = [f'{x} -> {plugin_renames[x]}'
+                             if x in plugin_renames else x for x in plugins]
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _(u'The installer script has finished, and '
                                   u'will apply the following settings:'))
         textTitle.wrap(parent.get_page_size()[0] - 10)
         # Sub-packages
-        self.listSubs = CheckListBox(self,
-            choices=[x.replace(u'&', u'&&') for x in subs])
+        self.listSubs = CheckListBox(self, choices=subs, ampersand=True)
         self.listSubs.on_box_checked.subscribe(self._on_select_subs)
         for index,key in enumerate(subs):
             if subsList[key]:
                 self.listSubs.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_sub_packages.append(key)
-        self.plugin_selection = CheckListBox(self, choices=displayed_plugins)
+        self.plugin_selection = CheckListBox(self, choices=displayed_plugins,
+                                             ampersand=True)
         self.plugin_selection.on_box_checked.subscribe(self._on_select_plugin)
         for index,key in enumerate(plugins):
             if plugin_list[key]:

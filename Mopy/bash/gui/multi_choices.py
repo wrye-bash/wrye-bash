@@ -183,7 +183,7 @@ class ListBox(WithMouseEvents):
                          state=_wx.LIST_STATE_SELECTED):
         return self._native_widget.GetNextItem(item, geometry, state)
 
-    def lb_get_str_item_at_index(self, lb_selection_dex):
+    def lb_get_str_item_at_index(self, lb_selection_dex): ##: && ->& ?
         return self._native_widget.GetString(lb_selection_dex)
 
     def lb_get_str_items(self):
@@ -232,7 +232,9 @@ class CheckListBox(ListBox, WithCharEvents):
 
     # note isSingle=False by default
     def __init__(self, parent, choices=None, isSingle=False, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None):
+                 isHScroll=False, isExtended=False, onSelect=None,
+                 ampersand=False):
+        if ampersand: choices = [x.replace(u'&', u'&&') for x in choices]
         super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
                                            isHScroll, isExtended, onSelect)
         self.on_box_checked = self._evt_handler(_wx.EVT_CHECKLISTBOX,
@@ -257,11 +259,7 @@ class CheckListBox(ListBox, WithCharEvents):
             for i in range(self.lb_get_items_count()):
                 self.lb_check_at_index(i, checked)
 
-    def get_checked_strings(self):
-        """Returns a list of string representations of all checked items."""
-        return self._native_widget.GetCheckedStrings()
-
-    def set_all_items(self, keys_values):
+    def set_all_items(self, keys_values): ##: & ->  &&
         """Completely clears the list and repopulates it using the specified
         key and value lists. Much faster than set_all_items_keep_pos, but
         discards the current scroll position."""
@@ -272,21 +270,22 @@ class CheckListBox(ListBox, WithCharEvents):
                 self.lb_check_at_index(i, v)
 
     ##: Test that the claim below is actually accurate
-    def set_all_items_keep_pos(self, names, checkmarks):
+    def set_all_items_keep_pos(self, keys_values):
         """Convenience method for setting a bunch of wxCheckListBox items. The
         main advantage of this is that it doesn't clear the list unless it
         needs to, which is good if you want to preserve the scroll position
         of the list. If you do not need that behavior, however, use
         set_all_items instead as it is much faster."""
-        if not names:
+        if not keys_values:
             self.lb_clear()
             return
         with self.pause_drawing():
-            for index, (lab, ch) in enumerate(zip(names, checkmarks)):
+            for index, (lab, ch) in enumerate(keys_values.items()):
+                lab = lab.replace('&', '&&')
                 if index >= self.lb_get_items_count():
                     self.lb_append(lab)
                 else:
                     self.lb_set_label_at_index(index, lab)
                 self.lb_check_at_index(index, ch)
-            for index in range(self.lb_get_items_count(), len(names), -1):
+            for index in range(self.lb_get_items_count(), len(keys_values), -1):
                 self.lb_delete_at_index(index - 1)
