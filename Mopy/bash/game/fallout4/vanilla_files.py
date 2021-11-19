@@ -24,7 +24,7 @@
 vanilla Fallout 4 setup."""
 
 # Generated with:
-#  find . -type f | cut -d'/' -f 2- | sed -e "s/^/u'/; s/$/',/; s./.\\\\\\\.g"
+#  find . -type f | cut -d'/' -f 2- | sed -e "s/^/'/; s/$/',/; s./.\\\\\\\.g"
 # Then manually added entries for other languages from SteamDB:
 # https://steamdb.info/app/377160/depots/
 vanilla_files = {

@@ -24,7 +24,7 @@
 vanilla Nehrim setup."""
 
 # Generated with:
-#  find . -type f | cut -d'/' -f 2- | sed -e "s/^/u'/; s/$/',/; s./.\\\\\\\.g"
+#  find . -type f | cut -d'/' -f 2- | sed -e "s/^/'/; s/$/',/; s./.\\\\\\\.g"
 vanilla_files = {
     u'Credits.txt',
     u'L - Misc.bsa',

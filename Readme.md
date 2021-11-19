@@ -31,7 +31,7 @@ tested on (previous versions or latest versions may or may not work):
 * Enderal (patch 1.6.4.0)
 * Fallout 4 (patch 1.10.163.0)
 * Skyrim Special Edition (patch 1.5.97.0)
-* Enderal Special Edition (patch 2.0.8)
+* Enderal Special Edition (patch 2.0.9)
 
 **Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 4 and
 Skyrim Special Edition are supported as well.
@@ -49,7 +49,7 @@ Skyrim Special Edition are supported as well.
 * [Enderal Special Edition Nexus][25]
 * [Github][8] (all releases)
 
-Docs are included in the download but we are setting them up also online
+Docs are included in the download, but we are also setting them up online
  [here][9].
 
 ### Installation
@@ -95,7 +95,7 @@ We are currently monitoring [this thread][17] at the AFK Mods forum and
 [the Wrye Bash Discord][18].
 Please be sure to ask there first before reporting an issue here. If asking for
 help please provide the info detailed in our [Reporting a bug][19] wiki page.
-In particular it is _essential_ you produce a [bashbugdump.log][20].
+In particular, it is _essential_ you produce a [bashbugdump.log][20].
 
 #### Latest betas
 
