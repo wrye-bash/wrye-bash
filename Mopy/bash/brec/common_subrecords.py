@@ -404,10 +404,8 @@ class MelDropSound(MelFid):
 #------------------------------------------------------------------------------
 class MelEnchantment(MelFid):
     """Represents the common enchantment/object effect subrecord."""
-    ##: Would be better renamed to object_effect, but used in tons of places
-    # that need renaming/reworking first
-    def __init__(self):
-        super(MelEnchantment, self).__init__(b'EITM', u'enchantment')
+    def __init__(self, ench_sig=b'EITM'):
+        super(MelEnchantment, self).__init__(ench_sig, u'enchantment')
 
 #------------------------------------------------------------------------------
 class MelPickupSound(MelFid):

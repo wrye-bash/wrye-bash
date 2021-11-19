@@ -41,7 +41,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
     MelDescription, BipedFlags, MelSpells, MelUInt8Flags, MelUInt32Flags, \
     SignatureDecider, MelRaceData, MelFactions, MelActorSounds, \
-    MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct
+    MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
+    MelEnchantment
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -544,7 +545,7 @@ class MreAmmo(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelFid(b'ENAM','enchantment'),
+        MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelStruct(b'DATA', [u'f', u'B', u'3s', u'I', u'f', u'H'], 'speed', (_flags, u'flags'),
                   'unused1', 'value', 'weight', 'damage'),
@@ -590,7 +591,7 @@ class MreArmo(MelRecord):
         MelEdid(),
         MelFull(),
         MelScript(),
-        MelFid(b'ENAM','enchantment'),
+        MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelUInt32Flags(b'BMDT', u'biped_flags', _flags),
         MelModel(u'maleBody', 0),
@@ -616,7 +617,7 @@ class MreBook(MelRecord):
         MelIcon(),
         MelDescription(u'book_text'),
         MelScript(),
-        MelFid(b'ENAM','enchantment'),
+        MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelStruct(b'DATA', [u'B', u'b', u'I', u'f'], (_flags, u'flags'), ('teaches', -1),
                   'value', 'weight'),
@@ -738,7 +739,7 @@ class MreClot(MelRecord):
         MelEdid(),
         MelFull(),
         MelScript(),
-        MelFid(b'ENAM','enchantment'),
+        MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelUInt32Flags(b'BMDT', u'biped_flags', _flags),
         MelModel(u'maleBody', 0),
@@ -1998,7 +1999,7 @@ class MreWeap(MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelFid(b'ENAM','enchantment'),
+        MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelStruct(b'DATA', [u'I', u'2f', u'3I', u'f', u'H'],'weaponType','speed','reach',(_flags, u'flags'),
             'value','health','weight','damage'),

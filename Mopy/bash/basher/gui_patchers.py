@@ -1234,6 +1234,15 @@ class ImportEffectsStats(_ImporterPatcherPanel):
     _config_key = u'ImportEffectsStats'
     patcher_type = preservers.ImportEffectsStatsPatcher
 
+# -----------------------------------------------------------------------------
+class ImportEnchantments(_ImporterPatcherPanel):
+    patcher_name = _('Import Enchantments')
+    patcher_desc = _('Import enchantments from armor, weapons, etc. from '
+                     'source mods.')
+    autoKey = {'Enchantments'}
+    _config_key = 'ImportEnchantments'
+    patcher_type = preservers.ImportEnchantmentsPatcher
+
 # Patchers 30 -----------------------------------------------------------------
 class TweakAssorted(_TweakPatcherPanel):
     patcher_name = _(u'Tweak Assorted')

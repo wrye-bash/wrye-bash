@@ -310,6 +310,11 @@ class ImportEffectsStatsPatcher(APreserver):
     rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
 
 #------------------------------------------------------------------------------
+class ImportEnchantmentsPatcher(APreserver):
+    """Preserves changes to EITM (enchantment/object effect) subrecords."""
+    rec_attrs = {x: ('enchantment',) for x in bush.game.enchantment_types}
+
+#------------------------------------------------------------------------------
 class ImportEnchantmentStatsPatcher(APreserver):
     """Preserves changes to ENCH stats."""
     rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}

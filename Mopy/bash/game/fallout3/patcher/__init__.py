@@ -474,20 +474,17 @@ graphicsTypes = {
               u'reloadAnimation'),
 }
 graphicsFidTypes = {
-    b'ARMO': (u'enchantment',),
-    b'CREA': (u'enchantment', u'bodyPartData'),
+    b'CREA': ('bodyPartData',),
     b'EFSH': (u'addonModels',),
-    b'EXPL': (u'enchantment', u'imageSpaceModifier', u'light',
-              u'impactDataset', u'placedImpactObject'),
+    b'EXPL': ('imageSpaceModifier', 'light', 'impactDataset',
+              'placedImpactObject'),
     b'IPCT': (u'textureSet',),
     b'IPDS': (u'stone', u'dirt', u'grass', u'metal', u'wood', u'organic',
               u'cloth', u'water', u'hollowMetal', u'organicBug',
               u'organicGlow'),
     b'MGEF': (u'light', u'effectShader', u'enchantEffect'),
-    b'NPC_': (u'enchantment',),
     b'PROJ': (u'light', u'muzzleFlash', u'explosion'),
-    b'WEAP': (u'enchantment', u'scopeEffect', u'impactDataset',
-              u'firstPersonModel'),
+    b'WEAP': ('scopeEffect', 'impactDataset', 'firstPersonModel'),
 }
 graphicsModelAttrs = (u'model', u'shellCasingModel', u'scopeModel',
                       u'worldModel', u'maleBody', u'maleWorld', u'femaleBody',
@@ -779,6 +776,11 @@ import_races_attrs = {
         u'R.Voice-M': (u'maleVoice',),
     },
 }
+
+#------------------------------------------------------------------------------
+# Import Enchantments
+#------------------------------------------------------------------------------
+enchantment_types = {b'ARMO', b'CREA', b'EXPL', b'NPC_', b'WEAP'}
 
 #------------------------------------------------------------------------------
 # Tweak Races

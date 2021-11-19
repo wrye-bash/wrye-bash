@@ -96,7 +96,7 @@ class PatchGame(GameInfo):
         u'relations_csv_header', u'relations_csv_row_format',
         u'save_rec_types', u'scripts_types', u'settings_tweaks',
         u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'spell_stats_types', u'staff_condition',
+        u'spell_stats_types', u'staff_condition', 'enchantment_types',
         u'static_attenuation_rec_type', u'statsTypes',
         u'text_types',
     }
@@ -241,6 +241,11 @@ class PatchGame(GameInfo):
     # Import Effect Stats
     #--------------------------------------------------------------------------
     mgef_stats_attrs = ()
+
+    #--------------------------------------------------------------------------
+    # Import Enchantments
+    #--------------------------------------------------------------------------
+    enchantment_types = set()
 
     #--------------------------------------------------------------------------
     # Tweak Assorted

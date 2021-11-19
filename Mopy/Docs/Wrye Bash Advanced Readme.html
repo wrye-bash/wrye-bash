@@ -2176,6 +2176,45 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>Enchantments</td>
+            <td>Modifies enchantments / object effects applied to objects.</td>
+            <td>The following records and subrecords:
+                <ul>
+                    <li><strong>Oblivion &amp; Nehrim&colon; At Fate's Edge
+                        only:</strong>
+                        <ul>
+                            <li>(AMMO) Ammunition: (ENAM) Enchantment</li>
+                            <li>(ARMO) Armor: (ENAM) Enchantment</li>
+                            <li>(BOOK) Book: (ENAM) Enchantment</li>
+                            <li>(CLOT) Clothing: (ENAM) Enchantment</li>
+                            <li>(WEAP) Weapon: (ENAM) Enchantment</li>
+                        </ul>
+                    </li>
+                    <li><strong>Fallout 3 &amp; Fallout&colon; New Vegas
+                        only:</strong>
+                        <ul>
+                            <li>(ARMO) Armor: (EITM) Object Effect</li>
+                            <li>(CREA) Creature: (EITM) Unarmed Attack
+                                Effect</li>
+                            <li>(EXPL) Explosion: (EITM) Object Effect</li>
+                            <li>(NPC_) Non-Player Character: (EITM) Unarmed
+                                Attack Effect</li>
+                            <li>(WEAP) Weapon: (EITM) Object Effect</li>
+                        </ul>
+                    </li>
+                    <li><strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
+                        Skyrim&colon; Special Edition only:</strong>
+                        <ul>
+                            <li>(ARMO) Armor: (EITM) Enchantment</li>
+                            <li>(EXPL) Explosion: (EITM) Enchantment</li>
+                            <li>(WEAP) Weapon: (EITM) Enchantment</li>
+                        </ul>
+                    </li>
+                </ul>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>EnchantmentStats</td>
             <td>Modifies (ENCH) Enchantment / Object Effect stats.</td>
             <td>The following fields of the (ENIT) Effect Data subrecord in
@@ -3769,7 +3808,6 @@ C.Location, -C.LockList
                             <li>(ICO2) Female Icon Filename</li>
                             <li>(MIC2) Female Small Icon Filename</li>
                             <li>(DNAM) 'Modulates Voice' Flag</li>
-                            <li>(EITM) Object Effect</li>
                             <li>(BMDT) Biped Flags</li>
                         </ul>
                     </li>
@@ -3842,7 +3880,6 @@ C.Location, -C.LockList
                             <li>(MODL) Model</li>
                             <li>(NIFZ) Model List</li>
                             <li>(NIFT) Texture File Hashes</li>
-                            <li>(EITM) Unarmed Attack Effect</li>
                         </ul>
                     </li>
                     <li>(CSNO) Casino - <strong>Fallout&colon; New Vegas only</strong>
@@ -3872,7 +3909,6 @@ C.Location, -C.LockList
                     <li>(EXPL) Explosion:
                         <ul>
                             <li>(MODL) Model</li>
-                            <li>(EITM) Object Effect</li>
                             <li>(MNAM) Image Space Modifier</li>
                             <li>(DATA) Light</li>
                             <li>(DATA) Impact Dataset</li>
@@ -4044,11 +4080,6 @@ C.Location, -C.LockList
                             <li>(XNAM) Texture</li>
                         </ul>
                     </li>
-                    <li>(NPC_) Non-Player Character:
-                        <ul>
-                            <li>(EITM) Unnarmed Attack Effect</li>
-                        </ul>
-                    </li>
                     <li>(PERK) Perk:
                         <ul>
                             <li>(ICON) Icon</li>
@@ -4142,7 +4173,6 @@ C.Location, -C.LockList
                             <li>(MODL) Model</li>
                             <li>(ICON) Icon</li>
                             <li>(MICO) Small Icon</li>
-                            <li>(EITM) Object Effect</li>
                             <li>(MOD2) Shell Casing Model</li>
                             <li>(MOD3) Scope Model</li>
                             <li>(EFSD) Scope Effect</li>

@@ -158,6 +158,7 @@ class Fallout3GameInfo(PatchGame):
         u'ImportText', u'LeveledLists', u'MergePatches', u'TweakActors',
         u'TweakAssorted', u'TweakSettings', u'ImportRacesRelations',
         u'TweakRaces', u'TimescaleChecker', u'TweakNames',
+        'ImportEnchantments',
     }
 
     weaponTypes = (
