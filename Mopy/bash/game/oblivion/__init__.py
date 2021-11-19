@@ -245,26 +245,26 @@ class OblivionGameInfo(PatchGame):
         }
 
     bethDataFiles = {
-        #--Vanilla
-        u'oblivion.esm',
-        u'oblivion_1.1.esm',
-        u'oblivion_si.esm',
-        u'oblivion - meshes.bsa',
-        u'oblivion - misc.bsa',
-        u'oblivion - sounds.bsa',
-        u'oblivion - textures - compressed.bsa',
-        u'oblivion - textures - compressed.bsa.orig',
-        u'oblivion - voices1.bsa',
-        u'oblivion - voices2.bsa',
-        #--Shivering Isles
-        u'dlcshiveringisles.esp',
-        u'dlcshiveringisles - meshes.bsa',
-        u'dlcshiveringisles - sounds.bsa',
-        u'dlcshiveringisles - textures.bsa',
-        u'dlcshiveringisles - voices.bsa',
-        #--Knights of the Nine - shipped with all WS versions
-        u'knights.esp',
-        u'knights.bsa',
+        'dlcshiveringisles - meshes.bsa',
+        'dlcshiveringisles - sounds.bsa',
+        'dlcshiveringisles - textures.bsa',
+        'dlcshiveringisles - voices.bsa',
+        'dlcshiveringisles.esp',
+        'knights.bsa',
+        'knights.esp',
+        'oblivion - meshes.bsa',
+        'oblivion - misc.bsa',
+        'oblivion - sounds.bsa',
+        'oblivion - textures - compressed.bsa',
+        'oblivion - textures - compressed.bsa.orig',
+        'oblivion - voices1.bsa',
+        'oblivion - voices2.bsa',
+        'oblivion.esm',
+        'oblivion_1.1b.esm',
+        'oblivion_1.1.esm',
+        'oblivion_gbr si.esm',
+        'oblivion_goty non-si.esm',
+        'oblivion_si.esm',
     }
 
     @classmethod

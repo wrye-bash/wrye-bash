@@ -2695,7 +2695,12 @@ class InstallersData(DataStore):
             if installer.is_active:
                 keepFiles.update(installer.ci_dest_sizeCrc) # relative to Data/
         from . import modInfos
-        keepFiles.update((bolt.CIstr(f) for f in bush.game.vanilla_files))
+        # Collect all files that we definitely want to keep
+        collected_strs = bush.game.vanilla_files
+        collected_strs |= bush.game.bethDataFiles
+        collected_strs |= bush.game.Bain.keep_data_files
+        collected_strs |= bush.game.Bain.wrye_bash_data_files
+        keepFiles.update((bolt.CIstr(f) for f in collected_strs))
         for bpatch in modInfos.bashed_patches: # type: bolt.Path
             keepFiles.add(bolt.CIstr(bpatch.s))
             bp_doc = modInfos.table.getItem(bpatch, u'doc')
@@ -2710,10 +2715,6 @@ class InstallersData(DataStore):
                 keepFiles.add((bolt.CIstr(
                     bp_doc.root.s + (u'.txt' if bp_doc.cext == u'.html'
                                      else u'.html'))))
-        keepFiles.update((bolt.CIstr(f)
-                          for f in bush.game.Bain.wrye_bash_data_files))
-        keepFiles.update((bolt.CIstr(f)
-                          for f in bush.game.Bain.keep_data_files))
         removes = set(self.data_sizeCrcDate) - keepFiles
         # don't remove files in Wrye Bash-related directories or Ini Tweaks
         skipPrefixes = [skipDir.lower() + os.sep for skipDir in

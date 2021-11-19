@@ -70,33 +70,13 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     allTags = Fallout4GameInfo.allTags | {u'NoMerge'}
     patchers = Fallout4GameInfo.patchers | {u'MergePatches'}
 
-    bethDataFiles = {
-        u'fallout4.esm',
-        u'fallout4.cdx',
-        u'fallout4 - animations.ba2',
-        u'fallout4 - geometry.csg',
-        u'fallout4 - interface.ba2',
-        u'fallout4 - materials.ba2',
-        u'fallout4 - meshes.ba2',
-        u'fallout4 - meshesextra.ba2',
-        u'fallout4 - misc.ba2',
-        u'fallout4 - shaders.ba2',
-        u'fallout4 - sounds.ba2',
-        u'fallout4 - startup.ba2',
-        u'fallout4 - textures1.ba2',
-        u'fallout4 - textures2.ba2',
-        u'fallout4 - textures3.ba2',
-        u'fallout4 - textures4.ba2',
-        u'fallout4 - textures5.ba2',
-        u'fallout4 - textures6.ba2',
-        u'fallout4 - textures7.ba2',
-        u'fallout4 - textures8.ba2',
-        u'fallout4 - textures9.ba2',
-        u'fallout4 - voices.ba2',
-        u'fallout4_vr.esm',
-        u'fallout4_vr - main.ba2',
-        u'fallout4_vr - shaders.ba2',
-        u'fallout4_vr - textures.ba2',
+    bethDataFiles = Fallout4GameInfo.bethDataFiles | {
+        'fallout4 - misc - beta.ba2',
+        'fallout4 - misc - debug.ba2',
+        'fallout4_vr - main.ba2',
+        'fallout4_vr - shaders.ba2',
+        'fallout4_vr - textures.ba2',
+        'fallout4_vr.esm',
     }
 
     # ---------------------------------------------------------------------

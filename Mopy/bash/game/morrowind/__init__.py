@@ -108,13 +108,12 @@ class MorrowindGameInfo(PatchGame):
         validHeaderVersions = (1.2, 1.3)
 
     bethDataFiles = {
-        #--Vanilla
-        u'morrowind.esm',
-        u'morrowind.bsa',
-        u'tribunal.esm',
-        u'tribunal.bsa',
-        u'bloodmoon.esm',
-        u'bloodmoon.bsa',
+        'bloodmoon.bsa',
+        'bloodmoon.esm',
+        'morrowind.bsa',
+        'morrowind.esm',
+        'tribunal.bsa',
+        'tribunal.esm',
     }
 
     @classmethod

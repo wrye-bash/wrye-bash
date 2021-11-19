@@ -30,7 +30,7 @@ tested on (previous versions or latest versions may or may not work):
 * Skyrim (patch 1.9.36.0)
 * Enderal (patch 1.6.4.0)
 * Fallout 4 (patch 1.10.163.0)
-* Skyrim Special Edition (patch 1.5.97.0)
+* Skyrim Special Edition (patch 1.6.318.0)
 * Enderal Special Edition (patch 2.0.9)
 
 **Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 4 and

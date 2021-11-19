@@ -81,15 +81,15 @@ class NehrimGameInfo(OblivionGameInfo):
     }
 
     bethDataFiles = {
-        u'nehrim.esm',
-        u'translation.esp',
-        u'l - misc.bsa',
-        u'l - voices.bsa',
-        u'n - meshes.bsa',
-        u'n - misc.bsa',
-        u'n - sounds.bsa',
-        u'n - textures1.bsa',
-        u'n - textures2.bsa',
+        'l - misc.bsa',
+        'l - voices.bsa',
+        'n - meshes.bsa',
+        'n - misc.bsa',
+        'n - sounds.bsa',
+        'n - textures1.bsa',
+        'n - textures2.bsa',
+        'nehrim.esm',
+        'translation.esp',
     }
 
     nirnroots = _(u'Vynroots')

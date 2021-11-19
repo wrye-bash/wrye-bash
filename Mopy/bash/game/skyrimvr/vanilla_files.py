@@ -23,8 +23,4 @@
 """This module lists the files installed in the Data folder in a completely
 vanilla Skyrim VR setup."""
 
-# Import vanilla_files from Skyrim, then edit as needed
 from ..skyrim.vanilla_files import vanilla_files
-
-# add new files
-vanilla_files |= {u'Skyrim_VR - Main.bsa',}
