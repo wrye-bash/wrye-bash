@@ -20,23 +20,23 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for the Windows Store version of Oblivion."""
+"""GameInfo override for the Windows Store version of Fallout 3."""
 
-from ..oblivion import OblivionGameInfo
+from ..fallout3 import Fallout3GameInfo
 from ..windows_store_game import WindowsStoreMixin
 
-class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
-    displayName = u'Oblivion (WS)'
+class WSFallout3GameInfo(WindowsStoreMixin, Fallout3GameInfo):
+    displayName = u'Fallout 3 (WS)'
     # `appdata_name` and `my_games_name` use the original locations, unlike
     # newer Windows Store games.
 
-    class Ws(OblivionGameInfo.Ws):
+    class Ws(Fallout3GameInfo.Ws):
         publisher_name = u'Bethesda'
-        win_store_name = u'BethesdaSoftworks.TESOblivion-PC'
-        game_language_dirs = [u'Oblivion GOTY English',
-                              u'Oblivion GOTY French',
-                              u'Oblivion GOTY German',
-                              u'Oblivion GOTY Italian',
-                              u'Oblivion GOTY Spanish']
+        win_store_name = u'BethesdaSoftworks.Fallout3'
+        game_language_dirs = ['Fallout 3 GOTY English',
+                              'Fallout 3 GOTY French',
+                              'Fallout 3 GOTY German',
+                              'Fallout 3 GOTY Italian',
+                              'Fallout 3 GOTY Spanish']
 
-GAME_TYPE = WSOblivionGameInfo
+GAME_TYPE = WSFallout3GameInfo

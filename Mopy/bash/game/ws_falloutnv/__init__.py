@@ -20,23 +20,25 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""GameInfo override for the Windows Store version of Oblivion."""
+"""GameInfo override for the Windows Store version of Fallout NV."""
 
-from ..oblivion import OblivionGameInfo
+from ..falloutnv import FalloutNVGameInfo
 from ..windows_store_game import WindowsStoreMixin
 
-class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
-    displayName = u'Oblivion (WS)'
+class WSFalloutNVGameInfo(WindowsStoreMixin, FalloutNVGameInfo):
+    displayName = u'Fallout New Vegas (WS)'
     # `appdata_name` and `my_games_name` use the original locations, unlike
     # newer Windows Store games.
 
-    class Ws(OblivionGameInfo.Ws):
+    class Ws(FalloutNVGameInfo.Ws):
         publisher_name = u'Bethesda'
-        win_store_name = u'BethesdaSoftworks.TESOblivion-PC'
-        game_language_dirs = [u'Oblivion GOTY English',
-                              u'Oblivion GOTY French',
-                              u'Oblivion GOTY German',
-                              u'Oblivion GOTY Italian',
-                              u'Oblivion GOTY Spanish']
+        win_store_name = u'BethesdaSoftworks.FalloutNewVegas'
+        game_language_dirs = ['Fallout New Vegas English',
+                              'Fallout New Vegas French',
+                              'Fallout New Vegas German',
+                              'Fallout New Vegas Italian',
+                              'Fallout New Vegas Spanish']
 
-GAME_TYPE = WSOblivionGameInfo
+    bethDataFiles = FalloutNVGameInfo.bethDataFiles | {'falloutnv_lang.esp'}
+
+GAME_TYPE = WSFalloutNVGameInfo

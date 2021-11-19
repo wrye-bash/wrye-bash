@@ -43,8 +43,8 @@ class WindowsStoreMixin(object):
         return super(WindowsStoreMixin,
             cls).game_detect_includes + [u'appxmanifest.xml']
 
-    # Disable any tools that require hooking into the game's executable. Even if
-    # the user manually installs these, they will not work, with no workable
+    # Disable any tools that require hooking into the game's executable. Even
+    # if the user manually installs these, they will not work, with no workable
     # solution found by the tool devs.
     class Se(GameInfo.Se):
         pass

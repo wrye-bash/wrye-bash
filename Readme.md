@@ -33,8 +33,8 @@ tested on (previous versions or latest versions may or may not work):
 * Skyrim Special Edition (patch 1.6.318.0)
 * Enderal Special Edition (patch 2.0.9)
 
-**Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 4 and
-Skyrim Special Edition are supported as well.
+**Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 3,
+Fallout New Vegas, Fallout 4 and Skyrim Special Edition are supported as well.
 
 ### Download
 
