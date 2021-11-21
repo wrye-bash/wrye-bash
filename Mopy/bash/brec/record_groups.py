@@ -52,7 +52,6 @@ class MobBase(object):
             # Yes it's weird, but this is how it needs to work
             self.label, self.groupType, self.stamp = (
                 header.flags1, header.fid, header.flags2)
-        self.debug = False
         # binary blob of the whole record group minus its GRUP header ##: rename
         self.data = None
         self.changed = False
@@ -69,7 +68,6 @@ class MobBase(object):
 
     def load_rec_group(self, ins=None, do_unpack=False):
         """Load data from ins stream or internal data buffer."""
-        if self.debug: print(u'GRUP load:',self.label)
         #--Read, but don't analyze.
         if not do_unpack:
             self.data = ins.read(self.header.blob_size(), type(self).__name__)

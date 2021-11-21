@@ -1880,7 +1880,6 @@ class Progress(object):
         self.message = u''
         self.full = 1.0 * full
         self.state = 0
-        self.debug = False
 
     def getParent(self):
         return None
@@ -1899,7 +1898,6 @@ class Progress(object):
         """Update progress with current state. Progress is state/full."""
         if (1.0*self.full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
         if message: self.message = message
-        if self.debug: deprint(u'%0.3f %s' % (1.0*state/self.full, self.message))
         self._do_progress(1.0 * state / self.full, self.message)
         self.state = state
 
