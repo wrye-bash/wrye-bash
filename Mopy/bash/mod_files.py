@@ -88,7 +88,6 @@ class LoadFactory(object):
         self.recTypes = set()
         self.topTypes = set()
         self.type_class = {}
-        self.cellType_class = {}
         recClasses = chain(generic, (MreRecord.type_class[x] for x in by_sig))
         for recClass in recClasses:
             self.addClass(recClass)
@@ -131,10 +130,8 @@ class LoadFactory(object):
 
     def getCellTypeClass(self):
         """Returns type_class dictionary for cell objects."""
-        if not self.cellType_class:
-            self.cellType_class.update((x, self.getRecClass(x)) for x in (
-                b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND', b'CELL', b'ROAD'))
-        return self.cellType_class
+        return {r: self.getRecClass(r) for r in (
+            b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND', b'CELL', b'ROAD')}
 
     def getUnpackCellBlocks(self,topType):
         """Returns whether cell blocks should be unpacked or not. Only relevant
