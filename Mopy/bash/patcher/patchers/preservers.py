@@ -490,7 +490,7 @@ class ImportCellsPatcher(ImportPatcher):
                         curr_pworld.setCell(cellBlock.cell)
                 pers_cell_block = worldBlock.worldCellBlock
                 if pers_cell_block and pers_cell_block.cell.fid in cellData:
-                    curr_pworld.worldCellBlock = pers_cell_block
+                    curr_pworld.set_persistent_cell(pers_cell_block.cell)
 
     def buildPatch(self, log, progress, __attrgetters=attrgetter_cache):
         """Adds merged lists to patchfile."""
@@ -504,22 +504,23 @@ class ImportCellsPatcher(ImportPatcher):
             to the bash patch, and the cell is flagged as modified.
             Modified cell Blocks are kept, the other are discarded."""
             modified = False
-            patch_cell_fid = patchCellBlock.cell.fid
+            patch_cell = patchCellBlock.cell
+            patch_cell_fid = patch_cell.fid
             for attr,value in cellData[patch_cell_fid].items():
-                curr_value = __attrgetters[attr](patchCellBlock.cell)
+                curr_value = __attrgetters[attr](patch_cell)
                 ##: If we made MelSorted sort on load too, we could drop this -
                 # but that might be too expensive? Maybe add a parameter to
                 # MelSorted to sort on load only for specific subrecords?
                 if attr == u'regions':
                     if set(value).difference(set(curr_value)):
-                        setattr_deep(patchCellBlock.cell, attr, value)
+                        setattr_deep(patch_cell, attr, value)
                         modified = True
                 else:
                     if value != curr_value:
-                        setattr_deep(patchCellBlock.cell, attr, value)
+                        setattr_deep(patch_cell, attr, value)
                         modified = True
             if modified:
-                patchCellBlock.cell.setChanged()
+                patch_cell.setChanged()
                 keep(patch_cell_fid)
             return modified
         if not self.isActive: return

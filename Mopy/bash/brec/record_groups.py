@@ -1520,6 +1520,18 @@ class MobWorld(MobCells):
         else:
             return worldSize
 
+    def set_persistent_cell(self, cell):
+        """Updates the persistent CELL block to use the specified CELL or
+        creates a new persistent CELL block if one does not already exist in
+        this world."""
+        if self.worldCellBlock:
+            self.worldCellBlock.cell = cell
+        else:
+            new_pers_block = MobCell(GrupHeader(0, 0, 6, self.stamp), ##: Note label is 0 here - specialized GrupHeader subclass?
+                                     self.loadFactory, cell)
+            new_pers_block.setChanged()
+            self.worldCellBlock = new_pers_block
+
     #--Fid manipulation, record filtering ----------------------------------
     def get_all_signatures(self):
         all_sigs = super(MobWorld, self).get_all_signatures()
