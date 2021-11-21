@@ -1151,11 +1151,10 @@ class Installer(ListInfo):
             size,crc = data_sizeCrc[dest]
             # Work with ghosts lopped off internally and check the destination,
             # since plugins may have been renamed
-            dest_path = GPath(dest)
-            if dest in installer_plugins:
+            if (dest_path := GPath_no_norm(dest)) in installer_plugins:
                 mods.add(dest_path)
-            elif is_ini_tweak(dest):
-                inis.add(dest_path.tail)
+            elif ini_name := is_ini_tweak(dest):
+                inis.add(GPath_no_norm(ini_name))
             elif dest_path.cext == bsa_ext:
                 bsas.add(dest_path)
             data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
@@ -2311,8 +2310,9 @@ class InstallersData(DataStore):
             if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
             iniAbsDataPath = bass.dirs[u'mods'].join(relPath)
             # Create a copy of the old one
-            baseName = bass.dirs[u'ini_tweaks'].join(u'%s, ~Old Settings [%s].ini' % (
-                iniAbsDataPath.sbody, installer.archive))
+            co_path = f'{iniAbsDataPath.sbody}, ~Old Settings ' \
+                      f'[{installer.ci_key}].ini'
+            baseName = bass.dirs[u'ini_tweaks'].join(co_path)
             tweakPath = self.__tweakPath(baseName)
             iniAbsDataPath.copyTo(tweakPath)
             tweaksCreated.add((tweakPath, iniAbsDataPath))
@@ -2500,12 +2500,12 @@ class InstallersData(DataStore):
     def _is_ini_tweak(ci_relPath):
         parts = ci_relPath.lower().split(os_sep)
         return len(parts) == 2 and parts[0] == u'ini tweaks' \
-           and parts[1][-4:] == u'.ini'
+           and parts[1][-4:] == u'.ini' and parts[1]
 
-    def _removeFiles(self, removes, refresh_ui, progress=None):
-        """Performs the actual deletion of files and updating of internal data.clear
+    def _removeFiles(self, ci_removes, refresh_ui, progress=None):
+        """Performs the actual deletion of files and updating of internal data,
            used by 'bain_uninstall' and 'bain_anneal'."""
-        if not removes: return
+        if not ci_removes: return
         modsDirJoin = bass.dirs[u'mods'].join
         emptyDirs = set()
         emptyDirsAdd = emptyDirs.add
@@ -2516,13 +2516,13 @@ class InstallersData(DataStore):
         removedInis = set()
         #--Construct list of files to delete
         norm_ghost_get = Installer.getGhosted().get
-        for ci_relPath in removes:
+        for ci_relPath in ci_removes:
             path = modsDirJoin(norm_ghost_get(ci_relPath, ci_relPath))
             if path.exists():
                 if reModExtSearch(ci_relPath):
-                    removedPlugins.add(GPath(ci_relPath))
-                elif self._is_ini_tweak(ci_relPath):
-                    removedInis.add(GPath(ci_relPath[11:]))
+                    removedPlugins.add(GPath_no_norm(str(ci_relPath)))
+                elif ini_name := self._is_ini_tweak(ci_relPath):
+                    removedInis.add(GPath_no_norm(ini_name))
                 else:
                     nonPlugins.add(path)
                     emptyDirsAdd(path.head)
@@ -2548,10 +2548,12 @@ class InstallersData(DataStore):
             ex = sys.exc_info()
             raise
         finally:
-            if ex:removes = [f for f in removes if not modsDirJoin(f).exists()]
+            if ex:
+                ci_removes = [f for f in ci_removes if
+                              not modsDirJoin(norm_ghost_get(f, f)).exists()]
             #--Update InstallersData
             data_sizeCrcDatePop = self.data_sizeCrcDate.pop
-            for ci_relPath in removes:
+            for ci_relPath in ci_removes:
                 data_sizeCrcDatePop(ci_relPath, None)
 
     def __restore(self, installer, removes, restores, cede_ownership):
@@ -2592,7 +2594,7 @@ class InstallersData(DataStore):
         removes = set()
         #--March through packages in reverse order...
         restores = bolt.LowerDict()
-        cede_ownership = collections.defaultdict(set)
+        _cede_ownership = collections.defaultdict(set)
         for installer in self.sorted_values(reverse=True):
             #--Uninstall archive?
             if installer in unArchives:
@@ -2605,9 +2607,9 @@ class InstallersData(DataStore):
             #  And/or may block later uninstalls.
             elif installer.is_active:
                 masked |= self.__restore(installer, removes, restores,
-                                         cede_ownership)
+                                         _cede_ownership)
         anneal = bass.settings[u'bash.installers.autoAnneal']
-        self._remove_restore(removes, restores, refresh_ui, cede_ownership,
+        self._remove_restore(removes, restores, refresh_ui, _cede_ownership,
                              progress, unArchives, anneal)
 
     def _remove_restore(self, removes, restores, refresh_ui, cede_ownership,
@@ -2623,16 +2625,14 @@ class InstallersData(DataStore):
                 self._restoreFiles(restores, refresh_ui, progress)
             # Set the 'installer' column in mod and ini tables
             from . import modInfos, iniInfos
-            for installer, owned_files in cede_ownership.items():
-                for ci_dest in owned_files:
-                    if modInfos.rightFileType(ci_dest):
+            for ikey, owned_files in cede_ownership.items():
+                for fn_key in owned_files:
+                    if modInfos.rightFileType(fn_key):
                         refresh_ui[0] = True
-                        modInfos.table.setItem(GPath(ci_dest), u'installer',
-                                               installer)
-                    elif InstallersData._is_ini_tweak(ci_dest):
+                        modInfos.table.setItem(GPath_no_norm(fn_key), u'installer', ikey)
+                    elif ini_name := InstallersData._is_ini_tweak(fn_key):
                         refresh_ui[1] = True
-                        iniInfos.table.setItem(GPath(ci_dest).tail,
-                                               u'installer', installer)
+                        iniInfos.table.setItem(GPath_no_norm(ini_name), u'installer', ikey)
         finally:
             self.irefresh(what=u'NS')
 
@@ -2669,13 +2669,13 @@ class InstallersData(DataStore):
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = bolt.LowerDict()
-        cede_ownership = collections.defaultdict(set)
+        _cede_ownership = collections.defaultdict(set)
         for installer in self.sorted_values(reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.is_active:
-                self.__restore(installer, removes, restores, cede_ownership)
-        self._remove_restore(removes, restores, refresh_ui, cede_ownership,
+                self.__restore(installer, removes, restores, _cede_ownership)
+        self._remove_restore(removes, restores, refresh_ui, _cede_ownership,
                              progress)
 
     def get_clean_data_dir_list(self):
