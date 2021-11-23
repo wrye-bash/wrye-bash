@@ -194,27 +194,17 @@ class DialogWindow(_TopLevelWin):
 
         :return: True if the dialog was closed with a good exit code (e.g. by
             clicking an 'OK' or 'Yes' button), False otherwise."""
-        return self.show_modal_raw() in (_wx.ID_OK, _wx.ID_YES)
-
-    # TODO(inf) Investigate uses, they all seem to have weird, fragile logic
-    def show_modal_raw(self):
-        """Begins a new modal dialog and returns the raw exit code."""
-        return self._native_widget.ShowModal()
+        return self._native_widget.ShowModal() in (_wx.ID_OK, _wx.ID_YES)
 
     def accept_modal(self):
         """Closes the modal dialog with a 'normal' exit code. Equivalent to
         clicking the OK button."""
-        self.exit_modal(_wx.ID_OK)
+        self._native_widget.EndModal(_wx.ID_OK)
 
     def cancel_modal(self):
         """Closes the modal dialog with an 'abnormal' exit code. Equivalent to
         clicking the Cancel button."""
-        self.exit_modal(_wx.ID_CANCEL)
-
-    # TODO(inf) Investigate uses, see show_modal_raw above
-    def exit_modal(self, custom_code):
-        """Closes the modal dialog with a custom exit code."""
-        self._native_widget.EndModal(custom_code)
+        self._native_widget.EndModal(_wx.ID_CANCEL)
 
 class StartupDialog(DialogWindow):
     """Dialog shown during early boot, generally due to errors."""
