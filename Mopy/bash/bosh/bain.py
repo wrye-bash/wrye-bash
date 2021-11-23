@@ -1632,15 +1632,15 @@ class InstallerProject(Installer):
     @staticmethod
     def _list_package(apath, log):
         def walkPath(folder, depth):
-            for entry in os.listdir(folder):
-                path = os.path.join(folder, entry)
-                if os.path.isdir(path):
-                    log(u' ' * depth + entry + u'\\')
-                    depth += 2
-                    walkPath(path, depth)
-                    depth -= 2
-                else:
-                    log(u' ' * depth + entry)
+            r, folders, files = next(os.walk(folder))
+            indent = u' ' * depth
+            for f in sorted(files):
+                log(f'{indent}{f}')
+            for d in sorted(folders):
+                log(f'{indent}{d}\\')
+                depth += 2
+                walkPath(os.path.join(r, d), depth)
+                depth -= 2
         walkPath(apath.s, 0)
 
     def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()

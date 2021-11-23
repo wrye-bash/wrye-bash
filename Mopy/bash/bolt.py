@@ -960,6 +960,13 @@ class Path(object):
         dec = other if isinstance(other, str) else decoder(other)
         return self._cs <= (os.path.normpath(dec).lower() if dec else dec)
 
+    # avoid setstate/getstate round trip
+    def __deepcopy__(self, memodict={}):
+        return self # immutable
+
+    def __copy__(self):
+        return self # immutable
+
 def popen_common(popen_cmd, **kwargs):
     """Wrapper around subprocess.Popen with commonly needed parameters."""
     return subprocess.Popen(popen_cmd, stdin=subprocess.DEVNULL,
