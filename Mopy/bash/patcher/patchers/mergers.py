@@ -59,7 +59,7 @@ class _AMerger(ImportPatcher):
         super(_AMerger, self).__init__(p_name, p_file, p_sources)
         self.id_deltas = defaultdict(list)
         merger_masters = set(chain.from_iterable(
-            self._recurse_masters(srcMod, p_file.p_file_minfos)
+            p_file.p_file_minfos.recurse_masters(srcMod)
             for srcMod in self.srcs))
         self._masters_and_srcs = merger_masters | set(self.srcs)
         # Set of record signatures that are actually provided by sources
@@ -69,16 +69,6 @@ class _AMerger(ImportPatcher):
         self.inventOnlyMods = (
             {x for x in self.srcs if x in p_file.mergeSet and u'IIM' in
              p_file.p_file_minfos[x].getBashTags()} if self.iiMode else set())
-
-    ##: Move to ModInfo? get_recursive_masters()?
-    def _recurse_masters(self, srcMod, minfs):
-        """Recursively collects all masters of srcMod."""
-        ret_masters = set()
-        src_masters = minfs[srcMod].masterNames if srcMod in minfs else []
-        for src_master in src_masters:
-            ret_masters.add(src_master)
-            ret_masters.update(self._recurse_masters(src_master, minfs))
-        return ret_masters
 
     ##: post-tweak pooling, see if we can use RecPath for this
     def _entry_key(self, subrecord_entry):

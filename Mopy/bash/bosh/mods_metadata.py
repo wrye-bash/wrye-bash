@@ -256,7 +256,7 @@ def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
                 add_deleted_rec = all_deleted_others[p_ci_key].append
                 add_old_weapon = old_weapon_records[p_ci_key].append
                 add_hitme = all_hitmes[p_ci_key].append
-                p_masters = modInfos[p_ci_key].masterNames + (p_ci_key,)
+                p_masters = (*modInfos[p_ci_key].masterNames, p_ci_key)
                 p_num_masters = len(p_masters)
                 for r, d in ext_data.items():
                     for r_fid, (r_header, r_eid) in d.items():

@@ -3149,6 +3149,15 @@ class ModInfos(FileInfos):
             for p_master in p_info.masterNames:
                 cached_dependents[p_master].add(p)
 
+    def recurse_masters(self, fn_mod):
+        """Recursively collect all masters of fn_mod."""
+        ret_masters = set()
+        src_masters = self[fn_mod].masterNames if fn_mod in self else []
+        for src_master in src_masters:
+            ret_masters.add(src_master)
+            ret_masters.update(self.recurse_masters(src_master))
+        return ret_masters
+
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""

@@ -425,12 +425,9 @@ class _ListPatcherPanel(_PatcherPanel):
         self.configChoices = copy.deepcopy(
             config.get(u'configChoices', self.__class__.default_configChoices))
         #--Verify file existence
-        newConfigItems = []
-        for srcPath in self.configItems:
-            if (srcPath in bosh.modInfos or (reCsvExt.search(
-                srcPath.s) and srcPath in patches_set())):
-                newConfigItems.append(srcPath)
-        self.configItems = newConfigItems
+        self.configItems = [srcPath.s for srcPath in self.configItems if (
+                    srcPath in bosh.modInfos or (reCsvExt.search(
+                srcPath.s) and srcPath in patches_set()))]
         if self.__class__.forceItemCheck:
             for item in self.configItems:
                 self.configChecks[item] = True
@@ -438,8 +435,8 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def saveConfig(self, configs):
         """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
         config = super(_ListPatcherPanel, self).saveConfig(configs)
+        #--Toss outdated configCheck data.
         listSet = set(self.configItems)
         self.configChecks = config[u'configChecks'] = {
             k: v for k, v in self.configChecks.items() if k in listSet}
@@ -799,10 +796,9 @@ class _ImporterPatcherPanel(_ListPatcherPanel):
         """Save config to configs dictionary."""
         config = super(_ImporterPatcherPanel, self).saveConfig(configs)
         if self.isEnabled:
-            importedMods = [item for item,value in
-                            self.configChecks.items() if
-                            value and bosh.ModInfos.rightFileType(item)]
-            configs[u'ImportedMods'].update(importedMods)
+            configs[u'ImportedMods'].update(
+                [item for item, value in self.configChecks.items() if
+                 value and bosh.ModInfos.rightFileType(item)])
         return config
 
 class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
@@ -830,11 +826,9 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
     def getItemLabel(self,item):
         # Note that we do *not* want to escape the & here - that puts *two*
         # ampersands in the resulting ListBox for some reason
-        choice = [i[0] for i in self.configChoices.get(item, tuple())]
-        if choice:
-            return u'%s [%s]' % (item, u''.join(sorted(choice)))
-        else:
-            return u'%s' % item # Path or string - YAK
+        choice = ''.join(
+            sorted(i[0] for i in self.configChoices.get(item) if i))
+        return f'{item}{f" [{choice}]" if choice else ""}'
 
     def GetConfigPanel(self, parent, config_layout, gTipText):
         if self.gConfigPanel: return self.gConfigPanel
