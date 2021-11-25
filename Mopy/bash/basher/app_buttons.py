@@ -322,7 +322,7 @@ def app_button_factory(exePathArgs, *args, **kwargs):
         return _ExeButton(exePath, exeArgs, *args, **kwargs)
     if exePath and exePath.cext == u'.jar':
         return _JavaButton(exePath, exeArgs, *args, **kwargs)
-    if exePath and( exePath.cext == u'.lnk' or exePath.isdir()):
+    if exePath and( exePath.cext == u'.lnk' or exePath.is_dir()):
         return _LnkOrDirButton(exePath, exeArgs, *args, **kwargs)
     return _App_Button(exePath, exeArgs, *args, **kwargs)
 
@@ -502,14 +502,14 @@ class Game_Button(_ExeButton):
             exe_path = self.exePath # Default to the regular launcher
             if BashStatusBar.laaButton.button_state:
                 # Should use the LAA Launcher if it's present
-                exe_path = (exe_laa if exe_laa.isfile() else exe_path)
+                exe_path = (exe_laa if exe_laa.is_file() else exe_path)
             elif BashStatusBar.obseButton.button_state:
                 # OBSE refuses to start when its EXE is launched on a Steam
                 # installation
                 if (bush.game.fsName != u'Oblivion'
                         or u'steam' not in bass.dirs[u'app'].cs):
                     # Should use the xSE launcher if it's present
-                    exe_path = (exe_xse if exe_xse.isfile() else exe_path)
+                    exe_path = (exe_xse if exe_xse.is_file() else exe_path)
             self._run_exe(exe_path, [exe_path.s])
         if bass.settings.get(u'bash.autoQuit.on', False):
             Link.Frame.close_win(True)
@@ -568,7 +568,7 @@ class TESCS_Button(_ExeButton):
     def _app_button_execute(self):
         exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
         if (self.xse_args and BashStatusBar.obseButton.button_state
-                and exe_xse.isfile()):
+                and exe_xse.is_file()):
             # If the script extender for this game has CK support, the xSE
             # loader is present and xSE is enabled, use that executable and
             # pass the editor argument to it

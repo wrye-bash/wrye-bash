@@ -429,7 +429,7 @@ def setattr_deep(obj, attr, value, __attrgetters=attrgetter_cache,
     setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
         leaf_attr, value)
 
-def top_level_files(directory): # faster than listdir then isfile
+def top_level_files(directory): # faster than listdir then is_file
     return top_level_items(directory)[1]
 
 def top_level_dirs(directory): # faster than listdir then isdir
@@ -672,7 +672,7 @@ class Path(object):
     @property
     def psize(self):
         """Size of file or directory."""
-        if self.isdir():
+        if self.is_dir():
             join = os.path.join
             op_size = os.path.getsize
             try:
@@ -775,14 +775,13 @@ class Path(object):
         return GPath(os.path.splitdrive(self._s)[0])
 
     #--File system info
-    #--THESE REALLY OUGHT TO BE PROPERTIES.
     def exists(self):
         return os.path.exists(self._s)
-    def isdir(self):
+    def is_dir(self):
         return os.path.isdir(self._s)
-    def isfile(self):
+    def is_file(self):
         return os.path.isfile(self._s)
-    def isabs(self):
+    def is_absolute(self):
         return os.path.isabs(self._s)
 
     #--File system manipulation
@@ -797,7 +796,7 @@ class Path(object):
 
     def clearRO(self):
         """Clears RO flag on self"""
-        if not self.isdir():
+        if not self.is_dir():
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
         else:
             try:
@@ -842,7 +841,7 @@ class Path(object):
             os.removedirs(self._s)
     def rmtree(self,safety=u'PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
-        if self.isdir() and safety and safety.lower() in self._cs:
+        if self.is_dir() and safety and safety.lower() in self._cs:
             shutil.rmtree(self._s,onerror=Path._onerror)
 
     #--start, move, copy, touch, untemp
@@ -858,7 +857,7 @@ class Path(object):
     def copyTo(self,destName):
         """Copy self to destName, make dirs if necessary and preserve mtime."""
         destName = GPath(destName)
-        if self.isdir():
+        if self.is_dir():
             shutil.copytree(self._s,destName._s)
             return
         try:
@@ -2259,7 +2258,7 @@ def readme_url(mopy, advanced=False, skip_local=False):
     readme_name = (u'Wrye Bash Advanced Readme.html' if advanced else
                    u'Wrye Bash General Readme.html')
     readme = mopy.join(u'Docs', readme_name)
-    if not skip_local and readme.isfile():
+    if not skip_local and readme.is_file():
         readme = u'file:///' + readme.s.replace(u'\\', u'/')
     else:
         # Fallback to Git repository

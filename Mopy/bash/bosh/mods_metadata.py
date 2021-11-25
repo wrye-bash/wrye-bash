@@ -52,7 +52,7 @@ def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
             return set(), set()
     else:
         tag_file = bass.dirs['tag_files'].join(bt_file_name)
-        if not tag_file.isfile():
+        if not tag_file.is_file():
             return set(), set()
     if tag_file is None: # If we hit the cache, we need to set tag_file here
         tag_file = bass.dirs['tag_files'].join(bt_file_name)

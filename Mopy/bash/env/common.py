@@ -118,7 +118,7 @@ def get_win_store_game_paths(submod):
         if submod.Ws.game_language_dirs:
             language_locations = [first_location.join(l)
                                   for l in submod.Ws.game_language_dirs]
-            return [p for p in language_locations if p.isdir()]
+            return [p for p in language_locations if p.is_dir()]
         else:
             return [first_location]
     else:

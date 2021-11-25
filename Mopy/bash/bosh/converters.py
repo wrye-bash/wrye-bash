@@ -144,7 +144,7 @@ class ConvertersData(DataDict):
     def _prune_converters(self):
         """Remove any converters that no longer exist."""
         for bcfPath in list(self.bcfPath_sizeCrcDate):
-            if not bcfPath.exists() or bcfPath.isdir():
+            if not bcfPath.exists() or bcfPath.is_dir():
                 self.removeConverter(bcfPath)
 
     def addConverter(self, converter):

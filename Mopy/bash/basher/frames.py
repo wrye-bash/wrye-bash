@@ -127,7 +127,7 @@ class DocBrowser(WindowFrame):
         doc_path = self._db_doc_paths.get(self._mod_name)
         if not doc_path:
             return bell()
-        if not doc_path.isfile():
+        if not doc_path.is_file():
             balt.showWarning(self, _(u'The assigned document is not present:')
                              + u'\n  %s' % doc_path)
         else:

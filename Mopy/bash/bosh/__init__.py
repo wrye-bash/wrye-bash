@@ -482,13 +482,13 @@ class ModInfo(FileInfo):
         mod_author = self.header.author
         if mod_author:
             authorDir = dest_dir.join(mod_author)
-            if authorDir.isdir():
+            if authorDir.is_dir():
                 return authorDir
         #--Use group subdirectory instead?
         file_group = self.get_table_prop(u'group')
         if file_group:
             groupDir = dest_dir.join(file_group)
-            if groupDir.isdir():
+            if groupDir.is_dir():
                 return groupDir
         return dest_dir
 
@@ -621,7 +621,7 @@ class ModInfo(FileInfo):
             self.isGhost = itsa_ghost
             return
         if regular_path is None: regular_path = self._file_key
-        self.isGhost = not regular_path.isfile() and os.path.isfile(
+        self.isGhost = not regular_path.is_file() and os.path.isfile(
             regular_path.s + u'.ghost')
 
     def do_update(self, raise_on_error=False, itsa_ghost=None):
@@ -866,7 +866,7 @@ class ModInfo(FileInfo):
         #--Check for Loose Files first
         for filepath in self._string_files_paths(lang):
             loose = baseDirJoin(filepath)
-            if not loose.isfile():
+            if not loose.is_file():
                 extract.add(filepath)
             else:
                 paths.add(loose)
@@ -964,7 +964,7 @@ class ModInfo(FileInfo):
             if ci_cached_strings_paths is not None:
                 if assetPath.lower() in ci_cached_strings_paths:
                     continue
-            elif self.dir.join(assetPath).isfile():
+            elif self.dir.join(assetPath).is_file():
                 continue
             # Check in BSA's next
             for bsa_info in bsa_infos:
@@ -1339,7 +1339,7 @@ class SaveInfo(FileInfo):
         cosaves_changed = False
         for co_type in SaveInfo.cosave_types:
             co_path = co_type.get_cosave_path(self.abs_path)
-            if co_path.isfile():
+            if co_path.is_file():
                 if co_type in self._co_saves:
                     # Existing cosave could have changed, check if it did
                     cosaves_changed |= self._co_saves[co_type].do_update()
@@ -1838,7 +1838,7 @@ class INIInfos(TableFileInfos):
             # will still be in here, but in English.  It wont get picked
             # up by the previous check, so we'll just delete any non-Path
             # objects.  That will take care of it.
-            if not isinstance(ini_path,bolt.Path) or not ini_path.isfile():
+            if not isinstance(ini_path,bolt.Path) or not ini_path.is_file():
                 if get_game_ini(ini_path):
                     continue # don't remove game inis even if missing
                 del _target_inis[ini_name]
@@ -2070,7 +2070,7 @@ class ModInfos(FileInfos):
         FileInfos.__init__(self, dirs[u'mods'], factory=ModInfo)
         #--Info lists/sets
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        if dirs[u'mods'].join(bush.game.master_file).isfile():
+        if dirs[u'mods'].join(bush.game.master_file).is_file():
             self._master_esm = bush.game.master_file
         else:
             raise FileError(bush.game.master_file,
@@ -3528,9 +3528,9 @@ def initTooldirs():
         tooldirs[u'boss'] = GPath(u'C:\\**DNE**')
         # Detect globally installed (into Program Files) BOSS
         path_in_registry = env.get_registry_path(
-            u'Boss', u'Installed Path', lambda p: p.join(u'BOSS.exe').isfile())
+            u'Boss', u'Installed Path', lambda p: p.join(u'BOSS.exe').is_file())
         if path_in_registry:
-            if path_in_registry.isdir():
+            if path_in_registry.is_dir():
                 path_in_registry = path_in_registry.join(u'BOSS.exe')
             tooldirs[u'boss'] = path_in_registry
     tooldirs[u'TES3EditPath'] = dirs[u'app'].join(u'TES3Edit.exe')
@@ -3668,7 +3668,7 @@ def initOptions(bashIni):
                 if settingType in (bolt.Path,list):
                     if value == u'.': continue
                     value = GPath(value)
-                    if not value.isabs():
+                    if not value.is_absolute():
                         value = dirs[u'app'].join(value)
                 elif settingType is bool:
                     if value == u'.': continue

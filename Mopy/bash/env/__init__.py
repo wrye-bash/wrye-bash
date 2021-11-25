@@ -48,10 +48,10 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
     # TODO(241): renameOnCollision NOT IMPLEMENTED
     doIt = shutil.copytree if operation == FO_COPY else shutil.move
     for fileFrom, fileTo in zip(source, target):
-        if fileFrom.isdir():
+        if fileFrom.is_dir():
             dest_dir = fileTo.join(fileFrom.tail)
             if dest_dir.exists():
-                if not dest_dir.isdir():
+                if not dest_dir.is_dir():
                     raise DirectoryFileCollisionError(fileFrom, dest_dir)
                 # dir exists at target, copy contents individually/recursively
                 source_paths, dests = [], []
@@ -62,7 +62,7 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
             else:  # dir doesn't exist at the target, copy it
                 doIt(fileFrom.s, fileTo.s)
         # copy the file, overwrite as needed
-        elif fileFrom.isfile():  # or os.path.islink(file):
+        elif fileFrom.is_file():  # or os.path.islink(file):
             # move may not work if the target exists, copy instead and
             # overwrite as needed
             try:
@@ -131,7 +131,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             # Do deletion
             for toDelete in source:
                 if not toDelete.exists(): continue
-                if toDelete.isdir():
+                if toDelete.is_dir():
                     toDelete.rmtree(toDelete.stail)
                 else:
                     toDelete.remove()

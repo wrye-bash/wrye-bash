@@ -125,7 +125,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         if isinstance(msg, tuple):
             _root, msg = msg
             self._showWarning(msg) # warn on extension change
-        if no_dir and self.idata.store_dir.join(archive_path).isdir():
+        if no_dir and self.idata.store_dir.join(archive_path).is_dir():
             self._showError(_(u'%s is a directory.') % archive_path)
             return
         if archive_path in self.idata:
@@ -1049,7 +1049,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     self._showWarning(_(u'%s is not a valid project name.') %
                                       result)
                     return
-                if self.idata.store_dir.join(project).isfile():
+                if self.idata.store_dir.join(project).is_file():
                     self._showWarning(_(u'%s is a file.') % project)
                     return
             if project in self.idata and not self._askYes(

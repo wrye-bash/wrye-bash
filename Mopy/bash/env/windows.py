@@ -161,7 +161,7 @@ def _get_default_app_icon(idex, target):
     if winreg is None: # FIXME(inf) linux.py
         return u'not\\a\\path', idex
     try:
-        if target.isdir():
+        if target.is_dir():
             global __folderIcon
             if not __folderIcon:
                 # Special handling of the Folder icon
@@ -210,7 +210,7 @@ def _get_app_links(apps_dir):
         sh = win32client.Dispatch(u'WScript.Shell')
         for lnk in apps_dir.list():
             lnk = apps_dir.join(lnk)
-            if lnk.cext == u'.lnk' and lnk.isfile():
+            if lnk.cext == u'.lnk' and lnk.is_file():
                 shortcut = sh.CreateShortCut(lnk.s)
                 shortcut_descr = shortcut.Description
                 if not shortcut_descr:
@@ -986,13 +986,13 @@ def getJava():
     try:
         java_home = _GPath(os.environ[u'JAVA_HOME'])
         java_bin_path = java_home.join(u'bin', u'javaw.exe')
-        if java_bin_path.isfile(): return java_bin_path
+        if java_bin_path.is_file(): return java_bin_path
     except KeyError: # no JAVA_HOME
         pass
     sys_root = _GPath(os.environ[u'SYSTEMROOT'])
     # Default location: Windows\System32\javaw.exe
     java_bin_path = sys_root.join(u'system32', u'javaw.exe')
-    if not java_bin_path.isfile():
+    if not java_bin_path.is_file():
         # 1st possibility:
         #  - Bash is running as 32-bit
         #  - The only Java installed is 64-bit
@@ -1000,7 +1000,7 @@ def getJava():
         # Windows\SysWOW64.  So look in the ACTUAL System32 folder
         # by using Windows\SysNative
         java_bin_path = sys_root.join(u'sysnative', u'javaw.exe')
-    if not java_bin_path.isfile():
+    if not java_bin_path.is_file():
         # 2nd possibility
         #  - Bash is running as 64-bit
         #  - The only Java installed is 32-bit

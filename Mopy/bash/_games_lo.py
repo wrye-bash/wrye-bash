@@ -853,11 +853,11 @@ class INIGame(Game):
         def _do_swap(cached_ini, ini_key):
             # If there's no INI inside the old (saves) directory, copy it
             old_ini = old_dir.join(ini_key[0])
-            if not old_ini.isfile():
+            if not old_ini.is_file():
                 cached_ini.abs_path.copyTo(old_ini)
             # Read from the new INI if it exists and write to our main INI
             move_ini = new_dir.join(ini_key[0])
-            if move_ini.isfile():
+            if move_ini.is_file():
                 self._write_ini(cached_ini, ini_key, self._read_ini(
                     self._mk_ini(move_ini), ini_key))
         if self._handles_actives:
@@ -1355,9 +1355,9 @@ class WindowsStoreGame(Game):
         if lo_file and fb_lo_file:
             # Use the main LO file if possible, but if the main file is missing
             # or the fallback file is newer, use that one
-            if lo_file.isfile():
+            if lo_file.is_file():
                 file_to_use = lo_file
-                if fb_lo_file.isfile() and fb_lo_file.mtime > lo_file.mtime:
+                if fb_lo_file.is_file() and fb_lo_file.mtime > lo_file.mtime:
                     file_to_use = fb_lo_file
             else:
                 file_to_use = fb_lo_file
@@ -1380,9 +1380,9 @@ class WindowsStoreGame(Game):
         if acti_file and fb_acti_file:
             # Use the main actives file if possible, but if the main file is
             # missing or the fallback file is newer, use that one
-            if acti_file.isfile():
+            if acti_file.is_file():
                 file_to_use = acti_file
-                if (fb_acti_file.isfile() and
+                if (fb_acti_file.is_file() and
                         fb_acti_file.mtime > acti_file.mtime):
                     file_to_use = fb_acti_file
             else:

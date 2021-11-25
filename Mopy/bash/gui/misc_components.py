@@ -86,7 +86,7 @@ class Picture(_AComponent):
         """Set the bitmap on the native_widget and return the wx object for
         caching"""
         if isinstance(bmp, Path):
-            bmp = (bmp.isfile() and ImageWrapper(bmp).get_bitmap()) or None
+            bmp = (bmp.is_file() and ImageWrapper(bmp).get_bitmap()) or None
         self.bitmap = bmp
         self._handle_resize()
         return self.bitmap

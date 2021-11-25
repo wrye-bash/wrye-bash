@@ -60,10 +60,10 @@ class BSA_ExtractToProject(ItemLink):
         # TODO(inf) Maybe create bosh.installers_data singleton?
         for project, _bsa_inf in to_unpack:
             proj_path = bass.dirs[u'installers'].join(project)
-            if proj_path.isfile():
+            if proj_path.is_file():
                 self._showWarning(_(u'%s is a file.') % project)
                 return
-            if proj_path.isdir():
+            if proj_path.is_dir():
                 question = _(u'%s already exists. Overwrite it?') % project
                 if not self._askYes(question, default=False):
                     return

@@ -1890,7 +1890,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     def _enable_buttons(self):
         isGameIni = bosh.iniInfos.ini in bosh.gameInis
         self.removeButton.enabled = not isGameIni
-        self.editButton.enabled = not isGameIni or self.current_ini_path.isfile()
+        self.editButton.enabled = not isGameIni or self.current_ini_path.is_file()
 
     def _OnRemove(self):
         """Called when the 'Remove' button is pressed."""
@@ -1903,7 +1903,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
 
     def _clean_targets(self):
         for ini_fname, ini_path in self.target_inis.items():
-            if ini_path is not None and not ini_path.isfile():
+            if ini_path is not None and not ini_path.is_file():
                 if not bosh.get_game_ini(ini_path):
                     self.__remove(ini_fname)
         self._combo_reset()
@@ -2556,7 +2556,7 @@ class InstallersList(balt.UIList):
     @balt.conversation
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
-        dirs = {x for x in filenames if x.isdir()}
+        dirs = {x for x in filenames if x.is_dir()}
         omodnames = [x for x in filenames if
                      not x in dirs and x.cext in archives.omod_exts]
         converters = {x for x in filenames if
@@ -3848,7 +3848,7 @@ class BashFrame(WindowFrame):
         for lf in limit_fixers:
             lf_path = bass.dirs[u'mods'].join(bush.game.Se.plugin_dir,
                                               u'plugins', lf)
-            if lf_path.isfile():
+            if lf_path.is_file():
                 return # Limit-fixing xSE plugin installed
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         if len(bosh.bsaInfos) + len(bosh.modInfos) >= 325 and not \
@@ -4145,10 +4145,10 @@ class BashFrame(WindowFrame):
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
             goodRoots = {p.root for p in fileInfos}
             backupDir = fileInfos.bash_dir.join(u'Backups')
-            if not backupDir.isdir(): continue
+            if not backupDir.is_dir(): continue
             for back_fname in backupDir.list():
                 back_path = backupDir.join(back_fname)
-                if back_fname.root not in goodRoots and back_path.isfile():
+                if back_fname.root not in goodRoots and back_path.is_file():
                     back_path.remove()
 
     @staticmethod
@@ -4197,7 +4197,7 @@ class BashApp(object):
             # Is splash enabled in ini ?
             if bass.inisettings[u'EnableSplashScreen']:
                 if (splash := bass.dirs['images'].join(
-                    'wryesplash.png')).isfile():
+                    'wryesplash.png')).is_file():
                     splash_screen = CenteredSplash(splash.s)
             #--Init Data
             progress(0.2, _(u'Initializing Data'))

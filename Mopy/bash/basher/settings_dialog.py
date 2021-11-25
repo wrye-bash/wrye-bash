@@ -193,7 +193,7 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
             return False # user canceled or entered identical name
         new_fpath = parent_dir.join(new_fname)
         old_fpath = parent_dir.join(chosen_file)
-        if new_fpath.isfile():
+        if new_fpath.is_file():
             if not balt.askYes(self, _(u'The chosen filename (%s) already '
                 u'exists. Do you want to replace the file?') % new_fname,
                 title=_(u'Name Conflict')):
@@ -582,7 +582,7 @@ class LanguagePage(_AScrollablePage):
                                    u"Please click on 'Configure Editor' to "
                                    u'set one up.'), title=_(u'Invalid Editor'))
             return
-        elif not chosen_editor.isfile():
+        elif not chosen_editor.is_file():
             balt.showError(self, _(u'The chosen editor (%s) does not exist or '
                                    u'is not a file.') % chosen_editor,
                 title=_(u'Invalid Editor'))

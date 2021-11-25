@@ -285,7 +285,7 @@ class IniFile(AFile):
 
     def target_ini_exists(self, msg=_(
         u'The target ini must exist to apply a tweak to it.')):
-        return self.abs_path.isfile()
+        return self.abs_path.is_file()
 
     def saveSettings(self,ini_settings,deleted_settings={}):
         """Apply dictionary of settings to ini file, latter must exist!

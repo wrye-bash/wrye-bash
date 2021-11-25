@@ -2742,7 +2742,7 @@ class InstallersData(DataStore):
                             f'failed', traceback=True)
             modInfos.delete_refresh(mods, None, check_existence=False)
             for emptyDir in emptyDirs:
-                if emptyDir.isdir() and not emptyDir.list():
+                if emptyDir.is_dir() and not emptyDir.list():
                     emptyDir.removedirs()
         finally:
             self.irefresh(what=u'NS')

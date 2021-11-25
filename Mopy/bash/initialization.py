@@ -28,7 +28,8 @@ import os
 from configparser import ConfigParser, MissingSectionHeaderError
 # Local - make sure that all imports here are carefully done in bash.py first
 from .bass import dirs, get_ini_option
-from .bolt import GPath, Path, decoder, deprint
+from .bolt import GPath, Path, decoder, deprint, top_level_dirs, \
+    GPath_no_norm
 from .env import get_personal_path, get_local_app_data_path, \
     get_win_store_game_info, shellMakeDirs
 from .exception import BoltError, NonExistentDriveError
@@ -54,7 +55,7 @@ def getPersonalPath(bash_ini_, my_docs_path):
         else:
             my_docs_path, sErrorInfo = get_personal_path()
     #  If path is relative, make absolute
-    if not my_docs_path.isabs():
+    if not my_docs_path.is_absolute():
         my_docs_path = dirs[u'app'].join(my_docs_path)
     #  Error check
     if not my_docs_path.exists():
@@ -77,7 +78,7 @@ def getLocalAppDataPath(bash_ini_, app_data_local_path):
         else:
             app_data_local_path, sErrorInfo = get_local_app_data_path()
     #  If path is relative, make absolute
-    if not app_data_local_path.isabs():
+    if not app_data_local_path.is_absolute():
         app_data_local_path = dirs[u'app'].join(app_data_local_path)
     #  Error check
     if not app_data_local_path.exists():
@@ -103,14 +104,14 @@ def getOblivionModsPath(bash_ini_, game_info):
         ob_mods_path = dirs[u'personal'].join(
             u'Wrye Bash', u'%s Mods' % game_info.bash_root_prefix)
         src = u'My Documents'
-    if not ob_mods_path.isabs(): ob_mods_path = dirs[u'app'].join(ob_mods_path)
+    if not ob_mods_path.is_absolute(): ob_mods_path = dirs[u'app'].join(ob_mods_path)
     return ob_mods_path, src
 
 def getBainDataPath(bash_ini_):
     idata_path = get_path_from_ini(bash_ini_, u'sInstallersData')
     if idata_path:
         src = [u'[General]', u'sInstallersData']
-        if not idata_path.isabs(): idata_path = dirs[u'app'].join(idata_path)
+        if not idata_path.is_absolute(): idata_path = dirs[u'app'].join(idata_path)
     else:
         idata_path = dirs[u'installers'].join(u'Bash')
         src = u'Relative Path'
@@ -119,7 +120,7 @@ def getBainDataPath(bash_ini_):
 def getBashModDataPath(bash_ini_):
     mod_data_path = get_path_from_ini(bash_ini_, u'sBashModData')
     if mod_data_path:
-        if not mod_data_path.isabs():
+        if not mod_data_path.is_absolute():
             mod_data_path = dirs[u'app'].join(mod_data_path)
         src = [u'[General]', u'sBashModData']
     else:
@@ -128,10 +129,10 @@ def getBashModDataPath(bash_ini_):
     return mod_data_path, src
 
 def getLegacyPath(newPath, oldPath):
-    return (oldPath,newPath)[newPath.isdir() or not oldPath.isdir()]
+    return (oldPath,newPath)[newPath.is_dir() or not oldPath.is_dir()]
 
 def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
-    if newPath.isdir() or not oldPath.isdir():
+    if newPath.is_dir() or not oldPath.is_dir():
         return newPath, newSrc
     else:
         return oldPath, oldSrc
@@ -185,7 +186,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     data_oblivion_ini = dirs[u'app'].join(first_ini_name)
     game_ini_path = dirs[u'saveBase'].join(first_ini_name)
     dirs[u'mods'] = dirs[u'app'].join(game_info.mods_dir)
-    if data_oblivion_ini.isfile():
+    if data_oblivion_ini.is_file():
         oblivionIni = ConfigParser(allow_no_value=True) ##: use GameIni here
         try:
             try:
@@ -310,8 +311,8 @@ def getLocalSaveDirs():
     base directory."""
     baseSaves = dirs[u'saveBase'].join(u'Saves')
     # Path.list returns [] for non existent dirs
-    localSaveDirs = [x for x in baseSaves.list() if
-                     x not in (u'Bash', u'Mash') and baseSaves.join(x).isdir()]
+    localSaveDirs = [GPath_no_norm(x) for x in top_level_dirs(baseSaves.s) if
+                     x.lower() not in ('bash', 'mash')]
     # Filter out non-encodable names
     bad = set()
     for folder in localSaveDirs:

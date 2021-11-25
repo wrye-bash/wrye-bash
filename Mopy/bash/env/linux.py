@@ -103,7 +103,7 @@ def getJava():
     try:
         java_home = _GPath(os.environ[u'JAVA_HOME'])
         java_bin_path = java_home.join(u'bin', u'java')
-        if java_bin_path.isfile(): return java_bin_path
+        if java_bin_path.is_file(): return java_bin_path
     except KeyError: # no JAVA_HOME
         pass
     try:
