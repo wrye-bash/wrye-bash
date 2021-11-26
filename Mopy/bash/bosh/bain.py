@@ -1023,46 +1023,34 @@ class Installer(ListInfo):
         return self.status != oldStatus or self.underrides != oldUnderrides
 
     #--Utility methods --------------------------------------------------------
-    def packToArchive(self, project, archive, isSolid, blockSize,
-            progress=None, release=False):
+    def packToArchive(self, project, fn_archive, isSolid, blockSize,
+                      progress=None, release=False):
         """Packs project to build directory. Release filters out development
         material from the archive. Needed for projects and to repack archives
         when syncing from Data."""
         if not self.num_of_files: return
-        archive, archiveType, solid = compressionSettings(archive, blockSize,
-                                                          isSolid)
+        fn_archive, archiveType, solid = compressionSettings(
+            fn_archive, blockSize, isSolid)
         outDir = bass.dirs[u'installers']
-        realOutFile = outDir.join(archive)
-        outFile = outDir.join(u'bash_temp_nonunicode_name.tmp')
-        num = 0
-        while outFile.exists():
-            outFile += str(num)
-            num += 1
+        realOutFile = outDir.join(fn_archive)
         project = outDir.join(project)
-        with project.unicodeSafe() as projectDir:
-            #--Dump file list
-            ##: We don't use a BOM for tempList in unpackToTemp...
-            with self.tempList.open(u'w', encoding=u'utf-8-sig') as out:
-                if release:
-                    out.write(u'*thumbs.db\n')
-                    out.write(u'*desktop.ini\n')
-                    out.write(u'*meta.ini\n')
-                    out.write(u'--*\\')
-            #--Compress
-            command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
-                       u'-x@%s -scsUTF-8 -sccUTF-8' % (
-                archives.exe7z, outFile.temp, archiveType, solid,
-                outDir, projectDir, self.tempList))
-            try:
-                # Safe to call without unicodeSafe because the name we chose is
-                # static and therefore guaranteed ASCII. Note that we lie a bit
-                # here - the third argument will be shown to the user, so we
-                # show the final archive name instead of the temp one we're
-                # internally using.
-                compress7z(command, outFile, archive, projectDir, progress)
-            finally:
-                self.tempList.remove()
-            outFile.moveTo(realOutFile)
+        #--Dump file list
+        ##: We don't use a BOM for tempList in unpackToTemp...
+        with self.tempList.open(u'w', encoding=u'utf-8-sig') as out:
+            if release:
+                out.write(u'*thumbs.db\n')
+                out.write(u'*desktop.ini\n')
+                out.write(u'*meta.ini\n')
+                out.write(u'--*\\')
+        #--Compress
+        command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
+                   u'-x@%s -scsUTF-8 -sccUTF-8' % (
+                       archives.exe7z, realOutFile.temp, archiveType, solid,
+                       outDir, project, self.tempList))
+        try:
+            compress7z(command, realOutFile, fn_archive, project, progress)
+        finally:
+            self.tempList.remove()
 
     def _do_sync_data(self, proj_dir, delta_files, progress):
         """Performs a Sync from Data on the specified project directory with
@@ -1360,18 +1348,17 @@ class InstallerArchive(Installer):
             elif key == u'CRC' and value: listed_crc = int(value,16)
             elif key == u'Method':
                 if filepath and not isdir_ and filepath != \
-                        tempArch.s:
+                        self.abs_path.s:
                     fileSizeCrcs.append((filepath, listed_size, listed_crc))
                     cumCRC += listed_crc
                 filepath = listed_size = listed_crc = isdir_ = 0
-        with self.abs_path.unicodeSafe() as tempArch:
-            try:
-                list_archive(tempArch, _parse_archive_line)
-                self.crc = cumCRC & 0xFFFFFFFF
-            except:
-                archive_msg = f"Unable to read archive '{self.abs_path}'."
-                deprint(archive_msg, traceback=True)
-                raise InstallerArchiveError(archive_msg)
+        try:
+            list_archive(self.abs_path, _parse_archive_line)
+            self.crc = cumCRC & 0xFFFFFFFF
+        except:
+            archive_msg = f"Unable to read archive '{self.abs_path}'."
+            deprint(archive_msg, traceback=True)
+            raise InstallerArchiveError(archive_msg)
 
     def unpackToTemp(self, fileNames, progress=None, recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
@@ -1386,18 +1373,17 @@ class InstallerArchive(Installer):
             out.write(u'\n'.join(fileNames))
         #--Ensure temp dir empty
         bass.rmTempDir()
-        with self.abs_path.unicodeSafe() as arch:
-            if progress:
-                progress.state = 0
-                progress.setFull(len(fileNames))
-            #--Extract files
-            unpack_dir = bass.getTempDir()
-            try:
-                extract7z(arch, unpack_dir, progress, recursive=recurse,
-                          filelist_to_extract=self.tempList.s)
-            finally:
-                self.tempList.remove()
-                bolt.clearReadOnly(unpack_dir)
+        if progress:
+            progress.state = 0
+            progress.setFull(len(fileNames))
+        #--Extract files
+        unpack_dir = bass.getTempDir()
+        try:
+            extract7z(self.abs_path, unpack_dir, progress, recursive=recurse,
+                      filelist_to_extract=self.tempList.s)
+        finally:
+            self.tempList.remove()
+            bolt.clearReadOnly(unpack_dir)
         #--Done -> don't clean out temp dir, it's going to be used soon
         return unpack_dir
 
@@ -1444,19 +1430,18 @@ class InstallerArchive(Installer):
 
     @staticmethod
     def _list_package(apath, log):
-        with apath.unicodeSafe() as tempArch:
-            list_text = []
-            filepath = u''
-            def _parse_archive_line(key, value):
-                nonlocal filepath
-                if key == u'Path':
-                    filepath = value
-                elif key == u'Attributes':
-                    list_text.append( # attributes may be empty
-                        (f'{filepath}', value and (u'D' in value)))
-                elif key == u'Method':
-                    filepath = u''
-            list_archive(tempArch, _parse_archive_line)
+        list_text = []
+        filepath = u''
+        def _parse_archive_line(key, value):
+            nonlocal filepath
+            if key == u'Path':
+                filepath = value
+            elif key == u'Attributes':
+                list_text.append(  # attributes may be empty
+                    (f'{filepath}', value and (u'D' in value)))
+            elif key == u'Method':
+                filepath = u''
+        list_archive(apath, _parse_archive_line)
         list_text.sort()
         #--Output
         for node, isdir_ in list_text:

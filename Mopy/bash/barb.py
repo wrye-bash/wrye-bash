@@ -175,9 +175,9 @@ class BackupSettings(object):
         # create the backup archive in 7z format WITH solid compression
         # may raise StateError
         backup_dir, dest7z = self._backup_dest_file.head, self._backup_dest_file.tail
-        with backup_dir.join(dest7z).unicodeSafe() as safe_dest:
-            command = archives.compressCommand(safe_dest, backup_dir, temp_dir)
-            archives.compress7z(command, safe_dest, dest7z, temp_dir)
+        command = archives.compressCommand(
+            safe_dest := backup_dir.join(dest7z), backup_dir, temp_dir)
+        archives.compress7z(command, safe_dest, dest7z, temp_dir)
         bass.settings[u'bash.backupPath'] = backup_dir
 
     def _backup_success(self, balt_):
@@ -225,8 +225,7 @@ class RestoreSettings(object):
         restarting."""
         if self._settings_file.isfile():
             temp_dir = bolt.Path.tempDir(prefix=RestoreSettings.__tmpdir_prefix)
-            with self._settings_file.unicodeSafe() as safe_settings:
-                archives.extract7z(safe_settings, temp_dir)
+            archives.extract7z(self._settings_file, temp_dir)
             self._extract_dir = temp_dir
         elif self._settings_file.isdir():
             self._extract_dir = self._settings_file

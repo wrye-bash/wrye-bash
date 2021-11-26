@@ -306,12 +306,11 @@ class InstallerConverter(object):
                                  self.addedSettings,
                                  pickle.load(translator, encoding='bytes')):
                     setattr(self, a, v)
-        with self.fullPath.unicodeSafe() as converter_path:
-            # Temp rename if its name wont encode correctly
-            command = f'"{archives.exe7z}" x "{converter_path}" BCF.dat -y ' \
-                      f'-so -sccUTF-8'
-            archives.wrapPopenOut(command, translate, errorMsg=f'\nLoading '
-                f'{self.fullPath}:\nBCF extraction failed.')
+        # Temp rename if its name wont encode correctly
+        command = f'"{archives.exe7z}" x "{self.fullPath}" BCF.dat -y ' \
+                  f'-so -sccUTF-8'
+        err_msg = f'\nLoading {self.fullPath}:\nBCF extraction failed.'
+        archives.wrapPopenOut(command, translate, errorMsg=err_msg)
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
@@ -331,11 +330,10 @@ class InstallerConverter(object):
         bass.rmTempDir()
         tmpDir = bass.newTempDir()
         #--Extract BCF
-        if progress: progress(0, self.fullPath.stail + u'\n' + _(
-                u'Extracting files...'))
-        with self.fullPath.unicodeSafe() as tempPath:
-            # don't pass progress in as we haven't got the count of BCF's files
-            archives.extract7z(tempPath, tmpDir, progress=None)
+        if progress:
+            progress(0, self.fullPath.stail + '\n' + _('Extracting files...'))
+        # don't pass progress in as we haven't got the count of BCF's files
+        archives.extract7z(self.fullPath, tmpDir, progress=None)
         #--Extract source archives
         lastStep = 0
         if embedded:
@@ -546,11 +544,10 @@ class InstallerConverter(object):
         #--Determine settings for 7z
         destArchive, archiveType, solid = compressionSettings(destArchive,
                 self.blockSize, self.isSolid)
-        with outDir.join(destArchive).unicodeSafe() as dest_safe:
-            command = compressCommand(dest_safe, outDir, srcFolder, solid,
-                archiveType)
-            archives.compress7z(command, dest_safe, destArchive, srcFolder,
-                progress)
+        command = compressCommand(self.fullPath, outDir, srcFolder, solid,
+                                  archiveType)
+        archives.compress7z(command, self.fullPath, destArchive, srcFolder,
+                            progress)
         bass.rmTempDir()
 
     def _unpack(self, srcInstaller, fileNames, progress=None):
@@ -580,13 +577,12 @@ class InstallerConverter(object):
             progress(0, f'{apath}\n' + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))
         #--Extract files
-        with apath.unicodeSafe() as arch:
-            try:
-                subArchives = archives.extract7z(arch, subTempDir, progress,
-                    readExtensions=readExts, filelist_to_extract=tempList.s)
-            finally:
-                tempList.remove()
-                bolt.clearReadOnly(subTempDir) ##: do this once
+        try:
+            subArchives = archives.extract7z(apath, subTempDir, progress,
+                readExtensions=readExts, filelist_to_extract=tempList.s)
+        finally:
+            tempList.remove()
+            bolt.clearReadOnly(subTempDir)  ##: do this once
         #--Recursively unpack subArchives
         for sub_archive in (subTempDir.join(a) for a in subArchives):
             self._unpack(sub_archive, [u'*']) # it will also unpack the embedded BCF if any...

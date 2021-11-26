@@ -874,35 +874,6 @@ class Path(object):
             self.clearRO()
             shutil.move(self._s,destPath._s)
 
-    def tempMoveTo(self,destName):
-        """Temporarily rename/move an object.  Use with the 'with' statement"""
-        class _temp_file(object):
-            def __init__(self,oldPath,newPath):
-                self.newPath = GPath(newPath)
-                self.oldPath = GPath(oldPath)
-
-            def __enter__(self): return self.newPath
-            def __exit__(self, exc_type, exc_value, exc_traceback): self.newPath.moveTo(self.oldPath)
-        self.moveTo(destName)
-        return _temp_file(self,destName)
-
-    def unicodeSafe(self): # PY3: investigate if obsoleted.
-        """Temporarily rename (only if necessary) the file to a unicode safe
-        name. Use with the 'with' statement. Meant to be used with Popen (which
-        automatically tries to encode the name)."""
-        try:
-            self._s.encode(u'ascii')
-            class _noop_file(object):
-                def __init__(self, _fpath):
-                    self._fpath = _fpath
-                def __enter__(self): return self._fpath
-                def __exit__(self, exc_type, exc_value, exc_traceback): pass
-            return _noop_file(self)
-        except UnicodeEncodeError:
-            safe_path = str(self._s.encode(u'ascii', u'xmlcharrefreplace'),
-                u'ascii') + u'_unicode_safe.tmp'
-            return self.tempMoveTo(safe_path)
-
     def untemp(self,doBackup=False):
         """Replaces file with temp version, optionally making backup of file first."""
         if self.temp.exists():
