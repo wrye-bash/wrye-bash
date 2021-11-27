@@ -59,7 +59,7 @@ def _early_setup(debug):
         os.chdir(pathToProg)
     bolt.deprintOn = debug
     # useful for understanding context of bug reports
-    if debug or bass.is_standalone:
+    if debug or bass.is_standalone: ##: currently debug==True for standalone
         # Standalone stdout is NUL no matter what.   Redirect it to stderr.
         # Also, setup stdout/stderr to the debug log if debug mode /
         # standalone before wxPython is up
@@ -226,7 +226,7 @@ def dump_environment(wxver=None):
         f'{u" (Standalone)" if bass.is_standalone else u""}',
         f'OS info: {platform.platform()}, running on '
         f'{platform.processor() or u"<unknown>"}',
-        f'Python version: {sys.version}',
+        f'Python version: {sys.version}'.replace('\n', '\n\t'),
         'Dependency versions:',
         f' - chardet: {chardet.__version__}',
         f' - PyMuPDF: {pymupdf_ver}',
@@ -242,9 +242,8 @@ def dump_environment(wxver=None):
         f'{(u" - using %s" % bolt.Path.sys_fs_enc) if not fse else u""}',
         f'Command line: {sys.argv}',
     ]
-    for m in msg:
-        bolt.deprint(m)
-    return u'\n'.join(msg)
+    bolt.deprint(msg := u'\n\t'.join(msg))
+    return msg
 
 def _bash_ini_parser(bash_ini_path):
     bash_ini_parser = None
@@ -262,6 +261,7 @@ def main(opts):
     :param opts: command line arguments
     :type opts: Namespace"""
     # Change working dir and logging
+    opts.debug = opts.debug or bass.is_standalone # always enable bugdump for standalone
     _early_setup(opts.debug)
     # wx is needed to initialize locale, so that's first
     wxver = _import_wx(opts.debug)

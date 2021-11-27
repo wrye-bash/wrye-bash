@@ -60,20 +60,20 @@ def reset_bush_globals():
 def _print_found_games(game_dict):
     """Formats and prints the specified dictionary of game detections in a
     human-readable way."""
+    msgs = []
     for found_name, found_paths in dict_sort(game_dict):
         if len(found_paths) == 1:
             # Single path, just print the name and path
-            deprint(u' - %s: %s' % (found_name, found_paths[0]))
+            msgs.append(f'   - {found_name}: {found_paths[0]}')
         else:
             # Multiple paths, format as a multiline list
-            deprint(u' - %s: [%s,' % (found_name, found_paths[0]))
-            remaining_paths = found_paths[1:]
-            space_padding = u' ' * (6 + len(found_name))
-            for i, found_path in enumerate(remaining_paths):
-                if i + 1 < len(remaining_paths):
-                    deprint(u'%s%s,' % (space_padding, found_path))
-                else:
-                    deprint(u'%s%s]' % (space_padding, found_path))
+            msg = f'   - {found_name}: [{found_paths[0]},\n'
+            # 8 == len('   - : [')
+            space_padding = u' ' * (8 + len(found_name))
+            msg += '\n'.join(f'{space_padding}{p},' for p in found_paths[1:-1])
+            msg += f'\n{space_padding}{found_paths[-1]}]'
+            msgs.append(msg)
+    return msgs
 
 def _supportedGames():
     """Set games supported by Bash and return their paths from the registry."""
@@ -93,58 +93,55 @@ def _supportedGames():
             game_type = module_container.GAME_TYPE
             _allGames[game_type.displayName] = game_type
         except (ImportError, AttributeError):
-            deprint(u'Error in game support module %s' % modname,
-                    traceback=True)
+            deprint(f'Error in game support module {modname}', traceback=True)
             continue
         try:
             # Get this game's install path(s)
             registry_paths = get_registry_game_paths(game_type)
         except AttributeError:
-            deprint(u'Error getting registry paths for %s'
-                    % game_type.displayName, traceback=True)
+            deprint(f'Error getting registry paths for '
+                    f'{game_type.displayName}', traceback=True)
         else:
             if registry_paths:
                 _registryGames[game_type.displayName] = registry_paths
         try:
             win_store_paths = get_win_store_game_paths(game_type)
         except AttributeError:
-            deprint(u'Error getting windows store paths for %s' %
-                    game_type.displayName, traceback=True)
+            deprint(f'Error getting windows store paths for '
+                    f'{game_type.displayName}', traceback=True)
         else:
             if win_store_paths:
                 _win_store_games[game_type.displayName] = win_store_paths
         del module
     # Dump out info about all games that we *could* launch, but wrap it
-    deprint(u'The following games are supported by this version of Wrye Bash:')
+    msg = ['The following games are supported by this version of Wrye Bash:']
     all_supported_games = u', '.join(sorted(_allGames))
-    for wrapped_line in textwrap.wrap(all_supported_games):
-        deprint(u' ' + wrapped_line)
+    msg.extend(f'  {wrapped_line}' for wrapped_line in
+               textwrap.wrap(all_supported_games))
     # Dump out info about all games that we *actually* found
-    deprint(u'Wrye Bash looked for games in the following places:')
-    deprint(u' 1. Windows Registry:')
+    msg.append(u'Wrye Bash looked for games in the following places:')
+    msg.append(u' 1. Windows Registry:')
     if _registryGames:
-        deprint(u'  The following installed games were found via the '
-                u'registry:')
-        _print_found_games(_registryGames)
+        msg.append(
+            u'  The following installed games were found via the registry:')
+        msg.extend(_print_found_games(_registryGames))
     else:
-        deprint(u'  No installed games were found via the registry')
-    for wrapped_line in textwrap.wrap(
-            u'Make sure to run the launcher of each game you installed '
-            u'through Steam once, otherwise Wrye Bash will not be able to '
-            u'find it.'):
-        deprint(u'  ' + wrapped_line)
-    deprint(u' 2. Windows Store:')
+        msg.append(u'  No installed games were found via the registry')
+    msg.extend(f'  {wrapped_line}' for wrapped_line in textwrap.wrap(
+        'Make sure to run the launcher of each game you installed through '
+        'Steam once, otherwise Wrye Bash will not be able to find it.'))
+    msg.append(u' 2. Windows Store:')
     if _win_store_games:
-        deprint(u'  The following installed games with modding enabled were '
-                u'found via the Windows Store:')
-        _print_found_games(_win_store_games)
+        msg.append('  The following installed games with modding enabled were '
+                   'found via the Windows Store:')
+        msg.extend(_print_found_games(_win_store_games))
     else:
-        deprint(u'  No installed games with modding enabled were found via '
-                u'the Windows Store.')
-    for wrapped_line in textwrap.wrap(
-            u'Make sure to enable mods for each Windows Store game you have '
-            u'installed, otherwise Wrye Bash will not be able to find it.'):
-        deprint(u'  ' + wrapped_line)
+        msg.append(u'  No installed games with modding enabled were found via '
+                   u'the Windows Store.')
+    msg.extend(f'  {wrapped_line}' for wrapped_line in textwrap.wrap(
+        'Make sure to enable mods for each Windows Store game you have '
+        'installed, otherwise Wrye Bash will not be able to find it.'))
+    deprint('\n'.join(msg))
     # Merge the dicts of games we found from all global sources
     all_found_games = _registryGames.copy()
     for found_game, found_paths in _win_store_games.items():
@@ -183,8 +180,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
             test_path = Path.getcwd().join(test_path)
         installPaths[u'cmd'] = (test_path,
             u'Set game mode to %(gamename)s specified via -o argument: ',
-            u'No known game in the path specified via -o argument: '
-            u'%(path)s')
+            u'No known game in the path specified via -o argument: %(path)s')
     #--Second: check if sOblivionPath is specified in the ini
     ini_game_path = get_path_from_ini(bash_ini_, u'sOblivionPath')
     if ini_game_path:
