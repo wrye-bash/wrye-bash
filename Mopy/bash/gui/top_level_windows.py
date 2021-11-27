@@ -182,6 +182,11 @@ class DialogWindow(_TopLevelWin):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.destroy_component()
 
+    def on_closing(self, destroy=False): # flip destroy to False
+        # dialogs are shown via the context manager above, if we destroy
+        # them here they won't be destroyed on __exit__ on mac at least
+        super(DialogWindow, self).on_closing(destroy)
+
     @classmethod
     def display_dialog(cls, *args, **kwargs):
         """Instantiate a dialog, display it and return the ShowModal result."""

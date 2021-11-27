@@ -56,7 +56,8 @@ class WizardDialog(DialogWindow):
         ])
         self._wiz_layout.apply_to(self)
 
-    def on_closing(self, destroy=True):
+    def on_closing(self, destroy=True):  ##: this is again True -> not called
+        # via display_dialog context manager
         if destroy:
             # We were closed via the dialog 'X' button, mark the wizard as
             # canceled in this case too

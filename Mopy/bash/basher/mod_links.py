@@ -1026,11 +1026,10 @@ class Mod_Patch_Update(_Mod_BP_Link):
                 u'game unusable and you quite possibly will have to '
                 u'regenerate your patch after fixing them.  So just go fix '
                 u'them now.')
-            with ListBoxes(Link.Frame, _(u'Master Errors'), proceed_,[
-                [_(u'Missing Master Errors'), missingMsg, missing],
+            if not ListBoxes.display_dialog(Link.Frame, _(u'Master Errors'),
+                proceed_, [[_(u'Missing Master Errors'), missingMsg, missing],
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
-                liststyle=u'tree',bOk=_(u'Continue Despite Errors')) as dialog:
-                   if not dialog.show_modal(): return
+                liststyle=u'tree',bOk=_(u'Continue Despite Errors')): return
         with PatchDialog(self.window, self._selected_info,
                 self.mods_to_reselect, self._bp_config) as patchDialog:
             patchDialog.show_modal()
