@@ -299,6 +299,7 @@ def pack_standalone(version):
         u'Mopy/bash/basher',
         u'Mopy/bash/bosh',
         u'Mopy/bash/brec',
+        u'Mopy/bash/env',
         u'Mopy/bash/game',
         u'Mopy/bash/gui',
         u'Mopy/bash/patcher',

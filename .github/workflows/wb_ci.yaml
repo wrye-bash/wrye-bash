@@ -35,3 +35,33 @@ jobs:
     - name: Test Wrye Bash
       run: |
         python -m pytest
+    - name: Copy executable/license files
+      run: |
+        cp "scripts/build/standalone/dist/Wrye Bash.exe" Mopy
+        cp LICENSE.md Mopy/LICENSE.md
+#    - name: Create Apps folder # does not work
+#      run: mkdir Mopy/Apps
+    - name: Upload Standalone Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ format('Wrye Bash CI {0}.{1}', github.ref_name, github.sha) }}
+        path: |
+          Mopy/*
+          Mopy/LICENSE.md
+          !Mopy/**.py
+          !Mopy/**.pyw
+          !Mopy/**.pyd
+          !Mopy/**.bat
+          !Mopy/**.template
+          !Mopy/redist
+          !Mopy/__pycache__
+          !Mopy/bash/**.py
+          !Mopy/bash/__pycache__
+          !Mopy/bash/basher
+          !Mopy/bash/bosh
+          !Mopy/bash/brec
+          !Mopy/bash/env
+          !Mopy/bash/game
+          !Mopy/bash/gui
+          !Mopy/bash/patcher
+          !Mopy/bash/tests
