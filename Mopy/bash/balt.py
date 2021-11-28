@@ -115,7 +115,7 @@ class ImageList(object):
             indices = self.indices
             imageList = self.imageList = wx.ImageList(self.width,self.height)
             for key,image in self.images:
-                indices[key] = imageList.Add(image.GetBitmap())
+                indices[key] = imageList.Add(image.get_bitmap())
         return self.imageList
 
     def get_image(self, key): return self.images[self[key]][1] # YAK !
@@ -873,8 +873,8 @@ class UIList(wx.Panel):
             # Image List: Column sorting order indicators
             # explorer style ^ == ascending
             checkboxesIL = self.icons.GetImageList()
-            self.sm_up = checkboxesIL.Add(images[u'arrow.up'].GetBitmap())
-            self.sm_dn = checkboxesIL.Add(images[u'arrow.down'].GetBitmap())
+            self.sm_up = checkboxesIL.Add(images[u'arrow.up'].get_bitmap())
+            self.sm_dn = checkboxesIL.Add(images[u'arrow.down'].get_bitmap())
             self.__gList._native_widget.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
         if self.__class__._editLabels:
             self.__gList.on_edit_label_begin.subscribe(self.OnBeginEditLabel)

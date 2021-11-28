@@ -74,7 +74,7 @@ class SettingsDialog(DialogWindow):
 # non-matching items, etc. Making this work is a very long-term goal.
 #        self._search_bar = SearchBar(self)
 #        self._search_bar.on_text_changed.subscribe(self._handle_search)
-        help_btn = ClickableImage(self, balt.images[u'help.24'].GetBitmap(),
+        help_btn = ClickableImage(self, balt.images[u'help.24'].get_bitmap(),
             btn_tooltip=_(u'View the readme section for the currently active '
                           u'settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)

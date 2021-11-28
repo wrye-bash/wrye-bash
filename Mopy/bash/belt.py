@@ -368,8 +368,8 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmp = [ImageWrapper(bass.dirs[u'images'].join(x)).GetBitmap() for x in
-               (u'error_cross_24.png', u'checkmark_24.png')]
+        bmps = [ImageWrapper(bass.dirs['images'].join(x)).get_bitmap() for x in
+                (u'error_cross_24.png', u'checkmark_24.png')]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
@@ -384,7 +384,7 @@ class PageVersions(PageInstaller):
         linkGame.tooltip = bush.game.patchTip
         versions_layout.append_row([linkGame, Label(self, gameNeed),
                                     Label(self, gameHave),
-                                    staticBitmap(self, bmp[bGameOk])])
+                                    staticBitmap(self, bmps[bGameOk])])
         def _link_row(tool, tool_name, need, have, ok, title=None, url=None,
                       tooltip_=None):
             if tool is None or tool_name != u'':
@@ -393,7 +393,7 @@ class PageVersions(PageInstaller):
                 link.tooltip = tooltip_ or tool.url_tip
                 versions_layout.append_row([link, Label(self, need),
                                             Label(self, have),
-                                            staticBitmap(self, bmp[ok])])
+                                            staticBitmap(self, bmps[ok])])
         # Script Extender
         _link_row(bush.game.Se, bush.game.Se.se_abbrev, seNeed, seHave, bSEOk)
         # Graphics extender

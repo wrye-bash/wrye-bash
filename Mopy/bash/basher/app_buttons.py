@@ -81,7 +81,7 @@ class StatusBar_Button(ItemLink):
     def GetBitmapButton(self, window, image=None, onRClick=None):
         """Create and return gui button - you must define imageKey - WIP overrides"""
         btn_image = image or balt.images[self.imageKey % bass.settings[
-            u'bash.statusbar.iconSize']].GetBitmap()
+            u'bash.statusbar.iconSize']].get_bitmap()
         if self.gButton is not None:
             self.gButton.destroy_component()
         self.gButton = ClickableImage(window, btn_image,
@@ -168,7 +168,7 @@ class _App_Button(StatusBar_Button):
         iconSize = bass.settings[u'bash.statusbar.iconSize'] # 16, 24, 32
         idex = (iconSize // 8) - 2 # 0, 1, 2, duh
         super(_App_Button, self).GetBitmapButton(
-            window, self.images[idex].GetBitmap(), onRClick)
+            window, self.images[idex].get_bitmap(), onRClick)
         if self.obseTip is not None:
             _App_Button.obseButtons.append(self)
             if BashStatusBar.obseButton.button_state:
@@ -596,7 +596,7 @@ class _StatefulButton(StatusBar_Button):
             self.button_state = True ^ self.button_state
         if self.gButton:
             self.gButton.image = balt.images[self.imageKey % bass.settings[
-                u'bash.statusbar.iconSize']].GetBitmap()
+                u'bash.statusbar.iconSize']].get_bitmap()
             self.gButton.tooltip = self.sb_button_tip
 
     @property

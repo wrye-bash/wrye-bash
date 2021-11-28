@@ -94,8 +94,7 @@ class ImportFaceDialog(DialogWindow):
         self.raceText.label_text = face.getRaceName()
         self.genderText.label_text = face.getGenderName()
         self.statsText.label_text = _(u'Health ') + str(face.health)
-        itemImagePath = bass.dirs[u'mods'].join(u'Docs', u'Images',
-                                                u'%s.jpg' % item)
+        itemImagePath = bass.dirs['mods'].join('Docs', 'Images', f'{item}.jpg')
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         self.picture.set_bitmap(itemImagePath)
         self.listBox.lb_select_index(lb_selection_dex)
