@@ -270,9 +270,6 @@ def main(opts):
         # message if WB crashes
         from . import localize
         wx_locale = localize.setup_locale(opts.language, _wx)
-        # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
-        if sys.platform.startswith('win') and sys.version_info > (3, 8):
-            locale.setlocale(locale.LC_ALL, 'C')
         if not bass.is_standalone and (not _rightWxVersion(wxver) or
                                        not _rightPythonVersion()): return
         # Both of these must come early, before we begin showing wx-based GUI

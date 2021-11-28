@@ -39,6 +39,11 @@ import traceback
 # Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
 
+def set_c_locale():
+    # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
+    if sys.platform.startswith('win') and sys.version_info > (3, 8):
+        locale.setlocale(locale.LC_ALL, 'C')
+
 #------------------------------------------------------------------------------
 # Locale Detection & Setup
 def setup_locale(cli_lang, _wx):
@@ -151,6 +156,7 @@ def setup_locale(cli_lang, _wx):
     # we ended up with as the final locale
     trans.install()
     bass.active_locale = target_name
+    set_c_locale() # this breaks the wx.ArtProvider for some locales
     return target_locale
 
 def __get_translations_dir():
