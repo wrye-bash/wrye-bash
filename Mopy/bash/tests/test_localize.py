@@ -24,6 +24,7 @@
 """Setting the locale in latest versions of python/wx is super buggy - see
 issue #610. Write some tests for common scenarios - note these should
 ideally run in all supported OSs - currently windoz."""
+import time
 
 import wx as _wx
 
@@ -50,6 +51,8 @@ class TestLocalize:
             # assert getlocale
             # call the wx API that blows
             assert _wx.ArtProvider.GetBitmap(_wx.ART_PLUS, size=(16, 16))
+            assert time.strptime('2006-01-01', '%Y-%m-%d')
+            # assert time.strptime('2006-01-01', '%c')
             print(f'******* Tested {loc=} *******')
 
     def test_setlocale_pl_PL(self, capsys):
