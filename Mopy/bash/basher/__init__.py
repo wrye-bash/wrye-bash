@@ -1478,16 +1478,13 @@ class ModDetails(_ModsSavesDetails):
         ##: Come up with a better solution for this
         class _ExClickableImage(WithMouseEvents, ClickableImage):
             bind_lclick_down = True
-        self._add_tag_btn = _ExClickableImage(
-            self._bottom_low_panel,
-            wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16, 16)),
-            no_border=False, btn_tooltip=_(u'Add bash tags to this plugin.'))
+        self._add_tag_btn = _ExClickableImage(self._bottom_low_panel,
+            'ART_PLUS', no_border=False,
+            btn_tooltip=_(u'Add bash tags to this plugin.'))
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
-        self._rem_tag_btn = ClickableImage(
-            self._bottom_low_panel,
-            wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16, 16)),
-            no_border=False, btn_tooltip=_(u'Remove the selected tag(s) from '
-                                           u'this plugin.'))
+        self._rem_tag_btn = ClickableImage(self._bottom_low_panel,
+            'ART_MINUS', no_border=False,
+            btn_tooltip=_(u'Remove the selected tag(s) from this plugin.'))
         self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
                              isSingle=False, isExtended=True)
