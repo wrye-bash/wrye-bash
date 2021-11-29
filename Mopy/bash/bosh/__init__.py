@@ -33,7 +33,6 @@ import os
 import pickle
 import re
 import sys
-import time
 import traceback
 from collections import OrderedDict
 from functools import wraps, partial
@@ -3319,7 +3318,7 @@ class BSAInfos(FileInfos):
         if bush.game.displayName == u'Oblivion':
             # Need to do this at runtime since it depends on inisettings (ugh)
             bush.game.Bsa.redate_dict[inisettings[
-                u'OblivionTexturesBSAName']] = u'2005-01-01'
+                u'OblivionTexturesBSAName']] = 1104530400 # '2005-01-01'
         self.__class__.file_pattern = re.compile(
             re.escape(bush.game.Bsa.bsa_extension) + u'$', re.I | re.U)
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
@@ -3349,8 +3348,7 @@ class BSAInfos(FileInfos):
             def _reset_bsa_mtime(self):
                 if bush.game.Bsa.allow_reset_timestamps and inisettings[
                     u'ResetBSATimestamps']:
-                    default_mtime = time.mktime(time.strptime(
-                        bush.game.Bsa.redate_dict[self.ci_key.s], '%Y-%m-%d'))
+                    default_mtime = bush.game.Bsa.redate_dict[self.ci_key.s]
                     if self._file_mod_time != default_mtime:
                         self.setmtime(default_mtime)
 

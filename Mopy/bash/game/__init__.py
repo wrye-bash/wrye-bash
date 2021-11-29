@@ -329,11 +329,11 @@ class GameInfo(object):
         # Whether or not the Archive.exe tool for this game creates BSL files
         has_bsl = False
         # Maps BSA names to the date to which they should be redated. Fallback
-        # will be used for BSAs which are not explicitly listed. Format is
-        # ISO 8601 (year-month-day). Generally used to redate the vanilla BSAs
-        # before all mod BSAs, and all BSAs before loose files by choosing
-        # dates older than the game's release date.
-        redate_dict = defaultdict(lambda: u'2006-01-01')
+        # will be used for BSAs which are not explicitly listed. We hardcode
+        # time.mktime result due to locale issues. Generally used to redate
+        # the vanilla BSAs before all mod BSAs, and all BSAs before loose
+        # files by choosing dates older than the game's release date.
+        redate_dict = defaultdict(lambda: 1136066400) # '2006-01-01'
         # All BSA versions accepted by this game. If empty, indicates that this
         # game does not use BSA versions and so BSA version checks will be
         # skipped entirely.

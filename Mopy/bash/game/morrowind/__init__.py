@@ -73,10 +73,10 @@ class MorrowindGameInfo(PatchGame):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
-        redate_dict = defaultdict(lambda: u'2003-06-04', {
-            u'Morrowind.bsa': u'2002-05-01',
-            u'Tribunal.bsa': u'2002-11-06',
-            u'Bloodmoon.bsa': u'2003-06-03',
+        redate_dict = defaultdict(lambda: 1054674000, { # '2003-06-04'
+            'Morrowind.bsa': 1020200400, # '2002-05-01'
+            'Tribunal.bsa': 1036533600,  # '2002-11-06'
+            'Bloodmoon.bsa': 1054587600, # '2003-06-03'
         })
 
     class Xe(GameInfo.Xe):
