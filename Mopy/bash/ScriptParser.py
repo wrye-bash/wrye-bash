@@ -92,9 +92,14 @@ def validNumber(string):
 # Define Some Constants ---------------------------
 
 # Some error string
-ERR_CANNOT_SET = u"Cannot set %s '%s': type is '%s'."
-ERR_TOO_FEW_ARGS = u"Too few arguments to %s '%s':  got %s, expected %s."
-ERR_TOO_MANY_ARGS = u"Too many arguments to %s '%s':  got %s, expected %s."
+def err_too_few_args(obj_type, obj_name, got, expected):
+    error(f"Too few arguments to {obj_type} '{obj_name}':  got {got}, "
+          f"expected {expected}.")
+def err_too_many_args(obj_type, obj_name, got, expected):
+    error(f"Too many arguments to {obj_type} '{obj_name}':  got {got}, "
+          f"expected {expected}.")
+def err_cant_set(obj_type, obj_name, type_enum):
+    error(f"Cannot set {obj_type} '{obj_name}': type is '{Types[type_enum]}'.")
 
 class KEY(object):
     # Constants for keyword args
@@ -249,24 +254,20 @@ class Parser(object):
             numArgs = len(args)
             if self.maxArgs != KEY.NO_MAX and numArgs > self.maxArgs:
                 if self.minArgs == self.maxArgs:
-                    error(ERR_TOO_MANY_ARGS % (
-                        self.Type, self.callable_name, numArgs, self.minArgs))
+                    err_too_many_args(self.Type, self.callable_name, numArgs,
+                                      self.minArgs)
                 else:
-                    error(ERR_TOO_MANY_ARGS % (
-                        self.Type, self.callable_name, numArgs,
-                        u'min: %s, max: %s' % (self.minArgs,self.maxArgs)))
+                    err_too_many_args(self.Type, self.callable_name, numArgs,
+                        f'min: {self.minArgs}, max: {self.maxArgs}')
             if numArgs < self.minArgs:
+                args = self.Type, self.callable_name, numArgs
                 if self.maxArgs == KEY.NO_MAX:
-                    error(ERR_TOO_FEW_ARGS % (
-                        self.Type, self.callable_name, numArgs,
-                        u'min: %s' % self.minArgs))
+                    err_too_few_args(*args, f'min: {self.minArgs}')
                 elif self.minArgs == self.maxArgs:
-                    error(ERR_TOO_FEW_ARGS % (
-                        self.Type, self.callable_name, numArgs, self.minArgs))
+                    err_too_few_args(*args, self.minArgs)
                 else:
-                    error(ERR_TOO_FEW_ARGS % (
-                        self.Type, self.callable_name, numArgs,
-                        u'min: %s, max: %s' % (self.minArgs, self.maxArgs)))
+                    err_too_few_args(*args, f'min: {self.minArgs}, '
+                                            f'max: {self.maxArgs}')
             return self.function(*args)
 
     class Operator(Callable):
@@ -484,29 +485,29 @@ class Parser(object):
     def SetOperator(self, op_name, *args, **kwdargs):
         type_ = getType(op_name, self)
         if type_ not in [NAME,OPERATOR,UNKNOWN]:
-            error(ERR_CANNOT_SET % (u'operator', op_name, Types[type_]))
+            err_cant_set(u'operator', op_name,  type_)
         self.operators[op_name] = Parser.Operator(op_name, *args, **kwdargs)
         for i in op_name:
             if i not in self.opChars: self.opChars += i
     def SetKeyword(self, keywrd_name, *args, **kwdargs):
         type_ = getType(keywrd_name, self)
         if type_ not in [NAME,KEYWORD]:
-            error(ERR_CANNOT_SET % (u'keyword', keywrd_name, Types[type_]))
+            err_cant_set(u'keyword', keywrd_name,  type_)
         self.keywords[keywrd_name] = Parser.Keyword(keywrd_name, *args, **kwdargs)
     def SetFunction(self, fun_name, *args, **kwdargs):
         type_ = getType(fun_name, self)
         if type_ not in [NAME,FUNCTION]:
-            error(ERR_CANNOT_SET % (u'function', fun_name, Types[type_]))
+            err_cant_set(u'function', fun_name,  type_)
         self.functions[fun_name] = Parser.Function(fun_name, *args, **kwdargs)
     def SetConstant(self, const_name, value):
         type_ = getType(const_name, self)
         if type_ not in [NAME,CONSTANT]:
-            error(ERR_CANNOT_SET % (u'constant', const_name, Types[type_]))
+            err_cant_set(u'constant', const_name,  type_)
         self.constants[const_name] = value
     def SetVariable(self, var_name, value):
         type_ = getType(var_name, self)
         if type_ not in [NAME, VARIABLE]:
-            error(ERR_CANNOT_SET % (u'variable', var_name, Types[type_]))
+            err_cant_set(u'variable', var_name,  type_)
         self.variables[var_name] = value
 
     # Flow control stack
@@ -723,10 +724,10 @@ class Parser(object):
         stack = []
         for i in rpn:
             if i.type == OPERATOR:
-                if len(stack) < i.tkn.minArgs:
-                    error(ERR_TOO_FEW_ARGS % (u'operator', i.text, len(stack), i.tkn.minArgs))
+                if len(stack) < (tkn_min_args := i.tkn.minArgs):
+                    err_too_few_args('operator',i.text,len(stack),tkn_min_args)
                 args = []
-                while len(args) < i.tkn.minArgs:
+                while len(args) < tkn_min_args:
                     args.append(stack.pop())
                 args.reverse()
                 ret = i(*args)
@@ -736,7 +737,7 @@ class Parser(object):
                     stack.append(Parser.Token(ret))
             elif i.type == FUNCTION:
                 if len(stack) < i.numArgs:
-                    error(ERR_TOO_FEW_ARGS % (u'function', i.text, len(stack), i.numArgs))
+                    err_too_few_args('function', i.text, len(stack), i.numArgs)
                 args = []
                 while len(args) < i.numArgs:
                     args.append(stack.pop())
