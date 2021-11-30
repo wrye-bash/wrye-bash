@@ -183,6 +183,8 @@ class Saves_Profiles(ChoiceLink):
             with BusyCursor():
                 Link.Frame.saveList.set_local_save(newSaves, refreshSaveInfos=False)
                 bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves)
+                Link.Frame.modList.RefreshUI(refreshSaves=False,
+                                             focus_list=False)
                 bosh.saveInfos.refresh()
                 self.window.DeleteAll() # let call below repopulate
                 self.window.RefreshUI(detail_item=None)

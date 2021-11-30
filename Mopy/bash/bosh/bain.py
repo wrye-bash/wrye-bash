@@ -273,6 +273,14 @@ class Installer(ListInfo):
         else:
             return _(u'Structure: Unrecognized')
 
+    def log_package(self, log, showInactive):
+        prefix = f'{self.order:03d}'
+        package = self.ci_key
+        if self.is_active:
+            log(f'++ {prefix} - {package} ({self.crc:08X}) (Installed)')
+        elif showInactive:
+            log(f'-- {prefix} - {package} ({self.crc:08X}) (Not Installed)')
+
     def resetEspmName(self,currentName):
         oldName = self.getEspmName(currentName)
         del self._remaps[oldName]
@@ -1238,7 +1246,7 @@ class InstallerMarker(Installer):
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
     _is_filename = False
-    _is_marker = True
+    is_marker = True
 
     @staticmethod
     def _new_name(base_name, count):
@@ -1278,6 +1286,9 @@ class InstallerMarker(Installer):
     def size_info_str(self): return  _(u'Size:') + u' N/A\n'
 
     def structure_string(self): return _(u'Structure: N/A')
+
+    def log_package(self, log, showInactive):
+        log(f'{f"{self.order:03d}"} - {self.ci_key}')
 
     def _refreshSource(self, progress, recalculate_project_crc):
         """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
@@ -2965,16 +2976,8 @@ class InstallersData(DataStore):
         log.setHeader(_(u'Bain Packages:'))
         #--List
         log(u'[spoiler]\n', False)
-        for package, installer in self.sorted_pairs():
-            prefix = u'%03d' % installer.order
-            if installer.is_marker:
-                log(u'%s - %s' % (prefix, package))
-            elif installer.is_active:
-                log(u'++ %s - %s (%08X) (Installed)' % (
-                    prefix, package, installer.crc))
-            elif showInactive:
-                log(u'-- %s - %s (%08X) (Not Installed)' % (
-                    prefix, package, installer.crc))
+        for inst in self.sorted_values():
+            inst.log_package(log, showInactive)
         log(u'[/spoiler]')
         return bolt.winNewLines(log.out.getvalue())
 

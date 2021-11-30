@@ -423,7 +423,8 @@ def _restore_lo(index_move):
                    __index_move=index_move, quiet=True)
 
 # API helpers
-def swap(old_dir, new_dir): _game_handle.swap(old_dir, new_dir)
+def swap(old_dir, new_dir):
+    return _game_handle.swap(old_dir, new_dir)
 
 def must_be_active_if_present():
     return set(_game_handle.must_be_active_if_present) | (

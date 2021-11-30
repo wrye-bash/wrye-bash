@@ -401,8 +401,7 @@ class Mods_ExportBashTags(_Mods_BashTags):
         for pl_name, p in dict_sort(bosh.modInfos):
             curr_tags = p.getBashTags()
             if curr_tags:
-                out.write(u'"%s","%s"\n' % (
-                    pl_name, u', '.join(sorted(curr_tags))))
+                out.write(f'"{pl_name}","{u", ".join(sorted(curr_tags))}"\n')
                 self.plugins_exported += 1
 
 #------------------------------------------------------------------------------

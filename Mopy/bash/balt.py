@@ -1046,11 +1046,10 @@ class UIList(wx.Panel):
         self.autosizeColumns()
 
     __all = ()
-    def RefreshUI(self, redraw=__all, to_del=__all, detail_item='SAME',
-                  **kwargs):
+    def RefreshUI(self, *, redraw=__all, to_del=__all, detail_item='SAME',
+                  focus_list=True, **kwargs):
         """Populate specified files or ALL files, sort, set status bar count.
         """
-        focus_list = kwargs.pop(u'focus_list', True)
         if redraw is to_del is self.__all:
             self.populate_items()
         else:  #--Iterable

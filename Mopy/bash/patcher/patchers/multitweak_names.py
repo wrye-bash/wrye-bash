@@ -823,7 +823,7 @@ class _ANamesTweak_RenameF(CustomChoiceTweak):
         # Gold001 is built into the engine, so if none of the plugins in the LO
         # override it (usually the game master does), we have to create an
         # override from scratch
-        if True:#not self._found_gold:
+        if not self._found_gold:
             gold_rec = patch_file.create_record(b'MISC', self._gold_fid)
             self.tweak_record(gold_rec) # Sets the FULL
             for gold_attr, gold_value in self._gold_attrs.items():

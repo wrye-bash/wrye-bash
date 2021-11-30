@@ -3183,11 +3183,11 @@ class ModInfos(FileInfos):
         self.voCurrent = newVersion
 
     def swapPluginsAndMasterVersion(self, arcSaves, newSaves):
-    # does not really belong here, but then where ?
         """Save current plugins into arcSaves directory, load plugins from
         newSaves directory and set oblivion version."""
         arcPath, newPath = map(dirs[u'saveBase'].join, (arcSaves, newSaves))
-        load_order.swap(arcPath, newPath)
+        if load_order.swap(arcPath, newPath):
+            self.refreshLoadOrder(unlock_lo=True)
         # Swap Oblivion version to memorized version
         voNew = saveInfos.get_profile_attr(newSaves, u'vOblivion', None)
         if voNew is None:

@@ -357,7 +357,7 @@ class LoGame(object):
         """Save current plugins into oldPath directory and load plugins from
         newPath directory (if present)."""
         # If this game has no plugins.txt, don't try to swap it
-        if not self.__class__.has_plugins_txt: return
+        if not self.__class__.has_plugins_txt: return False
         # Save plugins.txt inside the old (saves) directory
         if self.plugins_txt_path.exists():
             self.plugins_txt_path.copyTo(old_dir.join(u'plugins.txt'))
@@ -366,6 +366,8 @@ class LoGame(object):
         if move.exists():
             move.copyTo(self.plugins_txt_path)
             self.plugins_txt_path.mtime = time.time() # copy will not change mtime, bad
+            return True
+        return False
 
     def in_master_block(self, minf): # minf is a master or mod info
         """Return true for files that load in the masters' block."""
@@ -859,11 +861,14 @@ class INIGame(LoGame):
             if move_ini.is_file():
                 self._write_ini(cached_ini, ini_key, self._read_ini(
                     self._mk_ini(move_ini), ini_key))
+                return True
+            return False
+        changed = False
         if self._handles_actives:
-            _do_swap(self._cached_ini_actives, self.ini_key_actives)
+            changed = _do_swap(self._cached_ini_actives, self.ini_key_actives)
         if self._handles_lo:
-            _do_swap(self._cached_ini_lo, self.ini_key_lo)
-        super().swap(old_dir, new_dir)
+            changed |= _do_swap(self._cached_ini_lo, self.ini_key_lo)
+        return super().swap(old_dir, new_dir) or changed
 
     def get_acti_file(self):
         if self._handles_actives:
@@ -1052,6 +1057,8 @@ class TextfileGame(LoGame):
         if move.exists():
             move.copyTo(self.loadorder_txt_path)
             self.loadorder_txt_path.mtime = time.time() # update mtime to trigger refresh
+            return True
+        return False
 
     def get_acti_file(self):
         return self.plugins_txt_path
