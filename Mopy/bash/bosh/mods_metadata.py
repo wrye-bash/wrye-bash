@@ -97,12 +97,11 @@ def diff_tags(plugin_new_tags, plugin_old_tags):
 _cleaning_wiki_url = (u'[[!https://tes5edit.github.io/docs/7-mod-cleaning-and'
                       u'-error-checking.html|Tome of xEdit]]')
 
-def checkMods(mc_parent, showModList=False, showCRC=False, showVersion=True,
-              scan_plugins=True):
+def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
+              showVersion=True, scan_plugins=True):
     """Checks currently loaded mods for certain errors / warnings.
-    mod_checker should be the instance of PluginChecker, to scan."""
+    mc_parent should be the instance of PluginChecker, to scan."""
     # Setup some commonly used collections of plugin info
-    from . import modInfos
     full_acti = load_order.cached_active_tuple()
     plugin_to_acti_index = {p: i for i, p in enumerate(full_acti)}
     all_present_minfs = [modInfos[x] for x in load_order.cached_lo_tuple()]

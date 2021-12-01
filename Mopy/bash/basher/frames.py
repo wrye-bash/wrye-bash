@@ -394,10 +394,9 @@ class PluginChecker(WindowFrame):
         self.__merged = bosh.modInfos.merged.copy()
         self.__imported = bosh.modInfos.imported.copy()
         #--Do it
-        self.check_mods_text = mods_metadata.checkMods(
-            self, *[_get_mod_checker_setting(self._setting_names[setting_key])
-                    for setting_key in (_MOD_LIST, _CRC, _VERSION,
-                                        _LOAD_PLUGINS)])
+        self.check_mods_text = mods_metadata.checkMods(self, bosh.modInfos,
+            *[_get_mod_checker_setting(self._setting_names[setting_key])
+            for setting_key in (_MOD_LIST, _CRC, _VERSION, _LOAD_PLUGINS)])
         if web_viewer_available():
             log_path = bass.dirs[u'saveBase'].join(u'ModChecker.html')
             css_dir = bass.dirs[u'mopy'].join(u'Docs')

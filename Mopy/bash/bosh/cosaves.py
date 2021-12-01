@@ -120,17 +120,17 @@ class _AHeader(_Dumpable):
     savefile_tag = u'OVERRIDE'
     __slots__ = ()
 
-    def __init__(self, ins, cosave_path):
+    def __init__(self, ins, cosave_name):
         """The base constructor for headers checks if the expected save file
         tag for this header matches the actual tag found in the file.
 
         :param ins: The input stream to read from.
-        :param cosave_path: The path to the cosave."""
+        :param cosave_name: The filename of the cosave for error messages."""
         actual_tag = _cosave_decode(unpack_string(ins, len(self.savefile_tag)))
         if actual_tag != self.savefile_tag:
-            raise InvalidCosaveError(cosave_path.tail,
-                u'Header tag wrong: got %s, but expected %s' %
-                (actual_tag, self.savefile_tag))
+            raise InvalidCosaveError(cosave_name,
+                                     f'Header tag wrong: got {actual_tag}, '
+                                     f'but expected {self.savefile_tag}')
 
     def write_header(self, out):
         """Writes this header to the specified output stream. The base method
@@ -185,11 +185,11 @@ class _PluggyHeader(_AHeader):
         super(_PluggyHeader, self).__init__(ins, cosave_path)
         version = unpack_int(ins)
         if version > self._max_supported_version:
-            raise UnsupportedCosaveError(cosave_path.tail,
+            raise UnsupportedCosaveError(cosave_path,
                 u'Version of pluggy save file format is too new - only '
                 u'versions <= 1.6.0000 are supported.')
         elif version < self._min_supported_version:
-            raise UnsupportedCosaveError(cosave_path.tail,
+            raise UnsupportedCosaveError(cosave_path,
                 u'Version of pluggy save file format is too old - only '
                 u'versions >= 1.4.0000 are supported.')
 
@@ -1345,7 +1345,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
         to override this method.
 
         :param ins: The input stream to read from."""
-        self.cosave_header = self._header_type(ins, self.abs_path)
+        self.cosave_header = self._header_type(ins, self.abs_path.tail)
 
     def _read_cosave_body(self, ins, light=False):
         """Reads the body of this cosave. The header is already read and
