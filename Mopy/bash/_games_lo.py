@@ -93,6 +93,8 @@ def _parse_plugins_txt_(path, mod_infos, _star):
                 bolt.deprint(f'{modname!r} failed to properly decode')
                 continue
             mod_g_path = GPath_no_norm(test)
+            if mod_g_path.cext == '.ghost':  # Vortex keeps the .ghost extension!
+                mod_g_path = mod_g_path.body
             if mod_g_path not in mod_infos: # TODO(ut): is this really needed??
                 # The automatic encoding detector could have returned
                 # an encoding it actually wasn't.  Luckily, we
