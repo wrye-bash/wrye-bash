@@ -24,11 +24,11 @@
 functions to initialize bass.dirs that need be initialized high up into the
 boot sequence to be able to backup/restore settings."""
 import io
-import os
 from configparser import ConfigParser, MissingSectionHeaderError
+
 # Local - make sure that all imports here are carefully done in bash.py first
 from .bass import dirs, get_ini_option
-from .bolt import GPath, Path, decoder, deprint, top_level_dirs, \
+from .bolt import GPath, Path, decoder, deprint, os_name, top_level_dirs, \
     GPath_no_norm
 from .env import get_personal_path, get_local_app_data_path, \
     get_win_store_game_info, shellMakeDirs
@@ -262,7 +262,7 @@ def _dirs_err_msg(e, dir_keys, bainDataSrc, modsBashSrc, oblivionMods,
         if dirs[dir_key] in e.failed_paths:
             badKeys.add(dir_key)
     # Now, work back from those to determine which setting created those
-    if os.name == 'posix':
+    if os_name == 'posix':
         m = _("Please check the settings for the following paths in your "
               "bash.ini, the drive does not exist or you don't have write "
               "permissions")
@@ -309,7 +309,7 @@ def init_dirs_mopy():
     dirs[u'templates'] = dirs[u'mopy'].join(u'templates')
     dirs[u'images'] = dirs[u'bash'].join(u'images')
     from . import archives
-    if os.name == u'nt': # don't add local directory to binaries on linux
+    if os_name == u'nt': # don't add local directory to binaries on linux
         archives.exe7z = dirs[u'compiled'].join(archives.exe7z).s
     global mopy_dirs_initialized
     mopy_dirs_initialized = True

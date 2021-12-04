@@ -65,7 +65,7 @@ import wx
 #--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
 from ..bolt import GPath, SubProgress, deprint, round_size, dict_sort, \
-    top_level_items, GPath_no_norm
+    top_level_items, GPath_no_norm, os_name
 from ..bosh import omods, ModInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
@@ -4175,7 +4175,7 @@ class BashFrame(WindowFrame):
         # wxPython) do not generate open/close events for that style of
         # menubar, which means we can't implement our JIT global menu - it will
         # simply display empty global menus that do nothing when clicked.
-        show_gm = bass.settings[u'bash.show_global_menu'] and os.name == u'nt'
+        show_gm = bass.settings[u'bash.show_global_menu'] and os_name == u'nt'
         self._native_widget.SetMenuBar(self.global_menu._native_widget
                                        if show_gm else None)
 

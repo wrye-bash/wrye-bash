@@ -39,7 +39,7 @@ def csf(): ##: This is ugly, is there no nicer way?
     """Returns the content scale factor (CSF) needed for high DPI displays."""
     global _cached_csf
     if _cached_csf is None:
-        if platform.system() != u'Darwin': ##: Linux? os.name == 'nt' if so
+        if platform.system() != u'Darwin': ##: Linux? os_name == 'nt' if so
            _cached_csf = _wx.Window().GetContentScaleFactor()
         else:
             _cached_csf = 1.0 # Everything scales automatically on macOS

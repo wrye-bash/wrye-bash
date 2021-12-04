@@ -26,7 +26,7 @@ implementations for the current OS."""
 
 import platform
 import shutil
-from ..bolt import Path, GPath, deprint
+from ..bolt import Path, GPath, deprint, os_name
 from ..exception import CancelError, DirectoryFileCollisionError, \
     NonExistentDriveError
 # First import the shared API
@@ -180,7 +180,7 @@ def shellMakeDirs(dirs, parent=None):
     errorPaths = [d for d in dirs if not drive_exists(d)]
     if errorPaths:
         raise NonExistentDriveError(errorPaths)
-    if os.name == 'posix':
+    if os_name == 'posix':
         return # drive_exists creates the directories on posix
     #--Checks complete, start working
     tempDirs, fromDirs, toDirs = [], [], []

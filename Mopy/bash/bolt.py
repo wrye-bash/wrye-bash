@@ -62,7 +62,8 @@ struct_calcsize = struct.calcsize
 
 #-- To make commands executed with Popen hidden
 startupinfo = None
-if os.name == u'nt':
+os_name = os.name ##: usages probably belong to env
+if os_name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
@@ -80,7 +81,7 @@ encodingOrder = (
     u'cp500',
     u'UTF-16LE',
 )
-if os.name == u'nt':
+if os_name == u'nt':
     encodingOrder += (u'mbcs',)
 
 _encodingSwap = {
