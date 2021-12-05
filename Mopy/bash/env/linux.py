@@ -37,7 +37,7 @@ from ..exception import EnvError
 
 # API - Constants =============================================================
 try:
-    MAX_PATH = int(subprocess.check_output([u'getconf', u'PATH_MAX', u'/']))
+    MAX_PATH = int(subprocess.check_output([u'getconf', u'PATH_MAX', u'/'])) # 1024 on mac!
 except (ValueError, subprocess.CalledProcessError, OSError):
     _deprint(u'calling getconf failed - error:', traceback=True)
     MAX_PATH = 4096

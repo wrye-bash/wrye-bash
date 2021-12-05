@@ -1063,7 +1063,10 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                 as progress:
             projects = []
             for installer, project in to_unpack:
-                installer.unpackToProject(project,SubProgress(progress,0,0.8))
+                count_unpacked = installer.unpackToProject(project,
+                    SubProgress(progress, 0, 0.8))
+                if not count_unpacked:
+                    continue # no files were unpacked - stat would fail below
                 InstallerProject.refresh_installer(project, self.idata,
                     progress=SubProgress(progress, 0.8, 0.99),
                     install_order=installer.order + 1, do_refresh=False)
