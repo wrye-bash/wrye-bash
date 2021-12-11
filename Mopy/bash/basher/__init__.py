@@ -1478,16 +1478,13 @@ class ModDetails(_ModsSavesDetails):
         ##: Come up with a better solution for this
         class _ExClickableImage(WithMouseEvents, ClickableImage):
             bind_lclick_down = True
-        self._add_tag_btn = _ExClickableImage(
-            self._bottom_low_panel,
-            wx.ArtProvider.GetBitmap(wx.ART_PLUS, size=(16, 16)),
-            no_border=False, btn_tooltip=_(u'Add bash tags to this plugin.'))
+        self._add_tag_btn = _ExClickableImage(self._bottom_low_panel,
+            'ART_PLUS', no_border=False,
+            btn_tooltip=_(u'Add bash tags to this plugin.'))
         self._add_tag_btn.on_mouse_left_down.subscribe(self._popup_add_tags)
-        self._rem_tag_btn = ClickableImage(
-            self._bottom_low_panel,
-            wx.ArtProvider.GetBitmap(wx.ART_MINUS, size=(16, 16)),
-            no_border=False, btn_tooltip=_(u'Remove the selected tag(s) from '
-                                           u'this plugin.'))
+        self._rem_tag_btn = ClickableImage(self._bottom_low_panel,
+            'ART_MINUS', no_border=False,
+            btn_tooltip=_(u'Remove the selected tag(s) from this plugin.'))
         self._rem_tag_btn.on_clicked.subscribe(self._remove_selected_tags)
         self.gTags = ListBox(self._bottom_low_panel, isSort=True,
                              isSingle=False, isExtended=True)
@@ -4241,8 +4238,13 @@ class BashFrame(WindowFrame):
                                        if show_gm else None)
 
 #------------------------------------------------------------------------------
-class BashApp(wx.App):
-    """Bash Application class."""
+class BashApp(object):
+    """Wrapper around a wx Application."""
+    __slots__ = ('bash_app',)
+
+    def __init__(self, bash_app):
+        self.bash_app = bash_app
+
     def Init(self): # not OnInit(), we need to initialize _after_ the app has been instantiated
         """Initialize the application data and create the BashFrame."""
         #--OnStartup SplashScreen and/or Progress
@@ -4266,7 +4268,7 @@ class BashApp(wx.App):
             progress(1.0, _(u'Done'))
         if splash_screen:
             splash_screen.stop_splash()
-        self.SetTopWindow(frame._native_widget)
+        self.bash_app.SetTopWindow(frame._native_widget)
         frame.show_frame()
         frame.is_maximized = settings[u'bash.frameMax']
         frame.RefreshData(booting=True) # used to bind RefreshData

@@ -30,8 +30,7 @@ from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink
 from ..env import getJava, get_game_version_fallback
 from ..exception import AbstractError
-from ..gui import ClickableImage, EventResult, staticBitmap, get_key_down, \
-    get_shift_down
+from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down
 
 __all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
            u'TESCS_Button', u'App_Tes4View', u'App_BOSS', u'App_Help',
@@ -731,8 +730,7 @@ class App_Restart(StatusBar_Button):
     def GetBitmapButton(self, window, image=None, onRClick=None):
         iconSize = bass.settings[u'bash.statusbar.iconSize']
         return super(App_Restart, self).GetBitmapButton(window,
-            staticBitmap(window, special=u'undo', size=(iconSize, iconSize)),
-            onRClick)
+            bass.wx_bitmap[('ART_UNDO', iconSize)], onRClick)
 
     def Execute(self): Link.Frame.Restart()
 

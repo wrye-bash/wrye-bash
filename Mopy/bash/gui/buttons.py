@@ -28,6 +28,7 @@ __author__ = u'nycz, Infernio'
 import wx as _wx
 
 from .base_components import _AComponent
+from .. import bass
 
 class Button(_AComponent):
     """Represents a generic button that can be pressed, triggering an action.
@@ -183,14 +184,16 @@ class ImageButton(Button):
     See Button for documentation on button events. Note: this implementation
     locks us into wx 2.9+, since wx 2.8 can't do bitmaps with a regular button.
     """
-    def __init__(self, parent, init_image=None, **kwargs):
+    def __init__(self, parent, image_id=None, **kwargs):
         """Creates a new _AImageButton with the specified properties. See
         Button for documentation on all other keyword arguments.
 
-        :param init_image: The image shown on this button."""
+        :param image_id: The internal id for the image shown on this button."""
         super(ImageButton, self).__init__(parent, **kwargs)
-        if init_image:
-            self.image = init_image
+        if isinstance(image_id, str):
+            self.image = bass.wx_bitmap[image_id]
+        elif isinstance(image_id, _wx.Bitmap):
+            self.image = image_id
 
     @property
     def image(self): # type: () -> _wx.Bitmap
@@ -212,21 +215,19 @@ class ImageButton(Button):
 class _StdImageButton(ImageButton): ##: deprecate? makes us wx dependent
     """Base class for ImageButtons that come with a standard wx-supplied
     image."""
-    _wx_icon = None
-    _dip_size = (16, 16)
+    _wx_icon_key = 'OVERRIDE'
 
     def __init__(self, parent, **kwargs):
         super(_StdImageButton, self).__init__(parent, **kwargs)
-        self.image = _wx.ArtProvider.GetBitmap(
-            self._wx_icon, _wx.ART_HELP_BROWSER,
-            self._native_widget.FromDIP(self._dip_size))
+        ##: maybe rescale to self._native_widget.FromDIP(self._dip_size)) ?
+        self.image = bass.wx_bitmap[self._wx_icon_key]
 
 class BackwardButton(_StdImageButton):
     """An image button with no text that displays an arrow pointing to the
     right. Used for navigation, e.g. in a browser.
 
     See Button for documentation on button events."""
-    _wx_icon = _wx.ART_GO_BACK
+    _wx_icon_key = 'ART_GO_BACK'
 
     def __init__(self, parent):
         super(BackwardButton, self).__init__(parent, exact_fit=True,
@@ -237,7 +238,7 @@ class ForwardButton(_StdImageButton):
     right. Used for navigation, e.g. in a browser.
 
     See Button for documentation on button events."""
-    _wx_icon = _wx.ART_GO_FORWARD
+    _wx_icon_key = 'ART_GO_FORWARD'
 
     def __init__(self, parent):
         super(ForwardButton, self).__init__(parent, exact_fit=True,
@@ -246,8 +247,7 @@ class ForwardButton(_StdImageButton):
 class QuitButton(_StdImageButton, CancelButton):
     """Similar to CancelButton, also has a standard image shown on it."""
     _default_label =_(u'Quit')
-    _wx_icon = _wx.ART_ERROR
-    _dip_size = (32, 32)
+    _wx_icon_key = 'ART_ERROR'
 
 class ReloadButton(ImageButton):
     """An image button with no text that displays two arrows in a circle. Used
@@ -267,14 +267,14 @@ class ClickableImage(ImageButton):
     """An image that acts like a button. Has no text and no borders.
 
     See Button for documentation on button events."""
-    def __init__(self, parent, image, btn_tooltip=None, no_border=True):
+    def __init__(self, parent, image_id, btn_tooltip=None, no_border=True):
         """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
-        :param image: The image shown on this button.
+        :param image_id: The image id to be shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
                             button."""
         super(ClickableImage, self).__init__(
-            parent, image, btn_tooltip=btn_tooltip, exact_fit=True,
+            parent, image_id, btn_tooltip=btn_tooltip, exact_fit=True,
             no_border=no_border)

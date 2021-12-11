@@ -93,13 +93,13 @@ class Fallout3GameInfo(PatchGame):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
-        redate_dict = defaultdict(lambda: u'2006-01-01', {
-            u'Fallout - MenuVoices.bsa': u'2005-01-01',
-            u'Fallout - Meshes.bsa': u'2005-01-02',
-            u'Fallout - Misc.bsa': u'2005-01-03',
-            u'Fallout - Sound.bsa': u'2005-01-04',
-            u'Fallout - Textures.bsa': u'2005-01-05',
-            u'Fallout - Voices.bsa': u'2005-01-06',
+        redate_dict = defaultdict(lambda: 1136066400, { # '2006-01-01'
+            'Fallout - MenuVoices.bsa': 1104530400,  # '2005-01-01',
+            'Fallout - Meshes.bsa': 1104616800,      # '2005-01-02',
+            'Fallout - Misc.bsa': 1104703200,        # '2005-01-03',
+            'Fallout - Sound.bsa': 1104789600,       # '2005-01-04',
+            'Fallout - Textures.bsa': 1104876000,    # '2005-01-05',
+            'Fallout - Voices.bsa': 1104962400,      # '2005-01-06',
         })
         # ArchiveInvalidation Invalidated, which we shipped unmodified for a
         # long time, uses an Oblivion BSA with version 0x67, so we have to

@@ -59,14 +59,12 @@ class Resources(object):
 
 def load_app_icons():
     """Called early in boot, sets up the icon bundles we use as app icons."""
-    _temp_app = wx.App(False) # throwaway, needed for the calls below to work
     red_bundle = ImageBundle()
     red_bundle.Add(bass.dirs[u'images'].join(u'bash_32-2.ico'))
     Resources.bashRed = red_bundle.GetIconBundle()
     blue_bundle = ImageBundle()
     blue_bundle.Add(bass.dirs[u'images'].join(u'bash_blue.svg-2.ico'))
     Resources.bashBlue = blue_bundle.GetIconBundle()
-    del _temp_app
 
 # Settings --------------------------------------------------------------------
 __unset = bolt.Settings(dictFile=None) # type information
@@ -83,7 +81,7 @@ images = {} #--Singleton for collection of images.
 class ImageBundle(object):
     """Wrapper for bundle of images.
 
-    Allows image bundle to be specified before wx.App is initialized."""
+    Allows image bundle to be specified before wx.App is initialized.""" # TODO: unneeded?
     def __init__(self):
         self._image_paths = []
         self.iconBundle = None

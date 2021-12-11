@@ -39,9 +39,40 @@ import traceback
 # Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
 
+def __init_gui_images(_wx):
+    """The images API to be - we need to initialize wx images before we
+    touch the locale and once we have a wx app instance. This is in hopes we
+    will not crash due to the mismatch between wx/python/OS locale
+    conventions that seems to plague windoz. See:
+    - https://github.com/wxWidgets/Phoenix/issues/1616
+    - https://bugs.python.org/issue43115
+    """
+    wxart = _wx.ArtProvider.GetBitmap
+    siz16 = (16, 16)
+    for wx_id, internal_id in [(_wx.ART_PLUS, 'ART_PLUS'),
+                               (_wx.ART_MINUS, 'ART_MINUS')]:
+        bass.wx_bitmap[internal_id] = wxart(wx_id, size=siz16)
+    ids = [(_wx.ART_GO_BACK, 'ART_GO_BACK', siz16),
+           (_wx.ART_GO_FORWARD, 'ART_GO_FORWARD', siz16),
+           (_wx.ART_ERROR, 'ART_ERROR', (32, 32))]
+    fromdip = _wx.Window.FromDIP ##: should we dpi previous also?
+    for wx_id, internal_id, size_tup in ids:
+        bass.wx_bitmap[internal_id] = wxart(wx_id, _wx.ART_HELP_BROWSER,
+                                            size=fromdip(size_tup, None))
+    bass.wx_bitmap['ART_WARNING'] = wxart(_wx.ART_WARNING,
+        _wx.ART_MESSAGE_BOX, size=fromdip((32, 32), None))
+    for ico_size in (16, 24, 32):
+        bass.wx_bitmap[('ART_UNDO', ico_size)] = wxart(_wx.ART_UNDO,
+            _wx.ART_TOOLBAR, size=fromdip((ico_size, ico_size), None))
+
+def set_c_locale():
+    # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
+    if sys.platform.startswith('win') and sys.version_info > (3, 8):
+        locale.setlocale(locale.LC_ALL, 'C')
+
 #------------------------------------------------------------------------------
 # Locale Detection & Setup
-def setup_locale(cli_lang):
+def setup_locale(cli_lang, _wx):
     """Sets up wx and Wrye Bash locales, ensuring they match or falling back
     to English if that is impossible. Also considers cli_lang as an override,
     installs the gettext translation and remembers the locale we end up with
@@ -55,9 +86,8 @@ def setup_locale(cli_lang):
     :param cli_lang: The language the user specified on the command line, or
         None.
     :return: The wx.Locale object we ended up using."""
-    # We need a throwaway wx.App so that the calls below work
-    import wx as _wx
-    _temp_app = _wx.App(False)
+    # try loading the images before we touch the locale
+    __init_gui_images(_wx)
     # Set the wx language - otherwise we will crash when loading any images
     cli_target = cli_lang and _wx.Locale.FindLanguageInfo(cli_lang)
     if cli_target:
@@ -70,12 +100,7 @@ def setup_locale(cli_lang):
     # it - so check that next
     target_locale = _wx.Locale(target_language)
     target_name = target_locale.GetCanonicalName()
-    trans_path = os.path.join(os.getcwd(), u'bash', u'l10n')
-    if not os.path.exists(trans_path):
-        # HACK: the CI has to run tests from the top dir, which causes us to
-        # have a non-Mopy working dir here. Real fix is ditching the fake
-        # startup and adding a real headless mode to WB (see #568 and #554)
-        trans_path = os.path.join(os.getcwd(), u'Mopy', u'bash', u'l10n')
+    trans_path = __get_translations_dir()
     supported_l10ns = [l[:-3] for l in os.listdir(trans_path)
                        if l[-3:] == u'.po']
     if target_name not in supported_l10ns:
@@ -158,8 +183,17 @@ def setup_locale(cli_lang):
     # we ended up with as the final locale
     trans.install()
     bass.active_locale = target_name
-    del _temp_app
+    set_c_locale() # this breaks the wx.ArtProvider for some locales
     return target_locale
+
+def __get_translations_dir():
+    trans_path = os.path.join(os.getcwd(), u'bash', u'l10n')
+    if not os.path.exists(trans_path):
+        # HACK: the CI has to run tests from the top dir, which causes us to
+        # have a non-Mopy working dir here. Real fix is ditching the fake
+        # startup and adding a real headless mode to WB (see #568 and #554)
+        trans_path = os.path.join(os.getcwd(), u'Mopy', u'bash', u'l10n')
+    return trans_path
 
 #------------------------------------------------------------------------------
 # Internationalization

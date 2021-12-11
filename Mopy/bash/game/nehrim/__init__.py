@@ -43,14 +43,14 @@ class NehrimGameInfo(OblivionGameInfo):
     nexusKey = u'bash.installers.openNehrimNexus.continue'
 
     class Bsa(OblivionGameInfo.Bsa):
-        redate_dict = defaultdict(lambda: u'2006-01-01', {
-            u'N - Textures1.bsa': u'2005-01-01',
-            u'N - Textures2.bsa': u'2005-01-02',
-            u'L - Voices.bsa': u'2005-01-03',
-            u'N - Meshes.bsa': u'2005-01-04',
-            u'N - Sounds.bsa': u'2005-01-05',
-            u'L - Misc.bsa': u'2005-01-06',
-            u'N - Misc.bsa': u'2005-01-07',
+        redate_dict = defaultdict(lambda: 1136066400, { # '2006-01-01'
+            u'N - Textures1.bsa': 1104530400, # '2005-01-01'
+            u'N - Textures2.bsa': 1104616800, # '2005-01-02'
+            u'L - Voices.bsa': 1104703200,    # '2005-01-03'
+            u'N - Meshes.bsa': 1104789600,    # '2005-01-04'
+            u'N - Sounds.bsa': 1104876000,    # '2005-01-05'
+            u'L - Misc.bsa': 1104962400,      # '2005-01-06'
+            u'N - Misc.bsa': 1105048800,      # '2005-01-07'
         })
 
     # Oblivion minus Oblivion-specific patchers (Cobl Catalogs, Cobl

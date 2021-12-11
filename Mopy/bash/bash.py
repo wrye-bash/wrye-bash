@@ -28,8 +28,7 @@ loop."""
 # Imports ---------------------------------------------------------------------
 
 import atexit
-import codecs
-import io
+import locale
 import os
 import platform
 import shutil
@@ -42,6 +41,8 @@ from . import bass, bolt, exception
 basher = None # need to share it in _close_dialog_windows
 bass.is_standalone = hasattr(sys, u'frozen')
 _bugdump_handle = None
+# The one and only wx
+_wx = None
 
 def _early_setup(debug):
     """Executes (very) early setup by changing working directory and debug
@@ -69,17 +70,32 @@ def _early_setup(debug):
         sys.stdout = _bugdump_handle
         sys.stderr = _bugdump_handle
 
-def _import_wx():
+# Wx --------------------------------------------------------------------------
+# locale/image calls in wx work once an App object is instantiated and in scope
+bash_app = None  ##: typing
+def _import_wx(debug):
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
     try:
+        global _wx
         import wx as _wx
         # Hacky fix for loading older settings that pickled classes from
         # moved/deleted wx modules
         from wx import _core
         sys.modules[u'wx._gdi'] = _core
+        class _BaseApp(_wx.App):
+            def MainLoop(self, restore_stdio=True):
+                """Not sure what RestoreStdio does so I omit the call in game
+                selection dialog.""" # TODO: check standalone also
+                rv = _wx.PyApp.MainLoop(self)
+                if restore_stdio: self.RestoreStdio()
+                return rv
+        # Initialize the App instance once
+        global bash_app
+        bash_app = _BaseApp(not debug) # redirect std out
         # Disable image loading errors - wxPython is missing the actual flag
         # constants for some reason, so just use 0 (no flags)
         _wx.Image.SetDefaultLoadFlags(0)
+        return _wx.version()
     except Exception: ##: tighten this except
         but_kwargs = {u'text': u"QUIT",
                       u'fg': u'red'}  # foreground button color
@@ -124,7 +140,6 @@ def _import_deps():
                           u'your installed Microsoft Visual C++ '
                           u'Redistributables and try installing the 2010 x64 '
                           u'version.')
-        _close_dialog_windows()
         _show_boot_popup(_(u'The following dependencies could not be located '
                            u'or failed to load:') + u'\n\n' + deps_msg)
 
@@ -139,8 +154,6 @@ def assure_single_instance(instance):
 
     :type instance: wx.SingleInstanceChecker"""
     if instance.IsAnotherRunning():
-        import wx as _wx
-        _wx.App(False)
         bolt.deprint(u'Only one instance of Wrye Bash can run. Exiting.')
         from . import balt
         balt.showOk(None, _(u'Only one instance of Wrye Bash can run.'),
@@ -192,7 +205,7 @@ def exit_cleanup():
             print()
             raise
 
-def dump_environment():
+def dump_environment(wxver=None):
     """Dumps information about the environment. Must only be called after
     _import_wx and _import_deps."""
     # Note that we can't dump pywin32 because it doesn't contain a version
@@ -204,11 +217,7 @@ def dump_environment():
                        f'{fitz.VersionFitz}')
     except ImportError:
         pymupdf_ver = 'not found'
-    try:
-        import wx as _wx
-        wx_ver = _wx.version()
-    except ImportError:
-        wx_ver = 'not found'
+    wx_ver = wxver or 'not found'
     # Now that we have checked all dependencies (including potentially missing
     # ones), we can build the environment dump
     fse = bolt.Path.sys_fs_enc
@@ -255,12 +264,14 @@ def main(opts):
     # Change working dir and logging
     _early_setup(opts.debug)
     # wx is needed to initialize locale, so that's first
-    _import_wx()
+    wxver = _import_wx(opts.debug)
     try:
         # Next, initialize locale so that we can show a translated error
         # message if WB crashes
         from . import localize
-        wx_locale = localize.setup_locale(opts.language)
+        wx_locale = localize.setup_locale(opts.language, _wx)
+        if not bass.is_standalone and (not _rightWxVersion(wxver) or
+                                       not _rightPythonVersion()): return
         # Both of these must come early, before we begin showing wx-based GUI
         from . import env
         env.mark_high_dpi_aware()
@@ -270,7 +281,7 @@ def main(opts):
         from . import initialization
         initialization.init_dirs_mopy()
         # Early setup is done, delegate to the main init method
-        _main(opts, wx_locale)
+        _main(opts, wx_locale, wxver)
     except Exception:
         caught_exc = traceback.format_exc()
         try:
@@ -288,10 +299,9 @@ def main(opts):
             _(u'https://discord.gg/NwWvAFR'),
             u'', caught_exc,
         ])
-        _close_dialog_windows()
         _show_boot_popup(msg)
 
-def _main(opts, wx_locale):
+def _main(opts, wx_locale, wxver):
     """Run the Wrye Bash main loop.
 
     This function is marked private because it should be inside a try-except
@@ -302,6 +312,7 @@ def _main(opts, wx_locale):
     # Initialize gui, our wrapper above wx (also balt, temp module) and
     # load the window icon resources
     from . import gui, balt
+    # Now we have an App instance we can init Resources
     balt.load_app_icons()
     # Check for some non-critical dependencies (e.g. lz4) and warn if
     # they're missing now that we can show nice app icons
@@ -310,9 +321,8 @@ def _main(opts, wx_locale):
     from . import barg
     bass.sys_argv = barg.convert_to_long_options(sys.argv)
     if opts.debug:
-        dump_environment()
+        dump_environment(wxver)
     # Check if there are other instances of Wrye Bash running
-    import wx as _wx
     instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
     assure_single_instance(instance)
     # if HTML file generation was requested, just do it and quit
@@ -371,7 +381,6 @@ def _main(opts, wx_locale):
         msg = u'\n'.join([_(u'Error! Unable to start Wrye Bash.'), u'\n', _(
             u'Please ensure Wrye Bash is correctly installed.'), u'\n',
                           traceback.format_exc()])
-        _close_dialog_windows()
         _show_boot_popup(msg)
         return # _show_boot_popup calls sys.exit, this gets pycharm to shut up
     atexit.register(exit_cleanup)
@@ -379,23 +388,16 @@ def _main(opts, wx_locale):
     basher.InitLinks()
     basher.InitImages()
     #--Start application
-    if opts.debug:
-        if bass.is_standalone:
-            # Special case for py2exe version
-            app = basher.BashApp(False)
-            # Regain control of stdout/stderr from wxPython - TODO(inf) needed?
-            sys.stdout = _bugdump_handle
-            sys.stderr = _bugdump_handle
-        else:
-            app = basher.BashApp(False)
-    else:
-        app = basher.BashApp(True)
+    if opts.debug and bass.is_standalone:
+        # Special case for py2exe version
+        # Regain control of stdout/stderr from wxPython - TODO(inf) needed?
+        sys.stdout = _bugdump_handle
+        sys.stderr = _bugdump_handle
+    bapp = basher.BashApp(bash_app)
     # Set the window title for stdout/stderr messages
-    app.SetOutputWindowAttributes(u'Wrye Bash stdout/stderr:')
+    bash_app.SetOutputWindowAttributes(u'Wrye Bash stdout/stderr:')
     # Need to reference the locale object somewhere, so let's do it on the App
-    app.locale = wx_locale
-    if not bass.is_standalone and (
-        not _rightWxVersion() or not _rightPythonVersion()): return
+    bash_app.locale = wx_locale
     if env.is_uac():
         uacRestart = opts.uac
         if not opts.noUac and not opts.uac:
@@ -446,10 +448,10 @@ def _main(opts, wx_locale):
                     _(u'Do you want to quit Wrye Bash now?')]),
                                  title=_(u'Unable to create backup!')):
                     return  # Quit
-    frame = app.Init() # Link.Frame is set here !
+    frame = bapp.Init() # Link.Frame is set here !
     frame.ensureDisplayed()
     frame.bind_refresh()
-    app.MainLoop()
+    bash_app.MainLoop()
 
 def _detect_game(opts, backup_bash_ini):
     # Read the bash.ini file either from Mopy or from the backup location
@@ -482,7 +484,7 @@ def _detect_game(opts, backup_bash_ini):
     return bashIni, bush_game, game_ini_path
 
 def _import_bush_and_set_game(opts, bashIni):
-    from . import bush, balt
+    from . import bush
     bolt.deprint(u'Searching for game to manage:')
     game_infos = bush.detect_and_set_game(opts.oblivionPath, bashIni)
     if game_infos is not None:  # None == success
@@ -509,8 +511,9 @@ def _show_boot_popup(msg, is_critical=True):
     """Shows an error message in a popup window. If is_critical, exit the
     application afterwards. Must only be called after _import_wx, setup_locale
     and gui is imported."""
+    if is_critical:
+        _close_dialog_windows()
     try:
-        import wx as _wx
         from .balt import Resources
         from .gui import CancelButton, Color, LayoutOptions, \
             StartupDialog, TextArea, VLayout, CENTER
@@ -535,8 +538,6 @@ def _show_boot_popup(msg, is_critical=True):
                      LayoutOptions(h_align=CENTER)),
                 ]).apply_to(self)
         print(msg) # Print msg into error log.
-        _app = _wx.App(False)
-        _app.locale = _wx.Locale(_wx.LANGUAGE_DEFAULT)
         MessageBox.display_dialog(msg)
         if is_critical: sys.exit(1)
     except Exception: ##: tighten these excepts?
@@ -583,7 +584,6 @@ class _AppReturnCode(object):
     def set(self, value): self.value = value
 
 def _select_game_popup(game_infos):
-    import wx as _wx
     from .balt import Resources
     from .gui import Label, TextAlignment, WindowFrame, VLayout, \
         ImageDropDown, LayoutOptions, SearchBar, VBoxedLayout, TextField, \
@@ -715,22 +715,16 @@ def _select_game_popup(game_infos):
             self._callback((self._game_dropdown.get_value(),
                             self._chosen_path))
             self.close_win(force_close=True)
-    _app = _wx.App(False)
-    _app.locale = _wx.Locale(_wx.LANGUAGE_DEFAULT)
     retCode = _AppReturnCode()
     frame = SelectGamePopup(game_infos, retCode.set)
-    frame.show_frame()
-    frame._native_widget.Center() # TODO(inf) de-wx!
-    _app.MainLoop()
-    del _app
+    frame.show_frame(center=True)
+    bash_app.MainLoop(restore_stdio=False)
     return retCode.get()
 
 # Version checks --------------------------------------------------------------
-def _rightWxVersion():
+def _rightWxVersion(wxver):
     """Shows a warning if the wrong wxPython version is installed. Must only be
     called after _import_wx, setup_locale and balt is imported."""
-    import wx as _wx
-    wxver = _wx.version()
     if not wxver.startswith(u'4.1'):
         from . import balt
         return balt.askYes(
