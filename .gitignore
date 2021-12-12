@@ -24,8 +24,10 @@ desktop.ini
 .dropbox
 .DS_Store
 
-# Release archives.
-scripts/dist/*.7z
+# Build-related folders
+scripts/build/standalone/dist/
+scripts/build/standalone/temp/
+scripts/dist/
 
 # Local NSIS
 scripts/build/nsis/

@@ -86,7 +86,7 @@ class LayoutOptions(object):
 
     def __init__(self, border=None, expand=None, weight=None,
                  h_align=None, v_align=None, col_span=None, row_span=None):
-        # type: (int, bool, int, unicode, unicode, int, int) -> None
+        # type: (int, bool, int, str, str, int, int) -> None
         self.border = border
         self.expand = expand
         self.weight = weight
@@ -123,8 +123,8 @@ class LayoutOptions(object):
 class _ALayout(object):
     """Abstract base class for all layouts."""
 
-    def __init__(self, sizer, border=0, item_border=0, item_expand=False,
-                 item_h_align=None, item_v_align=None): # PY3: require kwargs (,*,)
+    def __init__(self, sizer, *, border=0, item_border=0, item_expand=False,
+                 item_h_align=None, item_v_align=None):
         """Initiate the layout.
         The item_* arguments are for when those options are not provided
         when adding an item. See LayoutOptions for more information.

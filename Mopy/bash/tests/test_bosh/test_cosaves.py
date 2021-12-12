@@ -113,7 +113,7 @@ class ATestACosave(object):
             # ARVR and STVR, which don't exist in SKSE/F4SE
             sv_masters = [GPath(m) for m in curr_cosave.get_master_list()]
             curr_cosave.dump_to_log(test_log, sv_masters)
-            assert isinstance(test_log.out.getvalue(), unicode)
+            assert isinstance(test_log.out.getvalue(), str)
             # Remapping should make the new filename appear in the log
             curr_cosave.remap_plugins({
                 curr_cosave.get_master_list()[0]: _impossible_master})

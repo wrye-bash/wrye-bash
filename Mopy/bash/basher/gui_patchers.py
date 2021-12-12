@@ -20,7 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from __future__ import division
+
 import copy
 import re
 from collections import defaultdict
@@ -34,7 +34,7 @@ from ..gui import Button, CheckBox, HBoxedLayout, Label, LayoutOptions, \
     CheckListBox, DeselectAllButton, SelectAllButton, FileOpenMultiple
 from ..patcher import patch_files, patches_set, base
 
-reCsvExt = re.compile(u'' r'\.csv$', re.I | re.U)
+reCsvExt = re.compile(r'\.csv$', re.I | re.U)
 
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""
@@ -44,7 +44,7 @@ class _PatcherPanel(object):
     # The key that will be used to read and write entries for BP configs
     # These are sometimes quite ugly - backwards compat leftover from when
     # those were the class names and got written directly into the configs
-    _config_key = None # type: unicode
+    _config_key = None # type: str
     patcher_type = None # type: base.Abstract_Patcher
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
@@ -63,7 +63,7 @@ class _PatcherPanel(object):
     def patcher_tip(self):
         # Remove everything but the first sentence from the first line of the
         # patcher description
-        return re.sub(u'' r'\..*', u'.', self.patcher_desc.split(u'\n')[0],
+        return re.sub(r'\..*', u'.', self.patcher_desc.split(u'\n')[0],
                       flags=re.U)
 
     def SetIsFirstLoad(self,isFirstLoad):
@@ -225,7 +225,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         #--Update old configs to use Paths instead of strings.
         self._ci_aliases = dict(
             [GPath(i) for i in item] for item in
-            config.get(u'aliases', {}).iteritems())
+            config.get(u'aliases', {}).items())
         return config
 
     def saveConfig(self, configs):
@@ -237,7 +237,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
 
     def _log_config(self, conf, config, clip, log):
         aliases = config.get(u'aliases', {})
-        for mod, alias in aliases.iteritems():
+        for mod, alias in aliases.items():
             log(u'* __%s__ >> %s' % (mod, alias))
             clip.write(u'  %s >> %s\n' % (mod, alias))
 
@@ -443,9 +443,9 @@ class _ListPatcherPanel(_PatcherPanel):
         config = super(_ListPatcherPanel, self).saveConfig(configs)
         listSet = set(self.configItems)
         self.configChecks = config[u'configChecks'] = {
-            k: v for k, v in self.configChecks.iteritems() if k in listSet}
+            k: v for k, v in self.configChecks.items() if k in listSet}
         self.configChoices = config[u'configChoices'] = {
-            k: v for k, v in self.configChoices.iteritems() if k in listSet}
+            k: v for k, v in self.configChoices.items() if k in listSet}
         config[u'configItems'] = self.configItems
         config[u'autoIsChecked'] = self.autoIsChecked
         config[u'remove_empty_sublists'] = self.remove_empty_sublists
@@ -518,8 +518,7 @@ class _ChoiceMenuMixin(object):
 
     def ShowChoiceMenu(self, lb_selection_dex): raise exception.AbstractError
 
-# PY3: drop long, duh
-_label_formats = {unicode: u'%s', float: u'%4.2f', int: u'%d', long: u'%d'}
+_label_formats = {str: u'%s', float: u'%4.2f', int: u'%d'}
 def _custom_label(label, value): # edit label text with value
     return u'%s: %s' % (label, _label_formats[type(value)] % value)
 
@@ -682,7 +681,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                     new = balt.askText(
                         self.gConfigPanel, label,
                         title=tweak.tweak_name + _(u' - Custom Tweak Value'),
-                        default=unicode(tweak.choiceValues[index][i]))
+                        default=str(tweak.choiceValues[index][i]))
                     if new is None: #user hit cancel
                         return
                     try:
@@ -695,7 +694,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                                          u"number.") % new,
                                        title=tweak.tweak_name + _(u' - Error'))
                         new = None # invalid float, try again
-            elif isinstance(v, (int, long)):
+            elif isinstance(v, int):
                 label = (_(u'Enter the desired custom tweak value.')
                          + key_display)
                 new = balt.askNumber(
@@ -705,7 +704,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                 if new is None: #user hit cancel
                     return
                 value.append(new)
-            elif isinstance(v, unicode):
+            elif isinstance(v, str):
                 label = (_(u'Enter the desired custom tweak text.')
                          + key_display)
                 new = balt.askText(
@@ -733,7 +732,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                             if len(value) == 1 else
                             _(u'The values you entered (%s) are not valid '
                               u'for this tweak.') % u', '.join(
-                                unicode(s) for s in value))
+                                str(s) for s in value))
             balt.showError(self.gConfigPanel,
                            error_header + u'\n\n' + validation_error,
                            title=_(u'%s - Error') % tweak.tweak_name)
@@ -802,7 +801,7 @@ class _ImporterPatcherPanel(_ListPatcherPanel):
         config = super(_ImporterPatcherPanel, self).saveConfig(configs)
         if self.isEnabled:
             importedMods = [item for item,value in
-                            self.configChecks.iteritems() if
+                            self.configChecks.items() if
                             value and bosh.ModInfos.rightFileType(item)]
             configs[u'ImportedMods'].update(importedMods)
         return config
@@ -997,7 +996,7 @@ class ImportActors(_ImporterPatcherPanel):
     patcher_name = _(u'Import Actors')
     patcher_desc = _(u'Import various actor attributes from source mods.')
     autoKey = set(chain.from_iterable(
-        d for d in bush.game.actor_importer_attrs.itervalues()))
+        d for d in bush.game.actor_importer_attrs.values()))
     _config_key = u'ActorImporter'
     patcher_type = preservers.ImportActorsPatcher
 
@@ -1146,7 +1145,7 @@ class ImportRaces(_ImporterPatcherPanel):
                      u'mods.')
     ##: Move to a game constant -> multi-game plus decouples this
     autoKey = set(chain.from_iterable(d for d in
-        preservers.ImportRacesPatcher.rec_attrs.itervalues()))
+        preservers.ImportRacesPatcher.rec_attrs.values()))
     _config_key = u'ImportRaces'
     patcher_type = preservers.ImportRacesPatcher
 
@@ -1392,13 +1391,11 @@ from .patcher_dialog import all_gui_patchers
 # Dynamically create game specific UI patcher classes and add them to module's
 # scope
 # Patchers with no options
-for gsp_name, gsp_class in bush.game.gameSpecificPatchers.iteritems():
-    gsp_name = gsp_name.encode(u'ascii') # PY3: drop - py2 compat hack
+for gsp_name, gsp_class in bush.game.gameSpecificPatchers.items():
     globals()[gsp_name] = type(gsp_name, (_PatcherPanel,),
         gsp_class.gui_cls_vars())
 # Simple list patchers
-for gsp_name, gsp_class in bush.game.gameSpecificListPatchers.iteritems():
-    gsp_name = gsp_name.encode(u'ascii') # PY3: drop - py2 compat hack
+for gsp_name, gsp_class in bush.game.gameSpecificListPatchers.items():
     gsp_bases = (_ListPatcherPanel,)
     gsp_attrs = gsp_class.gui_cls_vars()
     if u'_csv_key' in gsp_attrs:
@@ -1406,8 +1403,7 @@ for gsp_name, gsp_class in bush.game.gameSpecificListPatchers.iteritems():
         gsp_bases = (_AListPanelCsv,)
     globals()[gsp_name] = type(gsp_name, gsp_bases, gsp_attrs)
 # Import patchers
-for gsp_name, gsp_class in bush.game.game_specific_import_patchers.iteritems():
-    gsp_name = gsp_name.encode(u'ascii') # PY3: drop - py2 compat hack
+for gsp_name, gsp_class in bush.game.game_specific_import_patchers.items():
     gsp_bases = (_ImporterPatcherPanel,)
     gsp_attrs = gsp_class.gui_cls_vars()
     if u'_csv_key' in gsp_attrs:

@@ -59,8 +59,6 @@
 #  TokensToRPN
 #  ExecuteRPN
 #==================================================
-from __future__ import division
-
 import operator
 from string import digits, whitespace
 
@@ -166,7 +164,7 @@ Types = {UNKNOWN:u'UNKNOWN',
 #  various names as well.
 #------------------------------------------------
 def getType(item, parser=None):
-    if isinstance(item, unicode):
+    if isinstance(item, str):
         if not parser: return STRING
         if item in parser.constants: return CONSTANT
         if item in parser.variables: return VARIABLE
@@ -344,7 +342,7 @@ class Parser(object):
 
         def GetData(self):
             """:rtype: Parser.Function | Parser.Keyword | Parser.Operator |
-            unicode | int | float
+            str | int | float
             """
             if self.parser:
                 if self.type == FUNCTION: return self.parser.functions[self.text]
@@ -396,14 +394,14 @@ class Parser(object):
         def __and__(self, other): return Parser.Token(self.tkn & other.tkn)
         def __xor__(self, other): return Parser.Token(self.tkn ^ other.tkn)
         def __or__(self, other): return Parser.Token(self.tkn | other.tkn)
-        def __nonzero__(self): return bool(self.tkn)
+        def __bool__(self): return bool(self.tkn)
         def __neg__(self): return Parser.Token(-self.tkn)
         def __pos__(self): return Parser.Token(+self.tkn)
         def __abs__(self): return abs(self.tkn)
         def __int__(self): return int(self.tkn)
         def __index__(self): return operator.index(self.tkn)
         def __float__(self): return float(self.tkn)
-        def __str__(self): return unicode(self.tkn)
+        def __str__(self): return str(self.tkn)
 
         def __repr__(self): return u'<Token-%s:%s>' % (Types[self.type],self.text)
 
@@ -773,7 +771,7 @@ class Parser(object):
         # Try to figure out if it's multiple operators bunched together
         rightWord = None
         if type_ == UNKNOWN:
-            for idex in xrange(len(word),0,-1):
+            for idex in range(len(word),0,-1):
                 newType = getType(word[0:idex], self)
                 if newType != UNKNOWN:
                     rightWord = word[idex:]

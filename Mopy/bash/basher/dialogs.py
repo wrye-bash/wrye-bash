@@ -21,7 +21,6 @@
 #
 # =============================================================================
 from collections import OrderedDict
-from itertools import izip
 
 from . import bEnableWizard, BashFrame
 from .constants import installercons
@@ -41,12 +40,12 @@ class ImportFaceDialog(DialogWindow):
     def __init__(self, parent, title, fileInfo, faces):
         #--Data
         self.fileInfo = fileInfo
-        if faces and isinstance(next(iter(faces)), (int, long)):
+        if faces and isinstance(next(iter(faces)), int):
             self.fdata = {u'%08X %s' % (key, face.pcName): face for key, face
-                          in faces.iteritems()}
+                          in faces.items()}
         else:
             self.fdata = faces
-        self.list_items = sorted(self.fdata, key=unicode.lower)
+        self.list_items = sorted(self.fdata, key=str.lower)
         #--GUI
         super(ImportFaceDialog, self).__init__(parent, title=title,
                                                sizes_dict=balt.sizes)
@@ -95,7 +94,7 @@ class ImportFaceDialog(DialogWindow):
         self.nameText.label_text = face.pcName
         self.raceText.label_text = face.getRaceName()
         self.genderText.label_text = face.getGenderName()
-        self.statsText.label_text = _(u'Health ') + unicode(face.health)
+        self.statsText.label_text = _(u'Health ') + str(face.health)
         itemImagePath = bass.dirs[u'mods'].join(u'Docs', u'Images',
                                                 u'%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
@@ -269,10 +268,9 @@ class CreateNewPlugin(DialogWindow):
         self._master_search.on_text_changed.subscribe(self._handle_search)
         self._masters_box = CheckListBox(self)
         # Initially populate the masters list, checking only the game master
-        m_keys = [m.s for m in load_order.cached_lo_tuple()]
-        m_values = [m == bush.game.master_file for m in m_keys]
-        self._masters_box.set_all_items(m_keys, m_values)
-        self._masters_dict = OrderedDict(izip(m_keys, m_values))
+        self._masters_dict = {m.s: m == bush.game.master_file for m in
+                              load_order.cached_lo_tuple()}
+        self._masters_box.set_all_items(self._masters_dict)
         # Only once that's done do we subscribe - avoid all the initial events
         self._masters_box.on_box_checked.subscribe(self._handle_master_checked)
         select_all_btn = SelectAllButton(self,
@@ -319,7 +317,7 @@ class CreateNewPlugin(DialogWindow):
     @property
     def _chosen_masters(self):
         """Returns a generator yielding all checked masters."""
-        return (k for k, v in self._masters_dict.iteritems() if v)
+        return (k for k, v in self._masters_dict.items() if v)
 
     def _check_master_limit(self):
         """Checks if the current selection of masters exceeds the game's master
@@ -368,13 +366,10 @@ class CreateNewPlugin(DialogWindow):
         """Internal callback used to repopulate the masters box whenever the
         text in the search bar changes."""
         lower_search_str = search_str.lower().strip()
-        new_m_keys, new_m_values = [], []
         # Case-insensitively filter based on the keys, then update the box
-        for k, v in self._masters_dict.iteritems():
-            if lower_search_str in k.lower():
-                new_m_keys.append(k)
-                new_m_values.append(v)
-        self._masters_box.set_all_items(new_m_keys, new_m_values)
+        new_m_items = {k: v for k, v in self._masters_dict.items() if
+                       lower_search_str in k.lower()}
+        self._masters_box.set_all_items(new_m_items)
 
     def _handle_ok(self):
         """Internal callback to handle the OK button."""

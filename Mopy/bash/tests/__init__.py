@@ -23,10 +23,16 @@
 """Sets up the necessary environment to run Wrye Bash tests. This whole file is
 quite hacky, but running tests for WB is going to be a bit hacky no matter
 what."""
-
+import gettext
 import os
 import toml
 import traceback
+
+import wx as _wx
+
+# set in _emulate_startup used in set_game - we need to init translations
+# before importing
+bush = None
 
 class FailedTest(Exception):
     """Misc exception for when a test should fail for meta reasons."""
@@ -114,13 +120,17 @@ def set_game(game_fsName):
         new_game.init()
         _game_cache[game_fsName] = new_game
 
+_wx_app = None
+
 def _emulate_startup():
     """Emulates a normal Wrye Bash startup, but without launching basher
     etc."""
     # bush needs _() to be available, so need to do it like this
     global bush
-    from .. import localize
-    localize.setup_locale(u'English')
+    global _wx_app
+    _wx_app = _wx.App()
+    trans = gettext.NullTranslations()
+    trans.install()
     from .. import bush
     # noinspection PyProtectedMember
     bush._supportedGames()

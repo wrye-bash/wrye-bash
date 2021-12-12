@@ -65,7 +65,7 @@ class InstallerFomod(WizardDialog):
                 gver = env.get_game_version_fallback(test_path, bush.ws_info)
         except OSError:
             gver = env.get_game_version_fallback(test_path, bush.ws_info)
-        version_string = u'.'.join([unicode(i) for i in gver])
+        version_string = u'.'.join([str(i) for i in gver])
         self.fomod_parser = FomodInstaller(
             fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],
             version_string)
@@ -132,7 +132,7 @@ class InstallerFomod(WizardDialog):
             # have to do it just in time
             self.fm_ret.install_files = bolt.LowerDict({
                 v: k for k, v
-                in self.fomod_parser.get_fomod_files().iteritems()})
+                in self.fomod_parser.get_fomod_files().items()})
         # Clean up temp files
         if self.is_arch:
             bass.rmTempDir()
@@ -308,7 +308,7 @@ class PageSelect(PageInstaller):
         ##: Could maybe be de-wx'd further and moved to gui? RadioButtonGroup?
         frozen_state = self._frozen_states.get(block_checkable)
         if frozen_state:
-            for chk, chk_state in frozen_state.iteritems():
+            for chk, chk_state in frozen_state.items():
                 chk.is_checked = chk_state
         block_option = self.checkable_to_option[block_checkable]
         # Adjust the warning based on whether the problem is due to this option
@@ -361,7 +361,7 @@ class PageSelect(PageInstaller):
 
     def on_next(self):
         sel_options = []
-        for grp, option_chks in self.group_option_map.iteritems():
+        for grp, option_chks in self.group_option_map.items():
             opts_selected = [self.checkable_to_option[c] for c in option_chks
                              if c.is_checked]
             option_len = len(opts_selected)
@@ -388,7 +388,7 @@ class PageSelect(PageInstaller):
         return sel_options
 
     def apply_selection(self, opt_selection):
-        for checkable_list in self.group_option_map.itervalues():
+        for checkable_list in self.group_option_map.values():
             for checkable in checkable_list:
                 if self.checkable_to_option[checkable] in opt_selection:
                     checkable.is_checked = True
@@ -453,8 +453,8 @@ class PageFinish(PageInstaller):
     @staticmethod
     def display_files(file_dict):
         if not file_dict: return u''
-        lines = [u'{} -> {}'.format(v, k) for k, v in file_dict.iteritems()]
-        lines.sort(key=unicode.lower)
+        lines = [u'{} -> {}'.format(v, k) for k, v in file_dict.items()]
+        lines.sort(key=str.lower)
         return u'\n'.join(lines)
 
 # Some links for easier mass (de)selection of options

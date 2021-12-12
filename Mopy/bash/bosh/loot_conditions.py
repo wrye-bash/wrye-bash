@@ -79,7 +79,7 @@ class ConditionFunc(_ACondition):
     __slots__ = (u'func_name', u'func_args')
 
     def __init__(self, func_name, func_args):
-        # type: (unicode, list) -> None
+        # type: (str, list) -> None
         self.func_name = func_name
         self.func_args = func_args
 
@@ -102,9 +102,9 @@ class ConditionFunc(_ACondition):
     def __repr__(self):
         fmt_args = []
         for a in self.func_args:
-            if isinstance(a, unicode): # String
+            if isinstance(a, str): # String
                 fmt_a = u'"%s"' % a
-            elif isinstance(a, (int, long)): # Checksum
+            elif isinstance(a, int): # Checksum
                 fmt_a = u'%X' % a
             else: # Comparison
                 fmt_a = u'%r' % a
@@ -144,7 +144,7 @@ class ConditionOr(_ACondition):
 
 # Functions
 def _fn_active(path_or_regex):
-    # type: (unicode) -> bool
+    # type: (str) -> bool
     """Takes either a file path or a regex. Returns True iff at least one
     active plugin matches the specified path or regex.
 
@@ -161,7 +161,7 @@ def _fn_active(path_or_regex):
         return cached_is_active(GPath(path_or_regex))
 
 def _fn_checksum(file_path, expected_crc):
-    # type: (unicode, int) -> bool
+    # type: (str, int) -> bool
     """Takes a file path. Returns True if the file that the path resolves to
     exists and its CRC32 matches the specified expected CRC.
 
@@ -169,11 +169,11 @@ def _fn_checksum(file_path, expected_crc):
     :param expected_crc: The expected CRC32 value."""
     try:
         return _process_path(file_path).crc == expected_crc
-    except IOError:
+    except OSError:
         return False # Doesn't exist or is a directory
 
 def _fn_file(path_or_regex):
-    # type: (unicode) -> bool
+    # type: (str) -> bool
     """Takes either a file path or a regex. Returns True iff at least one
     file exists that matches the specified path or regex.
 
@@ -195,7 +195,7 @@ def _fn_file(path_or_regex):
         return _process_path(path_or_regex).exists()
 
 def _fn_is_master(file_path):
-    # type: (unicode) -> bool
+    # type: (str) -> bool
     """Takes a file path. Returns True iff a plugin with the specified name
     exists and is treated as a master by the currently managed game.
 
@@ -206,7 +206,7 @@ def _fn_is_master(file_path):
     return plugin_path in modInfos and in_master_block(modInfos[plugin_path])
 
 def _fn_many(path_regex):
-    # type: (unicode) -> bool
+    # type: (str) -> bool
     """Takes a regex. Returns True iff more than 1 file matching the specified
     regex exists.
 
@@ -225,7 +225,7 @@ def _fn_many(path_regex):
     return False
 
 def _fn_many_active(path_regex):
-    # type: (unicode) -> bool
+    # type: (str) -> bool
     """Takes a regex. Returns True iff more than 1 active plugin matches the
     specified regex.
 
@@ -243,7 +243,7 @@ def _fn_many_active(path_regex):
 ##: Maybe tweak the implementation to match LOOT's by adding some params to
 # env.get_file_version?
 def _fn_product_version(file_path, expected_ver, comparison):
-    # type: (unicode, unicode, Comparison) -> bool
+    # type: (str, str, Comparison) -> bool
     """Takes a file path, an expected version and a comparison operator.
     Returns True iff the file path resolves to an executable (.exe or .dll) and
     its version compares successfully against the specified expected version,
@@ -268,7 +268,7 @@ def _fn_product_version(file_path, expected_ver, comparison):
         if file_path.cext in (u'.exe', u'.dll'):
             # Read version from executable fields
             actual_ver = LooseVersion(u'.'.join(
-                unicode(s) for s in get_file_version(file_path.s)))
+                str(s) for s in get_file_version(file_path.s)))
         else:
             raise FileError(file_path.s, u'Product version query was '
                                          u'requested, but the file is not an '
@@ -276,7 +276,7 @@ def _fn_product_version(file_path, expected_ver, comparison):
     return comparison.compare(actual_ver, LooseVersion(expected_ver))
 
 def _fn_version(file_path, expected_ver, comparison):
-    # type: (unicode, unicode, Comparison) -> bool
+    # type: (str, str, Comparison) -> bool
     """Behaves like product_version, but extends its behavior to also allow
     plugin version checks. If the plugin's description contains a
     'Version: ...' section, then the version specified by that section is
@@ -301,7 +301,7 @@ def _fn_version(file_path, expected_ver, comparison):
         elif file_path.cext in (u'.exe', u'.dll'):
             # Read version from executable fields
             actual_ver = LooseVersion(u'.'.join(
-                unicode(s) for s in get_file_version(file_path.s)))
+                str(s) for s in get_file_version(file_path.s)))
         else:
             raise FileError(file_path.s, u'Version query was requested, but '
                                          u'the file is not a plugin or '
@@ -322,7 +322,7 @@ _function_mapping = {
 
 # Misc
 def is_regex(string_to_check):
-    # type: (unicode) -> bool
+    # type: (str) -> bool
     """Checks if the specified string is to be treated as a regex for purposes
     of differentiating between file paths and regexes for the functions that
     can take either one. This is done by checking if the string contains one of
@@ -337,7 +337,7 @@ def is_regex(string_to_check):
     return False
 
 def _process_path(file_path):
-    # type: (unicode) -> Path
+    # type: (str) -> Path
     """Processes a file path, prepending the path to the Data folder and
     resolving any '../' specifiers that it may have. Note that LOOT's file
     paths always use slashes as separators, so this methods also converts those
@@ -366,7 +366,7 @@ def _process_path(file_path):
             child_components.append(path_component)
     relative_path = bass.dirs[u'mods']
     # Move up by the number of requested parents
-    for x in xrange(parents):
+    for x in range(parents):
         relative_path = relative_path.head
     # If that put us outside the game folder, the path is invalid
     if not os.path.realpath(relative_path.s).startswith(bass.dirs[u'app'].s):
@@ -395,7 +395,7 @@ class Comparison(object):
     }
 
     def __init__(self, cmp_operator):
-        # type: (unicode) -> None
+        # type: (str) -> None
         self.cmp_operator = cmp_operator
 
     def compare(self, first_val, second_val):

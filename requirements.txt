@@ -1,18 +1,14 @@
 # Runtime, required
 chardet==4.0.0
-lz4==2.2.1
-pywin32==224
-PyYAML==5.4.1
-wxPython==4.1.0
+lz4==3.1.10
+pywin32==302
+PyYAML==6.0
+wxPython==4.1.1
 # Runtime, recommended
-scandir==1.10.0
-PyMuPDF==1.18.0
+PyMuPDF==1.19.3
 # Compile/Build-time
-pygit2==0.28.2
+pygit2==1.7.2
 pyfiglet==0.8.post1
-pytest==4.6.11
-https://github.com/wrye-bash/dev-tools/raw/64bit-wheels/wheels/py2exe-0.6.10a1-cp27-none-win_amd64.whl
+pyinstaller==4.7
+pytest==6.2.5
 toml==0.10.2
-# FIXME - Workarounds
-attrs==19.3.0 # Required by pytest - newer versions break on CI due to a
-              # py3-only file

@@ -21,8 +21,6 @@
 #
 # =============================================================================
 """This module contains the falloutnv record classes."""
-from __future__ import division, unicode_literals
-
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelDestructible, MelConditions
 from ...bolt import Flags, struct_calcsize
@@ -455,7 +453,7 @@ class MelWthrColorsFnv(MelArray):
             entry_slots = self._element_old.attrs
             entry_size = struct_calcsize(u'3Bs3Bs3Bs3Bs')
             load_entry = self._element_old.load_mel
-            for x in xrange(size_ // entry_size):
+            for x in range(size_ // entry_size):
                 arr_entry = MelObject()
                 append_entry(arr_entry)
                 arr_entry.__slots__ = entry_slots

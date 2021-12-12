@@ -109,6 +109,8 @@ Return Values:
 
 __author__ = u'Infernio'
 
+from enum import Enum
+
 from ..exception import UnknownListener, ListenerBound
 # no other imports, everything else needs to be able to import this
 
@@ -116,8 +118,7 @@ def null_processor(_event):
     """Argument processor that simply discards the event."""
     return []
 
-# PY3: Turn into enum
-class EventResult(object):
+class EventResult(Enum):
     """Implements the return values for EventHandler listeners."""
     CONTINUE = 0
     """This return value indicates that the event was successfully processed,
@@ -176,11 +177,11 @@ class EventHandler(object):
         for listener in self._listeners:
             result = listener(*listener_args)
             # result will be None if method didn't return anything
-            if result is None or result == EventResult.CONTINUE:
+            if result is None or result is EventResult.CONTINUE:
                 continue
-            elif result == EventResult.FINISH:
+            elif result is EventResult.FINISH:
                 return # to avoid event.Skip()
-            elif result == EventResult.CANCEL:
+            elif result is EventResult.CANCEL:
                 try:
                     event.Veto()
                     return # to avoid event.Skip()

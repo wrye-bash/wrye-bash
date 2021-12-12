@@ -29,7 +29,7 @@ import re
 import wx as _wx
 from wx.grid import Grid
 from collections import defaultdict
-from itertools import chain, imap
+from itertools import chain
 
 from .base_components import _AComponent, Color, WithMouseEvents, \
     ImageWrapper, WithCharEvents
@@ -163,14 +163,14 @@ class Table(WithCharEvents):
             object or a component.
         :param table_data: The data to show in the table. Maps column names to
             the data displayed in the column.
-        :type table_data: dict[unicode, list[unicode]]
+        :type table_data: dict[str, list[str]]
         :param editable: True if the user may edit the contents of the
             table."""
         super(Table, self).__init__(parent)
         # Verify that all columns are identically sized
-        column_len = len(next(table_data.itervalues()))
+        column_len = len(next(iter(table_data.values())))
         if any(len(column_data) != column_len for column_data
-               in table_data.itervalues()):
+               in table_data.values()):
             raise SyntaxError(u'Table columns must all have the same size')
         if not all(table_data):
             raise SyntaxError(u'Table rows must be nonempty strings')
@@ -197,7 +197,7 @@ class Table(WithCharEvents):
                     self._native_widget.ClearSelection()
                 else:
                     # Ctrl+A - select all cells
-                    for c in xrange(self._native_widget.GetNumberCols()):
+                    for c in range(self._native_widget.GetNumberCols()):
                         self._native_widget.SelectCol(c, True)
             elif kcode == ord(u'C'):
                 # Ctrl+C - copy contents of selected cells
@@ -225,7 +225,7 @@ class Table(WithCharEvents):
         elif len(sel_cells) == 1:
             # Selection is limited to a single column, format as a
             # newline-separated list
-            sorted_cells = dict_sort(next(sel_cells.itervalues()),
+            sorted_cells = dict_sort(next(iter(sel_cells.values())),
                                      key_f=lambda k: int(k))
             return u'\n'.join(t[1] for t in sorted_cells)
         else:
@@ -233,14 +233,14 @@ class Table(WithCharEvents):
             # row/column separators, proper spacing and labels
             clip_text = []
             row_labels = set(chain.from_iterable(
-                r for r in sel_cells.itervalues()))
+                r for r in sel_cells.values()))
             col_labels = list(sel_cells) ##: do we need the list here?
             # First calculate the maximum label lengths we'll have to pad to
-            max_row_length = max(imap(len, row_labels))
+            max_row_length = max(map(len, row_labels))
             max_col_lengths = {}
-            for col_label, col_cells in sel_cells.iteritems():
+            for col_label, col_cells in sel_cells.items():
                 max_col_lengths[col_label] = max(
-                    imap(len, col_cells.viewvalues()))
+                    map(len, col_cells.values()))
             # We now have enough info to format the header, so do that
             first_header_line = u' ' * max_row_length + u' | '
             first_header_line += u' | '.join(l.ljust(max_col_lengths[l])
@@ -256,14 +256,14 @@ class Table(WithCharEvents):
             for row_label in sorted(row_labels, key=int):
                 curr_line = row_label.ljust(max_row_length) + u' | '
                 cell_vals = []
-                for col_label, col_cells in sel_cells.iteritems():
+                for col_label, col_cells in sel_cells.items():
                     cell_vals.append(col_cells.get(row_label, u'').ljust(
                         max_col_lengths[col_label]))
                 curr_line += u' | '.join(cell_vals)
                 clip_text.append(curr_line)
             return u'\n'.join(l.rstrip() for l in clip_text)
 
-    _complex_start = re.compile(u'' r' +\|')
+    _complex_start = re.compile(r' +\|')
     def _parse_clipboard_contents(self, clipboard_contents):
         """Parses the specified clipboard contents into a dictionary
         containing instructions for how to edit the table."""
@@ -296,7 +296,7 @@ class Table(WithCharEvents):
             focused_col = self.get_focused_column()
             focused_row = self._native_widget.GetGridCursorRow() + 1
             for r, cell_value in enumerate(all_lines):
-                ret_dict[focused_col][unicode(focused_row + r)] = cell_value
+                ret_dict[focused_col][str(focused_row + r)] = cell_value
         return ret_dict
 
     def get_cell_value(self, col_label, row_label):
@@ -328,19 +328,19 @@ class Table(WithCharEvents):
         # May seem inefficient, but the alternative is incredibly complex; plus
         # this takes < 1/2s for a table with several thousand entries
         sel_dict = defaultdict(dict)
-        for c in xrange(self._native_widget.GetNumberCols()):
+        for c in range(self._native_widget.GetNumberCols()):
             col_label = self._native_widget.GetColLabelValue(c)
-            for r in xrange(self._native_widget.GetNumberRows()):
+            for r in range(self._native_widget.GetNumberRows()):
                 if self._native_widget.IsInSelection(r, c):
-                    sel_dict[col_label][unicode(r + 1)] = (
+                    sel_dict[col_label][str(r + 1)] = (
                         self._native_widget.GetCellValue(r, c))
         return sel_dict
 
     def edit_cells(self, cell_edits):
         """Applies a series of as described by the specified dict mapping
         column labels to row labels to cell values."""
-        for col_label, target_cells in cell_edits.iteritems():
-            for row_label, target_val in target_cells.iteritems():
+        for col_label, target_cells in cell_edits.items():
+            for row_label, target_val in target_cells.items():
                 # Skip any that would go out of bounds
                 if int(row_label) - 1 < self._native_widget.GetNumberRows():
                     self.set_cell_value(col_label, row_label, target_val)

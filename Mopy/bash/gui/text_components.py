@@ -51,7 +51,7 @@ class _ATextInput(_AComponent):
      - on_focus_lost(): Posted when this text input goes out of focus. Used in
        WB to auto-save edits.
      - on_right_clicked(): Posted when this text input is right-clicked.
-     - on_text_changed(new_text: unicode): Posted when the text in this text
+     - on_text_changed(new_text: str): Posted when the text in this text
        input changes. Be warned that changing it via _ATextInput.text_content
        also posts this event, so if you have to change text in response to this
        event, use _ATextInput.modified to check if it was a user modification;
@@ -104,7 +104,7 @@ class _ATextInput(_AComponent):
             self._on_size_changed.subscribe(self._on_size_change)
             self.on_text_changed.subscribe(self._update_tooltip)
 
-    def _update_tooltip(self, new_text): # type: (unicode) -> None
+    def _update_tooltip(self, new_text): # type: (str) -> None
         """Internal callback that shows or hides the tooltip depending on the
         length of the currently entered text and the size of this text input.
 
@@ -135,14 +135,14 @@ class _ATextInput(_AComponent):
         self._native_widget.SetEditable(is_editable)
 
     @property
-    def text_content(self): # type: () -> unicode
+    def text_content(self): # type: () -> str
         """Returns the text that is currently inside this text input.
 
         :return: The entered text."""
         return self._native_widget.GetValue()
 
     @text_content.setter
-    def text_content(self, new_text): # type: (unicode) -> None
+    def text_content(self, new_text): # type: (str) -> None
         """Changes the text inside this text input to the specified string.
 
         :param new_text: What to change this text input's text to."""
@@ -209,14 +209,14 @@ class SearchBar(TextField):
 class _ALabel(_AComponent):
     """Abstract base class for labels."""
     @property
-    def label_text(self): # type: () -> unicode
+    def label_text(self): # type: () -> str
         """Returns the text of this label as a string.
 
         :return: The text of this label."""
         return self._native_widget.GetLabel()
 
     @label_text.setter
-    def label_text(self, new_text): # type: (unicode) -> None
+    def label_text(self, new_text): # type: (str) -> None
         """Changes the text of this label to the specified string.
 
         :param new_text: The new text to use."""
@@ -252,7 +252,7 @@ class HyperlinkLabel(_ALabel):
     browser. Typically styled blue.
 
     Events:
-        - on_link_clicked(target_url: unicode): Posted when the link is
+        - on_link_clicked(target_url: str): Posted when the link is
         clicked on by the user."""
     _wx_widget_type = _adv.HyperlinkCtrl
 

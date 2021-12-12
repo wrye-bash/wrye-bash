@@ -23,8 +23,6 @@
 """This module contains the MultiTweakItem classes that tweak RACE records."""
 
 from collections import defaultdict
-from itertools import izip
-
 from .base import MultiTweakItem, MultiTweaker
 from ... import bush
 from ...bolt import attrgetter_cache
@@ -125,12 +123,12 @@ class RaceTweak_BiggerOrcsAndNords(_ARaceTweak):
         rec_full = record.full.lower()
         is_orc = u'orc' in rec_full
         return (u'nord' in rec_full or is_orc) and any(
-            getattr(record, a) != v for a, v in izip(
+            getattr(record, a) != v for a, v in zip(
                 self._tweak_attrs, self.choiceValues[self.chosen][0][is_orc]))
 
     def tweak_record(self, record):
         is_orc = u'orc' in record.full.lower()
-        for tweak_attr, tweak_val in izip(
+        for tweak_attr, tweak_val in zip(
                 self._tweak_attrs, self.choiceValues[self.chosen][0][is_orc]):
             setattr(record, tweak_attr, tweak_val)
 
@@ -299,8 +297,8 @@ class _ARFBGGTweak(_ARaceTweak):
                      (_(u'Invert'), u'invert_gender'),]
     # Variables based on whether or not we're targeting the female graph
     # (0 = male, 1 = female)
-    _graph_defaults = (u'' r'Actors\Character\DefaultMale.hkx',
-                       u'' r'Actors\Character\DefaultFemale.hkx')
+    _graph_defaults = (r'Actors\Character\DefaultMale.hkx',
+                       r'Actors\Character\DefaultFemale.hkx')
     _graph_defaults_lower = tuple(g.lower() for g in reversed(_graph_defaults))
     _graph_attrs = (u'male_behavior_graph', u'female_behavior_graph')
     # Whether to target the male or female behavior graph

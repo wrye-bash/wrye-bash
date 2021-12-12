@@ -23,8 +23,6 @@
 """Houses abstract base classes and some APIs for representing records and
 subrecords in memory."""
 
-from __future__ import division
-
 from collections import defaultdict
 import copy
 import io
@@ -130,7 +128,7 @@ attr_csv_struct = {
         _str_to_bool, _(u'Script Always Applies')],
 }
 
-for _k, _v in attr_csv_struct.iteritems():
+for _k, _v in attr_csv_struct.items():
     if _v[0] is int_or_zero: # should also cover Flags
         _v.append(lambda x: u'"%d"' % x)
     else: # also covers floats which should be wrapped in Rounder (see __str__)
@@ -553,10 +551,10 @@ class MreRecord(object):
     def parse_csv_line(cls, csv_fields, index_dict, reuse=False):
         if not reuse:
             attr_dict = {att: attr_csv_struct[att][0](csv_fields[dex]) for
-                         att, dex in index_dict.iteritems()}
+                         att, dex in index_dict.items()}
             return attr_dict
         else:
-            for att, dex in index_dict.iteritems():
+            for att, dex in index_dict.items():
                 index_dict[att] = attr_csv_struct[att][0](csv_fields[dex])
             return index_dict
 

@@ -23,8 +23,6 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Settings Multitweaker - as well as the tweaker itself."""
 
-from itertools import izip
-
 from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak
 from ... import bush  # for game
 
@@ -148,7 +146,7 @@ class _AGmstTweak(_ASettingsTweak):
     def _find_chosen_value(self, wanted_eid):
         """Returns the value the user chose for the game setting with the
         specified editor ID. Note that wanted_eid must be lower-case!"""
-        for test_eid, test_val in izip(self.chosen_eids, self.chosen_values):
+        for test_eid, test_val in zip(self.chosen_eids, self.chosen_values):
             if wanted_eid == test_eid.lower():
                 return test_val
         return None
@@ -166,7 +164,7 @@ class _AGmstTweak(_ASettingsTweak):
             for target_value in chosen_values:
                 if target_value < 0:
                     return _(u"Oblivion GMST values can't be negative")
-        for target_eid, target_value in izip(self.chosen_eids, chosen_values):
+        for target_eid, target_value in zip(self.chosen_eids, chosen_values):
             if target_eid.startswith(u'f') and not isinstance(
                     target_value, float):
                     return _(u"The value chosen for GMST '%s' must be a "
@@ -195,7 +193,7 @@ class _AGmstTweak(_ASettingsTweak):
         if len(self.choiceLabels) > 1:
             chosen_label = self.choiceLabels[self.chosen]
             if chosen_label == self.custom_choice:
-                if isinstance(self.chosen_values[0], unicode):
+                if isinstance(self.chosen_values[0], str):
                     log(u'* %s: %s %s' % (self.tweak_name, chosen_label,
                                           self.chosen_values[0]))
                 else:
@@ -208,7 +206,7 @@ class _AGmstTweak(_ASettingsTweak):
 
     def finish_tweaking(self, patch_file):
         # Create new records for any remaining EDIDs
-        for remaining_eid, was_itpo in self.eid_was_itpo.iteritems():
+        for remaining_eid, was_itpo in self.eid_was_itpo.items():
             if not was_itpo:
                 patch_file.new_gmst(self._find_original_eid(remaining_eid),
                     self._find_chosen_value(remaining_eid))
@@ -1393,11 +1391,11 @@ class GmstTweak_Arrow_MaxArrowsAttachedToNPC(_AGmstCCTweak):
     tweak_tip = _(u'The Maximum number of arrows that can be sticking out of '
                   u'an actor.')
     tweak_key = (u'iMaxAttachedArrows',)
-    tweak_choices = [(u'3',       3),
-                     (u'10',   10.0),
-                     (u'30',   30.0),
-                     (u'50',   50.0),
-                     (u'100', 100.0)]
+    tweak_choices = [(u'3',     3),
+                     (u'10',   10),
+                     (u'30',   30),
+                     (u'50',   50),
+                     (u'100', 100)]
     default_choice = u'3'
 
 #------------------------------------------------------------------------------
@@ -1415,7 +1413,6 @@ class GmstTweak_Actor_MerchantRestockTime(_AGmstTweak):
                   u'and gold.')
     tweak_key = (u'iDaysToRespawnVendor',)
     tweak_choices = [(_(u'Instant'),    0),
-                     (_(u'12 Hours'), 0.5),
                      (_(u'1 Day'),      1),
                      (_(u'2 Days'),     2),
                      (_(u'4 Days'),     4),

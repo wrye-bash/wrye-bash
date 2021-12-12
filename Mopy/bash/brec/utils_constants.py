@@ -23,8 +23,6 @@
 """Houses the parts of brec that didn't fit anywhere else or were needed by
 almost all other parts of brec."""
 
-from __future__ import division
-
 from .. import bolt
 from ..bolt import cstrip, decoder, Flags, structs_cache, attrgetter_cache
 # no local imports, imported everywhere in brec
@@ -37,19 +35,19 @@ def _make_hashable(target_obj):
     lookups with MelObject worked."""
     if isinstance(target_obj, dict):
         return tuple([(k, _make_hashable(v))
-                      for k, v in target_obj.iteritems()])
+                      for k, v in target_obj.items()])
     elif isinstance(target_obj, (list, set, tuple)):
         return tuple([_make_hashable(x) for x in target_obj])
     return target_obj
 
-class FixedString(unicode):
+class FixedString(str):
     """An action for MelStructs that will decode and encode a fixed-length
     string. Note that you do not need to specify defaults when using this."""
     __slots__ = (u'str_length',)
     _str_encoding = bolt.pluginEncoding
 
     def __new__(cls, str_length, target_str=b''):
-        if isinstance(target_str, unicode):
+        if isinstance(target_str, str):
             decoded_str = target_str
         else:
             decoded_str = u'\n'.join(
@@ -62,7 +60,7 @@ class FixedString(unicode):
 
     def __call__(self, new_str):
         # 0 is the default, so replace it with whatever we currently have
-        return FixedString(self.str_length, new_str or unicode(self))
+        return FixedString(self.str_length, new_str or str(self))
 
     def dump(self):
         return bolt.encode_complex_string(self, max_size=self.str_length,
@@ -80,22 +78,21 @@ def strFid(form_id):
     else:
         return u'%08X' % form_id
 
-# PY3: drop the int() calls in these four methods
 def genFid(modIndex,objectIndex):
     """Generates a fid from modIndex and ObjectIndex."""
-    return int(objectIndex) | (int(modIndex) << 24)
+    return objectIndex | (modIndex << 24)
 
 def getModIndex(form_id):
     """Returns the modIndex portion of a fid."""
-    return int(form_id >> 24)
+    return form_id >> 24
 
 def getObjectIndex(form_id):
     """Returns the objectIndex portion of a fid."""
-    return int(form_id & 0x00FFFFFF)
+    return form_id & 0x00FFFFFF
 
 def getFormIndices(form_id):
     """Returns tuple of modIndex and ObjectIndex of fid."""
-    return int(form_id >> 24), int(form_id & 0x00FFFFFF)
+    return form_id >> 24, form_id & 0x00FFFFFF
 
 # Common flags ----------------------------------------------------------------
 ##: xEdit marks these as unknown_is_unused, at least in Skyrim, but it makes no

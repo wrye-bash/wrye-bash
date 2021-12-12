@@ -33,7 +33,7 @@ remove_tweaks = {u'Shadows, Res512 Dist 1 [SkyrimPrefs].ini',
                  u'WaterReflect, Res1024 [SkyrimPrefs].ini',
                  u'WaterReflect, Res256 [SkyrimPrefs].ini',
                  u'WaterReflect, Res512 ~Default[SkyrimPrefs].ini'}
-default_tweaks = {k: v for k, v in default_tweaks.iteritems()
+default_tweaks = {k: v for k, v in default_tweaks.items()
                   if k not in remove_tweaks}
 
 # Add new SSE-specific tweaks

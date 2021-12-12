@@ -40,7 +40,7 @@ class APreserver(ImportPatcher):
     """Fairly mature base class for preservers. Some parts could (read should)
     be moved to ImportPatcher and used to eliminate duplication with _AMerger.
 
-    :type rec_attrs: dict[bytes, tuple] | dict[bytes, dict[unicode, tuple]]"""
+    :type rec_attrs: dict[bytes, tuple] | dict[bytes, dict[str, tuple]]"""
     rec_attrs = {}
     # Record attributes that are FormIDs. These will be checked to see if their
     # FormID is valid before being imported
@@ -72,19 +72,19 @@ class APreserver(ImportPatcher):
         if self._multi_tag: ##: This is hideous
             def collect_attrs(r, tag_dict):
                 return {t: a + self._fid_rec_attrs.get(r, {}).get(t, ())
-                        for t, a in tag_dict.iteritems()}
+                        for t, a in tag_dict.items()}
         else:
             def collect_attrs(r, a):
                 return a + self._fid_rec_attrs.get(r, ())
         self.rec_type_attrs = {r: collect_attrs(r, a)
-                               for r, a in self.rec_attrs.iteritems()}
+                               for r, a in self.rec_attrs.items()}
         # Check if we need to use setattr_deep to set attributes
         if self._multi_tag:
             all_attrs = chain.from_iterable(
-                v for d in self.rec_type_attrs.itervalues()
-                for v in d.itervalues())
+                v for d in self.rec_type_attrs.values()
+                for v in d.values())
         else:
-            all_attrs = chain.from_iterable(self.rec_type_attrs.viewvalues())
+            all_attrs = chain.from_iterable(self.rec_type_attrs.values())
         self._deep_attrs = any(u'.' in a for a in all_attrs)
         # Split srcs based on CSV extension ##: move somewhere else?
         self.csv_srcs = [s for s in p_sources if s.cext == u'.csv']
@@ -110,11 +110,11 @@ class APreserver(ImportPatcher):
         # Filter out any entries that don't actually have data or don't
         # actually exist (for this game at least)
         ##: make sure k is always bytes and drop encode below
-        filtered_dict = {k.encode(u'ascii') if type(k) is unicode else k: v
-                         for k, v in parsed_sources.iteritems()
+        filtered_dict = {k.encode(u'ascii') if type(k) is str else k: v
+                         for k, v in parsed_sources.items()
                          if v and k in MreRecord.type_class}
         self.srcs_sigs.update(filtered_dict)
-        for src_data in filtered_dict.itervalues():
+        for src_data in filtered_dict.values():
             self.id_data.update(src_data)
 
     @property
@@ -130,9 +130,9 @@ class APreserver(ImportPatcher):
             # For multi-tag importers, we need to look up the applied bash tags
             # and use those to find all applicable attributes
             recAttrs = set(chain.from_iterable(
-                attrs for t, attrs in recAttrs.iteritems() if t in mod_tags))
+                attrs for t, attrs in recAttrs.items() if t in mod_tags))
             fid_attrs = set(chain.from_iterable(
-                attrs for t, attrs in fid_attrs.iteritems() if t in mod_tags))
+                attrs for t, attrs in fid_attrs.items() if t in mod_tags))
         for rfid, record in srcFile.tops[top_grup_sig].iter_present_records():
             # If we have FormID attributes, check those before importing
             if fid_attrs:
@@ -186,7 +186,7 @@ class APreserver(ImportPatcher):
                         continue
                     for rfid, record in masterFile.tops[rsig].iter_present_records():
                         if rfid not in mod_id_data: continue
-                        for attr, value in mod_id_data[rfid].iteritems():
+                        for attr, value in mod_id_data[rfid].items():
                             try:
                                 if value == __attrgetters[attr](record):
                                     continue
@@ -212,7 +212,7 @@ class APreserver(ImportPatcher):
                 # Skip if we've already copied this record or if we're not
                 # interested in it
                 if rfid in copied_records or rfid not in id_data: continue
-                for attr, value in id_data[rfid].iteritems():
+                for attr, value in id_data[rfid].items():
                     if __attrgetters[attr](record) != value:
                         patchBlock.setRecord(record.getTypeCopy())
                         break
@@ -224,10 +224,10 @@ class APreserver(ImportPatcher):
         id_data = self.id_data
         for rfid, record in records:
             if rfid not in id_data: continue
-            for attr, value in id_data[rfid].iteritems():
+            for attr, value in id_data[rfid].items():
                 if __attrgetters[attr](record) != value: break
             else: continue
-            for attr, value in id_data[rfid].iteritems():
+            for attr, value in id_data[rfid].items():
                 loop_setattr(record, attr, value)
             keep(rfid)
             type_count[top_mod_rec] += 1
@@ -356,7 +356,7 @@ class ImportStatsPatcher(APreserver):
     # Don't patch Editor IDs - those are only in statsTypes for the
     # Export/Import links
     rec_attrs = {r: tuple(x for x in a if x != u'eid')
-                 for r, a in bush.game.statsTypes.iteritems()}
+                 for r, a in bush.game.statsTypes.items()}
     _csv_parser = parsers.ItemStats
 
 #------------------------------------------------------------------------------
@@ -376,7 +376,7 @@ class ImportCellsPatcher(ImportPatcher):
     def __init__(self, p_name, p_file, p_sources):
         super(ImportCellsPatcher, self).__init__(p_name, p_file, p_sources)
         self.cellData = defaultdict(dict)
-        self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[unicode]]
+        self.recAttrs = bush.game.cellRecAttrs # dict[str, tuple[str]]
         self.loadFactory = self._patcher_read_fact()
 
     def initData(self, progress, __attrgetters=attrgetter_cache):
@@ -500,7 +500,7 @@ class ImportCellsPatcher(ImportPatcher):
             Modified cell Blocks are kept, the other are discarded."""
             modified = False
             patch_cell_fid = patchCellBlock.cell.fid
-            for attr,value in cellData[patch_cell_fid].iteritems():
+            for attr,value in cellData[patch_cell_fid].items():
                 curr_value = __attrgetters[attr](patchCellBlock.cell)
                 ##: If we made MelSorted sort on load too, we could drop this -
                 # but that might be too expensive? Maybe add a parameter to
@@ -557,10 +557,10 @@ class ImportGraphicsPatcher(APreserver):
         id_data = self.id_data
         for rfid, record in records:
             if rfid not in id_data: continue
-            for attr, value in id_data[rfid].iteritems():
+            for attr, value in id_data[rfid].items():
                 rec_attr = __attrgetters[attr](record)
-                if isinstance(rec_attr, unicode) and isinstance(
-                        value, unicode):
+                if isinstance(rec_attr, str) and isinstance(
+                        value, str):
                     if rec_attr.lower() != value.lower():
                         break
                     continue
@@ -573,7 +573,7 @@ class ImportGraphicsPatcher(APreserver):
                         # aren't __both__ NONE)
                 if rec_attr != value: break
             else: continue
-            for attr, value in id_data[rfid].iteritems():
+            for attr, value in id_data[rfid].items():
                 setattr(record, attr, value)
             keep(rfid)
             type_count[top_mod_rec] += 1
@@ -589,7 +589,7 @@ class ImportRacesPatcher(APreserver):
         id_data = self.id_data
         for rfid, record in records:
             if rfid not in id_data: continue
-            for attr, value in id_data[rfid].iteritems():
+            for attr, value in id_data[rfid].items():
                 record_val = __attrgetters[attr](record)
                 if attr in (u'eyes', u'hairs'):
                     if set(record_val) != set(value): break
@@ -599,7 +599,7 @@ class ImportRacesPatcher(APreserver):
                             record.full, attr))
                     elif record_val != value: break
             else: continue
-            for attr, value in id_data[rfid].iteritems():
+            for attr, value in id_data[rfid].items():
                 loop_setattr(record, attr, value)
             keep(rfid)
             type_count[top_mod_rec] += 1

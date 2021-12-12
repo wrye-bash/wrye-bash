@@ -33,8 +33,6 @@ https://docs.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguid
 https://github.com/microsoft/DirectXTex
 https://github.com/ModOrganizer2/modorganizer-preview_dds"""
 
-from __future__ import division
-
 __author__ = u'Infernio'
 
 import copy
@@ -150,7 +148,7 @@ class _DDSPixelFormat(object):
 def _new_pf(**pf_props):
     """Builds a pixel format with the specified non-default properties."""
     ret = _DDSPixelFormat()
-    for prop_name, prop_val in pf_props.viewitems():
+    for prop_name, prop_val in pf_props.items():
         setattr(ret, prop_name, prop_val)
     return ret
 
@@ -228,7 +226,7 @@ class _DXGIFormat(object): # PY3: enums sorely missed...
         properties. Automatically aquires a a
 
         :param fmt_name: The standardized name of this format.
-        :type fmt_name: unicode
+        :type fmt_name: str
         :param fmt_ddspf: The pixel format to use with this DXGI format.
         :type fmt_ddspf: _DDSPixelFormat
         :param fmt_bpp: The bits per pixel.
@@ -545,7 +543,7 @@ class _DDSHeader(object):
         self.dw_pitch_or_linear_size = unpack_int(ins)
         self.dw_depth = unpack_int(ins)
         self.dw_mip_map_count = unpack_int(ins)
-        for x in xrange(len(self.dw_reserved1)):
+        for x in range(len(self.dw_reserved1)):
             self.dw_reserved1[x] = unpack_int(ins)
         self.ddspf.load_format(ins)
         self.dw_caps = unpack_int(ins)

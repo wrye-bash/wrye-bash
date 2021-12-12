@@ -22,10 +22,7 @@
 # =============================================================================
 """Houses basic building blocks for creating record definitions. Somewhat
 higher-level building blocks can be found in common_subrecords.py."""
-
-from __future__ import division
-
-from itertools import izip
+from typing import BinaryIO
 
 from .utils_constants import FID, null1, _make_hashable, FixedString, \
     _int_unpacker, get_structs
@@ -100,7 +97,7 @@ class Subrecord(object):
                                                               lenData))
         outWrite(binary_data)
 
-def unpackSubHeader(ins, rsig=b'----', # PY3: ,*,
+def unpackSubHeader(ins, rsig=b'----', *,
                     __unpacker=_int_unpacker, __sr=Subrecord):
     """Unpack a subrecord header. Optionally checks for match with expected
     type and size."""
@@ -372,7 +369,7 @@ class MelReadOnly(MelSequential):
 class MelGroup(MelSequential):
     """Represents a group record."""
     def __init__(self,attr,*elements):
-        """:type attr: unicode"""
+        """:type attr: str"""
         super(MelGroup, self).__init__(*elements)
         self.attr, self.loaders = attr, {}
 
@@ -476,7 +473,7 @@ class MelString(MelBase):
         setattr(record, self.attr, ins.readString(size_, *debug_strs))
 
     def packSub(self, out, string_val):
-        # type: (file, unicode) -> None
+        # type: (BinaryIO, str) -> None
         """Writes out a string subrecord, properly encoding it beforehand and
         respecting max_size, min_size and preferred_encoding if they are
         set."""
@@ -537,7 +534,7 @@ class MelStruct(MelBase):
 
     def __init__(self, mel_sig, struct_formats, *elements):
         """:type mel_sig: bytes
-        :type struct_formats: list[unicode]"""
+        :type struct_formats: list[str]"""
         if not isinstance(struct_formats, list):
             raise SyntaxError(u'Expected a list got "%s"' % struct_formats)
         # Sometimes subrecords have to preserve non-aligned sizes, check that
@@ -570,14 +567,14 @@ class MelStruct(MelBase):
         if self.formAttrs: formElements.add(self)
 
     def setDefault(self,record):
-        for attr, value, action in izip(self.attrs, self.defaults,
+        for attr, value, action in zip(self.attrs, self.defaults,
                                         self.actions):
             if callable(action): value = action(value)
             setattr(record, attr, value)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         unpacked = ins.unpack(self._unpacker, size_, *debug_strs)
-        for attr, value, action in izip(self.attrs, unpacked, self.actions):
+        for attr, value, action in zip(self.attrs, unpacked, self.actions):
             setattr(record, attr, action(value) if callable(action) else value)
 
     def pack_subrecord_data(self, record):
@@ -586,7 +583,7 @@ class MelStruct(MelBase):
         # just a noop - it is needed however when we read a flag say from a csv
         values = [
             action(value).dump() if callable(action) else value
-            for value, action in izip((getattr(record, a) for a in self.attrs),
+            for value, action in zip((getattr(record, a) for a in self.attrs),
                                       self.actions)]
         return self._packer(*values)
 
@@ -612,12 +609,12 @@ class MelStruct(MelBase):
         parseElements('level', 'unused1', (FID, 'listId', None),
                       ('count', 1), 'unused2')
 
-        :type elements: (list[None|unicode|tuple])"""
+        :type elements: (list[None|str|tuple])"""
         formAttrs = set()
         lenEls = len(elements)
         attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls
         expanded_fmts = self._expand_formats(elements, struct_formats)
-        for index, (element, fmt_str) in enumerate(izip(elements, expanded_fmts)):
+        for index, (element, fmt_str) in enumerate(zip(elements, expanded_fmts)):
             if not isinstance(element,tuple):
                 attrs[index] = element
                 if type(fmt_str) is int and fmt_str: # 0 for weird subclasses
@@ -762,7 +759,7 @@ class MelOptStruct(MelStruct):
         # TODO: Unfortunately, checking if the attribute is None is not
         # really effective.  Checking it to be 0,empty,etc isn't effective either.
         # It really just needs to check it against the default.
-        for attr, default in izip(self.attrs, self.defaults):
+        for attr, default in zip(self.attrs, self.defaults):
             oldValue = getattr(record, attr)
             if oldValue is not None and oldValue != default:
                 return super(MelOptStruct, self).pack_subrecord_data(record)

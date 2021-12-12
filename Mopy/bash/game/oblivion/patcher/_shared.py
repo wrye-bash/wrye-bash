@@ -35,7 +35,7 @@ class ExSpecial(Abstract_Patcher):
     patcher_order = 40
     patcher_name = u'UNDEFINED'
     patcher_desc = u'UNDEFINED'
-    _config_key = None # type: unicode
+    _config_key = None # type: str
 
     @classmethod
     def gui_cls_vars(cls):

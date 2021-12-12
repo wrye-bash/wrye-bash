@@ -24,7 +24,6 @@
 
 import collections
 import copy
-import errno
 import io
 import os
 import re
@@ -32,7 +31,7 @@ import sys
 import time
 from binascii import crc32
 from functools import partial, wraps
-from itertools import groupby, izip
+from itertools import groupby
 from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, \
@@ -47,7 +46,7 @@ from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 from ..ini_files import OBSEIniFile
 
-os_sep = unicode(os.path.sep) # PY3: already unicode
+os_sep = os.path.sep
 
 class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and
@@ -76,7 +75,7 @@ class Installer(ListInfo):
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
                u'.ppt', u'.pptx'}
     reReadMe = re.compile(
-        u'' r'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
+        r'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
         u'(' + u'|'.join(docExts) + u')$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
@@ -147,14 +146,14 @@ class Installer(ListInfo):
         #--Force update?
         if recalculate_all_crcs:
             pending.update(new_sizeCrcDate)
-            pending_size += sum(x[0] for x in new_sizeCrcDate.itervalues())
+            pending_size += sum(x[0] for x in new_sizeCrcDate.values())
         changed = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
         #--Update crcs?
         Installer.calc_crcs(pending, pending_size, rootName,
                             new_sizeCrcDate, progress)
         # drop _asFile
         old_sizeCrcDate.clear()
-        for rpFile, (siz, crc, date, _asFile) in new_sizeCrcDate.iteritems():
+        for rpFile, (siz, crc, date, _asFile) in new_sizeCrcDate.items():
             old_sizeCrcDate[rpFile] = (siz, crc, date)
         return changed
 
@@ -179,7 +178,7 @@ class Installer(ListInfo):
                     for block in iter(partial(ins.read, 2097152), b''):
                         crc = crc32(block, crc) # 2MB at a time, probably ok
                         sub(insTell())
-            except (OSError, IOError):
+            except OSError:
                 deprint(u'Failed to calculate crc for %s - please report '
                         u'this, and the following traceback:' % asFile,
                         traceback=True)
@@ -251,7 +250,7 @@ class Installer(ListInfo):
 
     @staticmethod
     def number_string(number, marker_string=u''):
-        return unicode(number)
+        return str(number)
 
     def size_string(self, marker_string=u''):
         return round_size(self.fsize)
@@ -316,7 +315,7 @@ class Installer(ListInfo):
         if u'fomod_files_dict' in self.extras_dict:
             self.extras_dict[u'fomod_dict'] = LowerDict({
                 v: k for k, v
-                in self.extras_dict.pop(u'fomod_files_dict').iteritems()})
+                in self.extras_dict.pop(u'fomod_files_dict').items()})
 
     def __setstate__(self,values):
         """Used by unpickler to recreate object."""
@@ -337,7 +336,7 @@ class Installer(ListInfo):
 
     def __setstate(self,values):
         self.initDefault() # runs on __init__ called by __reduce__
-        for a, v in izip(self.persistent, values):
+        for a, v in zip(self.persistent, values):
             setattr(self, a, v)
         rescan = False
         if not isinstance(self.extras_dict, dict):
@@ -348,10 +347,13 @@ class Installer(ListInfo):
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
             self.src_sizeCrcDate = bolt.LowerDict(
-                (u'%s' % x, y) for x, y in self.src_sizeCrcDate.iteritems())
+                (u'%s' % x, y) for x, y in self.src_sizeCrcDate.items())
         if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
             self.dirty_sizeCrc = bolt.LowerDict(
-                (u'%s' % x, y) for x, y in self.dirty_sizeCrc.iteritems())
+                (u'%s' % x, y) for x, y in self.dirty_sizeCrc.items())
+        if not isinstance(self.archive, str):
+            deprint(f'{repr(self.archive)} in Installers.dat')
+            self.archive = self.archive.decode('utf-8')
         if rescan:
             dest_scr = self.refreshBasic(bolt.Progress(),
                                          recalculate_project_crc=False)
@@ -670,7 +672,7 @@ class Installer(ListInfo):
         hasExtraData = self.hasExtraData
         # exclude u'' from active subpackages
         activeSubs = (
-            {x for x, y in izip(self.subNames[1:], self.subActives[1:]) if y}
+            {x for x, y in zip(self.subNames[1:], self.subActives[1:]) if y}
             if bain_type == 2 else set())
         data_sizeCrc = bolt.LowerDict()
         skipDirFiles = self.skipDirFiles
@@ -819,7 +821,7 @@ class Installer(ListInfo):
         #--Update dirty?
         if self.is_active and data_sizeCrc != old_sizeCrc:
             dirty_sizeCrc = self.dirty_sizeCrc
-            for filename,sizeCrc in old_sizeCrc.iteritems():
+            for filename,sizeCrc in old_sizeCrc.items():
                 if filename not in dirty_sizeCrc and sizeCrc != data_sizeCrc.get(filename):
                     dirty_sizeCrc[filename] = sizeCrc
         #--Done (return dest_src for install operation)
@@ -904,7 +906,7 @@ class Installer(ListInfo):
                     dest = file_relative
         # Redirect script files that are in the wrong place
         elif redirect_scripts and fileExt in bush.game.Psc.source_extensions:
-            for old_dir, new_dir in bush.game.Psc.source_redirects.iteritems():
+            for old_dir, new_dir in bush.game.Psc.source_redirects.items():
                 if fileLower.startswith(old_dir + os_sep):
                     # Note us keeping the path separator in via slicing
                     dest = new_dir + fileLower[len(old_dir):]
@@ -967,8 +969,8 @@ class Installer(ListInfo):
         self.type = bain_type
         #--SubNames, SubActives
         if bain_type == 2:
-            self.subNames = sorted(subNameSet,key=unicode.lower)
-            actives = {x for x, y in izip(self.subNames, self.subActives)
+            self.subNames = sorted(subNameSet,key=str.lower)
+            actives = {x for x, y in zip(self.subNames, self.subActives)
                        if (y or x == u'')}
             if len(self.subNames) == 2: #--If only one subinstall, then make it active.
                 self.subActives = [True,True] # that's a complex/simple package
@@ -1003,7 +1005,7 @@ class Installer(ListInfo):
         if self.type == 0:
             status = -20
         elif data_sizeCrc:
-            for filename,sizeCrc in data_sizeCrc.iteritems():
+            for filename,sizeCrc in data_sizeCrc.items():
                 sizeCrcDate = data_sizeCrcDate.get(filename)
                 if not sizeCrcDate:
                     missing.add(filename)
@@ -1019,7 +1021,7 @@ class Installer(ListInfo):
             else: status = 30
         #--Clean Dirty
         dirty_sizeCrc = self.dirty_sizeCrc
-        for filename, sizeCrc in list(dirty_sizeCrc.iteritems()):
+        for filename, sizeCrc in list(dirty_sizeCrc.items()):
             sizeCrcDate = data_sizeCrcDate.get(filename)
             if (not sizeCrcDate or sizeCrc != sizeCrcDate[:2] or
                 sizeCrc == data_sizeCrc.get(filename)
@@ -1045,7 +1047,7 @@ class Installer(ListInfo):
         outFile = outDir.join(u'bash_temp_nonunicode_name.tmp')
         num = 0
         while outFile.exists():
-            outFile += unicode(num)
+            outFile += str(num)
             num += 1
         project = outDir.join(project)
         with project.unicodeSafe() as projectDir:
@@ -1081,7 +1083,7 @@ class Installer(ListInfo):
         upt_numb = del_numb = 0
         proj_dir_join = proj_dir.join
         progress.setFull(len(delta_files))
-        for rel_src, rel_dest in self.refreshDataSizeCrc().iteritems():
+        for rel_src, rel_dest in self.refreshDataSizeCrc().items():
             if rel_src not in delta_files: continue
             progress(del_numb + upt_numb,
                      _(u'Syncing from %s folder...') % bush.game.mods_dir +
@@ -1097,10 +1099,10 @@ class Installer(ListInfo):
         if upt_numb or del_numb:
             # Remove empty directories from project directory
             empties = set()
-            for asDir, sDirs, sFiles in bolt.walkdir(proj_dir.s):
+            for asDir, sDirs, sFiles in os.walk(proj_dir.s):
                 if not (sDirs or sFiles): empties.add(GPath(asDir))
             for empty in empties: empty.removedirs()
-            self.abs_path.makedirs()  #--In case it just got wiped out.
+            proj_dir.makedirs()  #--In case it just got wiped out.
         return upt_numb, del_numb
 
     def size_or_mtime_changed(self, apath):
@@ -1156,7 +1158,7 @@ class Installer(ListInfo):
         is_ini_tweak = InstallersData._is_ini_tweak
         join_data_dir = bass.dirs[u'mods'].join
         bsa_ext = bush.game.Bsa.bsa_extension
-        for dest, src in dest_src.iteritems():
+        for dest, src in dest_src.items():
             size,crc = data_sizeCrc[dest]
             # Work with ghosts lopped off internally and check the destination,
             # since plugins may have been renamed
@@ -1307,8 +1309,8 @@ class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Archive')
-    _valid_exts_re = u'' r'(\.(?:' + u'|'.join(
-        ext[1:] for ext in archives.readExts) + u'))'
+    _valid_exts_re = r'(\.(?:' + '|'.join(
+        ext[1:] for ext in archives.readExts) + '))'
 
     @classmethod
     def is_archive(cls): return True
@@ -1346,25 +1348,24 @@ class InstallerArchive(Installer):
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
-        class _li(object): # line info - PY3: we really want nonlocal here
-            filepath = size = crc = isdir = cumCRC = 0
-            __slots__ = ()
+        filepath = listed_size = listed_crc = isdir_ = cumCRC = 0
         def _parse_archive_line(key, value):
+            nonlocal filepath, listed_size, listed_crc, isdir_, cumCRC
             if   key == u'Solid': self.isSolid = (value[0] == u'+')
-            elif key == u'Path': _li.filepath = value.decode(u'utf8')
-            elif key == u'Size': _li.size = int(value)
-            elif key == u'Attributes': _li.isdir = value and (u'D' in value)
-            elif key == u'CRC' and value: _li.crc = int(value,16)
+            elif key == u'Path': filepath = value
+            elif key == u'Size': listed_size = int(value)
+            elif key == u'Attributes': isdir_ = value and (u'D' in value)
+            elif key == u'CRC' and value: listed_crc = int(value,16)
             elif key == u'Method':
-                if _li.filepath and not _li.isdir and _li.filepath != \
+                if filepath and not isdir_ and filepath != \
                         tempArch.s:
-                    fileSizeCrcs.append((_li.filepath, _li.size, _li.crc))
-                    _li.cumCRC += _li.crc
-                _li.filepath = _li.size = _li.crc = _li.isdir = 0
+                    fileSizeCrcs.append((filepath, listed_size, listed_crc))
+                    cumCRC += listed_crc
+                filepath = listed_size = listed_crc = isdir_ = 0
         with self.abs_path.unicodeSafe() as tempArch:
             try:
                 list_archive(tempArch, _parse_archive_line)
-                self.crc = _li.cumCRC & 0xFFFFFFFF
+                self.crc = cumCRC & 0xFFFFFFFF
             except:
                 archive_msg = u"Unable to read archive '%s'." % self.abs_path
                 deprint(archive_msg, traceback=True)
@@ -1401,7 +1402,7 @@ class InstallerArchive(Installer):
     def _install(self, dest_src, progress):
         #--Extract
         progress(0, (u'%s\n' % self) + _(u'Extracting files...'))
-        unpackDir = self.unpackToTemp(list(dest_src.itervalues()),
+        unpackDir = self.unpackToTemp(list(dest_src.values()),
                                       SubProgress(progress, 0, 0.9))
         #--Rearrange files
         progress(0.9, (u'%s\n' % self) + _(u'Organizing files...'))
@@ -1440,22 +1441,23 @@ class InstallerArchive(Installer):
     @staticmethod
     def _list_package(apath, log):
         with apath.unicodeSafe() as tempArch:
-            filepath = [u''] # PY3: nonlocal
             list_text = []
+            filepath = u''
             def _parse_archive_line(key, value):
+                nonlocal filepath
                 if key == u'Path':
-                    filepath[0] = value.decode('utf8')
+                    filepath = value
                 elif key == u'Attributes':
                     list_text.append( # attributes may be empty
-                        (u'%s' % filepath[0], value and (u'D' in value)))
+                        (f'{filepath}', value and (u'D' in value)))
                 elif key == u'Method':
-                    filepath[0] = u''
+                    filepath = u''
             list_archive(tempArch, _parse_archive_line)
         list_text.sort()
         #--Output
-        for node, isdir in list_text:
+        for node, isdir_ in list_text:
             log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
-                os.sep if isdir else u''))
+                os.sep if isdir_ else u''))
 
     def _open_txt_file(self, rel_path):
         with gui.BusyCursor():
@@ -1555,7 +1557,7 @@ class InstallerProject(Installer):
         pending, pending_size = bolt.LowerDict(), 0
         new_sizeCrcDate = bolt.LowerDict()
         oldGet = self.src_sizeCrcDate.get
-        walk = self._dir_dirs_files if self._dir_dirs_files is not None else bolt.walkdir(asRoot)
+        walk = self._dir_dirs_files if self._dir_dirs_files is not None else os.walk(asRoot)
         for asDir, __sDirs, sFiles in walk:
             rsDir = asDir[relPos:]
             progress(0.05, progress_msg + (u'\n%s' % rsDir))
@@ -1589,7 +1591,7 @@ class InstallerProject(Installer):
         c, proj_size = [], 0
         cExtend, cAppend = c.extend, c.append
         self._dir_dirs_files = []
-        for root, d, files in bolt.walkdir(apath.s):
+        for root, d, files in os.walk(apath.s):
             cAppend(getM(root))
             lstats = [_lstat(join(root, f)) for f in files]
             cExtend(ls.st_mtime for ls in lstats)
@@ -1615,7 +1617,7 @@ class InstallerProject(Installer):
 ##        cumDate = 0
         cumSize = 0
         fileSizeCrcs = self.fileSizeCrcs = []
-        for path, (size, crc, date) in self.src_sizeCrcDate.iteritems():
+        for path, (size, crc, date) in self.src_sizeCrcDate.items():
             fileSizeCrcs.append((path, size, crc))
 ##            cumDate = max(date,cumDate)
             cumCRC += crc
@@ -1667,8 +1669,8 @@ def projects_walk_cache(func): ##: HACK ! Profile
         try:
             return func(self, *args, **kwargs)
         finally:
-            it = (self.viewvalues() if isinstance(self, InstallersData) else
-                  self.listData.viewvalues())
+            it = (self.values() if isinstance(self, InstallersData) else
+                  self.listData.values())
             for project in it:
                 if project.is_project():
                     project._dir_dirs_files = None
@@ -1772,7 +1774,7 @@ class InstallersData(DataStore):
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
             pickle, bolt.LowerDict) else pickle
         # fixup: all markers had their archive attribute set to u'===='
-        for key, value in self.iteritems():
+        for key, value in self.items():
             if value.is_marker():
                 value.archive = key.s
         self.loaded = True
@@ -1882,7 +1884,7 @@ class InstallersData(DataStore):
             self.pop(deleted)
         pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
-        for subPending, inst_type in izip(
+        for subPending, inst_type in zip(
                 (pending - projects, pending & projects), self._inst_types):
             if not subPending: continue
             progress(0,_(u'Scanning Packages...'))
@@ -1896,7 +1898,7 @@ class InstallersData(DataStore):
     def applyEmbeddedBCFs(self, installers=None, destArchives=None,
                           progress=bolt.Progress()):
         if installers is None:
-            installers = [x for x in self.itervalues() if
+            installers = [x for x in self.values() if
                           x.is_archive() and x.hasBCF]
         if not installers: return [], []
         if not destArchives:
@@ -1904,7 +1906,7 @@ class InstallersData(DataStore):
                             in installers]
         progress.setFull(len(installers))
         pending = []
-        for i, (installer, destArchive) in list(enumerate(izip(
+        for i, (installer, destArchive) in list(enumerate(zip(
                 installers, destArchives))): # we may modify installers below
             progress(i, installer.archive)
             #--Extract the embedded BCF and move it to the Converters folder
@@ -2034,7 +2036,7 @@ class InstallersData(DataStore):
         #--Abnorm
         ci_underrides_sizeCrc = bolt.LowerDict()
         dataGet = self.data_sizeCrcDate.get
-        for path,sizeCrc in norm_sizeCrc.iteritems():
+        for path,sizeCrc in norm_sizeCrc.items():
             sizeCrcDate = dataGet(path)
             if sizeCrcDate and sizeCrc != sizeCrcDate[:2]: # file is installed
                 # in data dir, but from a lower loading installer (or manually)
@@ -2046,7 +2048,7 @@ class InstallersData(DataStore):
     def refreshInstallersStatus(self):
         """Refresh installer status."""
         changed = False
-        for installer in self.itervalues():
+        for installer in self.values():
             changed |= installer.refreshStatus(self)
         return changed
 
@@ -2067,7 +2069,7 @@ class InstallersData(DataStore):
         dirDirsFilesAppend, emptyDirsAdd = dirDirsFiles.append, emptyDirs.add
         asRoot = bass.dirs[u'mods'].s
         relPos = len(asRoot) + 1
-        for asDir, sDirs, sFiles in bolt.walkdir(asRoot):
+        for asDir, sDirs, sFiles in os.walk(asRoot):
             progress(0.05, progress_msg + (u'\n%s' % asDir[relPos:]))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
             if asDir == asRoot: InstallersData._skips_in_data_dir(sDirs)
@@ -2108,7 +2110,7 @@ class InstallersData(DataStore):
         new_sizeCrcDate = bolt.LowerDict()
         oldGet = self.data_sizeCrcDate.get
         ghost_norm = bolt.LowerDict(
-            (y, x) for x, y in Installer.getGhosted().iteritems())
+            (y, x) for x, y in Installer.getGhosted().items())
         if bass.settings[u'bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
         else:
@@ -2131,30 +2133,29 @@ class InstallersData(DataStore):
                 else: rpFile = os.path.join(rsDir, sFile)
                 asFile = os.path.join(asDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
+                oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0.0))
+                if top_level_espm: # modInfos MUST BE UPDATED
+                    try:
+                        modInfo = modInfos[GPath(rpFile)]
+                        new_sizeCrcDate[rpFile] = (modInfo.fsize,
+                           modInfo.cached_mod_crc(), modInfo.mtime, asFile)
+                        continue
+                    except KeyError:
+                        pass # corrupted/missing, let os.lstat decide
                 try:
-                    oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0.0))
-                    if top_level_espm: # modInfos MUST BE UPDATED
-                        try:
-                            modInfo = modInfos[GPath(rpFile)]
-                            new_sizeCrcDate[rpFile] = (modInfo.fsize,
-                               modInfo.cached_mod_crc(), modInfo.mtime, asFile)
-                            continue
-                        except KeyError:
-                            pass # corrupted/missing, let os.lstat decide
                     lstat = os.lstat(asFile)
-                    size, date = lstat.st_size, lstat.st_mtime
-                    if size != oSize or date != oDate:
-                        pending[rpFile] = (size, oCrc, date, asFile)
-                        pending_size += size
-                    else:
-                        new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
-                except OSError as e:
-                    if e.errno == errno.ENOENT: continue # file does not exist
-                    raise
+                except FileNotFoundError:
+                    continue # file does not exist
+                size, date = lstat.st_size, lstat.st_mtime
+                if size != oSize or date != oDate:
+                    pending[rpFile] = (size, oCrc, date, asFile)
+                    pending_size += size
+                else:
+                    new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
         return new_sizeCrcDate, pending, pending_size
 
     def reset_refresh_flag_on_projects(self):
-        for installer in self.itervalues():
+        for installer in self.values():
             if installer.is_project():
                 installer.project_refreshed = False
 
@@ -2195,7 +2196,7 @@ class InstallersData(DataStore):
         """Update data_SizeCrcDate with info on given paths.
         :param progress: must be zeroed - message is used in _process_data_dir
         :param dest_paths: set of paths relative to Data/ - may not exist.
-        :type dest_paths: set[unicode]"""
+        :type dest_paths: set[str]"""
         root_files = []
         norm_ghost = Installer.getGhosted()
         for data_path in dest_paths:
@@ -2216,7 +2217,7 @@ class InstallersData(DataStore):
         for d in deleted_or_pending: self.data_sizeCrcDate.pop(d, None)
         Installer.calc_crcs(pending, pending_size, bass.dirs[u'mods'].stail,
                             new_sizeCrcDate, progress)
-        for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
+        for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.items():
             self.data_sizeCrcDate[rpFile] = (size, crc, date)
 
     def update_for_overridden_skips(self, dont_skip=None, progress=None):
@@ -2255,7 +2256,7 @@ class InstallersData(DataStore):
         ext_deleted = InstallersData._externally_deleted
         ext_updated.update(changed)
         ext_deleted.update(deleted)
-        for renamed_old, renamed_new in renamed.iteritems():
+        for renamed_old, renamed_new in renamed.items():
             for ext_tracker in (ext_updated, ext_deleted):
                 if renamed_old in ext_tracker:
                     ext_tracker.discard(renamed_old)
@@ -2266,7 +2267,7 @@ class InstallersData(DataStore):
             InstallersData._externally_updated)
         InstallersData._externally_updated.clear()
         InstallersData._externally_deleted.clear()
-        for abspath, tracked in list(InstallersData._miscTrackedFiles.iteritems()):
+        for abspath, tracked in list(InstallersData._miscTrackedFiles.items()):
             if not abspath.exists(): # untrack - runs on first run !!
                 InstallersData._miscTrackedFiles.pop(abspath, None)
                 deleted.add(abspath)
@@ -2342,7 +2343,7 @@ class InstallersData(DataStore):
         in the new ini."""
         removed = set()
         from . import iniInfos
-        pseudosections = set(OBSEIniFile.ci_pseudosections.itervalues())
+        pseudosections = set(OBSEIniFile.ci_pseudosections.values())
         for (tweakPath, iniAbsDataPath) in tweaksCreated:
             iniFile = BestIniFile(iniAbsDataPath)
             currSection = None
@@ -2450,7 +2451,7 @@ class InstallersData(DataStore):
         # and for rest of the files - we do mods separately for ghosts
         self.data_sizeCrcDate.update((dest, (
             s, c, (d != -1 and d) or bass.dirs[u'mods'].join(dest).mtime)) for
-            dest, (s, c, d) in data_sizeCrcDate_update.iteritems())
+            dest, (s, c, d) in data_sizeCrcDate_update.items())
         for ini_path in inis:
             iniInfos.new_info(ini_path, owner=installer.archive)
 
@@ -2470,7 +2471,7 @@ class InstallersData(DataStore):
         :type package_keys: None | collections.Iterable[Path]
         :rtype: list[Installer]
         """
-        if package_keys is None: values = self.viewvalues()
+        if package_keys is None: values = self.values()
         else: values = [self[k] for k in package_keys]
         return sorted(values, key=attrgetter('order'), reverse=reverse)
 
@@ -2589,7 +2590,7 @@ class InstallersData(DataStore):
 
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
-        if unArchives == u'ALL': unArchives = frozenset(self.viewvalues())
+        if unArchives == u'ALL': unArchives = frozenset(self.values())
         else: unArchives = frozenset(self[x] for x in unArchives)
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
@@ -2607,7 +2608,7 @@ class InstallersData(DataStore):
             #--Uninstall archive?
             if installer in unArchives:
                 for data_sizeCrc in (installer.ci_dest_sizeCrc,installer.dirty_sizeCrc):
-                    for cistr_file,sizeCrc in data_sizeCrc.iteritems():
+                    for cistr_file,sizeCrc in data_sizeCrc.items():
                         sizeCrcDate = data_sizeCrcDate.get(cistr_file)
                         if cistr_file not in masked and sizeCrcDate and sizeCrcDate[:2] == sizeCrc:
                             removes.add(cistr_file)
@@ -2633,7 +2634,7 @@ class InstallersData(DataStore):
                 self._restoreFiles(restores, refresh_ui, progress)
             # Set the 'installer' column in mod and ini tables
             from . import modInfos, iniInfos
-            for installer, owned_files in cede_ownership.iteritems():
+            for installer, owned_files in cede_ownership.items():
                 for ci_dest in owned_files:
                     if modInfos.rightFileType(ci_dest):
                         refresh_ui[0] = True
@@ -2655,10 +2656,10 @@ class InstallersData(DataStore):
         progress.setFull(len(installer_destinations))
         installer_destinations = dict_sort(installer_destinations,
                                            key_f=lambda k: self[k].order)
-        for index, (archive, destFiles) in enumerate(installer_destinations):
-            progress(index, archive.s)
+        for index, (archive_path, destFiles) in enumerate(installer_destinations):
+            progress(index, archive_path.s)
             if destFiles:
-                installer = self[archive]
+                installer = self[archive_path]
                 self.__installer_install(installer, destFiles, index, progress,
                                          refresh_ui)
 
@@ -2856,7 +2857,7 @@ class InstallersData(DataStore):
                         showInactive or installer.is_active): continue
             if not showLower and installer.order < srcOrder: continue
             curConflicts = bolt.sortFiles(
-                [x for x, y in installer.ci_dest_sizeCrc.iteritems()
+                [x for x, y in installer.ci_dest_sizeCrc.items()
                 if x in mismatched and y != src_sizeCrc[x]])
             if curConflicts:
                 if installer.order < srcOrder:

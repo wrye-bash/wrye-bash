@@ -138,7 +138,7 @@ class _AMerger(ImportPatcher):
             for master in modFile.tes4.masters:
                 if master in mod_id_entries:
                     id_entries.update(mod_id_entries[master])
-            for fid,entries in mod_id_entries[modName].iteritems():
+            for fid,entries in mod_id_entries[modName].items():
                 masterEntries = id_entries.get(fid)
                 if masterEntries is None: continue
                 master_keys = {en_key(x) for x in masterEntries}
@@ -652,7 +652,7 @@ class _AListsMerger(ListPatcher):
         strings, e.g. u'Delev'), defaulting to an empty set.
 
         :type remove_empty: bool
-        :type tag_choices: defaultdict[bolt.Path, set[unicode]]"""
+        :type tag_choices: defaultdict[bolt.Path, set[str]]"""
         super(_AListsMerger, self).__init__(p_name, p_file, p_sources)
         self.isActive |= bool(p_file.loadSet) # Can do meaningful work even without sources
         self.type_list = {rsig: {} for rsig in self._read_sigs}
@@ -743,13 +743,13 @@ class _AListsMerger(ListPatcher):
         for leveler in self.levelers:
             log(u'* ' + self.annotate_plugin(leveler))
         # Save to patch file
-        for list_type_sig, list_label in self._sig_to_label.iteritems():
+        for list_type_sig, list_label in self._sig_to_label.items():
             if list_type_sig not in self._read_sigs: continue
             log.setHeader(u'=== ' + _(u'Merged %s Lists') % list_label)
             patch_block = self.patchFile.tops[list_type_sig]
             stored_lists = self.type_list[list_type_sig]
-            for stored_list in sorted(stored_lists.viewvalues(),
-                                      key=attrgetter(u'eid')):
+            for stored_list in sorted(stored_lists.values(),
+                                      key=lambda l: l.eid or ''):
                 if not stored_list.mergeOverLast: continue
                 list_fid = stored_list.fid
                 keep(list_fid)
@@ -760,7 +760,7 @@ class _AListsMerger(ListPatcher):
                 self._check_list(stored_list, log)
         #--Discard empty sublists
         if not self.remove_empty_sublists: return
-        for list_type_sig, list_label in self._sig_to_label.iteritems():
+        for list_type_sig, list_label in self._sig_to_label.items():
             if list_type_sig not in self._read_sigs: continue
             patch_block = self.patchFile.tops[list_type_sig]
             stored_lists = self.type_list[list_type_sig]
@@ -768,7 +768,7 @@ class _AListsMerger(ListPatcher):
             # Build a dict mapping leveled lists to other leveled lists that
             # they are sublists in
             sub_supers = {x: [] for x in stored_lists} ##: defaultdict??
-            for stored_list in sorted(stored_lists.itervalues()):
+            for stored_list in stored_lists.values():
                 list_fid = stored_list.fid
                 if not stored_list.items:
                     empty_lists.append(list_fid)
@@ -806,11 +806,11 @@ class _AListsMerger(ListPatcher):
                         cleaned_lists.add(stored_list.eid)
                         keep(sub_super)
             log.setHeader(u'=== ' + _(u'Empty %s Sublists') % list_label)
-            for list_eid in sorted(removed_empty_sublists, key=unicode.lower):
+            for list_eid in sorted(removed_empty_sublists, key=str.lower):
                 log(u'* ' + list_eid)
             log.setHeader(u'=== ' + _(u'Empty %s Sublists Removed') %
                           list_label)
-            for list_eid in sorted(cleaned_lists, key=unicode.lower):
+            for list_eid in sorted(cleaned_lists, key=str.lower):
                 log(u'* ' + list_eid)
 
     # Methods for patchers to override

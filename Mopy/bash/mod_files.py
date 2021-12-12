@@ -23,8 +23,6 @@
 """This module houses the entry point for reading and writing plugin files
 through PBash (LoadFactory + ModFile) as well as some related classes."""
 
-from __future__ import division
-
 from collections import defaultdict
 from itertools import chain
 from zlib import decompress as zlib_decompress, error as zlib_error
@@ -78,7 +76,7 @@ class MasterMap(object):
 
 class LoadFactory(object):
     """Factory for mod representation objects."""
-    def __init__(self, keepAll, by_sig=(), generic=()): # PY3 keyword args
+    def __init__(self, keepAll, *, by_sig=(), generic=()):
         """Pass a collection of signatures to load - either by their
         respective type or using generic MreRecord.
         :param by_sig: pass an iterable of top group signatures to load
@@ -161,7 +159,7 @@ class LoadFactory(object):
     def __repr__(self):
         return u'<LoadFactory: load %u types (%s), %s others>' % (
             len(self.recTypes),
-            u', '.join(self.recTypes),
+            u', '.join([r.decode('ascii') for r in self.recTypes]),
             u'keep' if self.keepAll else u'discard',
         )
 
@@ -315,7 +313,7 @@ class ModFile(object):
             #--Mod Record
             self.tes4.setChanged()
             self.tes4.numRecords = sum(block.getNumRecords()
-                                       for block in self.tops.itervalues())
+                                       for block in self.tops.values())
             self.tes4.getSize()
             self.tes4.dump(out)
             #--Blocks
@@ -327,18 +325,21 @@ class ModFile(object):
     def getLongMapper(self):
         """Returns a mapping function to map short fids to long fids."""
         masters_list = self.augmented_masters()
-        maxMaster = len(masters_list)-1
+        max_masters = len(masters_list) - 1
         def mapper(short_fid):
-            if short_fid is None: return None
-            if isinstance(short_fid, tuple): return short_fid
-            # PY3: drop the int() calls
-            mod,object = int(short_fid >> 24), int(short_fid & 0xFFFFFF)
-            return masters_list[min(mod, maxMaster)], object # clamp HITMEs
+            # Return unchanged for None (== unset) and fids that are already
+            # in long format
+            ##: Drop long check in the future?
+            if short_fid is None or isinstance(short_fid, tuple):
+                return short_fid
+            # Clamp HITMEs by using at most max_masters for master index
+            return (masters_list[min(short_fid >> 24, max_masters)],
+                    short_fid & 0xFFFFFF)
         return mapper
 
     def augmented_masters(self):
         """List of plugin masters with the plugin's own name appended."""
-        return self.tes4.masters + [self.fileInfo.ci_key] # Py3: unpack
+        return [*self.tes4.masters, self.fileInfo.ci_key]
 
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
@@ -357,7 +358,7 @@ class ModFile(object):
                 return indices[m_name] if obj_id >= 0x800 else 0
         def mapper(long_fid):
             if long_fid is None: return None
-            if isinstance(long_fid, (int, long)): return long_fid
+            if isinstance(long_fid, int): return long_fid
             modName, object_id = long_fid
             return (_master_index(modName, object_id) << 24) | object_id
         return mapper
@@ -366,7 +367,7 @@ class ModFile(object):
         """Convert fids to the specified format - long FormIDs if to_long is
         True, short FormIDs otherwise."""
         mapper = self.getLongMapper() if to_long else self.getShortMapper()
-        for target_top in self.tops.itervalues():
+        for target_top in self.tops.values():
             target_top.convertFids(mapper, to_long)
         self.longFids = to_long
 
@@ -374,7 +375,7 @@ class ModFile(object):
         """Updates set of master names according to masters actually used."""
         if not self.longFids: raise StateError(u"ModFile fids not in long form.")
         masters_set = MasterSet([GPath(bush.game.master_file)])
-        for block in self.tops.itervalues():
+        for block in self.tops.values():
             block.updateMasters(masters_set.add)
         # The file itself is always implicitly available, so discard it here
         masters_set.discard(self.fileInfo.ci_key)
@@ -481,7 +482,7 @@ class ModHeaderReader(object):
         record with that signature. Note that the flags are not processed
         either - if you need that, manually call MreRecord.flags1_() on them.
 
-        :rtype: defaultdict[bytes, defaultdict[int, tuple[RecHeader, unicode]]]"""
+        :rtype: defaultdict[bytes, defaultdict[int, tuple[RecHeader, str]]]"""
         # This method is *heavily* optimized for performance. Inlines and other
         # ugly code ahead
         progress = progress or bolt.Progress()

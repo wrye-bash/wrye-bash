@@ -20,7 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from __future__ import print_function
+
 import time
 from collections import defaultdict, Counter
 from itertools import chain
@@ -67,10 +67,10 @@ class PatchFile(ModFile):
                   u'work properly. If this was not intentional, rebuild the '
                   u'patch after either deactivating the imported mods listed '
                   u'below or activating the missing mod(s).'))
-            for patcher, mod_skipcount in self.patcher_mod_skipcount.iteritems():
+            for patcher, mod_skipcount in self.patcher_mod_skipcount.items():
                 log(u'* ' + _(u'%s skipped %d records:') % (
-                patcher, sum(mod_skipcount.itervalues())))
-                for mod, skipcount in mod_skipcount.iteritems():
+                patcher, sum(mod_skipcount.values())))
+                for mod, skipcount in mod_skipcount.items():
                     log(u'  * ' + _(
                         u'The imported mod, %s, skipped %d records.') % (
                         mod, skipcount))
@@ -255,7 +255,7 @@ class PatchFile(ModFile):
                 merged_class = self.mergeFactory.type_class[merged_sig]
                 self.readFactory.addClass(merged_class)
                 self.loadFactory.addClass(merged_class)
-        for top_grup_sig,block in modFile.tops.iteritems():
+        for top_grup_sig,block in modFile.tops.items():
             for s in block.get_all_signatures():
                 add_to_factories(s)
             iiSkipMerge = iiMode and top_grup_sig not in bush.game.listTypes
@@ -287,7 +287,7 @@ class PatchFile(ModFile):
             patcher.buildPatch(log,SubProgress(subProgress,index))
         # Trim records to only keep ones we actually changed
         progress(0.9,_(u'Completing')+u'\n'+_(u'Trimming records...'))
-        for block in self.tops.itervalues():
+        for block in self.tops.values():
             block.keepRecords(self.keepIds)
         progress(0.95,_(u'Completing')+u'\n'+_(u'Converting fids...'))
         # Convert masters to short fids
@@ -295,7 +295,7 @@ class PatchFile(ModFile):
         progress(1.0, _(u'Compiled.'))
         # Build the description
         numRecords = sum(x.getNumRecords(includeGroups=False)
-                         for x in self.tops.itervalues())
+                         for x in self.tops.values())
         self.tes4.description = (
                 _(u'Updated: ') + format_date(time.time()) + u'\n\n' + _(
                 u'Records Changed: %d') % numRecords)

@@ -24,11 +24,9 @@
 Oblivion only . We need this split into cosaves and proper saves module and
 coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
-from __future__ import division, print_function
-
 import io
 from collections import Counter, defaultdict
-from itertools import izip, starmap, repeat
+from itertools import starmap, repeat
 
 from .save_headers import OblivionSaveHeader
 from .. import bolt, bush
@@ -282,10 +280,10 @@ class SaveFile(object):
             #--Globals
             globalsNum = unpack_short(ins)
             self.globals = [unpack_many(ins, u'If')
-                            for _n in xrange(globalsNum)]
+                            for _n in range(globalsNum)]
             #--Pre-Created (Class, processes, spectator, sky)
             buff = io.BytesIO()
-            for x in xrange(4):
+            for x in range(4):
                 siz = unpack_short(ins)
                 insCopy(buff, siz, 2)
             #--Supposedly part of created info, but sticking it here since
@@ -295,17 +293,17 @@ class SaveFile(object):
             #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
             modReader = ModReader(self.fileInfo.ci_key, ins)
             createdNum = unpack_int(ins)
-            for count in xrange(createdNum):
+            for count in range(createdNum):
                 progress(ins.tell(),_(u'Reading created...'))
                 self.created.append(MreRecord(unpack_header(modReader), modReader))
             #--Pre-records: Quickkeys, reticule, interface, regions
             buff = io.BytesIO()
-            for x in xrange(4):
+            for x in range(4):
                 siz = unpack_short(ins)
                 insCopy(buff, siz, 2)
             self.preRecords = buff.getvalue()
             #--Records
-            for count in xrange(recordsNum):
+            for count in range(recordsNum):
                 progress(ins.tell(),_(u'Reading records...'))
                 (rec_id, rec_kind, flags, version, siz) = unpack_many(ins,u'=IBIBH')
                 data = ins.read(siz)
@@ -317,16 +315,13 @@ class SaveFile(object):
             #--Fids
             num = unpack_int(ins)
             self.fids = array.array(u'I')
-            # PY3: self.fids.fromfile(ins, num)
-            self.fids.fromstring(ins.read(num * self.fids.itemsize))
+            self.fids.fromfile(ins, num)
             for iref,fid in enumerate(self.fids):
                 self.irefs[fid] = iref
             #--WorldSpaces
             num = unpack_int(ins)
             self.worldSpaces = array.array(u'I')
-            # PY3: self.worldSpaces.fromfile(ins, num)
-            self.worldSpaces.fromstring(
-                ins.read(num * self.worldSpaces.itemsize))
+            self.worldSpaces.fromfile(ins, num)
         #--Done
         progress(progress.full,_(u'Finished reading.'))
 
@@ -378,12 +373,10 @@ class SaveFile(object):
             _pack(u'I',fidsPos)
             out.seek(fidsPos)
             _pack(u'I',len(self.fids))
-            # PY3: self.fids.tofile(out)
-            out.write(self.fids.tostring())
+            self.fids.tofile(out)
             #--Worldspaces
             _pack(u'I',len(self.worldSpaces))
-            # PY3: self.worldSpaces.tofile(out)
-            out.write(self.worldSpaces.tostring())
+            self.worldSpaces.tofile(out)
             #--Done
             progress(1.0,_(u'Writing complete.'))
 
@@ -545,7 +538,7 @@ class SaveFile(object):
         log.setHeader(_(u'Fids'))
         log(u'  Refed\tChanged\tMI    Mod Name')
         log(u'  %d\t\t     Lost Refs (Fid == 0)' % lostRefs)
-        for modIndex, (irefed,changed) in enumerate(izip(idHist, changeHisto)):
+        for modIndex, (irefed,changed) in enumerate(zip(idHist, changeHisto)):
             if irefed or changed:
                 log(u'  %d\t%d\t%02X   %s' % (irefed,changed,modIndex,getMaster(modIndex)))
         #--Lost Changes
@@ -558,8 +551,8 @@ class SaveFile(object):
                 rec_kind, rec_type_map.get(rec_kind, _(u'Unknown'))))
             for modIndex,count in dict_sort(modHisto):
                 log(u'  %d\t%s' % (count,getMaster(modIndex)))
-            log(u'  %d\tTotal' % sum(modHisto.itervalues()))
-        objRefBases = {k: v for k, v in objRefBases.iteritems() if v[0] > 100}
+            log(u'  %d\tTotal' % sum(modHisto.values()))
+        objRefBases = {k: v for k, v in objRefBases.items() if v[0] > 100}
         log.setHeader(_(u'New ObjectRef Bases'))
         if objRefNullBases:
             log(u' Null Bases: %s' % objRefNullBases)

@@ -22,10 +22,9 @@
 # =============================================================================
 import os
 import re
-import subprocess
 
 from . import bass
-from .bolt import startupinfo, GPath, deprint, walkdir
+from .bolt import GPath, deprint, popen_common
 from .exception import StateError
 
 exe7z = u'7z.exe' if os.name == u'nt' else u'7z'
@@ -35,43 +34,41 @@ readExts = {u'.rar', u'.001'}
 readExts.update(writeExts)
 omod_exts = {u'.omod', u'.fomod'}
 noSolidExts = {u'.zip'}
-reSolid = re.compile(u'' r'[-/]ms=[^\s]+', re.IGNORECASE)
-regCompressMatch = re.compile(u'' r'Compressing\s+(.+)', re.U).match
+reSolid = re.compile(r'[-/]ms=[^\s]+', re.IGNORECASE)
+regCompressMatch = re.compile(r'Compressing\s+(.+)', re.U).match
 regExtractMatch = re.compile(u'- (.+)', re.U).match
 regErrMatch = re.compile(u'^(Error:.+|.+ {5}Data Error?|Sub items Errors:.+)',
     re.U).match
 reListArchive = re.compile(
-    u'' r'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
+    r'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
 
 def compress7z(command, full_dest, rel_dest, srcDir, progress=None):
     if progress is not None: #--Used solely for the progress bar
-        length = sum([len(files) for x, y, files in walkdir(srcDir.s)])
-        progress(0, u'%s\n' % rel_dest + _(u'Compressing files...'))
+        length = sum([len(files) for x, y, files in os.walk(srcDir.s)])
+        progress(0, f'{rel_dest}\n' + _(u'Compressing files...'))
         progress.setFull(1 + length)
     #--Pack the files
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
-                            stdin=subprocess.PIPE, # needed for some commands
-                            startupinfo=startupinfo)
+    proc = popen_common(command, bufsize=1, encoding='utf-8')
     #--Error checking and progress feedback
     index, errorLine = 0, u''
     with proc.stdout as out:
-        for line in iter(out.readline, b''):
-            line = unicode(line, u'utf8') # utf-8 is ok, see compressCommand
+        for line in out.readlines():
             if regErrMatch(line):
                 errorLine = line + u''.join(out)
                 break
             if progress is None: continue
             maCompressing = regCompressMatch(line)
             if maCompressing:
-                progress(index, u'%s\n' % rel_dest + _(
-                    u'Compressing files...') + u'\n' + maCompressing.group(
-                    1).strip())
+                progress(index, '\n'.join(
+                    [f'{rel_dest}', _(u'Compressing files...'),
+                     maCompressing.group(1).strip()]))
                 index += 1
     returncode = proc.wait()
     if returncode or errorLine:
         full_dest.temp.remove()
-        raise StateError(u'%s: Compression failed:\n7z.exe return value: '
-                         u'%d\n%s' % (rel_dest, returncode, errorLine))
+        raise StateError(
+            f'{rel_dest}: Compression failed:\n7z.exe return value: '
+            f'{returncode:d}\n{errorLine}')
     #--Finalize the file, and cleanup
     full_dest.untemp()
 
@@ -79,13 +76,11 @@ def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
               recursive=False, filelist_to_extract=None):
     command = _extract_command(src_archive, extract_dir, recursive,
                                filelist_to_extract)
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
-                            stdin=subprocess.PIPE, startupinfo=startupinfo)
+    proc = popen_common(command, bufsize=1, encoding='utf-8')
     # Error checking, progress feedback and subArchives for recursive unpacking
     index, errorLine, subArchives = 0, u'', []
     with proc.stdout as out:
-        for line in iter(out.readline, b''):
-            line = unicode(line, u'utf8')
+        for line in out.readlines():
             if regErrMatch(line):
                 errorLine = line + u''.join(out)
                 break
@@ -95,19 +90,18 @@ def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
                 if readExtensions and extracted.cext in readExtensions:
                     subArchives.append(extracted)
                 if not progress: continue
-                progress(index, u'%s\n' % src_archive.tail + _(
-                    u'Extracting files...') + u'\n%s' % extracted)
+                progress(index, f'{src_archive.tail}\n' + _(
+                    u'Extracting files...') + f'\n{extracted}')
                 index += 1
     returncode = proc.wait()
     if returncode or errorLine:
-        raise StateError(
-            u'%s: Extraction failed:\n7z.exe return value: %d\n%s' % (
-                src_archive.tail, returncode, errorLine))
+        raise StateError(f'{src_archive.tail}: Extraction failed:\n'
+                         f'7z.exe return value: {returncode:d}\n{errorLine}')
     return subArchives
 
 def wrapPopenOut(command, wrapper, errorMsg):
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=-1,
-                            stdin=subprocess.PIPE, startupinfo=startupinfo)
+    # No encoding, this is *supposed* to return bytes!
+    proc = popen_common(command, bufsize=-1)
     out, unused_err = proc.communicate()
     wrapper(out)
     returncode = proc.returncode
@@ -126,7 +120,7 @@ def compressionSettings(archive_path, blockSize, isSolid):
     else:
         if isSolid:
             if blockSize:
-                solid = u'-ms=on -ms=%dm' % blockSize
+                solid = f'-ms=on -ms={blockSize:d}m'
             else:
                 solid = u'-ms=on'
         else:
@@ -147,28 +141,24 @@ def compressionSettings(archive_path, blockSize, isSolid):
 
 def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
                     archiveType=u'7z'): # WIP - note solid on by default (7z)
-    return [exe7z, u'a', destArchive.temp.s,
-            u'-t%s' % archiveType] + solid.split() + [
-            u'-y', u'-r', # quiet, recursive
-            u'-o"%s"' % destDir,
-            u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
-            srcFolder.join(u'*').s] # add a wildcard at the end of the path
+    return [exe7z, u'a', destArchive.temp.s, f'-t{archiveType}',
+        *solid.split(), u'-y', u'-r',  # quiet, recursive
+        f'-o"{destDir}"', u'-scsUTF-8', u'-sccUTF-8',# encode output in unicode
+        srcFolder.join(u'*').s] # add a wildcard at the end of the path
 
 def _extract_command(archivePath, outDirPath, recursive, filelist_to_extract):
-    command = u'"%s" x "%s" -y -bb1 -o"%s" -scsUTF-8 -sccUTF-8' % (
-        exe7z, archivePath, outDirPath)
+    command = f'"{exe7z}" x "{archivePath}" -y -bb1 -o"{outDirPath}" ' \
+              f'-scsUTF-8 -sccUTF-8'
     if recursive: command += u' -r'
-    if filelist_to_extract: command += (u' @"%s"' % filelist_to_extract)
+    if filelist_to_extract: command += f' @"{filelist_to_extract}"'
     return command
 
 def list_archive(archive_path, parse_archive_line, __reList=reListArchive):
     """Client is responsible for closing the file ! See uses for
     _parse_archive_line examples."""
-    command = u'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, archive_path)
-    ins, err = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                stdin=subprocess.PIPE,
-                                startupinfo=startupinfo).communicate()
+    command = f'"{exe7z}" l -slt -sccUTF-8 "{archive_path}"'
+    proc = popen_common(command, encoding='utf-8')
+    ins, _err = proc.communicate()
     for line in ins.splitlines(True): # keepends=True
         maList = __reList.match(line)
         if maList:

@@ -181,14 +181,14 @@
 <h3 id="install-components">Python Components <a class="back2top" href="#contents">Back to top</a></h3>
 <p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.</p>
 <p class="emphasis">Note that the 64-bit versions are <em>required</em> - we no longer support 32-bit operating systems.</p>
-<p><a href="https://www.python.org/ftp/python/2.7.18/python-2.7.18.amd64.msi">Python 2.7.18</a>: Versions prior to this one may work with Wrye Bash,
+<p><a href="https://www.python.org/ftp/python/3.9.2/python-3.9.2-amd64.exe">Python 3.9.2</a>: Versions prior to this one may work with Wrye Bash,
     but have not been tested. Updating is recommended for bug and security fixes.</p>
 <p>Installation is easiest by just using pip, which comes with Python (see above). Simply run <code>path/to/python.exe -m pip install -r requirements.txt</code>
     (obviously replacing <code>path/to/python.exe</code> with the actual path to your python.exe).</p>
 <p>If you want to do it manually, the rest of this section will list out each
     dependency and what it's used for. Using the latest version of these is
-    recommended. If that one doesn't work / isn't available for Python 2, use
-    the newest version that does work.</p>
+    recommended. If that one doesn't work, use the newest version that does
+    work.</p>
 <p>Required libaries:</p>
 <ul>
     <li><a href="https://pypi.org/project/chardet">chardet</a>: Used to detect
@@ -205,8 +205,6 @@
 </ul>
 <p>Optional libaries:</p>
 <ul>
-    <li><a href="https://pypi.org/project/scandir">scandir</a>: Many refresh
-        and BAIN operations will become faster if this is installed.</li>
     <li><a href="https://pypi.org/project/PyMuPDF">PyMuPDF</a>: The doc browser
         will be able to display PDFs if this is installed.</li>
 </ul>

@@ -149,11 +149,10 @@ class SkyrimGameInfo(PatchGame):
             u'keyboard_spanish.txt',
             u'keyboard_italian.txt',
         )
-        no_skip_dirs = GameInfo.Bain.no_skip_dirs.copy() # PY3: dict join
-        no_skip_dirs.update({
+        no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.
             _j(u'interface', u'translations'): [u'.txt']
-        })
+        }
         skip_bain_refresh = {u'tes5edit backups', u'tes5edit cache'}
 
     class Esp(GameInfo.Esp):

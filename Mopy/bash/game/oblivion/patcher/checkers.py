@@ -128,7 +128,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
             buff = io.StringIO(book.book_text)
             buff.seek(0, os.SEEK_END)
             buffWrite = buff.write
-            for eid, eff_full, effects in sorted(id_ingred.viewvalues(),
+            for eid, eff_full, effects in sorted(id_ingred.values(),
                                                  key=lambda a: a[1].lower()):
                 buffWrite(eff_full + u'\r\n')
                 for mgef, actorValue in effects[:num]:
@@ -140,7 +140,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
             book.book_text = re.sub(u'\r\n', u'<br>\r\n', buff.getvalue())
         #--Get Ingredients by Effect
         effect_ingred = defaultdict(list)
-        for _fid,(eid,full,effects) in id_ingred.iteritems():
+        for _fid,(eid,full,effects) in id_ingred.items():
             for index,(mgef,actorValue) in enumerate(effects):
                 effectName = alt_names[mgef]
                 if mgef in actorEffects: effectName += actorNames[actorValue]

@@ -20,15 +20,14 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from __future__ import division
+
 import collections
 import re
 import subprocess
-from subprocess import PIPE
 from .. import env, bolt, bass, archives
 from ..bolt import decoder, encode, Path, startupinfo, unpack_int_signed, \
     unpack_byte, unpack_short, unpack_int64_signed, pack_byte_signed, \
-    pack_byte, pack_int_signed
+    pack_byte, pack_int_signed, popen_common
 
 def _readNetString(open_file):
     """Read a .net string. THIS CODE IS DUBIOUS!"""
@@ -120,19 +119,18 @@ class OmodFile(object):
         """Return a list of the files and their uncompressed sizes, and the total uncompressed size of an archive"""
         # Get contents of archive
         filesizes = collections.OrderedDict()
-        reFileSize = re.compile(u'' r'[0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]*\s+(.+?)$', re.U)
+        reFileSize = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]*\s+(.+?)$', re.U)
         with self.omod_path.unicodeSafe() as tempOmod:
             cmd7z = [archives.exe7z, u'l', u'-r', u'-sccUTF-8', tempOmod.s]
-            with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
+            with popen_common(cmd7z, encoding='utf-8').stdout as ins:
                 for line in ins:
-                    line = unicode(line,u'utf8')
                     maFileSize = reFileSize.match(line)
                     if maFileSize: #also matches the last line with total sizes
                         name_ = maFileSize.group(2).strip().strip(u'\r')
                         filesizes[name_] = int(maFileSize.group(1))
         # drop the last line entry
         del filesizes[list(filesizes)[-1]]
-        return filesizes, sum(filesizes.itervalues())
+        return filesizes, sum(filesizes.values())
 
     def extractToProject(self,outDir,progress=None):
         """Extract the contents of the omod to a project, with omod conversion data"""
@@ -170,9 +168,8 @@ class OmodFile(object):
         current = 0
         with self.omod_path.unicodeSafe() as tempOmod:
             cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', tempOmod.s, u'-o%s' % extractDir, u'-bb1']
-            with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
+            with popen_common(cmd7z, encoding='utf-8').stdout as ins:
                 for line in ins:
-                    line = unicode(line,'utf8')
                     maExtracting = reExtracting.match(line)
                     if maExtracting:
                         name_ = maExtracting.group(1).strip().strip(u'\r')
@@ -280,7 +277,7 @@ class OmodFile(object):
                 subprogress(5)
 
                 # Next 8 bytes are the size of the data stream
-                for i in xrange(8):
+                for i in range(8):
                     out = totalSize >> (i*8)
                     pack_byte(output, out & 0xFF)
                     done += 1
@@ -295,7 +292,7 @@ class OmodFile(object):
         # Now decompress
         progress(0.3)
         cmd = [bass.dirs[u'compiled'].join(u'lzma').s,u'd',outPath.join(dataPath.sbody+u'.tmp').s, outPath.join(dataPath.sbody+u'.uncomp').s]
-        subprocess.call(cmd,startupinfo=startupinfo)
+        subprocess.call(cmd, startupinfo=startupinfo)
         progress(0.8)
 
         # Split the uncompressed stream into files

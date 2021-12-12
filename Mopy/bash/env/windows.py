@@ -26,12 +26,12 @@ import os
 import re
 import sys
 import datetime
-import struct
 import xml.etree.ElementTree as xml
-import _winreg as winreg  # PY3
+import winreg
 from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes, WINFUNCTYPE, c_uint, c_long, Union, c_ushort, c_int, \
     c_longlong, c_ulong, c_wchar, sizeof, wstring_at, ARRAY
+import functools
 from uuid import UUID
 
 import win32api
@@ -40,8 +40,7 @@ import win32gui
 
 from ..bolt import GPath, deprint, Path
 from ..exception import AccessDeniedError, BoltError
-from .common import get_env_var, WinAppInfo, WinAppVersionInfo, \
-    real_sys_prefix
+from .common import  WinAppInfo, WinAppVersionInfo, real_sys_prefix
 
 # API - Constants =============================================================
 _isUAC = False
@@ -65,13 +64,13 @@ BTN_NO                          = 5104
 GOOD_EXITS                      = (BTN_OK, BTN_YES)
 
 # Internals ===================================================================
-_re_env = re.compile(u'' r'%(\w+)%', re.U)
+_re_env = re.compile(r'%(\w+)%', re.U)
 
 def _subEnv(match):
     env_var = match.group(1).upper()
     # NOTE: On Python 3, this would be better as a try...except KeyError,
     # then raise BoltError(...) from None
-    env_val = get_env_var(env_var, None)
+    env_val = os.environ.get(env_var, None)
     if not env_val:
         raise BoltError(u"Can't find user directories in windows registry."
             u'\n>> See "If Bash Won\'t Start" in bash docs for help.')
@@ -123,7 +122,7 @@ def _get_default_app_icon(idex, target):
             icon = os.path.expandvars(icon)
         if not os.path.isabs(icon):
             # Get the correct path to the dll
-            for dir_ in get_env_var(u'PATH').split(u';'):
+            for dir_ in os.environ[u'PATH'].split(u';'):
                 test = os.path.join(dir_, icon)
                 if os.path.exists(test):
                     icon = test
@@ -252,13 +251,9 @@ class _WindowsStoreFinder(object):
     @staticmethod
     def _read_registry_filetime(reg_key, filetime_name):
         filetime, value_type = winreg.QueryValueEx(reg_key, filetime_name)
-        if value_type == 11: # REG_QWORD on Python 3.6+
-            try:
-                filetime, = struct.unpack('q', filetime)
-            except struct.error:
-                return datetime.datetime(0)
+        if value_type == winreg.REG_QWORD:
             return _datetime_from_windows_filetime(filetime)
-        return datetime.datetime(0)
+        return datetime.datetime.fromtimestamp(0)
 
     @classmethod
     def _get_package_locations(cls, package_index):
@@ -295,14 +290,13 @@ class _WindowsStoreFinder(object):
     def _get_package_full_names(package_name):
         """Get all `package_full_name`s for this app."""
         try:
-            full_names = []
             with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,
                 r'Local Settings\Software\Microsoft\Windows\CurrentVersion'
                 r'\AppModel\Repository\Families') as families_key:
                 with winreg.OpenKey(families_key, package_name) as family_key:
                     num_families = winreg.QueryInfoKey(family_key)[0]
                     return [winreg.EnumKey(family_key, i)
-                            for i in xrange(num_families)]
+                            for i in range(num_families)]
         except WindowsError:
             # Windows version without apps, or not installed
             return []
@@ -354,7 +348,7 @@ class _WindowsStoreFinder(object):
             entry = root.find(entry_template % (namespace, namespace))
             if entry is not None:
                 entry_point = entry.get(u'Id')
-        except (xml.ParseError, IOError):
+        except (xml.ParseError, OSError):
             # Parsing error, or the file doesn't exist
             pass
         return version, entry_point
@@ -401,7 +395,7 @@ _win_store_finder = _WindowsStoreFinder()
 # All code starting from the 'BEGIN MIT-LICENSED PART' comment and until the
 # 'END MIT-LICENSED PART' comment is based on
 # https://gist.github.com/mkropat/7550097 by Michael Kropat
-# Modifications made for py3 compatibility and to conform to our code style
+# Modifications made for python3 compatibility and to conform to our code style
 # BEGIN MIT-LICENSED PART =====================================================
 # http://msdn.microsoft.com/en-us/library/windows/desktop/aa373931.aspx
 class _GUID(Structure):
@@ -416,7 +410,7 @@ class _GUID(Structure):
         super(_GUID, self).__init__()
         self.Data1, self.Data2, self.Data3, self.Data4[0], self.Data4[1], \
         rest = uuid_.fields
-        for i in xrange(2, 8):
+        for i in range(2, 8):
             self.Data4[i] = rest>>(8 - i - 1)*8 & 0xff
 
 # http://msdn.microsoft.com/en-us/library/windows/desktop/dd378457.aspx
@@ -572,7 +566,7 @@ def _get_known_path(known_folder_id, user_handle=_UserHandle.current):
 #       MA 02110-1301, USA.
 #
 # Edits have been made to it to fit Wrye Bash's code style and to port it to
-# 64bit/py3.
+# 64bit/python3.
 # BEGIN TASKDIALOG PART =======================================================
 _BUTTONID_OFFSET                 = 1000
 
@@ -836,9 +830,9 @@ def get_local_app_data_path():
 def init_app_links(apps_dir, badIcons, iconList):
     init_params = []
     for path, (target, icon, shortcut_descr) in _get_app_links(
-            apps_dir).iteritems():
+            apps_dir).items():
         # msi shortcuts: dc0c8de
-        if target.lower().find(u'' r'installer\{') != -1:
+        if target.lower().find(r'installer\{') != -1:
             target = path
         else:
             target = GPath(target)
@@ -922,15 +916,16 @@ def setUAC(handle, uac=True):
     if _isUAC and win32gui:
         win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
-def getJava(): # PY3: cache this
+@functools.lru_cache(maxsize=None) ##: cached in py 3.9
+def getJava():
     """Locate javaw.exe to launch jars from Bash."""
     try:
-        java_home = GPath(get_env_var(u'JAVA_HOME'))
+        java_home = GPath(os.environ[u'JAVA_HOME'])
         java_bin_path = java_home.join(u'bin', u'javaw.exe')
         if java_bin_path.isfile(): return java_bin_path
     except KeyError: # no JAVA_HOME
         pass
-    sys_root = GPath(get_env_var(u'SYSTEMROOT'))
+    sys_root = GPath(os.environ[u'SYSTEMROOT'])
     # Default location: Windows\System32\javaw.exe
     java_bin_path = sys_root.join(u'system32', u'javaw.exe')
     if not java_bin_path.isfile():
@@ -1149,7 +1144,7 @@ class TaskDialog(object):
         if button.value >= _BUTTONID_OFFSET:
             button = self.__custom_buttons[button.value - _BUTTONID_OFFSET][0]
         else:
-            for stock_btn, stock_val in self.stock_button_ids.iteritems():
+            for stock_btn, stock_val in self.stock_button_ids.items():
                 if stock_val == button.value:
                     button = stock_btn
                     break
@@ -1312,7 +1307,7 @@ class TaskDialog(object):
                 button = self.__custom_buttons[wparam - _BUTTONID_OFFSET][0]
                 args.append(button)
             else:
-                for stock_btn, stock_val in self.stock_button_ids.iteritems():
+                for stock_btn, stock_val in self.stock_button_ids.items():
                     if stock_val == wparam:
                         button = stock_btn
                         break

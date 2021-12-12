@@ -139,7 +139,9 @@ class WindowFrame(_TopLevelWin):
                                              lambda event: [event.GetActive()])
         self.set_background_color(self._bkg_color())
 
-    def show_frame(self): self._native_widget.Show()
+    def show_frame(self, center=False):
+        self._native_widget.Show()
+        if center: self._native_widget.Center()
 
     def raise_frame(self): self._native_widget.Raise()
 
@@ -159,8 +161,7 @@ class DialogWindow(_TopLevelWin):
     def __init__(self, parent=None, title=None, icon_bundle=None,
                  sizes_dict=None, caption=False, size_key=None, pos_key=None,
                  style=0, **kwargs):
-        # PY3: drop the unicode()
-        self._size_key = size_key or unicode(self.__class__.__name__)
+        self._size_key = size_key or self.__class__.__name__
         self._pos_key = pos_key
         self.title = title or self.__class__.title
         style |= _wx.DEFAULT_DIALOG_STYLE

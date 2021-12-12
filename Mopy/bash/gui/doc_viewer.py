@@ -32,9 +32,7 @@ except ImportError:
     _wx_html2 = None
 # Try to import the PDF viewer, may not be available everywhere
 try:
-    # wx.lib.pdfviewer uses a raw print statment, UGH!.  We cannot directly
-    # override this on Python 2, so instead redirect stdout temporarily to
-    # our deprint
+    # wx.lib.pdfviewer uses a raw print statment, UGH!
     from ..bolt import redirect_stdout_to_deprint
     with redirect_stdout_to_deprint():
         from wx.lib.pdfviewer import pdfViewer as _PdfViewer
@@ -43,8 +41,9 @@ except ImportError:
 import wx as _wx
 
 import webbrowser
-from urllib import pathname2url
-from urlparse import urljoin
+from enum import Enum
+from urllib.request import pathname2url
+from urllib.parse import urljoin
 
 from .base_components import _AComponent
 from .buttons import BackwardButton, ForwardButton, ReloadButton
@@ -67,7 +66,7 @@ def pdf_viewer_available():
     :return: True if we can render PDFs."""
     return bool(_PdfViewer) and _wx.VERSION >= (4, 1)
 
-class ViewerType(object): # PY3: enum
+class ViewerType(Enum):
     """The different types of viewers that DocumentViewer can display."""
     HTML = u'html'
     PDF =  u'pdf'
@@ -116,7 +115,7 @@ class WebViewer(_AComponent):
         self.update_buttons()
 
     @staticmethod
-    def _handle_new_window_opened(new_url): # type: (unicode) -> None
+    def _handle_new_window_opened(new_url): # type: (str) -> None
         """Internal method used as a callback when attempting to open a link
         in a new tab or window. We don't support that, so we just open it in
         the user's browser instead.
@@ -158,14 +157,14 @@ class WebViewer(_AComponent):
         # do this just in case CanGoForward() is false and we're out of sync
         self.update_buttons()
 
-    def open_file(self, file_path): # type: (unicode) -> None
+    def open_file(self, file_path): # type: (str) -> None
         """Opens the specified file by turning it into a 'file:' URL.
 
         :param file_path: The path to the file to open."""
         file_url = urljoin(u'file:', pathname2url(file_path))
         self.open_url(file_url)
 
-    def open_url(self, url): # type: (unicode) -> None
+    def open_url(self, url): # type: (str) -> None
         """Opens the specified URL.
 
         :param url: The URL to open."""
@@ -204,7 +203,7 @@ class PDFViewer(_AComponent):
         super(PDFViewer, self).__init__(parent, nid=-1, pos=(-1, -1),
             size=(-1, -1), style=0) # has no defaults, so need to specify them
 
-    def open_file(self, file_path): # type: (unicode) -> None
+    def open_file(self, file_path): # type: (str) -> None
         """Opens the specified PDF file.
 
         :param file_path: The path to the file to open."""
@@ -250,14 +249,14 @@ class DocumentViewer(_AComponent):
 
         :param viewer_type: One of """
         if web_viewer_available():
-            self._html_ctrl.enabled = viewer_type == ViewerType.HTML
-            self._html_ctrl.visible = viewer_type == ViewerType.HTML
+            self._html_ctrl.enabled = viewer_type is ViewerType.HTML
+            self._html_ctrl.visible = viewer_type is ViewerType.HTML
             self._html_ctrl.update_buttons()
         if pdf_viewer_available():
-            self._pdf_ctrl.enabled = viewer_type == ViewerType.PDF
-            self._pdf_ctrl.visible = viewer_type == ViewerType.PDF
-        self._text_ctrl.enabled = viewer_type == ViewerType.TEXT
-        self._text_ctrl.visible = viewer_type == ViewerType.TEXT
+            self._pdf_ctrl.enabled = viewer_type is ViewerType.PDF
+            self._pdf_ctrl.visible = viewer_type is ViewerType.PDF
+        self._text_ctrl.enabled = viewer_type is ViewerType.TEXT
+        self._text_ctrl.visible = viewer_type is ViewerType.TEXT
 
     @property
     def fallback_text(self):
@@ -273,7 +272,7 @@ class DocumentViewer(_AComponent):
     def load_text(self, target_text):
         """Switches to text mode (see switch_to_text()) and sets the
         specified text as the unmodified contents of the text display."""
-        if not isinstance(target_text, unicode): # needs to be unicode by now
+        if not isinstance(target_text, str): # needs to be unicode by now
             raise StateError(u'HtmlDisplay can only load unicode text.')
         self._text_ctrl.text_content = target_text
         self._text_ctrl.modified = False

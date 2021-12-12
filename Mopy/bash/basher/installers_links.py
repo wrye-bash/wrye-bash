@@ -378,7 +378,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
                 self.idata.update_for_overridden_skips(bush.game.bethDataFiles,
                                                        progress)
         # Refresh Installers
-        toRefresh = {iname for iname, installer in self.idata.iteritems() if
+        toRefresh = {iname for iname, installer in self.idata.items() if
                      installer.hasBethFiles}
         self.window.rescanInstallers(toRefresh, abort=False,
                                      update_from_data=False, shallow=True)

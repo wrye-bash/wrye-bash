@@ -190,7 +190,7 @@
 <p><strong>Windows Vista, 7, 8 &amp; 10 users:</strong> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Installation:
 <ol>
-    <li>Download and install the <a href="https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe">MSVC 2010 Redistributable (x64)</a>.
+    <li>Download and install the <a href="https://aka.ms/vs/16/release/vc_redist.x64.exe">latest MSVC Redistributable (x64)</a>.
     <li>You now have a choice:</li>
     <ul>
         <li>Extract the downloaded Wrye Bash archive into any folder.</li>
@@ -207,7 +207,7 @@
         See the <a href="Wrye%20Bash%20Advanced%20Readme.html#install-components">Python Components</a> section of the Advanced readme
         for the list of included libraries and their versions. If you have previously installed Python and any Python libraries,
         you may not need to install them again.
-    <li>Download and install the <a href="https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe">MSVC 2010 Redistributable (x64)</a>.
+    <li>Download and install the <a href="https://aka.ms/vs/16/release/vc_redist.x64.exe">latest MSVC Redistributable (x64)</a>.
     <li>Extract the downloaded Wrye Bash archive into your game folder (e.g. <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q>, depending on the game) so that the Mopy
     directory appears by the game executable. See the
     <a href="Wrye%20Bash%20Advanced%20Readme.html#install-alternate">Alternative Install Locations</a> if you wish to install to a different directory.
@@ -1641,7 +1641,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     <li>Change the working directory to the <code>Mopy</code> directory. E.g. <code>cd /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code> if Wrye Bash is installed for Oblivion.
     <li>If using the Python version of Wrye Bash: Run <code>"Wrye Bash Debug.py" -d &gt; bash.log</code>.
     <ul>
-        <li>If that does not work, try <code>"C:\python27\python.exe" "Wrye Bash Debug.py" -d</code>. This assumes that you have Python 2.7 installed to the default directory. Adjust the above to reference the correct path if not.
+        <li>If that does not work, try <code>"C:\python27\python.exe" "Wrye Bash Debug.py" -d</code>. This assumes that you have Python installed to the default directory. Adjust the above to reference the correct path if not.
     </ul>
     If using the Standalone version of Wrye Bash: Run <code>"Wrye Bash.exe" -d</code>.
 </ol>
@@ -1763,7 +1763,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
                 and remove the Documents folder from OneDrive.</td>
         </tr>
         <tr>
-            <td>IOError: [Errno 22] Invalid argument</td>
+            <td>OSError: [Errno 22] Invalid argument</td>
             <td>This is almost always caused by OneDrive taking control of your
                 My Documents folder.</td>
             <td>Follow the directions found in

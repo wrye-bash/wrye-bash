@@ -133,7 +133,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
-        log(u'* ' + _(u'Powers Tweaked') + u': %d' % sum(count.itervalues()))
+        log(u'* ' + _(u'Powers Tweaked') + u': %d' % sum(count.values()))
         for srcMod in load_order.get_ordered(count):
             log(u'  * %s: %d' % (srcMod, count[srcMod]))
 
@@ -217,7 +217,7 @@ class MorphFactionsPatcher(_ExSpecialList):
             log(u'* %s: %d' % (mod, changed[mod]))
 
     def _parse_line(self, csv_fields):
-        # type: # (list[unicode]) -> tuple[object] | None
+        # type: # (list[str]) -> tuple[object] | None
         mod, objectIndex = csv_fields[0], csv_fields[1]
         morphName = csv_fields[4].strip()
         if not morphName:

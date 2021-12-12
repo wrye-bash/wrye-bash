@@ -273,14 +273,14 @@ class Mods_CleanDummyMasters(EnabledLink):
     _help = _(u"Clean up after using a 'Create Dummy Masters...' command")
 
     def _enable(self):
-        for fileInfo in bosh.modInfos.itervalues():
+        for fileInfo in bosh.modInfos.values():
             if fileInfo.header.author == u'BASHED DUMMY':
                 return True
         return False
 
     def Execute(self):
         remove = []
-        for fileName, fileInfo in bosh.modInfos.iteritems():
+        for fileName, fileInfo in bosh.modInfos.items():
             if fileInfo.header.author == u'BASHED DUMMY':
                 remove.append(fileName)
         remove = load_order.get_ordered(remove)
@@ -355,11 +355,11 @@ class Mods_CrcRefresh(ItemLink):
     def Execute(self):
         message = u'== %s' % _(u'Mismatched CRCs') + u'\n\n'
         with BusyCursor(): pairs = bosh.modInfos.refresh_crcs()
-        mismatched = {k: v for k, v in pairs.iteritems() if v[0] != v[1]}
+        mismatched = {k: v for k, v in pairs.items() if v[0] != v[1]}
         if mismatched:
             message += u'  * ' + u'\n  * '.join(
                 [u'%s: cached %08X real %08X' % (k, v[1], v[0]) for k, v in
-                 mismatched.iteritems()])
+                 mismatched.items()])
             self.window.RefreshUI(redraw=mismatched, refreshSaves=False)
         else: message += _(u'No stale cached CRC values detected')
         self._showWryeLog(message)
@@ -461,7 +461,7 @@ class Mods_ClearManualBashTags(ItemLink):
                 _(u'Are you sure you want to proceed?')):
             return
         pl_reset = []
-        for pl_name, p in bosh.modInfos.iteritems():
+        for pl_name, p in bosh.modInfos.items():
             if not p.is_auto_tagged():
                 pl_reset.append(pl_name)
                 p.set_auto_tagged(True)

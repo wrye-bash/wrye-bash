@@ -1023,15 +1023,15 @@ _magic_effects = {
 # Note that ordering matters here, because of py2 bleeding the parameters into
 # the outer scope. Also, we have to use underscores to hide them from the
 # dynamic importer. Ugh.
-mgef_school = {_x: _y for _x, [_y, _z, _num] in _magic_effects.iteritems()}
-mgef_name = {_x: _z for _x, [_y, _z, __num] in _magic_effects.iteritems()}
-mgef_basevalue = {_x: _a for _x, [_y, _z, _a] in _magic_effects.iteritems()}
+mgef_school = {_x: _y for _x, [_y, _z, _num] in _magic_effects.items()}
+mgef_name = {_x: _z for _x, [_y, _z, __num] in _magic_effects.items()}
+mgef_basevalue = {_x: _a for _x, [_y, _z, _a] in _magic_effects.items()}
 mgef_school.update({_strU(_x)[0]: _y for _x, [_y, _z, _a]
-                    in _magic_effects.iteritems()})
+                    in _magic_effects.items()})
 mgef_name.update({_strU(_x)[0]: _z for _x, [_y, _z, _a]
-                  in _magic_effects.iteritems()})
+                  in _magic_effects.items()})
 mgef_basevalue.update({_strU(_x)[0]: _a for _x, [_y, _z, _a]
-                       in _magic_effects.iteritems()})
+                       in _magic_effects.items()})
 # Clean this up, no need to keep it around now
 del _strU
 
