@@ -1757,10 +1757,13 @@ def deprint(*args,**keyargs):
     """
     if not deprintOn and not keyargs.get(u'on'): return
     if keyargs.get(u'trace', True):
-        frame = keyargs.get(u'frame', 1)
-        stack = inspect.stack()
-        file_, line, function = stack[frame][1:4]
-        msg = u'%s %4d %s: ' % (GPath(file_).tail, line, function)
+        # Warning: This may be CPython-only due to _getframe usage - if we ever
+        # want to run on something besides CPython, add a fallback path that
+        # uses the (much slower) inspect.stack() API
+        parent_frame = sys._getframe(keyargs.get('frame', 1))
+        code_obj = parent_frame.f_code
+        msg = u'%s %4d %s: ' % (os.path.basename(code_obj.co_filename),
+                                parent_frame.f_lineno, code_obj.co_name)
     else:
         msg = u''
     try:
