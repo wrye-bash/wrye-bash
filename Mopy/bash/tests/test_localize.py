@@ -45,7 +45,7 @@ class TestLocalize:
     def _test_locale(self, loc, capsys):
         with capsys.disabled():
             print(f'\n\n******* Testing {loc=} *******')
-            setup_locale(loc, _wx)
+            wx_locale = setup_locale(loc, _wx)
             # getlocale = locale.getlocale()
             # print(getlocale)
             # assert getlocale
@@ -57,12 +57,16 @@ class TestLocalize:
 
     def test_setlocale_pl_PL(self, capsys):
         """Test setting locale to pl_PL."""
-        self._test_locale("pl_PL", capsys)
+        self._test_locale('pl_PL', capsys)
 
     def test_setlocale_nocli(self, capsys):
         """Test setting locale to default."""
-        self._test_locale("", capsys)
+        self._test_locale('', capsys)
 
     def test_setlocale_pl_dash_PL(self, capsys):
         """Test setting locale to pl-PL - seems it's not recognised by wx."""
-        self._test_locale("pl-PL", capsys)
+        self._test_locale('pl-PL', capsys)
+
+    def test_setlocale_de_DE(self, capsys):
+        """Test setting locale to de_DE - we have a translation file for it."""
+        self._test_locale('de_DE', capsys)
