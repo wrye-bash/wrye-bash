@@ -192,7 +192,7 @@ class MelBase(Subrecord):
         :rtype: bytes | None"""
         return getattr(record, self.attr) # this better be bytes here
 
-    def mapFids(self,record,function,save=False):
+    def mapFids(self, record, function, save_fids=False):
         """Applies function to fids. If save is True, then fid is set
         to result of function."""
         raise exception.AbstractError(u'mapFids called on subrecord without '
@@ -252,11 +252,11 @@ class MelFids(MelBase):
         for fid in getattr(record, self.attr):
             MelFid(self.mel_sig, '').packSub(out, __packer(fid))
 
-    def mapFids(self,record,function,save=False):
+    def mapFids(self, record, function, save_fids=False):
         fids = getattr(record, self.attr)
         for index,fid in enumerate(fids):
             result = function(fid)
-            if save: fids[index] = result
+            if save_fids: fids[index] = result
 
 #------------------------------------------------------------------------------
 class MelNull(MelBase):
@@ -347,9 +347,9 @@ class MelSequential(MelBase):
         for element in self.elements:
             element.dumpData(record, out)
 
-    def mapFids(self, record, function, save=False):
+    def mapFids(self, record, function, save_fids=False):
         for element in self.form_elements:
-            element.mapFids(record, function, save)
+            element.mapFids(record, function, save_fids)
 
     @property
     def signatures(self):
@@ -408,10 +408,10 @@ class MelGroup(MelSequential):
         if not target: return
         super(MelGroup, self).dumpData(target, out) # call getattr on target
 
-    def mapFids(self,record,function,save=False):
+    def mapFids(self, record, function, save_fids=False):
         target = getattr(record, self.attr)
         if not target: return
-        super(MelGroup, self).mapFids(target, function, save)
+        super(MelGroup, self).mapFids(target, function, save_fids)
 
 #------------------------------------------------------------------------------
 class MelGroups(MelGroup):
@@ -447,11 +447,11 @@ class MelGroups(MelGroup):
             for element in elements:
                 element.dumpData(target,out)
 
-    def mapFids(self,record,function,save=False):
+    def mapFids(self, record, function, save_fids=False):
         formElements = self.form_elements
         for target in getattr(record, self.attr):
             for element in formElements:
-                element.mapFids(target,function,save)
+                element.mapFids(target, function, save_fids)
 
     @property
     def static_size(self):
@@ -588,10 +588,10 @@ class MelStruct(MelBase):
                                       self.actions)]
         return self._packer(*values)
 
-    def mapFids(self,record,function,save=False):
+    def mapFids(self, record, function, save_fids=False):
         for attr in self.formAttrs:
             result = function(getattr(record, attr))
-            if save: setattr(record, attr, result)
+            if save_fids: setattr(record, attr, result)
 
     @property
     def static_size(self):
@@ -742,14 +742,14 @@ class MelFid(MelUInt32):
     def hasFids(self,formElements):
         formElements.add(self)
 
-    def mapFids(self,record,function,save=False):
+    def mapFids(self, record, function, save_fids=False):
         attr = self.attr
         try:
             fid = getattr(record, attr)
         except AttributeError:
             fid = None
         result = function(fid)
-        if save: setattr(record, attr, result)
+        if save_fids: setattr(record, attr, result)
 
 #------------------------------------------------------------------------------
 class MelOptStruct(MelStruct):

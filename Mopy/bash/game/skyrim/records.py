@@ -468,7 +468,7 @@ class _AVmadComponent(object):
     # Note that there is no has_fids - components (e.g. properties) with fids
     # could dynamically get added at runtime, so we must always call map_fids
     # to make sure.
-    def map_fids(self, record, map_function, save=False):
+    def map_fids(self, record, map_function, save_fids=False):
         """Maps fids for this component. Does nothing by default, you *must*
         override this if your component or some of its children can contain
         fids!"""
@@ -588,10 +588,10 @@ class _AVariableContainer(_AVmadComponent):
             out_data += dump_child(cont_child)
         return out_data
 
-    def map_fids(self, record, map_function, save=False):
+    def map_fids(self, record, map_function, save_fids=False):
         map_child = self.child_loader.map_fids
         for cont_child in getattr(record, self.__class__.children_attr):
-            map_child(cont_child, map_function, save)
+            map_child(cont_child, map_function, save_fids)
 
     @property
     def used_slots(self):
@@ -614,11 +614,11 @@ class ObjectRef(object):
         # Write only object format v2
         return __packer(0, self.aid, self.fid)
 
-    def map_fids(self, map_function, save=False):
+    def map_fids(self, map_function, save_fids=False):
         """Maps the specified function onto this ObjectRef's fid. If save is
         True, the result is stored, otherwise it is discarded."""
         result = map_function(self.fid)
-        if save: self.fid = result
+        if save_fids: self.fid = result
 
     def __lt__(self, other):
         if not isinstance(other, ObjectRef):
@@ -822,11 +822,11 @@ class MelVmad(MelBase):
                 out_data += dump_alias(alias)
             return out_data
 
-        def map_fids(self, record, map_function, save=False):
+        def map_fids(self, record, map_function, save_fids=False):
             # No need to call parent, QUST fragments can't contain fids
             map_alias = self._alias_loader.map_fids
             for alias in record.qust_aliases:
-                map_alias(alias, map_function, save)
+                map_alias(alias, map_function, save_fids)
 
         @property
         def used_slots(self):
@@ -1050,13 +1050,13 @@ class MelVmad(MelBase):
                 raise ModError(u'', u'Unrecognized VMAD property type: %u' %
                                property_type)
 
-        def map_fids(self, record, map_function, save=False):
+        def map_fids(self, record, map_function, save_fids=False):
             property_type = record.prop_type
             if property_type == 1: # object
-                record.prop_data.map_fids(map_function, save)
+                record.prop_data.map_fids(map_function, save_fids)
             elif property_type == 11: # object array
                 for obj_ref in record.prop_data:
-                    obj_ref.map_fids(map_function, save)
+                    obj_ref.map_fids(map_function, save_fids)
 
         @property
         def used_slots(self):
@@ -1123,9 +1123,9 @@ class MelVmad(MelBase):
             record.scripts.sort(key=vmad_script_key)
             return out_data + super(MelVmad.Alias, self).dump_frag(record)
 
-        def map_fids(self, record, map_function, save=False):
-            record.alias_ref_obj.map_fids(map_function, save)
-            super(MelVmad.Alias, self).map_fids(record, map_function, save)
+        def map_fids(self, record, map_function, save_fids=False):
+            record.alias_ref_obj.map_fids(map_function, save_fids)
+            super(MelVmad.Alias, self).map_fids(record, map_function,save_fids)
 
         @property
         def used_slots(self):
@@ -1226,15 +1226,15 @@ class MelVmad(MelBase):
         # _AVmadComponent.map_fids for more information
         formElements.add(self)
 
-    def mapFids(self, record, function, save=False):
+    def mapFids(self, record, function, save_fids=False):
         vmad = getattr(record, self.attr)
         if vmad is None: return
         map_script = self._script_loader.map_fids
         for vmad_script in vmad.scripts:
-            map_script(vmad_script, function, save)
+            map_script(vmad_script, function, save_fids)
         if vmad.special_data and record._rec_sig in self._handler_map:
             self._get_special_handler(record._rec_sig).map_fids(
-                vmad.special_data, function, save)
+                vmad.special_data, function, save_fids)
 
 #------------------------------------------------------------------------------
 # Skyrim Records --------------------------------------------------------------

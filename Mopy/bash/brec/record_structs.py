@@ -209,10 +209,10 @@ class MelSet(object):
                         bolt.deprint(u'> %s: %r' % (attr, attr1))
                 raise
 
-    def mapFids(self,record,mapper,save=False):
+    def mapFids(self, record, mapper, save_fids=False):
         """Maps fids of subelements."""
         for element in self.formElements:
-            element.mapFids(record,mapper,save)
+            element.mapFids(record, mapper, save_fids)
 
     def convertFids(self,record, mapper,toLong):
         """Converts fids between formats according to mapper.
@@ -220,7 +220,7 @@ class MelSet(object):
         if record.longFids == toLong: return
         record.fid = mapper(record.fid)
         for element in self.formElements:
-            element.mapFids(record,mapper,True)
+            element.mapFids(record, mapper, True)
         record.longFids = toLong
         record.setChanged()
 
@@ -622,9 +622,9 @@ class MelRecord(MreRecord):
         """Dumps state into out. Called by getSize()."""
         self.__class__.melSet.dumpData(self,out)
 
-    def mapFids(self,mapper,save):
+    def mapFids(self, mapper, save_fids):
         """Applies mapper to fids of sub-elements. Will replace fid with mapped value if save == True."""
-        self.__class__.melSet.mapFids(self,mapper,save)
+        self.__class__.melSet.mapFids(self, mapper, save_fids)
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.

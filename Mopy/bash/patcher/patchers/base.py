@@ -28,7 +28,7 @@ from itertools import chain
 from .. import getPatchesPath
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher
 from ... import load_order, bush
-from ...bolt import GPath, deprint
+from ...bolt import deprint
 from ...brec import MreRecord
 from ...exception import AbstractError
 from ...mod_files import LoadFactory, ModFile
@@ -230,10 +230,9 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
         if not self.isActive: return
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
             try: self.read_csv(getPatchesPath(srcFile))
-            except OSError: deprint(
-                u'%s is no longer in patches set' % srcPath, traceback=True)
+            except OSError: deprint(f'{srcFile} is no longer in patches set',
+                                    traceback=True)
             progress.plus()
 
     def scanModFile(self,modFile,progress):

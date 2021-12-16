@@ -1286,19 +1286,19 @@ class _EditableMixin(_DetailsMixin):
     def __init__(self, buttonsParent, ui_list_panel):
         self.edited = False
         #--Save/Cancel
-        self.save = SaveButton(buttonsParent)
-        self.save.on_clicked.subscribe(self.DoSave)
-        self.cancel = CancelButton(buttonsParent)
-        self.cancel.on_clicked.subscribe(self.DoCancel)
-        self.save.enabled = False
-        self.cancel.enabled = False
+        self._save_btn = SaveButton(buttonsParent)
+        self._save_btn.on_clicked.subscribe(self.DoSave)
+        self._cancel_btn = CancelButton(buttonsParent)
+        self._cancel_btn.on_clicked.subscribe(self.DoCancel)
+        self._save_btn.enabled = False
+        self._cancel_btn.enabled = False
 
     # Details panel API
     def SetFile(self, fileName=u'SAME'):
         #--Edit State
         self.edited = False
-        self.save.enabled = False
-        self.cancel.enabled = False
+        self._save_btn.enabled = False
+        self._cancel_btn.enabled = False
         return super(_EditableMixin, self).SetFile(fileName)
 
     # Abstract edit methods
@@ -1309,8 +1309,8 @@ class _EditableMixin(_DetailsMixin):
         if not self.displayed_item: return
         self.edited = True
         if self.allowDetailsEdit:
-            self.save.enabled = True
-        self.cancel.enabled = True
+            self._save_btn.enabled = True
+        self._cancel_btn.enabled = True
 
     def DoSave(self): raise AbstractError
 
@@ -1415,7 +1415,7 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
         VLayout(spacing=4, items=[
             self._masters_label,
             (self.uilist, LayoutOptions(weight=1, expand=True)),
-            HLayout(spacing=4, items=[self.save, self.cancel])
+            HLayout(spacing=4, items=[self._save_btn, self._cancel_btn])
         ]).apply_to(self.masterPanel)
         VLayout(item_expand=True, item_weight=1,
                 items=[self.subSplitter]).apply_to(self.right)
@@ -3445,7 +3445,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             Label(top, _(u'File:')), self._fname_ctrl]).apply_to(top)
         VLayout(spacing=4, items=[
             (self.gInfo, LayoutOptions(expand=True)),
-            HLayout(spacing=4, items=[self.save, self.cancel])
+            HLayout(spacing=4, items=[self._save_btn, self._cancel_btn])
         ]).apply_to(bottom)
 
     def _resetDetails(self):

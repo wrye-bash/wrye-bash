@@ -284,12 +284,12 @@ class MelEffects(MelSequential):
         for element in target_elements:
             element.dumpData(record, out)
 
-    def mapFids(self, record, function, save=False):
+    def mapFids(self, record, function, save_fids=False):
         target_form_elements = (self._obme_form_elements
                                 if record.obme_record_version is not None
                                 else self._vanilla_form_elements)
         for form_element in target_form_elements:
-            form_element.mapFids(record, function, save)
+            form_element.mapFids(record, function, save_fids)
 
 class MelEffectsObmeFull(MelString):
     """Hacky class for handling the extra FULL that OBME includes after the

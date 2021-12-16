@@ -206,7 +206,7 @@ class CreateNewProject(DialogWindow):
                 file_body = f'{file_body} (masterless)'
                 wanted_masters = []
             bosh.modInfos.create_new_mod(f'{file_body}.esp',
-                directory=tempProject, wanted_masters=wanted_masters)
+                dir_path=tempProject, wanted_masters=wanted_masters)
         if self.checkWizard.is_checked:
             # Create empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')

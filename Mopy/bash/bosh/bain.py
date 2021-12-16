@@ -31,7 +31,7 @@ import sys
 import time
 from binascii import crc32
 from functools import partial, wraps
-from itertools import groupby
+from itertools import groupby, chain
 from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, \
@@ -2676,19 +2676,17 @@ class InstallersData(DataStore):
                              progress)
 
     def get_clean_data_dir_list(self):
-        keepFiles = set()
-        for installer in self.sorted_values(reverse=True):
-            if installer.is_active:
-                keepFiles.update(installer.ci_dest_sizeCrc) # relative to Data/
-        from . import modInfos
+        ci_keep_files = set(chain.from_iterable(
+            installer.ci_dest_sizeCrc for installer in # relative to Data/
+            self.sorted_values(reverse=True) if installer.is_active))
         # Collect all files that we definitely want to keep
-        collected_strs = bush.game.vanilla_files
-        collected_strs |= bush.game.bethDataFiles
-        collected_strs |= bush.game.Bain.keep_data_files
-        collected_strs |= bush.game.Bain.wrye_bash_data_files
-        keepFiles.update((bolt.CIstr(f) for f in collected_strs))
+        ci_keep_files.update(map(CIstr, chain(bush.game.vanilla_files,
+            bush.game.bethDataFiles,
+            bush.game.Bain.keep_data_files,
+            bush.game.Bain.wrye_bash_data_files)))
+        from . import modInfos
         for bpatch in modInfos.bashed_patches: # type: bolt.Path
-            keepFiles.add(bolt.CIstr(bpatch.s))
+            ci_keep_files.add(bolt.CIstr(bpatch.s))
             bp_doc = modInfos.table.getItem(bpatch, u'doc')
             if bp_doc: # path is absolute, convert to relative to the Data/ dir
                 try:
@@ -2697,11 +2695,10 @@ class InstallersData(DataStore):
                     # bp_doc on a different drive, will be skipped anyway
                     continue
                 # Keep both versions of the BP doc (.txt and .html)
-                keepFiles.add((bolt.CIstr(u'%s' % bp_doc)))
-                keepFiles.add((bolt.CIstr(
-                    bp_doc.root.s + (u'.txt' if bp_doc.cext == u'.html'
-                                     else u'.html'))))
-        removes = set(self.data_sizeCrcDate) - keepFiles
+                ci_keep_files.add(CIstr(u'%s' % bp_doc))
+                ci_keep_files.add(CIstr(bp_doc.root.s + (
+                    u'.txt' if bp_doc.cext == u'.html' else u'.html')))
+        removes = set(self.data_sizeCrcDate) - ci_keep_files
         # don't remove files in Wrye Bash-related directories or Ini Tweaks
         skipPrefixes = [skipDir.lower() + os.sep for skipDir in
                         bush.game.Bain.wrye_bash_data_dirs |

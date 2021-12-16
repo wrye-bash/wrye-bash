@@ -143,8 +143,8 @@ class Saves_ProfilesData(balt.ListEditorData):
             return False
         #--Get file count. If > zero, verify with user.
         profileDir = bass.dirs[u'saveBase'].join(profileSaves)
-        files = [save for save in profileDir.list() if
-                 bosh.SaveInfos.rightFileType(save)]
+        files = [save_file for save_file in profileDir.list() if
+                 bosh.SaveInfos.rightFileType(save_file)]
         if files:
             message = _(u'Delete profile %s and the %d save files it contains?') % (profile,len(files))
             if not balt.askYes(self.parent,message,_(u'Delete Profile')):
@@ -300,8 +300,8 @@ class Save_RenamePlayer(ItemLink):
             _(u'Enter new player name. E.g. Conan the Bold'),
             title=_(u'Rename player'), default=saveInfo.header.pcName)
         if not newName: return
-        for save in self.iselected_infos():
-            savedPlayer = bosh._saves.Save_NPCEdits(save)
+        for save_inf in self.iselected_infos():
+            savedPlayer = bosh._saves.Save_NPCEdits(save_inf)
             savedPlayer.renamePlayer(newName)
         bosh.saveInfos.refresh()
         self.window.RefreshUI(redraw=self.selected)

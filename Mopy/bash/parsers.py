@@ -798,7 +798,7 @@ class FidReplacer(_HandleAliases):
         for top_grup_sig in self._parser_sigs:
             for rfid, record in modFile.tops[top_grup_sig].iter_present_records():
                 if changeBase: record.fid = swapper(rfid)
-                record.mapFids(swapper, save=True)
+                record.mapFids(swapper, save_fids=True)
                 record.setChanged()
         #--Done
         if not old_count: return False

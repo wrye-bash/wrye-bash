@@ -378,15 +378,15 @@ class MelArray(MelBase):
             self._prelude.setDefault(record)
         setattr(record, self.attr, [])
 
-    def mapFids(self,record,function,save=False):
+    def mapFids(self, record, function, save_fids=False):
         if self._prelude_has_fids:
-            self._prelude.mapFids(record, function, save)
+            self._prelude.mapFids(record, function, save_fids)
         if self._element_has_fids:
             array_val = getattr(record, self.attr)
             if array_val:
                 map_entry = self._element.mapFids
                 for arr_entry in array_val:
-                    map_entry(arr_entry, function, save)
+                    map_entry(arr_entry, function, save_fids)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         append_entry = getattr(record, self.attr).append
@@ -875,10 +875,10 @@ class MelUnion(MelBase):
         for element in self.fid_elements:
             element.setDefault(record)
 
-    def mapFids(self, record, function, save=False):
+    def mapFids(self, record, function, save_fids=False):
         element = self._get_element_from_record(record)
         if element in self.fid_elements:
-            element.mapFids(record, function, save)
+            element.mapFids(record, function, save_fids)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         # Ask the decider, and save the result for later - even if the decider
@@ -944,8 +944,8 @@ class _MelWrapper(MelBase):
     def pack_subrecord_data(self, record):
         self._wrapped_mel.pack_subrecord_data(record)
 
-    def mapFids(self, record, function, save=False):
-        self._wrapped_mel.mapFids(record, function, save)
+    def mapFids(self, record, function, save_fids=False):
+        self._wrapped_mel.mapFids(record, function, save_fids)
 
     @property
     def signatures(self):

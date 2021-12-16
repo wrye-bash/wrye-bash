@@ -2876,13 +2876,13 @@ class ModInfos(FileInfos):
         return [*reversed(self._plugin_inis.values()), oblivionIni]
 
     def create_new_mod(self, newName, selected=(), wanted_masters=None,
-            directory=empty_path, bashed_patch=False, esm_flag=False,
-            esl_flag=False):
+                       dir_path=empty_path, bashed_patch=False, esm_flag=False,
+                       esl_flag=False):
         if wanted_masters is None:
             wanted_masters = [self._master_esm]
-        directory = directory or self.store_dir
+        dir_path = dir_path or self.store_dir
         new_mod_name = GPath_no_norm(newName)
-        newInfo = self.factory(directory.join(new_mod_name))
+        newInfo = self.factory(dir_path.join(new_mod_name))
         newFile = ModFile(newInfo)
         newFile.tes4.masters = wanted_masters
         if bashed_patch:
@@ -2892,7 +2892,7 @@ class ModInfos(FileInfos):
         if esl_flag:
             newFile.tes4.flags1.eslFile = True
         newFile.safeSave()
-        if directory == self.store_dir:
+        if dir_path == self.store_dir:
             self.new_info(new_mod_name,
                           notify_bain=True)  # notify just in case...
             last_selected = load_order.get_ordered(selected)[

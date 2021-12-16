@@ -562,8 +562,7 @@ class ImportGraphicsPatcher(APreserver):
             if rfid not in id_data: continue
             for attr, value in id_data[rfid].items():
                 rec_attr = __attrgetters[attr](record)
-                if isinstance(rec_attr, str) and isinstance(
-                        value, str):
+                if isinstance(rec_attr, str) and isinstance(value, str):
                     if rec_attr.lower() != value.lower():
                         break
                     continue
@@ -572,8 +571,12 @@ class ImportGraphicsPatcher(APreserver):
                         if rec_attr.modPath.lower() != value.modPath.lower():
                             break
                         continue
-                    except: break  # assume they are not equal (ie they
-                        # aren't __both__ NONE)
+                    except AttributeError:
+                        if rec_attr is value is None: continue
+                        if rec_attr is None or value is None: # not both
+                            break
+                        if rec_attr.modPath is value.modPath is None: continue
+                        break
                 if rec_attr != value: break
             else: continue
             for attr, value in id_data[rfid].items():

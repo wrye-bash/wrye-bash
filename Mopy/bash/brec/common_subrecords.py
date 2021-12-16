@@ -172,11 +172,11 @@ class MelCtda(MelUnion):
         record.compValue = struct_unpack(u'fI'[record.operFlag.use_global],
                                          record.compValue)[0]
 
-    def mapFids(self, record, function, save=False):
-        super(MelCtda, self).mapFids(record, function, save)
+    def mapFids(self, record, function, save_fids=False):
+        super(MelCtda, self).mapFids(record, function, save_fids)
         if record.operFlag.use_global:
             new_comp_val = function(record.compValue)
-            if save: record.compValue = new_comp_val
+            if save_fids: record.compValue = new_comp_val
 
     def dumpData(self, record, out):
         # See _build_struct comments above for an explanation of this
@@ -236,15 +236,15 @@ class MelCtdaFo3(MelCtda):
             record.param2 = struct_unpack(self._vats_param2_fmt[record.param1],
                                           record.param2)[0]
 
-    def mapFids(self, record, function, save=False):
-        super(MelCtdaFo3, self).mapFids(record, function, save)
+    def mapFids(self, record, function, save_fids=False):
+        super(MelCtdaFo3, self).mapFids(record, function, save_fids)
         if record.runOn == 2 and record.ifunc not in self._ignore_ifuncs:
             new_reference = function(record.reference)
-            if save: record.reference = new_reference
+            if save_fids: record.reference = new_reference
         if (record.ifunc == self._getvatsvalue_ifunc and
                 record.param1 in self._vats_param2_fid):
             new_param2 = function(record.param2)
-            if save: record.param2 = new_param2
+            if save_fids: record.param2 = new_param2
 
     def dumpData(self, record, out):
         if record.ifunc == self._getvatsvalue_ifunc:
@@ -614,13 +614,13 @@ class MelMODS(MelBase):
                    struct_pack(u'=2I', fid, index)]
                   for (string, fid, index) in mods_data)))
 
-    def mapFids(self,record,function,save=False):
+    def mapFids(self, record, function, save_fids=False):
         attr = self.attr
         mods_data = getattr(record, attr)
         if mods_data is not None:
             mods_data = [(string,function(fid),index) for (string,fid,index)
                          in getattr(record, attr)]
-            if save: setattr(record, attr, mods_data)
+            if save_fids: setattr(record, attr, mods_data)
 
 #------------------------------------------------------------------------------
 class MelRegnEntrySubrecord(MelUnion):
