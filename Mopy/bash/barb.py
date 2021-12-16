@@ -148,12 +148,6 @@ class BackupSettings(object):
         return f'Backup Bash Settings {bak_name} ({bolt.timestamp()}) v' \
                f'{bass.settings[u"bash.version"]}-{AppVersion}.7z'
 
-    @staticmethod
-    def is_backup(backup_path):
-        """Returns True if the specified path is a backup. Currently only
-        checks if the file extension is 7z."""
-        return backup_path.cext == u'.7z'
-
     def backup_settings(self, balt_):
         deprint(u'')
         deprint(f'BACKUP BASH SETTINGS: {self._backup_dest_file}')
@@ -199,6 +193,11 @@ class BackupSettings(object):
         balt_.showWarning(balt_.Link.Frame, u'\n'.join([
             _(u'There was an error while trying to backup the Bash settings!'),
             _(u'No backup was created.')]), _(u'Unable to create backup!'))
+
+def is_backup(backup_path):
+    """Return True if the specified path is a backup. Currently only
+    checks if the file extension is 7z."""
+    return backup_path.cext == u'.7z'
 
 #------------------------------------------------------------------------------
 class RestoreSettings(object):

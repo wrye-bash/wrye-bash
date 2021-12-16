@@ -374,7 +374,9 @@ class CreateNewPlugin(DialogWindow):
         newName, root = ModInfo.validate_filename_str(pl_name)
         if root is None:
             balt.showError(self, newName)
-            return EventResult.CANCEL
+            self._plugin_name.set_focus()
+            self._plugin_name.select_all_text()
+            return EventResult.FINISH # leave the dialog open
         chosen_name = ModInfo.unique_name(newName)
         windowSelected = pw.GetSelected()
         pw.data_store.create_new_mod(chosen_name, windowSelected,

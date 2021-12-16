@@ -165,6 +165,9 @@ class _ATextInput(_AComponent):
                             modified."""
         self._native_widget.SetModified(is_modified)
 
+    def select_all_text(self):
+        self._native_widget.SelectAll()
+
 class TextArea(_ATextInput):
     """A multi-line text edit widget. See the documentation for _ATextInput
     for a list of the events this component offers."""

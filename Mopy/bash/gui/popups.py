@@ -217,3 +217,14 @@ class FileOpenMultiple(_FileDialog):
 class FileSave(_FileDialog):
     """'Save as' dialog."""
     _dialog_style = _wx.FD_SAVE | _wx.FD_OVERWRITE_PROMPT
+
+class DirOpen(_FileDialog):
+    """'Open directory' dialog."""
+    _wx_widget_type = _wx.DirDialog
+    _dialog_style = _wx.DD_DEFAULT_STYLE | _wx.DD_SHOW_HIDDEN
+
+    def __init__(self, parent, title=u'', defaultPath=u'', create_dir=False):
+        st = self.__class__._dialog_style
+        st |= _wx.DD_NEW_DIR_BUTTON if create_dir else _wx.DD_DIR_MUST_EXIST
+        super(_FileDialog, self).__init__(parent, title, '%s' % defaultPath,
+                                          style=st)

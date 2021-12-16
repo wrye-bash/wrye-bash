@@ -26,7 +26,7 @@ now. See #190, its code should be refactored and land in basher and/or gui."""
 # Imports ---------------------------------------------------------------------
 from . import bass # for dirs - try to avoid
 from . import bolt
-from .bolt import GPath, deprint, readme_url
+from .bolt import deprint, readme_url
 from .exception import AbstractError, AccessDeniedError, BoltError, \
     CancelError, SkipError, StateError
 #--Python
@@ -44,7 +44,7 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, \
     ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
     staticBitmap, bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, \
-    FileSave
+    FileSave, DirOpen
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -1655,10 +1655,8 @@ class Link(object):
     def _askContinue(self, message, continueKey, title=_(u'Warning')):
         return askContinue(self.window, message, continueKey, title=title)
 
-    def _askOpen(self, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u''):
-        return FileOpen.display_dialog(self.window, title=title,
-            defaultDir=defaultDir, defaultFile=defaultFile, wildcard=wildcard)
+    def _askContinueShortTerm(self, message, title=_(u'Warning')):
+        return askContinueShortTerm(self.window, message, title=title)
 
     def _showOk(self, message, title=u''):
         if not title: title = self._text
@@ -1674,11 +1672,6 @@ class Link(object):
 
     def _showError(self, message, title=_(u'Error')):
         return showError(self.window, message, title)
-
-    def _askSave(self, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u''):
-        return FileSave.display_dialog(self.window, title, defaultDir,
-                                       defaultFile, wildcard)
 
     _default_icons = object()
     def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,
@@ -1699,17 +1692,20 @@ class Link(object):
                    max=10000):
         return askNumber(self.window, message, prompt, title, value, min, max)
 
-    def _askDirectory(self, message=_(u'Choose a directory.'),
-                      defaultPath=u''):
+    # De-wx'd File/dir dialogs
+    def _askOpen(self, title='', defaultDir='', defaultFile='', wildcard=''):
+        return FileOpen.display_dialog(self.window, title, defaultDir,
+                                       defaultFile, wildcard)
+
+    def _askSave(self, title='', defaultDir='', defaultFile='', wildcard=''):
+        return FileSave.display_dialog(self.window, title, defaultDir,
+                                       defaultFile, wildcard)
+
+    def _askDirectory(self, message=_('Choose a directory.'), defaultPath=''):
         """Show a modal directory dialog and return the resulting path,
         or None if canceled."""
-        with wx.DirDialog(self.window, message, defaultPath.s,
-                          style=wx.DD_NEW_DIR_BUTTON) as dialog:
-            if dialog.ShowModal() != wx.ID_OK: return None
-            return GPath(dialog.GetPath())
-
-    def _askContinueShortTerm(self, message, title=_(u'Warning')):
-        return askContinueShortTerm(self.window, message, title=title)
+        return DirOpen.display_dialog(self.window, message, defaultPath,
+                                      create_dir=True)
 
 # Link subclasses -------------------------------------------------------------
 class ItemLink(Link):
