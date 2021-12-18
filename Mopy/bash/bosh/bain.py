@@ -41,7 +41,7 @@ from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
 from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
-    LowerDict, AFile, dict_sort, GPath_no_norm
+    LowerDict, AFile, dict_sort, GPath_no_norm, top_level_items, cext_
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 from ..ini_files import OBSEIniFile
@@ -1863,8 +1863,8 @@ class InstallersData(DataStore):
         progress = progress or bolt.Progress()
         #--Current archives
         if refresh_info is deleted is pending is None:
-            refresh_info = self.scan_installers_dir(bass.dirs[u'installers'].list(),
-                                                    fullRefresh)
+            refresh_info = self.scan_installers_dir(
+                *top_level_items(bass.dirs[u'installers'].s), fullRefresh)
         elif refresh_info is None:
             refresh_info = self._RefreshInfo(deleted, pending, projects)
         changed = refresh_info.refresh_needed()
@@ -1950,40 +1950,42 @@ class InstallersData(DataStore):
             if show_warning: show_warning(msg)
             raise # UI expects that
 
-    def scan_installers_dir(self, installers_paths=(), fullRefresh=False):
+    def scan_installers_dir(self, folders, files, fullRefresh=False, *,
+                            __skip_prefixes=(u'bash', u'--')):
         """March through the Bash Installers dir scanning for new and modified
         projects/packages, skipping as necessary. It will refresh projects on
         boot.
         :rtype: InstallersData._RefreshInfo"""
-        installers = set()
-        installersJoin = bass.dirs[u'installers'].join
-        pending, projects = set(), set()
-        for item in installers_paths:
-            if item.s.lower().startswith((u'bash',u'--')): continue
-            apath = installersJoin(item)
-            if apath.isfile() and item.cext in readExts:
-                installer = self.get(item)
-            elif apath.isdir(): # Project - autorefresh those only if specified
-                if item.s.lower() in self.installers_dir_skips:
-                    continue # skip Bash directories and user specified ones
-                installer = self.get(item)
-                projects.add(item)
-                # refresh projects once on boot even if skipRefresh is on
-                if installer and not installer.project_refreshed:
-                    pending.add(item)
-                    continue
-                elif installer and not fullRefresh and (installer.skipRefresh
-                       or not bass.settings[u'bash.installers.autoRefreshProjects']):
-                    installers.add(item) # installer is present
-                    continue # and needs not refresh
-            else:
-                continue ##: treat symlinks
-            if fullRefresh or not installer or installer.size_or_mtime_changed(
-                    apath):
-                pending.add(item)
-            else: installers.add(item)
+        pending, installers = set(), set()
+        files = [GPath_no_norm(f) for f in files if
+                 cext_(f) in readExts and not f.lower().startswith(
+                     __skip_prefixes)]
+        folders = {GPath_no_norm(f) for f in folders if
+            # skip Bash directories and user specified ones
+            (low := f.lower()) not in self.installers_dir_skips and
+            not low.startswith(__skip_prefixes)}
+        if fullRefresh:
+            pending = {*files, *folders}
+        else:
+            for items, is_proj in ((files, False), (folders, True)):
+                for item in items:
+                    installer = self.get(item)
+                    # Project - autorefresh those only if specified
+                    if is_proj and installer:
+                        # refresh projects once on boot even if skipRefresh is on
+                        if not installer.project_refreshed: # volatile
+                            pending.add(item)
+                            continue
+                        elif installer.skipRefresh or not bass.settings[
+                            u'bash.installers.autoRefreshProjects']:
+                            installers.add(item) # installer is present
+                            continue # and needs not refresh
+                    if not installer or installer.size_or_mtime_changed(
+                            installer.abs_path):
+                        pending.add(item)
+                    else: installers.add(item)
         deleted = set(self.ipackages(self)) - installers - pending
-        refresh_info = self._RefreshInfo(deleted, pending, projects)
+        refresh_info = self._RefreshInfo(deleted, pending, folders)
         return refresh_info
 
     def refreshConvertersNeeded(self):
