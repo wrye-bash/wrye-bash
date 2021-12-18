@@ -308,8 +308,9 @@ class _BsaHashedRecord(_HashedRecord):
 
     def load_record(self, ins):
         super(_BsaHashedRecord, self).load_record(ins)
+        ins_read = ins.read
         for f, a in zip(self.__class__.formats, self.__class__.__slots__):
-            setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
+            setattr(self, a, struct_unpack(f[0], ins_read(f[1]))[0])
 
     def load_record_from_buffer(self, memview, start):
         start = super(_BsaHashedRecord, self).load_record_from_buffer(memview,
@@ -429,10 +430,11 @@ class Ba2FileRecordTexture(_BsaHashedRecord):
         super(Ba2FileRecordTexture, self).load_record(ins)
         self.dxgi_format = mk_dxgi_fmt(self.dxgi_format)
         self.tex_chunks = []
+        append_tex_chunk = self.tex_chunks.append
         for x in range(self.num_chunks):
             tex_chunk = Ba2TexChunk()
             tex_chunk.load_chunk(ins)
-            self.tex_chunks.append(tex_chunk)
+            append_tex_chunk(tex_chunk)
 
 class Ba2TexChunk(object):
     """BA2 texture chunk, used in texture file records."""
@@ -675,22 +677,28 @@ class BSA(ABsa):
 
     def _read_bsa_file(self, folder_records, read_file_records):
         total_names_length = 0
+        my_bsa_name = self.bsa_name
         with open(u'%s' % self.abs_path, u'rb') as bsa_file: # accept string or Path
+            bsa_seek = bsa_file.seek
             # load the header from input stream
-            self.bsa_header.load_header(bsa_file, self.bsa_name)
+            self.bsa_header.load_header(bsa_file, my_bsa_name)
             # load the folder records from input stream
+            folder_rec_type = self.__class__.folder_record_type
+            append_folder_rec = folder_records.append
             for __ in range(self.bsa_header.folder_count):
-                rec = self.__class__.folder_record_type()
+                rec = folder_rec_type()
                 rec.load_record(bsa_file)
-                folder_records.append(rec)
+                append_folder_rec(rec)
             # load the file record block
             for folder_record in folder_records:
-                folder_path = u'?%d' % folder_record.record_hash # hack - untested ##: unused?
+                ##: This is unused - overwritten immediately afterwards. May
+                # have been intended to be used though?
+                #folder_path = u'?%d' % folder_record.record_hash # hack - untested
                 name_size = unpack_byte(bsa_file)
                 folder_path = _decode_path(
-                    unpack_string(bsa_file, name_size - 1), self.bsa_name)
+                    unpack_string(bsa_file, name_size - 1), my_bsa_name)
                 total_names_length += name_size
-                bsa_file.seek(1, 1) # discard null terminator
+                bsa_seek(1, 1) # discard null terminator
                 read_file_records(bsa_file, folder_path, folder_record)
             if total_names_length != self.bsa_header.total_folder_name_length:
                 deprint(u'%s reports wrong folder names length %d'
