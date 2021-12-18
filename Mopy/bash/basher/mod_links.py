@@ -31,7 +31,6 @@ import traceback
 from collections import defaultdict, OrderedDict
 
 # Local
-from . import configIsCBash
 from .constants import settingDefaults
 from .files_links import File_Redate
 from .frames import DocBrowser
@@ -71,6 +70,9 @@ __all__ = [u'Mod_FullLoad', u'Mod_CreateDummyMasters', u'Mod_OrderByName',
            u'Mod_FlipEsm', u'Mod_FlipEsl', u'Mod_FlipMasters',
            u'Mod_SetVersion', u'Mod_ListDependent', u'Mod_JumpToInstaller',
            u'Mod_Move', u'Mod_RecalcRecordCounts']
+
+def _configIsCBash(patchConfigs):
+    return any('CBash' in config_key for config_key in patchConfigs)
 
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
@@ -950,8 +952,8 @@ class Mod_Patch_Update(_Mod_BP_Link):
     def _initData(self, window, selection):
         super(Mod_Patch_Update, self)._initData(window, selection)
         # Detect the mode the patch was build in
-        config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
-        self._config_is_cbash = configIsCBash(config)
+        self._bp_config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
+        self._config_is_cbash = _configIsCBash(self._bp_config)
         self.mods_to_reselect = set()
 
     @balt.conversation
@@ -990,6 +992,7 @@ class Mod_Patch_Update(_Mod_BP_Link):
                       u'default. If you click "No", the patch building will '
                       u'abort now.'), title=_(u'Unsupported CBash Patch')):
                 return
+            self._bp_config = {}
         patch_files.executing_patch = self._selected_item
         mods_prior_to_patch = load_order.cached_lower_loading(
             self._selected_item)
@@ -1030,7 +1033,7 @@ class Mod_Patch_Update(_Mod_BP_Link):
                 liststyle=u'tree',bOk=_(u'Continue Despite Errors')) as dialog:
                    if not dialog.show_modal(): return
         with PatchDialog(self.window, self._selected_info,
-                self.mods_to_reselect) as patchDialog:
+                self.mods_to_reselect, self._bp_config) as patchDialog:
             patchDialog.show_modal()
         return self._selected_item
 
@@ -1107,7 +1110,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         #--Config
         config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
         # Detect and warn about patch mode
-        if configIsCBash(config):
+        if _configIsCBash(config):
             self._showError(_(u'The selected patch was built in CBash mode, '
                               u'which is no longer supported by this version '
                               u'of Wrye Bash.'),
@@ -1451,8 +1454,7 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
         if not self._askContinue(message, u'bash.decompileAll.continue',
                                  _(u'Decompile All')): return
         with BusyCursor():
-            for fileName, fileInfo in self.iselected_pairs():
-                file_name_s = fileName.s
+            for fileInfo in self.iselected_infos():
                 if fileInfo.match_oblivion_re():
                     self._showWarning(_(u'Skipping %s') % fileInfo,
                                       _(u'Decompile All'))
@@ -1471,7 +1473,7 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                         for rfid, r in masterFile.tops[b'SCPT'].iter_present_records():
                             id_text[rfid] = r.script_source
                     newRecords = []
-                    generic_lore_fid = (bosh.modInfos.masterName, 0x025811)
+                    generic_lore_fid = (bush.game.master_file, 0x025811)
                     for rfid, record in scpt_grp.iter_present_records():
                         #--Special handling for genericLoreScript
                         if (rfid in id_text and rfid == generic_lore_fid and
@@ -1488,15 +1490,16 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                     scpt_grp.setChanged()
                 if len(removed) >= 50 or badGenericLore:
                     modFile.safeSave()
-                    self._showOk((_(u'Scripts removed: %d.') + u'\n' +
-                                  _(u'Scripts remaining: %d')) % (
-                        len(removed), len(scpt_grp.records)), file_name_s)
+                    m =(_(u'Scripts removed: %d.') + u'\n' +
+                        _(u'Scripts remaining: %d')) % (
+                        len(removed), len(scpt_grp.records))
                 elif removed:
-                    self._showOk(_(u'Only %d scripts were identical.  This is '
-                                   u'probably intentional, so no changes have '
-                                   u'been made.') % len(removed), file_name_s)
+                    m = _(u'Only %d scripts were identical.  This is probably '
+                          u'intentional, so no changes have been made.'
+                          ) % len(removed)
                 else:
-                    self._showOk(_(u'No changes required.'), file_name_s)
+                    m = _(u'No changes required.')
+                self._showOk(m, fileInfo.ci_key)
 
 #------------------------------------------------------------------------------
 class _Esm_Esl_Flip(EnabledLink):
@@ -1968,7 +1971,7 @@ class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
 
     def Execute(self): # overrides _Mod_Export_Link
         fileInfo = next(self.iselected_infos()) # first selected info
-        defaultPath = bass.dirs[u'patches'].join(u'%s Exported Scripts' % fileInfo)
+        defaultPath = bass.dirs[u'patches'].join(f'{fileInfo} Exported Scripts')
         def OnOk():
             dialog.accept_modal()
             bass.settings[u'bash.mods.export.deprefix'] = gdeprefix.text_content.strip()

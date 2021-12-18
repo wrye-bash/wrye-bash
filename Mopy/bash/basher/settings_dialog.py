@@ -74,7 +74,7 @@ class SettingsDialog(DialogWindow):
 # non-matching items, etc. Making this work is a very long-term goal.
 #        self._search_bar = SearchBar(self)
 #        self._search_bar.on_text_changed.subscribe(self._handle_search)
-        help_btn = ClickableImage(self, balt.images[u'help.24'].GetBitmap(),
+        help_btn = ClickableImage(self, balt.images[u'help.24'].get_bitmap(),
             btn_tooltip=_(u'View the readme section for the currently active '
                           u'settings page.'))
         help_btn.on_clicked.subscribe(self._open_readme)
@@ -590,9 +590,9 @@ class LanguagePage(_AScrollablePage):
         # Now we can move on to actually opening the editor
         selected_l10n = bass.dirs[u'l10n'].join(self._chosen_l10n)
         # Construct the final command and pass it to subprocess
-        subprocess.Popen([chosen_editor.s] + [
-            (a % selected_l10n if u'%s' in a else a)
-            for a in editor_arg_fmt.split(u' ')], close_fds=True)
+        subprocess.Popen(
+            [chosen_editor.s, *((a % selected_l10n if '%s' in a else a)
+            for a in editor_arg_fmt.split(u' '))], close_fds=True)
 
     @staticmethod
     def _gather_l10n():

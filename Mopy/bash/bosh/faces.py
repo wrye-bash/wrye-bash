@@ -232,8 +232,7 @@ class PCFaces(object):
             maxMaster = len(face.face_masters) - 1
             mod = getModIndex(fid)
             master = face.face_masters[min(mod, maxMaster)]
-            if master not in saveFile._masters:
-                saveFile._masters.append(master)
+            saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
         #--Set face
         npc.full = face.pcName
@@ -288,8 +287,7 @@ class PCFaces(object):
             maxMaster = len(face.face_masters) - 1
             mod = getModIndex(fid)
             master = face.face_masters[min(mod, maxMaster)]
-            if master not in saveFile._masters:
-                saveFile._masters.append(master)
+            saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
 
         #--Player ACHR
@@ -461,9 +459,8 @@ class PCFaces(object):
             tes4.author = u'[wb]'
         if not tes4.description:
             tes4.description = _(u'Face dump from save game.')
-        from . import modInfos ##: put it here so I know it's initialized...
-        if modInfos.masterName not in tes4.masters:
-            tes4.masters.append(modInfos.masterName)
+        if bush.game.master_file not in tes4.masters:
+            tes4.masters.append(bush.game.master_file)
         masterMap = MasterMap(face.face_masters, modFile.augmented_masters())
         #--Eid
         npcEids = {record.eid for record in modFile.tops[b'NPC_'].records}

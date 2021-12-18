@@ -24,7 +24,7 @@
 necessary."""
 
 from ..fallout4 import Fallout4GameInfo
-from ... import brec
+from ... import brec, bolt
 
 class Fallout4VRGameInfo(Fallout4GameInfo):
     displayName = u'Fallout 4 VR'
@@ -38,7 +38,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     launch_exe = u'Fallout4VR.exe'
     game_detect_includes = [u'Fallout4VR.exe']
     version_detect_file = u'Fallout4VR.exe'
-    master_file = u'Fallout4.esm'
+    master_file = bolt.GPath_no_norm(u'Fallout4.esm')
     loot_dir = u'Fallout4VR'
     regInstallKeys = (u'Bethesda Softworks\\Fallout 4 VR', u'Installed Path')
 

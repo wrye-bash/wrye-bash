@@ -26,7 +26,7 @@ from collections import defaultdict
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
-from ... import brec
+from ... import brec, bolt
 from ...brec import MreFlst, MreGlob
 
 class Fallout3GameInfo(PatchGame):
@@ -42,7 +42,7 @@ class Fallout3GameInfo(PatchGame):
     launch_exe = u'Fallout3.exe'
     game_detect_includes = [u'Fallout3.exe']
     version_detect_file = u'Fallout3.exe'
-    master_file = u'Fallout3.esm'
+    master_file = bolt.GPath_no_norm(u'Fallout3.esm')
     taglist_dir = u'Fallout3'
     loot_dir = u'Fallout3'
     boss_game_name = u'Fallout3'

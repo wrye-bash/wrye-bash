@@ -505,7 +505,7 @@ class ActorLevels(_HandleAliases):
         from . import bosh
         mod_id_levels, gotLevels = self.mod_id_levels, self.gotLevels
         loadFactory = self._load_factory(keepAll=False)
-        for modName in (modInfo.masterNames + (modInfo.ci_key,)):
+        for modName in (*modInfo.masterNames, modInfo.ci_key):
             if modName in gotLevels: continue
             modFile = ModFile(bosh.modInfos[modName],loadFactory)
             modFile.load(True)

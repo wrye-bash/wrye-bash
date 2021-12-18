@@ -45,7 +45,7 @@ from . import bass # for settings (duh!)
 from . import bolt
 from . import initialization
 from .bass import dirs, AppVersion
-from .bolt import GPath, deprint
+from .bolt import GPath, deprint, top_level_files
 from .exception import BoltError, StateError
 
 def _init_settings_files(bak_name, mg_name, root_prefix, mods_folder):
@@ -116,7 +116,7 @@ class BackupSettings(object):
                     self.files[tmp_dir.join(fname)] = fpath
         # backup save profile settings
         savedir = GPath(u'My Games').join(mg_name)
-        profiles = [u''] + initialization.getLocalSaveDirs()
+        profiles = ['', *initialization.getLocalSaveDirs()]
         for profile in profiles:
             pluginsTxt = (u'Saves', profile, u'plugins.txt')
             loadorderTxt = (u'Saves', profile, u'loadorder.txt')
@@ -156,7 +156,7 @@ class BackupSettings(object):
 
     def backup_settings(self, balt_):
         deprint(u'')
-        deprint(u'BACKUP BASH SETTINGS: %s' % self._backup_dest_file)
+        deprint(f'BACKUP BASH SETTINGS: {self._backup_dest_file}')
         temp_settings_backup_dir = bolt.Path.tempDir()
         try:
             self._backup_settings(temp_settings_backup_dir)
@@ -190,7 +190,7 @@ class BackupSettings(object):
         if balt_ is None: return
         balt_.showInfo(balt_.Link.Frame, u'\n'.join([
             _(u'Your Bash settings have been backed up successfully.'),
-            _(u'Backup Path: ') + self._backup_dest_file.s]),
+            _(u'Backup Path: ') + f'{self._backup_dest_file}']),
                        _(u'Backup File Created'))
 
     @staticmethod
@@ -280,16 +280,15 @@ class RestoreSettings(object):
                                                   root_prefix, mods_folder))
         for dest_dir, back_path in restore_paths:
             full_back_path = self._extract_dir.join(back_path)
-            for fname in full_back_path.list():
-                if full_back_path.join(fname).isfile():
-                    _restore_file(dest_dir, GPath(back_path), fname)
+            for fname in top_level_files(full_back_path.s):
+                _restore_file(dest_dir, GPath(back_path), fname)
         # restore savegame profile settings
         back_path = GPath(u'My Games').join(mg_name, u'Saves')
         saves_dir = dirs[u'saveBase'].join(u'Saves')
         full_back_path = self._extract_dir.join(back_path)
         if full_back_path.exists():
-            for root_dir, folders, files_ in full_back_path.walk(True, None,
-                                                                 True):
+            for root_dir, folders, files_ in full_back_path.walk(
+                    True, None, relative=True):
                 root_dir = GPath(u'.%s' % root_dir)
                 for fname in files_:
                     _restore_file(saves_dir, back_path, root_dir, fname)

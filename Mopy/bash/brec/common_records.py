@@ -74,15 +74,9 @@ class MreHeaderBase(MelRecord):
                     ins.unpack(__unpacker, size_, *debug_strs)[0])
 
         def dumpData(self,record,out):
-            # Truncate or pad the sizes with zeroes as needed
-            # TODO(inf) For Morrowind, this will have to query the files for
-            #  their size and then store that
-            num_masters = len(record.masters)
-            num_sizes = len(record.master_sizes)
-            record.master_sizes = record.master_sizes[:num_masters] + [0] * (
-                    num_masters - num_sizes)
+            record._truncate_masters()
             for master_name, master_size in zip(record.masters,
-                                                 record.master_sizes):
+                                                record.master_sizes):
                 MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
                     out, master_name.s)
                 MelBase(b'DATA', '').packSub(
@@ -113,11 +107,16 @@ class MreHeaderBase(MelRecord):
 
     def loadData(self, ins, endPos):
         super(MreHeaderBase, self).loadData(ins, endPos)
-        num_masters = len(self.masters)
+        self._truncate_masters()
+
+    def _truncate_masters(self):
+        # TODO(inf) For Morrowind, this will have to query the files for
+        #  their size and then store that
+        num_masters = self.num_masters
         num_sizes = len(self.master_sizes)
         # Just in case, truncate or pad the sizes with zeroes as needed
         self.master_sizes = self.master_sizes[:num_masters] + [0] * (
-                num_masters - num_sizes)
+                num_masters - num_sizes) # [] * (-n) == []
 
     def getNextObject(self):
         """Gets next object index and increments it for next time."""

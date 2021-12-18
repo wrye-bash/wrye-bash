@@ -115,7 +115,7 @@ class ImageList(object):
             indices = self.indices
             imageList = self.imageList = wx.ImageList(self.width,self.height)
             for key,image in self.images:
-                indices[key] = imageList.Add(image.GetBitmap())
+                indices[key] = imageList.Add(image.get_bitmap())
         return self.imageList
 
     def get_image(self, key): return self.images[self[key]][1] # YAK !
@@ -172,14 +172,6 @@ class ColorChecks(ImageList):
         return self.indices[shortKey]
 
 # Modal Dialogs ---------------------------------------------------------------
-#------------------------------------------------------------------------------
-def askDirectory(parent,message=_(u'Choose a directory.'),defaultPath=u''):
-    """Shows a modal directory dialog and return the resulting path, or None if canceled."""
-    with wx.DirDialog(parent, message, defaultPath.s,
-                      style=wx.DD_NEW_DIR_BUTTON) as dialog:
-        if dialog.ShowModal() != wx.ID_OK: return None
-        return GPath(dialog.GetPath())
-
 #------------------------------------------------------------------------------
 def askContinue(parent, message, continueKey, title=_(u'Warning')):
     """Show a modal continue query if value of continueKey is false. Return
@@ -881,8 +873,8 @@ class UIList(wx.Panel):
             # Image List: Column sorting order indicators
             # explorer style ^ == ascending
             checkboxesIL = self.icons.GetImageList()
-            self.sm_up = checkboxesIL.Add(images[u'arrow.up'].GetBitmap())
-            self.sm_dn = checkboxesIL.Add(images[u'arrow.down'].GetBitmap())
+            self.sm_up = checkboxesIL.Add(images[u'arrow.up'].get_bitmap())
+            self.sm_dn = checkboxesIL.Add(images[u'arrow.down'].get_bitmap())
             self.__gList._native_widget.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
         if self.__class__._editLabels:
             self.__gList.on_edit_label_begin.subscribe(self.OnBeginEditLabel)
@@ -1210,19 +1202,23 @@ class UIList(wx.Panel):
             # renamed! Error handling is still a WIP
             for old, new in info.get_rename_paths(newFileName):
                 if old == new: continue
-                if new.exists() and not old.exists():
+                if not (oex := old.exists()) and (nex := new.exists()):
                     # some cosave move failed, restore files
-                    new.moveTo(old)
-                elif new.exists() and old.exists():
+                    new.moveTo(old, check_exist=False) # we just checked
+                elif oex and nex:
                     # move copies then deletes, so the delete part failed
                     new.remove()  # return None # break
             return None # maybe a msg if really really needed
 
-    def _getItemClicked(self, lb_dex_and_flags, on_icon=False):
+    def _getItemClicked(self, lb_dex_and_flags, *, on_icon=False):
         (hitItem, hitFlag) = lb_dex_and_flags
         if hitItem < 0 or (on_icon and hitFlag != wx.LIST_HITTEST_ONITEMICON):
             return None
         return self.GetItem(hitItem)
+
+    def _get_info_clicked(self, lb_dex_and_flags, *, on_icon=False):
+        item_key = self._getItemClicked(lb_dex_and_flags, on_icon=on_icon)
+        return self.data_store[item_key] if item_key else item_key
 
     #--Item selection ---------------------------------------------------------
     def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
@@ -1705,7 +1701,12 @@ class Link(object):
 
     def _askDirectory(self, message=_(u'Choose a directory.'),
                       defaultPath=u''):
-        return askDirectory(self.window, message, defaultPath)
+        """Show a modal directory dialog and return the resulting path,
+        or None if canceled."""
+        with wx.DirDialog(self.window, message, defaultPath.s,
+                          style=wx.DD_NEW_DIR_BUTTON) as dialog:
+            if dialog.ShowModal() != wx.ID_OK: return None
+            return GPath(dialog.GetPath())
 
     def _askContinueShortTerm(self, message, title=_(u'Warning')):
         return askContinueShortTerm(self.window, message, title=title)

@@ -113,6 +113,3 @@ def run_subprocess(command, logger, **kwargs):
     logger.debug(u'--- COMMAND OUTPUT START ---')
     logger.debug(stdout)
     logger.debug(u'---  COMMAND OUTPUT END  ---')
-
-def relpath(path):
-    return os.path.relpath(path, os.getcwd())

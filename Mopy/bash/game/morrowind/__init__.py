@@ -26,7 +26,7 @@ from collections import defaultdict
 
 from ..patch_game import GameInfo, PatchGame
 from .. import WS_COMMON
-from ... import brec
+from ... import brec, bolt
 
 class MorrowindGameInfo(PatchGame):
     displayName = u'Morrowind'
@@ -41,7 +41,7 @@ class MorrowindGameInfo(PatchGame):
     game_detect_includes = [u'Morrowind.exe']
     game_detect_excludes = WS_COMMON
     version_detect_file = u'Morrowind.exe'
-    master_file = u'Morrowind.esm'
+    master_file = bolt.GPath_no_norm(u'Morrowind.esm')
     mods_dir = u'Data Files'
     taglist_dir = u'Morrowind'
     loot_dir = u'Morrowind'

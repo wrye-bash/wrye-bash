@@ -432,15 +432,13 @@ class ImportCellsPatcher(ImportPatcher):
             # values from the value in any of srcMod's masters.
             tempCellData = defaultdict(dict)
             srcInfo = minfs[srcMod]
-            srcFile = self._mod_file_read(srcInfo)
-            cachedMasters[srcMod] = srcFile
             bashTags = srcInfo.getBashTags()
-            # print bashTags
             tags = bashTags & set(self.recAttrs)
             if not tags: continue
+            srcFile = self._mod_file_read(srcInfo)
+            cachedMasters[srcMod] = srcFile
             attrs = set(chain.from_iterable(
-                self.recAttrs[bashKey] for bashKey in tags
-                if bashKey in self.recAttrs))
+                self.recAttrs[bashKey] for bashKey in tags))
             if b'CELL' in srcFile.tops:
                 for cellBlock in srcFile.tops[b'CELL'].cellBlocks:
                     importCellBlockData(cellBlock)
@@ -467,12 +465,11 @@ class ImportCellsPatcher(ImportPatcher):
                             checkMasterCellBlockData(cellBlock)
                         if worldBlock.worldCellBlock:
                             checkMasterCellBlockData(worldBlock.worldCellBlock)
-            tempCellData = {}
             progress.plus()
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add lists from modFile."""
-        if not self.isActive or not (set(modFile.tops) & {b'CELL', b'WRLD'}):
+        if not (b'CELL' in modFile.tops or b'WRLD' in modFile.tops):
             return
         cellData = self.cellData
         patchCells = self.patchFile.tops[b'CELL']

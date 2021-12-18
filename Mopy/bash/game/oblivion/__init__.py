@@ -27,7 +27,7 @@ from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
 from .. import WS_COMMON
-from ... import brec
+from ... import brec, bolt
 from ...brec import MreGlob, MreLand
 
 class OblivionGameInfo(PatchGame):
@@ -47,7 +47,7 @@ class OblivionGameInfo(PatchGame):
     game_detect_includes = [_j(u'Data', u'Oblivion.esm')]
     game_detect_excludes = WS_COMMON
     version_detect_file = u'Oblivion.exe'
-    master_file = u'Oblivion.esm'
+    master_file = bolt.GPath_no_norm(u'Oblivion.esm')
     taglist_dir = u'Oblivion'
     loot_dir = u'Oblivion'
     boss_game_name = u'Oblivion'

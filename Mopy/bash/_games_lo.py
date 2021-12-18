@@ -201,7 +201,7 @@ class Game(object):
         super(Game, self).__init__()
         self.plugins_txt_path = plugins_txt_path # type: bolt.Path
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
-        self.master_path = mod_infos.masterName # type: bolt.Path
+        self.master_path = mod_infos._master_esm # type: bolt.Path
         self.mtime_plugins_txt = 0.0
         self.size_plugins_txt = 0
 
@@ -406,24 +406,28 @@ class Game(object):
         raise exception.AbstractError
 
     # MODFILES PARSING --------------------------------------------------------
-    def _parse_modfile(self, path):
+    def _parse_modfile(self, path, do_raise=False):
         """:rtype: (list[bolt.Path], list[bolt.Path])"""
-        if not path.exists(): return [], []
         #--Read file
-        acti, _lo = _parse_plugins_txt_(path, self.mod_infos, _star=self._star)
-        return acti, _lo
+        try:
+            return _parse_plugins_txt_(path, self.mod_infos, _star=self._star)
+        except FileNotFoundError:
+            if do_raise: raise
+            return [], []
 
     def _write_modfile(self, path, lord, active):
         _write_plugins_txt_(path, lord, active, _star=self._star)
 
     # PLUGINS TXT -------------------------------------------------------------
     def _parse_plugins_txt(self):
-        """:rtype: (list[bolt.Path], list[bolt.Path])"""
-        if not self.plugins_txt_path.exists(): return [], []
-        #--Read file
-        acti, _lo = self._parse_modfile(self.plugins_txt_path)
-        self.__update_plugins_txt_cache_info()
-        return acti, _lo
+        """Read plugins.txt file and return a tuple of (active, loadorder).
+        :rtype: (list[bolt.Path], list[bolt.Path])"""
+        try:
+            acti_lo = self._parse_modfile(self.plugins_txt_path, do_raise=True)
+            self.__update_plugins_txt_cache_info()
+            return acti_lo
+        except FileNotFoundError:
+            return [], []
 
     def _write_plugins_txt(self, lord, active):
         self._write_modfile(self.plugins_txt_path, lord, active)
@@ -1238,17 +1242,16 @@ class AsteriskGame(Game):
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from plugins.txt file. If plugins.txt does not exist
         create it. Discards information read if cached is passed in."""
-        exists = self.plugins_txt_path.exists()
         active, lo = self._parse_modfile(self.plugins_txt_path) # empty if not exists
         lo = lo if cached_load_order is None else cached_load_order
         if cached_active is None:  # we fetched it, clean it up
             active, lo = self._clean_actives(active, lo)
         else:
             active = cached_active
-        if not exists:
+        if not self.plugins_txt_path.exists():
             # Create it if it doesn't exist
             self._persist_load_order(lo, active)
-            bolt.deprint(u'Created %s' % self.plugins_txt_path)
+            bolt.deprint(f'Created {self.plugins_txt_path}')
         return lo, active
 
     def _persist_load_order(self, lord, active):
@@ -1322,9 +1325,9 @@ class AsteriskGame(Game):
                 cls.must_be_active_if_present += tuple(ccc_contents)
         except OSError as e:
             if not isinstance(e, FileNotFoundError):
-                bolt.deprint(u'Failed to open %s' % ccc_path, traceback=True)
-            bolt.deprint(u'%s does not exist or could not be read, falling '
-                         u'back to hardcoded CCC list' % cls._ccc_filename)
+                bolt.deprint(f'Failed to open {ccc_path}', traceback=True)
+            bolt.deprint(f'{cls._ccc_filename} does not exist or could not be '
+                         f'read, falling back to hardcoded CCC list')
             cls.must_be_active_if_present += cls._ccc_fallback
 
 class WindowsStoreGame(Game):

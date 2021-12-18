@@ -27,7 +27,7 @@ from collections import OrderedDict, Counter
 
 from . import env, bush
 from .bass import dirs
-from .bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, decoder, \
+from .bolt import LowerDict, CIstr, deprint, DefaultLowerDict, decoder, \
     getbestencoding, AFile, OrderedLowerDict
 from .exception import AbstractError, CancelError, SkipError, BoltError
 

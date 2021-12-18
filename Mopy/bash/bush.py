@@ -31,12 +31,12 @@ import collections
 import pkgutil
 import textwrap
 
-from . import bass
 from . import game as game_init
 from .bolt import GPath, Path, deprint, dict_sort
 from .env import get_registry_game_paths, get_win_store_game_paths, \
     get_win_store_game_info
 from .exception import BoltError
+from .initialization import get_path_from_ini
 from .game import patch_game
 
 # Game detection --------------------------------------------------------------
@@ -186,12 +186,11 @@ def _detectGames(cli_path=u'', bash_ini_=None):
             u'No known game in the path specified via -o argument: '
             u'%(path)s')
     #--Second: check if sOblivionPath is specified in the ini
-    ini_game_path = bass.get_ini_option(bash_ini_, u'sOblivionPath')
-    if ini_game_path and not ini_game_path == u'.':
-        test_path = GPath(ini_game_path.strip())
-        if not test_path.isabs():
-            test_path = Path.getcwd().join(test_path)
-        installPaths[u'ini'] = (test_path,
+    ini_game_path = get_path_from_ini(bash_ini_, u'sOblivionPath')
+    if ini_game_path:
+        if not ini_game_path.isabs():
+            ini_game_path = Path.getcwd().join(ini_game_path)
+        installPaths[u'ini'] = (ini_game_path,
             u'Set game mode to %(gamename)s based on sOblivionPath setting in '
             u'bash.ini: ',
             u'No known game in the path specified in sOblivionPath ini '
@@ -207,8 +206,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
             u'Mopy: ',
             u'No known game in parent directory of Mopy: %(path)s')
     #--Detect
-    deprint(u'Detecting games via the -o argument, bash.ini and relative '
-            u'path:')
+    deprint('Detecting games via the -o argument, bash.ini and relative path:')
     # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
     for test_path, foundMsg, errorMsg in installPaths.values():
         for gamename, info in _allGames.items():

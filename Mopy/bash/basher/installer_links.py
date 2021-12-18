@@ -178,7 +178,7 @@ class _Installer_AWizardLink(_InstallerLink):
             title = _(u'Installing...')
             do_it = self.window.data_store.bain_install
         with balt.Progress(title, u'\n'+u' '*60) as progress:
-            do_it([GPath(sel_package.archive)], ui_refresh, progress)
+            do_it([sel_package.ci_key], ui_refresh, progress)
 
 class Installer_Fomod(_Installer_AWizardLink):
     """Runs the FOMOD installer"""
@@ -296,9 +296,8 @@ class Installer_Wizard(_Installer_AWizardLink):
                         sel_package.espmNots.add(espm)
                 idetails.refreshCurrent(sel_package)
                 #Rename the espms that need renaming
-                for oldName in ret.rename_plugins:
-                    sel_package.setEspmName(oldName,
-                                            ret.rename_plugins[oldName])
+                for oldName, renamed in ret.rename_plugins.items():
+                    sel_package.setEspmName(oldName, renamed)
                 idetails.refreshCurrent(sel_package)
                 #Install if necessary
                 if ret.should_install:
@@ -554,14 +553,14 @@ class Installer_InstallSmart(_NoMarkerLink):
     _help = _(u'Installs selected installer(s), preferring a visual method if '
               u'available.')
 
-    def _try_installer(self, sel_package, inst_instance):
+    def _try_installer(self, sel_package, link_instance):
         """Checks if the specified installer link is enabled and, if so, runs
         it.
 
-        :type inst_instance: EnabledLink"""
-        inst_instance._initData(self.window, [GPath(sel_package.archive)])
-        if inst_instance._enable():
-            inst_instance.Execute()
+        :type link_instance: EnabledLink"""
+        link_instance._initData(self.window, [sel_package.ci_key])
+        if link_instance._enable():
+            link_instance.Execute()
             return True
         return False
 
@@ -807,7 +806,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                            u'\n' + u' ' * 60) as progress:
             progress.setFull(len(self.idata))
             numFiles = 0
-            destDir = GPath(u'Conflicts - %03d' % src_order)
+            fn_conflicts_dir = GPath(f'Conflicts - {src_order:03d}')
             for i,(package, installer) in enumerate(self.idata.sorted_pairs()):
                 curConflicts = set()
                 progress(i, _(u'Scanning Packages...') + u'\n%s' % package)
@@ -831,9 +830,9 @@ class Installer_CopyConflicts(_SingleInstallable):
             if inst.is_project():
                 for src in curConflicts:
                     srcFull = ijoin(package, src)
-                    destFull = ijoin(destDir, g_path, src)
+                    destFull = ijoin(fn_conflicts_dir, g_path, src)
                     if srcFull.exists():
-                        progress(curFile, u'%s\n' % self._selected_item + _(
+                        progress(curFile, f'{self._selected_item}\n' + _(
                             u'Copying files...') + u'\n' + src)
                         srcFull.copyTo(destFull)
                         curFile += 1
@@ -841,7 +840,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                 unpack_dir = inst.unpackToTemp(curConflicts,
                     SubProgress(progress, curFile, curFile + len(curConflicts),
                                 len(curConflicts)))
-                unpack_dir.moveTo(ijoin(destDir, g_path))
+                unpack_dir.moveTo(ijoin(fn_conflicts_dir, g_path))
                 curFile += len(curConflicts)
             return curFile
         with balt.Progress(_(u'Copying Conflicts...'),
@@ -855,9 +854,9 @@ class Installer_CopyConflicts(_SingleInstallable):
                 g_path = GPath(u'%03d - %s' % (
                     order if order < src_order else order + 1, package.s))
                 curFile = _copy_conflicts(curFile)
-        InstallerProject.refresh_installer(destDir, self.idata, progress=None,
-            install_order=src_order + 1, do_refresh=True)
-        self.window.RefreshUI(detail_item=destDir)
+        InstallerProject.refresh_installer(fn_conflicts_dir, self.idata,
+            progress=None, install_order=src_order + 1, do_refresh=True)
+        self.window.RefreshUI(detail_item=fn_conflicts_dir)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Plugin Filter Links ----------------------------------------
@@ -1336,13 +1335,13 @@ class InstallerConverter_Create(_InstallerConverter_Link):
                       u' be discarded.') % (
                               archives.defaultExt, BCFArchive.cext))
             BCFArchive = GPath(BCFArchive.sbody + archives.defaultExt).tail
-        if bass.dirs[u'converters'].join(BCFArchive).exists():
+        if (conv_path := bass.dirs[u'converters'].join(BCFArchive)).exists():
             if not self._askYes(_(
                     u'%s already exists. Overwrite it?') % BCFArchive,
                                 title=self.dialogTitle, default=False): return
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.
-            self.idata.converters_data.removeConverter(BCFArchive)
+            self.idata.converters_data.removeConverter(conv_path)
         destInstaller = self.idata[destArchive]
         blockSize = None
         if destInstaller.isSolid:
@@ -1360,25 +1359,26 @@ class InstallerConverter_Create(_InstallerConverter_Link):
             log = LogFile(io.StringIO())
             log.setHeader(u'== '+_(u'Overview')+u'\n')
 ##            log('{{CSS:wtxt_sand_small.css}}')
-            log(u'. '+_(u'Name')+u': %s'%BCFArchive)
-            log(u'. ' + _(u'Size') +u': %s' % round_size(converter.fullPath.psize))
-            log(u'. ' + _(u'Remapped: %u file(s)') %
-                len(converter.convertedFiles))
+            log(f". {_(u'Name')}: {BCFArchive}")
+            log(f". {_(u'Size')}: {round_size(converter.fullPath.psize)}")
+            log(f". {_(u'Remapped: %u file(s)') % len(converter.convertedFiles)}")
             log.setHeader(u'. ' + _(u'Requires: %u file(s)') %
                           len(converter.srcCRCs))
-            log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, crc_installer[x]) for x in converter.srcCRCs if x in crc_installer)))
+            log(u'  * ' +u'\n  * '.join(sorted(
+                f'({x:08X}) - {crc_installer[x]}' for x in converter.srcCRCs
+                if x in crc_installer)))
             log.setHeader(u'. '+_(u'Options:'))
-            log(u'  * '+_(u'Skip Voices')+u'   = %s'%bool(converter.skipVoices))
-            log(u'  * '+_(u'Solid Archive')+u' = %s'%bool(converter.isSolid))
+            log(f"  *  {_(u'Skip Voices')}   = {bool(converter.skipVoices)}")
+            log(f"  *  {_(u'Solid Archive')} = {bool(converter.isSolid)}")
             if converter.isSolid:
                 if converter.blockSize:
-                    log(u'    *  '+_(u'Solid Block Size')+u' = %d'%converter.blockSize)
+                    log(f"    *  {_(u'Solid Block Size')} = {converter.blockSize:d}")
                 else:
-                    log(u'    *  '+_(u'Solid Block Size')+u' = 7z default')
-            log(u'  *  '+_(u'Has Comments')+u'  = %s'%bool(converter.comments))
-            log(u'  *  '+_(u'Has Extra Directories')+u' = %s'%bool(converter.hasExtraData))
-            log(u'  *  '+_(u'Has Esps Unselected')+u'   = %s'%bool(converter.espmNots))
-            log(u'  *  '+_(u'Has Packages Selected')+u' = %s'%bool(converter.subActives))
+                    log(f"    *  {_(u'Solid Block Size')} = 7z default")
+            log(f"  *  {_(u'Has Comments')}  = {bool(converter.comments)}")
+            log(f"  *  {_(u'Has Extra Directories')} = {bool(converter.hasExtraData)}")
+            log(f"  *  {_(u'Has Esps Unselected')}   = {bool(converter.espmNots)}")
+            log(f"  *  {_(u'Has Packages Selected')} = {bool(converter.subActives)}")
             log.setHeader(u'. ' + _(u'Contains: %u file(s)') %
                           len(converter.bcf_missing_files))
             log(u'  * ' +u'\n  * '.join(sorted(u'%s' % x for x in converter

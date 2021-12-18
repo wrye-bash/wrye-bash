@@ -396,11 +396,11 @@ class DefaultLowerDict(LowerDict, collections.defaultdict):
         return type(self)(self.default_factory, self)
 
     def __repr__(self):
-        return u'%s(%s, %s)' % (type(self).__name__, self.default_factory,
-            super(collections.defaultdict, self).__repr__())
+        return f'{type(self).__name__}({self.default_factory}, ' \
+               f'{super(collections.defaultdict, self).__repr__()})'
 
 class OrderedLowerDict(LowerDict, collections.OrderedDict):
-    """LowerDict that inherits from OrdererdDict."""
+    """LowerDict that inherits from OrderedDict."""
     __slots__ = () # no __dict__ - that would be redundant
 
 #------------------------------------------------------------------------------
@@ -428,6 +428,19 @@ def setattr_deep(obj, attr, value, __attrgetters=attrgetter_cache,
         __split_cache[attr] = parent_attr, leaf_attr
     setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
         leaf_attr, value)
+
+def top_level_files(directory): # faster than listdir then isfile
+    return top_level_items(directory)[1]
+
+def top_level_dirs(directory): # faster than listdir then isdir
+    return top_level_items(directory)[0]
+
+def top_level_items(directory):
+    try:
+        _directory, folders, files = next(os.walk(directory))
+    except StopIteration:
+        return [], []
+    return folders, files
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -485,7 +498,7 @@ class Path(object):
 
     #--Class Vars/Methods -------------------------------------------
     sys_fs_enc = sys.getfilesystemencoding() or u'mbcs'
-    invalid_chars_re = re.compile(r'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
+    invalid_chars_re = re.compile(r'(.*)([/\\:*?"<>|]+)(.*)', re.I) # \\ needed
 
     @staticmethod
     def getNorm(str_or_path):
@@ -740,7 +753,7 @@ class Path(object):
         except FileNotFoundError:
             return []
 
-    def walk(self,topdown=True,onerror=None,relative=False):
+    def walk(self, topdown=True, onerror=None, *, relative=False):
         """Like os.walk."""
         if relative:
             start = len(self._s)
@@ -750,7 +763,7 @@ class Path(object):
                        [GPath_no_norm(x) for x in files])
         else:
             for root_dir,dirs,files in os.walk(self._s, topdown, onerror):
-                yield (GPath(root_dir),
+                yield (GPath(root_dir), ##: leaves the leading path separator?
                        [GPath_no_norm(x) for x in dirs],
                        [GPath_no_norm(x) for x in files])
 
@@ -845,9 +858,10 @@ class Path(object):
                 os.makedirs(destName.shead)
             shutil.copyfile(self._s,destName._s)
             destName.mtime = self.mtime
-    def moveTo(self,destName):
-        if not self.exists():
-            raise exception.StateError(self._s + u' cannot be moved because it does not exist.')
+    def moveTo(self, destName, check_exist=True):
+        if check_exist and not self.exists():
+            raise exception.StateError(f'{self._s} cannot be moved because it '
+                                       f'does not exist.')
         destPath = GPath(destName)
         if destPath._cs == self._cs: return
         if destPath.shead and not os.path.exists(destPath.shead):
@@ -959,6 +973,13 @@ class Path(object):
         dec = other if isinstance(other, str) else decoder(other)
         return self._cs <= (os.path.normpath(dec).lower() if dec else dec)
 
+    # avoid setstate/getstate round trip
+    def __deepcopy__(self, memodict={}):
+        return self # immutable
+
+    def __copy__(self):
+        return self # immutable
+
 def popen_common(popen_cmd, **kwargs):
     """Wrapper around subprocess.Popen with commonly needed parameters."""
     return subprocess.Popen(popen_cmd, stdin=subprocess.DEVNULL,
@@ -973,8 +994,6 @@ def clearReadOnly(dirPath):
 # TMP functions to deprecate Paths functionality for simple filenames - SLOW!
 def cext_(string_val):
     return os.path.splitext(string_val)[-1].lower()
-def body_(string_val):
-    return os.path.basename(os.path.splitext(string_val)[0])
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
@@ -1130,7 +1149,7 @@ class Flags(object):
 #------------------------------------------------------------------------------
 class DataDict(object):
     """Mixin class that handles dictionary emulation, assuming that
-    dictionary is its 'data' attribute."""
+    dictionary is its '_data' attribute."""
 
     def __contains__(self,key):
         return key in self._data

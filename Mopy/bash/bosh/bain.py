@@ -96,7 +96,7 @@ class Installer(ListInfo):
     _re_top_extensions = re.compile(u'(?:' + u'|'.join(
         re.escape(ext) for ext in _top_files_extensions) + u')$', re.I)
     # Extensions of strings files - automatically built from game constants
-    _strings_extensions = {os.path.splitext(x[1].lower())[1]
+    _strings_extensions = {os.path.splitext(x[1])[1].lower()
                            for x in bush.game.Esp.stringsFiles}
     # InstallersData singleton - consider this tmp
     instData = None # type: InstallersData
@@ -283,8 +283,8 @@ class Installer(ListInfo):
             self.resetEspmName(self.remaps[espm])
 
     def getEspmName(self,currentName):
-        for old in self.remaps:
-            if self.remaps[old] == currentName:
+        for old, renamed in self.remaps.items():
+            if renamed == currentName:
                 return old
         return currentName
 
@@ -307,22 +307,14 @@ class Installer(ListInfo):
 
     def __reduce__(self):
         """Used by pickler to save object state."""
-        raise AbstractError(u'%s must define __reduce__' % type(self))
-
-    def _fixme_drop__fomod_backwards_compat(self):
-        # Keys and values in the fomod dict got inverted, name changed to
-        # reflect this FIXME backwards compat
-        if u'fomod_files_dict' in self.extras_dict:
-            self.extras_dict[u'fomod_dict'] = LowerDict({
-                v: k for k, v
-                in self.extras_dict.pop(u'fomod_files_dict').items()})
+        raise AbstractError(f'{type(self)} must define __reduce__')
 
     def __setstate__(self,values):
         """Used by unpickler to recreate object."""
         try:
             self.__setstate(values)
         except:
-            deprint(u'Failed loading %s' % values[0], traceback=True)
+            deprint(f'Failed loading {values[0]}', traceback=True)
             # init to default values and let it be picked for refresh in
             # InstallersData#scan_installers_dir
             self.initDefault()
@@ -686,8 +678,6 @@ class Installer(ListInfo):
         #--Scan over fileSizeCrcs
         root_path = self.extras_dict.get(u'root_path', u'')
         rootIdex = len(root_path)
-        # For backwards compatibility - drop on VDATA3
-        self._fixme_drop__fomod_backwards_compat()
         fm_active = self.extras_dict.get(u'fomod_active', False)
         fm_dict = self.extras_dict.get(u'fomod_dict', {})
         module_config = os.path.join(u'fomod', u'moduleconfig.xml')
@@ -1038,8 +1028,7 @@ class Installer(ListInfo):
         """Packs project to build directory. Release filters out development
         material from the archive. Needed for projects and to repack archives
         when syncing from Data."""
-        length = len(self.fileSizeCrcs)
-        if not length: return
+        if not self.num_of_files: return
         archive, archiveType, solid = compressionSettings(archive, blockSize,
                                                           isSolid)
         outDir = bass.dirs[u'installers']
@@ -1271,8 +1260,8 @@ class InstallerMarker(Installer):
             return 2, len(text_str) - 2
         return 0, len(text_str)
 
-    def __init__(self,archive):
-        Installer.__init__(self,archive)
+    def __init__(self, marker_key):
+        Installer.__init__(self, marker_key)
         self.modified = time.time()
 
     def __reduce__(self):
@@ -1320,7 +1309,7 @@ class InstallerArchive(Installer):
                               use_default_ext=False, __7z=archives.defaultExt):
         r, e = os.path.splitext(name_str)
         if allowed_exts and e.lower() not in allowed_exts:
-            if not use_default_ext:
+            if not use_default_ext: # renaming as opposed to creating the file
                 return _(u'%s does not have correct extension (%s).') % (
                     name_str, u', '.join(allowed_exts)), None
             msg = _(u'The %s extension is unsupported. Using %s instead.') % (
@@ -1367,7 +1356,7 @@ class InstallerArchive(Installer):
                 list_archive(tempArch, _parse_archive_line)
                 self.crc = cumCRC & 0xFFFFFFFF
             except:
-                archive_msg = u"Unable to read archive '%s'." % self.abs_path
+                archive_msg = f"Unable to read archive '{self.abs_path}'."
                 deprint(archive_msg, traceback=True)
                 raise InstallerArchiveError(archive_msg)
 
@@ -1422,19 +1411,21 @@ class InstallerArchive(Installer):
         destDir = bass.dirs[u'installers'].join(project)
         destDir.rmtree(safety=u'Installers')
         #--Extract
-        progress(0,u'%s\n'%project+_(u'Extracting files...'))
+        progress(0, f'{project}\n' + _(u'Extracting files...'))
         unpack_dir = self.unpackToTemp(files, SubProgress(progress, 0, 0.9))
         #--Move
-        progress(0.9,u'%s\n'%project+_(u'Moving files...'))
+        progress(0.9, f'{project}\n' + _(u'Moving files...'))
         count = 0
         tempDirJoin = unpack_dir.join
         destDirJoin = destDir.join
         for file_ in files:
             srcFull = tempDirJoin(file_)
             destFull = destDirJoin(file_)
-            if srcFull.exists():
+            try:
                 srcFull.moveTo(destFull) # will try and clean read only flag
                 count += 1
+            except StateError: # Path does not exist
+                pass
         bass.rmTempDir()
         return count
 
@@ -1528,7 +1519,7 @@ class InstallerProject(Installer):
 
     @staticmethod
     def _new_name(base_name, count):
-        return base_name + ((u' (%d)' % count) if count else u'')
+        return f'{base_name} ({count})' if count else base_name
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
@@ -1641,15 +1632,15 @@ class InstallerProject(Installer):
     @staticmethod
     def _list_package(apath, log):
         def walkPath(folder, depth):
-            for entry in os.listdir(folder):
-                path = os.path.join(folder, entry)
-                if os.path.isdir(path):
-                    log(u' ' * depth + entry + u'\\')
-                    depth += 2
-                    walkPath(path, depth)
-                    depth -= 2
-                else:
-                    log(u' ' * depth + entry)
+            r, folders, files = next(os.walk(folder))
+            indent = u' ' * depth
+            for f in sorted(files):
+                log(f'{indent}{f}')
+            for d in sorted(folders):
+                log(f'{indent}{d}\\')
+                depth += 2
+                walkPath(os.path.join(r, d), depth)
+                depth -= 2
         walkPath(apath.s, 0)
 
     def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
@@ -1820,17 +1811,15 @@ class InstallersData(DataStore):
         elif markers:
             self.refreshOrder()
 
-    def copy_installer(self,item,destName,destDir=None):
+    def copy_installer(self, item, destName):
         """Copies archive to new location."""
         if item == self.lastKey: return
-        destDir = destDir or self.store_dir
         apath = self.store_dir.join(item)
-        apath.copyTo(destDir.join(destName))
-        if destDir == self.store_dir:
-            self[destName] = installer = copy.copy(self[item])
-            installer.archive = destName.s
-            installer.is_active = False
-            self.moveArchives([destName], self[item].order + 1)
+        apath.copyTo(self.store_dir.join(destName))
+        self[destName] = installer = copy.copy(self[item])
+        installer.archive = destName.s
+        installer.is_active = False
+        self.moveArchives([destName], self[item].order + 1)
 
     def move_info(self, filename, destDir):
         # hasty method to use in UIList.hide(), see FileInfos.move_info()
@@ -1906,8 +1895,8 @@ class InstallersData(DataStore):
                             in installers]
         progress.setFull(len(installers))
         pending = []
-        for i, (installer, destArchive) in list(enumerate(zip(
-                installers, destArchives))): # we may modify installers below
+        for i, (installer, destArchive) in [*enumerate(zip(installers,
+                destArchives))]: # we may modify installers below
             progress(i, installer.archive)
             #--Extract the embedded BCF and move it to the Converters folder
             unpack_dir = installer.unpackToTemp([installer.hasBCF],
@@ -2198,11 +2187,11 @@ class InstallersData(DataStore):
         :param dest_paths: set of paths relative to Data/ - may not exist.
         :type dest_paths: set[str]"""
         root_files = []
-        norm_ghost = Installer.getGhosted()
+        norm_ghost_get = Installer.getGhosted().get
         for data_path in dest_paths:
             sp = data_path.rsplit(os.sep, 1) # split into ['rel_path, 'file']
             if len(sp) == 1: # top level file
-                data_path = norm_ghost.get(data_path, data_path)
+                data_path = norm_ghost_get(data_path, data_path)
                 root_files.append((bass.dirs[u'mods'].s, data_path))
             else:
                 root_files.append((bass.dirs[u'mods'].join(sp[0]).s, sp[1]))
@@ -2526,9 +2515,9 @@ class InstallersData(DataStore):
         removedPlugins = set()
         removedInis = set()
         #--Construct list of files to delete
-        norm_ghost = Installer.getGhosted()
+        norm_ghost_get = Installer.getGhosted().get
         for ci_relPath in removes:
-            path = modsDirJoin(norm_ghost.get(ci_relPath, ci_relPath))
+            path = modsDirJoin(norm_ghost_get(ci_relPath, ci_relPath))
             if path.exists():
                 if reModExtSearch(ci_relPath):
                     removedPlugins.add(GPath(ci_relPath))
@@ -2733,10 +2722,10 @@ class InstallersData(DataStore):
         try:
             from . import modInfos
             emptyDirs, mods = set(), set()
-            norm_ghost = Installer.getGhosted()
+            norm_ghost_get = Installer.getGhosted().get
             for filename in removes:
                 full_path = bass.dirs[u'mods'].join(
-                    norm_ghost.get(filename, filename))
+                    norm_ghost_get(filename, filename))
                 try:
                     full_path.moveTo(destDir.join(filename)) # will drop .ghost
                     if modInfos.rightFileType(full_path):
@@ -2744,10 +2733,10 @@ class InstallersData(DataStore):
                         refresh_ui[0] = True
                     self.data_sizeCrcDate.pop(filename, None)
                     emptyDirs.add(full_path.head)
-                except OSError:
+                except (StateError, OSError):
                     #It's not imperative that files get moved, so ignore errors
-                    deprint(u'Clean Data: moving %s to %s failed' % (
-                                full_path, destDir), traceback=True)
+                    deprint(f'Clean Data: moving {full_path} to {destDir} '
+                            f'failed', traceback=True)
             modInfos.delete_refresh(mods, None, check_existence=False)
             for emptyDir in emptyDirs:
                 if emptyDir.isdir() and not emptyDir.list():
@@ -3007,13 +2996,13 @@ class InstallersData(DataStore):
 
     def createFromData(self, projectPath, ci_files, progress):
         if not ci_files: return
-        norm_ghost = Installer.getGhosted()
+        norm_ghost_get = Installer.getGhosted().get
         subprogress = SubProgress(progress, 0, 0.8, full=len(ci_files))
         srcJoin = bass.dirs[u'mods'].join
         dstJoin = self.store_dir.join(projectPath).join
         for i,filename in enumerate(ci_files):
             subprogress(i, filename)
-            srcJoin(norm_ghost.get(filename, filename)).copyTo(
+            srcJoin(norm_ghost_get(filename, filename)).copyTo(
                 dstJoin(filename))
         # Refresh, so we can manipulate the InstallerProject item
         self._inst_types[1].refresh_installer(projectPath, self, progress,

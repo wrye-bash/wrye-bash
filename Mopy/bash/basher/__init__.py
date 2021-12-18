@@ -106,13 +106,6 @@ if sys.prefix not in set(_env_path.split(u';')):
 # Settings --------------------------------------------------------------------
 settings = None # type: Optional[bolt.Settings]
 
-# Utils
-def configIsCBash(patchConfigs):
-    for config_key in patchConfigs:
-        if u'CBash' in config_key:
-            return True
-    return False
-
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 ##: DEPRECATED: Tank link mixins to access the Tank data. They should be
@@ -664,9 +657,8 @@ class INIList(balt.UIList):
         """Handle click on icon events
         :param wrapped_evt:
         """
-        hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
-        if not hitItem: return
-        if self.apply_tweaks((bosh.iniInfos[hitItem], )):
+        ini_inf = self._get_info_clicked(lb_dex_and_flags, on_icon=True)
+        if ini_inf and self.apply_tweaks([ini_inf]):
             self.panel.ShowPanel()
 
     @classmethod
@@ -1019,9 +1011,8 @@ class ModList(_ModsUIList):
     #--Events ---------------------------------------------
     def OnDClick(self, lb_dex_and_flags):
         """Handle doubleclicking a mod in the Mods List."""
-        hitItem = self._getItemClicked(lb_dex_and_flags)
-        if not hitItem: return
-        modInfo = self.data_store[hitItem]
+        modInfo = self._get_info_clicked(lb_dex_and_flags)
+        if not modInfo: return
         if not Link.Frame.docBrowser:
             from .frames import DocBrowser
             DocBrowser().show_frame()
@@ -1104,7 +1095,8 @@ class ModList(_ModsUIList):
         """Left Down: Check/uncheck mods.
         :param wrapped_evt:
         """
-        mod_clicked_on_icon = self._getItemClicked(lb_dex_and_flags, on_icon=True)
+        mod_clicked_on_icon = self._getItemClicked(lb_dex_and_flags,
+                                                   on_icon=True)
         if mod_clicked_on_icon:
             self._toggle_active_state(mod_clicked_on_icon)
             # _handle_select no longer seems to fire for the wrong index, but
@@ -2125,10 +2117,10 @@ class SaveList(balt.UIList):
         """Disable save by changing its extension so it's not loaded by the
         game."""
         #--Pass Event onward
-        hitItem = self._getItemClicked(lb_dex_and_flags, on_icon=True)
-        if not hitItem: return
+        sinf = self._get_info_clicked(lb_dex_and_flags, on_icon=True)
+        if not sinf: return
         # Don't allow enabling backups, the game won't read them either way
-        if hitItem.cext == u'.bak':
+        if (fn_item := sinf.ci_key).cext == u'.bak':
             balt.showError(self, _(u'You cannot enable save backups.'))
             return
         enabled_ext = bush.game.Ess.ext
@@ -2139,12 +2131,11 @@ class SaveList(balt.UIList):
             u'save_ext_on': enabled_ext, u'save_ext_off': disabled_ext}
         if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
-        sinf = self.data_store[hitItem]
         do_enable = not sinf.is_save_enabled()
         extension = enabled_ext if do_enable else disabled_ext
-        rename_res = self.try_rename(sinf, hitItem.root, ext=extension)
+        rename_res = self.try_rename(sinf, fn_item.root, ext=extension)
         if rename_res:
-            self.RefreshUI(redraw=[rename_res[1]], to_del=[hitItem])
+            self.RefreshUI(redraw=[rename_res[1]], to_del=[fn_item])
 
     # Save profiles
     def set_local_save(self, new_saves, refreshSaveInfos):
@@ -2551,7 +2542,7 @@ class InstallersList(balt.UIList):
     def _askCopyOrMove(self, filenames):
         action = settings[u'bash.installers.onDropFiles.action']
         if action not in (u'COPY', u'MOVE'):
-            if len(filenames):
+            if filenames:
                 message = _(u'You have dragged the following files into Wrye '
                             u'Bash:') + u'\n\n * '
                 message += u'\n * '.join(f.s for f in filenames) + u'\n'
@@ -2570,13 +2561,14 @@ class InstallersList(balt.UIList):
     @balt.conversation
     def OnDropFiles(self, x, y, filenames):
         filenames = [GPath(x) for x in filenames]
+        dirs = {x for x in filenames if x.isdir()}
         omodnames = [x for x in filenames if
-                     not x.isdir() and x.cext in archives.omod_exts]
+                     not x in dirs and x.cext in archives.omod_exts]
         converters = [x for x in filenames if
                       bosh.converters.ConvertersData.validConverterName(x)]
-        filenames = [x for x in filenames if x.isdir()
+        filenames = [x for x in filenames if x in dirs
                      or x.cext in archives.readExts and x not in converters]
-        if len(omodnames) > 0:
+        if omodnames:
             with balt.Progress(_(u'Extracting OMODs...'), u'\n' + u' ' * 60,
                                  abort=True) as prog:
                 self._extractOmods(omodnames, prog)
@@ -2645,14 +2637,14 @@ class InstallersList(balt.UIList):
 
     def OnDClick(self, lb_dex_and_flags):
         """Double click, open the installer."""
-        item = self._getItemClicked(lb_dex_and_flags)
-        if not item: return
-        if self.data_store[item].is_marker():
+        inst = self._get_info_clicked(lb_dex_and_flags)
+        if not inst: return
+        if inst.is_marker():
             # Double click on a Marker, select all items below
             # it in install order, up to the next Marker
             sorted_ = self._SortItems(col=u'Order', sortSpecial=False)
             new = []
-            for nextItem in sorted_[self.data_store[item].order + 1:]:
+            for nextItem in sorted_[inst.order + 1:]:
                 if self.data_store[nextItem].is_marker():
                     break
                 new.append(nextItem)
@@ -2660,7 +2652,7 @@ class InstallersList(balt.UIList):
                 self.SelectItemsNoCallback(new)
                 self.SelectItem((new[-1])) # show details for the last one
         else:
-            self.OpenSelected(selected=[item])
+            self.OpenSelected(selected=[inst.ci_key])
 
     def _handle_key_up(self, wrapped_evt):
         """Char events: Action depends on keys pressed"""
@@ -3178,8 +3170,11 @@ class InstallersPanel(BashTab):
             self._data_dir_scanned = False
         installers_paths = bass.dirs[
             u'installers'].list() if self.frameActivated else ()
-        if self.frameActivated and omods.extractOmodsNeeded(installers_paths):
-            self.__extractOmods()
+        if self.frameActivated:
+            omds = [inst_path for inst_path in installers_paths if
+                    inst_path.cext in archives.omod_exts]
+            if any(inst_path not in omods.failedOmods for inst_path in omds):
+                self.__extractOmods(omds) ##: change above to all?
         do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
         if not do_refresh and self.frameActivated:
             refresh_info = self.listData.scan_installers_dir(installers_paths,
@@ -3213,13 +3208,11 @@ class InstallersPanel(BashTab):
         refreshui |= do_refresh and self.listData.refreshInstallersStatus()
         if refreshui: self.uiList.RefreshUI(focus_list=False)
 
-    def __extractOmods(self):
+    def __extractOmods(self, omds):
         with balt.Progress(_(u'Extracting OMODs...'),
                            u'\n' + u' ' * 60) as progress:
-            dirInstallers = bass.dirs[u'installers']
-            dirInstallersJoin = dirInstallers.join
-            omods = [dirInstallersJoin(x) for x in dirInstallers.list() if
-                     x.cext in archives.omod_exts]
+            dirInstallersJoin = bass.dirs[u'installers'].join
+            omods = list(map(dirInstallersJoin, omds))
             progress.setFull(max(len(omods), 1))
             omodMoves, omodRemoves = set(), set()
             for i, omod in enumerate(omods):
@@ -3236,7 +3229,7 @@ class InstallersPanel(BashTab):
                 except (CancelError, SkipError):
                     omodMoves.add(omod)
                 except:
-                    deprint(u"Error extracting OMOD '%s':" % omod.stail,
+                    deprint(f"Error extracting OMOD '{omod.stail}':",
                             traceback=True)
                     # Ensure we don't infinitely refresh if moving the omod
                     # fails

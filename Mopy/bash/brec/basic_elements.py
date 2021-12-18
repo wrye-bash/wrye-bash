@@ -534,13 +534,13 @@ class MelStruct(MelBase):
         """:type mel_sig: bytes
         :type struct_formats: list[str]"""
         if not isinstance(struct_formats, list):
-            raise SyntaxError(u'Expected a list got "%s"' % struct_formats)
+            raise SyntaxError(f'Expected a list got "{struct_formats}"')
         # Sometimes subrecords have to preserve non-aligned sizes, check that
         # we don't accidentally pad those to alignment
         struct_format = u''.join(struct_formats)
         if (struct_calcsize(struct_format) != struct_calcsize(
                 u'=' + struct_format)):
-            struct_format = u'=%s' % struct_format
+            struct_format = f'={struct_format}'
         self.mel_sig = mel_sig
         self.attrs, self.defaults, self.actions, self.formAttrs = \
             self.parseElements(struct_formats, *elements)
@@ -550,8 +550,8 @@ class MelStruct(MelBase):
         present_attrs = set()
         for a in self.attrs:
             if a in present_attrs:
-                raise SyntaxError(u"Duplicate attribute '%s' in struct "
-                                  u"definition" % a)
+                raise SyntaxError(
+                    f"Duplicate attribute '{a}' in struct definition")
             present_attrs.add(a)
         _struct = structs_cache[struct_format]
         self._unpacker = _struct.unpack

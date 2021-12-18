@@ -388,6 +388,11 @@ class SaveFile(object):
         filePath.untemp()
         self.fileInfo.setmtime()
 
+    def addMaster(self, master):
+        """Adds master to masters list."""
+        if master not in self._masters:
+            self._masters.append(master)
+
     def indexCreated(self):
         """Fills out self.fid_recNum."""
         self.fid_createdNum = {x.fid: i for i, x in enumerate(self.created)}

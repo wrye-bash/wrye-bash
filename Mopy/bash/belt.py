@@ -160,27 +160,29 @@ class PageSelect(PageInstaller):
     """A page that shows a message up top, with a selection box on the left
     (multi- or single- selection), with an optional associated image and
     description for each option, shown when that item is selected."""
-    def __init__(self, parent, bMany, title, desc, listItems, listDescs, listImages, defaultMap):
+
+    def __init__(self, parent, bMany, desc, items_default, listDescs,
+                 image_paths):
         PageInstaller.__init__(self, parent)
-        self.listItems = listItems
-        self.images = listImages
+        self.listItems = list(items_default)
+        self.images = image_paths
         self.descs = listDescs
         self.bMany = bMany
         self.index = None
         self.title_desc = Label(self, desc)
         self.textItem = TextArea(self, editable=False, auto_tooltip=False)
         self.bmp_item = PictureWithCursor(self, 0, 0, background=None)
-        kwargs = dict(choices=listItems, isHScroll=True,
+        kwargs = dict(choices=self.listItems, isHScroll=True,
                       onSelect=self.OnSelect)
         self._page_parent = parent
         if bMany:
             self.listOptions = CheckListBox(self, **kwargs)
-            for index, default in enumerate(defaultMap):
+            for index, default in enumerate(items_default.values()):
                 self.listOptions.lb_check_at_index(index, default)
         else:
             self.listOptions = ListBox(self, **kwargs)
             parent.enable_forward(False)
-            for index, default in enumerate(defaultMap):
+            for index, default in enumerate(items_default.values()):
                 if default:
                     self.listOptions.lb_select_index(index)
                     self.Selection(index)
@@ -205,11 +207,9 @@ class PageSelect(PageInstaller):
 
     def _click_on_image(self):
         img = self.images[self.index]
-        if img.isfile():
-            try:
-                img.start()
-            except OSError:
-                bolt.deprint(u'Failed to open %s.' % img, traceback=True)
+        try: img.start()
+        except FileNotFoundError: pass
+        except OSError: bolt.deprint(f'Failed to open {img}.', traceback=True)
 
     def Selection(self, index):
         self._page_parent.enable_forward(True)
@@ -229,12 +229,13 @@ class PageSelect(PageInstaller):
         else:
             for i in self.listOptions.lb_get_selections():
                 temp_items.append(self.listItems[i])
-        if self._wiz_parent.parser.choiceIdex < len(self._wiz_parent.parser.choices):
-            oldChoices = self._wiz_parent.parser.choices[self._wiz_parent.parser.choiceIdex]
+        choice_idex = self._wiz_parent.parser.choiceIdex
+        if choice_idex < len(self._wiz_parent.parser.choices):
+            oldChoices = self._wiz_parent.parser.choices[choice_idex]
             if temp_items == oldChoices:
                 pass
             else:
-                self._wiz_parent.parser.choices = self._wiz_parent.parser.choices[0:self._wiz_parent.parser.choiceIdex]
+                self._wiz_parent.parser.choices = self._wiz_parent.parser.choices[0:choice_idex]
                 self._wiz_parent.parser.choices.append(temp_items)
         else:
             self._wiz_parent.parser.choices.append(temp_items)
@@ -368,8 +369,8 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmp = [ImageWrapper(bass.dirs[u'images'].join(x)).GetBitmap() for x in
-               (u'error_cross_24.png', u'checkmark_24.png')]
+        bmps = [ImageWrapper(bass.dirs['images'].join(x)).get_bitmap() for x in
+                (u'error_cross_24.png', u'checkmark_24.png')]
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
         versions_layout.append_row([None, Label(self, _(u'Need')),
@@ -384,7 +385,7 @@ class PageVersions(PageInstaller):
         linkGame.tooltip = bush.game.patchTip
         versions_layout.append_row([linkGame, Label(self, gameNeed),
                                     Label(self, gameHave),
-                                    staticBitmap(self, bmp[bGameOk])])
+                                    staticBitmap(self, bmps[bGameOk])])
         def _link_row(tool, tool_name, need, have, ok, title=None, url=None,
                       tooltip_=None):
             if tool is None or tool_name != u'':
@@ -393,7 +394,7 @@ class PageVersions(PageInstaller):
                 link.tooltip = tooltip_ or tool.url_tip
                 versions_layout.append_row([link, Label(self, need),
                                             Label(self, have),
-                                            staticBitmap(self, bmp[ok])])
+                                            staticBitmap(self, bmps[ok])])
         # Script Extender
         _link_row(bush.game.Se, bush.game.Se.se_abbrev, seNeed, seHave, bSEOk)
         # Graphics extender
@@ -1215,9 +1216,9 @@ class WryeParser(ScriptParser.Parser):
                 List = []
                 if self.installer.is_project():
                     sub = bass.dirs[u'installers'].join(self._path, subpackage)
-                    for root_dir, dirs, files in sub.walk():
+                    for root_dir, dirs, files in sub.walk(relative=True):
                         for file_ in files:
-                            rel = root_dir.join(file_).relpath(sub)
+                            rel = root_dir[1:].join(file_) # chop off path sep
                             List.append(rel.s)
                 else:
                     # Archive
@@ -1226,16 +1227,19 @@ class WryeParser(ScriptParser.Parser):
                         if not rel.s.startswith(u'..'):
                             List.append(rel.s)
                 List.sort()
-            if len(List) == 0:
+            if not List:
                 self.variables[varname.text] = u''
                 self.PushFlow(u'For', False, [u'For',u'EndFor'])
             else:
                 self.variables[varname.text] = List[0]
-                self.PushFlow(u'For', True, [u'For',u'EndFor'], ForType=1, cLine=self.cLine, varname=varname.text, List=List, index=0)
+                self.PushFlow(u'For', True, [u'For', u'EndFor'], ForType=1,
+                              cLine=self.cLine, varname=varname.text,
+                              List=List, index=0)
         else:
             error(_(u"Invalid syntax for 'For' statement.  Expected format:")
-                  +u'\n For var_name from value_start to value_end [by value_increment]\n For var_name in SubPackages\n For var_name in subpackage_name'
-                  )
+                + u'\n For var_name from value_start to value_end [by '
+                  u'value_increment]\n For var_name in SubPackages\n For '
+                  u'var_name in subpackage_name')
 
     def kwdEndFor(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != u'For':
@@ -1323,9 +1327,8 @@ class WryeParser(ScriptParser.Parser):
                 if std_img_path.isfile():
                     wiz_img_path = std_img_path
             image_paths.append(wiz_img_path)
-        self.page = PageSelect(self._wiz_parent, bMany, _(u'Installer Wizard'),
-                               main_desc, list(titles), descs, image_paths,
-                               list(titles.values()))
+        self.page = PageSelect(self._wiz_parent, bMany, main_desc, titles,
+                               descs, image_paths)
 
     def kwdCase(self, value):
         if self.LenFlow() == 0 or self.PeekFlow().type != u'Select':

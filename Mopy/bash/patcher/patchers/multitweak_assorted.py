@@ -30,7 +30,7 @@ import re
 from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak, \
     IndexingTweak
 from ... import bush, load_order, bolt
-from ...bolt import GPath, deprint
+from ...bolt import deprint
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):
@@ -475,7 +475,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     tweak_choices = [(u'0', 0)]
     tweak_log_msg = _(u'Script Effect silenced.')
     default_enabled = True
-    _null_ref = (GPath(bush.game.master_file), 0)
+    _null_ref = (bush.game.master_file, 0)
     _silent_attrs = {u'model': None, u'projectileSpeed': 9999,
                      u'light': _null_ref, u'effectShader': _null_ref,
                      u'enchantEffect': _null_ref, u'castingSound': _null_ref,
