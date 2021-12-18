@@ -2488,17 +2488,20 @@ class InstallersList(balt.UIList):
         self.RefreshUI()
 
     def _extractOmods(self, omodnames, progress):
+        """Called from onDropFiles duplicating __extractOmods with a bunch of
+        subtle differences. FIXME(ut) this must go - we should let caller's ShowPanel do it"""
         failed = []
         completed = []
         progress.setFull(len(omodnames))
         try:
             for i, omod in enumerate(omodnames):
-                progress(i, omod.stail)
+                om_name = omod.stail
+                progress(i, om_name)
                 outDir = bass.dirs[u'installers'].join(omod.body)
                 if outDir.exists():
                     if balt.askYes(progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
-                        u"with '%s'?") % (omod.sbody, omod.stail)):
+                        u"with '%s'?") % (omod.body, om_name)):
                         env.shellDelete(outDir, parent=self,
                                         recycle=True)  # recycle
                     else: continue
@@ -2511,21 +2514,18 @@ class InstallersList(balt.UIList):
                     # rights if needed
                     raise
                 except:
-                    deprint(
-                        _(u"Failed to extract '%s'.") % omod.stail + u'\n\n',
-                        traceback=True)
-                    failed.append(omod.stail)
+                    deprint(f"Failed to extract '{om_name}'.\n\n",
+                            traceback=True)
+                    failed.append(om_name)
         except CancelError:
             skipped = set(omodnames) - set(completed)
             msg = u''
-            if completed:
-                completed = [u' * ' + x.stail for x in completed]
-                msg += _(u'The following OMODs were unpacked:') + \
-                       u'\n%s\n\n' % u'\n'.join(completed)
-            if skipped:
-                skipped = [u' * ' + x.stail for x in skipped]
-                msg += _(u'The following OMODs were skipped:') + \
-                       u'\n%s\n\n' % u'\n'.join(skipped)
+            for filepaths, m in (
+                    [completed, _(u'The following OMODs were unpacked:')],
+                    [skipped, _(u'The following OMODs were skipped:')]):
+                if filepaths:
+                    filepaths = [f' * {x.stail}' for x in filepaths]
+                    msg += m + u'\n%s\n\n' % u'\n'.join(filepaths)
             if failed:
                 msg += _(u'The following OMODs failed to extract:') + \
                        u'\n%s' % u'\n'.join(failed)
@@ -2537,8 +2537,6 @@ class InstallersList(balt.UIList):
                 + u'\n'.join(failed), _(u'OMOD Extraction Complete'))
         finally:
             progress(len(omodnames), _(u'Refreshing...'))
-            self.data_store.irefresh(what=u'I')
-            self.RefreshUI()
 
     def _askCopyOrMove(self, filenames):
         action = settings[u'bash.installers.onDropFiles.action']
@@ -2550,13 +2548,10 @@ class InstallersList(balt.UIList):
             else: message = _(u'You have dragged some converters into Wrye '
                             u'Bash.')
             message += u'\n' + _(u'What would you like to do with them?')
-            with CopyOrMovePopup(self, message,
-                                 sizes_dict=balt.sizes) as cm_dialog:
-                if cm_dialog.show_modal():
-                    action = cm_dialog.get_action()
-                    if cm_dialog.should_remember():
-                        settings[u'bash.installers.onDropFiles.action'] = \
-                            action
+            action, remember = CopyOrMovePopup.display_dialog(self, message,
+                sizes_dict=balt.sizes)
+            if action and remember:
+                settings[u'bash.installers.onDropFiles.action'] = action
         return action
 
     @balt.conversation
@@ -2565,35 +2560,31 @@ class InstallersList(balt.UIList):
         dirs = {x for x in filenames if x.isdir()}
         omodnames = [x for x in filenames if
                      not x in dirs and x.cext in archives.omod_exts]
-        converters = [x for x in filenames if
-                      bosh.converters.ConvertersData.validConverterName(x)]
+        converters = {x for x in filenames if
+                      bosh.converters.ConvertersData.validConverterName(x)}
         filenames = [x for x in filenames if x in dirs
                      or x.cext in archives.readExts and x not in converters]
+        if not (omodnames or converters or filenames): return
         if omodnames:
             with balt.Progress(_(u'Extracting OMODs...'), u'\n' + u' ' * 60,
                                  abort=True) as prog:
                 self._extractOmods(omodnames, prog)
-        if not filenames and not converters:
-            return
-        action = self._askCopyOrMove(filenames)
-        if action not in [u'COPY',u'MOVE']: return
-        with BusyCursor():
-            installersJoin = bass.dirs[u'installers'].join
-            convertersJoin = bass.dirs[u'converters'].join
-            filesTo = [installersJoin(x.tail) for x in filenames]
-            filesTo.extend(convertersJoin(x.tail) for x in converters)
-            filenames.extend(converters)
-            try:
-                if action == u'MOVE':
-                    #--Move the dropped files
-                    env.shellMove(filenames, filesTo, parent=self)
-                else:
-                    #--Copy the dropped files
-                    env.shellCopy(filenames, filesTo, parent=self)
-            except (CancelError,SkipError):
-                pass
+        if filenames or converters:
+            action = self._askCopyOrMove(filenames)
+            if action in [u'COPY',u'MOVE']:
+                with BusyCursor():
+                    installersJoin = bass.dirs[u'installers'].join
+                    convertersJoin = bass.dirs[u'converters'].join
+                    filesTo = [installersJoin(x.tail) for x in filenames]
+                    filesTo.extend(convertersJoin(x.tail) for x in converters)
+                    filenames.extend(converters)
+                    try:
+                        (env.shellMove if action == 'MOVE' else env.shellCopy)(
+                            filenames, filesTo, parent=self)
+                    except (CancelError,SkipError):
+                        pass
         self.panel.frameActivated = True
-        self.panel.ShowPanel()
+        self.panel.ShowPanel(focus_list=True)
 
     def dndAllow(self, event):
         if not self.sort_column in self._dndColumns:
@@ -3147,7 +3138,7 @@ class InstallersPanel(BashTab):
 
     @balt.conversation
     def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False,
-                  **kwargs):
+                  focus_list=False, **kwargs):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled() # must run _before_ if below
         if (not settings[u'bash.installers.enabled'] or self.refreshing
@@ -3157,7 +3148,7 @@ class InstallersPanel(BashTab):
         try:
             self.refreshing = True
             self._refresh_installers_if_needed(canCancel, fullRefresh,
-                                               scan_data_dir)
+                                               scan_data_dir, focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
@@ -3165,7 +3156,7 @@ class InstallersPanel(BashTab):
     @balt.conversation
     @bosh.bain.projects_walk_cache
     def _refresh_installers_if_needed(self, canCancel, fullRefresh,
-                                      scan_data_dir):
+                                      scan_data_dir, focus_list):
         if settings.get(u'bash.installers.updatedCRCs',True): #only checked here
             settings[u'bash.installers.updatedCRCs'] = False
             self._data_dir_scanned = False
@@ -3176,7 +3167,8 @@ class InstallersPanel(BashTab):
             omds = [GPath_no_norm(inst_path) for inst_path in files
                     if cext_(inst_path) in archives.omod_exts]
             if any(inst_path not in omods.failedOmods for inst_path in omds):
-                self.__extractOmods(omds) ##: change above to all?
+                omod_projects = self.__extractOmods(omds) ##: change above to filter?
+                folders.extend(omod_projects)
             if not do_refresh:
                 refresh_info = self.listData.scan_installers_dir(folders,
                     files, fullRefresh)
@@ -3206,26 +3198,26 @@ class InstallersPanel(BashTab):
                     pass # User canceled the refresh
         do_refresh = self.listData.refreshTracked()
         refreshui |= do_refresh and self.listData.refreshInstallersStatus()
-        if refreshui: self.uiList.RefreshUI(focus_list=False)
+        if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
 
     def __extractOmods(self, omds):
+        omod_projects = []
         with balt.Progress(_(u'Extracting OMODs...'),
                            u'\n' + u' ' * 60) as progress:
             dirInstallersJoin = bass.dirs[u'installers'].join
-            omods = list(map(dirInstallersJoin, omds))
-            progress.setFull(max(len(omods), 1))
+            ompaths = list(map(dirInstallersJoin, omds))
+            progress.setFull(max(len(ompaths), 1))
             omodMoves, omodRemoves = set(), set()
-            for i, omod in enumerate(omods):
+            for i, omod in enumerate(ompaths):
                 progress(i, omod.stail)
-                outDir = dirInstallersJoin(omod.body)
-                num = 0
-                while outDir.exists():
-                    outDir = dirInstallersJoin(u'%s%s' % (omod.sbody, num))
-                    num += 1
+                pr_name = bosh.InstallerProject.unique_name(omod.body,
+                                                            check_exists=True)
+                outDir = dirInstallersJoin(pr_name)
                 try:
                     bosh.omods.OmodFile(omod).extractToProject(
                         outDir, SubProgress(progress, i))
                     omodRemoves.add(omod)
+                    omod_projects.append(pr_name.s)
                 except (CancelError, SkipError):
                     omodMoves.add(omod)
                 except:
@@ -3277,6 +3269,7 @@ class InstallersPanel(BashTab):
                         _move_omods(omodMoves)
                     except (CancelError, SkipError):
                         continue
+        return omod_projects
 
     def _sbCount(self):
         active = sum(x.is_active for x in self.listData.values())

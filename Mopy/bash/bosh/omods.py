@@ -158,6 +158,7 @@ class OmodFile(object):
         # Extract the files
         reExtracting = re.compile(u'- (.+)', re.U)
         subprogress = bolt.SubProgress(progress, 0, 0.4)
+        omod_tail = self.omod_path.stail
         current = 0
         with self.omod_path.unicodeSafe() as tempOmod:
             cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', tempOmod.s, u'-o%s' % extractDir, u'-bb1']
@@ -166,34 +167,35 @@ class OmodFile(object):
                     maExtracting = reExtracting.match(line)
                     if maExtracting:
                         name_ = maExtracting.group(1).strip().strip(u'\r')
-                        subprogress(float(current) / total, self.omod_path.stail + u'\n' + _(u'Extracting...') + u'\n' + name_)
+                        subprogress(float(current) / total, omod_tail + u'\n' + _(u'Extracting...') + u'\n' + name_)
                         current += sizes_[name_]
         # Get compression type
-        progress(0.4, self.omod_path.stail + u'\n' + _(u'Reading config'))
+        progress(0.4, omod_tail + u'\n' + _(u'Reading config'))
         self.readConfig(extractDir.join(u'config'))
         # Collect OMOD conversion data
         ocdDir = stageDir.join(u'omod conversion data')
-        progress(0.46, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\ninfo.txt')
+        prog_pref = omod_tail + u'\n' + _(u'Creating omod conversion data')
+        progress(0.46, prog_pref + u'\ninfo.txt')
         scr_path = extractDir.join(u'script')
         readme_path = extractDir.join(u'readme')
         readme_exists = readme_path.exists()
         scr_exists = scr_path.exists()
-        self.writeInfo(ocdDir.join(u'info.txt'), self.omod_path.stail,
+        self.writeInfo(ocdDir.join(u'info.txt'), omod_tail,
                        readme_exists, scr_exists)
-        progress(0.47, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscript')
+        progress(0.47, prog_pref + u'\nscript')
         if scr_exists:
             with scr_path.open(u'rb') as ins:
                 with ocdDir.join(u'script.txt').open(u'wb') as output:
                     output.write(_readNetString(ins))
-        progress(0.48, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nreadme.rtf')
+        progress(0.48, prog_pref + u'\nreadme.rtf')
         if readme_exists:
             with readme_path.open(u'rb') as ins:
                 with ocdDir.join(u'readme.rtf').open(u'wb') as output:
                     output.write(_readNetString(ins))
-        progress(0.49, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscreenshot')
+        progress(0.49, prog_pref + u'\nscreenshot')
         try: extractDir.join(u'image').moveTo(ocdDir.join(u'screenshot'))
         except StateError: pass # image file does not exist
-        progress(0.5, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nconfig')
+        progress(0.5, prog_pref + u'\nconfig')
         extractDir.join(u'config').moveTo(ocdDir.join(u'config'))
         # Extract the files
         if self.compType == 0:

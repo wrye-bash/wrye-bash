@@ -144,10 +144,12 @@ class ListInfo(object):
         return GPath(r + (u' (%d)' % count) + e)
 
     @classmethod
-    def unique_name(cls, name_str):
+    def unique_name(cls, name_str, check_exists=False):
         base_name = cls._new_name(GPath(name_str), 0)
         unique_counter = 0
-        while GPath(name_str) in cls.get_store():
+        store = cls.get_store()
+        while (store.store_dir.join(name_str).exists() if check_exists else
+                GPath(name_str) in store):
             unique_counter += 1
             name_str = cls._new_name(base_name, unique_counter)
         return GPath(name_str) # gpath markers and projects

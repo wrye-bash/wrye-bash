@@ -70,14 +70,11 @@ class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
         self._ret_action = new_ret
         self.accept_modal()
 
-    def get_action(self):
-        """Returns the choice the user made. Either the string 'MOVE' or the
-        string 'COPY'."""
-        return self._ret_action
-
-    def should_remember(self):
-        """Returns True if the choice the user made should be remembered."""
-        return self._gCheckBox.is_checked
+    def show_modal(self):
+        """Return the choice the user made (either the string 'MOVE' or the
+        string 'COPY') and whether that choice should be remembered."""
+        result = super(CopyOrMovePopup, self).show_modal()
+        return result and self._ret_action, self._gCheckBox.is_checked
 
 class _TransientPopup(_AComponent):
     """Base class for transient popups, i.e. popups that disappear as soon as
