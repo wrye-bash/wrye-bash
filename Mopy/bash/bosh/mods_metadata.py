@@ -41,8 +41,10 @@ def get_tags_from_dir(plugin_name):
     :param plugin_name: The name of the plugin to check the tag file for.
     :return: A tuple containing two sets of added and deleted tags."""
     # Check if the file even exists first
-    tag_files_dir = bass.dirs[u'tag_files']
-    tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
+    tag_file = bass.dirs[u'tag_files'].join(plugin_name.sbody + u'.txt')
+    ##: PY3.11: Measure EAFP here - right now it's slower because we hit the
+    # except case almost always, but py3.11's zero-cost exceptions could swing
+    # this
     if not tag_file.isfile(): return set(), set()
     removed, added = set(), set()
     # BashTags files must be in UTF-8 (or ASCII, obviously)

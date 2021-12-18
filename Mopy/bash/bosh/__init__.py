@@ -2041,7 +2041,7 @@ class ModInfos(FileInfos):
 
     def __init__(self):
         self.__class__.file_pattern = re.compile('(' + '|'.join(
-            [re.escape(e) for e in
+            [f'\\{e}' for e in
              bush.game.espm_extensions]) + r')(\.ghost)?$', re.I | re.U)
         FileInfos.__init__(self, dirs[u'mods'], factory=ModInfo)
         #--Info lists/sets
