@@ -633,7 +633,7 @@ class ModInfo(FileInfo):
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
         # Both should never exist simultaneously, Bash will warn in BashBugDump
-        self.isGhost = False if normal.exists() else ghost.exists()
+        self.isGhost = False if normal.isfile() else ghost.isfile()
         # Current status == what we want it?
         if isGhost == self.isGhost: return isGhost
         # Current status != what we want, so change it
@@ -829,11 +829,12 @@ class ModInfo(FileInfo):
         """Returns True if plugin has an associated BSA."""
         return bool(self.mod_bsas())
 
-    def getIniPath(self):
-        """Returns path to plugin's INI, if it were to exists."""
+    def get_ini_name(self):
+        """Returns the name of the INI matching this plugin, if it were to
+        exist."""
         # GPath_no_norm is okay because we got this by changing the extension
         # of a GPath object, meaning it was already normpath'd
-        return GPath_no_norm(self._file_key.s[:-3] + u'ini') # ignore .ghost
+        return self._file_key.sbody + '.ini'
 
     def _string_files_paths(self, lang):
         # type: (str) -> Iterable[str]
@@ -2294,19 +2295,28 @@ class ModInfos(FileInfos):
     _plugin_inis = OrderedDict() # cache active mod inis in active mods order
     def _refresh_mod_inis(self):
         if not bush.game.Ini.supports_mod_inis: return
-        iniPaths = (self[m].getIniPath() for m in load_order.cached_active_tuple())
-        iniPaths = [p for p in iniPaths if p.isfile()]
-        # delete non existent inis from cache
-        for key in list(self._plugin_inis):
-            if key not in iniPaths:
-                del self._plugin_inis[key]
-        # update cache with new or modified files
-        for iniPath in iniPaths:
+        data_folder_path = bass.dirs['mods']
+        # First, check the Data folder for INIs present in it. Order does not
+        # matter, we will only use this to look up existence
+        lower_data_cont = (f.lower() for f in os.listdir(data_folder_path.s))
+        present_inis = {i for i in lower_data_cont if i.endswith('.ini')}
+        # Determine which INIs are active based on LO. Order now matters
+        possible_inis = [self[m].get_ini_name() for m in
+                         load_order.cached_active_tuple()]
+        active_inis = [i for i in possible_inis if i.lower() in present_inis]
+        # Delete now inactive or deleted INIs from the cache
+        if self._plugin_inis: # avoid on boot
+            active_inis_set = set(active_inis)
+            for prev_ini in list(self._plugin_inis):
+                if prev_ini not in active_inis_set:
+                    del self._plugin_inis[prev_ini]
+        # Add new or modified INIs to the cache
+        for iniPath in active_inis:
             if iniPath not in self._plugin_inis or self._plugin_inis[
                 iniPath].do_update():
                 self._plugin_inis[iniPath] = IniFile(iniPath, 'cp1252')
         self._plugin_inis = OrderedDict(
-            [(k, self._plugin_inis[k]) for k in iniPaths])
+            [(k, self._plugin_inis[k]) for k in active_inis])
 
     def _refreshBadNames(self):
         """Refreshes which filenames cannot be saved to plugins.txt
