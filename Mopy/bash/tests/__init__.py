@@ -24,7 +24,9 @@
 quite hacky, but running tests for WB is going to be a bit hacky no matter
 what."""
 import gettext
+import locale
 import os
+import sys
 import traceback
 
 import tomli
@@ -123,13 +125,25 @@ def set_game(game_fsName):
 
 _wx_app = None
 
+class _BaseApp(_wx.App):
+    """Copy paste from bash.py"""
+    def MainLoop(self, restore_stdio=True):
+        """Not sure what RestoreStdio does so I omit the call in game
+        selection dialog.""" # TODO: check standalone also
+        rv = _wx.PyApp.MainLoop(self)
+        if restore_stdio: self.RestoreStdio()
+        return rv
+    def InitLocale(self):
+        if sys.platform.startswith('win') and sys.version_info > (3,8):
+            locale.setlocale(locale.LC_CTYPE, 'C')
+
 def _emulate_startup():
     """Emulates a normal Wrye Bash startup, but without launching basher
     etc."""
     # bush needs _() to be available, so need to do it like this
     global bush
     global _wx_app
-    _wx_app = _wx.App()
+    _wx_app = _BaseApp()
     trans = gettext.NullTranslations()
     trans.install()
     from .. import bush
