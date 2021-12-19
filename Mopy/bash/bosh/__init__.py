@@ -699,8 +699,8 @@ class ModInfo(FileInfo):
     def reloadBashTags(self, cached_bt_contents=None):
         """Reloads bash tags from mod description, LOOT and Data/BashTags.
 
-        cached_bt_contents will be passed to get_tags_from_dir, see there for
-        docs."""
+        :param cached_bt_contents: Passed to get_tags_from_dir, see there for
+            docs."""
         wip_tags = set()
         wip_tags |= self.getBashTagsDesc()
         # Tags from LOOT take precedence over the description
@@ -863,7 +863,7 @@ class ModInfo(FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            ##: Pass cached_ini_infos here for performance?
+            ##: Pass cached_ini_info here for performance?
             potential_bsas = self._find_string_bsas()
             bsa_assets = OrderedDict()
             for bsa_info in potential_bsas:
@@ -913,7 +913,7 @@ class ModInfo(FileInfo):
         prioritize files that are likely to contain the strings, instead of
         returning the true BSA order.
 
-        cached_ini_info will be passed to get_bsa_lo, see there for docs."""
+        :param cached_ini_info: Passed to get_bsa_lo, see there for docs."""
         ret_bsas = list(reversed(
             modInfos.get_bsa_lo(cached_ini_info=cached_ini_info,
                                 for_plugins=[self.ci_key])[0]))
@@ -936,17 +936,26 @@ class ModInfo(FileInfo):
         ret_bsas.sort(key=lambda b: not b.ci_key.cs.startswith(plugin_prefix))
         return ret_bsas
 
-    def isMissingStrings(self, cached_ini_info=(None, None, None)):
+    def isMissingStrings(self, cached_ini_info=(None, None, None),
+            cached_strings_paths=None):
         """True if the mod says it has .STRINGS files, but the files are
         missing.
 
-        cached_ini_info is passed to get_bsa_lo, see there for docs."""
+        :param cached_ini_info: Passed to get_bsa_lo, see there for docs.
+        :param cached_strings_paths: An optional set of lower-case versions of
+            the paths to all strings files. They must match the format returned
+            by _string_files_paths (i.e. starting with 'strings/'. If
+            specified, no stat calls will occur to determine if loose strings
+            files exist."""
         if not self.header.flags1.hasStrings: return False
         lang = oblivionIni.get_ini_language()
         bsa_infos = self._find_string_bsas(cached_ini_info)
         for assetPath in self._string_files_paths(lang):
             # Check loose files first
-            if self.dir.join(assetPath).isfile():
+            if cached_strings_paths is not None:
+                if assetPath.lower() in cached_strings_paths:
+                    continue
+            elif self.dir.join(assetPath).isfile():
                 continue
             # Check in BSA's next
             for bsa_info in bsa_infos:
@@ -2348,8 +2357,20 @@ class ModInfos(FileInfos):
         oldBad = self.missing_strings
         # Determine BSA LO from INIs once, this gets expensive very quickly
         cached_ini_info = self.get_bsas_from_inis()
-        self.missing_strings = {k for k, v in self.items()
-                                if v.isMissingStrings(cached_ini_info)}
+        # Determine the present strings files once to avoid stat'ing
+        # non-existent strings files hundreds of times
+        try:
+            strings_files = os.listdir(bass.dirs['mods'].join('strings').s)
+            strings_prefix = f'strings{os.path.sep}'
+            cached_strings_paths = {strings_prefix + s.lower()
+                                    for s in strings_files}
+        except FileNotFoundError:
+            # No loose strings folder -> all strings are in BSAs
+            cached_strings_paths = set()
+        self.missing_strings = {
+            k for k, v in self.items() if v.isMissingStrings(
+                cached_ini_info=cached_ini_info,
+                cached_strings_paths=cached_strings_paths)}
         self.new_missing_strings = self.missing_strings - oldBad
         return bool(self.new_missing_strings)
 
@@ -2925,12 +2946,11 @@ class ModInfos(FileInfos):
         BSA to a string describing the reason it was loaded. If a mod activates
         more than one bsa, their relative order is undefined.
 
-        If for_plugins is not None, only returns plugin-name-specific BSAs for
-        those plugins. Otherwise, returns it for all plugins.
-
-        cached_ini_info can contain the result of calling get_bsas_from_inis,
-        in which case calling that (fairly expensive) method will be
-        skipped."""
+        :param for_plugins: If not None, only returns plugin-name-specific BSAs
+            for those plugins. Otherwise, returns it for all plugins.
+        :param cached_ini_info: Can contain the result of calling
+            get_bsas_from_inis, in which case calling that (fairly expensive)
+            method will be skipped."""
         fetch_ini_info = any(c is None for c in cached_ini_info)
         if fetch_ini_info:
             # At least one part of the cached INI info we were passed in is
