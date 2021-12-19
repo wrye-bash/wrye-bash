@@ -860,9 +860,14 @@ class Path(object):
         destName = GPath(destName)
         if self.isdir():
             shutil.copytree(self._s,destName._s)
-        else:
-            if destName.shead and not os.path.exists(destName.shead):
-                os.makedirs(destName.shead)
+            return
+        try:
+            shutil.copyfile(self._s,destName._s)
+            destName.mtime = self.mtime
+        except FileNotFoundError:
+            if not (dest_par := destName.shead) or os.path.exists(dest_par):
+                raise
+            os.makedirs(dest_par)
             shutil.copyfile(self._s,destName._s)
             destName.mtime = self.mtime
     def moveTo(self, destName, check_exist=True):
@@ -871,11 +876,14 @@ class Path(object):
                                        f'does not exist.')
         destPath = GPath(destName)
         if destPath._cs == self._cs: return
-        if destPath.shead and not os.path.exists(destPath.shead):
-            os.makedirs(destPath.shead)
-        elif destPath.exists():
+        if destPath.exists(): ##: needed for dirs? (files will just replace)
             destPath.remove()
         try:
+            shutil.move(self._s,destPath._s)
+        except FileNotFoundError:
+            if not (dest_par := destPath.shead) or os.path.exists(dest_par):
+                raise
+            os.makedirs(dest_par)
             shutil.move(self._s,destPath._s)
         except OSError:
             self.clearRO()
