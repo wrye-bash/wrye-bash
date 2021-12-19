@@ -620,6 +620,12 @@ class ObjectRef(object):
         result = map_function(self.fid)
         if save: self.fid = result
 
+    def __lt__(self, other):
+        if not isinstance(other, ObjectRef):
+            return NotImplemented
+        # Sort key is *only* the FormID, see wbScriptPropertyObject in xEdit
+        return self.fid < other.fid
+
     def __repr__(self):
         return u'ObjectRef<%s, %s>' % (self.aid, self.fid)
 

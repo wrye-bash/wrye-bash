@@ -34,7 +34,7 @@ import utils
 
 LOGGER = logging.getLogger(__name__)
 
-MASTERLIST_VERSION = u'0.15'
+MASTERLIST_VERSION = '0.17'
 
 SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
 LOGFILE = os.path.join(SCRIPTS_PATH, u'taglist.log')
@@ -43,14 +43,16 @@ sys.path.append(MOPY_PATH)
 
 GAME_DATA = {
     # Maps game name in the Mopy/taglists folder to LOOT repo name
-    u'Enderal': u'enderal',
-    u'Fallout3': u'fallout3',
-    u'FalloutNV': u'falloutnv',
-    u'Fallout4': u'fallout4',
-    u'Morrowind': u'morrowind',
-    u'Oblivion': u'oblivion',
-    u'Skyrim': u'skyrim',
-    u'SkyrimSE': u'skyrimse',
+    'Enderal': 'enderal',
+    'Fallout3': 'fallout3',
+    'FalloutNV': 'falloutnv',
+    'Fallout4': 'fallout4',
+    'Fallout4VR': 'fallout4vr',
+    'Morrowind': 'morrowind',
+    'Oblivion': 'oblivion',
+    'Skyrim': 'skyrim',
+    'SkyrimSE': 'skyrimse',
+    'SkyrimVR': 'skyrimvr',
 }
 
 def setup_parser(parser):

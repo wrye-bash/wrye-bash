@@ -39,6 +39,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     launch_exe = u'SkyrimVR.exe'
     game_detect_includes = [u'SkyrimVR.exe']
     version_detect_file = u'SkyrimVR.exe'
+    taglist_dir = 'SkyrimVR'
     loot_dir = u'Skyrim VR'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim VR', u'Installed Path')
 

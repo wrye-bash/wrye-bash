@@ -39,6 +39,7 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     game_detect_includes = [u'Fallout4VR.exe']
     version_detect_file = u'Fallout4VR.exe'
     master_file = bolt.GPath_no_norm(u'Fallout4.esm')
+    taglist_dir = 'Fallout4VR'
     loot_dir = u'Fallout4VR'
     regInstallKeys = (u'Bethesda Softworks\\Fallout 4 VR', u'Installed Path')
 
