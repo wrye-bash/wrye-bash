@@ -696,8 +696,11 @@ class ModInfo(FileInfo):
             # Remove obsolete and unknown tags and resolve any tag aliases
             return process_tags(tags_set)
 
-    def reloadBashTags(self):
-        """Reloads bash tags from mod description, LOOT and Data/BashTags."""
+    def reloadBashTags(self, cached_bt_contents=None):
+        """Reloads bash tags from mod description, LOOT and Data/BashTags.
+
+        cached_bt_contents will be passed to get_tags_from_dir, see there for
+        docs."""
         wip_tags = set()
         wip_tags |= self.getBashTagsDesc()
         # Tags from LOOT take precedence over the description
@@ -706,7 +709,8 @@ class ModInfo(FileInfo):
         wip_tags -= deleted_tags
         # Tags from Data/BashTags/{self.ci_key}.txt take precedence over both
         # the description and LOOT
-        added_tags, deleted_tags = read_dir_tags(self.ci_key)
+        added_tags, deleted_tags = read_dir_tags(self.ci_key,
+            cached_bt_contents=cached_bt_contents)
         wip_tags |= added_tags
         wip_tags -= deleted_tags
         self.setBashTags(wip_tags)
@@ -1082,6 +1086,7 @@ def process_tags(tag_set, drop_unknown=True):
     specified set of tags. See the comments above for more information. If
     drop_unknown is True, also removes any unknown tags (tags that are not
     currently used, obsolete or aliases)."""
+    if not tag_set: return tag_set # fast path - nothing to process
     ret_tags = tag_set.copy()
     ret_tags -= removed_tags
     for old_tag, replacement_tags in tag_aliases.items():
@@ -1093,9 +1098,10 @@ def process_tags(tag_set, drop_unknown=True):
     return ret_tags
 
 # Some wrappers to decouple other files from process_tags
-def read_dir_tags(plugin_name):
+def read_dir_tags(plugin_name, cached_bt_contents=None):
     """Wrapper around get_tags_from_dir. See that method for docs."""
-    added_tags, deleted_tags = get_tags_from_dir(plugin_name)
+    added_tags, deleted_tags = get_tags_from_dir(plugin_name,
+        cached_bt_contents=cached_bt_contents)
     return process_tags(added_tags), process_tags(deleted_tags)
 
 def read_loot_tags(plugin_name):
@@ -2449,6 +2455,11 @@ class ModInfos(FileInfos):
     def _refresh_bash_tags(self):
         """Reloads bash tags for all mods set to receive automatic bash
         tags."""
+        try:
+            bt_contents = {t.lower() for t
+                           in os.listdir(bass.dirs['tag_files'].s)}
+        except FileNotFoundError:
+            bt_contents = set() # No BashTags folder -> no BashTags files
         for modinf in self.values(): # type: ModInfo
             autoTag = modinf.is_auto_tagged(default_auto=None)
             if autoTag is None and modinf.get_table_prop(u'bashTags') is None:
@@ -2459,7 +2470,7 @@ class ModInfos(FileInfos):
                 # An old mod that had manual bash tags added, disable auto tags
                 modinf.set_auto_tagged(False)
             if autoTag:
-                modinf.reloadBashTags()
+                modinf.reloadBashTags(cached_bt_contents=bt_contents)
 
     def refresh_crcs(self, mods=None): #TODO(ut) progress !
         pairs = {}
