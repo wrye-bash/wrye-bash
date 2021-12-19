@@ -696,11 +696,11 @@ class ModInfo(FileInfo):
             # Remove obsolete and unknown tags and resolve any tag aliases
             return process_tags(tags_set)
 
-    def reloadBashTags(self, cached_bt_contents=None):
+    def reloadBashTags(self, ci_cached_bt_contents=None):
         """Reloads bash tags from mod description, LOOT and Data/BashTags.
 
-        :param cached_bt_contents: Passed to get_tags_from_dir, see there for
-            docs."""
+        :param ci_cached_bt_contents: Passed to get_tags_from_dir, see there
+            for docs."""
         wip_tags = set()
         wip_tags |= self.getBashTagsDesc()
         # Tags from LOOT take precedence over the description
@@ -710,7 +710,7 @@ class ModInfo(FileInfo):
         # Tags from Data/BashTags/{self.ci_key}.txt take precedence over both
         # the description and LOOT
         added_tags, deleted_tags = read_dir_tags(self.ci_key,
-            cached_bt_contents=cached_bt_contents)
+            ci_cached_bt_contents=ci_cached_bt_contents)
         wip_tags |= added_tags
         wip_tags -= deleted_tags
         self.setBashTags(wip_tags)
@@ -937,14 +937,14 @@ class ModInfo(FileInfo):
         return ret_bsas
 
     def isMissingStrings(self, cached_ini_info=(None, None, None),
-            cached_strings_paths=None):
+            ci_cached_strings_paths=None):
         """True if the mod says it has .STRINGS files, but the files are
         missing.
 
         :param cached_ini_info: Passed to get_bsa_lo, see there for docs.
-        :param cached_strings_paths: An optional set of lower-case versions of
-            the paths to all strings files. They must match the format returned
-            by _string_files_paths (i.e. starting with 'strings/'. If
+        :param ci_cached_strings_paths: An optional set of lower-case versions
+            of the paths to all strings files. They must match the format
+            returned by _string_files_paths (i.e. starting with 'strings/'. If
             specified, no stat calls will occur to determine if loose strings
             files exist."""
         if not self.header.flags1.hasStrings: return False
@@ -952,8 +952,8 @@ class ModInfo(FileInfo):
         bsa_infos = self._find_string_bsas(cached_ini_info)
         for assetPath in self._string_files_paths(lang):
             # Check loose files first
-            if cached_strings_paths is not None:
-                if assetPath.lower() in cached_strings_paths:
+            if ci_cached_strings_paths is not None:
+                if assetPath.lower() in ci_cached_strings_paths:
                     continue
             elif self.dir.join(assetPath).isfile():
                 continue
@@ -1107,10 +1107,10 @@ def process_tags(tag_set, drop_unknown=True):
     return ret_tags
 
 # Some wrappers to decouple other files from process_tags
-def read_dir_tags(plugin_name, cached_bt_contents=None):
+def read_dir_tags(plugin_name, ci_cached_bt_contents=None):
     """Wrapper around get_tags_from_dir. See that method for docs."""
     added_tags, deleted_tags = get_tags_from_dir(plugin_name,
-        cached_bt_contents=cached_bt_contents)
+        ci_cached_bt_contents=ci_cached_bt_contents)
     return process_tags(added_tags), process_tags(deleted_tags)
 
 def read_loot_tags(plugin_name):
@@ -2362,15 +2362,15 @@ class ModInfos(FileInfos):
         try:
             strings_files = os.listdir(bass.dirs['mods'].join('strings').s)
             strings_prefix = f'strings{os.path.sep}'
-            cached_strings_paths = {strings_prefix + s.lower()
-                                    for s in strings_files}
+            ci_cached_strings_paths = {strings_prefix + s.lower()
+                                       for s in strings_files}
         except FileNotFoundError:
             # No loose strings folder -> all strings are in BSAs
-            cached_strings_paths = set()
+            ci_cached_strings_paths = set()
         self.missing_strings = {
             k for k, v in self.items() if v.isMissingStrings(
                 cached_ini_info=cached_ini_info,
-                cached_strings_paths=cached_strings_paths)}
+                ci_cached_strings_paths=ci_cached_strings_paths)}
         self.new_missing_strings = self.missing_strings - oldBad
         return bool(self.new_missing_strings)
 
@@ -2491,7 +2491,7 @@ class ModInfos(FileInfos):
                 # An old mod that had manual bash tags added, disable auto tags
                 modinf.set_auto_tagged(False)
             if autoTag:
-                modinf.reloadBashTags(cached_bt_contents=bt_contents)
+                modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
 
     def refresh_crcs(self, mods=None): #TODO(ut) progress !
         pairs = {}

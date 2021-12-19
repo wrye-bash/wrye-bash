@@ -33,25 +33,27 @@ from ..mod_files import ModHeaderReader
 _wrld_types = frozenset((b'CELL', b'WRLD'))
 
 # BashTags dir ----------------------------------------------------------------
-def get_tags_from_dir(plugin_name, cached_bt_contents=None):
+def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
     """Retrieves a tuple containing a set of added and a set of deleted
     tags from the 'Data/BashTags/PLUGIN_NAME.txt' file, if it is
     present.
 
     :param plugin_name: The name of the plugin to check the tag file for.
-    :param cached_bt_contents: An optional set containing lower-case versions
-        of the names of all files currently present in the BashTags directory.
-        If specified, get_tags_from_dir avoids having to stat to figure out if
-        the file in question exists.
+    :param ci_cached_bt_contents: An optional set containing lower-case
+        versions of the names of all files currently present in the BashTags
+        directory. If specified, get_tags_from_dir avoids having to stat to
+        figure out if the file in question exists.
     :return: A tuple containing two sets of added and deleted tags."""
     tag_file = None
     # Check if the file even exists first, using the cache if possible
     bt_file_name = plugin_name.sbody + '.txt'
-    if cached_bt_contents is not None:
-        if bt_file_name.lower() not in cached_bt_contents: return set(), set()
+    if ci_cached_bt_contents is not None:
+        if bt_file_name.lower() not in ci_cached_bt_contents:
+            return set(), set()
     else:
         tag_file = bass.dirs['tag_files'].join(bt_file_name)
-        if not tag_file.isfile(): return set(), set()
+        if not tag_file.isfile():
+            return set(), set()
     if tag_file is None: # If we hit the cache, we need to set tag_file here
         tag_file = bass.dirs['tag_files'].join(bt_file_name)
     removed, added = set(), set()
