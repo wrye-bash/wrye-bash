@@ -74,9 +74,11 @@ screen_infos = None # type: ScreenInfos
 lootDb = None # type: LOOTParser
 
 #--Header tags
+# re does not support \p{L} - [^\W\d_] is almost equivalent (N vs Nd)
 reVersion = re.compile(
-  r'^(version[:.]*|ver[:.]*|rev[:.]*|r[:.\s]+|v[:.\s]+) *([-0-9a-zA-Z.]*\+?)',
-  re.M | re.I | re.U)
+  r'((?:version|ver|rev|r|v)[:.]?)[^\S\r\n]*'
+  r'(\d(?:\d|[^\W\d_])*(?:(?:\.|-)(?:\d|[^\W\d_])+)*\+?)',
+  re.M | re.I)
 
 #--Mod Extensions
 __exts = r'((\.(' + u'|'.join(ext[1:] for ext in readExts) + u'))|)$'
@@ -3064,8 +3066,8 @@ class ModInfos(FileInfos):
         """Extracts and returns version number for fileName from header.hedr.description."""
         if not fileName in self or not self[fileName].header: ##: header not always present?
             return u''
-        maVersion = reVersion.search(self[fileName].header.description)
-        return (maVersion and maVersion.group(2)) or u''
+        desc_match = reVersion.search(self[fileName].header.description)
+        return (desc_match and desc_match.group(2)) or ''
 
     def getVersionFloat(self,fileName):
         """Extracts and returns version number for fileName from header.hedr.description."""
