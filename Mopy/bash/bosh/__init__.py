@@ -466,11 +466,12 @@ class ModInfo(FileInfo):
         x[1:] for x in bush.game.espm_extensions) + '))'
 
     def __init__(self, fullpath, load_cache=False):
-        self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
-        if endsInGhost: fullpath = GPath_no_norm(fullpath.s[:-6])
+        ends_in_ghost = (fullpath.cs[-6:] == u'.ghost')
+        if ends_in_ghost:
+            fullpath = GPath_no_norm(fullpath.s[:-6])
+            self.isGhost = True
         else: # new_info() path
-            self.isGhost = not fullpath.isfile() and os.path.isfile(
-                fullpath.s + u'.ghost')
+            self._refresh_ghost_state(regular_path=fullpath)
         super(ModInfo, self).__init__(fullpath, load_cache)
 
     def get_hide_dir(self):
@@ -612,9 +613,15 @@ class ModInfo(FileInfo):
         return modInfos.dependents[self.ci_key]
 
     # Ghosting and ghosting related overrides ---------------------------------
+    def _refresh_ghost_state(self, regular_path=None):
+        """Refreshes the isGhost state by checking existence on disk."""
+        if regular_path is None: regular_path = self._file_key
+        self.isGhost = not regular_path.isfile() and os.path.isfile(
+            regular_path.s + u'.ghost')
+
     def do_update(self, raise_on_error=False):
-        self.isGhost, old_ghost = not self._file_key.exists() and (
-                self._file_key + u'.ghost').exists(), self.isGhost
+        old_ghost = self.isGhost
+        self._refresh_ghost_state()
         # mark updated if ghost state changed but only reread header if needed
         changed = super(ModInfo, self).do_update(raise_on_error)
         return changed or self.isGhost != old_ghost
@@ -626,16 +633,17 @@ class ModInfo(FileInfo):
 
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
-        normal = self._file_key
-        ghost = normal + u'.ghost'
         # Refresh current status - it may have changed due to things like
         # libloadorder automatically unghosting plugins when activating them.
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
         # Both should never exist simultaneously, Bash will warn in BashBugDump
-        self.isGhost = False if normal.isfile() else ghost.isfile()
+        ##: Is this neeed? Causes tons of stat calls on boot
+        self._refresh_ghost_state()
         # Current status == what we want it?
         if isGhost == self.isGhost: return isGhost
+        normal = self._file_key
+        ghost = normal + u'.ghost'
         # Current status != what we want, so change it
         try:
             if not normal.editable() or not ghost.editable():
