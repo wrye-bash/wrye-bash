@@ -22,18 +22,18 @@ contributing.
 Here is a list of supported games with the minimal patch version that Bash was
 tested on (previous versions or latest versions may or may not work):
 
-* Morrowind (very early support, patch 1.6.1820)
-* Oblivion (patch 1.2.0.416)
-* Nehrim (patch 2.0.2.4)
-* Fallout 3 (patch 1.7.0.3)
-* Fallout New Vegas (patch 1.4.0.525)
-* Skyrim (patch 1.9.36.0)
 * Enderal (patch 1.6.4.0)
+* Enderal: Special Edition (patch 2.0.9)
+* Fallout 3 (patch 1.7.0.3)
 * Fallout 4 (patch 1.10.163.0)
 * Fallout 4 VR (patch 1.2.72.0)
+* Fallout New Vegas (patch 1.4.0.525)
+* Morrowind (very early support, patch 1.6.1820)
+* Nehrim (patch 2.0.2.4)
+* Oblivion (patch 1.2.0.416)
+* Skyrim (patch 1.9.36.0)
 * Skyrim Special Edition (patch 1.6.318.0)
 * Skyrim VR (patch 1.4.15.0)
-* Enderal Special Edition (patch 2.0.9)
 
 **Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 3,
 Fallout New Vegas, Fallout 4 and Skyrim Special Edition are supported as well.
