@@ -815,9 +815,16 @@ class Path(object):
                         except: pass
 
     def open(self,*args,**kwdargs):
-        if self.shead and not os.path.exists(self.shead):
-            os.makedirs(self.shead)
-        return io.open(self._s, *args, **kwdargs)
+        try:
+            return open(self._s, *args, **kwdargs)
+        except FileNotFoundError:
+            # We rarely need to do this, so avoid the stat call from
+            # os.path.exists unless it's unavoidable
+            if self.shead and not os.path.exists(self.shead):
+                os.makedirs(self.shead)
+                return open(self._s, *args, **kwdargs)
+            raise
+
     def makedirs(self):
         os.makedirs(self._s, exist_ok=True)
 

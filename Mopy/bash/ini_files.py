@@ -20,7 +20,6 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-import io
 import re
 import time
 from collections import OrderedDict, Counter
@@ -282,7 +281,7 @@ class IniFile(AFile):
         """Write to ourselves respecting windows newlines and out_encoding.
         Note content to be writen (if coming from ini tweaks) must be encodable
         to out_encoding."""
-        return io.open(self.abs_path.temp.s, u'w', encoding=self.out_encoding)
+        return open(self.abs_path.temp.s, u'w', encoding=self.out_encoding)
 
     def target_ini_exists(self, msg=_(
         u'The target ini must exist to apply a tweak to it.')):
