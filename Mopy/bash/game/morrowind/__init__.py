@@ -85,12 +85,13 @@ class MorrowindGameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
-            u'bookart',
-            u'fonts',
-            u'icons',
-            u'mwse',
-            u'shaders',
-            u'splash',
+            'bookart',
+            'distantland', # MGE XE
+            'fonts',
+            'icons',
+            'mwse',
+            'shaders',
+            'splash',
         }
         skip_bain_refresh = {
             u'tes3edit backups',
