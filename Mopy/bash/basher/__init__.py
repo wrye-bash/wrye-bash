@@ -3828,8 +3828,8 @@ class BashFrame(WindowFrame):
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
         self.knownCorrupted = set()
-        self.knownInvalidVerions = set()
-        self.known_sse_form43_mods = set()
+        self.known_invalid_versions = set()
+        self.known_older_form_versions = set()
         self.known_mismatched_version_bsas = set()
         self.known_ba2_collisions = set()
         self.incompleteInstallError = False
@@ -4019,18 +4019,19 @@ class BashFrame(WindowFrame):
         valid_vers = bush.game.Esp.validHeaderVersions
         invalidVersions = {ck for ck, x in bosh.modInfos.items() if
                            all(x.header.version != v for v in valid_vers)}
-        if warn_mods and not invalidVersions <= self.knownInvalidVerions:
+        if warn_mods and not invalidVersions <= self.known_invalid_versions:
             m = [_(u'Unrecognized Versions'),
                  _(u'The following mods have unrecognized header versions: ')]
-            m.extend(sorted(invalidVersions - self.knownInvalidVerions))
+            m.extend(sorted(invalidVersions - self.known_invalid_versions))
             message.append(m)
-            self.knownInvalidVerions |= invalidVersions
-        if warn_mods and not bosh.modInfos.sse_form43 <= self.known_sse_form43_mods:
+            self.known_invalid_versions |= invalidVersions
+        old_fvers = bosh.modInfos.older_form_versions
+        if warn_mods and not old_fvers <= self.known_older_form_versions:
             m = [_(u'Old Header Form Versions'),
                  _(u"The following mods don't use the current plugin Form Version: ")]
-            m.extend(sorted(bosh.modInfos.sse_form43 - self.known_sse_form43_mods))
+            m.extend(sorted(old_fvers - self.known_older_form_versions))
             message.append(m)
-            self.known_sse_form43_mods |= bosh.modInfos.sse_form43
+            self.known_older_form_versions |= old_fvers
         if warn_strings and bosh.modInfos.new_missing_strings:
             m = [_(u'Missing String Localization files:'),
                  _(u'This will cause CTDs if activated.')]

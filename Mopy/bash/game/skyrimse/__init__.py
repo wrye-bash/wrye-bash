@@ -79,6 +79,9 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     class Bain(SkyrimGameInfo.Bain):
         skip_bain_refresh = {u'sseedit backups', u'sseedit cache'}
 
+    class Esp(SkyrimGameInfo.Esp):
+        warn_older_form_versions = True
+
     allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
     patchers = SkyrimGameInfo.patchers - {u'MergePatches'}
 

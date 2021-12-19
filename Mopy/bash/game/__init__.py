@@ -433,6 +433,9 @@ class GameInfo(object):
         # groups and place some sort of thing into the cell (e.g. ACHR, REFR,
         # PMIS, etc.)
         reference_types = set()
+        # Whether to warn about plugins with header form
+        # versions < RecordHeader.plugin_form_version
+        warn_older_form_versions = False
 
     # Class attributes moved to constants module, set dynamically at init
     #--Game ESM/ESP/BSA files
