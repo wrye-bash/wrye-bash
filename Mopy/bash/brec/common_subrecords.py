@@ -90,7 +90,7 @@ class MelCtda(MelUnion):
         u'do_or', u'use_aliases', u'use_global', u'use_packa_data',
         u'swap_subject_and_target')
 
-    def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=[],
+    def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=None,
                  suffix_elements=None, old_suffix_fmts=None):
         """Creates a new MelCtda instance with the specified properties.
 
@@ -104,8 +104,9 @@ class MelCtda(MelUnion):
             MelTruncatedStruct. Must conform to the same syntax as suffix_fmt.
             May be empty.
         :type old_suffix_fmts: set[str]"""
-        if old_suffix_fmts is None: old_suffix_fmts = set()
+        if suffix_fmt is None: suffix_fmt = []
         if suffix_elements is None: suffix_elements = []
+        if old_suffix_fmts is None: old_suffix_fmts = set()
         from .. import bush
         super(MelCtda, self).__init__({
             # Build a (potentially truncated) struct for each function index
@@ -156,6 +157,7 @@ class MelCtda(MelUnion):
         """Builds a list of struct elements to pass to MelTruncatedStruct."""
         # First, build up a list of the parameter elemnts to use
         func_elements = [
+            # 2 == FormID, see PatchGame.condition_function_data
             (FID, u'param%u' % i) if func_param == 2 else u'param%u' % i
             for i, func_param in enumerate(func_data[1:], start=1)]
         # Then, combine the suffix, parameter and suffix elements
@@ -218,8 +220,8 @@ class MelCtdaFo3(MelCtda):
     # The param #1 values that indicate param #2 is a FormID
     _vats_param2_fid = {0, 1, 2, 3, 9, 10}
 
-    def __init__(self, suffix_fmt=u'', suffix_elements=[],
-                 old_suffix_fmts=set()):
+    def __init__(self, suffix_fmt=None, suffix_elements=None,
+                 old_suffix_fmts=None):
         super(MelCtdaFo3, self).__init__(suffix_fmt=suffix_fmt,
                                          suffix_elements=suffix_elements,
                                          old_suffix_fmts=old_suffix_fmts)

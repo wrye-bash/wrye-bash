@@ -29,7 +29,7 @@ and environment issues - do not modify or imitate (ut)."""
 
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
-AppVersion = u'310'  # must represent a valid float
+AppVersion = '310'  # must represent a valid float
 is_standalone = False # whether or not we're on standalone
 
 # wx bitmaps cached to workaround locale issues

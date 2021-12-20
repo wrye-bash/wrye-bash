@@ -354,8 +354,8 @@ def update_file_version(version, commit=False):
     bck_path = os.path.join(tmpdir, fname)
     cpy(orig_path, bck_path)
     with open(orig_path, u'r+') as fopen:
-        content = fopen.read().replace(f"\nAppVersion = u'{bass.AppVersion}'",
-                                       f"\nAppVersion = u'{version}'")
+        content = fopen.read().replace(f"\nAppVersion = '{bass.AppVersion}'",
+                                       f"\nAppVersion = '{version}'")
         fopen.seek(0)
         fopen.truncate(0)
         fopen.write(content)
