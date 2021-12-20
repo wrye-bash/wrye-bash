@@ -128,7 +128,7 @@ class IniFile(AFile):
             return self._ci_settings_cache_linenum, self._deleted_cache
         return self._ci_settings_cache_linenum
 
-    def do_update(self, raise_on_error=False):
+    def do_update(self, raise_on_error=False, itsa_ghost=None):
         try:
             # do_update will return True if the file was deleted then restored
             self.updated |= super(IniFile, self).do_update(raise_on_error=True)

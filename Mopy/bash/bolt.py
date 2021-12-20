@@ -1185,12 +1185,15 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, raise_on_error=False):
+    def do_update(self, raise_on_error=False, itsa_ghost=None):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we
         consider the file deleted and return True except if raise_on_error is
         True, whereupon raise the OSError we got in stat(). If raise_on_error
-        is False user must check if file exists."""
+        is False user must check if file exists.
+        :param itsa_ghost: in ModInfos if we have the ghosting info available
+                           skip recalculating it.
+        """
         try:
             stat_tuple = self._stat_tuple()
         except OSError: # PY3: FileNotFoundError case?

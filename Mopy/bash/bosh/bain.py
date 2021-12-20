@@ -134,9 +134,11 @@ class Installer(ListInfo):
     def getGhosted():
         """Returns map of real to ghosted files in mods directory."""
         dataDir = bass.dirs[u'mods']
-        ghosts = [x for x in dataDir.list() if x.cs[-6:] == u'.ghost']
-        return bolt.LowerDict((x.root.s, x.s) for x in ghosts if
-                              not dataDir.join(x).root.exists())
+        inodes = dataDir.list()
+        ghosts = [x.body for x in inodes if x.cext == u'.ghost']
+        limbo = set(ghosts) & set(inodes) # they exist in both states
+        return bolt.LowerDict(
+            (x.s , x.s + u'.ghost') for x in ghosts if x not in limbo)
 
     @staticmethod
     def final_update(new_sizeCrcDate, old_sizeCrcDate, pending, pending_size,
@@ -2098,8 +2100,8 @@ class InstallersData(DataStore):
         pending, pending_size = bolt.LowerDict(), 0
         new_sizeCrcDate = bolt.LowerDict()
         oldGet = self.data_sizeCrcDate.get
-        ghost_norm = bolt.LowerDict(
-            (y, x) for x, y in Installer.getGhosted().items())
+        ghost_norm_get = bolt.LowerDict(
+            (y, x) for x, y in Installer.getGhosted().items()).get
         if bass.settings[u'bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
         else:
@@ -2114,7 +2116,7 @@ class InstallersData(DataStore):
             for sFile in sFiles:
                 top_level_espm = False
                 if not rsDir:
-                    rpFile = ghost_norm.get(sFile, sFile)
+                    rpFile = ghost_norm_get(sFile, sFile)
                     ext = rpFile[rpFile.rfind(u'.'):]
                     if ext.lower() in skipExts: continue
                     if rpFile in bethFiles: continue
