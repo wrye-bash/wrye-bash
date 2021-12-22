@@ -2984,12 +2984,18 @@ class InstallersDetails(_SashDetailsPanel):
 
     def _selection_menu(self, lb_selection_dex):
         """Handle right click in espm list."""
+        # Clear if we right click something entirely outside the selection
+        if lb_selection_dex not in self.gEspmList.lb_get_selections():
+            self.gEspmList.lb_select_none()
         self.gEspmList.lb_select_index(lb_selection_dex)
         #--Show/Destroy Menu
         InstallersPanel.espmMenu.popup_menu(self, lb_selection_dex)
 
     def _sub_selection_menu(self, lb_selection_dex):
         """Handle right click in sub-packages list."""
+        # Clear if we right click something entirely outside the selection
+        if lb_selection_dex not in self.gSubList.lb_get_selections():
+            self.gSubList.lb_select_none()
         self.gSubList.lb_select_index(lb_selection_dex)
         #--Show/Destroy Menu
         InstallersPanel.subsMenu.popup_menu(self, lb_selection_dex)
