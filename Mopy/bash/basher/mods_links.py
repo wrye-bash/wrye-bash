@@ -442,9 +442,14 @@ class Mods_ImportBashTags(_Mods_BashTags):
             return
         pl_name, curr_tags = GPath(csv_fields[0]), csv_fields[1]
         if pl_name in bosh.modInfos:
-            self.plugins_imported.append(pl_name)
-            bosh.modInfos[pl_name].setBashTags(
-                {t.strip() for t in curr_tags.split(u',')})
+            target_tags = {t.strip() for t in curr_tags.split(u',')}
+            target_pl = bosh.modInfos[pl_name]
+            # Only import if doing this would actually change anything and mark
+            # as non-automatic (otherwise they'll just get deleted immediately)
+            if target_pl.getBashTags() != target_tags:
+                self.plugins_imported.append(pl_name)
+                target_pl.setBashTags(target_tags)
+                target_pl.set_auto_tagged(False)
 
 #------------------------------------------------------------------------------
 class Mods_ClearManualBashTags(ItemLink):
