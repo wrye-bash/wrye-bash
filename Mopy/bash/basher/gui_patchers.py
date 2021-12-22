@@ -1023,7 +1023,7 @@ class ImportActorsFactions(_ImporterPatcherPanel, _AListPanelCsv):
     """Import factions to creatures and NPCs."""
     patcher_name = _(u'Import Actors: Factions')
     patcher_desc = _(u'Import actor factions from source mods/files.')
-    autoKey = {u'Factions'}
+    autoKey = {'Actors.Factions'}
     _csv_key = u'Factions'
     _config_key = u'ImportFactions'
     patcher_type = preservers.ImportActorsFactionsPatcher

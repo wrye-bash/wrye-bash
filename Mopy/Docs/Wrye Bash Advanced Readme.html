@@ -933,14 +933,38 @@ tab. The directories skipped are:
 </ul>
 <p>CSV files can also be used when building the Bashed Patch, for a number of options. The Bashed Patch builder will automatically detect the presence of any CSV files in the <code>Data\Bash Patches</code> folder and have the correct filename ending. These filename endings are:
 <table>
-    <thead><tr><th>Import Type<th>Required Filename Ending
+    <thead>
+        <tr>
+            <th>Import Type</th>
+            <th>Required Filename Ending</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Replace Form IDs<td>Formids.csv
-        <tr><td>Import Factions<td>Factions.csv
-        <tr><td>Import Names<td>Names.csv
-        <tr><td>Import Relations<td>Relations.csv
-        <tr><td>Import Spell Stats<td>Spells.csv
-        <tr><td>Import Stats<td>Stats.csv
+        <tr>
+            <td>Replace Form IDs</td>
+            <td>Formids.csv</td>
+        </tr>
+        <tr>
+            <td>Import Actors: Factions</td>
+            <td>Factions.csv</td>
+        </tr>
+        <tr>
+            <td>Import Names</td>
+            <td>Names.csv</td>
+        </tr>
+        <tr>
+            <td>Import Relations</td>
+            <td>Relations.csv</td>
+        </tr>
+        <tr>
+            <td>Import Spell Stats</td>
+            <td>Spells.csv</td>
+        </tr>
+        <tr>
+            <td>Import Stats</td>
+            <td>Stats.csv</td>
+        </tr>
+    </tbody>
 </table>
 
 
@@ -1499,6 +1523,10 @@ C.Location, -C.LockList
             <td>Older name for R.Eyes.</td>
         </tr>
         <tr>
+            <td>Factions</td>
+            <td>Older name for Actors.Factions.</td>
+        </tr>
+        <tr>
             <td>Hair</td>
             <td>Older name for R.Hair.</td>
         </tr>
@@ -1659,6 +1687,21 @@ C.Location, -C.LockList
                         <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.Factions</td>
+            <td>Changes Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) or Non-Player Character factions.</td>
+            <td>Addition or removal of a faction, or change of faction rank in (NPC_) Non-Player Character or (CREA) Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) records.
+                <ul>
+                    <li>Factions
+                        <ul>
+                            <li>(SNAM) Faction</li>
+                            <li>(SNAM) Faction - Rank</li>
+                        </ul>
+                    </li>
                 </ul>
                 <strong>Not available for Fallout 4.</strong>
             </td>
@@ -2240,21 +2283,6 @@ C.Location, -C.LockList
                     <li>Charge Time</li>
                     <li>Base Enchantment</li>
                     <li>Worn Restrictions</li>
-                </ul>
-                <strong>Not available for Fallout 4.</strong>
-            </td>
-        </tr>
-        <tr>
-            <td>Factions</td>
-            <td>Changes Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) or Non-Player Character factions.</td>
-            <td>Addition or removal of a faction, or change of faction rank in (NPC_) Non-Player Character or (CREA) Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) records.
-                <ul>
-                    <li>Factions
-                        <ul>
-                            <li>(SNAM) Faction</li>
-                            <li>(SNAM) Faction - Rank</li>
-                        </ul>
-                    </li>
                 </ul>
                 <strong>Not available for Fallout 4.</strong>
             </td>
