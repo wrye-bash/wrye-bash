@@ -397,7 +397,7 @@ class _Mod_Labels(ChoiceLink):
                     # the mod list if this returns true
                 del _self.listEditor  ##: used by the buttons code - should be
                 # encapsulated
-        class _None(ItemLink):
+        class _None(CheckLink):
             _text = _(u'None')
             _help = _(u'Clear labels from selected mod(s)')
             def Execute(self):
@@ -406,12 +406,19 @@ class _Mod_Labels(ChoiceLink):
                 for fileName in self.selected:
                     fileLabels[fileName] = u''
                 _self._refresh()
+            def _check(self):
+                return _self._none_checked
         self.extraItems = [_Edit(), SeparatorLink(), _None()]
 
     def _initData(self, window, selection):
         super(_Mod_Labels, self)._initData(window, selection)
         _self = self
-        class _LabelLink(ItemLink):
+        label_column = bosh.modInfos.table.getColumn(self.column)
+        selection_set = set(selection)
+        column_contents = {x[1] for x in label_column.items()
+                           if x[0] in selection_set}
+        self._none_checked = not any(column_contents)
+        class _LabelLink(CheckLink):
             def Execute(self):
                 for fileInfo in self.iselected_infos():
                     fileInfo.set_table_prop(_self.column, self._text)
@@ -420,6 +427,10 @@ class _Mod_Labels(ChoiceLink):
             def link_help(self): return _(
                 u"Applies the label '%(lbl)s' to the selected mod(s).") % {
                                             u'lbl': self._text}
+            def _check(self):
+                """Check the link if any of the selected plugins have labels
+                matching this one."""
+                return self._text in column_contents
         self.__class__.choiceLinkType = _LabelLink
 
     @property
@@ -541,17 +552,6 @@ class Mod_Groups(_Mod_Labels):
         super(Mod_Groups, self).__init__()
         self.extraItems = [_Mod_Groups_Export(),
                            _Mod_Groups_Import()] + self.extraItems
-
-    def _initData(self, window, selection):
-        super(Mod_Groups, self)._initData(window, selection)
-        selection = set(selection)
-        mod_group = bosh.modInfos.table.getColumn(u'group')
-        modGroup = {x[1] for x in mod_group.items() if x[0] in selection}
-        class _CheckGroup(CheckLink, self.__class__.choiceLinkType):
-            def _check(self):
-                """Check the Link if any of the selected mods belongs to it."""
-                return self._text in modGroup
-        self.__class__.choiceLinkType = _CheckGroup
 
     def _doRefresh(self):
         """Add to the list of groups currently assigned to mods."""
