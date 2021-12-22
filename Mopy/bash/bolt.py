@@ -991,10 +991,6 @@ def clearReadOnly(dirPath):
     cmd = r'attrib -R "%s\*" /S /D' % dirPath
     subprocess.call(cmd, startupinfo=startupinfo)
 
-# TMP functions to deprecate Paths functionality for simple filenames - SLOW!
-def cext_(string_val):
-    return os.path.splitext(string_val)[-1].lower()
-
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
 reUnixNewLine = re.compile(r'(?<!\r)\n', re.U)

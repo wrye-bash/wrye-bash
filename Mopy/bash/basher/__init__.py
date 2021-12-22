@@ -65,7 +65,7 @@ import wx
 #--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
 from ..bolt import GPath, SubProgress, deprint, round_size, dict_sort, \
-    top_level_items, GPath_no_norm, cext_
+    top_level_items, GPath_no_norm
 from ..bosh import omods, ModInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
@@ -3145,7 +3145,7 @@ class InstallersPanel(BashTab):
         if self.frameActivated:
             folders, files = top_level_items(bass.dirs[u'installers'].s)
             omds = [GPath_no_norm(inst_path) for inst_path in files
-                    if cext_(inst_path) in archives.omod_exts]
+                    if os.path.splitext(inst_path)[1].lower() in archives.omod_exts]
             if any(inst_path not in omods.failedOmods for inst_path in omds):
                 omod_projects = self.__extractOmods(omds) ##: change above to filter?
                 folders.extend(omod_projects)

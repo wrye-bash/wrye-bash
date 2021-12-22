@@ -41,7 +41,7 @@ from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
 from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
-    LowerDict, AFile, dict_sort, GPath_no_norm, top_level_items, cext_
+    LowerDict, AFile, dict_sort, GPath_no_norm, top_level_items
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 from ..ini_files import OBSEIniFile
@@ -57,7 +57,7 @@ class Installer(ListInfo):
         u'subActives', u'dirty_sizeCrc', u'comments', u'extras_dict',
         u'packageDoc', u'packagePic', u'src_sizeCrcDate', u'hasExtraData',
         u'skipVoices', u'espmNots', u'isSolid', u'blockSize', u'overrideSkips',
-        u'remaps', u'skipRefresh', u'fileRootIdex')
+        u'_remaps', u'skipRefresh', u'fileRootIdex')
     volatile = (u'ci_dest_sizeCrc', u'skipExtFiles', u'skipDirFiles',
         u'status', u'missingFiles', u'mismatchedFiles', u'project_refreshed',
         u'mismatchedEspms', u'unSize', u'espms', u'underrides', u'hasWizard',
@@ -219,7 +219,7 @@ class Installer(ListInfo):
         self.order = -1 #--Set by user/interface.
         self.is_active = False
         self.espmNots = set() #--Lowercase plugin file names that user has decided not to install.
-        self.remaps = {}
+        self._remaps = {}
         #--Volatiles (not pickled values)
         #--Volatiles: directory specific
         self.project_refreshed = False
@@ -271,27 +271,27 @@ class Installer(ListInfo):
 
     def resetEspmName(self,currentName):
         oldName = self.getEspmName(currentName)
-        del self.remaps[oldName]
+        del self._remaps[oldName]
         path = GPath(currentName)
         if path in self.espmNots:
             self.espmNots.discard(path)
             self.espmNots.add(GPath(oldName))
 
     def resetAllEspmNames(self):
-        for espm in list(self.remaps):
+        for remapped in list(self._remaps.values()):
             # Need to use list(), since 'resetEspmName' will use
-            # del self.remaps[oldName], changing the dictionary size.
-            self.resetEspmName(self.remaps[espm])
+            # del self._remaps[oldName], changing the dictionary size.
+            self.resetEspmName(remapped)
 
     def getEspmName(self,currentName):
-        for old, renamed in self.remaps.items():
+        for old, renamed in self._remaps.items():
             if renamed == currentName:
                 return old
         return currentName
 
     def setEspmName(self,currentName,newName):
         oldName = self.getEspmName(currentName)
-        self.remaps[oldName] = newName
+        self._remaps[oldName] = newName
         path = GPath(currentName)
         if path in self.espmNots:
             self.espmNots.discard(path)
@@ -510,7 +510,7 @@ class Installer(ListInfo):
                     self.skipDirFiles.add(_(u'[Bethesda Content]') + u' ' +
                                           full)
                     return None # FIXME - after renames ?
-            file_relative = self.remaps.get(file_relative, file_relative)
+            file_relative = self._remaps.get(file_relative, file_relative)
             if file_relative not in self.espmMap[sub]: self.espmMap[
                 sub].append(file_relative)
             pFile = GPath(file_relative)
@@ -743,8 +743,8 @@ class Installer(ListInfo):
                         continue
                     elif not rootLower and fileExt in plugin_extensions:
                         #--Remap espms as defined by the user
-                        if file_relative in self.remaps:
-                            file_relative = self.remaps[file_relative]
+                        if file_relative in self._remaps:
+                            file_relative = self._remaps[file_relative]
                             # fileLower = file.lower() # not needed will skip
                         if file_relative not in sub_esps: sub_esps.append(file_relative)
                     if skip:
@@ -1972,7 +1972,7 @@ class InstallersData(DataStore):
         :rtype: InstallersData._RefreshInfo"""
         pending, installers = set(), set()
         files = [GPath_no_norm(f) for f in files if
-                 cext_(f) in readExts and not f.lower().startswith(
+                 os.path.splitext(f)[-1].lower() in readExts and not f.lower().startswith(
                      __skip_prefixes)]
         folders = {GPath_no_norm(f) for f in folders if
             # skip Bash directories and user specified ones
@@ -2118,8 +2118,8 @@ class InstallersData(DataStore):
         if bass.settings[u'bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
         else:
-            beth_keys = {CIstr(b) for b in
-                         bush.game.bethDataFiles} - self.overridden_skips
+            beth_keys = {*map(CIstr,
+                              bush.game.bethDataFiles)} - self.overridden_skips
             bethFiles = LowerDict.fromkeys(beth_keys)
         skipExts = Installer.skipExts
         relPos = len(bass.dirs[u'mods'].s) + 1
@@ -2150,10 +2150,10 @@ class InstallersData(DataStore):
                     lstat = os.lstat(asFile)
                 except FileNotFoundError:
                     continue # file does not exist
-                size, date = lstat.st_size, lstat.st_mtime
-                if size != oSize or date != oDate:
-                    pending[rpFile] = (size, oCrc, date, asFile)
-                    pending_size += size
+                lstat_size, date = lstat.st_size, lstat.st_mtime
+                if lstat_size != oSize or date != oDate:
+                    pending[rpFile] = (lstat_size, oCrc, date, asFile)
+                    pending_size += lstat_size
                 else:
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
         return new_sizeCrcDate, pending, pending_size
@@ -2953,9 +2953,9 @@ class InstallersData(DataStore):
             buff.write(u'= %s %s\n\n' % (_(u'Loose File Conflicts'), u'=' * 36))
         # Print loose file conflicts
         def _print_loose_conflicts(conflicts, title=_(u'Lower')):
-            buff.write(u'= %s %s\n' % (title, u'=' * 40))
+            buff.write(f'= {title} {u"=" * 40}\n')
             for inst_, package_, confl_ in conflicts:
-                buff.write(u'==%d== %s\n' % (inst_.order, package_))
+                buff.write(f'=={inst_.order:d}== {package_}\n')
                 for src_file in confl_:
                     oldName = inst_.getEspmName(src_file)
                     buff.write(oldName)
