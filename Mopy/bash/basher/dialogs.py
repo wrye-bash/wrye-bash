@@ -160,7 +160,7 @@ class CreateNewProject(DialogWindow):
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self, fit=True)
         # Dialog Icon Handlers
-        self.set_icon(installercons.get_image(u'off.white.dir').GetIcon())
+        self.set_icon(installercons.get_icon(u'off.white.dir'))
         self.OnCheckBoxChange()
         self.OnCheckProjectsColorTextCtrl(self.textName.text_content)
 
@@ -179,14 +179,11 @@ class CreateNewProject(DialogWindow):
         """Change the DialogWindow icon to represent what the project status
         will be when created. """
         if self.checkEsp.is_checked or self.checkEspMasterless.is_checked:
-            if self.checkWizard.is_checked:
-                self.set_icon(
-                    installercons.get_image(u'off.white.dir.wiz').GetIcon())
-            else:
-                self.set_icon(
-                    installercons.get_image(u'off.white.dir').GetIcon())
+            img_key = f'off.white.dir' \
+                      f'{self.checkWizard.is_checked and ".wiz" or ""}'
         else:
-            self.set_icon(installercons.get_image(u'off.grey.dir').GetIcon())
+            img_key = 'off.grey.dir'
+        self.set_icon(installercons.get_icon(img_key))
 
     def OnClose(self):
         """ Create the New Project and add user specified extras. """

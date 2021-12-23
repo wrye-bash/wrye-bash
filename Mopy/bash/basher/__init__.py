@@ -2222,7 +2222,7 @@ class SaveDetails(_ModsSavesDetails):
         if self.saveInfo:
             if not self.saveInfo.header.image_loaded:
                 self.saveInfo.header.read_save_header(load_image=True)
-            new_save_screen = ImageWrapper.from_bitstream(
+            new_save_screen = ImageWrapper.bmp_from_bitstream(
                 *self.saveInfo.header.image_parameters)
         else:
             new_save_screen = None # reset to default
@@ -4188,9 +4188,9 @@ class BashApp(object):
                            elapsed=False) as progress:
             # Is splash enabled in ini ?
             if bass.inisettings[u'EnableSplashScreen']:
-                if bass.dirs[u'images'].join(u'wryesplash.png').isfile():
-                    splash_screen = CenteredSplash(
-                        bass.dirs[u'images'].join(u'wryesplash.png').s)
+                if (splash := bass.dirs['images'].join(
+                    'wryesplash.png')).isfile():
+                    splash_screen = CenteredSplash(splash.s)
             #--Init Data
             progress(0.2, _(u'Initializing Data'))
             self.InitData(progress)

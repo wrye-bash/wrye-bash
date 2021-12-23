@@ -1284,7 +1284,7 @@ class WryeParser(ScriptParser.Parser):
         main_desc = args.pop(0).replace(u'&', u'&&')
         if len(args) % 3:
             error(MISSING_ARGS % name_)
-        images = []
+        images_ = []
         titles = OrderedDict()
         descs = []
         image_paths = []
@@ -1295,7 +1295,7 @@ class WryeParser(ScriptParser.Parser):
                 title = title[1:]
             titles[title] = is_default
             descs.append(args.pop(0))
-            images.append(args.pop(0))
+            images_.append(args.pop(0))
         if self.bAuto:
             # auto wizard will resolve SelectOne/SelectMany only if default(s)
             # were specified.
@@ -1318,7 +1318,7 @@ class WryeParser(ScriptParser.Parser):
             imageJoin = bass.getTempDir().join
         else:
             imageJoin = bass.dirs[u'installers'].join(self._path).join
-        for i in images:
+        for i in images_:
             # Try looking inside the package first, then look if it's using one
             # of the images packaged with Wrye Bash (from Mopy/bash/images)
             wiz_img_path = imageJoin(i)

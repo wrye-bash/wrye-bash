@@ -340,18 +340,18 @@ class ModFile(object):
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
         masters_list = self.augmented_masters()
-        indices = {mname: index for index, mname in enumerate(masters_list)}
+        indexes = {mname: index for index, mname in enumerate(masters_list)}
         has_expanded_range = bush.game.Esp.expanded_plugin_range
         if (has_expanded_range and len(masters_list) > 1
                 and self.tes4.version >= 1.0):
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range
             def _master_index(m_name, _obj_id):
-                return indices[m_name]
+                return indexes[m_name]
         else:
             # 0x000-0x800 are reserved for hardcoded (engine) records
             def _master_index(m_name, obj_id):
-                return indices[m_name] if obj_id >= 0x800 else 0
+                return indexes[m_name] if obj_id >= 0x800 else 0
         def mapper(long_fid):
             if long_fid is None: return None
             if isinstance(long_fid, int): return long_fid

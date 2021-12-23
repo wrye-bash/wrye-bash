@@ -117,7 +117,7 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
 
     def OnBeginDrag(self, event):
         if not self.fnDndAllow(event): return
-        indices = []
+        indexes = []
         start = stop = -1
         for index in range(self.GetItemCount()):
             if self.GetItemState(index, _wx.LIST_STATE_SELECTED):
@@ -127,12 +127,12 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                     return
                 if start < 0:
                     start = index
-                indices.append(index)
+                indexes.append(index)
             else:
                 if start >=0 > stop:
                     stop = index - 1
         if stop < 0: stop = self.GetItemCount()
-        selected = pickle.dumps(indices, 1)
+        selected = pickle.dumps(indexes, 1)
         ldata = _wx.CustomDataObject(u'ListIndexes')
         ldata.SetData(selected)
         data_object = _wx.DataObjectComposite()

@@ -460,7 +460,7 @@ class WithCharEvents(_AComponent):
 class ImageWrapper(object):
     """Wrapper for images, allowing access in various formats/classes.
 
-    Allows image to be specified before wx.App is initialized.""" # TODO: unneeded?
+    Allows image to be specified before wx.App is initialized."""
 
     typesDict = {u'png': _wx.BITMAP_TYPE_PNG, u'jpg': _wx.BITMAP_TYPE_JPEG,
                  u'jpeg': _wx.BITMAP_TYPE_JPEG, u'ico': _wx.BITMAP_TYPE_ICO,
@@ -510,7 +510,7 @@ class ImageWrapper(object):
         return self.icon
 
     @staticmethod
-    def from_bitstream(bm_width, bm_height, stream_data, with_alpha):
+    def bmp_from_bitstream(bm_width, bm_height, stream_data, with_alpha):
         """Creates a bitmap from the specified stream data."""
         wx_depth = (32 if with_alpha else 24)
         wx_fmt = (_wx.BitmapBufferFormat_RGBA if with_alpha

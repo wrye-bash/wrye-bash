@@ -89,10 +89,10 @@ def InitStatusBar():
         app_button_factory(bass.dirs[u'app'].join(u'OblivionModManager.exe'),
                            imageList(u'obmm%s.png'), _(u"Launch OBMM"),
                            uid=u'OBMM'))
-    from .constants import toolbar_buttons
     # Just an _App_Button whose path is in bass.tooldirs
     Tooldir_Button = lambda *args: app_button_factory(bass.tooldirs[args[0]],
                                                       *args[1:])
+    from .constants import toolbar_buttons
     for tb in toolbar_buttons:
         BashStatusBar.buttons.append(Tooldir_Button(*tb))
     for tb2 in _init_tool_buttons():

@@ -318,7 +318,7 @@ class Save_ExportScreenshot(OneItemLink):
             _(u'Screenshot %s.jpg') % self._selected_item, u'*.jpg')
         if not imagePath: return
         # TODO(inf) de-wx! All the image stuff is still way too close to wx
-        image = ImageWrapper.from_bitstream(
+        image = ImageWrapper.bmp_from_bitstream(
             *self._selected_info.header.image_parameters).ConvertToImage()
         image.SaveFile(imagePath.s, ImageWrapper.typesDict[u'jpg'])
 
