@@ -191,7 +191,7 @@ def __get_translations_dir():
     if not os.path.exists(trans_path):
         # HACK: the CI has to run tests from the top dir, which causes us to
         # have a non-Mopy working dir here. Real fix is ditching the fake
-        # startup and adding a real headless mode to WB (see #568 and #554)
+        # startup and adding a real headless mode to WB (see #568, #554 and #600)
         trans_path = os.path.join(os.getcwd(), u'Mopy', u'bash', u'l10n')
     return trans_path
 

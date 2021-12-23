@@ -26,7 +26,7 @@ now. See #190, its code should be refactored and land in basher and/or gui."""
 # Imports ---------------------------------------------------------------------
 from . import bass # for dirs - try to avoid
 from . import bolt
-from .bolt import deprint, readme_url
+from .bolt import deprint, readme_url, Path
 from .exception import AbstractError, AccessDeniedError, BoltError, \
     CancelError, SkipError, StateError
 #--Python
@@ -129,13 +129,14 @@ class ColorChecks(ImageList):
     """ColorChecks ImageList. Used by several UIList classes."""
     def __init__(self):
         ImageList.__init__(self, 16, 16)
+        if not (im_dir := Path.getcwd().join('bash', 'images')).exists(): ##: CI Hack
+            im_dir = Path.getcwd().join('Mopy', 'bash', 'images')
         for state in (u'on', u'off', u'inc', u'imp'):
             for status in (u'purple', u'blue', u'green', u'orange', u'yellow',
                            u'red'):
                 shortKey = f'{status}.{state}'
                 image_key = f'checkbox.{shortKey}'
-                img = bass.dirs[u'images'].join(
-                    f'checkbox_{status}_{state}.png')
+                img = im_dir.join(f'checkbox_{status}_{state}.png')
                 image = images[image_key] = ImageWrapper(img, ImageWrapper.typesDict[u'png'])
                 self.images.append((shortKey, image))
 
@@ -824,9 +825,7 @@ class UIList(wx.Panel):
     # order in which categories are added will also be the display order.
     global_links = None
     #--gList image collection
-    __icons = ImageList(16, 16) # sentinel value due to bass.dirs not being
-    # yet initialized when balt is imported, so I can't use ColorChecks here
-    icons = __icons
+    _icons = ColorChecks()
     _shellUI = False # only True in Screens/INIList/Installers
     _recycle = True # False on tabs that recycle makes no sense (People)
     max_items_open = 7 # max number of items one can open without prompt
@@ -858,9 +857,6 @@ class UIList(wx.Panel):
         #--Columns
         self.__class__.persistent_columns = {self._default_sort_col}
         self._colDict = {} # used in setting column sort indicator
-        #--gList image collection
-        self.__class__.icons = ColorChecks() \
-            if self.__class__.icons is self.__icons else self.__class__.icons
         #--gList
         self.__gList = UIListCtrl(self, self.__class__._editLabels,
                                   self.__class__._sunkenBorder,
@@ -869,13 +865,13 @@ class UIList(wx.Panel):
                                   dndList=self.__class__._dndList,
                                   fnDropFiles=self.OnDropFiles,
                                   fnDropIndexes=self.OnDropIndexes)
-        if self.icons:
-            # Image List: Column sorting order indicators
-            # explorer style ^ == ascending
-            checkboxesIL = self.icons.GetImageList()
-            self.sm_up = checkboxesIL.Add(images[u'arrow.up'].get_bitmap())
-            self.sm_dn = checkboxesIL.Add(images[u'arrow.down'].get_bitmap())
-            self.__gList._native_widget.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
+        # Image List: Column sorting order indicators
+        # explorer style ^ == ascending
+        checkboxesIL = self._icons.GetImageList()
+        self.sm_up = checkboxesIL.Add(images[u'arrow.up'].get_bitmap())
+        self.sm_dn = checkboxesIL.Add(images[u'arrow.down'].get_bitmap())
+        self.__gList._native_widget.SetImageList(checkboxesIL,
+                                                 wx.IMAGE_LIST_SMALL)
         if self.__class__._editLabels:
             self.__gList.on_edit_label_begin.subscribe(self.OnBeginEditLabel)
             self.__gList.on_edit_label_end.subscribe(self.OnLabelEdited)
@@ -986,10 +982,10 @@ class UIList(wx.Panel):
         gItem = self.__gList._native_widget.GetItem(itemDex)
         df = self._ListItemFormat()
         self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
-        if df.icon_key and self.icons:
+        if df.icon_key:
             if isinstance(df.icon_key, tuple):
-                img = self.icons.Get(*df.icon_key)
-            else: img = self.icons[df.icon_key]
+                img = self._icons.Get(*df.icon_key)
+            else: img = self._icons[df.icon_key]
             gItem.SetImage(img)
         if df.text_key:
             gItem.SetTextColour(colors[df.text_key].to_rgba_tuple())

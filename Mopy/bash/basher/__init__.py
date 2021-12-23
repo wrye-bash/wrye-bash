@@ -2328,7 +2328,7 @@ class InstallersList(balt.UIList):
     column_links = Links()
     context_links = Links()
     global_links = defaultdict(lambda: Links()) # Global menu
-    icons = installercons
+    _icons = installercons
     _sunkenBorder = False
     _shellUI = True
     _editLabels = _copy_paths = True

@@ -1810,7 +1810,7 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
                  lg_icons=Link._default_icons):
         super(_Mod_Import_Link, self)._showLog(logText,
             title=title or self.__class__.progressTitle, asDialog=asDialog,
-            fixedFont=fixedFont, icons=lg_icons)
+            fixedFont=fixedFont, lg_icons=lg_icons)
 
     def _log(self, changed, fileName):
         self._showLog(u'* %03d  %s\n' % (changed, fileName))
