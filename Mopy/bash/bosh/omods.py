@@ -249,8 +249,10 @@ class OmodFile(object):
         progress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail)
         with streamPath.open(u'rb') as bin_out:
             for i,fname in enumerate(fileNames):
-                progress(i, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail + u'\n' + fname)
-                outFile = outDir.join(fname)
+                fn_str = fname.decode('utf-8')
+                progress(i, self.omod_path.stail + u'\n' + _(
+                    u'Unpacking %s') % streamPath.stail + f'\n{fn_str}')
+                outFile = outDir.join(fn_str)
                 with outFile.open(u'wb') as output:
                     output.write(bin_out.read(sizes_[i]))
         progress(len(fileNames))
