@@ -810,7 +810,7 @@ class _GhostLink(ItemLink):
         for fileName, fileInfo in self.iselected_pairs():
             fileInfo.set_table_prop(u'allowGhosting', set_allow(fileName))
             oldGhost = fileInfo.isGhost
-            if fileInfo.setGhost(to_ghost(fileName), itsa_ghost=oldGhost) != oldGhost:
+            if fileInfo.setGhost(to_ghost(fileName)) != oldGhost:
                 changed.append(fileName)
         self.window.RefreshUI(redraw=changed, refreshSaves=False)
 

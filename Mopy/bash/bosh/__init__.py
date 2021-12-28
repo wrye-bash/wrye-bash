@@ -642,7 +642,7 @@ class ModInfo(FileInfo):
         return modInfos.dependents[self.fn_key]
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def _refresh_ghost_state(self, regular_path=None, itsa_ghost=None):
+    def _refresh_ghost_state(self, regular_path=None, *, itsa_ghost=None):
         """Refreshes the isGhost state by checking existence on disk."""
         if itsa_ghost is not None:
             self.isGhost = itsa_ghost
@@ -663,15 +663,13 @@ class ModInfo(FileInfo):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
         return (self._file_key + u'.ghost') if self.isGhost else self._file_key
 
-    def setGhost(self,isGhost): ## TODO pass itsa_ghost ?
+    def setGhost(self, isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
         # Refresh current status - it may have changed due to things like
         # libloadorder automatically unghosting plugins when activating them.
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
         # Both should never exist simultaneously, Bash will warn in BashBugDump
-        ##: Is this needed? Causes tons of stat calls on boot
-        self._refresh_ghost_state()
         # Current status == what we want it?
         if isGhost == self.isGhost: return isGhost
         normal = self._file_key
@@ -691,8 +689,8 @@ class ModInfo(FileInfo):
             # Notify BAIN, as this is basically a rename operation
             modInfos._notify_bain(renamed={ghost_source: ghost_target})
         except:
-            deprint(u'Failed to %sghost file %s' % ((u'un', u'')[isGhost],
-                (ghost, normal)[isGhost]), traceback=True)
+            deprint(f'Failed to {"" if isGhost else "un"}ghost file '
+                    f'{normal if isGhost else ghost}', traceback=True)
         return self.isGhost
 
     #--Bash Tags --------------------------------------------------------------

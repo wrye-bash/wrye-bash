@@ -68,8 +68,7 @@ import wx
 from .. import bush, bosh, bolt, bass, env, load_order, archives, \
     initialization
 from ..bolt import GPath, SubProgress, deprint, round_size, dict_sort, \
-    top_level_items, GPath_no_norm, os_name, str_to_sig, FName, \
-    forward_compat_path_to_fn
+    top_level_items, os_name, str_to_sig, FName, forward_compat_path_to_fn
 from ..bosh import omods, ModInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
