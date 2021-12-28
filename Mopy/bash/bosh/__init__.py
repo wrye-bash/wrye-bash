@@ -630,7 +630,7 @@ class ModInfo(FileInfo):
         return modInfos.dependents[self.ci_key]
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def _refresh_ghost_state(self, regular_path=None, itsa_ghost=None):
+    def _refresh_ghost_state(self, regular_path=None, *, itsa_ghost=None):
         """Refreshes the isGhost state by checking existence on disk."""
         if itsa_ghost is not None:
             self.isGhost = itsa_ghost
@@ -651,7 +651,7 @@ class ModInfo(FileInfo):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
         return (self._file_key + u'.ghost') if self.isGhost else self._file_key
 
-    def setGhost(self,isGhost): ## TODO pass itsa_ghost ?
+    def setGhost(self, isGhost, *, itsa_ghost=None):
         """Sets file to/from ghost mode. Returns ghost status at end."""
         # Refresh current status - it may have changed due to things like
         # libloadorder automatically unghosting plugins when activating them.
@@ -659,7 +659,7 @@ class ModInfo(FileInfo):
         # and ghosted version exist, treat the normal as the real one.
         # Both should never exist simultaneously, Bash will warn in BashBugDump
         ##: Is this needed? Causes tons of stat calls on boot
-        self._refresh_ghost_state()
+        self._refresh_ghost_state(itsa_ghost=itsa_ghost)
         # Current status == what we want it?
         if isGhost == self.isGhost: return isGhost
         normal = self._file_key
@@ -679,8 +679,8 @@ class ModInfo(FileInfo):
             # Notify BAIN, as this is basically a rename operation
             modInfos._notify_bain(renamed={ghost_source: ghost_target})
         except:
-            deprint(u'Failed to %sghost file %s' % ((u'un', u'')[isGhost],
-                (ghost, normal)[isGhost]), traceback=True)
+            deprint(f'Failed to {"" if isGhost else "un"}ghost file '
+                    f'{normal if isGhost else ghost}', traceback=True)
         return self.isGhost
 
     #--Bash Tags --------------------------------------------------------------
@@ -2066,7 +2066,7 @@ def _lo_cache(lord_func):
             self._recalc_real_indices()
             new_active = active_set - old_active_set
             for neu in new_active: # new active mods, unghost
-                self[neu].setGhost(False)
+                self[neu].setGhost(False, itsa_ghost=self[neu].isGhost)
             return (lo_changed and 1) + (active_changed and 2)
         finally:
             self._lo_wip = list(load_order.cached_lo_tuple())
@@ -2434,7 +2434,7 @@ class ModInfos(FileInfos):
                 modGhost = toGhost and not load_order.cached_is_active(mod) \
                            and allowGhosting.get(mod, True)
                 oldGhost = modInfo.isGhost
-                newGhost = modInfo.setGhost(modGhost)
+                newGhost = modInfo.setGhost(modGhost, itsa_ghost=oldGhost)
                 if newGhost != oldGhost:
                     changed.append(mod)
         return changed
@@ -2718,7 +2718,7 @@ class ModInfos(FileInfos):
             espms_extra, esls_extra = load_order.check_active_limit(
                 self._active_wip + [fileName])
             if espms_extra or esls_extra:
-                msg = u'%s: Trying to activate more than ' % fileName
+                msg = f'{fileName}: Trying to activate more than '
                 if espms_extra:
                     msg += f'{load_order.max_espms():d} espms'
                 else:
@@ -3199,7 +3199,7 @@ class ModInfos(FileInfos):
         self._lo_wip.insert(oldIndex, oldName)
         def _activate(active, mod):
             if active:
-                self[mod].setGhost(False) # needed if autoGhost is False
+                self[mod].setGhost(False, itsa_ghost=self[mod].isGhost) # needed if autoGhost is False
                 self.lo_activate(mod, doSave=False)
             else: self.lo_deactivate(mod, doSave=False)
         _activate(is_new_info_active, oldName)
