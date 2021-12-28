@@ -41,7 +41,7 @@ from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
 from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
-    LowerDict, AFile, dict_sort, GPath_no_norm
+    LowerDict, AFile, dict_sort, GPath_no_norm, top_level_items
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 from ..ini_files import OBSEIniFile
@@ -57,7 +57,7 @@ class Installer(ListInfo):
         u'subActives', u'dirty_sizeCrc', u'comments', u'extras_dict',
         u'packageDoc', u'packagePic', u'src_sizeCrcDate', u'hasExtraData',
         u'skipVoices', u'espmNots', u'isSolid', u'blockSize', u'overrideSkips',
-        u'remaps', u'skipRefresh', u'fileRootIdex')
+        u'_remaps', u'skipRefresh', u'fileRootIdex')
     volatile = (u'ci_dest_sizeCrc', u'skipExtFiles', u'skipDirFiles',
         u'status', u'missingFiles', u'mismatchedFiles', u'project_refreshed',
         u'mismatchedEspms', u'unSize', u'espms', u'underrides', u'hasWizard',
@@ -219,7 +219,7 @@ class Installer(ListInfo):
         self.order = -1 #--Set by user/interface.
         self.is_active = False
         self.espmNots = set() #--Lowercase plugin file names that user has decided not to install.
-        self.remaps = {}
+        self._remaps = {}
         #--Volatiles (not pickled values)
         #--Volatiles: directory specific
         self.project_refreshed = False
@@ -252,8 +252,9 @@ class Installer(ListInfo):
     def number_string(number, marker_string=u''):
         return str(number)
 
-    def size_string(self, marker_string=u''):
-        return round_size(self.fsize)
+    def size_string(self): return round_size(self.fsize)
+
+    def size_info_str(self): return  _(u'Size:') + u' %s' % self.size_string()
 
     def structure_string(self):
         if self.type == 1:
@@ -270,27 +271,27 @@ class Installer(ListInfo):
 
     def resetEspmName(self,currentName):
         oldName = self.getEspmName(currentName)
-        del self.remaps[oldName]
+        del self._remaps[oldName]
         path = GPath(currentName)
         if path in self.espmNots:
             self.espmNots.discard(path)
             self.espmNots.add(GPath(oldName))
 
     def resetAllEspmNames(self):
-        for espm in list(self.remaps):
+        for remapped in list(self._remaps.values()):
             # Need to use list(), since 'resetEspmName' will use
-            # del self.remaps[oldName], changing the dictionary size.
-            self.resetEspmName(self.remaps[espm])
+            # del self._remaps[oldName], changing the dictionary size.
+            self.resetEspmName(remapped)
 
     def getEspmName(self,currentName):
-        for old, renamed in self.remaps.items():
+        for old, renamed in self._remaps.items():
             if renamed == currentName:
                 return old
         return currentName
 
     def setEspmName(self,currentName,newName):
         oldName = self.getEspmName(currentName)
-        self.remaps[oldName] = newName
+        self._remaps[oldName] = newName
         path = GPath(currentName)
         if path in self.espmNots:
             self.espmNots.discard(path)
@@ -466,7 +467,7 @@ class Installer(ListInfo):
             dest = file_relative
             if not parentDir:
                 archiveRoot = GPath(
-                    self.archive).sroot if self.is_archive() else self.archive
+                    self.archive).sroot if self._valid_exts_re else self.archive
                 if fileLower in {u'masterlist.txt', u'dlclist.txt'}:
                     self.skipDirFiles.add(full)
                     return None # we dont want to install those files
@@ -509,7 +510,7 @@ class Installer(ListInfo):
                     self.skipDirFiles.add(_(u'[Bethesda Content]') + u' ' +
                                           full)
                     return None # FIXME - after renames ?
-            file_relative = self.remaps.get(file_relative, file_relative)
+            file_relative = self._remaps.get(file_relative, file_relative)
             if file_relative not in self.espmMap[sub]: self.espmMap[
                 sub].append(file_relative)
             pFile = GPath(file_relative)
@@ -632,14 +633,13 @@ class Installer(ListInfo):
         #--Bad archive?
         if bain_type not in {1,2}: return dest_src
         archiveRoot = GPath(
-            self.archive).sroot if self.is_archive() else self.archive
+            self.archive).sroot if self._valid_exts_re else self.archive
         docExts = self.docExts
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
         unSize = 0
         bethFiles = bush.game.bethDataFiles
-        strings_exts = self._strings_extensions
         skips, global_skip_ext = self._init_skips()
         if self.overrideSkips:
             ##: We should split this - Override Skips & Override Redirects
@@ -743,8 +743,8 @@ class Installer(ListInfo):
                         continue
                     elif not rootLower and fileExt in plugin_extensions:
                         #--Remap espms as defined by the user
-                        if file_relative in self.remaps:
-                            file_relative = self.remaps[file_relative]
+                        if file_relative in self._remaps:
+                            file_relative = self._remaps[file_relative]
                             # fileLower = file.lower() # not needed will skip
                         if file_relative not in sub_esps: sub_esps.append(file_relative)
                     if skip:
@@ -1023,46 +1023,34 @@ class Installer(ListInfo):
         return self.status != oldStatus or self.underrides != oldUnderrides
 
     #--Utility methods --------------------------------------------------------
-    def packToArchive(self, project, archive, isSolid, blockSize,
-            progress=None, release=False):
+    def packToArchive(self, project, fn_archive, isSolid, blockSize,
+                      progress=None, release=False):
         """Packs project to build directory. Release filters out development
         material from the archive. Needed for projects and to repack archives
         when syncing from Data."""
         if not self.num_of_files: return
-        archive, archiveType, solid = compressionSettings(archive, blockSize,
-                                                          isSolid)
+        fn_archive, archiveType, solid = compressionSettings(
+            fn_archive, blockSize, isSolid)
         outDir = bass.dirs[u'installers']
-        realOutFile = outDir.join(archive)
-        outFile = outDir.join(u'bash_temp_nonunicode_name.tmp')
-        num = 0
-        while outFile.exists():
-            outFile += str(num)
-            num += 1
+        realOutFile = outDir.join(fn_archive)
         project = outDir.join(project)
-        with project.unicodeSafe() as projectDir:
-            #--Dump file list
-            ##: We don't use a BOM for tempList in unpackToTemp...
-            with self.tempList.open(u'w', encoding=u'utf-8-sig') as out:
-                if release:
-                    out.write(u'*thumbs.db\n')
-                    out.write(u'*desktop.ini\n')
-                    out.write(u'*meta.ini\n')
-                    out.write(u'--*\\')
-            #--Compress
-            command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
-                       u'-x@%s -scsUTF-8 -sccUTF-8' % (
-                archives.exe7z, outFile.temp, archiveType, solid,
-                outDir, projectDir, self.tempList))
-            try:
-                # Safe to call without unicodeSafe because the name we chose is
-                # static and therefore guaranteed ASCII. Note that we lie a bit
-                # here - the third argument will be shown to the user, so we
-                # show the final archive name instead of the temp one we're
-                # internally using.
-                compress7z(command, outFile, archive, projectDir, progress)
-            finally:
-                self.tempList.remove()
-            outFile.moveTo(realOutFile)
+        #--Dump file list
+        ##: We don't use a BOM for tempList in unpackToTemp...
+        with self.tempList.open(u'w', encoding=u'utf-8-sig') as out:
+            if release:
+                out.write(u'*thumbs.db\n')
+                out.write(u'*desktop.ini\n')
+                out.write(u'*meta.ini\n')
+                out.write(u'--*\\')
+        #--Compress
+        command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
+                   u'-x@%s -scsUTF-8 -sccUTF-8' % (
+                       archives.exe7z, realOutFile.temp, archiveType, solid,
+                       outDir, project, self.tempList))
+        try:
+            compress7z(command, realOutFile, fn_archive, project, progress)
+        finally:
+            self.tempList.remove()
 
     def _do_sync_data(self, proj_dir, delta_files, progress):
         """Performs a Sync from Data on the specified project directory with
@@ -1151,11 +1139,10 @@ class Installer(ListInfo):
             size,crc = data_sizeCrc[dest]
             # Work with ghosts lopped off internally and check the destination,
             # since plugins may have been renamed
-            dest_path = GPath(dest)
-            if dest in installer_plugins:
+            if (dest_path := GPath_no_norm(dest)) in installer_plugins:
                 mods.add(dest_path)
-            elif is_ini_tweak(dest):
-                inis.add(dest_path.tail)
+            elif ini_name := is_ini_tweak(dest):
+                inis.add(GPath_no_norm(ini_name))
             elif dest_path.cext == bsa_ext:
                 bsas.add(dest_path)
             data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
@@ -1275,7 +1262,9 @@ class InstallerMarker(Installer):
     @staticmethod
     def number_string(number, marker_string=u''): return marker_string
 
-    def size_string(self, marker_string=u''): return marker_string
+    def size_string(self): return u''
+
+    def size_info_str(self): return  _(u'Size:') + u' N/A\n'
 
     def structure_string(self): return _(u'Structure: N/A')
 
@@ -1303,6 +1292,18 @@ class InstallerArchive(Installer):
 
     @classmethod
     def is_archive(cls): return True
+
+    def size_info_str(self):
+        if self.isSolid:
+            if self.blockSize:
+                sSolid = _(u'Solid, Block Size: %d MB') % self.blockSize
+            elif self.blockSize is None:
+                sSolid = _(u'Solid, Block Size: Unknown')
+            else:
+                sSolid = _(u'Solid, Block Size: 7z Default')
+        else:
+            sSolid = _(u'Non-solid')
+        return _(u'Size: %s (%s)') % (self.size_string(), sSolid)
 
     @classmethod
     def validate_filename_str(cls, name_str, allowed_exts=archives.writeExts,
@@ -1347,18 +1348,17 @@ class InstallerArchive(Installer):
             elif key == u'CRC' and value: listed_crc = int(value,16)
             elif key == u'Method':
                 if filepath and not isdir_ and filepath != \
-                        tempArch.s:
+                        self.abs_path.s:
                     fileSizeCrcs.append((filepath, listed_size, listed_crc))
                     cumCRC += listed_crc
                 filepath = listed_size = listed_crc = isdir_ = 0
-        with self.abs_path.unicodeSafe() as tempArch:
-            try:
-                list_archive(tempArch, _parse_archive_line)
-                self.crc = cumCRC & 0xFFFFFFFF
-            except:
-                archive_msg = f"Unable to read archive '{self.abs_path}'."
-                deprint(archive_msg, traceback=True)
-                raise InstallerArchiveError(archive_msg)
+        try:
+            list_archive(self.abs_path, _parse_archive_line)
+            self.crc = cumCRC & 0xFFFFFFFF
+        except:
+            archive_msg = f"Unable to read archive '{self.abs_path}'."
+            deprint(archive_msg, traceback=True)
+            raise InstallerArchiveError(archive_msg)
 
     def unpackToTemp(self, fileNames, progress=None, recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
@@ -1373,18 +1373,17 @@ class InstallerArchive(Installer):
             out.write(u'\n'.join(fileNames))
         #--Ensure temp dir empty
         bass.rmTempDir()
-        with self.abs_path.unicodeSafe() as arch:
-            if progress:
-                progress.state = 0
-                progress.setFull(len(fileNames))
-            #--Extract files
-            unpack_dir = bass.getTempDir()
-            try:
-                extract7z(arch, unpack_dir, progress, recursive=recurse,
-                          filelist_to_extract=self.tempList.s)
-            finally:
-                self.tempList.remove()
-                bolt.clearReadOnly(unpack_dir)
+        if progress:
+            progress.state = 0
+            progress.setFull(len(fileNames))
+        #--Extract files
+        unpack_dir = bass.getTempDir()
+        try:
+            extract7z(self.abs_path, unpack_dir, progress, recursive=recurse,
+                      filelist_to_extract=self.tempList.s)
+        finally:
+            self.tempList.remove()
+            bolt.clearReadOnly(unpack_dir)
         #--Done -> don't clean out temp dir, it's going to be used soon
         return unpack_dir
 
@@ -1431,19 +1430,18 @@ class InstallerArchive(Installer):
 
     @staticmethod
     def _list_package(apath, log):
-        with apath.unicodeSafe() as tempArch:
-            list_text = []
-            filepath = u''
-            def _parse_archive_line(key, value):
-                nonlocal filepath
-                if key == u'Path':
-                    filepath = value
-                elif key == u'Attributes':
-                    list_text.append( # attributes may be empty
-                        (f'{filepath}', value and (u'D' in value)))
-                elif key == u'Method':
-                    filepath = u''
-            list_archive(tempArch, _parse_archive_line)
+        list_text = []
+        filepath = u''
+        def _parse_archive_line(key, value):
+            nonlocal filepath
+            if key == u'Path':
+                filepath = value
+            elif key == u'Attributes':
+                list_text.append(  # attributes may be empty
+                    (f'{filepath}', value and (u'D' in value)))
+            elif key == u'Method':
+                filepath = u''
+        list_archive(apath, _parse_archive_line)
         list_text.sort()
         #--Output
         for node, isdir_ in list_text:
@@ -1864,8 +1862,8 @@ class InstallersData(DataStore):
         progress = progress or bolt.Progress()
         #--Current archives
         if refresh_info is deleted is pending is None:
-            refresh_info = self.scan_installers_dir(bass.dirs[u'installers'].list(),
-                                                    fullRefresh)
+            refresh_info = self.scan_installers_dir(
+                *top_level_items(bass.dirs[u'installers'].s), fullRefresh)
         elif refresh_info is None:
             refresh_info = self._RefreshInfo(deleted, pending, projects)
         changed = refresh_info.refresh_needed()
@@ -1951,40 +1949,42 @@ class InstallersData(DataStore):
             if show_warning: show_warning(msg)
             raise # UI expects that
 
-    def scan_installers_dir(self, installers_paths=(), fullRefresh=False):
+    def scan_installers_dir(self, folders, files, fullRefresh=False, *,
+                            __skip_prefixes=(u'bash', u'--')):
         """March through the Bash Installers dir scanning for new and modified
         projects/packages, skipping as necessary. It will refresh projects on
         boot.
         :rtype: InstallersData._RefreshInfo"""
-        installers = set()
-        installersJoin = bass.dirs[u'installers'].join
-        pending, projects = set(), set()
-        for item in installers_paths:
-            if item.s.lower().startswith((u'bash',u'--')): continue
-            apath = installersJoin(item)
-            if apath.isfile() and item.cext in readExts:
-                installer = self.get(item)
-            elif apath.isdir(): # Project - autorefresh those only if specified
-                if item.s.lower() in self.installers_dir_skips:
-                    continue # skip Bash directories and user specified ones
-                installer = self.get(item)
-                projects.add(item)
-                # refresh projects once on boot even if skipRefresh is on
-                if installer and not installer.project_refreshed:
-                    pending.add(item)
-                    continue
-                elif installer and not fullRefresh and (installer.skipRefresh
-                       or not bass.settings[u'bash.installers.autoRefreshProjects']):
-                    installers.add(item) # installer is present
-                    continue # and needs not refresh
-            else:
-                continue ##: treat symlinks
-            if fullRefresh or not installer or installer.size_or_mtime_changed(
-                    apath):
-                pending.add(item)
-            else: installers.add(item)
+        pending, installers = set(), set()
+        files = [GPath_no_norm(f) for f in files if
+                 os.path.splitext(f)[-1].lower() in readExts and not f.lower().startswith(
+                     __skip_prefixes)]
+        folders = {GPath_no_norm(f) for f in folders if
+            # skip Bash directories and user specified ones
+            (low := f.lower()) not in self.installers_dir_skips and
+            not low.startswith(__skip_prefixes)}
+        if fullRefresh:
+            pending = {*files, *folders}
+        else:
+            for items, is_proj in ((files, False), (folders, True)):
+                for item in items:
+                    installer = self.get(item)
+                    # Project - autorefresh those only if specified
+                    if is_proj and installer:
+                        # refresh projects once on boot even if skipRefresh is on
+                        if not installer.project_refreshed: # volatile
+                            pending.add(item)
+                            continue
+                        elif installer.skipRefresh or not bass.settings[
+                            u'bash.installers.autoRefreshProjects']:
+                            installers.add(item) # installer is present
+                            continue # and needs not refresh
+                    if not installer or installer.size_or_mtime_changed(
+                            installer.abs_path):
+                        pending.add(item)
+                    else: installers.add(item)
         deleted = set(self.ipackages(self)) - installers - pending
-        refresh_info = self._RefreshInfo(deleted, pending, projects)
+        refresh_info = self._RefreshInfo(deleted, pending, folders)
         return refresh_info
 
     def refreshConvertersNeeded(self):
@@ -2103,8 +2103,8 @@ class InstallersData(DataStore):
         if bass.settings[u'bash.installers.autoRefreshBethsoft']:
             bethFiles = set()
         else:
-            beth_keys = {CIstr(b) for b in
-                         bush.game.bethDataFiles} - self.overridden_skips
+            beth_keys = {*map(CIstr,
+                              bush.game.bethDataFiles)} - self.overridden_skips
             bethFiles = LowerDict.fromkeys(beth_keys)
         skipExts = Installer.skipExts
         relPos = len(bass.dirs[u'mods'].s) + 1
@@ -2135,10 +2135,10 @@ class InstallersData(DataStore):
                     lstat = os.lstat(asFile)
                 except FileNotFoundError:
                     continue # file does not exist
-                size, date = lstat.st_size, lstat.st_mtime
-                if size != oSize or date != oDate:
-                    pending[rpFile] = (size, oCrc, date, asFile)
-                    pending_size += size
+                lstat_size, date = lstat.st_size, lstat.st_mtime
+                if lstat_size != oSize or date != oDate:
+                    pending[rpFile] = (lstat_size, oCrc, date, asFile)
+                    pending_size += lstat_size
                 else:
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
         return new_sizeCrcDate, pending, pending_size
@@ -2311,8 +2311,9 @@ class InstallersData(DataStore):
             if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
             iniAbsDataPath = bass.dirs[u'mods'].join(relPath)
             # Create a copy of the old one
-            baseName = bass.dirs[u'ini_tweaks'].join(u'%s, ~Old Settings [%s].ini' % (
-                iniAbsDataPath.sbody, installer.archive))
+            co_path = f'{iniAbsDataPath.sbody}, ~Old Settings ' \
+                      f'[{installer.ci_key}].ini'
+            baseName = bass.dirs[u'ini_tweaks'].join(co_path)
             tweakPath = self.__tweakPath(baseName)
             iniAbsDataPath.copyTo(tweakPath)
             tweaksCreated.add((tweakPath, iniAbsDataPath))
@@ -2500,12 +2501,12 @@ class InstallersData(DataStore):
     def _is_ini_tweak(ci_relPath):
         parts = ci_relPath.lower().split(os_sep)
         return len(parts) == 2 and parts[0] == u'ini tweaks' \
-           and parts[1][-4:] == u'.ini'
+           and parts[1][-4:] == u'.ini' and parts[1]
 
-    def _removeFiles(self, removes, refresh_ui, progress=None):
-        """Performs the actual deletion of files and updating of internal data.clear
+    def _removeFiles(self, ci_removes, refresh_ui, progress=None):
+        """Performs the actual deletion of files and updating of internal data,
            used by 'bain_uninstall' and 'bain_anneal'."""
-        if not removes: return
+        if not ci_removes: return
         modsDirJoin = bass.dirs[u'mods'].join
         emptyDirs = set()
         emptyDirsAdd = emptyDirs.add
@@ -2516,13 +2517,13 @@ class InstallersData(DataStore):
         removedInis = set()
         #--Construct list of files to delete
         norm_ghost_get = Installer.getGhosted().get
-        for ci_relPath in removes:
+        for ci_relPath in ci_removes:
             path = modsDirJoin(norm_ghost_get(ci_relPath, ci_relPath))
             if path.exists():
                 if reModExtSearch(ci_relPath):
-                    removedPlugins.add(GPath(ci_relPath))
-                elif self._is_ini_tweak(ci_relPath):
-                    removedInis.add(GPath(ci_relPath[11:]))
+                    removedPlugins.add(GPath_no_norm(str(ci_relPath)))
+                elif ini_name := self._is_ini_tweak(ci_relPath):
+                    removedInis.add(GPath_no_norm(ini_name))
                 else:
                     nonPlugins.add(path)
                     emptyDirsAdd(path.head)
@@ -2548,10 +2549,12 @@ class InstallersData(DataStore):
             ex = sys.exc_info()
             raise
         finally:
-            if ex:removes = [f for f in removes if not modsDirJoin(f).exists()]
+            if ex:
+                ci_removes = [f for f in ci_removes if
+                              not modsDirJoin(norm_ghost_get(f, f)).exists()]
             #--Update InstallersData
             data_sizeCrcDatePop = self.data_sizeCrcDate.pop
-            for ci_relPath in removes:
+            for ci_relPath in ci_removes:
                 data_sizeCrcDatePop(ci_relPath, None)
 
     def __restore(self, installer, removes, restores, cede_ownership):
@@ -2592,7 +2595,7 @@ class InstallersData(DataStore):
         removes = set()
         #--March through packages in reverse order...
         restores = bolt.LowerDict()
-        cede_ownership = collections.defaultdict(set)
+        _cede_ownership = collections.defaultdict(set)
         for installer in self.sorted_values(reverse=True):
             #--Uninstall archive?
             if installer in unArchives:
@@ -2605,9 +2608,9 @@ class InstallersData(DataStore):
             #  And/or may block later uninstalls.
             elif installer.is_active:
                 masked |= self.__restore(installer, removes, restores,
-                                         cede_ownership)
+                                         _cede_ownership)
         anneal = bass.settings[u'bash.installers.autoAnneal']
-        self._remove_restore(removes, restores, refresh_ui, cede_ownership,
+        self._remove_restore(removes, restores, refresh_ui, _cede_ownership,
                              progress, unArchives, anneal)
 
     def _remove_restore(self, removes, restores, refresh_ui, cede_ownership,
@@ -2623,16 +2626,14 @@ class InstallersData(DataStore):
                 self._restoreFiles(restores, refresh_ui, progress)
             # Set the 'installer' column in mod and ini tables
             from . import modInfos, iniInfos
-            for installer, owned_files in cede_ownership.items():
-                for ci_dest in owned_files:
-                    if modInfos.rightFileType(ci_dest):
+            for ikey, owned_files in cede_ownership.items():
+                for fn_key in owned_files:
+                    if modInfos.rightFileType(fn_key):
                         refresh_ui[0] = True
-                        modInfos.table.setItem(GPath(ci_dest), u'installer',
-                                               installer)
-                    elif InstallersData._is_ini_tweak(ci_dest):
+                        modInfos.table.setItem(GPath_no_norm(fn_key), u'installer', ikey)
+                    elif ini_name := InstallersData._is_ini_tweak(fn_key):
                         refresh_ui[1] = True
-                        iniInfos.table.setItem(GPath(ci_dest).tail,
-                                               u'installer', installer)
+                        iniInfos.table.setItem(GPath_no_norm(ini_name), u'installer', ikey)
         finally:
             self.irefresh(what=u'NS')
 
@@ -2669,13 +2670,13 @@ class InstallersData(DataStore):
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = bolt.LowerDict()
-        cede_ownership = collections.defaultdict(set)
+        _cede_ownership = collections.defaultdict(set)
         for installer in self.sorted_values(reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.is_active:
-                self.__restore(installer, removes, restores, cede_ownership)
-        self._remove_restore(removes, restores, refresh_ui, cede_ownership,
+                self.__restore(installer, removes, restores, _cede_ownership)
+        self._remove_restore(removes, restores, refresh_ui, _cede_ownership,
                              progress)
 
     def get_clean_data_dir_list(self):
@@ -2937,9 +2938,9 @@ class InstallersData(DataStore):
             buff.write(u'= %s %s\n\n' % (_(u'Loose File Conflicts'), u'=' * 36))
         # Print loose file conflicts
         def _print_loose_conflicts(conflicts, title=_(u'Lower')):
-            buff.write(u'= %s %s\n' % (title, u'=' * 40))
+            buff.write(f'= {title} {u"=" * 40}\n')
             for inst_, package_, confl_ in conflicts:
-                buff.write(u'==%d== %s\n' % (inst_.order, package_))
+                buff.write(f'=={inst_.order:d}== {package_}\n')
                 for src_file in confl_:
                     oldName = inst_.getEspmName(src_file)
                     buff.write(oldName)

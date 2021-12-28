@@ -240,7 +240,6 @@ class _ExeButton(_App_Button):
         cwd = bolt.Path.getcwd()
         exe_path.head.setcwd()
         try:
-            ##: Same unicodeSafe problem here - see Path.start
             popen = subprocess.Popen(exe_args, close_fds=True)
             if self.wait:
                 popen.wait()

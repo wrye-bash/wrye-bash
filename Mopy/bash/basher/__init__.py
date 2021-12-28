@@ -52,20 +52,20 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 import collections
-import io
 import os
 import sys
 import time
 from collections import OrderedDict, namedtuple, defaultdict
 from functools import partial, reduce
-from typing import Optional
+from typing import Optional, List
 
 #--wxPython
 import wx
 
 #--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
-from ..bolt import GPath, SubProgress, deprint, round_size, dict_sort
+from ..bolt import GPath, SubProgress, deprint, round_size, dict_sort, \
+    top_level_items, GPath_no_norm
 from ..bosh import omods, ModInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
@@ -2222,7 +2222,7 @@ class SaveDetails(_ModsSavesDetails):
         if self.saveInfo:
             if not self.saveInfo.header.image_loaded:
                 self.saveInfo.header.read_save_header(load_image=True)
-            new_save_screen = ImageWrapper.from_bitstream(
+            new_save_screen = ImageWrapper.bmp_from_bitstream(
                 *self.saveInfo.header.image_parameters)
         else:
             new_save_screen = None # reset to default
@@ -2487,17 +2487,20 @@ class InstallersList(balt.UIList):
         self.RefreshUI()
 
     def _extractOmods(self, omodnames, progress):
+        """Called from onDropFiles duplicating __extractOmods with a bunch of
+        subtle differences. FIXME(ut) this must go - we should let caller's ShowPanel do it"""
         failed = []
         completed = []
         progress.setFull(len(omodnames))
         try:
             for i, omod in enumerate(omodnames):
-                progress(i, omod.stail)
+                om_name = omod.stail
+                progress(i, om_name)
                 outDir = bass.dirs[u'installers'].join(omod.body)
                 if outDir.exists():
                     if balt.askYes(progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
-                        u"with '%s'?") % (omod.sbody, omod.stail)):
+                        u"with '%s'?") % (omod.body, om_name)):
                         env.shellDelete(outDir, parent=self,
                                         recycle=True)  # recycle
                     else: continue
@@ -2510,21 +2513,18 @@ class InstallersList(balt.UIList):
                     # rights if needed
                     raise
                 except:
-                    deprint(
-                        _(u"Failed to extract '%s'.") % omod.stail + u'\n\n',
-                        traceback=True)
-                    failed.append(omod.stail)
+                    deprint(f"Failed to extract '{om_name}'.\n\n",
+                            traceback=True)
+                    failed.append(om_name)
         except CancelError:
             skipped = set(omodnames) - set(completed)
             msg = u''
-            if completed:
-                completed = [u' * ' + x.stail for x in completed]
-                msg += _(u'The following OMODs were unpacked:') + \
-                       u'\n%s\n\n' % u'\n'.join(completed)
-            if skipped:
-                skipped = [u' * ' + x.stail for x in skipped]
-                msg += _(u'The following OMODs were skipped:') + \
-                       u'\n%s\n\n' % u'\n'.join(skipped)
+            for filepaths, m in (
+                    [completed, _(u'The following OMODs were unpacked:')],
+                    [skipped, _(u'The following OMODs were skipped:')]):
+                if filepaths:
+                    filepaths = [f' * {x.stail}' for x in filepaths]
+                    msg += m + u'\n%s\n\n' % u'\n'.join(filepaths)
             if failed:
                 msg += _(u'The following OMODs failed to extract:') + \
                        u'\n%s' % u'\n'.join(failed)
@@ -2536,8 +2536,6 @@ class InstallersList(balt.UIList):
                 + u'\n'.join(failed), _(u'OMOD Extraction Complete'))
         finally:
             progress(len(omodnames), _(u'Refreshing...'))
-            self.data_store.irefresh(what=u'I')
-            self.RefreshUI()
 
     def _askCopyOrMove(self, filenames):
         action = settings[u'bash.installers.onDropFiles.action']
@@ -2549,13 +2547,10 @@ class InstallersList(balt.UIList):
             else: message = _(u'You have dragged some converters into Wrye '
                             u'Bash.')
             message += u'\n' + _(u'What would you like to do with them?')
-            with CopyOrMovePopup(self, message,
-                                 sizes_dict=balt.sizes) as cm_dialog:
-                if cm_dialog.show_modal():
-                    action = cm_dialog.get_action()
-                    if cm_dialog.should_remember():
-                        settings[u'bash.installers.onDropFiles.action'] = \
-                            action
+            action, remember = CopyOrMovePopup.display_dialog(self, message,
+                sizes_dict=balt.sizes)
+            if action and remember:
+                settings[u'bash.installers.onDropFiles.action'] = action
         return action
 
     @balt.conversation
@@ -2564,35 +2559,31 @@ class InstallersList(balt.UIList):
         dirs = {x for x in filenames if x.isdir()}
         omodnames = [x for x in filenames if
                      not x in dirs and x.cext in archives.omod_exts]
-        converters = [x for x in filenames if
-                      bosh.converters.ConvertersData.validConverterName(x)]
+        converters = {x for x in filenames if
+                      bosh.converters.ConvertersData.validConverterName(x)}
         filenames = [x for x in filenames if x in dirs
                      or x.cext in archives.readExts and x not in converters]
+        if not (omodnames or converters or filenames): return
         if omodnames:
             with balt.Progress(_(u'Extracting OMODs...'), u'\n' + u' ' * 60,
                                  abort=True) as prog:
                 self._extractOmods(omodnames, prog)
-        if not filenames and not converters:
-            return
-        action = self._askCopyOrMove(filenames)
-        if action not in [u'COPY',u'MOVE']: return
-        with BusyCursor():
-            installersJoin = bass.dirs[u'installers'].join
-            convertersJoin = bass.dirs[u'converters'].join
-            filesTo = [installersJoin(x.tail) for x in filenames]
-            filesTo.extend(convertersJoin(x.tail) for x in converters)
-            filenames.extend(converters)
-            try:
-                if action == u'MOVE':
-                    #--Move the dropped files
-                    env.shellMove(filenames, filesTo, parent=self)
-                else:
-                    #--Copy the dropped files
-                    env.shellCopy(filenames, filesTo, parent=self)
-            except (CancelError,SkipError):
-                pass
+        if filenames or converters:
+            action = self._askCopyOrMove(filenames)
+            if action in [u'COPY',u'MOVE']:
+                with BusyCursor():
+                    installersJoin = bass.dirs[u'installers'].join
+                    convertersJoin = bass.dirs[u'converters'].join
+                    filesTo = [installersJoin(x.tail) for x in filenames]
+                    filesTo.extend(convertersJoin(x.tail) for x in converters)
+                    filenames.extend(converters)
+                    try:
+                        (env.shellMove if action == 'MOVE' else env.shellCopy)(
+                            filenames, filesTo, parent=self)
+                    except (CancelError,SkipError):
+                        pass
         self.panel.frameActivated = True
-        self.panel.ShowPanel()
+        self.panel.ShowPanel(focus_list=True)
 
     def dndAllow(self, event):
         if not self.sort_column in self._dndColumns:
@@ -2791,7 +2782,8 @@ class InstallersDetails(_SashDetailsPanel):
         self.sp_label = Label(self.sp_panel, _(u'Sub-Packages'))
         self._update_fomod_state()
         #--Espms
-        self.espms = []
+        # sorted list of the displayed installer espm names - esms sorted first
+        self.espm_checklist_fns = [] # type: List[bolt.Path]
         self.gEspmList = CheckListBox(espmsPanel, isExtended=True)
         self.gEspmList.on_box_checked.subscribe(self._on_check_plugin)
         self.gEspmList.on_mouse_left_dclick.subscribe(
@@ -2853,7 +2845,7 @@ class InstallersDetails(_SashDetailsPanel):
             self._save_comments()
         fileName = super(InstallersDetails, self).SetFile(fileName)
         self._displayed_installer = fileName
-        del self.espms[:]
+        del self.espm_checklist_fns[:]
         if fileName:
             installer = self._idata[fileName]
             #--Name
@@ -2869,21 +2861,21 @@ class InstallersDetails(_SashDetailsPanel):
             if len(installer.subNames) <= 2:
                 self.gSubList.lb_clear()
             else:
-                sub_names_ = [x.replace(u'&', u'&&') for x in
-                              installer.subNames[1:]]
-                vals = installer.subActives[1:]
-                self.gSubList.set_all_items_keep_pos(sub_names_, vals)
+                ##: TODO(ut) subNames/subActives should be a dict really no?
+                sub_isactive = zip(installer.subNames, installer.subActives)
+                next(sub_isactive) # pop empty subpackage, duh
+                sub_isactive = {k: v for k, v in sub_isactive}
+                self.gSubList.set_all_items_keep_pos(sub_isactive)
             self._update_fomod_state()
             #--Espms
             if not installer.espms:
                 self.gEspmList.lb_clear()
             else:
-                names = self.espms = sorted(installer.espms)
-                names.sort(key=lambda x: x.cext != u'.esm')
-                names_ = [[u'', u'*'][installer.isEspmRenamed(x.s)] +
-                          x.s.replace(u'&', u'&&') for x in names]
-                vals = [x not in installer.espmNots for x in names]
-                self.gEspmList.set_all_items_keep_pos(names_, vals)
+                fns = self.espm_checklist_fns = sorted(installer.espms, key=lambda x: (
+                    x.cext != u'.esm', x)) # esms first then alphabetically
+                espm_acti = {['', '*'][installer.isEspmRenamed(
+                    x)] + x.s: x not in installer.espmNots for x in fns}
+                self.gEspmList.set_all_items_keep_pos(espm_acti)
             #--Comments
             self.gComments.text_content = installer.comments
 
@@ -2902,72 +2894,53 @@ class InstallersDetails(_SashDetailsPanel):
         if initialized: return
         else: self.infoPages[index][1] = True
         pageName = gPage.get_component_name()
-        def dumpFiles(files, header=u''):
+        def _dumpFiles(files, header=u''):
             if files:
-                buff = io.StringIO()
+                buff = []
                 files = bolt.sortFiles(files)
-                if header: buff.write(header+u'\n')
+                if header: buff.append(header)
                 for file in files:
                     oldName = installer.getEspmName(file)
-                    buff.write(oldName)
                     if oldName != file:
-                        buff.write(u' -> ')
-                        buff.write(file)
-                    buff.write(u'\n')
-                return buff.getvalue()
+                        oldName = f'{oldName} -> {file}'
+                    buff.append(oldName)
+                return buff.append('') or '\n'.join(buff) # add a newline
             elif header:
                 return header+u'\n'
             else:
                 return u''
         if pageName == u'gGeneral':
-            info = u'== '+_(u'Overview')+u'\n'
-            info += _(u'Type: ') + installer.type_string + u'\n'
-            info += installer.structure_string() + u'\n'
+            inf_ = ['== ' + _('Overview'), _('Type: ') + installer.type_string,
+                    installer.structure_string(), installer.size_info_str()]
             nConfigured = len(installer.ci_dest_sizeCrc)
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
-            if installer.is_archive():
-                if installer.isSolid:
-                    if installer.blockSize:
-                        sSolid = _(u'Solid, Block Size: %d MB') % installer.blockSize
-                    elif installer.blockSize is None:
-                        sSolid = _(u'Solid, Block Size: Unknown')
-                    else:
-                        sSolid = _(u'Solid, Block Size: 7z Default')
-                else:
-                    sSolid = _(u'Non-solid')
-                info += _(u'Size: %s (%s)') % (installer.size_string(),
-                                               sSolid) + u'\n'
-            else:
-                info += _(u'Size:') + u' %s\n' % installer.size_string(
-                    marker_string=u'N/A')
-            info += (_(u'Modified:') +u' %s\n' % format_date(installer.modified),
-                     _(u'Modified:') +u' N/A\n',)[installer.is_marker()]
-            info += (_(u'Data CRC:')+u' %08X\n' % installer.crc,
-                     _(u'Data CRC:')+u' N/A\n',)[installer.is_marker()]
-            info += (_(u'Files:') + u' %s\n' % installer.number_string(
-                installer.num_of_files, marker_string=u'N/A'))
-            info += (_(u'Configured:')+u' %u (%s)\n' % (
-                nConfigured, round_size(installer.unSize)),
-                     _(u'Configured:')+u' N/A\n',)[installer.is_marker()]
-            info += (_(u'  Matched:') + u' %s\n' % installer.number_string(
-                nConfigured - nMissing - nMismatched, marker_string=u'N/A'))
-            info += (_(u'  Missing:')+u' %s\n' % installer.number_string(
-                nMissing, marker_string=u'N/A'))
-            info += (_(u'  Conflicts:')+u' %s\n' % installer.number_string(
-                nMismatched, marker_string=u'N/A'))
-            info += u'\n'
-            #--Infoboxes
-            gPage.text_content = info + dumpFiles(
-                installer.ci_dest_sizeCrc, u'== ' + _(u'Configured Files'))
+            is_mark = installer.is_marker()
+            numstr = partial(installer.number_string, marker_string='N/A')
+            inf_.extend([
+                _('Modified:') + (' N/A' if is_mark else
+                    f' {format_date(installer.modified)}'),
+                _('Data CRC:') + (' N/A' if is_mark else
+                    f' {installer.crc:08X}'),
+                _('Files:') + f' {numstr(installer.num_of_files)}',
+                _('Configured:') + (' N/A' if is_mark else
+                    f' {nConfigured:d} ({round_size(installer.unSize)})'),
+                _('  Matched:') + ' %s' % numstr(
+                    nConfigured - nMissing - nMismatched),
+                 _('  Missing:') + f' {numstr(nMissing)}',
+                 _('  Conflicts:') + f' {numstr(nMismatched)}',
+                #--Infoboxes
+                _dumpFiles(installer.ci_dest_sizeCrc,
+                           '== ' + _('Configured Files'))])
+            gPage.text_content = u'\n'.join(inf_)
         elif pageName == u'gMatched':
-            gPage.text_content = dumpFiles(set(
+            gPage.text_content = _dumpFiles(set(
                 installer.ci_dest_sizeCrc) - installer.missingFiles -
                                            installer.mismatchedFiles)
         elif pageName == u'gMissing':
-            gPage.text_content = dumpFiles(installer.missingFiles)
+            gPage.text_content = _dumpFiles(installer.missingFiles)
         elif pageName == u'gMismatched':
-            gPage.text_content = dumpFiles(installer.mismatchedFiles)
+            gPage.text_content = _dumpFiles(installer.mismatchedFiles)
         elif pageName == u'gConflicts':
             gPage.text_content = self._idata.getConflictReport(
                 installer, u'OVER', bosh.modInfos)
@@ -2975,11 +2948,11 @@ class InstallersDetails(_SashDetailsPanel):
             gPage.text_content = self._idata.getConflictReport(
                 installer, u'UNDER', bosh.modInfos)
         elif pageName == u'gDirty':
-            gPage.text_content = dumpFiles(installer.dirty_sizeCrc)
+            gPage.text_content = _dumpFiles(installer.dirty_sizeCrc)
         elif pageName == u'gSkipped':
-            gPage.text_content = u'\n'.join((dumpFiles(
+            gPage.text_content = u'\n'.join((_dumpFiles(
                 installer.skipExtFiles, u'== ' + _(u'Skipped (Extension)')),
-                                             dumpFiles(
+                                             _dumpFiles(
                 installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)'))))
 
     #--Config
@@ -3024,28 +2997,28 @@ class InstallersDetails(_SashDetailsPanel):
     def _on_check_plugin(self, lb_selection_dex):
         """Handle check/uncheck of item."""
         espmNots = self.file_info.espmNots
-        plugin_name = self.gEspmList.lb_get_str_item_at_index(
-            lb_selection_dex).replace(u'&&', u'&')
-        if plugin_name[0] == u'*':
-            plugin_name = plugin_name[1:]
-        espm = GPath(plugin_name)
+        plugin_name = self.get_espm(lb_selection_dex)
         if self.gEspmList.lb_is_checked_at_index(lb_selection_dex):
-            espmNots.discard(espm)
+            espmNots.discard(plugin_name)
         else:
-            espmNots.add(espm)
+            espmNots.add(plugin_name)
         self.gEspmList.lb_select_index(lb_selection_dex)    # so that (un)checking also selects (moves the highlight)
         if not get_shift_down():
             self.refreshCurrent(self.file_info)
 
+    def get_espm(self, lb_selection_dex):
+        plugin_name = self.gEspmList.lb_get_str_item_at_index(
+            lb_selection_dex).replace(u'&&', u'&')
+        if plugin_name[0] == u'*':
+            plugin_name = plugin_name[1:]
+        return GPath_no_norm(plugin_name)
+
     def _on_plugin_filter_dclick(self, selected_index):
         """Handles double-clicking on a plugin in the plugin filter."""
         if selected_index < 0: return
-        selected_name = self.gEspmList.lb_get_str_item_at_index(
-            selected_index).replace(u'&&', u'&')
-        if selected_name[0] == u'*': selected_name = selected_name[1:]
-        selected_plugin = GPath(selected_name)
-        if selected_plugin not in bosh.modInfos: return
-        balt.Link.Frame.notebook.SelectPage(u'Mods', selected_plugin)
+        selected_name = self.get_espm(selected_index)
+        if selected_name not in bosh.modInfos: return
+        balt.Link.Frame.notebook.SelectPage(u'Mods', selected_name)
 
     def set_subpackage_checkmarks(self, checked):
         """Checks or unchecks all subpackage checkmarks and propagates that
@@ -3146,7 +3119,7 @@ class InstallersPanel(BashTab):
 
     @balt.conversation
     def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False,
-                  **kwargs):
+                  focus_list=False, **kwargs):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled() # must run _before_ if below
         if (not settings[u'bash.installers.enabled'] or self.refreshing
@@ -3156,7 +3129,7 @@ class InstallersPanel(BashTab):
         try:
             self.refreshing = True
             self._refresh_installers_if_needed(canCancel, fullRefresh,
-                                               scan_data_dir)
+                                               scan_data_dir, focus_list)
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
@@ -3164,23 +3137,23 @@ class InstallersPanel(BashTab):
     @balt.conversation
     @bosh.bain.projects_walk_cache
     def _refresh_installers_if_needed(self, canCancel, fullRefresh,
-                                      scan_data_dir):
+                                      scan_data_dir, focus_list):
         if settings.get(u'bash.installers.updatedCRCs',True): #only checked here
             settings[u'bash.installers.updatedCRCs'] = False
             self._data_dir_scanned = False
-        installers_paths = bass.dirs[
-            u'installers'].list() if self.frameActivated else ()
-        if self.frameActivated:
-            omds = [inst_path for inst_path in installers_paths if
-                    inst_path.cext in archives.omod_exts]
-            if any(inst_path not in omods.failedOmods for inst_path in omds):
-                self.__extractOmods(omds) ##: change above to all?
         do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
-        if not do_refresh and self.frameActivated:
-            refresh_info = self.listData.scan_installers_dir(installers_paths,
-                                                             fullRefresh)
-            do_refresh = refresh_info.refresh_needed()
-        else: refresh_info = None
+        refresh_info = None
+        if self.frameActivated:
+            folders, files = top_level_items(bass.dirs[u'installers'].s)
+            omds = [GPath_no_norm(inst_path) for inst_path in files
+                    if os.path.splitext(inst_path)[1].lower() in archives.omod_exts]
+            if any(inst_path not in omods.failedOmods for inst_path in omds):
+                omod_projects = self.__extractOmods(omds) ##: change above to filter?
+                folders.extend(omod_projects)
+            if not do_refresh:
+                refresh_info = self.listData.scan_installers_dir(folders,
+                    files, fullRefresh)
+                do_refresh = refresh_info.refresh_needed()
         refreshui = False
         if do_refresh:
             with balt.Progress(_(u'Refreshing Installers...'),
@@ -3206,26 +3179,26 @@ class InstallersPanel(BashTab):
                     pass # User canceled the refresh
         do_refresh = self.listData.refreshTracked()
         refreshui |= do_refresh and self.listData.refreshInstallersStatus()
-        if refreshui: self.uiList.RefreshUI(focus_list=False)
+        if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
 
     def __extractOmods(self, omds):
+        omod_projects = []
         with balt.Progress(_(u'Extracting OMODs...'),
                            u'\n' + u' ' * 60) as progress:
             dirInstallersJoin = bass.dirs[u'installers'].join
-            omods = list(map(dirInstallersJoin, omds))
-            progress.setFull(max(len(omods), 1))
+            ompaths = list(map(dirInstallersJoin, omds))
+            progress.setFull(max(len(ompaths), 1))
             omodMoves, omodRemoves = set(), set()
-            for i, omod in enumerate(omods):
+            for i, omod in enumerate(ompaths):
                 progress(i, omod.stail)
-                outDir = dirInstallersJoin(omod.body)
-                num = 0
-                while outDir.exists():
-                    outDir = dirInstallersJoin(u'%s%s' % (omod.sbody, num))
-                    num += 1
+                pr_name = bosh.InstallerProject.unique_name(omod.body,
+                                                            check_exists=True)
+                outDir = dirInstallersJoin(pr_name)
                 try:
                     bosh.omods.OmodFile(omod).extractToProject(
                         outDir, SubProgress(progress, i))
                     omodRemoves.add(omod)
+                    omod_projects.append(pr_name.s)
                 except (CancelError, SkipError):
                     omodMoves.add(omod)
                 except:
@@ -3277,6 +3250,7 @@ class InstallersPanel(BashTab):
                         _move_omods(omodMoves)
                     except (CancelError, SkipError):
                         continue
+        return omod_projects
 
     def _sbCount(self):
         active = sum(x.is_active for x in self.listData.values())
@@ -4215,9 +4189,9 @@ class BashApp(object):
                            elapsed=False) as progress:
             # Is splash enabled in ini ?
             if bass.inisettings[u'EnableSplashScreen']:
-                if bass.dirs[u'images'].join(u'wryesplash.png').isfile():
-                    splash_screen = CenteredSplash(
-                        bass.dirs[u'images'].join(u'wryesplash.png').s)
+                if (splash := bass.dirs['images'].join(
+                    'wryesplash.png')).isfile():
+                    splash_screen = CenteredSplash(splash.s)
             #--Init Data
             progress(0.2, _(u'Initializing Data'))
             self.InitData(progress)

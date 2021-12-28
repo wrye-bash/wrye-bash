@@ -337,42 +337,42 @@ class LowerDict(dict):
 
     def __getitem__(self, k):
         return super(LowerDict, self).__getitem__(
-            CIstr(k) if type(k) is str else k)
+            CIstr(k) if isinstance(k, str) else k)
 
     def __setitem__(self, k, v):
         return super(LowerDict, self).__setitem__(
-            CIstr(k) if type(k) is str else k, v)
+            CIstr(k) if isinstance(k, str) else k, v)
 
     def __delitem__(self, k):
         return super(LowerDict, self).__delitem__(
-            CIstr(k) if type(k) is str else k)
+            CIstr(k) if isinstance(k, str) else k)
 
     def copy(self): # don't delegate w/ super - dict.copy() -> dict :(
         return type(self)(self)
 
     def get(self, k, default=None):
         return super(LowerDict, self).get(
-            CIstr(k) if type(k) is str else k, default)
+            CIstr(k) if isinstance(k, str) else k, default)
 
     def setdefault(self, k, default=None):
         return super(LowerDict, self).setdefault(
-            CIstr(k) if type(k) is str else k, default)
+            CIstr(k) if isinstance(k, str) else k, default)
 
     __no_default = object()
     def pop(self, k, v=__no_default):
         if v is LowerDict.__no_default:
             # super will raise KeyError if no default and key does not exist
             return super(LowerDict, self).pop(
-                CIstr(k) if type(k) is str else k)
+                CIstr(k) if isinstance(k, str) else k)
         return super(LowerDict, self).pop(
-            CIstr(k) if type(k) is str else k, v)
+            CIstr(k) if isinstance(k, str) else k, v)
 
     def update(self, mapping=(), **kwargs):
         super(LowerDict, self).update(self._process_args(mapping, **kwargs))
 
     def __contains__(self, k):
         return super(LowerDict, self).__contains__(
-            CIstr(k) if type(k) is str else k)
+            CIstr(k) if isinstance(k, str) else k)
 
     @classmethod
     def fromkeys(cls, keys, v=None):
@@ -874,35 +874,6 @@ class Path(object):
             self.clearRO()
             shutil.move(self._s,destPath._s)
 
-    def tempMoveTo(self,destName):
-        """Temporarily rename/move an object.  Use with the 'with' statement"""
-        class _temp_file(object):
-            def __init__(self,oldPath,newPath):
-                self.newPath = GPath(newPath)
-                self.oldPath = GPath(oldPath)
-
-            def __enter__(self): return self.newPath
-            def __exit__(self, exc_type, exc_value, exc_traceback): self.newPath.moveTo(self.oldPath)
-        self.moveTo(destName)
-        return _temp_file(self,destName)
-
-    def unicodeSafe(self): # PY3: investigate if obsoleted.
-        """Temporarily rename (only if necessary) the file to a unicode safe
-        name. Use with the 'with' statement. Meant to be used with Popen (which
-        automatically tries to encode the name)."""
-        try:
-            self._s.encode(u'ascii')
-            class _noop_file(object):
-                def __init__(self, _fpath):
-                    self._fpath = _fpath
-                def __enter__(self): return self._fpath
-                def __exit__(self, exc_type, exc_value, exc_traceback): pass
-            return _noop_file(self)
-        except UnicodeEncodeError:
-            safe_path = str(self._s.encode(u'ascii', u'xmlcharrefreplace'),
-                u'ascii') + u'_unicode_safe.tmp'
-            return self.tempMoveTo(safe_path)
-
     def untemp(self,doBackup=False):
         """Replaces file with temp version, optionally making backup of file first."""
         if self.temp.exists():
@@ -990,10 +961,6 @@ def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
     cmd = r'attrib -R "%s\*" /S /D' % dirPath
     subprocess.call(cmd, startupinfo=startupinfo)
-
-# TMP functions to deprecate Paths functionality for simple filenames - SLOW!
-def cext_(string_val):
-    return os.path.splitext(string_val)[-1].lower()
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines

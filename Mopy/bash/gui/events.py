@@ -186,12 +186,11 @@ class EventHandler(object):
                     event.Veto()
                     return # to avoid event.Skip()
                 except AttributeError:
-                    raise RuntimeError(u'An attempt was made to cancel a type '
-                                       u'of event (%r) that cannot be '
-                                       u'canceled.' % event.__class__)
-            else:
-                raise RuntimeError(u'Incorrect return value (%r) for '
-                                   u'EventHandler listener.' % result)
+                    raise RuntimeError(
+                        f'An attempt was made to cancel a type of event ('
+                        f'{event.__class__!r}) that cannot be canceled.')
+            else:raise RuntimeError(f'Incorrect return value ({result!r}) for '
+                                    f'EventHandler listener.')
         # Need to propagate it up the wx chain
         event.Skip()
 

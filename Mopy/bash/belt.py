@@ -282,22 +282,21 @@ class PageFinish(PageInstaller):
         subs = sorted(subsList)
         plugins = sorted(plugin_list)
         #--make the list that will be displayed
-        displayed_plugins = [x.replace(u'&', u'&&') + (
-            u' -> ' + plugin_renames[x] if x in plugin_renames else u'')
-                             for x in plugins]
+        displayed_plugins = [f'{x} -> {plugin_renames[x]}'
+                             if x in plugin_renames else x for x in plugins]
         parent.parser.choiceIdex += 1
         textTitle = Label(self, _(u'The installer script has finished, and '
                                   u'will apply the following settings:'))
         textTitle.wrap(parent.get_page_size()[0] - 10)
         # Sub-packages
-        self.listSubs = CheckListBox(self,
-            choices=[x.replace(u'&', u'&&') for x in subs])
+        self.listSubs = CheckListBox(self, choices=subs, ampersand=True)
         self.listSubs.on_box_checked.subscribe(self._on_select_subs)
         for index,key in enumerate(subs):
             if subsList[key]:
                 self.listSubs.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_sub_packages.append(key)
-        self.plugin_selection = CheckListBox(self, choices=displayed_plugins)
+        self.plugin_selection = CheckListBox(self, choices=displayed_plugins,
+                                             ampersand=True)
         self.plugin_selection.on_box_checked.subscribe(self._on_select_plugin)
         for index,key in enumerate(plugins):
             if plugin_list[key]:
@@ -1284,7 +1283,7 @@ class WryeParser(ScriptParser.Parser):
         main_desc = args.pop(0).replace(u'&', u'&&')
         if len(args) % 3:
             error(MISSING_ARGS % name_)
-        images = []
+        images_ = []
         titles = OrderedDict()
         descs = []
         image_paths = []
@@ -1295,7 +1294,7 @@ class WryeParser(ScriptParser.Parser):
                 title = title[1:]
             titles[title] = is_default
             descs.append(args.pop(0))
-            images.append(args.pop(0))
+            images_.append(args.pop(0))
         if self.bAuto:
             # auto wizard will resolve SelectOne/SelectMany only if default(s)
             # were specified.
@@ -1318,7 +1317,7 @@ class WryeParser(ScriptParser.Parser):
             imageJoin = bass.getTempDir().join
         else:
             imageJoin = bass.dirs[u'installers'].join(self._path).join
-        for i in images:
+        for i in images_:
             # Try looking inside the package first, then look if it's using one
             # of the images packaged with Wrye Bash (from Mopy/bash/images)
             wiz_img_path = imageJoin(i)

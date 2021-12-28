@@ -167,10 +167,9 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
             cext_ = newInfo.ci_key.cext
-            if cext_ in (u'.esm', u'.esl'):
+            if (is_esl:= cext_ == '.esl') or cext_ == '.esm':
                 newFile.tes4.flags1.esm = True
-            if cext_ == u'.esl':
-                newFile.tes4.flags1.eslFile = True
+                newFile.tes4.flags1.eslFile = is_esl
             newFile.safeSave()
         to_select = []
         for mod, info, previous in to_refresh:
@@ -1314,8 +1313,8 @@ class Mod_ScanDirty(ItemLink):
             for p in skipped_plugins:
                 log(p)
             log(u'\n')
-        self._showWryeLog(log.out.getvalue(),
-                          title=_(u'Dirty Record Results'), asDialog=False)
+        self._showWryeLog(log.out.getvalue(), title=_(u'Dirty Record Results'),
+                          asDialog=False)
 
 #------------------------------------------------------------------------------
 class Mod_RemoveWorldOrphans(_NotObLink, _LoadLink):
@@ -1711,8 +1710,8 @@ class Mod_Fids_Replace(OneItemLink):
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed: self._showOk(_(u'No changes required.'))
-        else: self._showLog(changed, title=_(u'Objects Changed'),
-                            asDialog=True)
+        else:
+            self._showLog(changed, title=_(u'Objects Changed'), asDialog=True)
 
 class Mod_Face_Import(OneItemLink):
     """Imports a face from a save to an esp."""
@@ -1743,7 +1742,7 @@ class Mod_Face_Import(OneItemLink):
         if not imagePath.exists():
             srcInfo.header.read_save_header(load_image=True)
             # TODO(inf) de-wx! Again, image/bitmap stuff
-            image = ImageWrapper.from_bitstream(
+            image = ImageWrapper.bmp_from_bitstream(
                 *srcInfo.header.image_parameters).ConvertToImage()
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s, ImageWrapper.typesDict[u'jpg'])
@@ -1814,10 +1813,10 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
         return changed
 
     def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,
-                 icons=Link._default_icons):
+                 lg_icons=Link._default_icons):
         super(_Mod_Import_Link, self)._showLog(logText,
             title=title or self.__class__.progressTitle, asDialog=asDialog,
-            fixedFont=fixedFont, icons=icons)
+            fixedFont=fixedFont, icons=lg_icons)
 
     def _log(self, changed, fileName):
         self._showLog(u'* %03d  %s\n' % (changed, fileName))

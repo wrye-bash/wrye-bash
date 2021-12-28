@@ -70,14 +70,11 @@ class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
         self._ret_action = new_ret
         self.accept_modal()
 
-    def get_action(self):
-        """Returns the choice the user made. Either the string 'MOVE' or the
-        string 'COPY'."""
-        return self._ret_action
-
-    def should_remember(self):
-        """Returns True if the choice the user made should be remembered."""
-        return self._gCheckBox.is_checked
+    def show_modal(self):
+        """Return the choice the user made (either the string 'MOVE' or the
+        string 'COPY') and whether that choice should be remembered."""
+        result = super(CopyOrMovePopup, self).show_modal()
+        return result and self._ret_action, self._gCheckBox.is_checked
 
 class _TransientPopup(_AComponent):
     """Base class for transient popups, i.e. popups that disappear as soon as
@@ -220,3 +217,14 @@ class FileOpenMultiple(_FileDialog):
 class FileSave(_FileDialog):
     """'Save as' dialog."""
     _dialog_style = _wx.FD_SAVE | _wx.FD_OVERWRITE_PROMPT
+
+class DirOpen(_FileDialog):
+    """'Open directory' dialog."""
+    _wx_widget_type = _wx.DirDialog
+    _dialog_style = _wx.DD_DEFAULT_STYLE | _wx.DD_SHOW_HIDDEN
+
+    def __init__(self, parent, title=u'', defaultPath=u'', create_dir=False):
+        st = self.__class__._dialog_style
+        st |= _wx.DD_NEW_DIR_BUTTON if create_dir else _wx.DD_DIR_MUST_EXIST
+        super(_FileDialog, self).__init__(parent, title, '%s' % defaultPath,
+                                          style=st)

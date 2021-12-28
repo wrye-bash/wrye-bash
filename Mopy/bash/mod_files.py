@@ -94,15 +94,15 @@ class LoadFactory(object):
     def addClass(self, recClass, __cell_rec_sigs=frozenset([b'WRLD', b'ROAD',
             b'CELL', b'REFR', b'ACHR', b'ACRE', b'PGRD', b'LAND'])):
         """Adds specified class."""
-        if type(recClass) is bytes:
+        if isinstance(recClass, bytes):
             class_sig = recClass
             recClass = MreRecord
         else:
             try:
                 class_sig = recClass.rec_sig
             except AttributeError:
-                raise ValueError(u'addClass: bytes or MreRecord expected '
-                                 u'- got: %r!' % recClass)
+                raise ValueError(f'addClass: bytes or MreRecord expected - '
+                                 f'got: {recClass!r}!')
         #--Don't replace complex class with default (MreRecord) class
         if class_sig in self.type_class and recClass == MreRecord:
             return
@@ -233,13 +233,13 @@ class ModFile(object):
                             # Duplicate top-level group and we can't merge due
                             # to not loading it fully. Log and replace the
                             # existing one
-                            deprint(u'%s: Duplicate top-level %s group '
-                                    u'loaded as MobBase, replacing')
+                            deprint(f'{self.fileInfo}: Duplicate top-level '
+                                f'{label} group loaded as MobBase, replacing')
                             self.tops[label] = new_top
                         else:
                             # Duplicate top-level group and we can merge
-                            deprint(u'%s: Duplicate top-level %s group, '
-                                    u'merging' % (self.fileInfo, label))
+                            deprint(f'{self.fileInfo}: Duplicate top-level '
+                                    f'{label} group, merging')
                             self.tops[label].merge_records(new_top, set(),
                                 set(), False, False)
                     else:
@@ -247,7 +247,7 @@ class ModFile(object):
                         header.skip_blob(ins)
                 except:
                     if catch_errors:
-                        deprint(u'Error in %s' % self.fileInfo, traceback=True)
+                        deprint(f'Error in {self.fileInfo}', traceback=True)
                         break
                     else:
                         # Useful for implementing custom error behavior, see
@@ -340,18 +340,18 @@ class ModFile(object):
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
         masters_list = self.augmented_masters()
-        indices = {mname: index for index, mname in enumerate(masters_list)}
+        indexes = {mname: index for index, mname in enumerate(masters_list)}
         has_expanded_range = bush.game.Esp.expanded_plugin_range
         if (has_expanded_range and len(masters_list) > 1
                 and self.tes4.version >= 1.0):
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range
             def _master_index(m_name, _obj_id):
-                return indices[m_name]
+                return indexes[m_name]
         else:
             # 0x000-0x800 are reserved for hardcoded (engine) records
             def _master_index(m_name, obj_id):
-                return indices[m_name] if obj_id >= 0x800 else 0
+                return indexes[m_name] if obj_id >= 0x800 else 0
         def mapper(long_fid):
             if long_fid is None: return None
             if isinstance(long_fid, int): return long_fid
@@ -440,7 +440,7 @@ class ModFile(object):
             return self.cached_mgef_names
 
     def __repr__(self):
-        return u'ModFile<%s>' % self.fileInfo
+        return f'ModFile<{self.fileInfo}>'
 
 # TODO(inf) Use this for a bunch of stuff in mods_metadata.py (e.g. UDRs)
 class ModHeaderReader(object):

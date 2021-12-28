@@ -110,7 +110,7 @@ class APreserver(ImportPatcher):
         # Filter out any entries that don't actually have data or don't
         # actually exist (for this game at least)
         ##: make sure k is always bytes and drop encode below
-        filtered_dict = {k.encode(u'ascii') if type(k) is str else k: v
+        filtered_dict = {k.encode(u'ascii') if isinstance(k, str) else k: v
                          for k, v in parsed_sources.items()
                          if v and k in MreRecord.type_class}
         self.srcs_sigs.update(filtered_dict)

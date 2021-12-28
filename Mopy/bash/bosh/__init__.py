@@ -144,10 +144,12 @@ class ListInfo(object):
         return GPath(r + (u' (%d)' % count) + e)
 
     @classmethod
-    def unique_name(cls, name_str):
+    def unique_name(cls, name_str, check_exists=False):
         base_name = cls._new_name(GPath(name_str), 0)
         unique_counter = 0
-        while GPath(name_str) in cls.get_store():
+        store = cls.get_store()
+        while (store.store_dir.join(name_str).exists() if check_exists else
+                GPath(name_str) in store):
             unique_counter += 1
             name_str = cls._new_name(base_name, unique_counter)
         return GPath(name_str) # gpath markers and projects
@@ -2621,9 +2623,9 @@ class ModInfos(FileInfos):
             if espms_extra or esls_extra:
                 msg = u'%s: Trying to activate more than ' % fileName
                 if espms_extra:
-                    msg += u'%d espms' % load_order.max_espms()
+                    msg += f'{load_order.max_espms():d} espms'
                 else:
-                    msg += u'%d light plugins' % load_order.max_esls()
+                    msg += f'{load_order.max_esls():d} light plugins'
                 raise PluginsFullError(msg)
             _children = (_children or tuple()) + (fileName,)
             if fileName in _children[:-1]:
@@ -3644,7 +3646,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         if ignoreBackup: _bak.moveTo(f'{_bak}.ignore')
         # load the .bak file, or an empty settings dict saved to disc at exit
         loaded = _load()
-        if ignoreBackup: GPath(u'%s.ignore' % _bak).moveTo(_bak)
+        if ignoreBackup: GPath(f'{_bak}.ignore').moveTo(_bak)
         return loaded
     #--Set bass.settings ------------------------------------------------------
     try:

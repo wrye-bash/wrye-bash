@@ -26,7 +26,7 @@ now. See #190, its code should be refactored and land in basher and/or gui."""
 # Imports ---------------------------------------------------------------------
 from . import bass # for dirs - try to avoid
 from . import bolt
-from .bolt import GPath, deprint, readme_url
+from .bolt import deprint, readme_url
 from .exception import AbstractError, AccessDeniedError, BoltError, \
     CancelError, SkipError, StateError
 #--Python
@@ -44,7 +44,7 @@ from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, \
     ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
     staticBitmap, bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, \
-    FileSave
+    FileSave, DirOpen
 from .gui.base_components import _AComponent
 
 # Print a notice if wx.html2 is missing
@@ -118,7 +118,7 @@ class ImageList(object):
                 indices[key] = imageList.Add(image.get_bitmap())
         return self.imageList
 
-    def get_image(self, key): return self.images[self[key]][1] # YAK !
+    def get_icon(self, key): return self.images[self[key]][1].GetIcon() # YAK !
 
     def __getitem__(self,key):
         self.GetImageList()
@@ -132,8 +132,8 @@ class ColorChecks(ImageList):
         for state in (u'on', u'off', u'inc', u'imp'):
             for status in (u'purple', u'blue', u'green', u'orange', u'yellow',
                            u'red'):
-                shortKey = status + u'.' + state
-                image_key = u'checkbox.' + shortKey
+                shortKey = f'{status}.{state}'
+                image_key = f'checkbox.{shortKey}'
                 img = bass.dirs[u'images'].join(
                     f'checkbox_{status}_{state}.png')
                 image = images[image_key] = ImageWrapper(img, ImageWrapper.typesDict[u'png'])
@@ -1028,7 +1028,7 @@ class UIList(wx.Panel):
         self.autosizeColumns()
 
     __all = ()
-    def RefreshUI(self, redraw=__all, to_del=__all, detail_item=u'SAME',
+    def RefreshUI(self, redraw=__all, to_del=__all, detail_item='SAME',
                   **kwargs):
         """Populate specified files or ALL files, sort, set status bar count.
         """
@@ -1655,10 +1655,8 @@ class Link(object):
     def _askContinue(self, message, continueKey, title=_(u'Warning')):
         return askContinue(self.window, message, continueKey, title=title)
 
-    def _askOpen(self, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u''):
-        return FileOpen.display_dialog(self.window, title=title,
-            defaultDir=defaultDir, defaultFile=defaultFile, wildcard=wildcard)
+    def _askContinueShortTerm(self, message, title=_(u'Warning')):
+        return askContinueShortTerm(self.window, message, title=title)
 
     def _showOk(self, message, title=u''):
         if not title: title = self._text
@@ -1675,41 +1673,40 @@ class Link(object):
     def _showError(self, message, title=_(u'Error')):
         return showError(self.window, message, title)
 
-    def _askSave(self, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u''):
-        return FileSave.display_dialog(self.window, title, defaultDir,
-                                       defaultFile, wildcard)
-
     _default_icons = object()
-    def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,
-                 icons=_default_icons):
-        if icons is self._default_icons: icons = Resources.bashBlue
-        Log(self.window, logText, title, asDialog, fixedFont, log_icons=icons)
+    def _showLog(self, logText, title='', asDialog=False, fixedFont=False,
+                 lg_icons=_default_icons):
+        if lg_icons is self._default_icons: lg_icons = Resources.bashBlue
+        Log(self.window, logText, title, asDialog, fixedFont,
+            log_icons=lg_icons)
 
     def _showInfo(self, message, title=_(u'Information')):
         return showInfo(self.window, message, title)
 
-    def _showWryeLog(self, logText, title=u'', asDialog=True,
-                     icons=_default_icons):
-        if icons is self._default_icons: icons = Resources.bashBlue
+    def _showWryeLog(self, logText, title='', asDialog=True,
+                     lg_icons=_default_icons):
+        if lg_icons is self._default_icons: lg_icons = Resources.bashBlue
         if not title: title = self._text
-        WryeLog(self.window, logText, title, asDialog, log_icons=icons)
+        WryeLog(self.window, logText, title, asDialog, log_icons=lg_icons)
 
-    def _askNumber(self, message, prompt=u'', title=u'', value=0, min=0,
+    def _askNumber(self, message, prompt='', title='', value=0, min=0,
                    max=10000):
         return askNumber(self.window, message, prompt, title, value, min, max)
 
-    def _askDirectory(self, message=_(u'Choose a directory.'),
-                      defaultPath=u''):
+    # De-wx'd File/dir dialogs
+    def _askOpen(self, title='', defaultDir='', defaultFile='', wildcard=''):
+        return FileOpen.display_dialog(self.window, title, defaultDir,
+                                       defaultFile, wildcard)
+
+    def _askSave(self, title='', defaultDir='', defaultFile='', wildcard=''):
+        return FileSave.display_dialog(self.window, title, defaultDir,
+                                       defaultFile, wildcard)
+
+    def _askDirectory(self, message=_('Choose a directory.'), defaultPath=''):
         """Show a modal directory dialog and return the resulting path,
         or None if canceled."""
-        with wx.DirDialog(self.window, message, defaultPath.s,
-                          style=wx.DD_NEW_DIR_BUTTON) as dialog:
-            if dialog.ShowModal() != wx.ID_OK: return None
-            return GPath(dialog.GetPath())
-
-    def _askContinueShortTerm(self, message, title=_(u'Warning')):
-        return askContinueShortTerm(self.window, message, title=title)
+        return DirOpen.display_dialog(self.window, message, defaultPath,
+                                      create_dir=True)
 
 # Link subclasses -------------------------------------------------------------
 class ItemLink(Link):

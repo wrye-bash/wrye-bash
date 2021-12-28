@@ -148,12 +148,6 @@ class BackupSettings(object):
         return f'Backup Bash Settings {bak_name} ({bolt.timestamp()}) v' \
                f'{bass.settings[u"bash.version"]}-{AppVersion}.7z'
 
-    @staticmethod
-    def is_backup(backup_path):
-        """Returns True if the specified path is a backup. Currently only
-        checks if the file extension is 7z."""
-        return backup_path.cext == u'.7z'
-
     def backup_settings(self, balt_):
         deprint(u'')
         deprint(f'BACKUP BASH SETTINGS: {self._backup_dest_file}')
@@ -181,9 +175,9 @@ class BackupSettings(object):
         # create the backup archive in 7z format WITH solid compression
         # may raise StateError
         backup_dir, dest7z = self._backup_dest_file.head, self._backup_dest_file.tail
-        with backup_dir.join(dest7z).unicodeSafe() as safe_dest:
-            command = archives.compressCommand(safe_dest, backup_dir, temp_dir)
-            archives.compress7z(command, safe_dest, dest7z, temp_dir)
+        command = archives.compressCommand(
+            safe_dest := backup_dir.join(dest7z), backup_dir, temp_dir)
+        archives.compress7z(command, safe_dest, dest7z, temp_dir)
         bass.settings[u'bash.backupPath'] = backup_dir
 
     def _backup_success(self, balt_):
@@ -199,6 +193,11 @@ class BackupSettings(object):
         balt_.showWarning(balt_.Link.Frame, u'\n'.join([
             _(u'There was an error while trying to backup the Bash settings!'),
             _(u'No backup was created.')]), _(u'Unable to create backup!'))
+
+def is_backup(backup_path):
+    """Return True if the specified path is a backup. Currently only
+    checks if the file extension is 7z."""
+    return backup_path.cext == u'.7z'
 
 #------------------------------------------------------------------------------
 class RestoreSettings(object):
@@ -226,8 +225,7 @@ class RestoreSettings(object):
         restarting."""
         if self._settings_file.isfile():
             temp_dir = bolt.Path.tempDir(prefix=RestoreSettings.__tmpdir_prefix)
-            with self._settings_file.unicodeSafe() as safe_settings:
-                archives.extract7z(safe_settings, temp_dir)
+            archives.extract7z(self._settings_file, temp_dir)
             self._extract_dir = temp_dir
         elif self._settings_file.isdir():
             self._extract_dir = self._settings_file

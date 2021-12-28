@@ -112,15 +112,16 @@ class OmodFile(object):
         """Return a list of the files and their uncompressed sizes, and the total uncompressed size of an archive"""
         # Get contents of archive
         filesizes = collections.OrderedDict()
-        reFileSize = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]*\s+(.+?)$', re.U)
-        with self.omod_path.unicodeSafe() as tempOmod:
-            cmd7z = [archives.exe7z, u'l', u'-r', u'-sccUTF-8', tempOmod.s]
-            with popen_common(cmd7z, encoding='utf-8').stdout as ins:
-                for line in ins:
-                    maFileSize = reFileSize.match(line)
-                    if maFileSize: #also matches the last line with total sizes
-                        name_ = maFileSize.group(2).strip().strip(u'\r')
-                        filesizes[name_] = int(maFileSize.group(1))
+        reFileSize = re.compile(r'[0-9]{4}-[0-9]{2}-[0-9]{2}\s+'
+                                r'[0-9]{2}:[0-9]{2}:[0-9]{2}.{6}\s+'
+                                r'([0-9]+)\s+[0-9]*\s+(.+?)$')
+        cmd7z = [archives.exe7z, u'l', u'-r', u'-sccUTF-8', self.omod_path.s]
+        with popen_common(cmd7z, encoding='utf-8').stdout as ins:
+            for line in ins:
+                maFileSize = reFileSize.match(line)
+                if maFileSize:  #also matches the last line with total sizes
+                    name_ = maFileSize.group(2).strip().strip(u'\r')
+                    filesizes[name_] = int(maFileSize.group(1))
         # drop the last line entry
         del filesizes[list(filesizes)[-1]]
         return filesizes, sum(filesizes.values())
@@ -158,42 +159,44 @@ class OmodFile(object):
         # Extract the files
         reExtracting = re.compile(u'- (.+)', re.U)
         subprogress = bolt.SubProgress(progress, 0, 0.4)
+        omod_tail = self.omod_path.stail
         current = 0
-        with self.omod_path.unicodeSafe() as tempOmod:
-            cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', tempOmod.s, u'-o%s' % extractDir, u'-bb1']
-            with popen_common(cmd7z, encoding='utf-8').stdout as ins:
-                for line in ins:
-                    maExtracting = reExtracting.match(line)
-                    if maExtracting:
-                        name_ = maExtracting.group(1).strip().strip(u'\r')
-                        subprogress(float(current) / total, self.omod_path.stail + u'\n' + _(u'Extracting...') + u'\n' + name_)
-                        current += sizes_[name_]
+        cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', self.omod_path.s,
+                 u'-o%s' % extractDir, u'-bb1']
+        with popen_common(cmd7z, encoding='utf-8').stdout as ins:
+            for line in ins:
+                maExtracting = reExtracting.match(line)
+                if maExtracting:
+                    name_ = maExtracting.group(1).strip().strip(u'\r')
+                    subprogress(float(current) / total, omod_tail + u'\n' + _(u'Extracting...') + u'\n' + name_)
+                    current += sizes_[name_]
         # Get compression type
-        progress(0.4, self.omod_path.stail + u'\n' + _(u'Reading config'))
+        progress(0.4, omod_tail + u'\n' + _(u'Reading config'))
         self.readConfig(extractDir.join(u'config'))
         # Collect OMOD conversion data
         ocdDir = stageDir.join(u'omod conversion data')
-        progress(0.46, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\ninfo.txt')
+        prog_pref = omod_tail + u'\n' + _(u'Creating omod conversion data')
+        progress(0.46, prog_pref + u'\ninfo.txt')
         scr_path = extractDir.join(u'script')
         readme_path = extractDir.join(u'readme')
         readme_exists = readme_path.exists()
         scr_exists = scr_path.exists()
-        self.writeInfo(ocdDir.join(u'info.txt'), self.omod_path.stail,
+        self.writeInfo(ocdDir.join(u'info.txt'), omod_tail,
                        readme_exists, scr_exists)
-        progress(0.47, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscript')
+        progress(0.47, prog_pref + u'\nscript')
         if scr_exists:
             with scr_path.open(u'rb') as ins:
                 with ocdDir.join(u'script.txt').open(u'wb') as output:
                     output.write(_readNetString(ins))
-        progress(0.48, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nreadme.rtf')
+        progress(0.48, prog_pref + u'\nreadme.rtf')
         if readme_exists:
             with readme_path.open(u'rb') as ins:
                 with ocdDir.join(u'readme.rtf').open(u'wb') as output:
                     output.write(_readNetString(ins))
-        progress(0.49, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscreenshot')
+        progress(0.49, prog_pref + u'\nscreenshot')
         try: extractDir.join(u'image').moveTo(ocdDir.join(u'screenshot'))
         except StateError: pass # image file does not exist
-        progress(0.5, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nconfig')
+        progress(0.5, prog_pref + u'\nconfig')
         extractDir.join(u'config').moveTo(ocdDir.join(u'config'))
         # Extract the files
         if self.compType == 0:
@@ -203,13 +206,12 @@ class OmodFile(object):
         pluginSize = sizes_.get(u'plugins',0)
         dataSize = sizes_.get(u'data',0)
         subprogress = bolt.SubProgress(progress, 0.5, 1)
-        with stageDir.unicodeSafe() as tempOut:
-            if extractDir.join(u'plugins.crc').exists() and extractDir.join(u'plugins').exists():
-                pluginProgress = bolt.SubProgress(subprogress, 0, float(pluginSize)/(pluginSize+dataSize))
-                extract(extractDir.join(u'plugins.crc'),extractDir.join(u'plugins'),tempOut,pluginProgress)
-            if extractDir.join(u'data.crc').exists() and extractDir.join(u'data').exists():
-                dataProgress = bolt.SubProgress(subprogress, subprogress.state, 1)
-                extract(extractDir.join(u'data.crc'),extractDir.join(u'data'),tempOut,dataProgress)
+        if extractDir.join(u'plugins.crc').exists() and extractDir.join(u'plugins').exists():
+            pluginProgress = bolt.SubProgress(subprogress, 0, float(pluginSize) / (pluginSize + dataSize))
+            extract(extractDir.join(u'plugins.crc'), extractDir.join(u'plugins'), stageDir, pluginProgress)
+        if extractDir.join(u'data.crc').exists() and extractDir.join(u'data').exists():
+            dataProgress = bolt.SubProgress(subprogress, subprogress.state, 1)
+            extract(extractDir.join(u'data.crc'), extractDir.join(u'data'), stageDir, dataProgress)
 
     def _extract_fomod(self, extractDir, stageDir):
         """Extracts a .fomod file into stageDir. Unlike .omod files, these are
@@ -219,8 +221,7 @@ class OmodFile(object):
         # Needed since stageDir is a subdir of extractDir. We can't move a
         # parent dir into its subdir (duh), so just make a small temp subdir
         temp_extract = extractDir.join(u'out')
-        with self.omod_path.unicodeSafe() as tempOmod:
-            archives.extract7z(tempOmod, temp_extract)
+        archives.extract7z(self.omod_path, temp_extract)
         env.shellMove(temp_extract, stageDir, parent=None)
 
     def extractFilesZip(self, crcPath, dataPath, outPath, progress):
@@ -247,8 +248,10 @@ class OmodFile(object):
         progress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail)
         with streamPath.open(u'rb') as bin_out:
             for i,fname in enumerate(fileNames):
-                progress(i, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail + u'\n' + fname)
-                outFile = outDir.join(fname)
+                fn_str = fname.decode('utf-8')
+                progress(i, self.omod_path.stail + u'\n' + _(
+                    u'Unpacking %s') % streamPath.stail + f'\n{fn_str}')
+                outFile = outDir.join(fn_str)
                 with outFile.open(u'wb') as output:
                     output.write(bin_out.read(sizes_[i]))
         progress(len(fileNames))

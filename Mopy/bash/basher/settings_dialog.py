@@ -28,7 +28,7 @@ from collections import defaultdict
 from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
-from ..balt import colors, Link, Resources
+from ..balt import colors, Link, Resources, showOk
 from ..bolt import deprint, GPath, readme_url
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
@@ -36,7 +36,7 @@ from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     WrappingTextMixin, ListBox, Label, Spacer, HBoxedLayout, CheckBox, \
     TextField, OpenButton, ScrollableWindow, ClickableImage, RevertButton, \
     SaveButton, SaveAsButton, DoubleListBox, ATreeMixin, CheckListBox, \
-    VBoxedLayout, FileOpen, FileSave
+    VBoxedLayout, FileOpen, FileSave, DirOpen
 from ..localize import dump_translator
 
 class SettingsDialog(DialogWindow):
@@ -820,6 +820,9 @@ class BackupsPage(_AFixedPage):
             btn_tooltip=_(u"Backup all of Wrye Bash's settings/data to an "
                           u'archive file.'))
         new_backup_btn.on_clicked.subscribe(self._new_backup)
+        add_backup_btn = Button(self, _('Set Backups Directory...'),
+            btn_tooltip=_('Select the directory containing your backups.'))
+        add_backup_btn.on_clicked.subscribe(self._set_backup_dir)
         self.restore_backup_btn = Button(self, _(u'Restore...'),
             btn_tooltip=_(u"Restore all of Wrye Bash's settings/data from the "
                           u'selected backup.'))
@@ -838,8 +841,8 @@ class BackupsPage(_AFixedPage):
             HorizontalLine(self),
             (HLayout(spacing=4, item_expand=True, items=[
                 (self._backup_list, LayoutOptions(weight=1)),
-                VLayout(item_expand=True, spacing=4, items=[
-                    save_settings_btn, new_backup_btn, HorizontalLine(self),
+                VLayout(item_expand=True, spacing=4, items=[save_settings_btn,
+                    new_backup_btn, add_backup_btn, HorizontalLine(self),
                     self.restore_backup_btn, self.rename_backup_btn,
                     self.delete_backup_btn,
                 ]),
@@ -877,6 +880,14 @@ class BackupsPage(_AFixedPage):
         self._set_context_buttons(btns_enabled=True)
 
     @balt.conversation
+    def _set_backup_dir(self):
+        backups_dir = DirOpen.display_dialog(self,
+            title=_('Set Backups Directory'), defaultPath=self._backup_dir)
+        if not backups_dir: return
+        bass.settings[u'bash.backupPath'] = backups_dir
+        self._populate_backup_list()
+
+    @balt.conversation
     def _new_backup(self):
         """Saves the current settings and data to create a new backup."""
         with BusyCursor(): Link.Frame.SaveSettings()
@@ -901,7 +912,7 @@ class BackupsPage(_AFixedPage):
     def _populate_backup_list(self):
         """Clears and repopulates the backups list."""
         all_backups = [x.s for x in self._backup_dir.list()
-                       if barb.BackupSettings.is_backup(x)]
+                       if barb.is_backup(x)]
         self._backup_list.lb_set_items(all_backups)
         if not all_backups:
             # If there are no more backups left, we need to disable all
@@ -968,6 +979,9 @@ class BackupsPage(_AFixedPage):
         """Saves all settings and data right now."""
         with BusyCursor():
             Link.Frame.SaveSettings()
+        showOk(Link.Frame,
+               _('Wrye Bash settings files were successfully saved.'),
+               _('Save Settings'))
 
     def _set_context_buttons(self, btns_enabled):
         """Enables or disables all backup-specific buttons."""
