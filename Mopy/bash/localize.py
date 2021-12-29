@@ -228,9 +228,9 @@ def dump_translator(out_path, lang):
         bass.dirs[u'l10n'].
     :param lang: The language to dump a text file for.
     :return: The path to the file that the dump was written to."""
-    new_po = os.path.join(out_path, u'%sNEW.po' % lang)
-    tmp_po = os.path.join(out_path, u'%sNEW.tmp' % lang)
-    old_po = os.path.join(out_path, u'%s.po' % lang)
+    new_po = os.path.join(out_path, f'{lang}NEW.po')
+    tmp_po = os.path.join(out_path, f'{lang}NEW.tmp')
+    old_po = os.path.join(out_path, f'{lang}.po')
     gt_args = [u'p', u'-a', u'-o', new_po]
     gt_args.extend(_find_all_bash_modules())
     # Need to do this differently on standalone
@@ -268,8 +268,7 @@ def dump_translator(out_path, lang):
                             old_line.rstrip(b'\r\n'))
                         if encoding_match:
                             # Encoding names are all ASCII, so this is safe
-                            target_enc = str(encoding_match.group(1),
-                                                 u'ascii')
+                            target_enc = str(encoding_match.group(1), 'ascii')
                     if re_msg_ids_start.match(old_line):
                         break # Break once we hit the first translatable string
                     out.write(old_line)

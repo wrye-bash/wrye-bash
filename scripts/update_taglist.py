@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # GPL License and Copyright Notice ============================================
@@ -72,16 +72,15 @@ def setup_parser(parser):
     )
 
 def download_masterlist(repository, version, dl_path):
-    url = u'https://raw.githubusercontent.com/loot/{}/v{}/masterlist.yaml'
-    url = url.format(repository, version)
-    LOGGER.info(u'Downloading {} masterlist...'.format(repository))
-    LOGGER.debug(u'Download url: {}'.format(url))
-    LOGGER.debug(u'Downloading {} masterlist to {}'.format(
-        repository, dl_path))
+    url = f'https://raw.githubusercontent.com/loot/{repository}/v{version}/' \
+          f'masterlist.yaml'
+    LOGGER.info(f'Downloading {repository} masterlist...')
+    LOGGER.debug(f'Download url: {url}')
+    LOGGER.debug(f'Downloading {repository} masterlist to {dl_path}')
     utils.download_file(url, dl_path)
 
 def all_taglists_present():
-    for game_name, _repository in GAME_DATA.items():
+    for game_name in GAME_DATA:
         taglist_path = os.path.join(MOPY_PATH, u'taglists', game_name,
             u'taglist.yaml')
         if not os.path.isfile(taglist_path):
@@ -97,7 +96,7 @@ def main(verbosity=logging.INFO, logfile=LOGFILE,
         if not os.path.exists(game_dir):
             os.makedirs(game_dir)
         download_masterlist(repository, masterlist_version, taglist_path)
-        LOGGER.info(u'{} masterlist downloaded.'.format(game_name))
+        LOGGER.info(f'{game_name} masterlist downloaded.')
 
 if __name__ == u'__main__':
     argparser = argparse.ArgumentParser(

@@ -337,42 +337,42 @@ class LowerDict(dict):
 
     def __getitem__(self, k):
         return super(LowerDict, self).__getitem__(
-            CIstr(k) if isinstance(k, str) else k)
+            CIstr(k) if type(k) is str else k)
 
     def __setitem__(self, k, v):
         return super(LowerDict, self).__setitem__(
-            CIstr(k) if isinstance(k, str) else k, v)
+            CIstr(k) if type(k) is str else k, v)
 
     def __delitem__(self, k):
         return super(LowerDict, self).__delitem__(
-            CIstr(k) if isinstance(k, str) else k)
+            CIstr(k) if type(k) is str else k)
 
     def copy(self): # don't delegate w/ super - dict.copy() -> dict :(
         return type(self)(self)
 
     def get(self, k, default=None):
         return super(LowerDict, self).get(
-            CIstr(k) if isinstance(k, str) else k, default)
+            CIstr(k) if type(k) is str else k, default)
 
     def setdefault(self, k, default=None):
         return super(LowerDict, self).setdefault(
-            CIstr(k) if isinstance(k, str) else k, default)
+            CIstr(k) if type(k) is str else k, default)
 
     __no_default = object()
     def pop(self, k, v=__no_default):
         if v is LowerDict.__no_default:
             # super will raise KeyError if no default and key does not exist
             return super(LowerDict, self).pop(
-                CIstr(k) if isinstance(k, str) else k)
+                CIstr(k) if type(k) is str else k)
         return super(LowerDict, self).pop(
-            CIstr(k) if isinstance(k, str) else k, v)
+            CIstr(k) if type(k) is str else k, v)
 
     def update(self, mapping=(), **kwargs):
         super(LowerDict, self).update(self._process_args(mapping, **kwargs))
 
     def __contains__(self, k):
         return super(LowerDict, self).__contains__(
-            CIstr(k) if isinstance(k, str) else k)
+            CIstr(k) if type(k) is str else k)
 
     @classmethod
     def fromkeys(cls, keys, v=None):
@@ -1298,7 +1298,7 @@ class PickleDict(object):
     class Mold(Exception):
         def __init__(self, moldedFile):
             msg = (u'Your settings in %s come from an ancient Bash version. '
-                   u'Please load them in 306 so they are converted '
+                   u'Please load them in 307 so they are converted '
                    u'to the newer format' % moldedFile)
             super(PickleDict.Mold, self).__init__(msg)
 
