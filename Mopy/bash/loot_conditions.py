@@ -38,7 +38,7 @@ from .env import get_file_version
 from .exception import AbstractError, EvalError, FileError
 ##: below is too tight coupling with Bash internals - pass those as
 # parameters along with modInfos currently imported locally
-from .load_order import cached_active_tuple, cached_is_active, in_master_block
+from .load_order import cached_active_tuple, cached_is_active
 
 # Conditions
 class _ACondition(object):
@@ -200,7 +200,7 @@ def _fn_is_master(file_path):
     plugin_path = GPath(file_path)
     from .bosh import modInfos
     # Need to check if it's on disk first, otherwise modInfos[x] errors
-    return plugin_path in modInfos and in_master_block(modInfos[plugin_path])
+    return plugin_path in modInfos and modInfos[plugin_path].in_master_block()
 
 def _fn_many(path_regex):
     # type: (str) -> bool

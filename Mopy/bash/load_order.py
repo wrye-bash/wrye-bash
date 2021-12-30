@@ -61,9 +61,6 @@ _LORDS_PICKLE_VERSION = 2
 __active_mods_sentinel = {}
 _active_mods_lists = {}
 
-def in_master_block(minf):
-    return _game_handle.in_master_block(minf) # minf is a master or mod info
-
 def check_active_limit(mods):
     return _game_handle.check_active_limit(mods)
 

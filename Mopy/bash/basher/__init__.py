@@ -303,8 +303,7 @@ class _ModsUIList(balt.UIList):
 
     def _sortEsmsFirst(self, items):
         if self.esmsFirst:
-            items.sort(key=lambda a: not load_order.in_master_block(
-                self.data_store[a]))
+            items.sort(key=lambda a: not self.data_store[a].in_master_block())
 
     def _activeModsFirst(self, items):
         if self.selectedFirst: items.sort(key=lambda x: x not in
@@ -502,7 +501,7 @@ class MasterList(_ModsUIList):
             if masterInfo.is_esl():
                 final_text_key += u'l'
                 mouseText += _(u'Light plugin. ')
-            if load_order.in_master_block(masterInfo):
+            if masterInfo.in_master_block():
                 final_text_key += u'm'
                 mouseText += _(u'Master plugin. ')
             # Check if it's special, leave ESPs alone
@@ -1013,7 +1012,7 @@ class ModList(_ModsUIList):
             if mod_info.is_esl():
                 final_text_key += u'l'
                 mouseText += _(u'Light plugin. ')
-            if load_order.in_master_block(mod_info):
+            if mod_info.in_master_block():
                 final_text_key += u'm'
                 mouseText += _(u'Master plugin. ')
             # Check if it's special, leave ESPs alone

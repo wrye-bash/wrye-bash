@@ -369,10 +369,6 @@ class LoGame(object):
             return True
         return False
 
-    def in_master_block(self, minf): # minf is a master or mod info
-        """Return true for files that load in the masters' block."""
-        return minf.has_esm_flag()
-
     # ABSTRACT ----------------------------------------------------------------
     def _backup_active_plugins(self):
         """This method should make a backup of whatever file is storing the
@@ -528,14 +524,13 @@ class LoGame(object):
         lord[:] = [x for x in lord if x not in fix_lo.lo_removed]
         # See if any esm files are loaded below an esp and reorder as necessary
         ol = lord[:]
-        in_mblock = self.in_master_block
-        lord.sort(key=lambda m: not in_mblock(cached_minfs[m]))
+        lord.sort(key=lambda m: not cached_minfs[m].in_master_block())
         lo_order_changed |= ol != lord
         if fix_lo.lo_added:
             # Append new plugins to load order
             index_first_esp = self._index_of_first_esp(lord)
             for mod in fix_lo.lo_added:
-                if in_mblock(cached_minfs[mod]):
+                if cached_minfs[mod].in_master_block():
                     if not mod == master_name:
                         lord.insert(index_first_esp, mod)
                     else:
@@ -637,8 +632,8 @@ class LoGame(object):
     # HELPERS -----------------------------------------------------------------
     def _index_of_first_esp(self, lord):
         index_of_first_esp = 0
-        while index_of_first_esp < len(lord) and self.in_master_block(
-            self.mod_infos[lord[index_of_first_esp]]):
+        while index_of_first_esp < len(lord) and self.mod_infos[
+            lord[index_of_first_esp]].in_master_block():
             index_of_first_esp += 1
         return index_of_first_esp
 
@@ -934,7 +929,7 @@ class TimestampGame(LoGame):
         # sort case insensitive (for time conflicts)
         mods = sorted(self.mod_infos if mods is None else mods)
         mods.sort(key=lambda x: self.mod_infos[x].mtime)
-        mods.sort(key=lambda x: not self.in_master_block(self.mod_infos[x]))
+        mods.sort(key=lambda x: not self.mod_infos[x].in_master_block())
         return mods
 
     def _backup_active_plugins(self):
@@ -1010,11 +1005,6 @@ class Morrowind(INIGame, TimestampGame):
     plugins in Morrowind.ini."""
     has_plugins_txt = False
     ini_key_actives = (u'Morrowind.ini', u'Game Files', u'GameFile%(lo_idx)s')
-
-    ##: This is wrong, but works for now. We need game-specific record headers
-    # to parse the ESM flag for MW correctly - #480!
-    def in_master_block(self, minf):
-        return minf.get_extension() == u'.esm'
 
 class TextfileGame(LoGame):
 
@@ -1202,13 +1192,6 @@ class AsteriskGame(LoGame):
         return super().pinned_mods() | set(self.must_be_active_if_present)
 
     def load_order_changed(self): return self._plugins_txt_modified()
-
-    def in_master_block(self, minf,
-                        __master_exts=frozenset((u'.esm', u'.esl'))):
-        """For esl games .esm and .esl files are set the master flag in
-        memory even if not set on the file on disk. For esps we must check
-        for the flag explicitly."""
-        return minf.get_extension() in __master_exts or minf.has_esm_flag()
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
         # read the file once

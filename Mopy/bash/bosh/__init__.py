@@ -213,6 +213,12 @@ class MasterInfo(object):
         else:
             return self.get_extension() in (u'.esm', u'.esl')
 
+    def in_master_block(self):
+        if self.mod_info:
+            return self.mod_info.in_master_block()
+        else:
+            return self.get_extension() in (u'.esm', u'.esl')
+
     def is_esl(self):
         """Delegate to self.modInfo.is_esl if exists, else rely on ."""
         if self.mod_info:
@@ -509,6 +515,21 @@ class ModInfo(FileInfo):
         """Returns the file extension of this mod."""
         return self.name.cext
 
+    def in_master_block(self, __master_exts=frozenset((u'.esm', u'.esl'))):
+        """Return true for files that load in the masters' block."""
+        ##: we should cache this and calculate in reset_cache and co
+        mod_ext = self.get_extension()
+        if  bush.game.has_esl:
+            # For esl games .esm and .esl files are set the master flag in
+            # memory even if not set on the file on disk. For esps we must
+            # check for the flag explicitly.
+            return mod_ext in __master_exts or self.has_esm_flag()
+        elif bush.game.fsName == 'Morrowind':
+            ##: This is wrong, but works for now. We need game-specific
+            # record headers to parse the ESM flag for MW correctly - #480!
+            return mod_ext == '.esm'
+        else: return self.has_esm_flag()
+
     def has_esm_flag(self):
         """Check if the mod info is a master file based on master flag -
         header must be set"""
@@ -551,7 +572,7 @@ class ModInfo(FileInfo):
         mod_ext = self.get_extension()
         if mod_ext not in (u'.esm', u'.esp'): # don't use for esls
             raise ArgumentError(
-                u'isInvertedMod: %s - only esm/esp allowed' % mod_ext)
+                f'isInvertedMod: {mod_ext} - only esm/esp allowed')
         return (self.header and
                 mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
 
@@ -1007,7 +1028,7 @@ class ModInfo(FileInfo):
         based on that."""
         # Skip for games that don't need the ONAM generation
         if bush.game.Esp.generate_temp_child_onam:
-            if load_order.in_master_block(self):
+            if self.in_master_block():
                 # We're a master now, so calculate the ONAM
                 temp_headers = ModHeaderReader.read_temp_child_headers(self)
                 num_masters = len(self.masterNames)
@@ -2196,7 +2217,7 @@ class ModInfos(FileInfos):
     def cached_lo_last_esm(self):
         last_esm = self._master_esm
         for mod in self._lo_wip[1:]:
-            if not load_order.in_master_block(self[mod]): return last_esm
+            if not self[mod].in_master_block(): return last_esm
             last_esm = mod
         return last_esm
 
@@ -2218,7 +2239,7 @@ class ModInfos(FileInfos):
     def cached_lo_append_if_missing(self, mods):
         new = mods - set(self._lo_wip)
         if not new: return
-        esms = {x for x in new if load_order.in_master_block(self[x])}
+        esms = {x for x in new if self[x].in_master_block()}
         if esms:
             last = self.cached_lo_last_esm()
             for esm in esms:

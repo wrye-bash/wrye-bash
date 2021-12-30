@@ -209,7 +209,7 @@ class Mod_OrderByName(EnabledLink):
         #--Do it
         self.selected.sort()
         self.selected.sort( # sort masters first
-            key=lambda m: not load_order.in_master_block(bosh.modInfos[m]))
+            key=lambda m: not bosh.modInfos[m].in_master_block())
         if not bush.game.using_txt_file:
             #--Get first time from first selected file.
             newTime = min(x.mtime for x in self.iselected_infos())
