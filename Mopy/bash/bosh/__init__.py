@@ -466,11 +466,12 @@ class ModInfo(FileInfo):
         x[1:] for x in bush.game.espm_extensions) + '))'
 
     def __init__(self, fullpath, load_cache=False):
-        self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
-        if endsInGhost: fullpath = GPath_no_norm(fullpath.s[:-6])
+        ends_in_ghost = (fullpath.cs[-6:] == u'.ghost')
+        if ends_in_ghost:
+            fullpath = GPath_no_norm(fullpath.s[:-6])
+            self.isGhost = True
         else: # new_info() path
-            self.isGhost = not fullpath.isfile() and os.path.isfile(
-                fullpath.s + u'.ghost')
+            self._refresh_ghost_state(regular_path=fullpath)
         super(ModInfo, self).__init__(fullpath, load_cache)
 
     def get_hide_dir(self):
@@ -612,9 +613,15 @@ class ModInfo(FileInfo):
         return modInfos.dependents[self.ci_key]
 
     # Ghosting and ghosting related overrides ---------------------------------
+    def _refresh_ghost_state(self, regular_path=None):
+        """Refreshes the isGhost state by checking existence on disk."""
+        if regular_path is None: regular_path = self._file_key
+        self.isGhost = not regular_path.isfile() and os.path.isfile(
+            regular_path.s + u'.ghost')
+
     def do_update(self, raise_on_error=False):
-        self.isGhost, old_ghost = not self._file_key.exists() and (
-                self._file_key + u'.ghost').exists(), self.isGhost
+        old_ghost = self.isGhost
+        self._refresh_ghost_state()
         # mark updated if ghost state changed but only reread header if needed
         changed = super(ModInfo, self).do_update(raise_on_error)
         return changed or self.isGhost != old_ghost
@@ -626,16 +633,17 @@ class ModInfo(FileInfo):
 
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
-        normal = self._file_key
-        ghost = normal + u'.ghost'
         # Refresh current status - it may have changed due to things like
         # libloadorder automatically unghosting plugins when activating them.
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
         # Both should never exist simultaneously, Bash will warn in BashBugDump
-        self.isGhost = False if normal.exists() else ghost.exists()
+        ##: Is this neeed? Causes tons of stat calls on boot
+        self._refresh_ghost_state()
         # Current status == what we want it?
         if isGhost == self.isGhost: return isGhost
+        normal = self._file_key
+        ghost = normal + u'.ghost'
         # Current status != what we want, so change it
         try:
             if not normal.editable() or not ghost.editable():
@@ -696,8 +704,11 @@ class ModInfo(FileInfo):
             # Remove obsolete and unknown tags and resolve any tag aliases
             return process_tags(tags_set)
 
-    def reloadBashTags(self):
-        """Reloads bash tags from mod description, LOOT and Data/BashTags."""
+    def reloadBashTags(self, ci_cached_bt_contents=None):
+        """Reloads bash tags from mod description, LOOT and Data/BashTags.
+
+        :param ci_cached_bt_contents: Passed to get_tags_from_dir, see there
+            for docs."""
         wip_tags = set()
         wip_tags |= self.getBashTagsDesc()
         # Tags from LOOT take precedence over the description
@@ -706,7 +717,8 @@ class ModInfo(FileInfo):
         wip_tags -= deleted_tags
         # Tags from Data/BashTags/{self.ci_key}.txt take precedence over both
         # the description and LOOT
-        added_tags, deleted_tags = read_dir_tags(self.ci_key)
+        added_tags, deleted_tags = read_dir_tags(self.ci_key,
+            ci_cached_bt_contents=ci_cached_bt_contents)
         wip_tags |= added_tags
         wip_tags -= deleted_tags
         self.setBashTags(wip_tags)
@@ -829,11 +841,12 @@ class ModInfo(FileInfo):
         """Returns True if plugin has an associated BSA."""
         return bool(self.mod_bsas())
 
-    def getIniPath(self):
-        """Returns path to plugin's INI, if it were to exists."""
+    def get_ini_name(self):
+        """Returns the name of the INI matching this plugin, if it were to
+        exist."""
         # GPath_no_norm is okay because we got this by changing the extension
         # of a GPath object, meaning it was already normpath'd
-        return GPath_no_norm(self._file_key.s[:-3] + u'ini') # ignore .ghost
+        return self._file_key.sbody + '.ini'
 
     def _string_files_paths(self, lang):
         # type: (str) -> Iterable[str]
@@ -858,6 +871,7 @@ class ModInfo(FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
+            ##: Pass cached_ini_info here for performance?
             potential_bsas = self._find_string_bsas()
             bsa_assets = OrderedDict()
             for bsa_info in potential_bsas:
@@ -901,13 +915,16 @@ class ModInfo(FileInfo):
     # patch BSA (which only exists in SSE) will always load after the interface
     # BSA and hence should win all conflicts (including strings).
     _bsa_heuristics = list(enumerate((u'main', u'patch', u'interface')))
-    def _find_string_bsas(self):
+    def _find_string_bsas(self, cached_ini_info=(None, None, None)):
         """Return a list of BSAs to get strings files from. Note that this is
         *only* meant for strings files. It sorts the list in such a way as to
         prioritize files that are likely to contain the strings, instead of
-        returning the true BSA order."""
+        returning the true BSA order.
+
+        :param cached_ini_info: Passed to get_bsa_lo, see there for docs."""
         ret_bsas = list(reversed(
-            modInfos.get_bsa_lo(for_plugins=[self.ci_key])[0]))
+            modInfos.get_bsa_lo(cached_ini_info=cached_ini_info,
+                                for_plugins=[self.ci_key])[0]))
         # First heuristic sorting pass: sort 'main', 'patch' and 'interface' to
         # the front. This avoids parsing expensive BSAs at startup for the game
         # master (e.g. Skyrim.esm -> Skyrim - Textures0.bsa).
@@ -927,15 +944,26 @@ class ModInfo(FileInfo):
         ret_bsas.sort(key=lambda b: not b.ci_key.cs.startswith(plugin_prefix))
         return ret_bsas
 
-    def isMissingStrings(self):
+    def isMissingStrings(self, cached_ini_info=(None, None, None),
+            ci_cached_strings_paths=None):
         """True if the mod says it has .STRINGS files, but the files are
-        missing."""
+        missing.
+
+        :param cached_ini_info: Passed to get_bsa_lo, see there for docs.
+        :param ci_cached_strings_paths: An optional set of lower-case versions
+            of the paths to all strings files. They must match the format
+            returned by _string_files_paths (i.e. starting with 'strings/'. If
+            specified, no stat calls will occur to determine if loose strings
+            files exist."""
         if not self.header.flags1.hasStrings: return False
         lang = oblivionIni.get_ini_language()
-        bsa_infos = self._find_string_bsas()
+        bsa_infos = self._find_string_bsas(cached_ini_info)
         for assetPath in self._string_files_paths(lang):
             # Check loose files first
-            if self.dir.join(assetPath).isfile():
+            if ci_cached_strings_paths is not None:
+                if assetPath.lower() in ci_cached_strings_paths:
+                    continue
+            elif self.dir.join(assetPath).isfile():
                 continue
             # Check in BSA's next
             for bsa_info in bsa_infos:
@@ -1075,6 +1103,7 @@ def process_tags(tag_set, drop_unknown=True):
     specified set of tags. See the comments above for more information. If
     drop_unknown is True, also removes any unknown tags (tags that are not
     currently used, obsolete or aliases)."""
+    if not tag_set: return tag_set # fast path - nothing to process
     ret_tags = tag_set.copy()
     ret_tags -= removed_tags
     for old_tag, replacement_tags in tag_aliases.items():
@@ -1086,9 +1115,10 @@ def process_tags(tag_set, drop_unknown=True):
     return ret_tags
 
 # Some wrappers to decouple other files from process_tags
-def read_dir_tags(plugin_name):
+def read_dir_tags(plugin_name, ci_cached_bt_contents=None):
     """Wrapper around get_tags_from_dir. See that method for docs."""
-    added_tags, deleted_tags = get_tags_from_dir(plugin_name)
+    added_tags, deleted_tags = get_tags_from_dir(plugin_name,
+        ci_cached_bt_contents=ci_cached_bt_contents)
     return process_tags(added_tags), process_tags(deleted_tags)
 
 def read_loot_tags(plugin_name):
@@ -2022,13 +2052,20 @@ def _lo_cache(lord_func):
             self._active_wip = list(load_order.cached_active_tuple())
     return _modinfos_cache_wrapper
 
+def _bsas_from_ini(bsa_ini, bsa_key, available_bsas):
+    """Helper method for get_bsa_lo and friends. Retrieves BSA paths from an
+    INI file."""
+    r_bsas = (GPath_no_norm(x.strip()) for x in
+              bsa_ini.getSetting(u'Archive', bsa_key, u'').split(u','))
+    return (available_bsas[b] for b in r_bsas if b in available_bsas)
+
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
 
     def __init__(self):
         self.__class__.file_pattern = re.compile('(' + '|'.join(
-            [re.escape(e) for e in
+            [f'\\{e}' for e in
              bush.game.espm_extensions]) + r')(\.ghost)?$', re.I | re.U)
         FileInfos.__init__(self, dirs[u'mods'], factory=ModInfo)
         #--Info lists/sets
@@ -2281,19 +2318,28 @@ class ModInfos(FileInfos):
     _plugin_inis = OrderedDict() # cache active mod inis in active mods order
     def _refresh_mod_inis(self):
         if not bush.game.Ini.supports_mod_inis: return
-        iniPaths = (self[m].getIniPath() for m in load_order.cached_active_tuple())
-        iniPaths = [p for p in iniPaths if p.isfile()]
-        # delete non existent inis from cache
-        for key in list(self._plugin_inis):
-            if key not in iniPaths:
-                del self._plugin_inis[key]
-        # update cache with new or modified files
-        for iniPath in iniPaths:
+        data_folder_path = bass.dirs['mods']
+        # First, check the Data folder for INIs present in it. Order does not
+        # matter, we will only use this to look up existence
+        lower_data_cont = (f.lower() for f in os.listdir(data_folder_path.s))
+        present_inis = {i for i in lower_data_cont if i.endswith('.ini')}
+        # Determine which INIs are active based on LO. Order now matters
+        possible_inis = [self[m].get_ini_name() for m in
+                         load_order.cached_active_tuple()]
+        active_inis = [i for i in possible_inis if i.lower() in present_inis]
+        # Delete now inactive or deleted INIs from the cache
+        if self._plugin_inis: # avoid on boot
+            active_inis_set = set(active_inis)
+            for prev_ini in list(self._plugin_inis):
+                if prev_ini not in active_inis_set:
+                    del self._plugin_inis[prev_ini]
+        # Add new or modified INIs to the cache
+        for iniPath in active_inis:
             if iniPath not in self._plugin_inis or self._plugin_inis[
                 iniPath].do_update():
                 self._plugin_inis[iniPath] = IniFile(iniPath, 'cp1252')
         self._plugin_inis = OrderedDict(
-            [(k, self._plugin_inis[k]) for k in iniPaths])
+            [(k, self._plugin_inis[k]) for k in active_inis])
 
     def _refreshBadNames(self):
         """Refreshes which filenames cannot be saved to plugins.txt
@@ -2317,8 +2363,22 @@ class ModInfos(FileInfos):
         """Refreshes which mods are supposed to have strings files, but are
         missing them (=CTD). For Skyrim you need to have a valid load order."""
         oldBad = self.missing_strings
-        self.missing_strings = {k for k, v in self.items()
-                                if v.isMissingStrings()}
+        # Determine BSA LO from INIs once, this gets expensive very quickly
+        cached_ini_info = self.get_bsas_from_inis()
+        # Determine the present strings files once to avoid stat'ing
+        # non-existent strings files hundreds of times
+        try:
+            strings_files = os.listdir(bass.dirs['mods'].join('strings').s)
+            strings_prefix = f'strings{os.path.sep}'
+            ci_cached_strings_paths = {strings_prefix + s.lower()
+                                       for s in strings_files}
+        except FileNotFoundError:
+            # No loose strings folder -> all strings are in BSAs
+            ci_cached_strings_paths = set()
+        self.missing_strings = {
+            k for k, v in self.items() if v.isMissingStrings(
+                cached_ini_info=cached_ini_info,
+                ci_cached_strings_paths=ci_cached_strings_paths)}
         self.new_missing_strings = self.missing_strings - oldBad
         return bool(self.new_missing_strings)
 
@@ -2424,6 +2484,11 @@ class ModInfos(FileInfos):
     def _refresh_bash_tags(self):
         """Reloads bash tags for all mods set to receive automatic bash
         tags."""
+        try:
+            bt_contents = {t.lower() for t
+                           in os.listdir(bass.dirs['tag_files'].s)}
+        except FileNotFoundError:
+            bt_contents = set() # No BashTags folder -> no BashTags files
         for modinf in self.values(): # type: ModInfo
             autoTag = modinf.is_auto_tagged(default_auto=None)
             if autoTag is None and modinf.get_table_prop(u'bashTags') is None:
@@ -2434,7 +2499,7 @@ class ModInfos(FileInfos):
                 # An old mod that had manual bash tags added, disable auto tags
                 modinf.set_auto_tagged(False)
             if autoTag:
-                modinf.reloadBashTags()
+                modinf.reloadBashTags(ci_cached_bt_contents=bt_contents)
 
     def refresh_crcs(self, mods=None): #TODO(ut) progress !
         pairs = {}
@@ -2837,64 +2902,77 @@ class ModInfos(FileInfos):
                 return modName
         return None
 
-    ##: Maybe cache this? Invalidation would be tough
-    # TODO(inf): Morrowind does not have attached BSAs, there is instead a
-    #  'second load order' of BSAs in the INI
-    def get_bsa_lo(self, for_plugins=None):
-        """Returns the full BSA load order for this game, mapping each BSA to
-        the position of its activator mods. Also returns a dict mapping each
-        BSA to a string describing the reason it was loaded. If a mod activates
-        more than one bsa, their relative order is undefined.
-
-        If for_plugins is not None, only returns plugin-name-specific BSAs for
-        those plugins. Otherwise, returns it for all plugins."""
-        if for_plugins is None: for_plugins = list(self)
+    def get_bsas_from_inis(self):
+        """Retrieves BSA load order from INI files. This is separate so that we
+        can cache it during early boot for massive speedups. The real solution
+        to this is a full BSA LO cache though - see #233 as well."""
         # We'll be removing BSAs from here once we've given them a position
         available_bsas = dict(bsaInfos.items())
         bsa_lo = OrderedDict() # Final load order, -1 means it came from an INI
         bsa_cause = {} # Reason each BSA was loaded
-        def _bsas_from_ini(i, k):
-            r_bsas = (GPath_no_norm(x.strip()) for x in
-                      i.getSetting(u'Archive', k, u'').split(u','))
-            return (available_bsas[b] for b in r_bsas if b in available_bsas)
         # BSAs from INI files load first
         ini_idx = -sys.maxsize - 1 # Make sure they come first
         for ini_k in bush.game.Ini.resource_archives_keys:
             for ini_f in self.ini_files():
                 if ini_f.has_setting(u'Archive', ini_k):
-                    for b in _bsas_from_ini(ini_f, ini_k):
-                        bsa_lo[b] = ini_idx
-                        bsa_cause[b] = u'%s (%s)' % (ini_f.abs_path.stail,
-                                                     ini_k)
+                    for binf in _bsas_from_ini(ini_f, ini_k, available_bsas):
+                        bsa_lo[binf] = ini_idx
+                        bsa_cause[binf] = f'{ini_f.abs_path.stail} ({ini_k})'
                         ini_idx += 1
-                        del available_bsas[b.ci_key]
+                        del available_bsas[binf.ci_key]
                     break # The first INI with the key wins ##: Test this
-        # They get overridden by BSAs loaded based on plugin name
-        for i, p in enumerate(for_plugins):
-            for b in self[p].mod_bsas(available_bsas):
-                bsa_lo[b] = i
-                bsa_cause[b] = p.s
-                del available_bsas[b.name]
-        # Finally, some games have INI settings that override plugin BSAs
+        # Some games have INI settings that override all other BSAs
         ini_idx = sys.maxsize # Make sure they come last
         res_ov_key = bush.game.Ini.resource_override_key
         if res_ov_key:
             # Start out with the defaults set by the engine
             res_ov_bsas = [available_bsas[GPath_no_norm(b)] for b in
                            bush.game.Ini.resource_override_defaults]
-            res_ov_cause = u'%s (%s)' % (bush.game.Ini.dropdown_inis[0],
-                                         res_ov_key)
+            res_ov_cause = f'{bush.game.Ini.dropdown_inis[0]} ({res_ov_key})'
             # Then look if any INIs overwrite them
             for ini_f in self.ini_files():
                 if ini_f.has_setting(u'Archive', res_ov_key):
-                    res_ov_bsas = _bsas_from_ini(ini_f, res_ov_key)
-                    res_ov_cause = u'%s (%s)' % (ini_f.abs_path.stail,
-                                                 res_ov_key)
+                    res_ov_bsas = _bsas_from_ini(
+                        ini_f, res_ov_key, available_bsas)
+                    res_ov_cause = f'{ini_f.abs_path.stail} ({res_ov_key})'
                     break # The first INI with the key wins ##: Test this
-            for b in res_ov_bsas:
-                bsa_lo[b] = ini_idx
-                bsa_cause[b] = res_ov_cause
+            for binf in res_ov_bsas:
+                bsa_lo[binf] = ini_idx
+                bsa_cause[binf] = res_ov_cause
                 ini_idx -= 1
+                del available_bsas[binf.ci_key]
+        return available_bsas, bsa_lo, bsa_cause
+
+    # TODO(inf): Morrowind does not have attached BSAs, there is instead a
+    #  'second load order' of BSAs in the INI
+    ##: This will need caching in the future - invalidation will be *hard*.
+    # Prerequisite for a fully functional BSA tab though (see #233), especially
+    # for Morrowind
+    def get_bsa_lo(self, for_plugins=None, cached_ini_info=(None, None, None)):
+        """Returns the full BSA load order for this game, mapping each BSA to
+        the position of its activator mods. Also returns a dict mapping each
+        BSA to a string describing the reason it was loaded. If a mod activates
+        more than one bsa, their relative order is undefined.
+
+        :param for_plugins: If not None, only returns plugin-name-specific BSAs
+            for those plugins. Otherwise, returns it for all plugins.
+        :param cached_ini_info: Can contain the result of calling
+            get_bsas_from_inis, in which case calling that (fairly expensive)
+            method will be skipped."""
+        fetch_ini_info = any(c is None for c in cached_ini_info)
+        if fetch_ini_info:
+            # At least one part of the cached INI info we were passed in is
+            # None, which means we need to fetch the info from disk
+            available_bsas, bsa_lo, bsa_cause = self.get_bsas_from_inis()
+        else:
+            # We can use the cached INI info
+            available_bsas, bsa_lo, bsa_cause = cached_ini_info
+        # BSAs loaded based on plugin name load in the middle of the pack
+        if for_plugins is None: for_plugins = list(self)
+        for i, p in enumerate(for_plugins):
+            for b in self[p].mod_bsas(available_bsas):
+                bsa_lo[b] = i
+                bsa_cause[b] = p.s
                 del available_bsas[b.ci_key]
         return bsa_lo, bsa_cause
 

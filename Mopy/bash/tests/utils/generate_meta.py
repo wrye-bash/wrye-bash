@@ -29,7 +29,6 @@ stored in the resulting .meta file is of course read through Wrye Bash's
 internal APIs. If there is a bug in there, such a test file most likely won't
 catch it."""
 import argparse
-import io
 import os
 import sys
 
@@ -54,7 +53,7 @@ def generate_meta_cosave_xse(target_file):
                      bush.game.Se.cosave_ext)
     test_cosave = xSECosave(target_file)
     test_cosave.read_cosave()
-    with io.open(target_file + u'.meta', u'w', encoding=u'utf-8') as out:
+    with open(target_file + u'.meta', u'w', encoding=u'utf-8') as out:
         # xSE cosave header ---------------------------------------------------
         cosv_header = test_cosave.cosave_header # type: _xSEHeader
         out.write(u'[cosave_header]\n')

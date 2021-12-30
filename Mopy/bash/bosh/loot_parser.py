@@ -31,10 +31,10 @@ https://loot-api.readthedocs.io/en/latest/metadata/conditions.html."""
 
 __author__ = u'Infernio'
 
-import copy
 import re
 import yaml
 from collections import deque
+from copy import deepcopy
 
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
     ConditionFunc, ConditionNot, ConditionOr, is_regex
@@ -134,8 +134,8 @@ class LOOTParser(object):
         def get_resolved_tags(res_entry):
             # We may have to evaluate conditions now
             try:
-                return (_ConditionalTag.resolve_tags(res_entry.tags_added),
-                        _ConditionalTag.resolve_tags(res_entry.tags_removed))
+                return (_resolve_tags(res_entry.tags_added),
+                        _resolve_tags(res_entry.tags_removed))
             except (LexerError, ParserError, EvalError):
                 if not catch_errors:
                     raise
@@ -206,9 +206,13 @@ class LOOTParser(object):
         if not all_entries:
             # Plugin has no entry in the masterlist, this is fine
             merged_entry = _PluginEntry({})
+        elif len(all_entries) == 1:
+            # There is only one entry, so we can avoid the deepcopy (we only
+            # ever mutate deepcopied entries, so this is safe)
+            merged_entry = all_entries[0]
         else:
             # Merge the later entries with the first one
-            merged_entry = copy.deepcopy(all_entries[0])
+            merged_entry = deepcopy(all_entries[0])
             for plugin_entry in all_entries[1:]:
                 merged_entry.merge_with(plugin_entry)
         self._cached_merges[plugin_s] = merged_entry
@@ -323,26 +327,26 @@ class _ConditionalTag(object):
     def __repr__(self):
         return u'%s if %r' % (self.tag_name, self.tag_condition)
 
-    @staticmethod
-    def resolve_tags(tag_set):
-        """Convenience method to evaluate conditions for a set of tags (may
-        contain both conditional and unconditional (i.e. just a string) tags)
-        and return only the names of those tags that will actually apply.
+def _resolve_tags(tag_set):
+    """Convenience method to evaluate conditions for a set of tags (may
+    contain both conditional and unconditional (i.e. just a string) tags)
+    and return only the names of those tags that will actually apply.
 
-        :param tag_set: The set of tags to resolve.
-        :type tag_set: set[str|_ConditionalTag]
-        :return: A set of strings, containing only unconditional tags and
-            conditional tags whose conditions evaluated to True.
-        :rtype: set[str]"""
-        resulting_tags = set()
-        for tag in tag_set:
-            # Most tags are unconditional, so avoid try-except
-            if isinstance(tag, _ConditionalTag):
-                if tag.eval_condition():
-                    resulting_tags.add(tag.tag_name)
-            else:
-                resulting_tags.add(tag)
-        return resulting_tags
+    :param tag_set: The set of tags to resolve.
+    :type tag_set: set[str|_ConditionalTag]
+    :return: A set of strings, containing only unconditional tags and
+        conditional tags whose conditions evaluated to True.
+    :rtype: set[str]"""
+    resulting_tags = set()
+    add_resulting_tag = resulting_tags.add
+    for tag in tag_set:
+        # Most tags are unconditional, so avoid try-except
+        if isinstance(tag, _ConditionalTag):
+            if tag.eval_condition():
+                add_resulting_tag(tag.tag_name)
+        else:
+            add_resulting_tag(tag)
+    return resulting_tags
 
 ##: A lot of the lexing/parsing stuff here could probably be moved to a
 # generic top-level file and used to eventually write a better wizard parser

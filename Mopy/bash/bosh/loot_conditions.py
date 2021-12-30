@@ -260,16 +260,13 @@ def _fn_product_version(file_path, expected_ver, comparison):
     :param expected_ver: The version to check against.
     :param comparison: The comparison operator to use."""
     file_path = _process_path(file_path)
-    actual_ver = LooseVersion(u'0')
-    if file_path.isfile():
-        if file_path.cext in (u'.exe', u'.dll'):
-            # Read version from executable fields
-            actual_ver = LooseVersion(u'.'.join(
-                str(s) for s in get_file_version(file_path.s)))
-        else:
-            raise FileError(file_path.s, u'Product version query was '
-                                         u'requested, but the file is not an '
-                                         u'executable.')
+    if file_path.cext in ('.exe', '.dll'):
+        # Read version from executable fields
+        actual_ver = LooseVersion(_read_binary_ver(file_path.s))
+    else:
+        raise FileError(file_path.s, 'Product version query was '
+                                     'requested, but the file is not an '
+                                     'executable.')
     return comparison.compare(actual_ver, LooseVersion(expected_ver))
 
 def _fn_version(file_path, expected_ver, comparison):
@@ -288,21 +285,18 @@ def _fn_version(file_path, expected_ver, comparison):
     :param expected_ver: The version to check against.
     :param comparison: The comparison operator to use."""
     file_path = _process_path(file_path)
-    actual_ver = LooseVersion(u'0')
-    if file_path.isfile():
-        if file_path.cext in bush.game.espm_extensions:
-            # Read version from the description
-            from . import modInfos
-            actual_ver = LooseVersion(
-                modInfos.getVersion(file_path.tail) or u'0')
-        elif file_path.cext in (u'.exe', u'.dll'):
-            # Read version from executable fields
-            actual_ver = LooseVersion(u'.'.join(
-                str(s) for s in get_file_version(file_path.s)))
-        else:
-            raise FileError(file_path.s, u'Version query was requested, but '
-                                         u'the file is not a plugin or '
-                                         u'executable.')
+    if file_path.cext in bush.game.espm_extensions:
+        # Read version from the description
+        from . import modInfos
+        actual_ver = LooseVersion(
+            modInfos.getVersion(file_path.tail) or '0')
+    elif file_path.cext in ('.exe', '.dll'):
+        # Read version from executable fields
+        actual_ver = LooseVersion(_read_binary_ver(file_path.s))
+    else:
+        raise FileError(file_path.s, 'Version query was requested, but '
+                                     'the file is not a plugin or '
+                                     'executable.')
     return comparison.compare(actual_ver, LooseVersion(expected_ver))
 
 # Maps the function names used in conditions to the functions implementing them
@@ -370,6 +364,15 @@ def _process_path(file_path):
         raise EvalError(u'Illegal file path: May not specify paths that '
                         u'resolve to outside the game folder.', file_path)
     return relative_path.join(*child_components)
+
+def _read_binary_ver(binary_path):
+    """Reads version information from a binary at the specified path, returning
+    it as a string for LooseVersion."""
+    binary_ver = get_file_version(binary_path)
+    # Handle special case of (0, 0, 0, 0) - no version present
+    if binary_ver == (0, 0, 0, 0):
+        return '0'
+    return '.'.join(str(s) for s in binary_ver)
 
 def _iter_dir(parent_dir):
     """Takes a path and returns an iterator of the filenames (as strings) of
