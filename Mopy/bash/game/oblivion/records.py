@@ -39,7 +39,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
-    MelDescription, BipedFlags, MelSpells, MelUInt8Flags, MelUInt32Flags, \
+    MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, \
     SignatureDecider, MelRaceData, MelFactions, MelActorSounds, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight
@@ -405,6 +405,17 @@ class MelOwnershipTes4(brec.MelOwnership):
         )
 
 #------------------------------------------------------------------------------
+class MelSpellsTes4(MelFids): ##: HACKy workaround, see docstring
+    """Handles the common SPLO subrecord. This is a workaround to fix Oblivion
+    hanging on load in some edge cases. The CS does some sort of processing or
+    sorting to SPLOs that we don't fully understand yet. All we know for sure
+    so far is that it always seems to put SPLOs that link to LVSPs after ones
+    that link to SPELs, and we can't handle that without loading the plugin's
+    masters (see #282 and #577 for two issues that need this as well)."""
+    def __init__(self):
+        super().__init__(b'SPLO', u'spells')
+
+#------------------------------------------------------------------------------
 ##: Could technically be reworked for non-Oblivion games, but is broken and
 # unused outside of Oblivion right now
 class MreHasEffects(object):
@@ -649,7 +660,7 @@ class MreBsgn(MelRecord):
         MelFull(),
         MelIcon(),
         MelDescription(),
-        MelSpells(),
+        MelSpellsTes4(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -796,7 +807,7 @@ class MreCrea(MreActorBase):
         MelFull(),
         MelModel(),
         MelItems(),
-        MelSpells(),
+        MelSpellsTes4(),
         MelBodyParts(),
         MelBase(b'NIFT','nift_p'), # Texture File Hashes
         MelStruct(b'ACBS', [u'I', u'3H', u'h', u'2H'],
@@ -1342,7 +1353,7 @@ class MreNpc(MreActorBase):
         MelFactions(),
         MelFid(b'INAM','deathItem'),
         MelFid(b'RNAM','race'),
-        MelSpells(),
+        MelSpellsTes4(),
         MelScript(),
         MelItems(),
         MelStruct(b'AIDT', [u'4B', u'I', u'b', u'B', u'2s'], ('aggression', 5), ('confidence', 50),
@@ -1511,7 +1522,7 @@ class MreRace(MelRecord):
         MelEdid(),
         MelFull(),
         MelDescription(),
-        MelSpells(),
+        MelSpellsTes4(),
         MelRelations(with_gcr=False),
         MelRaceData(b'DATA', [u'14b', u'2s', u'4f', u'I'],
                     (u'skills', [0] * 14), 'unused1', 'maleHeight',

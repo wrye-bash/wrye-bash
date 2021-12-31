@@ -30,7 +30,7 @@ from collections import defaultdict, Counter
 from itertools import chain
 # Internal
 from ..base import ImportPatcher, ListPatcher
-from ... import bush
+from ... import bush, load_order
 from ...bolt import GPath
 from ...exception import AbstractError, BoltError, ModSigMismatchError
 
@@ -431,21 +431,30 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
 #------------------------------------------------------------------------------
 class ImportActorsSpellsPatcher(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Spell Lists Changed') + u': %d'
-    _read_sigs = bush.game.actor_types
+    _actor_sigs = bush.game.actor_types
+    _spel_sigs = bush.game.spell_types
+    if bush.game.Esp.sort_lvsp_after_spel:
+        # We need to read LVSP & SPEL to properly sort spell lists in actors
+        ##: This is a workaround, see MelSpellsTes4 for the proper solution
+        _read_sigs = _actor_sigs + _spel_sigs
+    else:
+        _read_sigs = _actor_sigs
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportActorsSpellsPatcher, self).__init__(p_name, p_file, p_sources)
         # long_fid -> {u'merged':list[long_fid], u'deleted':list[long_fid]}
-        self.id_merged_deleted = {}
+        self._id_merged_deleted = {}
+        # long_fid -> rec_sig
+        self._spel_type = {}
 
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        read_sigs = self._read_sigs
+        actor_sigs = self._actor_sigs
         self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
         cachedMasters = {}
-        mer_del = self.id_merged_deleted
+        mer_del = self._id_merged_deleted
         minfs = self.patchFile.p_file_minfos
         for index,srcMod in enumerate(self.srcs):
             tempData = {}
@@ -453,7 +462,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
             srcInfo = minfs[srcMod]
             srcFile = self._mod_file_read(srcInfo)
             bashTags = srcInfo.getBashTags()
-            for rsig in read_sigs:
+            for rsig in actor_sigs:
                 if rsig not in srcFile.tops: continue
                 for record in srcFile.tops[rsig].getActiveRecords():
                     tempData[record.fid] = record.spells
@@ -465,7 +474,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                     masterInfo = minfs[master]
                     masterFile = self._mod_file_read(masterInfo)
                     cachedMasters[master] = masterFile
-                for rsig in read_sigs:
+                for rsig in actor_sigs:
                     if rsig not in srcFile.tops or rsig not in masterFile.tops:
                         continue
                     for record in masterFile.tops[rsig].getActiveRecords():
@@ -545,34 +554,48 @@ class ImportActorsSpellsPatcher(ImportPatcher):
 
     def scanModFile(self, modFile, progress): # scanModFile2
         """Add record from modFile."""
-        merged_deleted = self.id_merged_deleted
-        for top_grup_sig in self._read_sigs:
-            patchBlock = self.patchFile.tops[top_grup_sig]
+        merged_deleted = self._id_merged_deleted
+        for top_grup_sig in self._actor_sigs:
+            patch_set = self.patchFile.tops[top_grup_sig].setRecord
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 fid = record.fid
-                if fid in merged_deleted:
-                    if record.spells != merged_deleted[fid][u'merged']:
-                        patchBlock.setRecord(record.getTypeCopy())
+                if (fid in merged_deleted and
+                        record.spells != merged_deleted[fid]['merged']):
+                    patch_set(record.getTypeCopy())
+        if bush.game.Esp.sort_lvsp_after_spel:
+            # Track the record signatures of every LSVP/SPEL
+            spel_type = self._spel_type
+            for spel_top_sig in self._spel_sigs:
+                for record in modFile.tops[spel_top_sig].getActiveRecords():
+                    spel_type[record.fid] = record._rec_sig
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        merged_deleted = self.id_merged_deleted
+        merged_deleted = self._id_merged_deleted
+        special_lvsp_sort = bush.game.Esp.sort_lvsp_after_spel
+        spel_type = self._spel_type
         mod_count = Counter()
-        for top_grup_sig in self._read_sigs:
+        def sorted_spells(spell_list):
+            # First pass: sort by the final load order (and ObjectID)
+            spells_ret = sorted(spell_list,
+                key=lambda s: (load_order.cached_lo_index(s[0]), s[1]))
+            if special_lvsp_sort:
+                # Second pass: sort LVSP after SPEL
+                spells_ret.sort(key=lambda s: spel_type[s] == b'LVSP')
+            return spells_ret
+        for top_grup_sig in self._actor_sigs:
             for record in self.patchFile.tops[top_grup_sig].records:
-                fid = record.fid
-                if fid not in merged_deleted: continue
-                changed = False
-                mergedSpells = sorted(merged_deleted[fid][u'merged'])
-                if sorted(record.spells) != mergedSpells:
-                    record.spells = mergedSpells
-                    changed = True
-                if changed:
+                if record.fid not in merged_deleted:
+                    continue
+                merged_spells = sorted_spells(
+                    merged_deleted[record.fid]['merged'])
+                if sorted_spells(record.spells) != merged_spells:
+                    record.spells = merged_spells
                     keep(record.fid)
                     mod_count[record.fid[0]] += 1
-        self.id_merged_deleted.clear()
+        self._id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)

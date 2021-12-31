@@ -552,6 +552,7 @@ actor_importer_attrs = {
     },
 }
 actor_types = (b'CREA', b'NPC_')
+spell_types = (b'LVSP', b'SPEL')
 
 #------------------------------------------------------------------------------
 # Import Spell Stats

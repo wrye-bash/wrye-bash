@@ -788,7 +788,7 @@ actor_importer_attrs = {
         u'NPC.Race': (u'race',),
     },
 }
-actor_types = (b'NPC_',)
+spell_types = (b'LVSP', b'SPEL')
 
 #------------------------------------------------------------------------------
 # Import Spell Stats

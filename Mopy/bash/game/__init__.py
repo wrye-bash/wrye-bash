@@ -436,6 +436,9 @@ class GameInfo(object):
         # Whether to warn about plugins with header form
         # versions < RecordHeader.plugin_form_version
         warn_older_form_versions = False
+        # Whether to sort LVSPs after SPELs in actors (CREA/NPC_)
+        ##: Workaround, see MelSpellsTes4 for the proper solution
+        sort_lvsp_after_spel = False
 
     # Class attributes moved to constants module, set dynamically at init
     #--Game ESM/ESP/BSA files

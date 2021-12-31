@@ -166,6 +166,7 @@ class OblivionGameInfo(PatchGame):
                             u'amulet', u'weapon', u'backWeapon', u'sideWeapon',
                             u'quiver', u'shield', u'torch', u'tail')
         reference_types = {b'ACHR', b'ACRE', b'REFR'}
+        sort_lvsp_after_spel = True
 
     allTags = PatchGame.allTags | {u'IIM', u'NoMerge'}
 
