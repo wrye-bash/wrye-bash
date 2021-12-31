@@ -23,7 +23,8 @@
 import pytest
 
 from ..bolt import LowerDict, DefaultLowerDict, OrderedLowerDict, decoder, \
-    encode, getbestencoding, GPath, Path, Rounder, SigToStr, StrToSig
+    encode, getbestencoding, GPath, Path, Rounder, SigToStr, StrToSig, \
+    LooseVersion
 
 def test_getbestencoding():
     """Tests getbestencoding. Keep this one small, we don't want to test
@@ -464,3 +465,77 @@ class TestRounder(object):
         assert not (rounder_5th == None)
         assert not (rounder_5th == True)
         assert not (rounder_5th == 55)
+
+class TestLooseVersion:
+    def test_repr(self):
+        """Tests that parsing and __repr__ work correctly."""
+        assert repr(LooseVersion('1.0')) == '1.0'
+        assert repr(LooseVersion('1-0')) == '1.0'
+        assert repr(LooseVersion('a.b.c')) == 'a.b.c'
+        # Watch out - we treat this as a separate component, hence it looks
+        # like this (that's correct, though it may be surprising at first)
+        assert repr(LooseVersion('1.2.2.alpha1')) == '1.2.2.alpha.1'
+        assert repr(LooseVersion('1.0-rc1+')) == '1.0.rc.1.+'
+        # Unicode should work fine too
+        assert repr(LooseVersion('0.9-ä-⻨-❓')) == '0.9.ä.⻨.❓'
+        assert repr(LooseVersion('0.9-ä⻨❓')) == '0.9.ä⻨❓'
+
+    def test_eq(self):
+        """Tests that __eq__ (and __ne__, by extension) work correctly."""
+        assert LooseVersion('1.0') != LooseVersion('1.1')
+        assert LooseVersion('1.0') == LooseVersion('1.0')
+        assert LooseVersion('1.1') != LooseVersion('1.0')
+        # Test with alphabetic characters and a length mismatch too
+        assert LooseVersion('1.1') != LooseVersion('1.1a')
+        assert LooseVersion('1.1a') == LooseVersion('1.1a')
+        assert LooseVersion('1.1a') != LooseVersion('1.1')
+
+    def test_lt(self):
+        """Tests that __lt__ works correctly."""
+        assert LooseVersion('1.0') < LooseVersion('1.1')
+        assert not (LooseVersion('1.0') < LooseVersion('1.0'))
+        assert not (LooseVersion('1.1') < LooseVersion('1.0'))
+        # Test with alphabetic characters and a length mismatch too
+        assert LooseVersion('1.1') < LooseVersion('1.1a')
+        assert not (LooseVersion('1.1a') < LooseVersion('1.1a'))
+        assert not (LooseVersion('1.1a') < LooseVersion('1.1'))
+
+    def test_le(self):
+        """Tests that __le__ works correctly."""
+        assert LooseVersion('1.0') <= LooseVersion('1.1')
+        assert LooseVersion('1.0') <= LooseVersion('1.0')
+        assert not (LooseVersion('1.1') <= LooseVersion('1.0'))
+        # Test with alphabetic characters and a length mismatch too
+        assert LooseVersion('1.1') <= LooseVersion('1.1a')
+        assert LooseVersion('1.1a') <= LooseVersion('1.1a')
+        assert not (LooseVersion('1.1a') <= LooseVersion('1.1'))
+
+    def test_gt(self):
+        """Tests that __gt__ works correctly."""
+        assert not (LooseVersion('1.0') > LooseVersion('1.1'))
+        assert not (LooseVersion('1.0') > LooseVersion('1.0'))
+        assert LooseVersion('1.1') > LooseVersion('1.0')
+        # Test with alphabetic characters and a length mismatch too
+        assert not (LooseVersion('1.1') > LooseVersion('1.1a'))
+        assert not (LooseVersion('1.1a') > LooseVersion('1.1a'))
+        assert LooseVersion('1.1a') > LooseVersion('1.1')
+
+    def test_ge(self):
+        """Tests that __ge__ works correctly."""
+        assert not (LooseVersion('1.0') >= LooseVersion('1.1'))
+        assert LooseVersion('1.0') >= LooseVersion('1.0')
+        assert LooseVersion('1.1') >= LooseVersion('1.0')
+        # Test with alphabetic characters and a length mismatch too
+        assert not (LooseVersion('1.1') >= LooseVersion('1.1a'))
+        assert LooseVersion('1.1a') >= LooseVersion('1.1a')
+        assert LooseVersion('1.1a') >= LooseVersion('1.1')
+
+    def test_not_implemented(self):
+        """Tests that comparing LooseVersion with incompatible types raises
+        errors (or returns False for __eq__/__ne__)."""
+        assert not (LooseVersion('1.0') == 'foo')
+        assert LooseVersion('1.0') != 'foo'
+        with pytest.raises(TypeError): assert LooseVersion('1.0') < 'foo'
+        with pytest.raises(TypeError): assert LooseVersion('1.0') <= 'foo'
+        with pytest.raises(TypeError): assert LooseVersion('1.0') > 'foo'
+        with pytest.raises(TypeError): assert LooseVersion('1.0') >= 'foo'

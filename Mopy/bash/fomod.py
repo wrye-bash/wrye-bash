@@ -42,11 +42,10 @@ xml attributes/text are available via instance attributes."""
 __author__ = u'Ganda'
 
 from collections import OrderedDict
-from distutils.version import LooseVersion
 from xml.etree import ElementTree as etree
 
 from . import bush
-from .bolt import GPath, Path
+from .bolt import GPath, Path, LooseVersion
 from .load_order import cached_is_active
 
 class FailedCondition(Exception):

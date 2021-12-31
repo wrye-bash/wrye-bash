@@ -47,6 +47,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
+from typing import Union
 from urllib.parse import quote
 
 import chardet
@@ -999,6 +1000,67 @@ class Path(os.PathLike):
 
     def __copy__(self):
         return self # immutable
+
+# We need to split every time we hit a new 'type' of component. So greedily
+# match as many of one type as possible (except dots and dashes, since those
+# are guaranteed to start a new component)
+_component_re = re.compile(r'(\.|-|\d+|[^\d.-]+)')
+_separators = frozenset({'.', '-'})
+class LooseVersion:
+    """A class for representing and comparing versions, where the term
+    'version' refers to any and every possible string. The way this class works
+    is pretty simple: there are three 'types' of components to a LooseVersion:
+
+     - separators (dots and dashes)
+     - digits
+     - everything else
+
+    Separators begin a new component to the version, but are not part of the
+    version themselves. Digits are compared numerically, so 2 < 10. Everything
+    else is compared alphabetically, so 'a' < 'm'. A whole version is compared
+    by comparing the components in it as a tuple."""
+    _parsed_version: tuple[Union[int, str]] ##: PY3.10: Use int | str
+
+    def __init__ (self, ver_string: str):
+        ver_components = _component_re.split(ver_string)
+        parsed_version = []
+        for ver_comp in ver_components:
+            if not ver_comp or ver_comp in _separators:
+                # Empty components and separators are not part of the version
+                continue
+            try:
+                parsed_version.append(int(ver_comp))
+            except ValueError:
+                parsed_version.append(ver_comp)
+        self._parsed_version = tuple(parsed_version)
+
+    def __repr__(self):
+        return '.'.join([str(c) for c in self._parsed_version])
+
+    def __eq__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version == other._parsed_version
+
+    def __lt__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version < other._parsed_version
+
+    def __le__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version <= other._parsed_version
+
+    def __gt__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version > other._parsed_version
+
+    def __ge__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version >= other._parsed_version
 
 def popen_common(popen_cmd, **kwargs):
     """Wrapper around subprocess.Popen with commonly needed parameters."""

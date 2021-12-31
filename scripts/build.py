@@ -45,13 +45,13 @@ import tempfile
 import zipfile
 import winreg
 from contextlib import contextmanager, suppress
-from distutils.version import LooseVersion
 
 import pygit2
 import PyInstaller.__main__
 
 import update_taglist
 import utils
+from utils import LooseVersion
 
 LOGGER = logging.getLogger(__name__)
 

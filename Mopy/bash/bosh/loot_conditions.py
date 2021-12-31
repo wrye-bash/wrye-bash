@@ -31,10 +31,9 @@ __author__ = u'Infernio'
 import operator
 import os
 import re
-from distutils.version import LooseVersion
 
 from .. import bass, bush
-from ..bolt import GPath, Path, deprint
+from ..bolt import GPath, Path, deprint, LooseVersion
 from ..env import get_file_version
 from ..exception import AbstractError, EvalError, FileError
 from ..load_order import cached_active_tuple, cached_is_active, in_master_block
