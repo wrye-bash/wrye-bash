@@ -5,10 +5,10 @@ pywin32==303
 PyYAML==6.0
 wxPython==4.1.1
 # Runtime, recommended
-PyMuPDF==1.19.3
+PyMuPDF==1.19.4
 # Compile/Build-time
 pygit2==1.7.2
 pyfiglet==0.8.post1
-pyinstaller==4.7
+pyinstaller==4.8
 pytest==6.2.5
 tomli==2.0.0

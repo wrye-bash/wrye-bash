@@ -521,6 +521,9 @@ class MelStrings(MelString):
     def packSub(self, out, strings, force_encoding=None):
         """Writes out a strings array subrecord, encoding and adding a null
         terminator to each string separately."""
+        if not strings:
+            # Don't dump out a pointless terminator when we have zero strings
+            return
         str_data = null1.join( # TODO use encode_complex_string?
             encode(x, firstEncoding=bolt.pluginEncoding) for x in strings)
         # call *MelBase* packSub which however will call MelString._dump_bytes
