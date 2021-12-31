@@ -1726,9 +1726,9 @@ class FileInfos(TableFileInfos):
         deleted = self._update_deleted_paths(deleted_keys, paths_to_keys,
                                              check_existence)
         if not deleted: return deleted
-        for name in deleted:
-            self.pop(name, None); self.corrupted.pop(name, None)
-            self.table.pop(name, None)
+        for del_fn in deleted:
+            self.pop(del_fn, None); self.corrupted.pop(del_fn, None)
+            self.table.pop(del_fn, None)
         return deleted
 
     def _additional_deletes(self, fileInfo, toDelete):
@@ -1960,9 +1960,9 @@ class INIInfos(TableFileInfos):
         deleted = self._update_deleted_paths(deleted_keys, paths_to_keys,
                                              check_existence)
         if not deleted: return deleted
-        for name in deleted:
-            self.pop(name, None)
-            self.table.delRow(name)
+        for del_fn in deleted:
+            self.pop(del_fn, None)
+            self.table.delRow(del_fn)
         if not _in_refresh: # re-add default tweaks
             for k, default_info in self._missing_default_inis():
                 self[k] = default_info  # type: DefaultIniInfo

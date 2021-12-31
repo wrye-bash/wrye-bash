@@ -29,7 +29,7 @@ from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import colors, Link, Resources, showOk
-from ..bolt import deprint, GPath, readme_url
+from ..bolt import deprint, GPath, readme_url, os_name
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
@@ -1238,7 +1238,7 @@ class GeneralPage(_AScrollablePage):
             checked=bass.settings[u'bash.show_global_menu'])
         self._global_menu_checkbox.on_checked.subscribe(self._on_global_menu)
         # Hide the option on Linux - see refresh_global_menu_visibility
-        self._global_menu_checkbox.visible = os.name == u'nt'
+        self._global_menu_checkbox.visible = os_name == u'nt'
         self._alt_name_checkbox = CheckBox(self,
             _(u'Use Alternate Wrye Bash Name'),
             chkbx_tooltip=_(u'Use an alternate display name for Wrye Bash '

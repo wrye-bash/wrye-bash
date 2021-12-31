@@ -1055,8 +1055,8 @@ class ScriptText(_TextParser):
                 scriptText = ins.read() # read the rest in one blob
                 self.eid_data[eid] = (scriptText, FormID)
             except (IndexError, StopIteration):
-                deprint(u'Skipped %s - malformed script header lines:\n%s' % (
-                    textPath.tail, u''.join((modName, FormID, eid))))
+                deprint(f'Skipped {textPath.tail} - malformed script header '
+                        f'lines:\n{u"".join((modName, FormID, eid))}')
 
 #------------------------------------------------------------------------------
 class _UsesEffectsMixin(_HandleAliases):

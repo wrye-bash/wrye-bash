@@ -29,6 +29,7 @@ import datetime
 import io
 import os
 import pickle
+import platform
 import re
 import shutil
 import stat
@@ -39,6 +40,7 @@ import sys
 import tempfile
 import textwrap
 import traceback as _traceback
+import webbrowser
 from binascii import crc32
 from contextlib import contextmanager, redirect_stdout
 from functools import partial
@@ -60,7 +62,8 @@ struct_calcsize = struct.calcsize
 
 #-- To make commands executed with Popen hidden
 startupinfo = None
-if os.name == u'nt':
+os_name = os.name ##: usages probably belong to env
+if os_name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
 
@@ -78,7 +81,7 @@ encodingOrder = (
     u'cp500',
     u'UTF-16LE',
 )
-if os.name == u'nt':
+if os_name == u'nt':
     encodingOrder += (u'mbcs',)
 
 _encodingSwap = {
@@ -853,7 +856,12 @@ class Path(object):
             else:
                 subprocess.Popen(exeArgs, executable=self._s, close_fds=True)
         else:
-            os.startfile(self._s)
+            if sys.platform == 'darwin':
+                webbrowser.open(f'file://{self._s}')
+            elif platform.system() == u'Windows':
+                os.startfile(self._s)
+            else: ##: TTT linux - WIP move this switch to env launch_file
+                subprocess.call(['xdg-open', f'{self._s}'])
     def copyTo(self,destName):
         """Copy self to destName, make dirs if necessary and preserve mtime."""
         destName = GPath(destName)

@@ -847,6 +847,10 @@ _HEADING = 3
 # END TASKDIALOG PART =========================================================
 
 # API - Functions =============================================================
+def drive_exists(dir_path):
+    """Check if the drive the dir is on exists."""
+    return dir_path.s.startswith('\\') or dir_path.drive().exists()
+
 def get_registry_path(subkey, entry, test_path_callback):
     """Check registry for a path to a program."""
     if not winreg: return None

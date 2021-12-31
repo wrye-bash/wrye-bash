@@ -146,7 +146,8 @@ class ListBox(WithMouseEvents):
             self.on_list_box.subscribe(onSelect)
 
     def lb_select_index(self, lb_selection_dex):
-        self._native_widget.SetSelection(lb_selection_dex)
+        self._native_widget.SetSelection( # clear selection if dex is None
+            _wx.NOT_FOUND if lb_selection_dex is None else lb_selection_dex)
 
     def lb_insert(self, str_item, lb_selection_dex):
         self._native_widget.Insert(str_item, lb_selection_dex)
@@ -192,7 +193,11 @@ class ListBox(WithMouseEvents):
     def lb_get_selections(self): return self._native_widget.GetSelections()
 
     def lb_index_for_str_item(self, str_item):
-        return self._native_widget.FindString(str_item)
+        # return self._native_widget.FindString(str_item) ##: fails on mac check on windows
+        try:
+            return self.lb_get_str_items().index(str_item)
+        except ValueError:
+            return None
 
     def lb_get_vertical_scroll_pos(self):
         return self._native_widget.GetScrollPos(_wx.VERTICAL)
@@ -206,7 +211,7 @@ class ListBox(WithMouseEvents):
 
     def lb_select_none(self):
         """Entirely clears the selection of this ListBox."""
-        self.lb_select_index(_wx.NOT_FOUND)
+        self.lb_select_index(None)
 
     def lb_select_all(self):
         """Selects all items in the ListBox. Pointless if isSingle=True was

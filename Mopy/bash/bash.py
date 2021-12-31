@@ -119,7 +119,7 @@ def _import_deps():
         import win32api, win32com
     except ImportError:
         # Only a dependency on Windows, so skip on other operating systems
-        if os.name == u'nt':
+        if bolt.os_name == u'nt':
             deps_msg += u'- pywin32\n'
     try:
         import yaml

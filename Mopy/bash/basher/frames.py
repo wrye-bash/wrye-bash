@@ -23,14 +23,13 @@
 
 import re
 import string
-import wx
 from collections import OrderedDict
 
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import Link, Resources
 from ..bolt import GPath
-from ..bosh import omods
 from ..bosh import mods_metadata
+from ..bosh import omods
 from ..exception import StateError
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
@@ -147,7 +146,7 @@ class DocBrowser(WindowFrame):
         if self._mod_name not in self._db_doc_paths:
             return
         index = self._mod_list.lb_index_for_str_item(self._mod_name.s)
-        if index != wx.NOT_FOUND:
+        if index is not None:
             self._mod_list.lb_delete_at_index(index)
         del self._db_doc_paths[self._mod_name]
         self.DoSave()
