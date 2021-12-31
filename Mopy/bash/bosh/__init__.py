@@ -844,8 +844,6 @@ class ModInfo(FileInfo):
     def get_ini_name(self):
         """Returns the name of the INI matching this plugin, if it were to
         exist."""
-        # GPath_no_norm is okay because we got this by changing the extension
-        # of a GPath object, meaning it was already normpath'd
         return self._file_key.sbody + '.ini'
 
     def _string_files_paths(self, lang):

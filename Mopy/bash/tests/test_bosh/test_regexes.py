@@ -167,6 +167,6 @@ class TestReVersion_Anywhere(_ATestReVersion):
         'This is v1.0',
         ' v1.0',
         '\tv1.0',
-        'This is a very important plugin.'
+        'This is a very important plugin.',
     ]
     _expected_matches = [('v', '1.0')] * 4
