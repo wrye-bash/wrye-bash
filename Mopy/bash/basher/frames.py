@@ -28,7 +28,7 @@ from collections import OrderedDict
 
 from .. import balt, bass, bolt, bosh, bush, load_order, wrye_text
 from ..balt import Link, Resources
-from ..bolt import FName, GPath
+from ..bolt import FName
 from ..bosh import empty_path, mods_metadata, omods
 from ..env import canonize_ci_path
 from ..exception import StateError, CancelError
@@ -48,14 +48,6 @@ class DocBrowser(WindowFrame):
         self._mod_infos_singl = mod_infos_singl # for modInfo doc/docEdit props
         self._doc_is_wtxt = False
         self._doc_dir = mod_infos_singl.store_dir.join('Docs')
-        # Clean data
-        docs = []
-        for mod_name, mod_inf in mod_infos_singl.items():
-            doc_path_ = mod_inf.get_table_prop('doc')
-            if not doc_path_: continue
-            if not isinstance(doc_path_, bolt.Path): ##: this belongs to TabledFileInfos
-                mod_inf.set_table_prop('doc', GPath(doc_path_))
-            docs.append(mod_name)
         # Singleton
         Link.Frame.docBrowser = self
         # Window
@@ -77,7 +69,10 @@ class DocBrowser(WindowFrame):
         self._plugin_dropdown.on_combo_select.subscribe(self._do_select_free)
         # Start out with an empty search -> everything shown
         self._search_plugins(search_str='', boot_search=True)
-        self._mod_list = ListBox(mod_list_window, choices=sorted(docs),
+        # Get mods that have a doc attribute set
+        documented = [mod_name for mod_name, mod_inf in mod_infos_singl.items()
+                      if mod_inf.get_table_prop('doc')]
+        self._mod_list = ListBox(mod_list_window, choices=sorted(documented),
             isSort=True, onSelect=self._do_select_existing)
         # Buttons
         self._set_btn = Button(main_window, _('Set Doc…'),

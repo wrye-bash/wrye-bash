@@ -261,7 +261,7 @@ class SashUIListPanel(SashPanel):
         if not self._firstShow and destroy: # if the panel was shown
             super(SashUIListPanel, self).ClosePanel(destroy)
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
-        self.listData.save()
+        self.listData.save_pickle()
 
 class BashTab(_DetailsViewMixin, SashUIListPanel):
     """Wrye Bash Tab, composed of a UIList and a Details panel."""
@@ -1403,8 +1403,9 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         try: # use self.file_info.fn_key, as name may have been updated
             # Although we could avoid rereading the header I leave it here as
             # an extra error check - error handling is WIP
-            self.panel_uilist.data_store.new_info(self.file_info.fn_key,
-                                                  notify_bain=True)
+            inf = self.panel_uilist.data_store.new_info(self.file_info.fn_key,
+                                                        notify_bain=True)
+            inf.copy_persistent_attrs(self.file_info) # yak, will go once new_info is absorbed in refresh
             return self.file_info.fn_key
         except FileError as e:
             deprint(f'Failed to edit details for {self.displayed_item}',
@@ -4196,7 +4197,7 @@ class BashFrame(WindowFrame):
     def CleanSettings():
         """Cleans junk from settings before closing."""
         #--Clean rename dictionary.
-        modNames = {*bosh.modInfos.table, *bosh.modInfos.corrupted}
+        modNames = {*bosh.modInfos.corrupted}
         modNames.update(bosh.modInfos)
         renames = bass.settings[u'bash.mods.renames']
         # Make a copy, we may alter it in the loop
