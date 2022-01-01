@@ -119,11 +119,11 @@ class BackupSettings(object):
         # backup save profile settings
         rel_save_dir = GPath(u'My Games').join(mg_name)
         save_dirs = ['', *initialization.getLocalSaveDirs()]
-        for save_dir in save_dirs:
+        for savedir in save_dirs:
             for txt in (['plugins.txt'], ['loadorder.txt'],
                         ['Bash', 'Table.dat']):
-                tpath = rel_save_dir.join('Saves', save_dir, *txt)
-                fpath = dirs[u'saveBase'].join('Saves', save_dir, *txt)
+                tpath = rel_save_dir.join('Saves', savedir, *txt)
+                fpath = dirs[u'saveBase'].join('Saves', savedir, *txt)
                 if fpath.exists(): self.files[tpath] = fpath
             # for 'Table.dat' check also the bak file
             if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup

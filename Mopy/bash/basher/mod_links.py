@@ -437,8 +437,8 @@ class _Mod_Labels(ChoiceLink):
                                      _self.extraButtons) as _self.listEditor:
                     _self.listEditor.show_modal()  ##: consider only refreshing
                     # the mod list if this returns true
-                del _self.listEditor  ##: used by the buttons code - should be
-                # encapsulated
+                ##: used by the buttons code - should be encapsulated
+                del _self.listEditor
         class _None(CheckLink):
             _text = _('None')
             _help = _('Remove all labels from the selected plugins.')

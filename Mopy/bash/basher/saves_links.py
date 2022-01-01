@@ -117,7 +117,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     def _validate_prof_name(self, newName):
         #--Error checks
         if not newName: return False
-        lowerNames = {save_dir.lower() for save_dir in self.getItemList()}
+        lowerNames = {savedir.lower() for savedir in self.getItemList()}
         if newName.lower() in lowerNames:
             showError(self.parent, _('Name must be unique.'))
             return False

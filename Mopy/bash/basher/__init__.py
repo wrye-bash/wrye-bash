@@ -3978,8 +3978,7 @@ class BashFrame(WindowFrame):
             title += maProfile
         else:
             title += _('Default')
-        if bosh.modInfos.voCurrent:
-            title += f' [{bosh.modInfos.voCurrent}]'
+        if curr_ver := bosh.modInfos.voCurrent: title += f' [{curr_ver}]'
         self._native_widget.SetTitle(title)
 
     def set_status_info(self, infoTxt, field=1, show_panel=False):

@@ -1550,8 +1550,8 @@ class _AFixedContainer(_AVmadComponent):
         # Load the regular attributes first
         super().load_frag(record, ins, vmad_ctx, *debug_strs)
         # Then, process the flags and decode them
-        child_flags = self._flags_mapper(getattr(record, 'fragment_flags'))
-        setattr(record, 'fragment_flags' , child_flags)
+        child_flags = self._flags_mapper(record.fragment_flags)
+        record.fragment_flags = child_flags
         # Finally, inspect the flags and load the appropriate children. We must
         # always load and dump these in the exact order specified by the
         # subclass!
@@ -1568,7 +1568,7 @@ class _AFixedContainer(_AVmadComponent):
         # Update the flags first, then dump the regular attributes
         # Also use this chance to store the value of each present child
         children = []
-        child_flags = getattr(record, 'fragment_flags')
+        child_flags = record.fragment_flags
         store_child = children.append
         for flag_attr, child_attr in self._flags_to_children.items():
             cont_child = getattr(record, child_attr)

@@ -900,7 +900,7 @@ class ModInfo(FileInfo):
     # patch BSA (which only exists in SSE) will always load after the interface
     # BSA and hence should win all conflicts (including strings).
     _bsa_heuristics = list(enumerate((u'main', u'patch', u'interface')))
-    def _find_string_bsas(self, cached_ini_info=(None, None, None)):
+    def _find_string_bsas(self, cached_ini_info=None):
         """Return a list of BSAs to get strings files from. Note that this is
         *only* meant for strings files. It sorts the list in such a way as to
         prioritize files that are likely to contain the strings, instead of
@@ -1869,7 +1869,7 @@ def ini_info_factory(fullpath, **kwargs) -> INIInfo:
 class _RDIni(RefrData):
     ini_changed: bool = False
 
-    def __bool__(self): #  # _RDIni is needed below
+    def __bool__(self): # _RDIni is needed below
         return super(_RDIni, self).__bool__() or self.ini_changed
 
 class INIInfos(TableFileInfos):
@@ -2283,8 +2283,8 @@ class ModInfos(TableFileInfos):
         self.cached_lo_save_lo()
 
     def masterWithVersion(self, master_name):
-        if master_name == 'Oblivion.esm' and self.voCurrent:
-            master_name += f' [{self.voCurrent}]'
+        if master_name == 'Oblivion.esm' and (curr_ver := self.voCurrent):
+            master_name += f' [{curr_ver}]'
         return master_name
 
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
@@ -3329,8 +3329,8 @@ class SaveInfos(TableFileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = False
     # Enabled and disabled saves, no .bak files ##: needed?
-    file_pattern = re.compile('(%s)(f?)$' % '|'.join(r'\.%s' % s for s in
-        [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I | re.U)
+    file_pattern = re.compile('(%s)(f?)$' % '|'.join(fr'\.{s}' for s in
+        [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r']), re.I)
     unique_store_key = Store.SAVES
 
     def _setLocalSaveFromIni(self):
