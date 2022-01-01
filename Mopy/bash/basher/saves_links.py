@@ -677,21 +677,19 @@ class Save_Move(ChoiceLink):
             title=_('Saves Copied') if self.copyMode else _('Saves Moved'))
 
     def _move_saves(self, destDir, profile: str | None):
-        savesTable = bosh.saveInfos.table
         #--bashDir
         destTable = bolt.DataTable(bolt.PickleDict(destDir.join(
             u'Bash', u'Table.dat')))
         count = 0
         ask = True
-        for fileName in self.selected:
+        for fileName, save_inf in self.iselected_pairs():
             if ask and destDir.join(fileName).exists():
                 profile_dir = bush.game.Ini.save_prefix
                 if profile is not None:
                     profile_dir = os.path.join(profile_dir, profile)
                 message = (_('A file named %(conflicting_save)s already '
                              'exists in %(save_profile)s. Overwrite it?') % {
-                    'conflicting_save': fileName,
-                    'save_profile': profile_dir})
+                    'conflicting_save': fileName, 'save_profile': profile_dir})
                 result = self._askContinueShortTerm(message,
                                                     title=_(u'Move File'))
                 #if result is true just do the job but ask next time if applicable as well
@@ -699,12 +697,10 @@ class Save_Move(ChoiceLink):
                 ask = ask and result != 2 # so don't warn for rest of operation
             if self.copyMode:
                 bosh.saveInfos.copy_info(fileName, destDir)
-                if fileName in savesTable:
-                    destTable[fileName] = savesTable[fileName]
+                if att_dict := save_inf.get_persistent_attrs():
+                    destTable[fileName] = att_dict
             else:
                 bosh.saveInfos[fileName].move_info(destDir)
-                if fileName in savesTable:
-                    destTable[fileName] = savesTable.pop(fileName)
             count += 1
         destTable.save()
         return count

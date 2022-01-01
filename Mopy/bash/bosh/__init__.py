@@ -204,7 +204,27 @@ class MasterInfo:
         return f'{self.__class__.__name__}<{self.curr_name!r}>'
 
 #------------------------------------------------------------------------------
-class FileInfo(AFileInfo):
+class _TabledInfo:
+    """Stores some of its attributes in a pickled dict. Most of the (hacky)
+    internals are for translating the legacy dict keys to proper attr names."""
+    _key_to_attr = {}
+
+    def get_table_prop(self, prop_key, default=None):
+        """Get Info attribute for given prop_key."""
+        return getattr(self, self.__class__._key_to_attr[prop_key], default)
+
+    def set_table_prop(self, prop_key, val):
+        if val is None:
+            try:
+                delattr(self, self.__class__._key_to_attr[prop_key])
+            except AttributeError: return
+        setattr(self, self.__class__._key_to_attr[prop_key], val)
+
+    def get_persistent_attrs(self):
+        return {pickle_key: val for pickle_key in self.__class__._key_to_attr
+                if (val := self.get_table_prop(pickle_key)) is not None}
+
+class FileInfo(_TabledInfo, AFileInfo):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
     _null_stat = (-1, None, None)
 
@@ -399,6 +419,15 @@ class ModInfo(FileInfo):
     _has_esm_flag = _is_esl = _is_overlay = False
     _valid_exts_re = r'(\.(?:' + u'|'.join(
         x[1:] for x in bush.game.espm_extensions) + '))'
+    _key_to_attr = {'allowGhosting': 'mod_allow_ghosting',
+        'autoBashTags': 'mod_auto_bash_tags',
+        'bash.patch.configs': 'mod_bp_config', 'bashTags': 'mod_bash_tags',
+        'crc': 'mod_crc', 'crc_mtime': 'mod_crc_mtime',
+        'crc_size': 'mod_crc_size', 'doc': 'mod_doc',
+        'docEdit': 'mod_editing_doc', 'group': 'mod_group',
+        'ignoreDirty': 'mod_ignore_dirty', 'installer': 'mod_owner_inst',
+        'mergeInfo': 'mod_merge_info', 'mtime':'mod_mtime',
+        'rating': 'mod_rating'}
 
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
         if itsa_ghost is None and (fullpath.cs[-6:] == '.ghost'):
@@ -1120,10 +1149,11 @@ def best_ini_files(abs_ini_paths):
         ret[aip] = detected_type(aip, detected_enc)
     return ret
 
-class AINIInfo(AIniInfo):
+class AINIInfo(_TabledInfo, AIniInfo):
     """Ini info, adding cached status and functionality to the ini files."""
     _status = None
     is_default_tweak = False
+    _key_to_attr = {'installer': 'ini_owner_inst'}
 
     @classmethod
     def get_store(cls): return iniInfos
@@ -1258,6 +1288,7 @@ class SaveInfo(FileInfo):
     _cosave_ui_string = {PluggyCosave: u'XP', xSECosave: u'XO'} # ui strings
     _valid_exts_re = r'(\.(?:' + '|'.join(
         [bush.game.Ess.ext[1:], bush.game.Ess.ext[1:-1] + 'r', 'bak']) + '))'
+    _key_to_attr = {'info': 'save_notes'}
     _co_saves: _CosaveDict
 
     def __init__(self, fullpath, load_cache=False, **kwargs):
@@ -1515,7 +1546,7 @@ class DataStore(DataDict):
         return {k: self[k] for k in fn_items}
 
     def refresh(self): raise NotImplementedError
-    def save(self): pass # for Screenshots
+    def save_pickle(self): pass # for Screenshots
 
     def rename_operation(self, member_info, newName):
         rename_paths = member_info.get_rename_paths(newName)
@@ -1751,50 +1782,39 @@ class _AFileInfos(DataStore):
 
 class TableFileInfos(_AFileInfos):
     tracks_ownership = True
+    _table_loaded = False
 
-    def _init_store(self, storedir):
+    def _init_from_table(self):
         """Load pickled data for mods, saves, inis and bsas."""
-        db = super()._init_store(storedir)
         deprint(f' bash_dir: {self.bash_dir}') # self.store_dir may need be set
         self.bash_dir.makedirs()
-        # the type of the table keys is always bolt.FName
-        self.table = bolt.DataTable(
-            bolt.PickleDict(self.bash_dir.join('Table.dat')))
-        ##: fix nightly regression storing 'installer' property as FName
-        for fn_key, val in ((fnk, col_dict['installer']) for fnk, col_dict in
-                            self.table.items() if 'installer' in col_dict):
-            if val is not None and type(val) is not str:
-                deprint(f'stored installer for {fn_key} is {val!r}')
-                self.table[fn_key]['installer'] = str(val)
-        return db
+        pickled = bolt.PickleDict(self.bash_dir.join('Table.dat'),
+                                  load_pickle=True)
+        stored_data = forward_compat_path_to_fn(pickled.pickled_data)
+        for fn, modinf in self.items():
+            if pickled_dict := stored_data.get(fn):
+                for attr_key, val in pickled_dict.items():
+                    modinf.set_table_prop(attr_key, val)
+                ##: fix nightly regression storing 'installer' property as FName - drop!
+                if (v := pickled_dict.get('installer')) and type(v) is not str:
+                    modinf.set_table_prop('installer', str(v))
+                if (v := pickled_dict.get('doc')) and type(v) is not Path:
+                    modinf.set_table_prop('doc', GPath(v))
+        self._table_loaded = True
 
-    #--Delete
-    def delete_refresh(self, infos, check_existence):
-        deleted_keys = super().delete_refresh(infos, check_existence)
-        for del_fn in deleted_keys:
-            self.table.pop(del_fn, None)
-        return deleted_keys
+    def refresh(self, *args, **kwargs):
+        sup = super().refresh(*args, **kwargs)
+        if not self._table_loaded:
+            self._init_from_table() # must be called after super().refresh
+        return sup
 
-    def save(self):
-        # items deleted outside Bash
-        for del_key in set(self.table) - set(self):
-            del self.table[del_key]
-        self.table.save()
-
-    #--Rename
-    def rename_operation(self, member_info, newName):
-        """Renames member file from oldName to newName."""
-        #--Update references
-        #--File system
-        old_key = super().rename_operation(member_info, newName)
-        self.table.moveRow(old_key, newName)
-        # self[newName]._mark_unchanged() # not needed with shellMove !
-        return old_key
-
-    def _add_info(self, destDir, destName, set_mtime, fileName, save_lo_cache):
-        self.table.copyRow(fileName, destName) ##: YAK table
-        return super()._add_info(destDir, destName, set_mtime, fileName,
-                                 save_lo_cache)
+    def save_pickle(self):
+        pd = bolt.PickleDict(self.bash_dir.join('Table.dat')) # don't load!
+        for k, v in self.items():
+            if pickle_dict := v.get_persistent_attrs():
+                pd.pickled_data[k] = pickle_dict
+        # fixme do we need to update self.vdata too??
+        pd.save()
 
 class Corrupted(AFile):
     """A 'corrupted' file info. Stores the exception message. Not displayed."""
@@ -3331,6 +3351,9 @@ class SaveInfos(TableFileInfos):
         self.localSave = save_dir
         if (boot := prev is None) or prev != save_dir:
             old = not boot and self.store_dir
+            if not boot:
+                self.save_pickle() # save current data before setting store_dir
+                self._table_loaded = False
             self.store_dir = sd = dirs['saveBase'].join(env.convert_separators(
                 save_dir)) # localSave always has backslashes
             if do_swap:
@@ -3341,8 +3364,7 @@ class SaveInfos(TableFileInfos):
                 voNew = self.get_profile_attr(save_dir, 'vOblivion', None)
                 if curr := modInfos.try_set_version(voNew, do_swap):
                     self.set_profile_attr(save_dir, 'vOblivion', curr)
-            if not boot:
-                self.table.save()
+            if not boot: # else in __init__,  calling _init_store right after
                 self._init_store(sd)
         return self.store_dir
 
@@ -3494,6 +3516,7 @@ class BSAInfos(TableFileInfos):
                     raise FileError(GPath(fullpath).tail,
                         f'{e.__class__.__name__}  {e.message}') from e
                 self._reset_bsa_mtime()
+            _key_to_attr = {'info': 'bsa_notes'}
 
             @classmethod
             def get_store(cls): return bsaInfos

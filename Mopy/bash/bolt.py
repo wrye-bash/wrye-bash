@@ -1825,17 +1825,6 @@ class ListInfo:
     def get_store(cls):
         raise NotImplementedError(f'{type(cls)} does not provide a data store')
 
-    # Instance methods --------------------------------------------------------
-    def get_table_prop(self, prop, default=None): ##: optimize self.get_store().table
-        return self.get_store().table.getItem(self.fn_key, prop, default)
-
-    def set_table_prop(self, prop, val):
-        store_table = self.get_store().table
-        if val is None:
-            store_table.delItem(self.fn_key, prop)
-            return
-        store_table.setItem(self.fn_key, prop, val)
-
     def __str__(self):
         """Alias for self.fn_key."""
         return self.fn_key
@@ -2143,39 +2132,6 @@ class DataTable(DataDict):
         if self.hasChanged and not dictFile.readOnly:
             dictFile.pickled_data = self._data # note we reassign pickled_data
             self.hasChanged = not dictFile.save()
-
-    def getItem(self,row,column,default=None):
-        """Get item from row, column. Return default if row,column doesn't exist."""
-        if row in self._data and column in self._data[row]:
-            return self._data[row][column]
-        else:
-            return default
-
-    def setItem(self,row,column,value):
-        """Set value for row, column."""
-        if row not in self._data:
-            self._data[row] = {}
-        self._data[row][column] = value
-        self.hasChanged = True
-
-    def delItem(self,row,column):
-        """Deletes item in row, column."""
-        if row in self._data and column in self._data[row]:
-            del self._data[row][column]
-            self.hasChanged = True
-
-    def moveRow(self,oldRow,newRow):
-        """Renames a row of data."""
-        if oldRow in self._data:
-            self._data[newRow] = self._data[oldRow]
-            del self._data[oldRow]
-            self.hasChanged = True
-
-    def copyRow(self,oldRow,newRow):
-        """Copies a row of data."""
-        if oldRow in self._data:
-            self._data[newRow] = self._data[oldRow].copy()
-            self.hasChanged = True
 
     #--Dictionary emulation
     def __setitem__(self,key,value):

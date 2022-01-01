@@ -1972,7 +1972,7 @@ class InstallersData(DataStore):
         self.loaded = True
         return True
 
-    def save(self):
+    def save_pickle(self):
         """Saves to pickle file."""
         if self.hasChanged:
             self.dictFile.pickled_data[u'installers'] = self._data

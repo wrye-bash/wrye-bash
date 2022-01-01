@@ -261,7 +261,7 @@ class SashUIListPanel(SashPanel):
         if not self._firstShow and destroy: # if the panel was shown
             super(SashUIListPanel, self).ClosePanel(destroy)
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
-        self.listData.save()
+        self.listData.save_pickle()
 
 class BashTab(_DetailsViewMixin, SashUIListPanel):
     """Wrye Bash Tab, composed of a UIList and a Details panel."""
@@ -4198,7 +4198,7 @@ class BashFrame(WindowFrame):
     def CleanSettings():
         """Cleans junk from settings before closing."""
         #--Clean rename dictionary.
-        modNames = {*bosh.modInfos.table, *bosh.modInfos.corrupted}
+        modNames = {*bosh.modInfos.corrupted}
         modNames.update(bosh.modInfos)
         renames = bass.settings[u'bash.mods.renames']
         # Make a copy, we may alter it in the loop
