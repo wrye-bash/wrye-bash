@@ -127,8 +127,8 @@ class DocBrowser(WindowFrame):
         if not doc_path:
             return bell()
         if not doc_path.is_file():
-            balt.showWarning(self, _(u'The assigned document is not present:')
-                             + u'\n  %s' % doc_path)
+            balt.showWarning(self, _('The assigned document is not '
+                                     'present:') + f'\n  {doc_path}')
         else:
             doc_path.start()
 
@@ -200,9 +200,9 @@ class DocBrowser(WindowFrame):
 
     def DoSave(self):
         """Saves doc, if necessary."""
-        if not self._doc_ctrl.is_text_modified(): return
         doc_path = self._db_doc_paths.get(self._mod_name)
         if not doc_path: return  # nothing to save if no file is loaded
+        if not self._doc_ctrl.is_text_modified(): return
         self._doc_ctrl.set_text_modified(False)
         with doc_path.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(self._doc_ctrl.fallback_text)
@@ -259,8 +259,8 @@ class DocBrowser(WindowFrame):
                         template = bolt.decoder(ins.read())
                     break
             else:
-                template = u'= $modName {}#\n{}'.format(u'=' * (74-len(mod_name)),
-                                                        doc_path.s)
+                template = f'= $modName {u"=" * (74 - len(mod_name))}#\n' \
+                           f'{doc_path}'
             self._load_data(uni_str=string.Template(template).substitute(
                 modName=mod_name.s))
             # Start edit mode

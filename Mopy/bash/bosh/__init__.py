@@ -3115,10 +3115,10 @@ class ModInfos(FileInfos):
         if oldSize not in self.size_voVersion:
             raise StateError(u"Can't match current main ESM to known version.")
         oldName = GPath( # Oblivion_SI.esm: we will rename Oblivion.esm to this
-            baseName.sbody + u'_' + self.size_voVersion[oldSize] + u'.esm')
+            f'{baseName.sbody}_{self.size_voVersion[oldSize]}.esm')
         if self.store_dir.join(oldName).exists():
-            raise StateError(u"Can't swap: %s already exists." % oldName)
-        newName = GPath(baseName.sbody + u'_' + newVersion + u'.esm')
+            raise StateError(f"Can't swap: {oldName} already exists.")
+        newName = GPath(f'{baseName.sbody}_{newVersion}.esm')
         if newName not in self:
             raise StateError(f"Can't swap: {newName} doesn't exist.")
         return newName, oldName
