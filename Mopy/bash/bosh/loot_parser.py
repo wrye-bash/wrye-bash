@@ -52,7 +52,7 @@ except ImportError:
             u'version')
 
 # API
-libloot_version = u'0.16.x' # The libloot version with which this
+libloot_version = u'0.17.x' # The libloot version with which this
                             # implementation is compatible
 
 class LOOTParser(object):

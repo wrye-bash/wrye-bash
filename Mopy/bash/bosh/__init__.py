@@ -2519,7 +2519,7 @@ class ModInfos(FileInfos):
         # if we fail, which might mean that some info got corrupted
         self._reset_info_sets()
         return super(ModInfos, self).new_info(fileName, _in_refresh, owner,
-                                              notify_bain)
+                                              notify_bain, itsa_ghost)
 
     #--Mod selection ----------------------------------------------------------
     def getSemiActive(self, patches=None, skip_active=False):
@@ -3443,7 +3443,7 @@ class BSAInfos(FileInfos):
     def new_info(self, fileName, _in_refresh=False, owner=None,
                  notify_bain=False, itsa_ghost=None):
         new_bsa = super(BSAInfos, self).new_info(fileName, _in_refresh, owner,
-                                                 notify_bain)
+                                                 notify_bain, itsa_ghost)
         new_bsa_name = new_bsa.ci_key
         # Check if the BSA has a mismatched version - if so, schedule a warning
         if bush.game.Bsa.valid_versions: # If empty, skip checks for this game
