@@ -29,7 +29,7 @@ from datetime import timedelta
 from . import BashFrame  ##: drop this - decouple !
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
-from ..bolt import SubProgress, GPath, Path
+from ..bolt import SubProgress, GPath, Path, GPath_no_norm
 from ..exception import BoltError, CancelError, FileEditError, \
     PluginsFullError, SkipError, BPConfigError
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
@@ -303,7 +303,7 @@ class PatchDialog(DialogWindow):
         exportConfig(patch_name=self.patchInfo.ci_key, config=config,
                      win=self.parent, outDir=bass.dirs[u'patches'])
 
-    __old_key = GPath(u'Saved Bashed Patch Configuration')
+    __old_key = u'Saved Bashed Patch Configuration'
     __new_key = u'Saved Bashed Patch Configuration (%s)'
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
@@ -315,25 +315,20 @@ class PatchDialog(DialogWindow):
             u'Import Bashed Patch configuration from:'), textDir, config_dat,
             u'*.dat')
         if not textPath: return
-        table_get = bolt.DataTable(bolt.PickleDict(textPath)).getItem
+        pickle_dict = bolt.PickleDict(textPath, load_pickle=True).pickled_data
+        table_get = lambda x: (conf := pickle_dict.get(GPath_no_norm(x))) and (
+            conf.get('bash.patch.configs'), {})
         # try the current Bashed Patch mode.
-        config_key = u'bash.patch.configs'
-        patchConfigs = table_get(GPath(self.__new_key % u'Python'), config_key,
-                                 {})
-        convert = False
+        patchConfigs = table_get(self.__new_key % 'Python')
         if not patchConfigs: # try the non-current Bashed Patch mode
-            patchConfigs = table_get(GPath(self.__new_key % u'CBash'),
-                                     config_key, {})
-            convert = bool(patchConfigs)
-        if not patchConfigs: # try the old format
-            patchConfigs = table_get(self.__old_key, config_key, {})
-            convert = bool(patchConfigs)
-        if not patchConfigs:
-            balt.showWarning(self,
-                _(u'No patch config data found in %s') % textPath,
-                title=_(u'Import Config'))
-            return
-        if convert:
+            patchConfigs = table_get(self.__new_key % 'CBash')
+            if not patchConfigs: # try the old format
+                patchConfigs = table_get(self.__old_key)
+            if not patchConfigs:
+                balt.showWarning(self,
+                    _(u'No patch config data found in %s') % textPath,
+                    title=_(u'Import Config'))
+                return
             balt.showError(self,
                 _(u'The patch config data in %s is too old for this version '
                   u'of Wrye Bash to handle or was created with CBash. Please '

@@ -1399,13 +1399,14 @@ def mainfunc(func):
 class PickleDict(object):
     """Dictionary saved in a pickle file.
     Note: self.vdata and self.data are not reassigned! (Useful for some clients.)"""
-    def __init__(self, pkl_path, readOnly=False):
+    def __init__(self, pkl_path, readOnly=False, load_pickle=False):
         """Initialize."""
         self._pkl_path = pkl_path
         self.backup = pkl_path.backup
         self.readOnly = readOnly
         self.vdata = {}
         self.pickled_data = {}
+        if load_pickle: self.load()
 
     def exists(self):
         return self._pkl_path.exists() or self.backup.exists()

@@ -115,19 +115,15 @@ class BackupSettings(object):
                 if fpath.exists():
                     self.files[tmp_dir.join(fname)] = fpath
         # backup save profile settings
-        savedir = GPath(u'My Games').join(mg_name)
-        profiles = ['', *initialization.getLocalSaveDirs()]
-        for profile in profiles:
-            pluginsTxt = (u'Saves', profile, u'plugins.txt')
-            loadorderTxt = (u'Saves', profile, u'loadorder.txt')
-            for txt in (pluginsTxt, loadorderTxt):
-                tpath = savedir.join(*txt)
-                fpath = dirs[u'saveBase'].join(*txt)
+        rel_save_dir = GPath(u'My Games').join(mg_name)
+        save_dirs = ['', *initialization.getLocalSaveDirs()]
+        for save_dir in save_dirs:
+            for txt in (['plugins.txt'], ['loadorder.txt'],
+                        ['Bash', 'Table.dat']):
+                tpath = rel_save_dir.join('Saves', save_dir, *txt)
+                fpath = dirs[u'saveBase'].join('Saves', save_dir, *txt)
                 if fpath.exists(): self.files[tpath] = fpath
-            prof_table = (u'Saves', profile, u'Bash', u'Table.dat')
-            tpath = savedir.join(*prof_table)
-            fpath = dirs[u'saveBase'].join(*prof_table)
-            if fpath.exists(): self.files[tpath] = fpath
+            # for 'Table.dat' check also the bak file
             if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
 
     @staticmethod

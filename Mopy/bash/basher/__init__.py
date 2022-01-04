@@ -3959,7 +3959,7 @@ class BashFrame(WindowFrame):
         else:
             title += _(u'Default')
         if bosh.modInfos.voCurrent:
-            title += u' ['+bosh.modInfos.voCurrent+u']'
+            title += f' [{bosh.modInfos.voCurrent}]'
         self._native_widget.SetTitle(title)
 
     def set_status_count(self, requestingPanel, countTxt):

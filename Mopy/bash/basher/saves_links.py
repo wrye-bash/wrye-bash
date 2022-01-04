@@ -81,12 +81,12 @@ class Saves_ProfilesData(balt.ListEditorData):
     def getInfo(self,item):
         """Returns string info on specified item."""
         profileSaves = _win_join(item)
-        return bosh.saveInfos.profiles.getItem(profileSaves, u'info',
+        return bosh.saveInfos.get_profile_attr(profileSaves, u'info',
                                                _(u'About %s:') % item)
     def setInfo(self, item, info_text):
         """Sets string info on specified item."""
         profileSaves = _win_join(item)
-        bosh.saveInfos.profiles.setItem(profileSaves, u'info', info_text)
+        bosh.saveInfos.set_profile_attr(profileSaves, u'info', info_text)
 
     def add(self):
         """Adds a new profile."""
@@ -109,7 +109,8 @@ class Saves_ProfilesData(balt.ListEditorData):
             return False
         self.baseSaves.join(newName).makedirs()
         newSaves = _win_join(newName)
-        bosh.saveInfos.profiles.setItem(newSaves,u'vOblivion',bosh.modInfos.voCurrent)
+        bosh.saveInfos.set_profile_attr(newSaves, 'vOblivion',
+                                        bosh.modInfos.voCurrent)
         return newName
 
     def rename(self,oldName,newName):
@@ -120,22 +121,21 @@ class Saves_ProfilesData(balt.ListEditorData):
         if newName.lower() in lowerNames:
             balt.showError(self,_(u'Name must be unique.'))
             return False
-        if len(newName) == 0 or len(newName) > 64:
+        if not (1 <= len(newName) <= 64):
             balt.showError(self.parent,
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
         #--Rename
-        oldDir, newDir = (self.baseSaves.join(subdir) for subdir in
-                          (oldName, newName))
+        oldDir, newDir = map(self.baseSaves.join, (oldName, newName))
         oldDir.moveTo(newDir)
-        oldSaves, newSaves = (_win_join(name_) for name_ in (oldName, newName))
+        oldSaves, newSaves = map(_win_join, (oldName, newName))
         if bosh.saveInfos.localSave == oldSaves:
             Link.Frame.saveList.set_local_save(newSaves)
-        bosh.saveInfos.profiles.moveRow(oldSaves,newSaves)
+        bosh.saveInfos.rename_profile(oldSaves, newSaves)
         return newName
 
     def remove(self,profile):
-        """Removes load list."""
+        """Remove save profile."""
         profileSaves = _win_join(profile)
         #--Can't remove active or Default directory.
         if bosh.saveInfos.localSave == profileSaves:
@@ -154,7 +154,7 @@ class Saves_ProfilesData(balt.ListEditorData):
             raise BoltError(f'Sanity check failed: No '
                 f'"{bush.game.my_games_name}\\Saves" in {profileDir}.')
         shutil.rmtree(profileDir.s) #--DO NOT SCREW THIS UP!!!
-        bosh.saveInfos.profiles.delRow(profileSaves)
+        bosh.saveInfos.rename_profile(profileSaves, None)
         return True
 
 #------------------------------------------------------------------------------

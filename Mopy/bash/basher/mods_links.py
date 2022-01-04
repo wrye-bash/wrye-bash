@@ -214,7 +214,8 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         bosh.modInfos.setOblivionVersion(self._version_key)
         self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
-            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,u'vOblivion', self._version_key)
+            bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
+                                            'vOblivion', self._version_key)
         Link.Frame.set_bash_frame_title()
 
 # "File" submenu --------------------------------------------------------------

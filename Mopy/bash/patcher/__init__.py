@@ -31,10 +31,10 @@ def exportConfig(patch_name, config, win, outDir):
         defaultDir=outDir, defaultFile=outFile,
         wildcard=u'*_Configuration.dat')
     if outPath:
-        table = bolt.DataTable(bolt.PickleDict(outPath))
-        table.setItem(bolt.GPath(u'Saved Bashed Patch Configuration (Python)'),
-            u'bash.patch.configs', config)
-        table.save()
+        pd = bolt.PickleDict(outPath)
+        gkey = bolt.GPath_no_norm('Saved Bashed Patch Configuration (Python)')
+        pd.pickled_data[gkey] = {'bash.patch.configs': config}
+        pd.save()
 
 def getPatchesPath(fileName):
     """Choose the correct Bash Patches path for the file."""
