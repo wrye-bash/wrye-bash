@@ -1830,7 +1830,11 @@ class ListInfo:
         return self.get_store().table.getItem(self.fn_key, prop, default)
 
     def set_table_prop(self, prop, val):
-        return self.get_store().table.setItem(self.fn_key, prop, val)
+        store_table = self.get_store().table
+        if val is None:
+            store_table.delItem(self.fn_key, prop)
+            return
+        store_table.setItem(self.fn_key, prop, val)
 
     def __str__(self):
         """Alias for self.fn_key."""
@@ -2112,49 +2116,6 @@ def unpack_spaced_string(ins, replacement_char=b'\x07') -> bytes:
     return b''.join(wip_string)
 
 #------------------------------------------------------------------------------
-class DataTableColumn(object):
-    """DataTable accessor that presents table column as a dictionary."""
-    def __init__(self, table: DataTable, column: str):
-        self._table = table
-        self.column = column
-    #--Dictionary Emulation
-    def __iter__(self):
-        """Dictionary emulation."""
-        column = self.column
-        return (key for key, col_dict in self._table.items() if
-                column in col_dict)
-    def values(self):
-        """Dictionary emulation."""
-        tableData = self._table._data
-        column = self.column
-        return (tableData[k][column] for k in self)
-    def items(self):
-        """Dictionary emulation."""
-        tableData = self._table._data
-        column = self.column
-        return ((k, tableData[k][column]) for k in self)
-    def clear(self):
-        """Dictionary emulation."""
-        self._table.delColumn(self.column)
-    def get(self,key,default=None):
-        """Dictionary emulation."""
-        return self._table.getItem(key, self.column, default)
-    #--Overloaded
-    def __contains__(self,key):
-        """Dictionary emulation."""
-        tableData = self._table._data
-        return key in tableData and self.column in tableData[key]
-    def __getitem__(self,key):
-        """Dictionary emulation."""
-        return self._table._data[key][self.column]
-    def __setitem__(self,key,value):
-        """Dictionary emulation. Marks key as changed."""
-        self._table.setItem(key, self.column, value)
-    def __delitem__(self,key):
-        """Dictionary emulation. Marks key as deleted."""
-        self._table.delItem(key, self.column)
-
-#------------------------------------------------------------------------------
 class DataTable(DataDict):
     """Simple data table of rows and columns, saved in a pickle file. It is
     currently used by TableFileInfos to represent properties associated with
@@ -2190,10 +2151,6 @@ class DataTable(DataDict):
         else:
             return default
 
-    def getColumn(self,column):
-        """Returns a data accessor for column."""
-        return DataTableColumn(self, column)
-
     def setItem(self,row,column,value):
         """Set value for row, column."""
         if row not in self._data:
@@ -2206,14 +2163,6 @@ class DataTable(DataDict):
         if row in self._data and column in self._data[row]:
             del self._data[row][column]
             self.hasChanged = True
-
-    ##: DataTableColumn.clear is the only usage, and that seems unused too
-    def delColumn(self,column):
-        """Deletes column of data."""
-        for rowData in self._data.values():
-            if column in rowData:
-                del rowData[column]
-                self.hasChanged = True
 
     def moveRow(self,oldRow,newRow):
         """Renames a row of data."""

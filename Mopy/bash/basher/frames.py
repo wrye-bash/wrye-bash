@@ -43,15 +43,19 @@ class DocBrowser(WindowFrame):
     _key_prefix = 'bash.modDocs'
     _def_size = (900, 500)
 
-    def __init__(self):
+    def __init__(self, mod_infos_singl):
         # Data
-        self._db_doc_paths = bosh.modInfos.table.getColumn(u'doc')
-        self._db_is_editing = bosh.modInfos.table.getColumn(u'docEdit')
+        self._mod_infos_singl = mod_infos_singl # for modInfo doc/docEdit props
         self._doc_is_wtxt = False
+        self._doc_dir = mod_infos_singl.store_dir.join('Docs')
         # Clean data
-        for mod_name, doc in list(self._db_doc_paths.items()):
-            if not isinstance(doc, bolt.Path):
-                self._db_doc_paths[mod_name] = GPath(doc)
+        docs = []
+        for mod_name, mod_inf in mod_infos_singl.items():
+            doc_path_ = mod_inf.get_table_prop('doc')
+            if not doc_path_: continue
+            if not isinstance(doc_path_, bolt.Path): ##: this belongs to TabledFileInfos
+                mod_inf.set_table_prop('doc', GPath(doc_path_))
+            docs.append(mod_name)
         # Singleton
         Link.Frame.docBrowser = self
         # Window
@@ -63,7 +67,7 @@ class DocBrowser(WindowFrame):
                                                               vertically=True)
         # Mod Name
         self._full_lo = [FName(''), # == no plugin selected
-                         *sorted(bosh.modInfos)]
+                         *sorted(mod_infos_singl)]
         self._lower_lo = {}
         self._plugin_search = SearchBar(mod_list_window,
             hint=_('Search Plugins'))
@@ -73,9 +77,8 @@ class DocBrowser(WindowFrame):
         self._plugin_dropdown.on_combo_select.subscribe(self._do_select_free)
         # Start out with an empty search -> everything shown
         self._search_plugins(search_str='', boot_search=True)
-        self._mod_list = ListBox(mod_list_window,
-             choices=sorted(self._db_doc_paths),
-             isSort=True, onSelect=self._do_select_existing)
+        self._mod_list = ListBox(mod_list_window, choices=sorted(docs),
+            isSort=True, onSelect=self._do_select_existing)
         # Buttons
         self._set_btn = Button(main_window, _('Set Doc…'),
                                btn_tooltip=_('Associates this plugin file '
@@ -129,6 +132,14 @@ class DocBrowser(WindowFrame):
         for btn in self._buttons:
             btn.enabled = False
 
+    def _get_doc_prop(self, def_=None, mod_name=None, *, prop='doc'):
+        if mod_name is None: mod_name = self._mod_name
+        if not mod_name: return def_ # duh, why would this be empty?
+        return self._mod_infos_singl[mod_name].get_table_prop(prop, def_)
+
+    def _set_doc_prop(self, doc_path, *, prop='doc'):
+        self._mod_infos_singl[self._mod_name].set_table_prop(prop, doc_path)
+
     @property
     def _mod_name(self):
         """Return the currently selected plugin."""
@@ -169,7 +180,7 @@ class DocBrowser(WindowFrame):
 
     def _do_open(self):
         """Handle "Open Doc" button."""
-        doc_path = self._db_doc_paths.get(self._mod_name)
+        doc_path = self._get_doc_prop()
         if not doc_path:
             return bell()
         if not doc_path.is_file():
@@ -181,20 +192,19 @@ class DocBrowser(WindowFrame):
     def _do_edit(self, is_editing):
         """Handle "Edit Doc" button click."""
         self.DoSave()
-        self._db_is_editing[self._mod_name] = is_editing
+        self._set_doc_prop(is_editing, prop='docEdit')
         self._doc_ctrl.set_text_editable(is_editing)
-        self._load_data(doc_path=self._db_doc_paths.get(self._mod_name),
-                        editing=is_editing)
+        self._load_data(doc_path=(self._get_doc_prop()), editing=is_editing)
 
     def _do_forget(self):
         """Handle "Forget Doc" button click. Drops the associated help document
         for the current plugin."""
-        if self._mod_name not in self._db_doc_paths:
+        if self._get_doc_prop() is None:  ##: can it happen?
             return
+        self._set_doc_prop(None)
         p_index = self._mod_list.lb_index_for_str_item(self._mod_name)
-        if p_index is not None:
-            self._mod_list.lb_delete_at_index(p_index)
-        del self._db_doc_paths[self._mod_name]
+        if p_index is None: return
+        self._mod_list.lb_delete_at_index(p_index)
         remaining_plugins = self._mod_list.lb_get_str_items()
         # If there are plugins remaining, switch to the one right before
         # the one that was removed
@@ -214,26 +224,25 @@ class DocBrowser(WindowFrame):
     def _do_set(self):
         """Handle "Set Doc" button click."""
         #--Already have mod data?
-        mod_name = FName(self._plugin_dropdown.get_value())
-        if mod_name in self._db_doc_paths:
-            (docs_dir, file_name) = self._db_doc_paths[mod_name].headTail
+        if doc_ := self._get_doc_prop():
+            (docs_dir, file_name) = doc_.headTail
         else:
             docs_dir = bass.settings[u'bash.modDocs.dir'] or bass.dirs[u'mods']
             file_name = ''
-        doc_path = FileOpen.display_dialog(self, _('Select document for '
-                                                   '%(target_file_name)s:') % {
-            'target_file_name': mod_name}, docs_dir, file_name, '*.*',
-            allow_create_file=True)
+        msg = _('Select document for %(target_file_name)s:') % {
+                    'target_file_name': self._mod_name}
+        doc_path = FileOpen.display_dialog(self, msg, docs_dir, file_name,
+                                           '*.*', allow_create_file=True)
         if not doc_path: return
         bass.settings[u'bash.modDocs.dir'] = doc_path.head
-        if mod_name not in self._db_doc_paths:
-            self._mod_list.lb_append(mod_name)
-        self._db_doc_paths[mod_name] = doc_path
-        self.SetMod(mod_name)
+        if not doc_:
+            self._mod_list.lb_append(self._mod_name)
+        self._set_doc_prop(doc_path)
+        self.SetMod(self._mod_name)
 
     def _do_rename(self):
         """Handle "Rename Doc" button click."""
-        old_path = self._db_doc_paths[self._mod_name]
+        old_path = self._get_doc_prop()
         (work_dir,file_name) = old_path.headTail
         #--Dialog
         dest_path = FileSave.display_dialog(self, _(u'Rename file to:'),
@@ -247,7 +256,7 @@ class DocBrowser(WindowFrame):
             try: old_html.moveTo(new_html)
             except StateError: new_html.remove()
         #--Remember change
-        self._db_doc_paths[self._mod_name] = dest_path
+        self._set_doc_prop(dest_path)
         self._doc_name_box.text_content = dest_path.stail
 
     def _clear_doc(self):
@@ -263,15 +272,14 @@ class DocBrowser(WindowFrame):
 
     def DoSave(self):
         """Saves doc, if necessary."""
-        doc_path = self._db_doc_paths.get(self._mod_name)
+        doc_path = self._get_doc_prop()
         if not doc_path: return  # nothing to save if no file is loaded
         if not self._doc_ctrl.is_text_modified(): return
         self._doc_ctrl.set_text_modified(False)
         with doc_path.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(self._doc_ctrl.fallback_text)
         if self._doc_is_wtxt:
-            wrye_text.genHtml(doc_path, None,
-                              bosh.modInfos.store_dir.join('Docs'))
+            wrye_text.genHtml(doc_path, None, self._doc_dir)
 
     def _load_data(self, doc_path=None, uni_str=None, editing=False,
                    __html_extensions=frozenset((u'.htm', u'.html', u'.mht'))):
@@ -306,7 +314,7 @@ class DocBrowser(WindowFrame):
         self._mod_list.lb_select_index(
             self._mod_list.lb_index_for_str_item(mod_name))
         # Doc path
-        doc_path = self._db_doc_paths.get(mod_name, empty_path)
+        doc_path = self._get_doc_prop(empty_path, mod_name)
         self._doc_name_box.text_content = doc_path.stail
         for btn in (self._forget_btn, self._rename_btn, self._edit_box,
                     self._open_btn):
@@ -339,14 +347,14 @@ class DocBrowser(WindowFrame):
                     bass.dirs['mods'].join(wip_doc))
                 if ported_path and ported_path.is_file():
                     doc_path = ported_path
-                    self._db_doc_paths[self._mod_name] = ported_path
+                    self._set_doc_prop(ported_path)
                 else:
                     # We reconstructed, but the path doesn't seem to exist.
                     # Again, best we can do is ignore it
                     self._load_data(uni_str='')
                     return
             else:
-                for template_file in (bosh.modInfos.store_dir.join('Docs',
+                for template_file in (self._doc_dir.join(
                         f'{s} Readme Template') for s in ('My', 'Bash')):
                     if template_file.exists():
                         with template_file.open(u'rb') as ins:
@@ -365,7 +373,7 @@ class DocBrowser(WindowFrame):
                 self.DoSave()
                 return
         # Either the path existed from the start or we ported it over
-        editing = self._db_is_editing.get(mod_name, False)
+        editing = self._get_doc_prop(False, mod_name, prop='docEdit')
         if editing:
             self._edit_box.is_checked = True
             self._doc_ctrl.set_text_editable(True)
@@ -374,8 +382,7 @@ class DocBrowser(WindowFrame):
             if is_wtxt:  # Update generated html
                 html_path = doc_path.root + '.html'
                 if not html_path.is_file() or doc_path.mtime > html_path.mtime:
-                    wrye_text.genHtml(doc_path, None,
-                                      bosh.modInfos.store_dir.join('Docs'))
+                    wrye_text.genHtml(doc_path, None, self._doc_dir)
         self._load_data(doc_path=doc_path, editing=editing)
 
     def on_closing(self, destroy=True):
