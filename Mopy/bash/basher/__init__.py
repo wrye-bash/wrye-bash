@@ -1084,7 +1084,7 @@ class ModList(_ModsUIList):
         modInfo = self._get_info_clicked(lb_dex_and_flags)
         if not modInfo: return
         if not Link.Frame.docBrowser:
-            DocBrowser().show_frame()
+            DocBrowser(self.data_store).show_frame()
         Link.Frame.docBrowser.SetMod(modInfo.fn_key) ##: will GPath it
         Link.Frame.docBrowser.raise_frame()
 

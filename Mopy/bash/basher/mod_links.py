@@ -667,7 +667,7 @@ class Mod_ShowReadme(OneItemLink):
 
     def Execute(self):
         if not Link.Frame.docBrowser:
-            DocBrowser().show_frame()
+            DocBrowser(self.window.data_store).show_frame()
         Link.Frame.docBrowser.SetMod(self._selected_item)
         Link.Frame.docBrowser.raise_frame()
 
