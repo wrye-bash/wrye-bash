@@ -23,6 +23,7 @@
 
 """Menu items for the _main_ menu of the installer tab - their window attribute
 points to the InstallersList singleton."""
+from itertools import chain
 
 from . import Installers_Link
 from .dialogs import CreateNewProject
@@ -139,17 +140,15 @@ class Installers_MonitorInstall(Installers_Link):
                 u'These files were deleted.  BAIN does not have the '
                 u'capability to remove files when installing.'), ]
             group.extend(sorted(delFiles))
-        with ListBoxes(self.window, _(u'External Installation'),
-                       _(u'The following changes were detected in the %s '
-                         u'directory.') % bush.game.mods_dir,
-                       checklists, bOk=_(u'Create Project')) as dialog:
-            if not dialog.show_modal(): return
-            include = set()
-            for (lst, key) in [(newFiles, newFilesKey),
-                               (changedFiles, changedFilesKey),
-                               (touchedFiles, touchedFilesKey), ]:
-                include |= set(dialog.getChecked(key, lst))
-            if not include: return
+        lists= ListBoxes.display_dialog(self.window,
+            _(u'External Installation'),
+            _(u'The following changes were detected in the %s directory.'
+              ) % bush.game.mods_dir,
+            checklists, bOk=_(u'Create Project'), get_checked=[(
+                newFilesKey, newFiles), (changedFilesKey, changedFiles),
+                (touchedFilesKey, touchedFiles)])
+        include = set(chain.from_iterable(lists))
+        if not include: return
         # Create Project
         projectName = self._askText(_(u'Project Name'),
                                     _(u'External Installation'))
@@ -269,30 +268,25 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
     def Execute(self):
         if not self._askYes(self.fullMessage): return
         ui_refresh = [False, False]
+        mdir = bush.game.mods_dir
         try:
             all_unknown_files = self.idata.get_clean_data_dir_list()
             if not all_unknown_files:
                 self._showOk(
-                    _(u'There are no untracked files in the %s '
-                      u'folder.') % bush.game.mods_dir,
-                    _(u'%s folder is clean') % bush.game.mods_dir)
+                    _('There are no untracked files in the %s folder.') % mdir,
+                    _('%s folder is clean') % mdir)
                 return
-            message = [u'',       # adding a tool tip
-                       _(u'Uncheck files to keep them in the %s '
-                         u'folder.') % bush.game.mods_dir]
+            message = [u'', # adding a tool tip
+                _('Uncheck files to keep them in the %s folder.') % mdir]
             all_unknown_files.sort()
             message.extend(all_unknown_files)
-            with ListBoxes(self.window,
-                  _(u'Move files out of the %s folder.') % bush.game.mods_dir,
-                  _(u'Uncheck any files you want to keep in the %s '
-                    u'folder.') % bush.game.mods_dir,
-                  [message]) as dialog:
-                selected_unknown_files = dialog.show_modal() and \
-                    dialog.getChecked(message[0], all_unknown_files)
+            selected_unknown_files, =  ListBoxes.display_dialog(self.window,
+                _(u'Move files out of the %s folder.') % mdir, _(
+                'Uncheck any files you want to keep in the %s folder.') % mdir,
+                [message], get_checked=[(message[0], all_unknown_files)])
             if selected_unknown_files:
-                with balt.Progress(
-                        _(u'Cleaning %s contents...') % bush.game.mods_dir,
-                        u'\n' + u' ' * 65):
+                with balt.Progress(_(u'Cleaning %s contents...') % mdir,
+                                   u'\n' + u' ' * 65):
                     self.idata.clean_data_dir(selected_unknown_files,
                                               ui_refresh)
         finally:

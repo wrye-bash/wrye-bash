@@ -1464,7 +1464,7 @@ class UIList(wx.Panel):
             (True if wrapped_evt is None else not wrapped_evt.is_shift_down))
         items = self._toDelete(items)
         if not self.__class__._shellUI:
-            items = self._promptDelete(items, dialogTitle, order, recycle)
+            items, = self._promptDelete(items, dialogTitle, order, recycle)
         if not items: return
         if not self.__class__._shellUI: # non shellUI path used to delete as
             # many as possible, mainly to show an error on trying to delete
@@ -1494,9 +1494,8 @@ class UIList(wx.Panel):
         message.extend(items)
         msg = _(u'Delete these items to the recycling bin ?') if recycle else \
             _(u'Delete these items?  This operation cannot be undone.')
-        with ListBoxes(self, dialogTitle, msg, [message]) as dialog:
-            if not dialog.show_modal(): return []
-            return dialog.getChecked(message[0], items)
+        return ListBoxes.display_dialog(self, dialogTitle, msg, [message],
+                                        get_checked=[(message[0], items)])
 
     def open_data_store(self):
         try:
@@ -2107,25 +2106,29 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
         """Context Menu"""
         self.itemMenu.popup_menu(lb_instance, lb_instance.lb_get_selections())
 
-    def getChecked(self, key, items, checked=True):
+    @classmethod
+    def display_dialog(cls, *args, **kwargs):
+        """Return a tuple of lists of checked items"""
+        get_checked = kwargs.pop('get_checked', ())
+        with cls(*args, **kwargs) as dialog:
+            res = dialog.show_modal()
+            if not res: return tuple(() for __ in range(len(get_checked)))
+            return tuple(
+                dialog._get_checked(*args_tuple) for args_tuple in get_checked)
+
+    def _get_checked(self, cntrl_key, items):
         """Return a sublist of 'items' containing (un)checked items.
 
         The control only displays the string names of items, that is why items
         needs to be passed in. If items is empty it will return an empty list.
-        :param key: a key for the private _ctrls dictionary
+        :param cntrl_key: a key for the private _ctrls dictionary
         :param items: the items that correspond to the _ctrls[key] checksCtrl
-        :param checked: keep checked items if True (default) else unchecked
         :rtype : list
         :return: the items in 'items' for (un)checked checkboxes in _ctrls[key]
         """
-        if not items: return []
-        select = []
-        checkList = self._ctrls[key]
-        if checkList:
-            for i, mod in enumerate(items):
-                if checkList.lb_is_checked_at_index(i) ^ (not checked):
-                    select.append(mod)
-        return select
+        if not items or not (checkList := self._ctrls[cntrl_key]): return []
+        return [mod for i, mod in enumerate(items) if
+                checkList.lb_is_checked_at_index(i)]
 
 # Some UAC stuff --------------------------------------------------------------
 def ask_uac_restart(message, title, mopy):

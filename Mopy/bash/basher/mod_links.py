@@ -29,6 +29,7 @@ import io
 import re
 import traceback
 from collections import defaultdict, OrderedDict
+from itertools import chain
 
 # Local
 from .constants import settingDefaults
@@ -1030,9 +1031,8 @@ class Mod_Patch_Update(_Mod_BP_Link):
                 proceed_, [[_(u'Missing Master Errors'), missingMsg, missing],
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
                 liststyle=u'tree',bOk=_(u'Continue Despite Errors')): return
-        with PatchDialog(self.window, self._selected_info,
-                self.mods_to_reselect, self._bp_config) as patchDialog:
-            patchDialog.show_modal()
+        PatchDialog.display_dialog(self.window, self._selected_info,
+                                   self.mods_to_reselect, self._bp_config)
         return self._selected_item
 
     def _ask_deactivate_mergeable(self, active_prior_to_patch):
@@ -1078,21 +1078,16 @@ class Mod_Patch_Update(_Mod_BP_Link):
             group.extend(deactivate)
             checklists.append(group)
         if not checklists: return
-        with ListBoxes(Link.Frame,
-            _(u'Deactivate these mods prior to patching'),
-            _(u'The following mods should be deactivated prior to building '
-              u'the patch.'), checklists, bCancel=_(u'Skip')) as dialog:
-            if not dialog.show_modal(): return
-            deselect = set()
-            for (lst, lst_key) in [(unfiltered, unfilteredKey),
-                               (merge, mergeKey),
-                               (noMerge, noMergeKey),
-                               (deactivate, deactivateKey), ]:
-                deselect |= set(dialog.getChecked(lst_key, lst))
-            if not deselect:
-                return
-            else:
-                self.mods_to_reselect = set(noMerge) & deselect
+        getchecks = [(unfilteredKey, unfiltered), (mergeKey, merge),
+                     (noMergeKey, noMerge), (deactivateKey, deactivate)]
+        deselect = set(chain.from_iterable(ListBoxes.display_dialog(Link.Frame,
+            _('Deactivate these mods prior to patching'),
+            _('The following mods should be deactivated prior to building the '
+              'patch.'), checklists, bCancel=_('Skip'),
+            get_checked= getchecks)))
+        if not deselect:
+            return
+        self.mods_to_reselect = set(noMerge) & deselect
         with BusyCursor():
             bosh.modInfos.lo_deactivate(deselect, doSave=True)
         self.window.RefreshUI(refreshSaves=True)

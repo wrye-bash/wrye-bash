@@ -1119,16 +1119,12 @@ class Installer_SyncFromData(_SingleInstallable):
         msg_upd = [_(u'Files to update (%u):') % len(mismatched),
                    _(u'Uncheck files to keep them unchanged in the package.')]
         msg_upd.extend(mismatched)
-        sel_missing, sel_mismatched = [], []
-        with balt.ListBoxes(self.window, self._text,
-                            _(u'Update %s according to %s directory?')
-                            % (self._selected_item, bush.game.mods_dir)
-                            + u'\n' +
-                            _(u'Uncheck any files you want to keep '
-                              u'unchanged.'), [msg_del, msg_upd]) as dialog:
-            if dialog.show_modal():
-                sel_missing = set(dialog.getChecked(msg_del[0], missing))
-                sel_mismatched = set(dialog.getChecked(msg_upd[0], mismatched))
+        m = _(u'Update %s according to %s directory?') % (
+            self._selected_item, bush.game.mods_dir) + u'\n' + _(
+            u'Uncheck any files you want to keep unchanged.')
+        sel_missing, sel_mismatched = map(set, balt.ListBoxes.display_dialog(
+            self.window, self._text, m, [msg_del, msg_upd],
+            get_checked=[(msg_del[0], missing), (msg_upd[0], mismatched)]))
         if not sel_missing and not sel_mismatched:
             return # Nothing left to sync, cancel
         #--Sync it, baby!
