@@ -117,14 +117,15 @@ class File_Duplicate(ItemLink):
             #--Continue copy
             r, e = to_duplicate.root, to_duplicate.ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
-            destDir = fileInfo.dir
+            destDir = fileInfo.info_dir
             if len(self.selected) == 1:
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
                     defaultFile=destName.s, wildcard=u'*%s' %e)
                 if not destPath: return
                 destDir, destName = destPath.headTail
-                if destDir == fileInfo.dir: # FIXME validate (or ask save does that)?
+                # FIXME validate (or ask save does that)?
+                if destDir == fileInfo.info_dir:
                     if destName == to_duplicate:
                         self._showError(
                             _(u'Files cannot be duplicated to themselves!'))

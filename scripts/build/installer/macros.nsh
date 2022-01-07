@@ -17,8 +17,9 @@
                         /x "basher" \
                         /x "bosh" \
                         /x "brec" \
-                        /x "gui" \
+                        /x "env" \
                         /x "game" \
+                        /x "gui" \
                         /x "patcher" \
                         /x "redist" \
                         /x "tests" \
@@ -562,11 +563,12 @@
         RMDir /r "${Path}\Mopy\bash\bosh"
         RMDir /r "${Path}\Mopy\bash\brec"
         RMDir /r "${Path}\Mopy\bash\chardet"
+        RMDir /r "${Path}\Mopy\bash\env"
         RMDir /r "${Path}\Mopy\bash\game"
         RMDir /r "${Path}\Mopy\bash\gui"
         RMDir /r "${Path}\Mopy\bash\patcher"
-        RMDir /r "${Path}\Mopy\redist"
         RMDir /r "${Path}\Mopy\bash\tests"
+        RMDir /r "${Path}\Mopy\redist"
         ; As of 307, several game icons have new names
         Delete "${Path}\Mopy\bash\images\fallout316.png"
         Delete "${Path}\Mopy\bash\images\fallout324.png"
@@ -591,6 +593,7 @@
         ; As of 308, taglists now reside in Mopy\taglists
         ; NOTE: Once/If we hardcode the Mopy\Bash Patches folder's contents,
         ; replace all these with a single RMDir (see #605)
+        RMDir /r "${Path}\Mopy\Bash Patches\Enderal"
         RMDir /r "${Path}\Mopy\Bash Patches\Fallout3"
         RMDir /r "${Path}\Mopy\Bash Patches\Fallout4"
         RMDir /r "${Path}\Mopy\Bash Patches\FalloutNV"
@@ -648,6 +651,10 @@
         Delete "${Path}\Mopy\bash\images\Skyrim VR16.png"
         Delete "${Path}\Mopy\bash\images\Skyrim VR24.png"
         Delete "${Path}\Mopy\bash\images\Skyrim VR32.png"
+        ; As of 309, Mopy/templates/FalloutNV is gone
+        ; TODO Replace with a single RMDir once templates is gone
+        ; entirely (see #519)
+        RMDir /r "${Path}\Mopy\templates\FalloutNV"
         ; As of 310, lzma.exe and pngcrush.exe are gone
         Delete "${Path}\Mopy\bash\compiled\lzma.exe"
         Delete "${Path}\Mopy\bash\compiled\pngcrush.exe"

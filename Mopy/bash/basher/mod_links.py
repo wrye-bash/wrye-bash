@@ -159,7 +159,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             if master in bosh.modInfos:
                 continue
             # Missing master, create a dummy plugin for it
-            newInfo = bosh.ModInfo(self._selected_info.dir.join(master))
+            newInfo = bosh.ModInfo(self._selected_info.info_dir.join(master))
             to_refresh.append((master, newInfo, previous_master))
             previous_master = master
             newFile = ModFile(newInfo, self._load_fact())
@@ -1401,7 +1401,7 @@ class _CopyToLink(EnabledLink):
                     timeSource = newName
                 newTime = modInfos[timeSource].mtime if timeSource else None
                 # Copy and set flag - will use ghosted path if needed
-                modInfos.copy_info(curName, minfo.dir, newName,
+                modInfos.copy_info(curName, minfo.info_dir, newName,
                                    set_mtime=newTime)
                 added.append(newName)
                 newInfo = modInfos[newName]

@@ -249,7 +249,6 @@ class FileInfo(AFile, ListInfo):
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
         ##: We GPath this three times - not slow, but very inelegant
         g_path = GPath(fullpath)
-        self.dir = g_path.head
         self.name = g_path.tail # ghost must be lopped off
         self.header = None
         self.masterNames = tuple()
@@ -260,6 +259,10 @@ class FileInfo(AFile, ListInfo):
         #--Ancillary storage
         self.extras = {}
         super(FileInfo, self).__init__(g_path, load_cache)
+
+    @property
+    def info_dir(self):
+        return self.abs_path.head
 
     def __str__(self):
         """Alias for self.name."""
@@ -441,7 +444,7 @@ class FileInfo(AFile, ListInfo):
             return _(u'%s: Incorrect file extension (must be %s)') % (
                 name_str, self._file_key.ext), None
         #--Else file exists?
-        if self.dir.join(name_str).exists(): ##: check using file_infos?
+        if self.info_dir.join(name_str).exists(): ##: check using file_infos?
             return _(u'File %s already exists.') % name_str, None
         return self.__class__.validate_filename_str(name_str)
 
@@ -959,12 +962,13 @@ class ModInfo(FileInfo):
         if not self.header.flags1.hasStrings: return False
         lang = oblivionIni.get_ini_language()
         bsa_infos = self._find_string_bsas(cached_ini_info)
+        info_dir_join = self.info_dir.join
         for assetPath in self._string_files_paths(lang):
             # Check loose files first
             if ci_cached_strings_paths is not None:
                 if assetPath.lower() in ci_cached_strings_paths:
                     continue
-            elif self.dir.join(assetPath).is_file():
+            elif info_dir_join(assetPath).is_file():
                 continue
             # Check in BSA's next
             for bsa_info in bsa_infos:
@@ -987,15 +991,16 @@ class ModInfo(FileInfo):
                                    in bush.game.plugin_name_specific_dirs))
 
     def _check_resources(self, resource_path):
-        """Returns True if the directory created by joining self.dir, the
+        """Returns True if the directory created by joining self.info_dir, the
         specified path and self.name exists. Used to check for the existence
         of plugin-name-specific directories, which prevent merging.
 
         :param resource_path: The path to the plugin-name-specific directory,
         as a list of path components."""
         # If resource_path is empty, then we would effectively query
-        # self.dir.join(self.ci_key), which always exists - it's the mod file!
-        return resource_path and self.dir.join(resource_path).join(
+        # self.info_dir.join(self.ci_key), which always exists - that's the
+        # plugin file!
+        return resource_path and self.info_dir.join(resource_path).join(
             self.ci_key).exists()
 
     def has_master_size_mismatch(self): # used in status calculation
@@ -1764,7 +1769,7 @@ class FileInfos(TableFileInfos):
     #--Copy
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies member file to destDir. Will overwrite! Will update
-        internal self.data for the file if copied inside self.dir but the
+        internal self.data for the file if copied inside self.info_dir but the
         client is responsible for calling the final refresh of the data store.
         See usages.
 
@@ -3370,7 +3375,7 @@ class SaveInfos(FileInfos):
 
     #--Local Saves ------------------------------------------------------------
     def _refreshLocalSave(self):
-        """Refreshes self.localSave and self.dir."""
+        """Refreshes self.localSave."""
         #--self.localSave is NOT a Path object.
         localSave = self.localSave
         self._setLocalSaveFromIni()
