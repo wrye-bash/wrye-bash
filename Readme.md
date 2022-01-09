@@ -73,8 +73,10 @@ longer supported.
 Once you have those, install the required packages by running:
 
 ```bash
-path/to/python.exe -m pip install -r requirements.txt
+py -3 -m pip install -r requirements.txt
 ```
+
+*Note: you will have to use a more specific version for `py -3` if you have multiple versions of Python 3 installed.*
 
 Refer to the readmes linked above for detailed instructions. In short:
 
