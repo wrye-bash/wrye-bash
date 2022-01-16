@@ -37,8 +37,6 @@ noSolidExts = {u'.zip'}
 reSolid = re.compile(r'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(r'Compressing\s+(.+)', re.U).match
 regExtractMatch = re.compile(u'- (.+)', re.U).match
-regErrMatch = re.compile(u'^(Error:.+|.+ {5}Data Error?|Sub items Errors:.+)',
-    re.U).match ##: does not catch all errors like \n\nCommand Line Error:\nToo short switch:\n-o\n
 reListArchive = re.compile(
     r'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
 
@@ -57,12 +55,10 @@ def compress7z(dest_dir, full_dest, rel_dest, srcDir, progress=None, *,
     #--Pack the files
     proc = popen_common(command, bufsize=1, encoding='utf-8')
     #--Error checking and progress feedback
-    index, errorLine = 0, u''
+    index, lines = 0, []
     with proc.stdout as out:
         for line in out.readlines():
-            if regErrMatch(line):
-                errorLine = line + u''.join(out)
-                break
+            lines.append(line)
             if progress is None: continue
             maCompressing = regCompressMatch(line)
             if maCompressing:
@@ -71,11 +67,11 @@ def compress7z(dest_dir, full_dest, rel_dest, srcDir, progress=None, *,
                      maCompressing.group(1).strip()]))
                 index += 1
     returncode = proc.wait()
-    if returncode or errorLine:
+    if returncode:
         full_dest.temp.remove()
         raise StateError(
             f'{rel_dest}: Compression failed:\n7z.exe return value: '
-            f'{returncode:d}\n{errorLine}')
+            f'{returncode:d}\n{"".join(lines)}')
     #--Finalize the file, and cleanup
     full_dest.untemp()
 
@@ -87,12 +83,9 @@ def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
     if filelist_to_extract: command.append(f'@{filelist_to_extract}')
     proc = popen_common(command, bufsize=1, encoding='utf-8')
     # Error checking, progress feedback and subArchives for recursive unpacking
-    index, errorLine, subArchives = 0, u'', []
+    index, lines, subArchives = 0, [], []
     with proc.stdout as out:
         for line in out.readlines():
-            if regErrMatch(line):
-                errorLine = line + u''.join(out)
-                break
             maExtracting = regExtractMatch(line)
             if maExtracting:
                 extracted = GPath(maExtracting.group(1).strip())
@@ -103,9 +96,9 @@ def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
                     u'Extracting files...') + f'\n{extracted}')
                 index += 1
     returncode = proc.wait()
-    if returncode or errorLine:
+    if returncode:
         raise StateError(f'{src_archive.tail}: Extraction failed:\n'
-                         f'7z.exe return value: {returncode:d}\n{errorLine}')
+            f'7z.exe return value: {returncode:d}\n{"".join(lines)}')
     return subArchives
 
 def wrapPopenOut(fullPath, wrapper, errorMsg):
