@@ -27,7 +27,7 @@ import pickle
 import re
 
 from .. import bolt, archives, bass
-from ..archives import defaultExt, readExts, compressionSettings
+from ..archives import defaultExt, readExts
 from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files, \
     GPath_no_norm
 from ..exception import ArgumentError, StateError
@@ -538,11 +538,8 @@ class InstallerConverter(object):
 
     def _pack(self, srcFolder, destArchive, outDir, progress=None):
         """Creates the BAIN'ified archive and cleans up temp"""
-        #--Determine settings for 7z
-        destArchive, archiveType, solid = compressionSettings(destArchive,
-                self.blockSize, self.isSolid)
         archives.compress7z(outDir, self.fullPath, destArchive, srcFolder,
-                            progress, solid=solid, archiveType=archiveType)
+            progress, is_solid=self.isSolid, blockSize=self.blockSize)
         bass.rmTempDir()
 
     def _unpack(self, srcInstaller, fileNames, progress=None):

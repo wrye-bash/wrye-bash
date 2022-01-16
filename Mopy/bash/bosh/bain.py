@@ -39,7 +39,7 @@ from . import imageExts, DataStore, BestIniFile, InstallerConverter, \
 from .. import balt, gui # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
-    extract7z, compressionSettings
+    extract7z
 from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
     LowerDict, AFile, dict_sort, GPath_no_norm, top_level_items
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
@@ -1031,8 +1031,6 @@ class Installer(ListInfo):
         material from the archive. Needed for projects and to repack archives
         when syncing from Data."""
         if not self.num_of_files: return
-        fn_archive, archiveType, solid = compressionSettings(
-            fn_archive, blockSize, isSolid)
         outDir = bass.dirs[u'installers']
         realOutFile = outDir.join(fn_archive)
         project = outDir.join(project)
@@ -1047,8 +1045,8 @@ class Installer(ListInfo):
         #--Compress
         try:
             compress7z(outDir, realOutFile, fn_archive, project, progress,
-                       solid=solid, archiveType=archiveType,
-                       temp_list=self.tempList)
+                       is_solid=isSolid, temp_list=self.tempList,
+                       blockSize=blockSize)
         finally:
             self.tempList.remove()
 
@@ -1366,7 +1364,7 @@ class InstallerArchive(Installer):
         SubProgress in.
         fileNames: File names (not paths)."""
         if not fileNames:
-            raise ArgumentError(u'No files to extract for %s.' % self)
+            raise ArgumentError(f'No files to extract for {self}.')
         # expand wildcards in fileNames to get actual count of files to extract
         #--Dump file list
         with self.tempList.open(u'w', encoding=u'utf8') as out:
