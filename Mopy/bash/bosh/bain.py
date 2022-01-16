@@ -197,8 +197,8 @@ class Installer(ListInfo):
         self.modified = 0 #--Modified date
         self.fsize = -1 #--size of archive file
         self.crc = 0 #--crc of archive
-        self.isSolid = False #--package only - solid 7z archive
-        self.blockSize = None #--package only - set here and there
+        self.isSolid = False #--archives only - solid 7z archive
+        self.blockSize = None #--archives only - set here and there
         self.fileSizeCrcs = [] #--list of tuples for _all_ files in installer
         #--For InstallerProject's, cache if refresh projects is skipped
         self.src_sizeCrcDate = bolt.LowerDict()

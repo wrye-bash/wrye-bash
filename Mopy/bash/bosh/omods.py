@@ -260,46 +260,44 @@ class OmodFile(object):
         fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
         totalSize = sum(sizes_)
-
         # Extract data stream to an uncompressed stream
         subprogress = bolt.SubProgress(progress, 0, 0.3, full=dataPath.psize)
         subprogress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
+        tmp_ = dataPath.sbody + u'.tmp'
         with dataPath.open(u'rb') as ins:
             done = 0
-            with open(outPath.join(dataPath.sbody+u'.tmp').s, u'wb') as output:
+            with open(outPath.join(tmp_).s, u'wb') as output:
                 # Decoder properties
                 output.write(ins.read(5))
                 done += 5
                 subprogress(5)
-
                 # Next 8 bytes are the size of the data stream
                 for i in range(8):
                     out = totalSize >> (i*8)
                     pack_byte(output, out & 0xFF)
                     done += 1
                     subprogress(done)
-
                 # Now copy the data stream
                 while ins.tell() < dataPath.psize:
                     output.write(ins.read(512))
                     done += 512
                     subprogress(done)
-
         # Now decompress
         progress(0.3)
-        cmd = [bass.dirs[u'compiled'].join(u'lzma').s,u'd',outPath.join(dataPath.sbody+u'.tmp').s, outPath.join(dataPath.sbody+u'.uncomp').s]
+        uncompressed = dataPath.sbody + u'.uncomp'
+        cmd = [bass.dirs[u'compiled'].join(u'lzma.exe').s, u'd',
+               outPath.join(tmp_).s,
+               outPath.join(uncompressed).s]
         subprocess.call(cmd, startupinfo=startupinfo)
         progress(0.8)
-
         # Split the uncompressed stream into files
-        self.splitStream(outPath.join(dataPath.sbody+u'.uncomp'), outPath, fileNames, sizes_,
+        self.splitStream(outPath.join(uncompressed), outPath, fileNames, sizes_,
                          bolt.SubProgress(progress,0.8,1.0,full=len(fileNames))
                          )
         progress(1)
-
         # Clean up temp files
-        outPath.join(dataPath.sbody+u'.uncomp').remove()
-        outPath.join(dataPath.sbody+u'.tmp').remove()
+        outPath.join(uncompressed).remove()
+        outPath.join(tmp_).remove()
 
     @staticmethod
     def getFile_CrcSizes(crc_file_path):

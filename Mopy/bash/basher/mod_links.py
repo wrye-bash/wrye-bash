@@ -949,16 +949,10 @@ class Mod_Patch_Update(_Mod_BP_Link):
     _text = _(u'Rebuild Patch...')
     _help = _(u'Rebuild the Bashed Patch')
 
-    def _initData(self, window, selection):
-        super(Mod_Patch_Update, self)._initData(window, selection)
-        # Detect the mode the patch was build in
-        self._bp_config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
-        self._config_is_cbash = _configIsCBash(self._bp_config)
-        self.mods_to_reselect = set()
-
     @balt.conversation
     def Execute(self):
         """Handle activation event."""
+        self.mods_to_reselect = set()
         try:
             if not self._Execute(): return # prevent settings save
         except CancelError:
@@ -971,10 +965,11 @@ class Mod_Patch_Update(_Mod_BP_Link):
                 self.window.RefreshUI(refreshSaves=True)
         # save data to disc in case of later improper shutdown leaving the
         # user guessing as to what options they built the patch with
-        Link.Frame.SaveSettings()
+        Link.Frame.SaveSettings() ##: just modInfos ?
 
     def _Execute(self):
         # Clean up some memory
+        bp_config = self._selected_info.get_table_prop(u'bash.patch.configs', {})
         bolt.GPathPurge()
         # We need active mods
         if not load_order.cached_active_tuple():
@@ -983,7 +978,7 @@ class Mod_Patch_Update(_Mod_BP_Link):
                 _(u'Load some mods and try again.'),
                 _(u'Existential Error'))
             return
-        if self._config_is_cbash:
+        if _configIsCBash(bp_config):
             if not self._askYes(
                     _(u'This patch was built in CBash mode. This is no longer '
                       u'supported. You can either use Wrye Bash 307 to '
@@ -992,7 +987,7 @@ class Mod_Patch_Update(_Mod_BP_Link):
                       u'default. If you click "No", the patch building will '
                       u'abort now.'), title=_(u'Unsupported CBash Patch')):
                 return
-            self._bp_config = {}
+            bp_config = {}
         patch_files.executing_patch = self._selected_item
         mods_prior_to_patch = load_order.cached_lower_loading(
             self._selected_item)
@@ -1032,7 +1027,7 @@ class Mod_Patch_Update(_Mod_BP_Link):
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
                 liststyle=u'tree',bOk=_(u'Continue Despite Errors')): return
         PatchDialog.display_dialog(self.window, self._selected_info,
-                                   self.mods_to_reselect, self._bp_config)
+                                   self.mods_to_reselect, bp_config)
         return self._selected_item
 
     def _ask_deactivate_mergeable(self, active_prior_to_patch):
