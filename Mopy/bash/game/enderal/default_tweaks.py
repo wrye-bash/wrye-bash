@@ -22,6 +22,9 @@
 # =============================================================================
 from collections import OrderedDict
 
+##: Figure out a way to deduplicate with skyrim.default_tweaks - maybe we
+# should turn tweaks into classes and define them somewhere else, then
+# reference by class name, similar to how we handle BP tweaks?
 default_tweaks = {
     u'Archery, ArrowTilt 0.0 [Enderal].ini': OrderedDict(
         [(u'Combat', OrderedDict(
@@ -56,6 +59,18 @@ default_tweaks = {
         [(u'Papyrus', OrderedDict(
         [(u'bEnableLogging', u'1'), (u'bLoadDebugInformation', u'1'),
          (u'bEnableTrace', u'1')]))]),
+    'Dialogue Camera, ~Default [Enderal].ini': OrderedDict(
+        [('Controls', OrderedDict(
+            [('fDialogueSoftStopAngle1P', '20.0'),
+             ('fDialogueHardStopAngle1P', '45.0'),
+             ('fDialogueSoftStopAngle3P', '25.0'),
+             ('fDialogueHardStopAngle3P', '55.0')]))]),
+    'Dialogue Camera, Free [Enderal].ini': OrderedDict(
+        [('Controls', OrderedDict(
+            [('fDialogueSoftStopAngle1P', '180.0'),
+             ('fDialogueHardStopAngle1P', '180.0'),
+             ('fDialogueSoftStopAngle3P', '180.0'),
+             ('fDialogueHardStopAngle3P', '180.0')]))]),
     u'Grass, Spacing 20 [Enderal].ini': OrderedDict(
         [(u'Grass', OrderedDict([(u'iMinGrassSize', u'20')]))]),
     u'Grass, Spacing 40 [Enderal].ini': OrderedDict(
