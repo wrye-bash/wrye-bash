@@ -281,6 +281,12 @@ class SkyrimSaveHeader(SaveFileHeader):
     def _esl_block(self): return self.__is_sse() and self._formVersion >= 78
 
     @property
+    def can_edit_header(self):
+        ##: In order to re-enable this, we have to handle ESL and regular
+        # masters separately when editing the masterlist
+        return False
+
+    @property
     def has_alpha(self):
         return self.__is_sse()
 
