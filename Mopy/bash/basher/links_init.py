@@ -174,6 +174,8 @@ def InitMasterLinks():
     #--MasterList: Column Links
     MasterList.column_links.append(SortByMenu(
         sort_options=[Mods_EsmsFirst(), Mods_SelectedFirst()]))
+    MasterList.column_links.append(ColumnsMenu())
+    MasterList.column_links.append(SeparatorLink())
     MasterList.column_links.append(Master_AllowEdit())
     MasterList.column_links.append(Master_ClearRenames())
     #--MasterList: Item Links

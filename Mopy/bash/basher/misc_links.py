@@ -277,9 +277,9 @@ class _Column(CheckLink, EnabledLink):
             window_cols.remove(self.colName)
         else:
             #--Ensure the same order each time
-            cols = set(window_cols)
+            cols_set = set(window_cols)
             window_cols[:] = [x for x in self.window.allCols if
-                              x in cols or x == self.colName]
+                              x in cols_set or x == self.colName]
         self.window.PopulateColumns()
         self.window.RefreshUI()
 
@@ -313,7 +313,7 @@ class ColumnsMenu(ChoiceMenuLink):
     extraItems = [_Manual(), _Contents(), _Header(), SeparatorLink()]
 
     @property
-    def _choices(self): return self.window.allCols
+    def _choices(self): return self.window.all_allowed_cols
 
 # Sort By menu ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -345,7 +345,7 @@ class SortByMenu(ChoiceMenuLink):
             self.extraItems = sort_options + [SeparatorLink()]
 
     @property
-    def _choices(self): return self.window.cols
+    def _choices(self): return self.window.allowed_cols
 
 # Settings Dialog -------------------------------------------------------------
 #------------------------------------------------------------------------------

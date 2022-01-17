@@ -722,7 +722,7 @@ class Mod_CopyModInfo(ItemLink):
             if not inst: info_txt += fileName.s
             else: info_txt += _(u'URL: %s') % _getUrl(inst)
             labels = self.window.labels
-            for col in self.window.cols:
+            for col in self.window.allowed_cols:
                 if col == u'File': continue
                 lab = labels[col](self.window, fileName)
                 info_txt += u'\n%s: %s' % (col, lab if lab else u'-')

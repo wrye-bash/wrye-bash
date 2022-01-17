@@ -292,8 +292,10 @@ class MasterList(_ModsUIList):
         u'File'         : lambda self, a:
             self.data_store[a].curr_name.s.lower(),
         # Missing mods sort last alphabetically
-        u'Current Order': lambda self, a: self.loadOrderNames[
+        u'Current Order': lambda self, a: self._curr_lo_index[
             self.data_store[a].curr_name],
+        'Indices': lambda self, a: self._save_real_master_index(
+            self.data_store[a].curr_name),
     }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
@@ -308,6 +310,8 @@ class MasterList(_ModsUIList):
             self.data_store[mi].curr_name.s)),
         (u'Num',           lambda self, mi: u'%02X' % mi),
         (u'Current Order', lambda self, mi: bosh.modInfos.hexIndexString(
+            self.data_store[mi].curr_name)),
+        ('Indices', lambda self, mi: self._save_real_master_hex(
             self.data_store[mi].curr_name)),
     ])
     # True if we should highlight masters whose stored size does not match the
@@ -336,7 +340,10 @@ class MasterList(_ModsUIList):
         self.edited = False
         self.detailsPanel = detailsPanel
         self.fileInfo = None
-        self.loadOrderNames = {} # cache, orders missing last alphabetically
+        self._curr_lo_index = {} # cache, orders missing last alphabetically
+        # Caches based on SaveHeader.masters_regular and masters_esl - map
+        self._save_lo_regular = {}
+        self._save_lo_esl = []
         self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
@@ -371,6 +378,31 @@ class MasterList(_ModsUIList):
             return # Master that is not installed was clicked
         balt.Link.Frame.notebook.SelectPage(u'Mods', sel_curr_name)
 
+    #--Indices column - 'real', runtime indices
+    def _save_real_master_index(self, master_name):
+        """Returns a sort key for the 'real' index of the specified master
+        within this save."""
+        if master_name in self._save_lo_regular:
+            # For regular masters, just return the index
+            return self._save_lo_regular[master_name]
+        elif master_name in self._save_lo_esl:
+            # For ESL masters, sort them after the last regular master
+            return len(self._save_lo_regular) + self._save_lo_esl[master_name]
+        else:
+            # This could potentially happen if we rename a save master
+            return sys.maxsize
+
+    def _save_real_master_hex(self, master_name):
+        """Returns the 'real' index of the specified master within this save,
+        i.e. the FormID prefix it had at the time the save was created. Compare
+        ModInfo.real_index[_string]."""
+        if master_name in self._save_lo_regular:
+            return '%02X' % self._save_lo_regular[master_name]
+        elif master_name in self._save_lo_esl:
+            return 'FE %03X' % self._save_lo_esl[master_name]
+        else:
+            return ''
+
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
         self.ClearSelected()
@@ -389,6 +421,7 @@ class MasterList(_ModsUIList):
             masters_size = fileInfo.header.master_sizes[mi] if has_sizes else 0
             self.data_store[mi] = bosh.MasterInfo(masters_name, masters_size)
         self._reList()
+        self._update_real_indices(fileInfo)
         self.PopulateItems()
 
     #--Get Master Status
@@ -398,7 +431,7 @@ class MasterList(_ModsUIList):
         status = masterInfo.getStatus()
         if status == 30: return status # does not exist
         # current load order of master relative to other masters
-        loadOrderIndex = self.loadOrderNames[masters_name]
+        loadOrderIndex = self._curr_lo_index[masters_name]
         ordered = load_order.cached_active_tuple()
         if mi != loadOrderIndex: # there are active masters out of order
             return 20  # orange
@@ -488,8 +521,11 @@ class MasterList(_ModsUIList):
     #--Relist
     def _reList(self):
         fileOrderNames = [v.curr_name for v in self.data_store.values()]
-        self.loadOrderNames = {p: i for i, p in enumerate(
+        self._curr_lo_index = {p: i for i, p in enumerate(
             load_order.get_ordered(fileOrderNames))}
+
+    def _update_real_indices(self, new_file_info):
+        """Updates the 'real' indices cache. Does nothing outside of saves."""
 
     #--InitEdit
     def InitEdit(self):
@@ -1429,6 +1465,7 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
 class _ModMasterList(MasterList):
     """Override to avoid doing size checks on save master lists."""
     _do_size_checks = bush.game.Esp.check_master_sizes
+    banned_columns = {'Indices'} # The Indices column is Saves-specific
 
 class ModDetails(_ModsSavesDetails):
     """Details panel for mod tab."""
@@ -2146,9 +2183,24 @@ class SaveList(balt.UIList):
         balt.Link.Frame.set_bash_frame_title()
 
 #------------------------------------------------------------------------------
+class _SaveMasterList(MasterList):
+    """Override to handle updating ESL masters."""
+    def _update_real_indices(self, new_file_info):
+        # Check if we have to worry about ESL masters
+        if bush.game.has_esl and new_file_info.header.has_esl_masters:
+            self._save_lo_regular = {m: i for i, m in enumerate(
+                new_file_info.header.masters_regular)}
+            self._save_lo_esl = {m: i for i, m in enumerate(
+                new_file_info.header.masters_esl)}
+        else:
+            self._save_lo_regular = {m: i for i, m in enumerate(
+                new_file_info.masterNames)}
+            self._save_lo_esl = {}
+
 class SaveDetails(_ModsSavesDetails):
     """Savefile details panel."""
     keyPrefix = u'bash.saves.details' # used in sash/scroll position, sorting
+    _master_list_type = _SaveMasterList
 
     @property
     def file_info(self): return self.saveInfo

@@ -34,6 +34,7 @@ import sys
 import zlib
 from collections import OrderedDict
 from functools import partial
+from typing import Optional # PY3.10: | None
 
 import lz4.block
 
@@ -97,9 +98,7 @@ class SaveFileHeader(object):
         self.pcLocation = remove_newlines(decoder(
             cstrip(self.pcLocation), bolt.pluginEncoding,
             avoidEncodings=(u'utf8', u'utf-8')))
-        self.masters = [bolt.GPath_no_norm(decoder(
-            x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
-            for x in self.masters]
+        self._decode_masters()
 
     def dump_header(self, out):
         raise AbstractError
@@ -116,8 +115,14 @@ class SaveFileHeader(object):
         self._mastersStart = ins.tell()
         self.masters = []
         numMasters = unpack_byte(ins)
+        append_master = self.masters.append
         for count in range(numMasters):
-            self.masters.append(unpack_str8(ins))
+            append_master(unpack_str8(ins))
+
+    def _decode_masters(self):
+        self.masters = [bolt.GPath_no_norm(decoder(
+            x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
+            for x in self.masters]
 
     def calc_time(self): pass
 
@@ -257,7 +262,8 @@ class SkyrimSaveHeader(SaveFileHeader):
     # _compressType of Skyrim SE saves - used to decide how to read/write them
     __slots__ = (u'gameDate', u'saveNumber', u'version', u'raceEid', u'pcSex',
                  u'pcExp', u'pcLvlExp', u'filetime', u'_formVersion',
-                 u'_compressType', u'_sse_start', u'has_esl_masters')
+                 u'_compressType', u'_sse_start', u'has_esl_masters',
+                 'masters_regular', 'masters_esl')
 
     unpackers = OrderedDict([
         (u'header_size', (00, unpack_int)),
@@ -285,6 +291,10 @@ class SkyrimSaveHeader(SaveFileHeader):
         ##: In order to re-enable this, we have to handle ESL and regular
         # masters separately when editing the masterlist
         return False
+
+    @property
+    def masters(self):
+        return self.masters_regular + self.masters_esl
 
     @property
     def has_alpha(self):
@@ -319,17 +329,22 @@ class SkyrimSaveHeader(SaveFileHeader):
 
     def _load_masters_16(self, ins, sse_offset=0): # common for skyrim and FO4
         mastersSize = unpack_int(ins)
-        self.masters = []
+        # Store separate lists of regular and ESLs masters for the Indices
+        # column on the Saves tab
+        self.masters_regular = []
+        self.masters_esl = []
         numMasters = unpack_byte(ins)
+        append_regular = self.masters_regular.append
         for count in range(numMasters):
-            self.masters.append(unpack_str16(ins))
+            append_regular(unpack_str16(ins))
         # SSE / FO4 save format with esl block
         if self._esl_block():
             _num_esl_masters = unpack_short(ins)
             # Remember if we had ESL masters for the inacurracy warning
             self.has_esl_masters = _num_esl_masters > 0
+            append_esl = self.masters_esl.append
             for count in range(_num_esl_masters):
-                self.masters.append(unpack_str16(ins))
+                append_esl(unpack_str16(ins))
         else:
             self.has_esl_masters = False
         # Check for master's table size
@@ -337,6 +352,14 @@ class SkyrimSaveHeader(SaveFileHeader):
         if masters_size != mastersSize:
             raise SaveHeaderError(f'Save game masters size ({masters_size}) '
                                   f'not as expected ({mastersSize}).')
+
+    def _decode_masters(self):
+        self.masters_regular = [bolt.GPath_no_norm(decoder(
+            x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
+            for x in self.masters_regular]
+        self.masters_esl = [bolt.GPath_no_norm(decoder(
+            x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
+            for x in self.masters_esl]
 
     def _sse_compress(self, to_compress):
         """Compresses the specified data using either LZ4 or zlib, depending on
@@ -414,7 +437,7 @@ class SkyrimSaveHeader(SaveFileHeader):
                 if num != 255:
                     return result
         uncompressed = b''
-        masters_size = None  # type: int
+        masters_size: Optional[int] = None
         while True:  # parse and decompress each block here
             token = unpack_byte(ins)
             # How many bytes long is the literals-field?

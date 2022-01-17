@@ -268,6 +268,7 @@ settingDefaults = { # keep current naming format till refactored
         u'File': 80,
         u'Num': 30,
         u'Current Order': 60,
+        'Indices': 50,
     },
     #--Wrye Bash: Mod Docs
     u'bash.modDocs.show': False,
@@ -421,6 +422,7 @@ if bush.game.Esp.check_master_sizes:
 
 if bush.game.has_esl: # Enable Index column by default for ESL games
     settingDefaults[u'bash.mods.cols'].insert(2, u'Indices')
+    settingDefaults['bash.masters.cols'].insert(1, 'Indices')
 
 # Images ----------------------------------------------------------------------
 #------------------------------------------------------------------------------

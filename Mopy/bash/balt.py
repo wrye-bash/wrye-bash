@@ -831,6 +831,9 @@ class UIList(wx.Panel):
     max_items_open = 7 # max number of items one can open without prompt
     #--Cols
     _min_column_width = 24
+    # Set of columns that exist, but will never be visible and can't be
+    # interacted with
+    banned_columns = set()
     #--Style params
     _editLabels = False # allow editing the labels - also enables F2 shortcut
     _sunkenBorder = True
@@ -908,6 +911,9 @@ class UIList(wx.Panel):
     @property
     def allCols(self): return list(self.labels)
     @property
+    def all_allowed_cols(self):
+        return [c for c in self.allCols if c not in self.banned_columns]
+    @property
     def colWidths(self): return _settings[self.keyPrefix + u'.colWidths']
     @property
     def colReverse(self):
@@ -915,6 +921,10 @@ class UIList(wx.Panel):
         return _settings[self.keyPrefix + u'.colReverse']
     @property
     def cols(self): return _settings[self.keyPrefix + u'.cols']
+    @property
+    def allowed_cols(self):
+        """Version of cols that filters out banned_columns."""
+        return [c for c in self.cols if c not in self.banned_columns]
     @property
     def autoColWidths(self):
         return _settings[u'bash.autoSizeListColumns']
@@ -953,7 +963,7 @@ class UIList(wx.Panel):
                 insert = True
         else: # no way we're inserting with a None item
             item = self.GetItem(itemDex)
-        for colDex, col in enumerate(self.cols):
+        for colDex, col in enumerate(self.allowed_cols):
             labelTxt = self.labels[col](self, item)
             if insert and colDex == 0:
                 self.__gList.InsertListCtrlItem(itemDex, labelTxt, item)
@@ -1335,15 +1345,15 @@ class UIList(wx.Panel):
 
         If items are not specified, sort self.data_store keys and return that.
         If sortSpecial is False do not apply extra sortings."""
-        def key(k): # if key is None then keep it None else provide self
+        def _mk_key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
             return bolt.natural_key() if k is None else partial(k, self)
-        defaultKey = key(self._default_sort_col)
+        defaultKey = _mk_key(self._default_sort_col)
         defSort = col == self._default_sort_col
         # always apply default sort
         items = sorted(self.data_store if items is None else items,
                        key=defaultKey, reverse=defSort and reverse)
-        if not defSort: items.sort(key=key(col), reverse=reverse)
+        if not defSort: items.sort(key=_mk_key(col), reverse=reverse)
         if sortSpecial:
             for lamda in self._extra_sortings: lamda(self, items)
         return items
@@ -1395,13 +1405,14 @@ class UIList(wx.Panel):
 
     def PopulateColumns(self):
         """Create/name columns in ListCtrl."""
-        cols = self.cols # this may have been updated in ColumnsMenu.Execute()
-        numCols = len(cols)
-        names = {_settings[u'bash.colNames'].get(key) for key in cols}
+        # this may have been updated in ColumnsMenu.Execute()
+        allow_cols = self.allowed_cols
+        numCols = len(allow_cols)
+        names = {_settings[u'bash.colNames'].get(key) for key in allow_cols}
         self._colDict.clear()
         colDex, listCtrl = 0, self.__gList
         while colDex < numCols: ##: simplify!
-            colKey = cols[colDex]
+            colKey = allow_cols[colDex]
             colName = _settings[u'bash.colNames'].get(colKey, colKey)
             colWidth = self.colWidths.get(colKey, 30)
             if colDex >= listCtrl.lc_get_columns_count(): # Make a new column
