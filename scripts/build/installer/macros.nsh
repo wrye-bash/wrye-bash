@@ -648,7 +648,8 @@
         Delete "${Path}\Mopy\bash\images\Skyrim VR16.png"
         Delete "${Path}\Mopy\bash\images\Skyrim VR24.png"
         Delete "${Path}\Mopy\bash\images\Skyrim VR32.png"
-        ; As of 310, pngcrush.exe is gone
+        ; As of 310, lzma.exe and pngcrush.exe are gone
+        Delete "${Path}\Mopy\bash\compiled\lzma.exe"
         Delete "${Path}\Mopy\bash\compiled\pngcrush.exe"
     !macroend
 

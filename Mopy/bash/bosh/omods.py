@@ -22,6 +22,8 @@
 # =============================================================================
 
 import collections
+import io
+import lzma
 import re
 import subprocess
 from .. import env, bolt, bass, archives
@@ -227,89 +229,72 @@ class OmodFile(object):
     def extractFilesZip(self, crcPath, dataPath, outPath, progress):
         fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
-
         # Extracted data stream is saved as a file named 'a'
-        progress(0, self.omod_path.tail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
+        base_msg = (self.omod_path.stail + u'\n' +
+                    _(u'Unpacking %s') % dataPath.stail)
+        progress(0, base_msg)
         cmd = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', dataPath.s, u'-o%s' % outPath]
         subprocess.call(cmd, startupinfo=startupinfo)
-
         # Split the uncompress stream into files
-        progress(0.7, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
-        self.splitStream(outPath.join(u'a'), outPath, fileNames, sizes_,
-                         bolt.SubProgress(progress,0.7,1.0,len(fileNames))
-                         )
+        progress(0.7)
+        stream_path = outPath.join(u'a')
+        s_prog = bolt.SubProgress(progress, 0.7, 1.0, len(fileNames))
+        with stream_path.open('rb') as ins:
+            self.splitStream(ins, outPath, fileNames, sizes_, s_prog,
+                             base_msg)
         progress(1)
-
         # Clean up
         outPath.join(u'a').remove()
 
-    def splitStream(self, streamPath, outDir, fileNames, sizes_, progress):
+    def splitStream(self, in_stream, outDir, fileNames, sizes_, progress,
+            base_progress_msg):
+        progress.setFull(len(fileNames))
+        progress(0, base_progress_msg)
         # Split the uncompressed stream into files
-        progress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail)
-        with streamPath.open(u'rb') as bin_out:
-            for i,fname in enumerate(fileNames):
-                fn_str = fname.decode('utf-8')
-                progress(i, self.omod_path.stail + u'\n' + _(
-                    u'Unpacking %s') % streamPath.stail + f'\n{fn_str}')
-                outFile = outDir.join(fn_str)
-                with outFile.open(u'wb') as output:
-                    output.write(bin_out.read(sizes_[i]))
+        for i, fname in enumerate(fileNames):
+            fn_str = fname.decode('utf-8')
+            progress(i, base_progress_msg + f'\n{fn_str}')
+            outFile = outDir.join(fn_str)
+            with outFile.open(u'wb') as out:
+                out.write(in_stream.read(sizes_[i]))
         progress(len(fileNames))
 
     def extractFiles7z(self, crcPath, dataPath, outPath, progress):
         fileNames, crcs, sizes_ = self.getFile_CrcSizes(crcPath)
         if len(fileNames) == 0: return
         totalSize = sum(sizes_)
+        base_msg = (self.omod_path.stail + u'\n' +
+                    _(u'Unpacking %s') % dataPath.stail)
         # Extract data stream to an uncompressed stream
-        subprogress = bolt.SubProgress(progress, 0, 0.3, full=dataPath.psize)
-        subprogress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
-        tmp_ = dataPath.sbody + u'.tmp'
+        dpath_size = dataPath.psize
+        out = io.BytesIO()
         with dataPath.open(u'rb') as ins:
-            done = 0
-            with open(outPath.join(tmp_).s, u'wb') as output:
-                # Decoder properties
-                output.write(ins.read(5))
-                done += 5
-                subprogress(5)
-                # Next 8 bytes are the size of the data stream
-                for i in range(8):
-                    out = totalSize >> (i*8)
-                    pack_byte(output, out & 0xFF)
-                    done += 1
-                    subprogress(done)
-                # Now copy the data stream
-                while ins.tell() < dataPath.psize:
-                    output.write(ins.read(512))
-                    done += 512
-                    subprogress(done)
+            # Decoder properties
+            out.write(ins.read(5))
+            # Next 8 bytes are the size of the data stream
+            for i in range(8):
+                pack_byte(out, totalSize >> (i * 8) & 0xFF)
+            # Now copy the data stream
+            while ins.tell() < dpath_size:
+                out.write(ins.read(2097152)) # 2MB at a time
         # Now decompress
-        progress(0.3)
-        uncompressed = dataPath.sbody + u'.uncomp'
-        cmd = [bass.dirs[u'compiled'].join(u'lzma.exe').s, u'd',
-               outPath.join(tmp_).s,
-               outPath.join(uncompressed).s]
-        subprocess.call(cmd, startupinfo=startupinfo)
-        progress(0.8)
+        uncompressed = io.BytesIO(lzma.decompress(out.getvalue()))
         # Split the uncompressed stream into files
-        self.splitStream(outPath.join(uncompressed), outPath, fileNames, sizes_,
-                         bolt.SubProgress(progress,0.8,1.0,full=len(fileNames))
-                         )
-        progress(1)
-        # Clean up temp files
-        outPath.join(uncompressed).remove()
-        outPath.join(tmp_).remove()
+        self.splitStream(uncompressed, outPath, fileNames, sizes_, progress,
+            base_msg)
 
     @staticmethod
     def getFile_CrcSizes(crc_file_path):
-        fileNames = list()
-        crcs = list()
-        sizes_ = list()
+        fileNames = []
+        crcs = []
+        sizes_ = []
+        crc_file_size = crc_file_path.psize
         with open(crc_file_path.s, u'rb') as crc_file:
-            while crc_file.tell() < crc_file_path.psize:
+            while crc_file.tell() < crc_file_size:
                 fileNames.append(_readNetString(crc_file))
                 crcs.append(unpack_int_signed(crc_file))
                 sizes_.append(unpack_int64_signed(crc_file))
-        return fileNames,crcs,sizes_
+        return fileNames, crcs, sizes_
 
 class OmodConfig(object):
     """Tiny little omod config class."""
