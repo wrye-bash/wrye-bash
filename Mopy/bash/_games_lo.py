@@ -1312,7 +1312,7 @@ class AsteriskGame(Game):
         if not cls._ccc_filename: return # Abort if this game has no CC
         ccc_path = bass.dirs[u'app'].join(cls._ccc_filename)
         try:
-            with open(ccc_path.s, u'rb') as ins:
+            with open(ccc_path, u'rb') as ins:
                 ccc_contents = []
                 for ccc_line in ins.readlines():
                     try:

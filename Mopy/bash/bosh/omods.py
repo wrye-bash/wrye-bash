@@ -68,7 +68,7 @@ class OmodFile(object):
 
     def readConfig(self, conf_path):
         """Read info about the omod from the 'config' file"""
-        with open(conf_path.s, u'rb') as omod_config:
+        with open(conf_path, u'rb') as omod_config:
             self.version = unpack_byte(omod_config) # OMOD version
             self.modName = decoder(_readNetString(omod_config)) # Mod name
             # TODO(ut) original code unpacked signed int, maybe that's why "weird numbers" ?
@@ -289,7 +289,7 @@ class OmodFile(object):
         crcs = []
         sizes_ = []
         crc_file_size = crc_file_path.psize
-        with open(crc_file_path.s, u'rb') as crc_file:
+        with open(crc_file_path, u'rb') as crc_file:
             while crc_file.tell() < crc_file_size:
                 fileNames.append(_readNetString(crc_file))
                 crcs.append(unpack_int_signed(crc_file))
@@ -315,7 +315,7 @@ class OmodConfig(object):
         configPath = bass.dirs[u'installers'].join(omod_proj,
             u'omod conversion data', u'config')
         if configPath.exists():
-            with open(configPath.s,u'rb') as ins:
+            with open(configPath,u'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
                 config.omod_proj = decoder(_readNetString(ins),

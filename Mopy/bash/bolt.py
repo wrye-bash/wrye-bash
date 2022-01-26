@@ -519,7 +519,7 @@ def GPathPurge():
 
 #------------------------------------------------------------------------------
 _conv_seps = None
-class Path(object):
+class Path(os.PathLike):
     """Paths are immutable objects that represent file directory paths.
      May be just a directory, filename or full path."""
 
@@ -587,6 +587,9 @@ class Path(object):
         return u'bolt.Path(%r)' % self._s
 
     def __str__(self):
+        return self._s
+
+    def __fspath__(self):
         return self._s
 
     #--Properties--------------------------------------------------------
@@ -1989,7 +1992,7 @@ class StringTable(dict):
         formatted = path.cext != u'.strings'
         backupEncoding = self.encodings.get(lang.lower(), u'cp1252')
         try:
-            with open(path.s, u'rb') as ins:
+            with open(path, u'rb') as ins:
                 insSeek = ins.seek
                 insTell = ins.tell
 
