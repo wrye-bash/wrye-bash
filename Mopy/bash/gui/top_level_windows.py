@@ -27,7 +27,7 @@ __author__ = u'Utumno, Infernio'
 import wx as _wx
 import wx.adv as _adv
 
-from .base_components import _AComponent, Color, csf
+from .base_components import _AComponent, Color, scaled
 
 # Special constant defining a window as having whatever position the underlying
 # GUI implementation picks for it by default.
@@ -256,7 +256,7 @@ class Splitter(_AComponent):
         self._native_widget.SetSashPosition(sash_position)
 
     def set_min_pane_size(self, min_pane_size):
-        self._native_widget.SetMinimumPaneSize(min_pane_size * csf())
+        self._native_widget.SetMinimumPaneSize(scaled(min_pane_size))
 
     def set_sash_gravity(self, sash_gravity):
         self._native_widget.SetSashGravity(sash_gravity)
@@ -300,10 +300,10 @@ class ScrollableWindow(_AComponent):
 
     def __init__(self, parent, scroll_horizontal=True, scroll_vertical=True):
         super(ScrollableWindow, self).__init__(parent)
-        scroll_h = (20 if scroll_horizontal else 0) * csf()
-        scroll_v = (20 if scroll_vertical else 0) * csf()
-        units_h = (50 if scroll_horizontal else 0) * csf()
-        units_v = (50 if scroll_vertical else 0) * csf()
+        scroll_h = scaled(20 if scroll_horizontal else 0)
+        scroll_v = scaled(20 if scroll_vertical else 0)
+        units_h = scaled(50 if scroll_horizontal else 0)
+        units_v = scaled(50 if scroll_vertical else 0)
         self._native_widget.SetScrollbars(scroll_h, scroll_v, units_h, units_v)
 
 class CenteredSplash(_AComponent):

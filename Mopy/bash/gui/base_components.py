@@ -25,6 +25,7 @@ more specialized parts (e.g. _AComponent)."""
 
 __author__ = u'nycz, Infernio'
 
+import functools
 import os
 import platform
 import textwrap
@@ -34,17 +35,20 @@ from ..bolt import deprint
 from ..exception import ArgumentError
 
 # Utilities -------------------------------------------------------------------
-_cached_csf = None
-def csf(): ##: This is ugly, is there no nicer way?
+@functools.lru_cache(maxsize=None) ##: Change to cache once we drop Win7
+def _csf():
     """Returns the content scale factor (CSF) needed for high DPI displays."""
-    global _cached_csf
-    if _cached_csf is None:
-        if platform.system() != u'Darwin': ##: Linux? os_name == 'nt' if so
-           _cached_csf = _wx.Window().GetContentScaleFactor()
-        else:
-            _cached_csf = 1.0 # Everything scales automatically on macOS
-    return _cached_csf
+    if platform.system() != u'Darwin': ##: Linux? os_name == 'nt' if so
+        return _wx.Window().GetContentScaleFactor()
+    else:
+        return 1.0 # Everything scales automatically on macOS
 
+def scaled(unscaled_size):
+    scaled = unscaled_size * _csf()
+    if isinstance(unscaled_size, int):
+        scaled = int(scaled)
+    return scaled
+    
 def wrapped_tooltip(tooltip_text, wrap_width=50):
     """Returns tooltip with wrapped copy of text."""
     tooltip_text = textwrap.fill(tooltip_text, wrap_width)

@@ -106,7 +106,7 @@ def setUAC(_handle, _uac=True):
 def is_uac():
     return False # Not a thing on Linux
 
-@functools.lru_cache(maxsize=None) ##: cached in py 3.9
+@functools.lru_cache(maxsize=None) ##: Change to cache once we drop Win7
 def getJava():
     try:
         java_home = _GPath(os.environ[u'JAVA_HOME'])

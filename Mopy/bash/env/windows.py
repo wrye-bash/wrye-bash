@@ -984,7 +984,7 @@ def setUAC(handle, uac=True):
     if _isUAC and win32gui:
         win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
-@functools.lru_cache(maxsize=None) ##: cached in py 3.9
+@functools.lru_cache(maxsize=None) ##: Change to cache once we drop Win7
 def getJava():
     """Locate javaw.exe to launch jars from Bash."""
     try:
