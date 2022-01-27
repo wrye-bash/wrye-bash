@@ -2427,11 +2427,11 @@ class ModInfos(FileInfos):
         for fn_mod, modInfo in dict_sort(self, reverse=True,
                                          key_f=load_order.cached_lo_index):
             size, canMerge = name_mergeInfo.get(fn_mod, (None, None))
-            # if esm/esl bit was flipped size won't change, so check this first
-            if modInfo.is_esl() or modInfo.has_esm_flag():
-                # esl don't mark as esl capable - modInfo must have its header set
+            # if ESL bit was flipped size won't change, so check this first
+            if modInfo.is_esl():
+                # Don't mark ESLs as ESL-capable (duh) - modInfo must have its
+                # header set
                 name_mergeInfo[fn_mod] = (modInfo.fsize, False)
-                self.mergeable.discard(fn_mod)
             elif size == modInfo.fsize:
                 if canMerge: self.mergeable.add(fn_mod)
             else:
