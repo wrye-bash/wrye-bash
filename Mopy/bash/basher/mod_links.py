@@ -651,7 +651,7 @@ def _getUrl(installer):
     url = None
     ma = bosh.reTesNexus.search(installer)
     if ma and ma.group(2):
-        url = bush.game.nexusUrl + u'mods/' + ma.group(2)
+        url = f'{bush.game.nexusUrl}mods/{ma.group(2)}/'
     if not url:
         ma = bosh.reTESA.search(installer)
         if ma and ma.group(2):
@@ -666,7 +666,7 @@ class _NotObLink(EnabledLink):
             not self._first_selected().match_oblivion_re())
 
 class Mod_CreateLOOTReport(_NotObLink):
-    """Creates a basic LOOT masterlist entry with ."""
+    """Creates a basic LOOT masterlist entry with URL and tags."""
     _text = _(u'Create LOOT Entry...')
     _help = _(u'Creates LOOT masterlist entries based on the tags you have '
               u'applied to the selected plugin(s).')
