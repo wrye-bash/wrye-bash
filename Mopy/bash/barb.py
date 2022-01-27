@@ -174,9 +174,9 @@ class BackupSettings(object):
             pickle.dump(AppVersion, out, -1)
         # create the backup archive in 7z format WITH solid compression
         # may raise StateError
-        backup_dir, dest7z = self._backup_dest_file.head, self._backup_dest_file.tail
-        archives.compress7z(backup_dir, self._backup_dest_file, dest7z, temp_dir)
-        bass.settings[u'bash.backupPath'] = backup_dir
+        dest7z = self._backup_dest_file.tail
+        archives.compress7z(self._backup_dest_file, dest7z, temp_dir)
+        bass.settings[u'bash.backupPath'] = self._backup_dest_file.head
 
     def _backup_success(self, balt_):
         if balt_ is None: return

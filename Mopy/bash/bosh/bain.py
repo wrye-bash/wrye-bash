@@ -1044,9 +1044,8 @@ class Installer(ListInfo):
                 out.write(u'--*\\')
         #--Compress
         try:
-            compress7z(outDir, realOutFile, fn_archive, project, progress,
-                       is_solid=isSolid, temp_list=self.tempList,
-                       blockSize=blockSize)
+            compress7z(realOutFile, fn_archive, project, progress,
+                is_solid=isSolid, temp_list=self.tempList, blockSize=blockSize)
         finally:
             self.tempList.remove()
 
@@ -1922,8 +1921,7 @@ class InstallersData(DataStore):
                         installer=None, pending=None, show_warning=None,
                         position=-1, crc_installer=None):
         try:
-            converter.apply(destArchive, crc_installer,
-                            bolt.SubProgress(progress, 0.0, 0.99),
+            converter.apply(destArchive, crc_installer, progress,
                             embedded=installer.crc if installer else 0)
             #--Add the new archive to Bash
             if destArchive not in self:

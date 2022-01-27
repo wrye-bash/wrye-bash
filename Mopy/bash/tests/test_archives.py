@@ -46,8 +46,7 @@ def test_compress_extract_with_spaces(capsys):
                 with open(thumbs := os.path.join(_utils_dir.s, 'thumbs.db'),
                           'w'):
                     print(f'creating {thumbs}')
-                compress7z(dirname, full_out, out_fname, _utils_dir,
-                           temp_list=templist)
+                compress7z(full_out, out_fname, _utils_dir, temp_list=templist)
             finally:
                 try:
                     os.remove(thumbs) ##: needed?
