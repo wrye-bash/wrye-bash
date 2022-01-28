@@ -137,9 +137,9 @@ class MelBipedData(MelStruct):
     _general_flags = TrimmedFlags.from_names(
         fnv_only((2, u'hasBackpack')),
         fnv_only((3, u'medium_armor')),
-        (5, u'powerArmor'),
+        (5, u'power_armor'),
         (6, u'notPlayable'),
-        (7, u'heavyArmor'))
+        (7, u'heavy_armor'))
 
     def __init__(self):
         super(MelBipedData, self).__init__(b'BMDT', [u'I', u'B', u'3s'],
@@ -1810,8 +1810,8 @@ class MreMesg(MelRecord):
         MelBase(b'NAM9', 'unused_9'),
         MelUInt32Flags(b'DNAM', u'flags', MesgTypeFlags),
         MelUInt32(b'TNAM', 'displayTime'),
-        MelGroups('menuButtons',
-            MelString(b'ITXT','buttonText'),
+        MelGroups('menu_buttons',
+            MelString(b'ITXT', 'button_text'),
             MelConditions(),
         ),
     )
@@ -2508,7 +2508,7 @@ class MreQust(MelRecord):
         ), sort_by_attrs='stage'),
         MelGroups('objectives',
             MelSInt32(b'QOBJ', 'index'),
-            MelString(b'NNAM','description'),
+            MelString(b'NNAM', 'display_text'),
             MelGroups('targets',
                 MelStruct(b'QSTA', [u'I', u'B', u'3s'],(FID,'targetId'),(targetFlags,'flags'),'unused1'),
                 MelConditions(),

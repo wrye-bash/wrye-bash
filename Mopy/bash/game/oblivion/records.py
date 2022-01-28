@@ -601,7 +601,7 @@ class MreArmo(MelRecord):
     rec_sig = b'ARMO'
 
     _flags = BipedFlags.from_names((16, u'hideRings'), (17, u'hideAmulet'),
-                                   (22, u'notPlayable'), (23, u'heavyArmor'))
+                                   (22, u'notPlayable'), (23, u'heavy_armor'))
 
     melSet = MelSet(
         MelEdid(),

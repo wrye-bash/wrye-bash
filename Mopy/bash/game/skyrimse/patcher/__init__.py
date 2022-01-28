@@ -33,3 +33,8 @@ assorted_tweaks |= {u'AssortedTweak_ArrowWeight'}
 statsTypes.update({
     b'AMMO': ('eid', 'value', 'damage', 'weight'),
 })
+
+#------------------------------------------------------------------------------
+# Tweak Names
+#------------------------------------------------------------------------------
+names_tweaks |= {'NamesTweak_AmmoWeight'}

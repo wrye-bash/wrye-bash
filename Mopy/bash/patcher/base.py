@@ -174,7 +174,7 @@ class AMultiTweakItem(object):
     # self.choiceValues[self.chosen][0], the selected value (24 or 48) will be
     # returned, which the tweak could use to e.g. change a record attribute
     # controlling how long a quest is delayed.
-    tweak_choices = []
+    tweak_choices = [] ##: Replace with a dict now that we're on py3?
     # The choice label (see tweak_choices above) that should be selected by
     # default.
     default_choice = None

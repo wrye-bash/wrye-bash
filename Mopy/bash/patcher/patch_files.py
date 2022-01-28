@@ -154,8 +154,6 @@ class PatchFile(ModFile):
         self.unFilteredMods = []
         self.compiledAllMods = []
         self.patcher_mod_skipcount = defaultdict(Counter)
-        #--Config
-        self.bodyTags = u''
         #--Mods
         # checking for files to include in patch, investigate
         self.all_plugins = load_order.cached_lower_loading(modInfo.ci_key)

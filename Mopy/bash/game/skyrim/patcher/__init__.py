@@ -830,6 +830,71 @@ assorted_tweaks = {
 staff_condition = (u'animationType', 8)
 
 #------------------------------------------------------------------------------
+# Tweak Names
+#------------------------------------------------------------------------------
+names_tweaks = {
+    'NamesTweak_BodyPartCodes',
+    'NamesTweak_Body_Armor_Tes5',
+    'NamesTweak_Scrolls',
+    'NamesTweak_Spells_Tes5',
+    'NamesTweak_Weapons_Tes5',
+    'NamesTweak_DwarvenToDwemer',
+    'NamesTweak_DwarfsToDwarves',
+    'NamesTweak_StaffsToStaves',
+}
+body_part_codes = ('HAGBMRS', 'HBALMRS')
+text_replacer_rpaths = {
+    b'ACTI': ('full', 'activate_text_override'),
+    b'ALCH': ('full', 'description'),
+    b'AMMO': ('full', 'description', 'short_name'),
+    b'APPA': ('full', 'description'),
+    b'ARMO': ('full', 'description'),
+    b'ASTP': ('male_parent_title', 'female_parent_title', 'male_child_title',
+              'female_child_title'),
+    b'AVIF': ('full', 'description', 'abbreviation'),
+    b'BOOK': ('full', 'description', 'book_text'),
+    b'CLAS': ('full', 'description'),
+    b'CLFM': ('full',),
+    b'COLL': ('description',),
+    b'CONT': ('full',),
+    b'DOOR': ('full',),
+    b'ENCH': ('full',),
+    b'EXPL': ('full',),
+    b'EYES': ('full',),
+    b'FACT': ('full', 'ranks[i].male_title', 'ranks[i].female_title'),
+    b'FLOR': ('full', 'activate_text_override'),
+    b'FURN': ('full',),
+    b'GMST': ('value',),
+    b'HAZD': ('full',),
+    b'HDPT': ('full',),
+    b'INGR': ('full',),
+    b'KEYM': ('full',),
+    b'LCTN': ('full',),
+    b'LIGH': ('full',),
+    b'LSCR': ('description',),
+    b'MESG': ('full', 'description', 'menu_buttons[i].button_text'),
+    b'MGEF': ('full', 'magic_item_description'),
+    b'MISC': ('full',),
+    b'MSTT': ('full',),
+    b'NPC_': ('full', 'short_name'),
+    b'PERK': ('full', 'description'),
+    b'PROJ': ('full',),
+    b'QUST': ('full', 'description', 'stages[i].log_entries[i].log_entry_text',
+              'objectives[i].display_text'),
+    b'RACE': ('full', 'description'),
+    b'SCRL': ('full', 'description'),
+    b'SHOU': ('full', 'description'),
+    b'SLGM': ('full',),
+    b'SNCT': ('full',),
+    b'SPEL': ('full', 'description'),
+    b'TACT': ('full',),
+    b'TREE': ('full',),
+    b'WATR': ('full',),
+    b'WEAP': ('full', 'description'),
+    b'WOOP': ('full',),
+}
+
+#------------------------------------------------------------------------------
 # Tweak Settings
 #------------------------------------------------------------------------------
 settings_tweaks = {

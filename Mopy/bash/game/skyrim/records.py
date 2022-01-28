@@ -113,12 +113,11 @@ class MelBipedObjectData(MelStruct):
         u'unknown_7',
         u'unknown_8')
 
-    ArmorTypeFlags = Flags.from_names('light_armor', 'heavy_armor', 'clothing')
-
     def __init__(self):
-        super(MelBipedObjectData, self).__init__(b'BOD2', [u'2I'],
-            (MelBipedObjectData._bp_flags, u'biped_flags'),
-            (MelBipedObjectData.ArmorTypeFlags, u'armorFlags'))
+        ##: armor_type is an enum, see wbArmorTypeEnum in xEdit and its usage
+        # in multitweak_names
+        super().__init__(b'BOD2', [u'2I'],
+            (MelBipedObjectData._bp_flags, u'biped_flags'), 'armor_type')
 
     def getLoaders(self,loaders):
         # Loads either old style BODT or new style BOD2 records
@@ -135,17 +134,17 @@ class MelBipedObjectData(MelStruct):
                 # omitted)
                 bp_flags, legacyFlags, _bp_unused = ins.unpack(
                     __unpacker2, size_, *debug_strs)
-                armorFlags = 0
+                armor_type = 0
             elif size_ != 12:
                 raise ModSizeError(ins.inName, debug_strs, (12, 8), size_)
             else:
-                bp_flags, legacyFlags, _bp_unused, armorFlags = ins.unpack(
+                bp_flags, legacyFlags, _bp_unused, armor_type = ins.unpack(
                     __unpacker3, size_, *debug_strs)
             # legacyData is discarded except for non-playable status
             record.biped_flags = MelBipedObjectData._bp_flags(bp_flags)
             record.flags1.isNotPlayable = MelBipedObjectData.LegacyFlags(
                 legacyFlags)[4]
-            record.armorFlags = MelBipedObjectData.ArmorTypeFlags(armorFlags)
+            record.armor_type = armor_type
         else:
             # BOD2 - new style, MelStruct can handle it
             super(MelBipedObjectData, self).load_mel(record, ins, sub_type,
@@ -3213,8 +3212,8 @@ class MreMesg(MelRecord):
         MelFid(b'QNAM','materialParent'),
         MelUInt32Flags(b'DNAM', u'flags', MesgTypeFlags),
         MelUInt32(b'TNAM', 'displayTime'),
-        MelGroups('menuButtons',
-            MelLString(b'ITXT','buttonText'),
+        MelGroups('menu_buttons',
+            MelLString(b'ITXT', 'button_text'),
             MelConditions(),
         ),
     )
@@ -3967,10 +3966,10 @@ class MreQust(MelRecord):
         MelConditions('eventConditions'),
         MelSorted(MelGroups('stages',
             MelStruct(b'INDX', [u'H', u'2B'],'index',(_stageFlags, u'flags'),'unknown'),
-            MelGroups('logEntries',
+            MelGroups('log_entries',
                 MelUInt8Flags(b'QSDT', u'stageFlags', stageEntryFlags),
                 MelConditions(),
-                MelLString(b'CNAM','log_text'),
+                MelLString(b'CNAM', 'log_entry_text'),
                 MelFid(b'NAM0', 'nextQuest'),
                 MelBase(b'SCHR', 'unusedSCHR'),
                 MelBase(b'SCTX', 'unusedSCTX'),
@@ -3980,7 +3979,7 @@ class MreQust(MelRecord):
         MelGroups('objectives',
             MelUInt16(b'QOBJ', 'index'),
             MelUInt32Flags(b'FNAM', u'flags', objectiveFlags),
-            MelLString(b'NNAM','description'),
+            MelLString(b'NNAM', 'display_text'),
             MelGroups('targets',
                 MelStruct(b'QSTA', [u'i', u'B', u'3s'],'alias',(targetFlags,'flags'),'unused1'),
                 MelConditions(),

@@ -97,7 +97,7 @@ class PatchGame(GameInfo):
         u'save_rec_types', u'scripts_types', u'settings_tweaks',
         u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
         u'spell_stats_types', u'staff_condition', 'enchantment_types',
-        u'static_attenuation_rec_type', u'statsTypes',
+        u'static_attenuation_rec_type', u'statsTypes', 'text_replacer_rpaths',
         u'text_types',
     }
 
@@ -219,6 +219,7 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     names_tweaks = set()
     body_part_codes = ()
+    text_replacer_rpaths = {}
 
     #--------------------------------------------------------------------------
     # Tweak Settings

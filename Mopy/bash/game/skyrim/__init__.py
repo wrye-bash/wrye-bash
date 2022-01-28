@@ -163,10 +163,10 @@ class SkyrimGameInfo(PatchGame):
         max_lvl_list_size = 255
         biped_flag_names = (
             u'head', u'hair', u'body', u'hands', u'forearms', u'amulet',
-            u'ring', u'feet', u'calves', u'shield', u'bodyaddon1_tail',
-            u'long_hair', u'circlet', u'bodyaddon2', u'dragon_head',
+            u'ring', u'feet', u'calves', u'shield', u'addon_tail',
+            u'long_hair', u'circlet', u'addon_ears', u'dragon_head',
             u'dragon_lwing', u'dragon_rwing', u'dragon_body', u'bodyaddon7',
-            u'bodyaddon8', u'decapate_head', u'decapate', u'bodyaddon9',
+            u'bodyaddon8', u'decapitate_head', u'decapitate', u'bodyaddon9',
             u'bodyaddon10', u'bodyaddon11', u'bodyaddon12', u'bodyaddon13',
             u'bodyaddon14', u'bodyaddon15', u'bodyaddon16', u'bodyaddon17',
             u'fx01')
@@ -186,7 +186,7 @@ class SkyrimGameInfo(PatchGame):
         u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
         u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
         u'TweakRaces', u'ImportActorsPerks', u'TimescaleChecker',
-        'ImportEnchantments',
+        'ImportEnchantments', 'TweakNames',
     }
 
     weaponTypes = (

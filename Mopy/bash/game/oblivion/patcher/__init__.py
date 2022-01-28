@@ -583,7 +583,7 @@ names_tweaks = {
     u'NamesTweak_Body_Armor_Tes4',
     u'NamesTweak_Body_Clothes',
     u'NamesTweak_Ingestibles_Tes4',
-    u'NamesTweak_Scrolls',
+    u'NamesTweak_NotesScrolls',
     u'NamesTweak_Spells',
     u'NamesTweak_Weapons_Tes4',
     u'NamesTweak_DwarvenToDwemer',
@@ -595,6 +595,40 @@ names_tweaks = {
     u'NamesTweak_AmmoWeight',
 }
 body_part_codes = (u'ARGHTCCPBS', u'ABGHINOPSL')
+text_replacer_rpaths = {
+    b'ALCH': ('full', 'effects[i].scriptEffect?.full'),
+    b'AMMO': ('full',),
+    b'APPA': ('full',),
+    b'ARMO': ('full',),
+    b'BOOK': ('full', 'book_text'),
+    b'BSGN': ('full', 'description'),
+    b'CLAS': ('full', 'description'),
+    b'CLOT': ('full',),
+    b'CONT': ('full',),
+    b'CREA': ('full',),
+    b'DOOR': ('full',),
+    b'ENCH': ('full', 'effects[i].scriptEffect?.full',),
+    b'EYES': ('full',),
+    b'FACT': ('full',), ##: maybe add male_title/female_title?
+    b'FLOR': ('full',),
+    b'FURN': ('full',),
+    b'GMST': ('value',),
+    b'HAIR': ('full',),
+    b'INGR': ('full', 'effects[i].scriptEffect?.full'),
+    b'KEYM': ('full',),
+    b'LIGH': ('full',),
+    b'LSCR': ('full', 'description'),
+    b'MGEF': ('full', 'description'),
+    b'MISC': ('full',),
+    b'NPC_': ('full',),
+    b'QUST': ('full', 'stages[i].entries[i].text'),
+    b'RACE': ('full', 'description'),
+    b'SGST': ('full', 'effects[i].scriptEffect?.full'),
+    b'SKIL': ('description', 'apprentice', 'journeyman', 'expert', 'master'),
+    b'SLGM': ('full',),
+    b'SPEL': ('full', 'effects[i].scriptEffect?.full'),
+    b'WEAP': ('full',),
+}
 
 #------------------------------------------------------------------------------
 # Tweak Settings

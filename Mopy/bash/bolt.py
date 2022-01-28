@@ -2115,16 +2115,16 @@ _rsub_component = re.compile(r'\\(\d+)')
 _plain_component = re.compile(r'[^\\\$]+', re.U)
 
 def build_esub(esub_str):
-    """Builds an esub (enhanced substitution) callable and returns it. These
+    r"""Builds an esub (enhanced substitution) callable and returns it. These
     expand normal re.sub syntax to allow the case of a match to be preserved,
     even while the letters change.
 
     The syntax looks like this:
-        my_sub = build_sub('$1(s)tamina')
+        my_sub = build_esub('$1(s)tamina')
         print(re.sub(r'\b(f|F)atigue\b', my_sub, u'Fatigue'))
         # prints 'Stamina'
 
-    The $1(s) part is what's important. The $2 identifies which regex group to
+    The $1(s) part is what's important. The $1 identifies which regex group to
     target. The part in parentheses will be what the case of the group gets
     applied to."""
     # Callables we'll chain together at the end
@@ -2190,31 +2190,29 @@ class _ARP_Subpath(object):
         self._next_subpath = _parse_rpath(rest_rpath)
 
     # See RecPath for documentation of these methods
-    def rp_eval(self, record):
-        """:rtype: list"""
+    def rp_eval(self, record) -> list:
         raise exception.AbstractError(u'rp_eval not implemented')
 
-    def rp_exists(self, record):
-        """:rtype: bool"""
+    def rp_exists(self, record) -> bool:
         raise exception.AbstractError(u'rp_exists not implemented')
 
-    def rp_map(self, record, func):
+    def rp_map(self, record, func) -> None:
         raise exception.AbstractError(u'rp_map not implemented')
 
 class _RP_Subpath(_ARP_Subpath):
     """A simple, intermediate subpath. Simply forwards all calls to the next
     part of the record path."""
-    def rp_eval(self, record):
+    def rp_eval(self, record) -> list:
         return self._next_subpath.rp_eval(getattr(record, self._subpath_attr))
 
-    def rp_exists(self, record):
+    def rp_exists(self, record) -> bool:
         try:
             return self._next_subpath.rp_exists(getattr(
                 record, self._subpath_attr))
         except AttributeError:
             return False
 
-    def rp_map(self, record, func):
+    def rp_map(self, record, func) -> None:
         self._next_subpath.rp_map(getattr(record, self._subpath_attr), func)
 
     def __repr__(self):
@@ -2223,13 +2221,13 @@ class _RP_Subpath(_ARP_Subpath):
 class _RP_LeafSubpath(_ARP_Subpath):
     """The final part of a record path. This the part that actually gets and
     sets values."""
-    def rp_eval(self, record):
+    def rp_eval(self, record) -> list:
         return [getattr(record, self._subpath_attr)]
 
-    def rp_exists(self, record):
+    def rp_exists(self, record) -> bool:
         return hasattr(record, self._subpath_attr)
 
-    def rp_map(self, record, func):
+    def rp_map(self, record, func) -> None:
         s_attr = self._subpath_attr
         setattr(record, s_attr, func(getattr(record, s_attr)))
 
@@ -2244,12 +2242,12 @@ class _RP_IteratedSubpath(_ARP_Subpath):
                                              u'iterated subpath.')
         super(_RP_IteratedSubpath, self).__init__(sub_rpath, rest_rpath)
 
-    def rp_eval(self, record):
+    def rp_eval(self, record) -> list:
         eval_next = self._next_subpath.rp_eval
         return chain.from_iterable(eval_next(iter_attr) for iter_attr
                                    in getattr(record, self._subpath_attr))
 
-    def rp_exists(self, record):
+    def rp_exists(self, record) -> bool:
         num_iterated = 0
         next_exists = self._next_subpath.rp_exists
         for iter_attr in getattr(record, self._subpath_attr):
@@ -2258,7 +2256,7 @@ class _RP_IteratedSubpath(_ARP_Subpath):
             num_iterated += 1
         return num_iterated > 0 # faster than bool()
 
-    def rp_map(self, record, func):
+    def rp_map(self, record, func) -> None:
         map_next = self._next_subpath.rp_map
         for iter_attr in getattr(record, self._subpath_attr):
             map_next(iter_attr, func)
@@ -2274,13 +2272,13 @@ class _RP_OptionalSubpath(_RP_Subpath):
                                              u'optional subpath.')
         super(_RP_OptionalSubpath, self).__init__(sub_rpath, rest_rpath)
 
-    def rp_eval(self, record):
+    def rp_eval(self, record) -> list:
         try:
             return super(_RP_OptionalSubpath, self).rp_eval(record)
         except AttributeError:
             return [] # Attribute did not exist, rest of the path evals to []
 
-    def rp_map(self, record, func):
+    def rp_map(self, record, func) -> None:
         try:
             super(_RP_OptionalSubpath, self).rp_map(record, func)
         except AttributeError:
@@ -2301,17 +2299,17 @@ class RecPath(object):
     def __init__(self, rpath_str): # type: (str) -> None
         self._root_subpath = _parse_rpath(rpath_str)
 
-    def rp_eval(self, record):
+    def rp_eval(self, record) -> list:
         """Evaluates this record path for the specified record, returning a
         list of all attribute values that it resolved to."""
         return self._root_subpath.rp_eval(record)
 
-    def rp_exists(self, record):
+    def rp_exists(self, record) -> bool:
         """Returns True if this record path will resolve to a non-empty list
         for the specified record."""
         return self._root_subpath.rp_exists(record)
 
-    def rp_map(self, record, func):
+    def rp_map(self, record, func) -> None:
         """Maps the specified function over all the values that this record
         path points to and assigns the altered values to the corresponding
         attributes on the specified record."""
