@@ -311,7 +311,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             # below is far too hot. Instead, at least make sure the progress
             # bar updates on each collision by bumping the state.
             collision_progress.setFull(len(all_active_plugins))
-            prog_msg = u'{}\n%s'.format(_(u'Looking for collisions...'))
+            prog_msg = f'{_("Looking for collisions...")}\n%s'
             num_collisions = 0
             collision_progress(num_collisions, prog_msg % game_master_name)
             for r_fid, r_versions in all_record_versions.items():

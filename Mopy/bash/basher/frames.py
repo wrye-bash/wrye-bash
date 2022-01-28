@@ -252,8 +252,7 @@ class DocBrowser(WindowFrame):
         # Create new file if none exists
         elif not doc_path.exists():
             for template_file in (bosh.modInfos.store_dir.join(
-                    u'Docs', u'{} Readme Template'.format(fname))
-                                  for fname in (u'My', u'Bash')):
+                    'Docs', f'{s} Readme Template') for s in (u'My', u'Bash')):
                 if template_file.exists():
                     with template_file.open(u'rb') as ins:
                         template = bolt.decoder(ins.read())

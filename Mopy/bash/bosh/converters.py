@@ -24,11 +24,9 @@
 
 import io
 import pickle
-import re
 
 from .. import bolt, archives, bass
-from ..archives import defaultExt, readExts, compressionSettings, \
-    compressCommand
+from ..archives import defaultExt, readExts
 from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files, \
     GPath_no_norm
 from ..exception import ArgumentError, StateError
@@ -157,6 +155,8 @@ class ConvertersData(DataDict):
             try:
                 newConverter = InstallerConverter(converter)
             except:
+                bolt.deprint(f'{converter} is corrupt, moving to '
+                             f'{self.corrupt_bcfs_dir}', traceback=True)
                 fullPath = converters_dir.join(converter)
                 fullPath.moveTo(self.corrupt_bcfs_dir.join(converter.tail))
                 del self.bcfPath_sizeCrcDate[fullPath]
@@ -171,10 +171,10 @@ class ConvertersData(DataDict):
                     self.dup_bcfs_dir.join(oldConverter.fullPath.tail))
             self.removeConverter(oldConverter)
         #--Link converter to Bash
-        srcCRC_converters = self.srcCRC_converters
-        [srcCRC_converters[srcCRC].append(newConverter) for srcCRC in
-         newConverter.srcCRCs if srcCRC_converters.setdefault(
-                srcCRC, [newConverter]) != [newConverter]]
+        add_new_conv = self.srcCRC_converters.setdefault
+        for srcCRC in newConverter.srcCRCs:
+            if add_new_conv(srcCRC, [newConverter]) != [newConverter]:
+                self.srcCRC_converters[srcCRC].append(newConverter)
         self.bcfCRC_converter[newConverter.crc] = newConverter
         s, m = newConverter.fullPath.size_mtime()
         self.bcfPath_sizeCrcDate[newConverter.fullPath] = (
@@ -283,9 +283,9 @@ class InstallerConverter(object):
         if not self.fullPath.exists(): raise StateError(
             f"\nLoading {self.fullPath}:\nBCF doesn't exist.")
         def translate(out):
-            ##: Does this usage (including translator and decode) work?
             stream = io.BytesIO(out)
             # translate data types to new hierarchy
+            _old_modules = {b'bolt', b'bosh'}
             class _Translator(object):
                 def __init__(self, streamToWrap):
                     self._stream = streamToWrap
@@ -295,8 +295,7 @@ class InstallerConverter(object):
                     return self._translate(self._stream.readline())
                 @staticmethod
                 def _translate(s):
-                    return re.sub('^(bolt|bosh)$', r'bash.\1',
-                                  s.decode(u'utf-8'), flags=re.U)
+                    return b'bash.' + s if s in _old_modules else s
             translator = _Translator(stream)
             for a, v in zip(self.persistBCF, pickle.load(
                     translator, encoding='bytes')):
@@ -307,10 +306,8 @@ class InstallerConverter(object):
                                  pickle.load(translator, encoding='bytes')):
                     setattr(self, a, v)
         # Temp rename if its name wont encode correctly
-        command = f'"{archives.exe7z}" x "{self.fullPath}" BCF.dat -y ' \
-                  f'-so -sccUTF-8'
         err_msg = f'\nLoading {self.fullPath}:\nBCF extraction failed.'
-        archives.wrapPopenOut(command, translate, errorMsg=err_msg)
+        archives.wrapPopenOut(self.fullPath, translate, errorMsg=err_msg)
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
@@ -384,8 +381,7 @@ class InstallerConverter(object):
         destDir = bass.newTempDir()
         progress(0, _(u'Moving files...'))
         progress.setFull(1 + len(self.convertedFiles))
-        #--Make a copy of dupeCount
-        dupes = dict(self.dupeCount)
+        dupes = self.dupeCount.copy()
         destJoin = destDir.join
         tempJoin = tmpDir.join
         #--Move every file
@@ -541,13 +537,8 @@ class InstallerConverter(object):
 
     def _pack(self, srcFolder, destArchive, outDir, progress=None):
         """Creates the BAIN'ified archive and cleans up temp"""
-        #--Determine settings for 7z
-        destArchive, archiveType, solid = compressionSettings(destArchive,
-                self.blockSize, self.isSolid)
-        command = compressCommand(self.fullPath, outDir, srcFolder, solid,
-                                  archiveType)
-        archives.compress7z(command, self.fullPath, destArchive, srcFolder,
-                            progress)
+        archives.compress7z(outDir.join(destArchive), destArchive, srcFolder,
+            progress, is_solid=self.isSolid, blockSize=self.blockSize)
         bass.rmTempDir()
 
     def _unpack(self, srcInstaller, fileNames, progress=None):

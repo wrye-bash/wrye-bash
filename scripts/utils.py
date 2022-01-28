@@ -73,7 +73,7 @@ def convert_bytes(size_bytes):
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
-    return u'{}{}'.format(s, size_name[i])
+    return f'{s}{size_name[i]}'
 
 def download_file(url, fpath):
     file_name = os.path.basename(fpath)

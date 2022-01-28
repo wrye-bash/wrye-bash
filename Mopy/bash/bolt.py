@@ -981,8 +981,16 @@ def popen_common(popen_cmd, **kwargs):
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
-    cmd = r'attrib -R "%s\*" /S /D' % dirPath
-    subprocess.call(cmd, startupinfo=startupinfo)
+    if os_name == 'nt':
+        cmd = fr'attrib -R "{dirPath}\*" /S /D'
+        subprocess.call(cmd, startupinfo=startupinfo)
+        return
+    # elif platform.system() == u'Darwin':
+    #     cmd = f'chflags -R nouchg {dirPath}'
+    else: # https://stackoverflow.com/a/36285142/281545 - last & needed on mac
+        cmds = (fr'find {dirPath} -not -executable -exec chmod a=rw {{}} \; &',
+                fr'find {dirPath} -executable -exec chmod a=rwx {{}} \; &')
+    for cmd in cmds: os.system(cmd) # returns 0 with the final &, 256 otherwise
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines

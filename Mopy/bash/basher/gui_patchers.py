@@ -507,8 +507,8 @@ class _ChoiceMenuMixin(object):
     def ShowChoiceMenu(self, lb_selection_dex): raise exception.AbstractError
 
 _label_formats = {str: u'%s', float: u'%4.2f', int: u'%d'}
-def _custom_label(label, value): # edit label text with value
-    return u'%s: %s' % (label, _label_formats[type(value)] % value)
+def _custom_label(label, val): # edit label text with value
+    return f'{label}: {_label_formats[type(val)] % val}'
 
 class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""

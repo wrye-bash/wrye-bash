@@ -39,7 +39,7 @@ from . import imageExts, DataStore, BestIniFile, InstallerConverter, \
 from .. import balt, gui # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
-    extract7z, compressionSettings
+    extract7z
 from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
     LowerDict, AFile, dict_sort, GPath_no_norm, top_level_items
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
@@ -197,8 +197,8 @@ class Installer(ListInfo):
         self.modified = 0 #--Modified date
         self.fsize = -1 #--size of archive file
         self.crc = 0 #--crc of archive
-        self.isSolid = False #--package only - solid 7z archive
-        self.blockSize = None #--package only - set here and there
+        self.isSolid = False #--archives only - solid 7z archive
+        self.blockSize = None #--archives only - set here and there
         self.fileSizeCrcs = [] #--list of tuples for _all_ files in installer
         #--For InstallerProject's, cache if refresh projects is skipped
         self.src_sizeCrcDate = bolt.LowerDict()
@@ -1031,8 +1031,6 @@ class Installer(ListInfo):
         material from the archive. Needed for projects and to repack archives
         when syncing from Data."""
         if not self.num_of_files: return
-        fn_archive, archiveType, solid = compressionSettings(
-            fn_archive, blockSize, isSolid)
         outDir = bass.dirs[u'installers']
         realOutFile = outDir.join(fn_archive)
         project = outDir.join(project)
@@ -1045,12 +1043,9 @@ class Installer(ListInfo):
                 out.write(u'*meta.ini\n')
                 out.write(u'--*\\')
         #--Compress
-        command = (u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" '
-                   u'-x@%s -scsUTF-8 -sccUTF-8' % (
-                       archives.exe7z, realOutFile.temp, archiveType, solid,
-                       outDir, project, self.tempList))
         try:
-            compress7z(command, realOutFile, fn_archive, project, progress)
+            compress7z(realOutFile, fn_archive, project, progress,
+                is_solid=isSolid, temp_list=self.tempList, blockSize=blockSize)
         finally:
             self.tempList.remove()
 
@@ -1368,7 +1363,7 @@ class InstallerArchive(Installer):
         SubProgress in.
         fileNames: File names (not paths)."""
         if not fileNames:
-            raise ArgumentError(u'No files to extract for %s.' % self)
+            raise ArgumentError(f'No files to extract for {self}.')
         # expand wildcards in fileNames to get actual count of files to extract
         #--Dump file list
         with self.tempList.open(u'w', encoding=u'utf8') as out:
@@ -1926,8 +1921,7 @@ class InstallersData(DataStore):
                         installer=None, pending=None, show_warning=None,
                         position=-1, crc_installer=None):
         try:
-            converter.apply(destArchive, crc_installer,
-                            bolt.SubProgress(progress, 0.0, 0.99),
+            converter.apply(destArchive, crc_installer, progress,
                             embedded=installer.crc if installer else 0)
             #--Add the new archive to Bash
             if destArchive not in self:

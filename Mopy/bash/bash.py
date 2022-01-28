@@ -260,6 +260,11 @@ def main(opts):
 
     :param opts: command line arguments
     :type opts: Namespace"""
+    if (os_system := platform.system()) != 'Windows' and not opts.unix:
+        # Linux is still mostly broken, so raise on import
+        raise ImportError(f'Wrye Bash only partially supports {os_system} at '
+                          f"the moment. If you know what you're doing, use "
+                          f"the --unix switch to bypass this raise statement.")
     # Change working dir and logging
     opts.debug = opts.debug or bass.is_standalone # always enable bugdump for standalone
     _early_setup(opts.debug)
