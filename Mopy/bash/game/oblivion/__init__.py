@@ -182,7 +182,7 @@ class OblivionGameInfo(PatchGame):
         u'SEWorldTests', u'TweakActors', u'TweakAssorted', u'TweakClothes',
         u'TweakNames', u'TweakSettings', u'ImportRaces', u'ImportRacesSpells',
         u'ImportRacesRelations', u'EyeChecker', u'TweakRaces', u'RaceChecker',
-        u'TimescaleChecker',
+        'TimescaleChecker', 'ImportEnchantments',
     }
 
     weaponTypes = (

@@ -396,7 +396,7 @@ class NamesTweak_Ingestibles_Fo3(_ANamesTweak_Ingestibles):
 #------------------------------------------------------------------------------
 _re_old_magic_label = re.compile(r'^(\([ACDIMR]\d\)|\w{3,6}:) ', re.U)
 
-class NamesTweak_Scrolls(_AMgefNamesTweak, IndexingTweak):
+class NamesTweak_Scrolls(IndexingTweak, _AMgefNamesTweak):
     """Names tweaker for scrolls."""
     tweak_read_classes = b'BOOK',
     tweak_name = _(u'Sort: Notes/Scrolls')
@@ -594,7 +594,7 @@ class NamesTweak_AmmoWeight(_ANamesTweak_AmmoWeight):
 class NamesTweak_AmmoWeight_Fnv(NamesTweak_AmmoWeight):
     _example_item = _(u'BB')
 
-class NamesTweak_AmmoWeight_Fo3(NamesTweak_AmmoWeight_Fnv, IndexingTweak):
+class NamesTweak_AmmoWeight_Fo3(IndexingTweak, NamesTweak_AmmoWeight_Fnv):
     """FO3 requires FWE (FO3 Wanderers Edition)."""
     tweak_tip = _(u'Requires FWE. Appends the FWE weight of ammunition to the '
                   u'end of the ammunition name.')
