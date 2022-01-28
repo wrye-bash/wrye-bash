@@ -1552,15 +1552,15 @@ class MreAstp(MelRecord):
     """Association Type."""
     rec_sig = b'ASTP'
 
-    AstpTypeFlags = Flags.from_names('related')
+    _astp_flags = Flags.from_names('family_association')
 
     melSet = MelSet(
         MelEdid(),
-        MelString(b'MPRT','maleParent'),
-        MelString(b'FPRT','femaleParent'),
-        MelString(b'MCHT','maleChild'),
-        MelString(b'FCHT','femaleChild'),
-        MelUInt32Flags(b'DATA', u'flags', AstpTypeFlags),
+        MelString(b'MPRT', 'male_parent_title'),
+        MelString(b'FPRT', 'female_parent_title'),
+        MelString(b'MCHT', 'male_child_title'),
+        MelString(b'FCHT', 'female_child_title'),
+        MelUInt32Flags(b'DATA', 'association_type_flags', _astp_flags),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2344,7 +2344,7 @@ class MreFlor(MelRecord):
         MelDestructible(),
         MelKeywords(),
         MelBase(b'PNAM','unknown01'),
-        MelLString(b'RNAM','activateTextOverride'),
+        MelLString(b'RNAM', 'activate_text_override'),
         MelBase(b'FNAM','unknown02'),
         MelFid(b'PFIG','ingredient'),
         MelFid(b'SNAM','harvestSound'),
@@ -3551,7 +3551,7 @@ class MreNpc(MreActorBase):
         MelKeywords(),
         MelFid(b'CNAM', 'iclass'),
         MelFull(),
-        MelLString(b'SHRT', 'shortName'),
+        MelLString(b'SHRT', 'short_name'),
         MelBase(b'DATA', 'marker'),
         MelStruct(b'DNAM', [u'36B', u'H', u'H', u'H', u'2s', u'f', u'B', u'3s'],
             'oneHandedSV','twoHandedSV','marksmanSV','blockSV','smithingSV',

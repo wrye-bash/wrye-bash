@@ -499,16 +499,17 @@ inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
 # Import Text
 #------------------------------------------------------------------------------
 text_types = {
-    b'AVIF': (u'description',),
-    b'BOOK': (u'book_text',),
-    b'CLAS': (u'description',),
-    b'LSCR': (u'description',),
-    b'MESG': (u'description',),
-    b'MGEF': (u'description',),
-    b'NOTE': (u'textTopic',),
-    b'PERK': (u'description',),
+    b'AMMO': ('short_name',),
+    b'AVIF': ('description', 'short_name'),
+    b'BOOK': ('book_text',),
+    b'CLAS': ('description',),
+    b'LSCR': ('description',),
+    b'MESG': ('description',),
+    b'MGEF': ('description',),
+    b'NOTE': ('textTopic',),
+    b'PERK': ('description',),
     # omit RACE - covered by R.Description
-    b'TERM': (u'description',),
+    b'TERM': ('description',),
 }
 
 #------------------------------------------------------------------------------

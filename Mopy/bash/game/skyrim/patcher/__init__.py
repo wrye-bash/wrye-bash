@@ -674,25 +674,29 @@ keywords_types = (b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'FLOR',
 # Import Text
 #------------------------------------------------------------------------------
 text_types = {
-    b'ACTI': (u'activate_text_override',),
-    b'ALCH': (u'description',),
-    b'AMMO': (u'description',),
-    b'APPA': (u'description',),
-    b'ARMO': (u'description',),
-    b'AVIF': (u'description',),
-    b'BOOK': (u'description', u'book_text'),
-    b'CLAS': (u'description',),
-    #b'COLL': (u'description',), # seems fairly useless to patch this
-    b'LSCR': (u'description',),
-    b'MESG': (u'description',),
-    b'MGEF': (u'magic_item_description',),
-    b'PERK': (u'description',),
-    #b'QUST': (u'description',), # no other patchers and seems unused
+    b'ACTI': ('activate_text_override',),
+    b'ALCH': ('description',),
+    b'AMMO': ('description', 'short_name'),
+    b'APPA': ('description',),
+    b'ARMO': ('description',),
+    b'ASTP': ('male_parent_title', 'female_parent_title', 'male_child_title',
+              'female_child_title'),
+    b'AVIF': ('description', 'abbreviation'),
+    b'BOOK': ('description', 'book_text'),
+    b'CLAS': ('description',),
+    b'COLL': ('description',),
+    b'FLOR': ('activate_text_override',),
+    b'LSCR': ('description',),
+    b'MESG': ('description',),
+    b'MGEF': ('magic_item_description',),
+    b'NPC_': ('short_name',),
+    b'PERK': ('description',),
+    b'QUST': ('description',),
     # omit RACE - covered by R.Description
-    b'SCRL': (u'description',),
-    b'SHOU': (u'description',),
-    b'SPEL': (u'description',),
-    b'WEAP': (u'description',),
+    b'SCRL': ('description',),
+    b'SHOU': ('description',),
+    b'SPEL': ('description',),
+    b'WEAP': ('description',),
 }
 
 #------------------------------------------------------------------------------

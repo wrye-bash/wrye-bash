@@ -323,6 +323,11 @@ class MelLinkedDecals(MelSorted):
             MelStruct(b'XDCR', [u'2I'], (FID, u'reference'), u'unknown'),
         ), sort_by_attrs=u'reference')
 
+class MelActivationPrompt(MelString):
+    """Handles the common XATO subrecord, introduced in FNV."""
+    def __init__(self):
+        super().__init__(b'XATO', 'activation_prompt')
+
 #------------------------------------------------------------------------------
 # Fallout3 Records ------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -371,7 +376,7 @@ class MreAchr(MelRecord):
         MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue','linkColorUnused1',
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue','linkColorUnused2'),
         MelActivateParents(),
-        fnv_only(MelString(b'XATO', 'activationPrompt')),
+        fnv_only(MelActivationPrompt()),
         MelEnableParent(),
         MelFid(b'XEMI', u'emittance'),
         MelFid(b'XMBR', u'multiboundReference'),
@@ -410,7 +415,7 @@ class MreAcre(MelRecord):
         MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue','linkColorUnused1',
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue','linkColorUnused2'),
         MelActivateParents(),
-        fnv_only(MelString(b'XATO', 'activationPrompt')),
+        fnv_only(MelActivationPrompt()),
         MelEnableParent(),
         MelFid(b'XEMI', u'emittance'),
         MelFid(b'XMBR', u'multiboundReference'),
@@ -437,7 +442,7 @@ class MreActi(MelRecord):
         fnv_only(MelFid(b'INAM', 'radioTemplate')),
         MelFid(b'RNAM', u'radioStation'),
         MelFid(b'WNAM', u'waterType'),
-        fnv_only(MelString(b'XATO', 'activationPrompt')),
+        fnv_only(MelActivationPrompt()),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -505,8 +510,8 @@ class MreAmmo(MelRecord):
             b'DAT2', [u'2I', u'f', u'I', u'f'], 'projPerShot',
             (FID, u'projectile'), 'weight', (FID, 'consumedAmmo'),
             'consumedPercentage', old_versions={'2If'})),
-        MelString(b'ONAM','shortName'),
-        fnv_only(MelString(b'QNAM', 'abbrev')),
+        MelString(b'ONAM', 'short_name'),
+        fnv_only(MelString(b'QNAM', 'abbreviation')),
         fnv_only(MelFids(b'RCIL', 'effects')),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -631,7 +636,7 @@ class MreAvif(MelRecord):
         MelFull(),
         MelDescription(),
         MelIcons(),
-        MelString(b'ANAM','shortName'),
+        MelString(b'ANAM', 'short_name'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2340,7 +2345,7 @@ class MrePgre(MelRecord):
         MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue','linkColorUnused1',
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue','linkColorUnused2'),
         MelActivateParents(),
-        fnv_only(MelString(b'XATO', 'activationPrompt')),
+        fnv_only(MelActivationPrompt()),
         MelEnableParent(),
         MelFid(b'XEMI', u'emittance'),
         MelFid(b'XMBR','multiboundReference'),
@@ -2378,7 +2383,7 @@ class MrePmis(MelRecord):
         MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue','linkColorUnused1',
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue','linkColorUnused2'),
         MelActivateParents(),
-        fnv_only(MelString(b'XATO', 'activationPrompt')),
+        fnv_only(MelActivationPrompt()),
         MelEnableParent(),
         MelFid(b'XEMI', u'emittance'),
         MelFid(b'XMBR','multiboundReference'),
@@ -2720,7 +2725,7 @@ class MreRefr(MelRecord):
         MelOptStruct(b'XCLP', [u'8B'],'linkStartColorRed','linkStartColorGreen','linkStartColorBlue','linkColorUnused1',
                      'linkEndColorRed','linkEndColorGreen','linkEndColorBlue','linkColorUnused2'),
         MelActivateParents(),
-        fnv_only(MelString(b'XATO', 'activationPrompt')),
+        fnv_only(MelActivationPrompt()),
         MelEnableParent(),
         MelFid(b'XEMI', u'emittance'),
         MelFid(b'XMBR','multiboundReference'),

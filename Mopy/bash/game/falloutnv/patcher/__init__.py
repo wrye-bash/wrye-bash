@@ -270,8 +270,10 @@ graphicsTypes.update({
 # Import Text
 #------------------------------------------------------------------------------
 text_types.update({
-    b'CHAL': (u'description',),
-    b'IMOD': (u'description',),
+    b'ACTI': ('activation_prompt',),
+    b'AMMO': ('short_name', 'abbreviation'),
+    b'CHAL': ('description',),
+    b'IMOD': ('description',),
 })
 
 #------------------------------------------------------------------------------
