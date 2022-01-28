@@ -43,7 +43,8 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelUInt32Flags, MelOwnership, MelDebrData, get_structs, MelWeatherTypes, \
     MelActorSounds, MelFactionRanks, MelSorted, vmad_properties_key, \
     vmad_qust_fragments_key, vmad_fragments_key, vmad_script_key, \
-    vmad_qust_aliases_key, MelReflectedRefractedBy, perk_effect_key
+    vmad_qust_aliases_key, MelReflectedRefractedBy, perk_effect_key, \
+    MelValueWeight
 from ...exception import ModError, ModSizeError, StateError
 
 # Set MelModel in brec but only if unset, otherwise we are being imported from
@@ -1450,7 +1451,7 @@ class MreAppa(MelRecord):
         MelDropSound(),
         MelUInt32(b'QUAL', 'quality'),
         MelDescription(),
-        MelStruct(b'DATA', [u'I', u'f'],'value','weight'),
+        MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1511,7 +1512,7 @@ class MreArmo(MelRecord):
         MelKeywords(),
         MelDescription(),
         MelFids(b'MODL','addons'),
-        MelStruct(b'DATA', [u'i', u'f'],'value','weight'),
+        MelValueWeight(),
         MelSInt32(b'DNAM', 'armorRating'),
         MelFid(b'TNAM','templateArmor'),
     )
@@ -2781,7 +2782,7 @@ class MreIngr(MelRecord):
         MelEquipmentType(),
         MelPickupSound(),
         MelDropSound(),
-        MelStruct(b'DATA', [u'i', u'f'],'value','weight'),
+        MelValueWeight(),
         MelStruct(b'ENIT', [u'i', u'I'],'ingrValue',(IngrTypeFlags, u'flags'),),
         MelEffects(),
     )
@@ -2840,7 +2841,7 @@ class MreKeym(MelRecord):
         MelPickupSound(),
         MelDropSound(),
         MelKeywords(),
-        MelStruct(b'DATA', [u'i', u'f'],'value','weight'),
+        MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3298,7 +3299,7 @@ class MreMisc(MelRecord):
         MelPickupSound(),
         MelDropSound(),
         MelKeywords(),
-        MelStruct(b'DATA', [u'I', u'f'],'value','weight'),
+        MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4759,7 +4760,7 @@ class MreSlgm(MelRecord):
         MelPickupSound(),
         MelDropSound(),
         MelKeywords(),
-        MelStruct(b'DATA', [u'I', u'f'],'value','weight'),
+        MelValueWeight(),
         MelUInt8(b'SOUL', u'soul'),
         MelUInt8(b'SLCP', u'capacity', 1),
         MelFid(b'NAM0','linkedTo'),

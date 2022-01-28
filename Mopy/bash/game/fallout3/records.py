@@ -44,7 +44,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
-    MelReflectedRefractedBy
+    MelReflectedRefractedBy, MelValueWeight
 from ...exception import ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -874,7 +874,7 @@ class MreCobj(MelRecord):
         MelScript(),
         MelPickupSound(),
         MelDropSound(),
-        MelStruct(b'DATA', [u'i', u'f'],'value','weight'),
+        MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1686,7 +1686,7 @@ class MreKeym(MelRecord):
         MelDestructible(),
         MelPickupSound(),
         MelDropSound(),
-        MelStruct(b'DATA', [u'i', u'f'],'value','weight'),
+        MelValueWeight(),
         fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1891,7 +1891,7 @@ class MreMisc(MelRecord):
         MelDestructible(),
         MelPickupSound(),
         MelDropSound(),
-        MelStruct(b'DATA', [u'i', u'f'],'value','weight'),
+        MelValueWeight(),
         fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
     )
     __slots__ = melSet.getSlotsUsed()

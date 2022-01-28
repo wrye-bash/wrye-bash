@@ -164,8 +164,9 @@ class MreFlst(MelRecord):
         #--Remove items based on other.removes
         if other.de_records:
             removeItems = self.items & other.de_records
-            self.formIDInList = [fi for fi in self.formIDInList if fi not in removeItems]
-            self.items = (self.items | other.de_records)
+            self.formIDInList = [fi for fi in self.formIDInList
+                                 if fi not in removeItems]
+            self.items |= other.de_records
         #--Add new items from other
         newItems = set()
         formIDInListAppend = self.formIDInList.append

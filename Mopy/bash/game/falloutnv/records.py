@@ -30,7 +30,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
     MelUInt32, MelBounds, null1, MelTruncatedStruct, MelIcons, MelIcon, \
     MelIco2, MelEdid, MelFull, MelArray, MelObject, MelNull, MelScript, \
     MelDescription, MelPickupSound, MelDropSound, MelUInt8Flags, MelSInt32, \
-    MelSorted
+    MelSorted, MelValueWeight
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -283,7 +283,7 @@ class MreImod(MelRecord):
         MelDestructible(),
         MelPickupSound(),
         MelDropSound(),
-        MelStruct(b'DATA', [u'I', u'f'],'value','weight'),
+        MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
 

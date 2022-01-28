@@ -42,7 +42,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelDescription, BipedFlags, MelSpells, MelUInt8Flags, MelUInt32Flags, \
     SignatureDecider, MelRaceData, MelFactions, MelActorSounds, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
-    MelEnchantment
+    MelEnchantment, MelValueWeight
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -745,7 +745,7 @@ class MreClot(MelRecord):
         MelModel(u'femaleBody', 3),
         MelModel(u'femaleWorld', 4),
         MelIco2(u'femaleIconPath'),
-        MelStruct(b'DATA', [u'I', u'f'],'value','weight'),
+        MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1135,7 +1135,7 @@ class MreKeym(MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelStruct(b'DATA', [u'i', u'f'],'value','weight'),
+        MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1303,7 +1303,7 @@ class MreMisc(MelRecord):
         MelIcon(),
         MelScript(),
         MelUnion({
-            False: MelStruct(b'DATA', [u'i', u'f'], u'value', u'weight'),
+            False: MelValueWeight(),
             True: MelStruct(b'DATA', [u'2I'], (FID, u'value'), u'weight'),
         }, decider=FlagDecider(u'flags1', [u'borderRegion', u'turnFireOff'])),
     )
@@ -1789,7 +1789,7 @@ class MreSlgm(MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelStruct(b'DATA', [u'I', u'f'],'value','weight'),
+        MelValueWeight(),
         MelUInt8(b'SOUL', u'soul'),
         MelUInt8(b'SLCP', u'capacity', 1),
     )

@@ -819,3 +819,11 @@ class MelReflectedRefractedBy(MelSorted):
                 MelStruct(b'XPWR', [u'2I'], (FID, u'waterReference'),
                           (self._watertypeFlags, u'waterFlags')),
         ), sort_by_attrs=u'waterReference')
+
+#------------------------------------------------------------------------------
+class MelValueWeight(MelStruct):
+    """Handles a common variant of the DATA subrecord that consists of one
+    integer (the value of an object) and one float (the weight of an
+    object)."""
+    def __init__(self):
+        super().__init__(b'DATA', ['I', 'f'], 'value', 'weight')
