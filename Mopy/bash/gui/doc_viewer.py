@@ -28,8 +28,12 @@ __author__ = u'Infernio'
 # Try to import html2 webview, may not be available everywhere
 try:
     import wx.html2 as _wx_html2
+    if _wx_html2.WebView.IsBackendAvailable(_wx_html2.WebViewBackendEdge):
+        _browser_backend = _wx_html2.WebViewBackendEdge
+    else:
+        _browser_backend = _wx_html2.WebViewBackendDefault
 except ImportError:
-    _wx_html2 = None
+    _wx_html2 = _browser_backend = None
 # Try to import the PDF viewer, may not be available everywhere
 try:
     # wx.lib.pdfviewer uses a raw print statment, UGH!
@@ -92,7 +96,7 @@ class WebViewer(_AComponent):
         :param buttons_parent: The object that the navigation buttons belong
                                to. If None, the same parent will be used."""
         if buttons_parent is None: buttons_parent = parent
-        super(WebViewer, self).__init__(parent)
+        super().__init__(parent, backend=_browser_backend)
         self._back_button = BackwardButton(buttons_parent)
         self._back_button.on_clicked.subscribe(self.go_back)
         self._forward_button = ForwardButton(buttons_parent)
@@ -103,16 +107,8 @@ class WebViewer(_AComponent):
         self._on_new_window = self._evt_handler(
             _wx_html2.EVT_WEBVIEW_NEWWINDOW, lambda event: [event.GetURL()])
         self._on_new_window.subscribe(self._handle_new_window_opened)
-        self._on_page_loaded = self._evt_handler(_wx_html2.EVT_WEBVIEW_LOADED)
-        self._on_page_loaded.subscribe(self._handle_page_loaded)
-
-    def _handle_page_loaded(self):
-        """Internal method used as a callback to update the navigation buttons
-        in response to the user navigating inside the WebView."""
-        # TODO(inf) On wx4, remove about:blank entries from history here
-        # for history_entry in self._native_widget.GetBackwardHistory():
-        #     if ...
-        self.update_buttons()
+        self._on_loading = self._evt_handler(_wx_html2.EVT_WEBVIEW_NAVIGATED)
+        self._on_loading.subscribe(self.update_buttons)
 
     @staticmethod
     def _handle_new_window_opened(new_url): # type: (str) -> None

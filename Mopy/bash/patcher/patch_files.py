@@ -85,9 +85,9 @@ class PatchFile(ModFile):
             log.setHeader(u'=== ' + _(u'Load Error Mods'))
             log(_(u'The following mods had load errors and were skipped while '
                   u'building the patch. Most likely this problem is due to a '
-                  u'badly formatted mod. For more info, see [['
-                  u'http://www.uesp.net/wiki/Tes4Mod:Wrye_Bash/Bashed_Patch'
-                  u'#Error_Messages|Bashed Patch: Error Messages]].'))
+                  u'badly formatted mod. For more info, generate a '
+                  u'[[https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D'
+                  u'-Reporting-a-bug#the-bashbugdumplog|BashBugDump]].'))
             for (mod, e) in self.loadErrorMods: log(
                 u'* %s' % mod + u': %s' % e)
         if self.worldOrphanMods:
