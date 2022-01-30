@@ -271,20 +271,22 @@ pricesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'CLOT', b'INGR',
 #------------------------------------------------------------------------------
 # Import Stats
 #------------------------------------------------------------------------------
+# The contents of these tuples has to stay fixed because of CSV parsers
 statsTypes = {
-    b'ALCH':(u'eid', u'weight', u'value'),
-    b'AMMO':(u'eid', u'weight', u'value', u'damage', u'speed', u'enchantPoints'),
-    b'APPA':(u'eid', u'weight', u'value', u'quality'),
-    b'ARMO':(u'eid', u'weight', u'value', u'health', u'strength'),
-    b'BOOK':(u'eid', u'weight', u'value', u'enchantPoints'),
-    b'CLOT':(u'eid', u'weight', u'value', u'enchantPoints'),
-    b'INGR':(u'eid', u'weight', u'value'),
-    b'KEYM':(u'eid', u'weight', u'value'),
-    b'LIGH':(u'eid', u'weight', u'value', u'duration'),
-    b'MISC':(u'eid', u'weight', u'value'),
-    b'SGST':(u'eid', u'weight', u'value', u'uses'),
-    b'SLGM':(u'eid', u'weight', u'value'),
-    b'WEAP':(u'eid', u'weight', u'value', u'health', u'damage', u'speed', u'reach', u'enchantPoints'),
+    b'ALCH': ('eid', 'weight', 'value'),
+    b'AMMO': ('eid', 'weight', 'value', 'damage', 'speed', 'enchantPoints'),
+    b'APPA': ('eid', 'weight', 'value', 'quality'),
+    b'ARMO': ('eid', 'weight', 'value', 'health', 'strength'),
+    b'BOOK': ('eid', 'weight', 'value', 'enchantPoints'),
+    b'CLOT': ('eid', 'weight', 'value', 'enchantPoints'),
+    b'INGR': ('eid', 'weight', 'value'),
+    b'KEYM': ('eid', 'weight', 'value'),
+    b'LIGH': ('eid', 'weight', 'value', 'duration'),
+    b'MISC': ('eid', 'weight', 'value'),
+    b'SGST': ('eid', 'weight', 'value', 'uses'),
+    b'SLGM': ('eid', 'weight', 'value'),
+    b'WEAP': ('eid', 'weight', 'value', 'health', 'damage', 'speed', 'reach',
+              'enchantPoints'),
 }
 
 #------------------------------------------------------------------------------

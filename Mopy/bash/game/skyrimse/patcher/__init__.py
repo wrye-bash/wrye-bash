@@ -26,3 +26,10 @@ data structures that are dynamically set on a per game basis in bush."""
 from ...skyrim.patcher import *
 
 assorted_tweaks |= {u'AssortedTweak_ArrowWeight'}
+
+#------------------------------------------------------------------------------
+# Import Stats
+#------------------------------------------------------------------------------
+statsTypes.update({
+    b'AMMO': ('eid', 'value', 'damage', 'weight'),
+})

@@ -2928,7 +2928,6 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <!-- TODO(inf) Stats patches EDIDs. Need to edit all the game-specific ones to mention this. -->
             <td>Stats</td>
             <td>Modifies the stats (e.g. weight, value, etc.) of items and other objects.</td>
             <td>See the game-specific sections below for record types:
@@ -3468,89 +3467,141 @@ C.Location, -C.LockList
                 <ul>
                     <li>(ALCH) Potion:
                         <ul>
+                            <li>(EDID) Editor ID</li>
                             <li>(DATA) Weight</li>
                             <li>(ENIT) Value</li>
                         </ul>
                     </li>
                     <li>(AMMO) Ammunition:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Damage</li>
-                            <li>(DATA) Speed</li>
+                            <li>(EDID) Editor ID</li>
                             <li>(ANAM) Enchantment Points</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Speed</li>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                    <li>Damage</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(APPA) Alchemical Apparatus:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Quality</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                    <li>Quality</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(ARMO) Armor:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Health</li>
-                            <li>(DATA) Strength</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Strength</li>
+                                    <li>Value</li>
+                                    <li>Health</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(BOOK) Book:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
                             <li>(ANAM) Enchantment Points</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(CLOT) Clothing:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
                             <li>(ANAM) Enchantment Points</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(INGR) Ingredient:
                         <ul>
+                            <li>(EDID) Editor ID</li>
                             <li>(DATA) Weight</li>
                             <li>(ENIT) Value</li>
                         </ul>
                     </li>
                     <li>(KEYM) Key:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(LIGH) Light:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Duration</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Duration</li>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(MISC) Misc. Item:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(SGST) Sigil Stone:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Uses</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Uses</li>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(WEAP) Weapon:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Health</li>
-                            <li>(DATA) Damage</li>
-                            <li>(DATA) Speed</li>
-                            <li>(DATA) Reach</li>
+                            <li>(EDID) Editor ID</li>
                             <li>(ANAM) Enchantment Points</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Speed</li>
+                                    <li>Reach</li>
+                                    <li>Value</li>
+                                    <li>Health</li>
+                                    <li>Weight</li>
+                                    <li>Damage</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -4571,7 +4622,7 @@ C.Location, -C.LockList
                     </li>
                     <li>(EXPL) Explosion:
                         <ul>
-                            <li>DATA
+                            <li>(DATA)
                                 <ul>
                                     <li>Sound Level</li>
                                     <li>Sound 1</li>
@@ -4683,41 +4734,72 @@ C.Location, -C.LockList
                 <ul>
                     <li>(ALCH) Ingestible:
                         <ul>
+                            <li>(EDID) Editor ID</li>
                             <li>(DATA) Weight</li>
                             <li>(ENIT) Value</li>
                         </ul>
                     </li>
                     <li>(AMMO) Ammunition:
                         <ul>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Speed</li>
-                            <li>(DATA) Clip Rounds</li>
-                            <li>(DAT2) Proj. Per Shot - <strong>Fallout&colon; New Vegas only</strong></li>
-                            <li>(DAT2) Weight - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Speed</li>
+                                    <li>Value</li>
+                                    <li>Clip Rounds</li>
+                                </ul>
+                            </li>
+                            <li>(DAT2) - <strong>Fallout&colon; New Vegas only</strong>
+                                <ul>Proj. Per Shot</ul>
+                                <ul>Weight</ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(ARMA) Armor Addon:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Max Condition</li>
-                            <li>(DNAM) DR</li>
-                            <li>(DNAM) DT - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Max Condition</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
+                            <li>(DNAM)
+                                <ul>
+                                    <li>DR</li>
+                                    <li>DT - <strong>Fallout&colon; New Vegas only</strong></li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(ARMO) Armor:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Max Condition</li>
-                            <li>(DNAM) DR</li>
-                            <li>(DNAM) DT - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Max Condition</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
+                            <li>(DNAM)
+                                <ul>
+                                    <li>DR</li>
+                                    <li>DT - <strong>Fallout&colon; New Vegas only</strong></li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(BOOK) Book:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(INGR) Ingredient:
@@ -4728,37 +4810,53 @@ C.Location, -C.LockList
                     </li>
                     <li>(KEYM) Key:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(LIGH) Light:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Time</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Time</li>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(MISC) Misc. Item:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(WEAP) Weapon:
                         <ul>
+                            <li>(EDID) Editor ID</li>
                             <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
                                     <li>Health</li>
+                                    <li>Weight</li>
                                     <li>Base Damage</li>
                                     <li>Clip Size</li>
                                 </ul>
                             </li>
                             <li>(DNAM)
                                 <ul>
-                                    <li>Animation multiplier</li>
+                                    <li>Animation Multiplier</li>
                                     <li>Reach</li>
                                     <li>Ammo Use</li>
                                     <li>Min Spread</li>
@@ -4801,7 +4899,7 @@ C.Location, -C.LockList
                                 <ul>
                                     <li>Skill</li>
                                     <li>Dam. Mult</li>
-                                    <li>AP (Action points)</li>
+                                    <li>AP</li>
                                 </ul>
                             </li>
                         </ul>
@@ -5519,36 +5617,41 @@ C.Location, -C.LockList
                 <ul>
                     <li>(ALCH) Ingestible:
                         <ul>
+                            <li>(EDID) Editor ID</li>
                             <li>(DATA) Weight</li>
                             <li>(ENIT) Value</li>
                         </ul>
                     </li>
                     <li>(AMMO) Ammunition:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Damage</li>
+                                    <li>Value</li>
+                                    <li>Weight - <strong>Skyrim&colon; Special Edition only</strong></li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(APPA) Alchemical Apparatus:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(ARMO) Armor:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                             <li>(DNAM) Armor Rating</li>
@@ -5556,71 +5659,79 @@ C.Location, -C.LockList
                     </li>
                     <li>(BOOK) Book:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(INGR) Ingredient:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(KEYM) Key:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(LIGH) Light:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
-                                    <li>Value</li>
                                     <li>Time</li>
+                                    <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(MISC) Misc. Item:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(SLGM) Soul Gem:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(WEAP) Weapon:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(EAMT) Enchantment Amount</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                     <li>Damage</li>
                                 </ul>
                             </li>
@@ -5631,7 +5742,6 @@ C.Location, -C.LockList
                                     <li>Stagger</li>
                                 </ul>
                             </li>
-                            <li>(EAMT) Enchantment Amount</li>
                             <li>(CRTD) Critical Data
                                 <ul>
                                     <li>Damage</li>

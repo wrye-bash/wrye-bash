@@ -463,21 +463,22 @@ pricesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'INGR', b'KEYM',
 #------------------------------------------------------------------------------
 # Import Stats
 #------------------------------------------------------------------------------
+# The contents of these tuples has to stay fixed because of CSV parsers
 statsTypes = {
-        b'ALCH':(u'eid', u'weight', u'value'),
-        b'AMMO':(u'eid', u'value', u'damage'),
-        b'APPA':(u'eid', u'weight', u'value'),
-        b'ARMO':(u'eid', u'weight', u'value', u'armorRating'),
-        b'BOOK':(u'eid', u'weight', u'value'),
-        b'INGR':(u'eid', u'weight', u'value'),
-        b'KEYM':(u'eid', u'weight', u'value'),
-        b'LIGH':(u'eid', u'weight', u'value', u'duration'),
-        b'MISC':(u'eid', u'weight', u'value'),
-        b'SLGM':(u'eid', u'weight', u'value'),
-        b'WEAP':(u'eid', u'weight', u'value', u'damage', u'speed', u'reach',
-                 u'enchantPoints', u'stagger', u'critDamage',
-                 u'criticalMultiplier', u'criticalEffect',),
-    }
+    b'ALCH': ('eid', 'weight', 'value'),
+    b'AMMO': ('eid', 'value', 'damage'),
+    b'APPA': ('eid', 'weight', 'value'),
+    b'ARMO': ('eid', 'weight', 'value', 'armorRating'),
+    b'BOOK': ('eid', 'weight', 'value'),
+    b'INGR': ('eid', 'weight', 'value'),
+    b'KEYM': ('eid', 'weight', 'value'),
+    b'LIGH': ('eid', 'weight', 'value', 'duration'),
+    b'MISC': ('eid', 'weight', 'value'),
+    b'SLGM': ('eid', 'weight', 'value'),
+    b'WEAP': ('eid', 'weight', 'value', 'damage', 'speed', 'reach',
+              'enchantPoints', 'stagger', 'critDamage', 'criticalMultiplier',
+              'criticalEffect'),
+}
 
 #------------------------------------------------------------------------------
 # Import Sounds

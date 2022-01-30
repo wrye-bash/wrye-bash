@@ -305,28 +305,28 @@ pricesTypes = {b'ALCH', b'AMMO', b'ARMA', b'ARMO', b'BOOK', b'INGR', b'KEYM',
 #------------------------------------------------------------------------------
 # Import Stats
 #------------------------------------------------------------------------------
+# The contents of these tuples has to stay fixed because of CSV parsers
 statsTypes = {
-    b'ALCH': (u'eid', u'weight', u'value'),
-    b'AMMO': (u'eid', u'value', u'speed', u'clipRounds'),
-    b'ARMA': (u'eid', u'weight', u'value', u'health', u'dr'),
-    b'ARMO': (u'eid', u'weight', u'value', u'health', u'dr'),
-    b'BOOK': (u'eid', u'weight', u'value'),
-    b'INGR': (u'eid', u'weight', u'value'),
-    b'KEYM': (u'eid', u'weight', u'value'),
-    b'LIGH': (u'eid', u'weight', u'value', u'duration'),
-    b'MISC': (u'eid', u'weight', u'value'),
+    b'ALCH': ('eid', 'weight', 'value'),
+    b'AMMO': ('eid', 'value', 'speed', 'clipRounds'),
+    b'ARMA': ('eid', 'weight', 'value', 'health', 'dr'),
+    b'ARMO': ('eid', 'weight', 'value', 'health', 'dr'),
+    b'BOOK': ('eid', 'weight', 'value'),
+    b'INGR': ('eid', 'weight', 'value'),
+    b'KEYM': ('eid', 'weight', 'value'),
+    b'LIGH': ('eid', 'weight', 'value', 'duration'),
+    b'MISC': ('eid', 'weight', 'value'),
     b'WEAP': (
-        u'eid', u'weight', u'value', u'health', u'damage', u'clipsize',
-        u'animationMultiplier', u'reach', u'ammoUse', u'minSpread', u'spread',
-        u'sightFov', u'baseVatsToHitChance', u'projectileCount', u'minRange',
-        u'maxRange', u'animationAttackMultiplier', u'fireRate',
-        u'overrideActionPoint', u'rumbleLeftMotorStrength',
-        u'rumbleRightMotorStrength', u'rumbleDuration',
-        u'overrideDamageToWeaponMult', u'attackShotsPerSec', u'reloadTime',
-        u'jamTime', u'aimArc', u'rumbleWavelength', u'limbDmgMult',
-        u'sightUsage', u'semiAutomaticFireDelayMin',
-        u'semiAutomaticFireDelayMax', u'criticalDamage',
-        u'criticalMultiplier'),
+        'eid', 'weight', 'value', 'health', 'damage', 'clipsize',
+        'animationMultiplier', 'reach', 'ammoUse', 'minSpread', 'spread',
+        'sightFov', 'baseVatsToHitChance', 'projectileCount', 'minRange',
+        'maxRange', 'animationAttackMultiplier', 'fireRate',
+        'overrideActionPoint', 'rumbleLeftMotorStrength',
+        'rumbleRightMotorStrength', 'rumbleDuration',
+        'overrideDamageToWeaponMult', 'attackShotsPerSec', 'reloadTime',
+        'jamTime', 'aimArc', 'rumbleWavelength', 'limbDmgMult', 'sightUsage',
+        'semiAutomaticFireDelayMin', 'semiAutomaticFireDelayMax',
+        'criticalDamage', 'criticalMultiplier'),
 }
 
 #------------------------------------------------------------------------------
