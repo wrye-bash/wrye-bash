@@ -58,7 +58,7 @@ def compress7z(full_dest, rel_dest, srcDir, progress=None, *,
         *solid.split(), u'-y', u'-r', # quiet, recursive
         *out_args, u'-scsUTF-8', u'-sccUTF-8']  # encode output in UTF-8
     if progress is not None: #--Used solely for the progress bar
-        length = sum(map(len, (files for x, y, files in os.walk(srcDir.s))))
+        length = sum(map(len, (files for x, y, files in os.walk(srcDir))))
         progress(0, f'{rel_dest}\n' + _(u'Compressing files...'))
         progress.setFull(1 + length)
     #--Pack the files

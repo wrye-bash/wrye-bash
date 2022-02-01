@@ -88,7 +88,7 @@ def save_tags_to_dir(plugin_name, plugin_tag_diff):
         by its description and the LOOT masterlist / userlist.."""
     tag_files_dir = bass.dirs[u'tag_files']
     tag_files_dir.makedirs()
-    tag_file = tag_files_dir.join(plugin_name.body + u'.txt')
+    tag_file = tag_files_dir.join(plugin_name.sbody + u'.txt')
     # Calculate the diff and ignore the minus when sorting the result
     tag_diff_add, tag_diff_del = plugin_tag_diff
     processed_diff = sorted(tag_diff_add | {u'-' + t for t in tag_diff_del},

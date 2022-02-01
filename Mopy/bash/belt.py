@@ -276,11 +276,11 @@ class PageFinish(PageInstaller):
     """Page displayed at the end of a wizard, showing which sub-packages and
     which plugins will be selected. Also displays some notes for the user."""
 
-    def __init__(self, parent, subsList, plugin_list, plugin_renames, bAuto,
+    def __init__(self, parent, sublist, plugin_enabled, plugin_renames, bAuto,
                  notes, iniedits):
         PageInstaller.__init__(self, parent)
-        subs = sorted(subsList)
-        plugins = sorted(plugin_list)
+        subs = sorted(sublist)
+        plugins = sorted(plugin_enabled)
         #--make the list that will be displayed
         displayed_plugins = [f'{x} -> {plugin_renames[x]}'
                              if x in plugin_renames else x for x in plugins]
@@ -292,14 +292,14 @@ class PageFinish(PageInstaller):
         self.listSubs = CheckListBox(self, choices=subs, ampersand=True)
         self.listSubs.on_box_checked.subscribe(self._on_select_subs)
         for index,key in enumerate(subs):
-            if subsList[key]:
+            if sublist[key]:
                 self.listSubs.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_sub_packages.append(key)
         self.plugin_selection = CheckListBox(self, choices=displayed_plugins,
                                              ampersand=True)
         self.plugin_selection.on_box_checked.subscribe(self._on_select_plugin)
         for index,key in enumerate(plugins):
-            if plugin_list[key]:
+            if plugin_enabled[key]:
                 self.plugin_selection.lb_check_at_index(index, True)
                 self._wiz_parent.ret.select_plugins.append(key)
         self._wiz_parent.ret.rename_plugins = plugin_renames
@@ -593,7 +593,7 @@ class WryeParser(ScriptParser.Parser):
             # everywhere. Broke this part of the code, hence the 'if s' below.
             self.sublist = bolt.LowerDict({
                 s: False for s in installer.subNames if s})
-            self.plugin_list = bolt.LowerDict({
+            self._plugin_enabled = bolt.LowerDict({
                 p: False for sub_plugins in installer.espmMap.values()
                 for p in sub_plugins})
         #--Constants
@@ -759,7 +759,7 @@ class WryeParser(ScriptParser.Parser):
         self.cLine += 1
         self.cLineStart = self.cLine
         self.parser_finished = True
-        return PageFinish(self._wiz_parent, self.sublist, self.plugin_list,
+        return PageFinish(self._wiz_parent, self.sublist, self._plugin_enabled,
                           self.plugin_renames, self.bAuto, self.notes,
                           self.iniedits)
 
@@ -778,10 +778,7 @@ class WryeParser(ScriptParser.Parser):
                 del self.lines[i-numLines:i]
                 i -= numLines
                 self.ExecCount -= 1
-        for i in self.sublist:
-            self.sublist[i] = False
-        for i in self.plugin_list:
-            self.plugin_list[i] = False
+        self._SelectAll(False)
         self.cLine = 0
         self.reversing = self.choiceIdex-1
         self.choiceIdex = -1
@@ -805,7 +802,7 @@ class WryeParser(ScriptParser.Parser):
 
     def _resolve_plugin_rename(self, plugin_name):
         plugin_name = plugin_name.lower()
-        for i in self.plugin_list:
+        for i in self._plugin_enabled:
             if plugin_name == i.lower():
                 return i
         return None
@@ -1395,10 +1392,13 @@ class WryeParser(ScriptParser.Parser):
     def kwdDeSelectAll(self): self._SelectAll(False)
 
     def _SelectAll(self, bSelect):
-        for i in list(self.sublist):
-            self.sublist[i] = bSelect
-        for i in list(self.plugin_list):
-            self.plugin_list[i] = bSelect
+        self._set_all_values(self.sublist, bSelect)
+        self._set_all_values(self._plugin_enabled, bSelect)
+
+    @staticmethod
+    def _set_all_values(di, common_value):
+        for k in di:
+            di[k] = common_value
 
     def kwd_select_plugin(self, plugin_name):
         self._select_plugin(True, plugin_name)
@@ -1409,7 +1409,7 @@ class WryeParser(ScriptParser.Parser):
     def _select_plugin(self, should_activate, plugin_name):
         resolved_name = self._resolve_plugin_rename(plugin_name)
         if resolved_name:
-            self.plugin_list[resolved_name] = should_activate
+            self._plugin_enabled[resolved_name] = should_activate
         else:
             error(_(u"Plugin '%s' is not a part of the installer.") %
                   plugin_name)
@@ -1418,8 +1418,7 @@ class WryeParser(ScriptParser.Parser):
     def kwd_de_select_all_plugins(self): self._select_all_plugins(False)
 
     def _select_all_plugins(self, should_activate):
-        for i in list(self.plugin_list):
-            self.plugin_list[i] = should_activate
+        self._set_all_values(self._plugin_enabled, should_activate)
 
     def kwd_rename_plugin(self, plugin_name, new_plugin_name):
         plugin_name = self._resolve_plugin_rename(plugin_name)
@@ -1438,7 +1437,7 @@ class WryeParser(ScriptParser.Parser):
             del self.plugin_renames[plugin_name]
 
     def kwd_reset_all_plugin_names(self):
-        self.plugin_renames = dict()
+        self.plugin_renames.clear()
 
     def kwdNote(self, note):
         self.notes.append(u'- %s\n' % note)
@@ -1530,9 +1529,9 @@ class WryeParser(ScriptParser.Parser):
         return [-1, u'None']
 
     def kwdReturn(self):
-        self.page = PageFinish(self._wiz_parent, self.sublist, self.plugin_list,
-                               self.plugin_renames, self.bAuto, self.notes,
-                               self.iniedits)
+        self.page = PageFinish(self._wiz_parent, self.sublist,
+                               self._plugin_enabled, self.plugin_renames,
+                               self.bAuto, self.notes, self.iniedits)
 
     def kwdCancel(self, msg=_(u'No reason given')):
         self.page = PageError(self._wiz_parent, _(u'The installer wizard was canceled:'), msg)

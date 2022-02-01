@@ -89,7 +89,7 @@ def isPBashMergeable(modInfo, minfos, reasons):
         modFile.load(True,loadStrings=False)
     except ModError as error:
         if not verbose: return False
-        reasons.append(u'%s.' % error)
+        reasons.append(f'{error}.')
     #--Skipped over types?
     if modFile.topsSkipped:
         if not verbose: return False

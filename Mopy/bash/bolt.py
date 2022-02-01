@@ -1325,8 +1325,8 @@ class AFile(object):
         """
         self.fsize, self._file_mod_time = stat_tuple
 
-    def __repr__(self): return u'%s<%s>' % (self.__class__.__name__,
-                                            self.abs_path.stail)
+    def __repr__(self): return f'{self.__class__.__name__}<' \
+                               f'{self.abs_path.stail}>'
 
 #------------------------------------------------------------------------------
 class MainFunctions(object):
@@ -2040,18 +2040,6 @@ class StringTable(dict):
         u'russian': u'cp1251',
     }
 
-    def load(self, modFilePath, lang=u'English', progress=Progress()):
-        baseName = modFilePath.tail.body
-        baseDir = modFilePath.head.join(u'Strings')
-        files = (baseName + u'_' + lang + x for x in
-                 (u'.STRINGS', u'.DLSTRINGS', u'.ILSTRINGS'))
-        files = (baseDir.join(file) for file in files)
-        self.clear()
-        progress.setFull(3)
-        for i,file in enumerate(files):
-            progress(i)
-            self.loadFile(file,SubProgress(progress,i,i+1))
-
     def loadFile(self, path, progress, lang=u'english'):
         formatted = path.cext != u'.strings'
         backupEncoding = self.encodings.get(lang.lower(), u'cp1252')
@@ -2059,26 +2047,23 @@ class StringTable(dict):
             with open(path, u'rb') as ins:
                 insSeek = ins.seek
                 insTell = ins.tell
-
                 insSeek(0,os.SEEK_END)
                 eof = insTell()
                 insSeek(0)
                 if eof < 8:
-                    deprint(u"Warning: Strings file '%s' file size (%d) is "
-                            u'less than 8 bytes.  8 bytes are the minimum '
-                            u'required by the expected format, assuming the '
-                            u'Strings file is empty.' % (path, eof))
+                    deprint(f"Warning: Strings file '{path}' file size "
+                            f"({eof}) is less than 8 bytes.  8 bytes are "
+                            f"the minimum required by the expected format, "
+                            f"assuming the Strings file is empty.")
                     return
-
                 numIds,dataSize = unpack_many(ins, u'=2I')
                 progress.setFull(max(numIds,1))
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
-                    deprint(u"Warning: Strings file '%s' dataSize element "
-                            u'(%d) results in a string start location of %d, '
-                            u'but the expected location is %d'
-                            % (path, dataSize, eof-dataSize, stringsStart))
-
+                    deprint(f"Warning: Strings file '{path}' dataSize element "
+                            f"({dataSize}) results in a string start location "
+                            f"of {eof - dataSize}, but the expected location "
+                            f"is {stringsStart}")
                 id_ = -1
                 offset = -1
                 for x in range(numIds):
@@ -2100,10 +2085,9 @@ class StringTable(dict):
                         insSeek(pos)
                         self[id_] = value
                     except:
-                        deprint(u'Error reading string file:')
-                        deprint(u'id:', id_)
-                        deprint(u'offset:', offset)
-                        deprint(u'filePos:',  insTell())
+                        deprint('\n'.join(
+                            ['Error reading string file:', f'id: {id_}',
+                             f'offset: {offset}', f'filePos: {insTell()}']))
                         raise
         except:
             deprint(u'Error loading string file:', path.stail, traceback=True)

@@ -2087,15 +2087,15 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
         for item_group in lists:
             title = item_group[0] # also serves as key in self._ctrls dict
             item_tip = item_group[1]
-            strings = [u'%s' % x for x in item_group[2:]] # works for Path & strings
-            if not strings: continue
+            if not (strs := [u'%s' % x for x in item_group[2:]]): # Path | str
+                continue
             if liststyle == u'check':
-                checksCtrl = CheckListBox(self, choices=strings, isSingle=True,
+                checksCtrl = CheckListBox(self, choices=strs, isSingle=True,
                                           isHScroll=True)
                 checksCtrl.on_context.subscribe(self._on_context)
                 checksCtrl.set_all_checkmarks(checked=True)
             elif liststyle == u'list':
-                checksCtrl = ListBox(self, choices=strings, isHScroll=True)
+                checksCtrl = ListBox(self, choices=strs, isHScroll=True)
             else: # u'tree'
                 checksCtrl = TreeCtrl(self, title, item_group[2])
             self._ctrls[title] = checksCtrl

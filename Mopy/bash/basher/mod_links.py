@@ -26,7 +26,6 @@ points to BashFrame.modList singleton."""
 
 import copy
 import io
-import re
 import traceback
 from collections import defaultdict, OrderedDict
 from itertools import chain
@@ -40,7 +39,6 @@ from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
     TransLink, SeparatorLink, ChoiceLink, OneItemLink, ListBoxes, MenuLink
 from ..bolt import GPath, SubProgress, dict_sort, sig_to_str
-from ..bosh import faces
 from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError
 from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
@@ -84,8 +82,8 @@ class _LoadLink(ItemLink):
     def _load_fact(self, keepAll=True):
         return LoadFactory(keepAll, by_sig=self._load_sigs)
 
-    def _load_mod(self, mod_info, keepAll=True, **kwargs):
-        loadFactory = self._load_fact(keepAll=keepAll)
+    def _load_mod(self, mod_info, keepAll=True, load_fact=None, **kwargs):
+        loadFactory = load_fact or self._load_fact(keepAll=keepAll)
         modFile = ModFile(mod_info, loadFactory)
         modFile.load(True, **kwargs)
         return modFile
@@ -97,8 +95,8 @@ class Mod_FullLoad(OneItemLink, _LoadLink):
     _load_sigs = tuple(MreRecord.type_class) # all available (decoded) records
 
     def Execute(self):
-        with balt.Progress(_(u'Loading:') + u'\n%s'
-                % self._selected_item.stail) as progress:
+        msg = _(u'Loading:') + f'\n{self._selected_item}'
+        with balt.Progress(msg) as progress:
             bolt.deprint(MreRecord.type_class)
             try:
                 self._load_mod(self._selected_info, keepAll=False,
@@ -529,9 +527,8 @@ class _Mod_Groups_Import(ItemLink):
         textPath = self._askOpen(_(u'Import names from:'), textDir, u'',
                                  u'*_Groups.csv')
         if not textPath: return
-        (textDir,textName) = textPath.headTail
         #--Extension error check
-        if textName.cext != u'.csv':
+        if textPath.cext != u'.csv':
             self._showError(_(u'Source file must be a csv file.'))
             return
         #--Import
@@ -1454,9 +1451,8 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                 if scpt_grp.getNumRecords(includeGroups=False):
                     master_factory = self._load_fact(keepAll=False)
                     for master in modFile.tes4.masters:
-                        masterFile = ModFile(bosh.modInfos[master],
-                                             master_factory)
-                        masterFile.load(True)
+                        masterFile = self._load_mod(bosh.modInfos[master],
+                                                    load_fact=master_factory)
                         for rfid, r in masterFile.tops[b'SCPT'].iter_present_records():
                             id_text[rfid] = r.script_source
                     newRecords = []
@@ -1599,14 +1595,12 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
     @property
     def _already_flagged(self): return not self.toEsm
 
-    def _initData(self, window, selection,
-            __reEspExt=re.compile(r'\.esp(.ghost)?$', re.I | re.U)):
+    def _initData(self, window, selection):
         present_mods = window.data_store
         modinfo_masters = present_mods[selection[0]].masterNames
         if len(selection) == 1 and len(modinfo_masters) > 1:
-            self.espMasters = [master for master in modinfo_masters if
-                               master in present_mods and __reEspExt.search(
-                                   master.s)]
+            self.espMasters = [m for m in modinfo_masters if
+                               m in present_mods and m.cext == '.esp']
             self._do_enable = bool(self.espMasters)
         else:
             self.espMasters = []
@@ -1686,15 +1680,14 @@ class Mod_Fids_Replace(OneItemLink):
         textPath = self._askOpen(_(u'Form ID mapper file:'), textDir, u'',
                                  u'*_Formids.csv')
         if not textPath: return
-        (textDir,textName) = textPath.headTail
         #--Extension error check
-        if textName.cext != u'.csv':
+        if textPath.cext != u'.csv':
             self._showError(_(u'Source file must be a csv file.'))
             return
         #--Export
         with balt.Progress(_(u'Import Form IDs')) as progress:
             replacer = self._parser()
-            progress(0.1,_(u'Reading') + u' %s.' % textName)
+            progress(0.1, _(u'Reading') + f' {textPath.stail}.')
             replacer.read_csv(textPath)
             progress(0.2, _(u'Applying to') + u' %s.' % self._selected_item)
             changed = replacer.updateMod(self._selected_info)
@@ -1760,7 +1753,6 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
         textName = self.selected[0].root + self.__class__.csvFile
         textPath = self._csv_out(textName)
         if not textPath: return
-        (textDir, textName) = textPath.headTail
         #--Export
         with balt.Progress(self.__class__.progressTitle) as progress:
             parser = self._parser()
@@ -1769,7 +1761,7 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
             for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
                 readProgress(index, _(u'Reading') + u' %s.' % fileName)
                 parser.readFromMod(fileInfo)
-            progress(0.8, _(u'Exporting to') + u' %s.' % textName)
+            progress(0.8, _(u'Exporting to') + f' {textPath.stail}.')
             parser.write_text_file(textPath)
             progress(1.0, _(u'Done.'))
 
@@ -1789,14 +1781,22 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
         return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + u';*' \
                + espml + u';*.ghost'
 
-    def _import(self, ext, textDir, textName, textPath):
+    def _import_from(self):
+        textName = self._selected_item.root + self.__class__.csvFile
+        textDir = bass.dirs[u'patches']
+        #--File dialog
+        textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
+                                 self._wildcard)
+        return textPath
+
+    def _import(self, ext, textPath):
         with balt.Progress(self.__class__.progressTitle) as progress:
             parser = self._parser()
-            progress(0.1, _(u'Reading') + u' %s.' % textName)
+            progress(0.1, _(u'Reading') + f' {textPath.stail}.')
             if ext == u'.csv':
                 parser.read_csv(textPath)
             else:
-                srcInfo = bosh.ModInfo(GPath(textDir).join(textName))
+                srcInfo = bosh.ModInfo(textPath)
                 parser.readFromMod(srcInfo)
             progress(0.2, _(u'Applying to') + f' {self._selected_item}.')
             changed = parser.writeToMod(self._selected_info)
@@ -1822,15 +1822,10 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
         if not self._askContinueImport(): return
         supportedExts = self.__class__.supportedExts
         csv_filename = self.__class__.csvFile
-        textName = self._selected_item.root + csv_filename
-        textDir = bass.dirs[u'patches']
-        #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
-                                 self._wildcard)
+        textPath = self._import_from()
         if not textPath: return
-        (textDir, textName) = textPath.headTail
         #--Extension error check
-        ext = textName.cext
+        ext = textPath.cext
         if ext not in supportedExts:
             plugin_exts = u'or '.join(sorted(bush.game.espm_extensions
                                              | {u'.ghost'}))
@@ -1842,7 +1837,7 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             self._showError(csv_err)
             return
         #--Import
-        changed = self._import(ext, textDir, textName, textPath)
+        changed = self._import(ext, textPath)
         #--Log
         self.show_change_log(changed, self._selected_item)
 
@@ -1865,8 +1860,10 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
         return ActorLevels()
 
     def Execute(self): # overrides _Mod_Export_Link
-        message = (_(u'This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported.')
-                   + u'\n\n' +
+        message = (_(
+            'This command will export the level info for NPCs whose level is '
+            'offset with respect to the PC.  The exported file can be edited '
+            'with most spreadsheet programs and then reimported.') + u'\n\n' +
                    _(u'See the Bash help file for more info.'))
         if not self._askContinue(message, u'bash.actorLevels.export.continue',
                                  _(u'Export NPC Levels')): return
@@ -2288,15 +2285,10 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
 
     def Execute(self):
         if not self._askContinueImport(): return
-        textName = self._selected_item.root + self.__class__.csvFile
-        textDir = bass.dirs[u'patches']
-        #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle, textDir,
-                                 textName, self._wildcard)
+        textPath = self._import_from()
         if not textPath: return
-        (textDir,textName) = textPath.headTail
         #--Extension error check
-        if textName.cext != u'.csv':
+        if textPath.cext != u'.csv':
             self._showError(_(u'Source file must be a csv file.'))
             return
         #--Import
@@ -2305,7 +2297,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         try:
             with balt.Progress(self.__class__.progressTitle) as progress:
                 editorIds = self._parser(questionableEidsSet, badEidsList)
-                progress(0.1, _(u'Reading') + u' %s.' % textName)
+                progress(0.1, _(u'Reading') + f' {textPath.stail}.')
                 editorIds.read_csv(textPath)
                 progress(0.2, _(u'Applying to %s.') % self._selected_item)
                 changed = editorIds.writeToMod(self._selected_info)

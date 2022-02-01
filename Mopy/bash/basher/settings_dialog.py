@@ -29,7 +29,7 @@ from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import colors, Link, Resources, showOk
-from ..bolt import deprint, GPath, readme_url, os_name
+from ..bolt import deprint, readme_url, os_name
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
@@ -574,15 +574,14 @@ class LanguagePage(_AScrollablePage):
 
     def _edit_l10n(self):
         """Opens the selected localization file in an editor."""
-        chosen_editor = GPath(bass.settings[u'bash.l10n.editor.path'])
-        editor_arg_fmt = bass.settings[u'bash.l10n.editor.param_fmt']
+        chosen_editor = bass.settings[u'bash.l10n.editor.path']
         # First, verify that the chosen editor is valid
         if not chosen_editor:
             balt.showError(self, _(u'No localization editor has been chosen. '
                                    u"Please click on 'Configure Editor' to "
                                    u'set one up.'), title=_(u'Invalid Editor'))
             return
-        elif not chosen_editor.is_file():
+        elif not os.path.isfile(chosen_editor):
             balt.showError(self, _(u'The chosen editor (%s) does not exist or '
                                    u'is not a file.') % chosen_editor,
                 title=_(u'Invalid Editor'))
@@ -590,6 +589,7 @@ class LanguagePage(_AScrollablePage):
         # Now we can move on to actually opening the editor
         selected_l10n = bass.dirs[u'l10n'].join(self._chosen_l10n)
         # Construct the final command and pass it to subprocess
+        editor_arg_fmt = bass.settings[u'bash.l10n.editor.param_fmt']
         subprocess.Popen(
             [chosen_editor, *((a % selected_l10n if '%s' in a else a)
             for a in editor_arg_fmt.split(u' '))], close_fds=True)

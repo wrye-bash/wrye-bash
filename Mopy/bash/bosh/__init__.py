@@ -842,7 +842,7 @@ class ModInfo(FileInfo):
         is_attached = re.compile(bsa_pattern, re.I | re.U).match
         # bsaInfos must be updated and contain all existing bsas
         if bsa_infos is None: bsa_infos = bsaInfos
-        return [i for b, i in bsa_infos.items() if is_attached(b.s)]
+        return [binf for k, binf in bsa_infos.items() if is_attached(k.s)]
 
     def hasBsa(self):
         """Returns True if plugin has an associated BSA."""
@@ -864,7 +864,7 @@ class ModInfo(FileInfo):
     def getStringsPaths(self, lang=u'English'):
         """If Strings Files are available as loose files, just point to
         those, otherwise extract needed files from BSA if needed."""
-        baseDirJoin = self.getPath().head.join
+        baseDirJoin = self.info_dir.join
         extract = set()
         paths = set()
         #--Check for Loose Files first
@@ -891,14 +891,14 @@ class ModInfo(FileInfo):
                 if not extract:
                     break
             else:
-                msg = (u'This plugin is localized, but the following strings '
-                       u'files seem to be missing:\n%s' %
-                       u'\n'.join(u' - %s' % e for e in extract))
+                msg = ('This plugin is localized, but the following strings '
+                       'files seem to be missing:\n%s' % u'\n'.join(
+                    f' - {e}' for e in extract))
                 if potential_bsas:
                     msg += (u'\nThe following BSAs were scanned (based on '
                             u'name and INI settings), but none of them '
                             u'contain the missing files:\n%s' % u'\n'.join(
-                        u' - %s' % bsa_inf for bsa_inf in potential_bsas))
+                        f' - {bsa_inf}' for bsa_inf in potential_bsas))
                 else:
                     msg += (u'\nNo BSAs were found that could contain the '
                             u'missing strings - this is bad, validate your '
@@ -911,8 +911,7 @@ class ModInfo(FileInfo):
                     bsa_inf.extract_assets(assets, out_path.s)
                 except BSAError as e:
                     raise ModError(self.ci_key,
-                                   u'Could not extract Strings File from '
-                                   u"'%s': %s" % (bsa_inf, e))
+                      f"Could not extract Strings File from '{bsa_inf}': {e}")
                 paths.update(map(out_path.join, assets))
         return paths
 
@@ -935,8 +934,8 @@ class ModInfo(FileInfo):
         # master (e.g. Skyrim.esm -> Skyrim - Textures0.bsa).
         heuristics = self._bsa_heuristics
         last_index = len(heuristics) # last place to sort unwanted BSAs
-        def _bsa_heuristic(b_name):
-            b_lower = b_name.ci_key.csbody
+        def _bsa_heuristic(binf):
+            b_lower = binf.ci_key.csbody
             for i, h in heuristics:
                 if h in b_lower:
                     return i
@@ -2648,7 +2647,7 @@ class ModInfos(FileInfos):
         dir_added, dir_removed = read_dir_tags(mname)
         has_tags_source |= bool(dir_added | dir_removed)
         tags_file = u"'%s/BashTags/%s'" % (bush.game.mods_dir,
-                                           mname.body + u'.txt')
+                                           mname.sbody + u'.txt')
         if dir_added:
             tagList = _tags(_(u'Added by %s: ') % tags_file, sorted(dir_added),
                             tagList)
@@ -2981,10 +2980,10 @@ class ModInfos(FileInfos):
         # BSAs loaded based on plugin name load in the middle of the pack
         if for_plugins is None: for_plugins = list(self)
         for i, p in enumerate(for_plugins):
-            for b in self[p].mod_bsas(available_bsas):
-                bsa_lo[b] = i
-                bsa_cause[b] = p.s
-                del available_bsas[b.ci_key]
+            for binf in self[p].mod_bsas(available_bsas):
+                bsa_lo[binf] = i
+                bsa_cause[binf] = p.s
+                del available_bsas[binf.ci_key]
         return bsa_lo, bsa_cause
 
     def get_active_bsas(self):

@@ -163,36 +163,6 @@ Types = {UNKNOWN:u'UNKNOWN',
          COLON:u'COLON',
          }
 
-# getType ---------------------------------------
-#  determines the type of a string.  If 'parser'
-#  is passed, then it will attempt it against
-#  various names as well.
-#------------------------------------------------
-def getType(item, parser=None):
-    if isinstance(item, str):
-        if not parser: return STRING
-        if item in parser.constants: return CONSTANT
-        if item in parser.variables: return VARIABLE
-        if item in parser.keywords : return KEYWORD
-        if item in parser.functions: return FUNCTION
-        if item in parser.operators: return OPERATOR
-        if item == u'(': return OPEN_PARENS
-        if item == u')': return CLOSE_PARENS
-        if item == u'[': return OPEN_BRACKET
-        if item == u']': return CLOSE_BRACKET
-        if item == u':': return COLON
-        if item == u',': return COMMA
-        if validName(item): return NAME
-        if validNumber(item):
-            if u'.' in item: return DECIMAL
-            return INTEGER
-        for i in item:
-            if i not in whitespace: return UNKNOWN
-        return WHITESPACE
-    if isinstance(item, int): return INTEGER
-    if isinstance(item, float): return DECIMAL
-    return UNKNOWN
-
 # FlowControl -------------------------------------
 #  Flow control object, to hold info about a flow
 #  control statement
@@ -230,6 +200,31 @@ class Parser(object):
     class ParserType(object):
         @property
         def Type(self): return self.__class__.__name__
+
+    def getType(self, token_or_num):
+        """Determine a token's type in self's type system."""
+        if isinstance(token_or_num, str): ##: use a dict here?
+            if token_or_num in self.constants: return CONSTANT
+            if token_or_num in self.variables: return VARIABLE
+            if token_or_num in self.keywords : return KEYWORD
+            if token_or_num in self.functions: return FUNCTION
+            if token_or_num in self.operators: return OPERATOR
+            if token_or_num == u'(': return OPEN_PARENS
+            if token_or_num == u')': return CLOSE_PARENS
+            if token_or_num == u'[': return OPEN_BRACKET
+            if token_or_num == u']': return CLOSE_BRACKET
+            if token_or_num == u':': return COLON
+            if token_or_num == u',': return COMMA
+            if validName(token_or_num): return NAME
+            if validNumber(token_or_num):
+                if u'.' in token_or_num: return DECIMAL
+                return INTEGER
+            for i in token_or_num:
+                if i not in whitespace: return UNKNOWN
+            return WHITESPACE
+        if isinstance(token_or_num, int): return INTEGER
+        if isinstance(token_or_num, float): return DECIMAL
+        return UNKNOWN
 
     class Callable(ParserType):
         def __init__(self, callable_name, function, min_args=0,
@@ -335,7 +330,7 @@ class Parser(object):
                 self.numArgs = token_or_text.numArgs
             else:
                 self.text = token_or_text
-                self.type = Type or getType(token_or_text, parser)
+                self.type = Type or parser.getType(token_or_text)
                 self.parser = parser
                 self.line = line
                 self.pos = pos
@@ -483,29 +478,29 @@ class Parser(object):
             error(_(u'Index out of bounds.'))
 
     def SetOperator(self, op_name, *args, **kwdargs):
-        type_ = getType(op_name, self)
+        type_ = self.getType(op_name)
         if type_ not in [NAME,OPERATOR,UNKNOWN]:
             err_cant_set(u'operator', op_name,  type_)
         self.operators[op_name] = Parser.Operator(op_name, *args, **kwdargs)
         for i in op_name:
             if i not in self.opChars: self.opChars += i
     def SetKeyword(self, keywrd_name, *args, **kwdargs):
-        type_ = getType(keywrd_name, self)
+        type_ = self.getType(keywrd_name)
         if type_ not in [NAME,KEYWORD]:
             err_cant_set(u'keyword', keywrd_name,  type_)
         self.keywords[keywrd_name] = Parser.Keyword(keywrd_name, *args, **kwdargs)
     def SetFunction(self, fun_name, *args, **kwdargs):
-        type_ = getType(fun_name, self)
+        type_ = self.getType(fun_name)
         if type_ not in [NAME,FUNCTION]:
             err_cant_set(u'function', fun_name,  type_)
         self.functions[fun_name] = Parser.Function(fun_name, *args, **kwdargs)
     def SetConstant(self, const_name, value):
-        type_ = getType(const_name, self)
+        type_ = self.getType(const_name)
         if type_ not in [NAME,CONSTANT]:
             err_cant_set(u'constant', const_name,  type_)
         self.constants[const_name] = value
     def SetVariable(self, var_name, value):
-        type_ = getType(var_name, self)
+        type_ = self.getType(var_name)
         if type_ not in [NAME, VARIABLE]:
             err_cant_set(u'variable', var_name,  type_)
         self.variables[var_name] = value
@@ -767,13 +762,13 @@ class Parser(object):
         word = word or self.word
         if word is None: return
         if self.wordStart is None: self.wordStart = self.cCol - 1
-        type_ = type_ or getType(word, self)
+        type_ = type_ or self.getType(word)
 
         # Try to figure out if it's multiple operators bunched together
         rightWord = None
         if type_ == UNKNOWN:
             for idex in range(len(word),0,-1):
-                newType = getType(word[0:idex], self)
+                newType = self.getType(word[0:idex])
                 if newType != UNKNOWN:
                     rightWord = word[idex:]
                     rightWordStart = self.wordStart + idex

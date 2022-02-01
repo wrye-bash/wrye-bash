@@ -1308,10 +1308,10 @@ class ModList(_ModsUIList):
                                  canCancel=False)
 
     def jump_to_mods_installer(self, modName):
-        installer = self.get_installer(modName)
-        if installer is None:
+        fn_inst = self.get_installer(modName)
+        if fn_inst is None:
             return False
-        balt.Link.Frame.notebook.SelectPage(u'Installers', installer)
+        balt.Link.Frame.notebook.SelectPage(u'Installers', fn_inst)
         return True
 
     def get_installer(self, modName):
@@ -2584,7 +2584,7 @@ class InstallersList(balt.UIList):
                 if outDir.exists():
                     if balt.askYes(progress.dialog, _(
                         u"The project '%s' already exists.  Overwrite "
-                        u"with '%s'?") % (omod.body, om_name)):
+                        u"with '%s'?") % (omod.sbody, om_name)):
                         env.shellDelete(outDir, parent=self,
                                         recycle=True)  # recycle
                     else: continue

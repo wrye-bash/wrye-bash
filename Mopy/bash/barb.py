@@ -107,13 +107,15 @@ class BackupSettings(object):
         self.files = {}
         for (bash_dir, tmpdir), setting_files in _init_settings_files(
                 bak_name, mg_name, root_prefix, mods_folder).items():
+            tjoin = GPath(tmpdir).join
             if not setting_files: # we have to backup everything in there
-                setting_files = bash_dir.list()
-            tmp_dir = GPath(tmpdir)
-            for fname in setting_files:
-                fpath = bash_dir.join(fname)
-                if fpath.exists():
-                    self.files[tmp_dir.join(fname)] = fpath
+                self.files.update(
+                    (tjoin(fname), bash_dir.join(fname)) for fname in
+                    bash_dir.list())
+            else:
+                self.files.update(
+                    (tjoin(fname), fpath) for fname in setting_files if
+                    (fpath := bash_dir.join(fname)).exists())
         # backup save profile settings
         rel_save_dir = GPath(u'My Games').join(mg_name)
         save_dirs = ['', *initialization.getLocalSaveDirs()]
@@ -359,7 +361,7 @@ class RestoreSettings(object):
             GPath(self._timestamped_old).copyTo(u'bash.ini')
         elif self._bash_ini_path:
             # remove bash.ini as it is the one from the backup
-            bolt.GPath(u'bash.ini').remove()
+            GPath(u'bash.ini').remove()
 
     @staticmethod
     def warn_message(balt_, msg=u''):
