@@ -3202,7 +3202,7 @@ class InstallersPanel(BashTab):
         do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
         refresh_info = None
         if self.frameActivated:
-            folders, files = top_level_items(bass.dirs[u'installers'].s)
+            folders, files = top_level_items(bass.dirs[u'installers'])
             omds = [GPath_no_norm(inst_path) for inst_path in files
                     if os.path.splitext(inst_path)[1].lower() in archives.omod_exts]
             if any(inst_path not in omods.failedOmods for inst_path in omds):

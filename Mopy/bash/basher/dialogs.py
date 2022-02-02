@@ -130,7 +130,7 @@ class CreateNewProject(DialogWindow):
         # Build a list of existing directories. The text control will use this
         # to change background color when name collisions occur.
         self.existingProjects = {GPath_no_norm(x) for x in ##: use idata?
-                                 top_level_dirs(bass.dirs[u'installers'].s)}
+                                 top_level_dirs(bass.dirs[u'installers'])}
         #--Attributes
         self.textName = TextField(self, _(u'New Project Name-#####'))
         self.textName.on_text_changed.subscribe(

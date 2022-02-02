@@ -335,7 +335,7 @@ class OmodConfig(object):
         configPath = bass.dirs[u'installers'].join(self.omod_proj,
             u'omod conversion data', u'config')
         configPath.head.makedirs()
-        with open(configPath.temp.s,u'wb') as out:
+        with open(configPath.temp,u'wb') as out:
             pack_byte(out, 4)
             _writeNetString(out, self.omod_proj.encode(u'utf8'))
             pack_int_signed(out, self.vMajor)

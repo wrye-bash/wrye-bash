@@ -205,7 +205,7 @@ class RestoreSettings(object):
     to restore the backed up ini, if it exists. Restoring the settings must
     be done on boot as soon as we are able to initialize bass#dirs."""
     __tmpdir_prefix = u'RestoreSettingsWryeBash_'
-    __unset = object()
+    __unset = bolt.Path('')
 
     def __init__(self, settings_file):
         self._settings_file = GPath(settings_file)
@@ -238,7 +238,7 @@ class RestoreSettings(object):
         initialize bass.dirs."""
         if self._extract_dir is self.__unset: raise BoltError(
             u'backup_ini_path: you must extract the settings file first')
-        for r, d, fs in os.walk(u'%s' % self._extract_dir):
+        for r, d, fs in os.walk(self._extract_dir):
             for f in fs:
                 if f == u'bash.ini':
                     self._bash_ini_path = jo(r, f)
@@ -260,8 +260,7 @@ class RestoreSettings(object):
         deprint(f'RESTORE BASH SETTINGS: {self._settings_file}')
         # backup previous Bash ini if it exists
         old_bash_ini = dirs[u'mopy'].join(u'bash.ini')
-        self._timestamped_old = u''.join(
-            [old_bash_ini.root.s, u'(', bolt.timestamp(), u').ini'])
+        self._timestamped_old = f'{old_bash_ini.sroot}({bolt.timestamp()}).ini'
         try:
             old_bash_ini.moveTo(self._timestamped_old)
             deprint(f'Existing bash.ini moved to {self._timestamped_old}')
@@ -276,7 +275,7 @@ class RestoreSettings(object):
                                                   root_prefix, mods_folder))
         for dest_dir, back_path in restore_paths:
             full_back_path = self._extract_dir.join(back_path)
-            for fname in top_level_files(full_back_path.s):
+            for fname in top_level_files(full_back_path):
                 _restore_file(dest_dir, GPath(back_path), fname)
         # restore savegame profile settings
         back_path = GPath(u'My Games').join(mg_name, u'Saves')
@@ -328,8 +327,7 @@ class RestoreSettings(object):
 
     def _get_settings_versions(self):
         if self._extract_dir is self.__unset: raise BoltError(
-            u'_get_settings_versions: you must extract the settings file '
-            u'first')
+            '_get_settings_versions: you must extract the settings file first')
         if self._saved_settings_version is None:
             backup_dat = self._extract_dir.join(u'backup.dat')
             try:
@@ -346,9 +344,9 @@ class RestoreSettings(object):
 
     def _get_backup_game(self):
         """Get the game this backup was for - hack, this info belongs to backup.dat."""
-        for node in os.listdir(u'%s' % self._extract_dir):
+        for node in os.listdir(self._extract_dir):
             if node != u'My Games' and not node.endswith(
-                    u'Mods') and os.path.isdir(self._extract_dir.join(node).s):
+                    u'Mods') and self._extract_dir.join(node).is_dir():
                 return node
         raise BoltError(f'{self._extract_dir} does not contain a game dir')
 

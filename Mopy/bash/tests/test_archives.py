@@ -43,7 +43,7 @@ def test_compress_extract_with_spaces(capsys):
             with open(templist, 'w', encoding=u'utf-8-sig') as out:
                 out.write(u'*thumbs.db\n')
             try:
-                with open(thumbs := os.path.join(_utils_dir.s, 'thumbs.db'),
+                with open(thumbs := os.path.join(_utils_dir, 'thumbs.db'),
                           'w'):
                     print(f'creating {thumbs}')
                 compress7z(full_out, out_fname, _utils_dir, temp_list=templist)

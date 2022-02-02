@@ -1073,7 +1073,7 @@ class Installer(ListInfo):
         if upt_numb or del_numb:
             # Remove empty directories from project directory
             empties = set()
-            for asDir, sDirs, sFiles in os.walk(proj_dir.s):
+            for asDir, sDirs, sFiles in os.walk(proj_dir):
                 if not (sDirs or sFiles): empties.add(GPath(asDir))
             for empty in empties: empty.removedirs()
             proj_dir.makedirs()  #--In case it just got wiped out.
@@ -1377,7 +1377,7 @@ class InstallerArchive(Installer):
         unpack_dir = bass.getTempDir()
         try:
             extract7z(self.abs_path, unpack_dir, progress, recursive=recurse,
-                      filelist_to_extract=self.tempList.s)
+                      filelist_to_extract=self.tempList)
         finally:
             self.tempList.remove()
             bolt.clearReadOnly(unpack_dir)
@@ -1577,7 +1577,7 @@ class InstallerProject(Installer):
         c, proj_size = [], 0
         cExtend, cAppend = c.extend, c.append
         self._dir_dirs_files = []
-        for root, d, files in os.walk(apath.s):
+        for root, d, files in os.walk(apath):
             cAppend(getM(root))
             lstats = [_lstat(join(root, f)) for f in files]
             cExtend(ls.st_mtime for ls in lstats)
@@ -1636,7 +1636,7 @@ class InstallerProject(Installer):
                 depth += 2
                 walkPath(os.path.join(r, d), depth)
                 depth -= 2
-        walkPath(apath.s, 0)
+        walkPath(apath, 0)
 
     def _open_txt_file(self, rel_path): self.abs_path.join(rel_path).start()
 
@@ -1860,7 +1860,7 @@ class InstallersData(DataStore):
         #--Current archives
         if refresh_info is deleted is pending is None:
             refresh_info = self.scan_installers_dir(
-                *top_level_items(bass.dirs[u'installers'].s), fullRefresh)
+                *top_level_items(bass.dirs[u'installers']), fullRefresh)
         elif refresh_info is None:
             refresh_info = self._RefreshInfo(deleted, pending, projects)
         changed = refresh_info.refresh_needed()
@@ -2047,19 +2047,19 @@ class InstallersData(DataStore):
         dirs if the setting is on."""
         #--Scan for changed files
         progress = progress if progress else bolt.Progress()
-        progress_msg = bass.dirs[u'mods'].stail + u': ' + _(u'Pre-Scanning...')
+        mods_dir = bass.dirs['mods']
+        progress_msg = f'{(dirname := mods_dir.stail)}: '+ _('Pre-Scanning...')
         progress(0, progress_msg + u'\n')
         progress.setFull(1)
         dirDirsFiles, emptyDirs = [], set()
         dirDirsFilesAppend, emptyDirsAdd = dirDirsFiles.append, emptyDirs.add
-        asRoot = bass.dirs[u'mods'].s
-        relPos = len(asRoot) + 1
-        for asDir, sDirs, sFiles in os.walk(asRoot):
+        relPos = len(mods_dir) + 1
+        for asDir, sDirs, sFiles in os.walk(mods_dir):
             progress(0.05, progress_msg + (u'\n%s' % asDir[relPos:]))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
-            if asDir == asRoot: InstallersData._skips_in_data_dir(sDirs)
+            if asDir == mods_dir: InstallersData._skips_in_data_dir(sDirs)
             dirDirsFilesAppend((asDir, sDirs, sFiles))
-        progress(0, _(u'%s: Scanning...') % bass.dirs[u'mods'].stail)
+        progress(0, _(u'%s: Scanning...') % dirname)
         new_sizeCrcDate, pending, pending_size = \
             self._process_data_dir(dirDirsFiles, progress)
         #--Remove empty dirs?
@@ -2070,8 +2070,7 @@ class InstallersData(DataStore):
         changed = Installer.final_update(new_sizeCrcDate,
                                          self.data_sizeCrcDate, pending,
                                          pending_size, progress,
-                                         recalculate_all_crcs,
-                                         bass.dirs[u'mods'].stail)
+                                         recalculate_all_crcs, dirname)
         self.update_for_overridden_skips(progress=progress) #after final_update
         #--Done
         return changed
@@ -2103,7 +2102,7 @@ class InstallersData(DataStore):
                               bush.game.bethDataFiles)} - self.overridden_skips
             bethFiles = LowerDict.fromkeys(beth_keys)
         skipExts = Installer.skipExts
-        relPos = len(bass.dirs[u'mods'].s) + 1
+        relPos = len(bass.dirs[u'mods']) + 1
         for index, (asDir, __sDirs, sFiles) in enumerate(dirDirsFiles):
             progress(index)
             rsDir = asDir[relPos:]

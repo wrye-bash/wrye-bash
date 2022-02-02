@@ -188,7 +188,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         try:
             try:
                 # Try UTF-8 first, will also work for ASCII-encoded files
-                oblivionIni.read(data_oblivion_ini.s, encoding='utf8')
+                oblivionIni.read(data_oblivion_ini, encoding='utf8')
             except UnicodeDecodeError:
                 # No good, this is a nonstandard encoding
                 with data_oblivion_ini.open(u'rb') as ins:
@@ -319,7 +319,7 @@ def getLocalSaveDirs():
     base directory."""
     baseSaves = dirs[u'saveBase'].join(u'Saves')
     # Path.list returns [] for non existent dirs
-    localSaveDirs = [GPath_no_norm(x) for x in top_level_dirs(baseSaves.s) if
+    localSaveDirs = [GPath_no_norm(x) for x in top_level_dirs(baseSaves) if
                      x.lower() not in ('bash', 'mash')]
     # Filter out non-encodable names
     bad = set()

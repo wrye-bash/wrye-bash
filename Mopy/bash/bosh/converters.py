@@ -72,7 +72,7 @@ class ConvertersData(DataDict):
         converterGet = self.bcfPath_sizeCrcDate.get
         archivesAdd = archives_set.add
         scannedAdd = scanned.add
-        for bcf_archive in top_level_files(converters_dir.s): # scan only files
+        for bcf_archive in top_level_files(converters_dir): # scan only files
             if self.validConverterName(GPath_no_norm(bcf_archive)): ##: drop GPath here!
                 scannedAdd(convertersJoin(bcf_archive))
         if len(scanned) != len(self.bcfPath_sizeCrcDate):
@@ -102,7 +102,7 @@ class ConvertersData(DataDict):
         if fullRefresh:
             self.bcfPath_sizeCrcDate.clear()
             self.srcCRC_converters.clear()
-        for bcf_archive in top_level_files(converters_dir.s):
+        for bcf_archive in top_level_files(converters_dir):
             if self.validConverterName(bcf_archive := GPath_no_norm(
                     bcf_archive)):  ##: drop GPath here!
                 bcfPath = convJoin(bcf_archive)

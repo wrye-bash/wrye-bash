@@ -537,7 +537,7 @@ class ABsa(AFile):
         i = 0
         if progress:
             progress.setFull(len(folder_to_assets))
-        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
+        with open(self.abs_path, u'rb') as bsa_file:
             for folder, file_records in folder_to_assets.items():
                 if progress:
                     progress(i, u'Extracting %s...\n%s' % (
@@ -678,7 +678,7 @@ class BSA(ABsa):
     def _read_bsa_file(self, folder_records, read_file_records):
         total_names_length = 0
         my_bsa_name = self.bsa_name
-        with open(u'%s' % self.abs_path, u'rb') as bsa_file: # accept string or Path
+        with open(self.abs_path, u'rb') as bsa_file:
             bsa_seek = bsa_file.seek
             # load the header from input stream
             self.bsa_header.load_header(bsa_file, my_bsa_name)
@@ -735,7 +735,7 @@ class BA2(ABsa):
         i = 0
         if progress:
             progress.setFull(len(folder_to_assets))
-        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
+        with open(self.abs_path, u'rb') as bsa_file:
             def _read_rec_or_chunk(record):
                 """Helper method, handles reading both compressed and
                 uncompressed records (or texture chunks)."""
@@ -800,7 +800,7 @@ class BA2(ABsa):
                         out.write(raw_data)
 
     def _load_bsa(self):
-        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
+        with open(self.abs_path, u'rb') as bsa_file:
             # load the header from input stream
             my_header = self.bsa_header # type: Ba2Header
             my_header.load_header(bsa_file, self.bsa_name)
@@ -838,7 +838,7 @@ class BA2(ABsa):
 
     def _load_bsa_light(self):
         my_header = self.bsa_header # type: Ba2Header
-        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
+        with open(self.abs_path, u'rb') as bsa_file:
             # load the header from input stream
             my_header.load_header(bsa_file, self.bsa_name)
             # load the file names block
@@ -866,7 +866,7 @@ class MorrowindBsa(ABsa):
 
     def _load_bsa_light(self):
         self.file_records = []
-        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
+        with open(self.abs_path, u'rb') as bsa_file:
             # load the header from input stream
             self.bsa_header.load_header(bsa_file, self.bsa_name)
             # load each file record
@@ -904,7 +904,7 @@ class MorrowindBsa(ABsa):
         i = 0
         if progress:
             progress.setFull(len(target_records))
-        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
+        with open(self.abs_path, u'rb') as bsa_file:
             for file_record in target_records:
                 rec_name = file_record.file_name
                 if progress:
@@ -972,7 +972,7 @@ class OblivionBsa(BSA):
 
         :param progress: The progress indicator to use for this process."""
         progress.setFull(self.bsa_header.folder_count)
-        with open(self.abs_path.s, u'r+b') as bsa_file:
+        with open(self.abs_path, u'r+b') as bsa_file:
             reset_count = 0
             for folder_name, folder in self.bsa_folders.items():
                 for file_name, file_info in folder.folder_assets.items():

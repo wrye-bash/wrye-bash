@@ -626,7 +626,7 @@ class ModInfo(FileInfo):
             return
         if regular_path is None: regular_path = self._file_key
         self.isGhost = not regular_path.is_file() and os.path.isfile(
-            regular_path.s + u'.ghost')
+            f'{regular_path}.ghost')
 
     def do_update(self, raise_on_error=False, itsa_ghost=None):
         old_ghost = self.isGhost
@@ -1596,7 +1596,7 @@ class TableFileInfos(DataStore):
     def _list_store_dir(self): # performance intensive
         file_matches_store = self.rightFileType
         return {GPath_no_norm(x): False for x in
-                top_level_files(self.store_dir.s) if file_matches_store(x)}
+                top_level_files(self.store_dir) if file_matches_store(x)}
 
     #--Right File Type?
     @classmethod
@@ -1988,7 +1988,7 @@ class INIInfos(TableFileInfos):
             return False
 
     def _copy_to_new_tweak(self, info, new_tweak):
-        with open(self.store_dir.join(new_tweak).s, u'wb') as ini_file:
+        with open(self.store_dir.join(new_tweak), u'wb') as ini_file:
             ini_file.write(info.read_ini_content(as_unicode=False)) # binary
         return self.new_info(new_tweak.tail, notify_bain=True)
 
@@ -2331,7 +2331,7 @@ class ModInfos(FileInfos):
         data_folder_path = bass.dirs['mods']
         # First, check the Data folder for INIs present in it. Order does not
         # matter, we will only use this to look up existence
-        lower_data_cont = (f.lower() for f in os.listdir(data_folder_path.s))
+        lower_data_cont = (f.lower() for f in os.listdir(data_folder_path))
         present_inis = {i for i in lower_data_cont if i.endswith('.ini')}
         # Determine which INIs are active based on LO. Order now matters
         possible_inis = [self[m].get_ini_name() for m in
@@ -2378,7 +2378,7 @@ class ModInfos(FileInfos):
         # Determine the present strings files once to avoid stat'ing
         # non-existent strings files hundreds of times
         try:
-            strings_files = os.listdir(bass.dirs['mods'].join('strings').s)
+            strings_files = os.listdir(bass.dirs['mods'].join('strings'))
             strings_prefix = f'strings{os.path.sep}'
             ci_cached_strings_paths = {strings_prefix + s.lower()
                                        for s in strings_files}
@@ -2496,7 +2496,7 @@ class ModInfos(FileInfos):
         tags."""
         try:
             bt_contents = {t.lower() for t
-                           in os.listdir(bass.dirs['tag_files'].s)}
+                           in os.listdir(bass.dirs['tag_files'])}
         except FileNotFoundError:
             bt_contents = set() # No BashTags folder -> no BashTags files
         for modinf in self.values(): # type: ModInfo

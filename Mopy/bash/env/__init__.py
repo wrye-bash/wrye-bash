@@ -59,7 +59,7 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
                     raise DirectoryFileCollisionError(fileFrom, dest_dir)
                 # dir exists at target, copy contents individually/recursively
                 source_paths, dests = [], []
-                for content in os.listdir(fileFrom.s):
+                for content in os.listdir(fileFrom):
                     source_paths.append(fileFrom.join(content))
                     dests.append(dest_dir)
                 __copyOrMove(operation, source_paths, dests, renameOnCollision, parent)

@@ -263,9 +263,8 @@ def _fn_product_version(file_path, expected_ver, comparison):
         # Read version from executable fields
         actual_ver = LooseVersion(_read_binary_ver(file_path.s))
     else:
-        raise FileError(file_path.s, 'Product version query was '
-                                     'requested, but the file is not an '
-                                     'executable.')
+        raise FileError(file_path, 'Product version query was requested, '
+                                   'but the file is not an executable.')
     return comparison.compare(actual_ver, LooseVersion(expected_ver))
 
 def _fn_version(file_path, expected_ver, comparison):
@@ -293,9 +292,8 @@ def _fn_version(file_path, expected_ver, comparison):
         # Read version from executable fields
         actual_ver = LooseVersion(_read_binary_ver(file_path.s))
     else:
-        raise FileError(file_path.s, 'Version query was requested, but '
-                                     'the file is not a plugin or '
-                                     'executable.')
+        raise FileError(file_path, 'Version query was requested, but the '
+                                   'file is not a plugin or executable.')
     return comparison.compare(actual_ver, LooseVersion(expected_ver))
 
 # Maps the function names used in conditions to the functions implementing them
@@ -359,7 +357,7 @@ def _process_path(file_path):
     for x in range(parents):
         relative_path = relative_path.head
     # If that put us outside the game folder, the path is invalid
-    if not os.path.realpath(relative_path.s).startswith(bass.dirs[u'app'].s):
+    if not os.path.realpath(relative_path).startswith(bass.dirs[u'app'].s):
         raise EvalError(u'Illegal file path: May not specify paths that '
                         u'resolve to outside the game folder.', file_path)
     return relative_path.join(*child_components)

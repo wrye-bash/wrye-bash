@@ -1795,7 +1795,7 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
             else:
                 srcInfo = bosh.ModInfo(GPath(textDir).join(textName))
                 parser.readFromMod(srcInfo)
-            progress(0.2, _(u'Applying to') + u' %s.' % self._selected_item)
+            progress(0.2, _(u'Applying to') + f' {self._selected_item}.')
             changed = parser.writeToMod(self._selected_info)
             progress(1.0, _(u'Done.'))
         return changed

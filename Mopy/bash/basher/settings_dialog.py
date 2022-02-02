@@ -564,7 +564,7 @@ class LanguagePage(_AScrollablePage):
             return
         outPath = bass.dirs[u'l10n']
         with BusyCursor():
-            outFile = dump_translator(outPath.s, bass.active_locale)
+            outFile = dump_translator(outPath, bass.active_locale)
         balt.showOk(self, _(u'Translation keys written to %s') % outFile,
                      _(u'Dump Localization: %s') % outPath.stail)
         # Make the new localization show up in the list
@@ -591,7 +591,7 @@ class LanguagePage(_AScrollablePage):
         selected_l10n = bass.dirs[u'l10n'].join(self._chosen_l10n)
         # Construct the final command and pass it to subprocess
         subprocess.Popen(
-            [chosen_editor.s, *((a % selected_l10n if '%s' in a else a)
+            [chosen_editor, *((a % selected_l10n if '%s' in a else a)
             for a in editor_arg_fmt.split(u' '))], close_fds=True)
 
     @staticmethod
