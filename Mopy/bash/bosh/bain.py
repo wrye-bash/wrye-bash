@@ -47,6 +47,7 @@ from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
 from ..ini_files import OBSEIniFile
 
 os_sep = os.path.sep
+_os_sep_re = re.escape(os_sep)
 
 class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and
@@ -71,19 +72,26 @@ class Installer(ListInfo):
     #--Will be skipped even if hasExtraData == True (bonus: skipped also on
     # scanning the game Data directory)
     dataDirsMinus = {u'bash', u'--'}
-    docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
-               u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
-               u'.ppt', u'.pptx'}
+    docExts = {'.txt', '.rtf', '.htm', '.html', '.doc', '.docx', '.odt',
+               '.mht', '.pdf', '.css', '.xls', '.xlsx', '.ods', '.odp',
+               '.ppt', '.pptx', '.md', '.rst'}
     reReadMe = re.compile(
-        r'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
-        u'(' + u'|'.join(docExts) + u')$', re.I | re.U)
+        f'^.*?([^{_os_sep_re}]*)(read[ _]?me|lisez[ _]?moi)([^{_os_sep_re}]*)'
+        '(' + '|'.join((f'\\{e}' for e in docExts)) + ')$', re.I)
+    # Filename roots (i.e. filenames without extensions) that are common and
+    # should be renamed by BAIN to avoid conflicts if they are used as doc
+    # files (e.g. 'credits' means 'Credits.txt' etc. would be caught). May be
+    # regexes too (which will be run on the filename root).
+    _common_doc_roots = {'change[ _]?log', 'changes', 'credits',
+                         'version[ _]?history'}
+    re_common_docs = re.compile(
+        '^(.*)(?:' + '|'.join(_common_doc_roots) + ')(.*)$', re.I)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
                 u'.fomod', u'.tb2', u'.lzma', u'.manifest', u'.ckm',
                 u'.vortex_backup'}
     skipExts.update(set(readExts))
-    scriptExts = {u'.txt', u'.ini', u'.cfg'}
-    commonlyEditedExts = scriptExts | {u'.xml'}
+    commonlyEditedExts = {'.txt', '.ini', '.cfg', '.xml'}
     #--Regular game directories - needs update after bush.game has been set
     dataDirsPlus = docDirs | {u'bash patches', u'bashtags', u'ini tweaks',
                               u'docs'}
@@ -453,37 +461,51 @@ class Installer(ListInfo):
         the file relative to the root of the package except for espms which
         support renaming (beta) and docs (also beta)."""
         reReadMeMatch = Installer.reReadMe.match
+        re_common_docs_match = Installer.re_common_docs.match
         docs_ = u'Docs' + os_sep
+        ignore_doclike = {'masterlist.txt', 'dlclist.txt'}
         def _process_docs(self, fileLower, full, fileExt, file_relative, sub):
             maReadMe = reReadMeMatch(fileLower)
-            if maReadMe: self.hasReadme = full
-            # let's hope there is no trailing separator - Linux: test fileLower, full are os agnostic
-            rsplit = fileLower.rsplit(os_sep, 1)
-            parentDir, fname = (u'', rsplit[0]) if len(rsplit) == 1 else rsplit
+            if maReadMe and not self.hasReadme:
+                self.hasReadme = full
+            ##: Linux: test fileLower, full are os agnostic
+            rsplit = file_relative.rsplit(os_sep, 1)
+            parent_dir, fname = ('', rsplit[0]) if len(rsplit) == 1 else rsplit
+            lower_parent = parent_dir.lower()
+            lower_fname = fname.lower()
+            package_root = (os.path.splitext(self.archive)[0]
+                            if self._valid_exts_re else self.archive)
+            lower_root = lower_fname[:-len(fileExt)]
+            if lower_root in package_root.lower() and not self.hasReadme:
+                # This is named similarly to the package (with a doc ext), so
+                # probably a readme
+                self.hasReadme = full
             if not self.overrideSkips and bass.settings[
                 u'bash.installers.skipDocs'] and not (
-                        fname in bush.game.Bain.no_skip) and not (
+                        lower_fname in bush.game.Bain.no_skip) and not (
                         fileExt in bush.game.Bain.no_skip_dirs.get(
-                parentDir, [])):
+                lower_parent, [])):
                 return None # skip
             dest = file_relative
-            if not parentDir:
-                archiveRoot = GPath(
-                    self.archive).sroot if self._valid_exts_re else self.archive
-                if fileLower in {u'masterlist.txt', u'dlclist.txt'}:
+            dest_start = (parent_dir + os_sep) if parent_dir else ''
+            # Rename docs with common names that will otherwise easily
+            # conflict to more unique names (by including the package
+            # name's root)
+            if not parent_dir or lower_parent == 'docs':
+                ma_cd = re_common_docs_match(lower_root)
+                if ma_cd and not (ma_cd.group(1) or ma_cd.group(2)):
+                    dest = dest_start + package_root + ' ' + fname
+                elif maReadMe and not (maReadMe.group(1) or maReadMe.group(3)):
+                    dest = dest_start + package_root + fileExt
+            # Move top-level docs to the Docs folder
+            if not parent_dir:
+                dest = docs_ + dest
+                if fileLower in ignore_doclike:
                     self.skipDirFiles.add(full)
                     return None # we dont want to install those files
-                elif maReadMe:
-                    if not (maReadMe.group(1) or maReadMe.group(3)):
-                        dest = u''.join((docs_, archiveRoot, fileExt))
-                    else:
-                        dest = u''.join((docs_, file_relative))
-                    # self.extras_dict['readMe'] = dest
-                elif fileLower == u'package.txt':
-                    dest = self.packageDoc = u''.join(
-                        (docs_, archiveRoot, u'.package.txt'))
-                else:
-                    dest = u''.join((docs_, file_relative))
+                elif fileLower == 'package.txt':
+                    dest = docs_ + package_root + '.package.txt'
+                    self.packageDoc = dest
             return dest
         for ext in Installer.docExts:
             Installer._attributes_process[ext] = _process_docs
@@ -627,7 +649,7 @@ class Installer(ListInfo):
         #--Init to empty
         self.has_fomod_conf = False
         self.hasWizard = self.hasBCF = self.hasReadme = False
-        self.packageDoc = self.packagePic = None # = self.extras_dict['readMe']
+        self.packageDoc = self.packagePic = None
         for attr in {'skipExtFiles','skipDirFiles','espms'}:
             ##: is the object. necessary?
             object.__getattribute__(self,attr).clear()
@@ -733,11 +755,8 @@ class Installer(ListInfo):
                         skipDirFilesDiscard(file_relative)
                         continue
                     elif fileExt in docExts and sub == u'':
-                        if not self.hasReadme:
-                            if reReadMeMatch(file_relative):
-                                self.hasReadme = full
-                                skipDirFilesDiscard(file_relative)
-                                skip = False
+                        skipDirFilesDiscard(file_relative)
+                        skip = False
                     elif fileLower in bethFiles:
                         self.hasBethFiles = True
                         skipDirFilesDiscard(file_relative)
