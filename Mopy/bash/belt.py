@@ -924,7 +924,7 @@ class WryeParser(ScriptParser.Parser):
         return ret[0]
 
     def fnCompareSEVersion(self, seWant):
-        if bush.game.Se.se_abbrev != u'':
+        if bush.game.Se.se_abbrev:
             ver_path = None
             for ver_file in bush.game.Se.ver_files:
                 ver_path = bass.dirs[u'app'].join(ver_file)
@@ -1465,7 +1465,7 @@ class WryeParser(ScriptParser.Parser):
             ret = self._TestVersion(gameWant, test_path, game_have)
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
-        if bush.game.Se.se_abbrev != u'':
+        if bush.game.Se.se_abbrev:
             ver_path = None
             for ver_file in bush.game.Se.ver_files:
                 ver_path = bass.dirs[u'app'].join(ver_file)

@@ -44,7 +44,7 @@ __author__ = u'Ganda'
 from collections import OrderedDict
 from xml.etree import ElementTree as etree
 
-from . import bush
+from . import bass, bush, env
 from .bolt import GPath, Path, LooseVersion
 from .load_order import cached_is_active
 
@@ -422,9 +422,27 @@ class FomodInstaller(object):
                 fm_flag_dict[fm_flag_name] = fm_flag_value
         return fm_flag_dict
 
+    # Translating this is non-trivial due to grammar differences between
+    # languages, so give translators as much freedom as possible by exhausting
+    # all six possibilities and offering a translation for each.
+    _readable_state_errors = {
+        ('Missing', 'Inactive'): _('File %(target_file_name)s should be '
+                                   'missing, but is inactive instead.'),
+        ('Missing', 'Active'):   _('File %(target_file_name)s should be '
+                                   'missing, but is active instead.'),
+        ('Inactive', 'Missing'): _('File %(target_file_name)s should be '
+                                   'inactive, but is missing instead.'),
+        ('Inactive', 'Active'):  _('File %(target_file_name)s should be '
+                                   'inactive, but is active instead.'),
+        ('Active', 'Missing'):   _('File %(target_file_name)s should be '
+                                   'active, but is missing instead.'),
+        ('Active', 'Inactive'):  _('File %(target_file_name)s should be '
+                                   'active, but is inactive instead.'),
+    }
+
     def _test_file_condition(self, condition):
         test_file = GPath(condition.get(u'file'))
-        test_type = condition.get(u'state')
+        target_type = condition.get(u'state')
         # Check if it's missing, ghosted or (in)active
         if not self.dst_dir.join(test_file).exists():
             actual_type = u'Missing'
@@ -435,28 +453,70 @@ class FomodInstaller(object):
         else:
             actual_type = (u'Active' if cached_is_active(test_file)
                            else u'Inactive')
-        if actual_type != test_type:
-            raise FailedCondition(
-                u'File {} should be {} but is {} instead.'.format(
-                    test_file, test_type, actual_type))
+        if actual_type != target_type:
+            raise FailedCondition(self._readable_state_errors[
+                (target_type, actual_type)])
 
     def _test_flag_condition(self, condition):
         fm_flag_name = condition.get(u'flag')
         fm_flag_value = condition.get(u'value', u'')
         actual_flag_value = self._fomod_flags().get(fm_flag_name, u'')
         if actual_flag_value != fm_flag_value:
-            raise FailedCondition(
-                u'Flag {} was expected to have {} but has {} instead.'.format(
-                    fm_flag_name, fm_flag_value, actual_flag_value))
+            raise FailedCondition(_('Flag %(target_flag_name)s was expected '
+                                    "to have value '%(val_want)s' but has "
+                                    "value '%(val_have)s' instead.") % {
+                'target_flag_name': fm_flag_name,
+                'val_want': fm_flag_value,
+                'val_have': actual_flag_value,
+            })
 
     def _test_version_condition(self, condition):
-        target_ver = condition.get(u'version')
+        target_ver = LooseVersion(condition.get('version'))
         game_ver = LooseVersion(self.game_version)
-        target_ver = LooseVersion(target_ver)
         if game_ver < target_ver:
-            raise FailedCondition(
-                u'Game version is {} but {} is required.'.format(
-                    game_ver, target_ver))
+            raise FailedCondition(_('%(game_name)s version %(ver_want)s '
+                                    'is required, but %(ver_have)s was '
+                                    'found.') % {
+                'game_name': bush.game.displayName,
+                'ver_have': game_ver,
+                'ver_want': target_ver,
+            })
+
+    def _test_fomm_condition(self, _condition):
+        # Always accept FOMM conditions, seeing as we can't possibly compare
+        # our own version against whatever version of FOMM might be 'required'.
+        # Plus the FOMOD format is pretty much frozen now, so we support pretty
+        # much all of it
+        pass
+
+    def _test_se_condition(self, condition):
+        if not bush.game.Se.se_abbrev:
+            return # No script extender, pass all tests
+        target_ver = LooseVersion(condition.get('version'))
+        ver_path = None
+        for ver_file in bush.game.Se.ver_files:
+            ver_path = bass.dirs['app'].join(ver_file)
+            if ver_path.exists(): break
+        if ver_path is None:
+            raise FailedCondition(_('%(se_name)s version %(ver_want)s or '
+                                    'higher is required, but could not be '
+                                    'found.') % {
+                'se_name': bush.game.Se.se_abbrev,
+                'ver_want': target_ver,
+            })
+        parsed_ver = env.get_file_version(ver_path.s)
+        if parsed_ver == (0, 0, 0, 0):
+            actual_ver = LooseVersion('0')
+        else:
+            actual_ver = LooseVersion('.'.join(str(s) for s in parsed_ver))
+        if actual_ver < target_ver:
+            raise FailedCondition(_('%(se_name)s version %(ver_want)s or '
+                                    'higher is required, but version '
+                                    '%(ver_have)s was found instead.') % {
+                'se_name': bush.game.Se.se_abbrev,
+                'ver_want': target_ver,
+                'ver_have': actual_ver,
+            })
 
     def test_conditions(self, fomod_conditions):
         cond_op = fomod_conditions.get(u'operator', u'And')
@@ -464,9 +524,7 @@ class FomodInstaller(object):
         all_conditions = fomod_conditions.findall(u'*')
         for condition in all_conditions:
             try:
-                test_func = self._condition_tests.get(condition.tag, None)
-                if test_func:
-                    test_func(self, condition)
+                self._condition_tests[condition.tag](self, condition)
             except FailedCondition as e:
                 failed_conditions.extend([a for a in str(e).splitlines()])
                 if cond_op == u'And':
@@ -474,10 +532,14 @@ class FomodInstaller(object):
         if cond_op == u'Or' and len(failed_conditions) == len(all_conditions):
             raise FailedCondition(u'\n'.join(failed_conditions))
 
-    _condition_tests = {u'fileDependency': _test_file_condition,
-                        u'flagDependency': _test_flag_condition,
-                        u'gameDependency': _test_version_condition,
-                        u'dependencies': test_conditions, }
+    _condition_tests = {
+        'fileDependency': _test_file_condition,
+        'flagDependency': _test_flag_condition,
+        'gameDependency': _test_version_condition,
+        'fommDependency': _test_fomm_condition,
+        'foseDependency': _test_se_condition,
+        'dependencies': test_conditions,
+    }
 
     # Valid values for 'order' attributes
     _valid_values = {u'Explicit', u'Ascending', u'Descending'}
