@@ -24,8 +24,9 @@
 """Requirement for further reading:
 https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Fomod-for-Devs
 
-This is a very simplistic backend installer for FOMOD. Ported from
-GandaG/pyfomod.
+This is WB's backend implementation for FOMOD. Originally ported from
+GandaG/pyfomod, it has seen significant refactoring and extension since then
+and now implements pretty much the entire FOMOD format.
 
 Only entry point is FomodInstaller. Parsing of the xml tree is done via
 Python's std lib and only as-needed (so that instancing this class isn't
@@ -41,7 +42,6 @@ xml attributes/text are available via instance attributes."""
 
 __author__ = u'Ganda'
 
-from collections import OrderedDict
 from enum import Enum
 from xml.etree import ElementTree as etree
 
@@ -127,6 +127,9 @@ class InstallerPage(_AFomodBase):
     def __len__(self):
         return len(self._group_list)
 
+    def __repr__(self):
+        return f'InstallerPage<{self.page_name}, {len(self)} group(s)>'
+
 class InstallerGroup(_AFomodBase):
     """Wrapper around the ElementTree element 'group'. Provides the group's
     name and type via the `group_name` and `group_type` instance attributes,
@@ -154,6 +157,9 @@ class InstallerGroup(_AFomodBase):
 
     def __len__(self):
         return len(self._option_list)
+
+    def __repr__(self):
+        return f'InstallerGroup<{self.group_name}, {len(self)} option(s)>'
 
 class InstallerOption(_AFomodBase):
     """Wrapper around the ElementTree element 'plugin'. Provides the option's
@@ -199,6 +205,9 @@ class InstallerOption(_AFomodBase):
                 opt_type_str = default_type
         self.option_type = _str_to_ot[opt_type_str]
 
+    def __repr__(self):
+        return f'InstallerOption<{self.option_name}>'
+
 class _FomodFileInfo(object):
     """Stores information about a single file that is going to be installed."""
     __slots__ = (u'file_source', u'file_destination', u'file_priority')
@@ -220,9 +229,11 @@ class _FomodFileInfo(object):
             self.file_priority)
 
     @classmethod
-    def process_files(cls, files_elem, file_list, inst_root):
-        """Processes the elements in *files_elem* into a list of
-        _FomodFileInfo.
+    def process_files(cls, files_elem, file_list, inst_root, is_usable):
+        """Processes the elements in files_elem into two lists of
+        _FomodFileInfo instances. The first one contains the regular, processed
+        files, the second contains processed files that *must* be installed due
+        to having alwaysInstall or a valid installIfUsable attribute.
 
         When parsing these elements there are a number of edge cases that must
         be taken into account, like a missing destination attribute having the
@@ -233,17 +244,21 @@ class _FomodFileInfo(object):
         and never any folders to simplify installation later on (python has a
         hard time copying folders).
 
-        :param files_elem: list of ElementTree elements 'file' and 'folder'
-        :param file_list: list of files in the mod being installed
-        :param inst_root: The root path to retrieve sources relative to."""
-        fm_infos = []
+        :param files_elem: An ElementTree element housing the 'file' and
+            'folder' elements we want to install
+        :param file_list: A list of all files in the parent package.
+        :param inst_root: The root path to retrieve sources relative to.
+        :param is_usable: True if the type of the option/plugin that this file
+            list belongs to is anything but NotUsable."""
+        fm_infos_con = []
+        fm_infos_req = []
         md_lower = bush.game.mods_dir.lower()
         md_lower_slash = tuple(md_lower + s for s in (u'/', u'\\'))
         md_lower_strip = len(md_lower) + 1 # for the (back)slash
         for file_object in files_elem.findall(u'*'):
             file_src = inst_root + file_object.get(u'source')
             if file_src.endswith((u'/', u'\\')):
-                file_src = file_src[:-1]
+                file_src = file_src[:-1] ##: Doesn't GPath already do this?
             file_src = GPath(file_src)
             file_dest = file_object.get(u'destination', None)
             if file_dest is None: # omitted destination
@@ -275,16 +290,26 @@ class _FomodFileInfo(object):
             # otherwise we may end up matching e.g. 'Foo - A/bar.esp' to the
             # source 'Foo', when the source 'Foo - A' exists.
             source_starts = (source_lower + u'/', source_lower + u'\\')
+            # Check the fileSystemItem attributes alwaysInstall and
+            # installIfUsable, which may make arbitrary files required
+            if file_object.get('alwaysInstall', 'false') in ('true', '1'):
+                fm_infos_target = fm_infos_req
+            elif (file_object.get('installIfUsable', 'false') in ('true', '1')
+                  and is_usable):
+                fm_infos_target = fm_infos_req
+            else:
+                fm_infos_target = fm_infos_con
             for fsrc in file_list:
                 fsrc_lower = fsrc.lower()
                 if fsrc_lower == source_lower: # it's a file
-                    fm_infos.append(cls(file_src, file_dest, file_prty))
+                    fm_infos_target.append(cls(file_src, file_dest, file_prty))
                 elif fsrc_lower.startswith(source_starts): # it's a folder
                     fdest = file_dest.s + fsrc[len(file_src):]
                     if fdest.startswith((u'/', u'\\')):
                         fdest = fdest[1:]
-                    fm_infos.append(cls(GPath(fsrc), GPath(fdest), file_prty))
-        return fm_infos
+                    fm_infos_target.append(cls(GPath(fsrc), GPath(fdest),
+                                           file_prty))
+        return fm_infos_con, fm_infos_req
 
 class FomodInstaller(object):
     """Represents the installer itself. Keeps parsing on instancing to a
@@ -330,7 +355,7 @@ class FomodInstaller(object):
         self.dst_dir = dst_dir
         self.game_version = game_version
         self._current_page = None
-        self._previous_pages = OrderedDict()
+        self._previous_pages: dict[InstallerPage, list[InstallerOption]] = {}
         self._has_finished = False
 
     def check_start_conditions(self):
@@ -395,45 +420,69 @@ class FomodInstaller(object):
 
     def move_to_prev(self):
         self._has_finished = False
-        prev_page, prev_selected = self._previous_pages.popitem(last=True)
+        prev_page, prev_selected = self._previous_pages.popitem()
         self._current_page = prev_page
         return prev_page, prev_selected
 
     def get_fomod_files(self):
-        required_files = []
+        collected_files = []
         required_files_elem = self.fomod_tree.find(u'requiredInstallFiles')
         if required_files_elem is not None:
-            required_files = _FomodFileInfo.process_files(
-                required_files_elem, self.file_list, self.installer_root)
-        user_files = []
-        selected_options = [option.option_object
-                            for options in self._previous_pages.values()
-                            for option in options]
-        for option in selected_options:
-            option_files = option.find(u'files')
-            if option_files is not None:
-                user_files.extend(_FomodFileInfo.process_files(
-                    option_files, self.file_list, self.installer_root))
-        conditional_files = []
+            # No need to worry about the con/req split here - we're in the
+            # requiredInstallFiles section, so all files are required
+            con_files, req_files = _FomodFileInfo.process_files(
+                required_files_elem, self.file_list, self.installer_root,
+                is_usable=True)
+            collected_files.extend(con_files)
+            collected_files.extend(req_files)
+        for pre_page, options in self._previous_pages.items():
+            # All options that were available on this page
+            all_options = [option for grp in pre_page for option in grp]
+            # Set of only the option objects that the user actually selected
+            selected_options = set(options)
+            for option in all_options:
+                option_files = option.option_object.find('files')
+                if option_files is not None:
+                    # Here we have to worry about the con/req split
+                    con_files, req_files = _FomodFileInfo.process_files(
+                        option_files, self.file_list, self.installer_root,
+                        is_usable=option.option_type != OptionType.NOT_USABLE)
+                    collected_files.extend(req_files)
+                    # Only include the conditional files if the option was
+                    # actually selected
+                    if option in selected_options:
+                        collected_files.extend(con_files)
         for cond_pattern in self.fomod_tree.findall(
                 u'conditionalFileInstalls/patterns/pattern'):
             dep_conditions = cond_pattern.find(u'dependencies')
             cond_files = cond_pattern.find(u'files')
+            # We also have to worry about the con/req split here
+            ##: I'm unsure about what to do with is_usable here. The schema
+            # says that installIfUsable 'should always be installed if the
+            # plugin is not NotUsable, regardless of whether or not the plugin
+            # has been selected', but this is outside the plugins and
+            # outside the requiredInstallFiles, so... should we raise an error?
+            # Ignore the attribute? Respect it? I went with respecting it to be
+            # safe
+            con_files, req_files = _FomodFileInfo.process_files(
+                cond_files, self.file_list, self.installer_root,
+                is_usable=True)
+            collected_files.extend(req_files)
             try:
                 self.test_conditions(dep_conditions)
+                # Only include the conditional files if the condition check
+                # passes successfully
+                collected_files.extend(con_files)
             except FailedCondition:
                 pass
-            else:
-                conditional_files.extend(_FomodFileInfo.process_files(
-                    cond_files, self.file_list, self.installer_root))
         file_dict = {}  # dst -> src
         priority_dict = {}  # dst -> priority
-        for fm_info in required_files + user_files + conditional_files:
+        for fm_info in collected_files:
             fm_info_dest = fm_info.file_destination
-            if fm_info_dest in priority_dict:
-                if priority_dict[fm_info_dest] > fm_info.file_priority:
-                    continue
-                del file_dict[fm_info_dest]
+            if (fm_info_dest in priority_dict
+                    and priority_dict[fm_info_dest] > fm_info.file_priority):
+                # Don't overwrite the higher-priority file
+                continue
             file_dict[fm_info_dest] = fm_info.file_source
             priority_dict[fm_info_dest] = fm_info.file_priority
         # return everything in strings
