@@ -448,14 +448,23 @@ class MasterList(_ModsUIList):
         if not fileInfo:
             return
         #--Fill data and populate
-        self.is_inaccurate = fileInfo.has_inaccurate_masters
-        has_sizes = bush.game.Esp.check_master_sizes and isinstance(
-            fileInfo, bosh.ModInfo) # only mods have master sizes
-        for mi, masters_name in enumerate(fileInfo.masterNames):
-            masters_size = fileInfo.header.master_sizes[mi] if has_sizes else 0
-            self.data_store[mi] = bosh.MasterInfo(masters_name, masters_size)
-        self._reList()
         self._update_real_indices(fileInfo)
+        self.is_inaccurate = fileInfo.has_inaccurate_masters
+        if isinstance(fileInfo, bosh.ModInfo):
+            can_have_sizes = bush.game.Esp.check_master_sizes
+            can_have_esl = False
+        else:
+            can_have_sizes = False
+            can_have_esl = bush.game.has_esl
+        all_esl_masters = (set(fileInfo.header.masters_esl) if can_have_esl
+                           else None)
+        all_master_sizes = (fileInfo.header.master_sizes if can_have_sizes
+                            else None)
+        for mi, ma_name in enumerate(fileInfo.masterNames):
+            ma_size = all_master_sizes[mi] if can_have_sizes else 0
+            ma_esl = can_have_esl and ma_name in all_esl_masters
+            self.data_store[mi] = bosh.MasterInfo(ma_name, ma_size, ma_esl)
+        self._reList()
         self.PopulateItems()
 
     #--Get Master Status

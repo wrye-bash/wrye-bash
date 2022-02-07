@@ -193,13 +193,14 @@ class MasterInfo(object):
     """Slight abstraction over ModInfo that allows us to represent masters that
     are missing an active mod counterpart."""
     __slots__ = (u'is_ghost', u'curr_name', u'mod_info', u'old_name',
-                 u'stored_size')
+                 'stored_size', '_was_esl')
 
-    def __init__(self, master_name, master_size):
+    def __init__(self, master_name, master_size, was_esl):
         self.old_name = self.curr_name = GPath_no_norm(master_name)
         self.stored_size = master_size
         self.mod_info = modInfos.get(self.curr_name, None)
         self.is_ghost = self.mod_info and self.mod_info.isGhost
+        self._was_esl = was_esl
 
     def get_extension(self):
         """Returns the file extension of this master."""
@@ -216,11 +217,11 @@ class MasterInfo(object):
             return self.get_extension() in (u'.esm', u'.esl')
 
     def is_esl(self):
-        """Delegate to self.modInfo.is_esl if exists, else check extension."""
+        """Delegate to self.modInfo.is_esl if exists, else rely on ."""
         if self.mod_info:
             return self.mod_info.is_esl()
         else:
-            return self.get_extension() == u'.esl'
+            return self._was_esl
 
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
@@ -791,8 +792,8 @@ class ModInfo(FileInfo):
         filePath.untemp()
         self.setmtime(crc_changed=True)
         #--Merge info
-        stored_size, canMerge = self.get_table_prop(u'mergeInfo', (None, None))
-        if stored_size is not None:
+        merge_size, canMerge = self.get_table_prop(u'mergeInfo', (None, None))
+        if merge_size is not None:
             self.set_table_prop(u'mergeInfo', (filePath.psize, canMerge))
 
     def writeDescription(self, new_desc):
