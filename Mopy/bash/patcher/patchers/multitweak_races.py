@@ -190,6 +190,9 @@ class _ARUnblockTweak(_ARaceTweak):
     _sig_and_attr = (b'OVERRIDE', u'OVERRIDE')
 
     def wants_record(self, record):
+        if record._rec_sig != b'RACE':
+            # We have to load HAIR/EYES, but we don't want to tweak them
+            return False
         race_sig, race_attr = self._sig_and_attr
         # If this is None, we don't have race data yet and have to blindly
         # forward records until the patcher sends it to us
@@ -204,6 +207,7 @@ class _ARUnblockTweak(_ARaceTweak):
 # -----------------------------------------------------------------------------
 class RaceTweak_AllHairs(_ARUnblockTweak):
     """Gives all races ALL hairs."""
+    tweak_read_classes = b'HAIR', b'RACE',
     tweak_name = _(u'Races Have All Hairs')
     tweak_tip = _(u'Gives all races every available hair.')
     tweak_key = u'hairyraces'
@@ -213,6 +217,7 @@ class RaceTweak_AllHairs(_ARUnblockTweak):
 # -----------------------------------------------------------------------------
 class RaceTweak_AllEyes(_ARUnblockTweak):
     """Gives all races ALL eyes."""
+    tweak_read_classes = b'EYES', b'RACE',
     tweak_name = _(u'Races Have All Eyes')
     tweak_tip = _(u'Gives all races every available eye.')
     tweak_key = u'eyeyraces'
@@ -359,8 +364,11 @@ class TweakRacesPatcher(MultiTweaker):
             tweak_data = self.collected_tweak_data
             for tweak_type in (b'EYES', b'HAIR'):
                 if tweak_type not in modFile.tops: continue
+                type_data = tweak_data[tweak_type]
+                type_data_set = set(type_data)
                 for record in modFile.tops[tweak_type].getActiveRecords():
-                    tweak_data[tweak_type].append(record.fid)
+                    if record.fid not in type_data_set:
+                        type_data.append(record.fid)
         super(TweakRacesPatcher, self).scanModFile(modFile, progress)
 
     def buildPatch(self, log, progress):
