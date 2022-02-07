@@ -2981,7 +2981,7 @@ class InstallersDetails(_SashDetailsPanel):
                     nConfigured - nMissing - nMismatched),
                  _('  Missing:') + f' {numstr(nMissing)}',
                  _('  Conflicts:') + f' {numstr(nMismatched)}',
-                #--Infoboxes
+                '', # One newline in between the main info and the file list
                 _dumpFiles(installer.ci_dest_sizeCrc,
                            '== ' + _('Configured Files'))])
             gPage.text_content = u'\n'.join(inf_)
