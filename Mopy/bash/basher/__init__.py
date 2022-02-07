@@ -3974,7 +3974,10 @@ class BashFrame(WindowFrame):
         bass.update_sys_argv([u'--no-uac'])
         # restart
         bass.is_restarting = True
-        self.close_win(True)
+        ##: This breaks on py3 + wx4.1, use sys.exit + manual save for now
+        #self.close_win(True)
+        Link.Frame.SaveSettings()
+        sys.exit(0)
 
     def set_bash_frame_title(self):
         """Set title. Set to default if no title supplied."""
