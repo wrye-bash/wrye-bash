@@ -42,6 +42,7 @@ xml attributes/text are available via instance attributes."""
 __author__ = u'Ganda'
 
 from collections import OrderedDict
+from enum import Enum
 from xml.etree import ElementTree as etree
 
 from . import bass, bush, env
@@ -53,6 +54,37 @@ class FailedCondition(Exception):
     passed to it should be human-readable and proper for a user to
     understand."""
     pass
+
+class FileState(Enum):
+    """The various states that a file can have. Implements the XML simpleType
+    'state'."""
+    MISSING = 'Missing'
+    INACTIVE = 'Inactive'
+    ACTIVE = 'Active'
+
+_str_to_fs = {f.value: f for f in FileState.__members__.values()}
+
+class GroupType(Enum):
+    """The various types that a group can have. Implements the XML simpleType
+    'type'."""
+    SELECT_AT_LEAST_ONE = 'SelectAtLeastOne'
+    SELECT_AT_MOST_ONE = 'SelectAtMostOne'
+    SELECT_EXACTLY_ONE = 'SelectExactlyOne'
+    SELECT_ALL = 'SelectAll'
+    SELECT_ANY = 'SelectAny'
+
+_str_to_gt = {g.value: g for g in GroupType.__members__.values()}
+
+class OptionType(Enum):
+    """The various types that an option can have. Implements the XML enum
+    'pluginType'."""
+    REQUIRED = 'Required'
+    OPTIONAL = 'Optional'
+    RECOMMENDED = 'Recommended'
+    NOT_USABLE = 'NotUsable'
+    COULD_BE_USABLE = 'CouldBeUsable'
+
+_str_to_ot = {o.value: o for o in OptionType.__members__.values()}
 
 class _AFomodBase(object):
     """Base class for FOMOD components. Defines a key to sort instances of this
@@ -115,7 +147,7 @@ class InstallerGroup(_AFomodBase):
             InstallerOption(parent_installer, xml_option_object)
             for xml_option_object in group_object.findall(u'plugins/*')],
             group_object.find(u'plugins').get(u'order', u'Ascending'))
-        self.group_type = group_object.get(u'type')
+        self.group_type = _str_to_gt[group_object.get('type')]
 
     def __getitem__(self, k):
         return self._option_list[k]
@@ -148,7 +180,7 @@ class InstallerOption(_AFomodBase):
             self.option_image = u''
         type_elem = option_object.find(u'typeDescriptor/type')
         if type_elem is not None:
-            self.option_type = type_elem.get(u'name')
+            opt_type_str = type_elem.get('name')
         else:
             default_type = option_object.find(
                 u'typeDescriptor/dependencyType/defaultType').get(u'name')
@@ -161,10 +193,11 @@ class InstallerOption(_AFomodBase):
                 except FailedCondition:
                     pass
                 else:
-                    self.option_type = dep_pattern.find(u'type').get(u'name')
+                    opt_type_str = dep_pattern.find('type').get('name')
                     break
             else:
-                self.option_type = default_type
+                opt_type_str = default_type
+        self.option_type = _str_to_ot[opt_type_str]
 
 class _FomodFileInfo(object):
     """Stores information about a single file that is going to be installed."""
@@ -426,36 +459,42 @@ class FomodInstaller(object):
     # languages, so give translators as much freedom as possible by exhausting
     # all six possibilities and offering a translation for each.
     _readable_state_errors = {
-        ('Missing', 'Inactive'): _('File %(target_file_name)s should be '
-                                   'missing, but is inactive instead.'),
-        ('Missing', 'Active'):   _('File %(target_file_name)s should be '
-                                   'missing, but is active instead.'),
-        ('Inactive', 'Missing'): _('File %(target_file_name)s should be '
-                                   'inactive, but is missing instead.'),
-        ('Inactive', 'Active'):  _('File %(target_file_name)s should be '
-                                   'inactive, but is active instead.'),
-        ('Active', 'Missing'):   _('File %(target_file_name)s should be '
-                                   'active, but is missing instead.'),
-        ('Active', 'Inactive'):  _('File %(target_file_name)s should be '
-                                   'active, but is inactive instead.'),
+        (FileState.MISSING, FileState.INACTIVE): _(
+            'File %(target_file_name)s should be missing, but is inactive '
+            'instead.'),
+        (FileState.MISSING, FileState.ACTIVE): _(
+            'File %(target_file_name)s should be missing, but is active '
+            'instead.'),
+        (FileState.INACTIVE, FileState.MISSING): _(
+            'File %(target_file_name)s should be inactive, but is missing '
+            'instead.'),
+        (FileState.INACTIVE, FileState.ACTIVE): _(
+            'File %(target_file_name)s should be inactive, but is active '
+            'instead.'),
+        (FileState.ACTIVE, FileState.MISSING): _(
+            'File %(target_file_name)s should be active, but is missing '
+            'instead.'),
+        (FileState.ACTIVE, FileState.INACTIVE): _(
+            'File %(target_file_name)s should be active, but is inactive '
+            'instead.'),
     }
 
     def _test_file_condition(self, condition):
         test_file = GPath(condition.get(u'file'))
-        target_type = condition.get(u'state')
+        target_type = _str_to_fs[condition.get('state')]
         # Check if it's missing, ghosted or (in)active
         if not self.dst_dir.join(test_file).exists():
-            actual_type = u'Missing'
+            actual_type = FileState.MISSING
         ##: Needed? Shouldn't this be handled by cached_is_active?
         elif (test_file.cext in bush.game.espm_extensions and
               self.dst_dir.join(test_file + u'.ghost').exists()):
-            actual_type = u'Inactive'
+            actual_type = FileState.INACTIVE
         else:
-            actual_type = (u'Active' if cached_is_active(test_file)
-                           else u'Inactive')
+            actual_type = (FileState.ACTIVE if cached_is_active(test_file)
+                           else FileState.INACTIVE)
         if actual_type != target_type:
             raise FailedCondition(self._readable_state_errors[
-                (target_type, actual_type)])
+                (target_type, actual_type)] % {'target_file_name': test_file})
 
     def _test_flag_condition(self, condition):
         fm_flag_name = condition.get(u'flag')
