@@ -465,7 +465,7 @@ class MasterList(_ModsUIList):
             ma_esl = can_have_esl and ma_name in all_esl_masters
             self.data_store[mi] = bosh.MasterInfo(ma_name, ma_size, ma_esl)
         self._reList()
-        self.PopulateItems()
+        self.populate_items()
 
     #--Get Master Status
     def GetMasterStatus(self, mi):
@@ -586,7 +586,7 @@ class MasterList(_ModsUIList):
 
     def SetMasterlistEdited(self, repopulate=False):
         self._reList()
-        if repopulate: self.PopulateItems()
+        if repopulate: self.populate_items()
         self.edited = True
         self.detailsPanel.SetEdited() # inform the details panel
 

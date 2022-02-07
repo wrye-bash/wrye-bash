@@ -237,14 +237,26 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         self._itemId_item[self.__item_id] = item
         return self.__item_id
 
-    def InsertListCtrlItem(self, index, value, item):
-        """Insert an item to the list control giving it an internal id."""
+    def InsertListCtrlItem(self, index, value, item, decorate_cb):
+        """Insert an item to the list control giving it an internal id.
+
+        :param decorate_cb: A callback that will be passed the created wx item.
+            Use this to set properties on the item once before it is """
         i = self.__id(item)
-        some_long = self._native_widget.InsertItem(index, value) # index ?
-        gItem = self._native_widget.GetItem(index) # that's what Tank did
-        gItem.SetData(i)  # Associate our id with that row.
-        self._native_widget.SetItem(gItem) # this is needed too - yak
-        return some_long
+        new_index = self._native_widget.InsertItem(index, value)
+        if new_index == -1:
+            raise RuntimeError(f'Failed to insert UIList item {value}')
+        # The item/row is inserted now, but all ancillary data has to be added
+        # to the actual wx object, then committed (see below)
+        gItem = self._native_widget.GetItem(new_index)
+        # Associate our internal id with this item/row
+        gItem.SetData(i)
+        ##: de-wx! This is a wx object escaping - should be internal-only,
+        # need to absorb __setUI in gui and export a public API like
+        # _ListItemFormat for that
+        decorate_cb(gItem)
+        # This commits the actual changed data in the ListCtrl
+        self._native_widget.SetItem(gItem)
 
     def RemoveItemAt(self, index):
         """Remove item at specified list index."""

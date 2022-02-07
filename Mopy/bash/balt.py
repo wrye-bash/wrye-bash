@@ -900,7 +900,7 @@ class UIList(wx.Panel):
         #--Items
         self._defaultTextBackground = wx.SystemSettings.GetColour(
             wx.SYS_COLOUR_WINDOW)
-        self.PopulateItems()
+        self.populate_items()
 
     # Column properties
     @property
@@ -950,6 +950,10 @@ class UIList(wx.Panel):
         the key in self.data
         """
         insert = False
+        gl_set_item = self.__gList._native_widget.SetItem
+        allow_cols = self.allowed_cols # property, calculate once
+        if not allow_cols:
+            return # No visible columns, nothing to do
         if item is not None:
             try:
                 itemDex = self.GetIndex(item)
@@ -958,13 +962,23 @@ class UIList(wx.Panel):
                 insert = True
         else: # no way we're inserting with a None item
             item = self.GetItem(itemDex)
-        for colDex, col in enumerate(self.allowed_cols):
-            labelTxt = self.labels[col](self, item)
-            if insert and colDex == 0:
-                self.__gList.InsertListCtrlItem(itemDex, labelTxt, item)
-            else:
-                self.__gList._native_widget.SetItem(itemDex, colDex, labelTxt)
-        self.__setUI(item, itemDex, target_ini_setts)
+        if insert:
+            # We're inserting a new item, so we need special handling for the
+            # first SetItem call - see InsertListCtrlItem
+            self.__gList.InsertListCtrlItem(
+                itemDex, self.labels[allow_cols[0]](self, item), item,
+                decorate_cb=partial(self.__setUI, item, target_ini_setts))
+        else:
+            # The item is already in the UIList, so we only need to redecorate
+            # and set text for all labels
+            gItem = self.__gList._native_widget.GetItem(itemDex)
+            self.__setUI(item, target_ini_setts, gItem)
+            # Piggyback off the SetItem call we need for __setUI to also set
+            # the first column's text
+            gItem.SetText(self.labels[allow_cols[0]](self, item))
+            gl_set_item(gItem)
+        for col_index, col in enumerate(allow_cols[1:], start=1):
+            gl_set_item(itemDex, col_index, self.labels[col](self, item))
 
     class _ListItemFormat(object):
         def __init__(self):
@@ -982,9 +996,8 @@ class UIList(wx.Panel):
         tweak_status in Inis) to update respective info's status."""
         pass # screens, bsas
 
-    def __setUI(self, fileName, itemDex, target_ini_setts):
+    def __setUI(self, fileName, target_ini_setts, gItem):
         """Set font, status icon, background text etc."""
-        gItem = self.__gList._native_widget.GetItem(itemDex)
         df = self._ListItemFormat()
         self.set_item_format(fileName, df, target_ini_setts=target_ini_setts)
         if df.icon_key:
@@ -1001,10 +1014,16 @@ class UIList(wx.Panel):
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
         gItem.SetFont(Font.Style(gItem.GetFont(), bold=df.strong,
                                  slant=df.italics, underline=df.underline))
-        self.__gList._native_widget.SetItem(gItem)
 
-    def PopulateItems(self):
+    def populate_items(self):
         """Sort items and populate entire list."""
+        # Make sure to freeze/thaw, all the InsertListCtrlItem calls make the
+        # GUI lag
+        self.Freeze()
+        self._PopulateItems()
+        self.Thaw()
+
+    def _PopulateItems(self):
         self.mouseTexts.clear()
         items = set(self.data_store)
         if self.__class__._target_ini:
@@ -1035,8 +1054,11 @@ class UIList(wx.Panel):
         """
         focus_list = kwargs.pop(u'focus_list', True)
         if redraw is to_del is self.__all:
-            self.PopulateItems()
+            self.populate_items()
         else:  #--Iterable
+            # Make sure to freeze/thaw, all the InsertListCtrlItem calls make
+            # the GUI lag
+            self.Freeze()
             for d in to_del:
                 self.__gList.RemoveItemAt(self.GetIndex(d))
             for upd in redraw:
@@ -1044,6 +1066,7 @@ class UIList(wx.Panel):
             #--Sort
             self.SortItems()
             self.autosizeColumns()
+            self.Thaw()
         self._refresh_details(redraw, detail_item)
         self.panel.SetStatusCount()
         if focus_list: self.Focus()
@@ -1271,7 +1294,10 @@ class UIList(wx.Panel):
         self.EnsureVisibleIndex(self.GetIndex(itm_name), focus=focus)
 
     def EnsureVisibleIndex(self, dex, focus=False):
-        self.__gList._native_widget.Focus(dex) if focus else self.__gList._native_widget.EnsureVisible(dex)
+        if focus:
+            self.__gList._native_widget.Focus(dex)
+        else:
+            self.__gList._native_widget.EnsureVisible(dex)
         self.Focus()
 
     def SelectAndShowItem(self, item, deselectOthers=False, focus=True):
