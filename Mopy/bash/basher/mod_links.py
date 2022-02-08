@@ -1513,10 +1513,13 @@ class _Esm_Esl_Flip(EnabledLink):
             # This will have changed the plugin, so let BAIN know
             bosh.modInfos._notify_bain(
                 changed={p.abs_path for p in self.iselected_infos()})
-        # will be moved to the top - note that modification times won't
-        # change - so mods will revert to their original position once back
-        # to esp from esm (Oblivion etc). Refresh saves due to esms move
-        self.window.RefreshUI(redraw=self.selected, refreshSaves=True)
+            # We need to RefreshUI all higher-loading plugins than the lowest
+            # plugin that was affected to update the Indices column
+            lowest_selected = min(self.selected,
+                                  key=load_order.cached_lo_index_or_max)
+            self.window.RefreshUI(
+                redraw=load_order.cached_higher_loading(lowest_selected),
+                refreshSaves=True)
 
 class Mod_FlipEsm(_Esm_Esl_Flip):
     """Flip ESM flag. Extension must be .esp or .esu."""
