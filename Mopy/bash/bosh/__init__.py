@@ -592,15 +592,7 @@ class ModInfo(FileInfo):
     def real_index_string(self):
         """Returns a string-based version of real_index for displaying in the
         Indices column."""
-        cr_index = self.real_index()
-        if cr_index == sys.maxsize:
-            return u''
-        elif self.is_esl():
-            # Need to undo the offset we applied to sort ESLs after regulars
-            sort_offset = load_order.max_espms() - 1
-            return u'FE %03X' % (cr_index - sort_offset)
-        else:
-            return u'%02X' % cr_index
+        return modInfos.real_index_strings[self.ci_key]
 
     def setmtime(self, set_time=0.0, crc_changed=False):
         """Set mtime and if crc_changed is True recalculate the crc."""
@@ -2086,6 +2078,7 @@ class ModInfos(FileInfos):
                             u'File is required, but could not be found')
         # Maps plugins to 'real indices', i.e. the ones the game will assign.
         self.real_indices = collections.defaultdict(lambda: sys.maxsize)
+        self.real_index_strings = collections.defaultdict(lambda: '')
         # Maps each plugin to a set of all plugins that have it as a master
         self.dependents = collections.defaultdict(set)
         self.mergeable = set() #--Set of all mods which can be merged.
@@ -3216,15 +3209,17 @@ class ModInfos(FileInfos):
         esl_index = 0
         esl_offset = load_order.max_espms() - 1
         self.real_indices.clear()
+        self.real_index_strings.clear()
         for p in load_order.cached_active_tuple():
             if self[p].is_esl():
                 # sort ESLs after all regular plugins
-                r_index = esl_offset + esl_index
+                self.real_indices[p] = esl_offset + esl_index
+                self.real_index_strings[p] = 'FE %03X' % esl_index # no fstring
                 esl_index += 1
             else:
-                r_index = regular_index
+                self.real_indices[p] = regular_index
+                self.real_index_strings[p] = '%02X' % regular_index #no fstring
                 regular_index += 1
-            self.real_indices[p] = r_index
 
     def _recalc_dependents(self):
         """Recalculates the dependents cache. See ModInfo.get_dependents for

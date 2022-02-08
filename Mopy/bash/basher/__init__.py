@@ -375,9 +375,9 @@ class MasterList(_ModsUIList):
         self.detailsPanel = detailsPanel
         self.fileInfo = None
         self._curr_lo_index = {} # cache, orders missing last alphabetically
-        # Caches based on SaveHeader.masters_regular and masters_esl - map
-        self._save_lo_regular = {}
-        self._save_lo_esl = []
+        # Cache based on SaveHeader.masters_regular and masters_esl
+        self._save_lo_real_index = defaultdict(lambda: sys.maxsize)
+        self._save_lo_hex_string = defaultdict(lambda: '')
         self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
@@ -416,26 +416,13 @@ class MasterList(_ModsUIList):
     def _save_real_master_index(self, master_name):
         """Returns a sort key for the 'real' index of the specified master
         within this save."""
-        if master_name in self._save_lo_regular:
-            # For regular masters, just return the index
-            return self._save_lo_regular[master_name]
-        elif master_name in self._save_lo_esl:
-            # For ESL masters, sort them after the last regular master
-            return len(self._save_lo_regular) + self._save_lo_esl[master_name]
-        else:
-            # This could potentially happen if we rename a save master
-            return sys.maxsize
+        return self._save_lo_real_index[master_name]
 
     def _save_real_master_hex(self, master_name):
         """Returns the 'real' index of the specified master within this save,
         i.e. the FormID prefix it had at the time the save was created. Compare
         ModInfo.real_index[_string]."""
-        if master_name in self._save_lo_regular:
-            return '%02X' % self._save_lo_regular[master_name]
-        elif master_name in self._save_lo_esl:
-            return 'FE %03X' % self._save_lo_esl[master_name]
-        else:
-            return ''
+        return self._save_lo_hex_string[master_name]
 
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
@@ -2229,16 +2216,24 @@ class SaveList(balt.UIList):
 class _SaveMasterList(MasterList):
     """Override to handle updating ESL masters."""
     def _update_real_indices(self, new_file_info):
+        self._save_lo_real_index.clear()
+        self._save_lo_hex_string.clear()
         # Check if we have to worry about ESL masters
         if bush.game.has_esl and new_file_info.header.has_esl_masters:
-            self._save_lo_regular = {m: i for i, m in enumerate(
+            save_lo_regular = {m: i for i, m in enumerate(
                 new_file_info.header.masters_regular)}
-            self._save_lo_esl = {m: i for i, m in enumerate(
-                new_file_info.header.masters_esl)}
+            num_regular = len(save_lo_regular)
+            # For ESL masters, we have to add an offset to the real index
+            for i, m in enumerate(new_file_info.header.masters_esl):
+                self._save_lo_real_index[m] = num_regular + i
+                self._save_lo_hex_string[m] = 'FE %03X' % i # fstring is slower
         else:
-            self._save_lo_regular = {m: i for i, m in enumerate(
+            save_lo_regular = {m: i for i, m in enumerate(
                 new_file_info.masterNames)}
-            self._save_lo_esl = {}
+        # For regular masters, simply store the LO index
+        self._save_lo_real_index.update(save_lo_regular)
+        self._save_lo_hex_string.update({m: '%02X' % i for m, i
+                                         in save_lo_regular.items()})
 
 class SaveDetails(_ModsSavesDetails):
     """Savefile details panel."""
