@@ -39,7 +39,7 @@ class DropDown(_AComponent):
     wider than width of control.
 
     Events:
-     - on_combo_select(selected_label: bytes): Posted when an item on the list is
+     - on_combo_select(selected_label: str): Posted when an item on the list is
      selected. The parameter is the new value of selection."""
     _wx_widget_type = _wx.ComboBox
 
@@ -75,15 +75,17 @@ class DropDown(_AComponent):
         else: tt = u''
         self.tooltip = tt
 
-    def set_choices(self, combo_choices):
-        """Set the combobox items"""
-        self._native_widget.SetItems(combo_choices)
+    def set_choices(self, dd_choices):
+        """Set the choices shown in this dropdown."""
+        self._native_widget.SetItems(dd_choices)
 
-    def set_selection(self, combo_choice):
-        """Set the combobox selected item"""
-        self._native_widget.SetSelection(combo_choice)
+    def set_selection(self, dd_selection: int):
+        """Set the choice that is currently selected in this dropdown."""
+        self._native_widget.SetSelection(dd_selection)
 
     def get_value(self):
+        """Get the value of the choice that is currently selected in this
+        dropdown."""
         return self._native_widget.GetValue()
 
 class ImageDropDown(DropDown):

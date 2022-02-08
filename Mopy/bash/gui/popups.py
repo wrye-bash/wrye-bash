@@ -148,7 +148,7 @@ class MultiChoicePopup(_TransientPopup):
 
     def _search_choices(self, search_str):
         """Internal callback for searching via the search bar."""
-        search_lower = search_str.lower().strip()
+        search_lower = search_str.strip().lower()
         choices_dict = {k: v for k, v in self._all_choices if
                         search_lower in k.lower()}
         self._choice_box.set_all_items(choices_dict)

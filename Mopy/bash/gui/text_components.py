@@ -208,6 +208,17 @@ class SearchBar(TextField):
     """A variant of TextField that looks like a typical search bar."""
     _wx_widget_type = _wx.SearchCtrl
 
+    def __init__(self, parent, *args, hint=_('Search'), **kwargs):
+        """Creates a new TextField instance with the specified properties.
+        See _ATextInput for documentation on kwargs.
+
+        :param hint: The string to show if nothing has been entered into
+            the search bar. Optional, defaults to 'Search'."""
+        super().__init__(parent, *args, **kwargs)
+        ##: Not sure what the difference between SetHint and SetDescriptiveText
+        # is supposed to be, but this one works while SetHint does not...
+        self._native_widget.SetDescriptiveText(hint)
+
 # Labels ----------------------------------------------------------------------
 class _ALabel(_AComponent):
     """Abstract base class for labels."""

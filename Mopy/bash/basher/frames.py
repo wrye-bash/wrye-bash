@@ -27,14 +27,15 @@ from collections import OrderedDict
 
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import Link, Resources
-from ..bolt import GPath
+from ..bolt import GPath, GPath_no_norm
 from ..bosh import mods_metadata
 from ..bosh import omods
 from ..exception import StateError
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
     web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
-    pdf_viewer_available, bell, copy_text_to_clipboard, FileOpen, FileSave
+    pdf_viewer_available, bell, copy_text_to_clipboard, FileOpen, FileSave, \
+    DropDown, SearchBar
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -43,7 +44,6 @@ class DocBrowser(WindowFrame):
 
     def __init__(self):
         # Data
-        self._mod_name = GPath(u'')
         self._db_doc_paths = bosh.modInfos.table.getColumn(u'doc')
         self._db_is_editing = bosh.modInfos.table.getColumn(u'docEdit')
         self._doc_is_wtxt = False
@@ -62,10 +62,21 @@ class DocBrowser(WindowFrame):
         mod_list_window, main_window = root_window.make_panes(250,
                                                               vertically=True)
         # Mod Name
-        self._mod_name_box = TextField(mod_list_window, editable=False)
+        self._full_lo = sorted((p.s for p in load_order.cached_lo_tuple()),
+            key=str.lower)
+        self._full_lo.insert(0, '') # == no plugin selected
+        self._lower_lo = {}
+        self._plugin_search = SearchBar(mod_list_window,
+            hint=_('Search Plugins'))
+        self._plugin_search.on_text_changed.subscribe(self._search_plugins)
+        self._plugin_dropdown = DropDown(mod_list_window, value='',
+            choices=[''])
+        self._plugin_dropdown.on_combo_select.subscribe(self._do_select_free)
+        # Start out with an empty search -> everything shown
+        self._search_plugins(search_str='', boot_search=True)
         self._mod_list = ListBox(mod_list_window,
              choices=sorted(x.s for x in self._db_doc_paths),
-             isSort=True, onSelect=self._do_select_mod)
+             isSort=True, onSelect=self._do_select_existing)
         # Buttons
         self._set_btn = Button(main_window, _(u'Set Doc...'),
                                btn_tooltip=u'Associates this plugin file with '
@@ -97,7 +108,9 @@ class DocBrowser(WindowFrame):
                          self._next_btn, self._reload_btn]
         #--Mod list
         VLayout(spacing=4, item_expand=True, items=[
-            self._mod_name_box, (self._mod_list, LayoutOptions(weight=1)),
+            self._plugin_search,
+            self._plugin_dropdown,
+            (self._mod_list, LayoutOptions(weight=1)),
         ]).apply_to(mod_list_window)
         #--Text field and buttons
         VLayout(spacing=4, item_expand=True, items=[
@@ -110,6 +123,11 @@ class DocBrowser(WindowFrame):
         for btn in self._buttons:
             btn.enabled = False
 
+    @property
+    def _mod_name(self):
+        """Returns a path representation of the currently selected plugin."""
+        return GPath_no_norm(self._plugin_dropdown.get_value())
+
     @staticmethod
     def _get_is_wtxt(doc_path):
         """Determines whether specified path is a wtxt file."""
@@ -120,6 +138,28 @@ class DocBrowser(WindowFrame):
             return match_text is not None
         except (OSError, UnicodeDecodeError):
             return False
+
+    def _search_plugins(self, search_str, boot_search=False):
+        """Called when text is entered into the search bar. Narrows the results
+        in the dropdown."""
+        prev_doc_plugin = self._mod_name.s
+        search_lower = search_str.strip().lower()
+        filtered_plugins = [p for p in self._full_lo
+                            if search_lower in p.lower()]
+        lower_plugins = [p.lower() for p in filtered_plugins]
+        self._lower_lo = {pl: i for i, pl in enumerate(lower_plugins)}
+        with self._plugin_dropdown.pause_drawing():
+            self._plugin_dropdown.set_choices(filtered_plugins)
+            # Check if the previous plugin can be restored now, otherwise
+            # select the first plugin
+            try:
+                new_doc_choice = lower_plugins.index(prev_doc_plugin.lower())
+            except ValueError:
+                new_doc_choice = 0
+            self._plugin_dropdown.set_selection(new_doc_choice)
+            if not boot_search:
+                # Update the doc viewer to match the new selection
+                self.SetMod(self._mod_name.s)
 
     def _do_open(self):
         """Handle "Open Doc" button."""
@@ -157,19 +197,23 @@ class DocBrowser(WindowFrame):
         else:
             self._clear_doc()
 
-    def _do_select_mod(self, _lb_selection_dex, lb_selection_str):
-        """Handle mod name combobox selection."""
+    def _do_select_free(self, selection_label):
+        """Called when a plugin is selected from the dropdown."""
+        self.SetMod(selection_label)
+
+    def _do_select_existing(self, _lb_selection_dex, lb_selection_str):
+        """Called when a plugin is selected in the left-hand list."""
         self.SetMod(lb_selection_str)
 
     def _do_set(self):
         """Handle "Set Doc" button click."""
         #--Already have mod data?
-        mod_name = self._mod_name
+        mod_name = GPath_no_norm(self._plugin_dropdown.get_value())
         if mod_name in self._db_doc_paths:
             (docs_dir, file_name) = self._db_doc_paths[mod_name].headTail
         else:
             docs_dir = bass.settings[u'bash.modDocs.dir'] or bass.dirs[u'mods']
-            file_name = GPath(u'')
+            file_name = GPath_no_norm('')
         doc_path = FileOpen.display_dialog(self,
             _(u'Select doc for %s:') % mod_name, docs_dir, file_name, u'*.*',
             allow_create=True)
@@ -207,7 +251,7 @@ class DocBrowser(WindowFrame):
             btn.enabled = False
         self._doc_name_box.text_content = ''
         self._mod_list.lb_select_none()
-        self._mod_name_box.text_content = ''
+        self._plugin_dropdown.set_selection(0)
         self._load_data(uni_str='')
 
     def DoSave(self):
@@ -242,16 +286,22 @@ class DocBrowser(WindowFrame):
         # defaults
         self._edit_box.is_checked = False
         self._doc_ctrl.set_text_editable(False)
-        mod_name = GPath(mod_name)
-        self._mod_name = mod_name
-        self._mod_name_box.text_content = mod_name.s
+        mod_name = GPath_no_norm(mod_name)
         if not mod_name:
             self._clear_doc()
             return
+        plugin_lower = mod_name.s.lower()
+        search_lower = self._plugin_search.text_content.strip().lower()
+        if search_lower not in plugin_lower:
+            # Clear the search since we ended up selecting something outside
+            # the search just now (this directly calls the subscribed
+            # _search_plugins and waits until it's done)
+            self._plugin_search.text_content = ''
+        self._plugin_dropdown.set_selection(self._lower_lo[plugin_lower])
         self._set_btn.enabled = True
         self._mod_list.lb_select_index(self._mod_list.lb_index_for_str_item(mod_name.s))
         # Doc path
-        doc_path = self._db_doc_paths.get(mod_name, GPath(u''))
+        doc_path = self._db_doc_paths.get(mod_name, GPath_no_norm(''))
         self._doc_name_box.text_content = doc_path.stail
         for btn in (self._forget_btn, self._rename_btn, self._edit_box,
                     self._open_btn):
