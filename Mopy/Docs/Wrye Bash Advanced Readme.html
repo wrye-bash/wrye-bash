@@ -707,25 +707,35 @@ tab. The directories skipped are:
                 wizard if it exists.</td>
         </tr>
         <tr>
-            <td rowspan="8">Advanced Installation..</td>
-            <td colspan="2" id="bainInstallConfigured">Install Config</td>
+            <td rowspan="10">Advanced Installation..</td>
+            <td colspan="2" id="bainInstallConfigured">Install Configured</td>
             <td>Fully installs the package except for files that would be overridden by later packages.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainInstallMissing">Install Missing Files</td>
+            <td colspan="2">Install Missing Files</td>
             <td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainInstallLast">Install Last</td>
+            <td colspan="2">Install Last</td>
             <td>Moves the package to the end of the order list and installs it.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainFomod">FOMOD Installer...</td>
-            <td>Runs the FOMOD wizard for this package, if it has one.</td>
+            <td rowspan="3">FOMOD Installer</td>
+            <td>Run FOMOD...</td>
+            <td>Runs the FOMOD for this package, if it has one.</td>
         </tr>
         <tr>
-            <td rowspan="4" id="bainWizardMenu">Wizard Installer...</td>
-            <td id="bainWizard">Manual Wizard...</td>
+            <td>View FOMOD...</td>
+            <td>Archives only. Opens the ModuleConfig.xml for viewing.</td>
+        </tr>
+        <tr>
+            <td>Edit FOMOD...</td>
+            <td>Projects only. Opens the ModuleConfig.xml in your system's
+                default <code>.xml</code> editor.</td>
+        </tr>
+        <tr>
+            <td rowspan="4">Wizard Installer...</td>
+            <td>Manual Wizard...</td>
             <td>Runs the BAIN wizard for the package, if it has one.</td>
         </tr>
         <tr>

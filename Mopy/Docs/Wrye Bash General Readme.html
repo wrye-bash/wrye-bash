@@ -365,7 +365,7 @@ will be skipped (and their content listed in Skipped tab). There are also some d
 </ol>
 <p>If a package has an FOMOD wizard (i.e. there is an FOMOD radio button):</p>
 <ol>
-    <li>Right-click the package and select <a href="bainFomod">FOMOD Installer...</a>.</li>
+    <li>Right-click the package and select <a href="#bainFomod">Run FOMOD...</a>.</li>
     <li>Navigate through the steps and choose options.</li>
     <li>At the wizard's finish screen, click the <q>Finish</q> button to apply its selections.</li>
 </ol>
@@ -538,7 +538,7 @@ from other packages previously overridden by the uninstalled package's
             order errors according to the package configuration.</td></tr>
         <tr><td colspan="3" id="bainInstall">Install...</td><td>Installs the selected package, preferring a
             BAIN or FOMOD wizard if those are available (see options below).</td></tr>
-        <tr><td rowspan="3">Advanced Installation..</td>
+        <tr><td rowspan="4">Advanced Installation..</td>
             <td colspan="2" id="bainInstallConfigured">Install Configured</td> <td>Fully installs the package as configured
             except for files that would be overridden by later packages.</td></tr>
             <tr><td rowspan="2">Wizard Installer..</td>
@@ -546,6 +546,11 @@ from other packages previously overridden by the uninstalled package's
                     one.</td></tr>
             <tr><td id="bainAutoWizard">Auto Wizard...</td><td>Runs the Wizard for the package, if
                 it has one, selecting the default options.</td></tr>
+            <tr>
+                <td rowspan="1">FOMOD Installer..</td>
+                <td id="bainFomod">Run FOMOD...</td>
+                <td>Runs the FOMOD for the package, if it has one.</td>
+            </tr>
         <tr><td colspan="3" id="bainUninstall">Uninstall<td>Uninstalls the package. If
             <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a> is active
             (the default) then files from earlier packages that were previously overridden will be
