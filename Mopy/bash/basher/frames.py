@@ -141,20 +141,21 @@ class DocBrowser(WindowFrame):
                         editing=is_editing)
 
     def _do_forget(self):
-        """Handle "Forget Doc" button click.
-        Sets help document for current mod name to None."""
+        """Handle "Forget Doc" button click. Drops the associated help document
+        for the current plugin."""
         if self._mod_name not in self._db_doc_paths:
             return
-        index = self._mod_list.lb_index_for_str_item(self._mod_name.s)
-        if index is not None:
-            self._mod_list.lb_delete_at_index(index)
+        p_index = self._mod_list.lb_index_for_str_item(self._mod_name.s)
+        if p_index is not None:
+            self._mod_list.lb_delete_at_index(p_index)
         del self._db_doc_paths[self._mod_name]
-        self.DoSave()
-        for btn in (self._edit_box, self._forget_btn, self._rename_btn,
-                    self._open_btn):
-            btn.enabled = False
-        self._doc_name_box.text_content = u''
-        self._load_data(uni_str=u'')
+        remaining_plugins = self._mod_list.lb_get_str_items()
+        # If there are plugins remaining, switch to the one right before
+        # the one that was removed
+        if remaining_plugins:
+            self.SetMod(remaining_plugins[max(p_index - 1, 0)])
+        else:
+            self._clear_doc()
 
     def _do_select_mod(self, _lb_selection_dex, lb_selection_str):
         """Handle mod name combobox selection."""
@@ -198,6 +199,17 @@ class DocBrowser(WindowFrame):
         self._db_doc_paths[self._mod_name] = dest_path
         self._doc_name_box.text_content = dest_path.stail
 
+    def _clear_doc(self):
+        """Clears the contents of the doc browser's text boxes, doc viewer,
+        etc."""
+        self.DoSave()
+        for btn in self._buttons:
+            btn.enabled = False
+        self._doc_name_box.text_content = ''
+        self._mod_list.lb_select_none()
+        self._mod_name_box.text_content = ''
+        self._load_data(uni_str='')
+
     def DoSave(self):
         """Saves doc, if necessary."""
         doc_path = self._db_doc_paths.get(self._mod_name)
@@ -234,9 +246,7 @@ class DocBrowser(WindowFrame):
         self._mod_name = mod_name
         self._mod_name_box.text_content = mod_name.s
         if not mod_name:
-            self._load_data(uni_str=u'')
-            for btn in self._buttons:
-                btn.enabled = False
+            self._clear_doc()
             return
         self._set_btn.enabled = True
         self._mod_list.lb_select_index(self._mod_list.lb_index_for_str_item(mod_name.s))

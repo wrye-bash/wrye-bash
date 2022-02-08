@@ -211,7 +211,7 @@ class DocumentViewer(_AComponent):
     _wx_widget_type = _wx.Window
 
     def __init__(self, parent):
-        """Creates a new HtmlDisplay with the specified parent.
+        """Creates a new DocumentViewer with the specified parent.
 
         :param parent: The object that this HTML display belongs to. May be a
                        wx object or a component."""
@@ -269,7 +269,7 @@ class DocumentViewer(_AComponent):
         """Switches to text mode (see switch_to_text()) and sets the
         specified text as the unmodified contents of the text display."""
         if not isinstance(target_text, str): # needs to be unicode by now
-            raise StateError(u'HtmlDisplay can only load unicode text.')
+            raise StateError('DocumentViewer can only load unicode text.')
         self._text_ctrl.text_content = target_text
         self._text_ctrl.modified = False
         self.switch_to_text()
