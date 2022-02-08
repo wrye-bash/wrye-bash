@@ -30,6 +30,8 @@ import os
 import platform
 import textwrap
 import wx as _wx
+from typing import Type
+
 from .events import EventHandler, null_processor
 from ..bolt import deprint
 from ..exception import ArgumentError
@@ -132,9 +134,9 @@ class _ACFrozen(object):
 # Base Elements ---------------------------------------------------------------
 class _AComponent(object):
     """Abstract base class for all GUI items. Holds a reference to the native
-    wx widget that we abstract over.
-    # :type _native_widget: _wx.Window FIXME(ut) PY3: add type info"""
-    _wx_widget_type = None # type: type
+    wx widget that we abstract over."""
+    _wx_widget_type: Type[_wx.Window]
+    _native_widget: _wx.Window
 
     def __init__(self, parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget

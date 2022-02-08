@@ -56,8 +56,8 @@ class _ATextInput(_AComponent):
        also posts this event, so if you have to change text in response to this
        event, use _ATextInput.modified to check if it was a user modification;
        otherwise, you risk getting into an infinite loop."""
-    # PY3: typing # type _native_widget: _wx.TextCtrl
     _wx_widget_type = _wx.TextCtrl
+    _native_widget: _wx.TextCtrl
 
     # TODO: (fixed) font(s)
     def __init__(self, parent, init_text=None, multiline=True, editable=True,
@@ -207,6 +207,7 @@ class TextField(_ATextInput):
 class SearchBar(TextField):
     """A variant of TextField that looks like a typical search bar."""
     _wx_widget_type = _wx.SearchCtrl
+    _native_widget: _wx.SearchCtrl
 
     def __init__(self, parent, *args, hint=_('Search'), **kwargs):
         """Creates a new TextField instance with the specified properties.
@@ -243,6 +244,7 @@ class Label(_ALabel):
     interacted with by the user."""
     # _native_widget: type: _wx.StaticText
     _wx_widget_type = _wx.StaticText
+    _native_widget: _wx.StaticText
 
     def __init__(self, parent, init_text, alignment=TextAlignment.LEFT):
         """Creates a new Label with the specified parent and text.
@@ -269,6 +271,7 @@ class HyperlinkLabel(_ALabel):
         - on_link_clicked(target_url: str): Posted when the link is
         clicked on by the user."""
     _wx_widget_type = _adv.HyperlinkCtrl
+    _native_widget: _adv.HyperlinkCtrl
 
     def __init__(self, parent, init_text, url, always_unvisited=False):
         """Creates a new HyperlinkLabel with the specified parent, text and
@@ -297,6 +300,7 @@ class Spinner(_AComponent):
       - on_spun(): Posted when a new value is entered into the spinner (whether
         manually or through the buttons)."""
     _wx_widget_type = _wx.SpinCtrl
+    _native_widget: _wx.SpinCtrl
 
     def __init__(self, parent, min_val=0, max_val=100, spin_tip=None):
         super(Spinner, self).__init__(parent, style=_wx.SP_ARROW_KEYS,

@@ -21,13 +21,15 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+
+from __future__ import annotations
+
 import logging
 import math
 import os
 import re
 import subprocess
 import sys
-from typing import Union
 from urllib.request import urlopen
 
 # verbosity:
@@ -135,7 +137,7 @@ class LooseVersion:
     version themselves. Digits are compared numerically, so 2 < 10. Everything
     else is compared alphabetically, so 'a' < 'm'. A whole version is compared
     by comparing the components in it as a tuple."""
-    _parsed_version: tuple[Union[int, str]] ##: PY3.10: Use int | str
+    _parsed_version: tuple[int | str]
 
     def __init__ (self, ver_string: str):
         ver_components = _component_re.split(ver_string)

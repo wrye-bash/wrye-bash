@@ -199,6 +199,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
     bind_motion = True
     bind_mouse_leaving = bind_lclick_double = bind_lclick_down = True
     _wx_widget_type = _DragListCtrl
+    _native_widget: _DragListCtrl
 
     def __init__(self, parent, allow_edit, is_border_sunken, is_single_cell,
             *args, **kwargs):

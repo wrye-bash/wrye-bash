@@ -70,11 +70,11 @@ def pdf_viewer_available():
     :return: True if we can render PDFs."""
     return bool(_PdfViewer) and _wx.VERSION >= (4, 1)
 
-class ViewerType(Enum):
+class ViewerMode(Enum):
     """The different types of viewers that DocumentViewer can display."""
-    HTML = u'html'
-    PDF =  u'pdf'
-    TEXT = u'txt'
+    HTML = 'html'
+    PDF =  'pdf'
+    TEXT = 'txt'
 
 class WebViewer(_AComponent):
     """Implements an HTML & CSS renderer with JavaScript support. May not be
@@ -85,7 +85,8 @@ class WebViewer(_AComponent):
     Basic control from the Python side is offered through methods for
     navigating the history, clearing the history, navigating to a URL and
     reloading the current page."""
-    _wx_widget_type = _wx_html2.WebView.New # type: _wx_html2.WebView
+    _wx_widget_type = _wx_html2.WebView.New
+    _native_widget: _wx_html2.WebView
 
     def __init__(self, parent, reload_ico, buttons_parent=None):
         """Creates a new WebViewer with the specified parent.
@@ -194,12 +195,13 @@ class PDFViewer(_AComponent):
     installed. PyPDF2 is pure Python, but PyMuPDF is *vastly* more complete and
     hence preferred."""
     _wx_widget_type = _PdfViewer
+    _native_widget: _PdfViewer
 
     def __init__(self, parent):
         super(PDFViewer, self).__init__(parent, nid=-1, pos=(-1, -1),
             size=(-1, -1), style=0) # has no defaults, so need to specify them
 
-    def open_file(self, file_path): # type: (str) -> None
+    def open_file(self, file_path: str) -> None:
         """Opens the specified PDF file.
 
         :param file_path: The path to the file to open."""
@@ -239,20 +241,20 @@ class DocumentViewer(_AComponent):
         VLayout(item_weight=4, item_expand=True, items=items).apply_to(self)
         self.switch_to_text() # default to text
 
-    def _update_views(self, viewer_type):
+    def _update_views(self, new_viewer_mode: ViewerMode):
         """Internal method to switch between display types, as well as
         update the state of the WebViewer buttons.
 
-        :param viewer_type: One of """
+        :param new_viewer_mode: The ViewerMode that we're switching to."""
         if web_viewer_available():
-            self._html_ctrl.enabled = viewer_type is ViewerType.HTML
-            self._html_ctrl.visible = viewer_type is ViewerType.HTML
+            self._html_ctrl.enabled = new_viewer_mode is ViewerMode.HTML
+            self._html_ctrl.visible = new_viewer_mode is ViewerMode.HTML
             self._html_ctrl.update_buttons()
         if pdf_viewer_available():
-            self._pdf_ctrl.enabled = viewer_type is ViewerType.PDF
-            self._pdf_ctrl.visible = viewer_type is ViewerType.PDF
-        self._text_ctrl.enabled = viewer_type is ViewerType.TEXT
-        self._text_ctrl.visible = viewer_type is ViewerType.TEXT
+            self._pdf_ctrl.enabled = new_viewer_mode is ViewerMode.PDF
+            self._pdf_ctrl.visible = new_viewer_mode is ViewerMode.PDF
+        self._text_ctrl.enabled = new_viewer_mode is ViewerMode.TEXT
+        self._text_ctrl.visible = new_viewer_mode is ViewerMode.TEXT
 
     @property
     def fallback_text(self):
@@ -292,19 +294,19 @@ class DocumentViewer(_AComponent):
         """Disables the other viewers and switches to HTML mode, if WebViewer
         is available."""
         if not web_viewer_available(): return
-        self._update_views(viewer_type=ViewerType.HTML)
+        self._update_views(new_viewer_mode=ViewerMode.HTML)
         self.update_layout()
 
     def switch_to_pdf(self):
         """Disables the other viewers and switches to PDF mode, if PDFViewer is
         available."""
         if not pdf_viewer_available(): return
-        self._update_views(viewer_type=ViewerType.PDF)
+        self._update_views(new_viewer_mode=ViewerMode.PDF)
         self.update_layout()
 
     def switch_to_text(self):
         """Disables the other viewers and switches to raw text mode."""
-        self._update_views(viewer_type=ViewerType.TEXT)
+        self._update_views(new_viewer_mode=ViewerMode.TEXT)
         self.update_layout()
 
     def get_buttons(self):
