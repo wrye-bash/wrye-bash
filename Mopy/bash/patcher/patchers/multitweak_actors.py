@@ -183,7 +183,7 @@ class RedguardNPCPatcher(_ANpcTweak):
     tweak_key = u'RedguardFGTSPatcher'
     tweak_log_msg = _(u'Redguard NPCs Tweaked: %(total_changed)d')
     tweak_choices = [(u'1.0', u'1.0')]
-    _redguard_fid = (bush.game.master_file, 0x00000D43)
+    _redguard_fid = (bush.game.master_file, 0x000D43)
 
     def wants_record(self, record):
         # Only affect NPCs with the redguard race

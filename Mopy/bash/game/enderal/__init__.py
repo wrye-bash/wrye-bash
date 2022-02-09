@@ -116,6 +116,8 @@ class EnderalGameInfo(SkyrimGameInfo):
     }
 
     nirnroots = _(u'Vynroots')
+
+    _patcher_package = 'bash.game.enderal' # We need to override tweaks
     @classmethod
     def init(cls):
         # Copy-pasted from Skyrim

@@ -30,7 +30,8 @@ from collections import defaultdict
 from .base import MultiTweakItem, IndexingTweak, MultiTweaker, \
     CustomChoiceTweak
 from ... import bush
-from ...bolt import build_esub, RecPath
+from ...bolt import build_esub, RecPath, setattr_deep
+from ...brec import MelObject
 from ...exception import AbstractError, BPConfigError
 
 _ignored_chars = frozenset(u'+-=.()[]<>')
@@ -739,7 +740,7 @@ class NamesTweak_Weapons_Tes5(_ANamesTweak_Weapons):
 _re_old_ammo_label = re.compile(r'^(.*)( \(WG \d+\.\d+\))$')
 _re_flst_ammo_weight = re.compile(r'^AmmoWeight(\d)(\d{2})List$')
 
-class _ANamesTweak_AmmoWeight(_ANamesTweak):
+class NamesTweak_AmmoWeight(_ANamesTweak):
     """Appends ammunition weight to the end of the ammunition's name."""
     tweak_read_classes = b'AMMO',
     tweak_name = _(u'Append Ammunition Weight')
@@ -763,10 +764,6 @@ class _ANamesTweak_AmmoWeight(_ANamesTweak):
         else:
             return old_full + fmt_weight
 
-    def _get_record_weight(self, record):
-        raise AbstractError(u'_get_record_weight not implemented')
-
-class NamesTweak_AmmoWeight(_ANamesTweak_AmmoWeight):
     def _get_record_weight(self, record):
         return record.weight
 
@@ -804,6 +801,66 @@ class NamesTweak_AmmoWeight_Fo3(IndexingTweak, NamesTweak_AmmoWeight_Fnv):
 
     def _get_record_weight(self, record):
         return self._look_up_weight[record.fid]
+
+#------------------------------------------------------------------------------
+class _ANamesTweak_RenameF(CustomChoiceTweak):
+    """Base class for Rename Gold/Caps tweaks."""
+    tweak_read_classes = b'MISC',
+    tweak_key = 'rename_gold'
+    _gold_fid = (bush.game.master_file, 0x00000F)
+    # Only interested in one specific record, see finish_tweaking below
+    _found_gold = False
+    _gold_attrs = bush.game.gold_attrs(bush.game.master_file)
+
+    def wants_record(self, record):
+        return record.fid == self._gold_fid
+
+    def tweak_record(self, record):
+        record.full = self.choiceValues[self.chosen][0]
+        self._found_gold = True
+
+    def finish_tweaking(self, patch_file):
+        # Gold001 is built into the engine, so if none of the plugins in the LO
+        # override it (usually the game master does), we have to create an
+        # override from scratch
+        if True:#not self._found_gold:
+            gold_rec = patch_file.create_record(b'MISC', self._gold_fid)
+            self.tweak_record(gold_rec) # Sets the FULL
+            for gold_attr, gold_value in self._gold_attrs.items():
+                if '.' in gold_attr:
+                    # Check if we have to set a MelObject for a MelGroup's attr
+                    ##: This should have a better solution (in records?)
+                    obj_attr = gold_attr.split('.', maxsplit=1)[0]
+                    if getattr(gold_rec, obj_attr) is None:
+                        setattr(gold_rec, obj_attr, MelObject())
+                setattr_deep(gold_rec, gold_attr, gold_value)
+
+    def tweak_log(self, log, count):
+        # count would be pointless, always one record
+        super().tweak_log(log, {})
+
+class NamesTweak_RenameGold(_ANamesTweak_RenameF):
+    """Changes the Gold001 record's FULL to something else."""
+    tweak_name = _('Rename Gold')
+    tweak_tip = _('Changes the name of gold to something of your choice.')
+    tweak_log_msg = _('Gold Renamed.')
+    tweak_choices = [(_('Septim'), _('Septim'))]
+
+class NamesTweak_RenameCaps(_ANamesTweak_RenameF):
+    """Fallout version of Rename Gold."""
+    tweak_name = _('Rename Bottle Caps')
+    tweak_tip = _('Changes the name of bottle caps to something of your '
+                  'choice.')
+    tweak_log_msg = _('Bottle Caps Renamed.')
+    tweak_choices = [(_('Caps'), _('Caps'))]
+
+class NamesTweak_RenamePennies(_ANamesTweak_RenameF):
+    """Enderal version of Rename Gold."""
+    tweak_name = _('Rename Pennies')
+    tweak_tip = _('Changes the name of Endralean penny coins to something of '
+                  'your choice.')
+    tweak_log_msg = _('Endralean Penny Coins Renamed.')
+    tweak_choices = [(_('Gold'), _('Gold'))]
 
 #------------------------------------------------------------------------------
 class _ATextReplacer(MultiTweakItem):

@@ -170,15 +170,26 @@ class PatchFile(ModFile):
         """Returns a function to add fids to self.keepIds."""
         return self.keepIds.add
 
+    def create_record(self, new_rec_sig: bytes, new_rec_fid: tuple = None):
+        """Creates a new record with the specified record signature (and
+        optionally the specified FormID - if it's not given, it will become a
+        new record inside the BP's FormID space), adds it to this patch and
+        returns it."""
+        if new_rec_fid is None:
+            new_rec_fid = (self.fileInfo.ci_key, self.tes4.getNextObject())
+        new_rec = MreRecord.type_class[new_rec_sig](RecHeader(new_rec_sig))
+        new_rec.longFids = True
+        new_rec.fid = new_rec_fid
+        self.keepIds.add(new_rec_fid)
+        self.tops[new_rec_sig].setRecord(new_rec)
+        return new_rec
+
     def new_gmst(self, gmst_eid, gmst_val):
-        """Creates a new GMST record and adds it to this patch."""
-        gmst_rec = MreRecord.type_class[b'GMST'](RecHeader(b'GMST'))
+        """Creates a new GMST record with the specified EDID and value and adds
+        it to this patch."""
+        gmst_rec = self.create_record(b'GMST')
         gmst_rec.eid = gmst_eid
         gmst_rec.value = gmst_val
-        gmst_rec.longFids = True
-        gmst_rec.fid = (self.fileInfo.ci_key, self.tes4.getNextObject())
-        self.keepIds.add(gmst_rec.fid)
-        self.tops[b'GMST'].setRecord(gmst_rec)
 
     def initFactories(self,progress):
         """Gets load factories."""

@@ -841,6 +841,7 @@ names_tweaks = {
     'NamesTweak_DwarvenToDwemer',
     'NamesTweak_DwarfsToDwarves',
     'NamesTweak_StaffsToStaves',
+    'NamesTweak_RenameGold',
 }
 body_part_codes = ('HAGBMRS', 'HBALMRS')
 text_replacer_rpaths = {
@@ -892,6 +893,23 @@ text_replacer_rpaths = {
     b'WATR': ('full',),
     b'WEAP': ('full', 'description'),
     b'WOOP': ('full',),
+}
+gold_attrs = lambda _self_ignore, gm_master: {
+    'eid': 'Gold001',
+    'bounds.boundX1': -2,
+    'bounds.boundY1': -2,
+    'bounds.boundZ1': 0,
+    'bounds.boundX2': 2,
+    'bounds.boundY2': 2,
+    'bounds.boundZ2': 0,
+    'model.modPath': r'Clutter\Coin01.nif',
+    'model.alternateTextures': None,
+    'iconPath': r'Clutter\Coin01.dds',
+    'pickupSound': (gm_master, 0x03E952), # ITMGoldUpSD
+    'dropSound': (gm_master, 0x03E955), # ITMGoldDownSD
+    'keywords': [(gm_master, 0x0914E9)], # VendorItemClutter
+    'value': 1,
+    'weight': 0.0,
 }
 
 #------------------------------------------------------------------------------

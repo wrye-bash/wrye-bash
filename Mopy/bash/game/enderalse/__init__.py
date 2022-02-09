@@ -96,6 +96,7 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
         'update.esm',
     }
 
+    _patcher_package = 'bash.game.enderalse' # We need to override tweaks
     @classmethod
     def init(cls):
         # Copy-pasted from Skyrim

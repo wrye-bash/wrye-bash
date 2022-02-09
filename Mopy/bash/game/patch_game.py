@@ -92,7 +92,7 @@ class PatchGame(GameInfo):
         u'mgef_school', u'mgef_stats_attrs', u'namesTypes',
         u'nonplayable_biped_flags', u'not_playable_flag', u'body_part_codes',
         u'object_bounds_types', u'pricesTypes', u'race_tweaks',
-        u'race_tweaks_need_collection', u'relations_attrs',
+        'race_tweaks_need_collection', 'relations_attrs', 'gold_attrs',
         u'relations_csv_header', u'relations_csv_row_format',
         u'save_rec_types', u'scripts_types', u'settings_tweaks',
         u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
@@ -221,6 +221,12 @@ class PatchGame(GameInfo):
     names_tweaks = set()
     body_part_codes = ()
     text_replacer_rpaths = {}
+    ##: This is a pretty ugly hack. We need to be able to create FormIDs in
+    # these for newer games than Oblivion, but master_file is only defined in
+    # here and importing it in the patcher files is probably a huge headache.
+    # The first parameter is required since Python automatically passes it when
+    # called: bush.game.gold_attrs(x) -> _gm_master == x
+    gold_attrs = lambda _self_ignore, _gm_master: {}
 
     #--------------------------------------------------------------------------
     # Tweak Settings

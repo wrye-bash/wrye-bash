@@ -580,20 +580,21 @@ actor_tweaks = {
 # Tweak Names
 #------------------------------------------------------------------------------
 names_tweaks = {
-    u'NamesTweak_BodyPartCodes',
-    u'NamesTweak_Body_Armor_Tes4',
-    u'NamesTweak_Body_Clothes',
-    u'NamesTweak_Ingestibles_Tes4',
-    u'NamesTweak_NotesScrolls',
-    u'NamesTweak_Spells',
-    u'NamesTweak_Weapons_Tes4',
-    u'NamesTweak_DwarvenToDwemer',
-    u'NamesTweak_DwarfsToDwarves',
-    u'NamesTweak_StaffsToStaves',
-    u'NamesTweak_FatigueToStamina',
-    u'NamesTweak_MarksmanToArchery',
-    u'NamesTweak_SecurityToLockpicking',
-    u'NamesTweak_AmmoWeight',
+    'NamesTweak_BodyPartCodes',
+    'NamesTweak_Body_Armor_Tes4',
+    'NamesTweak_Body_Clothes',
+    'NamesTweak_Ingestibles_Tes4',
+    'NamesTweak_NotesScrolls',
+    'NamesTweak_Spells',
+    'NamesTweak_Weapons_Tes4',
+    'NamesTweak_DwarvenToDwemer',
+    'NamesTweak_DwarfsToDwarves',
+    'NamesTweak_StaffsToStaves',
+    'NamesTweak_FatigueToStamina',
+    'NamesTweak_MarksmanToArchery',
+    'NamesTweak_SecurityToLockpicking',
+    'NamesTweak_AmmoWeight',
+    'NamesTweak_RenameGold',
 }
 body_part_codes = (u'ARGHTCCPBS', u'ABGHINOPSL')
 text_replacer_rpaths = {
@@ -629,6 +630,15 @@ text_replacer_rpaths = {
     b'SLGM': ('full',),
     b'SPEL': ('full', 'effects[i].scriptEffect?.full'),
     b'WEAP': ('full',),
+}
+gold_attrs = lambda _self_ignore, _gm_master: {
+    'eid': 'Gold001',
+    'model.modPath': r'Clutter\goldCoin01.NIF',
+    'model.modb': 1.0,
+    'model.modt_p': None,
+    'iconPath': r'Clutter\IconGold.dds',
+    'value': 1,
+    'weight': 0.0,
 }
 
 #------------------------------------------------------------------------------

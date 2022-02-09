@@ -473,7 +473,7 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     tweak_tip = _(u'Script Effect will be silenced and have no graphics.')
     tweak_key = u'SilentScriptEffect'
     tweak_choices = [(u'0', 0)]
-    tweak_log_msg = _(u'Script Effect silenced.')
+    tweak_log_msg = _(u'Script Effect Silenced.')
     default_enabled = True
     _null_ref = (bush.game.master_file, 0)
     _silent_attrs = {u'model': None, u'projectileSpeed': 9999,
@@ -488,8 +488,8 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
             getattr(record, a) != v for a, v in self._silent_attrs.items())
 
     def tweak_record(self, record):
-        s_attrs = self._silent_attrs
-        for attr in s_attrs: setattr(record, attr, s_attrs[attr])
+        for mgef_attr, mgef_val in self._silent_attrs.items():
+            setattr(record, mgef_attr, mgef_val)
         record.flags.noHitEffect = True
 
     def tweak_log(self, log, count):
