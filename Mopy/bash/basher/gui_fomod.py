@@ -32,7 +32,9 @@ from ..fomod import FailedCondition, FomodInstaller, InstallerGroup, \
     InstallerOption, InstallerPage, GroupType, OptionType
 from ..gui import CENTER, CheckBox, VBoxedLayout, HLayout, Label, \
     LayoutOptions, TextArea, VLayout, WizardDialog, PictureWithCursor, \
-    RadioButton, ScrollableWindow, Stretch, Table, BusyCursor, WizardPage
+    RadioButton, ScrollableWindow, Stretch, Table, BusyCursor, WizardPage, \
+    DialogWindow, HorizontalLine, OkButton, CancelButton, Button, \
+    copy_text_to_clipboard, TOP
 
 class FomodInstallInfo(object):
     __slots__ = (u'canceled', u'install_files', u'should_install')
@@ -44,6 +46,57 @@ class FomodInstallInfo(object):
         self.install_files = bolt.LowerDict()
         # should_install: boolean on whether to install the files
         self.should_install = True
+
+class ValidatorPopup(DialogWindow):
+    """Implements the error popup shown to the user when schema validation
+    fails."""
+    _def_size = (650, 400)
+    _warning_msg = _(
+        'The ModuleConfig.xml file used to specify the FOMOD installer for '
+        'this package does not conform to the FOMOD specification. This '
+        'should be reported to and fixed by the mod author. Please share the '
+        'error log shown below with them as well. You can use the "Copy Log" '
+        'button to easily copy it.') + '\n\n'
+
+    def __init__(self, parent, fm_name, error_lines):
+        del balt.sizes['ValidatorPopup'] # FIXME TESTING ONLY
+        super().__init__(parent,
+            title=_('FOMOD Validation Failed - %s') % fm_name,
+            sizes_dict=balt.sizes)
+        copy_log_btn = Button(self, _('Copy Log'))
+        copy_log_btn.tooltip = _('Copies the contents of the error log to the '
+                                 'clipboard.')
+        copy_log_btn.on_clicked.subscribe(self._handle_copy)
+        self._error_log = TextArea(self,
+            self._warning_msg + '\n'.join(error_lines), auto_tooltip=False,
+            editable=False)
+        continue_btn = OkButton(self, _('Continue Anyway'))
+        continue_btn.tooltip = _(
+            'If you continue regardless, Wrye Bash may fail to install the '
+            'package or have to make guesses as to what was intended.')
+        VLayout(item_expand=True, border=10, spacing=6, items=[
+            (HLayout(spacing=10, items=[
+                (balt.staticBitmap(self), LayoutOptions(v_align=TOP)),
+                (self._error_log, LayoutOptions(expand=True, weight=1)),
+            ]), LayoutOptions(weight=1)),
+            HLayout(items=[
+                Stretch(),
+                copy_log_btn,
+            ]),
+            HorizontalLine(self),
+            HLayout(items=[
+                continue_btn,
+                Stretch(),
+                CancelButton(self, _('Cancel Installation')),
+            ]),
+        ]).apply_to(self)
+
+    def _handle_copy(self):
+        """Called when the Copy Log button is clicked. Simply copies the
+        contents of the error log to the clipboard, minus the warning
+        message."""
+        copy_text_to_clipboard(
+            self._error_log.text_content[len(self._warning_msg):])
 
 class InstallerFomod(WizardDialog):
     _def_size = (600, 500)
@@ -137,6 +190,23 @@ class InstallerFomod(WizardDialog):
         if self.is_arch:
             bass.rmTempDir()
         return self.fm_ret
+
+    def validate_fomod(self):
+        """Validates this FOMOD installer against the schema."""
+        if not bass.settings['bash.installers.validate_fomods']:
+            return True
+        was_valid, error_log = self.fomod_parser.try_validate()
+        if was_valid:
+            return True
+        error_lines = []
+        for xml_error in error_log:
+            error_lines.append(f'Line {xml_error.line}, column '
+                               f'{xml_error.column}:')
+            error_lines.append(f'  {xml_error.message}')
+            error_lines.append(f'  XML Path: {xml_error.path}')
+            error_lines.append('')
+        return ValidatorPopup.display_dialog(self,
+            self.fomod_parser.fomod_name, error_lines)
 
 class PageInstaller(WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple

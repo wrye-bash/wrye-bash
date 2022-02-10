@@ -42,12 +42,21 @@ xml attributes/text are available via instance attributes."""
 
 __author__ = u'Ganda'
 
+import functools
 from enum import Enum
-from xml.etree import ElementTree as etree
 
 from . import bass, bush, env
 from .bolt import GPath, Path, LooseVersion
+from .fomod_schema import schema_string
 from .load_order import cached_is_active
+
+try:
+    # lxml is optional, but without it we can't validate schemata
+    from lxml import etree
+    _can_validate = True
+except ImportError:
+    from xml.etree import ElementTree as etree
+    _can_validate = False
 
 class FailedCondition(Exception):
     """Exception used to signal when a dependencies check is failed. Message
@@ -99,6 +108,10 @@ class _AFomodBase(object):
             class."""
         self._parent_installer = parent_installer
         self.sort_key = sort_key
+
+@functools.lru_cache(maxsize=None) ##: Change to cache once we drop Win7
+def _parsed_schema():
+    return etree.fromstring(schema_string)
 
 class InstallerPage(_AFomodBase):
     """Wrapper around the ElementTree element 'installStep'. Provides the
@@ -487,6 +500,16 @@ class FomodInstaller(object):
             priority_dict[fm_info_dest] = fm_info.file_priority
         # return everything in strings
         return {a.s: b.s for a, b in file_dict.items()}
+
+    def try_validate(self):
+        """Tries to validate this FOMOD installer against the FOMOD schema.
+        Returns a boolean indicating if the document was valid and and error
+        log. Note that if the boolean is True, the log may be None."""
+        if not _can_validate:
+            return True, None # lxml is not installed, we can't do validation
+        validator = etree.XMLSchema(_parsed_schema())
+        was_valid = validator.validate(self.fomod_tree)
+        return was_valid, validator.error_log
 
     def _fomod_flags(self):
         """Returns a mapping of 'flag name' -> 'flag value'.

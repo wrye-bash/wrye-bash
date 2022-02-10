@@ -5,6 +5,7 @@ pywin32==303
 PyYAML==6.0
 wxPython==4.1.1
 # Runtime, recommended
+lxml==4.8.0
 PyMuPDF==1.19.5
 # Compile/Build-time
 pygit2==1.9.0

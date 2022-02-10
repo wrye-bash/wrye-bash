@@ -48,7 +48,7 @@ __all__ = [u'Installers_SortActive', u'Installers_SortProjects',
            u'Installers_ConflictsReportShowBSAConflicts',
            u'Installers_WizardOverlay', u'Installers_GlobalSkips',
            u'Installers_GlobalRedirects', u'Installers_FullRefresh',
-           u'Installers_IgnoreFomod']
+           'Installers_IgnoreFomod', 'Installers_ValidateFomod']
 
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
@@ -330,6 +330,12 @@ class Installers_IgnoreFomod(BoolLink):
     _help = _('Ignores FOMODs when using the "Install..." option. If this is '
               'checked, FOMODs will only be used when you specifically run '
               'them via "Run FOMOD...".')
+
+class Installers_ValidateFomod(BoolLink):
+    _text = _('Validate FOMODs')
+    _bl_key = 'bash.installers.validate_fomods'
+    _help = _('Enable/disable verification of ModuleConfig.xml files against '
+              'the official schema when running an FOMOD installer.')
 
 class Installers_ApplyEmbeddedBCFs(ItemLink):
     """Automatically apply Embedded BCFs to archives that have one."""

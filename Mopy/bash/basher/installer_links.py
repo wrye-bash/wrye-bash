@@ -203,6 +203,9 @@ class Installer_RunFomod(_Installer_AWizardLink):
                         fm_wizard = InstallerFomod(self.window, sel_package)
                     except CancelError:
                         continue
+                    if not fm_wizard.validate_fomod():
+                        # Validation failed and the user chose not to continue
+                        return
                     fm_wizard.ensureDisplayed()
                 # Run the FOMOD installer
                 ret = fm_wizard.run_fomod()

@@ -553,9 +553,20 @@ tab. The directories skipped are:
             manually refresh) - so it's recommended to leave this enabled. If you are concerned about a particularly big project then consider enabling the <a href="#bainDontRefresh">Don't
                 Refresh</a> flag <em>on that particular project</em>. Keep in mind that Projects will be anyway refreshed once on Bash restart, irrespective of this setting (except if popular
             demand arises).
-        <tr><td colspan="2">Ignore FOMODs</td><td>If checked, then the 'smart'
-            <a href="#install">Install...</a> command will ignore FOMODs and
-            only run wizards or the manual procedure.</td></tr>
+        <tr>
+            <td colspan="2">Ignore FOMODs</td>
+            <td>If checked, then the 'smart' <a href="#install">Install...</a>
+                command will ignore FOMODs and only run wizards or the manual
+                procedure. You can still run FOMODs manually via
+                <a href="#bain-run-fomod">Run FOMOD...</a>.</td>
+        </tr>
+        <tr>
+            <td colspan="2">Validate FOMODs</td>
+            <td>If checked, then BAIN will validate FOMODs against the official
+                XML schema and shows a warning if validation fails. You can
+                find more information on
+                <a href="https://modding.wiki/en/vortex/developer/mod-installer-repair">this modding.wiki page</a>.</td>
+        </tr>
         <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will
             also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the
             timestamps on the Bethsoft BSAs are changed. However, disabling this setting is the only way to allow BAIN to install Vanilla
@@ -721,7 +732,7 @@ tab. The directories skipped are:
         </tr>
         <tr>
             <td rowspan="3">FOMOD Installer</td>
-            <td>Run FOMOD...</td>
+            <td id="bain-run-fomod">Run FOMOD...</td>
             <td>Runs the FOMOD for this package, if it has one.</td>
         </tr>
         <tr>
