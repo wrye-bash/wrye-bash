@@ -327,9 +327,9 @@ class Installers_AutoRefreshProjects(BoolLink):
 class Installers_IgnoreFomod(BoolLink):
     _text = _(u'Ignore FOMODs')
     _bl_key = u'bash.installers.ignore_fomods'
-    _help = _(u'Ignores FOMODs when using the "Install..." option. If this is '
-              u'checked, FOMODs will only be used when you specifically run '
-              u'them via "FOMOD Installer...".')
+    _help = _('Ignores FOMODs when using the "Install..." option. If this is '
+              'checked, FOMODs will only be used when you specifically run '
+              'them via "Run FOMOD...".')
 
 class Installers_ApplyEmbeddedBCFs(ItemLink):
     """Automatically apply Embedded BCFs to archives that have one."""

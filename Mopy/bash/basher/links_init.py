@@ -266,11 +266,17 @@ def InitInstallerLinks():
         installMenu.links.append(Installer_Install())
         installMenu.links.append(Installer_Install(u'MISSING'))
         installMenu.links.append(Installer_Install(u'LAST'))
-        installMenu.links.append(Installer_Fomod())
-        if bEnableWizard:
+        if True: #--FOMODs
+            fomod_menu = MenuLink(_('FOMOD Installer..'))
+            fomod_menu.links.append(Installer_RunFomod())
+            fomod_menu.links.append(SeparatorLink())
+            fomod_menu.links.append(Installer_EditFomod())
+            installMenu.links.append(fomod_menu)
+        if bEnableWizard: #--Wizards
             wizardMenu = MenuLink(_(u'Wizard Installer..'))
-            wizardMenu.links.append(Installer_Wizard(False))
-            wizardMenu.links.append(Installer_Wizard(True))
+            wizardMenu.links.append(Installer_Wizard(auto_wizard=False))
+            wizardMenu.links.append(Installer_Wizard(auto_wizard=True))
+            wizardMenu.links.append(SeparatorLink())
             wizardMenu.links.append(Installer_EditWizard())
             installMenu.links.append(wizardMenu)
         InstallersList.context_links.append(installMenu)

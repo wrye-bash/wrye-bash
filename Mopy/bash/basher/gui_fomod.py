@@ -29,7 +29,7 @@ from .. import balt, bass, bolt, bush, env
 from ..balt import EnabledLink, Links, colors
 from ..exception import AbstractError
 from ..fomod import FailedCondition, FomodInstaller, InstallerGroup, \
-    InstallerOption, InstallerPage
+    InstallerOption, InstallerPage, GroupType, OptionType
 from ..gui import CENTER, CheckBox, VBoxedLayout, HLayout, Label, \
     LayoutOptions, TextArea, VLayout, WizardDialog, PictureWithCursor, \
     RadioButton, ScrollableWindow, Stretch, Table, BusyCursor, WizardPage
@@ -120,9 +120,9 @@ class InstallerFomod(WizardDialog):
         try:
             self.fomod_parser.check_start_conditions()
         except FailedCondition as e:
-            fm_warning = _(u'This installer cannot start due to the following '
-                           u'unmet conditions:') + u'\n  ' + u'\n  '.join(
-                (u'%s' % e).splitlines()) + u'\n'
+            fm_warning = _('This installer cannot start due to the following '
+                           'unmet conditions:') + '\n' + '\n'.join(
+                f' - {l}' for l in str(e).splitlines())
             balt.showWarning(self, fm_warning,
                              title=_(u'Cannot Run Installer'), do_center=True)
             self._cancel_wizard()
@@ -156,14 +156,15 @@ class PageSelect(PageInstaller):
     description for each option, shown when that item is selected."""
     # Syntax: tuple containing text to show for an option of this type and a
     # boolean indicating whether to mark the text as a warning or not
-    _option_type_info = defaultdict(lambda: (u'', False))
-    _option_type_info[u'Required'] = (_(u'This option is required.'), False)
-    _option_type_info[u'Recommended'] = (_(u'This option is recommended.'),
-                                         False)
-    _option_type_info[u'CouldBeUsable'] = (_(u'This option could result in '
-                                             u'instability.'), True)
-    _option_type_info[u'NotUsable'] = (_(u'This option cannot be selected.'),
-                                       True)
+    _option_type_info = defaultdict(lambda: ('', False))
+    _option_type_info[OptionType.REQUIRED] = (
+        _('This option is required.'), False)
+    _option_type_info[OptionType.RECOMMENDED] = (
+        _('This option is recommended.'), False)
+    _option_type_info[OptionType.COULD_BE_USABLE] = (
+        _('This option could result in instability.'), True)
+    _option_type_info[OptionType.NOT_USABLE] = (
+        _('This option cannot be selected.'), True)
 
     def __init__(self, page_parent, inst_page):
         """:type inst_page: InstallerPage"""
@@ -196,8 +197,8 @@ class PageSelect(PageInstaller):
             first_selectable = None
             any_selected = False
             gtype = grp.group_type
-            group_force_selection = gtype in (u'SelectExactlyOne',
-                                              u'SelectAtLeastOne')
+            group_force_selection = gtype in (GroupType.SELECT_EXACTLY_ONE,
+                                              GroupType.SELECT_AT_LEAST_ONE)
             # A set of all option checkables to block in this group
             checkables_to_block = set()
             # Whether or not to block *all* checkables in this group. Whenever
@@ -207,7 +208,8 @@ class PageSelect(PageInstaller):
             block_all_in_group = False
             for option in grp: # type: InstallerOption
                 otype = option.option_type
-                if gtype in (u'SelectExactlyOne', u'SelectAtMostOne'):
+                if gtype in (GroupType.SELECT_EXACTLY_ONE,
+                             GroupType.SELECT_AT_MOST_ONE):
                     checkable = RadioButton(panel_groups,
                                             label=option.option_name,
                                             is_group=option is grp[0])
@@ -216,28 +218,30 @@ class PageSelect(PageInstaller):
                                          label=option.option_name)
                     # Mass selection makes no sense on radio buttons
                     checkable.on_context.subscribe(self._handle_context_menu)
-                    if gtype == u'SelectAll':
+                    if gtype == GroupType.SELECT_ALL:
                         checkable.is_checked = True
                         any_selected = True
                         checkables_to_block.add(checkable)
                 # Remember the first checkable we created for later
                 if not first_checkable:
                     first_checkable = checkable
-                if otype == u'Required':
+                if otype == OptionType.REQUIRED:
                     checkable.is_checked =  True
                     any_selected = True
-                    if gtype in (u'SelectExactlyOne', u'SelectAtMostOne'):
+                    if gtype in (GroupType.SELECT_EXACTLY_ONE,
+                                 GroupType.SELECT_AT_MOST_ONE):
                         block_all_in_group = True
                     else:
                         checkables_to_block.add(checkable)
-                elif otype == u'Recommended':
+                elif otype == OptionType.RECOMMENDED:
                     if not any_selected or not group_force_selection:
                         checkable.is_checked = True
                         any_selected = True
-                elif otype in (u'Optional', u'CouldBeUsable'):
+                elif otype in (OptionType.OPTIONAL,
+                               OptionType.COULD_BE_USABLE):
                     if first_selectable is None:
                         first_selectable = checkable
-                elif otype == u'NotUsable':
+                elif otype == OptionType.NOT_USABLE:
                     checkable.is_checked = False
                     checkables_to_block.add(checkable)
                 self.checkable_to_option[checkable] = option
@@ -257,7 +261,7 @@ class PageSelect(PageInstaller):
             # option
             initial_state = {c: c.is_checked for c in
                              self.group_option_map[grp]}
-            if gtype == u'SelectAtMostOne':
+            if gtype == GroupType.SELECT_AT_MOST_ONE:
                 none_button = RadioButton(panel_groups, label=_(u'None'))
                 if not any_selected:
                     none_button.is_checked = True
@@ -313,7 +317,7 @@ class PageSelect(PageInstaller):
         block_option = self.checkable_to_option[block_checkable]
         # Adjust the warning based on whether the problem is due to this option
         # or another one in the same group
-        if block_option.option_type == u'NotUsable':
+        if block_option.option_type == OptionType.NOT_USABLE:
             balt.showWarning(self, _(u'This option cannot be enabled.'))
         elif isinstance(block_checkable, CheckBox):
             balt.showWarning(self, _(u'This option is required and cannot be '
@@ -341,10 +345,11 @@ class PageSelect(PageInstaller):
         self._img_cache[opt_img] = self._bmp_item.set_bitmap(final_image)
         # Check if we need to display a special string above the description
         type_desc, type_warn = self._option_type_info[option.option_type]
-        if self.checkable_to_group[checkable].group_type == u'SelectAll':
+        cg_type = self.checkable_to_group[checkable].group_type
+        if cg_type == GroupType.SELECT_ALL:
             # Ugh. Some FOMODs set SelectAll but don't mark the options as
             # required. In such a case, we let the SelectAll win.
-            type_desc, type_warn = self._option_type_info[u'Required']
+            type_desc, type_warn = self._option_type_info[OptionType.REQUIRED]
         self._option_type_label.label_text = type_desc
         if type_warn:
             self._option_type_label.set_foreground_color(
@@ -366,20 +371,21 @@ class PageSelect(PageInstaller):
                              if c.is_checked]
             option_len = len(opts_selected)
             gtype = grp.group_type
-            if gtype == u'SelectExactlyOne' and option_len != 1:
+            if gtype == GroupType.SELECT_EXACTLY_ONE and option_len != 1:
                 fm_err = _(u'Group "{}" should have exactly 1 option selected '
                            u'but has {}.').format(grp.group_name, option_len)
                 self.show_fomod_error(fm_err)
-            elif gtype == u'SelectAtMostOne' and option_len > 1:
+            elif gtype == GroupType.SELECT_AT_MOST_ONE and option_len > 1:
                 fm_err = _(u'Group "{}" should have at most 1 option selected '
                            u'but has {}.').format(grp.group_name, option_len)
                 self.show_fomod_error(fm_err)
-            elif gtype == u'SelectAtLeast' and option_len < 1:
+            elif gtype == GroupType.SELECT_AT_LEAST_ONE and option_len < 1:
                 fm_err = _(u'Group "{}" should have at least 1 option '
                            u'selected but has {}.').format(grp.group_name,
                                                            option_len)
                 self.show_fomod_error(fm_err)
-            elif gtype == u'SelectAll' and option_len != len(option_chks):
+            elif (gtype == GroupType.SELECT_ALL
+                  and option_len != len(option_chks)):
                 fm_err = _(u'Group "{}" should have all options selected but '
                            u'has only {}.').format(grp.group_name,
                                                    option_len)
@@ -486,7 +492,7 @@ class _Group_MassSelect(_GroupLink):
         for checkable in self.window.group_option_map[self.selected_group]:
             # NotUsable options can't ever be enabled, so skip those
             otype = self.window.checkable_to_option[checkable].option_type
-            checkable.is_checked = (otype != u'NotUsable'
+            checkable.is_checked = (otype != OptionType.NOT_USABLE
                                     and self._should_enable(checkable))
 
     def _should_enable(self, checkable):

@@ -1084,6 +1084,7 @@ class Installer(ListInfo):
 
     def open_readme(self): self._open_txt_file(self.hasReadme)
     def open_wizard(self): self._open_txt_file(self.hasWizard)
+    def open_fomod_conf(self): self._open_txt_file(self.has_fomod_conf)
     def _open_txt_file(self, rel_path): raise AbstractError
     def wizard_file(self): raise AbstractError
     def fomod_file(self): raise AbstractError

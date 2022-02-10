@@ -68,7 +68,8 @@ __all__ = [u'Installer_Open', u'Installer_Duplicate',
            u'Installer_Subs_ToggleSelection',
            u'Installer_Subs_ListSubPackages', u'Installer_OpenNexus',
            u'Installer_ExportAchlist', u'Installer_Espm_JumpToMod',
-           u'Installer_Fomod', u'Installer_InstallSmart']
+           'Installer_RunFomod', 'Installer_InstallSmart',
+           'Installer_EditFomod']
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -152,13 +153,39 @@ class _Installer_AWizardLink(_InstallerLink):
         with balt.Progress(title, u'\n'+u' '*60) as progress:
             do_it([sel_package.ci_key], ui_refresh, progress)
 
-class Installer_Fomod(_Installer_AWizardLink):
+class _Installer_AViewOrEditFile(_SingleInstallable):
+    """Base class for View/Edit wizard/FOMOD links."""
+    def _run_on_archive(self):
+        """Returns True if the single installable we've got selected is an
+        archive."""
+        return next(self.iselected_infos()).is_archive()
+
+class Installer_EditFomod(_Installer_AViewOrEditFile):
+    """View or edit the ModuleConfig.xml associated with this package."""
+    @property
+    def link_text(self):
+        return (_('View ModuleConfig...') if self._run_on_archive() else
+                _('Edit ModuleConfig...'))
+
+    @property
+    def link_help(self):
+        return (_('View the ModuleConfig.xml associated with this archive.')
+                if self._run_on_archive() else
+                _('Edit the ModuleConfig.xml associated with this project.'))
+
+    def _enable(self):
+        return super()._enable() and bool(self._selected_info.has_fomod_conf)
+
+    def Execute(self):
+        self._selected_info.open_fomod_conf()
+
+class Installer_RunFomod(_Installer_AWizardLink):
     """Runs the FOMOD installer"""
-    _text = _(u'FOMOD Installer...')
+    _text = _('Run FOMOD...')
     _help = _(u'Run the FOMOD installer.')
 
     def _enable(self):
-        return super(Installer_Fomod, self)._enable() and all(
+        return super()._enable() and all(
             i.has_fomod_conf for i in self.iselected_infos())
 
     @balt.conversation
@@ -190,26 +217,30 @@ class Installer_Fomod(_Installer_AWizardLink):
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 
-class Installer_EditWizard(_SingleInstallable):
-    """Edit the wizard.txt associated with this project"""
-    _help = _(u'Edit the wizard.txt associated with this project.')
-
+class Installer_EditWizard(_Installer_AViewOrEditFile):
+    """View or edit the wizard.txt associated with this package."""
     @property
     def link_text(self):
-        return _(u'View Wizard...') if next(
-            self.iselected_infos()).is_archive() else _(u'Edit Wizard...')
+        return (_('View Wizard...') if self._run_on_archive() else
+                _('Edit Wizard...'))
+
+    @property
+    def link_help(self):
+        return (_('View the wizard.txt associated with this archive.')
+                if self._run_on_archive() else
+                _('Edit the wizard.txt associated with this project.'))
 
     def _enable(self):
-        return super(Installer_EditWizard, self)._enable() and bool(
-            self._selected_info.hasWizard)
+        return super()._enable() and bool(self._selected_info.hasWizard)
 
-    def Execute(self): self._selected_info.open_wizard()
+    def Execute(self):
+        self._selected_info.open_wizard()
 
 class Installer_Wizard(_Installer_AWizardLink):
     """Runs the install wizard to select subpackages and plugin filtering"""
-    def __init__(self, bAuto):
+    def __init__(self, *, auto_wizard):
         super(Installer_Wizard, self).__init__()
-        self.bAuto = bAuto
+        self.bAuto = auto_wizard
         self._text = (_(u'Auto Wizard...') if self.bAuto
                       else _(u'Manual Wizard...'))
         self._help = (
@@ -223,7 +254,7 @@ class Installer_Wizard(_Installer_AWizardLink):
     @balt.conversation
     def Execute(self):
         ##: Investigate why we have so many refreshCurrents in here.
-        # Installer_Fomod has just one!
+        # Installer_RunFomod has just one!
         ui_refresh = [False, False]
         idetails = self.iPanel.detailsPanel
         try:
@@ -536,8 +567,8 @@ class Installer_InstallSmart(_NoMarkerLink):
 
     def Execute(self):
         ##: Not the best implementation, pretty readable and obvious though
-        inst_wiz = Installer_Wizard(bAuto=False)
-        inst_fomod = Installer_Fomod()
+        inst_wiz = Installer_Wizard(auto_wizard=False)
+        inst_fomod = Installer_RunFomod()
         inst_regular = Installer_Install()
         # Use list() since the interactive installers can change selection
         for sel_package in list(self.iselected_infos()):
