@@ -215,7 +215,7 @@ class _AEffectsTweak_Tes4(_AEffectsTweak, _AMgefNamesTweak):
     def _get_spell_level(self, record):
         return record.level
 
-    def _has_harmful_effect(self, record):
+    def _is_harmful(self, record):
         for rec_effect in record.effects:
             if not self._is_effect_hostile(rec_effect):
                 return False

@@ -943,9 +943,9 @@ class Installer_Espm_List(_Installer_Details_Link):
     def Execute(self):
         subs = _(u'Plugin List for %s:') % self._installer + u'\n[spoiler]\n'
         espm_list = self.window.gEspmList
-        for index in range(espm_list.lb_get_items_count()):
-            subs += [u'   ', u'** '][espm_list.lb_is_checked_at_index(
-                index)] + self.window.get_espm(index) + u'\n'
+        for i in range(espm_list.lb_get_items_count()):
+            sub_prefix = ['   ', '** '][espm_list.lb_is_checked_at_index(i)]
+            subs += f'{sub_prefix}{self.window.get_espm(i)}\n'
         subs += u'[/spoiler]'
         copy_text_to_clipboard(subs)
         self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)

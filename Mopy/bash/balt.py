@@ -2120,8 +2120,8 @@ class ListBoxes(WrappingTextMixin, DialogWindow):
         with cls(*args, **kwargs) as dialog:
             res = dialog.show_modal()
             if not res: return tuple(() for __ in range(len(get_checked)))
-            return tuple(
-                dialog._get_checked(*args_tuple) for args_tuple in get_checked)
+            return tuple(dialog._get_checked(*args_tuple) for args_tuple in
+                         get_checked) or res # or for when get_checked is empty
 
     def _get_checked(self, cntrl_key, items):
         """Return a sublist of 'items' containing (un)checked items.

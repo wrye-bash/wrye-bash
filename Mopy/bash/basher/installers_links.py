@@ -140,13 +140,13 @@ class Installers_MonitorInstall(Installers_Link):
                 u'These files were deleted.  BAIN does not have the '
                 u'capability to remove files when installing.'), ]
             group.extend(sorted(delFiles))
-        lists= ListBoxes.display_dialog(self.window, self._dialog_title,
+        lists = ListBoxes.display_dialog(self.window, self._dialog_title,
             _(u'The following changes were detected in the %s directory.'
               ) % bush.game.mods_dir,
             checklists, bOk=_(u'Create Project'), get_checked=[(
                 newFilesKey, newFiles), (changedFilesKey, changedFiles),
                 (touchedFilesKey, touchedFiles)])
-        include = set(chain.from_iterable(lists))
+        include = set(chain(*lists))
         if not include: return
         # Create Project
         projectName = self._askFilename(_(u'Project Name'), u'', ##: some default here?
@@ -280,7 +280,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
                 _('Uncheck files to keep them in the %s folder.') % mdir]
             all_unknown_files.sort()
             message.extend(all_unknown_files)
-            selected_unknown_files, =  ListBoxes.display_dialog(self.window,
+            selected_unknown_files, = ListBoxes.display_dialog(self.window,
                 _(u'Move files out of the %s folder.') % mdir, _(
                 'Uncheck any files you want to keep in the %s folder.') % mdir,
                 [message], get_checked=[(message[0], all_unknown_files)])

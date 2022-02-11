@@ -1074,7 +1074,7 @@ class Mod_Patch_Update(_Mod_BP_Link):
         if not checklists: return
         getchecks = [(unfilteredKey, unfiltered), (mergeKey, merge),
                      (noMergeKey, noMerge), (deactivateKey, deactivate)]
-        deselect = set(chain.from_iterable(ListBoxes.display_dialog(Link.Frame,
+        deselect = set(chain(*ListBoxes.display_dialog(Link.Frame,
             _('Deactivate these mods prior to patching'),
             _('The following mods should be deactivated prior to building the '
               'patch.'), checklists, bCancel=_('Skip'),
