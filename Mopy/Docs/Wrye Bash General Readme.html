@@ -282,20 +282,62 @@ be restructured.</p>
 
 <h3 id="bain-structure">BAIN-Compatible installer layout <a class="back2top" href="#contents">Back to top</a></h3>
 
-<p>When scanning an installer (package or project) BAIN follows some rules to decide what's in there and if it can be installed. BAIN
-    will search for specific directories and file extensions (bsa/ba2, ini, all plugin extensions). All directory detection is <em>case insensitive</em>.
-    Directories BAIN is aware of, independently of the game, are:</p>
+<p>When scanning an installer (package or project) BAIN follows some rules to
+    decide what's in there and if it can be installed. BAIN will search for
+    specific directories and file extensions (bsa/ba2, ini, all plugin
+    extensions). All directory detection is <em>case insensitive</em>.
+    Directories BAIN is aware of, independent of the game, are:</p>
 <table>
-    <thead><tr><th>Wrye Bash Directory</th><th>Notes</th></tr></thead>
+    <thead>
+        <tr>
+            <th>Wrye Bash Directory</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>bashtags</td><td>Its contents will be copied inside <code>Data/BashTags</code>.</td></tr>
-        <tr><td>bash patches</td><td>BAIN will install files in this folder from packages, usually in the form of <code>.csv</code> files.</td></tr>
-        <tr><td>docs</td><td>Its contents will be copied inside <code>Data/Docs</code>.</td></tr>
-        <tr><td>ini tweaks</td><td>INI tweaks inside this will be installed in <code>Data/Ini Tweaks/</code> and appear on the INI Tab - do <strong>not</strong> include subfolders in <code>ini tweaks</code>.</td></tr>
-        <tr><td>screenshots</td><td>Its contents will be copied inside <code>Data/Docs</code>.</td></tr>
-        <tr class="tabttl"><th colspan="2">Game Directories Supported For All Games</th>
+        <tr>
+            <td>bashtags</td>
+            <td>Its contents will be copied into
+                <code>Data/BashTags</code>.</td>
+        </tr>
+        <tr>
+            <td>bash patches</td>
+            <td>BAIN will install files in this folder from packages, usually
+                in the form of <code>.csv</code> files.</td>
+        </tr>
+        <tr>
+            <td>docs</td>
+            <td>Its contents will be copied into <code>Data/Docs</code>.</td>
+        </tr>
+        <tr>
+            <td>ini tweaks</td>
+            <td>INI tweaks inside this will be installed in
+                <code>Data/INI Tweaks</code> and appear on the INI Tab - do
+                <strong>not</strong> include subfolders in
+                <code>ini tweaks</code>.</td>
+        </tr>
+        <tr>
+            <td>screenshots</td>
+            <td>Its contents will be copied into <code>Data/Docs</code>.</td>
+        </tr>
+        <tr>
+            <td>screens</td>
+            <td>Its contents will be copied into <code>Data/Docs</code>.</td>
+        </tr>
+        <tr>
+            <td>ss</td>
+            <td>Its contents will be copied into <code>Data/Docs</code>.</td>
+        </tr>
+        <tr class="tabttl">
+            <th colspan="2">Game Directories Supported For All Games</th>
+        </tr>
     <tbody>
-        <tr><td colspan="2"><div class="bain-structure-txtcnt">ini, meshes, music, sound, textures, video</div></td></tr>
+        <tr>
+            <td colspan="2">
+                <div class="bain-structure-txtcnt">ini, meshes, music, sound,
+                    textures, video</div>
+            </td>
+        </tr>
     </tbody>
 </table>
 

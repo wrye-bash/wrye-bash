@@ -68,7 +68,7 @@ class Installer(ListInfo):
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     type_string = _(u'Unrecognized')
-    docDirs = {u'screenshots'}
+    screenshot_dirs = {'screenshots', 'screens', 'ss'}
     #--Will be skipped even if hasExtraData == True (bonus: skipped also on
     # scanning the game Data directory)
     dataDirsMinus = {u'bash', u'--'}
@@ -93,8 +93,8 @@ class Installer(ListInfo):
     skipExts.update(set(readExts))
     commonlyEditedExts = {'.txt', '.ini', '.cfg', '.xml'}
     #--Regular game directories - needs update after bush.game has been set
-    dataDirsPlus = docDirs | {u'bash patches', u'bashtags', u'ini tweaks',
-                              u'docs'}
+    dataDirsPlus = screenshot_dirs | {'bash patches', 'bashtags', 'ini tweaks',
+                                      'docs'}
     # Files that may be installed in top Data/ directory - note that all
     # top-level file extensions commonly found in the wild need to go here,
     # even ones we'll end up skipping, since this is for the detection of
@@ -421,7 +421,7 @@ class Installer(ListInfo):
             meshes_lod = os_sep.join((u'meshes', u'landscape', u'lod'))
             Installer._global_start_skips.append(meshes_lod)
         if bass.settings[u'bash.installers.skipScreenshots']:
-            Installer._global_start_skips.append(u'screenshots')
+            Installer._global_start_skips.extend(Installer.screenshot_dirs)
         # LOD textures
         skipLODTextures = bass.settings[
             u'bash.installers.skipLandscapeLODTextures']
@@ -547,7 +547,9 @@ class Installer(ListInfo):
             skips = list(Installer._global_skips)
             start.extend(Installer._global_start_skips)
             skip_ext = Installer._global_skip_extensions
-        if start: skips.append(lambda f: f.startswith((tuple(start))))
+        if start:
+            start_tup = tuple(start) # do this ahead of time
+            skips.append(lambda f: f.startswith(start_tup))
         skipEspmVoices = not self.skipVoices and {x.cs for x in self.espmNots}
         if skipEspmVoices:
             def _skip_espm_voices(fileLower):
@@ -894,7 +896,7 @@ class Installer(ListInfo):
         """Renames and redirects files to other destinations in the Data
         folder."""
         # Redirect docs to the Docs folder
-        if rootLower in self.docDirs:
+        if rootLower in self.screenshot_dirs:
             dest = os_sep.join((u'Docs', file_relative[len(rootLower) + 1:]))
         # Rename strings files if the option is set
         elif (renameStrings and fileExt in self._strings_extensions
@@ -2187,7 +2189,8 @@ class InstallersData(DataStore):
             newSDirs = (x for x in newSDirs if x.lower() != os.path.join(
                 u'meshes', u'landscape', u'lod'))
         if bass.settings[u'bash.installers.skipScreenshots']:
-            newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
+            newSDirs = (x for x in newSDirs if x.lower()
+                        not in Installer.screenshot_dirs)
         # LOD textures
         if bass.settings[u'bash.installers.skipLandscapeLODTextures'] and \
                 bass.settings[u'bash.installers.skipLandscapeLODNormals']:
