@@ -550,8 +550,8 @@ class ModHeaderReader(object):
                             raise
                         if len(new_rec_data) != size_check:
                             raise ModError(ins.inName,
-                                u'Mis-sized compressed data. Expected %d, got '
-                                u'%d.' % (blob_siz, len(new_rec_data)))
+                                f'Mis-sized compressed data. Expected '
+                                f'{size_check}, got {len(new_rec_data)}.')
                     else:
                         new_rec_data = ins_read(blob_siz)
                     recs = FastModReader(minf_ci_key, new_rec_data)
@@ -602,7 +602,7 @@ class ModHeaderReader(object):
         # We want to read only the children of these, so skip their tops
         interested_sigs = {b'CELL', b'WRLD'}
         tops_to_skip = interested_sigs | {bush.game.Esp.plugin_header_sig}
-        with ModReader(mod_info.ci_key, mod_info.abs_path.open(u'rb')) as ins:
+        with ModReader(mod_info.ci_key, mod_info.abs_path.open('rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
             try:
@@ -629,6 +629,6 @@ class ModHeaderReader(object):
                         ret_headers.append(header)
                         header.skip_blob(ins)
             except (OSError, struct_error) as e:
-                raise ModError(ins.inName, u'Error scanning %s, file read '
-                    u"pos: %i\nCaused by: '%r'" % (mod_info, ins.tell(), e))
+                msg = f'Error scanning {mod_info}, file read pos: {ins.tell()}'
+                raise ModError(ins.inName, msg) from e
         return ret_headers

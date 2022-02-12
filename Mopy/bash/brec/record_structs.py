@@ -222,14 +222,6 @@ class MelSet(object):
         record.longFids = toLong
         record.setChanged()
 
-    def updateMasters(self, record, masterset_add):
-        """Updates set of master names according to masters actually used."""
-        if not record.longFids: raise exception.StateError(
-            u'Fids not in long format')
-        masterset_add(record.fid)
-        for element in self.formElements:
-            element.mapFids(record, masterset_add)
-
     def with_distributor(self, distributor_config):
         # type: (dict) -> MelSet
         """Adds a distributor to this MelSet. See _MelDistributor for more
@@ -631,4 +623,8 @@ class MelRecord(MreRecord):
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        self.__class__.melSet.updateMasters(self, masterset_add)
+        if not self.longFids:
+            raise exception.StateError('Fids not in long format')
+        masterset_add(self.fid)
+        for element in self.__class__.melSet.formElements:
+            element.mapFids(self, masterset_add)

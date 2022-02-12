@@ -778,8 +778,8 @@ class MelUnion(MelBase):
                 decider_val = (decider_val,)
             for split_val in decider_val:
                 if split_val in processed_mapping:
-                    raise SyntaxError(u'Invalid union mapping: Duplicate key '
-                                      u"'%s'" % repr(split_val))
+                    raise SyntaxError(f"Invalid union mapping: Duplicate key "
+                                      f"'{repr(split_val)}'")
                 processed_mapping[split_val] = element
         self.element_mapping = processed_mapping
         self.fid_elements = set()

@@ -187,8 +187,8 @@ class _Header(object):
             setattr(self, a, struct_unpack(f[0], ins.read(f[1]))[0])
         # error checking
         if self.file_id != self.__class__.bsa_magic:
-            raise BSAError(bsa_name, u'Magic wrong: got %r, expected %r' % (
-                self.file_id, self.__class__.bsa_magic))
+            raise BSAError(bsa_name, f'Magic wrong: got {self.file_id!r}, '
+                                     f'expected {self.__class__.bsa_magic}')
 
 class BsaHeader(_Header):
     __slots__ = ( # in the order encountered in the header
@@ -540,8 +540,7 @@ class ABsa(AFile):
         with open(self.abs_path, u'rb') as bsa_file:
             for folder, file_records in folder_to_assets.items():
                 if progress:
-                    progress(i, u'Extracting %s...\n%s' % (
-                        self.bsa_name, folder))
+                    progress(i, f'Extracting {self.bsa_name}...\n{folder}')
                     i += 1
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
@@ -573,8 +572,7 @@ class ABsa(AFile):
                     else:
                         # This is an uncompressed record, just read it
                         raw_data = bsa_file.read(data_size)
-                    with open(os.path.join(target_dir, filename),
-                              u'wb') as out:
+                    with open(os.path.join(target_dir, filename), 'wb') as out:
                         out.write(raw_data)
 
     def _map_assets_to_folders(self, folder_files_dict):
@@ -652,30 +650,30 @@ class BSA(ABsa):
             rec.load_record(bsa_file)
             file_records.append(rec)
 
-    def _load_bsa_light(self):
+    def _load_bsa_light(self, __ps=path_sep):
         folder_records = [] # we need those to parse the folder names
         _filenames = []
-        path_folder_record = collections.OrderedDict()
-        read_file_record = partial(self._discard_file_records,
-                                   folders=path_folder_record)
-        file_names = self._read_bsa_file(folder_records, read_file_record)
-        names_record_index = 0
+        folder_name_record = {} # type: dict[str, _BsaHashedRecord]
+        rs = self.file_record_type.total_record_size()
+        def _discard_file_records(bsa_file, folder_name, folder_record, rs=rs):
+            bsa_file.seek(rs * folder_record.files_count, 1)
+            folder_name_record[folder_name] = folder_record
+        file_names = self._read_bsa_file(folder_records, _discard_file_records)
         filenames_append = _filenames.append
-        path_sep_join = path_sep.join
-        for folder_path, folder_record in path_folder_record.items():
-            for __ in range(folder_record.files_count):
+        for folder_path, folder_record in folder_name_record.items():
+            start = len(_filenames)
+            for list_index in range(start, start + folder_record.files_count):
                 try:
                     # Inlined from _decode_path for startup performance
-                    filename = str(file_names[names_record_index],
-                                       encoding=_bsa_encoding)
+                    filename = str(file_names[list_index],
+                                   encoding=_bsa_encoding)
                 except UnicodeDecodeError:
                     raise BSADecodingError(self.bsa_name,
-                                           file_names[names_record_index])
-                filenames_append(path_sep_join((folder_path, filename)))
-                names_record_index += 1
+                                           file_names[list_index])
+                filenames_append(f'{folder_path}{__ps}{filename}')
         self._filenames = _filenames
 
-    def _read_bsa_file(self, folder_records, read_file_records):
+    def _read_bsa_file(self, folder_records, read_file_records) -> list[bytes]:
         total_names_length = 0
         my_bsa_name = self.bsa_name
         with open(self.abs_path, u'rb') as bsa_file:
@@ -710,12 +708,6 @@ class BSA(ABsa):
                 self.bsa_header.total_file_name_length).split(b'\00')
             # close the file
         return file_names
-
-    def _discard_file_records(self, bsa_file, folder_path, folder_record,
-                              folders=None):
-        bsa_file.seek(self.file_record_type.total_record_size() *
-                      folder_record.files_count, 1)
-        folders[folder_path] = folder_record
 
 class BA2(ABsa):
     _header_type = Ba2Header
@@ -771,8 +763,7 @@ class BA2(ABsa):
                     dds_file, use_legacy_formats=True)
             for folder, file_records in folder_to_assets.items():
                 if progress:
-                    progress(i, u'Extracting %s...\n%s' % (
-                        self.bsa_name, folder))
+                    progress(i, f'Extracting {self.bsa_name}...\n{folder}')
                     i += 1
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
@@ -795,8 +786,7 @@ class BA2(ABsa):
                         # Otherwise, we're dealing with a GNRL BA2, just
                         # read/decompress/write the record directly
                         raw_data = _read_rec_or_chunk(record)
-                    with open(os.path.join(target_dir, filename),
-                              u'wb') as out:
+                    with open(os.path.join(target_dir, filename), 'wb') as out:
                         out.write(raw_data)
 
     def _load_bsa(self):

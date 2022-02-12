@@ -229,8 +229,8 @@ class _MelNum(MelBase):
 
     def pack_subrecord_data(self, record):
         """Will only be dumped if set by load_mel."""
-        attr = getattr(record, self.attr)
-        return None if attr is None else self._packer(attr)
+        num = getattr(record, self.attr)
+        return None if num is None else self._packer(num)
 
 #------------------------------------------------------------------------------
 # TODO(inf) DEPRECATED! - don't use for new usages -> MelGroups(MelFid)
@@ -646,14 +646,13 @@ class MelStruct(MelBase):
         a new class (MelStructured?)"""
         expanded_fmts = []
         for f in struct_formats:
-            if f[-1] != u's':
+            if f[-1] != 's':
                 expanded_fmts.extend([f[-1]] * int(f[:-1] or 1))
             else:
                 expanded_fmts.append(int(f[:-1] or 1))
         if len(expanded_fmts) != len(elements):
-            raise SyntaxError(
-                u"Format specifiers (%s) do not match elements (%s)" % (
-                expanded_fmts, elements))
+            raise SyntaxError(f'Format specifiers ({expanded_fmts}) do not '
+                              f'match elements ({elements})')
         return expanded_fmts
 
 #------------------------------------------------------------------------------

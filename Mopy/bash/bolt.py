@@ -257,9 +257,8 @@ def round_size(size_bytes):
     for prefix_pt1 in (u'K', u'M', u'G', u'T', u'P', u'E', u'Z', u'Y'):
         if size_bytes < 1024:
             # Show a single decimal digit, but never show trailing zeroes
-            return u'%s %s' % (
-                    (u'%.1f' % size_bytes).rstrip(u'0').rstrip(u'.'),
-                    prefix_pt1 + prefix_pt2)
+            return f'{f"{size_bytes:.1f}".rstrip("0").rstrip(".")} ' \
+                   f'{prefix_pt1 + prefix_pt2}'
         size_bytes /= 1024
     return _(u'<very large>') # ;)
 
@@ -347,7 +346,7 @@ class CIstr(str):
         return NotImplemented
     #--repr
     def __repr__(self):
-        return u'%s(%s)' % (type(self).__name__, super(CIstr, self).__repr__())
+        return f'{type(self).__name__}({super(CIstr, self).__repr__()})'
 
 class LowerDict(dict):
     """Dictionary that transforms its keys to CIstr instances.
@@ -578,7 +577,7 @@ class Path(os.PathLike):
         return len(self._s)
 
     def __repr__(self):
-        return u'bolt.Path(%r)' % self._s
+        return f'bolt.Path({self._s!r})'
 
     def __str__(self):
         return self._s
@@ -1235,7 +1234,7 @@ class Flags(object):
     def __repr__(self):
         """Shows all set flags."""
         all_flags = u', '.join(self.getTrueAttrs()) if self._field else u'None'
-        return u'0x%s (%s)' % (self.hex(), all_flags)
+        return f'0x{self.hex()} ({all_flags})'
 
 class TrimmedFlags(Flags):
     """Flag subtype that will discard unnamed flags on __init__ and dump
@@ -1432,9 +1431,9 @@ class PickleDict(object):
 
     class Mold(Exception):
         def __init__(self, moldedFile):
-            msg = (u'Your settings in %s come from an ancient Bash version. '
-                   u'Please load them in 307 so they are converted '
-                   u'to the newer format' % moldedFile)
+            msg = (f'Your settings in {moldedFile} come from an ancient Bash '
+                   f'version. Please load them in 307 so they are converted '
+                   f'to the newer format')
             super(PickleDict.Mold, self).__init__(msg)
 
     def load(self):
@@ -1469,10 +1468,9 @@ class PickleDict(object):
                         firstPickle = pickle.load(ins, encoding='bytes')
                     except ValueError:
                         cor = path
-                        cor_name = GPath(
-                            u'%s (%s).corrupted' % (path, timestamp()))
-                        deprint(u'Unable to load %s (will be moved to "%s")' %(
-                                path, cor_name.tail), traceback=True)
+                        cor_name = GPath(f'{path} ({timestamp()}).corrupted')
+                        deprint(f'Unable to load {path} (will be moved to '
+                                f'"{cor_name.tail}")', traceback=True)
                         continue  # file corrupt - try next file
                     if firstPickle == u'VDATA3':
                         _perform_load() # new format, simply load
@@ -1481,7 +1479,7 @@ class PickleDict(object):
                         _perform_load()
                         self.vdata = conv_obj(self.vdata)
                         self.pickled_data = conv_obj(self.pickled_data)
-                        deprint(u'Converted %s to VDATA3 format' % path)
+                        deprint(f'Converted {path} to VDATA3 format')
                         resave = True
                     else:
                         raise PickleDict.Mold(path)
@@ -1630,7 +1628,7 @@ def pack_bzstr8(out, val, __pack=structs_cache[u'=B'].pack):
     out.write(val)
     out.write(b'\x00')
 def unpack_string(ins, string_len):
-    return struct_unpack(u'%ds' % string_len, ins.read(string_len))[0]
+    return struct_unpack(f'{string_len}s', ins.read(string_len))[0]
 def pack_string(out, val):
     out.write(val)
 
@@ -1795,8 +1793,7 @@ class Rounder(float):
 
     #--Hash/Compare
     def __hash__(self):
-        raise exception.AbstractError(
-            u'%s does not define __hash__' % type(self))
+        raise exception.AbstractError(f'{type(self)} does not define __hash__')
     def __eq__(self, b, rel_tol=1e-06, abs_tol=1e-12):
         """Check if the two floats are equal to the sixth place (relatively)
         or to the twelfth place (absolutely). Note that these parameters
@@ -1823,10 +1820,9 @@ class Rounder(float):
         return self == other or super(Rounder, self).__gt__(other)
     #--repr
     def __repr__(self):
-        return u'%s(%s)' % (
-            type(self).__name__, super(Rounder, self).__repr__())
+        return f'{type(self).__name__}({super(Rounder, self).__repr__()})'
     def __str__(self):
-        return u'%.6f' % round(self, 6) # for writing out in csv
+        return f'{round(self, 6):.6f}'  # for writing out in csv
 
     # Action API --------------------------------------------------------------
     def dump(self): return self  ##: TODO round?
@@ -2168,7 +2164,7 @@ def build_esub(esub_str):
             final_components.append(lambda _ma_obj, p=plain_contents: p)
             i = plain_match.end(0)
             continue # skip the error check
-        raise SyntaxError(u'Could not parse esub string %r' % esub_str)
+        raise SyntaxError(f'Could not parse esub string {esub_str!r}')
     def final_impl(ma_obj):
         return u''.join(c(ma_obj) for c in final_components)
     return final_impl
@@ -2348,7 +2344,7 @@ def natural_key():
         """Helper function that prepares substrings for comparison."""
         return int(sub_str) if sub_str.isdigit() else sub_str.lower()
     return lambda curr_str: [_to_cmp(s) for s in
-                             _digit_re.split(u'%s' % curr_str)]
+                             _digit_re.split(f'{curr_str}')]
 
 def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
     """WIP wrap common dict sorting patterns - key_f if passed takes
@@ -2717,12 +2713,12 @@ class WryeText(object):
             css = WryeText.defaultCss
         else:
             if cssName.ext != u'.css':
-                raise exception.BoltError(u'Invalid Css file: %s' % cssName)
+                raise exception.BoltError(f'Invalid Css file: {cssName}')
             for css_dir in css_dirs:
                 cssPath = GPath(css_dir).join(cssName)
                 if cssPath.exists(): break
             else:
-                raise exception.BoltError(u'Css file not found: %s' % cssName)
+                raise exception.BoltError(f'Css file not found: {cssName}')
             with cssPath.open(u'r', encoding=u'utf-8-sig') as cssIns:
                 css = u''.join(cssIns.readlines())
             if u'<' in css:
