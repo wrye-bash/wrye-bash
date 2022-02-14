@@ -1238,6 +1238,9 @@ class INIInfo(IniFile):
     def get_table_prop(self, prop, default=None):
         return iniInfos.table.getItem(self.abs_path.tail, prop, default)
 
+    def set_table_prop(self, prop, val):
+        iniInfos.table.setItem(self.abs_path.tail, prop, val)
+
     def reset_status(self): self._status = None
 
     def listErrors(self):
@@ -1578,7 +1581,7 @@ class TableFileInfos(DataStore):
         self.factory=factory
         self._initDB(dir_)
 
-    def new_info(self, fileName, _in_refresh=False, owner=None,
+    def new_info(self, fileName, *, _in_refresh=False, owner=None,
                  notify_bain=False, itsa_ghost=None):
         """Create, add to self and return a new info using self.factory.
         It will try to read the file to cache its header etc, so use on
@@ -1587,7 +1590,7 @@ class TableFileInfos(DataStore):
         info = self[fileName] = self.factory(self.store_dir.join(fileName),
             load_cache=True, itsa_ghost=itsa_ghost)
         if owner is not None:
-            self.table.setItem(fileName, u'installer', owner)
+            info.set_table_prop('installer', owner)
         if notify_bain:
             self._notify_bain(changed={info.abs_path})
         return info
@@ -1815,7 +1818,7 @@ class INIInfos(TableFileInfos):
     file_pattern = re.compile(r'\.ini$', re.I | re.U)
 
     def __init__(self):
-        INIInfos._default_tweaks = {
+        self._default_tweaks = {
             GPath_no_norm(k): DefaultIniInfo(k, v) for k, v in
             bush.game.default_tweaks.items()}
         super(INIInfos, self).__init__(dirs[u'ini_tweaks'],

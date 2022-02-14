@@ -249,7 +249,7 @@ class SaveFile(object):
         #--Records, temp effects, fids, worldspaces
         # (rec_id, rec_kind, flags, version, data)
         # rec_kind is an int, rec_id the short formid of the record in the save
-        self.records = []
+        self.save_records = []
         self.fid_recNum = None
         self.tempEffects = None
         self.fids = None
@@ -307,7 +307,7 @@ class SaveFile(object):
                 progress(ins.tell(),_(u'Reading records...'))
                 (rec_id, rec_kind, flags, version, siz) = unpack_many(ins,u'=IBIBH')
                 data = ins.read(siz)
-                self.records.append((rec_id,rec_kind,flags,version,data))
+                self.save_records.append((rec_id, rec_kind, flags, version, data))
             #--Temp Effects, fids, worldids
             progress(ins.tell(),_(u'Reading fids, worldids...'))
             tmp_effects_size = unpack_int(ins)
@@ -342,7 +342,7 @@ class SaveFile(object):
             #--Fids Pointer, num records
             fidsPointerPos = out.tell()
             _pack(u'I',0) #--Temp. Will write real value later.
-            _pack(u'I',len(self.records))
+            _pack(u'I', len(self.save_records))
             #--Pre-Globals
             out.write(self.preGlobals)
             #--Globals
@@ -360,7 +360,7 @@ class SaveFile(object):
             out.write(self.preRecords)
             #--Records, temp effects, fids, worldspaces
             progress(0.2,_(u'Writing records.'))
-            for rec_id,rec_kind,flags,version,data in self.records:
+            for rec_id,rec_kind,flags,version,data in self.save_records:
                 _pack(u'=IBIBH',rec_id,rec_kind,flags,version,len(data))
                 out.write(data)
             #--Temp Effects, fids, worldids
@@ -410,7 +410,7 @@ class SaveFile(object):
 
     def indexRecords(self):
         """Fills out self.fid_recNum."""
-        self.fid_recNum = {r[0]: i for i, r in enumerate(self.records)}
+        self.fid_recNum = {r[0]: i for i, r in enumerate(self.save_records)}
 
     def getRecord(self, rec_fid):
         """Returns recNum and record with corresponding fid."""
@@ -418,7 +418,7 @@ class SaveFile(object):
         recNum = self.fid_recNum.get(rec_fid)
         if recNum is None:
             return None
-        return self.records[recNum]
+        return self.save_records[recNum]
 
     def setRecord(self,record):
         """Sets records where record = (rec_id,rec_kind,flags,version,data)."""
@@ -426,10 +426,10 @@ class SaveFile(object):
         rec_id = record[0]
         recNum = self.fid_recNum.get(rec_id,-1)
         if recNum == -1:
-            self.records.append(record)
-            self.fid_recNum[rec_id] = len(self.records)-1
+            self.save_records.append(record)
+            self.fid_recNum[rec_id] = len(self.save_records) - 1
         else:
-            self.records[recNum] = record
+            self.save_records[recNum] = record
 
     def removeRecord(self,fid):
         """Removes record if it exists. Returns True if record existed, false if not."""
@@ -438,7 +438,7 @@ class SaveFile(object):
         if recNum is None:
             return False
         else:
-            del self.records[recNum]
+            del self.save_records[recNum]
             del self.fid_recNum[fid]
             return True
 
@@ -482,7 +482,7 @@ class SaveFile(object):
         #--Array Sizes
         log.setHeader(u'Array Sizes')
         log(u'  %d\t%s' % (len(self.created),_(u'Created Items')))
-        log(u'  %d\t%s' % (len(self.records),_(u'Records')))
+        log(u'  %d\t%s' % (len(self.save_records), _(u'Records')))
         log(u'  %d\t%s' % (len(self.fids),_(u'Fids')))
         #--Created Types
         log.setHeader(_(u'Created Items'))
@@ -512,8 +512,7 @@ class SaveFile(object):
         objRefBases = {}
         objRefNullBases = 0
         fids = self.fids
-        for record in self.records:
-            rec_id,rec_kind,rec_flgs,version,data = record
+        for rec_id, rec_kind, rec_flgs, version, rdata in self.save_records:
             if rec_id ==0xFEFFFFFF: continue #--Ignore intentional(?) extra fid added by patch.
             mod = rec_id >> 24
             typeModHisto[rec_kind][mod] += 1
@@ -531,10 +530,10 @@ class SaveFile(object):
                     knownTypes.add(rec_kind)
             #--Obj ref parents
             if rec_kind == 49 and mod == 255 and (rec_flgs & 2):
-                iref, = struct_unpack(u'I', data[4:8])
+                iref, = struct_unpack(u'I', rdata[4:8])
                 count,cumSize = objRefBases.get(iref,(0,0))
                 count += 1
-                cumSize += len(data) + 12
+                cumSize += len(rdata) + 12
                 objRefBases[iref] = (count,cumSize)
                 if iref >> 24 != 255 and fids[iref] == 0:
                     objRefNullBases += 1
@@ -575,7 +574,7 @@ class SaveFile(object):
         nullRefCount = 0
         createdCounts = Counter()
         progress = progress or bolt.Progress()
-        progress.setFull(len(self.created)+len(self.records))
+        progress.setFull(len(self.created) + len(self.save_records))
         #--Created objects
         progress(0,_(u'Scanning created objects'))
         for citem in self.created:
@@ -593,10 +592,9 @@ class SaveFile(object):
         #--Change records
         progress(len(self.created),_(u'Scanning change records.'))
         fids = self.fids
-        for record in self.records:
-            rec_id,rec_kind,rec_flgs,version,data = record
+        for rec_id, rec_kind, rec_flgs, version, rdata in self.save_records:
             if rec_kind == 49 and rec_id >> 24 == 0xFF and (rec_flgs & 2):
-                iref, = struct_unpack(u'I', data[4:8])
+                iref, = struct_unpack(u'I', rdata[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     nullRefCount += 1
             progress.plus()
@@ -606,7 +604,7 @@ class SaveFile(object):
         """Removes duplicated created items and null refs."""
         numUncreated = numUnCreChanged = numUnNulled = 0
         progress = progress or bolt.Progress()
-        progress.setFull((len(uncreateKeys) and len(self.created))+len(self.records))
+        progress.setFull((len(uncreateKeys) and len(self.created)) + len(self.save_records))
         uncreated = set()
         #--Uncreate
         if uncreateKeys:
@@ -628,12 +626,12 @@ class SaveFile(object):
         progress(progress.state,_(u'Scanning change records.'))
         fids = self.fids
         kept = []
-        for record in self.records:
-            rec_id,rec_kind,rec_flgs,version,data = record
+        for record in self.save_records:
+            rec_id,rec_kind,rec_flgs,version,rdata = record
             if rec_id in uncreated:
                 numUnCreChanged += 1
             elif removeNullRefs and rec_kind == 49 and rec_id >> 24 == 0xFF and (rec_flgs & 2):
-                iref, = struct_unpack(u'I', data[4:8])
+                iref, = struct_unpack(u'I', rdata[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     numUnNulled += 1
                 else:
@@ -641,7 +639,7 @@ class SaveFile(object):
             else:
                 kept.append(record)
             progress.plus()
-        self.records = kept
+        self.save_records = kept
         return numUncreated,numUnCreChanged,numUnNulled
 
     def getAbomb(self):

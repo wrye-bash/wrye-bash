@@ -184,9 +184,8 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
     if _settings.get(continueKey): return True
     #--Generate/show dialog
     checkBoxTxt = _(u"Don't show this in the future.")
-    result, check = _ContinueDialog.display_dialog(
-        _AComponent._resolve(parent), title=title, message=message,
-        checkBoxTxt=checkBoxTxt)
+    result, check = _ContinueDialog.display_dialog(parent, title=title,
+        message=message, checkBoxTxt=checkBoxTxt)
     if check:
         _settings[continueKey] = 1
     return result
@@ -196,14 +195,9 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
     Also provides checkbox "Don't show this for rest of operation."."""
     #--Generate/show dialog
     checkBoxTxt = _(u"Don't show this for the rest of operation.")
-    result, check = _ContinueDialog.display_dialog(
-        _AComponent._resolve(parent), title=title, message=message,
-        checkBoxTxt=checkBoxTxt)
-    if result:
-        if check:
-            return 2
-        return True
-    return False
+    result, check = _ContinueDialog.display_dialog(parent, title=title,
+        message=message, checkBoxTxt=checkBoxTxt)
+    return (result + bool(check)) if result else False # 2: checked 1: OK
 
 class _ContinueDialog(DialogWindow):
     _def_size = _min_size = (360, 150)
@@ -234,7 +228,8 @@ class _ContinueDialog(DialogWindow):
     def display_dialog(cls, *args, **kwargs):
         #--Get continue key setting and return
         if canVista:
-            result, check = vistaDialog(*args, **kwargs)
+            parent, *args = args
+            result, check = vistaDialog(cls._resolve(parent), *args, **kwargs)
         else:
             return super(_ContinueDialog, cls).display_dialog(*args, **kwargs)
         return result, check

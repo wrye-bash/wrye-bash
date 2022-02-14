@@ -108,13 +108,7 @@ class Installer(ListInfo):
                            for x in bush.game.Esp.stringsFiles}
     # InstallersData singleton - consider this tmp
     instData = None # type: InstallersData
-
-    @classmethod
-    def is_archive(cls): return False
-    @classmethod
-    def is_project(cls): return False
-    @classmethod
-    def is_marker(cls): return False
+    is_archive = is_project = is_marker = False ##: replace with inheritance if possible
 
     @classmethod
     def validate_filename_str(cls, name_str, allowed_exts=frozenset(),
@@ -1242,6 +1236,7 @@ class InstallerMarker(Installer):
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
     _is_filename = False
+    _is_marker = True
 
     @staticmethod
     def _new_name(base_name, count):
@@ -1253,9 +1248,6 @@ class InstallerMarker(Installer):
         if new_name.s == self.ci_key.s: # allow change of case
             return None
         return self.unique_name(new_name)
-
-    @classmethod
-    def is_marker(cls): return True
 
     @classmethod
     def rename_area_idxs(cls, text_str, start=0, stop=None):
@@ -1306,9 +1298,7 @@ class InstallerArchive(Installer):
     type_string = _(u'Archive')
     _valid_exts_re = r'(\.(?:' + '|'.join(
         ext[1:] for ext in archives.readExts) + '))'
-
-    @classmethod
-    def is_archive(cls): return True
+    is_archive = True
 
     def size_info_str(self):
         if self.isSolid:
@@ -1528,9 +1518,7 @@ class InstallerProject(Installer):
     """Represents a directory/build installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Project')
-
-    @classmethod
-    def is_project(cls): return True
+    is_project = True
 
     @staticmethod
     def _new_name(base_name, count):
@@ -1634,7 +1622,7 @@ class InstallerProject(Installer):
 
     def _install(self, dest_src, progress):
         progress.setFull(len(dest_src))
-        progress(0, (u'%s\n' % self) + _(u'Moving files...'))
+        progress(0, f'{self}\n' + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files
         srcDirJoin = self.abs_path.join
@@ -1678,7 +1666,7 @@ def projects_walk_cache(func): ##: HACK ! Profile
             it = (self.values() if isinstance(self, InstallersData) else
                   self.listData.values())
             for project in it:
-                if project.is_project():
+                if project.is_project:
                     project._dir_dirs_files = None
     return _projects_walk_cache_wrapper
 
@@ -1781,7 +1769,7 @@ class InstallersData(DataStore):
             pickle, bolt.LowerDict) else pickle
         # fixup: all markers had their archive attribute set to u'===='
         for key, value in self.items():
-            if value.is_marker():
+            if value.is_marker:
                 value.archive = key.s
         self.loaded = True
         return True
@@ -1810,7 +1798,7 @@ class InstallersData(DataStore):
         markers = []
         for item in filenames:
             if item == self.lastKey: continue
-            if self[item].is_marker(): markers.append(item)
+            if self[item].is_marker: markers.append(item)
             else: toDelete.append(self.store_dir.join(item))
         return toDelete, markers
 
@@ -1845,6 +1833,27 @@ class InstallersData(DataStore):
                                                        window, bash_frame)
         self.irefresh(what=u'I', pending=moved)
         return moved
+
+    # Getters
+    def sorted_pairs(self, package_keys=None, reverse=False):
+        """Return pairs of key, installer for package_keys in self, sorted by
+        install order.
+        :type package_keys: None | collections.Iterable[Path]
+        :rtype: list[(Path, Installer)]
+        """
+        pairs = self if package_keys is None else {k: self[k] for k in
+                                                   package_keys}
+        return dict_sort(pairs, key_f=lambda k: pairs[k].order,
+                         reverse=reverse)
+
+    def sorted_values(self, package_keys=None, reverse=False):
+        """Return installers for package_keys in self, sorted by install order.
+        :type package_keys: None | collections.Iterable[Path]
+        :rtype: list[Installer]
+        """
+        if package_keys is None: values = self.values()
+        else: values = [self[k] for k in package_keys]
+        return sorted(values, key=attrgetter('order'), reverse=reverse)
 
     #--Refresh Functions ------------------------------------------------------
     class _RefreshInfo(object):
@@ -1903,7 +1912,7 @@ class InstallersData(DataStore):
                           progress=bolt.Progress()):
         if installers is None:
             installers = [x for x in self.values() if
-                          x.is_archive() and x.hasBCF]
+                          x.is_archive and x.hasBCF]
         if not installers: return [], []
         if not destArchives:
             destArchives = [GPath(u'[Auto applied BCF] %s' % x) for x
@@ -2160,7 +2169,7 @@ class InstallersData(DataStore):
 
     def reset_refresh_flag_on_projects(self):
         for installer in self.values():
-            if installer.is_project():
+            if installer.is_project:
                 installer.project_refreshed = False
 
     @staticmethod
@@ -2389,42 +2398,6 @@ class InstallersData(DataStore):
             iniInfos.new_info(tweakPath.tail, notify_bain=True)
         tweaksCreated -= removed
 
-    def _install(self, packages, refresh_ui, progress=None, last=False,
-                 override=True):
-        """Install selected packages. If override is False install only
-        missing files. Otherwise, all (unmasked) files."""
-        progress = progress or bolt.Progress()
-        tweaksCreated = set()
-        #--Mask and/or reorder to last
-        mask = set()
-        if last:
-            self.moveArchives(packages, len(self))
-        to_install = {self[x] for x in packages}
-        min_order = min(x.order for x in to_install)
-        #--Install packages in turn
-        progress.setFull(len(packages))
-        index = 0
-        for installer in self.sorted_values(reverse=True):
-            if installer in to_install:
-                progress(index,installer.archive)
-                destFiles = set(installer.ci_dest_sizeCrc) - mask
-                if not override:
-                    destFiles &= installer.missingFiles
-                if destFiles:
-                    self._createTweaks(destFiles, installer, tweaksCreated)
-                    self.__installer_install(installer, destFiles, index,
-                                             progress, refresh_ui)
-                index += 1 # increment after it's used in __installer_install
-                installer.is_active = True
-                if installer.order == min_order:
-                    break # we are done
-            #prevent lower packages from installing any files of this installer
-            if installer.is_active: mask |= set(installer.ci_dest_sizeCrc)
-        if tweaksCreated:
-            self._editTweaks(tweaksCreated)
-            refresh_ui[1] |= bool(tweaksCreated)
-        return tweaksCreated
-
     def __installer_install(self, installer, destFiles, index, progress,
                             refresh_ui):
         sub_progress = SubProgress(progress, index, index + 1)
@@ -2460,30 +2433,42 @@ class InstallersData(DataStore):
         for ini_path in inis:
             iniInfos.new_info(ini_path, owner=installer.archive)
 
-    def sorted_pairs(self, package_keys=None, reverse=False):
-        """Return pairs of key, installer for package_keys in self, sorted by
-        install order.
-        :type package_keys: None | collections.Iterable[Path]
-        :rtype: list[(Path, Installer)]
-        """
-        pairs = self if package_keys is None else {k: self[k] for k in
-                                                   package_keys}
-        return dict_sort(pairs, key_f=lambda k: pairs[k].order,
-                         reverse=reverse)
-
-    def sorted_values(self, package_keys=None, reverse=False):
-        """Return installers for package_keys in self, sorted by install order.
-        :type package_keys: None | collections.Iterable[Path]
-        :rtype: list[Installer]
-        """
-        if package_keys is None: values = self.values()
-        else: values = [self[k] for k in package_keys]
-        return sorted(values, key=attrgetter('order'), reverse=reverse)
-
     def bain_install(self, packages, refresh_ui, progress=None, last=False,
                      override=True):
-        try: return self._install(packages, refresh_ui, progress, last,
-                                  override)
+        """Install selected packages. If override is False install only
+        missing files. Otherwise, all (unmasked) files."""
+        try:
+            progress = progress or bolt.Progress()
+            tweaksCreated = set()
+            #--Mask and/or reorder to last
+            mask = set()
+            if last:
+                self.moveArchives(packages, len(self))
+            to_install = {self[x] for x in packages}
+            min_order = min(x.order for x in to_install)
+            #--Install packages in turn
+            progress.setFull(len(packages))
+            index = 0
+            for inst in self.sorted_values(reverse=True):
+                if inst in to_install:
+                    progress(index, inst.archive)
+                    destFiles = set(inst.ci_dest_sizeCrc) - mask
+                    if not override:
+                        destFiles &= inst.missingFiles
+                    if destFiles:
+                        self._createTweaks(destFiles, inst, tweaksCreated)
+                        self.__installer_install(inst, destFiles, index,
+                                                 progress, refresh_ui)
+                    index += 1 # increment after it's used in __installer_install
+                    inst.is_active = True
+                    if inst.order == min_order:
+                        break  # we are done
+                #prevent lower packages from installing any files of this installer
+                if inst.is_active: mask |= set(inst.ci_dest_sizeCrc)
+            if tweaksCreated:
+                self._editTweaks(tweaksCreated)
+                refresh_ui[1] |= bool(tweaksCreated)
+            return tweaksCreated
         finally: self.irefresh(what=u'NS')
 
     #--Uninstall, Anneal, Clean
@@ -2979,7 +2964,7 @@ class InstallersData(DataStore):
         log(u'[spoiler]\n', False)
         for package, installer in self.sorted_pairs():
             prefix = u'%03d' % installer.order
-            if installer.is_marker():
+            if installer.is_marker:
                 log(u'%s - %s' % (prefix, package))
             elif installer.is_active:
                 log(u'++ %s - %s (%08X) (Installed)' % (
@@ -3005,7 +2990,7 @@ class InstallersData(DataStore):
         :type installerKeys: collections.Iterable[bolt.Path]
         :rtype: list[bolt.Path]
         """
-        return (x for x in installerKeys if not self[x].is_marker())
+        return (x for x in installerKeys if not self[x].is_marker)
 
     def createFromData(self, projectPath, ci_files, progress):
         if not ci_files: return

@@ -120,7 +120,7 @@ class _SingleProject(OneItemLink, _InstallerLink):
 
     def _enable(self):
         return super(_SingleProject, self)._enable() and \
-               self._selected_info.is_project()
+               self._selected_info.is_project
 
 class _RefreshingLink(_SingleInstallable):
     _overrides_skips = False
@@ -158,7 +158,7 @@ class _Installer_AViewOrEditFile(_SingleInstallable):
     def _run_on_archive(self):
         """Returns True if the single installable we've got selected is an
         archive."""
-        return next(self.iselected_infos()).is_archive()
+        return next(self.iselected_infos()).is_archive
 
 class Installer_EditFomod(_Installer_AViewOrEditFile):
     """View or edit the ModuleConfig.xml associated with this package."""
@@ -407,14 +407,14 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
 
     def _enable(self):
         single_item = super(Installer_Duplicate, self)._enable()
-        return single_item and not self._selected_info.is_marker()
+        return single_item and not self._selected_info.is_marker
 
     @balt.conversation
     def Execute(self):
         """Duplicate selected Installer."""
         newName = self._selected_info.unique_key(self._selected_item.root,
                                                  add_copy=True)
-        allowed_exts = set() if not self._selected_info.is_archive() else {
+        allowed_exts = set() if not self._selected_info.is_archive else {
             self._selected_item.ext}
         result = self._askFilename(
             _(u'Duplicate %s to:') % self._selected_item, newName.s,
@@ -434,7 +434,7 @@ class Installer_Hide(_InstallerLink, UIList_Hide):
                                   u'selected.')
 
     def _enable(self):
-        return not any(inf.is_marker() for inf in self.iselected_infos())
+        return not any(inf.is_marker for inf in self.iselected_infos())
 
 class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""
@@ -455,7 +455,7 @@ class Installer_HasExtraData(CheckLink, _RefreshingLink):
     _help = _(u'Allow installation of files in non-standard directories.')
 
     def _enable(self):
-        return len(self.selected) == 1 and not self._selected_info.is_marker()
+        return len(self.selected) == 1 and not self._selected_info.is_marker
 
     def _check(self):
         return self._enable() and self._selected_info.hasExtraData
@@ -590,7 +590,7 @@ class Installer_ListStructure(OneItemLink, _InstallerLink):
 
     def _enable(self):
         single_item = super(Installer_ListStructure, self)._enable()
-        return single_item and not self._selected_info.is_marker()
+        return single_item and not self._selected_info.is_marker
 
     @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
@@ -610,7 +610,7 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
 
     def _enable(self):
         single_item = super(Installer_ExportAchlist, self)._enable()
-        return single_item and not self._selected_info.is_marker()
+        return single_item and not self._selected_info.is_marker
 
     def Execute(self):
         info_dir = bass.dirs[u'app'].join(self.__class__._mode_info_dir)
@@ -661,7 +661,7 @@ class Installer_Open(balt.UIList_OpenItems, EnabledLink):
 
     def _enable(self):
         # Can't use _NoMarkerLink since it will skip unrecognized packages
-        return not any(p.is_marker() for p in self.iselected_infos())
+        return not any(p.is_marker for p in self.iselected_infos())
 
     def Execute(self):
         self.window.OpenSelected(selected=self.selected)
@@ -828,7 +828,7 @@ class Installer_CopyConflicts(_SingleInstallable):
         ijoin = self.idata.store_dir.join
         def _copy_conflicts(curFile):
             inst = self.idata[package]
-            if inst.is_project():
+            if inst.is_project:
                 for src in curConflicts:
                     srcFull = ijoin(package, src)
                     destFull = ijoin(fn_conflicts_dir, g_path, src)
@@ -1032,7 +1032,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
         self.window = window # and the idata access is via self.window
-        return all(inf.is_archive() for inf in self.iselected_infos())
+        return all(inf.is_archive for inf in self.iselected_infos())
 
     @balt.conversation
     def Execute(self):
@@ -1405,4 +1405,4 @@ class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
     _text = _(u'BAIN Conversions')
     def _enable(self):
-        return all(inst.is_archive() for inst in self.iselected_infos())
+        return all(inst.is_archive for inst in self.iselected_infos())

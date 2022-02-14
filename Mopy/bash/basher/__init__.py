@@ -2433,7 +2433,7 @@ class InstallersList(balt.UIList):
             items.sort(key=lambda x: not self.data_store[x].is_active)
     def _sortProjects(self, items):
         if settings[u'bash.installers.sortProjects']:
-            items.sort(key=lambda x: not self.data_store[x].is_project())
+            items.sort(key=lambda x: not self.data_store[x].is_project)
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--Labels
     labels = OrderedDict([
@@ -2457,7 +2457,7 @@ class InstallersList(balt.UIList):
         #--Text
         if inst.type == 2 and len(inst.subNames) == 2:
             item_format.text_key = self._type_textKey[1]
-        elif inst.is_marker():
+        elif inst.is_marker:
             item_format.text_key = u'installers.text.marker'
         else: item_format.text_key = self._type_textKey.get(inst.type,
                                              u'installers.text.invalid')
@@ -2476,7 +2476,7 @@ class InstallersList(balt.UIList):
         item_format.icon_key += u'.' + self._status_color[inst.status]
         if inst.type < 0: item_format.icon_key = u'corrupt'
         else:
-            if inst.is_project(): item_format.icon_key += u'.dir'
+            if inst.is_project: item_format.icon_key += u'.dir'
             if settings[u'bash.installers.wizardOverlay'] and inst.hasWizard:
                 item_format.icon_key += u'.wiz'
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
@@ -2714,13 +2714,13 @@ class InstallersList(balt.UIList):
         """Double click, open the installer."""
         inst = self._get_info_clicked(lb_dex_and_flags)
         if not inst: return
-        if inst.is_marker():
+        if inst.is_marker:
             # Double click on a Marker, select all items below
             # it in install order, up to the next Marker
             sorted_ = self._SortItems(col=u'Order', sortSpecial=False)
             new = []
             for nextItem in sorted_[inst.order + 1:]:
-                if self.data_store[nextItem].is_marker():
+                if self.data_store[nextItem].is_marker:
                     break
                 new.append(nextItem)
             if new:
@@ -2999,7 +2999,7 @@ class InstallersDetails(_SashDetailsPanel):
             nConfigured = len(installer.ci_dest_sizeCrc)
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
-            is_mark = installer.is_marker()
+            is_mark = installer.is_marker
             numstr = partial(installer.number_string, marker_string='N/A')
             inf_.extend([
                 _('Modified:') + (' N/A' if is_mark else

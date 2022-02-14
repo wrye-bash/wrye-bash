@@ -78,8 +78,8 @@ class ConvertersData(DataDict):
         if len(scanned) != len(self.bcfPath_sizeCrcDate):
             return True
         for bcf_archive in scanned:
-            size, crc, modified = converterGet(bcf_archive, (None, None, None))
-            if crc is None or (size, modified) != bcf_archive.size_mtime():
+            size, crc, mod_time = converterGet(bcf_archive, (None, None, None))
+            if crc is None or (size, mod_time) != bcf_archive.size_mtime():
                 return True
             archivesAdd(bcf_archive)
         #--Added/removed packages?
@@ -106,12 +106,12 @@ class ConvertersData(DataDict):
             if self.validConverterName(bcf_archive := GPath_no_norm(
                     bcf_archive)):  ##: drop GPath here!
                 bcfPath = convJoin(bcf_archive)
-                size, crc, modified = self.bcfPath_sizeCrcDate.get(bcfPath, (
+                size, crc, mod_time = self.bcfPath_sizeCrcDate.get(bcfPath, (
                     None, None, None))
                 size_mtime = bcfPath.size_mtime()
-                if crc is None or (size, modified) != size_mtime:
+                if crc is None or (size, mod_time) != size_mtime:
                     crc = bcfPath.crc
-                    (size, modified) = size_mtime
+                    (size, mod_time) = size_mtime
                     if crc in bcfCRC_converter and bcfPath != bcfCRC_converter[
                         crc].fullPath:
                         self.bcfPath_sizeCrcDate.pop(bcfPath, None)
@@ -119,7 +119,7 @@ class ConvertersData(DataDict):
                             bcfPath.moveTo(
                                 self.dup_bcfs_dir.join(bcfPath.tail))
                         continue
-                self.bcfPath_sizeCrcDate[bcfPath] = (size, crc, modified)
+                self.bcfPath_sizeCrcDate[bcfPath] = (size, crc, mod_time)
                 if fullRefresh or crc not in bcfCRC_converter:
                     pending.add(bcf_archive)
                 else:
@@ -189,7 +189,7 @@ class ConvertersData(DataDict):
             self.bcfPath_sizeCrcDate.pop(converter.fullPath, None)
         else:
             #--Removing by filepath
-            size, crc, modified = self.bcfPath_sizeCrcDate.pop(converter, (
+            _size, crc, _mod_time = self.bcfPath_sizeCrcDate.pop(converter, (
                 None, None, None))
             oldConverter = None if crc is None else self.bcfCRC_converter.pop(
                 crc, None)

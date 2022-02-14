@@ -384,28 +384,28 @@ class _AParser(_HandleAliases):
         self._current_mod = None
 
     # Writing to plugins
-    def _write_record_2(self, record, new_info, cur_info):
+    def _write_record_2(self, record, new_data, cur_info):
         """This is where your parser should perform the actual work of writing
         out the necessary changes to the record, using the given record
         information to determine what to change.
 
         :param record: The record to write to.
-        :param new_info: The new record info.
+        :param new_data: The new record info.
         :param cur_info: The current record info."""
         raise AbstractError(u'_write_record_2 not implemented')
 
     _changed_type = Counter
-    def _write_record(self, record, new_info, changed):
+    def _write_record(self, record, new_data, changed):
         """Asks this parser to write its stored information to the specified
         ModInfo instance.
 
         :param mod_info: The ModInfo instance to write to.
         :return: A dict mapping record types to the number of changed records
             in them."""
-        cur_info = self._read_record_sp(record)
-        if new_info != cur_info:
+        cur_data = self._read_record_sp(record)
+        if new_data != cur_data:
             # It's different, ask the parser to write it out
-            self._write_record_2(record, new_info, cur_info)
+            self._write_record_2(record, new_data, cur_data)
             record.setChanged()
             changed[record.rec_sig] += 1
 
@@ -444,8 +444,8 @@ class ActorFactions(_AParser):
     def _read_record_sp(self, record):
         return {f.faction: f.rank for f in record.factions}
 
-    def _write_record_2(self, record, new_info, cur_info):
-        for faction, rank in set(new_info.items()) - set(cur_info.items()):
+    def _write_record_2(self, record, new_data, cur_info):
+        for faction, rank in set(new_data.items()) - set(cur_info.items()):
             # Check if this an addition or a change
             for entry in record.factions:
                 if entry.faction == faction:
@@ -717,8 +717,8 @@ class FactionRelations(_AParser):
             relations[other_fac] = rel_attrs[1:]
         return relations
 
-    def _write_record_2(self, record, new_info, cur_info):
-        for rel_fac, rel_attributes in set(new_info.items()) - set(cur_info.items()):
+    def _write_record_2(self, record, new_data, cur_info):
+        for rel_fac, rel_attributes in set(new_data.items()) - set(cur_info.items()):
             # See if this is a new relation or a change to an existing one
             for entry in record.relations:
                 if rel_fac == entry.faction:

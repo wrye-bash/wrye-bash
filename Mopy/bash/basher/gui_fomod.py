@@ -73,7 +73,7 @@ class InstallerFomod(WizardDialog):
             parent_window, sizes_dict=bass.settings,
             title=_(u'FOMOD Installer - %s') % self.fomod_parser.fomod_name,
             size_key=u'bash.fomod.size', pos_key=u'bash.fomod.pos')
-        self.is_arch = target_installer.is_archive()
+        self.is_arch = target_installer.is_archive
         if self.is_arch:
             self.archive_path = bass.getTempDir()
         else:

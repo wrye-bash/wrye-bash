@@ -186,12 +186,12 @@ class APreserver(ImportPatcher):
                         continue
                     for rfid, record in masterFile.tops[rsig].iter_present_records():
                         if rfid not in mod_id_data: continue
-                        for attr, value in mod_id_data[rfid].items():
+                        for attr, val in mod_id_data[rfid].items():
                             try:
-                                if value == __attrgetters[attr](record):
+                                if val == __attrgetters[attr](record):
                                     continue
                                 else:
-                                    id_data[rfid][attr] = value
+                                    id_data[rfid][attr] = val
                             except AttributeError:
                                 raise ModSigMismatchError(master, record)
             progress.plus()
@@ -212,8 +212,8 @@ class APreserver(ImportPatcher):
                 # Skip if we've already copied this record or if we're not
                 # interested in it
                 if rfid in copied_records or rfid not in id_data: continue
-                for attr, value in id_data[rfid].items():
-                    if __attrgetters[attr](record) != value:
+                for attr, val in id_data[rfid].items():
+                    if __attrgetters[attr](record) != val:
                         patchBlock.setRecord(record.getTypeCopy())
                         break
 
@@ -224,11 +224,11 @@ class APreserver(ImportPatcher):
         id_data = self.id_data
         for rfid, record in records:
             if rfid not in id_data: continue
-            for attr, value in id_data[rfid].items():
-                if __attrgetters[attr](record) != value: break
+            for attr, val in id_data[rfid].items():
+                if __attrgetters[attr](record) != val: break
             else: continue
-            for attr, value in id_data[rfid].items():
-                loop_setattr(record, attr, value)
+            for attr, val in id_data[rfid].items():
+                loop_setattr(record, attr, val)
             keep(rfid)
             type_count[top_mod_rec] += 1
 
@@ -500,26 +500,26 @@ class ImportCellsPatcher(ImportPatcher):
             If the CellData value is different, then the value is copied
             to the bash patch, and the cell is flagged as modified.
             Modified cell Blocks are kept, the other are discarded."""
-            modified = False
+            cell_modified = False
             patch_cell = patchCellBlock.cell
             patch_cell_fid = patch_cell.fid
-            for attr,value in cellData[patch_cell_fid].items():
+            for attr, val in cellData[patch_cell_fid].items():
                 curr_value = __attrgetters[attr](patch_cell)
                 ##: If we made MelSorted sort on load too, we could drop this -
                 # but that might be too expensive? Maybe add a parameter to
                 # MelSorted to sort on load only for specific subrecords?
                 if attr == u'regions':
-                    if set(value).difference(set(curr_value)):
-                        setattr_deep(patch_cell, attr, value)
-                        modified = True
+                    if set(val).difference(set(curr_value)):
+                        setattr_deep(patch_cell, attr, val)
+                        cell_modified = True
                 else:
-                    if value != curr_value:
-                        setattr_deep(patch_cell, attr, value)
-                        modified = True
-            if modified:
+                    if val != curr_value:
+                        setattr_deep(patch_cell, attr, val)
+                        cell_modified = True
+            if cell_modified:
                 patch_cell.setChanged()
                 keep(patch_cell_fid)
-            return modified
+            return cell_modified
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
@@ -560,27 +560,27 @@ class ImportGraphicsPatcher(APreserver):
         id_data = self.id_data
         for rfid, record in records:
             if rfid not in id_data: continue
-            for attr, value in id_data[rfid].items():
+            for attr, val in id_data[rfid].items():
                 rec_attr = __attrgetters[attr](record)
-                if isinstance(rec_attr, str) and isinstance(value, str):
-                    if rec_attr.lower() != value.lower():
+                if isinstance(rec_attr, str) and isinstance(val, str):
+                    if rec_attr.lower() != val.lower():
                         break
                     continue
                 elif attr in bush.game.graphicsModelAttrs:
                     try:
-                        if rec_attr.modPath.lower() != value.modPath.lower():
+                        if rec_attr.modPath.lower() != val.modPath.lower():
                             break
                         continue
                     except AttributeError:
-                        if rec_attr is value is None: continue
-                        if rec_attr is None or value is None: # not both
+                        if rec_attr is val is None: continue
+                        if rec_attr is None or val is None: # not both
                             break
-                        if rec_attr.modPath is value.modPath is None: continue
+                        if rec_attr.modPath is val.modPath is None: continue
                         break
-                if rec_attr != value: break
+                if rec_attr != val: break
             else: continue
-            for attr, value in id_data[rfid].items():
-                setattr(record, attr, value)
+            for attr, val in id_data[rfid].items():
+                setattr(record, attr, val)
             keep(rfid)
             type_count[top_mod_rec] += 1
 
@@ -595,17 +595,17 @@ class ImportRacesPatcher(APreserver):
         id_data = self.id_data
         for rfid, record in records:
             if rfid not in id_data: continue
-            for attr, value in id_data[rfid].items():
+            for attr, val in id_data[rfid].items():
                 record_val = __attrgetters[attr](record)
                 if attr in (u'eyes', u'hairs'):
-                    if set(record_val) != set(value): break
+                    if set(record_val) != set(val): break
                 else:
                     if attr in (u'leftEye', u'rightEye') and not record_val:
                         deprint(u'Very odd race %s found - %s is None' % (
                             record.full, attr))
-                    elif record_val != value: break
+                    elif record_val != val: break
             else: continue
-            for attr, value in id_data[rfid].items():
-                loop_setattr(record, attr, value)
+            for attr, val in id_data[rfid].items():
+                loop_setattr(record, attr, val)
             keep(rfid)
             type_count[top_mod_rec] += 1

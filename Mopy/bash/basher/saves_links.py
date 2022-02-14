@@ -880,8 +880,10 @@ class Save_UpdateNPCLevels(EnabledLink):
     def _enable(self): return bool(load_order.cached_active_tuple())
 
     def Execute(self):
-        message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supersedes the older "Import NPC Levels" command.')
-        if not self._askContinue(message, u'bash.updateNpcLevels.continue',
+        msg = _('This will relevel the NPCs in the selected save game(s) '
+                'according to the npc levels in the currently active mods.  '
+                'This supersedes the older "Import NPC Levels" command.')
+        if not self._askContinue(msg, u'bash.updateNpcLevels.continue',
                                  _(u'Update NPC Levels')): return
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods
@@ -910,22 +912,23 @@ class Save_UpdateNPCLevels(EnabledLink):
                                      npc.calcMax, npc.flags.pcLevelOffset)
             #--Loop over savefiles
             subProgress = SubProgress(progress,0.4,1.0,len(self.selected))
-            message = _(u'NPCs Releveled:')
+            msg = [_(u'NPCs Releveled:')]
             for index,(saveName,saveInfo) in enumerate(self.iselected_pairs()):
                 subProgress(index,_(u'Updating %s') % saveName)
                 saveFile = bosh._saves.SaveFile(saveInfo)
                 saveFile.load()
-                records = saveFile.records
+                save_recs = saveFile.save_records
                 mapToOrdered = MasterMap(saveFile._masters, ordered)
                 releveledCount = 0
                 #--Loop over change records
-                for recNum, (recId, recType_, recFlags, version, data_) in \
-                        enumerate(records):
+                for recNum, (recId, rec_kind, recFlags, version, rdata) in \
+                        enumerate(save_recs):
                     orderedRecId = mapToOrdered(recId,None)
-                    if recType_ != 35 or recId == 7 or orderedRecId not in npc_info: continue
+                    if rec_kind != 35 or recId == 7 or orderedRecId not in \
+                            npc_info: continue
                     (eid, level_offset, calcMin, calcMax,
                      pcLevelOffset) = npc_info[orderedRecId]
-                    npc = bosh._saves.SreNPC(recFlags, data_)
+                    npc = bosh._saves.SreNPC(recFlags, rdata)
                     acbs = npc.acbs
                     if acbs and (
                         (acbs.level_offset != level_offset) or
@@ -937,16 +940,14 @@ class Save_UpdateNPCLevels(EnabledLink):
                         acbs.level_offset = level_offset
                         acbs.calcMin = calcMin
                         acbs.calcMax = calcMax
-                        (recId,recType_,recFlags,version,data_) = saveFile.records[recNum]
-                        records[recNum] = (recId,recType_,npc.getFlags(),version,npc.getData())
                         releveledCount += 1
-                        saveFile.records[recNum] = npc.getTuple(recId,version)
+                        save_recs[recNum] = npc.getTuple(recId, version)
                 #--Save changes?
                 subProgress(index+0.5,_(u'Updating %s') % saveName)
                 if releveledCount:
                     saveFile.safeSave()
-                message += u'\n%d %s' % (releveledCount,saveName)
+                msg.append(f'{releveledCount:d} {saveName}')
         if modErrors:
-            message += u'\n\n'+_(u'Some mods had load errors and were skipped:')+u'\n* '
-            message += u'\n* '.join(modErrors)
-        self._showOk(message, _(u'Update NPC Levels'))
+            msg.append('\n' + _('Some mods had load errors and were skipped:'))
+            msg.append('* ' + '\n* '.join(modErrors))
+        self._showOk('\n'.join(msg), _(u'Update NPC Levels'))

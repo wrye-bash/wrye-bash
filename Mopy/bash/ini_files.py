@@ -64,15 +64,15 @@ def get_ini_type_and_encoding(abs_ini_path):
     try:
         inferred_ini_type = count.most_common(1)[0][0]
     except IndexError: # empty file or failed to parse ini lines
-        raise BoltError(u'Failed to infer type for %s' % abs_ini_path)
+        raise BoltError(f'Failed to infer type for {abs_ini_path}')
     return inferred_ini_type, detected_encoding
 
 class IniFile(AFile):
     """Any old ini file."""
-    reComment = re.compile(u';.*',re.U)
-    reDeletedSetting = re.compile(r';-\s*(\w.*?)\s*(;.*$|=.*$|$)', re.U)
-    reSection = re.compile(r'^\[\s*(.+?)\s*\]$', re.U)
-    reSetting = re.compile(r'(.+?)\s*=(.*)', re.U)
+    reComment = re.compile(';.*')
+    reDeletedSetting = re.compile(r';-\s*(\w.*?)\s*(;.*$|=.*$|$)')
+    reSection = re.compile(r'^\[\s*(.+?)\s*\]$')
+    reSetting = re.compile(r'(.+?)\s*=(.*)')
     formatRes = (reSetting, reSection)
     out_encoding = 'cp1252' # when opening a file for writing force cp1252
     __empty_settings = LowerDict()
@@ -403,11 +403,11 @@ class DefaultIniFile(IniFile):
         self.lines, current_line = [], 0
         self._ci_settings_cache_linenum = OrderedLowerDict()
         for sect, setts in settings_dict.items():
-            self.lines.append(u'[%s]' % sect)
+            self.lines.append(f'[{sect}]')
             self._ci_settings_cache_linenum[sect] = OrderedLowerDict()
             current_line += 1
             for sett, val in setts.items():
-                self.lines.append(u'%s=%s' % (sett, val))
+                self.lines.append(f'{sett}={val}')
                 self._ci_settings_cache_linenum[sect][sett] = (
                     val, current_line)
                 current_line += 1

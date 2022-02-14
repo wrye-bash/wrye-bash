@@ -579,7 +579,7 @@ class WryeParser(ScriptParser.Parser):
         if not codebox:
             self._wiz_parent = wiz_parent
             self.installer = installer
-            self.bArchive = installer.is_archive()
+            self.bArchive = installer.is_archive
             self._path = installer.archive if installer else None
             if installer and installer.fileRootIdex:
                 root_path = installer.extras_dict.get(u'root_path', u'')
@@ -1210,7 +1210,7 @@ class WryeParser(ScriptParser.Parser):
                 if subpackage is None:
                     error(_(u"SubPackage '%s' does not exist.") % sub_name)
                 List = []
-                if self.installer.is_project():
+                if self.installer.is_project:
                     sub = bass.dirs[u'installers'].join(self._path, subpackage)
                     for root_dir, dirs, files in sub.walk(relative=True):
                         for file_ in files:
