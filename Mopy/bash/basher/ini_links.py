@@ -105,10 +105,8 @@ class INI_FileOpenOrCopy(EnabledLink):
                    u"tweak(s).")][self._targets_default()]
 
     def Execute(self):
-        newly_copied = []
-        for i in self.selected:
-            if bosh.iniInfos.open_or_copy(i):
-                newly_copied.append(i)
+        newly_copied = [i for i in self.selected if
+                        bosh.iniInfos.open_or_copy(i)]
         self.window.RefreshUI(redraw=newly_copied)
 
 #------------------------------------------------------------------------------
@@ -160,10 +158,9 @@ class INI_CreateNew(OneItemLink):
     def link_help(self):
         if not len(self.selected) == 1:
             return _(u'Please choose one Ini Tweak')
-        else:
-            return _(u"Creates a new tweak based on '%(tweak)s' but with "
-                          u"values from '%(ini)s'.") % {
-                u'tweak': (self.selected[0]), u'ini': self.window.current_ini_name}
+        return _(u"Creates a new tweak based on '%(tweak)s' but with "
+                 u"values from '%(ini)s'.") % {u'tweak': (self.selected[0]),
+                   u'ini': self.window.current_ini_name}
 
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
                               self._selected_info.tweak_status() >= 0

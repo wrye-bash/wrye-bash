@@ -1803,7 +1803,7 @@ class DefaultIniInfo(DefaultIniFile, INIInfo):
     def is_default_tweak(self): return True
 
 # noinspection PyUnusedLocal
-def ini_info_factory(fullpath, load_cache=u'Ignored'):
+def ini_info_factory(fullpath, load_cache=u'Ignored', itsa_ghost=False):
     """INIInfos factory
     :param fullpath: fullpath to the ini file to wrap
     :param load_cache: dummy param used in INIInfos#new_info factory call

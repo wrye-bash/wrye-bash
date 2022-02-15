@@ -389,7 +389,7 @@ class Save_Renumber(EnabledLink):
             _(u'Enter new number to start numbering the selected saves at.'),
             prompt=_(u'Save Number'), title=_(u'Re-number Saves'), value=1,
             min=1, max=10000)
-        if not newNumber: return
+        if newNumber is None: return
         old_names = set()
         new_names = set()
         for old_file_path, maPattern, sinf in self._matches:
@@ -599,7 +599,7 @@ class Save_EditCreatedEnchantmentCosts(OneItemLink):
               u'custom made enchantments.') + u'\n' + _(
                 u'(Enter 0 for unlimited uses)'), prompt=_(u'Uses'),
             title=_(u'Number of Uses'), value=50, min=0, max=10000)
-        if not dialog: return
+        if dialog is None: return
         Enchantments = bosh._saves.SaveEnchantments(self._selected_info)
         Enchantments.load()
         Enchantments.setCastWhenUsedEnchantmentNumberOfUses(dialog)

@@ -2034,8 +2034,7 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         textDir = self._askDirectory(
             message=_(u'Choose directory to import scripts from'),
             defaultPath=defaultPath)
-        if textDir is None:
-            return
+        if not textDir: return
         message = (_(u"Import scripts that don't exist in the esp as new"
                      u' scripts?') + u'\n' +
                    _(u'(If not they will just be skipped).')

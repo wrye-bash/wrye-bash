@@ -78,11 +78,11 @@ class _InstallerLink(Installers_Link, EnabledLink):
     """Common functions for installer links..."""
 
     ##: Methods below should be in archives.py
-    def _promptSolidBlockSize(self, title, value=0):
+    def _promptSolidBlockSize(self, title, default_size=0):
         return self._askNumber(
             _(u'Use what maximum size for each solid block?') + u'\n' + _(
                 u"Enter '0' to use 7z's default size."), prompt=u'MB',
-            title=title, value=value, min=0, max=102400)
+            title=title, value=default_size, min=0, max=102400)
 
     def _pack(self, archive_path, installer, project, release=False):
         #--Archive configuration options
@@ -1320,7 +1320,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         blockSize = None
         if destInstaller.isSolid:
             blockSize = self._promptSolidBlockSize(
-                title=self._dialog_title, value=destInstaller.blockSize or 0)
+                title=self._dialog_title, default_size=destInstaller.blockSize or 0)
         with balt.Progress(_(u'Creating %s...') % BCFArchive,u'\n'+u' '*60) as progress:
             #--Create the converter
             converter = bosh.converters.InstallerConverter(self.selected,

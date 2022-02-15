@@ -22,6 +22,8 @@
 # =============================================================================
 """BAIN Converters aka BCFs"""
 
+from __future__ import annotations
+
 import io
 import pickle
 
@@ -31,8 +33,8 @@ from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files, \
     GPath_no_norm
 from ..exception import ArgumentError, StateError
 
-converters_dir = None
-installers_dir = None
+converters_dir: Path | None = None
+installers_dir: Path | None = None
 
 class ConvertersData(DataDict):
     """Converters Data singleton, initialized in InstallersData."""

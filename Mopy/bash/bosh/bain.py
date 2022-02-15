@@ -1893,8 +1893,8 @@ class InstallersData(DataStore):
         elif refresh_info is None:
             refresh_info = self._RefreshInfo(deleted, pending, projects)
         changed = refresh_info.refresh_needed()
-        for deleted in refresh_info.deleted:
-            self.pop(deleted)
+        for del_item in refresh_info.deleted:
+            self.pop(del_item)
         pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
         for subPending, inst_type in zip(

@@ -287,7 +287,7 @@ def _fn_version(file_path, expected_ver, comparison):
         # Read version from the description
         from . import modInfos
         actual_ver = LooseVersion(
-            modInfos.getVersion(file_path.tail) or '0')
+            modInfos.getVersion(file_path.stail) or '0')
     elif file_path.cext in ('.exe', '.dll'):
         # Read version from executable fields
         actual_ver = LooseVersion(_read_binary_ver(file_path.s))

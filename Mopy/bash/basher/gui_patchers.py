@@ -649,7 +649,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     def tweak_custom_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
         tweak = self._all_tweaks[tweakIndex] # type: base.AMultiTweakItem
-        value = []
+        values = []
         new = None
         for i, v in enumerate(tweak.choiceValues[index]):
             if tweak.show_key_for_custom:
@@ -673,7 +673,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                     if new is None: #user hit cancel
                         return
                     try:
-                        value.append(float(new))
+                        values.append(float(new))
                         new = None # Reset, we may have a multi-key tweak
                         break
                     except ValueError:
@@ -691,7 +691,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                     value=tweak.choiceValues[index][i], min=-10000, max=10000)
                 if new is None: #user hit cancel
                     return
-                value.append(new)
+                values.append(new)
             elif isinstance(v, str):
                 label = (_(u'Enter the desired custom tweak text.')
                          + key_display)
@@ -701,26 +701,25 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                     default=tweak.choiceValues[index][i], strip=False) ##: strip ?
                 if new is None: #user hit cancel
                     return
-                value.append(new)
-        if not value:
-            value = tweak.choiceValues[index]
-        value = tuple(value)
-        validation_error = tweak.validate_values(value)
+                values.append(new)
+        if not values:
+            values = tweak.choiceValues[index]
+        values = tuple(values)
+        validation_error = tweak.validate_values(values)
         if not validation_error: # no error, we're good to go
-            tweak.choiceValues[index] = value
+            tweak.choiceValues[index] = values
             tweak.chosen = index
-            label = _custom_label(tweak.getListLabel(), value[0])
+            label = _custom_label(tweak.getListLabel(), values[0])
             self.gTweakList.lb_set_label_at_index(tweakIndex, label)
             self.gTweakList.lb_check_at_index(tweakIndex, True)
             self.TweakOnListCheck() # fired so this line is needed (?)
         else:
             # The tweak doesn't like the values the user chose, let them know
             error_header = (_(u'The value you entered (%s) is not valid '
-                              u'for this tweak.') % value[0]
-                            if len(value) == 1 else
+                              u'for this tweak.') % values[0]
+                            if len(values) == 1 else
                             _(u'The values you entered (%s) are not valid '
-                              u'for this tweak.') % u', '.join(
-                                str(s) for s in value))
+                              u'for this tweak.') % ', '.join(map(str, values)))
             balt.showError(self.gConfigPanel,
                            error_header + u'\n\n' + validation_error,
                            title=_(u'%s - Error') % tweak.tweak_name)
