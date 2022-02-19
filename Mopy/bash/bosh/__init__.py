@@ -1651,6 +1651,7 @@ class FileInfos(TableFileInfos):
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFile, AINIInfo):
+    _valid_exts_re = r'(\.(?:ini))'
 
     def _reset_cache(self, stat_tuple, load_cache):
         super(INIInfo, self)._reset_cache(stat_tuple, load_cache)

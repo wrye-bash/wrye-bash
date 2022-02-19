@@ -27,7 +27,6 @@ attribute points to BashFrame.iniList singleton.
 from .. import bass, bosh, balt
 from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink, \
     UIList_OpenItems
-from ..bolt import FName
 from ..gui import copy_text_to_clipboard
 
 __all__ = [u'INI_SortValid', u'INI_AllowNewLines', u'INI_ListINIs',
@@ -132,13 +131,16 @@ class INI_CreateNew(OneItemLink):
     @balt.conversation
     def Execute(self):
         """Handle creating a new INI tweak."""
-        pathFrom = self._selected_item
-        fileName = f'{pathFrom.fn_body} - Copy{pathFrom.fn_ext}'
+        ini_info, ini_key = self._selected_info, self._selected_item
+        fileName = ini_info.unique_key(ini_key.fn_body, add_copy=True)
         tweak_path = self._askSave(
             title=_(u'Copy Tweak with current settings...'),
             defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
             wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
-        fn_tweak = FName(tweak_path.stail)
+        fn_tweak, msg = ini_info.validate_filename_str(tweak_path.stail)
+        if msg is None:
+            self._showError(fn_tweak) # it's an error message in this case
+            return
         if bosh.iniInfos.copy_tweak_from_target(self._selected_item, fn_tweak):
             ##: we need a 'to_add' param in RefreshUI
             self.window.RefreshUI(redraw=[fn_tweak], detail_item=fn_tweak)
