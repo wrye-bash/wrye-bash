@@ -241,6 +241,7 @@ settingDefaults = { # keep current naming format till refactored
         u'Author': _(u'Author'),
         u'Cell': _(u'Cell'),
         u'CRC': _(u'CRC'),
+        'Current Index': _('Current Index'),
         u'Current Order': _(u'Current LO'),
         u'File': _(u'File'),
         u'Files': _(u'Files'),
@@ -269,6 +270,7 @@ settingDefaults = { # keep current naming format till refactored
         u'Num': 30,
         u'Current Order': 60,
         'Indices': 50,
+        'Current Index': 50,
     },
     #--Wrye Bash: Mod Docs
     u'bash.modDocs.show': False,
@@ -421,9 +423,9 @@ if bush.game.Esp.check_master_sizes:
     settingDefaults[u'bash.colors'][u'mods.bkgd.size_mismatch'] = (255, 238,
                                                                    217)
 
-if bush.game.has_esl: # Enable Index column by default for ESL games
+if bush.game.has_esl: # Enable Index columns by default for ESL games
     settingDefaults[u'bash.mods.cols'].insert(2, u'Indices')
-    settingDefaults['bash.masters.cols'].insert(1, 'Indices')
+    settingDefaults['bash.masters.cols'].extend(['Indices', 'Current Index'])
 
 # Images ----------------------------------------------------------------------
 #------------------------------------------------------------------------------

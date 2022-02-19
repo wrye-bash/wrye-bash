@@ -328,8 +328,10 @@ class MasterList(_ModsUIList):
         # Missing mods sort last alphabetically
         u'Current Order': lambda self, a: self._curr_lo_index[
             self.data_store[a].curr_name],
-        'Indices': lambda self, a: self._save_real_master_index(
-            self.data_store[a].curr_name),
+        'Indices': lambda self, a: self._save_lo_real_index[
+            self.data_store[a].curr_name],
+        'Current Index': lambda self, a: self._curr_real_index[
+            self.data_store[a].curr_name],
     }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
@@ -345,8 +347,10 @@ class MasterList(_ModsUIList):
         (u'Num',           lambda self, mi: u'%02X' % mi),
         (u'Current Order', lambda self, mi: bosh.modInfos.hexIndexString(
             self.data_store[mi].curr_name)),
-        ('Indices', lambda self, mi: self._save_real_master_hex(
-            self.data_store[mi].curr_name)),
+        ('Indices', lambda self, mi: self._save_lo_hex_string[
+            self.data_store[mi].curr_name]),
+        ('Current Index', lambda self, mi: bosh.modInfos.real_index_strings[
+            self.data_store[mi].curr_name]),
     ])
     # True if we should highlight masters whose stored size does not match the
     # size of the plugin on disk
@@ -375,6 +379,7 @@ class MasterList(_ModsUIList):
         self.detailsPanel = detailsPanel
         self.fileInfo = None
         self._curr_lo_index = {} # cache, orders missing last alphabetically
+        self._curr_real_index = {}
         # Cache based on SaveHeader.masters_regular and masters_esl
         self._save_lo_real_index = defaultdict(lambda: sys.maxsize)
         self._save_lo_hex_string = defaultdict(lambda: '')
@@ -411,18 +416,6 @@ class MasterList(_ModsUIList):
         if sel_curr_name not in bosh.modInfos:
             return # Master that is not installed was clicked
         balt.Link.Frame.notebook.SelectPage(u'Mods', sel_curr_name)
-
-    #--Indices column - 'real', runtime indices
-    def _save_real_master_index(self, master_name):
-        """Returns a sort key for the 'real' index of the specified master
-        within this save."""
-        return self._save_lo_real_index[master_name]
-
-    def _save_real_master_hex(self, master_name):
-        """Returns the 'real' index of the specified master within this save,
-        i.e. the FormID prefix it had at the time the save was created. Compare
-        ModInfo.real_index[_string]."""
-        return self._save_lo_hex_string[master_name]
 
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
@@ -550,9 +543,11 @@ class MasterList(_ModsUIList):
 
     #--Relist
     def _reList(self):
-        fileOrderNames = [v.curr_name for v in self.data_store.values()]
-        self._curr_lo_index = {p: i for i, p in enumerate(
-            load_order.get_ordered(fileOrderNames))}
+        file_order_names = load_order.get_ordered(
+            [v.curr_name for v in self.data_store.values()])
+        self._curr_lo_index = {p: i for i, p in enumerate(file_order_names)}
+        r_indices = bosh.modInfos.real_indices
+        self._curr_real_index = {p: r_indices[p] for p in file_order_names}
 
     def _update_real_indices(self, new_file_info):
         """Updates the 'real' indices cache. Does nothing outside of saves."""
@@ -1495,7 +1490,7 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
 class _ModMasterList(MasterList):
     """Override to avoid doing size checks on save master lists."""
     _do_size_checks = bush.game.Esp.check_master_sizes
-    banned_columns = {'Indices'} # The Indices column is Saves-specific
+    banned_columns = {'Indices', 'Current Index'} # These are Saves-specific
 
 class ModDetails(_ModsSavesDetails):
     """Details panel for mod tab."""
