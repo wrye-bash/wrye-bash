@@ -537,7 +537,11 @@ class MelStrings(MelString):
             return
         str_data = null1.join( # TODO use encode_complex_string?
             encode(x, firstEncoding=bolt.pluginEncoding) for x in strings)
-        # call *MelBase* packSub which however will call MelString._dump_bytes
+        # MelStrings need an extra null separator or Oblivion will CTD. This
+        # adds the null separator for the last string, then we...
+        str_data += null1
+        # ...call Subrecord.packSub which will call MelString._dump_bytes to
+        # add the last null separator
         super(MelString, self).packSub(out, str_data)
 
 #------------------------------------------------------------------------------
