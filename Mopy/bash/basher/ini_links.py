@@ -72,13 +72,13 @@ class INI_ListErrors(EnabledLink):
     _help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
     def _enable(self):
-        return any(map(lambda inf: inf.tweak_status() < 0,
-                        self.iselected_infos()))
+        self._erroneous = [inf for inf in self.iselected_infos() if
+                           not inf.is_default_tweak and inf.tweak_status() < 0]
+        return bool(self._erroneous)
 
     def Execute(self):
         """Handle printing out the errors."""
-        error_text = u'\n'.join(inf.listErrors() for inf in
-                                self.iselected_infos())
+        error_text = '\n'.join(inf.listErrors() for inf in self._erroneous)
         copy_text_to_clipboard(error_text)
         self._showLog(error_text, title=_(u'INI Tweak Errors'),
                       fixedFont=False)

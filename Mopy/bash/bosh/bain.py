@@ -37,14 +37,14 @@ from typing import Iterable
 from zlib import crc32
 
 from . import bain_image_exts, DataStore, BestIniFile, InstallerConverter, \
-    ModInfos, ListInfo
+    ModInfos
 from .. import balt, gui # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z
 from ..bolt import Path, deprint, round_size, GPath, SubProgress, CIstr, \
-    LowerDict, AFile, dict_sort, top_level_items, FName, \
-    forward_compat_path_to_fn_list, forward_compat_path_to_fn
+    AFile, dict_sort, top_level_items, FName, forward_compat_path_to_fn_list, \
+    forward_compat_path_to_fn, ListInfo
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 from ..ini_files import OBSEIniFile
@@ -67,7 +67,6 @@ class Installer(ListInfo):
         u'espmMap', u'hasReadme', u'hasBCF', u'hasBethFiles',
         u'_dir_dirs_files', u'has_fomod_conf')
 
-    __slots__ = persistent + volatile
     #--Package analysis/porting.
     type_string = _(u'Unrecognized')
     screenshot_dirs = {'screenshots', 'screens', 'ss'}
@@ -117,6 +116,10 @@ class Installer(ListInfo):
     # InstallersData singleton - consider this tmp
     instData = None # type: InstallersData
     is_archive = is_project = is_marker = False ##: replace with inheritance if possible
+
+    def __init__(self, fn_key):
+        self.initDefault()
+        super().__init__('%s' % fn_key)
 
     @classmethod
     def validate_filename_str(cls, name_str, allowed_exts=frozenset(),
@@ -319,10 +322,6 @@ class Installer(ListInfo):
 
     def isEspmRenamed(self,currentName):
         return self.getEspmName(currentName) != currentName
-
-    def __init__(self, fn_key):
-        self.initDefault()
-        self.fn_key = FName('%s' % fn_key) # type: FName
 
     def __reduce__(self):
         """Used by pickler to save object state."""

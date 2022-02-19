@@ -59,6 +59,7 @@ except ImportError:
 
 # Internal
 from . import exception
+from .exception import AbstractError
 
 # structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
 struct_pack = struct.pack
@@ -1525,7 +1526,6 @@ class DataDict(object):
 class AFile(object):
     """Abstract file, supports caching - beta."""
     _null_stat = (-1, None)
-    __slots__ = (u'_file_key', u'fsize', u'_file_mod_time')
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
@@ -1582,6 +1582,114 @@ class AFile(object):
 
     def __repr__(self): return f'{self.__class__.__name__}<' \
                                f'{self.abs_path.stail}>'
+
+#------------------------------------------------------------------------------
+class ListInfo:
+    """Info object displayed in Wrye Bash list."""
+    __slots__ = ('fn_key', )
+    _valid_exts_re = ''
+    _is_filename = True
+    _has_digits = False
+
+    def __init__(self, fn_key):
+        self.fn_key = FName(fn_key)
+
+    @classmethod
+    def validate_filename_str(cls, name_str: str, allowed_exts=frozenset()):
+        """Basic validation of list item name - those are usually filenames, so
+        they should contain valid chars. We also optionally check for match
+        with an extension group (apart from projects and markers). Returns
+        a tuple - if the second element is None validation failed and the first
+        element is the message to show - if not the meaning varies per override
+        """
+        if not name_str:
+            return _('Name may not be empty.'), None
+        char = cls._is_filename and Path.has_invalid_chars(name_str)
+        if char:
+            inv = _('%(new_name)s contains invalid character (%(bad_char)s).')
+            return inv % {'new_name': name_str, 'bad_char': char}, None
+        rePattern = cls._name_re(allowed_exts)
+        maPattern = rePattern.match(name_str)
+        if maPattern:
+            ma_groups = maPattern.groups(default=u'')
+            root = ma_groups[0]
+            num_str = ma_groups[1] if cls._has_digits else None
+            if not (root or num_str):
+                pass # will return the error message at the end
+            elif cls._has_digits: return FName(root + ma_groups[2]), num_str
+            else: return FName(name_str), root
+        return (_('Bad extension or file root (%(ext_or_root)s).') % {
+            'ext_or_root': name_str}), None
+
+    @classmethod
+    def _name_re(cls, allowed_exts):
+        exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))' \
+            if allowed_exts else cls._valid_exts_re
+        # The reason we do the regex like this is to support names like
+        # foo.ess.ess.ess etc.
+        exts_prefix = r'(?=.+\.)' if exts_re else ''
+        final_regex = f'^{exts_prefix}(.*?)'
+        if cls._has_digits: final_regex += r'(\d*)'
+        final_regex += f'{exts_re}$'
+        return re.compile(final_regex, re.I)
+
+    # Generate unique filenames when duplicating files etc
+    @staticmethod
+    def _new_name(base_name, count):
+        r, e = os.path.splitext(base_name)
+        return f'{r} ({count}){e}'
+
+    @classmethod
+    def unique_name(cls, name_str, check_exists=False):
+        base_name = name_str
+        unique_counter = 0
+        store = cls.get_store()
+        while (store.store_dir.join(name_str).exists() if check_exists else
+                name_str in store): # must wrap a FNDict
+            unique_counter += 1
+            name_str = cls._new_name(base_name, unique_counter)
+        return FName(name_str)
+
+    # Gui renaming stuff ------------------------------------------------------
+    @classmethod
+    def rename_area_idxs(cls, text_str, start=0, stop=None):
+        """Return the selection span of item being renamed - usually to
+        exclude the extension."""
+        if cls._valid_exts_re and not start: # start == 0
+            return 0, len(GPath(text_str[:stop]).sbody)
+        return 0, len(text_str) # if selection not at start reset
+
+    @classmethod
+    def get_store(cls):
+        raise AbstractError(f'{type(cls)} does not provide a data store')
+
+    # Instance methods --------------------------------------------------------
+    def get_rename_paths(self, newName):
+        """Return possible paths this file's renaming might affect (possibly
+        omitting some that do not exist)."""
+        return [(self.abs_path, self.get_store().store_dir.join(newName))]
+
+    def unique_key(self, new_root, ext=u'', add_copy=False):
+        if self.__class__._valid_exts_re and not ext:
+            ext = self.fn_key.fn_ext
+        new_name = FName(
+            new_root + (_(u' Copy') if add_copy else u'') + ext)
+        if new_name == self.fn_key: # new and old names are ci-same
+            return None
+        return self.unique_name(new_name)
+
+    def get_table_prop(self, prop, default=None): ##: optimize self.get_store().table
+        return self.get_store().table.getItem(self.fn_key, prop, default)
+
+    def set_table_prop(self, prop, val):
+        return self.get_store().table.setItem(self.fn_key, prop, val)
+
+    def __str__(self):
+        """Alias for self.ci_key."""
+        return self.fn_key
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}<{self.fn_key}>'
 
 #------------------------------------------------------------------------------
 class MainFunctions(object):

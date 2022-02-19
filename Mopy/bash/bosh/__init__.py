@@ -49,14 +49,14 @@ from .. import bass, bolt, balt, bush, env, load_order, initialization, \
 from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
     struct_error, dict_sort, top_level_files, os_name, FName, FNDict, \
-    forward_compat_path_to_fn_list, forward_compat_path_to_fn
+    forward_compat_path_to_fn_list, forward_compat_path_to_fn, ListInfo
 from ..brec import RecordHeader, FormIdReadContext, RemapWriteContext, \
     FormIdWriteContext
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, StateError
 from ..ini_files import IniFile, OBSEIniFile, DefaultIniFile, GameIni, \
-    get_ini_type_and_encoding
+    get_ini_type_and_encoding, AIniFile
 from ..mod_files import ModFile, ModHeaderReader
 
 # Singletons, Constants -------------------------------------------------------
@@ -100,106 +100,6 @@ _CosaveDict = dict[Type[cosaves.ACosave], cosaves.ACosave]
 #------------------------------------------------------------------------------
 # File System -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class ListInfo(object):
-    """Info object displayed in Wrye Bash list."""
-    __slots__ = ()
-    _valid_exts_re = ''
-    _is_filename = True
-    _has_digits = False
-
-    @classmethod
-    def validate_filename_str(cls, name_str, allowed_exts=frozenset()):
-        """Basic validation of list item name - those are usually filenames so
-        they should contain valid chars. We also optionally check for match
-        with an extension group (apart from projects and markers). Returns
-        a tuple - if the second element is None validation failed and the first
-        element is the message to show - if not the meaning varies per override
-
-        :type name_str: str"""
-        if not name_str:
-            return _('Name may not be empty.'), None
-        char = cls._is_filename and bolt.Path.has_invalid_chars(name_str)
-        if char:
-            return _('%(new_name)s contains invalid character '
-                     '(%(bad_char)s).') % {'new_name': name_str,
-                                           'bad_char': char}, None
-        rePattern = cls._name_re(allowed_exts)
-        maPattern = rePattern.match(name_str)
-        if maPattern:
-            ma_groups = maPattern.groups(default=u'')
-            root = ma_groups[0]
-            num_str = ma_groups[1] if cls._has_digits else None
-            if not (root or num_str):
-                pass # will return the error message at the end
-            elif cls._has_digits: return FName(root + ma_groups[2]), num_str
-            else: return FName(name_str), root
-        return (_('Bad extension or file root (%(ext_or_root)s).') % {
-            'ext_or_root': name_str}), None
-
-    @classmethod
-    def _name_re(cls, allowed_exts):
-        exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))' \
-            if allowed_exts else cls._valid_exts_re
-        # The reason we do the regex like this is to support names like
-        # foo.ess.ess.ess etc.
-        exts_prefix = r'(?=.+\.)' if exts_re else ''
-        final_regex = f'^{exts_prefix}(.*?)'
-        if cls._has_digits: final_regex += r'(\d*)'
-        final_regex += f'{exts_re}$'
-        return re.compile(final_regex, re.I)
-
-    # Generate unique filenames when duplicating files etc
-    @staticmethod
-    def _new_name(base_name, count):
-        r, e = os.path.splitext(base_name)
-        return f'{r} ({count}){e}'
-
-    @classmethod
-    def unique_name(cls, name_str, check_exists=False):
-        base_name = name_str
-        unique_counter = 0
-        store = cls.get_store()
-        while (store.store_dir.join(name_str).exists() if check_exists else
-                name_str in store): # must wrap a FNDict
-            unique_counter += 1
-            name_str = cls._new_name(base_name, unique_counter)
-        return FName(name_str)
-
-    # Gui renaming stuff ------------------------------------------------------
-    @classmethod
-    def rename_area_idxs(cls, text_str, start=0, stop=None):
-        """Return the selection span of item being renamed - usually to
-        exclude the extension."""
-        if cls._valid_exts_re and not start: # start == 0
-            return 0, len(GPath(text_str[:stop]).sbody)
-        return 0, len(text_str) # if selection not at start reset
-
-    @classmethod
-    def get_store(cls):
-        raise AbstractError(f'{type(cls)} does not provide a data store')
-
-    # Instance methods --------------------------------------------------------
-    def get_rename_paths(self, newName):
-        """Return possible paths this file's renaming might affect (possibly
-        omitting some that do not exist)."""
-        return [(self.abs_path, self.get_store().store_dir.join(newName))]
-
-    def unique_key(self, new_root, ext=u'', add_copy=False):
-        if self.__class__._valid_exts_re and not ext:
-            ext = self.fn_key.fn_ext
-        new_name = FName(
-            new_root + (_(u' Copy') if add_copy else u'') + ext)
-        if new_name == self.fn_key: # new and old names are ci-same
-            return None
-        return self.unique_name(new_name)
-
-    def __str__(self):
-        """Alias for self.fn_key."""
-        return self.fn_key
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}<{self.fn_key}>'
-
 class MasterInfo(object):
     """Slight abstraction over ModInfo that allows us to represent masters that
     are missing an active mod counterpart."""
@@ -280,7 +180,7 @@ class FileInfo(AFile, ListInfo):
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
         ##: We GPath this three times - not slow, but very inelegant
         g_path = GPath(fullpath)
-        self.fn_key = FName(g_path.stail) # ghost must be lopped off
+        ListInfo.__init__(self, g_path.stail) # ghost must be lopped off
         self.header = None
         self.masterNames = tuple()
         self.masterOrder = tuple()
@@ -354,12 +254,6 @@ class FileInfo(AFile, ListInfo):
 
         :return: A list of the masters of this file, as paths."""
         raise AbstractError()
-
-    def get_table_prop(self, prop, default=None): ##: optimize self.get_store().table
-        return self.get_store().table.getItem(self.fn_key, prop, default)
-
-    def set_table_prop(self, prop, val):
-        return self.get_store().table.setItem(self.fn_key, prop, val)
 
     # Backup stuff - beta, see #292 -------------------------------------------
     def get_hide_dir(self):
@@ -1172,21 +1066,18 @@ def BestIniFile(abs_ini_path):
         abs_ini_path)
     return inferred_ini_type(abs_ini_path, detected_encoding)
 
-class INIInfo(IniFile):
+class AINIInfo(AIniFile):
     """Ini info, adding cached status and functionality to the ini files."""
     _status = None
+    is_default_tweak = False
 
-    def _reset_cache(self, stat_tuple, load_cache):
-        super(INIInfo, self)._reset_cache(stat_tuple, load_cache)
-        if load_cache: self._status = None ##: is the if check needed here?
+    @classmethod
+    def get_store(cls): return iniInfos
 
     def tweak_status(self, target_ini_settings=None):
         if self._status is None:
             self.getStatus(target_ini_settings=target_ini_settings)
         return self._status
-
-    @property
-    def is_default_tweak(self): return False
 
     def _incompatible(self, other):
         if not isinstance(self, OBSEIniFile):
@@ -1257,61 +1148,7 @@ class INIInfo(IniFile):
         elif mismatch == 2:
             return _status(10)
 
-    def get_table_prop(self, prop, default=None):
-        return iniInfos.table.getItem(self.abs_path.stail, prop, default)
-
-    def set_table_prop(self, prop, val):
-        iniInfos.table.setItem(self.abs_path.stail, prop, val)
-
     def reset_status(self): self._status = None
-
-    def listErrors(self):
-        """Returns ini tweak errors as text."""
-        ini_infos_ini = iniInfos.ini
-        errors = [f'{self.abs_path.stail}:']
-        pseudosections_lower = {s.lower() for s in
-                                OBSEIniFile.ci_pseudosections.values()}
-        if self._incompatible(ini_infos_ini):
-            errors.append(' ' + _('Format mismatch:'))
-            if isinstance(self, OBSEIniFile):
-                errors.append('  ' + _('Target format is INI, tweak format is '
-                                       'Batch Script.'))
-            else:
-                errors.append('  ' + _('Target format is Batch Script, tweak '
-                                       'format is INI.'))
-        else:
-            tweak_settings = self.get_ci_settings()
-            ini_settings = ini_infos_ini.get_ci_settings()
-            if len(tweak_settings) == 0:
-                if not isinstance(self, OBSEIniFile):
-                    errors.append(' ' + _('No valid INI format lines.'))
-                else:
-                    errors.append(' ' + _('No valid Batch Script format '
-                                          'lines.'))
-            else:
-                missing_settings = []
-                for key in tweak_settings:
-                    # Properly handle OBSE pseudosections - they're always
-                    # missing from the ini_settings
-                    is_pseudosection = key.lower() in pseudosections_lower
-                    if not is_pseudosection and key not in ini_settings:
-                        errors.append(f' [{key}] - ' + _('Invalid Header'))
-                    else:
-                        for item in tweak_settings[key]:
-                            # Avoid modifying ini_settings by using get
-                            if item not in ini_settings.get(key, ()):
-                                missing_settings.append(
-                                    f'  {item}' if is_pseudosection
-                                    else f'  [{key}] {item}')
-                if missing_settings:
-                    errors.append(' ' + _('Settings missing from target INI:'))
-                    errors.extend(missing_settings)
-        if len(errors) == 1:
-            errors.append(' ' + _('None'))
-        log = bolt.LogFile(io.StringIO())
-        for line in errors:
-            log(line)
-        return log.out.getvalue()
 
 #------------------------------------------------------------------------------
 class SaveInfo(FileInfo):
@@ -1829,12 +1666,64 @@ class FileInfos(TableFileInfos):
         return set_mtime
 
 #------------------------------------------------------------------------------
+class INIInfo(IniFile, AINIInfo):
+
+    def _reset_cache(self, stat_tuple, load_cache):
+        super(INIInfo, self)._reset_cache(stat_tuple, load_cache)
+        if load_cache: self._status = None ##: is the if check needed here?
+
+    def listErrors(self):
+        """Returns ini tweak errors as text."""
+        ini_infos_ini = iniInfos.ini
+        errors = [f'{self.abs_path.stail}:']
+        pseudosections_lower = {s.lower() for s in
+                                OBSEIniFile.ci_pseudosections.values()}
+        if self._incompatible(ini_infos_ini):
+            errors.append(' ' + _('Format mismatch:'))
+            if isinstance(self, OBSEIniFile):
+                errors.append('  ' + _('Target format is INI, tweak format is '
+                                       'Batch Script.'))
+            else:
+                errors.append('  ' + _('Target format is Batch Script, tweak '
+                                       'format is INI.'))
+        else:
+            tweak_settings = self.get_ci_settings()
+            ini_settings = ini_infos_ini.get_ci_settings()
+            if len(tweak_settings) == 0:
+                if not isinstance(self, OBSEIniFile):
+                    errors.append(' ' + _('No valid INI format lines.'))
+                else:
+                    errors.append(' ' + _('No valid Batch Script format '
+                                          'lines.'))
+            else:
+                missing_settings = []
+                for key in tweak_settings:
+                    # Properly handle OBSE pseudosections - they're always
+                    # missing from the ini_settings
+                    is_pseudosection = key.lower() in pseudosections_lower
+                    if not is_pseudosection and key not in ini_settings:
+                        errors.append(f' [{key}] - ' + _('Invalid Header'))
+                    else:
+                        for item in tweak_settings[key]:
+                            # Avoid modifying ini_settings by using get
+                            if item not in ini_settings.get(key, ()):
+                                missing_settings.append(
+                                    f'  {item}' if is_pseudosection
+                                    else f'  [{key}] {item}')
+                if missing_settings:
+                    errors.append(' ' + _('Settings missing from target INI:'))
+                    errors.extend(missing_settings)
+        if len(errors) == 1:
+            errors.append(' ' + _('None'))
+        log = bolt.LogFile(io.StringIO())
+        for line in errors:
+            log(line)
+        return log.out.getvalue()
+
 class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
-class DefaultIniInfo(DefaultIniFile, INIInfo):
-
-    @property
-    def is_default_tweak(self): return True
+class DefaultIniInfo(DefaultIniFile, AINIInfo):
+    is_default_tweak = True
 
 # noinspection PyUnusedLocal
 def ini_info_factory(fullpath, load_cache=u'Ignored', itsa_ghost=False):
@@ -1891,7 +1780,7 @@ class INIInfos(TableFileInfos):
             deprint(f'_target_inis contain a Path {list(_target_inis)}')
             csChoices = {f'{x}'.lower() for x in _target_inis}
         for iFile in gameInis: # add the game inis even if missing
-            if iFile.abs_path.tail.cs not in csChoices:
+            if iFile.fn_key not in csChoices:
                 _target_inis[iFile.abs_path.stail] = iFile.abs_path
         if _(u'Browse...') not in _target_inis:
             _target_inis[_(u'Browse...')] = None
