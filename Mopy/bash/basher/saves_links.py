@@ -130,7 +130,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         oldDir.moveTo(newDir)
         oldSaves, newSaves = map(_win_join, (oldName, newName))
         if bosh.saveInfos.localSave == oldSaves:
-            Link.Frame.saveList.set_local_save(newSaves)
+            Link.Frame.saveList.set_local_save(newSaves, refreshSaveInfos=True)
         bosh.saveInfos.rename_profile(oldSaves, newSaves)
         return newName
 

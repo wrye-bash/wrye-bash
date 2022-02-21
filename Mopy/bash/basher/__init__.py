@@ -50,6 +50,8 @@ provided through the settings singleton (however the modInfos singleton also
 has its own data store)."""
 
 # Imports ---------------------------------------------------------------------
+from __future__ import annotations
+
 #--Python
 import collections
 import os
@@ -57,7 +59,7 @@ import sys
 import time
 from collections import OrderedDict, namedtuple, defaultdict
 from functools import partial, reduce
-from typing import Optional, List
+from typing import List
 
 #--wxPython
 import wx
@@ -104,7 +106,7 @@ if sys.prefix not in set(_env_path.split(u';')):
     os.environ[u'PATH'] = _env_path + u';' + sys.prefix
 
 # Settings --------------------------------------------------------------------
-settings = None # type: Optional[bolt.Settings]
+settings = None # type: bolt.Settings | None
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------

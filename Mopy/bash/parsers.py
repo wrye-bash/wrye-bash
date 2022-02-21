@@ -47,15 +47,20 @@ from .mod_files import ModFile, LoadFactory
 
 # Utils
 def _key_sort(di, id_eid_=None, keys_dex=(), values_key=u'', by_value=False):
-    """Adapted to current uses"""
+    """Adapted to current uses - values_key is always eid if set, keys_dex must
+    index a long id key (mod key that compares in lowercase, number)."""
     if id_eid_ is not None: # we passed id_eid in sort by eid
-        key_f=lambda k: id_eid_.get(k, u'unknown').lower()
+        key_f=lambda k: (id_eid_.get(k) or '').lower()
         for k in sorted(di, key=key_f):
             yield k, di[k], id_eid_[k]
     else:
-        if keys_dex or values_key: # TODO(ut): drop below when keys are CIStr
-            key_f = lambda k: tuple((u'%s' % k[x]).lower() for x in keys_dex
-                        ) + (di[k][values_key].lower(),)
+        if keys_dex and values_key:
+            key_f = lambda k: (*(k[x] for x in keys_dex),
+                               (di[k].get(values_key) or '').lower())
+        elif keys_dex:
+            key_f = itemgetter(keys_dex)
+        elif values_key:
+            key_f = lambda k: (di[k].get(values_key) or '').lower()
         elif by_value:
             key_f = lambda k: di[k].lower()
         else:
@@ -557,21 +562,21 @@ class ActorLevels(_HandleAliases):
         """Export NPC level data to specified text file."""
         extendedRowFormat = u',"%d","%d","%d","%d"\n'
         blankExtendedRow = u',,,,\n'
-        #Sorted based on mod, then editor ID
         bg_mf = bush.game.master_file
         obId_levels = self.mod_id_levels[bg_mf]
-        for mod, id_levels in _key_sort(self.mod_id_levels):
-            if mod == bg_mf: continue
+        for fn_mod, id_levels in _key_sort(self.mod_id_levels):
+            if fn_mod == bg_mf: continue
+            # Sorted based on mod, then editor ID
             sor = _key_sort(id_levels, keys_dex=[0], values_key=u'eid')
             for longfid, di in sor:
                 eid, isOffset, offset, calcMin, calcMax = __getter(di)
                 if isOffset:
                     out.write(self._row_fmt_str % (
-                        mod, eid, *longfid, offset, calcMin, calcMax))
+                        fn_mod, eid, *longfid, offset, calcMin, calcMax))
                     oldLevels = obId_levels.get(longfid, None)
                     if oldLevels:
-                        oldEid,wasOffset,oldOffset,oldCalcMin,oldCalcMax \
-                            = oldLevels
+                        oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax \
+                            = __getter(oldLevels)
                         out.write(extendedRowFormat % (
                             wasOffset,oldOffset,oldCalcMin,oldCalcMax))
                     else:
@@ -1234,7 +1239,7 @@ class _UsesEffectsMixin(_HandleAliases):
     def _write_rows(self, out):
         """Exports stats to specified text file."""
         stats, row_fmt_str = self.fid_stats, self._row_fmt_str
-        for rfid, fstats in _key_sort(stats, values_key=u'eid'): ##: , x[0]) ??
+        for rfid, fstats in _key_sort(stats, values_key=u'eid'): ##: spells key was ('eid' , rfid[0])
             output = row_fmt_str % (*rfid, u','.join(
                 ser(fstats[k]) for k, ser in self._attr_serializer.items()))
             out.write(output)

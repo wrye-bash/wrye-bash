@@ -182,7 +182,7 @@ class FixInfo(object):
             msg += _pl(self.act_reordered[1], u'\nto:\n', joint=u'\n')
         bolt.deprint(msg)
 
-class Game(object):
+class LoGame(object):
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
     allow_deactivate_master = False
@@ -198,7 +198,7 @@ class Game(object):
     _star = False # whether plugins.txt uses a star to denote an active plugin
 
     def __init__(self, mod_infos, plugins_txt_path):
-        super(Game, self).__init__()
+        super().__init__()
         self.plugins_txt_path = plugins_txt_path # type: bolt.Path
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos._master_esm # type: bolt.Path
@@ -674,11 +674,11 @@ class Game(object):
                 if acti_file:
                     bolt.deprint(f' - Active plugins: {acti_file}')
 
-class INIGame(Game):
+class INIGame(LoGame):
     """Class for games which use an INI section to determine parts of the load
-    order. Meant to be used in multiple inheritance with other Game types, be
+    order. Meant to be used in multiple inheritance with other LoGame types, be
     sure to put INIGame first, as a few of its methods delegate to super
-    implementations, which are abstract in the Game base class.
+    implementations, which are abstract in the LoGame base class.
 
     To use an INI section to specify active plugins, change ini_key_actives.
     To use an INI section to specify load order, change ini_key_lo. You can
@@ -698,7 +698,7 @@ class INIGame(Game):
     def __init__(self, mod_infos, plugins_txt_path=u''):
         """Creates a new INIGame instance. plugins_txt_path does not have to
         be specified if INIGame will manage active plugins."""
-        super(INIGame, self).__init__(mod_infos, plugins_txt_path)
+        super().__init__(mod_infos, plugins_txt_path)
         self._handles_actives = self.__class__.ini_key_actives != (
             u'', u'', u'')
         self._handles_lo = self.__class__.ini_key_lo != (u'', u'', u'')
@@ -770,7 +770,7 @@ class INIGame(Game):
             except OSError:
                 bolt.deprint(
                     f'Tried to back up {ini_path}, but it did not exist')
-        else: super(INIGame, self)._backup_active_plugins()
+        else: super()._backup_active_plugins()
 
     def _backup_load_order(self):
         if self._handles_lo:
@@ -780,21 +780,20 @@ class INIGame(Game):
             except OSError:
                 bolt.deprint(
                     f'Tried to back up {ini_path}, but it did not exist')
-        else: super(INIGame, self)._backup_load_order()
+        else: super()._backup_load_order()
 
     # Reading from INI
     def _fetch_active_plugins(self):
         if self._handles_actives:
             return self._read_ini(self._cached_ini_actives,
                                   self.__class__.ini_key_actives)
-        return super(INIGame, self)._fetch_active_plugins()
+        return super()._fetch_active_plugins()
 
     def _fetch_load_order(self, cached_load_order, cached_active):
         if self._handles_lo:
             return self._read_ini(self._cached_ini_lo,
                                   self.__class__.ini_key_lo)
-        return super(INIGame, self)._fetch_load_order(cached_load_order,
-                                                      cached_active)
+        return super()._fetch_load_order(cached_load_order, cached_active)
 
     # Writing changes to INI
     def _persist_if_changed(self, active, lord, previous_active,
@@ -812,8 +811,8 @@ class INIGame(Game):
         # If we handled both, don't do anything. Otherwise, delegate persisting
         # to the next method in the MRO
         if previous_lord != lord or previous_active != active:
-            super(INIGame, self)._persist_if_changed(
-                active, lord, previous_active, previous_lord)
+            super()._persist_if_changed(active, lord, previous_active,
+                                        previous_lord)
 
     def _persist_active_plugins(self, active, lord):
         if self._handles_actives:
@@ -821,7 +820,7 @@ class INIGame(Game):
                             self.__class__.ini_key_actives, active)
             self._cached_ini_actives.do_update()
         else:
-            super(INIGame, self)._persist_active_plugins(active, lord)
+            super()._persist_active_plugins(active, lord)
 
     def _persist_load_order(self, lord, active):
         if self._handles_lo:
@@ -829,7 +828,7 @@ class INIGame(Game):
                             self.__class__.ini_key_lo, lord)
             self._cached_ini_lo.do_update()
         else:
-            super(INIGame, self)._persist_load_order(lord, active)
+            super()._persist_load_order(lord, active)
 
     # Misc overrides
     @classmethod
@@ -842,12 +841,12 @@ class INIGame(Game):
     def active_changed(self):
         if self._handles_actives:
             return self._cached_ini_actives.needs_update()
-        return super(INIGame, self).active_changed()
+        return super().active_changed()
 
     def load_order_changed(self):
         if self._handles_lo:
             return self._cached_ini_lo.needs_update()
-        return super(INIGame, self).load_order_changed()
+        return super().load_order_changed()
 
     def swap(self, old_dir, new_dir):
         def _do_swap(cached_ini, ini_key):
@@ -864,17 +863,17 @@ class INIGame(Game):
             _do_swap(self._cached_ini_actives, self.ini_key_actives)
         if self._handles_lo:
             _do_swap(self._cached_ini_lo, self.ini_key_lo)
-        super(INIGame, self).swap(old_dir, new_dir)
+        super().swap(old_dir, new_dir)
 
     def get_acti_file(self):
         if self._handles_actives:
             return self._cached_ini_actives.abs_path
-        return super(INIGame, self).get_acti_file()
+        return super().get_acti_file()
 
     def get_lo_file(self):
         if self._handles_lo:
             return self._cached_ini_lo.abs_path
-        return super(INIGame, self).get_lo_file()
+        return super().get_lo_file()
 
     def _set_acti_file(self, new_acti_file):
         raise exception.AbstractError(u'INIGame does not support'
@@ -884,7 +883,7 @@ class INIGame(Game):
         raise exception.AbstractError(u'INIGame does not support _set_lo_file '
                                       u'right now')
 
-class TimestampGame(Game):
+class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
     times.
 
@@ -993,7 +992,7 @@ class TimestampGame(Game):
 
     # Other overrides ---------------------------------------------------------
     def _fix_load_order(self, lord, fix_lo):
-        super(TimestampGame, self)._fix_load_order(lord, fix_lo)
+        super()._fix_load_order(lord, fix_lo)
         if fix_lo is not None and fix_lo.lo_added:
             # should not occur, except if undoing
             bolt.deprint(u'Incomplete load order passed in to set_load_order. '
@@ -1012,22 +1011,21 @@ class Morrowind(INIGame, TimestampGame):
     def in_master_block(self, minf):
         return minf.get_extension() == u'.esm'
 
-class TextfileGame(Game):
+class TextfileGame(LoGame):
 
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path):
-        super(TextfileGame, self).__init__(mod_infos, plugins_txt_path)
+        super().__init__(mod_infos, plugins_txt_path)
         self.loadorder_txt_path = loadorder_txt_path # type: bolt.Path
         self.mtime_loadorder_txt = 0
         self.size_loadorder_txt = 0
 
     def pinned_mods(self):
-        return super(TextfileGame, self).pinned_mods() | set(
-            self.must_be_active_if_present)
+        return super().pinned_mods() | set(self.must_be_active_if_present)
 
     def _active_entries_to_remove(self):
         # Starting with Skyrim LE, the Update.esm file needs to be removed from
         # plugins.txt too
-        return super(TextfileGame, self)._active_entries_to_remove() | {
+        return super()._active_entries_to_remove() | {
             GPath_no_norm(u'Update.esm')}
 
     def load_order_changed(self):
@@ -1045,7 +1043,7 @@ class TextfileGame(Game):
         return deleted or reordered
 
     def swap(self, old_dir, new_dir):
-        super(TextfileGame, self).swap(old_dir, new_dir)
+        super().swap(old_dir, new_dir)
         # Save loadorder.txt inside the old (saves) directory
         if self.loadorder_txt_path.exists():
             self.loadorder_txt_path.copyTo(old_dir.join(u'loadorder.txt'))
@@ -1178,7 +1176,7 @@ class TextfileGame(Game):
                    f'supplied load order ({_pl(acti)})'
         return u''
 
-class AsteriskGame(Game):
+class AsteriskGame(LoGame):
 
     max_espms = 254
     max_esls = 4096 # hard limit, game runs out of fds sooner, testing needed
@@ -1190,12 +1188,11 @@ class AsteriskGame(Game):
     _star = True
 
     def _active_entries_to_remove(self):
-        return super(AsteriskGame, self)._active_entries_to_remove() | set(
+        return super()._active_entries_to_remove() | set(
             self.must_be_active_if_present)
 
     def pinned_mods(self):
-        return super(AsteriskGame, self).pinned_mods() | set(
-            self.must_be_active_if_present)
+        return super().pinned_mods() | set(self.must_be_active_if_present)
 
     def load_order_changed(self): return self._plugins_txt_modified()
 
@@ -1330,7 +1327,7 @@ class AsteriskGame(Game):
                          f'read, falling back to hardcoded CCC list')
             cls.must_be_active_if_present += cls._ccc_fallback
 
-class WindowsStoreGame(Game):
+class WindowsStoreGame(LoGame):
     """Mixin for Windows Store games, which have a second, fallback directory
     which we must keep in sync with the main one."""
     @property
@@ -1368,8 +1365,7 @@ class WindowsStoreGame(Game):
             swap_files = False
         if swap_files:
             self._set_lo_file(file_to_use)
-        ret_lo = super(WindowsStoreGame, self)._fetch_load_order(
-            cached_load_order, cached_active)
+        ret_lo = super()._fetch_load_order(cached_load_order, cached_active)
         if swap_files:
             self._set_lo_file(lo_file)
         return ret_lo
@@ -1395,25 +1391,25 @@ class WindowsStoreGame(Game):
             swap_files = False
         if swap_files:
             self._set_acti_file(file_to_use)
-        ret_acti = super(WindowsStoreGame, self)._fetch_active_plugins()
+        ret_acti = super()._fetch_active_plugins()
         if swap_files:
             self._set_acti_file(acti_file)
         return ret_acti
 
     def _persist_active_plugins(self, active, lord):
-        super(WindowsStoreGame, self)._persist_active_plugins(active, lord)
+        super()._persist_active_plugins(active, lord)
         fb_acti_file, _fb_lo_file = self._fallback_lo_files
         if fb_acti_file:
             self.get_acti_file().copyTo(fb_acti_file)
 
     def _persist_load_order(self, lord, active):
-        super(WindowsStoreGame, self)._persist_load_order(lord, active)
+        super()._persist_load_order(lord, active)
         _fb_acti_file, fb_lo_file = self._fallback_lo_files
         if fb_lo_file:
             self.get_lo_file().copyTo(fb_lo_file)
 
     def print_lo_paths(self):
-        super(WindowsStoreGame, self).print_lo_paths()
+        super().print_lo_paths()
         fb_acti_file, fb_lo_file = self._fallback_lo_files
         if fb_lo_file:
             bolt.deprint(u' - Load order (fallback): %s' % fb_lo_file)
@@ -1700,7 +1696,7 @@ class EnderalSE(SkyrimSE):
     ))
 
     def _active_entries_to_remove(self):
-        return super(EnderalSE, self)._active_entries_to_remove() - {
+        return super()._active_entries_to_remove() - {
             # Enderal - Forgotten Stories.esm is *not* hardcoded to load, so
             # don't remove it from the LO
             GPath_no_norm(u'Enderal - Forgotten Stories.esm'),

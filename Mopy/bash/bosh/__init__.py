@@ -2286,7 +2286,7 @@ class ModInfos(FileInfos):
 
         See usages for how to use the refresh_infos and _modTimesChange params.
         _modTimesChange is not strictly needed after the lo rewrite, as
-        games.Game#load_order_changed will always return True for timestamp
+        games.LoGame.load_order_changed will always return True for timestamp
         games - kept to help track places in the code where timestamp load
         order may change.
          NB: if an operation we performed changed the load order we do not want
@@ -3399,7 +3399,7 @@ class SaveInfos(FileInfos):
         self.table.save()
         self._initDB(dirs[u'saveBase'].join(self.localSave))
 
-    def setLocalSave(self, localSave, refreshSaveInfos=True):
+    def setLocalSave(self, localSave: str, refreshSaveInfos=True):
         """Sets SLocalSavePath in Oblivion.ini. The latter must exist."""
         self.table.save()
         self.localSave = localSave

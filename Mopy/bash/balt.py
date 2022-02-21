@@ -1203,10 +1203,10 @@ class UIList(wx.Panel):
             # renamed! Error handling is still a WIP
             for old, new in info.get_rename_paths(newFileName):
                 if old == new: continue
-                if not (oex := old.exists()) and (nex := new.exists()):
+                if (nex := new.exists()) and not (oex := old.exists()):
                     # some cosave move failed, restore files
                     new.moveTo(old, check_exist=False) # we just checked
-                elif oex and nex:
+                elif nex and oex:
                     # move copies then deletes, so the delete part failed
                     new.remove()  # return None # break
             return None # maybe a msg if really really needed

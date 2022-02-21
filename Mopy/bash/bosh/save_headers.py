@@ -25,6 +25,7 @@
 - that's the headers code only - write save classes (per game)
 - rework encoding/decoding
 """
+from __future__ import annotations
 
 __author__ = u'Utumno'
 
@@ -34,7 +35,6 @@ import sys
 import zlib
 from collections import OrderedDict
 from functools import partial
-from typing import Optional # PY3.10: | None
 
 import lz4.block
 
@@ -437,7 +437,7 @@ class SkyrimSaveHeader(SaveFileHeader):
                 if num != 255:
                     return result
         uncompressed = b''
-        masters_size: Optional[int] = None
+        masters_size: int | None = None
         while True:  # parse and decompress each block here
             token = unpack_byte(ins)
             # How many bytes long is the literals-field?

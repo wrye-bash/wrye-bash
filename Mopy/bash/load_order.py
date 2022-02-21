@@ -50,7 +50,7 @@ from .bolt import sig_to_str
 # Game instance providing load order operations API
 from . import _games_lo
 
-_game_handle = None # type: _games_lo.Game
+_game_handle = None # type: _games_lo.LoGame
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 # Load order locking
 locked = False
