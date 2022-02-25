@@ -1419,8 +1419,8 @@ class WindowsStoreGame(LoGame):
 # TextfileGame overrides
 class Skyrim(TextfileGame):
     must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
-        u'Update.esm', u'Dawnguard.esm', u'Hearthfires.esm',
-        u'Dragonborn.esm'))
+        'Update.esm', 'Dawnguard.esm', 'HearthFires.esm',
+        'Dragonborn.esm'))
 
 class Enderal(TextfileGame):
     must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
@@ -1602,7 +1602,7 @@ class Fallout4VR(Fallout4):
 
 class SkyrimSE(AsteriskGame):
     must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
-        u'Update.esm', u'Dawnguard.esm', u'Hearthfires.esm', u'Dragonborn.esm'
+        'Update.esm', 'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm'
     ))
     _ccc_filename = u'Skyrim.ccc'
     _ccc_fallback = tuple(GPath_no_norm(p) for p in (
@@ -1691,8 +1691,8 @@ class SkyrimVR(SkyrimSE):
 class EnderalSE(SkyrimSE):
     # Update.esm is forcibly loaded after the (empty) DLC plugins by the game
     must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
-        u'Dawnguard.esm', u'Hearthfires.esm', u'Dragonborn.esm', u'Update.esm',
-        u'Enderal - Forgotten Stories.esm',
+        'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm', 'Update.esm',
+        'Enderal - Forgotten Stories.esm',
     ))
 
     def _active_entries_to_remove(self):
