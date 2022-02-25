@@ -2070,6 +2070,7 @@ class MreDoor(MelRecord):
         MelFid(b'ANAM','soundClose'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', DoorTypeFlags),
+        MelFids(b'TNAM', 'random_teleports'),
     )
     __slots__ = melSet.getSlotsUsed()
 
