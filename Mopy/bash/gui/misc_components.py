@@ -109,7 +109,7 @@ class Picture(_AComponent):
             pos_y = max(0,y-new_y)/2
             image = self.bitmap.ConvertToImage()
             image.Rescale(int(new_x), int(new_y), _wx.IMAGE_QUALITY_HIGH)
-            dc.DrawBitmap(_wx.Bitmap(image), pos_x, pos_y)
+            dc.DrawBitmap(_wx.Bitmap(image), int(pos_x), int(pos_y))
         del dc
         self._native_widget.Refresh()
         self._native_widget.Update()

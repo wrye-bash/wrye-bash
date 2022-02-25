@@ -85,6 +85,7 @@ class MorrowindGameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
+            'animation', # Liztail's Animation Kit
             'bookart',
             'distantland', # MGE XE
             'fonts',
