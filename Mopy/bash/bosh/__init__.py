@@ -3710,12 +3710,18 @@ def initBosh(bashIni, game_ini_path):
     # Setup loot_parser, needs to be done after the dirs are initialized
     if not initialization.bash_dirs_initialized:
         raise BoltError(u'initBosh: Bash dirs are not initialized')
-    loot_path = bass.dirs[u'local_appdata'].join(u'LOOT', bush.game.loot_dir)
-    lootMasterPath = loot_path.join(u'masterlist.yaml')
-    lootUserPath = loot_path.join(u'userlist.yaml')
-    tagList = bass.dirs[u'taglists'].join(u'taglist.yaml')
+    loot_gname = bush.game.loot_dir
+    loot_folder = bass.dirs['local_appdata'].join('LOOT')
+    # Since LOOT v0.18, games are stored in LOOT\games\<game>, try that first
+    loot_path = loot_folder.join('games', loot_gname)
+    if not loot_path.is_dir():
+        # Fall back to the 'legacy' path (LOOT\<game>)
+        loot_path = loot_folder.join(loot_gname)
+    loot_master_path = loot_path.join('masterlist.yaml')
+    loot_user_path = loot_path.join('userlist.yaml')
+    loot_tag_path = bass.dirs['taglists'].join('taglist.yaml')
     global lootDb
-    lootDb = LOOTParser(lootMasterPath, lootUserPath, tagList)
+    lootDb = LOOTParser(loot_master_path, loot_user_path, loot_tag_path)
     deprint(u'Initialized loot_parser, compatible with libloot '
             u'v%s' % libloot_version)
     # game ini files
