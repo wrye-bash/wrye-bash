@@ -558,8 +558,6 @@ class ListEditor(DialogWindow):
         else:
             layout.apply_to(self, fit=True)
 
-    def GetSelected(self): return self.listBox.lb_get_next_item(-1)
-
     #--List Commands
     def DoAdd(self):
         """Adds a new item."""
@@ -2056,6 +2054,7 @@ class _CheckList_SelectAll(ItemLink):
 # TODO(inf) Needs renaming, also need to make a virtual version eventually...
 class TreeCtrl(_AComponent):
     _wx_widget_type = wx.TreeCtrl
+    _native_widget: wx.TreeCtrl
 
     def __init__(self, parent, title, items_dict):
         super(TreeCtrl, self).__init__(parent, size=(150, 200),

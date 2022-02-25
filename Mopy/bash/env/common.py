@@ -21,12 +21,14 @@
 #
 # =============================================================================
 """Common methods used by all platforms."""
+
+from __future__ import annotations
+
 import datetime
 import os
 import stat
 import sys
 from dataclasses import dataclass, field
-from typing import Union
 
 from .. import bolt
 
@@ -49,7 +51,7 @@ class WinAppVersionInfo(object):
     # which do not agree in general with the canonical "game version" found in
     # the executable.  We store it only as a fallback in case the Windows Store
     # changes (again) to where we cannot parse the EXE for the real version.
-    _version: Union[str, tuple]
+    _version: str | tuple
     install_time: datetime.datetime
     entry_point: str
 

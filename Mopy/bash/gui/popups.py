@@ -80,6 +80,7 @@ class _TransientPopup(_AComponent):
     """Base class for transient popups, i.e. popups that disappear as soon as
     they lose focus."""
     _wx_widget_type = _wx.PopupTransientWindow
+    _native_widget: _wx.PopupTransientWindow
 
     def __init__(self, parent):
         # Note: the style (second parameter) may not be passed as a keyword
@@ -148,7 +149,7 @@ class MultiChoicePopup(_TransientPopup):
 
     def _search_choices(self, search_str):
         """Internal callback for searching via the search bar."""
-        search_lower = search_str.lower().strip()
+        search_lower = search_str.strip().lower()
         choices_dict = {k: v for k, v in self._all_choices if
                         search_lower in k.lower()}
         self._choice_box.set_all_items(choices_dict)
@@ -174,6 +175,7 @@ class MultiChoicePopup(_TransientPopup):
 class _FileDialog(_AComponent):
     """Ask user for a filesystem path using the system dialogs."""
     _wx_widget_type = _wx.FileDialog
+    _native_widget: _wx.FileDialog
     _dialog_style = _wx.FD_OPEN | _wx.FD_FILE_MUST_EXIST
 
     def __init__(self, parent, title=u'', defaultDir=u'', defaultFile=u'',
@@ -221,6 +223,7 @@ class FileSave(_FileDialog):
 class DirOpen(_FileDialog):
     """'Open directory' dialog."""
     _wx_widget_type = _wx.DirDialog
+    _native_widget: _wx.DirDialog
     _dialog_style = _wx.DD_DEFAULT_STYLE | _wx.DD_SHOW_HIDDEN
 
     def __init__(self, parent, title=u'', defaultPath=u'', create_dir=False):

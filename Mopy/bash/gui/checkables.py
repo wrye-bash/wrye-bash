@@ -22,6 +22,8 @@
 # =============================================================================
 """Components that can be in one of two states, checked or unchecked."""
 
+from __future__ import annotations
+
 __author__ = u'Infernio'
 
 import wx as _wx
@@ -41,6 +43,8 @@ class _ACheckable(_AComponent):
       - on_hovered(hovered: _ACheckable): Posted when the user hovers over this
         component. The parameter is the instance of _ACheckable that was
         hovered over."""
+    _native_widget: _wx.CheckBox | _wx.RadioButton
+
     def __init__(self, *args, **kwargs):
         checked = kwargs.pop(u'checked', False)
         super(_ACheckable, self).__init__(*args, **kwargs)
@@ -82,6 +86,7 @@ class CheckBox(_ACheckable):
     """Represents a simple two-state checkbox. See _ACheckable for event
     docstrings."""
     _wx_widget_type = _wx.CheckBox
+    _native_widget: _wx.CheckBox
 
     def __init__(self, parent, label=u'', chkbx_tooltip=None, checked=False):
         """Creates a new CheckBox with the specified properties.
@@ -115,6 +120,7 @@ class RadioButton(_ACheckable):
     button. You will have to implement some custom logic to freeze an entire
     group of radio buttons."""
     _wx_widget_type = _wx.RadioButton
+    _native_widget: _wx.RadioButton
 
     def __init__(self, parent, label, is_group=False):
         super(RadioButton, self).__init__(parent, label=label,

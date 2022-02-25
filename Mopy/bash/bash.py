@@ -611,7 +611,7 @@ def _select_game_popup(game_infos):
                 g.displayName: _wx.Bitmap(bass.dirs[u'images'].join(
                     g.game_icon % 32).s) for g in game_infos}
             # Construction of the actual GUI begins here
-            game_search = SearchBar(self)
+            game_search = SearchBar(self, hint=_('Search Games'))
             game_search.on_text_changed.subscribe(self._perform_search)
             self._game_dropdown = ImageDropDown(self, value=u'', choices=[u''])
             self._game_dropdown.on_combo_select.subscribe(self._select_game)
@@ -666,7 +666,7 @@ def _select_game_popup(game_infos):
 
         def _perform_search(self, search_str):
             prev_choice = self._game_dropdown.get_value()
-            search_lower = search_str.lower().strip()
+            search_lower = search_str.strip().lower()
             filtered_games = [g for g in self._sorted_games
                               if search_lower in g.lower()]
             with self._game_dropdown.pause_drawing():

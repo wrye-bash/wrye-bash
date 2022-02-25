@@ -134,6 +134,7 @@ class _ALine(_AComponent):
     """Abstract base class for simple graphical lines."""
     _line_style = None # override in subclasses
     _wx_widget_type = _wx.StaticLine
+    _native_widget: _wx.StaticLine
 
     def __init__(self, parent):
         super(_ALine, self).__init__(parent, style=self._line_style)
@@ -153,6 +154,7 @@ class Table(WithCharEvents):
     to allow customizing the row labels, one of its central assumptions is that
     they are always ints."""
     _wx_widget_type = Grid
+    _native_widget: Grid
 
     def __init__(self, parent, table_data, editable=True):
         """Creates a new Table with the specified parent and table data.
@@ -349,6 +351,7 @@ class GlobalMenu(_AComponent):
     before the menu is opened by the user. The menus are called 'categories' to
     differentiate them from regular context menus."""
     _wx_widget_type = _wx.MenuBar
+    _native_widget: _wx.MenuBar
 
     class _GMCategory(_wx.Menu):
         """wx-derived class used to differentiate between events on regular

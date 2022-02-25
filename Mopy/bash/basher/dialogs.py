@@ -259,7 +259,7 @@ class CreateNewPlugin(DialogWindow):
                             u'light, i.e have the ESL flag.'),
             checked=bush.game.has_esl)
         self._esl_flag.visible = bush.game.has_esl
-        self._master_search = SearchBar(self)
+        self._master_search = SearchBar(self, hint=_('Search Masters'))
         self._master_search.on_text_changed.subscribe(self._handle_search)
         self._masters_box = CheckListBox(self)
         # Initially populate the masters list, checking only the game master
@@ -358,7 +358,7 @@ class CreateNewPlugin(DialogWindow):
     def _handle_search(self, search_str):
         """Internal callback used to repopulate the masters box whenever the
         text in the search bar changes."""
-        lower_search_str = search_str.lower().strip()
+        lower_search_str = search_str.strip().lower()
         # Case-insensitively filter based on the keys, then update the box
         new_m_items = {k: v for k, v in self._masters_dict.items() if
                        lower_search_str in k.lower()}

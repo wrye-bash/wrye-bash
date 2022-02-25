@@ -41,6 +41,7 @@ class _TopLevelWin(_AComponent):
     _def_pos = _wx.DefaultPosition
     _def_size = _wx.DefaultSize
     _min_size = _size_key = _pos_key = None
+    _native_widget: _wx.TopLevelWindow
 
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
         # dict holding size/pos info ##: can be bass.settings or balt.sizes
@@ -121,6 +122,7 @@ class WindowFrame(_TopLevelWin):
     _frame_settings_key = None
     _min_size = _def_size = (250, 250)
     _wx_widget_type = _wx.Frame
+    _native_widget: _wx.Frame
 
     def __init__(self, parent, title, icon_bundle=None, _base_key=None,
                  sizes_dict={}, caption=False, style=_wx.DEFAULT_FRAME_STYLE,
@@ -157,6 +159,7 @@ class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""
     title = u'OVERRIDE'
     _wx_widget_type = _wx.Dialog
+    _native_widget: _wx.Dialog
 
     def __init__(self, parent=None, title=None, icon_bundle=None,
                  sizes_dict=None, caption=False, size_key=None, pos_key=None,
@@ -220,6 +223,7 @@ class StartupDialog(DialogWindow):
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):
     _wx_widget_type = _wx.Panel
+    _native_widget: _wx.Panel
 
     def __init__(self, parent, no_border=True):
         super(PanelWin, self).__init__(
@@ -227,6 +231,7 @@ class PanelWin(_AComponent):
 
 class Splitter(_AComponent):
     _wx_widget_type = _wx.SplitterWindow
+    _native_widget: _wx.SplitterWindow
 
     def __init__(self, parent, allow_split=True, min_pane_size=0,
                  sash_gravity=0):
@@ -264,6 +269,8 @@ class Splitter(_AComponent):
 class _APageComponent(_AComponent):
     """Abstract base class for 'page' compoenents, i.e. notebooks and
     listbooks."""
+    _native_widget: _wx.BookCtrlBase
+
     def add_page(self, page_component, page_title):
         self._native_widget.AddPage(self._resolve(page_component), page_title)
 
@@ -276,6 +283,7 @@ class _APageComponent(_AComponent):
 class TabbedPanel(_APageComponent):
     """A panel with tabs, each of which contains a different panel."""
     _wx_widget_type = _wx.Notebook
+    _native_widget: _wx.Notebook
 
     def __init__(self, parent, multiline=False):
         super(TabbedPanel, self).__init__(
@@ -287,7 +295,8 @@ class TabbedPanel(_APageComponent):
 class ListPanel(_APageComponent):
     """A panel with a list of options that each correspond to a different
     panel."""
-    _wx_widget_type =  _wx.Listbook
+    _wx_widget_type = _wx.Listbook
+    _native_widget: _wx.Listbook
 
     def __init__(self, parent):
         super(ListPanel, self).__init__(parent)
@@ -297,6 +306,7 @@ class ListPanel(_APageComponent):
 class ScrollableWindow(_AComponent):
     """A window with a scrollbar."""
     _wx_widget_type = _wx.ScrolledWindow
+    _native_widget: _wx.ScrolledWindow
 
     def __init__(self, parent, scroll_horizontal=True, scroll_vertical=True):
         super(ScrollableWindow, self).__init__(parent)
@@ -310,6 +320,7 @@ class CenteredSplash(_AComponent):
     """A centered splash screen without a timeout. Only disappears when either
     the entire application terminates or stop_splash is called."""
     _wx_widget_type = _adv.SplashScreen
+    _native_widget: _adv.SplashScreen
 
     def __init__(self, splash_path):
         """Creates a new CenteredSplash with an image read from the specified
