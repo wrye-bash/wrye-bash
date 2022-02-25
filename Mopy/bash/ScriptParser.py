@@ -196,6 +196,13 @@ def error(msg):
 # Parser ------------------------------------------
 #  This is where the magic happens
 #--------------------------------------------------
+def _get_type_basic(token_or_num):
+    """Determines a token's type without considering a parser's type system."""
+    if isinstance(token_or_num, str): return STRING
+    if isinstance(token_or_num, int): return INTEGER
+    if isinstance(token_or_num, float): return DECIMAL
+    return UNKNOWN
+
 class Parser(object):
     class ParserType(object):
         @property
@@ -222,9 +229,7 @@ class Parser(object):
             for i in token_or_num:
                 if i not in whitespace: return UNKNOWN
             return WHITESPACE
-        if isinstance(token_or_num, int): return INTEGER
-        if isinstance(token_or_num, float): return DECIMAL
-        return UNKNOWN
+        return _get_type_basic(token_or_num)
 
     class Callable(ParserType):
         def __init__(self, callable_name, function, min_args=0,
@@ -330,7 +335,16 @@ class Parser(object):
                 self.numArgs = token_or_text.numArgs
             else:
                 self.text = token_or_text
-                self.type = Type or parser.getType(token_or_text)
+                if Type:
+                    # We were passed a type, so use that
+                    self.type = Type
+                elif parser:
+                    # We have a parser, so we can query for reliable type info
+                    self.type = parser.getType(token_or_text)
+                else:
+                    # We do not have a parser, so we can only query for basic
+                    # type info
+                    self.type = _get_type_basic(token_or_text)
                 self.parser = parser
                 self.line = line
                 self.pos = pos
