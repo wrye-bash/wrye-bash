@@ -23,7 +23,7 @@ Here is a list of supported games with the minimal patch version that Bash was
 tested on (previous versions or latest versions may or may not work):
 
 * Enderal (patch 1.6.4.0)
-* Enderal: Special Edition (patch 2.0.9)
+* Enderal: Special Edition (patch 2.0.11)
 * Fallout 3 (patch 1.7.0.3)
 * Fallout 4 (patch 1.10.163.0)
 * Fallout 4 VR (patch 1.2.72.0)
@@ -32,7 +32,7 @@ tested on (previous versions or latest versions may or may not work):
 * Nehrim (patch 2.0.2.4)
 * Oblivion (patch 1.2.0.416)
 * Skyrim (patch 1.9.36.0)
-* Skyrim Special Edition (patch 1.6.318.0)
+* Skyrim Special Edition (patch 1.6.353.0)
 * Skyrim VR (patch 1.4.15.0)
 
 **Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 3,
@@ -40,16 +40,16 @@ Fallout New Vegas, Fallout 4 and Skyrim Special Edition are supported as well.
 
 ### Download
 
-* [Oblivion Nexus][2]
-* [Nehrim Nexus][23]
-* [Fallout 3 Nexus][3]
-* [Fallout New Vegas Nexus][4]
-* [Skyrim Nexus][5]
+* [GitHub][8] (all releases)
 * [Enderal Nexus][22]
-* [Fallout 4 Nexus][6]
-* [Skyrim Special Edition Nexus][7]
 * [Enderal Special Edition Nexus][25]
-* [Github][8] (all releases)
+* [Fallout 3 Nexus][3]
+* [Fallout 4 Nexus][6]
+* [Fallout New Vegas Nexus][4]
+* [Nehrim Nexus][23]
+* [Oblivion Nexus][2]
+* [Skyrim Nexus][5]
+* [Skyrim Special Edition Nexus][7]
 
 Docs are included in the download, but we are also setting them up online
  [here][9].
@@ -132,7 +132,7 @@ bleeding edge branch. Commits land here for testing.
   [5]: https://www.nexusmods.com/skyrim/mods/1840
   [6]: https://www.nexusmods.com/fallout4/mods/20032
   [7]: https://www.nexusmods.com/skyrimspecialedition/mods/6837
-  [8]: https://github.com/wrye-bash/wrye-bash/releases
+  [8]: https://github.com/wrye-bash/wrye-bash/releases/latest
   [9]: http://wrye-bash.github.io/
   [10]: http://wrye-bash.github.io/docs/Wrye%20Bash%20General%20Readme.html#install
   [11]: http://wrye-bash.github.io/docs/Wrye%20Bash%20Advanced%20Readme.html#install
