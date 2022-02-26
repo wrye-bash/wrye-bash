@@ -149,12 +149,15 @@ class CsvParser(_TextParser):
     def _write_rows(self, out):
         """Writes rows to csv text file."""
         for top_grup_sig, id_data in dict_sort(self.id_stored_data):
-            if not id_data: continue
-            top_grup = sig_to_str(top_grup_sig)
+            if not (section_data := self._write_section(
+                    top_grup_sig, id_data, out)): continue
             for lfid, stored_data in self._row_sorter(id_data):
-                self._write_row(out, top_grup, lfid, stored_data)
+                self._write_row(out, lfid, stored_data, *section_data)
 
-    def _write_row(self, out, top_grup, lfid, stored_data):
+    def _write_section(self, top_grup_sig, id_data, out):
+        return bool(id_data) and [sig_to_str(top_grup_sig)]
+
+    def _write_row(self, out, lfid, stored_data, top_grup):
         raise AbstractError(f'{type(self)} must implement _write_row')
 
     # Read csv functionality --------------------------------------------------
@@ -508,7 +511,7 @@ class ActorFactions(_AParser):
         else:
             return {lfid: rank}
 
-    def _write_row(self, out, top_grup, aid, stored_data):
+    def _write_row(self, out, aid, stored_data, top_grup):
         """Exports faction data to specified text file."""
         factions, actorEid = stored_data
         for faction, (rank, factionEid) in self._row_sorter(factions):
@@ -595,29 +598,26 @@ class ActorLevels(_HandleAliases):
             raise ValueError # exit _parse_line
         return super(ActorLevels, self)._key2(csv_fields)
 
-    def _write_rows(self, out, __getter=itemgetter(u'eid',
-            u'flags.pcLevelOffset', u'level_offset', u'calcMin', u'calcMax')):
+    def _write_section(self, fn_mod, id_data, out):
+        return ((fn_mod != (bg_mf := bush.game.master_file)) and [fn_mod,
+            self.id_stored_data[bg_mf]])
+
+    def _write_row(self, out, longfid, di, fn_mod, obId_levels,
+        __getter=itemgetter('eid', 'flags.pcLevelOffset', 'level_offset',
+                            'calcMin', 'calcMax')):
         """Export NPC level data to specified text file."""
-        extendedRowFormat = u',"%d","%d","%d","%d"\n'
-        blankExtendedRow = u',,,,\n'
-        bg_mf = bush.game.master_file
-        obId_levels = self.id_stored_data[bg_mf]
-        for fn_mod, id_levels in dict_sort(self.id_stored_data):
-            if fn_mod == bg_mf: continue
-            # Sorted based on mod, then editor ID
-            for longfid, di in self._row_sorter(id_levels):
-                eid, isOffset, offset, calcMin, calcMax = __getter(di)
-                if isOffset:
-                    out.write(self._row_fmt_str % (
-                        fn_mod, eid, *longfid, offset, calcMin, calcMax))
-                    oldLevels = obId_levels.get(longfid, None)
-                    if oldLevels:
-                        oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax \
-                            = __getter(oldLevels)
-                        out.write(extendedRowFormat % (
-                            wasOffset,oldOffset,oldCalcMin,oldCalcMax))
-                    else:
-                        out.write(blankExtendedRow)
+        eid, isOffset, offset, calcMin, calcMax = __getter(di)
+        if isOffset:
+            out.write(self._row_fmt_str % (
+                fn_mod, eid, *longfid, offset, calcMin, calcMax))
+            oldLevels = obId_levels.get(longfid, None)
+            if oldLevels:
+                oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = \
+                    __getter(oldLevels)
+                out.write(f',"{wasOffset:d}","{oldOffset:d}","{oldCalcMin:d}",'
+                          f'"{oldCalcMax:d}"\n')
+            else:
+                out.write(',,,,\n')
 
 #------------------------------------------------------------------------------
 class EditorIds(_HandleAliases):
@@ -719,8 +719,8 @@ class EditorIds(_HandleAliases):
             self.questionableEidsSet.add(eid)
         return eid
 
-    def _write_row(self, out, top_grup, longid, stored_data):
-        out.write(self._row_fmt_str % (top_grup, *longid, stored_data))
+    def _write_row(self, out, lfid, stored_data, top_grup):
+        out.write(self._row_fmt_str % (top_grup, *lfid, stored_data))
 
 #------------------------------------------------------------------------------
 class FactionRelations(_AParser):
@@ -781,12 +781,12 @@ class FactionRelations(_AParser):
         oid = self._coerce_fid(omod, oobj)
         self.id_stored_data[b'FACT'][mid][oid] = tuple(csv_fields[6:])
 
-    def _write_row(self, out, top_grup, main_fid, stored_data):
+    def _write_row(self, out, lfid, stored_data, top_grup):
         """Exports faction relations to specified text file."""
         rel, main_eid = stored_data
         for oth_fid, (relation_obj, oth_eid) in self._row_sorter(rel):
             row_vals = '"%s","%s","0x%06X","%s","%s","0x%06X",%s\n' % (
-                main_eid, *main_fid, oth_eid, *oth_fid, ','.join(
+                main_eid, *lfid, oth_eid, *oth_fid, ','.join(
                     attr_csv_struct[a][2](x) for a, x in
                     zip(self.__class__.cls_rel_attrs[1:], relation_obj)))
             out.write(row_vals)
@@ -883,8 +883,8 @@ class FullNames(_HandleAliases):
             record.setChanged()
             changed[di[u'eid']] = (full, newFull)
 
-    def _write_row(self, out, top_grup, longid, stored_data):
-        out.write(self._row_fmt_str % (top_grup, *longid, stored_data['eid'],
+    def _write_row(self, out, lfid, stored_data, top_grup):
+        out.write(self._row_fmt_str % (top_grup, *lfid, stored_data['eid'],
             stored_data['full'].replace('"', '""')))
 
 #------------------------------------------------------------------------------
@@ -940,20 +940,21 @@ class ItemStats(_HandleAliases):
 
     def _header_row(self, out): pass # different header per sig
 
-    def _write_rows(self, out):
+    def _write_section(self, top_grup_sig, id_data, out):
+        if not (sup := super()._write_section(top_grup_sig, id_data, out)):
+            return
+        atts = self.sig_stats_attrs[top_grup_sig]
+        sers = [attr_csv_struct[x][2] for x in atts]
+        section_head = '","'.join((_('Type'), _('Mod Name'), _('ObjectIndex'),
+                                   *(attr_csv_struct[a][1] for a in atts)))
+        out.write(f'"{section_head}"\n')
+        return [*sup, [*zip(atts, sers)]]
+
+    def _write_row(self, out, longid, attr_value, top_grup, attrs_sers):
         """Writes stats to specified text file."""
-        for top_grup_sig, fid_attr_value in dict_sort(self.id_stored_data):
-            if not fid_attr_value: continue
-            atts = self.sig_stats_attrs[top_grup_sig]
-            sers = [attr_csv_struct[x][2] for x in atts]
-            out.write(u'"%s"\n' % u'","'.join(
-                (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'), *(
-                    attr_csv_struct[a][1] for a in atts))))
-            top_grup = sig_to_str(top_grup_sig)
-            for longid, attr_value in self._row_sorter(fid_attr_value):
-                output = self._row_fmt_str % (top_grup, *longid, u','.join(
-                    ser(attr_value[x]) for x, ser in zip(atts, sers)))
-                out.write(output)
+        output = self._row_fmt_str % (top_grup, *longid, ','.join(
+            ser(attr_value[x]) for x, ser in attrs_sers))
+        out.write(output)
 
 #------------------------------------------------------------------------------
 class ScriptText(_TextParser):
@@ -1267,9 +1268,9 @@ class _UsesEffectsMixin(_HandleAliases):
             changed.append(old_eid)
             record.setChanged()
 
-    def _write_row(self, out, top_grup, rfid, fstats):
-        output = self._row_fmt_str % (*rfid, u','.join(
-            ser(fstats[k]) for k, ser in self._attr_serializer.items()))
+    def _write_row(self, out, lfid, stored_data, top_grup):
+        output = self._row_fmt_str % (*lfid, u','.join(
+            ser(stored_data[k]) for k, ser in self._attr_serializer.items()))
         out.write(output)
 
 #------------------------------------------------------------------------------
@@ -1321,7 +1322,7 @@ class ItemPrices(_HandleAliases):
             changed[record.fid[0]] += 1
             record.setChanged()
 
-    def _write_row(self, out, top_grup, lfid, stored_data,
+    def _write_row(self, out, lfid, stored_data, top_grup,
                    __getter=itemgetter(*_attr_dex)):
         out.write(
             self._row_fmt_str % (*lfid, *__getter(stored_data), top_grup))
