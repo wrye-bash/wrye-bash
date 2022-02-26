@@ -101,8 +101,14 @@ class Installer(ListInfo):
     # archive 'types' - not actually deciding which get installed
     _top_files_extensions = bush.game.espm_extensions | {
         bush.game.Bsa.bsa_extension, u'.ini', u'.modgroups', u'.bsl', u'.ckm'}
+    # Same as _top_files_extensions, plus doc extensions. Needed since we want
+    # to allow top-level docs files in sub-packages, but we don't want them to
+    # invalidate a type 2 package
+    _top_files_plus_docs = _top_files_extensions | docExts
     _re_top_extensions = re.compile(u'(?:' + u'|'.join(
         re.escape(ext) for ext in _top_files_extensions) + u')$', re.I)
+    _re_top_plus_docs = re.compile('(?:' + '|'.join(
+        re.escape(ext) for ext in _top_files_plus_docs) + ')$', re.I)
     # Extensions of strings files - automatically built from game constants
     _strings_extensions = {os.path.splitext(x[1])[1].lower()
                            for x in bush.game.Esp.stringsFiles}
@@ -953,7 +959,8 @@ class Installer(ListInfo):
         #--Type, subNames
         bain_type = 0
         subNameSet = {u''}
-        valid_ext = self.__class__._re_top_extensions.search
+        valid_top_ext = self.__class__._re_top_extensions.search
+        valid_sub_top_ext = self.__class__._re_top_plus_docs.search
         dataDirsPlus = self.dataDirsPlus
         # hasExtraData is NOT taken into account when calculating package
         # structure or the root_path
@@ -967,7 +974,7 @@ class Installer(ListInfo):
             nfrags = len(frags)
             f0_lower = frags[0].lower()
             #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
-            if (nfrags == 1 and valid_ext(f0_lower) or
+            if (nfrags == 1 and valid_top_ext(f0_lower) or
                 nfrags > 1 and f0_lower in dataDirsPlus):
                 bain_type = 1
                 break
@@ -975,7 +982,7 @@ class Installer(ListInfo):
             elif not frags[0] in subNameSet and not \
                     f0_lower.startswith(skips_start) and (
                     (nfrags > 2 and frags[1].lower() in dataDirsPlus) or
-                    (nfrags == 2 and valid_ext(frags[1]))):
+                    (nfrags == 2 and valid_sub_top_ext(frags[1]))):
                 subNameSet.add(frags[0])
                 bain_type = 2
                 # keep looking for a type one package - having a loose file or

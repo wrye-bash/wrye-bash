@@ -1376,17 +1376,16 @@ class WryeParser(ScriptParser.Parser):
         self._SelectSubPackage(False, subpackage)
 
     def _SelectSubPackage(self, bSelect, subpackage):
-        package = subpackage if subpackage in self.sublist else None
-        if package:
-            self.sublist[package] = bSelect
-            for i in self.installer.espmMap[package]:
-                if bSelect:
-                    self._select_plugin(True, i)
-                else:
-                    if not self._plugin_in_active_package(i):
-                        self._select_plugin(False, i)
-        else:
-            error(_(u"Sub-package '%s' is not a part of the installer.") % subpackage)
+        if subpackage not in self.sublist:
+            error(_("Sub-package '%s' is not a part of the "
+                    "installer.") % subpackage)
+        self.sublist[subpackage] = bSelect
+        for fn_espm in self.installer.espmMap[subpackage]:
+            if bSelect:
+                self._select_plugin(True, fn_espm)
+            else:
+                if not self._plugin_in_active_package(fn_espm):
+                    self._select_plugin(False, fn_espm)
 
     def kwdSelectAll(self): self._SelectAll(True)
     def kwdDeSelectAll(self): self._SelectAll(False)
