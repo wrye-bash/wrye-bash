@@ -140,7 +140,6 @@ class _TextParser(object):
 
 class CsvParser(_TextParser):
     _csv_header = ()
-    _row_fmt_str = u''
 
     # Write csv functionality -------------------------------------------------
     def _header_row(self, out):
@@ -152,13 +151,14 @@ class CsvParser(_TextParser):
             if not (section_data := self._write_section(
                     top_grup_sig, id_data, out)): continue
             for lfid, stored_data in self._row_sorter(id_data):
-                self._write_row(out, lfid, stored_data, *section_data)
+                row = self._row_out(lfid, stored_data, *section_data)
+                if row: out.write(row)
 
     def _write_section(self, top_grup_sig, id_data, out):
         return bool(id_data) and [sig_to_str(top_grup_sig)]
 
-    def _write_row(self, out, lfid, stored_data, top_grup):
-        raise AbstractError(f'{type(self)} must implement _write_row')
+    def _row_out(self, lfid, stored_data, top_grup):
+        raise AbstractError(f'{type(self)} must implement _row_out')
 
     # Read csv functionality --------------------------------------------------
     def read_csv(self, csv_path):
@@ -459,7 +459,6 @@ class ActorFactions(_AParser):
     _csv_header = (_(u'Type'), _(u'Actor Eid'), _(u'Actor Mod'),
                    _(u'Actor Object'), _(u'Faction Eid'), _(u'Faction Mod'),
                    _(u'Faction Object'), _(u'Rank'))
-    _row_fmt_str = u'"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
     _grup_index = 0
     _key2_getter = itemgetter(2, 3)
 
@@ -511,12 +510,13 @@ class ActorFactions(_AParser):
         else:
             return {lfid: rank}
 
-    def _write_row(self, out, aid, stored_data, top_grup):
+    def _row_out(self, aid, stored_data, top_grup):
         """Exports faction data to specified text file."""
         factions, actorEid = stored_data
-        for faction, (rank, factionEid) in self._row_sorter(factions):
-            out.write(self._row_fmt_str % (
-                top_grup, actorEid, *aid, factionEid, *faction, rank))
+        return '\n'.join('"%s","%s","%s","0x%06X","%s","%s","0x%06X","%s"\n' % (
+            top_grup, actorEid, *aid, factionEid, *faction, rank) for
+                         faction, (rank, factionEid) in
+                         self._row_sorter(factions))
 
 #------------------------------------------------------------------------------
 class ActorLevels(_HandleAliases):
@@ -526,7 +526,6 @@ class ActorLevels(_HandleAliases):
         _(u'Actor Object'), _(u'Offset'), _(u'CalcMin'), _(u'CalcMax'),
         _(u'Old IsPCLevelOffset'), _(u'Old Offset'), _(u'Old CalcMin'),
         _(u'Old CalcMax'))
-    _row_fmt_str = u'"%s","%s","%s","0x%06X","%d","%d","%d"'
     _parser_sigs = [b'NPC_']
     _key2_getter = itemgetter(2, 3)
     _row_sorter = partial(_key_sort, keys_dex=[0], values_key='eid')
@@ -602,22 +601,23 @@ class ActorLevels(_HandleAliases):
         return ((fn_mod != (bg_mf := bush.game.master_file)) and [fn_mod,
             self.id_stored_data[bg_mf]])
 
-    def _write_row(self, out, longfid, di, fn_mod, obId_levels,
-        __getter=itemgetter('eid', 'flags.pcLevelOffset', 'level_offset',
-                            'calcMin', 'calcMax')):
+    def _row_out(self, longfid, di, fn_mod, obId_levels,
+                 __getter=itemgetter('eid', 'flags.pcLevelOffset',
+                                     'level_offset', 'calcMin', 'calcMax')):
         """Export NPC level data to specified text file."""
         eid, isOffset, offset, calcMin, calcMax = __getter(di)
         if isOffset:
-            out.write(self._row_fmt_str % (
-                fn_mod, eid, *longfid, offset, calcMin, calcMax))
+            out = '"%s","%s","%s","0x%06X","%d","%d","%d"' % (
+                fn_mod, eid, *longfid, offset, calcMin, calcMax)
             oldLevels = obId_levels.get(longfid, None)
             if oldLevels:
                 oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = \
                     __getter(oldLevels)
-                out.write(f',"{wasOffset:d}","{oldOffset:d}","{oldCalcMin:d}",'
-                          f'"{oldCalcMax:d}"\n')
+                out += (f',"{wasOffset:d}","{oldOffset:d}","{oldCalcMin:d}",'
+                        f'"{oldCalcMax:d}"\n')
             else:
-                out.write(',,,,\n')
+                out += ',,,,\n'
+            return out
 
 #------------------------------------------------------------------------------
 class EditorIds(_HandleAliases):
@@ -625,7 +625,6 @@ class EditorIds(_HandleAliases):
     from/to mod/text file: id_stored_data[top_grup_sig][longid] = eid"""
     _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
                    _(u'Editor Id'))
-    _row_fmt_str = u'"%s","%s","0x%06X","%s"\n'
     _key2_getter = itemgetter(1, 2)
     _grup_index = 0
     _attr_dex = {u'eid': 3}
@@ -719,8 +718,8 @@ class EditorIds(_HandleAliases):
             self.questionableEidsSet.add(eid)
         return eid
 
-    def _write_row(self, out, lfid, stored_data, top_grup):
-        out.write(self._row_fmt_str % (top_grup, *lfid, stored_data))
+    def _row_out(self, lfid, stored_data, top_grup):
+        return '"%s","%s","0x%06X","%s"\n' % (top_grup, *lfid, stored_data)
 
 #------------------------------------------------------------------------------
 class FactionRelations(_AParser):
@@ -781,15 +780,14 @@ class FactionRelations(_AParser):
         oid = self._coerce_fid(omod, oobj)
         self.id_stored_data[b'FACT'][mid][oid] = tuple(csv_fields[6:])
 
-    def _write_row(self, out, lfid, stored_data, top_grup):
+    def _row_out(self, lfid, stored_data, top_grup):
         """Exports faction relations to specified text file."""
         rel, main_eid = stored_data
-        for oth_fid, (relation_obj, oth_eid) in self._row_sorter(rel):
-            row_vals = '"%s","%s","0x%06X","%s","%s","0x%06X",%s\n' % (
+        return '\n'.join('"%s","%s","0x%06X","%s","%s","0x%06X",%s\n' % (
                 main_eid, *lfid, oth_eid, *oth_fid, ','.join(
                     attr_csv_struct[a][2](x) for a, x in
                     zip(self.__class__.cls_rel_attrs[1:], relation_obj)))
-            out.write(row_vals)
+        for oth_fid, (relation_obj, oth_eid) in self._row_sorter(rel))
 
 #------------------------------------------------------------------------------
 class FidReplacer(_HandleAliases):
@@ -859,7 +857,6 @@ class FullNames(_HandleAliases):
     mod/text file: id_stored_data[top_grup_sig][longid] = (eid, name)"""
     _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
                    _(u'Editor Id'), _(u'Name'))
-    _row_fmt_str = u'"%s","%s","0x%06X","%s","%s"\n'
     _key2_getter = itemgetter(1, 2)
     _grup_index = 0
     _row_sorter = partial(_key_sort, keys_dex=[0], values_key='eid')
@@ -883,15 +880,15 @@ class FullNames(_HandleAliases):
             record.setChanged()
             changed[di[u'eid']] = (full, newFull)
 
-    def _write_row(self, out, lfid, stored_data, top_grup):
-        out.write(self._row_fmt_str % (top_grup, *lfid, stored_data['eid'],
+    def _row_out(self, lfid, stored_data, top_grup):
+        return ('"%s","%s","0x%06X","%s","%s"\n' % (
+            top_grup, *lfid, stored_data['eid'],
             stored_data['full'].replace('"', '""')))
 
 #------------------------------------------------------------------------------
 class ItemStats(_HandleAliases):
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
-    _row_fmt_str = u'"%s","%s","0x%06X",%s\n'
     _nested_type = lambda: defaultdict(dict)
     _row_sorter = partial(_key_sort, keys_dex=(0, 1), values_key='eid')
 
@@ -950,11 +947,10 @@ class ItemStats(_HandleAliases):
         out.write(f'"{section_head}"\n')
         return [*sup, [*zip(atts, sers)]]
 
-    def _write_row(self, out, longid, attr_value, top_grup, attrs_sers):
+    def _row_out(self, longid, attr_value, top_grup, attrs_sers):
         """Writes stats to specified text file."""
-        output = self._row_fmt_str % (top_grup, *longid, ','.join(
+        return '"%s","%s","0x%06X",%s\n' % (top_grup, *longid, ','.join(
             ser(attr_value[x]) for x, ser in attrs_sers))
-        out.write(output)
 
 #------------------------------------------------------------------------------
 class ScriptText(_TextParser):
@@ -1121,7 +1117,6 @@ class _UsesEffectsMixin(_HandleAliases):
     schoolTypeName_Number = {y.lower(): x for x, y
                              in schoolTypeNumber_Name.items()
                              if x is not None}
-    _row_fmt_str = u'"%s","0x%06X",%s\n'
     _key2_getter = itemgetter(0, 1)
     _row_sorter = partial(_key_sort, values_key='eid')
 
@@ -1268,10 +1263,9 @@ class _UsesEffectsMixin(_HandleAliases):
             changed.append(old_eid)
             record.setChanged()
 
-    def _write_row(self, out, lfid, stored_data, top_grup):
-        output = self._row_fmt_str % (*lfid, u','.join(
+    def _row_out(self, lfid, stored_data, top_grup):
+        return '"%s","0x%06X",%s\n' % (*lfid, u','.join(
             ser(stored_data[k]) for k, ser in self._attr_serializer.items()))
-        out.write(output)
 
 #------------------------------------------------------------------------------
 class SigilStoneDetails(_UsesEffectsMixin):
@@ -1299,7 +1293,6 @@ class ItemPrices(_HandleAliases):
     value, name and eid of records."""
     _csv_header = (_(u'Mod Name'), _(u'ObjectIndex'), _(u'Value'),
                    _(u'Editor Id'), _(u'Name'), _(u'Type'))
-    _row_fmt_str = u'"%s","0x%06X","%d","%s","%s",%s\n'
     _key2_getter = itemgetter(0, 1)
     _grup_index = 5
     _attr_dex = {u'value': 2, u'eid': 3, u'full': 4}
@@ -1322,10 +1315,9 @@ class ItemPrices(_HandleAliases):
             changed[record.fid[0]] += 1
             record.setChanged()
 
-    def _write_row(self, out, lfid, stored_data, top_grup,
-                   __getter=itemgetter(*_attr_dex)):
-        out.write(
-            self._row_fmt_str % (*lfid, *__getter(stored_data), top_grup))
+    def _row_out(self, lfid, stored_data, top_grup,
+                 __getter=itemgetter(*_attr_dex)):
+        return '"%s","0x%06X","%d","%s","%s",%s\n' % (*lfid, *__getter(stored_data), top_grup)
 
 #------------------------------------------------------------------------------
 class SpellRecords(_UsesEffectsMixin):
@@ -1339,7 +1331,6 @@ class SpellRecords(_UsesEffectsMixin):
     _csv_header = (_(u'Type'), _(u'Mod Name'), _(u'ObjectIndex'),
                   _(u'Editor Id'), _(u'Cost'), _(u'Level Type'),
                   _(u'Spell Type'), _(u'Spell Flags'))
-    _row_fmt_str = u'"SPEL","%s","0x%06X",%s\n'
     _parser_sigs = [b'SPEL']
     _attr_dex = None
 
@@ -1373,6 +1364,9 @@ class SpellRecords(_UsesEffectsMixin):
                                                                        fields)
             attr_val[u'effects'] = self.readEffects(fields[15:])
             self.fid_stats[mid].update(attr_val)
+
+    def _row_out(self, lfid, stored_data, top_grup):
+        return f'"SPEL",{super()._row_out(lfid, stored_data, top_grup)}'
 
 #------------------------------------------------------------------------------
 class IngredientDetails(_UsesEffectsMixin):
