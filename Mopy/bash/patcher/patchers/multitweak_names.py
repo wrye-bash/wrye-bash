@@ -639,12 +639,14 @@ class NamesTweak_Spells(_ANamesTweak_Spells, _AEffectsTweak_Tes4):
     def init_tweak_config(self, configs):
         if self.tweak_key in configs:
             is_enabled, tweak_value = configs[self.tweak_key]
-            if tweak_value == u'NOTAGS':
+            if tweak_value in ('NOTAGS', ('NOTAGS',)):
                 # NOTAGS was replaced by an empty string
-                tweak_value = u''
-            elif u'%d' in tweak_value:
+                tweak_value = ('',)
+            cleaned_tv = []
+            for t_v in tweak_value:
                 # %d was replaced by %02d
-                tweak_value = tweak_value.replace(u'%d', u'%02d')
+                cleaned_tv.append(t_v.replace('%d', '%02d'))
+            tweak_value = tuple(cleaned_tv)
             configs[self.tweak_key] = (is_enabled, tweak_value)
         super(NamesTweak_Spells, self).init_tweak_config(configs)
 
