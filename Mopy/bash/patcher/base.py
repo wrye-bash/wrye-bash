@@ -29,9 +29,11 @@ from this module outside of the patcher package."""
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
+from __future__ import annotations
+
 from .. import load_order
 from ..bolt import dict_sort, sig_to_str
-from ..exception import AbstractError
+from ..exception import AbstractError, BPConfigError
 from ..mod_files import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
@@ -123,8 +125,19 @@ class AMultiTweaker(Abstract_Patcher):
     patcher_order = 30
     _tweak_classes = set() # override in implementations
 
-    def __init__(self, p_name, p_file, enabled_tweaks):
+    def __init__(self, p_name, p_file, enabled_tweaks: list[AMultiTweakItem]):
         super(AMultiTweaker, self).__init__(p_name, p_file)
+        for e_tweak in enabled_tweaks:
+            if e_tweak.custom_choice:
+                e_values = tuple(e_tweak.choiceValues[e_tweak.chosen])
+                validation_err = e_tweak.validate_values(e_values)
+                # We've somehow ended up with a custom value that is not
+                # accepted by the tweak itself, this will almost certainly fail
+                # at runtime so abort the BP process now with a more
+                # informative error message
+                if validation_err is not None:
+                    err_header = e_tweak.validation_error_header(e_values)
+                    raise BPConfigError(err_header + '\n\n' + validation_err)
         self.enabled_tweaks = enabled_tweaks
         self.isActive = bool(enabled_tweaks)
 
@@ -301,7 +314,7 @@ class AMultiTweakItem(object):
             tweakname += u' [' + self.choiceLabels[self.chosen] + u']'
         return tweakname
 
-    def validate_values(self, chosen_values):
+    def validate_values(self, chosen_values: tuple) -> str | None:
         """Gives this tweak a chance to check if the specified values (given
         as a tuple, as if they were retrieved via
         self.choiceValues[self.chosen][0]) are valid for this tweak. Return a
@@ -309,6 +322,19 @@ class AMultiTweakItem(object):
         message to the user. Return None if the values are valid, the values
         will then be accepted and the tweak will be activated."""
         return None
+
+    def validation_error_header(self, error_values: tuple) -> str:
+        """Gives this tweak a chacne to customize the error header that will be
+        shown to the user if validate_values returns a non-None result."""
+        t_val = (', '.join(map(str, error_values)) if len(error_values) > 1
+                 else error_values[0])
+        return (_("The values you entered (%(t_val)s) are not valid for the "
+                  "'%(t_name)s' tweak.") % {'t_val': t_val,
+                                            't_name': self.tweak_name}
+                 if len(error_values) > 1 else
+                _("The value you entered (%(t_val)s) is not valid for the "
+                  "'%(t_name)s' tweak.") % {'t_val': t_val,
+                                            't_name': self.tweak_name})
 
     def wants_record(self, record):
         """Return a truthy value if you want to get a chance to change the

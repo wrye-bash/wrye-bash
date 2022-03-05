@@ -23,6 +23,8 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Names Multitweaker - as well as the tweaker itself."""
 
+from __future__ import annotations
+
 import re
 from collections import defaultdict
 
@@ -76,63 +78,62 @@ class _ANamesTweak(CustomChoiceTweak):
     @property
     def chosen_format(self): return self.choiceValues[self.chosen][0]
 
-    def validate_values(self, chosen_values):
+    def validate_values(self, chosen_values: tuple) -> str | None:
         wanted_fmt = chosen_values[0]
         if self._may_lack_specifiers:
             if self._may_have_stats:
                 # May contain any combination of a single %s and a single %02d,
                 # but no other specifiers
                 fmt_params = ()
-                if u'%s' in wanted_fmt:
-                    fmt_params = (u'A', 1) if u'%02d' in wanted_fmt else u'A'
-                elif u'%02d' in wanted_fmt:
+                if '%s' in wanted_fmt:
+                    fmt_params = ('A', 1) if '%02d' in wanted_fmt else 'A'
+                elif '%02d' in wanted_fmt:
                     fmt_params = 1
                 if fmt_params:
                     try:
                         wanted_fmt % fmt_params
                     except TypeError:
-                        return _(u'The format you entered is not valid for '
-                                 u'this tweak. It may contain exactly one '
-                                 u"'%s' and one '%02d' as well as any regular "
-                                 u'characters, but no other format '
-                                 u"specifiers. See the 'Tweak Names' section "
-                                 u'of the Advanced Readme for more '
-                                 u'information.')
+                        return _("The format you entered is not valid for "
+                                 "this tweak. It may contain exactly one '%s' "
+                                 "and one '%02d' as well as any regular "
+                                 "characters, but no other format specifiers. "
+                                 "See the 'Tweak Names' section of the "
+                                 "Advanced Readme for more information.")
             else:
                 # May contain a single %s, but no other specifiers
-                if u'%s' in wanted_fmt:
+                if '%s' in wanted_fmt:
                     try:
-                        wanted_fmt % u'A'
+                        wanted_fmt % 'A'
                     except TypeError:
-                        return _(u'The format you entered is not valid for '
-                                 u'this tweak. It may contain exactly one '
-                                 u"'%s' and any regular characters, but no "
-                                 u"other format specifiers. See the 'Tweak "
-                                 u"Names' section of the Advanced Readme for "
-                                 u'more information.')
+                        return _("The format you entered is not valid for "
+                                 "this tweak. It may contain exactly one '%s' "
+                                 "and any regular characters, but no other "
+                                 "format specifiers. See the 'Tweak Names' "
+                                 "section of the Advanced Readme for more "
+                                 "information.")
         elif self._may_have_stats:
             # Must contain a single %s and may contain a %02d
-            fmt_params = (u'A', 1) if u'%02d' in wanted_fmt else u'A'
+            fmt_params = ('A', 1) if '%02d' in wanted_fmt else 'A'
             try:
                 wanted_fmt % fmt_params
             except TypeError:
-                return _(u'The format you entered is not valid for this '
-                         u"tweak. It must contain exactly one '%s' and may "
-                         u"contain one '%02d' as well as any regular "
-                         u'characters, but no other format specifiers. See '
-                         u"the 'Tweak Names' section of the Advanced Readme "
-                         u'for more information.')
+                return _("The format you entered is not valid for this tweak. "
+                         "It must contain exactly one '%s' and may contain "
+                         "one '%02d' as well as any regular characters, but "
+                         "no other format specifiers. See the 'Tweak Names' "
+                         "section of the Advanced Readme for more "
+                         "information.")
         else:
             # Must contain a single %s and no other specifiers
             try:
-                wanted_fmt % u'A'
+                wanted_fmt % 'A'
             except TypeError:
-                return _(u'The format you entered is not valid for this '
-                         u"tweak. It must contain exactly one '%s' and may "
-                         u'contain any regular characters, but no other '
-                         u"format specifiers. See the 'Tweak Names' section "
-                         u'of the Advanced Readme for more information.')
-        return super(_ANamesTweak, self).validate_values(chosen_values)
+                return _("The format you entered is not valid for this tweak. "
+                         "It must contain exactly one '%s' and may contain "
+                         "any regular characters, but no other format "
+                         "specifiers. See the 'Tweak Names' section of the "
+                         "Advanced Readme for more information.")
+        return super().validate_values(chosen_values)
 
     def wants_record(self, record):
         old_full = record.full
@@ -293,16 +294,15 @@ class NamesTweak_BodyPartCodes(CustomChoiceTweak): # loads no records
 
     def tweak_log(self, log, count): pass # 'internal' tweak, log nothing
 
-    def validate_values(self, chosen_values):
+    def validate_values(self, chosen_values: tuple) -> str | None:
         cho_len = len(chosen_values[0])
         req_len = len(self.tweak_choices[0][0])
         if cho_len != req_len:
-            return _(u'The value has length %d, but must have length %d to '
-                     u'match the number of body part types for this game. See '
-                     u"the 'Tweak Names' section of the Advanced Readme for "
-                     u'more information.') % (cho_len, req_len)
-        return super(NamesTweak_BodyPartCodes, self).validate_values(
-            chosen_values)
+            return _("The value has length %d, but must have length %d to "
+                     "match the number of body part types for this game. See "
+                     "the 'Tweak Names' section of the Advanced Readme for "
+                     "more information.") % (cho_len, req_len)
+        return super().validate_values(chosen_values)
 
 #------------------------------------------------------------------------------
 class _ANamesTweak_Body(_ANamesTweak):
@@ -564,12 +564,12 @@ class NamesTweak_NotesScrolls(_ANamesTweak_Scrolls, _AMgefNamesTweak):
         # Order by whether or not the scroll is enchanted
         return order_format[is_enchanted] + wip_name
 
-    def validate_values(self, chosen_values):
+    def validate_values(self, chosen_values: tuple) -> str | None:
         wanted_fmt = chosen_values[0]
-        if not wanted_fmt or wanted_fmt[0] not in (u'~', u'.'):
-            return _(u"The format must begin with a '~' or a '.'. See the "
-                     u"'Tweak Names' section of the Advanced Readme for more "
-                     u'information.')
+        if not wanted_fmt or wanted_fmt[0] not in ('~', '.'):
+            return _("The format must begin with a '~' or a '.'. See the "
+                     "'Tweak Names' section of the Advanced Readme for more "
+                     "information.")
         return super().validate_values(chosen_values)
 
     def wants_record(self, record):
@@ -979,9 +979,9 @@ class TweakNamesPatcher(MultiTweaker):
     """Tweaks record full names in various ways."""
     _tweak_classes = {globals()[t] for t in bush.game.names_tweaks}
 
-    def __init__(self, p_name, p_file, enabled_tweaks):
-        super(TweakNamesPatcher, self).__init__(p_name, p_file, enabled_tweaks)
-        body_part_tags = u''
+    def __init__(self, p_name, p_file, enabled_tweaks: list[MultiTweakItem]):
+        super().__init__(p_name, p_file, enabled_tweaks)
+        body_part_tags = ''
         for names_tweak in enabled_tweaks:
             # Always the first one if it's enabled, so this is safe
             if isinstance(names_tweak, NamesTweak_BodyPartCodes):
@@ -989,7 +989,7 @@ class TweakNamesPatcher(MultiTweaker):
                     names_tweak.chosen][0]
             elif isinstance(names_tweak, _ANamesTweak_Body):
                 if not body_part_tags:
-                    raise BPConfigError(_(u"'Body Part Codes' must be enabled "
-                                          u"when using the '%s' tweak.")
+                    raise BPConfigError(_("'Body Part Codes' must be enabled "
+                                          "when using the '%s' tweak.")
                                         % names_tweak.tweak_name)
                 names_tweak._tweak_body_tags = body_part_tags

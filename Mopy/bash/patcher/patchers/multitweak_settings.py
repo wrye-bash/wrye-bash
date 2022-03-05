@@ -22,6 +22,7 @@
 # =============================================================================
 """This module contains oblivion multitweak item patcher classes that belong
 to the Settings Multitweaker - as well as the tweaker itself."""
+from __future__ import annotations
 
 from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak
 from ... import bush  # for game
@@ -159,18 +160,18 @@ class _AGmstTweak(_ASettingsTweak):
                 return orig_eid
         return lower_eid # fallback, should never happen
 
-    def validate_values(self, chosen_values):
-        if bush.game.fsName == u'Oblivion': ##: add a comment why TES4 only!
+    def validate_values(self, chosen_values: tuple) -> str | None:
+        if bush.game.fsName == 'Oblivion': ##: add a comment why TES4 only!
             for target_value in chosen_values:
-                if target_value < 0:
-                    return _(u"Oblivion GMST values can't be negative")
+                if not isinstance(target_value, str) and target_value < 0:
+                    return _("Oblivion GMST values can't be negative")
         for target_eid, target_value in zip(self.chosen_eids, chosen_values):
             if target_eid.startswith(u'f') and not isinstance(
                     target_value, float):
-                    return _(u"The value chosen for GMST '%s' must be a "
-                             u'float, but is currently of type %s (%s).') % (
+                    return _("The value chosen for GMST '%s' must be a float, "
+                             "but is currently of type %s (%s).") % (
                         target_eid, type(target_value).__name__, target_value)
-        return super(_AGmstTweak, self).validate_values(chosen_values)
+        return super().validate_values(chosen_values)
 
     def wants_record(self, record):
         if record.fid[0] not in bush.game.bethDataFiles:

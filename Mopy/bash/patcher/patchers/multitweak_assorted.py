@@ -24,6 +24,8 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Assorted Multitweaker - as well as the tweaker itself."""
 
+from __future__ import annotations
+
 import random
 import re
 # Internal
@@ -382,13 +384,12 @@ class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
     tweak_log_msg = _(u'Potions Reweighed: %(total_changed)d')
     _log_weight_value = _(u'Potions set to maximum weight of %f.')
 
-    def validate_values(self, chosen_values):
+    def validate_values(self, chosen_values: tuple) -> str | None:
         if chosen_values[0] >= 1.0:
-            return _(u'Maximum potion weight cannot exceed 1.0. Potions with '
-                     u'higher weight are ignored by this tweak (since they '
-                     u"are usually special 'potion in name only' items).")
-        return super(AssortedTweak_PotionWeight, self).validate_values(
-            chosen_values)
+            return _("Maximum potion weight cannot exceed 1.0. Potions with "
+                     "higher weight are ignored by this tweak (since they "
+                     "are usually special 'potion in name only' items).")
+        return super().validate_values(chosen_values)
 
     def wants_record(self, record):
         return record.weight < 1.0 and super(

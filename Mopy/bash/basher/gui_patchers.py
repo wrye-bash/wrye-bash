@@ -701,7 +701,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             values = tweak.choiceValues[index]
         values = tuple(values)
         validation_error = tweak.validate_values(values)
-        if not validation_error: # no error, we're good to go
+        if validation_error is None: # no error, we're good to go
             tweak.choiceValues[index] = values
             tweak.chosen = index
             label = _custom_label(tweak.getListLabel(), values[0])
@@ -710,14 +710,10 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             self.TweakOnListCheck() # fired so this line is needed (?)
         else:
             # The tweak doesn't like the values the user chose, let them know
-            error_header = (_(u'The value you entered (%s) is not valid '
-                              u'for this tweak.') % values[0]
-                            if len(values) == 1 else
-                            _(u'The values you entered (%s) are not valid '
-                              u'for this tweak.') % ', '.join(map(str, values)))
+            error_header = tweak.validation_error_header(values)
             balt.showError(self.gConfigPanel,
-                           error_header + u'\n\n' + validation_error,
-                           title=_(u'%s - Error') % tweak.tweak_name)
+                           error_header + '\n\n' + validation_error,
+                           title=_('%s - Error') % tweak.tweak_name)
 
     def mass_select(self, select=True):
         """'Select All' or 'Deselect All' button was pressed, update all
