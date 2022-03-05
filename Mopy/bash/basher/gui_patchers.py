@@ -52,8 +52,8 @@ class _PatcherPanel(object):
 
     def __init__(self): # WIP- investigate why we instantiate gui patchers once
         if not self.__class__._config_key:
-            raise SyntaxError(u'No _config_key set for patcher panel class '
-                              u'%s' % self.__class__.__name__)
+            raise SyntaxError(f'No _config_key set for patcher panel class '
+                              f'{self.__class__.__name__}')
         self.gConfigPanel = None
         # Used to keep track of the state of the patcher label
         self._is_bolded = False
@@ -63,8 +63,7 @@ class _PatcherPanel(object):
     def patcher_tip(self):
         # Remove everything but the first sentence from the first line of the
         # patcher description
-        return re.sub(r'\..*', u'.', self.patcher_desc.split(u'\n')[0],
-                      flags=re.U)
+        return re.sub(r'\..*', '.', self.patcher_desc.split('\n')[0])
 
     def _enable_self(self, self_enabled=True):
         """Enables or disables this patcher and notifies the patcher dialog."""
@@ -138,13 +137,10 @@ class _PatcherPanel(object):
 
     def log_config(self, config, clip, log):
         ckey = self.__class__._config_key
+        # Check if the patcher is in the config and was enabled
+        if ckey not in config or not (conf := config[ckey]).get('isEnabled'):
+            return
         humanName = self.__class__.patcher_name
-        # Patcher in the config?
-        if ckey not in config: return
-        # Patcher active?
-        conf = config[ckey]
-        if not conf.get(u'isEnabled', False): return
-        # Active
         log.setHeader(u'== ' + humanName)
         clip.write(u'\n')
         clip.write(u'== ' + humanName + u'\n')
@@ -257,7 +253,6 @@ class _ListPatcherPanel(_PatcherPanel):
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     show_empty_sublist_checkbox = False
     # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
-    default_autoIsChecked = True
     default_remove_empty_sublists = bush.game.displayName == u'Oblivion'
 
     def GetConfigPanel(self, parent, config_layout, gTipText):
@@ -409,8 +404,7 @@ class _ListPatcherPanel(_PatcherPanel):
     def _getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
         config = super()._getConfig(configs)
-        self.autoIsChecked = self.forceAuto or config.get(
-            u'autoIsChecked', self.__class__.default_autoIsChecked)
+        self.autoIsChecked = self.forceAuto or config.get('autoIsChecked',True)
         self.remove_empty_sublists = config.get(
             u'remove_empty_sublists',
             self.__class__.default_remove_empty_sublists)
@@ -915,10 +909,10 @@ class _AListPanelCsv(_ListPatcherPanel):
 
     def getAutoItems(self):
         if not self._csv_key:
-            raise SyntaxError(u'_csv_key not specified for CSV-supporting '
-                              u'patcher panel (%s)' % self.__class__.__name__)
+            raise SyntaxError(f'_csv_key not specified for CSV-supporting '
+                              f'patcher panel ({self.__class__.__name__})')
         auto_items = super(_AListPanelCsv, self).getAutoItems()
-        csv_ending = u'_%s.csv' % self._csv_key
+        csv_ending = f'_{self._csv_key}.csv'
         for fileName in sorted(patches_set()):
             if fileName.s.endswith(csv_ending):
                 auto_items.append(fileName)
@@ -1024,7 +1018,8 @@ class ImportActorsFactions(_ImporterPatcherPanel, _AListPanelCsv):
     patcher_type = preservers.ImportActorsFactionsPatcher
 
 # -----------------------------------------------------------------------------
-class ImportRelations(_ImporterPatcherPanel, _AListPanelCsv):
+class ImportRelations(_ImporterPatcherPanel #:, _AListPanelCsv
+                      ):# TODO restore csv support - see comments in patcher.patchers.mergers._AMerger
     """Import faction relations to factions."""
     patcher_name = _(u'Import Relations')
     patcher_desc = _(u'Import relations from source mods/files.')

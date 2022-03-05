@@ -111,10 +111,10 @@ class ListPatcher(Patcher):
         """Logs the Source mods for this patcher."""
         log(self.__class__.srcsHeader)
         if not self.srcs:
-            log(u'. ~~%s~~' % _(u'None'))
+            log(f'. ~~{_("None")}~~')
         else:
             for srcFile in self.srcs:
-                log(u'* %s' % srcFile)
+                log(f'* {srcFile}')
 
 class AMultiTweaker(Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and

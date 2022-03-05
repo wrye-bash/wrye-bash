@@ -39,7 +39,8 @@ from ...exception import AbstractError, BoltError, ModSigMismatchError
 ##: add ForceAdd support
 ##: once the two tasks above are done, absorb all other mergers
 ##: a lot of code still shared with _APreserver - move to ImportPatcher
-##: add CSV support - we broke Import Relations when we made it an _AMerger
+##: add CSV support - we broke Import Relations when we made it an _AMerger -
+##: see gui_patchers.ImportRelations
 # instance (the GUI will still list them too)
 class _AMerger(ImportPatcher):
     """Still very WIP base class for mergers."""
@@ -326,7 +327,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
             srcFile = self._mod_file_read(srcInfo)
-            bashTags = srcInfo.getBashTags()
+            force_add = 'Actors.AIPackagesForceAdd' in srcInfo.getBashTags()
             for rsig in read_sigs:
                 if rsig not in srcFile.tops: continue
                 for record in srcFile.tops[rsig].getActiveRecords():
@@ -345,8 +346,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                     for record in masterFile.tops[rsig].getActiveRecords():
                         fi = record.fid
                         if fi not in tempData: continue
-                        if record.aiPackages == tempData[fi] and not \
-                            u'Actors.AIPackagesForceAdd' in bashTags:
+                        if record.aiPackages == tempData[fi] and not force_add:
                             # if subrecord is identical to the last master
                             # then we don't care about older masters.
                             del tempData[fi]
@@ -354,7 +354,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                         if fi in mer_del:
                             if tempData[fi] == mer_del[fi][u'merged']:
                                 continue
-                        recordData = {u'deleted':[],u'merged':tempData[fi]}
+                        recordData = {'deleted': [], 'merged': tempData[fi]}
                         for pkg in record.aiPackages:
                             if pkg not in tempData[fi]:
                                 recordData[u'deleted'].append(pkg)
@@ -367,32 +367,29 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                                 mer_del[fi][u'deleted'].append(pkg)
                             if mer_del[fi][u'merged'] == []:
                                 for pkg in recordData[u'merged']:
-                                    if pkg in mer_del[fi][u'deleted'] and not \
-                                      u'Actors.AIPackagesForceAdd' in bashTags:
+                                    if pkg in mer_del[fi][u'deleted'] and not force_add:
                                         continue
                                     mer_del[fi][u'merged'].append(pkg)
                                 continue
                             for index, pkg in enumerate(recordData[u'merged']):
-                                if pkg not in mer_del[fi][u'merged']:# so needs
-                                    #  to be added... (unless deleted that is)
+                                fi_merged = mer_del[fi]['merged']
+                                if pkg not in fi_merged: # so needs to be
+                                    # added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if pkg in mer_del[fi][u'deleted'] and not \
-                                      u'Actors.AIPackagesForceAdd' in bashTags:
-                                        continue  # previously deleted
-                                    self._insertPackage(mer_del, fi, index,
-                                                        pkg, recordData)
+                                    if force_add or pkg not in mer_del[fi][
+                                            'deleted']:
+                                        self._insertPackage(mer_del, fi, index,
+                                                            pkg, recordData)
                                     continue # Done with this package
-                                elif index == mer_del[fi][u'merged'].index(
-                                        pkg) or (
-                                    len(recordData[u'merged']) - index) == (
-                                    len(mer_del[fi][u'merged']) - mer_del[fi][
-                                    u'merged'].index(pkg)):
+                                if index == (dex := fi_merged.index(pkg)) or (
+                                        len(recordData['merged']) - index) == (
+                                        len(fi_merged) - dex):
                                     continue  # pkg same in both lists.
-                                else:  # this import is later loading so we'll
-                                    #  assume it is better order
-                                    mer_del[fi][u'merged'].remove(pkg)
-                                    self._insertPackage(mer_del, fi, index,
-                                                        pkg, recordData)
+                                # this import is later loading so we'll assume
+                                # it is better order
+                                fi_merged.remove(pkg)
+                                self._insertPackage(mer_del, fi, index,
+                                                    pkg, recordData)
             progress.plus()
 
     def scanModFile(self, modFile, progress): # scanModFile2: loop, LongTypes..
