@@ -476,8 +476,8 @@ statsTypes = {
     b'MISC': ('eid', 'weight', 'value'),
     b'SLGM': ('eid', 'weight', 'value'),
     b'WEAP': ('eid', 'weight', 'value', 'damage', 'speed', 'reach',
-              'enchantPoints', 'stagger', 'critDamage', 'criticalMultiplier',
-              'criticalEffect'),
+              'enchantPoints', 'stagger', 'criticalDamage',
+              'criticalMultiplier', 'criticalEffect'),
 }
 
 #------------------------------------------------------------------------------

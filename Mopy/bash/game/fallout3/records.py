@@ -3286,9 +3286,10 @@ class MreWeap(MelRecord):
                     'I2f4B5fI4B2f2I11fiI2fi', 'I2f4B5fI4B2f2I11fiI2f',
                 }),
         ),
-        MelOptStruct(b'CRDT', [u'H', u'2s', u'f', u'B', u'3s', u'I'],'criticalDamage','weapCrdt1',
-                     'criticalMultiplier',(_cflags, u'criticalFlags'),
-                     'weapCrdt2',(FID, u'criticalEffect')),
+        MelOptStruct(b'CRDT', ['H', '2s', 'f', 'B', '3s', 'I'],
+                     'criticalDamage', 'weapCrdt1', 'criticalMultiplier',
+                     (_cflags, 'criticalFlags'), 'weapCrdt2',
+                     (FID, 'criticalEffect')),
         fnv_only(MelTruncatedStruct(
             b'VATS', ['I', '3f', '2B', '2s'], (FID, 'vatsEffect'),
             'vatsSkill', 'vatsDamMult', 'vatsAp', 'vatsSilent',

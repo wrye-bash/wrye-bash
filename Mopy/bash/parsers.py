@@ -256,8 +256,9 @@ class _HandleAliases(CsvParser):
             for rfid, record in typeBlock.iter_present_records():
                 self._read_record(record, id_data)
 
-    def _read_record(self, record, id_data):
-        raise AbstractError
+    def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
+        id_data[record.fid] = {att: __attrgetters[att](record) for att in
+                               self._attr_dex}
 
 # TODO(inf) Once refactoring is done, we could easily take in Progress objects
 #  for more accurate progress bars when importing/exporting
@@ -745,13 +746,13 @@ class FactionRelations(_AParser):
         # may have still deleted original relations.
         return True
 
-    def _read_record_sp(self, record):
+    def _read_record_sp(self, record, __attrgetters=attrgetter_cache):
         # Look if we already have relations and base ourselves on those,
         # otherwise make a new list
         relations = self.id_stored_data[b'FACT'][record.fid]
         # Merge added relations, preserve changed relations
         for relation in record.relations:
-            rel_attrs = tuple(getattr(relation, a) for a
+            rel_attrs = tuple(__attrgetters[a](relation) for a
                               in self.cls_rel_attrs)
             other_fac = rel_attrs[0]
             relations[other_fac] = rel_attrs[1:]
@@ -867,10 +868,13 @@ class FullNames(_HandleAliases):
         self._attr_dex = {u'full': 4} if self._called_from_patcher else {
             u'eid': 3, u'full': 4}
 
-    def _read_record(self, record, id_data):
-        full = record.full or (record.rec_sig == b'LIGH' and u'NO NAME')
-        if record.eid and full: # never used from patcher
-            id_data[record.fid] = {u'eid': record.eid, u'full': full}
+    def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
+        super()._read_record(record, id_data)
+        rec_data = id_data[record.fid]
+        if not (full := rec_data['full']):
+            full = rec_data['full'] = record.rec_sig == b'LIGH' and 'NO NAME'
+        if not rec_data['eid'] or full: # never used from patcher
+            del id_data[record.fid]
 
     def _write_record(self, record, di, changed):
         full = record.full
@@ -901,21 +905,20 @@ class ItemStats(_HandleAliases):
             self.sig_stats_attrs = bush.game.statsTypes
         self._parser_sigs = set(self.sig_stats_attrs)
 
-    def _read_record(self, record, id_data):
+    def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
         atts = self.sig_stats_attrs[record.rec_sig]
-        id_data[record.fid].update(
-            zip(atts, (getattr(record, a) for a in atts)))
+        id_data[record.fid].update((a, __attrgetters[a](record)) for a in atts)
 
     _changed_type = Counter #--changed[modName] = numChanged
-    def _write_record(self, record, itemStats, changed):
+    def _write_record(self, record, itemStats, changed,
+                      __attrgetters=attrgetter_cache):
         """Writes stats to specified mod."""
         change = False
         for stat_key, n_stat in itemStats.items():
             if change:
                 setattr(record, stat_key, n_stat)
                 continue
-            o_stat = getattr(record, stat_key)
-            change = o_stat != n_stat
+            change = __attrgetters[stat_key](record) != n_stat
             if change:
                 setattr(record, stat_key, n_stat)
         if change:
@@ -1108,10 +1111,6 @@ class ItemPrices(_HandleAliases):
     def __init__(self, aliases_=None):
         super(ItemPrices, self).__init__(aliases_)
         self._parser_sigs = set(bush.game.pricesTypes)
-
-    def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
-        id_data[record.fid] = {att: __attrgetters[att](record) for att in
-                               self._attr_dex}
 
     _changed_type = Counter
     def _write_record(self, record, stats, changed):
