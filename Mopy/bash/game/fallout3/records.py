@@ -44,7 +44,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
-    MelReflectedRefractedBy, MelValueWeight
+    MelReflectedRefractedBy, MelValueWeight, SpellFlags
 from ...exception import ModSizeError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -2931,24 +2931,11 @@ class MreSpel(MelRecord):
     """Actor Effect"""
     rec_sig = b'SPEL'
 
-    class SpellFlags(Flags):
-        """For SpellFlags, immuneToSilence activates bits 1 AND 3."""
-        __slots__ = []
-        def __setitem__(self,index,value):
-            setter = Flags.__setitem__
-            setter(self,index,value)
-            if index == 1:
-                setter(self,3,value)
-
-    _SpellFlags = SpellFlags.from_names('noAutoCalc','immuneToSilence',
-        'startSpell', None, 'ignoreLOS', 'scriptEffectAlwaysApplies',
-        'disallowAbsorbReflect', 'touchExplodesWOTarget')
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelStruct(b'SPIT', [u'3I', u'B', u'3s'], 'spellType', 'cost', 'level',
-                  (_SpellFlags, u'flags'), 'unused1'),
+                  (SpellFlags, 'spell_flags'), 'unused1'),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()

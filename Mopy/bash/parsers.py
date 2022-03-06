@@ -1194,11 +1194,11 @@ class SigilStoneDetails(_UsesEffectsMixin):
 class SpellRecords(_UsesEffectsMixin):
     """Statistics for spells, with functions for importing/exporting from/to
     mod/text file."""
-    _extra_attrs = (u'flags.noAutoCalc', u'flags.startSpell',
-        u'flags.immuneToSilence', u'flags.ignoreLOS',
-        u'flags.scriptEffectAlwaysApplies', u'flags.disallowAbsorbReflect',
-        u'flags.touchExplodesWOTarget')
-    _csv_attrs = (u'eid', u'cost', u'level', u'spellType', u'flags')
+    _extra_attrs = tuple(f'spell_flags.{x}' for x in
+                         ['noAutoCalc', 'startSpell', 'immuneToSilence',
+                          'ignoreLOS', 'scriptEffectAlwaysApplies',
+                          'disallowAbsorbReflect', 'touchExplodesWOTarget'])
+    _csv_attrs = ('eid', 'cost', 'level', 'spellType', 'spell_flags')
     _parser_sigs = [b'SPEL']
     _attr_dex = None
 
@@ -1222,7 +1222,7 @@ class SpellRecords(_UsesEffectsMixin):
             attr_dex = {u'eid': 3, u'cost': 5, u'level': 6, u'spellType': 7}
         else: # FULL was dropped and flags added
             attr_dex = {u'eid': 3, u'cost': 4, u'level': 5, u'spellType': 6,
-                        u'flags': 7}
+                        u'spell_flags': 7}
         self.fid_stats[mid] = super(_UsesEffectsMixin, self)._update_from_csv(
             b'SPEL', fields, index_dict=attr_dex)
         if self._attr_dex:  # and not len(fields) < 7: IndexError

@@ -29,9 +29,9 @@ from itertools import chain
 from ... import brec
 from ...bolt import Flags, int_or_zero, structs_cache, str_or_none, \
     int_or_none, str_to_sig, sig_to_str
-from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
-    MelString, MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, \
-    MelFids, MreHeaderBase, MelBase, MelFidList, MelBodyParts, MelAnimations, \
+from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
+    MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
+    MreHeaderBase, MelBase, MelFidList, MelBodyParts, MelAnimations, \
     MreGmstBase, MelReferences, MelRegnEntrySubrecord, MelSorted, MelRegions, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelRaceParts, MelRaceVoices, null1, null2, MelScriptVars, MelRelations, \
@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, \
     SignatureDecider, MelRaceData, MelFactions, MelActorSounds, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
-    MelEnchantment, MelValueWeight, null4
+    MelEnchantment, MelValueWeight, null4, SpellFlags
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -2068,25 +2068,12 @@ class MreSpel(MreHasEffects, MelRecord):
     attr_csv_struct[u'spellType'][2] = \
         lambda val: u'"%s"' % MreSpel.spellTypeNumber_Name.get(val, val)
 
-    class SpellFlags(Flags):
-        """For SpellFlags, immuneToSilence activates bits 1 AND 3."""
-        __slots__ = []
-        def __setitem__(self,index,value):
-            setter = Flags.__setitem__
-            setter(self,index,value)
-            if index == 1:
-                setter(self,3,value)
-
-    _SpellFlags = SpellFlags.from_names('noAutoCalc','immuneToSilence',
-        'startSpell', None, 'ignoreLOS', 'scriptEffectAlwaysApplies',
-        'disallowAbsorbReflect', 'touchExplodesWOTarget')
-
     melSet = MelSet(
         MelEdid(),
         MelObme(),
         MelFull(),
         MelStruct(b'SPIT', [u'3I', u'B', u'3s'], 'spellType', 'cost', 'level',
-                  (_SpellFlags, u'flags'), 'unused1'),
+                  (SpellFlags, 'spell_flags'), 'unused1'),
         MelEffects(),
         MelEffectsObmeFull(),
     ).with_distributor(_effects_distributor)
@@ -2103,7 +2090,8 @@ class MreSpel(MreHasEffects, MelRecord):
             stype = attr_dict[u'spellType']
             attr_dict[u'spellType'] = cls.spellTypeName_Number.get(
                 stype.lower(), int_or_zero(stype))
-            attr_dict[u'flags'] = cls._SpellFlags(attr_dict.get(u'flags', 0))
+            attr_dict['spell_flags'] = SpellFlags(
+                attr_dict.get('spell_flags', 0))
         except KeyError:
             """We are called for reading the 'detailed' attributes"""
         return attr_dict

@@ -557,7 +557,7 @@ spell_types = (b'LVSP', b'SPEL')
 #------------------------------------------------------------------------------
 # Import Spell Stats
 #------------------------------------------------------------------------------
-spell_stats_attrs = (u'eid', u'cost', u'level', u'spellType', u'flags')
+spell_stats_attrs = (u'eid', u'cost', u'level', u'spellType', u'spell_flags')
 
 #------------------------------------------------------------------------------
 # Tweak Actors
