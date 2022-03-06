@@ -156,12 +156,6 @@ class _AMgefNamesTweak(_ANamesTweak):
         self._tweak_mgef_school = patch_file.getMgefSchool()
         super(_ANamesTweak, self).prepare_for_tweaking(patch_file)
 
-    def _is_effect_hostile(self, magic_effect):
-        """Returns a truthy value if the specified MGEF is hostile."""
-        return (magic_effect.scriptEffect.flags.hostile
-                if magic_effect.scriptEffect
-                else magic_effect.effect_sig in self._tweak_mgef_hostiles)
-
     def _get_effect_school(self, magic_effect):
         """Returns the school of the specified MGEF."""
         return (magic_effect.scriptEffect.school if magic_effect.scriptEffect
@@ -201,11 +195,6 @@ class _AEffectsTweak(_ANamesTweak):
           4: Master (level 100)"""
         raise AbstractError('_get_spell_level not implemented')
 
-    def _is_harmful(self, record):
-        """Returns True if all of the effects on the specified record are
-        harmful/hostile."""
-        raise AbstractError('_has_harmful_effect not implemented')
-
 class _AEffectsTweak_Tes4(_AEffectsTweak, _AMgefNamesTweak):
     """Oblivion implementation of _AEffectsTweak's API."""
     def _get_spell_school(self, record):
@@ -215,12 +204,6 @@ class _AEffectsTweak_Tes4(_AEffectsTweak, _AMgefNamesTweak):
 
     def _get_spell_level(self, record):
         return record.level
-
-    def _is_harmful(self, record):
-        for rec_effect in record.effects:
-            if not self._is_effect_hostile(rec_effect):
-                return False
-        return True
 
 ##: These will have to be moved to game/ in the future
 # Maps actor value IDs to a tag for the school they represent
@@ -278,13 +261,6 @@ class _AEffectsTweak_Tes5(IndexingTweak, _AEffectsTweak):
         if hc_perk:
             return _perk_to_level[hc_perk[1]]
         return 0 # default to 0 (novice)
-
-    def _is_harmful(self, record):
-        for rec_effect in record.effects:
-            mgef_record = self._look_up_mgef[rec_effect.effect_formid]
-            if not mgef_record.flags.hostile:
-                return False
-        return True
 
     def wants_record(self, record):
         # If we haven't indexed MGEFs yet, we have to forward all records
@@ -525,7 +501,7 @@ class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
         if record.flags.isFood:
             return '.' + wip_name
         else:
-            poison_tag = 'X' if self._is_harmful(record) else ''
+            poison_tag = 'X' if record.is_harmful(self._tweak_mgef_hostiles) else ''
             effect_label = poison_tag + self._get_spell_school(record)
             return self.chosen_format % effect_label + wip_name
 
