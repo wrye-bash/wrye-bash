@@ -173,7 +173,7 @@ class CsvParser(_TextParser):
         id_stored_data - both id and stored_data vary in type and meaning.
 
         :param csv_fields: A line in a CSV file, already split into fields."""
-        raise AbstractError(u'%s must implement _parse_line' % type(self))
+        raise AbstractError(f'{type(self)} must implement _parse_line')
 
     def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         return MreRecord.type_class[top_grup_sig].parse_csv_line(csv_fields,

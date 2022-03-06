@@ -313,7 +313,7 @@ class PatchDialog(DialogWindow):
         if not textPath: return
         pickle_dict = bolt.PickleDict(textPath, load_pickle=True).pickled_data
         table_get = lambda x: (conf := pickle_dict.get(GPath_no_norm(x))) and (
-            conf.get('bash.patch.configs'), {})
+            conf.get('bash.patch.configs', {}))
         # try the current Bashed Patch mode.
         patchConfigs = table_get(self.__new_key % 'Python')
         if not patchConfigs: # try the non-current Bashed Patch mode

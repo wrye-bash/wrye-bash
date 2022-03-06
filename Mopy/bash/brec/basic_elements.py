@@ -25,7 +25,7 @@ higher-level building blocks can be found in common_subrecords.py."""
 from typing import BinaryIO
 
 from .utils_constants import FID, null1, _make_hashable, FixedString, \
-    _int_unpacker, get_structs
+    int_unpacker, get_structs
 from .. import bolt, exception
 from ..bolt import decoder, encode, structs_cache, struct_calcsize, Rounder
 
@@ -98,7 +98,7 @@ class Subrecord(object):
         outWrite(binary_data)
 
 def unpackSubHeader(ins, rsig=b'----', *,
-                    __unpacker=_int_unpacker, __sr=Subrecord):
+                    __unpacker=int_unpacker, __sr=Subrecord):
     """Unpack a subrecord header. Optionally checks for match with expected
     type and size."""
     mel_sig, mel_size = ins.unpack(__sr.sub_header_unpack,

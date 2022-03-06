@@ -28,7 +28,7 @@ from ..bolt import cstrip, decoder, Flags, structs_cache, attrgetter_cache
 # no local imports, imported everywhere in brec
 
 # Random stuff ----------------------------------------------------------------
-_int_unpacker = structs_cache[u'I'].unpack
+int_unpacker = structs_cache['I'].unpack
 
 def _make_hashable(target_obj):
     """Bit of a HACK, but at least it fixes any code that just *assumed* set

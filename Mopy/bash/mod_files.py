@@ -32,7 +32,7 @@ from .bolt import deprint, SubProgress, structs_cache, struct_error, decoder, \
     sig_to_str, str_to_sig
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds, \
-    unpack_header, FastModReader, Subrecord
+    unpack_header, FastModReader, Subrecord, int_unpacker
 from .exception import MasterMapError, ModError, StateError, ModReadError
 
 class MasterSet(set):
@@ -386,7 +386,7 @@ class ModFile(object):
         m_names = bush.game.mgef_name.copy()
         hostile_recs = set()
         nonhostile_recs = set()
-        unpack_eid = structs_cache[u'I'].unpack
+        unpack_eid = int_unpacker
         if b'MGEF' in self.tops:
             for record in self.tops[b'MGEF'].getActiveRecords():
                 ##: Skip OBME records, at least for now
@@ -470,8 +470,8 @@ class ModHeaderReader(object):
         return True
 
     @staticmethod
-    def extract_mod_data(mod_info, progress, skip_tes4=True,
-                         __unpacker=structs_cache[u'I'].unpack):
+    def extract_mod_data(mod_info, progress, skip_tes4=True, *,
+                         __unpacker=int_unpacker):
         """Reads the headers and EDIDs of every record in the specified mod,
         returning them as a dict, mapping record signature to a dict mapping
         FormIDs to a list of tuples containing the headers and EDIDs of every

@@ -26,7 +26,7 @@ import os
 from io import BytesIO
 
 # no local imports beyond this, imported everywhere in brec
-from .utils_constants import _int_unpacker, group_types, null1, strFid
+from .utils_constants import int_unpacker, group_types, null1, strFid
 from .. import bolt
 from ..bolt import decoder, struct_pack, struct_unpack, structs_cache, \
     sig_to_str
@@ -274,11 +274,10 @@ class ModReader(object):
             raise ModSizeError(self.inName, debug_strs, (target_size,), size)
         return self.ins.read(size)
 
-    def readLString(self, size, *debug_strs):
+    def readLString(self, size, *debug_strs, __unpacker=int_unpacker):
         """Read translatable string. If the mod has STRINGS files, this is a
         uint32 to lookup the string in the string table. Otherwise, this is a
         zero-terminated string."""
-        __unpacker = _int_unpacker
         if self.hasStrings:
             if size != 4:
                 endPos = self.ins.tell() + size
@@ -289,9 +288,8 @@ class ModReader(object):
         else:
             return self.readString(size, *debug_strs)
 
-    def readString32(self, *debug_str):
+    def readString32(self, *debug_str, __unpacker=int_unpacker):
         """Read wide pascal string: uint32 is used to indicate length."""
-        __unpacker = _int_unpacker
         strLen, = self.unpack(__unpacker, 4, debug_str)
         return self.readString(strLen, *debug_str)
 
@@ -313,7 +311,7 @@ class ModReader(object):
             raise ModReadError(self.inName, debug_strs, endPos, self.size)
         return struct_unpacker(self.ins.read(size))
 
-    def unpackRef(self, __unpacker=_int_unpacker):
+    def unpackRef(self, *, __unpacker=int_unpacker):
         """Read a ref (fid)."""
         return self.unpack(__unpacker, 4)[0]
 

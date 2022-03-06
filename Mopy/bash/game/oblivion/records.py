@@ -244,8 +244,7 @@ class MelEffects(MelSequential):
         self._obme_loaders = {}
         self._obme_form_elements = set()
         # Only for setting the possible signatures, redirected in load_mel etc.
-        super(MelEffects, self).__init__(*(self._vanilla_elements +
-                                           self._obme_elements))
+        super().__init__(*self._vanilla_elements, *self._obme_elements)
 
     # Note that we only support creating vanilla effects, as our records system
     # isn't expressive enough to pass more info along here

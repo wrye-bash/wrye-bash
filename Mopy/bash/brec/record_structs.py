@@ -30,13 +30,13 @@ import zlib
 
 from .basic_elements import SubrecordBlob, unpackSubHeader
 from .mod_io import ModReader
-from .utils_constants import strFid, _int_unpacker
+from .utils_constants import strFid, int_unpacker
 from .. import bolt, exception
 from ..bolt import decoder, struct_pack, sig_to_str
 from ..bolt import float_or_none, int_or_zero, str_or_none
 
 def _str_to_bool(value, __falsy=frozenset(
-    [u'', u'none', u'false', u'no', u'0', u'0.0'])):
+    ['', 'none', 'false', 'no', '0', '0.0'])):
     return value.strip().lower() not in __falsy
 
 # Cross game dict, mapping attribute -> csv (de)serializer/csv column header
@@ -130,12 +130,12 @@ attr_csv_struct = {
 
 for _k, _v in attr_csv_struct.items():
     if _v[0] is int_or_zero: # should also cover Flags
-        _v.append(lambda x: u'"%d"' % x)
+        _v.append(lambda x: f'"{x:d}"')
     else: # also covers floats which should be wrapped in Rounder (see __str__)
-        _v.append(lambda x: u'"%s"' % x)
+        _v.append(lambda x: f'"{x}"')
 del _k, _v
 attr_csv_struct[u'enchantPoints'][2] = lambda x: ( # can be None
-            u'"%d"' % x) if x is not None else u'"None"'
+    f'"{x:d}"' if x is not None else '"None"')
 
 #------------------------------------------------------------------------------
 # Mod Element Sets ------------------------------------------------------------
@@ -154,9 +154,8 @@ class MelSet(object):
             element.hasFids(self.formElements)
         for sig_candidate in self.loaders:
             if len(sig_candidate) != 4 or not isinstance(sig_candidate, bytes):
-                raise SyntaxError(u"Invalid signature '%s': Signatures must "
-                                  u'be bytestrings and 4 bytes in '
-                                  u'length.' % sig_candidate)
+                raise SyntaxError(f"Invalid signature '{sig_candidate}': "
+                    f"Signatures must be bytestrings and 4 bytes in length.")
 
     def getSlotsUsed(self):
         """This function returns all of the attributes used in record instances
@@ -406,7 +405,7 @@ class MreRecord(object):
         removed from the list."""
         pass
 
-    def getDecompressed(self, __unpacker=_int_unpacker):
+    def getDecompressed(self, *, __unpacker=int_unpacker):
         """Return self.data, first decompressing it if necessary."""
         if not self.flags1.compressed: return self.data
         decompressed_size, = __unpacker(self.data[:4])

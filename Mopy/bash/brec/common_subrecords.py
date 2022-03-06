@@ -31,7 +31,7 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
     MelStrings, MelUInt8, MelFidList
-from .utils_constants import _int_unpacker, FID, null1
+from .utils_constants import int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
     dict_sort, TrimmedFlags
 from ..exception import ModError, ModSizeError
@@ -503,8 +503,8 @@ class MelRaceParts(MelNull):
         for element in self._indx_to_loader.values():
             element.setDefault(record)
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        __unpacker=_int_unpacker # PY3: keyword only search for __unpacker
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs,
+                 __unpacker=int_unpacker):
         if sub_type == b'INDX':
             self._last_indx = ins.unpack(__unpacker, size_, *debug_strs)[0]
         else:
@@ -591,7 +591,7 @@ class MelMODS(MelBase):
         setattr(record, self.attr, None)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        __unpacker=_int_unpacker
+        __unpacker=int_unpacker
         insUnpack = ins.unpack
         insRead32 = ins.readString32
         count, = insUnpack(__unpacker, 4, *debug_strs)

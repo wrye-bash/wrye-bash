@@ -44,7 +44,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelActorSounds, MelFactionRanks, MelSorted, vmad_properties_key, \
     vmad_qust_fragments_key, vmad_fragments_key, vmad_script_key, \
     vmad_qust_aliases_key, MelReflectedRefractedBy, perk_effect_key, \
-    MelValueWeight
+    MelValueWeight, int_unpacker
 from ...exception import ModError, ModSizeError, StateError
 
 # Set MelModel in brec but only if unset, otherwise we are being imported from
@@ -634,10 +634,9 @@ class ObjectRef(object):
     def array_from_file(cls, ins, obj_format, *debug_strs):
         """Reads an array of ObjectRefs directly from the specified input
         stream. Needs the current object format and a read ID as well."""
-        __unpacker=structs_cache[u'I'].unpack
         make_ref = cls.from_file
         return [make_ref(ins, obj_format, *debug_strs) for _x in
-                range(ins.unpack(__unpacker, 4, *debug_strs)[0])]
+                range(ins.unpack(int_unpacker, 4, *debug_strs)[0])]
 
     @staticmethod
     def dump_array(target_list, __packer=structs_cache[u'I'].pack):
