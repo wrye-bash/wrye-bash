@@ -149,7 +149,7 @@ class _ANamesTweak(CustomChoiceTweak):
         """Does the actual renaming, returning the new name as its result."""
         raise NotImplementedError
 
-class _AMgefNamesTweak(_ANamesTweak):
+class _AMgefNamesTweak_Tes4(_ANamesTweak):
     """Shared code of a few names tweaks that handle MGEFs.
     Oblivion-specific."""
     _prepared = False
@@ -394,7 +394,7 @@ class _ANamesTweak_Ingestibles(_ANamesTweak):
     _choice_formats = [u'%s ', u'%s. ', u'%s - ', u'(%s) ']
 
 class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
-                                  _AMgefNamesTweak):
+                                  _AMgefNamesTweak_Tes4):
     tweak_tip = _(u'Label ingestibles (potions and drinks) to sort by type '
                   u'and effect.')
     _example_item = _('Poison of Illness')
@@ -441,7 +441,7 @@ class _ANamesTweak_Scrolls(IndexingTweak, _ANamesTweak):
     _example_item = _('Fireball')
     _example_code = 'D'
 
-class NamesTweak_NotesScrolls(_ANamesTweak_Scrolls, _AMgefNamesTweak):
+class NamesTweak_NotesScrolls_Tes4(_ANamesTweak_Scrolls, _AMgefNamesTweak_Tes4):
     """Names tweaker for notes and scrolls - Oblivion only!"""
     tweak_read_classes = b'BOOK',
     tweak_name = _(u'Sort: Notes/Scrolls')
@@ -540,7 +540,7 @@ class _ANamesTweak_Spells(_ANamesTweak):
                 wip_name = self.chosen_format + wip_name
         return wip_name
 
-class NamesTweak_Spells(_ANamesTweak_Spells, _AMgefNamesTweak):
+class NamesTweak_Spells_Tes4(_ANamesTweak_Spells, _AMgefNamesTweak_Tes4):
     # Upgrade older format that used different values - we'll probably have to
     # keep this around indefinitely, unfortunately
     def init_tweak_config(self, configs):
@@ -555,7 +555,7 @@ class NamesTweak_Spells(_ANamesTweak_Spells, _AMgefNamesTweak):
                 cleaned_tv.append(t_v.replace('%d', '%02d'))
             tweak_value = tuple(cleaned_tv)
             configs[self.tweak_key] = (is_enabled, tweak_value)
-        super(NamesTweak_Spells, self).init_tweak_config(configs)
+        super().init_tweak_config(configs)
 
 class NamesTweak_Spells_Tes5(_ANamesTweak_Spells, _AEffectsTweak_Tes5): pass
 
