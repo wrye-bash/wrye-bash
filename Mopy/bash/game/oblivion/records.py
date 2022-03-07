@@ -462,12 +462,12 @@ class MreHasEffects(MelRecord):
         return ''.join(output)
 
     # Tweaks APIs -------------------------------------------------------------
-    def is_harmful(self, cached_hostile):
+    def is_harmful(self):
         """Return True if all the effects on the specified record are
         harmful/hostile."""
         for rec_eff in self.effects:
             is_effect_hostile = se.flags.hostile if (se := rec_eff.scriptEffect
-                ) else rec_eff.effect_sig in cached_hostile
+                ) else rec_eff.effect_sig in MreMgef.hostile_effects
             if not is_effect_hostile:
                 return False
         return True
