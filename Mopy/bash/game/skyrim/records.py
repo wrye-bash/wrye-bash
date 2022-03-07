@@ -224,6 +224,36 @@ _av_to_school = defaultdict(lambda: 'U', {
     21: 'I', # Illusion
     22: 'R', # Restoration
 })
+
+# Maps perk ObjectIDs (in the game master, e.g. Skyrim.esm) to levels. See
+# get_spell_level for more information
+_perk_to_level = defaultdict(lambda: 0, {
+    0x0F2CA6: 0, # AlterationNovice00
+    0x0C44B7: 1, # AlterationApprentice25
+    0x0C44B8: 2, # AlterationAdept50
+    0x0C44B9: 3, # AlterationExpert75
+    0x0C44BA: 4, # AlterationMaster100
+    0x0F2CA7: 0, # ConjurationNovice00
+    0x0C44BB: 1, # ConjurationApprentice25
+    0x0C44BC: 2, # ConjurationAdept50
+    0x0C44BD: 3, # ConjurationExpert75
+    0x0C44BE: 4, # ConjurationMaster100
+    0x0F2CA8: 0, # DestructionNovice00
+    0x0C44BF: 1, # DestructionApprentice25
+    0x0C44C0: 2, # DestructionAdept50
+    0x0C44C1: 3, # DestructionExpert75
+    0x0C44C2: 4, # DestructionMaster100
+    0x0F2CA9: 0, # IllusionNovice00
+    0x0C44C3: 1, # IllusionApprentice25
+    0x0C44C4: 2, # IllusionAdept50
+    0x0C44C5: 3, # IllusionExpert75
+    0x0C44C6: 4, # IllusionMaster100
+    0x0F2CAA: 0, # RestorationNovice00
+    0x0C44C7: 1, # RestorationApprentice25
+    0x0C44C8: 2, # RestorationAdept50
+    0x0C44C9: 3, # RestorationExpert75
+    0x0C44CA: 4, # RestorationMaster100
+})
 class MreHasEffects(MelRecord):
     """Mixin class used in the patcher."""
 
@@ -236,6 +266,19 @@ class MreHasEffects(MelRecord):
             first_effect = cached_mgfs[spell_effects[0].effect_formid]
             return _av_to_school[first_effect.magic_skill]
         return 'U' # default to 'U' (unknown)
+
+    def get_spell_level(self):
+        """Return the level for this spell as an integer:
+          0: Novice (level 0)
+          1: Apprentice (level 25)
+          2: Adept (level 50)
+          3: Expert (level 75)
+          4: Master (level 100)
+        """
+        hc_perk = self.halfCostPerk
+        if hc_perk:
+            return _perk_to_level[hc_perk.object_dex]
+        return 0 # default to 0 (novice)
 
 #------------------------------------------------------------------------------
 class MelIdleHandler(MelGroup):

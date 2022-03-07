@@ -162,75 +162,10 @@ class _AMgefNamesTweak(_ANamesTweak):
         return (old_full and (not self._tweak_mgef_hostiles or
                 old_full != self._exec_rename(record)))
 
-class _AEffectsTweak(_ANamesTweak):
-    """Base class for shared code between the ingestibles, scrolls and spells
-    tweakers."""
-
-    def _get_spell_level(self, record):
-        """Returns the level for this spell as an integer:
-
-        Oblivion:
-          0: Novice
-          1: Apprentice
-          2: Journeyman
-          3: Expert
-          4: Master
-
-        Skyrim:
-          0: Novice (level 0)
-          1: Apprentice (level 25)
-          2: Adept (level 50)
-          3: Expert (level 75)
-          4: Master (level 100)"""
-        raise NotImplementedError
-
-class _AEffectsTweak_Tes4(_AEffectsTweak, _AMgefNamesTweak):
-    """Oblivion implementation of _AEffectsTweak's API."""
-
-    def _get_spell_level(self, record):
-        return record.level
-
-##: These will have to be moved to game/ in the future
-# Maps perk ObjectIDs (in the game master, e.g. Skyrim.esm) to levels. See
-# _get_spell_level for more information
-_perk_to_level = defaultdict(lambda: 0, {
-    0x0F2CA6: 0, # AlterationNovice00
-    0x0C44B7: 1, # AlterationApprentice25
-    0x0C44B8: 2, # AlterationAdept50
-    0x0C44B9: 3, # AlterationExpert75
-    0x0C44BA: 4, # AlterationMaster100
-    0x0F2CA7: 0, # ConjurationNovice00
-    0x0C44BB: 1, # ConjurationApprentice25
-    0x0C44BC: 2, # ConjurationAdept50
-    0x0C44BD: 3, # ConjurationExpert75
-    0x0C44BE: 4, # ConjurationMaster100
-    0x0F2CA8: 0, # DestructionNovice00
-    0x0C44BF: 1, # DestructionApprentice25
-    0x0C44C0: 2, # DestructionAdept50
-    0x0C44C1: 3, # DestructionExpert75
-    0x0C44C2: 4, # DestructionMaster100
-    0x0F2CA9: 0, # IllusionNovice00
-    0x0C44C3: 1, # IllusionApprentice25
-    0x0C44C4: 2, # IllusionAdept50
-    0x0C44C5: 3, # IllusionExpert75
-    0x0C44C6: 4, # IllusionMaster100
-    0x0F2CAA: 0, # RestorationNovice00
-    0x0C44C7: 1, # RestorationApprentice25
-    0x0C44C8: 2, # RestorationAdept50
-    0x0C44C9: 3, # RestorationExpert75
-    0x0C44CA: 4, # RestorationMaster100
-})
-
-class _AEffectsTweak_Tes5(IndexingTweak, _AEffectsTweak):
+class _AEffectsTweak_Tes5(IndexingTweak, _ANamesTweak):
     """Skyrim implementation of _AEffectsTweak's API."""
     _index_sigs = [b'MGEF']
     _look_up_mgef = None
-
-    def _get_spell_level(self, record):
-        hc_perk = record.halfCostPerk
-        if hc_perk:
-            return _perk_to_level[hc_perk.object_dex]
-        return 0 # default to 0 (novice)
 
     def wants_record(self, record):
         # If we haven't indexed MGEFs yet, we have to forward all records
@@ -387,7 +322,6 @@ class NamesTweak_Body_Armor_Fo3(_ANamesTweak_Body_Armor):
                 prefix_subs += (record.dr / 100,)
         return prefix_format % prefix_subs + record.full
 
-
 class NamesTweak_Body_Armor_Tes5(_ANamesTweak_Body_Armor):
     _example_item = _('Iron Armor')
     _example_code = 'AH'
@@ -455,7 +389,7 @@ class _ANamesTweak_Ingestibles(_ANamesTweak):
     _choice_formats = [u'%s ', u'%s. ', u'%s - ', u'(%s) ']
 
 class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
-                                  _AEffectsTweak_Tes4):
+                                  _AMgefNamesTweak):
     tweak_tip = _(u'Label ingestibles (potions and drinks) to sort by type '
                   u'and effect.')
     _example_item = _('Poison of Illness')
@@ -564,7 +498,7 @@ class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _AEffectsTweak_Tes5):
         return self.chosen_format % school_tag + wip_name
 
 #------------------------------------------------------------------------------
-class _ANamesTweak_Spells(_AEffectsTweak):
+class _ANamesTweak_Spells(_ANamesTweak):
     """Names tweaker for spells."""
     tweak_read_classes = b'SPEL',
     tweak_name = _(u'Sort: Spells')
@@ -585,7 +519,7 @@ class _ANamesTweak_Spells(_AEffectsTweak):
 
     def _exec_rename(self, record):
         school_tag = record.get_spell_school(self._look_up_mgef)
-        level_tag = self._get_spell_level(record)
+        level_tag = record.get_spell_level()
         # Remove existing label
         wip_name = _re_old_magic_label.sub(u'', record.full)
         if u'%s' in self.chosen_format: # show spell school
@@ -601,7 +535,7 @@ class _ANamesTweak_Spells(_AEffectsTweak):
                 wip_name = self.chosen_format + wip_name
         return wip_name
 
-class NamesTweak_Spells(_ANamesTweak_Spells, _AEffectsTweak_Tes4):
+class NamesTweak_Spells(_ANamesTweak_Spells, _AMgefNamesTweak):
     # Upgrade older format that used different values - we'll probably have to
     # keep this around indefinitely, unfortunately
     def init_tweak_config(self, configs):

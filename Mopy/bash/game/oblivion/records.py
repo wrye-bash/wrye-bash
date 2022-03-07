@@ -471,6 +471,16 @@ class MreHasEffects(MelRecord):
             return 'ACDIMRU'[school]
         return 'U' # default to 'U' (unknown)
 
+    def get_spell_level(self):
+        """Return the level for this spell as an integer:
+          0: Novice
+          1: Apprentice
+          2: Journeyman
+          3: Expert
+          4: Master
+        """
+        return self.level
+
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
 #------------------------------------------------------------------------------
