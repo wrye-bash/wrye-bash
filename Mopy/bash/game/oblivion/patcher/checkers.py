@@ -21,7 +21,6 @@
 #
 # =============================================================================
 
-import copy
 import re
 from collections import defaultdict
 from itertools import chain
@@ -81,8 +80,8 @@ class CoblCatalogsPatcher(ExSpecial):
                 #--Ingredient must have name!
                 ##: Skips OBME records - rework to support them
                 if record.full and record.obme_record_version is None:
-                    effects = record.getEffects()
-                    if not (b'SEFF', 0) in effects:
+                    effects = record.effect_sig_to_actor_value()
+                    if b'SEFF' not in effects or effects[b'SEFF'] != 0:
                         self.id_ingred[rid] = (record.eid, record.full, effects)
         super().scanModFile(modFile, progress, [b'BOOK'])
 
@@ -90,10 +89,12 @@ class CoblCatalogsPatcher(ExSpecial):
         """Edits patch file as desired. Will write to log."""
         if not self.isActive: return
         #--Setup
-        alt_names = copy.deepcopy(self.patchFile.getMgefName())
+        alt_names = {k: v or '' for k, v in # could this be None?
+                     RecordType.sig_to_class[b'MGEF'].mgef_name.items()}
         attr_or_skill = f"({_('Attribute')}|{_('Skill')})"
-        for mgef in alt_names:
-            alt_names[mgef] = re.sub(attr_or_skill, u'', alt_names[mgef])
+        for mgef_sig_or_int in alt_names:
+            alt_names[mgef_sig_or_int] = re.sub(attr_or_skill, '',
+                                                alt_names[mgef_sig_or_int])
         actorEffects = RecordType.sig_to_class[b'MGEF'].generic_av_effects
         from ..records import actor_values
         keep = self.patchFile.getKeeper()
@@ -115,12 +116,12 @@ class CoblCatalogsPatcher(ExSpecial):
             book = getBook(objectId, full)
             if book is None: continue
             effs = []
-            for eid, eff_full, effects in sorted(id_ingred.values(),
-                                                 key=lambda a: a[1].lower()):
+            for eid, eff_full, eff_sig_av in sorted(
+                    id_ingred.values(), key=lambda a: a[1].lower()):
                 effs.append(eff_full)
-                for mgef, actorValue in effects[:num]:
-                    effectName = alt_names[mgef]
-                    if mgef in actorEffects:
+                for mgef_sig, actorValue in list(eff_sig_av.items())[:num]:
+                    effectName = alt_names[mgef_sig]
+                    if mgef_sig in actorEffects:
                         effectName += actor_values[actorValue]
                     effs.append(f'  {effectName}')
                 effs.append('')
@@ -128,10 +129,10 @@ class CoblCatalogsPatcher(ExSpecial):
             book.book_text = re.sub('\r\n', '<br>\r\n', book.book_text)
         #--Get Ingredients by Effect
         effect_ingred = defaultdict(list)
-        for _fid,(eid,full,effects) in id_ingred.items():
-            for index,(mgef,actorValue) in enumerate(effects):
-                effectName = alt_names[mgef]
-                if mgef in actorEffects: effectName += actor_values[actorValue]
+        for eid, full, eff_sig_av in id_ingred.values():
+            for index, (mgef_sig, actorValue) in enumerate(eff_sig_av.items()):
+                effectName = alt_names[mgef_sig]
+                if mgef_sig in actorEffects: effectName += actor_values[actorValue]
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs
         for (num, objectId, full) in _effect_alchem:

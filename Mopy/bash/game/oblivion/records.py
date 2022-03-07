@@ -321,11 +321,11 @@ class MreHasEffects(MelRecord):
                 index_dict['effects'] = effects_tuple
         return attr_dex
 
-    def getEffects(self):
+    def effect_sig_to_actor_value(self):
         """Returns a summary of effects. Useful for alchemical catalog."""
-        return [(mgef := effect.effect_sig,
-            effect.actorValue if mgef in MreMgef.generic_av_effects else 0)
-                for effect in self.effects]
+        return {(mgef := effect.effect_sig):
+            effect.actorValue if mgef in MreMgef.generic_av_effects else 0
+                for effect in self.effects}
 
     def _get_spell_school(self):
         """Returns the school based on the highest cost spell effect."""
