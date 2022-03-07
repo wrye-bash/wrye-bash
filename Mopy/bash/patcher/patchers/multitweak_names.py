@@ -152,19 +152,19 @@ class _ANamesTweak(CustomChoiceTweak):
 class _AMgefNamesTweak(_ANamesTweak):
     """Shared code of a few names tweaks that handle MGEFs.
     Oblivion-specific."""
-    _tweak_mgef_hostiles = set()
+    _prepared = False
     _look_up_mgef = None
 
     def prepare_for_tweaking(self, patch_file):
-        self._tweak_mgef_hostiles = patch_file.getMgefHostiles()
         super(_ANamesTweak, self).prepare_for_tweaking(patch_file)
+        self._prepared = True
 
     def wants_record(self, record):
         # Once we have MGEFs indexed, we can try renaming to check more
         # thoroughly (i.e. during the buildPatch/apply phase)
         old_full = record.full
-        return (old_full and (not self._tweak_mgef_hostiles or
-                old_full != self._exec_rename(record)))
+        return (old_full and (not self._prepared or
+                              old_full != self._exec_rename(record)))
 
 class _AEffectsTweak_Tes5(IndexingTweak, _ANamesTweak):
     """Skyrim implementation of _AEffectsTweak's API."""
@@ -407,7 +407,7 @@ class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
         if record.flags.alch_is_food:
             return '.' + wip_name
         else:
-            poison_tag = 'X' if record.is_harmful(self._tweak_mgef_hostiles) else ''
+            poison_tag = 'X' if record.is_harmful() else ''
             effect_label = poison_tag + record.get_spell_school()
             return self.chosen_format % effect_label + wip_name
 
