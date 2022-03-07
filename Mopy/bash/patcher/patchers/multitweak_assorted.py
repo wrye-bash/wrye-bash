@@ -307,16 +307,15 @@ class _AWeightTweak(CustomChoiceTweak):
 
 class _AWeightTweak_SEFF(_AWeightTweak):
     """Base class for weight tweaks that need to ignore SEFF effects."""
-    _seff_code = (b'SEFF', 0)
     _ignore_effects = bush.game.fsName not in ('Oblivion', 'OblivionRE')
 
     def wants_record(self, record):
         if not super().wants_record(record):
             return False
-        return (self._ignore_effects or
-                ##: Skip OBME records, at least for now
-                (record.obme_record_version is None and
-                 self._seff_code not in record.getEffects()))
+        return self._ignore_effects or (
+            ##: Skip OBME records, at least for now
+            record.obme_record_version is None and
+            not any(s == b'SEFF' for s, _av in record.effect_sigs_avs()))
 
 #------------------------------------------------------------------------------
 class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):

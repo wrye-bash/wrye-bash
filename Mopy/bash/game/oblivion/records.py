@@ -339,8 +339,10 @@ class MreHasEffects(MelRecord):
                 index_dict['effects'] = effects_tuple
         return attr_dex
 
-    def getEffects(self):
-        """Returns a summary of effects. Useful for alchemical catalog."""
+    def effect_sigs_avs(self):
+        """Returns a list of (effect sig, actor value) tuples, in the order of
+        the effects - an effect sig may repeat (Damage Willpower and Damage
+        Intelligence are both DGAT). Useful for the alchemical catalogs."""
         return [(mgef := effect.effect_sig,
             effect.actorValue if mgef in MreMgef.generic_av_effects else 0)
                 for effect in self.effects]
