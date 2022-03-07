@@ -39,16 +39,15 @@ delegate to the game_handle.
 
 __author__ = u'Utumno'
 
-import sys
-import math
 import collections
+import math
+import sys
 import time
 
 # Internal
-from . import bass, bolt, bush, exception
+from . import bass, bolt, exception
+from . import _games_lo # LoGame instance providing load order operations API
 from .bolt import sig_to_str
-# Game instance providing load order operations API
-from . import _games_lo
 
 _game_handle = None # type: _games_lo.LoGame
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
@@ -85,10 +84,9 @@ def initialize_load_order_files():
     _loadorder_txt_path = _dir.join(u'loadorder.txt')
     _lord_pickle_path = bass.dirs[u'saveBase'].join(u'BashLoadOrders.dat')
 
-def initialize_load_order_handle(mod_infos):
+def initialize_load_order_handle(mod_infos, fsname):
     global _game_handle
-    _game_handle = _games_lo.game_factory(bush.game.fsName, mod_infos,
-                                          _plugins_txt_path,
+    _game_handle = _games_lo.game_factory(fsname, mod_infos, _plugins_txt_path,
                                           _loadorder_txt_path)
     _game_handle.parse_ccc_file()
     _game_handle.print_lo_paths()
@@ -430,8 +428,6 @@ def must_be_active_if_present():
     return set(_game_handle.must_be_active_if_present) | (
         set() if _game_handle.allow_deactivate_master else {
             _game_handle.master_path})
-
-def using_txt_file(): return bush.game.using_txt_file
 
 def using_ini_file(): return isinstance(_game_handle, _games_lo.INIGame)
 

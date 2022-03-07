@@ -2106,7 +2106,7 @@ class ModInfos(FileInfos):
         # used in RefreshData
         self.selectedBad = set()
         self.selectedExtra = []
-        load_order.initialize_load_order_handle(self)
+        load_order.initialize_load_order_handle(self, bush.game.fsName)
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
@@ -2180,7 +2180,7 @@ class ModInfos(FileInfos):
     #--Load Order utility methods - be sure cache is valid when using them
     def cached_lo_insert_after(self, previous, new_mod):
         previous_index = self._lo_wip.index(previous)
-        if not load_order.using_txt_file():
+        if not bush.game.using_txt_file:
             # set the mtime to avoid reordering all subsequent mods
             try:
                 next_mod = self._lo_wip[previous_index + 1]
@@ -2299,7 +2299,7 @@ class ModInfos(FileInfos):
                 self._recalc_dependents()
             hasChanged = bool(change)
         # If refresh_infos is False and mods are added _do_ manually refresh
-        _modTimesChange = _modTimesChange and not load_order.using_txt_file()
+        _modTimesChange = _modTimesChange and not bush.game.using_txt_file
         lo_changed = self.refreshLoadOrder(
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
         self._refresh_bash_tags()

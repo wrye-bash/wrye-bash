@@ -1694,7 +1694,7 @@ class ModDetails(_ModsSavesDetails):
             with load_order.Unlock():
                 bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
             BashFrame.modList.RefreshUI( # refresh saves if lo changed
-                refreshSaves=not load_order.using_txt_file())
+                refreshSaves=not bush.game.using_txt_file)
             return
         #--Backup
         modInfo.makeBackup()
@@ -1731,7 +1731,7 @@ class ModDetails(_ModsSavesDetails):
         with load_order.Unlock():
             bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
         refreshSaves = detail_item is None or changeName or (
-            changeDate and not load_order.using_txt_file())
+            changeDate and not bush.game.using_txt_file)
         self.panel_uilist.RefreshUI(refreshSaves=refreshSaves,
                                     detail_item=detail_item)
 

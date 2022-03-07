@@ -458,7 +458,7 @@ class App_BOSS(_ExeButton):
                 # on timestamp method scan the data dir, if not loadorder.txt
                 # should have changed, refreshLoadOrder should detect that
                 bosh.modInfos.refresh(
-                    refresh_infos=not bosh.load_order.using_txt_file())
+                    refresh_infos=not bush.game.using_txt_file)
             # Refresh UI, so WB is made aware of the changes to load order
             BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
 

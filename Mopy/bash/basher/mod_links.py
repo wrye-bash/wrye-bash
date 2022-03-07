@@ -198,7 +198,7 @@ class Mod_OrderByName(EnabledLink):
         message = _(u'Reorder selected mods in alphabetical order?  The first '
             u'file will be given the date/time of the current earliest file '
             u'in the group, with consecutive files following at 1 minute '
-            u'increments.') if not load_order.using_txt_file() else _(
+            u'increments.') if not bush.game.using_txt_file else _(
             u'Reorder selected mods in alphabetical order starting at the '
             u'lowest ordered?')
         message += (u'\n\n' + _(
@@ -210,7 +210,7 @@ class Mod_OrderByName(EnabledLink):
         self.selected.sort()
         self.selected.sort( # sort masters first
             key=lambda m: not load_order.in_master_block(bosh.modInfos[m]))
-        if not load_order.using_txt_file():
+        if not bush.game.using_txt_file:
             #--Get first time from first selected file.
             newTime = min(x.mtime for x in self.iselected_infos())
             for inf in self.iselected_infos():
