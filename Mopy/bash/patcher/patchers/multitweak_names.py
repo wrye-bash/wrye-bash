@@ -42,8 +42,6 @@ _ignored_chars = frozenset(u'+-=.()[]<>')
 
 class _ANamesTweak(CustomChoiceTweak):
     """Shared code of names tweaks."""
-    _tweak_mgef_hostiles = set()
-    _tweak_mgef_school = {}
     _choice_formats = [] # The default formats for this tweak
     _example_item = _example_code = u'' # An example item name and its code
     _example_stat = 0 # The example item's stat
@@ -150,15 +148,12 @@ class _ANamesTweak(CustomChoiceTweak):
 class _AMgefNamesTweak(_ANamesTweak):
     """Shared code of a few names tweaks that handle MGEFs.
     Oblivion-specific."""
+    _tweak_mgef_hostiles = set()
+    _look_up_mgef = None
+
     def prepare_for_tweaking(self, patch_file):
         self._tweak_mgef_hostiles = patch_file.getMgefHostiles()
-        self._tweak_mgef_school = patch_file.getMgefSchool()
         super(_ANamesTweak, self).prepare_for_tweaking(patch_file)
-
-    def _get_effect_school(self, magic_effect):
-        """Returns the school of the specified MGEF."""
-        return (magic_effect.scriptEffect.school if magic_effect.scriptEffect
-                else self._tweak_mgef_school.get(magic_effect.effect_sig, 6))
 
     def wants_record(self, record):
         # Once we have MGEFs indexed, we can try renaming to check more
@@ -170,11 +165,6 @@ class _AMgefNamesTweak(_ANamesTweak):
 class _AEffectsTweak(_ANamesTweak):
     """Base class for shared code between the ingestibles, scrolls and spells
     tweakers."""
-    def _get_spell_school(self, record):
-        """Returns the school for this record as a single letter, based on its
-        first effect (e.g. 'D' for a spell where the first effect belongs to
-        the school of Destruction)."""
-        raise NotImplementedError
 
     def _get_spell_level(self, record):
         """Returns the level for this spell as an integer:
@@ -196,23 +186,11 @@ class _AEffectsTweak(_ANamesTweak):
 
 class _AEffectsTweak_Tes4(_AEffectsTweak, _AMgefNamesTweak):
     """Oblivion implementation of _AEffectsTweak's API."""
-    def _get_spell_school(self, record):
-        if record.effects:
-            return 'ACDIMRU'[self._get_effect_school(record.effects[0])]
-        return 'U' # default to 'U' (unknown)
 
     def _get_spell_level(self, record):
         return record.level
 
 ##: These will have to be moved to game/ in the future
-# Maps actor value IDs to a tag for the school they represent
-_av_to_school = defaultdict(lambda: 'U', {
-    18: 'A', # Alteration
-    19: 'C', # Conjuration
-    20: 'D', # Destruction
-    21: 'I', # Illusion
-    22: 'R', # Restoration
-})
 # Maps perk ObjectIDs (in the game master, e.g. Skyrim.esm) to levels. See
 # _get_spell_level for more information
 _perk_to_level = defaultdict(lambda: 0, {
@@ -247,13 +225,6 @@ class _AEffectsTweak_Tes5(IndexingTweak, _AEffectsTweak):
     """Skyrim implementation of _AEffectsTweak's API."""
     _index_sigs = [b'MGEF']
     _look_up_mgef = None
-
-    def _get_spell_school(self, record):
-        spell_effects = record.effects
-        if spell_effects:
-            first_effect = self._look_up_mgef[spell_effects[0].effect_formid]
-            return _av_to_school[first_effect.magic_skill]
-        return 'U' # default to 'U' (unknown)
 
     def _get_spell_level(self, record):
         hc_perk = record.halfCostPerk
@@ -498,7 +469,7 @@ class NamesTweak_Ingestibles_Tes4(_ANamesTweak_Ingestibles,
             return '.' + wip_name
         else:
             poison_tag = 'X' if record.is_harmful(self._tweak_mgef_hostiles) else ''
-            effect_label = poison_tag + self._get_spell_school(record)
+            effect_label = poison_tag + record.get_spell_school()
             return self.chosen_format % effect_label + wip_name
 
 class NamesTweak_Ingestibles_Fo3(_ANamesTweak_Ingestibles):
@@ -532,7 +503,7 @@ class _ANamesTweak_Scrolls(IndexingTweak, _ANamesTweak):
     _example_code = 'D'
 
 class NamesTweak_NotesScrolls(_ANamesTweak_Scrolls, _AMgefNamesTweak):
-    """Names tweaker for notes and scrolls."""
+    """Names tweaker for notes and scrolls - Oblivion only!"""
     tweak_read_classes = b'BOOK',
     tweak_name = _(u'Sort: Notes/Scrolls')
     tweak_tip = _(u'Mark notes and scrolls to sort separately from books.')
@@ -550,13 +521,13 @@ class NamesTweak_NotesScrolls(_ANamesTweak_Scrolls, _AMgefNamesTweak):
         rec_ench = record.enchantment
         is_enchanted = bool(rec_ench)
         if is_enchanted and u'%s' in magic_format:
-            school = 6 # Default to 6 (U: unknown)
             enchantment = self._look_up_ench[rec_ench]
-            if enchantment and enchantment.effects:
-                school = self._get_effect_school(enchantment.effects[0])
+            if enchantment: ##: true?
+                school = enchantment.get_spell_school()
+            else: school = 'U' # U: unknown
             # Remove existing label
             wip_name = _re_old_magic_label.sub(u'', wip_name)
-            wip_name = magic_format[1:] % u'ACDIMRU'[school] + wip_name
+            wip_name = magic_format[1:] % school + wip_name
         # Order by whether or not the scroll is enchanted
         return order_format[is_enchanted] + wip_name
 
@@ -578,6 +549,7 @@ class NamesTweak_NotesScrolls(_ANamesTweak_Scrolls, _AMgefNamesTweak):
 
 #------------------------------------------------------------------------------
 class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _AEffectsTweak_Tes5):
+    """Skyrim!"""
     tweak_read_classes = b'SCRL',
     tweak_name = _('Sort: Scrolls')
     tweak_tip = _('Mark scrolls to sort by magic school.')
@@ -586,7 +558,7 @@ class NamesTweak_Scrolls(_ANamesTweak_Scrolls, _AEffectsTweak_Tes5):
                        '%s - ', '(%s) ']
 
     def _exec_rename(self, record):
-        school_tag = self._get_spell_school(record)
+        school_tag = record.get_spell_school(self._look_up_mgef)
         # Remove existing label
         wip_name = _re_old_magic_label.sub('', record.full)
         return self.chosen_format % school_tag + wip_name
@@ -612,7 +584,7 @@ class _ANamesTweak_Spells(_AEffectsTweak):
         return record.spellType == 0 and super().wants_record(record)
 
     def _exec_rename(self, record):
-        school_tag = self._get_spell_school(record)
+        school_tag = record.get_spell_school(self._look_up_mgef)
         level_tag = self._get_spell_level(record)
         # Remove existing label
         wip_name = _re_old_magic_label.sub(u'', record.full)

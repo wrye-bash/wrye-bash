@@ -294,7 +294,6 @@ class ModFile(object):
         by the patchers. We do this once at all so we only have to iterate over
         the MGEFs once."""
         mgef_class = RecordType.sig_to_class[b'MGEF']
-        m_school = mgef_class.mgef_school.copy()
         m_hostiles = mgef_class.hostile_effects.copy()
         m_names = mgef_class.mgef_name.copy()
         hostile_recs = set()
@@ -303,26 +302,12 @@ class ModFile(object):
             for _rid, record in self.tops[b'MGEF'].iter_present_records():
                 ##: Skip OBME records, at least for now
                 if record.obme_record_version is not None: continue
-                m_school[record.eid] = record.school
                 target_set = (hostile_recs if record.flags.hostile
                               else nonhostile_recs)
                 target_set.add(record.eid)
                 m_names[record.eid] = record.full or u'' # could this be None?
-        self.cached_mgef_school = m_school
         self.cached_mgef_hostiles = m_hostiles - nonhostile_recs | hostile_recs
         self.cached_mgef_names = m_names
-
-    def getMgefSchool(self):
-        """Return a dictionary mapping magic effect code to magic effect
-        school. This is intended for use with the patch file when it records
-        for all magic effects. If magic effects are not available, it will
-        revert to constants.py version."""
-        try:
-            # Try to just return the cached version
-            return self.cached_mgef_school
-        except AttributeError:
-            self._index_mgefs()
-            return self.cached_mgef_school
 
     def getMgefHostiles(self):
         """Return a set of hostile magic effect codes. This is intended for use

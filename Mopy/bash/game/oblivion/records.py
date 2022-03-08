@@ -463,6 +463,14 @@ class MreHasEffects(MelRecord):
                 return False
         return True
 
+    def get_spell_school(self, tweak_mgef_school=None): # param unused in Oblivion
+        if self.effects:
+            first_eff = self.effects[0]
+            school = se.school if (se := first_eff.scriptEffect) else \
+                MreMgef.mgef_school.get(first_eff.effect_sig, 6)
+            return 'ACDIMRU'[school]
+        return 'U' # default to 'U' (unknown)
+
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1390,7 +1398,7 @@ class MreMgef(MelRecord):
         boltType: bool = flag(26)
         noHitEffect: bool = flag(27)
 
-    _magic_effects = {
+    _magic_effects = { # effect_sig -> (school, name, value)
         b'ABAT': [5, _('Absorb Attribute'), 0.95],
         b'ABFA': [5, _('Absorb Fatigue'), 6],
         b'ABHE': [5, _('Absorb Health'), 16],
@@ -1553,9 +1561,9 @@ class MreMgef(MelRecord):
         b'ZXIV': [1, _('Summon Xivilai'), 200],
         b'ZZOM': [1, _('Summon Zombie'), 16.67],
     }
-    mgef_school = {x: y for x, [y, z, a] in _magic_effects.items()}
-    mgef_name = {x: z for x, [y, z, b] in _magic_effects.items()}
-    mgef_basevalue = {x: c for x, [y, z, c] in _magic_effects.items()}
+    mgef_school = {x: y[0] for x, y in _magic_effects.items()}
+    mgef_name = {x: y[1] for x, y in _magic_effects.items()}
+    mgef_basevalue = {x: y[2] for x, y in _magic_effects.items()}
 
     # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
     # generic name.

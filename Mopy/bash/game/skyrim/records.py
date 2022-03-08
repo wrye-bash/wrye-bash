@@ -21,6 +21,8 @@
 #
 # =============================================================================
 """This module contains the skyrim record classes."""
+from collections import defaultdict
+
 from ... import bush
 from ...bolt import Flags, TrimmedFlags, flag, sig_to_str
 from ...brec import FID, AMelItems, AMelLLItems, AMelNvnm, AMelVmad, \
@@ -212,6 +214,28 @@ class MelDestructible(MelGroup):
                 MelBaseR(b'DSTF', 'dest_end_marker'),
             ),
         )
+
+#------------------------------------------------------------------------------
+# Maps actor value IDs to a tag for the school they represent
+_av_to_school = defaultdict(lambda: 'U', {
+    18: 'A', # Alteration
+    19: 'C', # Conjuration
+    20: 'D', # Destruction
+    21: 'I', # Illusion
+    22: 'R', # Restoration
+})
+class MreHasEffects(MelRecord):
+    """Mixin class used in the patcher."""
+
+    def get_spell_school(self, cached_mgfs):
+        """Return the school for this record as a single letter, based on its
+        first effect (e.g. 'D' for a spell where the first effect belongs to
+        the school of Destruction)."""
+        spell_effects = self.effects
+        if spell_effects:
+            first_effect = cached_mgfs[spell_effects[0].effect_formid]
+            return _av_to_school[first_effect.magic_skill]
+        return 'U' # default to 'U' (unknown)
 
 #------------------------------------------------------------------------------
 class MelIdleHandler(MelGroup):
@@ -512,7 +536,7 @@ class MreAddn(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreAlch(AMreWithKeywords):
+class MreAlch(MreHasEffects, AMreWithKeywords):
     """Ingestible."""
     rec_sig = b'ALCH'
 
@@ -1219,7 +1243,7 @@ class MreEfsh(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreEnch(MelRecord):
+class MreEnch(MreHasEffects, MelRecord):
     """Object Effect."""
     rec_sig = b'ENCH'
 
@@ -1559,7 +1583,7 @@ class MreImgs(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreIngr(AMreWithKeywords):
+class MreIngr(MreHasEffects, AMreWithKeywords):
     """Ingredient."""
     rec_sig = b'INGR'
 
@@ -3361,7 +3385,7 @@ class MreScen(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreScrl(AMreWithKeywords):
+class MreScrl(MreHasEffects, AMreWithKeywords):
     """Scroll."""
     rec_sig = b'SCRL'
 
@@ -3555,7 +3579,7 @@ class MreSoun(MelRecord):
     )
 
 #------------------------------------------------------------------------------
-class MreSpel(AMreWithKeywords):
+class MreSpel(MreHasEffects, AMreWithKeywords):
     """Spell."""
     rec_sig = b'SPEL'
 
