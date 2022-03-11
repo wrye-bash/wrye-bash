@@ -547,8 +547,8 @@ class Path(os.PathLike):
         os.chdir(self._s)
 
     @staticmethod
-    def has_invalid_chars(string):
-        match = Path.invalid_chars_re.match(string)
+    def has_invalid_chars(path_str):
+        match = Path.invalid_chars_re.match(path_str)
         if not match: return None
         return match.groups()[1]
 

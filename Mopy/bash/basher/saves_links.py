@@ -33,7 +33,7 @@ from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, load_order, initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, UIList_Rename
-from ..bolt import GPath, SubProgress
+from ..bolt import GPath, SubProgress, Path
 from ..bosh import faces
 from ..exception import ArgumentError, BoltError, ModError, AbstractError
 from ..gui import BusyCursor, ImageWrapper, FileSave
@@ -91,22 +91,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     def add(self):
         """Adds a new profile."""
         newName = balt.askText(self.parent, _(u'Enter profile name:'))
-        if not newName: return False
-        if newName in self.getItemList():
-            balt.showError(self.parent,_(u'Name must be unique.'))
-            return False
-        if len(newName) == 0 or len(newName) > 64:
-            balt.showError(self.parent,
-                _(u'Name must be between 1 and 64 characters long.'))
-            return False
-        try:
-            newName.encode('cp1252')
-        except UnicodeEncodeError:
-            balt.showError(self.parent,
-                _(u'Name must be encodable in Windows Codepage 1252 '
-                  u'(Western European), due to limitations of %(gameIni)s.')
-                % {u'gameIni': bush.game.Ini.dropdown_inis[0]})
-            return False
+        if not self._validate_prof_name(newName): return
         self.baseSaves.join(newName).makedirs()
         newSaves = _win_join(newName)
         bosh.saveInfos.set_profile_attr(newSaves, 'vOblivion',
@@ -116,15 +101,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     def rename(self,oldName,newName):
         """Renames profile oldName to newName."""
         newName = newName.strip()
-        lowerNames = [save_dir.lower() for save_dir in self.getItemList()]
-        #--Error checks
-        if newName.lower() in lowerNames:
-            balt.showError(self,_(u'Name must be unique.'))
-            return False
-        if not (1 <= len(newName) <= 64):
-            balt.showError(self.parent,
-                _(u'Name must be between 1 and 64 characters long.'))
-            return False
+        if not self._validate_prof_name(newName): return
         #--Rename
         oldDir, newDir = map(self.baseSaves.join, (oldName, newName))
         oldDir.moveTo(newDir)
@@ -133,6 +110,32 @@ class Saves_ProfilesData(balt.ListEditorData):
             Link.Frame.saveList.set_local_save(newSaves, refreshSaveInfos=True)
         bosh.saveInfos.rename_profile(oldSaves, newSaves)
         return newName
+
+    def _validate_prof_name(self, newName):
+        #--Error checks
+        if not newName: return False
+        lowerNames = {save_dir.lower() for save_dir in self.getItemList()}
+        if newName.lower() in lowerNames:
+            balt.showError(self.parent, _('Name must be unique.'))
+            return False
+        if len(newName) == 0 or len(newName) > 64:
+            balt.showError(self.parent,
+                           _('Name must be between 1 and 64 characters long.'))
+            return False
+        try:
+            newName.encode('cp1252')
+        except UnicodeEncodeError:
+            balt.showError(self.parent,
+                _('Name must be encodable in Windows Codepage 1252 (Western '
+                  'European), due to limitations of %(gameIni)s.') % {
+                               'gameIni': bush.game.Ini.dropdown_inis[0]})
+            return False
+        if inv := Path.has_invalid_chars(newName):
+            balt.showError(self.parent,
+                           _('Name must not contain invalid chars for a '
+                             'windows path like %(inv)s') % {'inv': inv})
+            return False
+        return True
 
     def remove(self,profile):
         """Remove save profile."""
@@ -442,35 +445,35 @@ class Save_EditCreatedData(balt.ListEditorData):
         items.sort(key=lambda x: self.name_nameRecords[x][1][0]._rec_sig)
         return items
 
-    _attrs = {b'CLOT': (_(u'Clothing') + u'\n' + _(u'Flags: '), ()), b'ARMO': (
-        _(u'Armor') + u'\n' + _(u'Flags: '), (u'strength',u'value',u'weight')),
-              b'WEAP': (u'', (u'damage',u'value',u'speed',u'reach',u'weight'))}
+    _attrs = {b'CLOT': (f'{_("Clothing")}\n{_("Flags: ")}', ()), b'ARMO': (
+        f'{_("Armor")}\n{_("Flags: ")}', ('strength', 'value', 'weight')),
+              b'WEAP': ('', ('damage', 'value', 'speed', 'reach', 'weight'))}
     def getInfo(self,item):
         """Returns string info on specified item."""
-        buff = io.StringIO()
+        buff = []
         record_full, records = self.name_nameRecords[item]
         record = records[0]
         #--Armor, clothing, weapons
-        rsig = record._rec_sig
+        rsig = record.rec_sig
         if rsig in self._attrs:
             info_str, attrs = self._attrs[rsig]
             if rsig == b'WEAP':
-                buff.write(bush.game.weaponTypes[record.weaponType] + u'\n')
+                buff.append(bush.game.weaponTypes[record.weaponType])
             else:
-                buff.write(info_str)
-                buff.write(u', '.join(record.flags.getTrueAttrs()) + u'\n')
+                buff.append(info_str + ', '.join(
+                    record.biped_flags.getTrueAttrs()))
             for attr in attrs:
-                buff.write(u'%s: %s\n' % (attr, getattr(record, attr)))
+                buff.append(f'{attr}: {getattr(record, attr)}')
         #--Enchanted? Switch record to enchantment.
-        if hasattr(record,u'enchantment') and record.enchantment in self.enchantments:
-            buff.write(u'\n'+_(u'Enchantment:')+u'\n')
+        if hasattr(record,'enchantment') and \
+                record.enchantment in self.enchantments:
+            buff.append('\n' + _('Enchantment:'))
             record = self.enchantments[record.enchantment].getTypeCopy()
         #--Magic effects
         if rsig in (b'ALCH', b'SPEL', b'ENCH'):
-            buff.write(record.getEffectsSummary())
+            buff.append(record.getEffectsSummary())
         #--Done
-        ret = buff.getvalue()
-        return ret
+        return '\n'.join(buff)
 
     def rename(self,oldName,newName):
         """Renames oldName to newName."""

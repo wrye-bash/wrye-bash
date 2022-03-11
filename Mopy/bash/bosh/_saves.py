@@ -398,7 +398,8 @@ class SaveFile(object):
         self.fid_createdNum = {x.fid: i for i, x in enumerate(self.created)}
 
     def removeCreated(self,fid):
-        """Removes created if it exists. Returns True if record existed, false if not."""
+        """Remove created if it exists. Return True if record existed, False if
+        not."""
         if self.fid_createdNum is None: self.indexCreated()
         recNum = self.fid_createdNum.get(fid)
         if recNum is None:
@@ -481,9 +482,9 @@ class SaveFile(object):
         log(_(u'  Next in-game object: %08X') % struct_unpack(u'I', self.preGlobals[:4]))
         #--Array Sizes
         log.setHeader(u'Array Sizes')
-        log(u'  %d\t%s' % (len(self.created),_(u'Created Items')))
-        log(u'  %d\t%s' % (len(self.save_records), _(u'Records')))
-        log(u'  %d\t%s' % (len(self.fids),_(u'Fids')))
+        log(f'  {len(self.created)}\t{_("Created Items")}')
+        log(f'  {len(self.save_records)}\t{_("Records")}')
+        log(f'  {len(self.fids)}\t{_("Fids")}')
         #--Created Types
         log.setHeader(_(u'Created Items'))
         created_sizes = defaultdict(int)

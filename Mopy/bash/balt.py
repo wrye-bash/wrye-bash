@@ -508,13 +508,14 @@ class ListEditor(DialogWindow):
         :param orderedDict: orderedDict['ButtonLabel']=buttonAction
         """
         #--Data
-        self._listEditorData = lid_data #--Should be subclass of ListEditorData
+        self._listEditorData = lid_data # type: ListEditorData
         self._list_items = lid_data.getItemList()
         #--GUI
-        super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
         self._size_key = self._listEditorData.__class__.__name__
+        super(ListEditor, self).__init__(parent, title, sizes_dict=sizes)
         #--List Box
-        self.listBox = ListBox(self, choices=self._list_items)
+        self.listBox = ListBox(self, choices=self._list_items,
+                               onSelect=self.OnSelect)
         self.listBox.set_min_size(125, 150)
         #--Infobox
         self.gInfoBox = None # type: TextArea
@@ -605,6 +606,14 @@ class ListEditor(DialogWindow):
             self.gInfoBox.text_content = u''
 
     #--Show Info
+    def OnSelect(self, _lb_selection_dex, lb_selection_str):
+        """Handle show info (item select) event."""
+        # self._listEditorData.select(lb_selection_str)
+        if self.gInfoBox:
+             # self.gInfoBox.DiscardEdits()
+             self.gInfoBox.text_content = self._listEditorData.getInfo(
+                 lb_selection_str)
+
     def OnInfoEdit(self, new_text):
         """Info box text has been edited."""
         selections = self.listBox.lb_get_selections()

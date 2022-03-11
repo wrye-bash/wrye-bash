@@ -390,7 +390,7 @@ class MelObme(MelOptStruct):
         struct_contents += extra_contents
         # Always ends with a statically sized reserved byte array
         struct_contents += [(u'obme_unused', null1 * reserved_byte_count)]
-        str_fmts =[ u'4B'] + extra_format +  [u'%ds' % reserved_byte_count]
+        str_fmts = ['4B', *extra_format, f'{reserved_byte_count}s']
         super(MelObme, self).__init__(struct_sig, str_fmts, *struct_contents)
 
 #------------------------------------------------------------------------------
@@ -433,7 +433,7 @@ class MreHasEffects(object):
             effectsAppend((mgef,actorValue))
         return effects
 
-    def getSpellSchool(self):
+    def _get_spell_school(self):
         """Returns the school based on the highest cost spell effect."""
         from ... import bush
         spellSchool = [0,0]
@@ -458,7 +458,7 @@ class MreHasEffects(object):
         aValues = bush.game.actor_values
         buffWrite = buff.write
         if self.effects:
-            school = self.getSpellSchool()
+            school = self._get_spell_school()
             buffWrite(aValues[20 + school] + u'\n')
         for index, effect in enumerate(self.effects):
             if effect.scriptEffect:
@@ -468,10 +468,10 @@ class MreHasEffects(object):
                 if effect.effect_sig in avEffects:
                     effectName = re.sub(_(u'(Attribute|Skill)'),
                                         aValues[effect.actorValue], effectName)
-            buffWrite(u'o+*'[effect.recipient] + u' ' + effectName)
-            if effect.magnitude: buffWrite(u' %sm' % effect.magnitude)
-            if effect.area: buffWrite(u' %sa' % effect.area)
-            if effect.duration > 1: buffWrite(u' %sd' % effect.duration)
+            buffWrite('o+*'[effect.recipient] + f' {effectName}')
+            if effect.magnitude: buffWrite(f' {effect.magnitude}m')
+            if effect.area: buffWrite(f' {effect.area}a')
+            if effect.duration > 1: buffWrite(f' {effect.duration}d')
             buffWrite(u'\n')
         return buff.getvalue()
 
@@ -1274,7 +1274,7 @@ class MreMgef(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelObme(extra_format=[u'2B', u'2s', u'4s', u'I', u'4s'], extra_contents=[
+        MelObme(extra_format=['2B', '2s', '4s', 'I', '4s'], extra_contents=[
             u'obme_param_a_info', u'obme_param_b_info', u'obme_unused_mgef',
             u'obme_handler', (_obme_flag_overrides, u'obme_flag_overrides'),
             u'obme_param_b']),

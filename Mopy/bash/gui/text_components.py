@@ -178,7 +178,7 @@ class TextArea(_ATextInput):
         :param do_wrap: Whether or not to wrap text inside this text area."""
         wrap_style = _wx.TE_DONTWRAP if not kwargs.pop('do_wrap', True) else 0
         super(TextArea, self).__init__(parent, *args, style=wrap_style,
-            **kwargs)
+                                       **kwargs)
 
 class TextField(_ATextInput):
     """A single-line text edit widget. Pressing Enter while it is focused will
