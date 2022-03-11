@@ -541,9 +541,9 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         config.abstract = self.gAbstract.text_content.strip()
         #--Version
         maVersion = re.match(r'(\d+)\.(\d+)',
-                             self.gVersion.text_content.strip(), flags=re.U)
+                             self.gVersion.text_content.strip())
         if maVersion:
-            config.vMajor,config.vMinor = (int(g) for g in maVersion.groups())
+            config.vMajor, config.vMinor = map(int, maVersion.groups())
         else:
             config.vMajor,config.vMinor = (0,0)
         #--Done

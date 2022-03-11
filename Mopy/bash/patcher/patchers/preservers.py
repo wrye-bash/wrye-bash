@@ -350,7 +350,8 @@ class ImportSpellStatsPatcher(APreserver):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {x: bush.game.spell_stats_attrs
                  for x in bush.game.spell_stats_types}
-    _csv_parser = parsers.SpellRecords
+    _csv_parser = parsers.SpellRecords if bush.game.fsName == 'Oblivion' \
+        else None
 
 #------------------------------------------------------------------------------
 class ImportStatsPatcher(APreserver):

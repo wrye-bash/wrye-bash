@@ -660,7 +660,7 @@ class MreBook(MelRecord):
         MelDropSound(),
         MelStruct(b'DATA', [u'B', u'b', u'I', u'f'],(_flags, u'flags'),('teaches',-1),'value','weight'),
     )
-    __slots__ = melSet.getSlotsUsed() + ['modb']
+    __slots__ = [*melSet.getSlotsUsed(), 'modb']
 
 #------------------------------------------------------------------------------
 class MelBptdParts(MelGroups):

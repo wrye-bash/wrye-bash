@@ -124,9 +124,9 @@ class MelBipedObjectData(MelStruct):
         loaders[b'BOD2'] = self
         loaders[b'BODT'] = self
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        __unpacker2=structs_cache[u'IB3s'].unpack
-        __unpacker3=structs_cache[u'IB3sI'].unpack
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs,
+                 __unpacker2=structs_cache['IB3s'].unpack,
+                 __unpacker3=structs_cache['IB3sI'].unpack):
         if sub_type == b'BODT':
             # Old record type, use alternate loading routine
             if size_ == 8:
@@ -351,11 +351,10 @@ class MelSpit(MelStruct):
     )
 
     def __init__(self):
-        super(MelSpit, self).__init__(b'SPIT',
-            [u'3I', u'f', u'2I', u'2f', u'I'], u'cost',
-            (MelSpit.spit_flags, u'dataFlags'), u'spellType', u'chargeTime',
-            u'castType', u'targetType', u'castDuration', u'range',
-            (FID, u'halfCostPerk'))
+        super().__init__(b'SPIT', ['3I', 'f', '2I', '2f', 'I'], 'cost',
+            (self.spit_flags, 'dataFlags'), 'spellType', 'chargeTime',
+            'castType', 'targetType', 'castDuration', 'range',
+            (FID, 'halfCostPerk'))
 
 #------------------------------------------------------------------------------
 class MelTopicData(MelGroups):
@@ -1631,7 +1630,7 @@ class MreBook(MelRecord):
         MelFid(b'INAM','inventoryArt'),
         MelLString(b'CNAM','description'),
     )
-    __slots__ = melSet.getSlotsUsed() + ['modb']
+    __slots__ = [*melSet.getSlotsUsed(), 'modb']
 
 #------------------------------------------------------------------------------
 class MreBptd(MelRecord):

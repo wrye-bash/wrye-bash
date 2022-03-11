@@ -453,12 +453,12 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         cachedMasters = {}
         mer_del = self._id_merged_deleted
         minfs = self.patchFile.p_file_minfos
-        for index,srcMod in enumerate(self.srcs):
+        for srcMod in self.srcs:
             tempData = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
             srcFile = self._mod_file_read(srcInfo)
-            bashTags = srcInfo.getBashTags()
+            force_add = 'Actors.SpellsForceAdd' in srcInfo.getBashTags()
             for rsig in actor_sigs:
                 if rsig not in srcFile.tops: continue
                 for record in srcFile.tops[rsig].getActiveRecords():
@@ -477,7 +477,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                     for record in masterFile.tops[rsig].getActiveRecords():
                         fid = record.fid
                         if fid not in tempData: continue
-                        if record.spells == tempData[fid] and not u'Actors.SpellsForceAdd' in bashTags:
+                        if record.spells == tempData[fid] and not force_add:
                             # if subrecord is identical to the last master then we don't care about older masters.
                             del tempData[fid]
                             continue
@@ -496,57 +496,55 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                                 mer_del[fid][u'deleted'].append(spell)
                             if mer_del[fid][u'merged'] == []:
                                 for spell in recordData[u'merged']:
-                                    if spell in mer_del[fid][u'deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue
+                                    if spell in mer_del[fid][u'deleted'] and not force_add: continue
                                     mer_del[fid][u'merged'].append(spell)
                                 continue
-                            for index, spell in enumerate(recordData[u'merged']):
-                                if spell not in mer_del[fid][u'merged']: # so needs to be added... (unless deleted that is)
+                            len_mer = len(rec_merged := recordData['merged'])
+                            fi_merged = mer_del[fid]['merged']
+                            for index, spell in enumerate(rec_merged):
+                                if spell not in fi_merged: # so needs to be added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if spell in mer_del[fid][u'deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
-                                    if index == 0:
-                                        mer_del[fid][u'merged'].insert(0, spell) #insert as first item
-                                    elif index == (len(recordData[u'merged'])-1):
-                                        mer_del[fid][u'merged'].append(spell) #insert as last item
+                                    if spell in mer_del[fid][u'deleted'] and not force_add: continue #previously deleted
+                                    if index == 0: #insert as first item
+                                        fi_merged.insert(0, spell)
+                                    elif index == (len_mer - 1):
+                                        fi_merged.append(spell) #insert as last item
                                     else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
-                                        i = index - 1
-                                        while i >= 0:
-                                            if recordData[u'merged'][i] in mer_del[fid][u'merged']:
-                                                slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i]) + 1
-                                                mer_del[fid][u'merged'].insert(slot, spell)
+                                        for i in range(index - 1, -1, -1):
+                                            try:
+                                                slot = fi_merged.index(rec_merged[i]) + 1
+                                                fi_merged.insert(slot, spell)
                                                 break
-                                            i -= 1
+                                            except ValueError: continue
                                         else:
-                                            i = index + 1
-                                            while i != len(recordData[u'merged']):
-                                                if recordData[u'merged'][i] in mer_del[fid][u'merged']:
-                                                    slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i])
-                                                    mer_del[fid][u'merged'].insert(slot, spell)
+                                            for i in range(index + 1, len_mer):
+                                                try:
+                                                    slot = fi_merged.index(rec_merged[i])
+                                                    fi_merged.insert(slot, spell)
                                                     break
-                                                i += 1
+                                                except ValueError: continue
                                     continue # Done with this package
-                                elif index == mer_del[fid][u'merged'].index(spell) or (len(recordData[u'merged'])-index) == (len(mer_del[fid][u'merged'])-mer_del[fid][u'merged'].index(spell)): continue #spell same in both lists.
+                                elif index == (dex := fi_merged.index(spell)) or (len_mer - index) == (len(fi_merged) - dex): continue #spell same in both lists.
                                 else: #this import is later loading so we'll assume it is better order
-                                    mer_del[fid][u'merged'].remove(spell)
-                                    if index == 0:
-                                        mer_del[fid][u'merged'].insert(0, spell) #insert as first item
-                                    elif index == (len(recordData[u'merged'])-1):
-                                        mer_del[fid][u'merged'].append(spell) #insert as last item
+                                    fi_merged.remove(spell)
+                                    if index == 0: # insert as first item
+                                        fi_merged.insert(0, spell)
+                                    elif index == (len_mer - 1):
+                                        fi_merged.append(spell) # insert as last item
                                     else:
-                                        i = index - 1
-                                        while i >= 0:
-                                            if recordData[u'merged'][i] in mer_del[fid][u'merged']:
-                                                slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i]) + 1
-                                                mer_del[fid][u'merged'].insert(slot, spell)
+                                        for i in range(index - 1, -1, -1):
+                                            try:
+                                                slot = fi_merged.index(rec_merged[i]) + 1
+                                                fi_merged.insert(slot, spell)
                                                 break
-                                            i -= 1
+                                            except ValueError: continue
                                         else:
-                                            i = index + 1
-                                            while i != len(recordData[u'merged']):
-                                                if recordData[u'merged'][i] in mer_del[fid][u'merged']:
-                                                    slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i])
-                                                    mer_del[fid][u'merged'].insert(slot, spell)
+                                            for i in range(index + 1, len_mer):
+                                                try:
+                                                    slot = fi_merged.index(rec_merged[i])
+                                                    fi_merged.insert(slot, spell)
                                                     break
-                                                i += 1
+                                                except ValueError: continue
             progress.plus()
 
     def scanModFile(self, modFile, progress): # scanModFile2

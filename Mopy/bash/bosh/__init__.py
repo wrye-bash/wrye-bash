@@ -695,10 +695,10 @@ class ModInfo(FileInfo):
             self.setBashTags(fixed_tags)
         return fixed_tags & bush.game.allTags
 
-    def getBashTagsDesc(self):
+    def getBashTagsDesc(self, *, __tags_search=re.compile(
+        '{{ *BASH *:([^}]+)}}', re.I).search):
         """Returns any Bash flag keys."""
-        maBashKeys = re.search(u'{{ *BASH *:([^}]+)}}',
-                               self.header.description, flags=re.U | re.I)
+        maBashKeys = __tags_search(self.header.description)
         if not maBashKeys:
             return set()
         else:
@@ -3077,7 +3077,7 @@ class ModInfos(FileInfos):
     def getVersionFloat(self,fileName):
         """Extracts and returns version number for fileName from header.hedr.description."""
         version = self.getVersion(fileName)
-        maVersion = re.search(r'(\d+\.?\d*)', version, flags=re.U)
+        maVersion = re.search(r'(\d+\.?\d*)', version)
         if maVersion:
             return float(maVersion.group(1))
         else:

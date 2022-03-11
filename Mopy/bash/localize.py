@@ -363,8 +363,7 @@ def unformat_date(date_str):
         return time.strptime(date_str, u'%c')
     except ValueError:
         if bass.active_locale.startswith(u'ja_'):
-            date_str = re.sub(u'^([0-9]{4})/([1-9])', r'\1/0\2', date_str,
-                              flags=re.U)
+            date_str = re.sub('^([0-9]{4})/([1-9])', r'\1/0\2', date_str)
             return time.strptime(date_str, u'%c')
         else:
             raise
