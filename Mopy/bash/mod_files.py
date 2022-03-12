@@ -381,9 +381,9 @@ class ModFile(object):
         """Indexes and cache all MGEF properties and stores them for retrieval
         by the patchers. We do this once at all so we only have to iterate over
         the MGEFs once."""
-        m_school = bush.game.mgef_school.copy()
-        m_hostiles = bush.game.hostile_effects.copy()
-        m_names = bush.game.mgef_name.copy()
+        m_school = MreRecord.type_class[b'MGEF'].mgef_school.copy()
+        m_hostiles = MreRecord.type_class[b'MGEF'].hostile_effects.copy()
+        m_names = MreRecord.type_class[b'MGEF'].mgef_name.copy()
         hostile_recs = set()
         nonhostile_recs = set()
         unpack_eid = int_unpacker

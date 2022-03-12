@@ -476,8 +476,8 @@ statsTypes = {
     b'MISC': ('eid', 'weight', 'value'),
     b'SLGM': ('eid', 'weight', 'value'),
     b'WEAP': ('eid', 'weight', 'value', 'damage', 'speed', 'reach',
-              'enchantPoints', 'stagger', 'critDamage', 'criticalMultiplier',
-              'criticalEffect'),
+              'enchantPoints', 'stagger', 'criticalDamage',
+              'criticalMultiplier', 'criticalEffect'),
 }
 
 #------------------------------------------------------------------------------
@@ -1006,11 +1006,6 @@ settings_tweaks = {
 # Import Relations
 #------------------------------------------------------------------------------
 relations_attrs = (u'faction', u'mod', u'group_combat_reaction')
-relations_csv_header = (
-    _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
-    _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'),
-    _(u'Group Combat Reaction'))
-relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
 
 #------------------------------------------------------------------------------
 # Import Enchantment Stats

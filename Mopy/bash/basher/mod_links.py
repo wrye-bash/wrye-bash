@@ -440,7 +440,6 @@ class _ModGroups(CsvParser):
     """Groups for mods with functions for importing/exporting from/to text
     file."""
     _csv_header = _(u'Mod'), _(u'Group')
-    _row_fmt_str = u'"%s","%s"\n'
 
     def __init__(self):
         self.mod_group = {}
@@ -477,9 +476,8 @@ class _ModGroups(CsvParser):
 
     def _write_rows(self, out):
         """Exports eids to specified text file."""
-        rowFormat = self._row_fmt_str
         for mod, mod_grp in dict_sort(self.mod_group):
-            out.write(rowFormat % (mod, mod_grp))
+            out.write(f'"{mod}","{mod_grp}"\n')
 
 class _CsvExport_Link(ItemLink):
     """Mixin for links exporting in a csv file."""

@@ -827,3 +827,18 @@ class MelValueWeight(MelStruct):
     object)."""
     def __init__(self):
         super().__init__(b'DATA', ['I', 'f'], 'value', 'weight')
+
+#------------------------------------------------------------------------------
+class _SpellFlags(Flags):
+    """For SpellFlags, immuneToSilence activates bits 1 AND 3."""
+    __slots__ = []
+
+    def __setitem__(self, index, value):
+        setter = Flags.__setitem__
+        setter(self, index, value)
+        if index == 1:
+            setter(self, 3, value)
+
+SpellFlags = _SpellFlags.from_names('noAutoCalc','immuneToSilence',
+    'startSpell', None, 'ignoreLOS', 'scriptEffectAlwaysApplies',
+    'disallowAbsorbReflect', 'touchExplodesWOTarget')

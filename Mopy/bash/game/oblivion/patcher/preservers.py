@@ -21,6 +21,7 @@
 #
 # =============================================================================
 from collections import Counter
+from operator import itemgetter
 
 from ._shared import cobl_main, ExSpecial
 from .... import load_order
@@ -106,7 +107,6 @@ class _ExSpecialList(_HandleAliases, ListPatcher, ExSpecial):
     def __init__(self, p_name, p_file, p_sources):
         super(_ExSpecialList, self).__init__(p_file.pfile_aliases)
         ListPatcher.__init__(self, p_name, p_file, p_sources)
-        self.id_info = {}
 
     @classmethod
     def gui_cls_vars(cls):
@@ -124,12 +124,12 @@ class CoblExhaustionPatcher(_ExSpecialList):
     _csv_key = u'Exhaust'
     _config_key = u'CoblExhaustion'
     _read_sigs = (b'SPEL',)
+    _key2_getter = itemgetter(0, 1)
 
     def __init__(self, p_name, p_file, p_sources):
         super(CoblExhaustionPatcher, self).__init__(p_name, p_file, p_sources)
         self.isActive &= (cobl_main in p_file.loadSet and
             self.patchFile.p_file_minfos.getVersionFloat(cobl_main) > 1.65)
-        self.id_exhaustion = self.id_info
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self._patcher_name)
@@ -137,9 +137,8 @@ class CoblExhaustionPatcher(_ExSpecialList):
         for srcMod in load_order.get_ordered(count):
             log(u'  * %s: %d' % (srcMod, count[srcMod]))
 
-    def _parse_line(self, csv_fields): # mod, objectIndex, time
-        self.id_info[self._coerce_fid(csv_fields[0], csv_fields[1])] = int(
-            csv_fields[3])
+    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
+        return int(csv_fields[3])
 
     def initData(self,progress):
         """Get names from source files."""
@@ -153,9 +152,10 @@ class CoblExhaustionPatcher(_ExSpecialList):
 
     def scanModFile(self,modFile,progress): # if b'SPEL' not in modFile.tops: return
         patchRecords = self.patchFile.tops[b'SPEL']
+        id_info = self.id_stored_data[b'FACT']
         for record in modFile.tops[b'SPEL'].getActiveRecords():
             if not record.spellType == 2: continue
-            if record.fid in self.id_exhaustion:
+            if record.fid in id_info:
                 patchRecords.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):
@@ -164,20 +164,19 @@ class CoblExhaustionPatcher(_ExSpecialList):
         count = Counter()
         exhaustId = (cobl_main, 0x05139B)
         keep = self.patchFile.getKeeper()
+        id_info = self.id_stored_data[b'FACT']
         for record in self.patchFile.tops[b'SPEL'].records:
             ##: Skips OBME records - rework to support them
             if record.obme_record_version is not None: continue
             #--Skip this one?
             rec_fid = record.fid
-            duration = self.id_exhaustion.get(rec_fid, 0)
+            duration = id_info.get(rec_fid, 0)
             if not (duration and record.spellType == 2): continue
             isExhausted = False ##: unused, was it supposed to be used?
-            for effect in record.effects:
-                if effect.effect_sig == b'SEFF' \
-                        and effect.scriptEffect.script_fid == exhaustId:
-                    duration = 0
-                    break
-            if not duration: continue
+            if any(ef.effect_sig == b'SEFF' and
+                   ef.scriptEffect.script_fid == exhaustId
+                   for ef in record.effects):
+                continue
             #--Okay, do it
             record.full = u'+' + record.full
             record.spellType = 3 #--Lesser power
@@ -208,6 +207,7 @@ class MorphFactionsPatcher(_ExSpecialList):
     _csv_key = u'MFact'
     _config_key = u'MFactMarker'
     _read_sigs = (b'FACT',)
+    _key2_getter = itemgetter(0, 1)
 
     def _pLog(self, log, changed):
         log.setHeader(u'= ' + self._patcher_name)
@@ -216,14 +216,12 @@ class MorphFactionsPatcher(_ExSpecialList):
         for mod in load_order.get_ordered(changed):
             log(u'* %s: %d' % (mod, changed[mod]))
 
-    def _parse_line(self, csv_fields):
+    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
         # type: # (list[str]) -> tuple[object] | None
-        mod, objectIndex = csv_fields[0], csv_fields[1]
         morphName = csv_fields[4].strip()
-        if not morphName:
-            return None # caller unpacks -> TypeError (should not happen often)
+        if not morphName: raise ValueError # exit _parse_line
         rankName = csv_fields[5].strip() or _(u'Member')
-        self.id_info[self._coerce_fid(mod, objectIndex)] = morphName, rankName
+        return morphName, rankName
 
     def __init__(self, p_name, p_file, p_sources):
         super(MorphFactionsPatcher, self).__init__(p_name, p_file, p_sources)
@@ -242,7 +240,7 @@ class MorphFactionsPatcher(_ExSpecialList):
 
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
-        id_info = self.id_info
+        id_info = self.id_stored_data[b'FACT']
         patchBlock = self.patchFile.tops[b'FACT']
         if modFile.fileInfo.ci_key == cobl_main:
             record = modFile.tops[b'FACT'].getRecord(self.mFactLong)
@@ -256,7 +254,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         """Make changes to patchfile."""
         if not self.isActive: return
         mFactLong = self.mFactLong
-        id_info = self.id_info
+        id_info = self.id_stored_data[b'FACT']
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
         changed = Counter()
