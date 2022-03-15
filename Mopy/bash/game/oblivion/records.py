@@ -493,21 +493,18 @@ actor_values = [ # Human-readable names for each actor value
 class MreHasEffects(object):
     """Mixin class for magic items."""
     __slots__ = []
-    recipientTypeNumber_Name = {None: 'NONE', 0: 'Self', 1: 'Touch',
-                                2: 'Target'}
-    recipientTypeName_Number = {y.lower(): x for x, y
-                                in recipientTypeNumber_Name.items()
-                                if x is not None}
-    actorValueNumber_Name = {x: y for x, y in enumerate(actor_values)}
-    actorValueName_Number = {y.lower(): x for x, y
-                             in actorValueNumber_Name.items()}
-    actorValueNumber_Name[None] = 'NONE'
-    schoolTypeNumber_Name = {None: 'NONE', 0: 'Alteration', 1: 'Conjuration',
-                             2: 'Destruction', 3: 'Illusion', 4: 'Mysticism',
-                             5: 'Restoration'}
-    schoolTypeName_Number = {y.lower(): x for x, y
-                             in schoolTypeNumber_Name.items()
-                             if x is not None}
+    _recipient_number_name = {None: 'NONE', 0: 'Self', 1: 'Touch', 2: 'Target'}
+    _recipient_name_number = {y.lower(): x for x, y in
+                              _recipient_number_name.items() if x is not None}
+    _actor_val_number_name = {x: y for x, y in enumerate(actor_values)}
+    _actor_val_name_number = {y.lower(): x for x, y
+                              in _actor_val_number_name.items()}
+    _actor_val_number_name[None] = 'NONE'
+    _school_number_name = {None: 'NONE', 0: 'Alteration', 1: 'Conjuration',
+                           2: 'Destruction', 3: 'Illusion', 4: 'Mysticism',
+                           5: 'Restoration'}
+    _school_name_number = {y.lower(): x for x, y in _school_number_name.items()
+                           if x is not None}
     # Add 'effects/script_fid' to attr_csv_struct (column headers are tuples!)
     _effect_headers = (
         _('Effect'), _('Name'), _('Magnitude'), _('Area'), _('Duration'),
@@ -583,10 +580,10 @@ class MreHasEffects(object):
     @classmethod
     def _read_effects(cls, _effects, _coerce_fid, *,
                       __packer=structs_cache['I'].pack):
-        schoolTypeName_Number = cls.schoolTypeName_Number
-        recipientTypeName_Number = cls.recipientTypeName_Number
-        actorValueName_Number = cls.actorValueName_Number
-        effects = []
+        schoolTypeName_Number = cls._school_name_number
+        recipientTypeName_Number = cls._recipient_name_number
+        actorValueName_Number = cls._actor_val_name_number
+        effects_list = []
         while len(_effects) >= 13:
             _effect,_effects = _effects[1:13],_effects[13:]
             eff_name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
@@ -607,7 +604,7 @@ class MreHasEffects(object):
             if None in (eff_name,magnitude,area,duration,range_,actorvalue):
                 continue
             eff = cls.getDefault('effects')
-            effects.append(eff)
+            effects_list.append(eff)
             eff.effect_sig = str_to_sig(eff_name)
             eff.magnitude = magnitude
             eff.area = area
@@ -635,22 +632,19 @@ class MreHasEffects(object):
             # the csv, this assumes visual MGEFCode is raw)
             if sevisuals is None: # it was no int try to read unicode MGEF Code
                 sevisuals = str_or_none(sevisual)
-                if sevisuals == u'' or sevisuals is None:
-                    sevisuals = null4
-                else:
-                    sevisuals = str_to_sig(sevisuals)
+                sevisuals = str_to_sig(sevisuals) if sevisuals else null4
             else: # pack int to bytes
                 sevisuals = __packer(sevisuals)
             sevisual = sevisuals
             se.visual = sevisual
             se.flags = MelEffects.se_flags(seflags) # TODO TEST
-        return effects
+        return effects_list
 
     @classmethod
     def _write_effects(cls, effects):
-        schoolTypeNumber_Name = cls.schoolTypeNumber_Name
-        recipientTypeNumber_Name = cls.recipientTypeNumber_Name
-        actorValueNumber_Name = cls.actorValueNumber_Name
+        schoolTypeNumber_Name = cls._school_number_name
+        recipientTypeNumber_Name = cls._recipient_number_name
+        actorValueNumber_Name = cls._actor_val_number_name
         effectFormat = ',,"%s","%d","%d","%d","%s","%s"'
         scriptEffectFormat = ',"%s","0x%06X","%s","%s","%s","%s"'
         noscriptEffectFiller = ',"None","None","None","None","None","None"'
@@ -2275,27 +2269,27 @@ class MreSpel(MreHasEffects, MelRecord):
     """Spell."""
     rec_sig = b'SPEL'
     ##: use LowerDict and get rid of the lower() in callers
-    spellTypeNumber_Name = {None: u'NONE',
+    _spell_type_num_name = {None: u'NONE',
                             0   : u'Spell',
                             1   : u'Disease',
                             2   : u'Power',
                             3   : u'LesserPower',
                             4   : u'Ability',
                             5   : u'Poison'}
-    spellTypeName_Number = {y.lower(): x for x, y in
-                            spellTypeNumber_Name.items() if x is not None}
-    levelTypeNumber_Name = {None : u'NONE',
+    _spell_type_name_num = {y.lower(): x for x, y in
+                            _spell_type_num_name.items() if x is not None}
+    _level_type_num_name = {None : u'NONE',
                             0    : u'Novice',
                             1    : u'Apprentice',
                             2    : u'Journeyman',
                             3    : u'Expert',
                             4    : u'Master'}
-    levelTypeName_Number = {y.lower(): x for x, y in
-                            levelTypeNumber_Name.items() if x is not None}
+    _level_type_name_num = {y.lower(): x for x, y in
+                            _level_type_num_name.items() if x is not None}
     attr_csv_struct[u'level'][2] = \
-        lambda val: u'"%s"' % MreSpel.levelTypeNumber_Name.get(val, val)
+        lambda val: f'"{MreSpel._level_type_num_name.get(val, val)}"'
     attr_csv_struct[u'spellType'][2] = \
-        lambda val: u'"%s"' % MreSpel.spellTypeNumber_Name.get(val, val)
+        lambda val: f'"{MreSpel._spell_type_num_name.get(val, val)}"'
 
     melSet = MelSet(
         MelEdid(),
@@ -2314,10 +2308,10 @@ class MreSpel(MreHasEffects, MelRecord):
                                                        reuse)
         try:
             lvl = attr_dict[u'level'] # KeyError on 'detailed' pass
-            attr_dict[u'level'] = cls.levelTypeName_Number.get(lvl.lower(),
+            attr_dict[u'level'] = cls._level_type_name_num.get(lvl.lower(),
                 int_or_zero(lvl))
             stype = attr_dict[u'spellType']
-            attr_dict[u'spellType'] = cls.spellTypeName_Number.get(
+            attr_dict[u'spellType'] = cls._spell_type_name_num.get(
                 stype.lower(), int_or_zero(stype))
             attr_dict['spell_flags'] = SpellFlags(
                 attr_dict.get('spell_flags', 0))

@@ -49,6 +49,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
+from typing import Iterable
 from urllib.parse import quote
 
 import chardet
@@ -2174,7 +2175,7 @@ def build_esub(esub_str):
 
 #------------------------------------------------------------------------------
 # no re.U, we want our record attrs to be ASCII
-_valid_rpath_attr = re.compile(r'^[^\d\W]\w*\Z')
+_valid_rpath_attr = re.compile(r'^[^\d\W]\w*\Z', re.ASCII)
 
 class _ARP_Subpath(object):
     """Abstract base class for all subpaths of a larger record path."""
@@ -2183,11 +2184,11 @@ class _ARP_Subpath(object):
     def __init__(self, sub_rpath, rest_rpath):
         # type: (str, str) -> None
         if not _valid_rpath_attr.match(sub_rpath):
-            raise SyntaxError(u"'%s' is not a valid subpath. Your record path "
-                              u'likely contains a typo.' % sub_rpath)
+            raise SyntaxError(f"'{sub_rpath}' is not a valid subpath. "
+                              f"Your record path likely contains a typo.")
         elif iskeyword(sub_rpath):
-            raise SyntaxError(u'Record path subpaths may not be Python '
-                              u"keywords (was '%s')." % sub_rpath)
+            raise SyntaxError(f"Record path subpaths may not be "
+                              f"Python keywords (was '{sub_rpath}').")
         self._subpath_attr = sub_rpath
         self._next_subpath = _parse_rpath(rest_rpath)
 
@@ -2204,7 +2205,7 @@ class _ARP_Subpath(object):
 class _RP_Subpath(_ARP_Subpath):
     """A simple, intermediate subpath. Simply forwards all calls to the next
     part of the record path."""
-    def rp_eval(self, record) -> list:
+    def rp_eval(self, record) -> Iterable:
         return self._next_subpath.rp_eval(getattr(record, self._subpath_attr))
 
     def rp_exists(self, record) -> bool:
@@ -2218,7 +2219,7 @@ class _RP_Subpath(_ARP_Subpath):
         self._next_subpath.rp_map(getattr(record, self._subpath_attr), func)
 
     def __repr__(self):
-        return u'%s.%r' % (self._subpath_attr, self._next_subpath)
+        return f'{self._subpath_attr}.{self._next_subpath!r}'
 
 class _RP_LeafSubpath(_ARP_Subpath):
     """The final part of a record path. This the part that actually gets and
@@ -2244,7 +2245,7 @@ class _RP_IteratedSubpath(_ARP_Subpath):
                                              u'iterated subpath.')
         super(_RP_IteratedSubpath, self).__init__(sub_rpath, rest_rpath)
 
-    def rp_eval(self, record) -> list:
+    def rp_eval(self, record) -> Iterable:
         eval_next = self._next_subpath.rp_eval
         return chain.from_iterable(eval_next(iter_attr) for iter_attr
                                    in getattr(record, self._subpath_attr))
@@ -2264,7 +2265,7 @@ class _RP_IteratedSubpath(_ARP_Subpath):
             map_next(iter_attr, func)
 
     def __repr__(self):
-        return u'%s[i].%r' % (self._subpath_attr, self._next_subpath)
+        return f'{self._subpath_attr}[i].{self._next_subpath!r}'
 
 class _RP_OptionalSubpath(_RP_Subpath):
     """An optional part of a record path. If it doesn't exist, mapping and
@@ -2274,7 +2275,7 @@ class _RP_OptionalSubpath(_RP_Subpath):
                                              u'optional subpath.')
         super(_RP_OptionalSubpath, self).__init__(sub_rpath, rest_rpath)
 
-    def rp_eval(self, record) -> list:
+    def rp_eval(self, record) -> Iterable:
         try:
             return super(_RP_OptionalSubpath, self).rp_eval(record)
         except AttributeError:
@@ -2287,7 +2288,7 @@ class _RP_OptionalSubpath(_RP_Subpath):
             pass # Attribute did not exist, can't map any further
 
     def __repr__(self):
-        return u'%s?.%r' % (self._subpath_attr, self._next_subpath)
+        return f'{self._subpath_attr}?.{self._next_subpath!r}'
 
 class RecPath(object):
     """Record paths (or 'rpaths' for short) provide a way to get and set
@@ -2301,7 +2302,7 @@ class RecPath(object):
     def __init__(self, rpath_str): # type: (str) -> None
         self._root_subpath = _parse_rpath(rpath_str)
 
-    def rp_eval(self, record) -> list:
+    def rp_eval(self, record) -> Iterable:
         """Evaluates this record path for the specified record, returning a
         list of all attribute values that it resolved to."""
         return self._root_subpath.rp_eval(record)

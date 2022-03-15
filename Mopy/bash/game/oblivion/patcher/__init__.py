@@ -619,7 +619,7 @@ text_replacer_rpaths = {
     b'INGR': ('full', 'effects[i].scriptEffect?.full'),
     b'KEYM': ('full',),
     b'LIGH': ('full',),
-    b'LSCR': ('full', 'description'),
+    b'LSCR': ('description',),
     b'MGEF': ('full', 'description'),
     b'MISC': ('full',),
     b'NPC_': ('full',),
