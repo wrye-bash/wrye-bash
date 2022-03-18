@@ -24,8 +24,7 @@
 higher-level building blocks can be found in common_subrecords.py."""
 from typing import BinaryIO
 
-from .utils_constants import FID, null1, _make_hashable, FixedString, \
-    int_unpacker, get_structs
+from .utils_constants import FID, null1, FixedString, int_unpacker, get_structs
 from .. import bolt, exception
 from ..bolt import decoder, encode, structs_cache, struct_calcsize, Rounder, \
     sig_to_str, attrgetter_cache, struct_error
@@ -42,7 +41,7 @@ class MelObject(object):
         return not isinstance(other,MelObject) or self.__dict__ != other.__dict__
 
     def __hash__(self):
-        return hash(_make_hashable(self.__dict__))
+        raise TypeError(f'unhashable type: {type(self)}')
 
     def __repr__(self):
         """Carefully try to show as much info about ourselves as possible."""

@@ -1976,7 +1976,7 @@ class Rounder(float):
 
     #--Hash/Compare
     def __hash__(self):
-        raise exception.AbstractError(f'{type(self)} does not define __hash__')
+        raise TypeError(f'unhashable type: {type(self)}')
     def __eq__(self, b, rel_tol=1e-06, abs_tol=1e-12):
         """Check if the two floats are equal to the sixth place (relatively)
         or to the twelfth place (absolutely). Note that these parameters

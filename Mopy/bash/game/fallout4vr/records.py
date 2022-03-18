@@ -23,7 +23,8 @@
 """This module contains only the overrides of record classes needed for
 FO4VR."""
 
-from ...brec import MreHeaderBase, MelSet, MelStruct, MelBase, MelArray, MelFid
+from ...brec import MreHeaderBase, MelSet, MelStruct, MelBase, MelFid, \
+    MelSimpleArray
 
 # Only difference from FO4 is the default version, but this seems less hacky
 # than adding a game var just for this and dynamically importing it in FO4
