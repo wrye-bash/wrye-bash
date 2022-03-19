@@ -1,5 +1,7 @@
 # -*- mode: python -*-
 
+from PyInstaller import HOMEPATH
+
 import fnmatch
 import os
 import sys
@@ -51,9 +53,16 @@ excluded_modules += [
     'numpy',
 ]
 
+# Add binaries we want to include that PyInstaller misses
+included_binaries = []
+if os.name == 'nt':
+    # On Windows, make sure to include the Edge webview DLL
+    included_binaries.append((os.path.join(
+        HOMEPATH, 'wx', 'WebView2Loader.dll'), '.'))
+
 a = Analysis([entry_point],
              pathex=[TOOL_PATH, ROOT_PATH],
-             binaries=[],
+             binaries=included_binaries,
              datas=[],
              hiddenimports=hiddenimports,
              hookspath=[],
@@ -68,6 +77,7 @@ a = Analysis([entry_point],
 excluded_binaries = {
     'MSVCP140.dll',
     'VCRUNTIME140.dll',
+    'VCRUNTIME140_1.dll',
     'api-ms-win-core-console-l1-1-0.dll',
     'api-ms-win-core-datetime-l1-1-0.dll',
     'api-ms-win-core-debug-l1-1-0.dll',
