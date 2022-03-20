@@ -660,6 +660,7 @@ class BSA(ABsa):
             folder_name_record[folder_name] = folder_record
         file_names = self._read_bsa_file(folder_records, _discard_file_records)
         filenames_append = _filenames.append
+        filename = 'none' ###: XXX debug #629
         for folder_path, folder_record in folder_name_record.items():
             start = len(_filenames)
             for list_index in range(start, start + folder_record.files_count):
@@ -670,6 +671,11 @@ class BSA(ABsa):
                 except UnicodeDecodeError:
                     raise BSADecodingError(self.bsa_name,
                                            file_names[list_index])
+                except IndexError as ie: ###: XXX debug #629
+                    deprint(f'{file_names=}')
+                    deprint(f'{list_index=}')
+                    deprint(f'{filename=}')
+                    raise BSAError(self.bsa_name, 'failed to read bsa') from ie
                 filenames_append(f'{folder_path}{__ps}{filename}')
         self._filenames = _filenames
 
