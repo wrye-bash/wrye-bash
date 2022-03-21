@@ -387,14 +387,17 @@ class MelArray(MelBase):
                     map_entry(arr_entry, function, save_fids)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        append_entry = getattr(record, self.attr).append
-        entry_slots = self.array_element_attrs
-        entry_size = self._element_size
-        load_entry = self._element.load_mel
         if self._prelude:
             self._prelude.load_mel(record, ins, sub_type, self._prelude_size,
                                    *debug_strs)
             size_ -= self._prelude_size
+        self._load_array(record, ins, sub_type, size_, debug_strs)
+
+    def _load_array(self, record, ins, sub_type, size_, debug_strs):
+        append_entry = getattr(record, self.attr).append
+        entry_slots = self.array_element_attrs
+        entry_size = self._element_size
+        load_entry = self._element.load_mel
         for x in range(size_ // entry_size):
             arr_entry = MelObject()
             append_entry(arr_entry)
@@ -413,9 +416,13 @@ class MelArray(MelBase):
                 sub_data = b''
         else:
             sub_data = b''
-        sub_data += b''.join([self._element.pack_subrecord_data(arr_entry)
-                              for arr_entry in array_val])
+        sub_data += self._pack_array_data(array_val)
         return sub_data
+
+    def _pack_array_data(self, array_val):
+        return b''.join(
+            [self._element.pack_subrecord_data(arr_entry) for arr_entry in
+             array_val])
 
 #------------------------------------------------------------------------------
 class MelTruncatedStruct(MelStruct):

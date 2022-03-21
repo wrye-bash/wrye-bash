@@ -188,7 +188,13 @@ class MelBase(Subrecord):
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         """Read the actual data (not the headers) from ins into record
         attribute."""
-        setattr(record, self.attr, ins.read(size_, *debug_strs))
+        setattr(record, self.attr, self.load_bytes(ins, size_, *debug_strs))
+
+    def load_bytes(self, ins, size_, *debug_strs):
+        """Deserialize a chunk of the binary data of given size_ - by
+        default reads it in as is. Subclasses should deserialize to appropriate
+        types."""
+        return ins.read(size_, *debug_strs)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -235,9 +241,8 @@ class _MelNum(MelBase):
     _unpacker, _packer, static_size = get_structs(u'I')
     __slots__ = ()
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        setattr(record, self.attr, ins.unpack(self._unpacker, size_,
-                                              *debug_strs)[0])
+    def load_bytes(self, ins, size_, *debug_strs):
+        return ins.unpack(self._unpacker, size_, *debug_strs)[0]
 
     def pack_subrecord_data(self, record):
         """Will only be dumped if set by load_mel."""
@@ -479,8 +484,8 @@ class MelString(MelBase):
         self.minSize = minSize
         self.encoding = None # will default to bolt.pluginEncoding
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        setattr(record, self.attr, ins.readString(size_, *debug_strs))
+    def load_bytes(self, ins, size_, *debug_strs):
+        return ins.readString(size_, *debug_strs)
 
     def packSub(self, out, string_val):
         # type: (BinaryIO, str) -> None
@@ -506,16 +511,17 @@ class MelUnicode(MelString):
         super(MelUnicode, self).__init__(mel_sig, attr, default, maxSize)
         self.encoding = encoding # None == automatic detection
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        value = u'\n'.join(decoder(x,self.encoding,avoidEncodings=('utf8','utf-8'))
-                           for x in bolt.cstrip(ins.read(size_, *debug_strs)).split(b'\n'))
-        setattr(record, self.attr, value)
+    def load_bytes(self, ins, size_, *debug_strs):
+        return '\n'.join(
+            decoder(x, self.encoding, avoidEncodings=('utf8', 'utf-8')) for x
+            in bolt.cstrip(ins.read(size_, *debug_strs)).split(b'\n'))
 
 #------------------------------------------------------------------------------
 class MelLString(MelString):
     """Represents a mod record localized string."""
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        setattr(record, self.attr, ins.readLString(size_, *debug_strs))
+
+    def load_bytes(self, ins, size_, *debug_strs):
+        return ins.readLString(size_, *debug_strs)
 
 #------------------------------------------------------------------------------
 class MelStrings(MelString):
@@ -689,9 +695,8 @@ class MelFloat(_MelNum):
     """Float."""
     _unpacker, _packer, static_size = get_structs(u'=f')
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        float_val = ins.unpack(self._unpacker, size_, *debug_strs)[0]
-        setattr(record, self.attr, Rounder(float_val)) ##: note we dont round on dump
+    def load_bytes(self, ins, size_, *debug_strs): ##: note we dont round on dump
+        return Rounder(super().load_bytes(ins, size_, *debug_strs))
 
 class MelSInt8(_MelNum):
     """Signed 8-bit integer."""
@@ -737,9 +742,9 @@ class _MelFlags(_MelNum):
     def setDefault(self, record):
         setattr(record, self.attr, self._flag_type(self.default or 0))
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        setattr(record, self.attr, self._flag_type(ins.unpack(
-            self._unpacker, size_, *debug_strs)[0]))
+    def load_bytes(self, ins, size_, *debug_strs):
+        return self._flag_type(
+            ins.unpack(self._unpacker, size_, *debug_strs)[0])
 
     def pack_subrecord_data(self, record):
         flag_val = getattr(record, self.attr)
@@ -758,7 +763,7 @@ class MelXXXX(MelUInt32):
         self.mel_sig = b'XXXX'
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        self.int_size = ins.unpack(self._unpacker, size_, *debug_strs)[0]
+        self.int_size = self.load_bytes(ins, size_, *debug_strs)
 
     def pack_subrecord_data(self, record):
         return self._packer(self.int_size)
