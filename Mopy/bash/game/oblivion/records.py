@@ -31,7 +31,7 @@ from ...bolt import Flags, int_or_zero, structs_cache, str_or_none, \
     int_or_none, str_to_sig, sig_to_str
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
-    MreHeaderBase, MelBase, MelFidList, MelBodyParts, MelAnimations, \
+    MreHeaderBase, MelBase, MelSimpleArray, MelBodyParts, MelAnimations, \
     MreGmstBase, MelReferences, MelRegnEntrySubrecord, MelSorted, MelRegions, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelRaceParts, MelRaceVoices, null1, null2, MelScriptVars, MelRelations, \
@@ -2022,8 +2022,8 @@ class MreRace(MelRecord):
         # Note: xEdit marks both HNAM and ENAM as sorted. They are not, but
         # changing it would cause too many conflicts. We do *not* want to mark
         # them as sorted here, because that's what the Race Checker is for!
-        MelFidList(b'HNAM','hairs'),
-        MelFidList(b'ENAM','eyes'),
+        MelSimpleArray('hairs', MelFid(b'HNAM')),
+        MelSimpleArray('eyes', MelFid(b'ENAM')),
         MelBase(b'FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
         MelBase(b'FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
         MelBase(b'FGTS','fgts_p'), ####FaceGen Texture-Symmetric
@@ -2385,7 +2385,7 @@ class MreWatr(MelRecord):
             ('dispDampner', 10.0000), ('dispSize', 0.0500), 'damage',
             old_versions={'11f3Bs3Bs3BsB3s6f2s', '11f3Bs3Bs3BsB3s2s',
                           '10f2s', '2s'}),
-        MelFidList(b'GNAM','relatedWaters'),
+        MelSimpleArray('relatedWaters', MelFid(b'GNAM')),
     )
     __slots__ = melSet.getSlotsUsed()
 

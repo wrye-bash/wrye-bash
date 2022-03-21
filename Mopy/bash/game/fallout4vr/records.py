@@ -23,7 +23,7 @@
 """This module contains only the overrides of record classes needed for
 FO4VR."""
 
-from ...brec import MreHeaderBase, MelSet, MelStruct, MelBase, MelFidList
+from ...brec import MreHeaderBase, MelSet, MelStruct, MelBase, MelArray, MelFid
 
 # Only difference from FO4 is the default version, but this seems less hacky
 # than adding a game var just for this and dynamically importing it in FO4
@@ -38,7 +38,7 @@ class MreTes4(MreHeaderBase):
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelFidList(b'ONAM', u'overrides',),
+        MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', u'screenshot'),
         MelBase(b'INTV', u'unknownINTV'),
         MelBase(b'INCC', u'unknownINCC'),

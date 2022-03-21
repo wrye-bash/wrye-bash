@@ -26,11 +26,11 @@ from collections import defaultdict
 from itertools import chain
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion, PartialLoadDecider, FlagDecider, MelSorted
+    MelUnion, PartialLoadDecider, FlagDecider, MelSorted, MelSimpleArray
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
-    MelStrings, MelUInt8, MelFidList
+    MelStrings, MelUInt8
 from .utils_constants import int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
     dict_sort, TrimmedFlags
@@ -50,8 +50,8 @@ class MelActionFlags(MelUInt32Flags):
     # with the ability to mark subrecords as required (e.g. for QSDT)
     def pack_subrecord_data(self, record):
         flag_val = getattr(record, self.attr)
-        return (self._packer(flag_val.dump())
-                if flag_val != self._flag_default else None)
+        return self.packer(
+            flag_val) if flag_val != self._flag_default else None
 
 #------------------------------------------------------------------------------
 class MelActivateParents(MelGroup):
@@ -772,7 +772,7 @@ class MelActorSounds(MelSorted):
 class MelRegions(MelSorted):
     """Handles the CELL subrecord XCLR (Regions)."""
     def __init__(self):
-        super(MelRegions, self).__init__(MelFidList(b'XCLR', u'regions'))
+        super(MelRegions, self).__init__(MelSimpleArray('regions', MelFid(b'XCLR')))
 
 #------------------------------------------------------------------------------
 class MelWeatherTypes(MelSorted):

@@ -27,7 +27,7 @@ from ...bolt import Flags, struct_pack, structs_cache, unpack_str16, \
     TrimmedFlags
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelFidList, MelRelations, \
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelSimpleArray, MelRelations, \
     MreGmstBase, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
@@ -281,7 +281,7 @@ class MelKeywords(MelSequential):
         MelSequential.__init__(self,
             MelCounter(MelUInt32(b'KSIZ', u'keyword_count'),
                        counts=u'keywords'),
-            MelSorted(MelFidList(b'KWDA', u'keywords')),
+            MelSorted(MelSimpleArray('keywords', MelFid(b'KWDA'))),
         )
 
 #------------------------------------------------------------------------------
@@ -1246,7 +1246,7 @@ class MreTes4(MreHeaderBase):
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelFidList(b'ONAM','overrides',),
+        MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelBase(b'INTV', 'unknownINTV'),
         MelBase(b'INCC', 'unknownINCC'),
@@ -1875,7 +1875,7 @@ class MreColl(MelRecord):
         MelUInt32Flags(b'GNAM', u'flags', CollisionLayerFlags,),
         MelString(b'MNAM', u'col_layer_name',),
         MelUInt32(b'INTV', 'interactablesCount'),
-        MelSorted(MelFidList(b'CNAM', 'collidesWith')),
+        MelSorted(MelSimpleArray('collidesWith', MelFid(b'CNAM'))),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1910,7 +1910,7 @@ class MreCpth(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelConditions(),
-        MelFidList(b'ANAM','relatedCameraPaths',),
+        MelSimpleArray('relatedCameraPaths', MelFid(b'ANAM')),
         MelUInt8(b'DATA', 'cameraZoom'),
         MelFids(b'SNAM','cameraShots',),
     )
@@ -2221,7 +2221,7 @@ class MreEqup(MelRecord):
     rec_sig = b'EQUP'
     melSet = MelSet(
         MelEdid(),
-        MelFidList(b'PNAM','canBeEquipped'),
+        MelSimpleArray('canBeEquipped', MelFid(b'PNAM')),
         MelUInt32(b'DATA', 'useAllParents'), # actually a bool
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2370,7 +2370,7 @@ class MreFsts(MelRecord):
         MelEdid(),
         MelStruct(b'XCNT', [u'5I'],'walkForward','runForward','walkForwardAlt',
                   'runForwardAlt','walkForwardAlternate2',),
-        MelFidList(b'DATA','footstepSets'),
+        MelSimpleArray('footstepSets', MelFid(b'DATA')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2572,7 +2572,7 @@ class MreIdlm(MelRecord):
         MelUInt8Flags(b'IDLF', u'flags', IdlmTypeFlags),
         MelCounter(MelUInt8(b'IDLC', 'animation_count'), counts='animations'),
         MelFloat(b'IDLT', 'idleTimerSetting'),
-        MelFidList(b'IDLA','animations'),
+        MelSimpleArray('animations', MelFid(b'IDLA')),
         MelModel(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2879,7 +2879,7 @@ class MreLctn(MelRecord):
             MelStruct(b'LCPR', [u'2I', u'2h'], (FID, 'actor'), (FID, 'location'),
                       'gridX', 'gridY'),
         ),
-        MelFidList(b'RCPR','referenceCellPersistentReference',),
+        MelSimpleArray('referenceCellPersistentReference', MelFid(b'RCPR')),
         MelArray('actorCellUnique',
             MelStruct(b'ACUN', [u'3I'], (FID, 'actor'), (FID, 'eef'),
                       (FID, 'location')),
@@ -2888,7 +2888,7 @@ class MreLctn(MelRecord):
             MelStruct(b'LCUN', [u'3I'], (FID, 'actor'), (FID, 'eef'),
                       (FID, 'location')),
         ),
-        MelFidList(b'RCUN','referenceCellUnique',),
+        MelSimpleArray('referenceCellUnique', MelFid(b'RCUN')),
         MelArray('actorCellStaticReference',
             MelStruct(b'ACSR', [u'3I', u'2h'], (FID, 'locRefType'), (FID, 'marker'),
                       (FID, 'location'), 'gridX', 'gridY'),
@@ -2897,7 +2897,7 @@ class MreLctn(MelRecord):
             MelStruct(b'LCSR', [u'3I', u'2h'], (FID, 'locRefType'), (FID, 'marker'),
                       (FID, 'location'), 'gridX', 'gridY'),
         ),
-        MelFidList(b'RCSR','referenceCellStaticReference',),
+        MelSimpleArray('referenceCellStaticReference', MelFid(b'RCSR')),
         MelGroups(u'actorCellEncounterCell',
             MelArray(u'coordinates',
                 MelStruct(b'ACEC', [u'2h'], u'grid_x', u'grid_y'),
@@ -2916,8 +2916,8 @@ class MreLctn(MelRecord):
                      prelude=MelFid(b'RCEC', u'location'),
             ),
         ),
-        MelFidList(b'ACID','actorCellMarkerReference',),
-        MelFidList(b'LCID','locationCellMarkerReference',),
+        MelSimpleArray('actorCellMarkerReference', MelFid(b'ACID')),
+        MelSimpleArray('locationCellMarkerReference', MelFid(b'LCID')),
         MelArray('actorCellEnablePoint',
             MelStruct(b'ACEP', [u'2I', u'2h'], (FID, 'actor'), (FID,'ref'), 'gridX',
                       'gridY'),
@@ -3355,7 +3355,7 @@ class MreMusc(MelRecord):
         # Divided by 100 in TES5Edit, probably for editing only
         MelStruct(b'PNAM', [u'2H'],'priority','duckingDB'),
         MelFloat(b'WNAM', 'fadeDuration'),
-        MelFidList(b'TNAM','musicTracks'),
+        MelSimpleArray('musicTracks', MelFid(b'TNAM')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3377,7 +3377,7 @@ class MreMust(MelRecord):
         MelOptStruct(b'LNAM', [u'2f', u'I'],'loopBegins','loopEnds','loopCount',),
         MelConditionCounter(),
         MelConditions(),
-        MelFidList(b'SNAM','tracks',),
+        MelSimpleArray('tracks', MelFid(b'SNAM')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3394,7 +3394,7 @@ class MreNavi(MelRecord):
         # If no mitigation is needed, then leave it as MelBase
         MelBase(b'NVMI','navigationMapInfos',),
         MelBase(b'NVPP','preferredPathing',),
-        MelFidList(b'NVSI','navigationMesh'),
+        MelSimpleArray('navigationMesh', MelFid(b'NVSI')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3602,7 +3602,7 @@ class MreOtft(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelSorted(MelFidList(b'INAM', 'items')),
+        MelSorted(MelSimpleArray('items', MelFid(b'INAM'))),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3675,7 +3675,7 @@ class MrePack(MelRecord):
                                         'unknown'),
                               counter='animation_count', counts='animations'),
             MelFloat(b'IDLT', 'idleTimerSetting',),
-            MelFidList(b'IDLA', 'animations'),
+            MelSimpleArray('animations', MelFid(b'IDLA')),
             MelBase(b'IDLB', 'unknown1'),
         ),
         MelFid(b'CNAM', 'combatStyle',),
@@ -4183,8 +4183,8 @@ class MreRace(MelRecord):
         ), sort_by_attrs='body_part_index'),
         # These seem like unused leftovers from TES4/FO3, never occur in
         # vanilla or in any of the ~400 mod plugins I checked
-        MelSorted(MelFidList(b'HNAM', u'hairs')),
-        MelSorted(MelFidList(b'ENAM', u'eyes')),
+        MelSorted(MelSimpleArray('hairs', MelFid(b'HNAM'))),
+        MelSorted(MelSimpleArray('eyes', MelFid(b'ENAM'))),
         MelFid(b'GNAM', u'body_part_data'), # required
         MelBase(b'NAM2', u'marker_nam2_2'),
         MelBase(b'NAM3', u'behavior_graph_marker', b''), # required
@@ -4439,7 +4439,7 @@ class MreRefr(MelRecord):
         MelFid(b'XEZN','encounterZone'),
         MelOptStruct(b'XNDP', [u'I', u'H', u'2s'], (FID, u'navMesh'),
             u'teleportMarkerTriangle', u'unknown7'),
-        MelFidList(b'XLRT','locationRefType',),
+        MelSimpleArray('locationRefType', MelFid(b'XLRT')),
         MelNull(b'XIS2',),
         MelOwnership(),
         MelSInt32(b'XCNT', 'count'),
