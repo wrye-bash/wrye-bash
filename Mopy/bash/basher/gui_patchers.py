@@ -646,7 +646,10 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         tweak = self._all_tweaks[tweakIndex] # type: base.AMultiTweakItem
         values = []
         new = None
-        for i, v in enumerate(tweak.choiceValues[index]):
+        # Check the default values since the type of values accepted by the
+        # tweak could have changed and so old custom values may have the wrong
+        # type now
+        for i, v in enumerate(tweak.choiceValues[tweak.default]):
             if tweak.show_key_for_custom:
                 ##: Mirrors chosen_eids, but all this is hacky - we should
                 # enforce that keys for settings tweaks *must* be tuples and
@@ -655,7 +658,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                     tweak.tweak_key, tuple) else tweak.tweak_key
             else:
                 key_display = u''
-            if isinstance(v,float):
+            if isinstance(v, float):
                 while new is None: # keep going until user entered valid float
                     label = (_(u'Enter the desired custom tweak value.')
                              + u'\n\n' +
