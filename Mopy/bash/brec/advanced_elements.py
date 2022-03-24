@@ -35,7 +35,7 @@ from itertools import chain
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct, \
     MelSequential
 from .. import exception
-from ..bolt import GPath, structs_cache, attrgetter_cache, deprint
+from ..bolt import structs_cache, attrgetter_cache, deprint
 
 #------------------------------------------------------------------------------
 class _MelDistributor(MelNull):
@@ -59,7 +59,7 @@ class _MelDistributor(MelNull):
         self._pre_process()
 
     def _raise_syntax_error(self, error_msg):
-        raise SyntaxError(u'Invalid distributor syntax: %s' % error_msg)
+        raise SyntaxError(f'Invalid distributor syntax: {error_msg}')
 
     ##: Needs to change to only accept unicode strings as attributes, but keep
     # accepting only bytestrings as signatures
@@ -67,35 +67,33 @@ class _MelDistributor(MelNull):
         """Ensures that the distributor config defined above has correct syntax
         and resolves shortcuts (e.g. A|B syntax)."""
         if not isinstance(self.distributor_config, dict):
-            self._raise_syntax_error(
-                u'distributor_config must be a dict (actual type: %s)' %
-                type(self.distributor_config))
+            self._raise_syntax_error(f'distributor_config must be a dict '
+                f'(actual type: {type(self.distributor_config)})')
         mappings_to_iterate = [self.distributor_config] # TODO(inf) Proper name for dicts / mappings (scopes?)
         while mappings_to_iterate:
             mapping = mappings_to_iterate.pop()
             for signature_str in list(mapping):
                 if not isinstance(signature_str, bytes):
                     self._raise_syntax_error(
-                        u'All keys must be signature bytestrings (offending '
-                        u'key: %r)' % signature_str)
+                        f'All keys must be signature bytestrings (offending '
+                        f'key: {signature_str!r})')
                 # Resolve 'A|B' syntax
                 split_sigs = signature_str.split(b'|')
                 resolved_entry = mapping[signature_str]
                 if not resolved_entry:
-                    self._raise_syntax_error(
-                        u'Mapped values may not be empty (offending value: '
-                        u'%s)' % resolved_entry)
+                    self._raise_syntax_error(f'Mapped values may not be empty '
+                        f'(offending value: {resolved_entry})')
                 # Delete the 'A|B' entry, not needed anymore
                 del mapping[signature_str]
                 for signature in split_sigs:
                     if len(signature) != 4:
                         self._raise_syntax_error(
-                            u'Signature strings must have length 4 (offending '
-                            u'string: %s)' % signature)
+                            f'Signature strings must have length 4 (offending '
+                            f'string: {signature})')
                     if signature in mapping:
                         self._raise_syntax_error(
-                            u'Duplicate signature string (offending string: '
-                            u'%s)' % signature)
+                            f'Duplicate signature string (offending string: '
+                            f'{signature})')
                     # For each option in A|B|..|Z, make a new entry
                     mapping[signature] = resolved_entry
                 re_type = type(resolved_entry)
@@ -108,9 +106,9 @@ class _MelDistributor(MelNull):
                             or not isinstance(resolved_entry[0], str)
                             or not isinstance(resolved_entry[1], dict)):
                         self._raise_syntax_error(
-                            u'Tuples used as values must always have two '
-                            u'elements - an attribute string and a dict '
-                            u'(offending tuple: %s)' % repr(resolved_entry))
+                            f'Tuples used as values must always have two '
+                            f'elements - an attribute string and a dict '
+                            f'(offending tuple: {resolved_entry!r})')
                     # If the signature maps to a tuple, recurse into the
                     # dict stored in its second element
                     mappings_to_iterate.append(resolved_entry[1])
@@ -124,19 +122,19 @@ class _MelDistributor(MelNull):
                                     or not isinstance(seq_entry[0], bytes)
                                     or not isinstance(seq_entry[1], str)):
                                 self._raise_syntax_error(
-                                    u'Sequential tuples must always have two '
-                                    u'elements, a bytestring and a string '
-                                    u'(offending sequential entry: %s)' %
-                                    repr(seq_entry))
+                                    f'Sequential tuples must always have two '
+                                    f'elements, a bytestring and a string '
+                                    f'(offending sequential entry: '
+                                    f'{seq_entry!r})')
                         elif not isinstance(seq_entry, bytes):
                             self._raise_syntax_error(
-                                u'Sequential entries must either be '
-                                u'tuples or bytestrings (actual type: %r)' %
-                                type(seq_entry))
+                                f'Sequential entries must either be tuples '
+                                f'or bytestrings (actual type: '
+                                f'{type(seq_entry)})')
                 elif re_type != str:
                     self._raise_syntax_error(
-                        u'Only dicts, lists, strings and tuples may occur as '
-                        u'values (offending type: %r)' % re_type)
+                        f'Only dicts, lists, strings and tuples may occur as '
+                        f'values (offending type: {re_type})')
 
     def getLoaders(self, loaders):
         # We need a copy of the unmodified signature-to-loader dictionary
@@ -505,8 +503,8 @@ class MelLists(MelStruct):
 
     def __init__(self, mel_sig, struct_formats, *elements):
         if len(struct_formats) != len(elements):
-            raise SyntaxError(u'MelLists: struct_formats (%r) do not match '
-                              u'elements (%r)' % (struct_formats, elements))
+            raise SyntaxError(f'MelLists: struct_formats ({struct_formats}) '
+                              f'do not match elements ({elements})')
         super(MelLists, self).__init__(mel_sig, struct_formats, *elements)
 
     @staticmethod
@@ -803,8 +801,8 @@ class MelUnion(MelBase):
         element = self.element_mapping.get(decider_ret, self.fallback)
         if not element:
             raise exception.ArgumentError(
-                u'Specified element mapping did not handle a decider return '
-                u'value (%r) and there is no fallback' % decider_ret)
+                f'Specified element mapping did not handle a decider return '
+                f'value ({decider_ret!r}) and there is no fallback')
         return element
 
     def _get_element_from_record(self, record):
@@ -1036,17 +1034,16 @@ class MelSorted(_MelWrapper):
             elif isinstance(sorted_mel, MelArray):
                 all_child_attrs = set(sorted_mel.array_element_attrs)
             else:
-                raise SyntaxError(u'sort_by_attrs is not supported for %s '
-                                  u'instances' % type(sorted_mel))
+                raise SyntaxError(f'sort_by_attrs is not supported for '
+                                  f'{type(sorted_mel)} instances')
             # Note that sort_by_attrs could be either a single attr or a tuple
             # of attrs
             wanted_attrs = set(sort_by_attrs) if isinstance(
                 sort_by_attrs, tuple) else {sort_by_attrs}
             missing_attrs = wanted_attrs - all_child_attrs
             if missing_attrs:
-                raise SyntaxError(u'The following attributes passed to '
-                                  u'sort_by_attrs do not exist: %s'
-                                  % sorted(missing_attrs))
+                raise SyntaxError(f'The following attributes passed to '
+                    f'sort_by_attrs do not exist: {sorted(missing_attrs)}')
             self._attr_key_func = attrgetter_cache[sort_by_attrs]
         else:
             # Simply use the default key function (whole list entries)

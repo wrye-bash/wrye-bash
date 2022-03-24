@@ -48,10 +48,10 @@ class RecordHeader(object):
     # precompiled unpacker for record headers
     header_unpack = structs_cache[rec_pack_format_str].unpack
     # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups
-    pack_formats = {0: u'=4sI4s3I'} # Top Type
-    pack_formats.update({x: u'=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
-    pack_formats.update({x: u'=4sIi3I' for x in {2, 3}})  #Interior Cell Blocks
-    pack_formats.update({x: u'=4sIhh3I' for x in {4, 5}}) #Exterior Cell Blocks
+    pack_formats = {0: '=4sI4s3I'} # Top Group
+    pack_formats.update({x: '=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
+    pack_formats.update({x: '=4sIi3I' for x in {2, 3}})  # Interior Cell Blocks
+    pack_formats.update({x: '=4sIhh3I' for x in {4, 5}}) # Exterior Cell Blocks
     #--Top types in order of the main ESM
     top_grup_sigs = []
     #--Record Types: all recognized record types (not just the top types)
@@ -192,12 +192,13 @@ def unpack_header(ins, __rh=RecordHeader):
                                    u'REC_HEADER')
     #--Bad type?
     if header_sig not in __rh.valid_header_sigs:
-        raise ModError(ins.inName, u'Bad header type: %r' % header_sig)
+        raise ModError(ins.inName, f'Bad header type: '
+                                   f'{sig_to_str(header_sig)}')
     #--Record
     if header_sig != b'GRUP':
         return RecHeader(header_sig, *args)
     #--Top Group
-    elif args[2] == 0: #groupType == 0 (Top Type)
+    elif args[2] == 0: # groupType == 0 (Top Type)
         str0 = struct_pack(u'I', args[1])
         if str0 in __rh.top_grup_sigs:
             args = list(args)
@@ -205,7 +206,8 @@ def unpack_header(ins, __rh=RecordHeader):
             del args[2]
             return TopGrupHeader(*args)
         else:
-            raise ModError(ins.inName, u'Bad Top GRUP type: %r' % str0)
+            raise ModError(ins.inName, f'Bad Top GRUP type: '
+                                       f'{sig_to_str(str0)}')
     return GrupHeader(*args)
 
 #------------------------------------------------------------------------------

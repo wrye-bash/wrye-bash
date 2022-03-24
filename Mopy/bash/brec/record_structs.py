@@ -369,12 +369,8 @@ class MreRecord(object):
         if ins: self.load(ins, do_unpack)
 
     def __repr__(self):
-        return u'<%(eid)s[%(signature)s:%(fid)s]>' % {
-            u'signature': self.rec_str,
-            u'fid': strFid(self.fid),
-            u'eid': (
-                (self.eid + u' ') if getattr(self, u'eid', None) else u''),
-        }
+        reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''
+        return f'<{reid}[{self.rec_str}:{strFid(self.fid)}]>'
 
     def getTypeCopy(self):
         """Returns a type class copy of self"""
@@ -403,8 +399,8 @@ class MreRecord(object):
         decomp = zlib.decompress(self.data[4:])
         if len(decomp) != decompressed_size:
             raise exception.ModError(self.inName,
-                u'Mis-sized compressed data. Expected %d, got %d.'
-                                     % (decompressed_size,len(decomp)))
+                f'Mis-sized compressed data. Expected {decompressed_size}, '
+                f'got {len(decomp)}.')
         return decomp
 
     def load(self, ins=None, do_unpack=False):
@@ -603,7 +599,7 @@ class MelRecord(MreRecord):
                 f'  eid = {getattr(self, "eid", "<<NO EID>>")!r}',
                 f'  subrecord = {sig_to_str(sub_type)}',
                 f'  subrecord size = {sub_size}',
-                f'  file pos = {ins.tell()}']), traceback=True) ## todo test what is the traceback here
+                f'  file pos = {ins.tell()}']))
             if isinstance(error, str):
                 raise exception.ModError(ins.inName, error)
             raise exception.ModError(ins.inName, f'{error!r}') from error

@@ -164,9 +164,6 @@ class PCFaces(object):
         face.spells = [getFid(x) for x in (npc.spells or [])]
         face.factions = [(getFid(x),y) for x,y in (npc.factions or [])]
         face.modifiers = (npc.modifiers or [])[:]
-        #delist('npc.spells:',[strFid(x) for x in face.spells])
-        #delist('npc.factions:',face.factions)
-        #delist('npc.modifiers:',face.modifiers)
         return face
 
     @staticmethod

@@ -797,7 +797,7 @@ class ModInfo(FileInfo):
                     for block in iter(partial(ins.read, 0x5000000), b''):
                         outWrite(block)
                 except struct_error as rex:
-                    raise ModError(self.ci_key, u'Struct.error: %s' % rex)
+                    raise ModError(self.ci_key, f'Struct.error: {rex}')
         #--Remove original and replace with temp
         filePath.untemp()
         self.setmtime(crc_changed=True)

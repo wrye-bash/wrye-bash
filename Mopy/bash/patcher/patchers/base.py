@@ -394,7 +394,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
         self._srcMods(log)
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in load_order.get_ordered(count):
-            log(u'* %s: %d' % (srcMod,count[srcMod]))
+            log(f'* {srcMod}: {count[srcMod]:d}')
 
 #------------------------------------------------------------------------------
 def is_templated(record, flag_name):

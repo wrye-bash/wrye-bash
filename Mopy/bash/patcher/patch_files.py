@@ -160,7 +160,7 @@ class PatchFile(ModFile):
         loadMods = [m for m in self.all_plugins
                     if load_order.cached_is_active(m)]
         if not loadMods:
-            raise BoltError(u"No active mods loading before the bashed patch")
+            raise BoltError('No active mods loading before the bashed patch')
         self.loadMods = tuple(loadMods)
         self.loadSet = frozenset(self.loadMods)
         self.set_mergeable_mods([])

@@ -234,4 +234,4 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
                 keep(rec_fid)
                 patched.append(record.eid)
         log.setHeader(u'= ' + self._patcher_name)
-        log(u'==='+_(u'Quests Patched') + u': %d' % (len(patched),))
+        log(u'===' + _(u'Quests Patched') + f': {len(patched)}')

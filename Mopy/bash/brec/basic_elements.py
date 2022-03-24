@@ -27,7 +27,8 @@ from typing import BinaryIO
 from .utils_constants import FID, null1, _make_hashable, FixedString, \
     int_unpacker, get_structs
 from .. import bolt, exception
-from ..bolt import decoder, encode, structs_cache, struct_calcsize, Rounder
+from ..bolt import decoder, encode, structs_cache, struct_calcsize, Rounder, \
+    sig_to_str
 
 #------------------------------------------------------------------------------
 class MelObject(object):
@@ -81,8 +82,8 @@ class Subrecord(object):
         try:
             self._dump_bytes(out, binary_data, len(binary_data))
         except Exception:
-            bolt.deprint(u'%r: Failed packing: %r, %r' % (
-                self, self.mel_sig, binary_data))
+            bolt.deprint(
+                f'{self!r}: Failed packing: {self.mel_sig!r}, {binary_data!r}')
             raise
 
     def _dump_bytes(self, out, binary_data, lenData):
@@ -97,18 +98,28 @@ class Subrecord(object):
                                                               lenData))
         outWrite(binary_data)
 
-def unpackSubHeader(ins, rsig=b'----', *,
-                    __unpacker=int_unpacker, __sr=Subrecord):
-    """Unpack a subrecord header. Optionally checks for match with expected
-    type and size."""
+def unpackSubHeader(ins, rsig, *, __unpacker=int_unpacker, __sr=Subrecord):
+    """Unpack a subrecord header."""
     mel_sig, mel_size = ins.unpack(__sr.sub_header_unpack,
                                    __sr.sub_header_size, rsig, u'SUB_HEAD')
     # Extended storage - very rare, so don't optimize inlines etc. for it
     if mel_sig == b'XXXX':
+        sizes = []
         ins_unpack = ins.unpack
-        mel_size = ins_unpack(__unpacker, 4, rsig, u'XXXX.SIZE')[0]
-        mel_sig = ins_unpack(__sr.sub_header_unpack, __sr.sub_header_size,
-                             rsig, u'XXXX.TYPE')[0] # Throw away size here (always == 0)
+        pos = ins.tell() - __sr.sub_header_size
+        while mel_sig == b'XXXX': ##: it does happen to have two of those in a row
+            mel_size = ins_unpack(__unpacker, 4, rsig, u'XXXX.SIZE')[0]
+            mel_sig = ins_unpack(__sr.sub_header_unpack, __sr.sub_header_size,
+                                 rsig, u'XXXX.TYPE')[0] # Throw away size here (always == 0)
+            sizes.append(mel_size)
+        if len(set(sizes)) > 1:
+            raise exception.ModError(ins.inName,
+                f'Consecutive XXXX subrecords with sizes {sizes} starting '
+                f'at {sig_to_str(rsig)} record position {pos}')
+        if len(sizes) > 1:
+            bolt.deprint(f'{ins.inName}: Consecutive XXXX subrecords '
+                         f'at {sig_to_str(rsig)} record position {pos}')
+        mel_size = sizes[0]
     return mel_sig, mel_size
 
 class SubrecordBlob(Subrecord):
@@ -118,10 +129,10 @@ class SubrecordBlob(Subrecord):
 
     def __init__(self, ins, record_sig, mel_sigs=frozenset()):
         # record_sig is the sig of parent record
-        mel_sig, mel_size = unpackSubHeader(ins)
+        mel_sig, mel_size = unpackSubHeader(ins, record_sig)
         self.mel_sig = mel_sig
         if not mel_sigs or mel_sig in mel_sigs:
-            self.mel_data = ins.read(mel_size, record_sig + self.mel_sig)
+            self.mel_data = ins.read(mel_size, record_sig, self.mel_sig)
         else:
             self.mel_data = None
             ins.seek(mel_size, 1) # discard the data

@@ -90,8 +90,8 @@ class _LoadLink(ItemLink):
 
 class Mod_FullLoad(OneItemLink, _LoadLink):
     """Tests all record definitions against a specific mod"""
-    _text = _(u'Test Full Record Definitions...')
-    _help = _(u'Tests all record definitions against the selected mod')
+    _text = _('Test Full Record Definitions...')
+    _help = _('Tests all record definitions against the selected mod')
     _load_sigs = tuple(MreRecord.type_class) # all available (decoded) records
 
     def Execute(self):
@@ -102,16 +102,16 @@ class Mod_FullLoad(OneItemLink, _LoadLink):
                 self._load_mod(self._selected_info, keepAll=False,
                                progress=progress, catch_errors=False)
             except:
-                failed_msg = (_(u'File failed to verify using current record '
-                                u'definitions. The original traceback is '
-                                u'available in the BashBugDump.') + u'\n\n' +
+                failed_msg = (_('File failed to verify using current record '
+                                'definitions. The original traceback is '
+                                'available in the BashBugDump.') + '\n\n' +
                               traceback.format_exc())
-                self._showError(failed_msg, title=_(u'Verification Failed'))
-                bolt.deprint(u'Exception loading %s:\n' % self._selected_info,
+                self._showError(failed_msg, title=_('Verification Failed'))
+                bolt.deprint(f'Exception loading {self._selected_info}:\n',
                              traceback=True)
                 return
-        self._showOk(_(u'File fully verified using current record '
-                       u'definitions.'), title=_(u'Verification Succeeded'))
+        self._showOk(_('File fully verified using current record '
+                       'definitions.'), title=_('Verification Succeeded'))
 
 class Mod_RecalcRecordCounts(OneItemLink, _LoadLink):
     """Useful for debugging if any getNumRecords implementations are broken.

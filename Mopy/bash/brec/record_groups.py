@@ -175,9 +175,7 @@ class MobBase(object):
         :param iiSkipMerge: If True, skip merging and only perform merge
             filtering. Used by IIM mode.
         :param doFilter: If True, perform merge filtering."""
-        from ..bolt import deprint
-        deprint(u'merge_records missing for %s' % self.label)
-        raise AbstractError(u'merge_records not implemented')
+        raise AbstractError(f'{self.label}: merge_records not implemented')
 
     def _sort_group(self):
         """Performs any sorting of records that has to be done in this record
@@ -416,12 +414,12 @@ class MobDial(MobObjects):
             if header.recType == b'INFO':
                 append_info(info_class(header, ins, True))
             elif header.recType == b'DIAL':
-                raise ModError(ins.inName, u'Duplicate DIAL record (%r) '
-                                           u'inside DIAL block (a header size '
-                                           u'is likely incorrect).' % header)
+                raise ModError(ins.inName, f'Duplicate DIAL record '
+                    f'({header!r}) inside DIAL block (a header size is likely '
+                    f'incorrect).')
             else:
                 raise ModError(ins.inName,
-                    u'Unexpected %r in DIAL group.' % header)
+                               f'Unexpected {header!r} in DIAL group.')
         self.setChanged()
 
     def getSize(self):
@@ -1273,7 +1271,7 @@ class MobCells(MobBase):
             cellBlock.updateMasters(masterset_add)
 
     def __repr__(self):
-        return u'<CELL GRUP: %u record(s)>' % len(self.cellBlocks)
+        return f'<CELL GRUP: {len(self.cellBlocks)} record(s)>'
 
 #------------------------------------------------------------------------------
 class MobICells(MobCells):
@@ -1329,7 +1327,7 @@ class MobICells(MobCells):
                                 f'Cell subgroup ({groupFid:X}) does not match '
                                 f'CELL <{cell.fid:X}> {cell.eid}.')
                         build_cell_block(unpack_block=unpackCellBlocks,
-                            skip_delta=True)
+                                         skip_delta=True)
                         cell = None
                     else:
                         raise ModError(self.inName,
@@ -1446,7 +1444,7 @@ class MobWorld(MobCells):
                                            f'Cell subgroup ({hex(groupFid)}) '
                                            f'does not match CELL {cell!r}.')
                         build_cell_block(unpack_block=unpackCellBlocks,
-                            skip_delta=True)
+                                         skip_delta=True)
                         cell = None
                     else:
                         raise ModError(self.inName,
@@ -1640,11 +1638,11 @@ class MobWorld(MobCells):
             iiSkipMerge, doFilter)
 
     def __repr__(self):
-        return u'<WRLD (%r): %u record(s), %s, %s>' % (
-            self.world, len(self.cellBlocks),
-            u'persistent CELL: %r' % self.worldCellBlock
-            if self.worldCellBlock else u'no persistent CELL',
-            u'ROAD: %r' % self.road if self.road else u'no ROAD')
+        persistent_cell = f'persistent CELL: {self.worldCellBlock!r}' if \
+            self.worldCellBlock else 'no persistent CELL'
+        road_ = f'ROAD: {self.road!r}' if self.road else 'no ROAD'
+        return f'<WRLD ({self.world!r}): {len(self.cellBlocks)} record(s), ' \
+               f'{persistent_cell}, {road_}>'
 
 #------------------------------------------------------------------------------
 class MobWorlds(MobBase):
