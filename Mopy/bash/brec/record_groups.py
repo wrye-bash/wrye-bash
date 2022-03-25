@@ -126,7 +126,7 @@ class MobBase(object):
 
     def getReader(self):
         """Returns a ModReader wrapped around self.data."""
-        return ModReader(self.inName, io.BytesIO(self.data))
+        return ModReader(self.inName, io.BytesIO(self.data), len(self.data))
 
     def iter_present_records(self, include_ignored=False, rec_key='fid',
                              __attrgetters=attrgetter_cache):
@@ -226,7 +226,7 @@ class MobObjects(MobBase):
                 header_str = sig_to_str(header.recType)
                 msg = f'Unexpected {header_str} record in {exp_str} group.'
                 raise ModError(ins.inName, msg)
-            recordsAppend(recClass(header, ins, True))
+            recordsAppend(recClass(header, ins, do_unpack=True))
         self.setChanged()
 
     def getActiveRecords(self):
@@ -413,7 +413,7 @@ class MobDial(MobObjects):
         while not ins_at_end(endPos, u'DIAL Block'):
             header = read_header()
             if header.recType == b'INFO':
-                append_info(info_class(header, ins, True))
+                append_info(info_class(header, ins, do_unpack=True))
             elif header.recType == b'DIAL':
                 raise ModError(ins.inName, f'Duplicate DIAL record '
                     f'({header!r}) inside DIAL block (a header size is likely '
@@ -608,7 +608,7 @@ class MobDials(MobBase):
             dial_header = insRecHeader()
             if dial_header.recType == expType:
                 # Read the full DIAL record now
-                dial = dial_class(dial_header, ins, True)
+                dial = dial_class(dial_header, ins, do_unpack=True)
                 if insAtEnd(endPos, errLabel):
                     # We've hit the end of the block, finish off this DIAL
                     self.set_dialogue(dial)
@@ -824,14 +824,14 @@ class MobCell(MobBase):
             elif not recClass:
                 header.skip_blob(ins)
             elif _rsig in (b'REFR',b'ACHR',b'ACRE'):
-                record = recClass(header,ins,True)
+                record = recClass(header, ins, do_unpack=True)
                 if   groupType ==  8: persistentAppend(record)
                 elif groupType ==  9: tempAppend(record)
                 elif groupType == 10: distantAppend(record)
             elif _rsig == b'LAND':
-                self.land = recClass(header, ins, True)
+                self.land = recClass(header, ins, do_unpack=True)
             elif _rsig == b'PGRD':
-                self.pgrd = recClass(header, ins, True)
+                self.pgrd = recClass(header, ins, do_unpack=True)
         self.setChanged()
 
     def getSize(self):
@@ -1297,7 +1297,7 @@ class MobICells(MobCells):
                 if cell:
                     # If we already have a cell lying around, finish it off
                     build_cell_block()
-                cell = recCellClass(header,ins,True)
+                cell = recCellClass(header, ins, do_unpack=True)
                 if insTell() > endBlockPos or insTell() > endSubblockPos:
                     raise ModError(self.inName,
                                    f'Interior cell <{cell.fid:X}> {cell.eid} '
@@ -1401,12 +1401,12 @@ class MobWorld(MobCells):
             recClass = cellGet(_rsig)
             if _rsig == b'ROAD':
                 if not recClass: header.skip_blob(ins)
-                else: self.road = recClass(header,ins,True)
+                else: self.road = recClass(header, ins, do_unpack=True)
             elif _rsig == b'CELL':
                 if cell:
                     # If we already have a cell lying around, finish it off
                     build_cell_block()
-                cell = recClass(header,ins,True)
+                cell = recClass(header, ins, do_unpack=True)
                 if isFallout: cells[cell.fid] = cell
                 if block and (
                         insTell() > endBlockPos or insTell() > endSubblockPos):
@@ -1670,7 +1670,7 @@ class MobWorlds(MobBase):
                     # We hit a WRLD directly after another WRLD, so there are
                     # no children to read - just finish this WRLD
                     self.setWorld(world)
-                world = recWrldClass(header,ins,True)
+                world = recWrldClass(header, ins, do_unpack=True)
                 if isFallout: worlds[world.fid] = world
             elif _rsig == b'GRUP':
                 groupFid,groupType = header.label,header.groupType

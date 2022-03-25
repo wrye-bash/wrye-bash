@@ -68,7 +68,7 @@ class SreNPC(object):
     def __init__(self, sre_flags=0, data_=None):
         for att in self.__slots__:
             setattr(self, att, None)
-        if data_: self.load(sre_flags, data_)
+        if data_: self._load_acbs(sre_flags, data_)
 
     @staticmethod
     def get_acbs():
@@ -79,7 +79,7 @@ class SreNPC(object):
         acbs.flags = MreRecord.type_class[b'NPC_']._flags(acbs.flags)
         return acbs
 
-    def load(self, sr_flags, data_):
+    def _load_acbs(self, sr_flags, data_):
         """Loads variables from data."""
         ins = io.BytesIO(data_)
         def _unpack(fmt, fmt_siz):
@@ -288,37 +288,39 @@ class SaveFile(object):
             insCopy(buff, 4)
             self.preCreated = buff.getvalue()
             #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
-            modReader = ModReader(self.fileInfo.ci_key, ins)
             createdNum = unpack_int(ins)
-            for count in range(createdNum):
-                progress(ins.tell(),_(u'Reading created...'))
-                self.created.append(MreRecord(unpack_header(modReader), modReader))
-            #--Pre-records: Quickkeys, reticule, interface, regions
-            buff = io.BytesIO()
-            for x in range(4):
-                siz = unpack_short(ins)
-                insCopy(buff, siz, 2)
-            self.preRecords = buff.getvalue()
-            #--Records
-            for count in range(recordsNum):
-                progress(ins.tell(),_(u'Reading records...'))
-                (rec_id, rec_kind, flags, version, siz) = unpack_many(ins,u'=IBIBH')
-                data = ins.read(siz)
-                self.save_records.append((rec_id, rec_kind, flags, version, data))
-            #--Temp Effects, fids, worldids
-            progress(ins.tell(),_(u'Reading fids, worldids...'))
-            tmp_effects_size = unpack_int(ins)
-            self.tempEffects = ins.read(tmp_effects_size)
-            #--Fids
-            num = unpack_int(ins)
-            self.fids = array.array(u'I')
-            self.fids.fromfile(ins, num)
-            for iref,fid in enumerate(self.fids):
-                self.irefs[fid] = iref
-            #--WorldSpaces
-            num = unpack_int(ins)
-            self.worldSpaces = array.array(u'I')
-            self.worldSpaces.fromfile(ins, num)
+            with ModReader(self.fileInfo.ci_key, ins) as modReader:
+                for count in range(createdNum):
+                    progress(ins.tell(), _('Reading created...'))
+                    self.created.append(
+                        MreRecord(unpack_header(modReader), modReader))
+                #--Pre-records: Quickkeys, reticule, interface, regions
+                buff = io.BytesIO()
+                for x in range(4):
+                    siz = unpack_short(ins)
+                    insCopy(buff, siz, 2)
+                self.preRecords = buff.getvalue()
+                #--Records
+                for count in range(recordsNum):
+                    progress(ins.tell(), _('Reading records...'))
+                    (rec_id, rec_kind, flags, version, siz) = unpack_many(
+                        ins, '=IBIBH')
+                    data = ins.read(siz)
+                    self.save_records.append((rec_id, rec_kind, flags, version, data))
+                #--Temp Effects, fids, worldids
+                progress(ins.tell(), _('Reading fids, worldids...'))
+                tmp_effects_size = unpack_int(ins)
+                self.tempEffects = ins.read(tmp_effects_size)
+                #--Fids
+                num = unpack_int(ins)
+                self.fids = array.array('I')
+                self.fids.fromfile(ins, num)
+                for iref, int_fid in enumerate(self.fids):
+                    self.irefs[int_fid] = iref
+                #--WorldSpaces
+                num = unpack_int(ins)
+                self.worldSpaces = array.array('I')
+                self.worldSpaces.fromfile(ins, num)
         #--Done
         progress(progress.full,_(u'Finished reading.'))
 

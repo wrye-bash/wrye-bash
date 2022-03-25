@@ -98,7 +98,8 @@ class Subrecord(object):
                                                               lenData))
         outWrite(binary_data)
 
-def unpackSubHeader(ins, rsig, *, __unpacker=int_unpacker, __sr=Subrecord):
+def unpackSubHeader(ins, rsig, *, file_offset=0, __unpacker=int_unpacker,
+                    __sr=Subrecord):
     """Unpack a subrecord header."""
     mel_sig, mel_size = ins.unpack(__sr.sub_header_unpack,
                                    __sr.sub_header_size, rsig, u'SUB_HEAD')
@@ -106,19 +107,19 @@ def unpackSubHeader(ins, rsig, *, __unpacker=int_unpacker, __sr=Subrecord):
     if mel_sig == b'XXXX':
         sizes = []
         ins_unpack = ins.unpack
-        pos = ins.tell() - __sr.sub_header_size
-        while mel_sig == b'XXXX': ##: it does happen to have two of those in a row
+        pos = (file_offset or ins.tell()) - __sr.sub_header_size
+        while mel_sig == b'XXXX': #it does happen to have two of those in a row
             mel_size = ins_unpack(__unpacker, 4, rsig, u'XXXX.SIZE')[0]
             mel_sig = ins_unpack(__sr.sub_header_unpack, __sr.sub_header_size,
-                                 rsig, u'XXXX.TYPE')[0] # Throw away size here (always == 0)
+                rsig, u'XXXX.TYPE')[0] # Throw away size here (always == 0)
             sizes.append(mel_size)
-        if len(set(sizes)) > 1:
-            raise exception.ModError(ins.inName,
-                f'Consecutive XXXX subrecords with sizes {sizes} starting '
-                f'at {sig_to_str(rsig)} record position {pos}')
         if len(sizes) > 1:
-            bolt.deprint(f'{ins.inName}: Consecutive XXXX subrecords '
-                         f'at {sig_to_str(rsig)} record position {pos}')
+            msg = f'{ins.inName}: {len(sizes)} consecutive XXXX subrecords ' \
+                  f'reading {sig_to_str(rsig)} starting at file position {pos}'
+            if len(set(sizes)) > 1:
+                raise exception.ModError(ins.inName,
+                                         f'{msg} - differing sizes {sizes}!')
+            bolt.deprint(msg)
         mel_size = sizes[0]
     return mel_sig, mel_size
 

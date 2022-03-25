@@ -216,14 +216,16 @@ class ModReader(object):
     Will throw a ModReaderror if read operation fails to return correct size.
     """
 
-    def __init__(self,inName,ins):
+    def __init__(self, inName, ins, ins_size=None):
         self.inName = inName
         self.ins = ins
         #--Get ins size
-        curPos = ins.tell()
-        ins.seek(0,os.SEEK_END)
-        self.size = ins.tell()
-        ins.seek(curPos)
+        if ins_size is None:
+            curPos = ins.tell()
+            ins.seek(0, os.SEEK_END)
+            ins_size = ins.tell()
+            ins.seek(curPos)
+        self.size = ins_size
         self.strings = {}
         self.hasStrings = False
 
@@ -267,9 +269,10 @@ class ModReader(object):
             return filePos == endPos
 
     #--Read/Unpack ----------------------------------------
-    def read(self, size, *debug_strs):
+    def read(self, size, *debug_strs, file_offset=None):
         """Read from file."""
-        endPos = self.ins.tell() + size
+        endPos = (file_offset if file_offset is not None else self.ins.tell()
+                  ) + size
         if endPos > self.size:
             target_size = size - (endPos - self.size)
             raise ModSizeError(self.inName, debug_strs, (target_size,), size)

@@ -770,7 +770,7 @@ class ModInfo(FileInfo):
             try:
                 tes4_rec_header = self._read_tes4_record(ins)
                 self.header = bush.game.plugin_header_class(tes4_rec_header,
-                                                            ins, True)
+                                                            ins, do_unpack=True)
             except struct_error as rex:
                 raise ModError(self.ci_key,u'Struct.error: %s' % rex)
         if bush.game.Esp.warn_older_form_versions:
