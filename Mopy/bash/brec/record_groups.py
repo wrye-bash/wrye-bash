@@ -457,7 +457,7 @@ class MobDial(MobObjects):
                 info.dump(out)
 
     def get_all_signatures(self):
-        return {self.dial._rec_sig} | {i._rec_sig for i in self.records}
+        return {self.dial._rec_sig, *(i._rec_sig for i in self.records)}
 
     def iter_records(self):
         return chain([self.dial], self.records)

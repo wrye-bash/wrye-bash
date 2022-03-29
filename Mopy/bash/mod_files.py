@@ -202,8 +202,7 @@ class ModFile(object):
         """Load file."""
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
-        with FormIdReadContext(self.fileInfo.fn_key,
-                               self.fileInfo.getPath().open('rb')) as ins:
+        with FormIdReadContext.from_info(self.fileInfo) as ins:
             insRecHeader = ins.unpackRecHeader
             self.tes4 = ins.plugin_header
             subProgress = self.__load_strs(do_unpack, ins, loadStrings,
@@ -403,7 +402,7 @@ class ModHeaderReader(object):
     def formids_in_esl_range(mod_info):
         """Checks if all FormIDs in the specified mod are in the ESL range."""
         num_masters = len(mod_info.masterNames)
-        with ModReader(mod_info.fn_key, mod_info.abs_path.open(u'rb')) as ins:
+        with ModReader.from_info(mod_info) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
             try:
@@ -553,7 +552,7 @@ class ModHeaderReader(object):
         # We want to read only the children of these, so skip their tops
         interested_sigs = {b'CELL', b'WRLD'}
         tops_to_skip = interested_sigs | {bush.game.Esp.plugin_header_sig}
-        with ModReader(mod_info.fn_key, mod_info.abs_path.open('rb')) as ins:
+        with ModReader.from_info(mod_info) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
             try:

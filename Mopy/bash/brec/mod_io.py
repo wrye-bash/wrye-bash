@@ -267,6 +267,11 @@ class ModReader(object):
         utils_constants.FORM_ID = self.form_id_type
         self.ins.close()
 
+    @classmethod
+    def from_info(cls, mod_info):
+        """Boilerplate for creating a ModReader wrapping a mod_info."""
+        return cls(mod_info.fn_key, mod_info.abs_path.open('rb'))
+
     def setStringTable(self, string_table):
         self.hasStrings = bool(string_table)
         self.strings = string_table or {} # table may be None

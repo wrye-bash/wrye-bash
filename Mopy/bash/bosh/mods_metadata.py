@@ -704,8 +704,8 @@ class NvidiaFogFixer(object):
         #--File stream
         minfo_path = self.modInfo.getPath()
         #--Scan/Edit
-        with ModReader(self.modInfo.fn_key, minfo_path.open(u'rb')) as ins:
-            with minfo_path.temp.open(u'wb') as  out:
+        with ModReader.from_info(self.modInfo) as ins:
+            with minfo_path.temp.open(u'wb') as out:
                 def copy(bsize):
                     buff = ins.read(bsize)
                     out.write(buff)

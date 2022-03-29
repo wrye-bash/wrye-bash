@@ -777,8 +777,7 @@ class ModInfo(FileInfo):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
-            with FormIdReadContext(self.fn_key,
-                                   self.abs_path.open('rb')) as ins:
+            with FormIdReadContext.from_info(self) as ins:
                 self.header = ins.plugin_header
         except struct_error as rex:
             raise ModError(self.fn_key, f'Struct.error: {rex}')
@@ -789,7 +788,7 @@ class ModInfo(FileInfo):
 
     def writeHeader(self, old_masters: list[FName] | None = None):
         """Write Header. Actually have to rewrite entire file."""
-        with FormIdReadContext(self.fn_key, self.abs_path.open('rb')) as ins:
+        with FormIdReadContext.from_info(self) as ins:
             # If we need to remap masters, construct a proper write context.
             # Otherwise, we can get away with a simple output stream
             if old_masters is not None:
