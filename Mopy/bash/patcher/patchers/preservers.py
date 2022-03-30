@@ -431,11 +431,11 @@ class ImportCellsPatcher(ImportPatcher):
             attrs = set(chain.from_iterable(
                 self.recAttrs[bashKey] for bashKey in tags))
             if b'CELL' in srcFile.tops:
-                for cellBlock in srcFile.tops[b'CELL'].cellBlocks:
+                for cellBlock in srcFile.tops[b'CELL'].id_cellBlock.values():
                     importCellBlockData(cellBlock)
             if b'WRLD' in srcFile.tops:
                 for worldBlock in srcFile.tops[b'WRLD'].worldBlocks:
-                    for cellBlock in worldBlock.cellBlocks:
+                    for cellBlock in worldBlock.id_cellBlock.values():
                         importCellBlockData(cellBlock)
                     if worldBlock.worldCellBlock:
                         importCellBlockData(worldBlock.worldCellBlock)
@@ -448,11 +448,11 @@ class ImportCellsPatcher(ImportPatcher):
                     masterFile = self._mod_file_read(masterInfo)
                     cachedMasters[master] = masterFile
                 if b'CELL' in masterFile.tops:
-                    for cellBlock in masterFile.tops[b'CELL'].cellBlocks:
+                    for cellBlock in masterFile.tops[b'CELL'].id_cellBlock.values():
                         checkMasterCellBlockData(cellBlock)
                 if b'WRLD' in masterFile.tops:
                     for worldBlock in masterFile.tops[b'WRLD'].worldBlocks:
-                        for cellBlock in worldBlock.cellBlocks:
+                        for cellBlock in worldBlock.id_cellBlock.values():
                             checkMasterCellBlockData(cellBlock)
                         if worldBlock.worldCellBlock:
                             checkMasterCellBlockData(worldBlock.worldCellBlock)
@@ -466,15 +466,15 @@ class ImportCellsPatcher(ImportPatcher):
         patchCells = self.patchFile.tops[b'CELL']
         patchWorlds = self.patchFile.tops[b'WRLD']
         if b'CELL' in modFile.tops:
-            for cellBlock in modFile.tops[b'CELL'].cellBlocks:
-                if cellBlock.cell.fid in cellData:
+            for cfid, cellBlock in modFile.tops[b'CELL'].id_cellBlock.items():
+                if cfid in cellData:
                     patchCells.setCell(cellBlock.cell)
         if b'WRLD' in modFile.tops:
             for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
                 patchWorlds.setWorld(worldBlock.world)
                 curr_pworld = patchWorlds.id_worldBlocks[worldBlock.world.fid]
-                for cellBlock in worldBlock.cellBlocks:
-                    if cellBlock.cell.fid in cellData:
+                for cfid, cellBlock in worldBlock.id_cellBlock.items():
+                    if cfid in cellData:
                         curr_pworld.setCell(cellBlock.cell)
                 pers_cell_block = worldBlock.worldCellBlock
                 if pers_cell_block and pers_cell_block.cell.fid in cellData:
@@ -514,14 +514,12 @@ class ImportCellsPatcher(ImportPatcher):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
-        for cellBlock in self.patchFile.tops[b'CELL'].cellBlocks:
-            cell_fid = cellBlock.cell.fid
+        for cell_fid, cellBlock in self.patchFile.tops[b'CELL'].id_cellBlock.items():
             if cell_fid in cellData and handlePatchCellBlock(cellBlock):
                 count[cell_fid[0]] += 1
         for worldBlock in self.patchFile.tops[b'WRLD'].worldBlocks:
             keepWorld = False
-            for cellBlock in worldBlock.cellBlocks:
-                cell_fid = cellBlock.cell.fid
+            for cell_fid, cellBlock in worldBlock.id_cellBlock.items():
                 if cell_fid in cellData and handlePatchCellBlock(cellBlock):
                     count[cell_fid[0]] += 1
                     keepWorld = True
