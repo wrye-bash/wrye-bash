@@ -46,25 +46,24 @@ from ..mod_files import ModFile, LoadFactory
 # Save Change Records ---------------------------------------------------------
 class SreNPC(object):
     """NPC change record."""
-    __slots__ = (u'form', u'health', u'unused2', u'attributes', u'acbs',
-                 u'spells', u'factions', u'full', u'ai', u'skills',
-                 u'modifiers')
+    __slots__ = ('form', 'health', 'unused2', 'attributes', 'acbs', 'spells',
+                 'factions', 'full', 'ai', 'skills', 'modifiers')
     sre_flags = Flags.from_names(
-        (0,u'form'),
-        (2,u'health'),
-        (3,u'attributes'),
-        (4,u'acbs'),
-        (5,u'spells'),
-        (6,u'factions'),
-        (7,u'full'),
-        (8,u'ai'),
-        (9,u'skills'),
-        (28,u'modifiers'),
+        (0, 'form'),
+        (2, 'health'),
+        (3, 'attributes'),
+        (4, 'acbs'),
+        (5, 'spells'),
+        (6, 'factions'),
+        (7, 'full'),
+        (8, 'ai'),
+        (9, 'skills'),
+        (28, 'modifiers'),
     )
 
     class ACBS(object):
-        __slots__ = (u'flags', u'baseSpell', u'fatigue', u'barterGold',
-                     u'level_offset', u'calcMin', u'calcMax')
+        __slots__ = ('flags', 'baseSpell', 'fatigue', 'barterGold',
+                     'level_offset', 'calcMin', 'calcMax')
 
     def __init__(self, sre_flags=0, data_=None):
         for att in self.__slots__:
@@ -89,7 +88,7 @@ class SreNPC(object):
         if sr_flags.form:
             self.form = unpack_int(ins)
         if sr_flags.attributes:
-            self.attributes = list(_unpack(u'8B', 8))
+            self.attributes = list(_unpack('8B', 8))
         if sr_flags.acbs:
             acbs = self.acbs = SreNPC.ACBS()
             (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
@@ -148,7 +147,7 @@ class SreNPC(object):
         if self.spells is not None:
             num = len(self.spells)
             pack_short(out, num)
-            _pack(u'%dI' % num, *self.spells)
+            _pack(f'{num}I', *self.spells)
         #--AI Data
         if self.ai is not None:
             out.write(self.ai)

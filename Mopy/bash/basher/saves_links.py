@@ -711,10 +711,10 @@ class Save_RepairAbomb(OneItemLink):
         if abombCounter <= newCounter:
             self._showOk(_(u'Abomb counter is too low to reset.'))
             return
-        message = (_(u'Reset Abomb counter? (Current progress: %.0f%%.)')
-                   + u'\n\n' +
-                   _(u"Note: Abomb animation slowing won't occur until progress is near 100%%.")
-                   ) % progress
+        message = _('Reset Abomb counter? (Current progress: %.0f%%.)'
+                    ) % progress
+        message += '\n\n' + _("Note: Abomb animation slowing won't occur "
+                              "until progress is near 100%%.")
         if self._askYes(message, _(u'Repair Abomb'), default=False):
             saveFile.setAbomb(newCounter)
             saveFile.safeSave()
@@ -916,8 +916,8 @@ class Save_UpdateNPCLevels(EnabledLink):
             #--Loop over savefiles
             subProgress = SubProgress(progress,0.4,1.0,len(self.selected))
             msg = [_(u'NPCs Releveled:')]
-            for index,(saveName,saveInfo) in enumerate(self.iselected_pairs()):
-                subProgress(index,_(u'Updating %s') % saveName)
+            for index, saveInfo in enumerate(self.iselected_infos()):
+                subProgress(index, _('Updating %s') % saveInfo)
                 saveFile = _saves.SaveFile(saveInfo)
                 saveFile.load()
                 save_recs = saveFile.save_records
@@ -929,8 +929,8 @@ class Save_UpdateNPCLevels(EnabledLink):
                     orderedRecId = mapToOrdered(recId,None)
                     if rec_kind != 35 or recId == 7 or orderedRecId not in \
                             npc_info: continue
-                    (eid, level_offset, calcMin, calcMax,
-                     pcLevelOffset) = npc_info[orderedRecId]
+                    eid, level_offset, calcMin, calcMax, pcLevelOffset = \
+                        npc_info[orderedRecId]
                     npc = _saves.SreNPC(recFlags, rdata)
                     acbs = npc.acbs
                     if acbs and (
@@ -946,10 +946,10 @@ class Save_UpdateNPCLevels(EnabledLink):
                         releveledCount += 1
                         save_recs[recNum] = npc.getTuple(recId, version)
                 #--Save changes?
-                subProgress(index+0.5,_(u'Updating %s') % saveName)
+                subProgress(index + 0.5, _('Updating %s') % saveInfo)
                 if releveledCount:
                     saveFile.safeSave()
-                msg.append(f'{releveledCount:d} {saveName}')
+                msg.append(f'{releveledCount:d} {saveInfo}')
         if modErrors:
             msg.append('\n' + _('Some mods had load errors and were skipped:'))
             msg.append('* ' + '\n* '.join(modErrors))

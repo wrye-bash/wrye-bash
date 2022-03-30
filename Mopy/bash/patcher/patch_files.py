@@ -50,7 +50,7 @@ class PatchFile(ModFile):
             self.merged_or_loaded)
 
     def _log_header(self, log, patch_name):
-        log.setHeader((u'= %s' % patch_name) + u' ' + u'=' * 30 + u'#', True)
+        log.setHeader(f'= {patch_name} {u"=" * 30}#', True)
         log(u'{{CONTENTS=1}}')
         #--Load Mods and error mods
         log.setHeader(u'= ' + _(u'Overview'), True)
@@ -59,7 +59,7 @@ class PatchFile(ModFile):
         log(u'* ' + _(u'Elapsed Time: ') + u'TIMEPLACEHOLDER')
         def _link(link_id):
             return (readme_url(mopy=bass.dirs[u'mopy'], advanced=True),
-                    u'#%s' % link_id)
+                    f'#{link_id}')
         if self.patcher_mod_skipcount:
             log.setHeader(u'=== ' + _(u'Skipped Imports'))
             log(_(u'The following import patchers skipped records because the '
@@ -88,15 +88,14 @@ class PatchFile(ModFile):
                   u'badly formatted mod. For more info, generate a '
                   u'[[https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D'
                   u'-Reporting-a-bug#the-bashbugdumplog|BashBugDump]].'))
-            for (mod, e) in self.loadErrorMods: log(
-                u'* %s' % mod + u': %s' % e)
+            for (mod, e) in self.loadErrorMods: log(f'* {mod}: {e}')
         if self.worldOrphanMods:
             log.setHeader(u'=== ' + _(u'World Orphans'))
             log(_(u'The following mods had orphaned world groups, which were '
                   u'skipped. This is not a major problem, but you might want '
                   u"to use Bash's [[%s%s|Remove World Orphans]] command to "
                   u'repair the mods.') % _link(u'modsRemoveWorldOrphans'))
-            for mod in self.worldOrphanMods: log(u'* %s' % mod)
+            for mod in self.worldOrphanMods: log(f'* {mod}')
         if self.compiledAllMods:
             log.setHeader(u'=== ' + _(u'Compiled All'))
             log(_(u'The following mods have an empty compiled version of '
@@ -107,12 +106,12 @@ class PatchFile(ModFile):
                   u"and Unofficial Oblivion Patch.) You can use Bash's [["
                   u'%s%s|Decompile All]] command to repair the mods.'
                   ) % ((bush.game.master_file,) + _link(u'modsDecompileAll')))
-            for mod in self.compiledAllMods: log(u'* %s' % mod)
+            for mod in self.compiledAllMods: log(f'* {mod}')
         log.setHeader(u'=== ' + _(u'Active Mods'), True)
         for mname in self.merged_or_loaded_ord:
             version = self.p_file_minfos.getVersion(mname)
             if mname in self.loadSet:
-                message = u'* %02X ' % (self.loadMods.index(mname),)
+                message = f'* {self.loadMods.index(mname):02X} '
             else:
                 message = u'* ++ '
             if version:
@@ -124,7 +123,7 @@ class PatchFile(ModFile):
         if self.pfile_aliases:
             log.setHeader(u'= ' + _(u'Mod Aliases'))
             for alias_target, alias_repl in dict_sort(self.pfile_aliases):
-                log(u'* %s >> %s' % (alias_target, alias_repl))
+                log(f'* {alias_target} >> {alias_repl}')
 
     def init_patchers_data(self, patcher_instances, progress):
         """Gives each patcher a chance to get its source data."""
@@ -157,6 +156,11 @@ class PatchFile(ModFile):
         #--Mods
         # checking for files to include in patch, investigate
         self.all_plugins = load_order.cached_lower_loading(modInfo.ci_key)
+        # exclude moding esms (those tend to be huge)
+        b, e = bush.game.master_file.csbody, bush.game.master_file.cext
+        excluded = {bolt.GPath_no_norm(f'{b}_{ver}{e}') for ver in
+                    p_file_minfos.voAvailable}
+        self.all_plugins = [k for k in self.all_plugins if k not in excluded]
         loadMods = [m for m in self.all_plugins
                     if load_order.cached_is_active(m)]
         if not loadMods:
