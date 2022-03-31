@@ -967,7 +967,7 @@ class MobCell(MobBase):
         """Updates set of master names according to masters actually used."""
         self.cell.updateMasters(masterset_add)
         for record in chain(self.persistent_refs, self.distant_refs,
-                self.temp_refs):
+                            self.temp_refs):
             record.updateMasters(masterset_add)
         if self.land:
             self.land.updateMasters(masterset_add)
@@ -1147,9 +1147,10 @@ class MobCells(MobBase):
             deprint(f'bsbCellBlocks = {repr(bsbCellBlocks)}')
             deprint(f'self.cellBlocks = {repr(self.cellBlocks)}')
             raise
-        hsize = RecordHeader.rec_header_size
+        # Calculate total size and create block/subblock sizes dict to update
+        # block GRUP headers
+        totalSize = hsize = RecordHeader.rec_header_size
         bsb_size = defaultdict(lambda : hsize)
-        totalSize = hsize
         for bsb,cellBlock in bsbCellBlocks:
             cellBlockSize = cellBlock.getSize()
             totalSize += cellBlockSize

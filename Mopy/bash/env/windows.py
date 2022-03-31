@@ -72,8 +72,6 @@ try:
              confirm=True, renameOnCollision=False, silent=False,
              parent=None):
         """Wrapper around (deprecated!) SHFileOperation."""
-        _source = source # copy to display in debug messages
-        _target = target
         # flags
         flgs = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
         flgs |= FOF_NOCONFIRMMKDIR # never ask user for creating dirs
@@ -83,6 +81,7 @@ try:
         if renameOnCollision: flgs |= shellcon.FOF_RENAMEONCOLLISION
         if silent: flgs |= shellcon.FOF_SILENT
         # null terminated strings
+        _source, _target = source, target # keep to display in debug messages
         source = u'\x00'.join(source) # don't add a null! # + u'\x00'
         target = u'\x00'.join(target)
         # get the handle to parent window to feed to win api
@@ -103,8 +102,8 @@ try:
             if result == 124:
                 src_list = u'\n'.join(_source)
                 trg_list = u'\n'.join(_target)
-                _deprint(f"Invalid paths:\nsource: {src_list}"
-                        f"\ntarget: {trg_list}\nRetrying")
+                _deprint(f'Invalid paths:\nsource: {src_list}\ntarget: '
+                         f'{trg_list}\nRetrying')
                 return None
             raise _file_op_error_map.get(result, FileOperationError(result))
 except ImportError:

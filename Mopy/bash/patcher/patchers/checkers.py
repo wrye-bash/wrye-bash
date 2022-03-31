@@ -216,8 +216,7 @@ class EyeCheckerPatcher(Patcher):
             if not race.eyes: continue  #--Sheogorath. Assume is handled
             # correctly.
             if not race.rightEye or not race.leftEye: continue #--WIPZ race?
-            if re.match(u'^117[a-zA-Z]', race.eid, flags=re.U): continue  #--
-            #  x117 race?
+            if re.match('^117[a-zA-Z]', race.eid): continue #--x117 race?
             raceChanged = False
             mesh_eye = {}
             for eye in race.eyes:
