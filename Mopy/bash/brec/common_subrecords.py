@@ -590,8 +590,8 @@ class MelMODS(MelBase):
     def setDefault(self,record):
         setattr(record, self.attr, None)
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        __unpacker=int_unpacker
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs,
+                 __unpacker=int_unpacker):
         insUnpack = ins.unpack
         insRead32 = ins.readString32
         count, = insUnpack(__unpacker, 4, *debug_strs)

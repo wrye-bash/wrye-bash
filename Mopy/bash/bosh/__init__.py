@@ -2085,9 +2085,8 @@ class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Data directory."""
 
     def __init__(self):
-        self.__class__.file_pattern = re.compile('(' + '|'.join(
-            [f'\\{e}' for e in
-             bush.game.espm_extensions]) + r')(\.ghost)?$', re.I | re.U)
+        exts = '|'.join([f'\\{e}' for e in bush.game.espm_extensions])
+        self.__class__.file_pattern = re.compile(fr'({exts})(\.ghost)?$', re.I)
         FileInfos.__init__(self, dirs[u'mods'], factory=ModInfo)
         #--Info lists/sets
         self.mergeScanned = [] #--Files that have been scanned for mergeability.

@@ -28,7 +28,7 @@ from .utils_constants import FID, null1, _make_hashable, FixedString, \
     int_unpacker, get_structs
 from .. import bolt, exception
 from ..bolt import decoder, encode, structs_cache, struct_calcsize, Rounder, \
-    sig_to_str
+    sig_to_str, attrgetter_cache
 
 #------------------------------------------------------------------------------
 class MelObject(object):
@@ -206,9 +206,9 @@ class MelBase(Subrecord):
     def mapFids(self, record, function, save_fids=False):
         """Applies function to fids. If save is True, then fid is set
         to result of function."""
-        raise exception.AbstractError(u'mapFids called on subrecord without '
-                                      u'FormIDs (signatures: %s)'
-                                      % sorted(self.signatures))
+        raise exception.AbstractError(
+            f'mapFids called on subrecord without FormIDs (signatures: '
+            f'{sorted(self.signatures)})')
 
     @property
     def signatures(self):
@@ -593,14 +593,16 @@ class MelStruct(MelBase):
         for attr, value, action in zip(self.attrs, unpacked, self.actions):
             setattr(record, attr, action(value) if callable(action) else value)
 
-    def pack_subrecord_data(self, record):
-        # Apply the action to itself before dumping to handle e.g. a
-        # FixedString getting assigned a unicode value. Worst case, this is
-        # just a noop - it is needed however when we read a flag say from a csv
-        values = [
-            action(value).dump() if callable(action) else value
-            for value, action in zip((getattr(record, a) for a in self.attrs),
-                                      self.actions)]
+    def pack_subrecord_data(self, record, *, __attrgetters=attrgetter_cache):
+        values = [__attrgetters[a](record) for a in self.attrs]
+        for dex in self._action_dexes:
+            try:
+                values[dex] =  values[dex].dump()
+            except AttributeError:
+                # Apply the action to itself before dumping to handle e.g. a
+                # FixedString getting assigned a unicode value. Needed also
+                # when we read a flag say from a csv
+                values[dex] = self.actions[dex](values[dex]).dump()
         return self._packer(*values)
 
     def mapFids(self, record, function, save_fids=False):
@@ -629,6 +631,7 @@ class MelStruct(MelBase):
         formAttrs = set()
         lenEls = len(elements)
         attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls
+        self._action_dexes = set()
         expanded_fmts = self._expand_formats(elements, struct_formats)
         for index, (element, fmt_str) in enumerate(zip(elements, expanded_fmts)):
             if not isinstance(element,tuple):
@@ -646,8 +649,10 @@ class MelStruct(MelBase):
                 elif callable(el_0):
                     actions[index] = el_0
                     attrIndex = 1
+                    self._action_dexes.add(index)
                 elif fmt_str == u'f':
                     actions[index] = Rounder # note this overrides action
+                    self._action_dexes.add(index)
                 attrs[index] = element[attrIndex]
                 if len(element) - attrIndex == 2:
                     defaults[index] = element[-1] # else leave to 0
