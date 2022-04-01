@@ -1267,9 +1267,9 @@ class Mod_ScanDirty(ItemLink):
             del_refs = all_deleted_refs[m_ci_key]
             del_others = all_deleted_others[m_ci_key]
             if m_ci_key == game_master_name or m_ci_key.cext == u'.esu':
-                skipped_plugins.append(u'* __%s__' % modInfo)
+                skipped_plugins.append(f'* __{modInfo}__')
             elif del_navms or del_refs or del_others:
-                full_dirty_msg = u'* __%s__:\n' % modInfo
+                full_dirty_msg = f'* __{modInfo}__:\n'
                 if del_navms:
                     log_fids(_(u'Deleted Navmeshes'), del_navms)
                 if del_refs:
@@ -1278,7 +1278,7 @@ class Mod_ScanDirty(ItemLink):
                     log_fids(_(u'Deleted Base Records'), del_others)
                 dirty_plugins.append(full_dirty_msg)
             else:
-                clean_plugins.append(u'* __%s__' % modInfo)
+                clean_plugins.append(f'* __{modInfo}__')
         if dirty_plugins:
             log(_(u'Detected %d plugin(s) with deleted '
                   u'records:') % len(dirty_plugins))

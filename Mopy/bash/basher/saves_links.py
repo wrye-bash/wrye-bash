@@ -904,7 +904,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 try:
                     modFile.load(True)
                 except ModError as x:
-                    modErrors.append(u'%s'%x)
+                    modErrors.append(f'{x}')
                     continue
                 if b'NPC_' not in modFile.tops: continue
                 short_mapper = modFile.getShortMapper()

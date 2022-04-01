@@ -83,6 +83,8 @@ class ModError(FileError):
     pass
 
 def _join_sigs(debug_str):
+    if isinstance(debug_str, bytes):
+        debug_str = [debug_str]
     if isinstance(debug_str, (tuple, list)):
         from .bolt import sig_to_str # don't mind this we are in exception code
         debug_str = u'.'.join(map(sig_to_str, debug_str))

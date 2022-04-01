@@ -132,7 +132,7 @@ class PatchFile(ModFile):
         if not self._patcher_instances: return
         progress = progress.setFull(len(self._patcher_instances))
         for index, patcher in enumerate(self._patcher_instances):
-            progress(index, _(u'Preparing') + u'\n' + patcher.getName())
+            progress(index, _(u'Preparing') + f'\n{patcher.getName()}')
             patcher.initData(SubProgress(progress, index))
         progress(progress.full, _(u'Patchers prepared.'))
         # initData may set isActive to zero - TODO(ut) track down
@@ -308,7 +308,7 @@ class PatchFile(ModFile):
                 len(self._patcher_instances))
             for i, patcher in enumerate(sorted(self._patcher_instances,
                     key=attrgetter(u'patcher_order'))):
-                subProgress(i, _(u'Completing')+u'\n%s...' % patcher.getName())
+                subProgress(i, _(u'Completing') + f'\n{patcher.getName()}...')
                 patcher.buildPatch(log, SubProgress(subProgress, i))
         # Trim records to only keep ones we actually changed
         progress(0.9,_(u'Completing')+u'\n'+_(u'Trimming records...'))

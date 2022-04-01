@@ -426,6 +426,7 @@ class OrderedLowerDict(LowerDict, collections.OrderedDict):
 #------------------------------------------------------------------------------
 # cache attrgetter objects
 class _AttrGettersCache(dict):
+    __slots__ = ()
     def __missing__(self, ag_key):
         return self.setdefault(ag_key, attrgetter(ag_key) if isinstance(
             ag_key, str) else attrgetter(*ag_key))

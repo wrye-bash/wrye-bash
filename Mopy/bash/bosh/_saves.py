@@ -70,9 +70,9 @@ class SreNPC(object):
             setattr(self, attr, None)
         if data_: self.load(sre_flags, data_)
 
-    def getDefault(self,attr):
+    @staticmethod
+    def get_acbs():
         """Returns a default version. Only supports acbs."""
-        assert attr == u'acbs'
         acbs = SreNPC.ACBS()
         (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
          acbs.level_offset, acbs.calcMin, acbs.calcMax) = (0,0,0,0,1,0,0)

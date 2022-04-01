@@ -973,11 +973,11 @@ class _PluggyArrayBlock(_PluggyBlock):
             pack_int(out, self.entry_index)
             pack_byte(out, self.entry_type)
             try:
-                packer = __data_formats[self.entry_type]
+                entry_packer = __data_formats[self.entry_type]
             except KeyError:
                 raise RuntimeError(u'Unknown or unsupported entry type %u.' %
                                    self.entry_type)
-            packer(out, self.entry_data)
+            entry_packer(out, self.entry_data)
 
         def dump_to_log(self, log, save_masters_):
             if self.entry_type == 0:

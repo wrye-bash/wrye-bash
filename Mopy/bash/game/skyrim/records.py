@@ -648,16 +648,16 @@ class ObjectRef(object):
         return out_data
 
     @classmethod
-    def from_file(cls, ins, obj_format, *debug_strs):
+    def from_file(cls, ins, obj_format, *debug_strs,
+                  __unpacker1=structs_cache['IhH'].unpack,
+                  __unpacker2=structs_cache['HhI'].unpack):
         """Reads an ObjectRef directly from the specified input stream. Needs
         the current object format and a read ID as well."""
-        __unpacker1=structs_cache[u'IhH'].unpack
-        __unpacker2=structs_cache[u'HhI'].unpack
-        if obj_format == 1: # object format v1 - fid, aid, unused
-            fid, aid, _unused = ins.unpack(__unpacker1, 8, *debug_strs)
-        else: # object format v2 - unused, aid, fid
-            _unused, aid, fid = ins.unpack(__unpacker2, 8, *debug_strs)
-        return cls(aid, fid)
+        if obj_format == 1: # object format v1 - int_fid, aid, unused
+            int_fid, aid, _unused = ins.unpack(__unpacker1, 8, *debug_strs)
+        else: # object format v2 - unused, aid, int_fid
+            _unused, aid, int_fid = ins.unpack(__unpacker2, 8, *debug_strs)
+        return cls(aid, int_fid)
 
 # Implementation --------------------------------------------------------------
 class MelVmad(MelBase):
@@ -1079,10 +1079,9 @@ class MelVmad(MelBase):
             super(MelVmad.Alias, self).__init__()
             self.child_loader = MelVmad.Script()
 
-        def load_frag(self, record, ins, vmad_version, obj_format,
-                      *debug_strs):
-            __unpacker_H=structs_cache[u'H'].unpack
-            __unpacker_h=structs_cache[u'h'].unpack
+        def load_frag(self, record, ins, vmad_version, obj_format, *debug_strs,
+                      __unpacker_H=structs_cache['H'].unpack,
+                      __unpacker_h=structs_cache['h'].unpack):
             MelVmad.Alias.processors = MelVmad.Alias._load_processors
             # Aliases start with an ObjectRef, skip that for now and unpack
             # the three regular attributes. We need to do this, since one of

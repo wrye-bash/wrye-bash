@@ -889,8 +889,8 @@ class MreCell(MelRecord):
         MelUInt8Flags(b'DATA', u'flags', cellFlags),
         # None defaults here are on purpose - XCLC does not necessarily exist,
         # but 0 is a valid value for both coordinates (duh)
-        MelSkipInterior(MelOptStruct(b'XCLC', [u'2i'], (u'posX', None),
-            (u'posY', None))),
+        MelSkipInterior(MelOptStruct(b'XCLC', ['2i'],
+                                     ('posX', None), ('posY', None))),
         MelOptStruct(b'XCLL', [u'3B', u's', u'3B', u's', u'3B', u's', u'2f', u'2i', u'2f'], u'ambientRed',
             u'ambientGreen', u'ambientBlue', u'unused1',
             u'directionalRed', u'directionalGreen', u'directionalBlue',

@@ -175,8 +175,7 @@ class TopGrupHeader(GrupHeader):
     is_top_group_header = True
 
     def __init__(self, grup_size=0, grup_records_sig=b'', arg3=0, arg4=0):
-        super(TopGrupHeader, self).__init__(grup_size, grup_records_sig, 0,
-                                            arg3, arg4)
+        super().__init__(grup_size, grup_records_sig, 0, arg3, arg4)
 
     def pack_head(self, __rh=RecordHeader):
         pack_args = [__rh.pack_formats[0], b'GRUP', self.size,

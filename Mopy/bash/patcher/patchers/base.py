@@ -389,8 +389,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                         keepWorld = True
             if keepWorld:
                 keep(worldBlock.world.fid)
-
-        log.setHeader(u'= ' + self._patcher_name)
+        log.setHeader(f'= {self._patcher_name}')
         self._srcMods(log)
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in load_order.get_ordered(count):

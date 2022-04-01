@@ -260,7 +260,7 @@ class PCFaces(object):
         if changeRecord is None: return
         fid,_recType,recFlags,version,data = changeRecord
         npc = SreNPC(recFlags,data)
-        if not npc.acbs: npc.acbs = npc.getDefault(u'acbs')
+        if not npc.acbs: npc.acbs = npc.get_acbs()
         npc.acbs.flags.female = face.gender
         npc.acbs.level_offset = face.level_offset
         npc.acbs.baseSpell = face.baseSpell

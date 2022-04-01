@@ -24,7 +24,7 @@
 
 # Python imports
 import io
-from collections import deque
+from collections import deque, defaultdict
 from itertools import chain
 from operator import itemgetter, attrgetter
 
@@ -40,7 +40,7 @@ class MobBase(object):
 
     __slots__ = [u'header',u'size',u'label',u'groupType', u'stamp', u'debug',
                  u'data', u'changed', u'numRecords', u'loadFactory',
-                 u'inName'] ##: nice collection of forbidden names, including header -> group_header
+                 u'inName'] ##: nice collection of forbidden names, including header -> grup_header
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         self.header = header
@@ -127,13 +127,13 @@ class MobBase(object):
         """Returns a ModReader wrapped around self.data."""
         return ModReader(self.inName, io.BytesIO(self.data))
 
-    def iter_present_records(self, include_ignored=False, rec_key=u'fid',
+    def iter_present_records(self, include_ignored=False, rec_key='fid',
                              __attrgetters=attrgetter_cache):
         """Filters iter_records, returning only records that have not set
         the deleted flag and/or the ignore flag if include_ignored is False."""
-        return ((__attrgetters[rec_key](r), r) for r in self.iter_records()
-                if not r.flags1.deleted
-                and (include_ignored or not r.flags1.ignored))
+        key_get = __attrgetters[rec_key]
+        return ((key_get(r), r) for r in self.iter_records() if not
+                r.flags1.deleted and (include_ignored or not r.flags1.ignored))
 
     # Abstract methods --------------------------------------------------------
     def get_all_signatures(self):
@@ -897,7 +897,7 @@ class MobCell(MobBase):
             x, y = cell.posX, cell.posY
             if x is None: x = 0
             if y is None: y = 0
-            return (y // 32, x // 32), (y // 8, x // 8)
+            return (y // 32, x // 32), (y // 8, x // 8) # YX- ready for packing
 
     def dump(self,out):
         """Dumps group header and then records."""
@@ -1136,20 +1136,18 @@ class MobCells(MobBase):
     def getBsbSizes(self): ##: This is the _sort_group for MobCells
         """Returns the total size of the block, but also returns a
         dictionary containing the sizes of the individual block,subblocks."""
-        bsbCellBlocks = [(x.getBsb(),x) for x in self.cellBlocks]
+        bsbCellBlocks = [(cb.getBsb(), cb) for cb in self.cellBlocks]
         # First sort by the CELL FormID, then by the block they belong to
         bsbCellBlocks.sort(key=lambda y: y[1].cell.fid)
         bsbCellBlocks.sort(key=itemgetter(0))
-        bsb_size = {}
         hsize = RecordHeader.rec_header_size
+        bsb_size = defaultdict(lambda : hsize)
         totalSize = hsize
-        bsb_set_default = bsb_size.setdefault
         for bsb,cellBlock in bsbCellBlocks:
             cellBlockSize = cellBlock.getSize()
             totalSize += cellBlockSize
             bsb0 = (bsb[0],None) #--Block group
-            bsb_set_default(bsb0,hsize)
-            if bsb_set_default(bsb, hsize) == hsize:
+            if bsb not in bsb_size:
                 bsb_size[bsb0] += hsize
             bsb_size[bsb] += cellBlockSize
             bsb_size[bsb0] += cellBlockSize
@@ -1366,8 +1364,8 @@ class MobWorld(MobCells):
         self.road = None
         super(MobWorld, self).__init__(header, loadFactory, ins, do_unpack)
 
-    def _load_rec_group(self, ins, endPos, __packer=structs_cache[u'I'].pack,
-                        __unpacker=structs_cache[u'2h'].unpack):
+    def _load_rec_group(self, ins, endPos, *, __packer=structs_cache['I'].pack,
+                        __unpacker=structs_cache['2h'].unpack):
         """Loads data from input stream. Called by load()."""
         cellType_class = self.loadFactory.getCellTypeClass()
         errLabel = u'World Block'
@@ -1397,7 +1395,7 @@ class MobWorld(MobCells):
             if cell.flags1.persistent:
                 if self.worldCellBlock:
                     raise ModError(self.inName,
-                        u'Misplaced exterior cell %r.' % cell)
+                                   f'Misplaced exterior cell {cell!r}.')
                 self.worldCellBlock = cellBlock
             else:
                 cellBlocksAppend(cellBlock)
@@ -1448,8 +1446,8 @@ class MobWorld(MobCells):
                         cell = None
                     else:
                         raise ModError(self.inName,
-                                       u'Extra cell children subgroup in '
-                                       u'world children group.')
+                                       'Extra cell children subgroup in '
+                                       'world children group.')
                 else:
                     raise ModError(self.inName,
                                    f'Unexpected subgroup {groupType:d} in '
@@ -1690,7 +1688,7 @@ class MobWorlds(MobBase):
                 if groupType != 1:
                     raise ModError(ins.inName,
                                    f'Unexpected subgroup {groupType:d} in '
-                                   f'CELL group.')
+                                   f'WRLD group.')
                 if isFallout: world = worlds.get(groupFid,None)
                 if not world:
                     #raise ModError(ins.inName,'Extra subgroup %d in WRLD

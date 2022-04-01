@@ -28,8 +28,8 @@ from itertools import chain
 from zlib import decompress as zlib_decompress, error as zlib_error
 
 from . import bolt, bush, env, load_order
-from .bolt import deprint, SubProgress, structs_cache, struct_error, decoder, \
-    sig_to_str, str_to_sig
+from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str, \
+    str_to_sig
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds, \
     unpack_header, FastModReader, Subrecord, int_unpacker
@@ -55,9 +55,9 @@ class MasterMap(object):
         mast_map = {}
         outMastersIndex = outMasters.index
         for index,master in enumerate(inMasters):
-            if master in outMasters:
+            try:
                 mast_map[index] = outMastersIndex(master)
-            else:
+            except ValueError:
                 mast_map[index] = -1
         self._mast_map = mast_map
 
@@ -295,16 +295,17 @@ class ModFile(object):
     def save(self,outPath=None):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
-        if not self.loadFactory.keepAll: raise StateError(u"Insufficient data to write file.")
+        if not self.loadFactory.keepAll:
+            raise StateError('Insufficient data to write file.')
         # Convert back to short FormIDs at the IO boundary
         self._convert_fids(to_long=False)
-        outPath = outPath or self.fileInfo.getPath()
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
         if self.tes4.num_masters > bush.game.Esp.master_limit:
             raise ModError(self.fileInfo.ci_key,
-                u'Attempting to write a file with too many masters (>%u).'
-                % bush.game.Esp.master_limit)
+                           f'Attempting to write a file with too many '
+                           f'masters (>{bush.game.Esp.master_limit}).')
+        outPath = outPath or self.fileInfo.getPath()
         with outPath.open(u'wb') as out:
             #--Mod Record
             self.tes4.setChanged()
@@ -470,8 +471,7 @@ class ModHeaderReader(object):
         return True
 
     @staticmethod
-    def extract_mod_data(mod_info, progress, skip_tes4=True, *,
-                         __unpacker=int_unpacker):
+    def extract_mod_data(mod_info, progress, *, __unpacker=int_unpacker):
         """Reads the headers and EDIDs of every record in the specified mod,
         returning them as a dict, mapping record signature to a dict mapping
         FormIDs to a list of tuples containing the headers and EDIDs of every
@@ -586,8 +586,7 @@ class ModHeaderReader(object):
                             recs_seek(mel_size, 1)
                     records[header.fid] = (header, eid)
                     ins_seek(next_record) # we may have break'd at EDID
-        if skip_tes4:
-            del group_records[bush.game.Esp.plugin_header_sig]
+        del group_records[bush.game.Esp.plugin_header_sig] # skip TES4 record
         return group_records
 
     ##: The methods above have to be very fast, but this one can afford to be
