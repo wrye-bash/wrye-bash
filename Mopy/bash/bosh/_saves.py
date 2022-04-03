@@ -24,6 +24,7 @@
 Oblivion only . We need this split into cosaves and proper saves module and
 coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
+import array
 import io
 from collections import Counter, defaultdict
 from itertools import starmap, repeat
@@ -34,8 +35,8 @@ from ..bolt import Flags, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
     structs_cache, unpack_str8, dict_sort, sig_to_str
 from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
-    unpack_header
-from ..exception import ModError, StateError
+    unpack_header, int_unpacker
+from ..exception import ModError, StateError, AbstractError
 from ..mod_files import ModFile, LoadFactory
 
 #------------------------------------------------------------------------------
@@ -66,8 +67,8 @@ class SreNPC(object):
                      u'level_offset', u'calcMin', u'calcMax')
 
     def __init__(self, sre_flags=0, data_=None):
-        for attr in self.__slots__:
-            setattr(self, attr, None)
+        for att in self.__slots__:
+            setattr(self, att, None)
         if data_: self.load(sre_flags, data_)
 
     @staticmethod
@@ -259,7 +260,6 @@ class SaveFile(object):
     def load(self,progress=None):
         """Extract info from save file."""
         # TODO: This is Oblivion only code.  Needs to be refactored
-        import array
         with self.fileInfo.abs_path.open(u'rb') as ins:
             #--Progress
             progress = progress or bolt.Progress()
@@ -279,8 +279,7 @@ class SaveFile(object):
             self.preGlobals = ins.read(8*4)
             #--Globals
             globalsNum = unpack_short(ins)
-            self.globals = [unpack_many(ins, u'If')
-                            for _n in range(globalsNum)]
+            self.globals = [unpack_many(ins, 'If') for _n in range(globalsNum)]
             #--Pre-Created (Class, processes, spectator, sky)
             buff = io.BytesIO()
             for x in range(4):
@@ -394,7 +393,7 @@ class SaveFile(object):
             self._masters.append(master)
 
     def indexCreated(self):
-        """Fills out self.fid_recNum."""
+        """Fills out self.fid_createdNum."""
         self.fid_createdNum = {x.fid: i for i, x in enumerate(self.created)}
 
     def removeCreated(self,fid):
@@ -460,7 +459,7 @@ class SaveFile(object):
         return iref
 
     #--------------------------------------------------------------------------
-    def logStats(self,log=None):
+    def logStats(self,log=None, *, __unpacker=int_unpacker):
         """Print stats to log."""
         log = log or bolt.Log()
         doLostChanges = False
@@ -479,7 +478,7 @@ class SaveFile(object):
         log(_(u'  Float:\t%.2f') % abombFloat)
         #--FBomb
         log.setHeader(_(u'Fbomb Counter'))
-        log(_(u'  Next in-game object: %08X') % struct_unpack(u'I', self.preGlobals[:4]))
+        log(_('  Next in-game object: %08X') % __unpacker(self.preGlobals[:4]))
         #--Array Sizes
         log.setHeader(u'Array Sizes')
         log(f'  {len(self.created)}\t{_("Created Items")}')
@@ -524,14 +523,14 @@ class SaveFile(object):
             #--Unknown type?
             if doUnknownTypes and rec_kind not in knownTypes:
                 if mod < 255:
-                    print(rec_kind,hex(rec_id), u'%s' % getMaster(mod))
+                    print(rec_kind, hex(rec_id), f'{getMaster(mod)}')
                     knownTypes.add(rec_kind)
                 elif rec_id in id_created:
                     print(rec_kind, hex(rec_id), id_created[rec_id]._rec_sig)
                     knownTypes.add(rec_kind)
             #--Obj ref parents
             if rec_kind == 49 and mod == 255 and (rec_flgs & 2):
-                iref, = struct_unpack(u'I', rdata[4:8])
+                iref = __unpacker(rdata[4:8])[0]
                 count,cumSize = objRefBases.get(iref,(0,0))
                 count += 1
                 cumSize += len(rdata) + 12
@@ -542,25 +541,26 @@ class SaveFile(object):
         #--Fids log
         log.setHeader(_(u'Fids'))
         log(u'  Refed\tChanged\tMI    Mod Name')
-        log(u'  %d\t\t     Lost Refs (Fid == 0)' % lostRefs)
+        log(f'  {lostRefs:d}\t\t     Lost Refs (Fid == 0)')
         for modIndex, (irefed,changed) in enumerate(zip(idHist, changeHisto)):
             if irefed or changed:
-                log(u'  %d\t%d\t%02X   %s' % (irefed,changed,modIndex,getMaster(modIndex)))
+                log(f'  {irefed:d}\t{changed:d}\t{modIndex:02X}   '
+                    f'{getMaster(modIndex)}')
         #--Lost Changes
         if lostChanges:
             log.setHeader(_(u'LostChanges'))
             for rec_id, rec_kind in dict_sort(lostChanges):
-                log(hex(rec_id) + rec_type_map.get(rec_kind, u'%s' % rec_kind))
+                log(hex(rec_id) + rec_type_map.get(rec_kind, f'{rec_kind}'))
         for rec_kind, modHisto in dict_sort(typeModHisto):
-            log.setHeader(u'%d %s' % (
-                rec_kind, rec_type_map.get(rec_kind, _(u'Unknown'))))
+            log.setHeader(f'{rec_kind:d} '
+                          f'{rec_type_map.get(rec_kind, _("Unknown"))}')
             for modIndex,count in dict_sort(modHisto):
-                log(u'  %d\t%s' % (count,getMaster(modIndex)))
-            log(u'  %d\tTotal' % sum(modHisto.values()))
+                log(f'  {count:d}\t{getMaster(modIndex)}')
+            log(f'  {sum(modHisto.values()):d}\tTotal')
         objRefBases = {k: v for k, v in objRefBases.items() if v[0] > 100}
         log.setHeader(_(u'New ObjectRef Bases'))
         if objRefNullBases:
-            log(u' Null Bases: %s' % objRefNullBases)
+            log(f' Null Bases: {objRefNullBases}')
         if objRefBases:
             log(_(u' Count IRef     BaseId'))
             for iref, (count, cumSize) in dict_sort(objRefBases):
@@ -568,7 +568,8 @@ class SaveFile(object):
                     parentid = iref
                 else:
                     parentid = self.fids[iref]
-                log(u'%6d %08X %08X %6d kb' % (count,iref,parentid,cumSize//1024))
+                log(f'{count:6d} {iref:08X} {parentid:08X} '
+                    f'{cumSize // 1024:6d} kb')
 
     def findBloating(self,progress=None):
         """Analyzes file for bloating. Returns (createdCounts,nullRefCount)."""
@@ -664,22 +665,32 @@ class SaveFile(object):
         self.preCreated = buff.getvalue()
 
 #------------------------------------------------------------------------------
-class SaveSpells(object):
-    """Player spells of a savegame."""
-
-    def __init__(self,saveInfo):
+class _SaveData:
+    """Encapsulate common SaveFile manipulations."""
+    def __init__(self, saveInfo):
         self.saveInfo = saveInfo
         self.saveFile = None
+
+    def _load_save(self, progress=None):
+        self.saveFile = SaveFile(self.saveInfo)
+        self.saveFile.load(progress)
+
+    def load_data(self, progress=None): raise AbstractError
+
+class SaveSpells(_SaveData):
+    """Player spells of a savegame."""
+
+    def __init__(self, saveInfo):
+        super().__init__(saveInfo)
         self.allSpells = {} #--spells[(modName,objectIndex)] = (name,type)
 
-    def load(self, modInfos, progress=None):
+    def load_data(self, progress, modInfos):
         """Load savegame and extract created spells from it and its masters."""
         progress = progress or bolt.Progress()
-        saveFile = self.saveFile = SaveFile(self.saveInfo)
-        saveFile.load(SubProgress(progress,0,0.4))
-        progress = SubProgress(progress, 0.4, 1.0, len(saveFile._masters) + 1)
+        self._load_save(SubProgress(progress, 0, 0.4))
+        progress = SubProgress(progress, 0.4, 1.0, len(self.saveFile._masters) + 1)
         #--Extract spells from masters
-        for index,master in enumerate(saveFile._masters):
+        for index,master in enumerate(self.saveFile._masters):
             progress(index,master.s)
             if master in modInfos:
                 self.importMod(modInfos[master])
@@ -687,7 +698,7 @@ class SaveSpells(object):
         allSpells = self.allSpells
         saveName = self.saveInfo.ci_key
         progress(progress.full-1,saveName.s)
-        for record in saveFile.created:
+        for record in self.saveFile.created:
             if record._rec_sig == b'SPEL':
                 allSpells[(saveName,getObjectIndex(record.fid))] = record.getTypeCopy()
 
@@ -750,27 +761,25 @@ class SaveSpells(object):
             self.saveFile.safeSave()
 
 #------------------------------------------------------------------------------
-class SaveEnchantments(object):
+class SaveEnchantments(_SaveData):
     """Player enchantments of a savegame."""
 
-    def __init__(self,saveInfo):
-        self.saveInfo = saveInfo
-        self.saveFile = None
+    def __init__(self, saveInfo):
+        super().__init__(saveInfo)
         self.createdEnchantments = []
 
-    def load(self,progress=None):
+    def load_data(self, progress=None):
         """Loads savegame and and extracts created enchantments from it."""
         progress = progress or bolt.Progress()
-        saveFile = self.saveFile = SaveFile(self.saveInfo)
-        saveFile.load(SubProgress(progress,0,0.4))
+        self._load_save(SubProgress(progress,0,0.4))
         #--Extract created enchantments
         saveName = self.saveInfo.ci_key
         progress(progress.full-1,saveName.s)
-        for index,record in enumerate(saveFile.created):
+        for index,record in enumerate(self.saveFile.created):
             if record._rec_sig == b'ENCH':
                 record = record.getTypeCopy()
                 record.getSize() #--Since type copy makes it changed.
-                saveFile.created[index] = record
+                self.saveFile.created[index] = record
                 self.createdEnchantments.append((index,record))
 
     def setCastWhenUsedEnchantmentNumberOfUses(self,uses):
@@ -782,29 +791,25 @@ class SaveEnchantments(object):
                     if record.enchantCost == 0: continue
                     record.enchantCost = 0
                 else:
-                    if record.enchantCost == max(record.chargeAmount//uses,1): continue
-                    record.enchantCost = max(record.chargeAmount//uses,1)
+                    charge_over_uses = max(record.chargeAmount // uses, 1)
+                    if record.enchantCost == charge_over_uses: continue
+                    record.enchantCost = charge_over_uses
                 record.setChanged()
                 record.getSize()
                 count += 1
         self.saveFile.safeSave()
 
 #------------------------------------------------------------------------------
-class Save_NPCEdits(object):
+class Save_NPCEdits(_SaveData):
     """General editing of NPCs/player in savegame."""
-
-    def __init__(self,saveInfo):
-        self.saveInfo = saveInfo
-        self.saveFile = SaveFile(saveInfo)
 
     def renamePlayer(self,newName):
         """rename the player in  a save file."""
         self.saveInfo.header.pcName = newName
-        saveFile = self.saveFile
-        saveFile.load()
-        (rec_id,rec_kind,recFlags,version,data) = saveFile.getRecord(7)
+        self._load_save()
+        rec_id, rec_kind, recFlags, version, data = self.saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
         npc.full = encode(newName)
-        saveFile.header.pcName = newName
-        saveFile.setRecord(npc.getTuple(rec_id,version))
-        saveFile.safeSave()
+        self.saveFile.header.pcName = newName
+        self.saveFile.setRecord(npc.getTuple(rec_id,version))
+        self.saveFile.safeSave()

@@ -34,7 +34,7 @@ from .. import bass, bosh, bolt, balt, bush, load_order, initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, UIList_Rename
 from ..bolt import GPath, SubProgress, Path
-from ..bosh import faces
+from ..bosh import faces, _saves
 from ..exception import ArgumentError, BoltError, ModError, AbstractError
 from ..gui import BusyCursor, ImageWrapper, FileSave
 from ..mod_files import LoadFactory, MasterMap, ModFile
@@ -275,13 +275,13 @@ class Save_ImportFace(OneItemLink):
             #--Get face
             srcInfo = bosh.SaveInfo(srcPath)
             with balt.Progress(fname) as progress:
-                saveFile = bosh._saves.SaveFile(srcInfo)
+                saveFile = _saves.SaveFile(srcInfo)
                 saveFile.load(progress)
-            srcFaces = bosh.faces.PCFaces.save_getFaces(saveFile)
+            srcFaces = faces.PCFaces.save_getFaces(saveFile)
         elif bosh.ModInfos.rightFileType(srcPath): # Import from a mod
             #--Get faces
             srcInfo = bosh.ModInfo(srcPath)
-            srcFaces = bosh.faces.PCFaces.mod_getFaces(srcInfo)
+            srcFaces = faces.PCFaces.mod_getFaces(srcInfo)
             #--No faces to import?
             if not srcFaces:
                 self._showOk(_(u'No player (PC) faces found in %s.') % fname,
@@ -306,7 +306,7 @@ class Save_RenamePlayer(ItemLink):
             title=_(u'Rename player'), default=saveInfo.header.pcName)
         if not newName: return
         for save_inf in self.iselected_infos():
-            savedPlayer = bosh._saves.Save_NPCEdits(save_inf)
+            savedPlayer = _saves.Save_NPCEdits(save_inf)
             savedPlayer.renamePlayer(newName)
         bosh.saveInfos.refresh()
         self.window.RefreshUI(redraw=self.selected)
@@ -530,7 +530,7 @@ class Save_EditCreated(OneItemLink):
     def Execute(self):
         #--Get SaveFile
         with balt.Progress(_(u'Loading...')) as progress:
-            saveFile = bosh._saves.SaveFile(self._selected_info)
+            saveFile = _saves.SaveFile(self._selected_info)
             saveFile.load(progress)
         #--No custom items?
         types_set = Save_EditCreated.rec_types[self.save_rec_type]
@@ -547,9 +547,9 @@ class Save_EditPCSpellsData(balt.ListEditorData):
     """Data capsule for pc spell editing dialog."""
     def __init__(self,parent,saveInfo):
         """Initialize."""
-        self.saveSpells = bosh._saves.SaveSpells(saveInfo)
+        self.saveSpells = _saves.SaveSpells(saveInfo)
         with balt.Progress(_(u'Loading Masters')) as progress:
-            self.saveSpells.load(bosh.modInfos, progress)
+            self.saveSpells.load_data(progress, bosh.modInfos)
         self.player_spells = self.saveSpells.getPlayerSpells()
         self.removed = set()
         #--GUI
@@ -599,14 +599,14 @@ class Save_EditCreatedEnchantmentCosts(OneItemLink):
     _help = _(u'Set number of uses for Cast When Used Enchantments')
 
     def Execute(self):
-        dialog = self._askNumber(
-            _(u'Enter the number of uses you desire per recharge for all '
-              u'custom made enchantments.') + u'\n' + _(
-                u'(Enter 0 for unlimited uses)'), prompt=_(u'Uses'),
-            title=_(u'Number of Uses'), value=50, min=0, max=10000)
+        msg = _('Enter the number of uses you desire per recharge for all '
+              'custom made enchantments.') + '\n' + _(
+            '(Enter 0 for unlimited uses)')
+        dialog = self._askNumber(msg, prompt=_('Uses'), title=_(
+            'Number of Uses'), value=50, min=0, max=10000)
         if dialog is None: return
-        Enchantments = bosh._saves.SaveEnchantments(self._selected_info)
-        Enchantments.load()
+        Enchantments = _saves.SaveEnchantments(self._selected_info)
+        Enchantments.load_data()
         Enchantments.setCastWhenUsedEnchantmentNumberOfUses(dialog)
 
 #------------------------------------------------------------------------------
@@ -702,7 +702,7 @@ class Save_RepairAbomb(OneItemLink):
         #--File Info
         fileInfo = self._selected_info
         #--Check current value
-        saveFile = bosh._saves.SaveFile(fileInfo)
+        saveFile = _saves.SaveFile(fileInfo)
         saveFile.load()
         (tcSize,abombCounter,abombFloat) = saveFile.getAbomb()
         #--Continue?
@@ -755,7 +755,7 @@ class Save_ReweighPotions(OneItemLink):
         bass.settings[u'bash.reweighPotions.newWeight'] = newWeight
         #--Do it
         with balt.Progress(_(u'Reweigh Potions')) as progress:
-            saveFile = bosh._saves.SaveFile(self._selected_info)
+            saveFile = _saves.SaveFile(self._selected_info)
             saveFile.load(SubProgress(progress,0,0.5))
             count = 0
             progress(0.5,_(u'Processing.'))
@@ -782,7 +782,7 @@ class Save_Stats(OneItemLink):
     _help = _(u'Show savefile statistics')
 
     def Execute(self):
-        saveFile = bosh._saves.SaveFile(self._selected_info)
+        saveFile = _saves.SaveFile(self._selected_info)
         with balt.Progress(_(u'Statistics')) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
             log = bolt.LogFile(io.StringIO())
@@ -837,15 +837,15 @@ class Save_StatPluggy(_Save_StatCosave):
 #------------------------------------------------------------------------------
 class Save_Unbloat(OneItemLink):
     """Unbloats savegame."""
-    _text = _(u'Remove Bloat...')
-    _help = _(u'Unbloat savegame. Experimental ! Back up your saves before'
-             u' using it on them')
+    _text = _('Remove Bloat...')
+    _help = _('Unbloat savegame. Experimental ! Back up your saves before '
+              'using it on them')
 
     def Execute(self):
         #--File Info
         with balt.Progress(_(u'Scanning for Bloat')) as progress:
             #--Scan and report
-            saveFile = bosh._saves.SaveFile(self._selected_info)
+            saveFile = _saves.SaveFile(self._selected_info)
             saveFile.load(SubProgress(progress,0,0.8))
             createdCounts,nullRefCount = saveFile.findBloating(SubProgress(progress,0.8,1.0))
         #--Dialog
@@ -859,12 +859,10 @@ class Save_Unbloat(OneItemLink):
                 message.append(u'  %s %s: %u' % (
                     created_item_rec_type, rec_full, count_))
         if nullRefCount:
-            message.append(u'  ' + _(u'Null Ref Objects:') +
-                           u' %u' % nullRefCount)
-        message.extend([u'', _(
-            u'WARNING: This is a risky procedure that may corrupt your '
-            u'savegame!  Use only if necessary!')])
-        if not self._askYes(u'\n'.join(message), _(u'Remove bloating?')):
+            message.append(f'  {_("Null Ref Objects:")} {nullRefCount:d}')
+        message.extend(['', _('WARNING: This is a risky procedure that may '
+            'corrupt your savegame!  Use only if necessary!')])
+        if not self._askYes('\n'.join(message), _('Remove bloating?')):
             return
         #--Remove bloating
         with balt.Progress(_(u'Removing Bloat')) as progress:
@@ -920,7 +918,7 @@ class Save_UpdateNPCLevels(EnabledLink):
             msg = [_(u'NPCs Releveled:')]
             for index,(saveName,saveInfo) in enumerate(self.iselected_pairs()):
                 subProgress(index,_(u'Updating %s') % saveName)
-                saveFile = bosh._saves.SaveFile(saveInfo)
+                saveFile = _saves.SaveFile(saveInfo)
                 saveFile.load()
                 save_recs = saveFile.save_records
                 mapToOrdered = MasterMap(saveFile._masters, ordered)
@@ -933,7 +931,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                             npc_info: continue
                     (eid, level_offset, calcMin, calcMax,
                      pcLevelOffset) = npc_info[orderedRecId]
-                    npc = bosh._saves.SreNPC(recFlags, rdata)
+                    npc = _saves.SreNPC(recFlags, rdata)
                     acbs = npc.acbs
                     if acbs and (
                         (acbs.level_offset != level_offset) or

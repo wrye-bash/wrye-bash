@@ -502,8 +502,8 @@ class _ChoiceMenuMixin(object):
     def ShowChoiceMenu(self, lb_selection_dex): raise exception.AbstractError
 
 _label_formats = {str: u'%s', float: u'%4.2f', int: u'%d'}
-def _custom_label(label, val): # edit label text with value
-    return f'{label}: {_label_formats[type(val)] % val}'
+def _custom_label(label_text, val): # edit label text with value
+    return f'{label_text}: {_label_formats[type(val)] % val}'
 
 class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
@@ -550,11 +550,11 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         isFirstLoad = self._GetIsFirstLoad()
         patcher_bold = False
         for index,tweak in enumerate(self._all_tweaks):
-            label = tweak.getListLabel()
+            item_label = tweak.getListLabel()
             if tweak.choiceLabels and tweak.choiceLabels[
                 tweak.chosen] == tweak.custom_choice:
-                label = _custom_label(label, tweak.choiceValues[tweak.chosen][0])
-            self.gTweakList.lb_insert(label, index)
+                item_label = _custom_label(item_label, tweak.choiceValues[tweak.chosen][0])
+            self.gTweakList.lb_insert(item_label, index)
             self.gTweakList.lb_check_at_index(index, tweak.isEnabled)
             if not isFirstLoad and tweak.isNew():
                 # Indicate that this is a new item by bolding it and its parent
@@ -616,14 +616,14 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             def Execute(self): _self.tweak_choice(self.index, tweakIndex)
         class _ValueLinkCustom(_ValueLink):
             def Execute(self): _self.tweak_custom_choice(self.index,tweakIndex)
-        for index,label in enumerate(choiceLabels):
-            if label == u'----':
+        for index, itm_txt in enumerate(choiceLabels):
+            if itm_txt == '----':
                 links.append(SeparatorLink())
-            elif label == tweak.custom_choice:
-                label = _custom_label(label, tweak.choiceValues[index][0])
-                links.append(_ValueLinkCustom(label, index))
+            elif itm_txt == tweak.custom_choice:
+                itm_txt = _custom_label(itm_txt, tweak.choiceValues[index][0])
+                links.append(_ValueLinkCustom(itm_txt, index))
             else:
-                links.append(_ValueLink(label, index))
+                links.append(_ValueLink(itm_txt, index))
         #--Show/Destroy Menu
         links.popup_menu(self.gTweakList, None)
 
@@ -659,13 +659,11 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             else:
                 key_display = u''
             if isinstance(v, float):
+                msg = (_('Enter the desired custom tweak value.') + '\n\n' + _(
+                    'Note: A floating point number is expected here.'))
+                msg = f'{msg}{key_display}'
                 while new is None: # keep going until user entered valid float
-                    label = (_(u'Enter the desired custom tweak value.')
-                             + u'\n\n' +
-                             _(u'Note: A floating point number is expected '
-                               u'here.') + key_display)
-                    new = balt.askText(
-                        self.gConfigPanel, label,
+                    new = balt.askText(self.gConfigPanel, msg,
                         title=tweak.tweak_name + _(u' - Custom Tweak Value'),
                         default=str(tweak.choiceValues[index][i]))
                     if new is None: #user hit cancel
@@ -675,26 +673,24 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
                         new = None # Reset, we may have a multi-key tweak
                         break
                     except ValueError:
-                        balt.showError(self.gConfigPanel,
-                                       _(u"'%s' is not a valid floating point "
-                                         u"number.") % new,
+                        ermsg = _("'%s' is not a valid floating point number."
+                                  ) % new
+                        balt.showError(self.gConfigPanel, ermsg,
                                        title=tweak.tweak_name + _(u' - Error'))
                         new = None # invalid float, try again
             elif isinstance(v, int):
-                label = (_(u'Enter the desired custom tweak value.')
-                         + key_display)
+                msg = _('Enter the desired custom tweak value.') + key_display
                 new = balt.askNumber(
-                    self.gConfigPanel, label, prompt=_(u'Value'),
+                    self.gConfigPanel, msg, prompt=_('Value'),
                     title=tweak.tweak_name + _(u' - Custom Tweak Value'),
                     value=tweak.choiceValues[index][i], min=-10000, max=10000)
                 if new is None: #user hit cancel
                     return
                 values.append(new)
             elif isinstance(v, str):
-                label = (_(u'Enter the desired custom tweak text.')
-                         + key_display)
+                msg = _(u'Enter the desired custom tweak text.') + key_display
                 new = balt.askText(
-                    self.gConfigPanel, label,
+                    self.gConfigPanel, msg,
                     title=tweak.tweak_name + _(u' - Custom Tweak Text'),
                     default=tweak.choiceValues[index][i], strip=False) ##: strip ?
                 if new is None: #user hit cancel
@@ -707,8 +703,8 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         if validation_error is None: # no error, we're good to go
             tweak.choiceValues[index] = values
             tweak.chosen = index
-            label = _custom_label(tweak.getListLabel(), values[0])
-            self.gTweakList.lb_set_label_at_index(tweakIndex, label)
+            custom_label = _custom_label(tweak.getListLabel(), values[0])
+            self.gTweakList.lb_set_label_at_index(tweakIndex, custom_label)
             self.gTweakList.lb_check_at_index(tweakIndex, True)
             self.TweakOnListCheck() # fired so this line is needed (?)
         else:
@@ -750,14 +746,14 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         for tweak in self._all_tweaks:
             if tweak.tweak_key in conf:
                 enabled, value = conf.get(tweak.tweak_key, (False, u''))
-                label = tweak.getListLabel().replace(u'[[', u'[').replace(
-                    u']]', u']')
+                list_label = tweak.getListLabel().replace('[[', '[').replace(
+                    ']]', ']')
                 if enabled:
-                    log(f'* __{label}__')
-                    clip.write(f' ** {label}\n')
+                    log(f'* __{list_label}__')
+                    clip.write(f' ** {list_label}\n')
                 else:
-                    log(f'. ~~{label}~~')
-                    clip.write(f'    {label}\n')
+                    log(f'. ~~{list_label}~~')
+                    clip.write(f'    {list_label}\n')
 
     def _import_config(self, default=False):
         super(_TweakPatcherPanel, self)._import_config(default)
@@ -860,11 +856,11 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
                 self._get_set_choice(item)
             self.gList.lb_set_label_at_index(itemIndex, self.getItemLabel(item))
         links = Links()
-        for index,label in enumerate(self.choiceMenu):
-            if label == u'----':
+        for index, item_label in enumerate(self.choiceMenu):
+            if item_label == '----':
                 links.append(SeparatorLink())
             else:
-                links.append(_OnItemChoice(label, index))
+                links.append(_OnItemChoice(item_label, index))
         #--Show/Destroy Menu
         links.popup_menu(self.gList, None)
 

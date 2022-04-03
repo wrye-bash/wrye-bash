@@ -218,8 +218,8 @@ class ModFile(object):
                 header = insRecHeader()
                 if not header.is_top_group_header:
                     raise ModError(self.fileInfo.ci_key, u'Improperly grouped file.')
-                label = header.label
-                topClass = self.loadFactory.getTopClass(label)
+                top_grup_sig = header.label
+                topClass = self.loadFactory.getTopClass(top_grup_sig)
                 try:
                     if topClass:
                         new_top = topClass(header, self.loadFactory)
@@ -227,23 +227,23 @@ class ModFile(object):
                         new_top.load_rec_group(ins, load_fully)
                         # Starting with FO4, some of Bethesda's official files
                         # have duplicate top-level groups
-                        if label not in self.tops:
-                            self.tops[label] = new_top
+                        if top_grup_sig not in self.tops:
+                            self.tops[top_grup_sig] = new_top
                         elif not load_fully:
                             # Duplicate top-level group and we can't merge due
                             # to not loading it fully. Log and replace the
                             # existing one
                             deprint(f'{self.fileInfo}: Duplicate top-level '
-                                f'{label} group loaded as MobBase, replacing')
-                            self.tops[label] = new_top
+                                f'{top_grup_sig} group loaded as MobBase, replacing')
+                            self.tops[top_grup_sig] = new_top
                         else:
                             # Duplicate top-level group and we can merge
                             deprint(f'{self.fileInfo}: Duplicate top-level '
-                                    f'{label} group, merging')
-                            self.tops[label].merge_records(new_top, set(),
+                                    f'{top_grup_sig} group, merging')
+                            self.tops[top_grup_sig].merge_records(new_top, set(),
                                 set(), False, False)
                     else:
-                        self.topsSkipped.add(label)
+                        self.topsSkipped.add(top_grup_sig)
                         header.skip_blob(ins)
                 except:
                     if catch_errors:
