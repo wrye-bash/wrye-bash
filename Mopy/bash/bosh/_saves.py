@@ -223,13 +223,12 @@ class SreNPC(object):
 # Save File -------------------------------------------------------------------
 class SaveFile(object):
     """Represents a Tes4 Save file."""
-    recordFlags = Flags.from_names(u'form', u'baseid', u'moved',
-        u'havocMoved', u'scale', u'allExtra', u'lock', u'owner', u'unk8',
-        u'unk9', u'mapMarkerFlags', u'hadHavokMoveFlag', u'unk12', u'unk13',
-        u'unk14', u'unk15', u'emptyFlag', u'droppedItem', u'doorDefaultState',
-        u'doorState', u'teleport', u'extraMagic', u'furnMarkers',
-        u'oblivionFlag', u'movementExtra', u'animation', u'script',
-        u'inventory', u'created', u'unk29', u'enabled')
+    recordFlags = Flags.from_names('form', 'baseid', 'moved', 'havocMoved',
+        'scale', 'allExtra', 'lock', 'owner', 'unk8', 'unk9', 'mapMarkerFlags',
+        'hadHavokMoveFlag', 'unk12', 'unk13', 'unk14', 'unk15', 'emptyFlag',
+        'droppedItem', 'doorDefaultState', 'doorState', 'teleport',
+        'extraMagic', 'furnMarkers', 'oblivionFlag', 'movementExtra',
+        'animation', 'script', 'inventory', 'created', 'unk29', 'enabled')
 
     def __init__(self,saveInfo=None,canSave=True):
         self.fileInfo = saveInfo
@@ -704,18 +703,18 @@ class SaveSpells(_SaveData):
     def importMod(self,modInfo):
         """Imports spell info from specified mod."""
         #--Spell list already extracted?
-        if u'bash.spellList' in modInfo.extras:
-            self.allSpells.update(modInfo.extras[u'bash.spellList'])
+        if 'bash.spellList' in modInfo.extras:
+            self.allSpells.update(modInfo.extras['bash.spellList'])
             return
         #--Else extract spell list
         loadFactory = LoadFactory(False, by_sig=[b'SPEL'])
         modFile = ModFile(modInfo, loadFactory)
         try: modFile.load(True)
         except ModError as err:
-            deprint(u'skipped mod due to read error (%s)' % err)
+            deprint(f'skipped mod due to read error ({err})')
             return
-        spells = modInfo.extras[u'bash.spellList'] = {
-            record.fid: record for record in modFile.tops[b'SPEL'].getActiveRecords()}
+        spells = modInfo.extras['bash.spellList'] = {record.fid: record for
+            record in modFile.tops[b'SPEL'].getActiveRecords()}
         self.allSpells.update(spells)
 
     def getPlayerSpells(self):

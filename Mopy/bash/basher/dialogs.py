@@ -40,8 +40,8 @@ class ImportFaceDialog(DialogWindow):
         #--Data
         self.fileInfo = fileInfo
         if faces and isinstance(next(iter(faces)), int):
-            self.fdata = {u'%08X %s' % (key, face.pcName): face for key, face
-                          in faces.items()}
+            self.fdata = {f'{int_key:08X} {face.pcName}': face for
+                          int_key, face in faces.items()}
         else:
             self.fdata = faces
         self.list_items = sorted(self.fdata, key=str.lower)
@@ -61,11 +61,11 @@ class ImportFaceDialog(DialogWindow):
         self.statsCheck = CheckBox(self, _(u'Stats'), checked=fi_flgs.stats)
         self.classCheck = CheckBox(self, _(u'Class'), checked=fi_flgs.iclass)
         #--Name,Race,Gender Text
-        self.nameText  = Label(self,u'-----------------------------')
-        self.raceText  = Label(self,u'')
-        self.genderText  = Label(self,u'')
-        self.statsText  = Label(self,u'')
-        self.classText  = Label(self,u'')
+        self.nameText = Label(self, '-----------------------------')
+        self.raceText = Label(self, '')
+        self.genderText = Label(self, '')
+        self.statsText = Label(self, '')
+        self.classText = Label(self, '')
         #--Other
         importButton = OkButton(self, btn_label=_(u'Import'))
         importButton.on_clicked.subscribe(self.DoImport)

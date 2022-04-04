@@ -25,27 +25,28 @@ import io
 import re
 from . import SaveInfo
 from ._saves import SreNPC, SaveFile
-from .. import bush, bolt
-from ..bolt import Flags, encode, Path, struct_pack, struct_unpack, \
-    pack_int, pack_byte
-from ..brec import getModIndex, MreRecord, genFid, RecHeader, null2
+from .. import bush
+from ..bolt import Flags, encode, Path, struct_pack, struct_unpack, pack_int, \
+    pack_byte, structs_cache
+from ..brec import getModIndex, MreRecord, genFid, RecHeader, null2, \
+    int_unpacker
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
 class PCFaces(object):
     """Package: Objects and functions for working with face data."""
-    pcf_flags = Flags.from_names(u'pcf_name', u'race', u'gender', u'hair',
-                                 u'eye', u'iclass', u'stats', u'factions',
-                                 u'modifiers', u'spells')
+    pcf_flags = Flags.from_names('pcf_name', 'race', 'gender', 'hair', 'eye',
+                                 'iclass', 'stats', 'factions', 'modifiers',
+                                 'spells')
 
     class PCFace(object):
         """Represents a face."""
         __slots__ = (
-            u'face_masters', u'eid', u'pcName', u'race', u'gender', u'eye',
-            u'hair', u'hairLength', u'hairRed', u'hairBlue', u'hairGreen',
-            u'unused3', u'fggs_p', u'fgga_p', u'fgts_p', u'level_offset',
-            u'attributes', u'skills', u'health', u'unused2', u'baseSpell',
-            u'fatigue', u'iclass', u'factions', u'modifiers', u'spells')
+            'face_masters', 'eid', 'pcName', 'race', 'gender', 'eye', 'hair',
+            'hairLength', 'hairRed', 'hairBlue', 'hairGreen', 'unused3',
+            'fggs_p', 'fgga_p', 'fgts_p', 'level_offset', 'attributes',
+            'skills', 'health', 'unused2', 'baseSpell', 'fatigue', 'iclass',
+            'factions', 'modifiers', 'spells')
 
         def __init__(self):
             self.face_masters = []
@@ -84,56 +85,41 @@ class PCFaces(object):
         """Safely finds position of name within save ACHR data."""
         namePos = data.find(pcName)
         if namePos == -1:
-            raise SaveFileError(saveName,u'Failed to find pcName in PC ACHR record.')
+            raise SaveFileError(saveName,
+                                'Failed to find pcName in PC ACHR record.')
         namePos2 = data.find(pcName,namePos+1)
         if namePos2 != -1:
             raise SaveFileError(saveName,
-                u'Uncertain about position of face data, probably because '
-                u'player character name is too short. Try renaming player '
-                u'character in save game.')
+                'Uncertain about position of face data, probably because '
+                'player character name is too short. Try renaming player '
+                'character in save game.')
         return namePos
 
     # Save Get ----------------------------------------------------------------
     @staticmethod
     def save_getFaces(saveFile):
         """Returns player and created faces from a save file or saveInfo."""
-        if isinstance(saveFile,SaveInfo):
-            saveInfo = saveFile
-            saveFile = SaveFile(saveInfo)
-            saveFile.load()
-        faces = PCFaces.save_getCreatedFaces(saveFile)
+        faces = PCFaces._save_getCreatedFaces(saveFile)
         playerFace = PCFaces.save_getPlayerFace(saveFile)
         faces[7] = playerFace
         return faces
 
     @staticmethod
-    def save_getCreatedFace(saveFile,targetid):
-        """Gets a particular created face."""
-        return PCFaces.save_getCreatedFaces(saveFile,targetid).get(targetid)
-
-    @staticmethod
-    def save_getCreatedFaces(saveFile,targetid=None):
+    def _save_getCreatedFaces(saveFile):
         """Returns created faces from savefile. If fid is supplied, will only
         return created face with that fid.
         Note: Created NPCs do NOT use irefs!"""
-        targetid = bolt.intArg(targetid)
-        if isinstance(saveFile,SaveInfo):
-            saveInfo = saveFile
-            saveFile = SaveFile(saveInfo)
-            saveFile.load()
         faces = {}
         for record in saveFile.created:
             if record._rec_sig != b'NPC_': continue
             #--Created NPC record
-            if targetid and record.fid != targetid: continue
             npc = record.getTypeCopy()
             face = faces[npc.fid] = PCFaces.PCFace()
             face.face_masters = saveFile._masters
-            for a in (u'eid', u'race', u'eye', u'hair', u'hairLength',
-                      u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
-                      u'fggs_p', u'fgga_p', u'fgts_p', u'level_offset',
-                      u'skills', u'health', u'unused2', u'baseSpell',
-                      u'fatigue', u'attributes', u'iclass'):
+            for a in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
+                      'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
+                      'fgts_p', 'level_offset', 'skills', 'health', 'unused2',
+                      'baseSpell', 'fatigue', 'attributes', 'iclass'):
                 setattr(face, a, getattr(npc, a))
             face.gender = (0,1)[npc.flags.female]
             face.pcName = npc.full
@@ -155,7 +141,7 @@ class PCFaces(object):
             face.level_offset = npc.acbs.level_offset
             face.baseSpell = npc.acbs.baseSpell
             face.fatigue = npc.acbs.fatigue
-        for a in (u'attributes', u'skills', u'health', u'unused2'):
+        for a in ('attributes', 'skills', 'health', 'unused2'):
             npc_val = getattr(npc, a)
             if npc_val is not None:
                 setattr(face, a, npc_val)
@@ -167,7 +153,8 @@ class PCFaces(object):
         return face
 
     @staticmethod
-    def save_getPlayerFace(saveFile):
+    def save_getPlayerFace(saveFile, *, __unpacker=int_unpacker,
+            __faceunpack=structs_cache['=200s120s200s3If3BsB'].unpack):
         """Extract player face from save file."""
         if isinstance(saveFile,SaveInfo):
             saveInfo = saveFile
@@ -182,10 +169,11 @@ class PCFaces(object):
         namePos = PCFaces.save_getNamePos(saveFile.fileInfo.ci_key, data,
                                           encode(saveFile.header.pcName))
         (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair, face.eye,
-            face.hairLength, face.hairRed, face.hairBlue, face.hairGreen, face.unused3, face.gender) = struct_unpack(
-            u'=200s120s200s3If3BsB',data[namePos-542:namePos-1])
+         face.hairLength, face.hairRed, face.hairBlue, face.hairGreen,
+         face.unused3, face.gender) = __faceunpack(
+            data[namePos - 542:namePos - 1])
         classPos = namePos + len(saveFile.header.pcName) + 1
-        face.iclass, = struct_unpack(u'I', data[classPos:classPos+4])
+        face.iclass, = __unpacker(data[classPos:classPos+4])
         #--Iref >> fid
         getFid = saveFile.getFid
         face.race = getFid(face.race)
@@ -207,22 +195,21 @@ class PCFaces(object):
         saveFile.safeSave()
 
     @staticmethod
-    def save_setCreatedFace(saveFile,targetid,face):
+    def save_setCreatedFace(saveFile, targetid: int, face): ##: UNUSED!
         """Sets created face in savefile to specified face.
         Note: Created NPCs do NOT use irefs!"""
-        targetid = bolt.intArg(targetid)
         #--Find record
         for index,record in enumerate(saveFile.created):
             if record.fid == targetid:
                 if record._rec_sig != b'NPC_':
-                    raise StateError(u'Record %08X in %s is not an NPC.' % (
-                        targetid, saveFile.fileInfo))
+                    raise StateError(f'Record {targetid:08X} in '
+                                     f'{saveFile.fileInfo} is not an NPC.')
                 npc = record.getTypeCopy()
                 saveFile.created[index] = npc
                 break
         else:
-            raise StateError(u'Record %08X not found in %s.' % (
-                targetid, saveFile.fileInfo))
+            raise StateError(f'Record {targetid:08X} not found in '
+                             f'{saveFile.fileInfo}.')
         #--Update masters
         for fid in (face.race, face.eye, face.hair):
             if not fid: continue
