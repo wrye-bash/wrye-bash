@@ -920,12 +920,12 @@ class Save_UpdateNPCLevels(EnabledLink):
                 subProgress(index, _('Updating %s') % saveInfo)
                 saveFile = _saves.SaveFile(saveInfo)
                 saveFile.load()
-                save_recs = saveFile.save_records
                 mapToOrdered = MasterMap(saveFile._masters, ordered)
                 releveledCount = 0
                 #--Loop over change records
-                for recNum, (recId, rec_kind, recFlags, version, rdata) in \
-                        enumerate(save_recs):
+                fid_rec = saveFile.fid_recNum
+                for recId, (rec_kind, recFlags, version, rdata) in \
+                        fid_rec.items():
                     orderedRecId = mapToOrdered(recId,None)
                     if rec_kind != 35 or recId == 7 or orderedRecId not in \
                             npc_info: continue
@@ -944,7 +944,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                         acbs.calcMin = calcMin
                         acbs.calcMax = calcMax
                         releveledCount += 1
-                        save_recs[recNum] = npc.getTuple(recId, version)
+                        fid_rec[recId] = npc.getTuple(version)
                 #--Save changes?
                 subProgress(index + 0.5, _('Updating %s') % saveInfo)
                 if releveledCount:
