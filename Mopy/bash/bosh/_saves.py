@@ -223,13 +223,12 @@ class SreNPC(object):
 # Save File -------------------------------------------------------------------
 class SaveFile(object):
     """Represents a Tes4 Save file."""
-    recordFlags = Flags.from_names(u'form', u'baseid', u'moved',
-        u'havocMoved', u'scale', u'allExtra', u'lock', u'owner', u'unk8',
-        u'unk9', u'mapMarkerFlags', u'hadHavokMoveFlag', u'unk12', u'unk13',
-        u'unk14', u'unk15', u'emptyFlag', u'droppedItem', u'doorDefaultState',
-        u'doorState', u'teleport', u'extraMagic', u'furnMarkers',
-        u'oblivionFlag', u'movementExtra', u'animation', u'script',
-        u'inventory', u'created', u'unk29', u'enabled')
+    recordFlags = Flags.from_names('form', 'baseid', 'moved', 'havocMoved',
+        'scale', 'allExtra', 'lock', 'owner', 'unk8', 'unk9', 'mapMarkerFlags',
+        'hadHavokMoveFlag', 'unk12', 'unk13', 'unk14', 'unk15', 'emptyFlag',
+        'droppedItem', 'doorDefaultState', 'doorState', 'teleport',
+        'extraMagic', 'furnMarkers', 'oblivionFlag', 'movementExtra',
+        'animation', 'script', 'inventory', 'created', 'unk29', 'enabled')
 
     def __init__(self,saveInfo=None,canSave=True):
         self.fileInfo = saveInfo
@@ -704,7 +703,7 @@ class SaveSpells(_SaveData):
     def importMod(self,modInfo):
         """Imports spell info from specified mod."""
         #--Spell list already extracted?
-        if u'bash.spellList' in modInfo.extras:
+        if 'bash.spellList' in modInfo.extras:
             self.allSpells.update(modInfo.extras[u'bash.spellList'])
             return
         #--Else extract spell list
