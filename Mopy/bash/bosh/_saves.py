@@ -65,19 +65,21 @@ class SreNPC(object):
         __slots__ = ('flags', 'baseSpell', 'fatigue', 'barterGold',
                      'level_offset', 'calcMin', 'calcMax')
 
+        def __init__(self, ins=None, *, __deflts=(0, 0, 0, 0, 1, 0, 0)):
+            if ins is not None:
+                __deflts = struct_unpack('=I3Hh2H', ins.read(16))
+            for a, d in zip(self.__slots__, __deflts):
+                setattr(self, a, d)
+            self.flags = MreRecord.type_class[b'NPC_']._flags(self.flags)
+
+        def __str__(self):
+            return '\n'.join(
+                f'  {a} {getattr(self, a)}' for a in self.__slots__)
+
     def __init__(self, sre_flags=0, data_=None):
         for att in self.__slots__:
             setattr(self, att, None)
         if data_: self._load_acbs(sre_flags, data_)
-
-    @staticmethod
-    def get_acbs():
-        """Returns a default version. Only supports acbs."""
-        acbs = SreNPC.ACBS()
-        (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
-         acbs.level_offset, acbs.calcMin, acbs.calcMax) = (0,0,0,0,1,0,0)
-        acbs.flags = MreRecord.type_class[b'NPC_']._flags(acbs.flags)
-        return acbs
 
     def _load_acbs(self, sr_flags, data_):
         """Loads variables from data."""
@@ -90,11 +92,7 @@ class SreNPC(object):
         if sr_flags.attributes:
             self.attributes = list(_unpack('8B', 8))
         if sr_flags.acbs:
-            acbs = self.acbs = SreNPC.ACBS()
-            (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
-             acbs.level_offset, acbs.calcMin,
-             acbs.calcMax) = _unpack(u'=I3Hh2H', 16)
-            acbs.flags = MreRecord.type_class[b'NPC_']._flags(acbs.flags)
+            self.acbs = SreNPC.ACBS(ins)
         if sr_flags.factions:
             num = unpack_short(ins)
             self.factions = list(starmap(_unpack, repeat((u'=Ib', 5), num)))
@@ -187,8 +185,7 @@ class SreNPC(object):
                     self.attributes))
         if self.acbs is not None:
             buff.write(u'ACBS:\n')
-            for attr in SreNPC.ACBS.__slots__:
-                buff.write(u'  %s %s\n' % (attr, getattr(self.acbs, attr)))
+            buff.write(f'{self.acbs}\n')
         if self.factions is not None:
             buff.write(u'Factions:\n')
             for faction in self.factions:
@@ -611,6 +608,16 @@ class SaveFile(object):
         pack_int(buff, value)
         self.preCreated = buff.getvalue()
 
+    def get_npc(self, pc_fid=7):
+        """Get NPC with specified fid - if no fid is passed get Player record.
+        """
+        try:
+            rec_kind, recFlags, version, data = self.fid_recNum.get(pc_fid)
+        except ValueError: # Unpacking None
+            return None
+        npc = SreNPC(recFlags, data)
+        return npc, version
+
 #------------------------------------------------------------------------------
 class _SaveData:
     """Encapsulate common SaveFile manipulations."""
@@ -669,16 +676,14 @@ class SaveSpells(_SaveData):
     def getPlayerSpells(self):
         """Returns players spell list from savegame. (Returns ONLY spells. I.e., not abilities, etc.)"""
         saveFile = self.saveFile
-        #--Get masters and npc spell fids
-        masters_copy = saveFile._masters[:]
-        maxMasters = len(masters_copy) - 1
-        pc_fid = 7
-        rec_kind, recFlags, version, data = saveFile.fid_recNum.get(pc_fid)
-        npc = SreNPC(recFlags,data)
+        npc, _version = saveFile.get_npc()
         pcSpells = {} #--pcSpells[spellName] = iref
         #--NPC doesn't have any spells?
         if not npc.spells:
             return pcSpells
+        #--Get masters and npc spell fids
+        masters_copy = saveFile._masters[:]
+        maxMasters = len(masters_copy) - 1
         #--Get spell names to match fids
         for iref in npc.spells:
             if (iref >> 24) == 255:
@@ -701,9 +706,7 @@ class SaveSpells(_SaveData):
     def removePlayerSpells(self,spellsToRemove):
         """Removes specified spells from players spell list."""
         pc_fid = 7
-        rec_kind, recFlags, version, data = self.saveFile.fid_recNum.get(
-            pc_fid)
-        npc = SreNPC(recFlags,data)
+        npc, version = self.saveFile.get_npc()
         if npc.spells and spellsToRemove:
             #--Remove spells and save
             npc.spells = [iref for iref in npc.spells if iref not in spellsToRemove]
@@ -755,9 +758,7 @@ class Save_NPCEdits(_SaveData):
         self.saveInfo.header.pcName = newName
         self._load_save()
         pc_fid = 7
-        rec_kind, recFlags, version, data = self.saveFile.fid_recNum.get(
-            pc_fid)
-        npc = SreNPC(recFlags,data)
+        npc, version = self.saveFile.get_npc()
         npc.full = encode(newName)
         self.saveFile.header.pcName = newName
         self.saveFile.fid_recNum[pc_fid] = npc.getTuple(version)

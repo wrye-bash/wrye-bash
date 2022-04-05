@@ -131,11 +131,10 @@ class PCFaces(object):
     def save_getChangedNpc(saveFile, npc_fid, face=None):
         """Update face with data from npc change record."""
         face = face or PCFaces.PCFace()
-        changeRecord = saveFile.fid_recNum.get(npc_fid)
-        if not changeRecord:
+        changeRecord = saveFile.get_npc(npc_fid)
+        if changeRecord is None:
             return face
-        _recType, recFlags, version, data = changeRecord
-        npc = SreNPC(recFlags,data)
+        npc, _version = changeRecord
         if npc.acbs:
             face.gender = npc.acbs.flags.female
             face.level_offset = npc.acbs.level_offset
@@ -242,11 +241,10 @@ class PCFaces(object):
         npc.setChanged()
         npc.getSize()
         #--Change record?
-        changeRecord = saveFile.fid_recNum.get(npc_int_fid := npc.fid)
+        changeRecord = saveFile.get_npc(npc_int_fid := npc.fid)
         if changeRecord is None: return
-        _recType, recFlags, version, data = changeRecord
-        npc = SreNPC(recFlags,data)
-        if not npc.acbs: npc.acbs = npc.get_acbs()
+        npc, version = changeRecord
+        if not npc.acbs: npc.acbs = SreNPC.ACBS()
         npc.acbs.flags.female = face.gender
         npc.acbs.level_offset = face.level_offset
         npc.acbs.baseSpell = face.baseSpell
@@ -329,8 +327,7 @@ class PCFaces(object):
         newData = buff.getvalue()
         saveFile.fid_recNum[0x14] = (*oldRecord[:-1], newData)
         #--Player NPC
-        (_recType,recFlags,version,data) = saveFile.fid_recNum.get(7)
-        npc = SreNPC(recFlags,data)
+        npc, version = saveFile.get_npc()
         #--Gender
         if pcf_flags.gender and npc.acbs:
             npc.acbs.flags.female = face.gender
