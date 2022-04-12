@@ -304,19 +304,19 @@ class RaceCheckerPatcher(Patcher):
             if (race.flags.playable or race.fid == (
                     _main_master, 0x038010)) and race.eyes:
                 prev_hairs = race.hairs[:]
-                race.hairs.sort(key=lambda x: hairNames.get(x))
+                race.hairs.sort(key=lambda x: hairNames.get(x) or '')
                 prev_eyes = race.eyes[:]
-                race.eyes.sort(key=lambda x: eyeNames.get(x))
+                race.eyes.sort(key=lambda x: eyeNames.get(x) or '')
                 if race.hairs != prev_hairs or race.eyes != prev_eyes:
                     racesSorted.append(race.eid)
                     keep(race.fid)
-        log.setHeader(u'= ' + self._patcher_name)
-        log(u'\n=== ' + _(u'Eyes/Hair Sorted'))
+        log.setHeader(f'= {self._patcher_name}')
+        log(f'\n=== {_("Eyes/Hair Sorted")}')
         if not racesSorted:
-            log(u'. ~~%s~~' % _(u'None'))
+            log(f'. ~~{_("None")}~~')
         else:
             for eid in sorted(racesSorted):
-                log(u'* ' + eid)
+                log(f'* {eid}')
 
 #------------------------------------------------------------------------------
 def _find_vanilla_eyes():

@@ -8,8 +8,8 @@ wxPython==4.1.1
 lxml==4.8.0
 PyMuPDF==1.19.6
 # Compile/Build-time
-pygit2==1.9.0
+pygit2==1.9.1
 pyfiglet==0.8.post1
 pyinstaller==4.10
-pytest==7.0.1
+pytest==7.1.1
 tomli==2.0.1

@@ -284,8 +284,8 @@ class ModReader(object):
                 endPos = self.ins.tell() + size
                 raise ModReadError(self.inName, debug_strs, endPos, self.size)
             id_, = self.unpack(__unpacker, 4, *debug_strs)
-            if id_ == 0: return u''
-            else: return self.strings.get(id_,u'LOOKUP FAILED!') #--Same as Skyrim
+            if id_ == 0: return ''
+            return self.strings.get(id_, 'LOOKUP FAILED!') #--Same as Skyrim
         else:
             return self.readString(size, *debug_strs)
 
