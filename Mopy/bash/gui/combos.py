@@ -103,7 +103,7 @@ class DoubleListBox(PanelWin):
         """Internal callback, called when an item in one of the two lists is
         selected. Deselects the other list and enables the right move
         button."""
-        if my_list == self._left_list:
+        if my_list is self._left_list:
             other_list = self._right_list
             my_btn = self._move_right_btn
             other_btn = self._move_left_btn

@@ -1763,7 +1763,7 @@ class ModDetails(_ModsSavesDetails):
                 self._update_tags(set(curr_choices), choices_checked)
         bt_popup = BashTagsPopup(
             self, all_choices={t: t in app_tags for t in bush.game.allTags},
-            help_text=_(u'Tick a tag to add it to the plugin.'),
+            help_text=_('Check a tag to add it to the plugin.'),
             aa_btn_tooltip=_(u'Add all shown tags to the plugin.'),
             ra_btn_tooltip=_(u'Remove all shown tags from the plugin.'))
         mouse_pos = self._add_tag_btn.to_absolute_position(wrapped_evt.evt_pos)

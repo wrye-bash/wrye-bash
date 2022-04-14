@@ -113,7 +113,7 @@ class MultiChoicePopup(_TransientPopup):
         :param ra_btn_tooltip: A tooltip to show when hovering over the 'Remove
             All' button (optional)."""
         super(MultiChoicePopup, self).__init__(parent)
-        self._all_choices = list(dict_sort(all_choices))
+        self._all_choices = dict(dict_sort(all_choices))
         choice_search = SearchBar(self)
         choice_search.on_text_changed.subscribe(self._search_choices)
         choice_search.set_focus()
@@ -137,20 +137,26 @@ class MultiChoicePopup(_TransientPopup):
 
     def _select_all_choices(self):
         """Internal callback for the Select All button."""
-        self._choice_box.set_all_checkmarks(checked=True)
-        self.on_mass_select(curr_choices=self._choice_box.lb_get_str_items(),
-                            choices_checked=True)
+        self._mass_select_shared(choices_checked=True)
 
     def _deselect_all_choices(self):
         """Internal callback for the Deselect All button."""
-        self._choice_box.set_all_checkmarks(checked=False)
-        self.on_mass_select(curr_choices=self._choice_box.lb_get_str_items(),
-                            choices_checked=False)
+        self._mass_select_shared(choices_checked=False)
+
+    def _mass_select_shared(self, *, choices_checked: bool):
+        """Shared code of _select_all_choices and _deselect_all_choices."""
+        self._choice_box.set_all_checkmarks(checked=choices_checked)
+        curr_choice_strs = self._choice_box.lb_get_str_items()
+        # Remember this for when we update the choice box contents via search
+        for choice_str in curr_choice_strs:
+            self._all_choices[choice_str] = choices_checked
+        self.on_mass_select(curr_choices=curr_choice_strs,
+                            choices_checked=choices_checked)
 
     def _search_choices(self, search_str):
         """Internal callback for searching via the search bar."""
         search_lower = search_str.strip().lower()
-        choices_dict = {k: v for k, v in self._all_choices if
+        choices_dict = {k: v for k, v in self._all_choices.items() if
                         search_lower in k.lower()}
         self._choice_box.set_all_items(choices_dict)
 
@@ -159,6 +165,8 @@ class MultiChoicePopup(_TransientPopup):
         the abstract on_item_checked method."""
         choice_name = self._choice_box.lb_get_str_item_at_index(choice_index)
         choice_checked = self._choice_box.lb_is_checked_at_index(choice_index)
+        # Remember this for when we update the choice box contents via search
+        self._all_choices[choice_name] = choice_checked
         self.on_item_checked(choice_name, choice_checked)
 
     def on_item_checked(self, choice_name, choice_checked):
