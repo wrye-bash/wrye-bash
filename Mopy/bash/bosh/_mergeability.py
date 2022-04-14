@@ -37,6 +37,13 @@ def _is_mergeable_no_load(modInfo, reasons):
     if modInfo.isBP():
         if not verbose: return False
         reasons.append(_(u'Is Bashed Patch.'))
+    # Plugin INIs would get deactivated if the plugin got merged
+    plugin_ini_name = modInfo.get_ini_name()
+    plugin_inis_lower = {p.abs_path.stail.lower()
+                         for p in modInfo.get_store().ini_files()}
+    if plugin_ini_name.lower() in plugin_inis_lower:
+        if not verbose: return False
+        reasons.append(_('Has plugin INI (%s).') % plugin_ini_name)
     #--Bsa / blocking resources?
     has_resources = modInfo.hasResources()
     if has_resources != (False, False):

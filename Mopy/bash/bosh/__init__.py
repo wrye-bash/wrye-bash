@@ -2355,17 +2355,23 @@ class ModInfos(FileInfos):
         active_inis = [i for i in possible_inis if i.lower() in present_inis]
         # Delete now inactive or deleted INIs from the cache
         if self._plugin_inis: # avoid on boot
-            active_inis_set = set(active_inis)
+            active_inis_lower = {i.lower() for i in active_inis}
             for prev_ini in list(self._plugin_inis):
-                if prev_ini not in active_inis_set:
+                if prev_ini.stail.lower() not in active_inis_lower:
                     del self._plugin_inis[prev_ini]
-        # Add new or modified INIs to the cache
-        for iniPath in active_inis:
-            if iniPath not in self._plugin_inis or self._plugin_inis[
-                iniPath].do_update():
-                self._plugin_inis[iniPath] = IniFile(iniPath, 'cp1252')
-        self._plugin_inis = OrderedDict(
-            [(k, self._plugin_inis[k]) for k in active_inis])
+        # Add new or modified INIs to the cache and copy the final order
+        data_join = bass.dirs['mods'].join
+        ini_order = []
+        for acti_ini_name in active_inis:
+            # Need to restore the full path here since we'll stat that path
+            # when resetting the cache during __init__
+            acti_ini_path = data_join(acti_ini_name)
+            acti_ini = self._plugin_inis.get(acti_ini_path)
+            if acti_ini is None or acti_ini.do_update():
+                acti_ini = self._plugin_inis[acti_ini_path] = IniFile(
+                    acti_ini_path, 'cp1252')
+            ini_order.append((acti_ini_path, acti_ini))
+        self._plugin_inis = OrderedDict(ini_order)
 
     def _refreshBadNames(self):
         """Refreshes which filenames cannot be saved to plugins.txt
