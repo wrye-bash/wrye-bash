@@ -56,7 +56,7 @@ __all__ = [u'Installer_Open', u'Installer_Duplicate',
            u'Installer_SkipRefresh', u'Installer_Wizard',
            u'Installer_EditWizard', u'Installer_OpenReadme',
            u'Installer_Anneal', u'Installer_Install', u'Installer_Uninstall',
-           u'InstallerConverter_MainMenu', u'InstallerConverter_Create',
+           'Installer_ArchiveMenu', 'InstallerConverter_Create',
            u'InstallerConverter_ConvertMenu', u'InstallerProject_Pack',
            u'InstallerArchive_Unpack', u'InstallerProject_ReleasePack',
            u'Installer_CopyConflicts', u'Installer_SyncFromData' ,
@@ -69,7 +69,7 @@ __all__ = [u'Installer_Open', u'Installer_Duplicate',
            u'Installer_Subs_ListSubPackages', u'Installer_OpenNexus',
            u'Installer_ExportAchlist', u'Installer_Espm_JumpToMod',
            'Installer_RunFomod', 'Installer_InstallSmart',
-           'Installer_EditFomod']
+           'Installer_EditFomod', 'Installer_ProjectMenu']
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -121,6 +121,11 @@ class _SingleProject(OneItemLink, _InstallerLink):
     def _enable(self):
         return super(_SingleProject, self)._enable() and \
                self._selected_info.is_project
+
+class _ArchiveOnly(_InstallerLink):
+    """_InstallerLink that is only enabled for archives."""
+    def _enable(self):
+        return all(inf.is_archive for inf in self.iselected_infos())
 
 class _RefreshingLink(_SingleInstallable):
     _overrides_skips = False
@@ -1027,15 +1032,10 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
 #------------------------------------------------------------------------------
 # InstallerArchive Links ------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
+class InstallerArchive_Unpack(_ArchiveOnly):
     """Unpack installer package(s) to Project(s)."""
     _text = _dialog_title = _(u'Unpack to Project(s)...')
     _help = _(u'Unpack installer package(s) to Project(s)')
-
-    def _append(self, window):
-        self.selected = window.GetSelected() # append runs before _initData
-        self.window = window # and the idata access is via self.window
-        return all(inf.is_archive for inf in self.iselected_infos())
 
     @balt.conversation
     def Execute(self):
@@ -1086,7 +1086,7 @@ class InstallerProject_OmodConfig(_SingleProject):
 #------------------------------------------------------------------------------
 class Installer_SyncFromData(_SingleInstallable):
     """Synchronize an archive or project with files from the Data directory."""
-    _text = _(u'Sync from Data')
+    _text = _('Sync from Data...')
     _help = _(u'Synchronize an installer with files from the %s '
               u'directory.') % bush.game.mods_dir
 
@@ -1180,7 +1180,7 @@ class InstallerProject_ReleasePack(InstallerProject_Pack):
     release = True
 
 #------------------------------------------------------------------------------
-class _InstallerConverter_Link(_InstallerLink):
+class _InstallerConverter_Link(_ArchiveOnly):
 
     @balt.conversation
     def _check_identical_content(self, message):
@@ -1368,7 +1368,8 @@ class InstallerConverter_Create(_InstallerConverter_Link):
 #------------------------------------------------------------------------------
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
-    _text = _(u'Apply')
+    _text = _('Apply..')
+
     def _enable(self):
         """Return False to disable the converter menu, otherwise populate its
         links attribute and return True."""
@@ -1404,8 +1405,22 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
             self.links.append(InstallerConverter_Apply(converter, selected))
         return True
 
-class InstallerConverter_MainMenu(balt.MenuLink):
-    """Main BCF Menu"""
-    _text = _(u'BAIN Conversions')
-    def _enable(self):
-        return all(inst.is_archive for inst in self.iselected_infos())
+class _Installer_TypeOnlyMenu(AppendableLink, balt.MenuLink):
+    """Base class for archive/project-only menus."""
+    _wants_archive: bool
+
+    def _append(self, window):
+        self.selected = window.GetSelected() # append runs before _initData
+        self.window = window # and the idata access is via self.window
+        return all(inst.is_archive == self._wants_archive
+                   for inst in self.iselected_infos())
+
+class Installer_ArchiveMenu(_Installer_TypeOnlyMenu):
+    """Archive-specific menu."""
+    _text = _('Archive..')
+    _wants_archive = True
+
+class Installer_ProjectMenu(_Installer_TypeOnlyMenu):
+    """Project-specific menu."""
+    _text = _('Project..')
+    _wants_archive = False
