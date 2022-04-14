@@ -656,16 +656,27 @@ class Installer(ListInfo):
          - in Installer_CopyConflicts
         """
         bain_type    = self.type
-        #--Init to empty
-        self.has_fomod_conf = False
+        # Init to empty - this has to reset everything that this method might
+        # touch so that the early return from bad archives works correctly
+        self.has_fomod_conf = self.hasBethFiles = False
         self.hasWizard = self.hasBCF = self.hasReadme = False
         self.packageDoc = self.packagePic = None
-        for attr in {'skipExtFiles','skipDirFiles','espms'}:
+        self.unSize = 0
+        for inst_attr in {'skipExtFiles', 'skipDirFiles', 'espms'}:
             ##: is the object. necessary?
-            object.__getattribute__(self,attr).clear()
+            object.__getattribute__(self, inst_attr).clear()
         dest_src = bolt.LowerDict()
-        #--Bad archive?
-        if bain_type not in {1,2}: return dest_src
+        # If this is a bad (i.e. unrecognized) archive, abort early
+        if bain_type not in (1, 2):
+            # If an archive became unrecognized, mark everything that was in it
+            # as dirty and clear the destination dict
+            if self.is_active:
+                dirty_sizeCrc = self.dirty_sizeCrc
+                for filename, sizeCrc in self.ci_dest_sizeCrc.items():
+                    if filename not in dirty_sizeCrc:
+                        dirty_sizeCrc[filename] = sizeCrc
+            self.ci_dest_sizeCrc.clear()
+            return dest_src
         archiveRoot = GPath(
             self.archive).sroot if self._valid_exts_re else self.archive
         docExts = self.docExts
