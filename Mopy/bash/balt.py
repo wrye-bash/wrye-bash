@@ -1828,8 +1828,11 @@ class MenuLink(Link):
 
     def _enable_menu(self):
         """Disable ourselves if none of our children are visible."""
-        ##: These hasattr calls are really ugly, try to find a better way
         for l in self.links:
+            if isinstance(l, SeparatorLink):
+                # SeparatorLinks are not interactable links, so there is no
+                # need to worry about their enabled status
+                continue
             if isinstance(l, AppendableLink):
                 # This is an AppendableLink, skip if it's not appended
                 if not l._append(self.window): continue
