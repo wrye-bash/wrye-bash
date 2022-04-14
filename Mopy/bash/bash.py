@@ -220,6 +220,11 @@ def dump_environment(wxver=None):
                        f'{fitz.VersionFitz}')
     except ImportError:
         pymupdf_ver = 'not found'
+    try:
+        import lxml
+        lxml_ver = lxml.__version__
+    except ImportError:
+        lxml_ver = ''
     wx_ver = wxver or 'not found'
     # Now that we have checked all dependencies (including potentially missing
     # ones), we can build the environment dump
@@ -232,6 +237,7 @@ def dump_environment(wxver=None):
         f'Python version: {sys.version}'.replace('\n', '\n\t'),
         'Dependency versions:',
         f' - chardet: {chardet.__version__}',
+        f' - lxml: {lxml_ver}',
         f' - PyMuPDF: {pymupdf_ver}',
         f' - python-lz4: {lz4.version.version}; bundled LZ4 version: '
         f'{lz4.library_version_string()}',

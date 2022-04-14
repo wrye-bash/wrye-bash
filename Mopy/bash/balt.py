@@ -308,10 +308,12 @@ def askStyled(parent, message, title, style, do_center=False):
             vista_btn.append((BTN_OK, u'ok'))
         if style & wx.CANCEL:
             vista_btn.append((BTN_CANCEL, u'cancel'))
-        if style & (wx.ICON_EXCLAMATION|wx.ICON_INFORMATION):
-            icon = u'warning'
-        if style & wx.ICON_HAND:
-            icon = u'error'
+        if style & wx.ICON_INFORMATION:
+            icon = 'information'
+        if style & wx.ICON_WARNING:
+            icon = 'warning'
+        if style & wx.ICON_ERROR:
+            icon = 'error'
         result, _check = vistaDialog(parent, message=message, title=title,
                                      icon=icon, buttons=vista_btn)
     else:
@@ -326,14 +328,14 @@ def askOk(parent, message, title=u''):
 
 def askYes(parent, message, title=u'', default=True, questionIcon=False):
     """Shows a modal warning or question message."""
-    icon= wx.ICON_QUESTION if questionIcon else wx.ICON_EXCLAMATION
+    icon= wx.ICON_QUESTION if questionIcon else wx.ICON_WARNING
     style = wx.YES_NO|icon|(wx.YES_DEFAULT if default else wx.NO_DEFAULT)
     return askStyled(parent, message, title, style)
 
 def askWarning(parent, message, title=_(u'Warning')):
     """Shows a modal warning message."""
     return askStyled(parent, message, title,
-                     wx.OK | wx.CANCEL | wx.ICON_EXCLAMATION)
+                     wx.OK | wx.CANCEL | wx.ICON_WARNING)
 
 def showOk(parent, message, title=u''):
     """Shows a modal error message."""
@@ -343,11 +345,11 @@ def showOk(parent, message, title=u''):
 def showError(parent, message, title=_(u'Error')):
     """Shows a modal error message."""
     if isinstance(title, bolt.Path): title = title.s
-    return askStyled(parent, message, title, wx.OK | wx.ICON_HAND)
+    return askStyled(parent, message, title, wx.OK | wx.ICON_ERROR)
 
 def showWarning(parent, message, title=_(u'Warning'), do_center=False):
     """Shows a modal warning message."""
-    return askStyled(parent, message, title, wx.OK | wx.ICON_EXCLAMATION,
+    return askStyled(parent, message, title, wx.OK | wx.ICON_WARNING,
                      do_center=do_center)
 
 def showInfo(parent, message, title=_(u'Information')):
