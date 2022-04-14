@@ -268,6 +268,21 @@ def _fn_product_version(file_path, expected_ver, comparison):
                                    'but the file is not an executable.')
     return comparison.compare(actual_ver, LooseVersion(expected_ver))
 
+def _fn_readable(file_path):
+    """Takes a file path. Returns True iff the path exists and is a readable
+    file or directory."""
+    file_path = _process_path(file_path)
+    try:
+        if file_path.is_dir():
+            os.listdir(file_path)
+            return True
+        else:
+            with open(file_path, 'rb'):
+                pass
+            return True
+    except OSError:
+        return False
+
 def _fn_version(file_path, expected_ver, comparison):
     # type: (str, str, Comparison) -> bool
     """Behaves like product_version, but extends its behavior to also allow
@@ -299,14 +314,15 @@ def _fn_version(file_path, expected_ver, comparison):
 
 # Maps the function names used in conditions to the functions implementing them
 _function_mapping = {
-    u'active':          _fn_active,
-    u'checksum':        _fn_checksum,
-    u'file':            _fn_file,
-    u'is_master':       _fn_is_master,
-    u'many':            _fn_many,
-    u'many_active':     _fn_many_active,
-    u'product_version': _fn_product_version,
-    u'version':         _fn_version,
+    'active':          _fn_active,
+    'checksum':        _fn_checksum,
+    'file':            _fn_file,
+    'is_master':       _fn_is_master,
+    'many':            _fn_many,
+    'many_active':     _fn_many_active,
+    'product_version': _fn_product_version,
+    'readable':        _fn_readable,
+    'version':         _fn_version,
 }
 
 # Misc
