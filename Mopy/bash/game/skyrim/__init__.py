@@ -114,22 +114,25 @@ class SkyrimGameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
-            u'asi', # script dragon
-            u'calientetools', # bodyslide
-            u'dialogueviews',
-            u'dyndolod',
-            u'grass',
-            u'interface',
-            u'lodsettings',
-            u'scripts',
-            u'seq',
-            u'shadersfx',
-            u'skse',
-            u'skyproc patchers',
-            u'slanims', # nsfw mods
-            u'source', # see Psc.source_redirects above
-            u'strings',
-            u'tools', # FNIS
+            'asi', # 3P: Script Dragon
+            'autobody', # 3P: AutoBody
+            'calientetools', # 3P: BodySlide
+            'dialogueviews',
+            'dyndolod', # 3P: DynDOLOD
+            'grass',
+            'interface',
+            'lodsettings',
+            'nemesis_engine', # 3P: Nemesis Unlimited Behavior Engine
+            'osa', # 3P: OSA Animation Framework
+            'scripts',
+            'seq',
+            'shadersfx',
+            'skse', # 3P: SKSE
+            'skyproc patchers', # 3P: SkyProc
+            'slanims', # 3P: SL Animation Loader
+            'source', # see Psc.source_redirects above
+            'strings',
+            'tools', # 3P: FNIS
         }
         keep_data_dirs = {u'LSData'}
         no_skip = (

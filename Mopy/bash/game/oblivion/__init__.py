@@ -124,17 +124,17 @@ class OblivionGameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
-            u'_tejon',
-            u'distantlod',
-            u'facegen',
-            u'fonts',
-            u'menus',
-            u'obse',
-            u'pluggy',
-            u'scripts',
-            u'shaders',
-            u'streamline',
-            u'trees',
+            '_tejon',
+            'distantlod',
+            'facegen',
+            'fonts',
+            'menus',
+            'obse', # 3P: OBSE
+            'pluggy', # 3P: Pluggy
+            'scripts',
+            'shaders',
+            'streamline',
+            'trees',
         }
         keep_data_dirs = {
             _j(u'OBSE', u'Plugins', u'ComponentDLLs', u'CSE'),

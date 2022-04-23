@@ -76,7 +76,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         xe_key_prefix = u'fnvView'
 
     class Bain(Fallout3GameInfo.Bain):
-        data_dirs = (Fallout3GameInfo.Bain.data_dirs - {u'fose'}) | {u'nvse'}
+        data_dirs = (Fallout3GameInfo.Bain.data_dirs - {'fose'}) | {'nvse'}
         skip_bain_refresh = {u'fnvedit backups', u'fnvedit cache'}
 
     class Esp(Fallout3GameInfo.Esp):

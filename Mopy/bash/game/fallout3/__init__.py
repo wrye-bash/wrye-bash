@@ -112,17 +112,17 @@ class Fallout3GameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
-            u'config', # mod config files (INIs)
-            u'distantlod',
-            u'docs',
-            u'facegen',
-            u'fonts',
-            u'fose',
-            u'menus',
-            u'uio', # User Interface Organizer
-            u'scripts',
-            u'shaders',
-            u'trees',
+            'config', # 3P: mod config files (INIs)
+            'distantlod',
+            'docs',
+            'facegen',
+            'fonts',
+            'fose', # 3P: FOSE
+            'menus',
+            'uio', # 3P: User Interface Organizer
+            'scripts',
+            'shaders',
+            'trees',
         }
         keep_data_dirs = {u'LSData'}
         keep_data_files = {u'Fallout - AI!.bsa'}

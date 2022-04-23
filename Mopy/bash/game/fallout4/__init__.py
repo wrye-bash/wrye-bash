@@ -98,19 +98,19 @@ class Fallout4GameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
-            u'f4se',
-            u'interface',
-            u'lodsettings',
-            u'materials',
-            u'mcm', # FO4 MCM
-            u'misc',
-            u'programs',
-            u'scripts',
-            u'seq',
-            u'shadersfx',
-            u'strings',
-            u'tools', # bodyslide
-            u'vis',
+            'f4se', # 3P: F4SE
+            'interface',
+            'lodsettings',
+            'materials',
+            'mcm', # 3P: FO4 MCM
+            'misc',
+            'programs',
+            'scripts',
+            'seq',
+            'shadersfx',
+            'strings',
+            'tools', # 3P: BodySlide
+            'vis',
         }
         no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.

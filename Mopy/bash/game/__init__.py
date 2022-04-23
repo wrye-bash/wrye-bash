@@ -362,12 +362,12 @@ class GameInfo(object):
         """Information about what BAIN should do for this game."""
         # The allowed default data directories that BAIN can install to
         data_dirs = {
-            u'ini',
-            u'meshes',
-            u'music',
-            u'sound',
-            u'textures',
-            u'video'
+            'ini',
+            'meshes',
+            'music',
+            'sound',
+            'textures',
+            'video'
         }
         # Directories in the Data folder to exclude from Clean Data
         keep_data_dirs = set()
