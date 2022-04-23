@@ -37,7 +37,7 @@ __all__ = [u'Installers_SortActive', u'Installers_SortProjects',
            u'Installers_CreateNewProject', u'Installers_MonitorInstall',
            u'Installers_ListPackages', u'Installers_AnnealAll',
            u'Installers_UninstallAllPackages',
-           u'Installers_UninstallAllUnknownFiles', u'Installers_AvoidOnStart',
+           'Installers_CleanData', 'Installers_AvoidOnStart',
            u'Installers_Enabled', u'Installers_AutoAnneal',
            u'Installers_AutoWizard', u'Installers_AutoRefreshProjects',
            u'Installers_AutoRefreshBethsoft',
@@ -246,11 +246,11 @@ class Installers_RefreshData(_AInstallers_Refresh):
     _help = _(u'Rescan the %s directory and all project '
               u'directories.') % bush.game.mods_dir
 
-class Installers_UninstallAllUnknownFiles(Installers_Link):
+class Installers_CleanData(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
     files. For safety just moved to Game Mods/Bash Installers/Bash/Data
     Folder Contents (date/time)."""
-    _text = _(u'Clean Data')
+    _text = _('Clean Data...')
     _help = _(u'This will remove all mod files that are not linked to an '
              u'active installer out of the %s folder.') % bush.game.mods_dir
     fullMessage = (_(u'Clean %s directory?') % bush.game.mods_dir + u' ' +

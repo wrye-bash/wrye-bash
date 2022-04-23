@@ -214,7 +214,7 @@ def InitInstallerLinks():
     InstallersList.column_links.append(Installers_AnnealAll())
     InstallersList.column_links.append(SeparatorLink())
     InstallersList.column_links.append(Installers_UninstallAllPackages())
-    InstallersList.column_links.append(Installers_UninstallAllUnknownFiles())
+    InstallersList.column_links.append(Installers_CleanData())
     InstallersList.column_links.append(Installers_ApplyEmbeddedBCFs())
     #--Behavior
     InstallersList.column_links.append(SeparatorLink())
@@ -344,7 +344,7 @@ def InitInstallerLinks():
     edit_menu.append(Installers_ApplyEmbeddedBCFs())
     edit_menu.append(SeparatorLink())
     edit_menu.append(Installers_AnnealAll())
-    edit_menu.append(Installers_UninstallAllUnknownFiles())
+    edit_menu.append(Installers_CleanData())
     edit_menu.append(Installers_UninstallAllPackages())
     edit_menu.append(SeparatorLink())
     edit_menu.append(Installers_RefreshData())

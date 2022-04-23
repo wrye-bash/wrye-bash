@@ -542,14 +542,24 @@ tab. The directories skipped are:
         <tr><td colspan="2" id="bainListPackages">List Packages...<td>Displays a list of projects and archives and copies the list to your clipboard. This is useful for posting your package order on forums, eg. when troubleshooting an install.
         <tr><td colspan="2" id="bainAnnealAll">Anneal All<td>Installs any missing files for active installers and corrects all install order errors.
         <tr><td colspan="2" id="bainUninstallAll">Uninstall All Packages<td>Uninstalls all the packages in the package list.
-        <tr><td colspan="2" id="bainCleanData">Clean Data<td>Removes files from the Data folder that are not from one of the following sources:
-            <ul>
-                <li>Vanilla game content.
-                <li>Official DLC content.
-                <li>Wrye Bash (including the Bashed patches and their corresponding docs in Data/Docs - such as <em>Bashed Patch, 0.html/txt</em>).
-                <li>Installed BAIN packages.
-            </ul>
-        The files are not deleted, but moved to the <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents [timestamp]</code> folder instead, where <code>[timestamp]</code> is the date and time the command was run.
+        <tr>
+            <td colspan="2" id="bainCleanData">Clean Data...</td>
+            <td>Removes files from the Data folder that are not from one of the
+                following sources:
+                <ul>
+                    <li>Vanilla game content.</li>
+                    <li>Official DLC content.</li>
+                    <li>Wrye Bash (including the Bashed Patches and their
+                        corresponding docs in <code>Data/Docs</code>, e.g.
+                        <code>Bashed Patch, 0.html</code>).</li>
+                    <li>Installed BAIN packages.</li>
+                </ul>
+                The files are not deleted, but moved to the
+                <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents
+                    [timestamp]</code> folder instead, where
+                <code>[timestamp]</code> is the date and time the command was
+                run.</td>
+        </tr>
         <tr><td colspan="2" id="bainApplyEmbeddedBCFs">Apply Embedded BCFs<td>Automatically apply Embedded BCFs to archives that have one. The new package will be
             created next to the archive that contains the BCF, and named as this archive prepended with "[Auto applied BCF] ". If a package with that name exists it will be
             <em>overridden</em>. BAIN used to try and do that automatically on refresh based on a setting (set by this column menu item), but this had many issues and was removed.
