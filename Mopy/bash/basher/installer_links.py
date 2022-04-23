@@ -45,7 +45,7 @@ from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap
 from ..bosh import InstallerArchive, InstallerProject
-from ..exception import CancelError, SkipError, StateError
+from ..exception import CancelError, SkipError, StateError, AbstractError
 from ..gui import BusyCursor, copy_text_to_clipboard
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
@@ -676,66 +676,92 @@ class Installer_Open(balt.UIList_OpenItems, EnabledLink):
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
-    group = 2  # the regexp group we are interested in (2 is id, 1 is modname)
-    _open_at_continue = u'OVERRIDE'
+    _open_at_key: str
+    _open_at_message: str
+    _open_at_title: str
+
+    def _url(self):
+        raise AbstractError('_url not implemented')
+
+    def Execute(self):
+        if self._askContinue(self._open_at_message, self._open_at_key,
+                             self._open_at_title):
+            webbrowser.open(self._url())
+
+class _Installer_OpenAt_Regex(_Installer_OpenAt):
+    _regex_pattern: re.Pattern
+    _regex_group: int
+    _base_url: str
 
     def _enable(self):
         # The menu won't even be enabled if >1 plugin is selected
-        x = self.__class__.regexp.search(self.selected[0].s)
+        x = self.__class__._regex_pattern.search(self.selected[0].s)
         if not x: return False
-        self.mod_url_id = x.group(self.__class__.group)
-        return bool(self.mod_url_id)
+        self._mod_url_id = x.group(self.__class__._regex_group)
+        return bool(self._mod_url_id)
 
-    def _url(self): return self.__class__.baseUrl + self.mod_url_id
+    def _url(self):
+        return self.__class__._base_url + self._mod_url_id
 
-    def Execute(self):
-        if self._askContinue(self.message, self._open_at_continue,
-                             self.askTitle):
-            webbrowser.open(self._url())
-
-class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
-    regexp = bosh.reTesNexus
-    _text = u'%s...' % bush.game.nexusName
-    _help = _(u"Opens this mod's page at the %(nexusName)s.") % \
-            {u'nexusName': bush.game.nexusName}
-    message = _(
+class Installer_OpenNexus(AppendableLink, _Installer_OpenAt_Regex):
+    _text = f'{bush.game.nexusName}...'
+    _help = _("Opens this mod's page at the %(nexusName)s.") % {
+        'nexusName': bush.game.nexusName}
+    _open_at_key = bush.game.nexusKey
+    _open_at_message = _(
         u'Attempt to open this as a mod at %(nexusName)s? This assumes that '
         u"the trailing digits in the package's name are actually the id "
         u'number of the mod at %(nexusName)s. If this assumption is wrong, '
         u"you'll just get a random mod page (or error notice) at %("
         u'nexusName)s.') % {u'nexusName': bush.game.nexusName}
-    _open_at_continue = bush.game.nexusKey
-    askTitle = _(u'Open at %(nexusName)s') % {u'nexusName':bush.game.nexusName}
-    baseUrl = bush.game.nexusUrl + u'mods/'
+    _open_at_title = _('Open at %(nexusName)s') % {
+        'nexusName': bush.game.nexusName}
+    _regex_pattern = bosh.reTesNexus
+    _regex_group = 2
+    _base_url = bush.game.nexusUrl + 'mods/'
 
     def _append(self, window): return bool(bush.game.nexusUrl)
 
 class Installer_OpenSearch(_Installer_OpenAt):
-    group = 1
-    regexp = bosh.reTesNexus
     _text = u'Google...'
     _help = _(u"Searches for this mod's title on Google.")
-    _open_at_continue = u'bash.installers.opensearch.continue'
-    askTitle = _(u'Open a search')
-    message = _(u'Open a search for this on Google?')
+    _open_at_key = 'bash.installers.opensearch.continue'
+    _open_at_message = _('Open a search for this on Google?')
+    _open_at_title = _('Open at Google')
 
     def _url(self):
-        return u'http://www.google.com/search?hl=en&q=' + u'+'.join(
-            re.split(r'\W+|_+', self.mod_url_id))
+        def _mk_google_param(m):
+            """Helper method to create a google search query for the specified
+            mod name."""
+            return '+'.join(re.split(r'\W+|_+', m))
+        search_base = 'https://www.google.com/search?q='
+        sel_inst_name = self.selected[0].s
+        # First, try extracting the mod name via the Nexus regex
+        ma_nexus = bosh.reTesNexus.search(sel_inst_name)
+        if ma_nexus and ma_nexus.group(1):
+            return search_base + _mk_google_param(ma_nexus.group(1))
+        # If that fails, try extracting the mod name via the TESAlliance regex
+        ma_tesa = bosh.reTESA.search(sel_inst_name)
+        if ma_tesa and ma_tesa.group(1):
+            return search_base + _mk_google_param(ma_tesa.group(1))
+        # If even that fails, just use the whole string (except the file
+        # extension)
+        return search_base + GPath(sel_inst_name).sbody
 
-class Installer_OpenTESA(_Installer_OpenAt):
-    regexp = bosh.reTESA
+class Installer_OpenTESA(_Installer_OpenAt_Regex):
     _text = u'TES Alliance...'
     _help = _(u"Opens this mod's page at TES Alliance.")
-    _open_at_continue = u'bash.installers.openTESA.continue'
-    askTitle = _(u'Open at TES Alliance')
-    message = _(
+    _open_at_key = 'bash.installers.openTESA.continue'
+    _open_at_message = _(
         u'Attempt to open this as a mod at TES Alliance? This assumes that '
         u"the trailing digits in the package's name are actually the id "
         u'number of the mod at TES Alliance. If this assumption is wrong, '
         u"you'll just get a random mod page (or error notice) at TES "
         u'Alliance.')
-    baseUrl =u'http://tesalliance.org/forums/index.php?app=downloads&showfile='
+    _open_at_title = _('Open at TES Alliance')
+    _regex_pattern = bosh.reTESA
+    _regex_group = 2
+    _base_url = 'http://tesalliance.org/forums/index.php?app=downloads&showfile='
 
 #------------------------------------------------------------------------------
 class Installer_Refresh(_InstallerLink):
