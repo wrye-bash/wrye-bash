@@ -43,9 +43,10 @@ from .. import bass, bolt, bosh, bush, balt, archives
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
-from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap
+from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap, deprint
 from ..bosh import InstallerArchive, InstallerProject
-from ..exception import CancelError, SkipError, StateError, AbstractError
+from ..exception import CancelError, SkipError, StateError, AbstractError, \
+    XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
@@ -222,6 +223,15 @@ class Installer_RunFomod(_Installer_AWizardLink):
                 idetails.refreshCurrent(sel_package)
                 if ret.should_install:
                     self._perform_install(sel_package, ui_refresh)
+        except XMLParsingError:
+            deprint('Invalid FOMOD XML syntax:', traceback=True)
+            self._showError(
+                _("The ModuleConfig.xml file that comes with this package's "
+                  "FOMOD installer has invalid syntax. Please report this to "
+                  "the mod author so it can be fixed properly. The "
+                  "BashBugDump.log in Wrye Bash's Mopy folder contains "
+                  "additional details, please include it in your report."),
+                title=_('Invalid FOMOD XML Syntax'))
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 

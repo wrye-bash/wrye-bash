@@ -59,7 +59,6 @@ class ValidatorPopup(DialogWindow):
         'button to easily copy it.') + '\n\n'
 
     def __init__(self, parent, fm_name, error_lines):
-        del balt.sizes['ValidatorPopup'] # FIXME TESTING ONLY
         super().__init__(parent,
             title=_('FOMOD Validation Failed - %s') % fm_name,
             sizes_dict=balt.sizes)

@@ -47,6 +47,7 @@ from enum import Enum
 
 from . import bass, bush, env
 from .bolt import GPath, Path, LooseVersion
+from .exception import XMLParsingError
 from .fomod_schema import schema_string
 from .load_order import cached_is_active
 
@@ -361,7 +362,11 @@ class FomodInstaller(object):
             specified relative to this by the FOMOD config.
         :param dst_dir: the destination directory - <Game>/Data
         :param game_version: version of the game launch exe"""
-        self.fomod_tree = etree.parse(mc_path)
+        try:
+            self.fomod_tree = etree.parse(mc_path)
+        except etree.ParseError as e:
+            # Wrap ParseErrors so that GUI code can catch and handle them
+            raise XMLParsingError(str(e)) from e
         self.fomod_name = self.fomod_tree.findtext(u'moduleName', u'').strip()
         self.file_list = file_list
         self.installer_root = inst_root
