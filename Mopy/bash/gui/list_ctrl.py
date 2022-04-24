@@ -305,6 +305,10 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
                                               ec.GetValue(), self])
         on_char.subscribe(on_char_handler)
 
+    def ec_rename_prompt_opened(self):
+        """Returns True if the rename prompt is currently open."""
+        return self.__ec() is not None
+
     ##: column wrappers - belong to a superclass that wraps ListCtrl
     def lc_get_columns_count(self):
         return self._native_widget.GetColumnCount()

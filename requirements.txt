@@ -5,11 +5,13 @@ pywin32==303
 PyYAML==6.0
 wxPython==4.1.1
 # Runtime, recommended
+# For FOMOD schema validation
 lxml==4.8.0
+# For PDF support in the doc browser
 PyMuPDF==1.19.6
 # Compile/Build-time
 pygit2==1.9.1
 pyfiglet==0.8.post1
-pyinstaller==4.10
-pytest==7.1.1
+pyinstaller==5.0
+pytest==7.1.2
 tomli==2.0.1

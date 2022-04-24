@@ -1096,17 +1096,24 @@ class UIList(wx.Panel):
     #--Column Menu
     def DoColumnMenu(self, evt_col):
         """Show column menu."""
-        if self.column_links: self.column_links.popup_menu(self, evt_col)
+        # See DoItemMenu below
+        if self.column_links and not self.__gList.ec_rename_prompt_opened():
+            self.column_links.popup_menu(self, evt_col)
         return EventResult.FINISH
 
     #--Item Menu
     def DoItemMenu(self):
         """Show item menu."""
-        selected = self.GetSelected()
-        if not selected:
-            self.DoColumnMenu(0)
-        elif self.context_links:
-            self.context_links.popup_menu(self, selected)
+        # Don't allow this if we are in the process of renaming because
+        # various operations in the menus would make the rename prompt lose
+        # focus, which would leave WB's data stores out of sync with the file
+        # system, resulting in errors when we go to access the file
+        if not self.__gList.ec_rename_prompt_opened():
+            selected = self.GetSelected()
+            if not selected:
+                self.DoColumnMenu(0)
+            elif self.context_links:
+                self.context_links.popup_menu(self, selected)
         return EventResult.FINISH
 
     #--Callbacks --------------------------------------------------------------
