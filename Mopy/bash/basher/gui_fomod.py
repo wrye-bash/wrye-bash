@@ -100,7 +100,7 @@ class ValidatorPopup(DialogWindow):
 class InstallerFomod(WizardDialog):
     _def_size = (600, 500)
 
-    def __init__(self, parent_window, target_installer):
+    def __init__(self, parent_window, target_installer, show_install_chkbox):
         # saving this list allows for faster processing of the files the fomod
         # installer will return.
         self.files_list = [a[0] for a in target_installer.fileSizeCrcs]
@@ -109,6 +109,7 @@ class InstallerFomod(WizardDialog):
             target_installer.extras_dict.get(u'root_path', u'')
             if target_installer.fileRootIdex else u'')
         fm_file = target_installer.fomod_file().s
+        self._show_install_checkbox = show_install_chkbox
         # Get the game version, be careful about Windows Store games
         test_path = bass.dirs[u'app'].join(bush.game.version_detect_file)
         try:
@@ -152,7 +153,7 @@ class InstallerFomod(WizardDialog):
             sel_opts = None
         next_page = self.fomod_parser.move_to_next(sel_opts)
         if next_page is None:
-            return PageFinish(self)
+            return PageFinish(self, self._show_install_checkbox)
         else:
             return PageSelect(self, next_page)
 
@@ -469,12 +470,13 @@ class PageSelect(PageInstaller):
                     checkable.is_checked = True
 
 class PageFinish(PageInstaller):
-    def __init__(self, page_parent):
+    def __init__(self, page_parent, show_install_chkbox):
         super(PageFinish, self).__init__(page_parent)
         check_install = CheckBox(
             self, _(u'Install this package'),
             checked=self._page_parent.fm_ret.should_install)
         check_install.on_checked.subscribe(self._on_check_install)
+        check_install.visible = show_install_chkbox
         use_table = bass.settings[u'bash.fomod.use_table']
         check_tab_view = CheckBox(
             self, _(u'Use Table View'), checked=use_table,
