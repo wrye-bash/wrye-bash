@@ -1828,7 +1828,7 @@ def ini_info_factory(fullpath, load_cache=u'Ignored', itsa_ghost=False):
 class INIInfos(TableFileInfos):
     """:type _ini: IniFile
     :type data: dict[bolt.Path, IniInfo]"""
-    file_pattern = re.compile(r'\.ini$', re.I | re.U)
+    file_pattern = re.compile(r'\.ini$', re.I)
 
     def __init__(self):
         self._default_tweaks = {

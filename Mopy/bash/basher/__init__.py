@@ -1926,8 +1926,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     @property
     def current_ini_path(self):
         """Return path of currently chosen ini."""
-        return list(self.target_inis.values())[
-            settings[u'bash.ini.choice']]
+        return list(self.target_inis.values())[settings['bash.ini.choice']]
 
     @property
     def target_inis(self):

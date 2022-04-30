@@ -30,6 +30,8 @@ from .bolt import LowerDict, CIstr, deprint, DefaultLowerDict, decoder, \
     getbestencoding, AFile, OrderedLowerDict
 from .exception import AbstractError, CancelError, SkipError, BoltError
 
+_comment_start_re = re.compile(r'^\s*;\s*')
+
 def _to_lower(ini_settings):
     """Transforms dict of dict to LowerDict of LowerDict, respecting
     OrdererdDicts if they're used."""
@@ -43,7 +45,7 @@ def get_ini_type_and_encoding(abs_ini_path):
     """Return ini type (one of IniFile, OBSEIniFile) and inferred encoding
     of the file at abs_ini_path. It reads the file and performs heuristics
     for detecting the encoding, then decodes and applies regexes to every
-    line to detect the ini type. Those operations are somewhat expensive so
+    line to detect the ini type. Those operations are somewhat expensive, so
     it would make sense to pass an encoding in, if we know that the ini file
     must have a specific encoding (for instance the game ini files that
     reportedly must be cp1252). More investigation needed."""
@@ -53,19 +55,29 @@ def get_ini_type_and_encoding(abs_ini_path):
     # chardet here!
     detected_encoding, _confidence = getbestencoding(content)
     decoded_content = decoder(content, detected_encoding)
+    inferred_ini_type = _scan_ini(lines := decoded_content.splitlines())
+    if inferred_ini_type is not None:
+        return inferred_ini_type, detected_encoding
+    # Empty file/entirely comments or we failed to parse any line - try
+    # again, considering commented out lines that match the INI format too
+    inferred_ini_type = _scan_ini(lines, scan_comments=True)
+    if inferred_ini_type is not None:
+        return inferred_ini_type, detected_encoding
+    raise BoltError(f'Failed to infer type for {abs_ini_path}')
+
+def _scan_ini(lines, scan_comments=False):
     count = Counter()
-    for line in decoded_content.splitlines():
-        for ini_type in (IniFile, OBSEIniFile):
-            stripped = ini_type.reComment.sub(u'', line).strip()
-            for regex in ini_type.formatRes:
-                if regex.match(stripped):
+    for ini_type in (IniFile, OBSEIniFile):
+        comment_re = _comment_start_re if scan_comments else ini_type.reComment
+        for line in lines:
+            line_stripped = comment_re.sub('', line).strip()
+            if not line_stripped:
+                continue # No need to try matching an empty string
+            for ini_format_re in ini_type.formatRes:
+                if ini_format_re.match(line_stripped):
                     count[ini_type] += 1
                     break
-    try:
-        inferred_ini_type = count.most_common(1)[0][0]
-    except IndexError: # empty file or failed to parse ini lines
-        raise BoltError(f'Failed to infer type for {abs_ini_path}')
-    return inferred_ini_type, detected_encoding
+    return count.most_common(1)[0][0] if count else None
 
 class IniFile(AFile):
     """Any old ini file."""
