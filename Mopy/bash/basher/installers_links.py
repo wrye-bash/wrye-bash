@@ -34,9 +34,9 @@ from ..gui import copy_text_to_clipboard
 
 __all__ = [u'Installers_SortActive', u'Installers_SortProjects',
            u'Installers_RefreshData', u'Installers_AddMarker',
-           u'Installers_CreateNewProject', u'Installers_MonitorInstall',
+           'Installers_MonitorExternalInstallation',
            u'Installers_ListPackages', u'Installers_AnnealAll',
-           u'Installers_UninstallAllPackages',
+           u'Installers_UninstallAllPackages', 'Installers_CreateNewProject',
            'Installers_CleanData', 'Installers_AvoidOnStart',
            u'Installers_Enabled', u'Installers_AutoAnneal',
            u'Installers_AutoWizard', u'Installers_AutoRefreshProjects',
@@ -63,7 +63,7 @@ class Installers_AddMarker(ItemLink):
         """Add a Marker."""
         self.window.addMarker()
 
-class Installers_MonitorInstall(Installers_Link):
+class Installers_MonitorExternalInstallation(Installers_Link):
     """Monitors Data folder for external installation."""
     _text = _dialog_title = _(u'Monitor External Installation...')
     _help = _(u'Monitors the %s folder during installation via manual install '

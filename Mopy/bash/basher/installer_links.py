@@ -39,7 +39,7 @@ from collections import defaultdict
 from . import Installers_Link, BashFrame, INIList
 from .frames import InstallerProject_OmodConfigDialog
 from .gui_fomod import InstallerFomod
-from .. import bass, bolt, bosh, bush, balt, archives
+from .. import bass, bolt, bosh, bush, balt, archives, env
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
@@ -50,7 +50,7 @@ from ..exception import CancelError, SkipError, StateError, AbstractError, \
 from ..gui import BusyCursor, copy_text_to_clipboard
 
 __all__ = [u'Installer_Open', u'Installer_Duplicate',
-           u'Installer_OpenSearch',
+           'Installer_OpenSearch', 'Installer_CaptureFomodOutput',
            u'Installer_OpenTESA', u'Installer_Hide', u'Installer_Rename',
            u'Installer_Refresh', u'Installer_Move', u'Installer_HasExtraData',
            u'Installer_OverrideSkips', u'Installer_SkipVoices',
@@ -166,7 +166,13 @@ class _Installer_AViewOrEditFile(_SingleInstallable):
         archive."""
         return next(self.iselected_infos()).is_archive
 
-class Installer_EditFomod(_Installer_AViewOrEditFile):
+class _Installer_AFomod(_InstallerLink):
+    """Base class for FOMOD links."""
+    def _enable(self):
+        return super()._enable() and all(
+            i.has_fomod_conf for i in self.iselected_infos())
+
+class Installer_EditFomod(_Installer_AFomod, _Installer_AViewOrEditFile):
     """View or edit the ModuleConfig.xml associated with this package."""
     @property
     def link_text(self):
@@ -179,61 +185,113 @@ class Installer_EditFomod(_Installer_AViewOrEditFile):
                 if self._run_on_archive() else
                 _('Edit the ModuleConfig.xml associated with this project.'))
 
-    def _enable(self):
-        return super()._enable() and bool(self._selected_info.has_fomod_conf)
-
     def Execute(self):
         self._selected_info.open_fomod_conf()
 
-class Installer_RunFomod(_Installer_AWizardLink):
-    """Runs the FOMOD installer"""
-    _text = _('Run FOMOD...')
-    _help = _(u'Run the FOMOD installer.')
-
-    def _enable(self):
-        return super()._enable() and all(
-            i.has_fomod_conf for i in self.iselected_infos())
+class _Installer_ARunFomod(_Installer_AFomod):
+    """Base class for FOMOD links that need to run the FOMOD wizard."""
+    _wants_install_checkbox: bool
 
     @balt.conversation
     def Execute(self):
         ui_refresh = [False, False]
-        idetails = self.iPanel.detailsPanel
+        # Use list() since we're going to deselect packages
         try:
-            # Use list() since we're going to deselect packages
             for sel_package in list(self.iselected_infos()):
-                with BusyCursor():
-                    # Select the package we want to install - posts events to
-                    # set details and update GUI
-                    self.window.SelectItem(GPath(sel_package.archive))
-                    try:
-                        fm_wizard = InstallerFomod(self.window, sel_package)
-                    except CancelError:
+                try:
+                    with BusyCursor():
+                        # Select the package we want to install - posts events
+                        # to set details and update GUI
+                        self.window.SelectItem(GPath(sel_package.archive))
+                        try:
+                            fm_wizard = InstallerFomod(
+                                self.window, sel_package,
+                                self._wants_install_checkbox)
+                        except CancelError:
+                            continue
+                        if not fm_wizard.validate_fomod():
+                            # Validation failed and the user chose not to continue
+                            return
+                        fm_wizard.ensureDisplayed()
+                    ret = fm_wizard.run_fomod()
+                    if ret.canceled:
                         continue
-                    if not fm_wizard.validate_fomod():
-                        # Validation failed and the user chose not to continue
-                        return
-                    fm_wizard.ensureDisplayed()
-                # Run the FOMOD installer
-                ret = fm_wizard.run_fomod()
-                if ret.canceled:
-                    continue
-                # Switch the GUI to FOMOD mode and pass selected files to BAIN
-                idetails.set_fomod_mode(fomod_enabled=True)
-                sel_package.extras_dict[u'fomod_dict'] = ret.install_files
-                idetails.refreshCurrent(sel_package)
-                if ret.should_install:
-                    self._perform_install(sel_package, ui_refresh)
-        except XMLParsingError:
-            deprint('Invalid FOMOD XML syntax:', traceback=True)
-            self._showError(
-                _("The ModuleConfig.xml file that comes with this package's "
-                  "FOMOD installer has invalid syntax. Please report this to "
-                  "the mod author so it can be fixed properly. The "
-                  "BashBugDump.log in Wrye Bash's Mopy folder contains "
-                  "additional details, please include it in your report."),
-                title=_('Invalid FOMOD XML Syntax'))
+                    # Now we're ready to execute the link's specific action
+                    self._execute_action(sel_package, ret, ui_refresh)
+                except XMLParsingError:
+                    deprint('Invalid FOMOD XML syntax:', traceback=True)
+                    self._showError(
+                        _("The ModuleConfig.xml file that comes with "
+                          "%(package_name)s has invalid syntax. Please report "
+                          "this to the mod author so it can be fixed "
+                          "properly. The BashBugDump.log in Wrye Bash's Mopy "
+                          "folder contains additional details, please include "
+                          "it in your report.") % {
+                            'package_name': sel_package.archive
+                        }, title=_('Invalid FOMOD XML Syntax'))
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
+
+    def _execute_action(self, sel_package, ret, ui_refresh):
+        raise AbstractError('_execute_action not implemented')
+
+class Installer_RunFomod(_Installer_AWizardLink, _Installer_ARunFomod):
+    """Runs the FOMOD installer and installs the output via BAIN."""
+    _text = _('Run FOMOD...')
+    _help = _('Run the FOMOD installer and install the output.')
+    _wants_install_checkbox = True
+
+    def _execute_action(self, sel_package, ret, ui_refresh):
+        # Switch the GUI to FOMOD mode and pass selected files to BAIN
+        idetails = self.iPanel.detailsPanel
+        idetails.set_fomod_mode(fomod_enabled=True)
+        sel_package.extras_dict['fomod_dict'] = ret.install_files
+        idetails.refreshCurrent(sel_package)
+        if ret.should_install:
+            self._perform_install(sel_package, ui_refresh)
+
+class Installer_CaptureFomodOutput(_Installer_ARunFomod):
+    _text = _dialog_title = _('Capture FOMOD Output...')
+    _help = _('Run the FOMOD installer and create a new project from the '
+              'output.')
+    # There's no point in showing the 'Install this package' checkbox - it
+    # would have the same behavior as hitting 'Cancel' for this link
+    _wants_install_checkbox = False
+
+    def _execute_action(self, sel_package, ret, ui_refresh):
+        working_on_archive = sel_package.is_archive
+        proj_default = (sel_package.abs_path.sbody if working_on_archive
+                        else sel_package.archive)
+        proj_name = self._askFilename(_('Project Name'), proj_default,
+            inst_type=bosh.InstallerProject, check_exists=False)
+        if not proj_name:
+            return
+        pr_path = bosh.InstallerProject.unique_name(proj_name)
+        if working_on_archive:
+            # This is an archive, so we have to use unpackToTemp first
+            with balt.Progress(_('Unpacking Archive...'),
+                               '\n' + ' ' * 60) as prog:
+                src_folder = sel_package.unpackToTemp(
+                    list(ret.install_files), prog)
+        else:
+            # This is a project, so we can directly copy the wanted
+            # files
+            src_folder = sel_package.abs_path
+        dst_folder = bass.dirs['installers'].join(pr_path)
+        dst_folder.makedirs()
+        src = [src_folder.join(s) for s in ret.install_files.keys()]
+        dst = [dst_folder.join(d) for d in ret.install_files.values()]
+        env.shellCopy(src, dst, parent=self.window)
+        if working_on_archive:
+            # We no longer need the temp directory since we copied everything
+            # to the final project, so clean it up
+            bass.rmTempDir()
+        with balt.Progress(_('Creating Project...'), '\n' + ' ' * 60) as prog:
+            InstallerProject.refresh_installer(pr_path, self.idata,
+                progress=prog, install_order=sel_package.order + 1,
+                do_refresh=False)
+            ##: Copied from InstallerArchive_Unpack - needed?
+            self.idata.irefresh(what='NS')
 
 class Installer_EditWizard(_Installer_AViewOrEditFile):
     """View or edit the wizard.txt associated with this package."""

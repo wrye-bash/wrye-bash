@@ -207,7 +207,7 @@ def InitInstallerLinks():
     InstallersList.column_links.append(Installers_RefreshData())
     InstallersList.column_links.append(Installers_FullRefresh())
     InstallersList.column_links.append(Installers_AddMarker())
-    InstallersList.column_links.append(Installers_MonitorInstall())
+    InstallersList.column_links.append(Installers_MonitorExternalInstallation())
     InstallersList.column_links.append(SeparatorLink())
     InstallersList.column_links.append(Installers_ListPackages())
     InstallersList.column_links.append(SeparatorLink())
@@ -272,6 +272,7 @@ def InitInstallerLinks():
         if True: #--FOMODs
             fomod_menu = MenuLink(_('FOMOD Installer..'))
             fomod_menu.links.append(Installer_RunFomod())
+            fomod_menu.links.append(Installer_CaptureFomodOutput())
             fomod_menu.links.append(SeparatorLink())
             fomod_menu.links.append(Installer_EditFomod())
             installMenu.links.append(fomod_menu)
@@ -340,7 +341,7 @@ def InitInstallerLinks():
     file_menu.append(Installers_CreateNewProject())
     # Edit Menu
     edit_menu = InstallersList.global_links[_(u'Edit')]
-    edit_menu.append(Installers_MonitorInstall())
+    edit_menu.append(Installers_MonitorExternalInstallation())
     edit_menu.append(Installers_ApplyEmbeddedBCFs())
     edit_menu.append(SeparatorLink())
     edit_menu.append(Installers_AnnealAll())
