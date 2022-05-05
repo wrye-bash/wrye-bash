@@ -547,10 +547,6 @@ cc_passes = (
 #------------------------------------------------------------------------------
 # Import Scripts
 #------------------------------------------------------------------------------
-# In valda's version: 'WEAP', 'ACTI', 'ALCH', 'ARMO', 'BOOK', 'CONT', 'CREA',
-#                     'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
-#                     'QUST', 'TERM', 'TACT'
-# In valda's FNV version, only 'CCRD' got added
 # INGR and COBJ are unused - still including them, see e.g. APPA in Skyrim
 scripts_types = {b'ACTI', b'ALCH', b'ARMO', b'BOOK', b'COBJ', b'CONT', b'CREA',
                  b'DOOR', b'FURN', b'INGR', b'KEYM', b'LIGH', b'MISC', b'NPC_',
