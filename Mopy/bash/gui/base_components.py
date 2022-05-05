@@ -50,7 +50,7 @@ def scaled(unscaled_size):
     if isinstance(unscaled_size, int):
         scaled = int(scaled)
     return scaled
-    
+
 def wrapped_tooltip(tooltip_text, wrap_width=50):
     """Returns tooltip with wrapped copy of text."""
     tooltip_text = textwrap.fill(tooltip_text, wrap_width)
@@ -59,7 +59,7 @@ def wrapped_tooltip(tooltip_text, wrap_width=50):
 class Color(object):
     """A simple RGB(A) color class used to avoid having to return wx.Colour
     objects."""
-    def __init__(self, red, green, blue, alpha=255): # type: (int, int, int, int) -> None
+    def __init__(self, red: int, green: int, blue: int, alpha=255):
         """Creates a new color object with the specified color properties.
         Note that all color components must be in the range [0-255] (inclusive
         on both ends), otherwise a RuntimeException is raised.
@@ -100,27 +100,6 @@ class Color(object):
         :param color: The wx.Colour object to copy.
         :return: A Color object representing the same color."""
         return cls(color.Red(), color.Green(), color.Blue(), color.Alpha())
-
-class Colors(object):
-    """Color collection and wrapper for wx.ColourDatabase. Provides
-    dictionary syntax access (colors[key]) and predefined colors."""
-    def __init__(self):
-        self._colors = {}
-
-    def __setitem__(self, key_, value):
-        """Add a color to the database."""
-        if isinstance(value, Color):
-            self._colors[key_] = value
-        else:
-            self._colors[key_] = Color(*value)
-
-    def __getitem__(self, key_):
-        """Dictionary syntax: color = colors[key]."""
-        return self._colors[key_]
-
-    def __iter__(self):
-        for key_ in self._colors:
-            yield key_
 
 class _ACFrozen(object):
     """Helper for _AComponent.pause_drawing."""

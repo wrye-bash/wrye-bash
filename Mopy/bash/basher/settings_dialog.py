@@ -29,7 +29,7 @@ from . import BashStatusBar, tabInfo
 from .constants import colorInfo, settingDefaults
 from .. import balt, barb, bass, bolt, bosh, bush, env, exception
 from ..balt import colors, Link, Resources, showOk
-from ..bolt import deprint, readme_url, os_name
+from ..bolt import deprint, readme_url, os_name, dict_sort
 from ..gui import ApplyButton, BusyCursor, Button, CancelButton, Color, \
     ColorPicker, DialogWindow, DropDown, HLayout, HorizontalLine, \
     LayoutOptions, OkButton, PanelWin, Stretch, TextArea, TreePanel, VLayout, \
@@ -282,11 +282,11 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                 del self.changes[col_key]
         anyChanged = bool(self.changes)
         allDefault = True
-        for col_key in colors:
+        for col_key, col_value in colors.items():
             if col_key in self.changes:
                 color = self.changes[col_key]
             else:
-                color = colors[col_key]
+                color = col_value
             default = color == Color(*settingDefaults[u'bash.colors'][col_key])
             if not default:
                 allDefault = False
@@ -316,10 +316,10 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         self.UpdateUIButtons()
 
     def OnDefaultAll(self):
-        for key in colors:
-            default = Color(*settingDefaults[u'bash.colors'][key])
-            if colors[key] != default:
-                self.changes[key] = default
+        for col_key, col_value in colors.items():
+            default = Color(*settingDefaults['bash.colors'][col_key])
+            if col_value != default:
+                self.changes[col_key] = default
         self.UpdateUIButtons()
 
     def on_apply(self):
@@ -339,15 +339,15 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
         if not outPath: return
         try:
             with outPath.open(u'w', encoding=u'utf-8') as out:
-                for key in sorted(colors):
-                    if key in self.changes:
-                        color = self.changes[key]
+                for col_key, col_value in dict_sort(colors):
+                    if col_key in self.changes:
+                        color = self.changes[col_key]
                     else:
-                        color = colors[key]
-                    out.write(u'%s: %s\n' % (key, color.to_rgb_tuple()))
+                        color = col_value
+                    out.write(f'{col_key}: {color.to_rgb_tuple()}\n')
         except Exception as e:
-            balt.showError(self, _(u'An error occurred writing to ') +
-                           outPath.stail + u':\n\n%s' % e)
+            msg = _('An error occurred writing to %s:') % outPath.stail
+            balt.showError(self, msg + f'\n\n{e}')
 
     def OnImport(self):
         inDir = bass.dirs[u'patches']
@@ -380,15 +380,13 @@ class ColorsPage(_AFixedPage): ##: _AScrollablePage breaks the color picker??
                             break
                     else:
                         # All checks passed, save it
-                        color = Color(*color_tup)
-                        if (color == colors[color_key] and
-                                color_key not in self.changes):
+                        if (color_key not in self.changes and (
+                            color := Color(*color_tup)) == colors[color_key]):
                             continue # skip, identical to our current state
                         self.changes[color_key] = color
         except Exception as e:
-            balt.showError(self,
-                _(u'An error occurred reading from ') + inPath.stail +
-                u':\n\n%s' % e)
+            msg = _('An error occurred reading from %s:') % inPath.stail
+            balt.showError(self, msg + f'\n\n{e}')
         self.UpdateUIButtons()
 
     def OnComboBox(self):

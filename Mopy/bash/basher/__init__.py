@@ -68,7 +68,7 @@ import wx
 from .. import bush, bosh, bolt, bass, env, load_order, archives, \
     initialization
 from ..bolt import GPath, SubProgress, deprint, round_size, dict_sort, \
-    top_level_items, GPath_no_norm, os_name
+    top_level_items, GPath_no_norm, os_name, str_to_sig
 from ..bosh import omods, ModInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
@@ -4386,10 +4386,12 @@ def InitImages():
     # Setup the colors dictionary
     for color_key, color_val in settings[u'bash.colors'].items():
         # Convert any colors that were stored as bytestrings into tuples
+        if isinstance(color_val, str):
+            color_val = str_to_sig(color_val)
         if isinstance(color_val, bytes):
             color_val = _conv_dict[color_val]
             settings[u'bash.colors'][color_key] = color_val
-        colors[color_key] = color_val
+        colors[color_key] = Color(*color_val)
     #--Images
     imgDirJn = bass.dirs[u'images'].join
     def _png(fname): return ImageWrapper(imgDirJn(fname))

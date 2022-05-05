@@ -22,6 +22,7 @@
 # =============================================================================
 """Weird module that sits in-between basher and gui on the abstraction tree
 now. See #190, its code should be refactored and land in basher and/or gui."""
+from __future__ import annotations
 
 # Imports ---------------------------------------------------------------------
 from . import bass # for dirs - try to avoid
@@ -41,7 +42,7 @@ import wx.adv
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
     web_viewer_available, DialogWindow, WindowFrame, EventResult, ListBox, \
-    Font, CheckListBox, UIListCtrl, PanelWin, Colors, DocumentViewer, \
+    Font, CheckListBox, UIListCtrl, PanelWin, Color, DocumentViewer, \
     ImageWrapper, BusyCursor, GlobalMenu, WrappingTextMixin, HorizontalLine, \
     staticBitmap, bell, copy_files_to_clipboard, FileOpenMultiple, FileOpen, \
     FileSave, DirOpen
@@ -72,7 +73,7 @@ _settings = __unset # must be bound to bosh.settings - smelly, see #174
 sizes = {} #--Using applications should override this.
 
 # Colors ----------------------------------------------------------------------
-colors = Colors()
+colors: dict[str, Color] = {}
 
 # Images ----------------------------------------------------------------------
 images = {} #--Singleton for collection of images.
