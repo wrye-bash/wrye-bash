@@ -1,7 +1,7 @@
 # Runtime, required
 chardet==4.0.0
 lz4==4.0.0
-pywin32==303
+pywin32==304
 PyYAML==6.0
 wxPython==4.1.1
 # Runtime, recommended
@@ -12,6 +12,6 @@ PyMuPDF==1.19.6
 # Compile/Build-time
 pygit2==1.9.1
 pyfiglet==0.8.post1
-pyinstaller==5.0
+pyinstaller==5.1
 pytest==7.1.2
 tomli==2.0.1
