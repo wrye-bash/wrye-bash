@@ -120,8 +120,13 @@ class _AComponent(object):
     def __init__(self, parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget
         with the specified parent, args and kwargs."""
-        self._native_widget = self._wx_widget_type(self._resolve(parent),
-                                                   *args, **kwargs)
+        if kwargs.pop('_wrap_existing', False):
+            # Encapsulate an already existing wx object
+            self._native_widget = parent
+        else:
+            # Create a new wx object
+            self._native_widget = self._wx_widget_type(self._resolve(parent),
+                                                       *args, **kwargs)
 
     def _evt_handler(self, evt, arg_proc=null_processor):
         """Register an EventHandler on _native_widget"""
