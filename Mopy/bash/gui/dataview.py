@@ -20,10 +20,28 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""DataView classes for implmenting a DVC."""
+"""DataView classes for implementing a DVC. wx.dataview provides many types:
+
+- wx.dataview.DataViewModel: abstract base for all models.
+   - Implemented with _DataViewModel
+   - Wrapped with ADataViewModel.  Users still need to implement
+     the methods that DataViewCtrl uses to access data from the model.
+- wx.dataview.DataViewCtrl:
+   - Implemented with DataViewCtrl.  Only works with models derived
+     from DataViewModel.
+- wx.dataview.DataViewColumn: class representing a UI column of a DataViewCtrl
+   - Wrapped with DataViewColumn.
+- wx.dataview.DataViewItem: wx type of all items in a model.
+- wx.dataview.DataViewItemArray: list-like object holding wx.DataViewItem's.
+   - Mostly wrapped/unwrapped at boundaries between DataViewCtrl/ADataViewModel
+     and their wrapped wx instances.
+- wx.dataview.DataViewItemAttr: wx type holding UI attributes of an item
+   - Currently exposed as-is.  It provides an interface for getting/setting
+     various UI options, like font, color, etc.
+"""
 from __future__ import annotations
 
-__author__ = u'Lojack'
+__author__ = 'Lojack'
 
 from functools import wraps, cache, cached_property
 from typing import Any, Callable, Iterable
@@ -37,27 +55,6 @@ import wx.dataview as dv
 
 from .base_components import _AComponent
 
-
-## wx.dataview provides many types:
-#
-# wx.dataview.DataViewModel: abstract base for all models.
-#  - Implemented with _DataViewModel
-#  - Wrapped with ADataViewModel.  Users still need to implement
-#    the methods that DataViewCtrl uses to access data from the model.
-# wx.dataview.DataViewCtrl:
-#  - Implemented with DataViewCtrl.  Only works with models derived
-#    from DataViewModel.
-# wx.dataview.DataViewColumn: class representing a UI column of a DataViewCtrl
-#  - Wrapped with DataViewColumn.
-# wx.dataview.DataViewItem: wx type of all items in a model.
-# wx.dataview.DataViewItemArray: list-like object holding wx.DataViewItem's.
-#  - Mostly wrapped/unwrapped at boundaries between DataViewCtrl/ADataViewModel
-#    and their wrapped wx instances.
-# wx.dataview.DataViewItemAttr: wx type holding UI attributes of an item
-#  - Currently exposed as-is.  It provides an interface for getting/setting
-#    various UI options, like font, color, etc.
-
-
 __all__ = [
     'ADataViewModel',
     'DataViewCtrl',
@@ -67,16 +64,14 @@ __all__ = [
     'forward',
 ]
 
-
 class DataViewColumnFlags(IntFlag):
     HIDDEN = dv.DATAVIEW_COL_HIDDEN
     REORDERABLE = dv.DATAVIEW_COL_REORDERABLE
     RESIZABLE = dv.DATAVIEW_COL_RESIZABLE
     SORTABLE = dv.DATAVIEW_COL_SORTABLE
 
-
 class Forwarder:
-    """Class for easier forwarding of methods/properties from 
+    """Class for easier forwarding of methods/properties from
        one class to another."""
     def __init__(self,
             get_wrapper: Callable | None = None,
@@ -132,7 +127,7 @@ class Forwarder:
     def wrap(cls, return_wrapper: Callable, input_wrapper: Callable | None = None) -> 'Forwarder':
         input_wrapper = input_wrapper or cls.default_resolver
         return cls(return_wrapper, input_wrapper)
-    
+
     def __call__(self, func: Callable | property) -> Callable | property:
         """Create a instance method or property which forwards its calls to another object.
            The object forwarded to is determined by the resolver specified at creation,
@@ -140,14 +135,14 @@ class Forwarder:
            `_native_widget` attribute.  The return type can optionally be automatically
            converted, as well as the input types for properties, as determined by conversion
            methods specified at `Forwarder` creation.
-           
+
            Usage:
              forward(class.Attribute)
                 - Forward the method or property with no conversion.
 
              forward.with_return(return_converter)(class.Attribute)
                 - Forward the method or property, converting the return value.
-            
+
              forward.with_input(input_converter=default_resolver)(class.Attribute)
                 - Forward a property. Converting values to be set with `input_converter`.
 
@@ -159,8 +154,8 @@ class Forwarder:
             return self.forward_property(func)
         else:
             return self.forward_method(func)
-forward = Forwarder()
 
+forward = Forwarder()
 
 class _DataViewModel(dv.PyDataViewModel):
     def __init__(self, parent=None) -> None:
@@ -240,7 +235,6 @@ class _DataViewModel(dv.PyDataViewModel):
             return 'double'
         raise TypeError(f'DataViewModel: Unsupported column type {col_type!r}.')
 
-
 class ADataViewModel(_AComponent):
     # Technically not a widget though
     _wx_widget_type = _DataViewModel
@@ -253,7 +247,7 @@ class ADataViewModel(_AComponent):
     # Methods accessed by DataViewCtrl
     def get_children(self, parent: Any) -> Iterable[Any]:
         raise NotImplementedError
-    
+
     def is_container(self, item: Any) -> bool:
         raise NotImplementedError
 
@@ -323,7 +317,6 @@ class ADataViewModel(_AComponent):
             self._native_widget.wrap_list(items)
         )
 
-
 class DataViewColumn(_AComponent):
     _wx_widget_type = dv.DataViewColumn
     _native_widget: dv.DataViewColumn
@@ -341,7 +334,6 @@ class DataViewColumn(_AComponent):
     sortable = forward(dv.DataViewColumn.Sortable)
     reorderable = forward(dv.DataViewColumn.Reorderable)
 
-
 class DataViewColumnType(Enum):
     BITMAP = 'Bitmap'
     DATE = 'Date'
@@ -351,11 +343,9 @@ class DataViewColumnType(Enum):
     TOGGLE = 'Toggle'
     GENERIC = ''
 
-
 class _ColumnInsert(IntEnum):
     Append = 0
     Prepend = 1
-
 
 class _DataViewColumns(Sequence):
     # list-like wrapper around the UI columns present in a DataViewCtrl.
@@ -374,7 +364,7 @@ class _DataViewColumns(Sequence):
     @property
     def sorter(self) -> DataViewColumn:
         return DataViewColumn(self._native_widget.GetSortingColumn(), _wrap_existing=True)
-    
+
     @sorter.setter
     def sorter(self, column: DataViewColumn) -> None:
         col = self.index(column._native_widget)
@@ -415,7 +405,6 @@ class _DataViewColumns(Sequence):
     __getitem__ = forward.with_return(DataViewColumn)(dv.DataViewCtrl.GetColumn)
     __len__ = forward(dv.DataViewCtrl.GetColumnCount)
     index = forward.with_input()(dv.DataViewCtrl.GetColumnPosition)
-
 
 class _DataViewOptions:
     # Wrapper around a DataViewCtrl's UI configuration options.
@@ -481,11 +470,10 @@ class _DataViewSelection(Sequence):
     @property
     def focused(self) -> Any:
         return self._widget._unwrap_item(self._widget.CurrentItem)
-    
+
     @focused.setter
     def focused(self, item) -> None:
         self._widget.CurrentItem = self._widget._wrap_object(item)
-
 
 class DataViewCtrl(_AComponent):
     _wx_widget_type = dv.DataViewCtrl
@@ -499,7 +487,7 @@ class DataViewCtrl(_AComponent):
     @property
     def top_item(self) -> Any:
         return self._unwrap_item(self._native_widget.TopItem)
-    
+
     @top_item.setter
     def top_item(self, item: Any):
         self._native_widget.TopItem = self._wrap_object(item)
