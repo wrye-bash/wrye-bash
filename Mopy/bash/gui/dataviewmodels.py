@@ -55,6 +55,12 @@ class InstallerViewModel(ADataViewModel):
         Tree = auto()
         Flat = auto()
 
+    class ItemStatus(Enum):
+        Matched = 'Installed'
+        Missing = 'Missing'
+        Overridden = 'Overridden'
+        Mismatched = 'Mismatched'
+
     @dataclass
     class ItemData:
         destination: Path
@@ -62,19 +68,20 @@ class InstallerViewModel(ADataViewModel):
         size: int
         mtime: float
         crc: int
+        status: InstallerViewModel.ItemStatus
 
     class DirectoryData(ItemData):
         pass
 
     _columns = {
         Columns.Destination: lambda item_data: item_data.destination.name,
-        Columns.Source: lambda item_data: item_data.source.name,
+        Columns.Source: lambda item_data: f'{item_data.source}',
         Columns.Size: lambda item_data: round_size(item_data.size),
         Columns.Mtime: lambda item_data: format_date(item_data.mtime),
-        Columns.Crc: lambda item_data: f'0x{item_data.crc:08X}',
-        Columns.Status: lambda item_data: '',
+        Columns.Crc: lambda item_data: f'{item_data.crc:08X}',
+        Columns.Status: lambda item_data: item_data.status.value,
     }
-    _folder_columns = {Columns.Destination}
+    _folder_columns = {Columns.Destination, Columns.Size}
 
     _install_directory = Path('Data')
     _conflicts_node = Path('conflicts')
@@ -113,12 +120,16 @@ class InstallerViewModel(ADataViewModel):
     
     @installer.setter
     def installer(self, installer: 'Installer') -> None:
+        changed = self.installer != installer
         self._installer = installer
-        self.scan()
+        if changed:
+            self.scan()
 
     def scan(self) -> None:
         self._top_nodes = []
         self._data = {}
+        # Clear the UI of old data
+        self.notify_cleared()
         installer = self.installer
         if not installer or installer.is_marker:
             return
@@ -126,26 +137,30 @@ class InstallerViewModel(ADataViewModel):
         from .. import bosh
         ini_origin_match = self._idata._ini_origin.match
         active_bsas, bsa_cause = bosh.modInfos.get_active_bsas()
-        _, higher_loose, _, higher_bsa = self._idata.find_conflicts(
+        lower_loose, higher_loose, lower_bsa, higher_bsa = self._idata.find_conflicts(
             installer, active_bsas, bsa_cause, True, False, False, True
         )
-        # Overrides
-        overrides = {
-            source_file: conflicting_installer
-            for conflicting_installer, _package, installer_conflicts in higher_loose
-            for source_file in installer_conflicts
-        }
-        for bsa_origin, conflicting_bsa, bsa_conflicts in higher_bsa:
-            if (match := ini_origin_match(bsa_origin)):
-                m1 = match.group(1)
-                m2 = match.group(2)
-            else:
-                m1 = active_bsas[conflicting_bsa]
-                m2 = bsa_origin
-            for source_file in bsa_conflicts:
-                overrides[source_file] = (m1, m2, conflicting_bsa)
+        def _get_conflicts(loose_files, bsas):
+            conflicts = {
+                source_file: conflicting_installer
+                for conflicting_installer, _package, installer_conflicts in loose_files
+                for source_file in installer_conflicts
+            }
+            for bsa_origin, conflicting_bsa, bsa_conflicts in bsas:
+                if (match := ini_origin_match(bsa_origin)):
+                    m1 = match.group(1)
+                    m2 = match.group(2)
+                else:
+                    m1 = active_bsas[conflicting_bsa]
+                    m2 = bsa_origin
+                conflicts |= {source_file: (m1, m2, conflicting_bsa) for source_file in bsa_conflicts}
+            return conflicts
+        # Overrides, underrides
+        overrides = _get_conflicts(higher_loose, higher_bsa)
+        underrides = _get_conflicts(lower_loose, lower_bsa)
         # Skips (TODO)
-        skips = {}
+        skips = {Path(dest): 'ext' for dest in installer.skipExtFiles}
+        skips |= {Path(dest): 'dir' for dest in installer.skipDirFiles}
         # Configured items
         matched = set(installer.ci_dest_sizeCrc) - installer.missingFiles - installer.mismatchedFiles
         # And build the view data
@@ -154,22 +169,44 @@ class InstallerViewModel(ADataViewModel):
             data_root = self._install_directory
             skip_root = self._skips_node
             for dest, (size, crc) in installer.ci_dest_sizeCrc.items():
-                # TODO: add conflict information to ItemData
-                self._data[data_root / dest] = self.ItemData(Path(dest), Path(''), size, 0, crc)
+                if dest in overrides:
+                    status = self.ItemStatus.Overridden
+                    installed_source = f'{overrides[dest]}'
+                elif dest in installer.missingFiles:
+                    status = self.ItemStatus.Missing
+                    installed_source = ''
+                elif dest in installer.mismatchedFiles:
+                    status = self.ItemStatus.Mismatched
+                    if dest in underrides:
+                        installed_source = f'{underrides[dest]}'
+                    else:
+                        # TODO: Get installer source for mismatched files in uninstalled installers?
+                        # like underrides, but this installer isn't configured to install
+                        installed_source = ''
+                else:
+                    status = self.ItemStatus.Matched
+                    installed_source = f'{installer.archive}'
+                self._data[data_root / dest] = self.ItemData(Path(dest), installed_source, size, 0, crc, status)
             if installer.ci_dest_sizeCrc:
+                self._data[data_root] = self.DirectoryData(data_root, Path(''), installer.unSize, installer.modified, installer.crc, self.ItemStatus.Matched)
                 self._top_nodes.append(data_root)
             for skip, reason in skips:
-                # TODO: add skip reason to ItemData
-                self._data[skip_root / skip] = reason
+                self._data[skip_root / skip] = self.ItemData(skip, Path(reason), 0, 0, 0, self.ItemStatus.Missing)
             if skips:
                 self._top_nodes.append(skip_root)
             # Build tree branch nodes
-            parents = {path.parent for path in self._data if path.parent}
-            self._data |= {path: self.DirectoryData(path, Path(''), 0, 0, 0) for path in parents}
+            parents = {parent
+                       for path in self._data
+                       for parent in path.parents
+            } - {data_root, Path('.')}
+            for parent in parents:
+                children = (path for path in self._data if path.is_relative_to(parent))
+                size = sum(self._data[child].size for child in children if not isinstance(self._data[child], self.DirectoryData))
+                self._data[parent] = self.DirectoryData(parent, Path(''), size, 0, 0, self.ItemStatus.Matched)
         else:
-            # Flat view
+            # TODO: Flat view
             pass
-        # All data was refreshed, notify the ViewCtrl`s
+        # Notify UI of new data.
         self.notify_cleared()
 
     # DataViewModel methods
@@ -189,8 +226,9 @@ class InstallerViewModel(ADataViewModel):
     def has_value(self, item: Path | None, column: int) -> bool:
         if not item:
             return False
-        item_data = self._data[item]
-        if isinstance(item_data, self.DirectoryData):
+        if item is self._install_directory:
+            return column in {self.Columns.Destination, self.Columns.Crc, self.Columns.Mtime, self.Columns.Size}
+        if isinstance(self._data[item], self.DirectoryData):
             return column in self._folder_columns
         return True
 

@@ -524,12 +524,8 @@ class DataViewCtrl(_AComponent):
     # Forwarded methods
     def associate_model(self, model: ADataViewModel) -> None:
         self._native_widget.AssociateModel(model._native_widget)
-        # Clear cache on the dv.DataViewItem wrappers,
-        # so they will use the new model's mappers
         with suppress(AttributeError):
-            del self._unwrap_item
-        with suppress(AttributeError):
-            del self._wrap_object
+            del self._model
 
     def collapse_item(self, item: Any) -> None:
         self._native_widget.Collapse(self._wrap_object(item))
@@ -552,21 +548,20 @@ class DataViewCtrl(_AComponent):
 
     # Helper methods to wrap/unwrap _dv.DataViewItem's
     @cached_property
-    def _unwrap_item(self) -> Callable[[dv.DataViewItem], Any]:
-        return self._resolve(self).GetModel().ItemToObject
+    def _model(self) -> _DataViewModel:
+        return self._resolve(self).GetModel()
 
-    @cached_property
-    def _wrap_object(self, py_object: Any) -> Callable[[Any], dv.DataViewItem]:
-        return self._resolve(self).GetModel().ObjectToItem
+    def _unwrap_item(self, item: dv.DataViewItem) -> Any:
+        return self._model.unwrap(item)
 
     def _unwrap_list(self, items: dv.DataViewItemArray) -> Iterable[Any]:
-        return map(self._unwrap_item, items)
+        return self._model.unwrap_list(items)
 
-    def _wrap_list(self, items: Iterable[Any]) -> dv.DataViewItemArray:
-        array = dv.DataViewItemArray()
-        for item in map(self._wrap_object, items):
-            array.append(item)
-        return array
+    def _wrap_object(self, py_object: Any) -> dv.DataViewItem:
+        return self._model.wrap(py_object)
+
+    def _wrap_list(self, py_objects: Iterable[Any]) -> dv.DataViewItemArray:
+        return self._model.wrap_list(py_objects)
 
     ## Not exposed/forwarded
     # Create

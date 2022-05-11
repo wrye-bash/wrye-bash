@@ -2874,13 +2874,13 @@ class InstallersDetails(_SashDetailsPanel):
         gPage.associate_model(self.installer_view)
         gPage.set_component_name('gView')
         gPage.columns.append('Destination', self.installer_view.Columns.Destination, column_type=DataViewColumnType.TEXT)
-        gPage.columns.append('Source', self.installer_view.Columns.Source, column_type=DataViewColumnType.TEXT)
+        gPage.columns.append('Status', self.installer_view.Columns.Status, column_type=DataViewColumnType.TEXT)
         gPage.columns.append('Size', self.installer_view.Columns.Size, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
         gPage.columns.append('CRC', self.installer_view.Columns.Crc, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
+        gPage.columns.append('Installed Source', self.installer_view.Columns.Source, column_type=DataViewColumnType.TEXT)
         gPage.columns.append('Modified', self.installer_view.Columns.Mtime, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
-        gPage.columns.append('Status', self.installer_view.Columns.Status, column_type=DataViewColumnType.TEXT)
         self.gNotebook.add_page(gPage, 'Tree View')
-        self.infoPages.append([gPage, True])
+        self.infoPages.append([gPage, False])
         # Finish up notebook initialization
         self.gNotebook.set_selected_page_index(
             settings[u'bash.installers.page'])
@@ -3017,6 +3017,8 @@ class InstallersDetails(_SashDetailsPanel):
         pageName = gPage.get_component_name()
         if pageName == 'gView':
             self.installer_view.installer = installer
+            if (top_item := gPage.top_item):
+                gPage.expand_item(top_item)
             return
         def _dumpFiles(files, header=u''):
             if files:
