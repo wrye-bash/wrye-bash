@@ -128,6 +128,10 @@ class _AComponent(object):
             self._native_widget = self._wx_widget_type(self._resolve(parent),
                                                        *args, **kwargs)
 
+    @classmethod
+    def from_native(cls, wx_object: _wx.Window) -> '_AComponent':
+        return cls(wx_object, _wrap_existing=True)
+
     def _evt_handler(self, evt, arg_proc=null_processor):
         """Register an EventHandler on _native_widget"""
         return EventHandler(self._native_widget, evt, arg_proc)

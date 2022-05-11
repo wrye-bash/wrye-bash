@@ -31,6 +31,7 @@ from .buttons import *
 from .checkables import *
 from .combos import *
 from .dataview import *
+from .dataviewmodels import *
 from .doc_viewer import *
 from .events import *
 from .functions import *
