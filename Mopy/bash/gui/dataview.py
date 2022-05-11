@@ -276,7 +276,7 @@ class ADataViewModel(_AComponent):
     def get_column_count(self) -> int:
         raise NotImplementedError
 
-    def get_column_type(self, column: int) -> Any:
+    def get_column_type(self, column: int) -> type | str:
         raise NotImplementedError
 
     # Methods for notifying associated DataViewCtrl's of changes

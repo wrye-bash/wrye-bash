@@ -89,7 +89,8 @@ from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
     Picture, ImageWrapper, CenteredSplash, BusyCursor, RadioButton, \
     GlobalMenu, CopyOrMovePopup, ListBox, ClickableImage, CENTER, \
     MultiChoicePopup, WithMouseEvents, read_files_from_clipboard_cb, \
-    get_shift_down, FileOpen
+    get_shift_down, FileOpen, DataViewCtrl, InstallerViewModel, \
+    DataViewColumnType
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, installercons
@@ -2867,6 +2868,20 @@ class InstallersDetails(_SashDetailsPanel):
             gPage.set_component_name(cmp_name)
             self.gNotebook.add_page(gPage, page_title)
             self.infoPages.append([gPage,False])
+        #-- POC: Set up directory view
+        self.installer_view = InstallerViewModel(self._idata)
+        gPage = DataViewCtrl(self.gNotebook)
+        gPage.associate_model(self.installer_view)
+        gPage.set_component_name('gView')
+        gPage.columns.append('Destination', self.installer_view.Columns.Destination, column_type=DataViewColumnType.TEXT)
+        gPage.columns.append('Source', self.installer_view.Columns.Source, column_type=DataViewColumnType.TEXT)
+        gPage.columns.append('Size', self.installer_view.Columns.Size, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
+        gPage.columns.append('CRC', self.installer_view.Columns.Crc, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
+        gPage.columns.append('Modified', self.installer_view.Columns.Mtime, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
+        gPage.columns.append('Status', self.installer_view.Columns.Status, column_type=DataViewColumnType.TEXT)
+        self.gNotebook.add_page(gPage, 'Tree View')
+        self.infoPages.append([gPage, True])
+        # Finish up notebook initialization
         self.gNotebook.set_selected_page_index(
             settings[u'bash.installers.page'])
         self.gNotebook.on_nb_page_change.subscribe(self.OnShowInfoPage)
@@ -3000,6 +3015,9 @@ class InstallersDetails(_SashDetailsPanel):
         if initialized: return
         else: self.infoPages[index][1] = True
         pageName = gPage.get_component_name()
+        if pageName == 'gView':
+            self.installer_view.installer = installer
+            return
         def _dumpFiles(files, header=u''):
             if files:
                 buff = []
