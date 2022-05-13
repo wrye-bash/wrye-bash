@@ -23,26 +23,19 @@
 """Concrete DataViewModel classes for use in with DataViewCtrls."""
 from __future__ import annotations
 
-__author__ = u'Lojack'
+__author__ = 'Lojack'
 
-from typing import Any, Callable, Iterable, Dict, Tuple, List
-import os
-from pathlib import Path
-from enum import Enum, IntEnum, auto
 from dataclasses import dataclass
+from enum import Enum, IntEnum, auto
+from pathlib import Path
+from typing import Iterable, Dict, List
 
 from .dataview import ADataViewModel
-
 from ..bolt import round_size
 from ..localize import format_date
 
-
-__all__ = [
-    'InstallerViewModel',
-]
-
-
 class InstallerViewModel(ADataViewModel):
+    """"""
     class Columns(IntEnum):
         Destination = 0
         Source = auto()
@@ -113,11 +106,11 @@ class InstallerViewModel(ADataViewModel):
         self._view_mode = new_mode
         if scan_needed:
             self.scan()
-    
+
     @property
     def installer(self) -> 'Installer':
         return self._installer
-    
+
     @installer.setter
     def installer(self, installer: 'Installer') -> None:
         changed = self.installer != installer
@@ -222,7 +215,7 @@ class InstallerViewModel(ADataViewModel):
         if item in self._data:
             return item.parent
         return None
-    
+
     def has_value(self, item: Path | None, column: int) -> bool:
         if not item:
             return False
