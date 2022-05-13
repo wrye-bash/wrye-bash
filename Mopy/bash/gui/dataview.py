@@ -55,22 +55,13 @@ import wx.dataview as dv
 
 from .base_components import _AComponent
 
-__all__ = [
-    'ADataViewModel',
-    'DataViewCtrl',
-    'DataViewColumnType',
-    'DataViewColumn',
-    'DataViewColumnFlags',
-    'forward',
-]
-
 class DataViewColumnFlags(IntFlag):
     HIDDEN = dv.DATAVIEW_COL_HIDDEN
     REORDERABLE = dv.DATAVIEW_COL_REORDERABLE
     RESIZABLE = dv.DATAVIEW_COL_RESIZABLE
     SORTABLE = dv.DATAVIEW_COL_SORTABLE
 
-class Forwarder:
+class _Forwarder:
     """Class for easier forwarding of methods/properties from
        one class to another."""
     def __init__(self,
@@ -113,18 +104,19 @@ class Forwarder:
 
     @classmethod
     @cache
-    def with_return(cls, return_wrapper: Callable) -> 'Forwarder':
+    def with_return(cls, return_wrapper: Callable) -> '_Forwarder':
         return cls(return_wrapper)
 
     @classmethod
     @cache
-    def with_input(cls, input_wrapper: Callable | None = None) -> 'Forwarder':
+    def with_input(cls, input_wrapper: Callable | None = None) -> '_Forwarder':
         input_wrapper = input_wrapper or cls.default_resolver
         return cls(None, input_wrapper)
 
     @classmethod
     @cache
-    def wrap(cls, return_wrapper: Callable, input_wrapper: Callable | None = None) -> 'Forwarder':
+    def wrap(cls, return_wrapper: Callable,
+             input_wrapper: Callable | None = None) -> '_Forwarder':
         input_wrapper = input_wrapper or cls.default_resolver
         return cls(return_wrapper, input_wrapper)
 
@@ -155,7 +147,7 @@ class Forwarder:
         else:
             return self.forward_method(func)
 
-forward = Forwarder()
+forward = _Forwarder()
 
 class _DataViewModel(dv.PyDataViewModel):
     def __init__(self, parent=None) -> None:
@@ -260,7 +252,8 @@ class ADataViewModel(_AComponent):
     def get_value(self, item: Any, column: int) -> Any:
         raise NotImplementedError
 
-    def get_attributes(self, item: Any, column: int, attributes: dv.DataViewItemAttr) -> bool:
+    def get_attributes(self, item: Any, column: int,
+                       attributes: dv.DataViewItemAttr) -> bool:
         # Default implementation: don't change any display attributes
         return False
 
@@ -386,10 +379,8 @@ class _DataViewColumns(Sequence):
             col = get_column_arg(*args, **kwargs)
             # TODO: Check if dv.DataViewColumn derives from wx.Window
             # if it doesn't, we can't use _resolve
-            if method(self._native_widget, _AComponent._resolve(col)):
-                return col
-            else:
-                return None
+            return col if method(self._native_widget,
+                                 _AComponent._resolve(col)) else None
 
     def append(self, *args, **kwargs) -> DataViewColumn | None:
         return self._insert_column(_ColumnInsert.Append, *args, **kwargs)
@@ -407,7 +398,7 @@ class _DataViewColumns(Sequence):
     index = forward.with_input()(dv.DataViewCtrl.GetColumnPosition)
 
 class _DataViewOptions:
-    # Wrapper around a DataViewCtrl's UI configuration options.
+    """Wrapper around a DataViewCtrl's UI configuration options."""
 
     def __init__(self, wx_widget: dv.DataViewCtrl):
         self._native_widget = wx_widget
