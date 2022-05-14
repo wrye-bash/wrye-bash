@@ -73,8 +73,16 @@ class InstallerViewModel(ADataViewModel):
     class DirectoryData(ItemData):
         pass
 
+    @staticmethod
+    def _format_destination_tree(item_data: ItemData) -> str:
+        return item_data.destination.name
+
+    @staticmethod
+    def _format_destination_flat(item_data: ItemData) -> str:
+        return f'{item_data.destination}'
+
     _columns = {
-        Columns.Destination: lambda item_data: item_data.destination.name,
+        Columns.Destination: _format_destination_tree,
         Columns.Source: lambda item_data: f'{item_data.source}',
         Columns.Size: lambda item_data: round_size(item_data.size),
         Columns.Mtime: lambda item_data: format_date(item_data.mtime),
@@ -109,10 +117,14 @@ class InstallerViewModel(ADataViewModel):
     def view_mode(self, new_mode: ViewMode) -> None:
         if not isinstance(new_mode, self.ViewMode):
             raise TypeError(f'Expected {self.ViewMode.__name__}, not {type(new_mode)}.')
-        scan_needed = new_mode is not self.view_mode
+        changed = new_mode is not self.view_mode
         self._view_mode = new_mode
-        if scan_needed:
-            self.scan()
+        if changed:
+            if new_mode is self.ViewMode.Tree:
+                self._columns[self.Columns.Destination] = self._format_destination_tree
+            else:
+                self._columns[self.Columns.Destination] = self._format_destination_flat
+            self.notify_cleared()
     
     @property
     def installer(self) -> 'Installer':
@@ -164,48 +176,43 @@ class InstallerViewModel(ADataViewModel):
         # Configured items
         matched = set(installer.ci_dest_sizeCrc) - installer.missingFiles - installer.mismatchedFiles
         # And build the view data
-        if self.view_mode is self.ViewMode.Tree:
-            # Tree view
-            data_root = self._install_directory
-            skip_root = self._skips_node
-            for dest, (size, crc) in installer.ci_dest_sizeCrc.items():
-                if dest in overrides:
-                    status = self.ItemStatus.Overridden
-                    installed_source = f'{overrides[dest]}'
-                elif dest in installer.missingFiles:
-                    status = self.ItemStatus.Missing
-                    installed_source = ''
-                elif dest in installer.mismatchedFiles:
-                    status = self.ItemStatus.Mismatched
-                    if dest in underrides:
-                        installed_source = f'{underrides[dest]}'
-                    else:
-                        # TODO: Get installer source for mismatched files in uninstalled installers?
-                        # like underrides, but this installer isn't configured to install
-                        installed_source = ''
+        data_root = self._install_directory
+        skip_root = self._skips_node
+        for dest, (size, crc) in installer.ci_dest_sizeCrc.items():
+            if dest in overrides:
+                status = self.ItemStatus.Overridden
+                installed_source = f'{overrides[dest]}'
+            elif dest in installer.missingFiles:
+                status = self.ItemStatus.Missing
+                installed_source = ''
+            elif dest in installer.mismatchedFiles:
+                status = self.ItemStatus.Mismatched
+                if dest in underrides:
+                    installed_source = f'{underrides[dest]}'
                 else:
-                    status = self.ItemStatus.Matched
-                    installed_source = f'{installer.archive}'
-                self._data[data_root / dest] = self.ItemData(Path(dest), installed_source, size, 0, crc, status)
-            if installer.ci_dest_sizeCrc:
-                self._data[data_root] = self.DirectoryData(data_root, Path(''), installer.unSize, installer.modified, installer.crc, self.ItemStatus.Matched)
-                self._top_nodes.append(data_root)
-            for skip, reason in skips:
-                self._data[skip_root / skip] = self.ItemData(skip, Path(reason), 0, 0, 0, self.ItemStatus.Missing)
-            if skips:
-                self._top_nodes.append(skip_root)
-            # Build tree branch nodes
-            parents = {parent
-                       for path in self._data
-                       for parent in path.parents
-            } - {data_root, Path('.')}
-            for parent in parents:
-                children = (path for path in self._data if path.is_relative_to(parent))
-                size = sum(self._data[child].size for child in children if not isinstance(self._data[child], self.DirectoryData))
-                self._data[parent] = self.DirectoryData(parent, Path(''), size, 0, 0, self.ItemStatus.Matched)
-        else:
-            # TODO: Flat view
-            pass
+                    # TODO: Get installer source for mismatched files in uninstalled installers?
+                    # like underrides, but this installer isn't configured to install
+                    installed_source = ''
+            else:
+                status = self.ItemStatus.Matched
+                installed_source = f'{installer.archive}'
+            self._data[data_root / dest] = self.ItemData(Path(dest), installed_source, size, 0, crc, status)
+        if installer.ci_dest_sizeCrc:
+            self._data[data_root] = self.DirectoryData(data_root, Path(''), installer.unSize, installer.modified, installer.crc, self.ItemStatus.Matched)
+            self._top_nodes.append(data_root)
+        for skip, reason in skips:
+            self._data[skip_root / skip] = self.ItemData(skip, Path(reason), 0, 0, 0, self.ItemStatus.Missing)
+        if skips:
+            self._top_nodes.append(skip_root)
+        # Build tree branch nodes
+        parents = {parent
+                    for path in self._data
+                    for parent in path.parents
+        } - {data_root, Path('.')}
+        for parent in parents:
+            children = (path for path in self._data if path.is_relative_to(parent))
+            size = sum(self._data[child].size for child in children if not isinstance(self._data[child], self.DirectoryData))
+            self._data[parent] = self.DirectoryData(parent, Path(''), size, 0, 0, self.ItemStatus.Matched)
         # Notify UI of new data.
         self.notify_cleared()
 
@@ -213,14 +220,22 @@ class InstallerViewModel(ADataViewModel):
     def get_children(self, parent: Path | None) -> Iterable[Path]:
         if not parent:
             return self._top_nodes
-        return (item for item in self._data if item.parent == parent)
+        if self.view_mode is self.ViewMode.Tree:
+            return (item for item in self._data if item.parent == parent)
+        else:
+            return (item for item in self._data if not isinstance(self._data[item], self.DirectoryData) and item.is_relative_to(parent))
 
     def is_container(self, parent: Path | None) -> bool:
         return parent is None or isinstance(self._data[parent], self.DirectoryData)
 
     def get_parent(self, item: Path) -> Path | None:
         if item in self._data:
-            return item.parent
+            if self.view_mode is self.ViewMode.Tree:
+                return item.parent
+            else:
+                for parent in self._top_nodes:
+                    if item.is_relative_to(parent):
+                        return parent
         return None
     
     def has_value(self, item: Path | None, column: int) -> bool:

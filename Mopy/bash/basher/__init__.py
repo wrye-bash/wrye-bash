@@ -2870,7 +2870,15 @@ class InstallersDetails(_SashDetailsPanel):
             self.infoPages.append([gPage,False])
         #-- POC: Set up directory view
         self.installer_view = InstallerViewModel(self._idata)
-        gPage = DataViewCtrl(self.gNotebook)
+        view_panel = NotebookPanel(self.gNotebook)
+        radio_tree = RadioButton(view_panel, 'Tree View', True)
+        radio_tree.is_checked = True
+        radio_flat = RadioButton(view_panel, 'Flat View')
+        def _set_tree(checked): self.installer_view.view_mode = InstallerViewModel.ViewMode.Tree
+        def _set_flat(checked): self.installer_view.view_mode = InstallerViewModel.ViewMode.Flat
+        radio_tree.on_checked.subscribe(_set_tree)
+        radio_flat.on_checked.subscribe(_set_flat)
+        gPage = DataViewCtrl(view_panel)
         gPage.associate_model(self.installer_view)
         gPage.set_component_name('gView')
         gPage.columns.append('Destination', self.installer_view.Columns.Destination, column_type=DataViewColumnType.TEXT)
@@ -2879,7 +2887,12 @@ class InstallersDetails(_SashDetailsPanel):
         gPage.columns.append('CRC', self.installer_view.Columns.Crc, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
         gPage.columns.append('Installed Source', self.installer_view.Columns.Source, column_type=DataViewColumnType.TEXT)
         gPage.columns.append('Modified', self.installer_view.Columns.Mtime, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
-        self.gNotebook.add_page(gPage, 'Tree View')
+        # Layout for InstallerDataView
+        VLayout(items=[
+            radio_tree, radio_flat,
+            (gPage, LayoutOptions(expand=True, weight=1))
+        ]).apply_to(view_panel)
+        self.gNotebook.add_page(view_panel, 'Tree View')
         self.infoPages.append([gPage, False])
         # Finish up notebook initialization
         self.gNotebook.set_selected_page_index(
