@@ -134,12 +134,13 @@ class OmodFile(object):
         extractDir = stageBaseDir = Path.tempDir()
         stageDir = stageBaseDir.join(outDir.tail)
         try:
-            progress(0, self.omod_path.stail + u'\n' + _(u'Extracting...'))
+            stail_ = f'{self.omod_path.stail}\n'
+            progress(0, stail_ + _('Extracting...'))
             if self._is_fomod:
                 self._extract_fomod(extractDir, stageDir)
             else:
                 self._extract_omod(progress, extractDir, stageDir)
-            progress(1, self.omod_path.stail + u'\n' + _(u'Extracted'))
+            progress(1, stail_ + _('Extracted'))
             # Move files to final directory
             env.shellMove(stageDir, outDir.head, parent=None,
                           askOverwrite=True, allowUndo=True, autoRename=True)

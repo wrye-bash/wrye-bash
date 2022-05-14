@@ -189,9 +189,9 @@ class Installer(ListInfo):
                         crc = crc32(block, crc) # 2MB at a time, probably ok
                         sub(insTell())
             except OSError:
-                deprint(u'Failed to calculate crc for %s - please report '
-                        u'this, and the following traceback:' % asFile,
-                        traceback=True)
+                deprint(
+                    f'Failed to calculate crc for {asFile} - please report '
+                    f'this, and the following traceback:', traceback=True)
                 continue
             crc &= 0xFFFFFFFF
             done += siz + 1
@@ -1616,7 +1616,7 @@ class InstallerProject(Installer):
         c, proj_size = [], 0
         cExtend, cAppend = c.extend, c.append
         self._dir_dirs_files = []
-        for root, d, files in os.walk(apath):
+        for root, _d, files in os.walk(apath):
             cAppend(getM(root))
             lstats = [_lstat(join(root, f)) for f in files]
             cExtend(ls.st_mtime for ls in lstats)
@@ -1684,7 +1684,7 @@ class InstallerProject(Installer):
     def fomod_file(self): return self.abs_path.join(self.has_fomod_conf)
 
 def projects_walk_cache(func): ##: HACK ! Profile
-    """Decorator to make sure I dont leak self._dir_dirs_files project cache.
+    """Decorator to make sure I don't leak self._dir_dirs_files project cache.
     Must decorate all methods that may call size_or_mtime_changed (only
     called in scan_installers_dir). For self._dir_dirs_files to be of any use
     the call to scan_installers_dir must be followed by refreshBasic calls
@@ -2006,7 +2006,7 @@ class InstallersData(DataStore):
             raise # UI expects that
 
     def scan_installers_dir(self, folders, files, fullRefresh=False, *,
-                            __skip_prefixes=(u'bash', u'--')):
+                            __skip_prefixes=('bash', '--')):
         """March through the Bash Installers dir scanning for new and modified
         projects/packages, skipping as necessary. It will refresh projects on
         boot.
@@ -2024,21 +2024,27 @@ class InstallersData(DataStore):
         else:
             for items, is_proj in ((files, False), (folders, True)):
                 for item in items:
-                    installer = self.get(item)
+                    inst = self.get(item)
+                    if inst is None:
+                        pending.add(item)
+                        continue
+                    if inst.archive != item: # some rename bug - corrupted
+                        deprint(f'{item} invalid path: {inst.abs_path}')
+                        del self[item] # delete the stored installer
+                        pending.add(item)
+                        continue
                     # Project - autorefresh those only if specified
-                    if is_proj and installer:
+                    if is_proj:
                         # refresh projects once on boot even if skipRefresh is on
-                        if not installer.project_refreshed: # volatile
+                        if not inst.project_refreshed: # volatile
                             pending.add(item)
                             continue
-                        elif installer.skipRefresh or not bass.settings[
-                            u'bash.installers.autoRefreshProjects']:
+                        elif inst.skipRefresh or not bass.settings[
+                                'bash.installers.autoRefreshProjects']:
                             installers.add(item) # installer is present
                             continue # and needs not refresh
-                    if not installer or installer.size_or_mtime_changed(
-                            installer.abs_path):
-                        pending.add(item)
-                    else: installers.add(item)
+                    pending.add(item) if inst.size_or_mtime_changed(
+                        inst.abs_path) else installers.add(item)
         deleted = set(self.ipackages(self)) - installers - pending
         refresh_info = self._RefreshInfo(deleted, pending, folders)
         return refresh_info

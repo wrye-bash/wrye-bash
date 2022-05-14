@@ -3228,7 +3228,7 @@ class InstallersPanel(BashTab):
     @bosh.bain.projects_walk_cache
     def _refresh_installers_if_needed(self, canCancel, fullRefresh,
                                       scan_data_dir, focus_list):
-        if settings.get(u'bash.installers.updatedCRCs',True): #only checked here
+        if settings.get('bash.installers.updatedCRCs',True): #only checked here
             settings[u'bash.installers.updatedCRCs'] = False
             self._data_dir_scanned = False
         do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
@@ -3239,15 +3239,18 @@ class InstallersPanel(BashTab):
                     if os.path.splitext(inst_path)[1].lower() in archives.omod_exts]
             if any(inst_path not in omods.failedOmods for inst_path in omds):
                 omod_projects = self.__extractOmods(omds) ##: change above to filter?
-                folders.extend(omod_projects)
+                if omod_projects:
+                    deprint(f'Extending projects: {omod_projects}')
+                    folders.extend(omod_projects)
             if not do_refresh:
                 refresh_info = self.listData.scan_installers_dir(folders,
                     files, fullRefresh)
                 do_refresh = refresh_info.refresh_needed()
         refreshui = False
+        nl = f'\n{" " * 60}'
         if do_refresh:
-            with balt.Progress(_(u'Refreshing Installers...'),
-                               u'\n' + u' ' * 60, abort=canCancel) as progress:
+            with balt.Progress(_('Refreshing Installers...'), nl,
+                               abort=canCancel) as progress:
                 try:
                     what = u'DISC' if scan_data_dir else u'IC'
                     refreshui |= self.listData.irefresh(progress, what,
@@ -3259,8 +3262,7 @@ class InstallersPanel(BashTab):
                 finally:
                     self._data_dir_scanned = True
         elif self.frameActivated and self.listData.refreshConvertersNeeded():
-            with balt.Progress(_(u'Refreshing Converters...'),
-                               u'\n' + u' ' * 60) as progress:
+            with balt.Progress(_('Refreshing Converters...'), nl) as progress:
                 try:
                     refreshui |= self.listData.irefresh(progress, u'C',
                                                         fullRefresh)
