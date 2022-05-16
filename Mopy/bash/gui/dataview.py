@@ -26,7 +26,7 @@ from __future__ import annotations
 __author__ = u'Lojack'
 
 from functools import wraps, cache, cached_property
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Tuple
 from datetime import datetime
 from collections.abc import Sequence
 from enum import Enum, IntEnum, IntFlag
@@ -35,7 +35,7 @@ from contextlib import suppress
 import wx
 import wx.dataview as dv
 
-from .base_components import _AComponent
+from .base_components import _AComponent, Color
 
 
 ## wx.dataview provides many types:
@@ -50,9 +50,9 @@ from .base_components import _AComponent
 # wx.dataview.DataViewColumn: class representing a UI column of a DataViewCtrl
 #  - Wrapped with DataViewColumn.
 # wx.dataview.DataViewItem: wx type of all items in a model.
+#  - Wrapped/unwrapped at wx boundaries internally.
 # wx.dataview.DataViewItemArray: list-like object holding wx.DataViewItem's.
-#  - Mostly wrapped/unwrapped at boundaries between DataViewCtrl/ADataViewModel
-#    and their wrapped wx instances.
+#  - Wrapped/unwrapped at wx boundaries internally.
 # wx.dataview.DataViewItemAttr: wx type holding UI attributes of an item
 #  - Wrapped with DataViewItemAttr
 #  - Note, wx.Font items are not wrapped however (DataViewItemAttr.font)
@@ -64,6 +64,7 @@ __all__ = [
     'DataViewColumnType',
     'DataViewColumn',
     'DataViewColumnFlags',
+    'DataViewItemAttr',
     'forward',
 ]
 
@@ -162,6 +163,33 @@ class Forwarder:
 forward = Forwarder()
 
 
+class DataViewItemAttr(_AComponent):
+    # Never instantiated by users, only wrapped
+    _wx_widget_type: dv.DataViewItemAttr
+    _native_widget: dv.DataViewItemAttr
+
+    @staticmethod
+    def color_to_rgba(color: Tuple[int, int, int, int] | Color) -> Tuple[int, int, int, int]:
+        if isinstance(color, Color):
+            return color.to_rgba_tuple()
+        # Already an RGBA tuple
+        return color
+
+    # Item attributes
+    bold = forward(dv.DataViewItemAttr.Bold)
+    color = forward.wrap(Color.from_wx, color_to_rgba)(dv.DataViewItemAttr.Colour)
+    italic = forward(dv.DataViewItemAttr.Italic)
+    background_color = forward.wrap(Color.from_wx, color_to_rgba)(dv.DataViewItemAttr.BackgroundColour)
+    strikethrough = forward(property(None, dv.DataViewItemAttr.SetStrikethrough))
+    font = forward(property(dv.DataViewItemAttr.GetEffectiveFont))
+
+    # Test if default attributes have been changed from defaults
+    is_default = forward(property(dv.DataViewItemAttr.IsDefault))
+    has_color = forward(property(dv.DataViewItemAttr.HasColour))
+    has_background_color = forward(property(dv.DataViewItemAttr.HasBackgroundColour))
+    has_font = forward(property(dv.DataViewItemAttr.HasFont))
+
+
 class _DataViewModel(dv.PyDataViewModel):
     def __init__(self, parent=None) -> None:
         # parent parameter provided to work with _AComponent,
@@ -215,8 +243,7 @@ class _DataViewModel(dv.PyDataViewModel):
         return self._model.get_value(self.unwrap(item), column)
 
     def GetAttr(self, item: dv.DataViewItem, column: int, attributes: dv.DataViewItemAttr) -> bool:
-        ## TODO: wrap _dv.DataViewItemAttributes
-        return self._model.get_attributes(self.unwrap(item), column, attributes)
+        return self._model.get_attributes(self.unwrap(item), column, DataViewItemAttr.from_native(attributes))
 
     def SetValue(self, value: Any, item: dv.DataViewItem, column: int) -> bool:
         return self._model.set_value(self.unwrap(item), column, value)
@@ -266,7 +293,7 @@ class ADataViewModel(_AComponent):
     def get_value(self, item: Any, column: int) -> Any:
         raise NotImplementedError
 
-    def get_attributes(self, item: Any, column: int, attributes: dv.DataViewItemAttr) -> bool:
+    def get_attributes(self, item: Any, column: int, attributes: DataViewItemAttr) -> bool:
         # Default implementation: don't change any display attributes
         return False
 
