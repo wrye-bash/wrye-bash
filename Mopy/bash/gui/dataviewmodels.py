@@ -34,7 +34,7 @@ from typing import Dict, List, Iterable, Tuple
 import wx
 
 from .checkables import RadioButton
-from .dataview import ADataViewModel, DataViewColumnType, DataViewCtrl
+from .dataview import ADataViewModel, DataViewColumnType, DataViewItemAttr, DataViewCtrl
 from .layouts import HLayout, LayoutOptions, VLayout
 from .top_level_windows import PanelWin
 
@@ -70,6 +70,7 @@ class InstallerViewData:
         Missing = 'Missing'
         Overridden = 'Overridden'
         Mismatched = 'Mismatched'
+        Skipped = 'Skipped'
 
     _install_directory = Path('Data')
     _conflicts_node = Path('conflicts')
@@ -172,7 +173,7 @@ class InstallerViewData:
             self._data[data_root] = _DirectoryData(data_root, Path(''), installer.unSize, installer.modified, installer.crc, self.ItemStatus.Matched)
             self._top_nodes.append(data_root)
         for skip, reason in skips:
-            self._data[skip_root / skip] = _ItemData(skip, Path(reason), 0, 0, 0, self.ItemStatus.Missing)
+            self._data[skip_root / skip] = _ItemData(skip, Path(reason), 0, 0, 0, self.ItemStatus.Skipped)
         if skips:
             self._top_nodes.append(skip_root)
         # Build tree branch nodes
@@ -243,6 +244,22 @@ class InstallerTreeViewModel(ADataViewModel):
 
     def get_column_type(self, column: int) -> type:
         return str
+
+    def get_attributes(self, item: Path, column: int, attributes: DataViewItemAttr) -> bool:
+        if not item:
+            return False
+        item_data = self._iview_data[item]
+        statuses = self._iview_data.ItemStatus
+        if item_data.status is statuses.Mismatched:
+            attributes.color = (255, 0, 0)
+            return True
+        if item_data.status is statuses.Skipped:
+            attributes.italic = True
+            return True
+        if item_data.status is statuses.Overridden:
+            attributes.color = (0, 255, 0)
+        # No attributes changed
+        return False
 
 
 class InstallerFlatViewModel(InstallerTreeViewModel):
