@@ -89,8 +89,7 @@ from ..gui import Button, CancelButton, HLayout, Label, LayoutOptions, \
     Picture, ImageWrapper, CenteredSplash, BusyCursor, RadioButton, \
     GlobalMenu, CopyOrMovePopup, ListBox, ClickableImage, CENTER, \
     MultiChoicePopup, WithMouseEvents, read_files_from_clipboard_cb, \
-    get_shift_down, FileOpen, DataViewCtrl, InstallerViewModel, \
-    DataViewColumnType
+    get_shift_down, FileOpen, InstallerViewCtrl, InstallerViewData
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, installercons
@@ -2869,31 +2868,14 @@ class InstallersDetails(_SashDetailsPanel):
             self.gNotebook.add_page(gPage, page_title)
             self.infoPages.append([gPage,False])
         #-- POC: Set up directory view
-        self.installer_view = InstallerViewModel(self._idata)
-        view_panel = NotebookPanel(self.gNotebook)
-        radio_tree = RadioButton(view_panel, 'Tree View', True)
-        radio_tree.is_checked = True
-        radio_flat = RadioButton(view_panel, 'Flat View')
-        def _set_tree(checked): self.installer_view.view_mode = InstallerViewModel.ViewMode.Tree
-        def _set_flat(checked): self.installer_view.view_mode = InstallerViewModel.ViewMode.Flat
-        radio_tree.on_checked.subscribe(_set_tree)
-        radio_flat.on_checked.subscribe(_set_flat)
-        gPage = DataViewCtrl(view_panel)
-        gPage.associate_model(self.installer_view)
+        gPage = NotebookPanel(self.gNotebook)
+        self.iview_ctrl = InstallerViewCtrl(gPage, InstallerViewData(self._idata))
         gPage.set_component_name('gView')
-        gPage.columns.append('Destination', self.installer_view.Columns.Destination, column_type=DataViewColumnType.TEXT)
-        gPage.columns.append('Status', self.installer_view.Columns.Status, column_type=DataViewColumnType.TEXT)
-        gPage.columns.append('Size', self.installer_view.Columns.Size, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
-        gPage.columns.append('CRC', self.installer_view.Columns.Crc, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
-        gPage.columns.append('Installed Source', self.installer_view.Columns.Source, column_type=DataViewColumnType.TEXT)
-        gPage.columns.append('Modified', self.installer_view.Columns.Mtime, align=wx.ALIGN_RIGHT, column_type=DataViewColumnType.TEXT)
-        # Layout for InstallerDataView
-        VLayout(items=[
-            radio_tree, radio_flat,
-            (gPage, LayoutOptions(expand=True, weight=1))
-        ]).apply_to(view_panel)
-        self.gNotebook.add_page(view_panel, 'Tree View')
+        self.gNotebook.add_page(gPage, 'Tree View')
         self.infoPages.append([gPage, False])
+        VLayout(items=[
+            (self.iview_ctrl, LayoutOptions(expand=True, weight=1)),
+        ]).apply_to(gPage)
         # Finish up notebook initialization
         self.gNotebook.set_selected_page_index(
             settings[u'bash.installers.page'])
@@ -3029,9 +3011,7 @@ class InstallersDetails(_SashDetailsPanel):
         else: self.infoPages[index][1] = True
         pageName = gPage.get_component_name()
         if pageName == 'gView':
-            self.installer_view.installer = installer
-            if (top_item := gPage.top_item):
-                gPage.expand_item(top_item)
+            self.iview_ctrl.set_installer(installer)
             return
         def _dumpFiles(files, header=u''):
             if files:

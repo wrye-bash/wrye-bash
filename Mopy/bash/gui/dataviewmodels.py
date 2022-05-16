@@ -25,71 +25,51 @@ from __future__ import annotations
 
 __author__ = u'Lojack'
 
-from typing import Any, Callable, Iterable, Dict, Tuple, List
-import os
-from pathlib import Path
-from enum import Enum, IntEnum, auto
 from dataclasses import dataclass
+from enum import auto, Enum, IntEnum
+from functools import partial
+from pathlib import Path
+from typing import Dict, List, Iterable, Tuple
 
-from .dataview import ADataViewModel
+import wx
+
+from .checkables import RadioButton
+from .dataview import ADataViewModel, DataViewColumnType, DataViewCtrl
+from .layouts import HLayout, LayoutOptions, VLayout
+from .top_level_windows import PanelWin
 
 from ..bolt import round_size
 from ..localize import format_date
 
 
 __all__ = [
-    'InstallerViewModel',
+    'InstallerViewData',
+    'InstallerTreeViewModel',
+    'InstallerFlatViewModel',
+    'InstallerViewCtrl',
 ]
 
 
-class InstallerViewModel(ADataViewModel):
-    class Columns(IntEnum):
-        Destination = 0
-        Source = auto()
-        Size = auto()
-        Crc = auto()
-        Mtime = auto()
-        Status = auto()
+@dataclass
+class _ItemData:
+    destination: Path
+    source: Path
+    size: int
+    mtime: float
+    crc: int
+    status: 'InstallerViewData.ItemStatus'
 
-    class ViewMode(Enum):
-        Tree = auto()
-        Flat = auto()
 
+class _DirectoryData(_ItemData):
+    pass
+
+
+class InstallerViewData:
     class ItemStatus(Enum):
         Matched = 'Installed'
         Missing = 'Missing'
         Overridden = 'Overridden'
         Mismatched = 'Mismatched'
-
-    @dataclass
-    class ItemData:
-        destination: Path
-        source: Path
-        size: int
-        mtime: float
-        crc: int
-        status: InstallerViewModel.ItemStatus
-
-    class DirectoryData(ItemData):
-        pass
-
-    @staticmethod
-    def _format_destination_tree(item_data: ItemData) -> str:
-        return item_data.destination.name
-
-    @staticmethod
-    def _format_destination_flat(item_data: ItemData) -> str:
-        return f'{item_data.destination}'
-
-    _columns = {
-        Columns.Destination: _format_destination_tree,
-        Columns.Source: lambda item_data: f'{item_data.source}',
-        Columns.Size: lambda item_data: round_size(item_data.size),
-        Columns.Mtime: lambda item_data: format_date(item_data.mtime),
-        Columns.Crc: lambda item_data: f'{item_data.crc:08X}',
-        Columns.Status: lambda item_data: item_data.status.value,
-    }
-    _folder_columns = {Columns.Destination, Columns.Size}
 
     _install_directory = Path('Data')
     _conflicts_node = Path('conflicts')
@@ -99,33 +79,26 @@ class InstallerViewModel(ADataViewModel):
             self,
             installers_data: 'InstallersData',
             installer: 'Installer' | None = None,
-            view_mode: ViewMode = ViewMode.Tree
         ) -> None:
-        super().__init__()
         self._idata = installers_data
         self._installer = installer
-        self.scan()
-        self._view_mode = view_mode
-        self._data: Dict[Path, InstallerViewModel.ItemData] = {}
+        self._data: Dict[Path, _ItemData] = dict()
         self._top_nodes: List[Path] = []
+        self.scan()
+
+    def __contains__(self, item: Path) -> bool:
+        return item in self._data
+
+    def __getitem__(self, item: Path) -> _ItemData:
+        return self._data[item]
+
+    def __iter__(self):
+        return iter(self._data)
 
     @property
-    def view_mode(self) -> ViewMode:
-        return self._view_mode
+    def top_nodes(self) -> List[Path]:
+        return self._top_nodes
 
-    @view_mode.setter
-    def view_mode(self, new_mode: ViewMode) -> None:
-        if not isinstance(new_mode, self.ViewMode):
-            raise TypeError(f'Expected {self.ViewMode.__name__}, not {type(new_mode)}.')
-        changed = new_mode is not self.view_mode
-        self._view_mode = new_mode
-        if changed:
-            if new_mode is self.ViewMode.Tree:
-                self._columns[self.Columns.Destination] = self._format_destination_tree
-            else:
-                self._columns[self.Columns.Destination] = self._format_destination_flat
-            self.notify_cleared()
-    
     @property
     def installer(self) -> 'Installer':
         return self._installer
@@ -140,8 +113,6 @@ class InstallerViewModel(ADataViewModel):
     def scan(self) -> None:
         self._top_nodes = []
         self._data = {}
-        # Clear the UI of old data
-        self.notify_cleared()
         installer = self.installer
         if not installer or installer.is_marker:
             return
@@ -196,12 +167,12 @@ class InstallerViewModel(ADataViewModel):
             else:
                 status = self.ItemStatus.Matched
                 installed_source = f'{installer.archive}'
-            self._data[data_root / dest] = self.ItemData(Path(dest), installed_source, size, 0, crc, status)
+            self._data[data_root / dest] = _ItemData(Path(dest), installed_source, size, 0, crc, status)
         if installer.ci_dest_sizeCrc:
-            self._data[data_root] = self.DirectoryData(data_root, Path(''), installer.unSize, installer.modified, installer.crc, self.ItemStatus.Matched)
+            self._data[data_root] = _DirectoryData(data_root, Path(''), installer.unSize, installer.modified, installer.crc, self.ItemStatus.Matched)
             self._top_nodes.append(data_root)
         for skip, reason in skips:
-            self._data[skip_root / skip] = self.ItemData(skip, Path(reason), 0, 0, 0, self.ItemStatus.Missing)
+            self._data[skip_root / skip] = _ItemData(skip, Path(reason), 0, 0, 0, self.ItemStatus.Missing)
         if skips:
             self._top_nodes.append(skip_root)
         # Build tree branch nodes
@@ -211,44 +182,59 @@ class InstallerViewModel(ADataViewModel):
         } - {data_root, Path('.')}
         for parent in parents:
             children = (path for path in self._data if path.is_relative_to(parent))
-            size = sum(self._data[child].size for child in children if not isinstance(self._data[child], self.DirectoryData))
-            self._data[parent] = self.DirectoryData(parent, Path(''), size, 0, 0, self.ItemStatus.Matched)
-        # Notify UI of new data.
-        self.notify_cleared()
+            size = sum(self._data[child].size for child in children if not isinstance(self._data[child], _DirectoryData))
+            self._data[parent] = _DirectoryData(parent, Path(''), size, 0, 0, self.ItemStatus.Matched)
+
+
+class InstallerTreeViewModel(ADataViewModel):
+    class Columns(IntEnum):
+        Destination = 0
+        Source = auto()
+        Size = auto()
+        Crc = auto()
+        Mtime = auto()
+        Status = auto()
+
+    _columns = {
+        Columns.Destination: lambda item_data: item_data.destination.name,
+        Columns.Source: lambda item_data: f'{item_data.source}',
+        Columns.Size: lambda item_data: round_size(item_data.size),
+        Columns.Mtime: lambda item_data: format_date(item_data.mtime),
+        Columns.Crc: lambda item_data: f'{item_data.crc:08X}',
+        Columns.Status: lambda item_data: item_data.status.value,
+    }
+    _folder_columns = {Columns.Destination, Columns.Size}
+    _data_colunns = {Columns.Destination, Columns.Crc, Columns.Mtime, Columns.Size}
+
+    def __init__(self, installer_view_data: InstallerViewData) -> None:
+        super().__init__()
+        self._iview_data = installer_view_data
 
     # DataViewModel methods
     def get_children(self, parent: Path | None) -> Iterable[Path]:
         if not parent:
-            return self._top_nodes
-        if self.view_mode is self.ViewMode.Tree:
-            return (item for item in self._data if item.parent == parent)
-        else:
-            return (item for item in self._data if not isinstance(self._data[item], self.DirectoryData) and item.is_relative_to(parent))
+            return self._iview_data.top_nodes
+        return (item for item in self._iview_data if item.parent == parent)
 
     def is_container(self, parent: Path | None) -> bool:
-        return parent is None or isinstance(self._data[parent], self.DirectoryData)
+        return parent is None or isinstance(self._iview_data[parent], _DirectoryData)
 
     def get_parent(self, item: Path) -> Path | None:
-        if item in self._data:
-            if self.view_mode is self.ViewMode.Tree:
-                return item.parent
-            else:
-                for parent in self._top_nodes:
-                    if item.is_relative_to(parent):
-                        return parent
+        if item in self._iview_data:
+            return item.parent
         return None
     
     def has_value(self, item: Path | None, column: int) -> bool:
         if not item:
             return False
-        if item is self._install_directory:
-            return column in {self.Columns.Destination, self.Columns.Crc, self.Columns.Mtime, self.Columns.Size}
-        if isinstance(self._data[item], self.DirectoryData):
+        if item is self._iview_data._install_directory:
+            return column in self._data_colunns
+        if isinstance(self._iview_data[item], _DirectoryData):
             return column in self._folder_columns
         return True
 
     def get_value(self, item: Path, column: int) -> str:
-        return self._columns[column](self._data[item])
+        return self._columns[column](self._iview_data[item])
 
     # set_value -> don't override, this is a read-only view
 
@@ -257,3 +243,117 @@ class InstallerViewModel(ADataViewModel):
 
     def get_column_type(self, column: int) -> type:
         return str
+
+
+class InstallerFlatViewModel(InstallerTreeViewModel):
+    @staticmethod
+    def _format_destination_flat(item_data: _ItemData) -> str:
+        return f'{item_data.destination}'
+
+    _columns = InstallerTreeViewModel._columns.copy()
+    _columns[InstallerTreeViewModel.Columns.Destination] = _format_destination_flat
+
+    # Override some DataViewModel methods to present the items
+    # as a flat view.
+    def get_children(self, parent: Path | None) -> Iterable[Path]:
+        if not parent:
+            return self._iview_data.top_nodes
+        return (item for item in self._iview_data if not isinstance(self._iview_data[item], _DirectoryData) and item.is_relative_to(parent))
+
+    def get_parent(self, item: Path) -> Path | None:
+        if item in self._iview_data:
+            for parent in self._iview_data.top_nodes:
+                if item.is_relative_to(parent):
+                    return parent
+        return None
+
+
+class InstallerViewCtrl(PanelWin):
+    class ViewMode(Enum):
+        Tree = auto()
+        Flat = auto()
+
+    def __init__(
+            self,
+            parent,
+            installer_view_data: InstallerViewData,
+            view_mode: ViewMode = ViewMode.Tree,
+            expand_top: bool = True,
+        ) -> None:
+        super().__init__(parent)
+        self._view_mode = None
+        self._expand_top = expand_top
+        # Data models
+        self._iview_data = installer_view_data
+        self._tree_model = InstallerTreeViewModel(installer_view_data)
+        self._flat_model = InstallerFlatViewModel(installer_view_data)
+        # View toggles
+        self._radio_tree = radio_tree = RadioButton(self, _('Tree View'), is_group=True)
+        radio_tree.is_checked = view_mode is self.ViewMode.Tree
+        radio_tree.on_checked.subscribe(self._on_radio_tree)
+        self._radio_flat = radio_flat = RadioButton(self, _('Flat View'))
+        radio_flat.is_checked = view_mode is not self.ViewMode.Tree
+        radio_flat.on_checked.subscribe(self._on_radio_flat)
+        # View control
+        self._view_control = DataViewCtrl(self)
+        text_column = partial(
+            self._view_control.columns.append,
+            column_type=DataViewColumnType.TEXT
+        )
+        col_names = self._tree_model.Columns
+        text_column(_('Destination'), col_names.Destination)
+        text_column(_('Status'), col_names.Status)
+        text_column(_('Size'), col_names.Size, align=wx.ALIGN_RIGHT)
+        text_column(_('CRC'), col_names.Crc, align=wx.ALIGN_RIGHT)
+        text_column(_('Installed Source'), col_names.Source)
+        text_column(_('Modified'), col_names.Mtime, align=wx.ALIGN_RIGHT)
+        # Save view_mode and associate correct model to the control
+        self.view_mode = view_mode
+        # Setup layout
+        radios = HLayout(items=[radio_tree, radio_flat])
+        VLayout(items=[
+            radios,
+            (self._view_control, LayoutOptions(expand=True, weight=1)),
+        ]).apply_to(self)
+
+    def set_installer(self, installer: 'Installer') -> None:
+        with self.pause_drawing():
+            self._iview_data.installer = installer
+            self._tree_model.notify_cleared()
+            self._flat_model.notify_cleared()
+            if self._expand_top and (top_item := self.view.top_item):
+                self.view.expand_item(top_item)
+
+    @property
+    def radios(self) -> Tuple[RadioButton, RadioButton]:
+        return self._radio_tree, self._radio_flat
+
+    @property
+    def view(self) -> DataViewCtrl:
+        return self._view_control
+
+    @property
+    def view_mode(self) -> ViewMode:
+        return self._view_mode
+
+    def _on_radio_tree(self, checked: bool) -> None:
+        self.view_mode = self.ViewMode.Tree
+
+    def _on_radio_flat(self, checked: bool) -> None:
+        self.view_mode = self.ViewMode.Flat
+
+    @view_mode.setter
+    def view_mode(self, new_mode: ViewMode) -> None:
+        if not isinstance(new_mode, self.ViewMode):
+            raise TypeError(f'Expected {self.ViewMode.__name__}, not {type(new_mode)}.')
+        changed = new_mode is not self.view_mode
+        self._view_mode = new_mode
+        if changed:
+            if new_mode is self.ViewMode.Tree:
+                self.view.associate_model(self._tree_model)
+                self._tree_model.notify_cleared()
+            else:
+                self.view.associate_model(self._flat_model)
+                self._flat_model.notify_cleared()
+
+
