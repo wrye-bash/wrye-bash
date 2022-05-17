@@ -26,7 +26,9 @@ from __future__ import annotations
 __author__ = u'Lojack'
 
 from functools import wraps, cache, cached_property
-from typing import Any, Callable, Iterable, Tuple
+from types import UnionType
+from typing import Any, Callable, get_origin, get_args, Iterable, Tuple, \
+    Optional, Union
 from datetime import datetime
 from collections.abc import Sequence
 from enum import Enum, IntEnum, IntFlag
@@ -80,6 +82,26 @@ class DataViewColumnFlags(IntFlag):
     SORTABLE = dv.DATAVIEW_COL_SORTABLE
 
 
+def get_optional_type(annotation) -> Any:
+    """Get the optional type of an `Optional[type]`, `Union[type, None]`, or
+    `type | None` type annotation.
+
+    :param annotation: a type annotation
+    :return: the optional type, or None if `annotation` is not an Optional
+        type annotation or accepts more than one none-None type.
+    """
+    origin = get_origin(annotation)
+    if origin is Union or origin is UnionType:
+        # UnionType is the type | None annotation type.
+        type_args = get_args(annotation)
+        if len(type_args) == 2:
+            t1, t2 = type_args
+            if t1 is type(None):
+                return t2
+            return t1
+    return None
+
+
 def default_resolver(component: _AComponent) -> Any:
     """A resolver to use with `Forwarder` instances, forwarding to objects
     storing the forwarded instance in a `_native_widget` attribute, ie:
@@ -119,8 +141,15 @@ class Forwarder:
         :return: A new property object forwarding to the given property.
         """
         if self._get_wrap:
-            def getter(component):
-                return self._get_wrap(prop.fget(self._resolve(component)))
+            if (return_type := get_optional_type(self._get_wrap)):
+                def getter(component):
+                    return_value = prop.fget(self._resolve(component))
+                    if return_value is None:
+                        return return_type(return_value)
+                    return None
+            else:
+                def getter(component):
+                    return self._get_wrap(prop.fget(self._resolve(component)))
         else:
             def getter(component):
                 return prop.fget(self._resolve(component))
@@ -470,16 +499,14 @@ class _DataViewColumns(Sequence):
         self._native_widget = widget
 
     # Forwarded properties
-    selected = forward.with_return(DataViewColumn.from_native)(
+    selected = forward.with_return(Optional[DataViewColumn.from_native])(
         property(dv.DataViewCtrl.GetCurrentColumn))
-    expander = forward.with_wrappers(DataViewColumn.from_native,
+    expander = forward.with_wrappers(Optional[DataViewColumn.from_native],
         default_resolver)(dv.DataViewCtrl.ExpanderColumn)
 
-    @property
-    def sorter(self) -> DataViewColumn:
-        return DataViewColumn.from_native(
-            self._native_widget.GetSortingColumn())
-    
+    sorter = forward.with_return(property(
+        Optional[DataViewColumn.from_native]))
+
     @sorter.setter
     def sorter(self, column: DataViewColumn) -> None:
         col = self.index(column._native_widget)
