@@ -229,6 +229,14 @@ class InstallerTreeViewModel(ADataViewModel):
     def __init__(self, installer_view_data: InstallerViewData) -> None:
         super().__init__()
         self._iview_data = installer_view_data
+        img_size = (16, 16)
+        self._image_list = wx.ImageList(*img_size)
+        self._images: Dict[str, int] = {
+            'folder': self._image_list.Add(wx.ArtProvider.GetIcon(
+                wx.ART_FOLDER, wx.ART_OTHER, img_size)),
+            'file': self._image_list.Add(wx.ArtProvider.GetIcon(
+                wx.ART_NORMAL_FILE, wx.ART_OTHER, img_size)),
+        }
 
     # DataViewModel methods
     def get_children(self, parent: Path | None) -> Iterable[Path]:
@@ -255,7 +263,17 @@ class InstallerTreeViewModel(ADataViewModel):
         return True
 
     def get_value(self, item: Path, column: int) -> str:
-        return self._columns[column](self._iview_data[item])
+        item_data = self._iview_data[item]
+        if column == self.Columns.Destination:
+            text = self._columns[column](self._iview_data[item])
+            if isinstance(item_data, _DirectoryData):
+                icon_key = 'folder'
+            else:
+                icon_key = 'file'
+            icon = self._image_list.GetIcon(self._images[icon_key])
+            from wx import dataview as dv
+            return dv.DataViewIconText(text, icon)
+        return self._columns[column](item_data)
 
     # set_value -> don't override, this is a read-only view
 
@@ -273,16 +291,18 @@ class InstallerTreeViewModel(ADataViewModel):
         ) -> bool:
         if not item:
             return False
-        item_data = self._iview_data[item]
-        statuses = self._iview_data.ItemStatus
-        if item_data.status is statuses.Mismatched:
-            attributes.color = (255, 0, 0)
-            return True
-        if item_data.status is statuses.Skipped:
-            attributes.italic = True
-            return True
-        if item_data.status is statuses.Overridden:
-            attributes.color = (0, 255, 0)
+        if column == self.Columns.Destination:
+            item_data = self._iview_data[item]
+            statuses = self._iview_data.ItemStatus
+            if item_data.status is statuses.Mismatched:
+                attributes.color = (255, 0, 0)
+                return True
+            if item_data.status is statuses.Skipped:
+                attributes.italic = True
+                return True
+            if item_data.status is statuses.Overridden:
+                attributes.color = (0, 255, 0)
+                return True
         # No attributes changed
         return False
 
@@ -349,7 +369,9 @@ class InstallerViewCtrl(PanelWin):
             column_type=DataViewColumnType.TEXT
         )
         col_names = self._models[self.ViewMode.Tree].Columns
-        text_column(_('Destination'), col_names.Destination)
+        self._view_control.columns.append(
+            _('Destination'), col_names.Destination,
+            column_type=DataViewColumnType.ICON_TEXT)
         text_column(_('Status'), col_names.Status)
         text_column(_('Size'), col_names.Size, align=wx.ALIGN_RIGHT)
         text_column(_('CRC'), col_names.Crc, align=wx.ALIGN_RIGHT)
