@@ -66,6 +66,7 @@ __all__ = [
     'DataViewColumnFlags',
     'DataViewItemAttr',
     'forward',
+    'default_resolver',
 ]
 
 
@@ -76,18 +77,48 @@ class DataViewColumnFlags(IntFlag):
     SORTABLE = dv.DATAVIEW_COL_SORTABLE
 
 
+def default_resolver(component: _AComponent) -> Any:
+    """A resolver to use with `Forwarder` instances, forwarding
+    to objects storing the forwarded instance in a `_native_widget`
+    attribute, ie: `_AComponent` instances.
+    """
+    return getattr(component, '_native_widget', component)
+
+
 class Forwarder:
     """Class for easier forwarding of methods/properties from 
-       one class to another."""
+    one class to another.
+    """
     def __init__(self,
-            get_wrapper: Callable | None = None,
-            set_wrapper: Callable | None = None,
+            return_wrapper: Callable | None = None,
+            input_wrapper: Callable | None = None,
             resolver: Callable | None = None) -> None:
-        self._get_wrap = get_wrapper
-        self._set_wrap = set_wrapper
-        self._resolve = resolver or self.default_resolver
+        """Create a new forwarder instance for wrapping methods.
+        
+        :param return_wrapper: A callable taking a single object.
+            When this forwarder wraps a property or method, its
+            return value is passed through `get_wrapper` to convert
+            it.
+        :param set_wrapper: A callable taking a single object. When
+            this forwarder wraps a property, the setter for the
+            property has values to be set passed through
+            `set_wrapper` to convert it.
+        :param resolver: A callable taking the instance of the
+            forwarding class, returning the target object to forward
+            to.
+        """
+        self._get_wrap = return_wrapper
+        self._set_wrap = input_wrapper
+        self._resolve = resolver or default_resolver
 
     def forward_property(self, prop: property) -> property:
+        """Create a property which forwards to the property on the
+        target class.
+
+        :param prop: The property instance on the target class.
+        :return: A new property object forwarding to the given
+                 property.
+        """
         if self._get_wrap:
             def getter(component):
                 return self._get_wrap(prop.fget(self._resolve(component)))
@@ -100,9 +131,17 @@ class Forwarder:
         else:
             def setter(component, value):
                 prop.fset(self._resolve(component), value)
-        return property(getter, setter, prop.fdel, prop.__doc__)
+        def deller(component):
+            prop.fdel(self._resolve(component))
+        return property(getter, setter, deller, prop.__doc__)
 
     def forward_method(self, func: Callable) -> Callable:
+        """Create a instance method which forwards to a method on
+        the target class.
+
+        :param func: The method on the target class.
+        :return: A new method, forwarding to the given method.
+        """
         if self._get_wrap:
             @wraps(func)
             def wrapped(component, *args, **kwargs):
@@ -113,49 +152,62 @@ class Forwarder:
                 return func(self._resolve(component), *args, **kwargs)
         return wrapped
 
-    @staticmethod
-    def default_resolver(component: '_AComponent') -> Any:
-        return getattr(component, '_native_widget', component)
+    def with_return(self, return_wrapper: Callable) -> 'Forwarder':
+        """Create a copy of this `Forwarder` instance, using the
+        specified return wrapper. Equivalent to
+        `Forwarder.with_wrappers(return_wrapper, None, None)`.
+        
+        :param return_wrapper: The return wrapper the new instance
+            will use.
+        :return: A new `Forwarder` instance with the given wrapper.
+        """
+        return self.with_wrappers(return_wrapper=return_wrapper)
 
-    @classmethod
-    @cache
-    def with_return(cls, return_wrapper: Callable) -> 'Forwarder':
-        return cls(return_wrapper)
+    def with_input(self, input_wrapper: Callable | None = None) -> 'Forwarder':
+        """Create a copy of this `Forwarder` instance, using the
+        specified input wrapper.  Equivalent to either
+        `Forwarder.with_wrappers(None, input_wrapper, None)` or
+        `Forwarder.with_wrappers(None, default_resolver, None)`.
+        
+        :param input_wrapper: The input wrapper the new instance
+            will use. If not specified, the default resolver
+            will be used.
+        :return: A new `Forwarder` instance with the given wrapper.
+        """
+        input_wrapper = input_wrapper or default_resolver
+        return self.with_wrappers(input_wrapper=input_wrapper)
 
-    @classmethod
     @cache
-    def with_input(cls, input_wrapper: Callable | None = None) -> 'Forwarder':
-        input_wrapper = input_wrapper or cls.default_resolver
-        return cls(None, input_wrapper)
+    def with_wrappers(self, return_wrapper: Callable | None = None, input_wrapper: Callable | None = None, resolver: Callable | None = None) -> 'Forwarder':
+        """Create a copy of this `Forwarder` instance, with the specified
+        wrappers, and resolver.
 
-    @classmethod
-    @cache
-    def wrap(cls, return_wrapper: Callable, input_wrapper: Callable | None = None) -> 'Forwarder':
-        input_wrapper = input_wrapper or cls.default_resolver
-        return cls(return_wrapper, input_wrapper)
+        :param return_wrapper: If provided, the new instance will
+            use this as the return wrapper.
+        :param input_wrapper: If provided, the new instance will use
+            this as the input wrapper.
+        :param resolver: If provided, the new instance will use this
+            as the resolver.
+        :return: A new `Forwarder` instance with the given wrappers
+            and resolver.
+        """
+        return_wrapper = return_wrapper or self._get_wrap
+        input_wrapper = input_wrapper or self._set_wrap
+        resolver = resolver or self._resolve
+        return type(self)(return_wrapper, input_wrapper, resolver)
     
     def __call__(self, func: Callable | property) -> Callable | property:
-        """Create a instance method or property which forwards its calls to another object.
-           The object forwarded to is determined by the resolver specified at creation,
-           the default resolver assumes the forwarding object is `_AComponent`-like (has a
-           `_native_widget` attribute.  The return type can optionally be automatically
-           converted, as well as the input types for properties, as determined by conversion
-           methods specified at `Forwarder` creation.
-           
-           Usage:
-             forward(class.Attribute)
-                - Forward the method or property with no conversion.
+        """Wrap a method or property as a new method or property.
+        Using the resolver, input wrapper, and return wrappers
+        specified at `Forwarder` creation:
+        - The target instance is found using the resolver.
+        - Input values to properties are converted using the input
+          wrapper.
+        - The return value is converted using the return wrapper.
 
-             forward.with_return(return_converter)(class.Attribute)
-                - Forward the method or property, converting the return value.
-            
-             forward.with_input(input_converter=default_resolver)(class.Attribute)
-                - Forward a property. Converting values to be set with `input_converter`.
-
-             forward.wrap(return_converter, input_converter=default_resolver)(class.Attribute)
-                - Forward the method or property, converting the return value.
-                  For properties, set values are converted with `input_converter`.
-           """
+        :param func: The method or property to forward to.
+        :return: A new method or property, forwarding to `func`.
+        """
         if isinstance(func, property):
             return self.forward_property(func)
         else:
@@ -177,9 +229,9 @@ class DataViewItemAttr(_AComponent):
 
     # Item attributes
     bold = forward(dv.DataViewItemAttr.Bold)
-    color = forward.wrap(Color.from_wx, color_to_rgba)(dv.DataViewItemAttr.Colour)
+    color = forward.with_wrappers(Color.from_wx, color_to_rgba)(dv.DataViewItemAttr.Colour)
     italic = forward(dv.DataViewItemAttr.Italic)
-    background_color = forward.wrap(Color.from_wx, color_to_rgba)(dv.DataViewItemAttr.BackgroundColour)
+    background_color = forward.with_wrappers(Color.from_wx, color_to_rgba)(dv.DataViewItemAttr.BackgroundColour)
     strikethrough = forward(property(None, dv.DataViewItemAttr.SetStrikethrough))
     font = forward(property(dv.DataViewItemAttr.GetEffectiveFont))
 
@@ -396,7 +448,7 @@ class _DataViewColumns(Sequence):
 
     # Forwarded properties
     selected = property(forward.with_return(DataViewColumn)(dv.DataViewCtrl.GetCurrentColumn))
-    expander = forward.wrap(DataViewColumn)(dv.DataViewCtrl.ExpanderColumn)
+    expander = forward.with_wrappers(DataViewColumn, default_resolver)(dv.DataViewCtrl.ExpanderColumn)
 
     @property
     def sorter(self) -> DataViewColumn:

@@ -263,6 +263,8 @@ class InstallerTreeViewModel(ADataViewModel):
 
 
 class InstallerFlatViewModel(InstallerTreeViewModel):
+    # Override some InstallerTreeViewModel methods to
+    # present the items as a semi-flat view.
     @staticmethod
     def _format_destination_flat(item_data: _ItemData) -> str:
         return f'{item_data.destination}'
@@ -270,8 +272,6 @@ class InstallerFlatViewModel(InstallerTreeViewModel):
     _columns = InstallerTreeViewModel._columns.copy()
     _columns[InstallerTreeViewModel.Columns.Destination] = _format_destination_flat
 
-    # Override some DataViewModel methods to present the items
-    # as a flat view.
     def get_children(self, parent: Path | None) -> Iterable[Path]:
         if not parent:
             return self._iview_data.top_nodes
@@ -302,8 +302,10 @@ class InstallerViewCtrl(PanelWin):
         self._expand_top = expand_top
         # Data models
         self._iview_data = installer_view_data
-        self._tree_model = InstallerTreeViewModel(installer_view_data)
-        self._flat_model = InstallerFlatViewModel(installer_view_data)
+        self._models: Dict[InstallerViewCtrl.ViewMode, InstallerTreeViewModel] = {
+            self.ViewMode.Tree: InstallerTreeViewModel(installer_view_data),
+            self.ViewMode.Flat: InstallerFlatViewModel(installer_view_data),
+        }
         # View toggles
         self._radio_tree = radio_tree = RadioButton(self, _('Tree View'), is_group=True)
         radio_tree.is_checked = view_mode is self.ViewMode.Tree
@@ -317,7 +319,7 @@ class InstallerViewCtrl(PanelWin):
             self._view_control.columns.append,
             column_type=DataViewColumnType.TEXT
         )
-        col_names = self._tree_model.Columns
+        col_names = self._models[self.ViewMode.Tree].Columns
         text_column(_('Destination'), col_names.Destination)
         text_column(_('Status'), col_names.Status)
         text_column(_('Size'), col_names.Size, align=wx.ALIGN_RIGHT)
@@ -327,19 +329,21 @@ class InstallerViewCtrl(PanelWin):
         # Save view_mode and associate correct model to the control
         self.view_mode = view_mode
         # Setup layout
-        radios = HLayout(items=[radio_tree, radio_flat])
         VLayout(items=[
-            radios,
+            HLayout(items=[radio_tree, radio_flat]),
             (self._view_control, LayoutOptions(expand=True, weight=1)),
         ]).apply_to(self)
 
     def set_installer(self, installer: 'Installer') -> None:
         with self.pause_drawing():
             self._iview_data.installer = installer
-            self._tree_model.notify_cleared()
-            self._flat_model.notify_cleared()
-            if self._expand_top and (top_item := self.view.top_item):
-                self.view.expand_item(top_item)
+            self._refresh_and_expand()
+
+    def _refresh_and_expand(self) -> None:
+        self._models[self.view_mode].notify_cleared()
+        data_key = self._iview_data._install_directory
+        if data_key in self._iview_data:
+            self.view.expand_item(data_key)
 
     @property
     def radios(self) -> Tuple[RadioButton, RadioButton]:
@@ -366,11 +370,5 @@ class InstallerViewCtrl(PanelWin):
         changed = new_mode is not self.view_mode
         self._view_mode = new_mode
         if changed:
-            if new_mode is self.ViewMode.Tree:
-                self.view.associate_model(self._tree_model)
-                self._tree_model.notify_cleared()
-            else:
-                self.view.associate_model(self._flat_model)
-                self._flat_model.notify_cleared()
-
-
+            self.view.associate_model(self._models[self.view_mode])
+            self._refresh_and_expand()
