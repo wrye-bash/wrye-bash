@@ -2869,7 +2869,8 @@ class InstallersDetails(_SashDetailsPanel):
             self.infoPages.append([gPage,False])
         #-- POC: Set up directory view
         gPage = NotebookPanel(self.gNotebook)
-        self.iview_ctrl = InstallerViewCtrl(gPage, InstallerViewData(self._idata))
+        self.iview_ctrl = InstallerViewCtrl(
+            gPage, InstallerViewData(self._idata))
         gPage.set_component_name('gView')
         self.gNotebook.add_page(gPage, 'Tree View')
         self.infoPages.append([gPage, False])

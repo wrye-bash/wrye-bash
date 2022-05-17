@@ -70,6 +70,9 @@ __all__ = [
 ]
 
 
+RGBA = Tuple[int, int, int, int]
+
+
 class DataViewColumnFlags(IntFlag):
     HIDDEN = dv.DATAVIEW_COL_HIDDEN
     REORDERABLE = dv.DATAVIEW_COL_REORDERABLE
@@ -78,16 +81,16 @@ class DataViewColumnFlags(IntFlag):
 
 
 def default_resolver(component: _AComponent) -> Any:
-    """A resolver to use with `Forwarder` instances, forwarding
-    to objects storing the forwarded instance in a `_native_widget`
-    attribute, ie: `_AComponent` instances.
+    """A resolver to use with `Forwarder` instances, forwarding to objects
+    storing the forwarded instance in a `_native_widget` attribute, ie:
+    `_AComponent` instances.
     """
     return getattr(component, '_native_widget', component)
 
 
 class Forwarder:
-    """Class for easier forwarding of methods/properties from 
-    one class to another.
+    """Class for easier forwarding of methods/properties from one class to
+    another.
     """
     def __init__(self,
             return_wrapper: Callable | None = None,
@@ -95,29 +98,25 @@ class Forwarder:
             resolver: Callable | None = None) -> None:
         """Create a new forwarder instance for wrapping methods.
         
-        :param return_wrapper: A callable taking a single object.
-            When this forwarder wraps a property or method, its
-            return value is passed through `get_wrapper` to convert
-            it.
-        :param set_wrapper: A callable taking a single object. When
-            this forwarder wraps a property, the setter for the
-            property has values to be set passed through
-            `set_wrapper` to convert it.
-        :param resolver: A callable taking the instance of the
-            forwarding class, returning the target object to forward
-            to.
+        :param return_wrapper: A callable taking a single object. When this
+            forwarder wraps a property or method, its return value is passed
+            through `get_wrapper` to convert it.
+        :param set_wrapper: A callable taking a single object. When this
+            forwarder wraps a property, the setter for the property has values
+            to be set passed through `set_wrapper` to convert it.
+        :param resolver: A callable taking the instance of the forwarding
+            class, returning the target object to forward to.
         """
         self._get_wrap = return_wrapper
         self._set_wrap = input_wrapper
         self._resolve = resolver or default_resolver
 
     def forward_property(self, prop: property) -> property:
-        """Create a property which forwards to the property on the
-        target class.
+        """Create a property which forwards to the property on the target
+        class.
 
         :param prop: The property instance on the target class.
-        :return: A new property object forwarding to the given
-                 property.
+        :return: A new property object forwarding to the given property.
         """
         if self._get_wrap:
             def getter(component):
@@ -136,8 +135,8 @@ class Forwarder:
         return property(getter, setter, deller, prop.__doc__)
 
     def forward_method(self, func: Callable) -> Callable:
-        """Create a instance method which forwards to a method on
-        the target class.
+        """Create a instance method which forwards to a method on the target
+        class.
 
         :param func: The method on the target class.
         :return: A new method, forwarding to the given method.
@@ -145,7 +144,8 @@ class Forwarder:
         if self._get_wrap:
             @wraps(func)
             def wrapped(component, *args, **kwargs):
-                return self._get_wrap(func(self._resolve(component), *args, **kwargs))
+                return self._get_wrap(
+                    func(self._resolve(component), *args, **kwargs))
         else:
             @wraps(func)
             def wrapped(component, *args, **kwargs):
@@ -153,43 +153,46 @@ class Forwarder:
         return wrapped
 
     def with_return(self, return_wrapper: Callable) -> 'Forwarder':
-        """Create a copy of this `Forwarder` instance, using the
-        specified return wrapper. Equivalent to
+        """Create a copy of this `Forwarder` instance, using the specified
+        return wrapper. Equivalent to 
         `Forwarder.with_wrappers(return_wrapper, None, None)`.
         
-        :param return_wrapper: The return wrapper the new instance
-            will use.
+        :param return_wrapper: The return wrapper the new instance will use.
         :return: A new `Forwarder` instance with the given wrapper.
         """
         return self.with_wrappers(return_wrapper=return_wrapper)
 
     def with_input(self, input_wrapper: Callable | None = None) -> 'Forwarder':
-        """Create a copy of this `Forwarder` instance, using the
-        specified input wrapper.  Equivalent to either
+        """Create a copy of this `Forwarder` instance, using the specified
+        input wrapper.  Equivalent to either
         `Forwarder.with_wrappers(None, input_wrapper, None)` or
         `Forwarder.with_wrappers(None, default_resolver, None)`.
         
-        :param input_wrapper: The input wrapper the new instance
-            will use. If not specified, the default resolver
-            will be used.
+        :param input_wrapper: The input wrapper the new instance will use. If
+            not specified, the default resolver will be used.
         :return: A new `Forwarder` instance with the given wrapper.
         """
         input_wrapper = input_wrapper or default_resolver
         return self.with_wrappers(input_wrapper=input_wrapper)
 
     @cache
-    def with_wrappers(self, return_wrapper: Callable | None = None, input_wrapper: Callable | None = None, resolver: Callable | None = None) -> 'Forwarder':
+    def with_wrappers(
+            self,
+            return_wrapper: Callable | None = None,
+            input_wrapper: Callable | None = None,
+            resolver: Callable | None = None
+        ) -> 'Forwarder':
         """Create a copy of this `Forwarder` instance, with the specified
         wrappers, and resolver.
 
-        :param return_wrapper: If provided, the new instance will
-            use this as the return wrapper.
-        :param input_wrapper: If provided, the new instance will use
-            this as the input wrapper.
-        :param resolver: If provided, the new instance will use this
-            as the resolver.
-        :return: A new `Forwarder` instance with the given wrappers
-            and resolver.
+        :param return_wrapper: If provided, the new instance will use this as
+            the return wrapper.
+        :param input_wrapper: If provided, the new instance will use this as
+            the input wrapper.
+        :param resolver: If provided, the new instance will use this as the
+            resolver.
+        :return: A new `Forwarder` instance with the given wrappers and
+            resolver.
         """
         return_wrapper = return_wrapper or self._get_wrap
         input_wrapper = input_wrapper or self._set_wrap
@@ -197,12 +200,11 @@ class Forwarder:
         return type(self)(return_wrapper, input_wrapper, resolver)
     
     def __call__(self, func: Callable | property) -> Callable | property:
-        """Wrap a method or property as a new method or property.
-        Using the resolver, input wrapper, and return wrappers
-        specified at `Forwarder` creation:
+        """Wrap a method or property as a new method or property. Using the
+        resolver, input wrapper, and return wrappers specified at `Forwarder`
+        creation:
         - The target instance is found using the resolver.
-        - Input values to properties are converted using the input
-          wrapper.
+        - Input values to properties are converted using the input wrapper.
         - The return value is converted using the return wrapper.
 
         :param func: The method or property to forward to.
@@ -221,7 +223,7 @@ class DataViewItemAttr(_AComponent):
     _native_widget: dv.DataViewItemAttr
 
     @staticmethod
-    def color_to_rgba(color: Tuple[int, int, int, int] | Color) -> Tuple[int, int, int, int]:
+    def color_to_rgba(color: RGBA | Color) -> RGBA:
         if isinstance(color, Color):
             return color.to_rgba_tuple()
         # Already an RGBA tuple
@@ -229,29 +231,32 @@ class DataViewItemAttr(_AComponent):
 
     # Item attributes
     bold = forward(dv.DataViewItemAttr.Bold)
-    color = forward.with_wrappers(Color.from_wx, color_to_rgba)(dv.DataViewItemAttr.Colour)
+    color = forward.with_wrappers(Color.from_wx, color_to_rgba)(
+        dv.DataViewItemAttr.Colour)
     italic = forward(dv.DataViewItemAttr.Italic)
-    background_color = forward.with_wrappers(Color.from_wx, color_to_rgba)(dv.DataViewItemAttr.BackgroundColour)
-    strikethrough = forward(property(None, dv.DataViewItemAttr.SetStrikethrough))
+    background_color = forward.with_wrappers(Color.from_wx, color_to_rgba)(
+        dv.DataViewItemAttr.BackgroundColour)
+    strikethrough = forward(
+        property(None, dv.DataViewItemAttr.SetStrikethrough))
     font = forward(property(dv.DataViewItemAttr.GetEffectiveFont))
 
-    # Test if default attributes have been changed from defaults
+    # Test if default attributes have been changed from defaults.
     is_default = forward(property(dv.DataViewItemAttr.IsDefault))
     has_color = forward(property(dv.DataViewItemAttr.HasColour))
-    has_background_color = forward(property(dv.DataViewItemAttr.HasBackgroundColour))
+    has_background_color = forward(
+        property(dv.DataViewItemAttr.HasBackgroundColour))
     has_font = forward(property(dv.DataViewItemAttr.HasFont))
 
 
 class _DataViewModel(dv.PyDataViewModel):
     def __init__(self, parent=None) -> None:
-        # parent parameter provided to work with _AComponent,
-        # even though dv.PyDataViewModel doesn't derive from wx.Window
+        # parent parameter provided to work with _AComponent, even though
+        # dv.PyDataViewModel doesn't derive from wx.Window.
         super().__init__()
 
     def _set_amodel(self, model: 'ADataViewModel') -> None:
-        # ADataViewModel constructs this object before its
-        # Construction is complete, so we cannot set this
-        # during this object's constructor
+        # ADataViewModel constructs this object before its construction is
+        # complete, so we cannot set this during this object's constructor.
         self._model = model
 
     weak_refs = property(
@@ -261,7 +266,8 @@ class _DataViewModel(dv.PyDataViewModel):
 
     # Helper methods for converting to<->from wx types
     def wrap(self, py_object: Any) -> dv.DataViewItem:
-        return dv.NullDataViewItem if py_object is None else self.ObjectToItem(py_object)
+        return (dv.NullDataViewItem if py_object is None
+                else self.ObjectToItem(py_object))
 
     def wrap_list(self, py_objects: Iterable[Any]) -> dv.DataViewItemArray:
         array = dv.DataViewItemArray()
@@ -276,9 +282,14 @@ class _DataViewModel(dv.PyDataViewModel):
         return map(self.unwrap, wx_array)
 
     # Methods accessed by dv.DataViewControl
-    def GetChildren(self, parent: dv.DataViewItem, children: dv.DataViewItemArray) -> int:
+    def GetChildren(
+            self,
+            parent: dv.DataViewItem,
+            children: dv.DataViewItemArray
+        ) -> int:
         i = 0
-        for i, child in enumerate(self._model.get_children(self.unwrap(parent)), start=1):
+        for i, child in enumerate(self._model.get_children(
+                                  self.unwrap(parent)), start=1):
             children.append(self.wrap(child))
         return i
 
@@ -294,8 +305,14 @@ class _DataViewModel(dv.PyDataViewModel):
     def GetValue(self, item: dv.DataViewItem, column: int) -> Any:
         return self._model.get_value(self.unwrap(item), column)
 
-    def GetAttr(self, item: dv.DataViewItem, column: int, attributes: dv.DataViewItemAttr) -> bool:
-        return self._model.get_attributes(self.unwrap(item), column, DataViewItemAttr.from_native(attributes))
+    def GetAttr(
+            self,
+            item: dv.DataViewItem,
+            column: int,
+            attributes: dv.DataViewItemAttr
+        ) -> bool:
+        return self._model.get_attributes(self.unwrap(item), column,
+            DataViewItemAttr.from_native(attributes))
 
     def SetValue(self, value: Any, item: dv.DataViewItem, column: int) -> bool:
         return self._model.set_value(self.unwrap(item), column, value)
@@ -317,7 +334,8 @@ class _DataViewModel(dv.PyDataViewModel):
             return 'bool'
         elif issubclass(col_type, float):
             return 'double'
-        raise TypeError(f'DataViewModel: Unsupported column type {col_type!r}.')
+        raise TypeError(
+            f'DataViewModel: Unsupported column type {col_type!r}.')
 
 
 class ADataViewModel(_AComponent):
@@ -345,7 +363,12 @@ class ADataViewModel(_AComponent):
     def get_value(self, item: Any, column: int) -> Any:
         raise NotImplementedError
 
-    def get_attributes(self, item: Any, column: int, attributes: DataViewItemAttr) -> bool:
+    def get_attributes(
+            self,
+            item: Any,
+            column: int,
+            attributes: DataViewItemAttr
+        ) -> bool:
         # Default implementation: don't change any display attributes
         return False
 
@@ -447,12 +470,15 @@ class _DataViewColumns(Sequence):
         self._native_widget = widget
 
     # Forwarded properties
-    selected = property(forward.with_return(DataViewColumn)(dv.DataViewCtrl.GetCurrentColumn))
-    expander = forward.with_wrappers(DataViewColumn, default_resolver)(dv.DataViewCtrl.ExpanderColumn)
+    selected = forward.with_return(DataViewColumn.from_native)(
+        property(dv.DataViewCtrl.GetCurrentColumn))
+    expander = forward.with_wrappers(DataViewColumn.from_native,
+        default_resolver)(dv.DataViewCtrl.ExpanderColumn)
 
     @property
     def sorter(self) -> DataViewColumn:
-        return DataViewColumn(self._native_widget.GetSortingColumn(), _wrap_existing=True)
+        return DataViewColumn.from_native(
+            self._native_widget.GetSortingColumn())
     
     @sorter.setter
     def sorter(self, column: DataViewColumn) -> None:
@@ -465,7 +491,8 @@ class _DataViewColumns(Sequence):
         method = self._methods[column_type][where]
         if column_type:
             # Specific column append/prepend method
-            return DataViewColumn(method(self._native_widget, *args, **kwargs), _wrap_existing=True)
+            return DataViewColumn.from_native(
+                method(self._native_widget, *args, **kwargs))
         else:
             # Generic column append/prepend method with an already existing
             # DataViewColumn object
@@ -487,11 +514,13 @@ class _DataViewColumns(Sequence):
         return self._insert_column(_ColumnInsert.Prepend, *args, **kwargs)
 
     def insert(self, position: int, column: DataViewColumn) -> bool:
-        return self._native_widget.InsertColumn(position, _AComponent._resolve(column))
+        return self._native_widget.InsertColumn(
+            position, _AComponent._resolve(column))
 
     clear = forward(dv.DataViewCtrl.ClearColumns)
     __delitem__ = forward(dv.DataViewCtrl.DeleteColumn)
-    __getitem__ = forward.with_return(DataViewColumn)(dv.DataViewCtrl.GetColumn)
+    __getitem__ = forward.with_return(DataViewColumn.from_native)(
+        dv.DataViewCtrl.GetColumn)
     __len__ = forward(dv.DataViewCtrl.GetColumnCount)
     index = forward.with_input()(dv.DataViewCtrl.GetColumnPosition)
 
@@ -568,7 +597,8 @@ class DataViewCtrl(_AComponent):
     _native_widget: dv.DataViewCtrl
 
     # Forwarded properties
-    default_item_attributes = property(forward(dv.DataViewCtrl.GetClassDefaultAttributes))
+    default_item_attributes = forward(
+        property(dv.DataViewCtrl.GetClassDefaultAttributes))
     visible_item_count = forward(dv.DataViewCtrl.GetCountPerPage)
     indent = forward(dv.DataViewCtrl.Indent)
 

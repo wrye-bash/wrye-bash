@@ -34,7 +34,8 @@ from typing import Dict, List, Iterable, Tuple
 import wx
 
 from .checkables import RadioButton
-from .dataview import ADataViewModel, DataViewColumnType, DataViewItemAttr, DataViewCtrl
+from .dataview import ADataViewModel, DataViewColumnType, DataViewItemAttr, \
+    DataViewCtrl
 from .layouts import HLayout, LayoutOptions, VLayout
 from .top_level_windows import PanelWin
 
@@ -121,13 +122,15 @@ class InstallerViewData:
         from .. import bosh
         ini_origin_match = self._idata._ini_origin.match
         active_bsas, bsa_cause = bosh.modInfos.get_active_bsas()
-        lower_loose, higher_loose, lower_bsa, higher_bsa = self._idata.find_conflicts(
+        lower_loose, higher_loose, lower_bsa, higher_bsa = \
+            self._idata.find_conflicts(
             installer, active_bsas, bsa_cause, True, False, False, True
         )
         def _get_conflicts(loose_files, bsas):
             conflicts = {
                 source_file: conflicting_installer
-                for conflicting_installer, _package, installer_conflicts in loose_files
+                for conflicting_installer, _package, installer_conflicts
+                    in loose_files
                 for source_file in installer_conflicts
             }
             for bsa_origin, conflicting_bsa, bsa_conflicts in bsas:
@@ -137,7 +140,8 @@ class InstallerViewData:
                 else:
                     m1 = active_bsas[conflicting_bsa]
                     m2 = bsa_origin
-                conflicts |= {source_file: (m1, m2, conflicting_bsa) for source_file in bsa_conflicts}
+                conflicts |= {source_file: (m1, m2, conflicting_bsa)
+                              for source_file in bsa_conflicts}
             return conflicts
         # Overrides, underrides
         overrides = _get_conflicts(higher_loose, higher_bsa)
@@ -146,7 +150,9 @@ class InstallerViewData:
         skips = {Path(dest): 'ext' for dest in installer.skipExtFiles}
         skips |= {Path(dest): 'dir' for dest in installer.skipDirFiles}
         # Configured items
-        matched = set(installer.ci_dest_sizeCrc) - installer.missingFiles - installer.mismatchedFiles
+        matched = (set(installer.ci_dest_sizeCrc)
+                   - installer.missingFiles
+                   - installer.mismatchedFiles)
         # And build the view data
         data_root = self._install_directory
         skip_root = self._skips_node
@@ -162,18 +168,23 @@ class InstallerViewData:
                 if dest in underrides:
                     installed_source = f'{underrides[dest]}'
                 else:
-                    # TODO: Get installer source for mismatched files in uninstalled installers?
-                    # like underrides, but this installer isn't configured to install
+                    # TODO: Get installer source for mismatched files in
+                    # uninstalled installers? like underrides, but this
+                    # installer isn't configured to install
                     installed_source = ''
             else:
                 status = self.ItemStatus.Matched
                 installed_source = f'{installer.archive}'
-            self._data[data_root / dest] = _ItemData(Path(dest), installed_source, size, 0, crc, status)
+            self._data[data_root / dest] = _ItemData(
+                Path(dest), installed_source, size, 0, crc, status)
         if installer.ci_dest_sizeCrc:
-            self._data[data_root] = _DirectoryData(data_root, Path(''), installer.unSize, installer.modified, installer.crc, self.ItemStatus.Matched)
+            self._data[data_root] = _DirectoryData(
+                data_root, Path(''), installer.unSize, installer.modified,
+                installer.crc, self.ItemStatus.Matched)
             self._top_nodes.append(data_root)
         for skip, reason in skips:
-            self._data[skip_root / skip] = _ItemData(skip, Path(reason), 0, 0, 0, self.ItemStatus.Skipped)
+            self._data[skip_root / skip] = _ItemData(
+                skip, Path(reason), 0, 0, 0, self.ItemStatus.Skipped)
         if skips:
             self._top_nodes.append(skip_root)
         # Build tree branch nodes
@@ -182,9 +193,12 @@ class InstallerViewData:
                     for parent in path.parents
         } - {data_root, Path('.')}
         for parent in parents:
-            children = (path for path in self._data if path.is_relative_to(parent))
-            size = sum(self._data[child].size for child in children if not isinstance(self._data[child], _DirectoryData))
-            self._data[parent] = _DirectoryData(parent, Path(''), size, 0, 0, self.ItemStatus.Matched)
+            children = (path for path in self._data
+                        if path.is_relative_to(parent))
+            size = sum(self._data[child].size for child in children
+                       if not isinstance(self._data[child], _DirectoryData))
+            self._data[parent] = _DirectoryData(
+                parent, Path(''), size, 0, 0, self.ItemStatus.Matched)
 
 
 class InstallerTreeViewModel(ADataViewModel):
@@ -205,7 +219,12 @@ class InstallerTreeViewModel(ADataViewModel):
         Columns.Status: lambda item_data: item_data.status.value,
     }
     _folder_columns = {Columns.Destination, Columns.Size}
-    _data_colunns = {Columns.Destination, Columns.Crc, Columns.Mtime, Columns.Size}
+    _data_colunns = {
+        Columns.Destination,
+        Columns.Crc,
+        Columns.Mtime,
+        Columns.Size,
+    }
 
     def __init__(self, installer_view_data: InstallerViewData) -> None:
         super().__init__()
@@ -218,7 +237,8 @@ class InstallerTreeViewModel(ADataViewModel):
         return (item for item in self._iview_data if item.parent == parent)
 
     def is_container(self, parent: Path | None) -> bool:
-        return parent is None or isinstance(self._iview_data[parent], _DirectoryData)
+        return parent is None or isinstance(self._iview_data[parent],
+                                            _DirectoryData)
 
     def get_parent(self, item: Path) -> Path | None:
         if item in self._iview_data:
@@ -245,7 +265,12 @@ class InstallerTreeViewModel(ADataViewModel):
     def get_column_type(self, column: int) -> type:
         return str
 
-    def get_attributes(self, item: Path, column: int, attributes: DataViewItemAttr) -> bool:
+    def get_attributes(
+            self,
+            item: Path,
+            column: int,
+            attributes: DataViewItemAttr
+        ) -> bool:
         if not item:
             return False
         item_data = self._iview_data[item]
@@ -270,12 +295,15 @@ class InstallerFlatViewModel(InstallerTreeViewModel):
         return f'{item_data.destination}'
 
     _columns = InstallerTreeViewModel._columns.copy()
-    _columns[InstallerTreeViewModel.Columns.Destination] = _format_destination_flat
+    _columns[InstallerTreeViewModel.Columns.Destination] = \
+        _format_destination_flat
 
     def get_children(self, parent: Path | None) -> Iterable[Path]:
         if not parent:
             return self._iview_data.top_nodes
-        return (item for item in self._iview_data if not isinstance(self._iview_data[item], _DirectoryData) and item.is_relative_to(parent))
+        return (item for item in self._iview_data
+                if not isinstance(self._iview_data[item], _DirectoryData)
+                   and item.is_relative_to(parent))
 
     def get_parent(self, item: Path) -> Path | None:
         if item in self._iview_data:
@@ -307,7 +335,8 @@ class InstallerViewCtrl(PanelWin):
             self.ViewMode.Flat: InstallerFlatViewModel(installer_view_data),
         }
         # View toggles
-        self._radio_tree = radio_tree = RadioButton(self, _('Tree View'), is_group=True)
+        self._radio_tree = radio_tree = RadioButton(
+            self, _('Tree View'), is_group=True)
         radio_tree.is_checked = view_mode is self.ViewMode.Tree
         radio_tree.on_checked.subscribe(self._on_radio_tree)
         self._radio_flat = radio_flat = RadioButton(self, _('Flat View'))
@@ -366,7 +395,8 @@ class InstallerViewCtrl(PanelWin):
     @view_mode.setter
     def view_mode(self, new_mode: ViewMode) -> None:
         if not isinstance(new_mode, self.ViewMode):
-            raise TypeError(f'Expected {self.ViewMode.__name__}, not {type(new_mode)}.')
+            raise TypeError(f'Expected {self.ViewMode.__name__}, '
+                            f'not {type(new_mode)}.')
         changed = new_mode is not self.view_mode
         self._view_mode = new_mode
         if changed:
