@@ -946,15 +946,6 @@ class ImportGraphics(_ImporterPatcherPanel):
     patcher_type = preservers.ImportGraphicsPatcher
 
 # -----------------------------------------------------------------------------
-class ImportActorsAnimations(_ImporterPatcherPanel):
-    """Merges changes to actor animation lists."""
-    patcher_name = _(u'Import Actors: Animations')
-    patcher_desc = _(u'Import actor animations from source mods.')
-    autoKey = {u'Actors.Anims'}
-    _config_key = u'KFFZPatcher'
-    patcher_type = preservers.ImportActorsAnimationsPatcher
-
-# -----------------------------------------------------------------------------
 class ImportActorsAIPackages(_ImporterPatcherPanel):
     """Merges changes to the AI Packages of Actors."""
     patcher_name = _(u'Import Actors: AI Packages')
@@ -982,15 +973,6 @@ class ImportActorsPerks(_ImporterPatcherPanel):
                u'Actors.Perks.Remove'}
     _config_key = u'ImportActorsPerks'
     patcher_type = mergers.ImportActorsPerksPatcher
-
-# -----------------------------------------------------------------------------
-class ImportActorsDeathItems(_ImporterPatcherPanel):
-    """Merges changes to actor death items."""
-    patcher_name = _(u'Import Actors: Death Items')
-    patcher_desc = _(u'Import actor death items from source mods.')
-    autoKey = {u'Actors.DeathItem'}
-    _config_key = u'DeathItemPatcher'
-    patcher_type = preservers.ImportActorsDeathItemsPatcher
 
 # -----------------------------------------------------------------------------
 class ImportCells(_ImporterPatcherPanel):

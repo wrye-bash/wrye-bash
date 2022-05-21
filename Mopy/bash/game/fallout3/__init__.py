@@ -148,8 +148,8 @@ class Fallout3GameInfo(PatchGame):
 
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
-        u'ImportActorsAIPackages', u'ImportActorsAnimations', u'NpcChecker',
-        u'ImportActorsDeathItems', u'ImportActorsFaces', u'RaceChecker',
+        'ImportActorsAIPackages', 'NpcChecker',
+        'ImportActorsFaces', 'RaceChecker',
         u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
         u'ImportDestructible', u'ImportEffectsStats', u'ImportRaces',
         u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',

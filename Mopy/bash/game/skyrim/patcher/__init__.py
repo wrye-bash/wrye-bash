@@ -768,6 +768,7 @@ actor_importer_attrs = {
                            u'energyLevel', u'mood', u'responsibility', u'warn',
                            u'warnAttack'),
         u'Actors.CombatStyle': (u'combatStyle',),
+        'Actors.DeathItem': ('deathItem',),
         u'Actors.RecordFlags': (u'flags1',),
         u'Actors.Stats': (u'alchemySO', u'alchemySV', u'alterationSO',
                           u'alterationSV', u'blockSO', u'blockSV',

@@ -173,7 +173,6 @@ class OblivionGameInfo(PatchGame):
     patchers = {
         u'AliasModNames', u'CoblCatalogs', u'CoblExhaustion',
         u'ContentsChecker', u'ImportActors', u'ImportActorsAIPackages',
-        u'ImportActorsAnimations', u'ImportActorsDeathItems',
         u'ImportActorsFaces', u'ImportActorsFactions', u'ImportActorsSpells',
         u'ImportCells', u'ImportEffectsStats', u'ImportEnchantmentStats',
         u'ImportGraphics', u'ImportInventory', u'ImportNames',

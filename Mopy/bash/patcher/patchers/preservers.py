@@ -263,16 +263,6 @@ class ImportActorsPatcher(APreserver):
     _multi_tag = True
 
 #------------------------------------------------------------------------------
-##: Could be absorbed by ImportActors, but would break existing configs
-class ImportActorsAnimationsPatcher(APreserver):
-    rec_attrs = {x: (u'animations',) for x in bush.game.actor_types}
-
-#------------------------------------------------------------------------------
-##: Could be absorbed by ImportActors, but would break existing configs
-class ImportActorsDeathItemsPatcher(APreserver):
-    rec_attrs = {x: (u'deathItem',) for x in bush.game.actor_types}
-
-#------------------------------------------------------------------------------
 class ImportActorsFacesPatcher(APreserver):
     logMsg = u'\n=== '+_(u'Faces Patched')
     rec_attrs = {b'NPC_': {

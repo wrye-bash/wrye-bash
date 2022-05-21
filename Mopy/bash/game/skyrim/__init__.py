@@ -180,7 +180,7 @@ class SkyrimGameInfo(PatchGame):
 
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'ImportActors', u'ImportRaces',
-        u'ImportActorsAIPackages', u'ImportActorsDeathItems',
+        'ImportActorsAIPackages',
         u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
         u'ImportDestructible', u'ImportEffectsStats', u'ImportRacesSpells',
         u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
