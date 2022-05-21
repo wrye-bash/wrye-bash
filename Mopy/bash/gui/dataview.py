@@ -26,16 +26,20 @@ from __future__ import annotations
 __author__ = u'Lojack'
 
 from functools import wraps, cache, cached_property
-from types import UnionType
-from typing import Any, Callable, get_origin, get_args, Iterable, Tuple, \
-    Optional, Union
+from typing import Any, Callable, get_origin, get_args, Optional, Union
 from datetime import datetime
-from collections.abc import Sequence
+from collections.abc import Sequence, Iterable
 from enum import Enum, IntEnum, IntFlag
 from contextlib import suppress
 
 import wx
 import wx.dataview as dv
+
+try:
+    from types import UnionType
+except ImportError:
+    # Only available on py 3.10+
+    UnionType = Union
 
 from .base_components import _AComponent, Color
 
@@ -72,7 +76,7 @@ __all__ = [
 ]
 
 
-RGBA = Tuple[int, int, int, int]
+RGBA = tuple[int, int, int, int]
 
 
 class DataViewColumnFlags(IntFlag):

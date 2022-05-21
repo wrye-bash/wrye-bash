@@ -34,9 +34,15 @@ import re
 import subprocess
 import sys
 import time
+import typing
 
 # Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
+
+if typing.TYPE_CHECKING:
+    # Alias for type checkers
+    def _(message: str) -> str:
+        return message
 
 def __init_gui_images(_wx):
     """The images API to be - we need to initialize wx images before we

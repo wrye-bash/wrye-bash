@@ -29,7 +29,8 @@ from dataclasses import dataclass
 from enum import auto, Enum, IntEnum
 from functools import partial
 from pathlib import Path
-from typing import Dict, List, Iterable, Tuple
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import wx
 
@@ -41,6 +42,10 @@ from .top_level_windows import PanelWin
 
 from ..bolt import round_size
 from ..localize import format_date
+
+if TYPE_CHECKING:
+    from ..bosh.bain import Installer, InstallersData
+    from ..bolt import _
 
 
 __all__ = [
@@ -84,8 +89,8 @@ class InstallerViewData:
         ) -> None:
         self._idata = installers_data
         self._installer = installer
-        self._data: Dict[Path, _ItemData] = dict()
-        self._top_nodes: List[Path] = []
+        self._data: dict[Path, _ItemData] = dict()
+        self._top_nodes: list[Path] = []
         self.scan()
 
     def __contains__(self, item: Path) -> bool:
@@ -98,7 +103,7 @@ class InstallerViewData:
         return iter(self._data)
 
     @property
-    def top_nodes(self) -> List[Path]:
+    def top_nodes(self) -> list[Path]:
         return self._top_nodes
 
     @property
@@ -231,7 +236,7 @@ class InstallerTreeViewModel(ADataViewModel):
         self._iview_data = installer_view_data
         img_size = (16, 16)
         self._image_list = wx.ImageList(*img_size)
-        self._images: Dict[str, int] = {
+        self._images: dict[str, int] = {
             'folder': self._image_list.Add(wx.ArtProvider.GetIcon(
                 wx.ART_FOLDER, wx.ART_OTHER, img_size)),
             'file': self._image_list.Add(wx.ArtProvider.GetIcon(
@@ -350,7 +355,7 @@ class InstallerViewCtrl(PanelWin):
         self._expand_top = expand_top
         # Data models
         self._iview_data = installer_view_data
-        self._models: Dict[InstallerViewCtrl.ViewMode, InstallerTreeViewModel] = {
+        self._models: dict[InstallerViewCtrl.ViewMode, InstallerTreeViewModel] = {
             self.ViewMode.Tree: InstallerTreeViewModel(installer_view_data),
             self.ViewMode.Flat: InstallerFlatViewModel(installer_view_data),
         }
@@ -397,7 +402,7 @@ class InstallerViewCtrl(PanelWin):
             self.view.expand_item(data_key)
 
     @property
-    def radios(self) -> Tuple[RadioButton, RadioButton]:
+    def radios(self) -> tuple[RadioButton, RadioButton]:
         return self._radio_tree, self._radio_flat
 
     @property
