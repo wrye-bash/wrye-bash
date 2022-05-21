@@ -45,7 +45,7 @@ from ..localize import format_date
 
 if TYPE_CHECKING:
     from ..bosh.bain import Installer, InstallersData
-    from ..bolt import _
+    from ..localize import _
 
 
 __all__ = [

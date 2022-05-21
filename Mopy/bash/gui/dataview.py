@@ -508,8 +508,8 @@ class _DataViewColumns(Sequence):
     expander = forward.with_wrappers(Optional[DataViewColumn.from_native],
         default_resolver)(dv.DataViewCtrl.ExpanderColumn)
 
-    sorter = forward.with_return(property(
-        Optional[DataViewColumn.from_native]))
+    sorter = forward.with_return(Optional[DataViewColumn.from_native])(
+        property(Optional[DataViewColumn.from_native]))
 
     @sorter.setter
     def sorter(self, column: DataViewColumn) -> None:
