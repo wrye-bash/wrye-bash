@@ -293,7 +293,7 @@ namesTypes = {
     b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS', b'COBJ',
     b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'HAIR', b'INGR',
     b'KEYM', b'LIGH', b'MESG', b'MGEF', b'MISC', b'NOTE', b'NPC_', b'PERK',
-    b'RACE', b'SPEL', b'TACT', b'TERM', b'WEAP',
+    b'QUST', b'RACE', b'SPEL', b'TACT', b'TERM', b'WEAP',
 }
 
 #------------------------------------------------------------------------------
