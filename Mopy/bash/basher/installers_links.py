@@ -639,6 +639,8 @@ class Installers_CreateNewProject(ItemLink):
     """Open the New Project Dialog"""
     _text = _(u'New Project...')
     _help = _(u'Create a new project.')
+    _keyboard_hint = 'Ctrl+N'
 
     @balt.conversation
-    def Execute(self): CreateNewProject.display_dialog(self.window)
+    def Execute(self):
+        CreateNewProject.display_dialog(self.window)

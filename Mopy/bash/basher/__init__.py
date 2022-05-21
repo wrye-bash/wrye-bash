@@ -2731,10 +2731,15 @@ class InstallersList(balt.UIList):
 
     def _handle_key_up(self, wrapped_evt):
         """Char events: Action depends on keys pressed"""
-        # Ctrl+Shift+N - Add a marker
-        if (wrapped_evt.is_cmd_down and wrapped_evt.is_shift_down and
-                wrapped_evt.key_code == ord(u'N')):
-            self.addMarker()
+        if (wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord('N')):
+            if wrapped_evt.is_shift_down:
+                # Ctrl+Shift+N - Add a marker
+                self.addMarker()
+            else:
+                # Ctrl+N - Create a new project
+                ##: drop this local import
+                from .dialogs import CreateNewProject
+                CreateNewProject.display_dialog(self)
         super(InstallersList, self)._handle_key_up(wrapped_evt)
 
     # Installer specific ------------------------------------------------------

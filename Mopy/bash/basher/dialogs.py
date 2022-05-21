@@ -20,12 +20,12 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from . import bEnableWizard, BashFrame
+from . import bEnableWizard
 from .constants import installercons
 from .. import bass, balt, bosh, bolt, bush, env, load_order
 from ..balt import colors
 from ..bolt import GPath_no_norm, top_level_dirs
-from ..bosh import faces, ModInfo
+from ..bosh import faces, ModInfo, InstallerProject
 from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
     VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
@@ -125,7 +125,8 @@ class ImportFaceDialog(DialogWindow):
 #------------------------------------------------------------------------------
 class CreateNewProject(DialogWindow):
     title = _(u'New Project')
-    def __init__(self,parent=None):
+    def __init__(self, parent):
+        self._parent = parent
         super(CreateNewProject, self).__init__(parent)
         # Build a list of existing directories. The text control will use this
         # to change background color when name collisions occur.
@@ -225,10 +226,22 @@ class CreateNewProject(DialogWindow):
         # Move into the target location
         # TODO(inf) de-wx! Investigate further
         env.shellMove(tempProject, projectDir, parent=self._native_widget)
-        BashFrame.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         tmpDir.rmtree(tmpDir.s)
         if not has_files:
             projectDir.join(u'temp_hack').rmtree(safety=u'temp_hack')
+        result_proj = projectDir.tail
+        new_installer_order = None
+        sel_installers = self._parent.GetSelectedInfos()
+        if sel_installers:
+            new_installer_order = sel_installers[-1].order + 1
+        ##: This is mostly copy-pasted from InstallerArchive_Unpack
+        with balt.Progress(_('Creating Project...'), '\n' + ' ' * 60) as prog:
+            InstallerProject.refresh_installer(
+                result_proj, self._parent.data_store, progress=prog,
+                install_order=new_installer_order, do_refresh=False)
+        self._parent.data_store.irefresh(what='NS')
+        self._parent.RefreshUI(detail_item=result_proj)
+        self._parent.SelectItemsNoCallback([result_proj])
 
 #------------------------------------------------------------------------------
 class CreateNewPlugin(DialogWindow):
