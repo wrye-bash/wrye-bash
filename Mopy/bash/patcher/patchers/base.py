@@ -280,9 +280,8 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                             patchCells.id_cellBlock[
                                 cfid].persistent_refs.append(record)
         if b'WRLD' in modFile.tops:
-            for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
+            for wfid, worldBlock in modFile.tops[b'WRLD'].id_worldBlocks.items():
                 worldImported = False
-                wfid = worldBlock.world.fid
                 if wfid in patchWorlds.id_worldBlocks:
                     patchWorlds.id_worldBlocks[wfid].world = worldBlock.world
                     worldImported = True
@@ -364,7 +363,8 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
-        for worldBlock in self.patchFile.tops[b'WRLD'].worldBlocks:
+        for worldId, worldBlock in self.patchFile.tops[
+            b'WRLD'].id_worldBlocks.items():
             keepWorld = False
             for cfid, cellBlock in worldBlock.id_cellBlock.items():
                 for record in cellBlock.temp_refs:
@@ -384,7 +384,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                         keep(record.fid)
                         keepWorld = True
             if keepWorld:
-                keep(worldBlock.world.fid)
+                keep(worldId)
         log.setHeader(f'= {self._patcher_name}')
         self._srcMods(log)
         log(u'\n=== '+_(u'Records Patched'))

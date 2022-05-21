@@ -1638,7 +1638,6 @@ class MobWorlds(MobBase):
     of world blocks."""
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
-        self.worldBlocks = [] ##: absorb in id_worldBlocks
         self.id_worldBlocks = {}
         self.orphansSkipped = 0
         super(MobWorlds, self).__init__(header, loadFactory, ins, do_unpack)
@@ -1653,7 +1652,6 @@ class MobWorlds(MobBase):
         insAtEnd = ins.atEnd
         insRecHeader = ins.unpackRecHeader
         selfLoadFactory = self.loadFactory
-        worldBlocksAppend = self.worldBlocks.append
         from .. import bush
         isFallout = bush.game.fsName != u'Oblivion'
         worlds = {}
@@ -1686,12 +1684,12 @@ class MobWorlds(MobBase):
                     header.skip_blob(ins)
                     self.orphansSkipped += 1
                     continue
-                if groupFid != world.fid:
+                if groupFid != (wfid := world.fid):
                     raise ModError(ins.inName,
                                    f'WRLD subgroup ({hex(groupFid)}) does '
                                    f'not match WRLD {world!r}.')
                 worldBlock = MobWorld(header,selfLoadFactory,world,ins,True)
-                worldBlocksAppend(worldBlock)
+                self.id_worldBlocks[wfid] = worldBlock
                 world = None
             else:
                 raise ModError(ins.inName,
@@ -1700,13 +1698,12 @@ class MobWorlds(MobBase):
         if world:
             # We have a last WRLD without children lying around, finish it
             self.setWorld(world)
-        self.id_worldBlocks.clear()
         self.setChanged()
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
         return RecordHeader.rec_header_size + sum(
-            x.getSize() for x in self.worldBlocks)
+            x.getSize() for x in self.id_worldBlocks.values())
 
     def dump(self,out):
         """Dumps group header and then records."""
@@ -1714,62 +1711,55 @@ class MobWorlds(MobBase):
             out.write(self.header.pack_head())
             out.write(self.data)
         else:
-            if not self.worldBlocks: return
+            if not self.id_worldBlocks: return
             worldHeaderPos = out.tell()
             header = TopGrupHeader(0, self.label, self.stamp)
             out.write(header.pack_head())
             self._sort_group()
             ##: Why not use getSize here?
             totalSize = RecordHeader.rec_header_size + sum(
-                x.dump(out) for x in self.worldBlocks)
+                x.dump(out) for x in self.id_worldBlocks.values())
             out.seek(worldHeaderPos + 4)
             pack_int(out, totalSize)
             out.seek(worldHeaderPos + totalSize)
 
     def getNumRecords(self,includeGroups=True):
         """Returns number of records, including self and all children."""
-        count = sum(x.getNumRecords(includeGroups) for x in self.worldBlocks)
+        count = sum(x.getNumRecords(includeGroups) for x in self.id_worldBlocks.values())
         return count + includeGroups * bool(count)
 
     def convertFids(self,mapper,toLong):
         """Converts fids between formats according to mapper.
         toLong should be True if converting to long format or False if
         converting to short format."""
-        for worldBlock in self.worldBlocks:
+        for worldBlock in self.id_worldBlocks.values():
             worldBlock.convertFids(mapper,toLong)
+        self.id_worldBlocks = {mapper(k): v for k, v in
+                               self.id_worldBlocks.items()}
 
     def get_all_signatures(self):
         return set(chain.from_iterable(w.get_all_signatures()
-                                       for w in self.worldBlocks))
-
-    def indexRecords(self):
-        """Indexes records by fid."""
-        self.id_worldBlocks = {x.world.fid: x for x in self.worldBlocks}
+                                       for w in self.id_worldBlocks.values()))
 
     def _sort_group(self):
         """Sorts WRLD groups by the FormID of the WRLD record."""
-        self.worldBlocks.sort(key=attrgetter_cache[u'world.fid'])
+        self.id_worldBlocks = dict(dict_sort(self.id_worldBlocks))
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        for worldBlock in self.worldBlocks:
+        for worldBlock in self.id_worldBlocks.values():
             worldBlock.updateMasters(masterset_add)
 
     def updateRecords(self, srcBlock, mergeIds):
         """Updates any records in 'self' that exist in 'srcBlock'."""
-        if self.worldBlocks and not self.id_worldBlocks:
-            self.indexRecords()
-        id_worldBlocks = self.id_worldBlocks
-        idGet = id_worldBlocks.get
-        for srcWorldBlock in srcBlock.worldBlocks:
-            worldBlock = idGet(srcWorldBlock.world.fid)
+        idGet = self.id_worldBlocks.get
+        for wfid, srcWorldBlock in srcBlock.id_worldBlocks.items():
+            worldBlock = idGet(wfid)
             if worldBlock:
                 worldBlock.updateRecords(srcWorldBlock, mergeIds)
 
     def setWorld(self, world):
         """Adds record to record list and indexed."""
-        if self.worldBlocks and not self.id_worldBlocks:
-            self.indexRecords()
         fid = world.fid
         if fid in self.id_worldBlocks:
             self.id_worldBlocks[fid].world = world
@@ -1777,39 +1767,31 @@ class MobWorlds(MobBase):
             worldBlock = MobWorld(GrupHeader(0, 0, 1, self.stamp), ##: groupType = 1
                                   self.loadFactory, world)
             worldBlock.setChanged()
-            self.worldBlocks.append(worldBlock)
             self.id_worldBlocks[fid] = worldBlock
 
     def remove_world(self, world):
         """Removes the specified world from this block. The exact world object
         must be present, otherwise a ValueError is raised."""
-        if self.worldBlocks and not self.id_worldBlocks:
-            self.indexRecords()
-        self.worldBlocks.remove(world)
         del self.id_worldBlocks[world.fid]
 
     def iter_records(self):
-        return chain.from_iterable(w.iter_records() for w in self.worldBlocks)
+        return chain.from_iterable(w.iter_records() for w in self.id_worldBlocks.values())
 
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
-        for worldBlock in self.worldBlocks: worldBlock.keepRecords(p_keep_ids)
-        self.worldBlocks = [x for x in self.worldBlocks if
-                            x.world.fid in p_keep_ids]
-        self.id_worldBlocks.clear()
+        for worldBlock in self.id_worldBlocks.values():
+            worldBlock.keepRecords(p_keep_ids)
+        self.id_worldBlocks = {k: x for k, x in self.id_worldBlocks.items() if
+                               k in p_keep_ids}
         self.setChanged()
 
     def merge_records(self, block, loadSet, mergeIds, iiSkipMerge, doFilter):
         from ..mod_files import MasterSet # YUCK
-        if self.worldBlocks and not self.id_worldBlocks:
-            self.indexRecords()
         lookup_world_block = self.id_worldBlocks.get
-        filtered_world_blocks = []
-        filtered_append = filtered_world_blocks.append
+        filtered_world_blocks = {}
         loadSetIsSuperset = loadSet.issuperset
-        for src_world_block in block.worldBlocks:
+        for src_fid, src_world_block in block.id_worldBlocks.items():
             was_newly_added = False
-            src_fid = src_world_block.world.fid
             # Check if we already have a world with that FormID
             dest_world_block = lookup_world_block(src_fid)
             if not dest_world_block:
@@ -1839,10 +1821,9 @@ class MobWorlds(MobBase):
                         self.remove_world(dest_world_block.world)
                     continue
             # We're either not Filter-tagged or we want to keep this world
-            filtered_append(src_world_block)
+            filtered_world_blocks[src_fid] = src_world_block
         # Apply any merge filtering we've done above to the record block
-        block.worldBlocks = filtered_world_blocks
-        block.indexRecords()
+        block.id_worldBlocks = filtered_world_blocks
 
     def __repr__(self):
-        return u'<WRLD GRUP: %u record(s)>' % len(self.worldBlocks)
+        return u'<WRLD GRUP: %u record(s)>' % len(self.id_worldBlocks)
