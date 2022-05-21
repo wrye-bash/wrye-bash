@@ -279,6 +279,8 @@ statsTypes = {
     b'ARMO': ('eid', 'weight', 'value', 'health', 'strength'),
     b'BOOK': ('eid', 'weight', 'value', 'enchantPoints'),
     b'CLOT': ('eid', 'weight', 'value', 'enchantPoints'),
+    b'EYES': ('eid', 'flags'),
+    b'HAIR': ('eid', 'flags'),
     b'INGR': ('eid', 'weight', 'value'),
     b'KEYM': ('eid', 'weight', 'value'),
     b'LIGH': ('eid', 'weight', 'value', 'duration'),

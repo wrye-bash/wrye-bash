@@ -64,6 +64,7 @@ attr_csv_struct = {
     'eid': [str_or_none, _('Editor Id')],
     'enchantPoints': [int_or_zero, _('Enchantment Points')],
     'fireRate': [float_or_none, _('Fire Rate')],
+    'flags': [int_or_zero, _('Flags')],
     'full': [str_or_none, _('Name')],
     'group_combat_reaction': [str_or_none, _('Group Combat Reaction')],
     'health': [int_or_zero, _('Health')],

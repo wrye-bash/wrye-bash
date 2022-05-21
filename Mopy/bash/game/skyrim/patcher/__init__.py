@@ -470,6 +470,8 @@ statsTypes = {
     b'APPA': ('eid', 'weight', 'value'),
     b'ARMO': ('eid', 'weight', 'value', 'armorRating'),
     b'BOOK': ('eid', 'weight', 'value'),
+    b'EYES': ('eid', 'flags'),
+    b'HDPT': ('eid', 'flags'),
     b'INGR': ('eid', 'weight', 'value'),
     b'KEYM': ('eid', 'weight', 'value'),
     b'LIGH': ('eid', 'weight', 'value', 'duration'),
