@@ -58,6 +58,7 @@ class Installers_AddMarker(ItemLink):
     _text = _(u'New Marker...')
     _help = _(u'Adds a Marker, a special type of package useful for '
               u'separating and labelling your packages.')
+    _keyboard_hint = 'Ctrl+Shift+N'
 
     def Execute(self):
         """Add a Marker."""

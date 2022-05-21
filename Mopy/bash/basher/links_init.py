@@ -201,12 +201,12 @@ def InitInstallerLinks():
         files_menu.links.append(Files_Unhide(u'installer'))
         files_menu.links.append(SeparatorLink())
         files_menu.links.append(Installers_CreateNewProject())
+        files_menu.links.append(Installers_AddMarker())
         InstallersList.column_links.append(files_menu)
     InstallersList.column_links.append(SeparatorLink())
     #--Actions
     InstallersList.column_links.append(Installers_RefreshData())
     InstallersList.column_links.append(Installers_FullRefresh())
-    InstallersList.column_links.append(Installers_AddMarker())
     InstallersList.column_links.append(Installers_MonitorExternalInstallation())
     InstallersList.column_links.append(SeparatorLink())
     InstallersList.column_links.append(Installers_ListPackages())
@@ -337,8 +337,8 @@ def InitInstallerLinks():
     file_menu.append(UIList_OpenStore())
     file_menu.append(Files_Unhide(u'installer'))
     file_menu.append(SeparatorLink())
-    file_menu.append(Installers_AddMarker())
     file_menu.append(Installers_CreateNewProject())
+    file_menu.append(Installers_AddMarker())
     # Edit Menu
     edit_menu = InstallersList.global_links[_(u'Edit')]
     edit_menu.append(Installers_MonitorExternalInstallation())

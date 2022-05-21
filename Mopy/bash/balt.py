@@ -1760,6 +1760,7 @@ class ItemLink(Link):
     """
     kind = wx.ITEM_NORMAL # The default in wx.MenuItem(... kind=...)
     _help = u''           # The tooltip to show at the bottom of the GUI
+    _keyboard_hint = ''   # The keyboard shortcut hint to show, if any
 
     @property
     def link_text(self):
@@ -1785,7 +1786,10 @@ class ItemLink(Link):
         selected."""
         super(ItemLink, self).AppendToMenu(menu, window, selection)
         # Note default id here is *not* ID_ANY but the special ID_SEPARATOR!
-        menuItem = wx.MenuItem(menu, wx.ID_ANY, self.link_text, self.link_help,
+        full_link_text = self.link_text
+        if self._keyboard_hint:
+            full_link_text += f'\t{self._keyboard_hint}'
+        menuItem = wx.MenuItem(menu, wx.ID_ANY, full_link_text, self.link_help,
                                self.__class__.kind)
         Link.Frame._native_widget.Bind(wx.EVT_MENU, self.__Execute, id=menuItem.GetId())
         Link.Frame._native_widget.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
@@ -2004,6 +2008,7 @@ class UIList_Delete(ItemLink):
     """Delete selected item(s) from UIList."""
     _text = _(u'Delete')
     _help = _(u'Delete selected item(s)')
+    _keyboard_hint = 'Del'
 
     def Execute(self):
         # event is a 'CommandEvent' and I can't check if shift is pressed - duh
@@ -2012,12 +2017,14 @@ class UIList_Delete(ItemLink):
 class UIList_Rename(ItemLink):
     """Rename selected UIList item(s)."""
     _text = _(u'Rename...')
+    _keyboard_hint = 'F2'
 
     def Execute(self): self.window.Rename(selected=self.selected)
 
 class UIList_OpenItems(ItemLink):
     """Open specified file(s)."""
     _text = _(u'Open...')
+    _keyboard_hint = 'Enter'
 
     @property
     def link_help(self):
@@ -2030,6 +2037,7 @@ class UIList_OpenItems(ItemLink):
 class UIList_OpenStore(ItemLink):
     """Opens data directory in explorer."""
     _text = _(u'Open Folder...')
+    _keyboard_hint = 'Ctrl+O'
 
     @property
     def link_help(self):
