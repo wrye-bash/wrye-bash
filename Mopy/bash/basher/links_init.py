@@ -438,8 +438,8 @@ def InitModLinks():
         files_menu.links.append(Files_Unhide(u'mod'))
         if bush.game.Esp.canBash:
             files_menu.links.append(SeparatorLink())
-            files_menu.links.append(Mods_CreateBlankBashedPatch())
             files_menu.links.append(Mods_CreateBlank())
+            files_menu.links.append(Mods_CreateBlankBashedPatch())
         files_menu.links.append(SeparatorLink())
         files_menu.links.append(Mods_OpenLOFileMenu())
         ModList.column_links.append(files_menu)
@@ -609,8 +609,8 @@ def InitModLinks():
     file_menu.append(Files_Unhide(u'mod'))
     if bush.game.Esp.canBash:
         file_menu.append(SeparatorLink())
-        file_menu.append(Mods_CreateBlankBashedPatch())
         file_menu.append(Mods_CreateBlank())
+        file_menu.append(Mods_CreateBlankBashedPatch())
     file_menu.append(SeparatorLink())
     file_menu.append(Mods_OpenLOFileMenu())
     # Edit Menu

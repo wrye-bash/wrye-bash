@@ -1124,12 +1124,12 @@ class ModList(_ModsUIList):
                 lowest_index = min(lowest_index, newIndex)
                 moved |= self._dropIndexes(chunk, newIndex)
             if moved: self._refreshOnDrop(lowest_index)
-        # Ctrl+Z: Undo last load order or active plugins change
+        # Ctrl+Z - Undo last load order or active plugins change
         elif wrapped_evt.is_cmd_down and kcode == ord(u'Z'):
             undo_redo_op(self.data_store.redo_load_order
                          if wrapped_evt.is_shift_down
                          else self.data_store.undo_load_order)
-        # Ctrl+Y: Redo last load order or active plugins change
+        # Ctrl+Y - Redo last load order or active plugins change
         elif wrapped_evt.is_cmd_down and kcode == ord(u'Y'):
             undo_redo_op(self.data_store.redo_load_order)
         else: # correctly update the highlight around selected mod
@@ -1139,7 +1139,7 @@ class ModList(_ModsUIList):
 
     def _handle_key_up(self, wrapped_evt):
         """Char event: Activate selected items, select all items"""
-        ##Space
+        # Space - enable/disable selected plugins
         if wrapped_evt.is_space:
             selected = self.GetSelected()
             toActivate = [item for item in selected if
@@ -1150,6 +1150,15 @@ class ModList(_ModsUIList):
                                          len(toActivate) == len(selected)
                              else toActivate)
             self._toggle_active_state(*toggle_target)
+        if (wrapped_evt.is_cmd_down and wrapped_evt.key_code == ord('N')):
+            if wrapped_evt.is_shift_down:
+                # Ctrl+Shift+N - Create a new Bashed Patch
+                self.new_bashed_patch()
+            else:
+                # Ctrl+N - Create a new plugin
+                ##: drop this local import
+                from .dialogs import CreateNewPlugin
+                CreateNewPlugin.display_dialog(self)
         super(ModList, self)._handle_key_up(wrapped_evt)
 
     def _handle_left_down(self, wrapped_evt, lb_dex_and_flags):
@@ -1312,6 +1321,17 @@ class ModList(_ModsUIList):
             u'bash.installers.enabled']: return None
         installer = self.data_store.table.getColumn(u'installer').get(modName)
         return GPath(installer)
+
+    def new_bashed_patch(self):
+        """Create a new Bashed Patch and refresh the GUI for it."""
+        new_patch_name = bosh.modInfos.generateNextBashedPatch(
+            self.GetSelected())
+        if new_patch_name is not None:
+            self.ClearSelected(clear_details=True)
+            self.RefreshUI(redraw=[new_patch_name], refreshSaves=False)
+        else:
+            balt.showWarning(self, _('Unable to create new Bashed Patch: 10 '
+                                     'Bashed Patches already exist!'))
 
 #------------------------------------------------------------------------------
 class _DetailsMixin(object):

@@ -1139,8 +1139,8 @@ class UIList(wx.Panel):
         """Char event: select all items, delete selected items, rename."""
         kcode = wrapped_evt.key_code
         cmd_down = wrapped_evt.is_cmd_down
-        if cmd_down and kcode == ord(u'A'): # Ctrl+A
-            if wrapped_evt.is_shift_down: # de-select all
+        if cmd_down and kcode == ord(u'A'): # Ctrl+A - (de)select all
+            if wrapped_evt.is_shift_down: # deselect all
                 self.ClearSelected(clear_details=True)
             else: # select all
                 with self.__gList.on_item_selected.pause_subscription(
@@ -1151,9 +1151,9 @@ class UIList(wx.Panel):
         elif self.__class__._editLabels and kcode == wx.WXK_F2: self.Rename()
         elif kcode in _wx_delete:
             with BusyCursor(): self.DeleteItems(wrapped_evt=wrapped_evt)
-        elif cmd_down and kcode == ord(u'O'): # Ctrl+O
+        elif cmd_down and kcode == ord(u'O'): # Ctrl+O - open data folder
             self.open_data_store()
-        # Ctrl+C: Copy file(s) to clipboard
+        # Ctrl+C - copy file(s) to clipboard
         elif self.__class__._copy_paths and cmd_down and kcode == ord(u'C'):
             copy_files_to_clipboard(
                 [x.abs_path.s for x in self.GetSelectedInfos()])

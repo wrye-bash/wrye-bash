@@ -223,21 +223,16 @@ class Mods_CreateBlankBashedPatch(ItemLink):
     """Create a new bashed patch."""
     _text = _(u'New Bashed Patch')
     _help = _(u'Create a new Bashed Patch.')
+    _keyboard_hint = 'Ctrl+Shift+N'
 
     def Execute(self):
-        newPatchName = bosh.modInfos.generateNextBashedPatch(
-            self.window.GetSelected())
-        if newPatchName is not None:
-            self.window.ClearSelected(clear_details=True)
-            self.window.RefreshUI(redraw=[newPatchName], refreshSaves=False)
-        else:
-            self._showWarning(u'Unable to create new bashed patch: '
-                              u'10 bashed patches already exist!')
+        self.window.new_bashed_patch()
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
     _text = _(u'New Plugin...')
     _help = _(u'Create a new blank plugin.')
+    _keyboard_hint = 'Ctrl+N'
 
     def Execute(self):
         CreateNewPlugin.display_dialog(self.window)
