@@ -1705,8 +1705,8 @@ def projects_walk_cache(func): ##: HACK ! Profile
 class InstallersData(DataStore):
     """Installers tank data. This is the data source for the InstallersList."""
     # track changes in installed mod inis etc _in the game Data/ dir_ and
-    # deletions of mods/Ini Tweaks. Keys are absolute paths (so we can track
-    # ini deletions from Data/Ini Tweaks as well as mods/xmls etc in Data/)
+    # deletions of mods/INI Tweaks. Keys are absolute paths (so we can track
+    # ini deletions from Data/INI Tweaks as well as mods/xmls etc in Data/)
     _miscTrackedFiles = {}
     # we only scan Data dir on first refresh - therefore we need be informed
     # for updates/deletions that happen outside our control - mods/inis/bsas
@@ -2741,7 +2741,7 @@ class InstallersData(DataStore):
                 ci_keep_files.add(CIstr(bp_doc.root.s + (
                     u'.txt' if bp_doc.cext == u'.html' else u'.html')))
         removes = set(self.data_sizeCrcDate) - ci_keep_files
-        # don't remove files in Wrye Bash-related directories or Ini Tweaks
+        # don't remove files in Wrye Bash-related directories or INI Tweaks
         skipPrefixes = [skipDir.lower() + os.sep for skipDir in
                         bush.game.Bain.wrye_bash_data_dirs |
                         bush.game.Bain.keep_data_dirs]

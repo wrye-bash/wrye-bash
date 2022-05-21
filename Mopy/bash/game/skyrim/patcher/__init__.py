@@ -702,6 +702,7 @@ text_types = {
     b'SHOU': ('description',),
     b'SPEL': ('description',),
     b'WEAP': ('description',),
+    b'WOOP': ('translation',),
 }
 
 #------------------------------------------------------------------------------

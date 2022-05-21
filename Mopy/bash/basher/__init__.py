@@ -658,7 +658,7 @@ class INIList(balt.UIList):
 
     def ListTweaks(self):
         """Returns text list of tweaks"""
-        tweaklist = _(u'Active Ini Tweaks:') + u'\n'
+        tweaklist = _('Active INI Tweaks:') + '\n'
         tweaklist += u'[spoiler]\n'
         for tweak, info in dict_sort(self.data_store):
             if not info.tweak_status() == 20: continue

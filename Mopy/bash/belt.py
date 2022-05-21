@@ -329,7 +329,7 @@ class PageFinish(PageInstaller):
                                (self.plugin_selection,
                                 LayoutOptions(weight=1))]),
              ]), LayoutOptions(weight=1)),
-            Label(self, _(u'Ini Tweaks:')),
+            Label(self, _('INI Tweaks:')),
             (HLayout(item_expand=True, item_weight=1, spacing=5,
                      items=[self.listInis, self.listTweaks]),
              LayoutOptions(weight=1)),
