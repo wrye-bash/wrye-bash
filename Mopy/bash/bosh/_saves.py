@@ -240,8 +240,7 @@ class SaveFile(object):
         self._masters = []
         #--Global
         self.globals = []
-        self.created = []
-        self.fid_createdNum = None
+        self.created = {}
         self.preGlobals = None #--Pre-records, pre-globals
         self.preCreated = None #--Pre-records, pre-created
         self.preRecords = None #--Pre-records, pre
@@ -291,8 +290,8 @@ class SaveFile(object):
             with ModReader(self.fileInfo.ci_key, ins) as modReader:
                 for count in range(createdNum):
                     progress(ins.tell(), _('Reading created...'))
-                    self.created.append(
-                        MreRecord(unpack_header(modReader), modReader))
+                    record = MreRecord(unpack_header(modReader), modReader)
+                    self.created[record.fid] = record
                 #--Pre-records: Quickkeys, reticule, interface, regions
                 buff = io.BytesIO()
                 for x in range(4):
@@ -350,7 +349,7 @@ class SaveFile(object):
             #--Created
             progress(0.1,_(u'Writing created.'))
             _pack(u'I',len(self.created))
-            for record in self.created:
+            for record in self.created.values():
                 record.dump(out)
             #--Pre-records
             out.write(self.preRecords)
@@ -388,22 +387,6 @@ class SaveFile(object):
         """Adds master to masters list."""
         if master not in self._masters:
             self._masters.append(master)
-
-    def indexCreated(self):
-        """Fills out self.fid_createdNum."""
-        self.fid_createdNum = {x.fid: i for i, x in enumerate(self.created)}
-
-    def removeCreated(self,fid):
-        """Remove created if it exists. Return True if record existed, False if
-        not."""
-        if self.fid_createdNum is None: self.indexCreated()
-        recNum = self.fid_createdNum.get(fid)
-        if recNum is None:
-            return False
-        else:
-            del self.created[recNum]
-            del self.fid_createdNum[fid]
-            return True
 
     def getFid(self,iref,default=None):
         """Returns fid corresponding to iref."""
@@ -451,11 +434,9 @@ class SaveFile(object):
         log.setHeader(_(u'Created Items'))
         created_sizes = defaultdict(int)
         created_counts = Counter()
-        id_created = {}
-        for citem in self.created:
+        for citem in self.created.values():
             created_sizes[citem._rec_sig] += citem.size
             created_counts[citem._rec_sig] += 1
-            id_created[citem.fid] = citem
         for rsig, csize in dict_sort(created_sizes):
             log(f'  {created_counts[rsig]}\t{csize // 1024} kb\t'
                 f'{sig_to_str(rsig)}')
@@ -482,15 +463,15 @@ class SaveFile(object):
             typeModHisto[rec_kind][mod] += 1
             changeHisto[mod] += 1
             #--Lost Change?
-            if doLostChanges and mod == 255 and not (48 <= rec_kind <= 51) and rec_id not in id_created:
+            if doLostChanges and mod == 255 and not (48 <= rec_kind <= 51) and rec_id not in self.created:
                 lostChanges[rec_id] = rec_kind
             #--Unknown type?
             if doUnknownTypes and rec_kind not in knownTypes:
                 if mod < 255:
                     print(rec_kind, hex(rec_id), f'{getMaster(mod)}')
                     knownTypes.add(rec_kind)
-                elif rec_id in id_created:
-                    print(rec_kind, hex(rec_id), id_created[rec_id]._rec_sig)
+                elif rec_id in self.created:
+                    print(rec_kind, hex(rec_id), self.created[rec_id]._rec_sig)
                     knownTypes.add(rec_kind)
             #--Obj ref parents
             if rec_kind == 49 and mod == 255 and (rec_flgs & 2):
@@ -543,7 +524,7 @@ class SaveFile(object):
         progress.setFull(len(self.created) + len(self.fid_recNum))
         #--Created objects
         progress(0,_(u'Scanning created objects'))
-        for citem in self.created:
+        for citem in self.created.values():
             if u'full' in citem.__class__.__slots__:
                 full = citem.full
             else:
@@ -577,17 +558,17 @@ class SaveFile(object):
         #--Uncreate
         if uncreateKeys:
             progress(0,_(u'Scanning created objects'))
-            kept = []
-            for citem in self.created:
+            kept = {}
+            for rfid, citem in self.created.items():
                 if u'full' in citem.__class__.__slots__:
                     full = citem.full
                 else:
                     full = citem.getSubString(b'FULL')
                 if full and (citem._rec_sig, full) in uncreateKeys:
-                    uncreated.add(citem.fid)
+                    uncreated.add(rfid)
                     numUncreated += 1
                 else:
-                    kept.append(citem)
+                    kept[rfid] = citem
                 progress.plus()
             self.created = kept
         #--Change records
@@ -664,9 +645,9 @@ class SaveSpells(_SaveData):
         allSpells = self.allSpells
         saveName = self.saveInfo.ci_key
         progress(progress.full-1,saveName.s)
-        for record in self.saveFile.created:
+        for rfid, record in self.saveFile.created.items():
             if record._rec_sig == b'SPEL':
-                allSpells[(saveName,getObjectIndex(record.fid))] = record.getTypeCopy()
+                allSpells[(saveName,getObjectIndex(rfid))] = record.getTypeCopy()
 
     def importMod(self,modInfo):
         """Imports spell info from specified mod."""
@@ -744,25 +725,22 @@ class SaveEnchantments(_SaveData):
         #--Extract created enchantments
         saveName = self.saveInfo.ci_key
         progress(progress.full-1,saveName.s)
-        for index,record in enumerate(self.saveFile.created):
+        for rfid, record in self.saveFile.created.items():
             if record._rec_sig == b'ENCH':
                 record = record.getTypeCopy()
                 record.getSize() #--Since type copy makes it changed.
-                self.saveFile.created[index] = record
-                self.createdEnchantments.append((index,record))
+                self.saveFile.created[rfid] = record
+                self.createdEnchantments.append(record)
 
     def setCastWhenUsedEnchantmentNumberOfUses(self,uses):
-        """Sets Cast When Used Enchantment number of uses (via editing the enchat cost)."""
+        """Sets Cast When Used Enchantment number of uses (via editing the enchant cost)."""
         count = 0
-        for (index, record) in self.createdEnchantments:
+        for record in self.createdEnchantments:
             if record.itemType in [1,2]:
-                if uses == 0:
-                    if record.enchantCost == 0: continue
-                    record.enchantCost = 0
-                else:
-                    charge_over_uses = max(record.chargeAmount // uses, 1)
-                    if record.enchantCost == charge_over_uses: continue
-                    record.enchantCost = charge_over_uses
+                charge_over_uses = 0 if uses == 0 else max(
+                    record.chargeAmount // uses, 1)
+                if record.enchantCost == charge_over_uses: continue
+                record.enchantCost = charge_over_uses
                 record.setChanged()
                 record.getSize()
                 count += 1

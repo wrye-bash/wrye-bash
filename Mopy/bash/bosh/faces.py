@@ -110,7 +110,7 @@ class PCFaces(object):
         return created face with that fid.
         Note: Created NPCs do NOT use irefs!"""
         faces = {}
-        for record in saveFile.created:
+        for rfid, record in saveFile.created.items():
             if record._rec_sig != b'NPC_': continue
             #--Created NPC record
             npc = record.getTypeCopy()
@@ -124,7 +124,7 @@ class PCFaces(object):
             face.gender = (0,1)[npc.flags.female]
             face.pcName = npc.full
             #--Changed NPC Record
-            PCFaces.save_getChangedNpc(saveFile,record.fid,face)
+            PCFaces.save_getChangedNpc(saveFile, rfid, face)
         return faces
 
     @staticmethod
@@ -199,13 +199,13 @@ class PCFaces(object):
         """Sets created face in savefile to specified face.
         Note: Created NPCs do NOT use irefs!"""
         #--Find record
-        for index,record in enumerate(saveFile.created):
-            if record.fid == targetid:
+        for rfid, record in saveFile.created.items():
+            if rfid == targetid:
                 if record._rec_sig != b'NPC_':
                     raise StateError(f'Record {targetid:08X} in '
                                      f'{saveFile.fileInfo} is not an NPC.')
                 npc = record.getTypeCopy()
-                saveFile.created[index] = npc
+                saveFile.created[rfid] = npc
                 break
         else:
             raise StateError(f'Record {targetid:08X} not found in '

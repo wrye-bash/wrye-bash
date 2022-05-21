@@ -420,14 +420,14 @@ class Save_EditCreatedData(balt.ListEditorData):
         name_nameRecords = self.name_nameRecords = {}
         self.enchantments = {}
         #--Parse records and get into name_nameRecords
-        for index,record in enumerate(saveFile.created):
+        for rfid, record in saveFile.created.items():
             if record._rec_sig == b'ENCH':
                 self.enchantments[record.fid] = record.getTypeCopy()
             elif record._rec_sig in types_set:
                 record = record.getTypeCopy()
                 if not record.full: continue
                 record.getSize() #--Since type copy makes it changed.
-                saveFile.created[index] = record
+                saveFile.created[rfid] = record
                 record_full = record.full
                 if record_full not in name_nameRecords:
                     name_nameRecords[record_full] = (record_full, [])
@@ -534,7 +534,8 @@ class Save_EditCreated(OneItemLink):
             saveFile.load(progress)
         #--No custom items?
         types_set = Save_EditCreated.rec_types[self.save_rec_type]
-        records = [rec for rec in saveFile.created if rec._rec_sig in types_set]
+        records = [rec for rec in saveFile.created.values() if
+                   rec._rec_sig in types_set]
         if not records:
             self._showOk(_(u'No items to edit.'))
             return
@@ -759,12 +760,12 @@ class Save_ReweighPotions(OneItemLink):
             saveFile.load(SubProgress(progress,0,0.5))
             count = 0
             progress(0.5,_(u'Processing.'))
-            for index,record in enumerate(saveFile.created):
+            for rfid, record in saveFile.created.items():
                 if record._rec_sig == b'ALCH':
                     record = record.getTypeCopy()
                     record.weight = newWeight
                     record.getSize()
-                    saveFile.created[index] = record
+                    saveFile.created[rfid] = record
                     count += 1
             if count:
                 saveFile.safeSave(SubProgress(progress,0.6,1.0))
