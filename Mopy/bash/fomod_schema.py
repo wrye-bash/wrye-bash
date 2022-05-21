@@ -729,3 +729,28 @@ schema_string = br"""<?xml version="1.0" encoding="utf-8"?>
     </xs:element>
 </xs:schema>"""
 # END MIT-LICENSED PART =======================================================
+
+default_moduleconfig = """<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://qconsulting.ca/fo3/ModConfig5.0.xsd">
+    <moduleName>%(fomod_proj)s</moduleName>
+    <!--Created by Wrye Bash v%(wb_ver)s-->
+    <installSteps order="Explicit">
+        <installStep name="First step">
+            <optionalFileGroups>
+                <group name="First group" type="SelectAny">
+                    <plugins>
+                        <plugin name="First plugin">
+                            <description>Put a fitting description for the first %(fomod_proj)s plugin here.</description>
+                            <files>
+                                <!--Files for the first %(fomod_proj)s group go here.-->
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
+                    </plugins>
+                </group>
+            </optionalFileGroups>
+        </installStep>
+    </installSteps>
+</config>
+"""

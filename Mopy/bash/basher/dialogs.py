@@ -26,6 +26,7 @@ from .. import bass, balt, bosh, bolt, bush, env, load_order
 from ..balt import colors
 from ..bolt import GPath_no_norm, top_level_dirs
 from ..bosh import faces, ModInfo, InstallerProject
+from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
     VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
@@ -133,62 +134,82 @@ class CreateNewProject(DialogWindow):
         self.existingProjects = {GPath_no_norm(x) for x in ##: use idata?
                                  top_level_dirs(bass.dirs[u'installers'])}
         #--Attributes
-        self.textName = TextField(self, _(u'New Project Name-#####'))
-        self.textName.on_text_changed.subscribe(
+        self._project_name = TextField(self, _('Project Name Goes Here'))
+        self._project_name.on_text_changed.subscribe(
             self.OnCheckProjectsColorTextCtrl)
-        self.checkEsp = CheckBox(self, _(u'Blank.esp'), checked=True)
-        self.checkEspMasterless = CheckBox(self, _(u'Blank Masterless.esp'))
-        self.checkWizard = CheckBox(self, _(u'Blank wizard.txt'))
-        self.checkWizardImages = CheckBox(self, _(u'Wizard Images Directory'))
-        for checkbox in (self.checkEsp, self.checkEspMasterless,
-                         self.checkWizard):
+        self._check_esp = CheckBox(self, _('Blank.esp'), checked=True,
+            chkbx_tooltip=_('Include a blank plugin file with only the '
+                            '%(game_master)s as a master in the project.') % {
+                'game_master': bush.game.master_file})
+        self._check_esp_masterless = CheckBox(self, _('Blank Masterless.esp'),
+            chkbx_tooltip=_('Include a blank plugin file without any masters '
+                            'in the project.'))
+        self._check_wizard = CheckBox(self, _('Blank wizard.txt'),
+            chkbx_tooltip=_('Include a blank BAIN wizard in the project.'))
+        self._check_fomod = CheckBox(self, _('Blank ModuleConfig.xml'),
+            chkbx_tooltip=_('Include a blank FOMOD config in the project.'))
+        self._check_wizard_images = CheckBox(self,
+            _('Wizard Images Directory'), chkbx_tooltip=_(
+                'Include an empty Wizard Images directory in the project.'))
+        self._check_docs = CheckBox(self, _('Docs Directory'),
+            chkbx_tooltip=_('Include an empty Docs directory in the project.'))
+        for checkbox in (self._check_esp, self._check_esp_masterless,
+                         self._check_wizard):
             checkbox.on_checked.subscribe(self.OnCheckBoxChange)
         if not bEnableWizard:
             # pywin32 not installed
-            self.checkWizard.enabled = False
-            self.checkWizardImages.enabled = False
-        self.checkDocs = CheckBox(self, _(u'Docs Directory'))
+            self._check_wizard.enabled = False
+            self._check_wizard_images.enabled = False
         # Panel Layout
         self.ok_button = OkButton(self)
         self.ok_button.on_clicked.subscribe(self.OnClose)
         VLayout(border=5, spacing=5, items=[
-            Label(self, _(u'What do you want to name the new project?')),
-            (self.textName, LayoutOptions(expand=True)),
-            Label(self, _(u'What do you want to add to the new project?')),
-            self.checkEsp, self.checkEspMasterless, self.checkWizard,
-            self.checkWizardImages, self.checkDocs, Stretch(),
+            (VBoxedLayout(self,
+                title=_(u'What do you want to name the new project?'),
+                item_expand=True, item_weight=1, items=[
+                    self._project_name,
+                ]), LayoutOptions(expand=True)),
+            VBoxedLayout(self, spacing=5,
+                title=_('What do you want to add to the new project?'),
+                items=[
+                    self._check_esp, self._check_esp_masterless,
+                    self._check_wizard, self._check_fomod,
+                    self._check_wizard_images, self._check_docs,
+                ]),
+            Stretch(),
             (HLayout(spacing=5, items=[self.ok_button, CancelButton(self)]),
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self, fit=True)
         # Dialog Icon Handlers
-        self.set_icon(installercons.get_icon(u'off.white.dir'))
+        self.set_icon(installercons.get_icon('off.red.dir'))
         self.OnCheckBoxChange()
-        self.OnCheckProjectsColorTextCtrl(self.textName.text_content)
+        self.OnCheckProjectsColorTextCtrl(self._project_name.text_content)
 
     def OnCheckProjectsColorTextCtrl(self, new_text):
         projectName = bolt.GPath(new_text)
         if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
-            self.textName.set_background_color(colors[u'default.warn'])
-            self.textName.tooltip = _(u'There is already a project with that name!')
+            self._project_name.set_background_color(colors['default.warn'])
+            self._project_name.tooltip = _('There is already a project with '
+                                           'that name!')
             self.ok_button.enabled = False
         else:
-            self.textName.reset_background_color()
-            self.textName.tooltip = None
+            self._project_name.reset_background_color()
+            self._project_name.tooltip = None
             self.ok_button.enabled = True
 
     def OnCheckBoxChange(self, is_checked=None):
         """Change the DialogWindow icon to represent what the project status
         will be when created. """
-        if self.checkEsp.is_checked or self.checkEspMasterless.is_checked:
-            img_key = f'off.white.dir' \
-                      f'{self.checkWizard.is_checked and ".wiz" or ""}'
+        if self._check_esp.is_checked or self._check_esp_masterless.is_checked:
+            img_key = f'off.red.dir' \
+                      f'{self._check_wizard.is_checked and ".wiz" or ""}'
         else:
             img_key = 'off.grey.dir'
         self.set_icon(installercons.get_icon(img_key))
 
     def OnClose(self):
         """ Create the New Project and add user specified extras. """
-        projectName = self.textName.text_content.strip()
+        projectName = self._project_name.text_content.strip()
         # Destination project directory in installers dir
         projectDir = bass.dirs[u'installers'].join(projectName)
         if projectDir.exists():
@@ -200,23 +221,37 @@ class CreateNewProject(DialogWindow):
         # Shell commands (UAC workaround) ##: TODO(ut) needed?
         tmpDir = bolt.Path.tempDir()
         tempProject = tmpDir.join(projectName)
-        if (masterless := self.checkEspMasterless.is_checked) or \
-                self.checkEsp.is_checked:
-            file_body, wanted_masters = f'Blank, {bush.game.displayName}', None
-            if masterless:
-                file_body = f'{file_body} (masterless)'
-                wanted_masters = []
-            bosh.modInfos.create_new_mod(f'{file_body}.esp',
-                dir_path=tempProject, wanted_masters=wanted_masters)
-        if self.checkWizard.is_checked:
-            # Create empty wizard.txt
+        blank_esp_name = f'Blank, {bush.game.displayName}.esp'
+        if self._check_esp.is_checked:
+            bosh.modInfos.create_new_mod(blank_esp_name, dir_path=tempProject)
+        blank_ml_name = f'Blank, {bush.game.displayName} (masterless).esp'
+        if self._check_esp_masterless.is_checked:
+            bosh.modInfos.create_new_mod(blank_ml_name, dir_path=tempProject,
+                wanted_masters=[])
+        if self._check_wizard.is_checked:
+            # Create (mostly) empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')
             with wizardPath.open(u'w', encoding=u'utf-8') as out:
                 out.write(f'; {projectName} BAIN Wizard Installation Script\n')
-        if self.checkWizardImages.is_checked:
+                out.write(f'; Created by Wrye Bash v{bass.AppVersion}\n')
+                # Put an example SelectPlugin statement in if possible
+                if self._check_esp.is_checked:
+                    out.write(f'SelectPlugin "{blank_esp_name}"\n')
+                if self._check_esp_masterless.is_checked:
+                    out.write(f'SelectPlugin "{blank_ml_name}"\n')
+        if self._check_fomod.is_checked:
+            # Create (mostly) empty ModuleConfig.xml
+            fomod_path = tempProject.join('fomod')
+            fomod_path.makedirs()
+            module_config_path = fomod_path.join('ModuleConfig.xml')
+            with module_config_path.open('w', encoding='utf-8') as out:
+                out.write(default_moduleconfig % {
+                    'fomod_proj': projectName, 'wb_ver': bass.AppVersion,
+                })
+        if self._check_wizard_images.is_checked:
             # Create 'Wizard Images' directory
             tempProject.join(u'Wizard Images').makedirs()
-        if self.checkDocs.is_checked:
+        if self._check_docs.is_checked:
             #Create the 'Docs' Directory
             tempProject.join(u'Docs').makedirs()
         # HACK: shellMove fails unless it has at least one file - means
@@ -230,7 +265,7 @@ class CreateNewProject(DialogWindow):
         if not has_files:
             projectDir.join(u'temp_hack').rmtree(safety=u'temp_hack')
         result_proj = projectDir.tail
-        new_installer_order = None
+        new_installer_order = 0
         sel_installers = self._parent.GetSelectedInfos()
         if sel_installers:
             new_installer_order = sel_installers[-1].order + 1
