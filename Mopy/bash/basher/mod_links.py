@@ -1752,11 +1752,21 @@ class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
         textPath = self._csv_out(textName)
         if not textPath: return
         #--Export
+        lo_plugins_set = set(load_order.cached_lo_tuple())
         with balt.Progress(self.__class__.progressTitle) as progress:
             parser = self._parser()
             readProgress = SubProgress(progress, 0.1, 0.8)
             readProgress.setFull(len(self.selected))
             for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
+                e_missing_masters = set(fileInfo.masterNames) - lo_plugins_set
+                if e_missing_masters:
+                    err_msg = _('%(filename)s is missing one or more masters. '
+                                'Without these, a data export is not '
+                                'possible:') % {'filename': fileName}
+                    err_msg += '\n\n' + '\n'.join([
+                        f' - {m}' for m in e_missing_masters])
+                    self._showError(err_msg, title=_('Missing Masters'))
+                    return
                 readProgress(index, _(u'Reading') + u' %s.' % fileName)
                 parser.readFromMod(fileInfo)
             progress(0.8, _(u'Exporting to') + f' {textPath.stail}.')

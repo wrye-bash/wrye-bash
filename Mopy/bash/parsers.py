@@ -53,7 +53,7 @@ def _key_sort(di, keys_dex=(), values_key='', by_value=False):
         values_key = [values_key] if values_key else []
     if keys_dex and values_key:
         key_f = lambda k: (*(k[x] for x in keys_dex), *(
-            (di[k].get(values_key) or '').lower() if v == 'eid' else di[k][v]
+            (di[k].get(v) or '').lower() if v == 'eid' else di[k][v]
         for v in values_key))
     elif keys_dex:
         key_f = itemgetter(keys_dex)
@@ -213,8 +213,9 @@ class _HandleAliases(CsvParser):
         # data format when reading from a csv - could be in a subclass
         self._called_from_patcher = called_from_patcher
         # (Mostly) map record sigs to dicts that map long fids to stored info
-        # May have been retrieved from mod in second pass, or from a CSV file
-        self.id_stored_data = defaultdict(self._nested_type)
+        # May have been retrieved from mod in second pass, or from a CSV file.
+        # Need __class__ access to get a function rather than a bound method
+        self.id_stored_data = defaultdict(self.__class__._nested_type)
 
     def _coerce_fid(self, modname, hex_fid):
         """Create a long formid from a unicode modname and a unicode
@@ -464,9 +465,12 @@ class ActorFactions(_AParser):
     _key2_getter = itemgetter(2, 3)
 
     def __init__(self, aliases_=None, called_from_patcher=False):
-        if called_from_patcher:
-            self._nested_type = lambda: defaultdict(lambda: {'factions': []})
         super(ActorFactions, self).__init__(aliases_, called_from_patcher)
+        if called_from_patcher:
+            # Need to redefine this for the patcher since we don't want to
+            # reassign self.__class__._nested_type
+            self.id_stored_data = defaultdict(lambda: defaultdict(lambda: {
+                'factions': []}))
         a_types = bush.game.actor_types
         # We don't need the first pass if we're used by the parser
         self._fp_types = () if called_from_patcher else (*a_types, b'FACT')
@@ -514,9 +518,10 @@ class ActorFactions(_AParser):
     def _row_out(self, aid, stored_data, top_grup):
         """Exports faction data to specified text file."""
         factions, actorEid = stored_data
-        return '\n'.join('"%s","%s",%s,"%s",%s,"%s"\n' % (top_grup, actorEid,
-            _fid_str(aid), factionEid, _fid_str(faction), rank)
-            for faction, (rank, factionEid) in self._row_sorter(factions))
+        return '\n'.join([
+            '"%s","%s",%s,"%s",%s,"%s"' % (top_grup, actorEid, _fid_str(aid),
+                                           fac_eid, _fid_str(faction), rank)
+            for faction, (rank, fac_eid) in self._row_sorter(factions)]) + '\n'
 
 #------------------------------------------------------------------------------
 class ActorLevels(_HandleAliases):
@@ -613,10 +618,10 @@ class ActorLevels(_HandleAliases):
                 oldEid, wasOffset, oldOffset, oldCalcMin, oldCalcMax = \
                     __getter(oldLevels)
                 out += (f',"{wasOffset:d}","{oldOffset:d}","{oldCalcMin:d}",'
-                        f'"{oldCalcMax:d}"\n')
+                        f'"{oldCalcMax:d}"')
             else:
-                out += ',,,,\n'
-            return out
+                out += ',,,,'
+            return out + '\n'
 
 #------------------------------------------------------------------------------
 class EditorIds(_HandleAliases):
@@ -782,11 +787,11 @@ class FactionRelations(_AParser):
     def _row_out(self, lfid, stored_data, top_grup):
         """Exports faction relations to specified text file."""
         rel, main_eid = stored_data
-        return '\n'.join('"%s",%s,"%s",%s,%s\n' % (
+        return '\n'.join(['"%s",%s,"%s",%s,%s' % (
             main_eid, _fid_str(lfid), oth_eid, _fid_str(oth_fid), ','.join(
                 attr_csv_struct[a][2](x) for a, x in
                 zip(self.__class__.cls_rel_attrs[1:], relation_obj)))
-        for oth_fid, (relation_obj, oth_eid) in self._row_sorter(rel))
+        for oth_fid, (relation_obj, oth_eid) in self._row_sorter(rel)]) + '\n'
 
 #------------------------------------------------------------------------------
 class FidReplacer(_HandleAliases):

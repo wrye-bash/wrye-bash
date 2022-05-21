@@ -127,11 +127,13 @@ attr_csv_struct = {
     'weight': [float_or_none, _('Weight')],
 }
 
+# Note: these two formats *must* remain in the %d/%s style! f-strings will
+# break with Flags etc. due to them not implementing __format__
 for _k, _v in attr_csv_struct.items():
     if _v[0] is int_or_zero: # should also cover Flags
-        _v.append(lambda x: f'"{x:d}"')
+        _v.append(lambda x: '"%d"' % x)
     else: # also covers floats which should be wrapped in Rounder (see __str__)
-        _v.append(lambda x: f'"{x}"')
+        _v.append(lambda x: '"%s"' % x)
 del _k, _v
 attr_csv_struct[u'enchantPoints'][2] = lambda x: ( # can be None
     '"None"' if x is None else f'"{x:d}"')
