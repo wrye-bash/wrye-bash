@@ -3021,10 +3021,11 @@ class MreLigh(MelRecord):
         MelFull(),
         MelIcons(),
         # fe = 'Flicker Effect'
-        MelStruct(b'DATA', [u'i', u'I', u'4B', u'I', u'6f', u'I', u'f'],'duration','radius','red','green','blue',
-                  'unknown',(LighTypeFlags, u'flags'),'falloffExponent','fov',
-                  'nearClip','fePeriod','feIntensityAmplitude',
-                  'feMovementAmplitude','value','weight',),
+        MelStruct(b'DATA', ['i', 'I', '4B', 'I', '6f', 'I', 'f'], 'duration',
+                  'radius', 'red', 'green', 'blue', 'unknown',
+                  (LighTypeFlags, 'flags'), 'falloff', 'fov', 'nearClip',
+                  'fePeriod', 'feIntensityAmplitude', 'feMovementAmplitude',
+                  'value', 'weight'),
         MelFloat(b'FNAM', u'fade'),
         MelFid(b'SNAM','sound'),
     )

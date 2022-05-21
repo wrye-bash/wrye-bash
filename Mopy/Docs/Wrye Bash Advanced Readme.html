@@ -3238,7 +3238,24 @@ C.Location, -C.LockList
                     <li>(HAIR) Hair: (ICON) Texture, Model</li>
                     <li>(INGR) Ingredient: (ICON) Icon Filename, Model</li>
                     <li>(KEYM) Key: (ICON) Icon Filename, Model</li>
-                    <li>(LIGH) Light: (ICON) Icon Filename, Model</li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(ICON) Icon Filename</li>
+                            <li>Model</li>
+                            <li>(DATA) Radius</li>
+                            <li>(DATA) Color
+                                <ul>
+                                    <li>Red</li>
+                                    <li>Green</li>
+                                    <li>Blue</li>
+                                </ul>
+                            </li>
+                            <li>(DATA) Flags</li>
+                            <li>(DATA) Falloff Exponent</li>
+                            <li>(DATA) FOV</li>
+                            <li>(FNAM) Fade</li>
+                        </ul>
+                    </li>
                     <li>(LSCR) Load Screen: (ICON) Icon Filename</li>
                     <li>(LTEX) Landscape Texture: (ICON) Icon Filename</li>
                     <li>(MGEF) Magic Effect:
@@ -3622,7 +3639,7 @@ C.Location, -C.LockList
                             <li>(EDID) Editor ID</li>
                             <li>(DATA)
                                 <ul>
-                                    <li>Duration</li>
+                                    <li>Time</li>
                                     <li>Value</li>
                                     <li>Weight</li>
                                 </ul>
@@ -4165,7 +4182,6 @@ C.Location, -C.LockList
                         <ul>
                             <li>(MODL) Model</li>
                             <li>(ICON) Icon</li>
-                            <li>(DATA) Duration</li>
                             <li>(DATA) Radius</li>
                             <li>(DATA) Color
                                 <ul>
@@ -4176,6 +4192,7 @@ C.Location, -C.LockList
                             </li>
                             <li>(DATA) Flags</li>
                             <li>(DATA) Falloff Exponent</li>
+                            <li>(DATA) FOV</li>
                             <li>(FNAM) Fade</li>
                         </ul>
                     </li>
@@ -5333,7 +5350,32 @@ C.Location, -C.LockList
                     <li>(GRAS) Grass: (MODL) Model</li>
                     <li>(INGR) Ingredient: (ICON) Icon, (MODL) Model</li>
                     <li>(KEYM) Key: (ICON) Icon, (MODL) Model</li>
-                    <li>(LIGH) Light (ICON) Icon, (MODL) Model</li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                            <li>(MODL) Model</li>
+                            <li>(DATA) Radius</li>
+                            <li>(DATA) Color
+                                <ul>
+                                    <li>Red</li>
+                                    <li>Green</li>
+                                    <li>Blue</li>
+                                </ul>
+                            </li>
+                            <li>(DATA) Flags</li>
+                            <li>(DATA) Falloff Exponent</li>
+                            <li>(DATA) FOV</li>
+                            <li>(DATA) Near Clip</li>
+                            <li>(DATA) Flicker Effect
+                                <ul>
+                                    <li>Period</li>
+                                    <li>Intensity Amplitude</li>
+                                    <li>Movement Amplitude</li>
+                                </ul>
+                            </li>
+                            <li>(FNAM) Fade</li>
+                        </ul>
+                    </li>
                     <li>(LSCR) Load Screen: (ICON) Icon</li>
                     <li>(MGEF) Magic Effect:
                         <ul>
