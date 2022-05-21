@@ -1777,7 +1777,6 @@ class FileInfos(TableFileInfos):
     def move_info(self, fileName, destDir):
         """Moves member file to destDir. Will overwrite! The client is
         responsible for calling delete_refresh of the data store."""
-        destDir.makedirs()
         srcPath = self[fileName].getPath()
         destPath = destDir.join(fileName)
         srcPath.moveTo(destPath)
@@ -2251,12 +2250,12 @@ class ModInfos(FileInfos):
 
     @staticmethod
     def hexIndexString(mod):
-        return u'%02X' % (load_order.cached_active_index(mod),) \
-            if load_order.cached_is_active(mod) else u''
+        return '' if not load_order.cached_is_active(mod) else \
+            f'{load_order.cached_active_index(mod):02X}'
 
     def masterWithVersion(self, master_name):
         if master_name == u'Oblivion.esm' and self.voCurrent:
-            master_name += u' [' + self.voCurrent + u']'
+            master_name += f' [{self.voCurrent}]'
         return master_name
 
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE

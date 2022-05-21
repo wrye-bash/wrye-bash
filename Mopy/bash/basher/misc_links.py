@@ -122,9 +122,9 @@ class Screens_JpgQuality(RadioLink):
     _help = _(u'Sets JPEG quality for saving')
 
     def __init__(self, quality):
-        super(Screens_JpgQuality, self).__init__()
+        super().__init__()
         self.quality = quality
-        self._text = u'%i' % self.quality
+        self._text = f'{self.quality:d}'
 
     def _check(self):
         return self.quality == bass.settings[u'bash.screens.jpgQuality']
@@ -136,8 +136,7 @@ class Screens_JpgQuality(RadioLink):
 class Screens_JpgQualityCustom(Screens_JpgQuality):
     """Sets a custom JPG quality."""
     def __init__(self):
-        super(Screens_JpgQualityCustom, self).__init__(
-            bass.settings[u'bash.screens.jpgCustomQuality'])
+        super().__init__(bass.settings['bash.screens.jpgCustomQuality'])
         self._text = _(u'Custom [%i]') % self.quality
 
     def Execute(self):
@@ -147,7 +146,7 @@ class Screens_JpgQualityCustom(Screens_JpgQuality):
         self.quality = quality
         bass.settings[u'bash.screens.jpgCustomQuality'] = self.quality
         self._text = _(u'Custom [%i]') % quality
-        super(Screens_JpgQualityCustom, self).Execute()
+        super().Execute()
 
 #------------------------------------------------------------------------------
 class Screen_Rename(UIList_Rename):

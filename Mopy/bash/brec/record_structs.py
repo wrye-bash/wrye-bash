@@ -399,11 +399,10 @@ class MreRecord(object):
         return myCopy
 
     def mergeFilter(self,modSet):
-        """This method is called by the bashed patch mod merger. The intention is
-        to allow a record to be filtered according to the specified modSet. E.g.
-        for a list record, items coming from mods not in the modSet could be
-        removed from the list."""
-        pass
+        """This method is called by the bashed patch mod merger. The
+        intention is to allow a record to be filtered according to the
+        specified modSet. E.g. for a list record, items coming from mods not
+        in the modSet could be removed from the list."""
 
     def getDecompressed(self, *, __unpacker=int_unpacker):
         """Return (decompressed if necessary) record data wrapped in BytesIO.
@@ -423,7 +422,7 @@ class MreRecord(object):
 
         Subclasses should actually read the data, but MreRecord just skips over
         it (assuming that the raw data has already been read to itself. To force
-        reading data into an array of subrecords, use iterate_subrecords()."""
+        reading data into an array of subrecords, use iterate_subrecords())."""
         ins.seek(endPos)
 
     def iterate_subrecords(self, mel_sigs=frozenset()):

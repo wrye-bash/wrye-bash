@@ -593,7 +593,7 @@ class MelMODS(MelBase):
         setattr(record, self.attr, None)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs,
-                 __unpacker=int_unpacker):
+                 __unpacker=int_unpacker, __load_fid=_fid_element.load_bytes):
         insUnpack = ins.unpack
         insRead32 = ins.readString32
         count, = insUnpack(__unpacker, 4, *debug_strs)
@@ -601,19 +601,19 @@ class MelMODS(MelBase):
         dataAppend = mods_data.append
         for x in range(count):
             string = insRead32(*debug_strs)
-            int_fid = self.__class__._fid_element.load_bytes(ins, 4)
+            int_fid = __load_fid(ins, 4)
             index, = insUnpack(__unpacker, 4, *debug_strs)
             dataAppend((string, int_fid, index))
         setattr(record, self.attr, mods_data)
 
-    def pack_subrecord_data(self, record, *, __packer=structs_cache['I'].pack):
+    def pack_subrecord_data(self, record, *, __packer=structs_cache['I'].pack,
+                            __fid_packer=_fid_element.packer):
         mods_data = getattr(record, self.attr)
         if mods_data is not None:
             # Sort by 3D Name and 3D Index
             mods_data.sort(key=lambda e: (e[0], e[2]))
-            fid_packer = self.__class__._fid_element.packer
             return b''.join([__packer(len(mods_data)), *(chain(*(
-                [__packer(len(string)), encode(string), fid_packer(int_fid),
+                [__packer(len(string)), encode(string), __fid_packer(int_fid),
                  __packer(index)] for (string, int_fid, index) in
             mods_data)))])
 

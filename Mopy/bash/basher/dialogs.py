@@ -227,7 +227,7 @@ class CreateNewProject(DialogWindow):
         blank_ml_name = f'Blank, {bush.game.displayName} (masterless).esp'
         if self._check_esp_masterless.is_checked:
             bosh.modInfos.create_new_mod(blank_ml_name, dir_path=tempProject,
-                wanted_masters=[])
+                                         wanted_masters=[])
         if self._check_wizard.is_checked:
             # Create (mostly) empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')

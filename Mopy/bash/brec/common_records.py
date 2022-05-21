@@ -147,7 +147,7 @@ class MreFlst(MelRecord):
         super(MreFlst, self).__init__(header, ins, do_unpack=do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
-        self.items  = None #--Set of items included in list
+        self.items = None #--Set of items included in list
         #--Set of items deleted by list (Deflst mods) unused for Skyrim
         self.de_records = None #--Set of items deleted by list (Deflst mods)
         self.re_records = None # unused, needed by patcher
@@ -288,7 +288,7 @@ class MreLeveledListBase(MelRecord):
         super().__init__(header, ins, do_unpack=do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
-        self.items  = None #--Set of items included in list
+        self.items = None #--Set of items included in list
         self.de_records = None #--Set of items deleted by list (Delev and Relev mods)
         self.re_records = None #--Set of items relevelled by list (Relev mods)
 

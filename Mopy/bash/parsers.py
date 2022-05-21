@@ -23,8 +23,8 @@
 """Parsers can read and write information from and to mods and from and to CSV
 files. They store the read information in an internal representation, which
 means that they can be used to export and import information from and to mods.
-They are also used by some of the patchers in order to not duplicate the work
-that has to be done when reading mods.
+They are also used by some patchers in order to not duplicate the work that
+has to be done when reading mods.
 However, not all parsers fit this pattern - some have to read mods twice,
 others barely even fit into the pattern at all (e.g. FidReplacer)."""
 

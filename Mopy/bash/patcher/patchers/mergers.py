@@ -966,4 +966,4 @@ class ImportRacesSpellsPatcher(ImportPatcher):
             log(f'. ~~{_("None")}~~')
         else:
             for eid in sorted(racesPatched):
-                log(u'* ' + eid)
+                log(f'* {eid}')

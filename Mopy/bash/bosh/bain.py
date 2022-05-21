@@ -419,7 +419,7 @@ class Installer(ListInfo):
     def init_global_skips():
         """Update _global_skips with functions deciding if 'fileLower' (docs !)
         must be skipped, based on global settings. Should be updated on boot
-        and on flipping skip settings - and nowhere else hopefully."""
+        and on flipping skip settings - and nowhere else, hopefully."""
         del Installer._global_skips[:]
         del Installer._global_start_skips[:]
         Installer._global_skip_extensions.clear()
@@ -2290,7 +2290,7 @@ class InstallersData(DataStore):
 
     @staticmethod
     def notify_external(changed=frozenset(), deleted=frozenset(),
-            renamed=None):
+                        renamed=None):
         """Notifies BAIN of changes in the Data folder done by something other
         than BAIN.
 

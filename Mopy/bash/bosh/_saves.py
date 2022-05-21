@@ -25,8 +25,8 @@ Oblivion only . We need this split into cosaves and proper saves module and
 coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
 import array
-import io
 from collections import Counter, defaultdict
+from io import BytesIO
 from itertools import starmap, repeat
 
 from .save_headers import OblivionSaveHeader
@@ -83,7 +83,7 @@ class SreNPC(object):
 
     def _load_acbs(self, sr_flags, data_):
         """Loads variables from data."""
-        ins = io.BytesIO(data_)
+        ins = BytesIO(data_)
         def _unpack(fmt, fmt_siz):
             return struct_unpack(fmt, ins.read(fmt_siz))
         sr_flags = SreNPC.sre_flags(sr_flags)
@@ -121,7 +121,7 @@ class SreNPC(object):
 
     def getData(self):
         """Returns self.data."""
-        out = io.BytesIO()
+        out = BytesIO()
         def _pack(fmt, *args):
             out.write(structs_cache[fmt].pack(*args))
         #--Form
@@ -173,49 +173,48 @@ class SreNPC(object):
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
-        buff = io.StringIO()
+        buff = []
         fids = saveFile.fids
         if self.form is not None:
-            buff.write(u'Form:\n  %d' % self.form)
+            buff.append(f'Form:\n  {self.form:d}')
         if self.attributes is not None:
-            buff.write(
-                u'Attributes\n  strength %3d\n  intelligence %3d\n  '
-                u'willpower %3d\n  agility %3d\n  speed %3d\n  endurance '
-                u'%3d\n  personality %3d\n  luck %3d\n' % tuple(
-                    self.attributes))
+            buff.append('Attributes\n  strength %3d\n  intelligence %3d\n  '
+                'willpower %3d\n  agility %3d\n  speed %3d\n  endurance '
+                '%3d\n  personality %3d\n  luck %3d' % tuple(self.attributes))
         if self.acbs is not None:
-            buff.write(u'ACBS:\n')
-            buff.write(f'{self.acbs}\n')
+            buff.append('ACBS:')
+            buff.append(f'{self.acbs}')
         if self.factions is not None:
-            buff.write(u'Factions:\n')
+            buff.append('Factions:')
             for faction in self.factions:
-                buff.write(u'  %8X %2X\n' % (fids[faction[0]], faction[1]))
+                buff.append(f'  {fids[faction[0]]:8X} {faction[1]:2X}')
         if self.spells is not None:
-            buff.write(u'Spells:\n')
+            buff.append('Spells:')
             for spell in self.spells:
-                buff.write(u'  %8X\n' % fids[spell])
+                buff.append(f'  {fids[spell]:8X}')
         if self.ai is not None:
-            buff.write(_(u'AI')+u':\n  ' + self.ai + u'\n')
+            buff.append(_(u'AI') + f':\n  {self.ai}')
         if self.health is not None:
-            buff.write(u'Health\n  %s\n' % self.health)
-            buff.write(u'Unused2\n  %s\n' % self.unused2)
+            buff.append(f'Health\n  {self.health}')
+            buff.append(f'Unused2\n  {self.unused2}')
         if self.modifiers is not None:
-            buff.write(u'Modifiers:\n')
+            buff.append('Modifiers:')
             for modifier in self.modifiers:
-                buff.write(u'  %s\n' % modifier)
+                buff.append(f'  {modifier}')
         if self.full is not None:
-            buff.write(u'Full:\n  %s\n' % self.full)
+            buff.append(f'Full:\n  {self.full}')
         if self.skills is not None:
-            buff.write(
+            buff.append(
                 u'Skills:\n  armorer %3d\n  athletics %3d\n  blade %3d\n '
                 u' block %3d\n  blunt %3d\n  handToHand %3d\n  '
                 u'heavyArmor %3d\n  alchemy %3d\n  alteration %3d\n  '
                 u'conjuration %3d\n  destruction %3d\n  illusion %3d\n  '
                 u'mysticism %3d\n  restoration %3d\n  acrobatics %3d\n  '
                 u'lightArmor %3d\n  marksman %3d\n  mercantile %3d\n  '
-                u'security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(
+                u'security %3d\n  sneak %3d\n  speechcraft  %3d' % tuple(
                     self.skills))
-        return buff.getvalue()
+        buff.append('') # final newline
+        return '\n'.join(buff)
 
 # Save File -------------------------------------------------------------------
 class SaveFile(object):
@@ -274,7 +273,7 @@ class SaveFile(object):
             globalsNum = unpack_short(ins)
             self.globals = [unpack_many(ins, 'If') for _n in range(globalsNum)]
             #--Pre-Created (Class, processes, spectator, sky)
-            buff = io.BytesIO()
+            buff = BytesIO()
             for x in range(4):
                 siz = unpack_short(ins)
                 insCopy(buff, siz, 2)
@@ -290,7 +289,7 @@ class SaveFile(object):
                     record = MreRecord(unpack_header(modReader), modReader)
                     self.created[record.fid] = record
                 #--Pre-records: Quickkeys, reticule, interface, regions
-                buff = io.BytesIO()
+                buff = BytesIO()
                 for x in range(4):
                     siz = unpack_short(ins)
                     insCopy(buff, siz, 2)
@@ -320,7 +319,8 @@ class SaveFile(object):
     def save(self,outPath=None,progress=None):
         """Save data to file.
         outPath -- Path of the output file to write to. Defaults to original file path."""
-        if not self.canSave: raise StateError(u'Insufficient data to write file.')
+        if not self.canSave:
+            raise StateError('Insufficient data to write file.')
         outPath = outPath or self.fileInfo.getPath()
         with outPath.open(u'wb') as out:
             def _pack(fmt, *args):
@@ -345,7 +345,7 @@ class SaveFile(object):
             out.write(self.preCreated)
             #--Created
             progress(0.1,_(u'Writing created.'))
-            _pack(u'I',len(self.created))
+            _pack('I', len(self.created))
             for record in self.created.values():
                 record.dump(out)
             #--Pre-records
@@ -602,7 +602,7 @@ class SaveFile(object):
         data = self.preCreated
         tesClassSize, = struct_unpack(u'H', data[:2])
         if tesClassSize < 4: return
-        buff = io.BytesIO()
+        buff = BytesIO()
         buff.write(data)
         buff.seek(2 + tesClassSize - 4)
         pack_int(buff, value)
@@ -736,7 +736,8 @@ class SaveEnchantments(_SaveData):
                 self.createdEnchantments.append(record)
 
     def setCastWhenUsedEnchantmentNumberOfUses(self,uses):
-        """Sets Cast When Used Enchantment number of uses (via editing the enchant cost)."""
+        """Sets Cast When Used Enchantment number of uses (via editing the
+        enchant cost)."""
         count = 0
         for record in self.createdEnchantments:
             if record.itemType in [1,2]:

@@ -392,7 +392,7 @@ class Installer_Wizard(_Installer_AWizardLink):
         for iniFile, wizardEdits in ret.ini_edits.items():
             basen = os.path.basename(os.path.splitext(iniFile)[0])
             outFile = bass.dirs[u'ini_tweaks'].join(
-                u'%s - Wizard Tweak [%s].ini' % (installer, basen))
+                f'{installer} - Wizard Tweak [{basen}].ini')
             # Use UTF-8 since this came from a wizard.txt which could have
             # characters in it that are unencodable in cp1252 - plus this is
             # just a tweak, won't be read by the game
@@ -1329,15 +1329,15 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
         defaultFilename = self.converter.fullPath.sbody[:-4] + archives\
             .defaultExt
         #--List source archives
-        message = _(u'Using:') + u'\n* ' + u'\n* '.join(sorted(
-            u'(%08X) - %s' % (x, crc_installer[x]) for x in
-            self.converter.srcCRCs)) + u'\n'
+        message = _('Using:') + '\n* ' + '\n* '.join(sorted(
+            f'({x:08X}) - {crc_installer[x]}' for x in
+            self.converter.srcCRCs)) + '\n'
         #--Ask for an output filename
         destArchive = self._askFilename(message, filename=defaultFilename)
         if not destArchive: return
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
-            msg = u'%s: ' % destArchive + _(
+            msg = f'{destArchive}: ' + _(
                 u'An error occurred while applying an Auto-BCF.')
             msg += _(u'Maybe the BCF was packed for another installer ?')
             new_archive_order = self.idata[self.selected[-1]].order + 1
