@@ -115,6 +115,8 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
     tweak_key = u'VORB'
     tweak_log_header = _(u"VadersApp's Oblivion Real Bodies")
     _skeleton_dir = u'Characters\\_male'
+    _skeleton_list: list[str]
+    _skeleton_specials: set[str]
 
     def _get_skeleton_collections(self):
         """construct skeleton mesh collections. skeleton_list gets files that
@@ -131,11 +133,11 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
             list_skel_dir = skeleton_dir.list() # empty if dir does not exist
             skel_nifs = [x for x in list_skel_dir if
                          x.cs.startswith(u'skel_') and x.cext == u'.nif']
-            skeleton_list = [x for x in skel_nifs
+            skeleton_list = [x.s for x in skel_nifs
                              if not x.cs.startswith(u'skel_special_')]
-            set_skeleton_list = set(skeleton_list)
+            set_skeleton_list = {s.lower() for s in skeleton_list}
             skeleton_specials = {x.s for x in skel_nifs
-                                 if x not in set_skeleton_list}
+                                 if x.cs not in set_skeleton_list}
             self._skeleton_list, self._skeleton_specials = (skeleton_list,
                                                             skeleton_specials)
             return skeleton_list, skeleton_specials
@@ -147,11 +149,10 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
             return self._get_skeleton_path(record) # leave unchanged
         special_skel_mesh = u'skel_special_%X.nif' % record.fid[1]
         if special_skel_mesh in skeleton_specials:
-            return u'%s\\%s' % (self._skeleton_dir, special_skel_mesh)
+            return f'{self._skeleton_dir}\\{special_skel_mesh}'
         else:
             random.seed(record.fid[1]) # make it deterministic
-            rand_index = random.randint(1, len(skeleton_list)) - 1 ##: choice?
-            return u'%s\\%s' % (self._skeleton_dir, skeleton_list[rand_index])
+            return f'{self._skeleton_dir}\\{random.choice(skeleton_list)}'
 
 #------------------------------------------------------------------------------
 class VanillaNPCSkeletonPatcher(_ASkeletonTweak):

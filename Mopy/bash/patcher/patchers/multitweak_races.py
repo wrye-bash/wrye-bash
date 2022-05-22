@@ -23,29 +23,40 @@
 """This module contains the MultiTweakItem classes that tweak RACE records."""
 
 from collections import defaultdict
+from typing import Union, Optional
+
 from .base import MultiTweakItem, MultiTweaker
 from ... import bush
-from ...bolt import attrgetter_cache
+from ...bolt import attrgetter_cache, Path
 
 _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
                   u'dark seducer', u'golden saint', u'high elf', u'imperial',
                   u'khajiit', u'nord', u'orc', u'redguard', u'wood elf']
 
+_FidList = list[tuple[Path, int]]
+_FacePartDict = defaultdict[str, _FidList]
+# PY3.10: Union -> |, can't do this here with __future__ annotations
+##: Also, we really need a less hacky solution than this 'mixed dict'
+_MixedDict = dict[Union[bytes, str], Union[_FidList, dict[str, _FidList]]]
+
 class _ARaceTweak(MultiTweakItem):
     """ABC for race tweaks."""
     tweak_read_classes = b'RACE',
     tweak_log_msg = _(u'Races Tweaked: %(total_changed)d')
-    tweak_races_data = None # sentinel, set by the tweaker
+    tweak_races_data: Optional[_MixedDict] = None # sentinel, set by tweaker
+    _cached_changed_eyes: _FacePartDict
+    _cached_changed_hairs: _FacePartDict
 
-    def _calc_changed_face_parts(self, face_attr, collected_races_data):
+    def _calc_changed_face_parts(self, face_attr: str,
+            collected_races_data: _MixedDict) -> _FacePartDict:
         """Calculates a changes dictionary for the specified face attribute,
         using the specified collected races data."""
-        changed_parts = defaultdict(list)
+        changed_parts: _FacePartDict = defaultdict(list)
         #process hair lists
         if self.choiceValues[self.chosen][0] == 1:
             # Merge face parts only from vanilla races to custom parts
             for race in collected_races_data:
-                if race in (b'HAIR', b'EYES'): continue # ugh
+                if isinstance(race, bytes): continue # ugh
                 old_r_data = collected_races_data[race][face_attr]
                 for r in _vanilla_races:
                     if r in race:
@@ -58,7 +69,7 @@ class _ARaceTweak(MultiTweakItem):
                             changed_parts[race] = list(merged_r_data)
         else: # full back and forth merge!
             for race in collected_races_data:
-                if race in (b'HAIR', b'EYES'): continue # ugh
+                if isinstance(race, bytes): continue # ugh
                 old_r_data = collected_races_data[race][face_attr]
                 # nasty processing slog
                 rs = race.split(u'(')
@@ -67,7 +78,7 @@ class _ARaceTweak(MultiTweakItem):
                     rs[0] = rs[0] + u' ' + rs[1]
                     del(rs[1])
                 for r in collected_races_data:
-                    if r == race: continue
+                    if isinstance(r, bytes) or r == race: continue
                     for s in rs:
                         if s in r:
                             new_r_data = collected_races_data[r][face_attr]
@@ -356,7 +367,7 @@ class TweakRacesPatcher(MultiTweaker):
     def initData(self, progress):
         super(TweakRacesPatcher, self).initData(progress)
         if bush.game.race_tweaks_need_collection:
-            self.collected_tweak_data = {b'EYES': [], b'HAIR': []}
+            self.collected_tweak_data: _MixedDict = {b'EYES': [], b'HAIR': []}
 
     def scanModFile(self, modFile, progress):
         if bush.game.race_tweaks_need_collection:

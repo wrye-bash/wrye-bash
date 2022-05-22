@@ -1,6 +1,6 @@
 # Runtime, required
 chardet==4.0.0
-lz4==4.0.0
+lz4==4.0.1
 pywin32==304
 PyYAML==6.0
 wxPython==4.1.1
@@ -10,7 +10,7 @@ lxml==4.8.0
 # For PDF support in the doc browser
 PyMuPDF==1.19.6
 # Compile/Build-time
-pygit2==1.9.1
+pygit2==1.9.2
 pyfiglet==0.8.post1
 pyinstaller==5.1
 pytest==7.1.2

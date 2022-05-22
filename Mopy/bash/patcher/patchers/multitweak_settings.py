@@ -127,6 +127,7 @@ class GlobalsTweak_Crime_ForceJail(_AGlobalsTweak):
 class _AGmstTweak(_ASettingsTweak):
     """Sets a GMST to specified value."""
     tweak_read_classes = b'GMST',
+    _eid_was_itpo: dict[str, bool]
 
     @property
     def chosen_eids(self):
