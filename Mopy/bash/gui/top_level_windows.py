@@ -28,6 +28,7 @@ import wx as _wx
 import wx.adv as _adv
 
 from .base_components import _AComponent, Color, scaled
+from ..bolt import deprint
 
 # Special constant defining a window as having whatever position the underlying
 # GUI implementation picks for it by default.
@@ -277,8 +278,19 @@ class _APageComponent(_AComponent):
     def get_selected_page_index(self):
         return self._native_widget.GetSelection()
 
-    def set_selected_page_index(self, page_index):
-        self._native_widget.SetSelection(page_index)
+    def set_selected_page_index(self, page_index: int) -> None:
+        corrected_index = max(0, min(self.page_count - 1, page_index))
+        if corrected_index != page_index:
+            deprint(
+                f'warning: attempted to set selected page to {page_index}, '
+                f'out of range of available pages (0-{self.page_count - 1}). '
+                f'Using {corrected_index} instead.'
+            )
+        self._native_widget.SetSelection(corrected_index)
+
+    @property
+    def page_count(self) -> int:
+        return self._native_widget.PageCount
 
 class TabbedPanel(_APageComponent):
     """A panel with tabs, each of which contains a different panel."""
