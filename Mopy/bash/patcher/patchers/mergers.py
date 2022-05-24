@@ -963,7 +963,7 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         self._srcMods(log)
         log(u'\n=== ' + _(u'Merged'))
         if not racesPatched:
-            log(u'. ~~%s~~' % _(u'None'))
+            log(f'. ~~{_("None")}~~')
         else:
             for eid in sorted(racesPatched):
                 log(u'* ' + eid)

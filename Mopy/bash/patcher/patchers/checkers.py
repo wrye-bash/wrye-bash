@@ -415,7 +415,7 @@ class NpcCheckerPatcher(Patcher):
         if mod_npcsFixed:
             log(u'\n=== ' + _(u'Eyes/Hair Assigned for NPCs'))
             for src_mod, num_fixed in dict_sort(mod_npcsFixed):
-                log(u'* %s: %d' % (src_mod, num_fixed))
+                log(f'* {src_mod}: {num_fixed:d}')
 
 #------------------------------------------------------------------------------
 class TimescaleCheckerPatcher(ModLoader):
