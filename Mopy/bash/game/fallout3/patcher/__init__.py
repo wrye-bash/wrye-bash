@@ -812,9 +812,8 @@ race_tweaks_need_collection = True
 #------------------------------------------------------------------------------
 # NPC Checker
 #------------------------------------------------------------------------------
-# Note that we use _x to avoid exposing these to the dynamic importer
 def _fid(_x): return None, _x # None <=> game master
-_standard_eyes = [_fid(_x) for _x in (0x4252, 0x4253, 0x4254, 0x4255, 0x4256)]
+_standard_eyes = [*map(_fid, (0x4252, 0x4253, 0x4254, 0x4255, 0x4256))]
 default_eyes = {
     #--FalloutNV.esm
     # Caucasian

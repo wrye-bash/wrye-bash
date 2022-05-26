@@ -114,6 +114,7 @@ ManifestDPIAware true
 
 
 ;-------------------------------- Page List:
+    !define MUI_ICON "${WB_CLEAN_MOPY}\bash\images\bash_32.ico"
     !define MUI_HEADERIMAGE
     !define MUI_HEADERIMAGE_BITMAP "${WB_CLEAN_MOPY}\bash\images\nsis\wrye_monkey_150x57.bmp"
     !define MUI_HEADERIMAGE_RIGHT

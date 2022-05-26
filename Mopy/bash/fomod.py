@@ -462,9 +462,10 @@ class FomodInstaller(object):
                 option_files = option.option_object.find('files')
                 if option_files is not None:
                     # Here we have to worry about the con/req split
+                    op_usable = option.option_type is not OptionType.NOT_USABLE
                     con_files, req_files = _FomodFileInfo.process_files(
                         option_files, self.file_list, self.installer_root,
-                        is_usable=option.option_type != OptionType.NOT_USABLE)
+                        is_usable=op_usable)
                     collected_files.extend(req_files)
                     # Only include the conditional files if the option was
                     # actually selected
@@ -569,7 +570,7 @@ class FomodInstaller(object):
         else:
             actual_type = (FileState.ACTIVE if cached_is_active(test_file)
                            else FileState.INACTIVE)
-        if actual_type != target_type:
+        if actual_type is not target_type:
             raise FailedCondition(self._readable_state_errors[
                 (target_type, actual_type)] % {'target_file_name': test_file})
 

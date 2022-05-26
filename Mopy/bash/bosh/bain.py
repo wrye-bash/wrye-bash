@@ -2668,10 +2668,10 @@ class InstallersData(DataStore):
                 for fn_key in owned_files:
                     if modInfos.rightFileType(fn_key):
                         refresh_ui[0] = True
-                        modInfos.table.setItem(GPath_no_norm(fn_key), u'installer', ikey)
+                        modInfos[GPath_no_norm(fn_key)].set_table_prop('installer', ikey)
                     elif ini_name := InstallersData._is_ini_tweak(fn_key):
                         refresh_ui[1] = True
-                        iniInfos.table.setItem(GPath_no_norm(ini_name), u'installer', ikey)
+                        iniInfos[GPath_no_norm(ini_name)].set_table_prop('installer', ikey)
         finally:
             self.irefresh(what=u'NS')
 

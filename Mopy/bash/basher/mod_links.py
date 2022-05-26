@@ -1353,7 +1353,7 @@ class Mod_FogFixer(ItemLink):
                 fog_fixer.fix_fog(SubProgress(progress, index, index + 1))
                 if fog_fixer.fixedCells:
                     fixed.append(
-                        u'* %4d %s' % (len(fog_fixer.fixedCells), fileName))
+                        f'* {len(fog_fixer.fixedCells):4d} {fileName}')
         if fixed:
             message = u'==='+_(u'Cells Fixed')+u':\n'+u'\n'.join(fixed)
             self._showWryeLog(message)
