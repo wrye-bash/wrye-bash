@@ -523,18 +523,17 @@ class MreCrea(MelRecord):
     """Creature."""
     rec_sig = b'CREA'
 
+    # Names match those of MreCrea._flags in later games
+    # Default is 0x48 (walks | crea_none)
     _crea_flags = Flags.from_names(
-        u'biped', # names match those of MreCrea._flags in later games
-        u'respawn',
-        u'weaponAndShield',
-        u'crea_none',
-        u'swims',
-        u'flies',
-        u'walks',
-        u'default_flags',
-        u'essential',
-        u'skeleton_blood',
-        u'metal_blood',
+        'biped',
+        'respawn',
+        'weaponAndShield',
+        'crea_none',
+        'swims',
+        'flies',
+        'walks',
+        'essential',
     )
 
     melSet = MelSet(
@@ -552,7 +551,8 @@ class MreCrea(MelRecord):
             u'crea_attack_min_1', u'crea_attack_max_1', u'crea_attack_min_2',
             u'crea_attack_max_2', u'crea_attack_min_3', u'crea_attack_max_3',
             u'crea_gold'),
-        MelUInt32Flags(b'FLAG', u'crea_flags', _crea_flags),
+        MelStruct(b'FLAG', ['B', '3s'], ('crea_flags', _crea_flags),
+            'blood_type'),
         MelRefScale(),
         MelItems(),
         MelMWSpells(),
@@ -885,14 +885,13 @@ class MreNpc(MelRecord):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
+    # Names match those of MreNpc._flags in later games
     _npc_flags = Flags.from_names(
-        (0, u'female'),
-        (1, u'essential'),
-        (2, u'respawn'),
-        (3, u'default_unknown'), # always set
-        (4, u'autoCalc'), # Bad name to match other games
-        (10, u'skeleton_blood'),
-        (11, u'metal_blood'),
+        'female',
+        'essential',
+        'respawn',
+        'default_unknown', # always set
+        'autoCalc',
     )
 
     class MelNpcData(MelLists):
@@ -933,7 +932,8 @@ class MreNpc(MelRecord):
                 u'npc_fatigue', u'npc_disposition', u'npc_reputation',
                 u'npc_rank', u'unknown3', u'npc_gold'),
         }, decider=NpcDataDecider()),
-        MelUInt32Flags(b'FLAG', u'npc_flags', _npc_flags),
+        MelStruct(b'FLAG', ['B', '3s'], ('npc_flags', _npc_flags),
+            'blood_type'),
         MelItems(),
         MelMWSpells(),
         MelAIData(),
