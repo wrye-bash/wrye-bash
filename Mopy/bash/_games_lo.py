@@ -389,10 +389,13 @@ class LoGame(object):
         """:rtype: list[bolt.Path]"""
         raise exception.AbstractError
 
-    def _persist_load_order(self, lord, active):
+    def _persist_load_order(self, lord, active, *, _cleaned=False):
         """Persist the fixed lord to disk - will break conflicts for
-        timestamp games."""
-        raise exception.AbstractError
+        timestamp games.
+        :param _cleaned: internal, used in AsteriskGame - whether lists are
+        already cleaned."""
+        raise exception.AbstractError(f'{type(self)} does not define '
+                                      f'_persist_load_order')
 
     def _persist_active_plugins(self, active, lord):
         raise exception.AbstractError
@@ -433,7 +436,8 @@ class LoGame(object):
 
     def _filter_actives(self, active, rem_from_acti):
         """Removes entries that are not supposed to be in the actives file."""
-        return [x for x in active if x not in rem_from_acti]
+        return [x for x in active if
+                x not in rem_from_acti] if rem_from_acti else active
 
     def _clean_actives(self, active, lord): # LO matters only for AsteriskGame
         """Removes all plugins from the actives file that should not be there,
@@ -819,13 +823,13 @@ class INIGame(LoGame):
         else:
             super()._persist_active_plugins(active, lord)
 
-    def _persist_load_order(self, lord, active):
+    def _persist_load_order(self, lord, active, *, _cleaned=False):
         if self._handles_lo:
             self._write_ini(self._cached_ini_lo,
                             self.__class__.ini_key_lo, lord)
             self._cached_ini_lo.do_update()
         else:
-            super()._persist_load_order(lord, active)
+            super()._persist_load_order(lord, active, _cleaned=_cleaned)
 
     # Misc overrides
     @classmethod
@@ -951,9 +955,9 @@ class TimestampGame(LoGame):
         active, _lo = self._parse_plugins_txt()
         return active
 
-    def _persist_load_order(self, lord, active):
+    def _persist_load_order(self, lord, active, *, _cleaned=False):
         assert set(self.mod_infos) == set(lord) # (lord must be valid)
-        if len(lord) == 0: return
+        if not lord: return
         current = self.__calculate_mtime_order()
         # break conflicts
         older = self.mod_infos[current[0]].mtime # initialize to game master
@@ -1147,7 +1151,7 @@ class TextfileGame(LoGame):
         acti, _lo = self._clean_actives(*self._parse_plugins_txt())
         return acti
 
-    def _persist_load_order(self, lord, active):
+    def _persist_load_order(self, lord, active, *, _cleaned=False):
         _write_plugins_txt_(self.loadorder_txt_path, lord, lord, _star=False)
         self.__update_lo_cache_info()
 
@@ -1232,24 +1236,25 @@ class AsteriskGame(LoGame):
         create it. Discards information read if cached is passed in."""
         active, lo = self._parse_modfile(self.plugins_txt_path) # empty if not exists
         lo = lo if cached_load_order is None else cached_load_order
-        if cached_active is None:  # we fetched it, clean it up
+        if cleaned := cached_active is None:  # we fetched it, clean it up
             active, lo = self._clean_actives(active, lo)
         else:
             active = cached_active
         if not self.plugins_txt_path.exists():
             # Create it if it doesn't exist
-            self._persist_load_order(lo, active)
+            self._persist_load_order(lo, active, _cleaned=cleaned)
             bolt.deprint(f'Created {self.plugins_txt_path}')
         return lo, active
 
-    def _persist_load_order(self, lord, active):
-        assert active # must at least contain the master esm for these games
+    def _persist_load_order(self, lord, active, *, _cleaned=False):
+        if not _cleaned: # must at least contain the master esm for these games
+            assert active
         rem_from_acti = self._active_entries_to_remove()
         self._write_plugins_txt(self._filter_actives(lord, rem_from_acti),
                                 self._filter_actives(active, rem_from_acti))
 
     def _persist_active_plugins(self, active, lord):
-        self._persist_load_order(lord, active)
+        self._persist_load_order(lord, active) # note we do no pass _cleaned!
 
     def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
         if fixed_active: return # plugins.txt already saved
@@ -1288,7 +1293,8 @@ class AsteriskGame(LoGame):
                 self.get_acti_file()))
             # We removed plugins that don't belong here, back up first
             self._backup_active_plugins()
-            self._persist_active_plugins(active_filtered, lord_filtered)
+            self._persist_load_order(lord_filtered, active_filtered,
+                                     _cleaned=True) # we need to pass _cleaned
         # Prepend all fixed-order plugins that can't be in the actives plugins
         # list to the actives
         sorted_rem = [x for x in self._fixed_order_plugins()
@@ -1393,8 +1399,8 @@ class WindowsStoreGame(LoGame):
         if fb_acti_file:
             self.get_acti_file().copyTo(fb_acti_file)
 
-    def _persist_load_order(self, lord, active):
-        super()._persist_load_order(lord, active)
+    def _persist_load_order(self, lord, active, *, _cleaned=False):
+        super()._persist_load_order(lord, active, _cleaned=_cleaned)
         _fb_acti_file, fb_lo_file = self._fallback_lo_files
         if fb_lo_file:
             self.get_lo_file().copyTo(fb_lo_file)
