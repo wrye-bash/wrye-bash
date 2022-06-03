@@ -246,9 +246,8 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
 ##                if record.fid in self.old_new:
 ##                    self.patchFile.tops[top_grup_sig].setRecord(record)
         if b'CELL' in modFile.tops:
-            for cellBlock in modFile.tops[b'CELL'].cellBlocks:
+            for cfid, cellBlock in modFile.tops[b'CELL'].id_cellBlock.items():
                 cellImported = False
-                cfid = cellBlock.cell.fid
                 if cfid in patchCells.id_cellBlock:
                     patchCells.id_cellBlock[cfid].cell = cellBlock.cell
                     cellImported = True
@@ -281,15 +280,13 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                             patchCells.id_cellBlock[
                                 cfid].persistent_refs.append(record)
         if b'WRLD' in modFile.tops:
-            for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
+            for wfid, worldBlock in modFile.tops[b'WRLD'].id_worldBlocks.items():
                 worldImported = False
-                wfid = worldBlock.world.fid
                 if wfid in patchWorlds.id_worldBlocks:
                     patchWorlds.id_worldBlocks[wfid].world = worldBlock.world
                     worldImported = True
-                for cellBlock in worldBlock.cellBlocks:
+                for wcfid, cellBlock in worldBlock.id_cellBlock.items():
                     cellImported = False
-                    wcfid = cellBlock.cell.fid
                     if wfid in patchWorlds.id_worldBlocks and wcfid in patchWorlds.id_worldBlocks[wfid].id_cellBlock:
                         patchWorlds.id_worldBlocks[
                             wfid].id_cellBlock[wcfid].cell = cellBlock.cell
@@ -351,8 +348,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
 ####                    record.mapFids(swapper,True)
 ##                    record.setChanged()
 ##                    keep(record.fid)
-        for cellBlock in self.patchFile.tops[b'CELL'].cellBlocks:
-            cfid = cellBlock.cell.fid
+        for cfid, cellBlock in self.patchFile.tops[b'CELL'].id_cellBlock.items():
             for record in cellBlock.temp_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
@@ -367,10 +363,10 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
-        for worldBlock in self.patchFile.tops[b'WRLD'].worldBlocks:
+        for worldId, worldBlock in self.patchFile.tops[
+            b'WRLD'].id_worldBlocks.items():
             keepWorld = False
-            for cellBlock in worldBlock.cellBlocks:
-                cfid = cellBlock.cell.fid
+            for cfid, cellBlock in worldBlock.id_cellBlock.items():
                 for record in cellBlock.temp_refs:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
@@ -388,7 +384,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                         keep(record.fid)
                         keepWorld = True
             if keepWorld:
-                keep(worldBlock.world.fid)
+                keep(worldId)
         log.setHeader(f'= {self._patcher_name}')
         self._srcMods(log)
         log(u'\n=== '+_(u'Records Patched'))

@@ -105,8 +105,8 @@ class MreHeaderBase(MelRecord):
     def author(self, new_author):
         self.author_pstr = new_author
 
-    def loadData(self, ins, endPos):
-        super(MreHeaderBase, self).loadData(ins, endPos)
+    def loadData(self, ins, endPos, *, file_offset=0):
+        super().loadData(ins, endPos, file_offset=file_offset)
         self._truncate_masters()
 
     def _truncate_masters(self):
@@ -136,7 +136,7 @@ class MreFlst(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFids(b'LNAM', u'formIDInList'), # do *not* sort!
+        MelFids('formIDInList', MelFid(b'LNAM')),  # do *not* sort!
     )
 
     __slots__ = melSet.getSlotsUsed() + [u'mergeOverLast', u'mergeSources',
@@ -144,7 +144,7 @@ class MreFlst(MelRecord):
                                          u're_records']
 
     def __init__(self, header, ins=None, do_unpack=False):
-        super(MreFlst, self).__init__(header, ins, do_unpack)
+        super(MreFlst, self).__init__(header, ins, do_unpack=do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list
@@ -285,7 +285,7 @@ class MreLeveledListBase(MelRecord):
                 # + ['flags', 'entries'] # define those in the subclasses
 
     def __init__(self, header, ins=None, do_unpack=False):
-        super(MreLeveledListBase, self).__init__(header, ins, do_unpack)
+        super().__init__(header, ins, do_unpack=do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list

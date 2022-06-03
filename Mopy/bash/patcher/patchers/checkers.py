@@ -179,8 +179,8 @@ class EyeCheckerPatcher(Patcher):
                 # Don't complain if the FULL is missing, that probably means
                 # it's an internal or unused RACE
                 if record.full:
-                    deprint(u'No right and/or no left eye recorded in race '
-                        u'%s, from mod %s' % (record.full, modFile.fileInfo))
+                    deprint(f'No right and/or no left eye recorded in race '
+                            f'{record.full}, from mod {modFile.fileInfo}')
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:

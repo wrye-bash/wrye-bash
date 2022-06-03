@@ -358,7 +358,7 @@ class MreRecord(object):
     # those subrecords
     subrec_sig_to_record_sig = defaultdict(set)
 
-    def __init__(self, header, ins=None, do_unpack=False):
+    def __init__(self, header, ins=None, *, do_unpack=False):
         self.header = header
         self._rec_sig = header.recType
         self.fid = header.fid
@@ -369,21 +369,31 @@ class MreRecord(object):
         self.changed = False
         self.data = None
         self.inName = ins and ins.inName
-        if ins: self.load(ins, do_unpack)
+        if ins: # Load data from ins stream
+            file_offset = ins.tell()
+            self.data = ins.read(self.size, self._rec_sig,
+                                 file_offset=file_offset)
+            if not do_unpack: return  #--Read, but don't analyze.
+            if self.__class__ is MreRecord: return  # nothing to be done
+            ins_ins, ins_size = ins.ins, ins.size
+            try: # swap the wrapped io stream with our (decompressed) data
+                ins.ins, ins.size = self.getDecompressed()
+                self.loadData(ins, ins.size, file_offset=file_offset)
+            finally: # restore the wrapped stream to read next record
+                ins.ins, ins.size = ins_ins, ins_size
 
     def __repr__(self):
         reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''
         return f'<{reid}[{self.rec_str}:{strFid(self.fid)}]>'
 
     def getTypeCopy(self):
-        """Returns a type class copy of self"""
-        if self.__class__ == MreRecord:
-            fullClass = MreRecord.type_class[self._rec_sig]
-            myCopy = fullClass(self.header)
-            myCopy.data = self.data
-            myCopy.load(do_unpack=True)
-        else:
-            myCopy = copy.deepcopy(self)
+        """Return a copy of self - MreRecord base class will find and return an
+        instance of the appropriate subclass (!)"""
+        subclass = MreRecord.type_class[self._rec_sig]
+        myCopy = subclass(self.header)
+        myCopy.data = self.data
+        with ModReader(self.inName, *self.getDecompressed()) as reader:
+            myCopy.loadData(reader, reader.size) # load the data to rec attrs
         myCopy.changed = True
         myCopy.data = None
         return myCopy
@@ -396,42 +406,19 @@ class MreRecord(object):
         pass
 
     def getDecompressed(self, *, __unpacker=int_unpacker):
-        """Return self.data, first decompressing it if necessary."""
-        if not self.flags1.compressed: return self.data
+        """Return (decompressed if necessary) record data wrapped in BytesIO.
+        Return also the length of the data."""
+        if not self.flags1.compressed:
+            return io.BytesIO(self.data), len(self.data)
         decompressed_size, = __unpacker(self.data[:4])
         decomp = zlib.decompress(self.data[4:])
         if len(decomp) != decompressed_size:
             raise exception.ModError(self.inName,
                 f'Mis-sized compressed data. Expected {decompressed_size}, '
                 f'got {len(decomp)}.')
-        return decomp
+        return io.BytesIO(decomp), len(decomp)
 
-    def load(self, ins=None, do_unpack=False):
-        """Load data from ins stream or internal data buffer."""
-        #--Read, but don't analyze.
-        if not do_unpack:
-            self.data = ins.read(self.size, self._rec_sig)
-        #--Unbuffered analysis?
-        elif ins and not self.flags1.compressed:
-            inPos = ins.tell()
-            self.data = ins.read(self.size, self._rec_sig)
-            ins.seek(inPos,0,self._rec_sig,u'_REWIND') # _rec_sig,'_REWIND' is just for debug
-            self.loadData(ins,inPos+self.size)
-        #--Buffered analysis (subclasses only)
-        else:
-            if ins:
-                self.data = ins.read(self.size,self._rec_sig)
-            if not self.__class__ == MreRecord:
-                with self.getReader() as reader:
-                    # Check This
-                    if ins and ins.hasStrings: reader.setStringTable(ins.strings)
-                    self.loadData(reader,reader.size)
-        #--Discard raw data?
-        if do_unpack == 2:
-            self.data = None
-            self.changed = True
-
-    def loadData(self,ins,endPos):
+    def loadData(self, ins, endPos, *, file_offset=0):
         """Loads data from input stream. Called by load().
 
         Subclasses should actually read the data, but MreRecord just skips over
@@ -445,7 +432,7 @@ class MreRecord(object):
 
         :type mel_sigs: set"""
         if not self.data: return
-        with self.getReader() as reader:
+        with ModReader(self.inName, *self.getDecompressed()) as reader:
             _rec_sig_ = self._rec_sig
             readAtEnd = reader.atEnd
             while not readAtEnd(reader.size,_rec_sig_):
@@ -514,10 +501,6 @@ class MreRecord(object):
         out.write(self.header.pack_head())
         if self.size > 0: out.write(self.data)
 
-    def getReader(self):
-        """Returns a ModReader wrapped around (decompressed) self.data."""
-        return ModReader(self.inName, io.BytesIO(self.getDecompressed()))
-
     #--Accessing subrecords ---------------------------------------------------
     def getSubString(self, mel_sig_):
         """Returns the (stripped) string for a zero-terminated string
@@ -557,13 +540,20 @@ class MelRecord(MreRecord):
     _has_duplicate_attrs = False
     __slots__ = []
 
-    def __init__(self, header, ins=None, do_unpack=False):
+    def __init__(self, header, ins=None, *, do_unpack=False):
         if self.__class__.rec_sig != header.recType:
-            raise ValueError(u'Initialize %s with header.recType %s' % (
-                type(self), header.recType))
+            raise ValueError(f'Initialize {type(self)} with header.recType '
+                             f'{header.recType}')
         for element in self.__class__.melSet.elements:
             element.setDefault(self)
-        MreRecord.__init__(self, header, ins, do_unpack)
+        MreRecord.__init__(self, header, ins, do_unpack=do_unpack)
+
+    def getTypeCopy(self):
+        """Return a copy of self - we must be loaded, data will be discarded"""
+        myCopy = copy.deepcopy(self)
+        myCopy.changed = True
+        myCopy.data = None
+        return myCopy
 
     @classmethod
     def validate_record_syntax(cls):
@@ -577,13 +567,14 @@ class MelRecord(MreRecord):
         MelGroup and MelGroups."""
         return cls.melSet.getDefault(attr)
 
-    def loadData(self, ins, endPos):
-        """Loads data from input stream. Called by load()."""
+    def loadData(self, ins, endPos, *, file_offset=0):
+        """Loads data from input stream."""
         loaders = self.__class__.melSet.loaders
         # Load each subrecord
         ins_at_end = ins.atEnd
         while not ins_at_end(endPos, self._rec_sig):
-            sub_type, sub_size = unpackSubHeader(ins, self._rec_sig)
+            sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
+                                                 file_offset=file_offset)
             try:
                 loader = loaders[sub_type]
                 try:
@@ -596,13 +587,14 @@ class MelRecord(MreRecord):
                 # Wrap this error to make it more understandable
                 error = f'Unexpected subrecord: {self.rec_str}.' \
                         f'{sig_to_str(sub_type)}'
+            file_offset += ins.tell()
             bolt.deprint('\n'.join([
                 f'Error loading {self.rec_str} record '
                 f'and/or subrecord: {self.fid:08X}',
                 f'  eid = {getattr(self, "eid", "<<NO EID>>")!r}',
                 f'  subrecord = {sig_to_str(sub_type)}',
                 f'  subrecord size = {sub_size}',
-                f'  file pos = {ins.tell()}']))
+                f'  file pos = {file_offset}']))
             if isinstance(error, str):
                 raise exception.ModError(ins.inName, error)
             raise exception.ModError(ins.inName, f'{error!r}') from error

@@ -33,7 +33,7 @@ from collections import OrderedDict
 from itertools import chain
 
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct, \
-    MelSequential
+    MelSequential, MelNum
 from .. import exception
 from ..bolt import structs_cache, attrgetter_cache, deprint
 
@@ -379,6 +379,9 @@ class MelArray(MelBase):
     def mapFids(self, record, function, save_fids=False):
         if self._prelude_has_fids:
             self._prelude.mapFids(record, function, save_fids)
+        self._map_array_fids(record, function, save_fids)
+
+    def _map_array_fids(self, record, function, save_fids):
         if self._element_has_fids:
             array_val = getattr(record, self.attr)
             if array_val:
@@ -387,14 +390,17 @@ class MelArray(MelBase):
                     map_entry(arr_entry, function, save_fids)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        append_entry = getattr(record, self.attr).append
-        entry_slots = self.array_element_attrs
-        entry_size = self._element_size
-        load_entry = self._element.load_mel
         if self._prelude:
             self._prelude.load_mel(record, ins, sub_type, self._prelude_size,
                                    *debug_strs)
             size_ -= self._prelude_size
+        self._load_array(record, ins, sub_type, size_, debug_strs)
+
+    def _load_array(self, record, ins, sub_type, size_, debug_strs):
+        append_entry = getattr(record, self.attr).append
+        entry_slots = self.array_element_attrs
+        entry_size = self._element_size
+        load_entry = self._element.load_mel
         for x in range(size_ // entry_size):
             arr_entry = MelObject()
             append_entry(arr_entry)
@@ -413,9 +419,41 @@ class MelArray(MelBase):
                 sub_data = b''
         else:
             sub_data = b''
-        sub_data += b''.join([self._element.pack_subrecord_data(arr_entry)
-                              for arr_entry in array_val])
+        sub_data += self._pack_array_data(array_val)
         return sub_data
+
+    def _pack_array_data(self, array_val):
+        return b''.join(
+            [self._element.pack_subrecord_data(arr_entry) for arr_entry in
+             array_val])
+
+#------------------------------------------------------------------------------
+class MelSimpleArray(MelArray):
+    """A MelArray of simple elements (currently MelNum) - override loading and
+    dumping of the array to avoid creating mel objects."""
+    _element: MelNum
+
+    def __init__(self, array_attr, element):
+        if not isinstance(element, MelNum):
+            raise SyntaxError(f'MelSimpleArray only accepts MelNum, passed: '
+                              f'{element!r}')
+        super().__init__(array_attr, element)
+
+    def _load_array(self, record, ins, sub_type, size_, *debug_strs):
+        entry_size = self._element_size
+        getattr(record, self.attr).extend(
+            self._element.load_bytes(ins, entry_size, *debug_strs) for x in
+            range(size_ // entry_size))
+
+    def _map_array_fids(self, record, function, save_fids):
+        if self._element_has_fids:
+            array_val = getattr(record, self.attr)
+            mapped = [function(arr_entry) for arr_entry in array_val]
+            if save_fids:
+                setattr(record, self.attr, mapped)
+
+    def _pack_array_data(self, array_val):
+        return b''.join(map(self._element.packer, array_val))
 
 #------------------------------------------------------------------------------
 class MelTruncatedStruct(MelStruct):

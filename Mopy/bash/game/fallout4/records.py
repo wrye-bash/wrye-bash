@@ -24,7 +24,7 @@
 imported from skyrim, but only after setting MelModel to the FO4 format."""
 from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
-    MelStruct, MelNull, MelFidList, MreLeveledListBase, MelFid, \
+    MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, \
     MelArray, MreGmstBase, MelUInt8Flags
 
@@ -75,7 +75,7 @@ class MreTes4(MreHeaderBase):
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelFidList(b'ONAM','overrides',),
+        MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelBase(b'INTV', 'unknownINTV'),
         MelBase(b'INCC', 'unknownINCC'),

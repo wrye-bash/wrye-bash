@@ -110,7 +110,7 @@ class PCFaces(object):
         return created face with that fid.
         Note: Created NPCs do NOT use irefs!"""
         faces = {}
-        for record in saveFile.created:
+        for rfid, record in saveFile.created.items():
             if record._rec_sig != b'NPC_': continue
             #--Created NPC record
             npc = record.getTypeCopy()
@@ -124,18 +124,17 @@ class PCFaces(object):
             face.gender = (0,1)[npc.flags.female]
             face.pcName = npc.full
             #--Changed NPC Record
-            PCFaces.save_getChangedNpc(saveFile,record.fid,face)
+            PCFaces.save_getChangedNpc(saveFile, rfid, face)
         return faces
 
     @staticmethod
-    def save_getChangedNpc(saveFile,fid,face=None):
+    def save_getChangedNpc(saveFile, npc_fid, face=None):
         """Update face with data from npc change record."""
         face = face or PCFaces.PCFace()
-        changeRecord = saveFile.getRecord(fid)
-        if not changeRecord:
+        changeRecord = saveFile.get_npc(npc_fid)
+        if changeRecord is None:
             return face
-        fid,_recType,recFlags,version,data = changeRecord
-        npc = SreNPC(recFlags,data)
+        npc, _version = changeRecord
         if npc.acbs:
             face.gender = npc.acbs.flags.female
             face.level_offset = npc.acbs.level_offset
@@ -164,7 +163,7 @@ class PCFaces(object):
         face.pcName = saveFile.header.pcName
         face.face_masters = saveFile._masters
         #--Player ACHR
-        record = saveFile.getRecord(0x14)
+        record = saveFile.fid_recNum.get(0x14)
         data = record[-1]
         namePos = PCFaces.save_getNamePos(saveFile.fileInfo.ci_key, data,
                                           encode(saveFile.header.pcName))
@@ -199,22 +198,22 @@ class PCFaces(object):
         """Sets created face in savefile to specified face.
         Note: Created NPCs do NOT use irefs!"""
         #--Find record
-        for index,record in enumerate(saveFile.created):
-            if record.fid == targetid:
+        for rfid, record in saveFile.created.items():
+            if rfid == targetid:
                 if record._rec_sig != b'NPC_':
                     raise StateError(f'Record {targetid:08X} in '
                                      f'{saveFile.fileInfo} is not an NPC.')
                 npc = record.getTypeCopy()
-                saveFile.created[index] = npc
+                saveFile.created[rfid] = npc
                 break
         else:
             raise StateError(f'Record {targetid:08X} not found in '
                              f'{saveFile.fileInfo}.')
         #--Update masters
-        for fid in (face.race, face.eye, face.hair):
-            if not fid: continue
+        for save_rec_fid in (face.race, face.eye, face.hair):
+            if not save_rec_fid: continue
             maxMaster = len(face.face_masters) - 1
-            mod = getModIndex(fid)
+            mod = getModIndex(save_rec_fid)
             master = face.face_masters[min(mod, maxMaster)]
             saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
@@ -241,13 +240,11 @@ class PCFaces(object):
         if face.iclass: npc.iclass = face.iclass
         npc.setChanged()
         npc.getSize()
-
         #--Change record?
-        changeRecord = saveFile.getRecord(npc.fid)
+        changeRecord = saveFile.get_npc(npc_int_fid := npc.fid)
         if changeRecord is None: return
-        fid,_recType,recFlags,version,data = changeRecord
-        npc = SreNPC(recFlags,data)
-        if not npc.acbs: npc.acbs = npc.get_acbs()
+        npc, version = changeRecord
+        if not npc.acbs: npc.acbs = SreNPC.ACBS()
         npc.acbs.flags.female = face.gender
         npc.acbs.level_offset = face.level_offset
         npc.acbs.baseSpell = face.baseSpell
@@ -257,12 +254,11 @@ class PCFaces(object):
         getIref = saveFile.getIref
         npc.spells = [getIref(x) for x in face.spells]
         npc.factions = [(getIref(x),y) for x,y in face.factions]
-
         #--Done
-        saveFile.setRecord(npc.getTuple(fid,version))
+        saveFile.fid_recNum[npc_int_fid] = npc.getTuple(version)
 
     @staticmethod
-    def save_setPlayerFace(saveFile, face, pcf_flags=0, morphFacts=None):
+    def save_setPlayerFace(saveFile, face, pcf_flags=0):
         """Write a pcFace to a save file."""
         pcf_flags = PCFaces.pcf_flags(pcf_flags)
         #--Update masters
@@ -273,7 +269,6 @@ class PCFaces(object):
             master = face.face_masters[min(mod, maxMaster)]
             saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
-
         #--Player ACHR
         #--Buffer for modified record data
         buff = io.BytesIO()
@@ -286,7 +281,7 @@ class PCFaces(object):
                 pack_int(buff, newRef)
             else:
                 buff.seek(4,1)
-        oldRecord = saveFile.getRecord(0x14)
+        oldRecord = saveFile.fid_recNum.get(0x14)
         oldData = oldRecord[-1]
         namePos = PCFaces.save_getNamePos(saveFile.fileInfo.ci_key, oldData,
                                           encode(saveFile.header.pcName))
@@ -329,13 +324,10 @@ class PCFaces(object):
             if customClass not in (newClass,oldClass):
                 buff.seek(pos)
                 buffPackRef(newClass)
-
         newData = buff.getvalue()
-        saveFile.setRecord(oldRecord[:-1]+(newData,))
-
+        saveFile.fid_recNum[0x14] = (*oldRecord[:-1], newData)
         #--Player NPC
-        (fid,_recType,recFlags,version,data) = saveFile.getRecord(7)
-        npc = SreNPC(recFlags,data)
+        npc, version = saveFile.get_npc()
         #--Gender
         if pcf_flags.gender and npc.acbs:
             npc.acbs.flags.female = face.gender
@@ -352,11 +344,10 @@ class PCFaces(object):
         #--Modifiers, Spells, Name
         if pcf_flags.modifiers: npc.modifiers = face.modifiers[:]
         if pcf_flags.spells:
-            #delist('Set PC Spells:',face.spells)
             npc.spells = [saveFile.getIref(x) for x in face.spells]
         npc.full = None
         #--Save
-        saveFile.setRecord(npc.getTuple(fid,version))
+        saveFile.fid_recNum[7] = npc.getTuple(version)
 
     # Save Misc ----------------------------------------------------------------
     @staticmethod
@@ -366,7 +357,7 @@ class PCFaces(object):
         if no repair was necessary."""
         saveFile = SaveFile(saveInfo)
         saveFile.load()
-        record = saveFile.getRecord(0x14)
+        record = saveFile.fid_recNum.get(0x14)
         data = record[-1]
         namePos = PCFaces.save_getNamePos(saveInfo.ci_key, data,
                                           encode(saveFile.header.pcName))
@@ -380,10 +371,9 @@ class PCFaces(object):
             hairForm = bush.game.raceHairMale.get(raceForm,0x90475)
         hairRef = saveFile.getIref(hairForm)
         data = data[:namePos-18]+struct_pack(u'I', hairRef)+data[namePos-14:]
-        saveFile.setRecord(record[:-1]+(data,))
+        saveFile.fid_recNum[0x14] = (*record[:-1], data)
         saveFile.safeSave()
         return True
-
     # MODS --------------------------------------------------------------------
     @staticmethod
     def _mod_load_fact(modInfo, keepAll=False, by_sig=None):

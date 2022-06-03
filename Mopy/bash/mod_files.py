@@ -206,7 +206,7 @@ class ModFile(object):
             insRecHeader = ins.unpackRecHeader
             # Main header of the mod file - generally has 'TES4' signature
             header = insRecHeader()
-            self.tes4 = bush.game.plugin_header_class(header,ins,True)
+            self.tes4 = bush.game.plugin_header_class(header,ins,do_unpack=True)
             subProgress = self.__load_strs(do_unpack, ins, loadStrings,
                                            progress)
             #--Raw data read

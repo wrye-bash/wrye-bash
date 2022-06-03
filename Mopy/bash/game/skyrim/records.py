@@ -27,7 +27,7 @@ from ...bolt import Flags, struct_pack, structs_cache, unpack_str16, \
     TrimmedFlags
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelFidList, MelRelations, \
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelSimpleArray, MelRelations, \
     MreGmstBase, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
@@ -281,7 +281,7 @@ class MelKeywords(MelSequential):
         MelSequential.__init__(self,
             MelCounter(MelUInt32(b'KSIZ', u'keyword_count'),
                        counts=u'keywords'),
-            MelSorted(MelFidList(b'KWDA', u'keywords')),
+            MelSorted(MelSimpleArray('keywords', MelFid(b'KWDA'))),
         )
 
 #------------------------------------------------------------------------------
@@ -1246,7 +1246,7 @@ class MreTes4(MreHeaderBase):
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelFidList(b'ONAM','overrides',),
+        MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelBase(b'INTV', 'unknownINTV'),
         MelBase(b'INCC', 'unknownINCC'),
@@ -1474,7 +1474,7 @@ class MreArma(MelRecord):
         MelFid(b'NAM1', 'skin1'),
         MelFid(b'NAM2', 'skin2'),
         MelFid(b'NAM3', 'skin3'),
-        MelSorted(MelFids(b'MODL', 'additional_races')),
+        MelSorted(MelFids('additional_races', MelFid(b'MODL'))),
         MelFid(b'SNDD', 'footstepSound'),
         MelFid(b'ONAM', 'art_object'),
     )
@@ -1507,7 +1507,7 @@ class MreArmo(MelRecord):
         MelFid(b'RNAM', 'race'),
         MelKeywords(),
         MelDescription(),
-        MelFids(b'MODL','addons'),
+        MelFids('addons', MelFid(b'MODL')),
         MelValueWeight(),
         MelSInt32(b'DNAM', 'armorRating'),
         MelFid(b'TNAM','templateArmor'),
@@ -1875,7 +1875,7 @@ class MreColl(MelRecord):
         MelUInt32Flags(b'GNAM', u'flags', CollisionLayerFlags,),
         MelString(b'MNAM', u'col_layer_name',),
         MelUInt32(b'INTV', 'interactablesCount'),
-        MelSorted(MelFidList(b'CNAM', 'collidesWith')),
+        MelSorted(MelSimpleArray('collidesWith', MelFid(b'CNAM'))),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1910,9 +1910,9 @@ class MreCpth(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelConditions(),
-        MelFidList(b'ANAM','relatedCameraPaths',),
+        MelSimpleArray('relatedCameraPaths', MelFid(b'ANAM')),
         MelUInt8(b'DATA', 'cameraZoom'),
-        MelFids(b'SNAM','cameraShots',),
+        MelFids('cameraShots', MelFid(b'SNAM')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2001,7 +2001,7 @@ class MreDlvw(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFid(b'QNAM','quest',),
-        MelFids(b'BNAM','branches',),
+        MelFids('branches', MelFid(b'BNAM')),
         MelGroups('unknownTNAM',
             MelBase(b'TNAM','unknown',),
         ),
@@ -2069,7 +2069,7 @@ class MreDoor(MelRecord):
         MelFid(b'ANAM','soundClose'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', DoorTypeFlags),
-        MelFids(b'TNAM', 'random_teleports'),
+        MelFids('random_teleports', MelFid(b'TNAM')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2221,7 +2221,7 @@ class MreEqup(MelRecord):
     rec_sig = b'EQUP'
     melSet = MelSet(
         MelEdid(),
-        MelFidList(b'PNAM','canBeEquipped'),
+        MelSimpleArray('canBeEquipped', MelFid(b'PNAM')),
         MelUInt32(b'DATA', 'useAllParents'), # actually a bool
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2370,7 +2370,7 @@ class MreFsts(MelRecord):
         MelEdid(),
         MelStruct(b'XCNT', [u'5I'],'walkForward','runForward','walkForwardAlt',
                   'runForwardAlt','walkForwardAlternate2',),
-        MelFidList(b'DATA','footstepSets'),
+        MelSimpleArray('footstepSets', MelFid(b'DATA')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2521,7 +2521,7 @@ class MreHdpt(MelRecord):
         MelModel(),
         MelUInt8Flags(b'DATA', u'flags', HdptTypeFlags),
         MelUInt32(b'PNAM', 'hdpt_type'),
-        MelSorted(MelFids(b'HNAM', 'extraParts')),
+        MelSorted(MelFids('extraParts', MelFid(b'HNAM'))),
         MelGroups('partsData',
             MelUInt32(b'NAM0', 'headPartType',),
             MelString(b'NAM1','filename'),
@@ -2572,7 +2572,7 @@ class MreIdlm(MelRecord):
         MelUInt8Flags(b'IDLF', u'flags', IdlmTypeFlags),
         MelCounter(MelUInt8(b'IDLC', 'animation_count'), counts='animations'),
         MelFloat(b'IDLT', 'idleTimerSetting'),
-        MelFidList(b'IDLA','animations'),
+        MelSimpleArray('animations', MelFid(b'IDLA')),
         MelModel(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2611,7 +2611,7 @@ class MreInfo(MelRecord):
         MelFid(b'TPIC', u'info_topic'),
         MelFid(b'PNAM', 'prev_info'),
         MelUInt8(b'CNAM', 'favorLevel'),
-        MelFids(b'TCLT','linkTo',),
+        MelFids('linkTo', MelFid(b'TCLT')),
         MelFid(b'DNAM','responseData',),
         MelGroups('responses',
             MelStruct(b'TRDT', [u'2I', u'4s', u'B', u'3s', u'I', u'B', u'3s'], u'emotionType', u'emotionValue',
@@ -2879,7 +2879,7 @@ class MreLctn(MelRecord):
             MelStruct(b'LCPR', [u'2I', u'2h'], (FID, 'actor'), (FID, 'location'),
                       'gridX', 'gridY'),
         ),
-        MelFidList(b'RCPR','referenceCellPersistentReference',),
+        MelSimpleArray('referenceCellPersistentReference', MelFid(b'RCPR')),
         MelArray('actorCellUnique',
             MelStruct(b'ACUN', [u'3I'], (FID, 'actor'), (FID, 'eef'),
                       (FID, 'location')),
@@ -2888,7 +2888,7 @@ class MreLctn(MelRecord):
             MelStruct(b'LCUN', [u'3I'], (FID, 'actor'), (FID, 'eef'),
                       (FID, 'location')),
         ),
-        MelFidList(b'RCUN','referenceCellUnique',),
+        MelSimpleArray('referenceCellUnique', MelFid(b'RCUN')),
         MelArray('actorCellStaticReference',
             MelStruct(b'ACSR', [u'3I', u'2h'], (FID, 'locRefType'), (FID, 'marker'),
                       (FID, 'location'), 'gridX', 'gridY'),
@@ -2897,7 +2897,7 @@ class MreLctn(MelRecord):
             MelStruct(b'LCSR', [u'3I', u'2h'], (FID, 'locRefType'), (FID, 'marker'),
                       (FID, 'location'), 'gridX', 'gridY'),
         ),
-        MelFidList(b'RCSR','referenceCellStaticReference',),
+        MelSimpleArray('referenceCellStaticReference', MelFid(b'RCSR')),
         MelGroups(u'actorCellEncounterCell',
             MelArray(u'coordinates',
                 MelStruct(b'ACEC', [u'2h'], u'grid_x', u'grid_y'),
@@ -2916,8 +2916,8 @@ class MreLctn(MelRecord):
                      prelude=MelFid(b'RCEC', u'location'),
             ),
         ),
-        MelFidList(b'ACID','actorCellMarkerReference',),
-        MelFidList(b'LCID','locationCellMarkerReference',),
+        MelSimpleArray('actorCellMarkerReference', MelFid(b'ACID')),
+        MelSimpleArray('locationCellMarkerReference', MelFid(b'LCID')),
         MelArray('actorCellEnablePoint',
             MelStruct(b'ACEP', [u'2I', u'2h'], (FID, 'actor'), (FID,'ref'), 'gridX',
                       'gridY'),
@@ -3063,7 +3063,7 @@ class MreLtex(MelRecord):
         MelFid(b'MNAM','materialType',),
         MelStruct(b'HNAM', [u'2B'], 'friction', 'restitution',),
         MelUInt8(b'SNAM', 'textureSpecularExponent'),
-        MelSorted(MelFids(b'GNAM', 'grasses')),
+        MelSorted(MelFids('grasses', MelFid(b'GNAM'))),
         sse_only(MelUInt32Flags(b'INAM', u'snow_flags', _SnowFlags))
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3355,7 +3355,7 @@ class MreMusc(MelRecord):
         # Divided by 100 in TES5Edit, probably for editing only
         MelStruct(b'PNAM', [u'2H'],'priority','duckingDB'),
         MelFloat(b'WNAM', 'fadeDuration'),
-        MelFidList(b'TNAM','musicTracks'),
+        MelSimpleArray('musicTracks', MelFid(b'TNAM')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3377,7 +3377,7 @@ class MreMust(MelRecord):
         MelOptStruct(b'LNAM', [u'2f', u'I'],'loopBegins','loopEnds','loopCount',),
         MelConditionCounter(),
         MelConditions(),
-        MelFidList(b'SNAM','tracks',),
+        MelSimpleArray('tracks', MelFid(b'SNAM')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3394,7 +3394,7 @@ class MreNavi(MelRecord):
         # If no mitigation is needed, then leave it as MelBase
         MelBase(b'NVMI','navigationMapInfos',),
         MelBase(b'NVPP','preferredPathing',),
-        MelFidList(b'NVSI','navigationMesh'),
+        MelSimpleArray('navigationMesh', MelFid(b'NVSI')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3545,7 +3545,7 @@ class MreNpc(MreActorBase):
                   'energyLevel', 'responsibility', 'mood', 'assistance',
                   'aggroRadiusBehavior',
                   'aidtUnknown', 'warn', 'warnAttack', 'attack'),
-        MelFids(b'PKID', 'aiPackages',),
+        MelFids('aiPackages', MelFid(b'PKID')),
         MelKeywords(),
         MelFid(b'CNAM', 'iclass'),
         MelFull(),
@@ -3562,7 +3562,7 @@ class MreNpc(MreActorBase):
             'destructionSO','illusionSO','restorationSO','enchantingSO',
             'health','magicka','stamina','dnamUnused1',
             'farawaymodeldistance','gearedupweapons','dnamUnused2'),
-        MelSorted(MelFids(b'PNAM', 'head_part_addons')),
+        MelSorted(MelFids('head_part_addons', MelFid(b'PNAM'))),
         MelFid(b'HCLF', u'hair_color'),
         MelFid(b'ZNAM', u'combatStyle'),
         MelFid(b'GNAM', u'gifts'),
@@ -3602,7 +3602,7 @@ class MreOtft(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelSorted(MelFidList(b'INAM', 'items')),
+        MelSorted(MelSimpleArray('items', MelFid(b'INAM'))),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3675,7 +3675,7 @@ class MrePack(MelRecord):
                                         'unknown'),
                               counter='animation_count', counts='animations'),
             MelFloat(b'IDLT', 'idleTimerSetting',),
-            MelFidList(b'IDLA', 'animations'),
+            MelSimpleArray('animations', MelFid(b'IDLA')),
             MelBase(b'IDLB', 'unknown1'),
         ),
         MelFid(b'CNAM', 'combatStyle',),
@@ -3957,7 +3957,7 @@ class MreQust(MelRecord):
         MelStruct(b'DNAM', [u'H', u'2B', u'4s', u'I'], (_questFlags, u'questFlags'),
                   'priority', 'formVersion', 'unknown', 'questType'),
         MelOptStruct(b'ENAM', [u'4s'], u'event_name'),
-        MelFids(b'QTGL','textDisplayGlobals'),
+        MelFids('textDisplayGlobals', MelFid(b'QTGL')),
         MelString(b'FLTR','objectWindowFilter'),
         MelConditions('dialogueConditions'),
         MelBase(b'NEXT','marker'),
@@ -4026,9 +4026,9 @@ class MreQust(MelRecord):
             MelFid(b'GWOR','guardWarnOverridePackageList'),
             MelFid(b'ECOR','combatOverridePackageList'),
             MelFid(b'ALDN','displayName'),
-            MelFids(b'ALSP','aliasSpells'),
-            MelFids(b'ALFC','aliasFactions'),
-            MelFids(b'ALPC','aliasPackageData'),
+            MelFids('aliasSpells', MelFid(b'ALSP')),
+            MelFids('aliasFactions', MelFid(b'ALFC')),
+            MelFids('aliasPackageData', MelFid(b'ALPC')),
             MelFid(b'VTCK','voiceType'),
             MelBase(b'ALED','aliasEnd'),
         ),
@@ -4183,8 +4183,8 @@ class MreRace(MelRecord):
         ), sort_by_attrs='body_part_index'),
         # These seem like unused leftovers from TES4/FO3, never occur in
         # vanilla or in any of the ~400 mod plugins I checked
-        MelSorted(MelFidList(b'HNAM', u'hairs')),
-        MelSorted(MelFidList(b'ENAM', u'eyes')),
+        MelSorted(MelSimpleArray('hairs', MelFid(b'HNAM'))),
+        MelSorted(MelSimpleArray('eyes', MelFid(b'ENAM'))),
         MelFid(b'GNAM', u'body_part_data'), # required
         MelBase(b'NAM2', u'marker_nam2_2'),
         MelBase(b'NAM3', u'behavior_graph_marker', b''), # required
@@ -4401,14 +4401,14 @@ class MreRefr(MelRecord):
                 counter='linked_rooms_count', counts='linked_rooms'),
             MelFid(b'LNAM', 'lightingTemplate'),
             MelFid(b'INAM', 'imageSpace'),
-            MelSorted(MelFids(b'XLRM', 'linked_rooms')),
+            MelSorted(MelFids('linked_rooms', MelFid(b'XLRM'))),
         ),
         MelBase(b'XMBP','multiboundPrimitiveMarker'),
         MelBase(b'XRGD','ragdollData'),
         MelBase(b'XRGB','ragdollBipedData'),
         MelFloat(b'XRDS', 'radius'),
         MelReflectedRefractedBy(),
-        MelSorted(MelFids(b'XLTW', 'litWaters')),
+        MelSorted(MelFids('litWaters', MelFid(b'XLTW'))),
         MelFid(b'XEMI', 'emittance'),
         MelOptStruct(b'XLIG', [u'4f', u'4s'], u'fov90Delta', u'fadeDelta',
             u'end_distance_cap', u'shadowDepthBias', u'unknown2'),
@@ -4417,7 +4417,7 @@ class MreRefr(MelRecord):
                      'destinationPosY','destinationPosZ','destinationRotX',
                      'destinationRotY','destinationRotZ',
                      (_destinationFlags,'destinationFlags')),
-        MelFids(b'XTNM','teleportMessageBox'),
+        MelFids('teleportMessageBox', MelFid(b'XTNM')),
         MelFid(b'XMBR','multiboundReference'),
         MelWaterVelocities(),
         MelOptStruct(b'XCVL', [u'4s', u'f', u'4s'], u'unknown3', u'angleX', u'unknown4'),
@@ -4439,7 +4439,7 @@ class MreRefr(MelRecord):
         MelFid(b'XEZN','encounterZone'),
         MelOptStruct(b'XNDP', [u'I', u'H', u'2s'], (FID, u'navMesh'),
             u'teleportMarkerTriangle', u'unknown7'),
-        MelFidList(b'XLRT','locationRefType',),
+        MelSimpleArray('locationRefType', MelFid(b'XLRT')),
         MelNull(b'XIS2',),
         MelOwnership(),
         MelSInt32(b'XCNT', 'count'),
@@ -4663,7 +4663,7 @@ class MreScen(MelRecord):
             MelUInt32(b'SNAM', 'startPhase'),
             MelUInt32(b'ENAM', 'endPhase'),
             MelFloat(b'SNAM', 'timerSeconds'),
-            MelFids(b'PNAM','packages'),
+            MelFids('packages', MelFid(b'PNAM')),
             MelFid(b'DATA','topic'),
             MelUInt32(b'HTID', 'headtrackActorID'),
             MelFloat(b'DMAX', 'loopingMax'),
@@ -5455,7 +5455,7 @@ class MreWthr(MelRecord):
         MelGroups('sounds',
             MelStruct(b'SNAM', [u'2I'], (FID, 'sound'), 'type'),
         ),
-        MelSorted(MelFids(b'TNAM', 'skyStatics')),
+        MelSorted(MelFids('skyStatics', MelFid(b'TNAM'))),
         MelStruct(b'IMSP', [u'4I'], (FID, 'image_space_sunrise'),
                   (FID, 'image_space_day'), (FID, 'image_space_sunset'),
                   (FID, 'image_space_night'),),

@@ -26,7 +26,7 @@ from ..fallout3.records import MelDestructible, MelConditions
 from ...bolt import Flags, struct_calcsize
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
-    MelFid, MelFids, MelBase, MelFidList, MreHeaderBase, MelFloat, MelUInt8, \
+    MelFid, MelFids, MelBase, MelSimpleArray, MreHeaderBase, MelFloat, MelUInt8, \
     MelUInt32, MelBounds, null1, MelTruncatedStruct, MelIcons, MelIcon, \
     MelIco2, MelEdid, MelFull, MelArray, MelObject, MelNull, MelScript, \
     MelDescription, MelPickupSound, MelDropSound, MelUInt8Flags, MelSInt32, \
@@ -48,7 +48,7 @@ class MreTes4(MreHeaderBase):
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelFidList(b'ONAM','overrides'),
+        MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -68,12 +68,12 @@ class MreAloc(MelRecord):
         MelUInt32(b'NAM5', 'dayStart'),
         MelUInt32(b'NAM6', 'nightStart'),
         MelUInt32(b'NAM7', 'retrigerDelay'),
-        MelSorted(MelFids(b'HNAM', 'neutralSets')),
-        MelSorted(MelFids(b'ZNAM', 'allySets')),
-        MelSorted(MelFids(b'XNAM', 'friendSets')),
-        MelSorted(MelFids(b'YNAM', 'enemySets')),
-        MelSorted(MelFids(b'LNAM', 'locationSets')),
-        MelSorted(MelFids(b'GNAM', 'battleSets')),
+        MelSorted(MelFids('neutralSets', MelFid(b'HNAM'))),
+        MelSorted(MelFids('allySets', MelFid(b'ZNAM'))),
+        MelSorted(MelFids('friendSets', MelFid(b'XNAM'))),
+        MelSorted(MelFids('enemySets', MelFid(b'YNAM'))),
+        MelSorted(MelFids('locationSets', MelFid(b'LNAM'))),
+        MelSorted(MelFids('battleSets', MelFid(b'GNAM'))),
         MelFid(b'RNAM','conditionalFaction'),
         MelUInt32(b'FNAM', 'fnam'),
     )
@@ -125,7 +125,7 @@ class MreCdck(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelSorted(MelFids(b'CARD', 'cards')),
+        MelSorted(MelFids('cards', MelFid(b'CARD'))),
         MelUInt32(b'DATA', 'count'), # 'Count (broken)' in xEdit - unused?
     )
     __slots__ = melSet.getSlotsUsed()
@@ -241,7 +241,7 @@ class MreDial(MelRecord):
             ),
         ), sort_by_attrs='added_quest'),
         # Apparently unused, but xEdit has it so we should keep it too
-        MelSorted(MelFids(b'QSTR', 'removed_quests')),
+        MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
         MelFloat(b'PNAM', 'priority'),
         MelString(b'TDUM', 'dumb_response'),

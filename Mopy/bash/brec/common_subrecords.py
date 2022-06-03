@@ -26,14 +26,14 @@ from collections import defaultdict
 from itertools import chain
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion, PartialLoadDecider, FlagDecider, MelSorted
+    MelUnion, PartialLoadDecider, FlagDecider, MelSorted, MelSimpleArray
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
-    MelStrings, MelUInt8, MelFidList
+    MelStrings, MelUInt8
 from .utils_constants import int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
-    dict_sort, TrimmedFlags
+    dict_sort, TrimmedFlags, structs_cache
 from ..exception import ModError, ModSizeError
 
 #------------------------------------------------------------------------------
@@ -50,8 +50,8 @@ class MelActionFlags(MelUInt32Flags):
     # with the ability to mark subrecords as required (e.g. for QSDT)
     def pack_subrecord_data(self, record):
         flag_val = getattr(record, self.attr)
-        return (self._packer(flag_val.dump())
-                if flag_val != self._flag_default else None)
+        return self.packer(
+            flag_val) if flag_val != self._flag_default else None
 
 #------------------------------------------------------------------------------
 class MelActivateParents(MelGroup):
@@ -584,6 +584,8 @@ class MelMapMarker(MelGroup):
 #------------------------------------------------------------------------------
 class MelMODS(MelBase):
     """MODS/MO2S/etc/DMDS subrecord"""
+    _fid_element = MelFid(null1) # dummy MelFid instance to use its loader
+
     def hasFids(self,formElements):
         formElements.add(self)
 
@@ -599,27 +601,28 @@ class MelMODS(MelBase):
         dataAppend = mods_data.append
         for x in range(count):
             string = insRead32(*debug_strs)
-            fid = ins.unpackRef()
+            int_fid = self.__class__._fid_element.load_bytes(ins, 4)
             index, = insUnpack(__unpacker, 4, *debug_strs)
-            dataAppend((string,fid,index))
+            dataAppend((string, int_fid, index))
         setattr(record, self.attr, mods_data)
 
-    def pack_subrecord_data(self,record):
+    def pack_subrecord_data(self, record, *, __packer=structs_cache['I'].pack):
         mods_data = getattr(record, self.attr)
         if mods_data is not None:
             # Sort by 3D Name and 3D Index
             mods_data.sort(key=lambda e: (e[0], e[2]))
-            return b''.join(chain([struct_pack(u'I', len(mods_data))],
-                *([struct_pack(u'I', len(string)), encode(string),
-                   struct_pack(u'=2I', fid, index)]
-                  for (string, fid, index) in mods_data)))
+            fid_packer = self.__class__._fid_element.packer
+            return b''.join([__packer(len(mods_data)), *(chain(*(
+                [__packer(len(string)), encode(string), fid_packer(int_fid),
+                 __packer(index)] for (string, int_fid, index) in
+            mods_data)))])
 
     def mapFids(self, record, function, save_fids=False):
         attr = self.attr
         mods_data = getattr(record, attr)
         if mods_data is not None:
             mods_data = [(string,function(fid),index) for (string,fid,index)
-                         in getattr(record, attr)]
+                         in mods_data]
             if save_fids: setattr(record, attr, mods_data)
 
 #------------------------------------------------------------------------------
@@ -660,7 +663,7 @@ class MelRefScale(MelFloat):
 class MelSpells(MelSorted):
     """Handles the common SPLO subrecord."""
     def __init__(self):
-        super(MelSpells, self).__init__(MelFids(b'SPLO', u'spells'))
+        super(MelSpells, self).__init__(MelFids('spells', MelFid(b'SPLO')))
 
 #------------------------------------------------------------------------------
 class MelWorldBounds(MelSequential):
@@ -772,7 +775,7 @@ class MelActorSounds(MelSorted):
 class MelRegions(MelSorted):
     """Handles the CELL subrecord XCLR (Regions)."""
     def __init__(self):
-        super(MelRegions, self).__init__(MelFidList(b'XCLR', u'regions'))
+        super(MelRegions, self).__init__(MelSimpleArray('regions', MelFid(b'XCLR')))
 
 #------------------------------------------------------------------------------
 class MelWeatherTypes(MelSorted):

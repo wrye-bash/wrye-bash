@@ -98,7 +98,8 @@ class Subrecord(object):
                                                               lenData))
         outWrite(binary_data)
 
-def unpackSubHeader(ins, rsig, *, __unpacker=int_unpacker, __sr=Subrecord):
+def unpackSubHeader(ins, rsig, *, file_offset=0, __unpacker=int_unpacker,
+                    __sr=Subrecord):
     """Unpack a subrecord header."""
     mel_sig, mel_size = ins.unpack(__sr.sub_header_unpack,
                                    __sr.sub_header_size, rsig, u'SUB_HEAD')
@@ -106,19 +107,19 @@ def unpackSubHeader(ins, rsig, *, __unpacker=int_unpacker, __sr=Subrecord):
     if mel_sig == b'XXXX':
         sizes = []
         ins_unpack = ins.unpack
-        pos = ins.tell() - __sr.sub_header_size
-        while mel_sig == b'XXXX': ##: it does happen to have two of those in a row
+        pos = (file_offset or ins.tell()) - __sr.sub_header_size
+        while mel_sig == b'XXXX': #it does happen to have two of those in a row
             mel_size = ins_unpack(__unpacker, 4, rsig, u'XXXX.SIZE')[0]
             mel_sig = ins_unpack(__sr.sub_header_unpack, __sr.sub_header_size,
-                                 rsig, u'XXXX.TYPE')[0] # Throw away size here (always == 0)
+                rsig, u'XXXX.TYPE')[0] # Throw away size here (always == 0)
             sizes.append(mel_size)
-        if len(set(sizes)) > 1:
-            raise exception.ModError(ins.inName,
-                f'Consecutive XXXX subrecords with sizes {sizes} starting '
-                f'at {sig_to_str(rsig)} record position {pos}')
         if len(sizes) > 1:
-            bolt.deprint(f'{ins.inName}: Consecutive XXXX subrecords '
-                         f'at {sig_to_str(rsig)} record position {pos}')
+            msg = f'{ins.inName}: {len(sizes)} consecutive XXXX subrecords ' \
+                  f'reading {sig_to_str(rsig)} starting at file position {pos}'
+            if len(set(sizes)) > 1:
+                raise exception.ModError(ins.inName,
+                                         f'{msg} - differing sizes {sizes}!')
+            bolt.deprint(msg)
         mel_size = sizes[0]
     return mel_sig, mel_size
 
@@ -187,7 +188,13 @@ class MelBase(Subrecord):
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         """Read the actual data (not the headers) from ins into record
         attribute."""
-        setattr(record, self.attr, ins.read(size_, *debug_strs))
+        setattr(record, self.attr, self.load_bytes(ins, size_, *debug_strs))
+
+    def load_bytes(self, ins, size_, *debug_strs):
+        """Deserialize a chunk of the binary data of given size_ - by
+        default reads it in as is. Subclasses should deserialize to appropriate
+        types."""
+        return ins.read(size_, *debug_strs)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -229,45 +236,18 @@ class MelBase(Subrecord):
         raise exception.AbstractError()
 
 # Simple static Fields --------------------------------------------------------
-class _MelNum(MelBase):
+class MelNum(MelBase):
     """A simple static subrecord representing a number."""
-    _unpacker, _packer, static_size = get_structs(u'I')
+    _unpacker, packer, static_size = get_structs(u'I')
     __slots__ = ()
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        setattr(record, self.attr, ins.unpack(self._unpacker, size_,
-                                              *debug_strs)[0])
+    def load_bytes(self, ins, size_, *debug_strs):
+        return ins.unpack(self._unpacker, size_, *debug_strs)[0]
 
     def pack_subrecord_data(self, record):
         """Will only be dumped if set by load_mel."""
         num = getattr(record, self.attr)
-        return None if num is None else self._packer(num)
-
-#------------------------------------------------------------------------------
-# TODO(inf) DEPRECATED! - don't use for new usages -> MelGroups(MelFid)
-#  instead. Same idea as with MelFidList.
-class MelFids(MelBase):
-    """Represents a mod record fid elements."""
-
-    def hasFids(self,formElements):
-        formElements.add(self)
-
-    def setDefault(self,record):
-        setattr(record, self.attr, [])
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        fid = ins.unpackRef()
-        getattr(record, self.attr).append(fid)
-
-    def dumpData(self, record, out, __packer=structs_cache[u'I'].pack):
-        for fid in getattr(record, self.attr):
-            MelFid(self.mel_sig, '').packSub(out, __packer(fid))
-
-    def mapFids(self, record, function, save_fids=False):
-        fids = getattr(record, self.attr)
-        for index,fid in enumerate(fids):
-            result = function(fid)
-            if save_fids: fids[index] = result
+        return None if num is None else self.packer(num)
 
 #------------------------------------------------------------------------------
 class MelNull(MelBase):
@@ -288,26 +268,6 @@ class MelNull(MelBase):
 
     def dumpData(self,record,out):
         pass
-
-#------------------------------------------------------------------------------
-# TODO(inf) DEPRECATED! - don't use for new usages -> MelArray(MelFid) instead.
-#  Not backwards-compatible (runtime interface differs), hence deprecation.
-class MelFidList(MelFids):
-    """Represents a listmod record fid elements. The only difference from
-    MelFids is how the data is stored. For MelFidList, the data is stored
-    as a single subrecord rather than as separate subrecords."""
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        if not size_: return
-        fids = ins.unpack(structs_cache[u'%dI' % (size_ // 4)].unpack, size_,
-                          *debug_strs)
-        setattr(record, self.attr, list(fids))
-
-    def dumpData(self, record, out):
-        fids = getattr(record, self.attr)
-        if not fids: return
-        fids_packed = structs_cache[u'%dI' % len(fids)].pack(*fids)
-        self.packSub(out, fids_packed)
 
 #------------------------------------------------------------------------------
 class MelSequential(MelBase):
@@ -469,6 +429,37 @@ class MelGroups(MelGroup):
         raise exception.AbstractError()
 
 #------------------------------------------------------------------------------
+class MelFids(MelGroups):
+    """A lighter version of MelGroups, holding an array of separate form id
+    subrecords."""
+
+    def __init__(self, attr, *elements):
+        if not len(elements) == 1 or not isinstance(elements[0], MelFid):
+            raise SyntaxError(
+                f'{type(self)} requires a single initializer of type MelFid, '
+                f'passed: {elements}')
+        super().__init__(attr, *elements)
+
+    def hasFids(self,formElements):
+        formElements.add(self)
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        """Override MelGroups.load_mel to not create the MelObjects."""
+        getattr(record, self.attr).append(
+            self.elements[0].load_bytes(ins, size_, *debug_strs))
+
+    def dumpData(self, record, out, __packer=structs_cache[u'I'].pack):
+        fid_mel = self.elements[0]
+        for fid in getattr(record, self.attr):
+            fid_mel.packSub(out, fid_mel.packer(fid))
+
+    def mapFids(self, record, function, save_fids=False):
+        fids = getattr(record, self.attr)
+        for index,fid in enumerate(fids):
+            result = function(fid)
+            if save_fids: fids[index] = result
+
+#------------------------------------------------------------------------------
 class MelString(MelBase):
     """Represents a mod record string element."""
 
@@ -478,8 +469,8 @@ class MelString(MelBase):
         self.minSize = minSize
         self.encoding = None # will default to bolt.pluginEncoding
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        setattr(record, self.attr, ins.readString(size_, *debug_strs))
+    def load_bytes(self, ins, size_, *debug_strs):
+        return ins.readString(size_, *debug_strs)
 
     def packSub(self, out, string_val):
         # type: (BinaryIO, str) -> None
@@ -505,16 +496,17 @@ class MelUnicode(MelString):
         super(MelUnicode, self).__init__(mel_sig, attr, default, maxSize)
         self.encoding = encoding # None == automatic detection
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        value = u'\n'.join(decoder(x,self.encoding,avoidEncodings=('utf8','utf-8'))
-                           for x in bolt.cstrip(ins.read(size_, *debug_strs)).split(b'\n'))
-        setattr(record, self.attr, value)
+    def load_bytes(self, ins, size_, *debug_strs):
+        return '\n'.join(
+            decoder(x, self.encoding, avoidEncodings=('utf8', 'utf-8')) for x
+            in bolt.cstrip(ins.read(size_, *debug_strs)).split(b'\n'))
 
 #------------------------------------------------------------------------------
 class MelLString(MelString):
     """Represents a mod record localized string."""
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        setattr(record, self.attr, ins.readLString(size_, *debug_strs))
+
+    def load_bytes(self, ins, size_, *debug_strs):
+        return ins.readLString(size_, *debug_strs)
 
 #------------------------------------------------------------------------------
 class MelStrings(MelString):
@@ -571,10 +563,8 @@ class MelStruct(MelBase):
                 raise SyntaxError(
                     f"Duplicate attribute '{a}' in struct definition")
             present_attrs.add(a)
-        _struct = structs_cache[struct_format]
-        self._unpacker = _struct.unpack
-        self._packer = _struct.pack
-        self._static_size = _struct.size
+        self._unpacker, self._packer, self._static_size, = get_structs(
+            struct_format)
 
     def getSlotsUsed(self):
         return self.attrs
@@ -684,47 +674,46 @@ class MelFixedString(MelStruct):
             (FixedString(str_length, default), attr))
 
 # Simple primitive type wrappers ----------------------------------------------
-class MelFloat(_MelNum):
+class MelFloat(MelNum):
     """Float."""
-    _unpacker, _packer, static_size = get_structs(u'=f')
+    _unpacker, packer, static_size = get_structs(u'=f')
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        float_val = ins.unpack(self._unpacker, size_, *debug_strs)[0]
-        setattr(record, self.attr, Rounder(float_val)) ##: note we dont round on dump
+    def load_bytes(self, ins, size_, *debug_strs): ##: note we dont round on dump
+        return Rounder(super().load_bytes(ins, size_, *debug_strs))
 
-class MelSInt8(_MelNum):
+class MelSInt8(MelNum):
     """Signed 8-bit integer."""
-    _unpacker, _packer, static_size = get_structs(u'=b')
+    _unpacker, packer, static_size = get_structs(u'=b')
 
-class MelSInt16(_MelNum):
+class MelSInt16(MelNum):
     """Signed 16-bit integer."""
-    _unpacker, _packer, static_size = get_structs(u'=h')
+    _unpacker, packer, static_size = get_structs(u'=h')
 
-class MelSInt32(_MelNum):
+class MelSInt32(MelNum):
     """Signed 32-bit integer."""
-    _unpacker, _packer, static_size = get_structs(u'=i')
+    _unpacker, packer, static_size = get_structs(u'=i')
 
     def pack_subrecord_data(self, record):
         """Will only be dumped if set by load_mel."""
         attr = getattr(record, self.attr)
         try:
-            return None if attr is None else self._packer(attr)
+            return None if attr is None else self.packer(attr)
         except struct_error: ##: TODO HACK: fix the records code
-            return self._packer(int(attr))
+            return self.packer(int(attr))
 
-class MelUInt8(_MelNum):
+class MelUInt8(MelNum):
     """Unsigned 8-bit integer."""
-    _unpacker, _packer, static_size = get_structs(u'=B')
+    _unpacker, packer, static_size = get_structs(u'=B')
 
-class MelUInt16(_MelNum):
+class MelUInt16(MelNum):
     """Unsigned 16-bit integer."""
-    _unpacker, _packer, static_size = get_structs(u'=H')
+    _unpacker, packer, static_size = get_structs(u'=H')
 
-class MelUInt32(_MelNum):
+class MelUInt32(MelNum):
     """Unsigned 32-bit integer."""
-    _unpacker, _packer, static_size = get_structs(u'=I')
+    _unpacker, packer, static_size = get_structs(u'=I')
 
-class _MelFlags(_MelNum):
+class _MelFlags(MelNum):
     """Integer flag field."""
     __slots__ = (u'_flag_type', u'_flag_default')
 
@@ -736,13 +725,12 @@ class _MelFlags(_MelNum):
     def setDefault(self, record):
         setattr(record, self.attr, self._flag_type(self.default or 0))
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        setattr(record, self.attr, self._flag_type(ins.unpack(
-            self._unpacker, size_, *debug_strs)[0]))
+    def load_bytes(self, ins, size_, *debug_strs):
+        return self._flag_type(
+            ins.unpack(self._unpacker, size_, *debug_strs)[0])
 
-    def pack_subrecord_data(self, record):
-        flag_val = getattr(record, self.attr)
-        return self._packer(flag_val.dump()) if flag_val is not None else None
+    def packer(self, flag_val): # override class variable, access parent's
+        return super(_MelFlags, self.__class__).packer(flag_val.dump())
 
 class MelUInt8Flags(MelUInt8, _MelFlags): pass
 class MelUInt16Flags(MelUInt16, _MelFlags): pass
@@ -757,14 +745,17 @@ class MelXXXX(MelUInt32):
         self.mel_sig = b'XXXX'
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        self.int_size = ins.unpack(self._unpacker, size_, *debug_strs)[0]
+        self.int_size = self.load_bytes(ins, size_, *debug_strs)
 
     def pack_subrecord_data(self, record):
-        return self._packer(self.int_size)
+        return self.packer(self.int_size)
 
 #------------------------------------------------------------------------------
 class MelFid(MelUInt32):
     """Represents a mod record fid element."""
+
+    def __init__(self, mel_sig, element=u'FID_'):
+        super(MelFid, self).__init__(mel_sig, element)
 
     def hasFids(self,formElements):
         formElements.add(self)

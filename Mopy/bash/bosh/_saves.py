@@ -65,21 +65,23 @@ class SreNPC(object):
         __slots__ = ('flags', 'baseSpell', 'fatigue', 'barterGold',
                      'level_offset', 'calcMin', 'calcMax')
 
+        def __init__(self, ins=None, *, __deflts=(0, 0, 0, 0, 1, 0, 0)):
+            if ins is not None:
+                __deflts = struct_unpack('=I3Hh2H', ins.read(16))
+            for a, d in zip(self.__slots__, __deflts):
+                setattr(self, a, d)
+            self.flags = MreRecord.type_class[b'NPC_']._flags(self.flags)
+
+        def __str__(self):
+            return '\n'.join(
+                f'  {a} {getattr(self, a)}' for a in self.__slots__)
+
     def __init__(self, sre_flags=0, data_=None):
         for att in self.__slots__:
             setattr(self, att, None)
-        if data_: self.load(sre_flags, data_)
+        if data_: self._load_acbs(sre_flags, data_)
 
-    @staticmethod
-    def get_acbs():
-        """Returns a default version. Only supports acbs."""
-        acbs = SreNPC.ACBS()
-        (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
-         acbs.level_offset, acbs.calcMin, acbs.calcMax) = (0,0,0,0,1,0,0)
-        acbs.flags = MreRecord.type_class[b'NPC_']._flags(acbs.flags)
-        return acbs
-
-    def load(self, sr_flags, data_):
+    def _load_acbs(self, sr_flags, data_):
         """Loads variables from data."""
         ins = io.BytesIO(data_)
         def _unpack(fmt, fmt_siz):
@@ -90,11 +92,7 @@ class SreNPC(object):
         if sr_flags.attributes:
             self.attributes = list(_unpack('8B', 8))
         if sr_flags.acbs:
-            acbs = self.acbs = SreNPC.ACBS()
-            (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
-             acbs.level_offset, acbs.calcMin,
-             acbs.calcMax) = _unpack(u'=I3Hh2H', 16)
-            acbs.flags = MreRecord.type_class[b'NPC_']._flags(acbs.flags)
+            self.acbs = SreNPC.ACBS(ins)
         if sr_flags.factions:
             num = unpack_short(ins)
             self.factions = list(starmap(_unpack, repeat((u'=Ib', 5), num)))
@@ -169,9 +167,9 @@ class SreNPC(object):
         #--Done
         return out.getvalue()
 
-    def getTuple(self,rec_id,version):
+    def getTuple(self, version):
         """Returns record as a change record tuple."""
-        return rec_id,35,self.getFlags(),version,self.getData()
+        return 35, self.getFlags(), version, self.getData()
 
     def dumpText(self,saveFile):
         """Returns informal string representation of data."""
@@ -187,8 +185,7 @@ class SreNPC(object):
                     self.attributes))
         if self.acbs is not None:
             buff.write(u'ACBS:\n')
-            for attr in SreNPC.ACBS.__slots__:
-                buff.write(u'  %s %s\n' % (attr, getattr(self.acbs, attr)))
+            buff.write(f'{self.acbs}\n')
         if self.factions is not None:
             buff.write(u'Factions:\n')
             for faction in self.factions:
@@ -240,16 +237,14 @@ class SaveFile(object):
         self._masters = []
         #--Global
         self.globals = []
-        self.created = []
-        self.fid_createdNum = None
+        self.created = {}
         self.preGlobals = None #--Pre-records, pre-globals
         self.preCreated = None #--Pre-records, pre-created
         self.preRecords = None #--Pre-records, pre
         #--Records, temp effects, fids, worldspaces
-        # (rec_id, rec_kind, flags, version, data)
+        # rec_id: (rec_kind, flags, version, data)
         # rec_kind is an int, rec_id the short formid of the record in the save
-        self.save_records = []
-        self.fid_recNum = None
+        self.fid_recNum = {}
         self.tempEffects = None
         self.fids = None
         self.irefs = {}  #--iref = self.irefs[fid]
@@ -288,37 +283,37 @@ class SaveFile(object):
             insCopy(buff, 4)
             self.preCreated = buff.getvalue()
             #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
-            modReader = ModReader(self.fileInfo.ci_key, ins)
             createdNum = unpack_int(ins)
-            for count in range(createdNum):
-                progress(ins.tell(),_(u'Reading created...'))
-                self.created.append(MreRecord(unpack_header(modReader), modReader))
-            #--Pre-records: Quickkeys, reticule, interface, regions
-            buff = io.BytesIO()
-            for x in range(4):
-                siz = unpack_short(ins)
-                insCopy(buff, siz, 2)
-            self.preRecords = buff.getvalue()
-            #--Records
-            for count in range(recordsNum):
-                progress(ins.tell(),_(u'Reading records...'))
-                (rec_id, rec_kind, flags, version, siz) = unpack_many(ins,u'=IBIBH')
-                data = ins.read(siz)
-                self.save_records.append((rec_id, rec_kind, flags, version, data))
-            #--Temp Effects, fids, worldids
-            progress(ins.tell(),_(u'Reading fids, worldids...'))
-            tmp_effects_size = unpack_int(ins)
-            self.tempEffects = ins.read(tmp_effects_size)
-            #--Fids
-            num = unpack_int(ins)
-            self.fids = array.array(u'I')
-            self.fids.fromfile(ins, num)
-            for iref,fid in enumerate(self.fids):
-                self.irefs[fid] = iref
-            #--WorldSpaces
-            num = unpack_int(ins)
-            self.worldSpaces = array.array(u'I')
-            self.worldSpaces.fromfile(ins, num)
+            with ModReader(self.fileInfo.ci_key, ins) as modReader:
+                for count in range(createdNum):
+                    progress(ins.tell(), _('Reading created...'))
+                    record = MreRecord(unpack_header(modReader), modReader)
+                    self.created[record.fid] = record
+                #--Pre-records: Quickkeys, reticule, interface, regions
+                buff = io.BytesIO()
+                for x in range(4):
+                    siz = unpack_short(ins)
+                    insCopy(buff, siz, 2)
+                self.preRecords = buff.getvalue()
+                #--Records
+                for count in range(recordsNum):
+                    progress(ins.tell(), _('Reading records...'))
+                    rec_id, *atts, siz = unpack_many(ins, '=IBIBH')
+                    self.fid_recNum[rec_id] = (*atts, ins.read(siz))
+                #--Temp Effects, fids, worldids
+                progress(ins.tell(), _('Reading fids, worldids...'))
+                tmp_effects_size = unpack_int(ins)
+                self.tempEffects = ins.read(tmp_effects_size)
+                #--Fids
+                num = unpack_int(ins)
+                self.fids = array.array('I')
+                self.fids.fromfile(ins, num)
+                for iref, int_fid in enumerate(self.fids):
+                    self.irefs[int_fid] = iref
+                #--WorldSpaces
+                num = unpack_int(ins)
+                self.worldSpaces = array.array('I')
+                self.worldSpaces.fromfile(ins, num)
         #--Done
         progress(progress.full,_(u'Finished reading.'))
 
@@ -339,7 +334,7 @@ class SaveFile(object):
             #--Fids Pointer, num records
             fidsPointerPos = out.tell()
             _pack(u'I',0) #--Temp. Will write real value later.
-            _pack(u'I', len(self.save_records))
+            _pack('I', len(self.fid_recNum))
             #--Pre-Globals
             out.write(self.preGlobals)
             #--Globals
@@ -351,15 +346,15 @@ class SaveFile(object):
             #--Created
             progress(0.1,_(u'Writing created.'))
             _pack(u'I',len(self.created))
-            for record in self.created:
+            for record in self.created.values():
                 record.dump(out)
             #--Pre-records
             out.write(self.preRecords)
             #--Records, temp effects, fids, worldspaces
             progress(0.2,_(u'Writing records.'))
-            for rec_id,rec_kind,flags,version,data in self.save_records:
-                _pack(u'=IBIBH',rec_id,rec_kind,flags,version,len(data))
-                out.write(data)
+            for rec_id, (*atts, rdata) in self.fid_recNum.items():
+                _pack('=IBIBH', rec_id, *atts, len(rdata))
+                out.write(rdata)
             #--Temp Effects, fids, worldids
             _pack(u'I',len(self.tempEffects))
             out.write(self.tempEffects)
@@ -389,56 +384,6 @@ class SaveFile(object):
         """Adds master to masters list."""
         if master not in self._masters:
             self._masters.append(master)
-
-    def indexCreated(self):
-        """Fills out self.fid_createdNum."""
-        self.fid_createdNum = {x.fid: i for i, x in enumerate(self.created)}
-
-    def removeCreated(self,fid):
-        """Remove created if it exists. Return True if record existed, False if
-        not."""
-        if self.fid_createdNum is None: self.indexCreated()
-        recNum = self.fid_createdNum.get(fid)
-        if recNum is None:
-            return False
-        else:
-            del self.created[recNum]
-            del self.fid_createdNum[fid]
-            return True
-
-    def indexRecords(self):
-        """Fills out self.fid_recNum."""
-        self.fid_recNum = {r[0]: i for i, r in enumerate(self.save_records)}
-
-    def getRecord(self, rec_fid):
-        """Returns recNum and record with corresponding fid."""
-        if self.fid_recNum is None: self.indexRecords()
-        recNum = self.fid_recNum.get(rec_fid)
-        if recNum is None:
-            return None
-        return self.save_records[recNum]
-
-    def setRecord(self,record):
-        """Sets records where record = (rec_id,rec_kind,flags,version,data)."""
-        if self.fid_recNum is None: self.indexRecords()
-        rec_id = record[0]
-        recNum = self.fid_recNum.get(rec_id,-1)
-        if recNum == -1:
-            self.save_records.append(record)
-            self.fid_recNum[rec_id] = len(self.save_records) - 1
-        else:
-            self.save_records[recNum] = record
-
-    def removeRecord(self,fid):
-        """Removes record if it exists. Returns True if record existed, false if not."""
-        if self.fid_recNum is None: self.indexRecords()
-        recNum = self.fid_recNum.get(fid)
-        if recNum is None:
-            return False
-        else:
-            del self.save_records[recNum]
-            del self.fid_recNum[fid]
-            return True
 
     def getFid(self,iref,default=None):
         """Returns fid corresponding to iref."""
@@ -480,17 +425,15 @@ class SaveFile(object):
         #--Array Sizes
         log.setHeader(u'Array Sizes')
         log(f'  {len(self.created)}\t{_("Created Items")}')
-        log(f'  {len(self.save_records)}\t{_("Records")}')
+        log(f'  {len(self.fid_recNum)}\t{_("Records")}')
         log(f'  {len(self.fids)}\t{_("Fids")}')
         #--Created Types
         log.setHeader(_(u'Created Items'))
         created_sizes = defaultdict(int)
         created_counts = Counter()
-        id_created = {}
-        for citem in self.created:
+        for citem in self.created.values():
             created_sizes[citem._rec_sig] += citem.size
             created_counts[citem._rec_sig] += 1
-            id_created[citem.fid] = citem
         for rsig, csize in dict_sort(created_sizes):
             log(f'  {created_counts[rsig]}\t{csize // 1024} kb\t'
                 f'{sig_to_str(rsig)}')
@@ -510,21 +453,22 @@ class SaveFile(object):
         objRefBases = {}
         objRefNullBases = 0
         fids = self.fids
-        for rec_id, rec_kind, rec_flgs, version, rdata in self.save_records:
+        for rec_id, (rec_kind, rec_flgs, _version, rdata) in \
+                self.fid_recNum.items():
             if rec_id ==0xFEFFFFFF: continue #--Ignore intentional(?) extra fid added by patch.
             mod = rec_id >> 24
             typeModHisto[rec_kind][mod] += 1
             changeHisto[mod] += 1
             #--Lost Change?
-            if doLostChanges and mod == 255 and not (48 <= rec_kind <= 51) and rec_id not in id_created:
+            if doLostChanges and mod == 255 and not (48 <= rec_kind <= 51) and rec_id not in self.created:
                 lostChanges[rec_id] = rec_kind
             #--Unknown type?
             if doUnknownTypes and rec_kind not in knownTypes:
                 if mod < 255:
                     print(rec_kind, hex(rec_id), f'{getMaster(mod)}')
                     knownTypes.add(rec_kind)
-                elif rec_id in id_created:
-                    print(rec_kind, hex(rec_id), id_created[rec_id]._rec_sig)
+                elif rec_id in self.created:
+                    print(rec_kind, hex(rec_id), self.created[rec_id]._rec_sig)
                     knownTypes.add(rec_kind)
             #--Obj ref parents
             if rec_kind == 49 and mod == 255 and (rec_flgs & 2):
@@ -574,10 +518,10 @@ class SaveFile(object):
         nullRefCount = 0
         createdCounts = Counter()
         progress = progress or bolt.Progress()
-        progress.setFull(len(self.created) + len(self.save_records))
+        progress.setFull(len(self.created) + len(self.fid_recNum))
         #--Created objects
         progress(0,_(u'Scanning created objects'))
-        for citem in self.created:
+        for citem in self.created.values():
             if u'full' in citem.__class__.__slots__:
                 full = citem.full
             else:
@@ -592,7 +536,8 @@ class SaveFile(object):
         #--Change records
         progress(len(self.created),_(u'Scanning change records.'))
         fids = self.fids
-        for rec_id, rec_kind, rec_flgs, version, rdata in self.save_records:
+        for rec_id, (rec_kind, rec_flgs, _version, rdata) in \
+                self.fid_recNum.items():
             if rec_kind == 49 and rec_id >> 24 == 0xFF and (rec_flgs & 2):
                 iref, = struct_unpack(u'I', rdata[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
@@ -604,30 +549,31 @@ class SaveFile(object):
         """Removes duplicated created items and null refs."""
         numUncreated = numUnCreChanged = numUnNulled = 0
         progress = progress or bolt.Progress()
-        progress.setFull((len(uncreateKeys) and len(self.created)) + len(self.save_records))
+        progress.setFull(
+            (len(uncreateKeys) and len(self.created)) + len(self.fid_recNum))
         uncreated = set()
         #--Uncreate
         if uncreateKeys:
             progress(0,_(u'Scanning created objects'))
-            kept = []
-            for citem in self.created:
+            kept = {}
+            for rfid, citem in self.created.items():
                 if u'full' in citem.__class__.__slots__:
                     full = citem.full
                 else:
                     full = citem.getSubString(b'FULL')
                 if full and (citem._rec_sig, full) in uncreateKeys:
-                    uncreated.add(citem.fid)
+                    uncreated.add(rfid)
                     numUncreated += 1
                 else:
-                    kept.append(citem)
+                    kept[rfid] = citem
                 progress.plus()
             self.created = kept
         #--Change records
         progress(progress.state,_(u'Scanning change records.'))
         fids = self.fids
-        kept = []
-        for record in self.save_records:
-            rec_id,rec_kind,rec_flgs,version,rdata = record
+        kept = {}
+        for rec_id, record in self.fid_recNum.items():
+            rec_kind, rec_flgs, version, rdata = record
             if rec_id in uncreated:
                 numUnCreChanged += 1
             elif removeNullRefs and rec_kind == 49 and rec_id >> 24 == 0xFF and (rec_flgs & 2):
@@ -635,11 +581,11 @@ class SaveFile(object):
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     numUnNulled += 1
                 else:
-                    kept.append(record)
+                    kept[rec_id] = record
             else:
-                kept.append(record)
+                kept[rec_id] = record
             progress.plus()
-        self.save_records = kept
+        self.fid_recNum = kept
         return numUncreated,numUnCreChanged,numUnNulled
 
     def getAbomb(self):
@@ -661,6 +607,16 @@ class SaveFile(object):
         buff.seek(2 + tesClassSize - 4)
         pack_int(buff, value)
         self.preCreated = buff.getvalue()
+
+    def get_npc(self, pc_fid=7):
+        """Get NPC with specified fid - if no fid is passed get Player record.
+        """
+        try:
+            rec_kind, recFlags, version, data = self.fid_recNum.get(pc_fid)
+        except ValueError: # Unpacking None
+            return None
+        npc = SreNPC(recFlags, data)
+        return npc, version
 
 #------------------------------------------------------------------------------
 class _SaveData:
@@ -696,9 +652,9 @@ class SaveSpells(_SaveData):
         allSpells = self.allSpells
         saveName = self.saveInfo.ci_key
         progress(progress.full-1,saveName.s)
-        for record in self.saveFile.created:
+        for rfid, record in self.saveFile.created.items():
             if record._rec_sig == b'SPEL':
-                allSpells[(saveName,getObjectIndex(record.fid))] = record.getTypeCopy()
+                allSpells[(saveName,getObjectIndex(rfid))] = record.getTypeCopy()
 
     def importMod(self,modInfo):
         """Imports spell info from specified mod."""
@@ -720,15 +676,14 @@ class SaveSpells(_SaveData):
     def getPlayerSpells(self):
         """Returns players spell list from savegame. (Returns ONLY spells. I.e., not abilities, etc.)"""
         saveFile = self.saveFile
-        #--Get masters and npc spell fids
-        masters_copy = saveFile._masters[:]
-        maxMasters = len(masters_copy) - 1
-        (rec_id,rec_kind,recFlags,version,data) = saveFile.getRecord(7)
-        npc = SreNPC(recFlags,data)
+        npc, _version = saveFile.get_npc()
         pcSpells = {} #--pcSpells[spellName] = iref
         #--NPC doesn't have any spells?
         if not npc.spells:
             return pcSpells
+        #--Get masters and npc spell fids
+        masters_copy = saveFile._masters[:]
+        maxMasters = len(masters_copy) - 1
         #--Get spell names to match fids
         for iref in npc.spells:
             if (iref >> 24) == 255:
@@ -750,12 +705,12 @@ class SaveSpells(_SaveData):
 
     def removePlayerSpells(self,spellsToRemove):
         """Removes specified spells from players spell list."""
-        (rec_id,rec_kind,recFlags,version,data) = self.saveFile.getRecord(7)
-        npc = SreNPC(recFlags,data)
+        pc_fid = 7
+        npc, version = self.saveFile.get_npc()
         if npc.spells and spellsToRemove:
             #--Remove spells and save
             npc.spells = [iref for iref in npc.spells if iref not in spellsToRemove]
-            self.saveFile.setRecord(npc.getTuple(rec_id,version))
+            self.saveFile.fid_recNum[pc_fid] = npc.getTuple(version)
             self.saveFile.safeSave()
 
 #------------------------------------------------------------------------------
@@ -773,25 +728,22 @@ class SaveEnchantments(_SaveData):
         #--Extract created enchantments
         saveName = self.saveInfo.ci_key
         progress(progress.full-1,saveName.s)
-        for index,record in enumerate(self.saveFile.created):
+        for rfid, record in self.saveFile.created.items():
             if record._rec_sig == b'ENCH':
                 record = record.getTypeCopy()
                 record.getSize() #--Since type copy makes it changed.
-                self.saveFile.created[index] = record
-                self.createdEnchantments.append((index,record))
+                self.saveFile.created[rfid] = record
+                self.createdEnchantments.append(record)
 
     def setCastWhenUsedEnchantmentNumberOfUses(self,uses):
-        """Sets Cast When Used Enchantment number of uses (via editing the enchat cost)."""
+        """Sets Cast When Used Enchantment number of uses (via editing the enchant cost)."""
         count = 0
-        for (index, record) in self.createdEnchantments:
+        for record in self.createdEnchantments:
             if record.itemType in [1,2]:
-                if uses == 0:
-                    if record.enchantCost == 0: continue
-                    record.enchantCost = 0
-                else:
-                    charge_over_uses = max(record.chargeAmount // uses, 1)
-                    if record.enchantCost == charge_over_uses: continue
-                    record.enchantCost = charge_over_uses
+                charge_over_uses = 0 if uses == 0 else max(
+                    record.chargeAmount // uses, 1)
+                if record.enchantCost == charge_over_uses: continue
+                record.enchantCost = charge_over_uses
                 record.setChanged()
                 record.getSize()
                 count += 1
@@ -805,9 +757,9 @@ class Save_NPCEdits(_SaveData):
         """rename the player in  a save file."""
         self.saveInfo.header.pcName = newName
         self._load_save()
-        rec_id, rec_kind, recFlags, version, data = self.saveFile.getRecord(7)
-        npc = SreNPC(recFlags,data)
+        pc_fid = 7
+        npc, version = self.saveFile.get_npc()
         npc.full = encode(newName)
         self.saveFile.header.pcName = newName
-        self.saveFile.setRecord(npc.getTuple(rec_id,version))
+        self.saveFile.fid_recNum[pc_fid] = npc.getTuple(version)
         self.saveFile.safeSave()
