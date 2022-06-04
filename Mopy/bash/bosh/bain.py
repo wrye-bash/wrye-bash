@@ -354,6 +354,10 @@ class Installer(ListInfo):
             self.extras_dict = {}
             if self.fileRootIdex: # need to add 'root_path' key to extras_dict
                 rescan = True
+        if not isinstance(self.archive, str):
+            deprint(f'{repr(self.archive)} in Installers.dat')
+            self.archive = self.archive.decode('utf-8')
+        if isinstance(self, InstallerMarker): return
         if not self.abs_path.exists(): # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
@@ -362,9 +366,6 @@ class Installer(ListInfo):
         if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
             self.dirty_sizeCrc = bolt.LowerDict(
                 (u'%s' % x, y) for x, y in self.dirty_sizeCrc.items())
-        if not isinstance(self.archive, str):
-            deprint(f'{repr(self.archive)} in Installers.dat')
-            self.archive = self.archive.decode('utf-8')
         if rescan:
             dest_scr = self.refreshBasic(bolt.Progress(),
                                          recalculate_project_crc=False)
@@ -1792,8 +1793,9 @@ class InstallersData(DataStore):
     def __load(self, progress):
         progress(0, _(u'Loading Data...'))
         self.dictFile.load()
-        self.converters_data.load()
         pickl_data = self.dictFile.pickled_data
+        pickl_data.pop('crc_installer', None) # remove unused dict
+        self.converters_data.load()
         self._data = pickl_data.get(u'installers', {})
         pickle = pickl_data.get(u'sizeCrcDate', {})
         self.data_sizeCrcDate = bolt.LowerDict(pickle) if not isinstance(
@@ -1838,6 +1840,8 @@ class InstallersData(DataStore):
         super(InstallersData, self)._delete_operation(paths, markers, **kwargs)
 
     def delete_refresh(self, deleted, markers, check_existence):
+        if any(not p.is_absolute() for p in deleted): # UIList.hide path
+            deleted = [self.store_dir.join(p) for p in deleted]
         deleted = {item.tail for item in deleted
                    if not check_existence or not item.exists()}
         if deleted:
