@@ -730,7 +730,7 @@ def GPathPurge():
 
 #------------------------------------------------------------------------------
 _conv_seps = None
-class Path(os.PathLike):
+class Path(os.PathLike[str]):
     """Paths are immutable objects that represent file directory paths.
      May be just a directory, filename or full path."""
 
@@ -1274,6 +1274,11 @@ class LooseVersion:
         if not isinstance(other, LooseVersion):
             return NotImplemented
         return self._parsed_version == other._parsed_version
+
+    def __ne__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version != other._parsed_version
 
     def __lt__(self, other):
         if not isinstance(other, LooseVersion):
