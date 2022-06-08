@@ -79,11 +79,11 @@ reVersion = re.compile(
   re.M | re.I)
 
 #--Mod Extensions
-__exts = r'((\.(' + u'|'.join(ext[1:] for ext in archives.readExts) + u'))|)$'
+__exts = fr'((\.({"|".join(ext[1:] for ext in archives.readExts)}))|)$'
 reTesNexus = re.compile(r'(.*?)-(\d{1,7})(?:-\w*){0,3}(?:-\d{1,16})?' + __exts,
-                        re.I | re.U)
+                        re.I)
 reTESA = re.compile(r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?' + __exts,
-                    re.I | re.U)
+                    re.I)
 del __exts
 imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 
@@ -126,14 +126,14 @@ class ListInfo(object):
 
     @classmethod
     def _name_re(cls, allowed_exts):
-        exts_re = cls._valid_exts_re if not allowed_exts else \
-            r'(\.(?:' + u'|'.join(ext[1:] for ext in allowed_exts) + u'))'
+        exts_re = fr'(\.(?:{"|".join(e[1:] for e in allowed_exts)}))' \
+            if allowed_exts else cls._valid_exts_re
         # The reason we do the regex like this is to support names like
         # foo.ess.ess.ess etc.
         final_regex = '^%s(.*?)' % (r'(?=.+\.)' if exts_re else '')
         if cls._has_digits: final_regex += r'(\d*)'
-        final_regex += exts_re + u'$'
-        return re.compile(final_regex, re.I | re.U)
+        final_regex += f'{exts_re}$'
+        return re.compile(final_regex, re.I)
 
     # Generate unique filenames when duplicating files etc
     @staticmethod

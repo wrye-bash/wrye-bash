@@ -2573,9 +2573,9 @@ class InstallersList(balt.UIList):
 
     @staticmethod
     def _unhide_wildcard():
-        starred = u';'.join(u'*' + ext for ext in archives.readExts)
-        return bush.game.displayName + u' ' + _(
-            u'Mod Archives') + u' (' + starred + u')|' + starred
+        starred = ';'.join(f'*{e}' for e in archives.readExts)
+        return  f'{bush.game.displayName} {_("Mod Archives")} ' \
+                f'({starred})|{starred}'
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
@@ -3286,7 +3286,8 @@ class InstallersPanel(BashTab):
                     self._user_cancelled = True # User canceled the refresh
                 finally:
                     self._data_dir_scanned = True
-        elif self.frameActivated and self.listData.refreshConvertersNeeded():
+        elif self.frameActivated and \
+                self.listData.converters_data.refreshConvertersNeeded(): # TODO: avoid this call do it in irefresh
             with balt.Progress(_('Refreshing Converters...'), nl) as progress:
                 try:
                     refreshui |= self.listData.irefresh(progress, u'C',

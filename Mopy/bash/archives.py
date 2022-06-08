@@ -29,7 +29,7 @@ from .exception import StateError
 
 exe7z = u'7z.exe' if os_name == u'nt' else u'7z'
 defaultExt = u'.7z'
-writeExts = {defaultExt: u'7z', u'.zip': u'zip'}
+writeExts = {defaultExt: '7z', '.zip': 'zip'}
 readExts = {u'.rar', u'.001'}
 readExts.update(writeExts)
 omod_exts = {u'.omod', u'.fomod'}

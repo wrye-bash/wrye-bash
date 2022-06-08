@@ -1192,14 +1192,13 @@ class Installer_SyncFromData(_SingleInstallable):
     def Execute(self):
         was_rar = self._selected_item.cext == u'.rar'
         if was_rar:
-            if not self._askYes(
-                    _(u'.rar files cannot be modified. Wrye Bash can however '
-                      u'repack them to .7z files, which can then be '
-                      u'modified.') + u'\n\n' +
-                    _(u'Note that doing this will leave the old .rar file '
-                      u'behind, so you may want to manually delete it '
-                      u'afterwards.') + u'\n\n' +
-                    _(u"Click 'Yes' to repack, or 'No' to abort the sync.")):
+            if not self._askYes('\n\n'.join([
+                    _('.rar files cannot be modified. Wrye Bash can however '
+                      'repack them to .7z files, which can then be modified.'),
+                    _('Note that doing this will leave the old .rar file '
+                      'behind, so you may want to manually delete it '
+                      'afterwards.'),
+                    _("Click 'Yes' to repack, or 'No' to abort the sync.")])):
                 return # user clicked 'No'
         missing = sorted(self._selected_info.missingFiles)
         mismatched = sorted(self._selected_info.mismatchedFiles)
@@ -1290,8 +1289,7 @@ class _InstallerConverter_Link(_ArchiveOnly):
                     sorted(x.archive for x in installers))))
         if duplicates:
             msg = _(u'Installers with identical content selected:') + u'\n'
-            msg += u'\n'.join(
-                sorted(u'CRC: %08X%s' % (k, v) for k, v in duplicates))
+            msg += '\n'.join(sorted(f'CRC: {k:08X}{v}' for k, v in duplicates))
             if message: msg += u'\n' + message
             self._showError(msg, _(u'Identical installers content'))
             return True
@@ -1381,7 +1379,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         # all installers that this converter needs are unique
         crc_installer = {x.crc: x for x in self.iselected_infos()}
         #--Generate allowable targets
-        readTypes = u'*%s' % u';*'.join(archives.readExts)
+        readTypes = f'*{";*".join(archives.readExts)}'
         #--Select target archive
         destArchive = self._askOpen(title=_("Select the BAIN'ed Archive:"),
             defaultDir=self.idata.store_dir, wildcard=readTypes)

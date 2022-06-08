@@ -72,18 +72,16 @@ class ConvertersData(DataDict):
         scanned = set()
         convertersJoin = converters_dir.join
         converterGet = self.bcfPath_sizeCrcDate.get
-        archivesAdd = archives_set.add
-        scannedAdd = scanned.add
         for bcf_archive in top_level_files(converters_dir): # scan only files
             if self.validConverterName(GPath_no_norm(bcf_archive)): ##: drop GPath here!
-                scannedAdd(convertersJoin(bcf_archive))
+                scanned.add(convertersJoin(bcf_archive))
         if len(scanned) != len(self.bcfPath_sizeCrcDate):
             return True
         for bcf_archive in scanned:
             size, crc, mod_time = converterGet(bcf_archive, (None, None, None))
             if crc is None or (size, mod_time) != bcf_archive.size_mtime():
                 return True
-            archivesAdd(bcf_archive)
+            archives_set.add(bcf_archive)
         #--Added/removed packages?
         return archives_set != set(self.bcfPath_sizeCrcDate)
 
@@ -98,16 +96,15 @@ class ConvertersData(DataDict):
         progress = progress or bolt.Progress()
         pending = set()
         bcfCRC_converter = self.bcfCRC_converter
-        convJoin = converters_dir.join
         #--Current converters
         newData = dict()
         if fullRefresh:
             self.bcfPath_sizeCrcDate.clear()
             self.srcCRC_converters.clear()
-        for bcf_archive in top_level_files(converters_dir):
+        for bcf_archive in top_level_files(converters_dir): # few items
             if self.validConverterName(bcf_archive := GPath_no_norm(
                     bcf_archive)):  ##: drop GPath here!
-                bcfPath = convJoin(bcf_archive)
+                bcfPath = converters_dir.join(bcf_archive)
                 size, crc, mod_time = self.bcfPath_sizeCrcDate.get(bcfPath, (
                     None, None, None))
                 size_mtime = bcfPath.size_mtime()
@@ -127,6 +124,7 @@ class ConvertersData(DataDict):
                 else:
                     newData[crc] = bcfCRC_converter[crc]
                     newData[crc].fullPath = bcfPath
+        # TODO remove converters here!! - don't repeat in _prune_converters
         #--New/update crcs?
         self.bcfCRC_converter = newData
         pendingChanged = False
@@ -208,27 +206,24 @@ class ConvertersData(DataDict):
 
 class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
+    #--Persistent variables are saved in the data tank for normal operations.
+    #--_persistBCF is read one time from BCF.dat, and then saved in
+    #  Converters.dat to keep archive extractions to a minimum
+    #--_persistDAT has operational variables that are saved in Converters.dat
+    #--Do NOT reorder _persistBCF,_persistDAT,addedPersist or you will break
+    #  existing BCFs!
+    #--Do NOT add new attributes to _persistBCF, _persistDAT.
+    _persistBCF = ['srcCRCs']
+    _persistDAT = ['crc', 'fullPath']
+    #--Any new BCF persistent variables are not allowed. Additional work
+    #  needed to support backwards compat.
+    #--Any new DAT persistent variables must be appended to _addedPersistDAT.
+    #----They must be able to handle being set to None
+    _addedPersistDAT = []
 
     def __init__(self, srcArchives=None, idata=None, destArchive=None,
                  BCFArchive=None, blockSize=None, progress=None,
                  crc_installer=None):
-        #--Persistent variables are saved in the data tank for normal
-        # operations.
-        #--persistBCF is read one time from BCF.dat, and then saved in
-        # Converters.dat to keep archive extractions to a minimum
-        #--persistDAT has operational variables that are saved in
-        # Converters.dat
-        #--Do NOT reorder persistBCF,persistDAT,addedPersist or you will
-        # break existing BCFs!
-        #--Do NOT add new attributes to persistBCF, persistDAT.
-        self.persistBCF = [u'srcCRCs']
-        self.persistDAT = [u'crc', u'fullPath']
-        #--Any new BCF persistent variables are not allowed. Additional work
-        #  needed to support backwards compat.
-        #--Any new DAT persistent variables must be appended to
-        # addedPersistDAT.
-        #----They must be able to handle being set to None
-        self.addedPersistDAT = []
         self.srcCRCs = set()
         self.crc = None
         #--fullPath is saved in Converters.dat, but it is also updated on
@@ -263,21 +258,21 @@ class InstallerConverter(object):
 
     def __getstate__(self):
         """Used by pickler to save object state. Used for Converters.dat"""
-        return tuple(getattr(self, a) for a in
-                     self.persistBCF + self.persistDAT + self.addedPersistDAT)
+        return tuple(getattr(self, a) for a in self._persistBCF +
+                     self._persistDAT + self._addedPersistDAT)
 
     def __setstate__(self, values):
         """Used by unpickler to recreate object. Used for Converters.dat"""
         self.__init__()
-        for a, v in zip(self.persistBCF + self.persistDAT +
-                         self.addedPersistDAT, values):
+        for a, v in zip(self._persistBCF + self._persistDAT +
+                        self._addedPersistDAT, values):
             setattr(self, a, v)
 
     def __reduce__(self):
         from . import InstallerConverter as boshInstallerConverter
         return boshInstallerConverter, (), tuple(
             getattr(self, a) for a in
-            self.persistBCF + self.persistDAT + self.addedPersistDAT)
+            self._persistBCF + self._persistDAT + self._addedPersistDAT)
 
     def load(self, fullLoad=False):
         """Load BCF.dat. Called once when a BCF is first installed, during a
@@ -299,7 +294,7 @@ class InstallerConverter(object):
                 def _translate(s):
                     return b'bash.' + s if s in _old_modules else s
             translator = _Translator(stream)
-            for a, v in zip(self.persistBCF, pickle.load(
+            for a, v in zip(self._persistBCF, pickle.load(
                     translator, encoding='bytes')):
                 setattr(self, a, v)
             if fullLoad:
@@ -317,7 +312,7 @@ class InstallerConverter(object):
             pickle.dump(tuple(getattr(self, a) for a in att), dat, -1)
         try:
             with bass.getTempDir().join(u'BCF.dat').open(u'wb') as f:
-                _dump(self.persistBCF, f)
+                _dump(self._persistBCF, f)
                 _dump(self._converter_settings + self.volatile + self.addedSettings, f)
         except Exception as e:
             raise StateError(f'Error creating BCF.dat:\nError: {e}') from e
