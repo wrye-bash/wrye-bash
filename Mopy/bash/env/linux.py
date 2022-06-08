@@ -227,6 +227,6 @@ def convert_separators(p):
 
 # API - Classes ===============================================================
 class TaskDialog(object):
-    def __init__(self, _title, _heading, _content, _buttons=(),
-                 _main_icon=None, _parenthwnd=None, _footer=None):
+    def __init__(self, title, heading, content, buttons=(), 
+                 main_icon=None, parenthwnd=None, footer=None):
         raise EnvError(u'TaskDialog')

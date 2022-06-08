@@ -91,7 +91,7 @@ class SaveFileHeader(object):
         for attr, (__pack, _unpack) in self.__class__.unpackers.items():
             setattr(self, attr, _unpack(ins))
         self.load_image_data(ins, load_image)
-        self.load_masters(ins)
+        self._load_masters(ins)
         # additional calculations - TODO(ut): rework decoding
         self.calc_time()
         self.pcName = remove_newlines(decoder(cstrip(self.pcName)))
@@ -111,7 +111,7 @@ class SaveFileHeader(object):
         else:
             ins.seek(image_size, 1)
 
-    def load_masters(self, ins):
+    def _load_masters(self, ins):
         self._mastersStart = ins.tell()
         self.masters = []
         numMasters = unpack_byte(ins)
@@ -308,7 +308,7 @@ class SkyrimSaveHeader(SaveFileHeader):
                                   f'as expected ({self.header_size}).')
         super(SkyrimSaveHeader, self).load_image_data(ins, load_image)
 
-    def load_masters(self, ins):
+    def _load_masters(self, ins):
         # If on SSE, check _compressType and respond accordingly:
         #  0 means uncompressed
         #  1 means zlib
@@ -554,7 +554,7 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
                                   f'as expected ({self.header_size}).')
         super(SkyrimSaveHeader, self).load_image_data(ins, load_image)
 
-    def load_masters(self, ins):
+    def _load_masters(self, ins):
         self._formVersion = unpack_byte(ins)
         unpack_str16(ins) # drop "gameVersion"
         self._mastersStart = ins.tell()
@@ -606,7 +606,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
         (u'gameDate',    (00, unpack_str16_delim)),
     ])
 
-    def load_masters(self, ins):
+    def _load_masters(self, ins):
         self._mastersStart = ins.tell()
         self._master_list_size(ins)
         self.masters = []
