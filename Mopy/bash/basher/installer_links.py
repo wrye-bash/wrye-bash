@@ -35,6 +35,7 @@ import os
 import re
 import webbrowser
 from collections import defaultdict
+from itertools import chain
 
 from . import Installers_Link, BashFrame, INIList
 from .frames import InstallerProject_OmodConfigDialog
@@ -1466,18 +1467,18 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         selected = self.selected
         idata = self.window.data_store # InstallersData singleton
         selectedCRCs = set(inst.crc for inst in self.iselected_infos())
-        srcCRCs = set(idata.converters_data.srcCRC_converters)
+        srcCRCs = set( # crcs of all installers referenced by some converter
+            inst_crc_converters := idata.converters_data.srcCRC_converters)
         #--There is no point in testing each converter unless
         #--every selected archive has an associated converter
         if selectedCRCs <= srcCRCs:
             #--Test every converter for every selected archive
+            converters = {*chain( # converters referencing selected installers
+                *(inst_crc_converters[inst_crc] for inst_crc in selectedCRCs))}
             # Only add a link to the converter if all of its required archives
             # are selected
-            linkSet = set()
-            for installerCRC in selectedCRCs:
-               for converter in idata.converters_data.srcCRC_converters[installerCRC]:
-                   if converter.srcCRCs <= selectedCRCs:
-                       linkSet.add(converter)
+            linkSet = {conv for conv in converters if
+                       conv.srcCRCs <= selectedCRCs}
         #--If the archive is a single archive with an embedded BCF, add that
         if len(selected) == 1 and self._first_selected().hasBCF:
             self.links.append(InstallerConverter_ApplyEmbedded())
@@ -1487,7 +1488,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--Otherwise add each link in alphabetical order, and
         #--indicate the number of additional, unselected archives
         #--that the converter requires
-        for converter in sorted(linkSet,key=lambda x:x.fullPath.stail.lower()):
+        for converter in sorted(linkSet, key=lambda x: x.fullPath.tail):
             self.links.append(InstallerConverter_Apply(converter, selected))
         return True
 

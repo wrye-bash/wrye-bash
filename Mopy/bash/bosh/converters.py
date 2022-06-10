@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import io
 import pickle
+from collections import defaultdict
 
 from .. import bolt, archives, bass
 from ..archives import defaultExt, readExts
@@ -61,8 +62,9 @@ class ConvertersData(DataDict):
         return True
 
     def save(self):
-        self.converterFile.pickled_data[u'bcfCRC_converter'] = self.bcfCRC_converter
-        self.converterFile.pickled_data[u'srcCRC_converters'] = self.srcCRC_converters
+        pickle_dict = self.converterFile.pickled_data
+        pickle_dict['bcfCRC_converter'] = self.bcfCRC_converter
+        pickle_dict['srcCRC_converters'] = self.srcCRC_converters
         self.converterFile.save()
 
     def refreshConvertersNeeded(self):
@@ -190,16 +192,15 @@ class ConvertersData(DataDict):
             #--Removing by filepath
             _size, crc, _mod_time = self.bcfPath_sizeCrcDate.pop(converter, (
                 None, None, None))
-            oldConverter = None if crc is None else self.bcfCRC_converter.pop(
-                crc, None)
+            oldConverter = self.bcfCRC_converter.pop(crc, None)
         #--Sanity check
         if oldConverter is None: return
         #--Unlink the converter from Bash
-        for srcCRC in list(self.srcCRC_converters):
-            for converter in self.srcCRC_converters[srcCRC][:]:
+        for srcCRC, parent_converters in list(self.srcCRC_converters.items()):
+            for converter in parent_converters[:]:
                 if converter is oldConverter:
-                    self.srcCRC_converters[srcCRC].remove(converter)
-            if len(self.srcCRC_converters[srcCRC]) == 0:
+                    parent_converters.remove(converter)
+            if not parent_converters:
                 del self.srcCRC_converters[srcCRC]
         del oldConverter
 
@@ -421,40 +422,35 @@ class InstallerConverter(object):
         destInstaller = idata[destArchive]
         self.bcf_missing_files = []
         self.blockSize = blockSize
-        subArchives = dict()
-        srcAdd = self.srcCRCs.add
+        subArchives = defaultdict(list)
         convertedFileAppend = self.convertedFiles.append
         destFileAppend = destFiles.append
         dupeGet = self.dupeCount.get
-        subGet = subArchives.get
         lastStep = 0
         #--Get settings
         attrs = self._converter_settings
         for a in attrs:
             setattr(self, a, getattr(destInstaller, a))
         #--Make list of source files
-        for installer in [idata[x] for x in srcArchives]:
+        for installer in [idata[x] for x in srcArchives]: # few items
             installerCRC = installer.crc
-            srcAdd(installerCRC)
-            fileList = subGet(installerCRC, [])
-            fileAppend = fileList.append
+            self.srcCRCs.add(installerCRC)
             for fileName, __size, fileCRC in installer.fileSizeCrcs:
                 srcFiles[fileCRC] = (installerCRC, fileName)
                 #--Note any subArchives
                 if GPath_no_norm(fileName).cext in readExts:
-                    fileAppend(fileName)
-            if fileList: subArchives[installerCRC] = fileList
+                    subArchives[installerCRC].append(fileName)
         # TODO(inf) Hacky temp fix - real fix is probably passing a valid
         #  crc_installer param to this method
-        if len(subArchives) and crc_installer:
+        if subArchives and crc_installer:
             archivedFiles = dict()
             nextStep = step = 0.3 / len(subArchives)
             #--Extract any subArchives
             #--It would be faster to read them with 7z l -slt
             #--But it is easier to use the existing recursive extraction
-            for index, (installerCRC) in enumerate(subArchives):
+            for index, (installerCRC, subs) in enumerate(subArchives.items()):
                 installer = crc_installer[installerCRC]
-                self._unpack(installer, subArchives[installerCRC],
+                self._unpack(installer, subs,
                              SubProgress(progress, lastStep, nextStep))
                 lastStep = nextStep
                 nextStep += step
@@ -462,7 +458,7 @@ class InstallerConverter(object):
             tmpDir = bass.getTempDir()
             for crc in tmpDir.list():
                 fpath = tmpDir.join(crc)
-                for root_dir, y, files in fpath.walk():
+                for root_dir, y, files in fpath.walk(): ##: replace with os walk!!
                     for file in files:
                         file = root_dir.join(file)
                         archivedFiles[file.crc] = (crc, file.s[len(fpath)+1:]) # +1 for '/'
