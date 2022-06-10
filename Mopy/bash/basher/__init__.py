@@ -3284,15 +3284,13 @@ class InstallersPanel(BashTab):
                     self._user_cancelled = True # User canceled the refresh
                 finally:
                     self._data_dir_scanned = True
-        elif self.frameActivated and \
-                self.listData.converters_data.refreshConvertersNeeded(): # TODO: avoid this call do it in irefresh
-            with balt.Progress(_('Refreshing Converters...')) as progress:
-                try:
-                    refreshui |= self.listData.irefresh(progress, u'C',
-                                                        fullRefresh)
-                    self.frameActivated = False
-                except CancelError:
-                    pass # User canceled the refresh
+        elif self.frameActivated:
+            try:
+                refreshui |= self.listData.irefresh(what='C',
+                                                    fullRefresh=fullRefresh)
+                self.frameActivated = False
+            except CancelError:
+                pass  # User canceled the refresh
         do_refresh = self.listData.refreshTracked()
         refreshui |= do_refresh and self.listData.refreshInstallersStatus()
         if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
