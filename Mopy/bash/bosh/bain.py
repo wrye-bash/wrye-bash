@@ -1961,13 +1961,13 @@ class InstallersData(DataStore):
             unpack_dir = installer.unpackToTemp([installer.hasBCF],
                 SubProgress(progress, i, i + 0.5))
             srcBcfFile = unpack_dir.join(installer.hasBCF)
-            bcfFile = bass.dirs[u'converters'].join(u'temp-' + srcBcfFile.stail)
+            bcfFile = bass.dirs['converters'].join('temp-' + srcBcfFile.stail)
             srcBcfFile.moveTo(bcfFile)
             bass.rmTempDir()
             #--Create the converter, apply it
             converter = InstallerConverter(bcfFile.tail)
             try:
-                msg = u'%s: ' % destArchive + _(
+                msg = f'{destArchive}: ' + _(
                     u'An error occurred while applying an Embedded BCF.')
                 self.apply_converter(converter, destArchive,
                                      SubProgress(progress, i + 0.5, i + 1.0),

@@ -1340,7 +1340,8 @@ class Mod_FogFixer(ItemLink):
              u'screen bug')
 
     def Execute(self):
-        message = _(u'Apply Nvidia fog fix.  This modify fog values in interior cells to avoid the Nvidia black screen bug.')
+        message = _('Apply Nvidia fog fix. This modifies fog values in '
+                    'interior cells to avoid the Nvidia black screen bug.')
         if not self._askContinue(message, u'bash.cleanMod.continue',
                                  _(u'Nvidia Fog Fix')): return
         with balt.Progress(_(u'Nvidia Fog Fix')) as progress:

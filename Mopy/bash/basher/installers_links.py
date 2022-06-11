@@ -82,6 +82,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Backup CRC data
         data_sizeCrcDate = self.idata.data_sizeCrcDate.copy()
+        oldFiles = set(data_sizeCrcDate)
         # Install and wait
         self._showOk(_(u'You may now install your mod.  When installation is '
                        u'complete, press Ok.'), _(u'External Installation'))
@@ -94,7 +95,6 @@ class Installers_MonitorExternalInstallation(Installers_Link):
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
-        oldFiles = set(data_sizeCrcDate)
         curFiles = set(curData)
         newFiles = curFiles - oldFiles
         delFiles = oldFiles - curFiles

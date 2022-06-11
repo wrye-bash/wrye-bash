@@ -246,13 +246,13 @@ class PatchFile(ModFile):
                 pstate = index+0.5
                 if is_merged:
                     # If the plugin is to be merged, merge it
-                    progress(pstate, u'%s\n' % modName + _(u'Merging...'))
+                    progress(pstate, f'{modName}\n' + _('Merging...'))
                     self.mergeModFile(modFile, doFilter, iiMode)
                 elif is_loaded:
                     # Else, if the plugin is active, update records from it. If
                     # the plugin is inactive, we only want to import from it,
                     # so do nothing here
-                    progress(pstate, u'%s\n' % modName + _(u'Scanning...'))
+                    progress(pstate, f'{modName}\n' + _('Scanning...'))
                     self.update_patch_records_from_mod(modFile)
                 for patcher in sorted(self._patcher_instances,
                         key=attrgetter(u'patcher_order')):
@@ -262,9 +262,9 @@ class PatchFile(ModFile):
             except CancelError:
                 raise
             except:
-                print(u'MERGE/SCAN ERROR: %s' % modName)
+                bolt.deprint(f'MERGE/SCAN ERROR: {modName}', traceback=True)
                 raise
-        progress(progress.full,_(u'Load mods scanned.'))
+        progress(progress.full, _('Load mods scanned.'))
 
     def mergeModFile(self, modFile, doFilter, iiMode):
         """Copies contents of modFile into self."""

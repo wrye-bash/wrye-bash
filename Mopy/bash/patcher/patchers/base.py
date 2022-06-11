@@ -179,7 +179,12 @@ class MultiTweaker(AMultiTweaker,Patcher):
                         # that we now want to keep the record. Note that we
                         # can't break early here, because more than one tweak
                         # may want to touch this record
-                        p_tweak.tweak_record(record)
+                        try:
+                            p_tweak.tweak_record(record)
+                        except:
+                            deprint(record.error_string('tweaking'),
+                                    traceback=True)
+                            continue
                         keep(record.fid)
                         tweak_counter[p_tweak][record.fid[0]] += 1
         # We're done with all tweaks, give them a chance to clean up and do any

@@ -23,10 +23,10 @@
 """Houses abstract base classes and some APIs for representing records and
 subrecords in memory."""
 
-from collections import defaultdict
 import copy
 import io
 import zlib
+from collections import defaultdict
 
 from .basic_elements import SubrecordBlob, unpackSubHeader
 from .mod_io import ModReader
@@ -532,8 +532,8 @@ class MreRecord(object):
 class MelRecord(MreRecord):
     """Mod record built from mod record elements."""
     #--Subclasses must define as MelSet(*mels)
-    melSet = None # type: MelSet
-    rec_sig = None # type: bytes
+    melSet: MelSet = None
+    rec_sig: bytes = None
     # If set to False, skip the check for duplicate attributes for this
     # subrecord. See MelSet.check_duplicate_attrs for more information.
     _has_duplicate_attrs = False
@@ -587,16 +587,22 @@ class MelRecord(MreRecord):
                 error = f'Unexpected subrecord: {self.rec_str}.' \
                         f'{sig_to_str(sub_type)}'
             file_offset += ins.tell()
-            bolt.deprint('\n'.join([
-                f'Error loading {self.rec_str} record '
-                f'and/or subrecord: {self.fid:08X}',
-                f'  eid = {getattr(self, "eid", "<<NO EID>>")!r}',
-                f'  subrecord = {sig_to_str(sub_type)}',
-                f'  subrecord size = {sub_size}',
-                f'  file pos = {file_offset}']))
+            bolt.deprint(self.error_string('loading', file_offset, sub_size,
+                                           sub_type))
             if isinstance(error, str):
                 raise exception.ModError(ins.inName, error)
             raise exception.ModError(ins.inName, f'{error!r}') from error
+
+    def error_string(self, op, file_offset=None, sub_size=None, sub_type=None):
+        """Return a human-readable description of this record to use in error
+        messages."""
+        msg = f'Error {op} {self.rec_str} record and/or subrecord: ' \
+              f'{self.fid:08X}\n  eid = {getattr(self, "eid", "<<NO EID>>")!r}'
+        if file_offset is None:
+            return msg
+        li = [msg, f'subrecord = {sig_to_str(sub_type)}',
+              f'subrecord size = {sub_size}', f'file pos = {file_offset}']
+        return '\n  '.join(li)
 
     def dumpData(self,out):
         """Dumps state into out. Called by getSize()."""
