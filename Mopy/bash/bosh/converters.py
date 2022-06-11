@@ -262,8 +262,6 @@ class InstallerConverter(object):
     def load(self, fullLoad=False):
         """Load BCF.dat. Called once when a BCF is first installed, during a
         fullRefresh, and when the BCF is applied"""
-        if not self.fullPath.exists(): raise StateError(
-            f"\nLoading {self.fullPath}:\nBCF doesn't exist.")
         def translate(out):
             stream = io.BytesIO(out)
             # translate data types to new hierarchy
@@ -289,7 +287,12 @@ class InstallerConverter(object):
                     setattr(self, a, v)
         # Temp rename if its name wont encode correctly
         err_msg = f'\nLoading {self.fullPath}:\nBCF extraction failed.'
-        archives.wrapPopenOut(self.fullPath, translate, errorMsg=err_msg)
+        try:
+            archives.wrapPopenOut(self.fullPath, translate, errorMsg=err_msg)
+        except StateError:
+            if not self.fullPath.exists(): raise StateError(
+                f"\nLoading {self.fullPath}:\nBCF doesn't exist.")
+            raise
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
@@ -377,7 +380,7 @@ class InstallerConverter(object):
             srcFile = tempJoin(
                 srcDir if type(srcDir) is str else f'{srcDir:08X}', srcFile)
             destFile = destJoin(destFile)
-            if not srcFile.exists():
+            if not srcFile.exists(): ##: EAFP instead
                 raise StateError(
                     f'{self.fullPath.stail}: Missing source file:\n{srcFile}')
             if destFile is None:

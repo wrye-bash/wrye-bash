@@ -365,7 +365,7 @@ class Installer(ListInfo):
             self._remaps = forward_compat_path_to_fn(self._remaps,
                 value_type=lambda v: FName('%s' % v)) # Path -> FName
         if isinstance(self, InstallerMarker): return
-        if not self.abs_path.exists(): # pickled installer deleted outside bash
+        if not self.abs_path.exists(): # pickled installer deleted outside bash ##: EAFP
             return  # don't do anything should be deleted from our data soon
         if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
             self.src_sizeCrcDate = bolt.LowerDict(
@@ -2482,7 +2482,7 @@ class InstallersData(DataStore):
             except FileError:
                 pass # corrupt, but we won't need the bsas set again, so ignore
         modInfos.cached_lo_append_if_missing(mods)
-        modInfos.refreshLoadOrder(unlock_lo=True)
+        modInfos.refreshLoadOrder(unlock_lo=True) ##: TODO: needed?? cached_lo_append_if_missing calls cached_lo_save_lo
         # now that we saved load order update missing mtimes for mods:
         for mod in mods:
             s, c, _d = data_sizeCrcDate_update[mod]

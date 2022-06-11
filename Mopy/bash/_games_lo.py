@@ -963,7 +963,11 @@ class TimestampGame(LoGame):
     def _rebuild_mtimes_cache(self):
         self._mtime_mods.clear()
         for mod, info in self.mod_infos.items():
-            self._mtime_mods[int(info.mtime)] |= {mod}
+            try:
+                self._mtime_mods[int(info.mtime)] |= {mod}
+            except TypeError:
+                bolt.deprint(f'{info!r} has no mtime!')
+                raise
 
     def _persist_active_plugins(self, active, lord):
         self._write_plugins_txt(active, active)

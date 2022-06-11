@@ -379,7 +379,7 @@ class PCFaces(object):
     def _mod_load_fact(modInfo, keepAll=False, by_sig=None):
         loadFactory = LoadFactory(keepAll=keepAll, by_sig=by_sig)
         modFile = ModFile(modInfo,loadFactory)
-        if (not keepAll) or modInfo.getPath().exists(): # read -> keepAll=False
+        if (not keepAll) or modInfo.getPath().exists(): # read -> keepAll=False ##: EAFP
             modFile.load(True)
         return modFile
 
