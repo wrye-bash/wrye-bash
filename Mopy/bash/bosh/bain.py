@@ -1959,7 +1959,7 @@ class InstallersData(DataStore):
             srcBcfFile.moveTo(bcfFile)
             bass.rmTempDir()
             #--Create the converter, apply it
-            converter = InstallerConverter(bcfFile.tail)
+            converter = InstallerConverter.from_path(bcfFile)
             try:
                 msg = f'{destArchive}: ' + _(
                     u'An error occurred while applying an Embedded BCF.')

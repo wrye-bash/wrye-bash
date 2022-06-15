@@ -45,7 +45,7 @@ from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap, deprint
-from ..bosh import InstallerArchive, InstallerProject
+from ..bosh import InstallerArchive, InstallerProject, InstallerConverter
 from ..exception import CancelError, SkipError, StateError, AbstractError, \
     XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
@@ -1414,8 +1414,8 @@ class InstallerConverter_Create(_InstallerConverter_Link):
                 title=self._dialog_title, default_size=destInstaller.blockSize or 0)
         with balt.Progress(_('Creating %s...') % BCFArchive) as progress:
             #--Create the converter
-            conv = bosh.converters.InstallerConverter(self.selected,
-                    self.idata, destArchive, BCFArchive, blockSize, progress)
+            conv = InstallerConverter.from_scratch(self.selected, self.idata,
+                destArchive, BCFArchive, blockSize, progress)
             #--Add the converter to Bash
             self.idata.converters_data.addConverter(conv)
         #--Refresh UI
