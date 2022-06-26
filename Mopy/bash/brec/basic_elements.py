@@ -212,7 +212,7 @@ class MelBase(Subrecord):
 
     def mapFids(self, record, function, save_fids=False):
         """Applies function to fids. If save is True, then fid is set
-        to result of function."""
+        to result of function - see ReplaceFormIDsPatcher."""
         raise exception.AbstractError(
             f'mapFids called on subrecord without FormIDs (signatures: '
             f'{sorted(self.signatures)})')
@@ -540,9 +540,17 @@ class MelStrings(MelString):
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    def __init__(self, mel_sig, struct_formats, *elements):
-        """:type mel_sig: bytes
-        :type struct_formats: list[str]"""
+    def __init__(self, mel_sig: bytes, struct_formats: list[str], *elements):
+        """Parse elements and set attrs, defaults, actions, formAttrs where:
+        * attrs is tuple of attributes (names)
+        * formAttrs is set of attributes that have fids,
+        * defaults is tuple of default values for attributes
+        * actions is tuple of callables to be used when loading data
+        Note that each element of defaults and actions matches corresponding
+        attr element. Example elements:
+        ('level', 'unused1', (FID, 'listId', None), ('count', 1), 'unused2')
+        :type elements: (list[None|str|tuple])
+        """
         if not isinstance(struct_formats, list):
             raise SyntaxError(f'Expected a list got "{struct_formats}"')
         # Sometimes subrecords have to preserve non-aligned sizes, check that
@@ -553,7 +561,7 @@ class MelStruct(MelBase):
             struct_format = f'={struct_format}'
         self.mel_sig = mel_sig
         self.attrs, self.defaults, self.actions, self.formAttrs = \
-            self.parseElements(struct_formats, *elements)
+            self._parseElements(struct_formats, *elements)
         # Check for duplicate attrs - can't rely on MelSet.getSlotsUsed only,
         # since we may end up in a MelUnion which has to use a set to collect
         # its slots
@@ -587,7 +595,7 @@ class MelStruct(MelBase):
         values = [__attrgetters[a](record) for a in self.attrs]
         for dex in self._action_dexes:
             try:
-                values[dex] =  values[dex].dump()
+                values[dex] = values[dex].dump()
             except AttributeError:
                 # Apply the action to itself before dumping to handle e.g. a
                 # FixedString getting assigned a unicode value. Needed also
@@ -604,20 +612,7 @@ class MelStruct(MelBase):
     def static_size(self):
         return self._static_size
 
-    def parseElements(self, struct_formats, *elements):
-        """Parses elements and returns attrs,defaults,actions,formAttrs where:
-        * attrs is tuple of attributes (names)
-        * formAttrs is set of attributes that have fids,
-        * defaults is tuple of default values for attributes
-        * actions is tuple of callables to be used when loading data
-        Note that each element of defaults and actions matches corresponding attr element.
-        Used by MelStruct and _MelField.
-
-        Example call:
-        parseElements('level', 'unused1', (FID, 'listId', None),
-                      ('count', 1), 'unused2')
-
-        :type elements: (list[None|str|tuple])"""
+    def _parseElements(self, struct_formats, *elements):
         formAttrs = set()
         lenEls = len(elements)
         attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls

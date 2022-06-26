@@ -1443,7 +1443,7 @@ class ACosave(_Dumpable, _Remappable, AFile):
             if ends_with_f:
                 final_cs_path += u'f'
             return GPath(final_cs_path)
-        raise BoltError(u'Invalid save path %s' % save_path)
+        raise BoltError(f'Invalid save path {save_path}')
 
 class xSECosave(ACosave):
     """Represents an xSE cosave, with a .**se extension."""

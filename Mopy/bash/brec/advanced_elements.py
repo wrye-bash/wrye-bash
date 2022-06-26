@@ -464,13 +464,12 @@ class MelTruncatedStruct(MelStruct):
 
         :param sub_sig: The subrecord signature of this struct.
         :param sub_fmt: The format of this struct.
-        :param elements: The element syntax of this struct. Passed to
-            parseElements, see that method for syntax explanations.
+        :param elements: The element syntax of this struct.
         :param kwargs: Must contain an old_versions keyword argument, which
             specifies the older formats that are supported by this struct. The
             keyword argument is_optional can be supplied, which determines
-            whether or not this struct should behave like MelOptStruct. May
-            also contain any keyword arguments that MelStruct supports."""
+            whether this struct should behave like MelOptStruct. May also
+            contain any keyword arguments that MelStruct supports."""
         try:
             old_versions = kwargs.pop('old_versions')
         except KeyError:

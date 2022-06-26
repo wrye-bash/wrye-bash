@@ -597,7 +597,7 @@ class MelRecord(MreRecord):
         """Return a human-readable description of this record to use in error
         messages."""
         msg = f'Error {op} {self.rec_str} record and/or subrecord: ' \
-              f'{self.fid:08X}\n  eid = {getattr(self, "eid", "<<NO EID>>")!r}'
+              f'{strFid(self.fid)}\n  eid = {getattr(self, "eid", "<<NO EID>>")!r}'
         if file_offset is None:
             return msg
         li = [msg, f'subrecord = {sig_to_str(sub_type)}',

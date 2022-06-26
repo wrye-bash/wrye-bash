@@ -242,8 +242,7 @@ class _HandleAliases(CsvParser):
         return top_grup_sig
 
     def _key2(self, csv_fields):
-        longid = self._coerce_fid(*self._key2_getter(csv_fields))
-        return longid
+        return self._coerce_fid(*self._key2_getter(csv_fields))
 
     def readFromMod(self, modInfo):
         """Hasty readFromMod implementation."""
@@ -605,7 +604,7 @@ class ActorLevels(_HandleAliases):
         return ((fn_mod != (bg_mf := bush.game.master_file)) and [fn_mod,
             self.id_stored_data[bg_mf]])
 
-    def _row_out(self, longfid, di, fn_mod, obId_levels,
+    def _row_out(self, longfid, di, fn_mod, obId_levels, *,
                  __getter=itemgetter('eid', 'flags.pcLevelOffset',
                                      'level_offset', 'calcMin', 'calcMax')):
         """Export NPC level data to specified text file."""

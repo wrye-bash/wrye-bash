@@ -2303,7 +2303,7 @@ class InstallersData(DataStore):
         :param deleted: A set of file paths that have been deleted.
         :type changed: set[bolt.Path]
         :param renamed: A dict of file paths that were renamed. Maps old file
-            paths to new ones. Currently only updates tracked changed/deleted
+            paths to new ones. Currently, only updates tracked changed/deleted
             paths.
         :type renamed: dict[Path, Path]"""
         if renamed is None: renamed = {}

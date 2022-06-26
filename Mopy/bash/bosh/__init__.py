@@ -3785,8 +3785,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                     u"the current file. Do you want to delete the corrupted "
                     u"settings and load Wrye Bash without your saved UI "
                     u"settings?. (Otherwise Wrye Bash won't start up)")
-                delete = balt.askYes(None, msg % err,
-                                     _(u'Settings Load Error'))
+                delete = balt.askYes(None, msg % err, _('Settings Load Error'))
                 if delete: bass.settings = _loadBakOrEmpty(delBackup=True)
                 else:raise
         else:
