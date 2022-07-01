@@ -37,9 +37,10 @@ def test_getbestencoding():
     assert getbestencoding(b'\x8cx\x8d\x90')[0] == None
     # Wrong - this is GBK, not ISO-8859-1!
     assert getbestencoding(b'\xbe\xaf\xb8\xe6')[0] == u'ISO-8859-1'
-    # Wrong - this is Windows-1251, not MacCyrillic!
+    # Since chardet 5.0, detected correctly as Windows-1251 - before 5.0 it got
+    # wrongly detected as MacCyrillic
     assert getbestencoding(b'\xc2\xed\xe8\xec\xe0\xed\xe8'
-                           b'\xe5')[0] == u'MacCyrillic'
+                           b'\xe5')[0] == 'cp1251'
 
 class TestDecoder(object):
     def test_decoder_basics(self):
@@ -61,65 +62,59 @@ class TestDecoder(object):
         assert decoder(b'Aten\xc3\xa7\xc3\xa3o') == u'Atenção'
         # Russian (UTF-8)
         assert decoder(b'\xd0\x92\xd0\xbd\xd0\xb8\xd0\xbc\xd0\xb0\xd0\xbd\xd0'
-                      b'\xb8\xd0\xb5') == u'Внимание'
-        # Russian (Windows-1251), but gets autodetected as MacCyrillic
-        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5') != u'Внимание'
+                       b'\xb8\xd0\xb5') == 'Внимание'
+        # Russian (Windows-1251), before chardet 5.0 this got wrongly detected
+        # as MacCyrillic
+        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5') == 'Внимание'
 
     def test_decoder_encoding(self):
         """Tests the 'encoding' parameter of decoder."""
         # UTF-8-encoded 'Warning' in Chinese, fed to various encodings
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'ascii') == u'警告'
+                       encoding='ascii') == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'gbk') == u'璀﹀憡'
+                       encoding='gbk') == '璀﹀憡'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'cp932') == u'警告'
+                       encoding='cp932') == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'cp949') == u'警告'
+                       encoding='cp949') == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'cp1252') == u'è\xad¦å‘Š'
+                       encoding='cp1252') == 'è\xad¦å‘Š'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'utf8') == u'警告'
+                       encoding='utf8') == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'cp500') == u'YÝwVj«'
+                       encoding='cp500') == 'YÝwVj«'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'UTF-16LE') == u'귨誑'
+                       encoding='UTF-16LE') == '귨誑'
         # Bad detections from above, with the correct encoding
-        assert decoder(b'\xbe\xaf\xb8\xe6', encoding=u'gbk') == u'警告'
-        assert decoder(b'\x8cx\x8d\x90', encoding=u'cp932') == u'警告'
+        assert decoder(b'\x8cx\x8d\x90', encoding='cp932') == '警告'
+        assert decoder(b'\xbe\xaf\xb8\xe6', encoding='gbk') == '警告'
+        # This one works since chardet 5.0, still keeping it here just in case
         assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
-                      encoding=u'cp1251') == u'Внимание'
+                       encoding='cp1251') == 'Внимание'
 
     def test_decoder_avoidEncodings(self):
-        """Tests the 'avoidEncodings' parameter of avoidEncodings."""
+        """Tests the 'avoidEncodings' parameter of decoder."""
         # UTF-8-encoded 'Warning' in Chinese, fed to various encodings
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'ascii',)) == u'警告'
+                       avoidEncodings=('ascii',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'gbk',)) == u'警告'
+                       avoidEncodings=('gbk',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'cp932',)) == u'警告'
+                       avoidEncodings=('cp932',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'cp949',)) == u'警告'
+                       avoidEncodings=('cp949',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'cp1252',)) == u'警告'
+                       avoidEncodings=('cp1252',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'utf8',)) == u'璀﹀憡'
+                       avoidEncodings=('utf8',)) == '璀﹀憡'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'cp500',)) == u'警告'
+                       avoidEncodings=('cp500',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'UTF-16LE',)) == u'警告'
+                       avoidEncodings=('UTF-16LE',)) == '警告'
         # Bad detections from above - this one works now...
         assert decoder(b'\xbe\xaf\xb8\xe6',
-                      avoidEncodings=(u'ISO-8859-1',)) == u'警告'
-        # But this one still fails because GBK is next in line and happens to
-        # not error when given those bytes. Even avoiding GBK does not help
-        # because the only thing the 'avoidEncodings' parameter does is avoid
-        # bad chardet detections.
-        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
-                      avoidEncodings=(u'MacCyrillic',)) != u'Внимание'
-        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
-                      avoidEncodings=(u'MacCyrillic', u'gbk')) != u'Внимание'
+                       avoidEncodings=('ISO-8859-1',)) == '警告'
 
     def decode_already_decoded(self):
         """Tests if passing in a unicode string doesn't try any decoding."""
