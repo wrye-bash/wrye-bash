@@ -86,10 +86,9 @@ class Installer(ListInfo):
                          'version[ _]?history'}
     re_common_docs = re.compile(
         '^(.*)(?:' + '|'.join(_common_doc_roots) + ')(.*)$', re.I)
-    skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
-                u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
-                u'.fomod', u'.tb2', u'.lzma', u'.manifest', u'.ckm',
-                u'.vortex_backup'}
+    skipExts = {'.exe', '.py', '.pyc', '.7z', '.zip', '.rar', '.db', '.ace',
+                '.tgz', '.tar', '.gz', '.bz2', '.omod', '.fomod', '.tb2',
+                '.lzma', '.manifest', '.ckm', '.vortex_backup'}
     skipExts.update(set(readExts))
     commonlyEditedExts = {'.txt', '.ini', '.cfg', '.xml'}
     #--Regular game directories - needs update after bush.game has been set
@@ -637,7 +636,8 @@ class Installer(ListInfo):
                          u'saying yes.') % ext
         return message
 
-    def refreshDataSizeCrc(self, checkOBSE=False, splitExt=os.path.splitext):
+    def refreshDataSizeCrc(self, checkOBSE=False, *, splitExt=os.path.splitext,
+                           __skip_exts: set[str] = skipExts):
         """Update self.ci_dest_sizeCrc and related variables and return
         dest_src map for install operation. ci_dest_sizeCrc is a dict that maps
         CIstr paths _relative to the Data dir_ (the locations the files will
@@ -683,7 +683,6 @@ class Installer(ListInfo):
         docExts = self.docExts
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
-        skipExts = self.skipExts
         unSize = 0
         bethFiles = bush.game.bethDataFiles
         skips, global_skip_ext = self._init_skips()
@@ -834,7 +833,7 @@ class Installer(ListInfo):
             elif hasExtraData and rootLower and rootLower in dataDirsMinus:
                 skipDirFilesAdd(full)
                 continue
-            elif fileExt in skipExts:
+            elif fileExt in __skip_exts:
                 skipExtFilesAdd(full)
                 continue
             #--Remap docs, strings
@@ -1328,8 +1327,7 @@ class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Archive')
-    _valid_exts_re = r'(\.(?:' + '|'.join(
-        ext[1:] for ext in archives.readExts) + '))'
+    _valid_exts_re = fr'(\.(?:{"|".join(e[1:] for e in archives.readExts)}))'
     is_archive = True
 
     def size_info_str(self):
@@ -1501,16 +1499,13 @@ class InstallerArchive(Installer):
                 pass
 
     def _extract_wizard_files(self, wizard_file_name, wizard_prog_title):
-        with balt.Progress(wizard_prog_title, u'\n' + u' ' * 60,
-                           abort=True) as progress:
+        with balt.Progress(wizard_prog_title, abort=True) as progress:
             # Extract the wizard, and any images as well
             files_to_extract = [wizard_file_name]
+            image_exts = ('bmp', 'jpg', 'jpeg', 'png', 'gif', 'pcx', 'pnm',
+                'tif', 'tiff', 'tga', 'iff', 'xpm', 'ico', 'cur', 'ani')
             files_to_extract.extend(x for (x, _s, _c) in self.fileSizeCrcs if
-                                    x.lower().endswith((
-                                        u'bmp', u'jpg', u'jpeg', u'png',
-                                        u'gif', u'pcx', u'pnm', u'tif',
-                                        u'tiff', u'tga', u'iff', u'xpm',
-                                        u'ico', u'cur', u'ani',)))
+                                    x.lower().endswith(image_exts))
             unpack_dir = self.unpackToTemp(files_to_extract, progress,
                                            recurse=True)
         return unpack_dir.join(wizard_file_name)
@@ -1730,12 +1725,11 @@ class InstallersData(DataStore):
         self._data = {}
         self.data_sizeCrcDate = bolt.LowerDict()
         from . import converters
-        self.converters_data = converters.ConvertersData(bass.dirs[u'bainData'],
+        self.converters_data = converters.ConvertersData(bass.dirs['bainData'],
             bass.dirs[u'converters'], bass.dirs[u'dupeBCFs'],
             bass.dirs[u'corruptBCFs'], bass.dirs[u'installers'])
         #--Volatile
         self.ci_underrides_sizeCrc = bolt.LowerDict() # underridden files
-        self.bcfPath_sizeCrcDate = {}
         self.hasChanged = False
         self.loaded = False
         self.lastKey = GPath(u'==Last==')
@@ -1764,7 +1758,6 @@ class InstallersData(DataStore):
 
     def irefresh(self, progress=None, what=u'DIONSC', fullRefresh=False,
                  refresh_info=None, deleted=None, pending=None, projects=None):
-        progress = progress or bolt.Progress()
         #--Archive invalidation
         from . import oblivionIni, InstallerMarker, modInfos
         if bass.settings[u'bash.bsaRedirection'] and oblivionIni.abs_path.exists():
@@ -1791,6 +1784,7 @@ class InstallersData(DataStore):
         return changed
 
     def __load(self, progress):
+        progress = progress or bolt.Progress()
         progress(0, _(u'Loading Data...'))
         self.dictFile.load()
         pickl_data = self.dictFile.pickled_data
@@ -1965,7 +1959,7 @@ class InstallersData(DataStore):
             srcBcfFile.moveTo(bcfFile)
             bass.rmTempDir()
             #--Create the converter, apply it
-            converter = InstallerConverter(bcfFile.tail)
+            converter = InstallerConverter.from_path(bcfFile)
             try:
                 msg = f'{destArchive}: ' + _(
                     u'An error occurred while applying an Embedded BCF.')
@@ -2052,11 +2046,6 @@ class InstallersData(DataStore):
         deleted = set(self.ipackages(self)) - installers - pending
         refresh_info = self._RefreshInfo(deleted, pending, folders)
         return refresh_info
-
-    def refreshConvertersNeeded(self):
-        """Return True if refreshConverters is necessary. (Point is to skip
-        use of progress dialog when possible)."""
-        return self.converters_data.refreshConvertersNeeded()
 
     def refreshOrder(self):
         """Refresh installer status."""

@@ -157,7 +157,7 @@ class Installers_MonitorExternalInstallation(Installers_Link):
             return
         pr_path = bosh.InstallerProject.unique_name(projectName)
         # Copy Files
-        with balt.Progress(_(u'Creating Project...'), u'\n' + u' '*60) as prog:
+        with balt.Progress(_('Creating Project...')) as prog:
             self.idata.createFromData(pr_path, include, prog) # will order last
         # createFromData placed the new project last in install order - install
         try:
@@ -196,7 +196,7 @@ class Installers_AnnealAll(Installers_Link):
         """Anneal all packages."""
         ui_refresh = [False, False]
         try:
-            with balt.Progress(_(u'Annealing...'),u'\n'+u' '*60) as progress:
+            with balt.Progress(_('Annealing...')) as progress:
                 self.idata.bain_anneal(None, ui_refresh, progress=progress)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
@@ -212,8 +212,8 @@ class Installers_UninstallAllPackages(Installers_Link):
         if not self._askYes(_(u'Really uninstall All Packages?')): return
         ui_refresh = [False, False]
         try:
-            with balt.Progress(_(u'Uninstalling...'),u'\n'+u' '*60) as progress:
-                self.idata.bain_uninstall(u'ALL', ui_refresh, progress=progress)
+            with balt.Progress(_('Uninstalling...')) as progress:
+                self.idata.bain_uninstall('ALL', ui_refresh, progress=progress)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 
@@ -346,8 +346,7 @@ class Installers_ApplyEmbeddedBCFs(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        with balt.Progress(_(u'Auto-Applying Embedded BCFs...'),
-                           message=u'\n' + u' ' * 60) as progress:
+        with balt.Progress(_('Auto-Applying Embedded BCFs...')) as progress:
             destinations, converted = self.window.data_store.applyEmbeddedBCFs(
                 progress=progress)
             if not destinations: return
@@ -374,8 +373,8 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
         super(Installers_AutoRefreshBethsoft, self).Execute()
         if bass.settings[self._bl_key]:
             # Refresh Data - only if we are now including Bethsoft files
-            with balt.Progress(title=_(u'Refreshing Bethsoft Content'),
-                               message=u'\n' + u' ' * 60) as progress:
+            with balt.Progress(
+                    title=_('Refreshing Bethsoft Content')) as progress:
                 self.idata.update_for_overridden_skips(bush.game.bethDataFiles,
                                                        progress)
         # Refresh Installers
@@ -436,8 +435,8 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
                         bass.inisettings[u'OblivionTexturesBSAName'])
                 bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_cache=True,
                                                      names_only=False)
-                with balt.Progress(_(u'Enabling BSA Redirection...'),
-                                   message=u'\n' + u' ' * 60) as progress:
+                with balt.Progress(
+                        _('Enabling BSA Redirection...')) as progress:
                     bsaFile.undo_alterations(progress)
         bosh.oblivionIni.setBsaRedirection(bass.settings[self._bl_key])
 

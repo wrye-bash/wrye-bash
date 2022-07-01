@@ -2573,9 +2573,9 @@ class InstallersList(balt.UIList):
 
     @staticmethod
     def _unhide_wildcard():
-        starred = u';'.join(u'*' + ext for ext in archives.readExts)
-        return bush.game.displayName + u' ' + _(
-            u'Mod Archives') + u' (' + starred + u')|' + starred
+        starred = ';'.join(f'*{e}' for e in archives.readExts)
+        return  f'{bush.game.displayName} {_("Mod Archives")} ' \
+                f'({starred})|{starred}'
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
@@ -2669,8 +2669,7 @@ class InstallersList(balt.UIList):
                      or x.cext in archives.readExts and x not in converters]
         if not (omodnames or converters or filenames): return
         if omodnames:
-            with balt.Progress(_(u'Extracting OMODs...'), u'\n' + u' ' * 60,
-                                 abort=True) as prog:
+            with balt.Progress(_(u'Extracting OMODs...'), abort=True) as prog:
                 self._extractOmods(omodnames, prog)
         if filenames or converters:
             action = self._askCopyOrMove(filenames)
@@ -2794,14 +2793,14 @@ class InstallersList(balt.UIList):
         toRefresh = list(self.data_store.ipackages(toRefresh))
         if not toRefresh: return
         try:
-            with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,
+            with balt.Progress(_('Refreshing Packages...'),
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
                 dest = set() # installer's destination paths rel to Data/
                 for index, installer in enumerate(
                         self.data_store.sorted_values(toRefresh)):
-                    progress(index, _(u'Refreshing Packages...') + u'\n%s' %
-                             installer)
+                    progress(index,
+                             _('Refreshing Packages...') + f'\n{installer}')
                     if shallow:
                         op = installer.refreshDataSizeCrc
                     else:
@@ -3272,9 +3271,8 @@ class InstallersPanel(BashTab):
                     files, fullRefresh)
                 do_refresh = refresh_info.refresh_needed()
         refreshui = False
-        nl = f'\n{" " * 60}'
         if do_refresh:
-            with balt.Progress(_('Refreshing Installers...'), nl,
+            with balt.Progress(_('Refreshing Installers...'),
                                abort=canCancel) as progress:
                 try:
                     what = u'DISC' if scan_data_dir else u'IC'
@@ -3286,22 +3284,20 @@ class InstallersPanel(BashTab):
                     self._user_cancelled = True # User canceled the refresh
                 finally:
                     self._data_dir_scanned = True
-        elif self.frameActivated and self.listData.refreshConvertersNeeded():
-            with balt.Progress(_('Refreshing Converters...'), nl) as progress:
-                try:
-                    refreshui |= self.listData.irefresh(progress, u'C',
-                                                        fullRefresh)
-                    self.frameActivated = False
-                except CancelError:
-                    pass # User canceled the refresh
+        elif self.frameActivated:
+            try:
+                refreshui |= self.listData.irefresh(what='C',
+                                                    fullRefresh=fullRefresh)
+                self.frameActivated = False
+            except CancelError:
+                pass  # User canceled the refresh
         do_refresh = self.listData.refreshTracked()
         refreshui |= do_refresh and self.listData.refreshInstallersStatus()
         if refreshui: self.uiList.RefreshUI(focus_list=focus_list)
 
     def __extractOmods(self, omds):
         omod_projects = []
-        with balt.Progress(_(u'Extracting OMODs...'),
-                           u'\n' + u' ' * 60) as progress:
+        with balt.Progress(_('Extracting OMODs...')) as progress:
             dirInstallersJoin = bass.dirs[u'installers'].join
             progress.setFull(max(len(omds), 1))
             omodMoves, omodRemoves = set(), set()

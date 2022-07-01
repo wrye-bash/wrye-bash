@@ -220,9 +220,8 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
         try:
             # Extract data for all plugins (we'll need the context from all of
             # them, even the game master)
-            progress = balt.Progress(
-                _(u'Checking Plugins...'), u'\n' + u' ' * 60,
-                parent=mc_parent, abort=True)
+            progress = balt.Progress(_('Checking Plugins...'),
+                                     parent=mc_parent, abort=True)
             load_progress = SubProgress(progress, 0, 0.7)
             load_progress.setFull(len(all_present_minfs))
             all_extracted_data = OrderedDict() # PY3: dict?

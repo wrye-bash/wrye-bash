@@ -35,6 +35,7 @@ import os
 import re
 import webbrowser
 from collections import defaultdict
+from itertools import chain
 
 from . import Installers_Link, BashFrame, INIList
 from .frames import InstallerProject_OmodConfigDialog
@@ -44,7 +45,7 @@ from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import GPath, SubProgress, LogFile, round_size, text_wrap, deprint
-from ..bosh import InstallerArchive, InstallerProject
+from ..bosh import InstallerArchive, InstallerProject, InstallerConverter
 from ..exception import CancelError, SkipError, StateError, AbstractError, \
     XMLParsingError
 from ..gui import BusyCursor, copy_text_to_clipboard
@@ -98,8 +99,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
                     blockSize = self._promptSolidBlockSize(title=self._text)
             else:
                 isSolid = True
-        with balt.Progress(_(u'Packing to Archive...'),
-                           u'\n' + u' ' * 60) as progress:
+        with balt.Progress(_('Packing to Archive...')) as progress:
             #--Pack
             installer.packToArchive(project, archive_path, isSolid, blockSize,
                                     SubProgress(progress, 0, 0.8),
@@ -156,7 +156,7 @@ class _Installer_AWizardLink(_InstallerLink):
         else: # Install if it's not installed
             title = _(u'Installing...')
             do_it = self.idata.bain_install
-        with balt.Progress(title, u'\n'+u' '*60) as progress:
+        with balt.Progress(title) as progress:
             do_it([sel_package.ci_key], ui_refresh, progress)
 
 class _Installer_AViewOrEditFile(_SingleInstallable):
@@ -269,8 +269,7 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
         pr_path = bosh.InstallerProject.unique_name(proj_name)
         if working_on_archive:
             # This is an archive, so we have to use unpackToTemp first
-            with balt.Progress(_('Unpacking Archive...'),
-                               '\n' + ' ' * 60) as prog:
+            with balt.Progress(_('Unpacking Archive...')) as prog:
                 src_folder = sel_package.unpackToTemp(
                     list(ret.install_files), prog)
         else:
@@ -286,7 +285,7 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
             # We no longer need the temp directory since we copied everything
             # to the final project, so clean it up
             bass.rmTempDir()
-        with balt.Progress(_('Creating Project...'), '\n' + ' ' * 60) as prog:
+        with balt.Progress(_('Creating Project...')) as prog:
             InstallerProject.refresh_installer(pr_path, self.idata,
                 progress=prog, install_order=sel_package.order + 1,
                 do_refresh=False)
@@ -464,7 +463,7 @@ class Installer_Anneal(_NoMarkerLink):
     def Execute(self):
         ui_refresh = [False, False]
         try:
-            with balt.Progress(_(u'Annealing...'),u'\n'+u' '*60) as progress:
+            with balt.Progress(_('Annealing...')) as progress:
                 self.idata.bain_anneal(self._installables, ui_refresh,
                                        progress)
         except (CancelError,SkipError):
@@ -601,7 +600,7 @@ class Installer_Install(_NoMarkerLink):
     def Execute(self):
         ui_refresh = [False, False]
         try:
-            with balt.Progress(_(u'Installing...'),u'\n'+u' '*60) as progress:
+            with balt.Progress(_('Installing...')) as progress:
                 last = (self.mode == u'LAST')
                 override = (self.mode != u'MISSING')
                 try:
@@ -879,7 +878,7 @@ class Installer_Uninstall(_NoMarkerLink):
         """Uninstall selected Installers."""
         ui_refresh = [False, False]
         try:
-            with balt.Progress(_(u'Uninstalling...'),u'\n'+u' '*60) as progress:
+            with balt.Progress(_('Uninstalling...')) as progress:
                 self.idata.bain_uninstall(self._installables, ui_refresh,
                                           progress)
         except (CancelError,SkipError): # now where could this be raised from ?
@@ -905,8 +904,7 @@ class Installer_CopyConflicts(_SingleInstallable):
         if not src_sizeCrc:
             return _ok(_(u'No files to install for %s'))
         src_order = self._selected_info.order
-        with balt.Progress(_(u'Scanning Packages...'),
-                           u'\n' + u' ' * 60) as progress:
+        with balt.Progress(_('Scanning Packages...')) as progress:
             progress.setFull(len(self.idata))
             numFiles = 0
             fn_conflicts_dir = GPath(f'Conflicts - {src_order:03d}')
@@ -946,8 +944,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                 unpack_dir.moveTo(ijoin(fn_conflicts_dir, g_path))
                 curFile += len(curConflicts)
             return curFile
-        with balt.Progress(_(u'Copying Conflicts...'),
-                           u'\n' + u' ' * 60) as progress:
+        with balt.Progress(_('Copying Conflicts...')) as progress:
             progress.setFull(numFiles)
             curFile = 0
             g_path = package = self._selected_item
@@ -1149,8 +1146,7 @@ class InstallerArchive_Unpack(_ArchiveOnly):
             # All check passed, we can unpack this
             to_unpack.append((installer, project))
         # We're safe to show the progress dialog now
-        with balt.Progress(_(u'Unpacking to Project...'),u'\n'+u' '*60) \
-                as progress:
+        with balt.Progress(_('Unpacking to Project...')) as progress:
             projects = []
             for installer, project in to_unpack:
                 count_unpacked = installer.unpackToProject(project,
@@ -1192,14 +1188,13 @@ class Installer_SyncFromData(_SingleInstallable):
     def Execute(self):
         was_rar = self._selected_item.cext == u'.rar'
         if was_rar:
-            if not self._askYes(
-                    _(u'.rar files cannot be modified. Wrye Bash can however '
-                      u'repack them to .7z files, which can then be '
-                      u'modified.') + u'\n\n' +
-                    _(u'Note that doing this will leave the old .rar file '
-                      u'behind, so you may want to manually delete it '
-                      u'afterwards.') + u'\n\n' +
-                    _(u"Click 'Yes' to repack, or 'No' to abort the sync.")):
+            if not self._askYes('\n\n'.join([
+                    _('.rar files cannot be modified. Wrye Bash can however '
+                      'repack them to .7z files, which can then be modified.'),
+                    _('Note that doing this will leave the old .rar file '
+                      'behind, so you may want to manually delete it '
+                      'afterwards.'),
+                    _("Click 'Yes' to repack, or 'No' to abort the sync.")])):
                 return # user clicked 'No'
         missing = sorted(self._selected_info.missingFiles)
         mismatched = sorted(self._selected_info.mismatchedFiles)
@@ -1218,7 +1213,7 @@ class Installer_SyncFromData(_SingleInstallable):
         if not sel_missing and not sel_mismatched:
             return # Nothing left to sync, cancel
         #--Sync it, baby!
-        with balt.Progress(self._text, u'\n' + u' ' * 60) as progress:
+        with balt.Progress(self._text) as progress:
             progress(0.1,_(u'Updating files.'))
             actual_upd, actual_del = self._selected_info.sync_from_data(
                 sel_missing | sel_mismatched,
@@ -1290,8 +1285,7 @@ class _InstallerConverter_Link(_ArchiveOnly):
                     sorted(x.archive for x in installers))))
         if duplicates:
             msg = _(u'Installers with identical content selected:') + u'\n'
-            msg += u'\n'.join(
-                sorted(u'CRC: %08X%s' % (k, v) for k, v in duplicates))
+            msg += '\n'.join(sorted(f'CRC: {k:08X}{v}' for k, v in duplicates))
             if message: msg += u'\n' + message
             self._showError(msg, _(u'Identical installers content'))
             return True
@@ -1335,7 +1329,7 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
         #--Ask for an output filename
         destArchive = self._askFilename(message, filename=defaultFilename)
         if not destArchive: return
-        with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
+        with balt.Progress(_('Converting to Archive...')) as progress:
             #--Perform the conversion
             msg = f'{destArchive}: ' + _(
                 u'An error occurred while applying an Auto-BCF.')
@@ -1362,7 +1356,7 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
         #--Ask for an output filename
         dest = self._askFilename(_(u'Output file:'), filename=iname.stail)
         if not dest: return
-        with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
+        with balt.Progress(_('Extracting BCF...')) as progress:
             destinations, converted = self.idata.applyEmbeddedBCFs(
                 [inst], [dest], progress)
             if not destinations: return # destinations == [dest] if all was ok
@@ -1381,7 +1375,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         # all installers that this converter needs are unique
         crc_installer = {x.crc: x for x in self.iselected_infos()}
         #--Generate allowable targets
-        readTypes = u'*%s' % u';*'.join(archives.readExts)
+        readTypes = f'*{";*".join(archives.readExts)}'
         #--Select target archive
         destArchive = self._askOpen(title=_("Select the BAIN'ed Archive:"),
             defaultDir=self.idata.store_dir, wildcard=readTypes)
@@ -1418,44 +1412,43 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         if destInstaller.isSolid:
             blockSize = self._promptSolidBlockSize(
                 title=self._dialog_title, default_size=destInstaller.blockSize or 0)
-        with balt.Progress(_(u'Creating %s...') % BCFArchive,u'\n'+u' '*60) as progress:
+        with balt.Progress(_('Creating %s...') % BCFArchive) as progress:
             #--Create the converter
-            converter = bosh.converters.InstallerConverter(self.selected,
-                    self.idata, destArchive, BCFArchive, blockSize, progress)
+            conv = InstallerConverter.from_scratch(self.selected, self.idata,
+                destArchive, BCFArchive, blockSize, progress)
             #--Add the converter to Bash
-            self.idata.converters_data.addConverter(converter)
-            #--Refresh UI
-            self.idata.irefresh(what=u'C')
-            #--Generate log
-            log = LogFile(io.StringIO())
-            log.setHeader(u'== '+_(u'Overview')+u'\n')
+            self.idata.converters_data.addConverter(conv)
+        #--Refresh UI
+        with balt.Progress(_('Refreshing Converters...')) as progress:
+            self.idata.irefresh(progress, what='C')
+        #--Generate log
+        log = LogFile(io.StringIO())
+        log.setHeader(f'== {_("Overview")}\n')
 ##            log('{{CSS:wtxt_sand_small.css}}')
-            log(f". {_(u'Name')}: {BCFArchive}")
-            log(f". {_(u'Size')}: {round_size(converter.fullPath.psize)}")
-            log(f". {_(u'Remapped: %u file(s)') % len(converter.convertedFiles)}")
-            log.setHeader(u'. ' + _(u'Requires: %u file(s)') %
-                          len(converter.srcCRCs))
-            log(u'  * ' +u'\n  * '.join(sorted(
-                f'({x:08X}) - {crc_installer[x]}' for x in converter.srcCRCs
-                if x in crc_installer)))
-            log.setHeader(u'. '+_(u'Options:'))
-            log(f"  *  {_(u'Skip Voices')}   = {bool(converter.skipVoices)}")
-            log(f"  *  {_(u'Solid Archive')} = {bool(converter.isSolid)}")
-            if converter.isSolid:
-                if converter.blockSize:
-                    log(f"    *  {_(u'Solid Block Size')} = {converter.blockSize:d}")
-                else:
-                    log(f"    *  {_(u'Solid Block Size')} = 7z default")
-            log(f"  *  {_(u'Has Comments')}  = {bool(converter.comments)}")
-            log(f"  *  {_(u'Has Extra Directories')} = {bool(converter.hasExtraData)}")
-            log(f"  *  {_(u'Has Esps Unselected')}   = {bool(converter.espmNots)}")
-            log(f"  *  {_(u'Has Packages Selected')} = {bool(converter.subActives)}")
-            log.setHeader(u'. ' + _(u'Contains: %u file(s)') %
-                          len(converter.bcf_missing_files))
-            log(u'  * ' +u'\n  * '.join(sorted(u'%s' % x for x in converter
-                                               .bcf_missing_files)))
+        log(f". {_('Name')}: {BCFArchive}")
+        log(f". {_('Size')}: {round_size(conv.fullPath.psize)}")
+        log(f". {_('Remapped: %u file(s)') % len(conv.convertedFiles)}")
+        log.setHeader('. ' + _('Requires: %u file(s)') % len(conv.srcCRCs))
+        log('  * ' + '\n  * '.join(sorted(
+            f'({x:08X}) - {crc_installer[x]}' for x in conv.srcCRCs
+            if x in crc_installer)))
+        log.setHeader('. ' + _('Options:'))
+        log(f"  *  {_('Skip Voices')}   = {bool(conv.skipVoices)}")
+        log(f"  *  {_('Solid Archive')} = {bool(conv.isSolid)}")
+        if conv.isSolid:
+            if conv.blockSize:
+                log(f"    *  {_('Solid Block Size')} = {conv.blockSize:d}")
+            else:
+                log(f"    *  {_('Solid Block Size')} = 7z default")
+        log(f"  *  {_('Has Comments')}  = {bool(conv.comments)}")
+        log(f"  *  {_('Has Extra Directories')} = {bool(conv.hasExtraData)}")
+        log(f"  *  {_('Has Esps Unselected')}   = {bool(conv.espmNots)}")
+        log(f"  *  {_('Has Packages Selected')} = {bool(conv.subActives)}")
+        log.setHeader('. ' + _('Contains: %u file(s)') % len(
+            conv.bcf_missing_files))
+        log('  * ' + '\n  * '.join(sorted(map(str, conv.bcf_missing_files))))
         if log:
-            self._showLog(log.out.getvalue(), title=_(u'BCF Information'))
+            self._showLog(log.out.getvalue(), title=_('BCF Information'))
 
 #------------------------------------------------------------------------------
 # Installer Submenus ----------------------------------------------------------
@@ -1474,18 +1467,18 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         selected = self.selected
         idata = self.window.data_store # InstallersData singleton
         selectedCRCs = set(inst.crc for inst in self.iselected_infos())
-        srcCRCs = set(idata.converters_data.srcCRC_converters)
+        srcCRCs = set( # crcs of all installers referenced by some converter
+            inst_crc_converters := idata.converters_data.srcCRC_converters)
         #--There is no point in testing each converter unless
         #--every selected archive has an associated converter
         if selectedCRCs <= srcCRCs:
             #--Test every converter for every selected archive
+            converters = {*chain( # converters referencing selected installers
+                *(inst_crc_converters[inst_crc] for inst_crc in selectedCRCs))}
             # Only add a link to the converter if all of its required archives
             # are selected
-            linkSet = set()
-            for installerCRC in selectedCRCs:
-               for converter in idata.converters_data.srcCRC_converters[installerCRC]:
-                   if converter.srcCRCs <= selectedCRCs:
-                       linkSet.add(converter)
+            linkSet = {conv for conv in converters if
+                       conv.srcCRCs <= selectedCRCs}
         #--If the archive is a single archive with an embedded BCF, add that
         if len(selected) == 1 and self._first_selected().hasBCF:
             self.links.append(InstallerConverter_ApplyEmbedded())
@@ -1495,7 +1488,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--Otherwise add each link in alphabetical order, and
         #--indicate the number of additional, unselected archives
         #--that the converter requires
-        for converter in sorted(linkSet,key=lambda x:x.fullPath.stail.lower()):
+        for converter in sorted(linkSet, key=lambda x: x.fullPath.tail):
             self.links.append(InstallerConverter_Apply(converter, selected))
         return True
 

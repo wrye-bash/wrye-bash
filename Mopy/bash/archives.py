@@ -29,14 +29,14 @@ from .exception import StateError
 
 exe7z = u'7z.exe' if os_name == u'nt' else u'7z'
 defaultExt = u'.7z'
-writeExts = {defaultExt: u'7z', u'.zip': u'zip'}
+writeExts = {defaultExt: '7z', '.zip': 'zip'}
 readExts = {u'.rar', u'.001'}
 readExts.update(writeExts)
 omod_exts = {u'.omod', u'.fomod'}
 noSolidExts = {u'.zip'}
 reSolid = re.compile(r'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(r'Compressing\s+(.+)', re.U).match
-regExtractMatch = re.compile(u'- (.+)', re.U).match
+regExtractMatch = re.compile('- (.+)').match
 reListArchive = re.compile(
     r'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
 
@@ -84,7 +84,7 @@ def compress7z(full_dest, rel_dest, srcDir, progress=None, *,
     #--Finalize the file, and cleanup
     full_dest.untemp()
 
-def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
+def extract7z(src_archive, extract_dir, progress=None, read_exts=None,
               recursive=False, filelist_to_extract=None):
     command = [exe7z, 'x', src_archive.s, '-y', '-bb1', f'-o{extract_dir}',
                '-scsUTF-8', '-sccUTF-8']
@@ -97,8 +97,8 @@ def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
         for line in out.readlines():
             maExtracting = regExtractMatch(line)
             if maExtracting:
-                extracted = GPath(maExtracting.group(1).strip())
-                if readExtensions and extracted.cext in readExtensions:
+                extracted = maExtracting.group(1).strip()
+                if read_exts and extracted.endswith(read_exts):
                     subArchives.append(extracted)
                 if not progress: continue
                 progress(index, f'{src_archive.tail}\n' + _(

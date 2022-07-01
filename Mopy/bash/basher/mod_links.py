@@ -1210,8 +1210,7 @@ class Mod_ScanDirty(ItemLink):
         all_deleted_navms = defaultdict(list) # ci_key -> list[fid]
         all_deleted_others = defaultdict(list) # ci_key -> list[fid]
         try:
-            with balt.Progress(_(u'Deleted Records'), u'\n' + u' ' * 60,
-                               abort=True) as progress:
+            with balt.Progress(_('Deleted Records'), abort=True) as progress:
                 progress.setFull(len(all_present_minfs))
                 load_progress = SubProgress(progress, 0, 0.7)
                 load_progress.setFull(len(all_present_minfs))
@@ -1378,8 +1377,8 @@ class _CopyToLink(EnabledLink):
     def Execute(self):
         modInfos, added = bosh.modInfos, []
         do_save_lo = False
-        add_esm_flag = self._target_ext in (u'.esm', u'.esl')
         add_esl_flag = self._target_ext == u'.esl'
+        add_esm_flag = add_esl_flag or self._target_ext == '.esm'
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
                 newName = curName.root + self._target_ext

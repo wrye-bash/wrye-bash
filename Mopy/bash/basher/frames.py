@@ -28,8 +28,7 @@ from collections import OrderedDict
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import Link, Resources
 from ..bolt import GPath, GPath_no_norm
-from ..bosh import mods_metadata
-from ..bosh import omods
+from ..bosh import mods_metadata, empty_path, omods
 from ..exception import StateError
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
@@ -301,7 +300,7 @@ class DocBrowser(WindowFrame):
         self._set_btn.enabled = True
         self._mod_list.lb_select_index(self._mod_list.lb_index_for_str_item(mod_name.s))
         # Doc path
-        doc_path = self._db_doc_paths.get(mod_name, GPath_no_norm(''))
+        doc_path = self._db_doc_paths.get(mod_name, empty_path)
         self._doc_name_box.text_content = doc_path.stail
         for btn in (self._forget_btn, self._rename_btn, self._edit_box,
                     self._open_btn):
