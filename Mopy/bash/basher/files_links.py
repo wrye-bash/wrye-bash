@@ -116,7 +116,7 @@ class File_Duplicate(ItemLink):
             if msg and not self._askWarning(msg, _(
                 u'Duplicate %s') % fileInfo): continue
             #--Continue copy
-            r, e = to_duplicate.ci_body, to_duplicate.ci_ext
+            r, e = to_duplicate.fn_body, to_duplicate.fn_ext
             destName = fileInfo.unique_key(r, e, add_copy=True)
             destDir = fileInfo.info_dir
             if len(self.selected) == 1: # ask the user for a filename
@@ -177,7 +177,7 @@ class File_Snapshot(ItemLink):
                 if not destPath: return
                 (destDir,destName) = destPath.headTail
             #--Extract version number
-            fileRoot = fileName.ci_body
+            fileRoot = fileName.fn_body
             destRoot = destName.sroot
             fileVersion = bolt.getMatch(
                 re.search(r'[ _]+v?([.\d]+)$', fileRoot), 1)

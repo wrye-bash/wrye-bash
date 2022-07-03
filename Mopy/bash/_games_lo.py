@@ -93,8 +93,8 @@ def _parse_plugins_txt_(path, mod_infos, _star):
                 bolt.deprint(f'{modname!r} failed to properly decode')
                 continue
             mod_g_path = FName(test)
-            if mod_g_path.ci_ext == '.ghost':  # Vortex keeps the .ghost extension!
-                mod_g_path = mod_g_path.ci_body
+            if mod_g_path.fn_ext == '.ghost':  # Vortex keeps the .ghost extension!
+                mod_g_path = mod_g_path.fn_body
             if mod_g_path not in mod_infos: # TODO(ut): is this really needed??
                 # The automatic encoding detector could have returned
                 # an encoding it actually wasn't.  Luckily, we
@@ -557,7 +557,7 @@ class LoGame(object):
         # never be active
         cached_minfs = self.mod_infos
         acti_filtered = [x for x in acti if x in cached_minfs
-                         and x.ci_ext != u'.esu']
+                         and x.fn_ext != u'.esu']
         # Use sets to avoid O(n) lookups due to lists
         acti_filtered_set = set(acti_filtered)
         lord_set = set(lord)

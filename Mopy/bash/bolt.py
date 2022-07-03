@@ -359,7 +359,7 @@ class FName(str):
     for that purpose, but there is no way to make this work with types in the
     wild. Note:
       - currently we triple storage for each string (self, cache key and
-      ci_body). Apart from bsas code ci_body appears rarely
+      fn_body). Apart from bsas code fn_body appears rarely
       - we added no other special methods like __add__ or slice operations
       to return FName - too much magic
       - pickling: eventually we want to pickle strings as string type and
@@ -388,12 +388,12 @@ class FName(str):
     def lower(self): return self._lower
 
     @functools.cached_property
-    def ci_ext(self):
+    def fn_ext(self):
         return FName('' if (dot := self.rfind('.')) == -1 else self[dot:])
 
     @functools.cached_property
-    def ci_body(self):
-        return FName(self[:-len(self.ci_ext)]) if self.ci_ext else self
+    def fn_body(self):
+        return FName(self[:-len(self.fn_ext)]) if self.fn_ext else self
 
     def __reduce__(self):##: [backwards compat] drop in 312+ (GPath_no_norm -> str)
         return GPath_no_norm, (str(self),)

@@ -55,7 +55,7 @@ class Installer(ListInfo):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
     #--Member data
-    persistent = (u'ci_key', u'order', u'group', u'modified', u'fsize',
+    persistent = (u'fn_key', u'order', u'group', u'modified', u'fsize',
         u'crc', u'fileSizeCrcs', u'type', u'is_active', u'subNames',
         u'subActives', u'dirty_sizeCrc', u'comments', u'extras_dict',
         u'packageDoc', u'packagePic', u'src_sizeCrcDate', u'hasExtraData',
@@ -144,7 +144,7 @@ class Installer(ListInfo):
         """Returns map of real to ghosted files in mods directory."""
         dataDir = bass.dirs[u'mods']
         inodes = [*dataDir.ilist()] ##: will cache all of those as FName use glob?
-        ghosts = [x.ci_body for x in inodes if x.ci_ext == u'.ghost']
+        ghosts = [x.fn_body for x in inodes if x.fn_ext == u'.ghost']
         limbo = set(ghosts) & set(inodes) # they exist in both states
         return bolt.LowerDict(
             (x, x + u'.ghost') for x in ghosts if x not in limbo)
@@ -201,7 +201,7 @@ class Installer(ListInfo):
     #--Initialization, etc ----------------------------------------------------
     def initDefault(self):
         """Initialize everything to default values."""
-        self.ci_key = FName('')
+        self.fn_key = FName('')
         #--Persistent: set by _refreshSource called by refreshBasic
         self.modified = 0 #--Modified date
         self.fsize = -1 #--size of archive file
@@ -282,7 +282,7 @@ class Installer(ListInfo):
 
     def log_package(self, log, showInactive):
         prefix = f'{self.order:03d}'
-        package = self.ci_key
+        package = self.fn_key
         if self.is_active:
             log(f'++ {prefix} - {package} ({self.crc:08X}) (Installed)')
         elif showInactive:
@@ -320,9 +320,9 @@ class Installer(ListInfo):
     def isEspmRenamed(self,currentName):
         return self.getEspmName(currentName) != currentName
 
-    def __init__(self, ci_key):
+    def __init__(self, fn_key):
         self.initDefault()
-        self.ci_key = FName('%s' % ci_key) # type: FName
+        self.fn_key = FName('%s' % fn_key) # type: FName
 
     def __reduce__(self):
         """Used by pickler to save object state."""
@@ -340,7 +340,7 @@ class Installer(ListInfo):
 
     @property
     def abs_path(self):
-        return bass.dirs[u'installers'].join(self.ci_key)
+        return bass.dirs[u'installers'].join(self.fn_key)
 
     def get_hide_dir(self): ##: Copy-pasted from InstallersData.hidden_dir!
         return bass.dirs[u'modsBash'].join(u'Hidden')
@@ -354,11 +354,11 @@ class Installer(ListInfo):
             self.extras_dict = {}
             if self.fileRootIdex: # need to add 'root_path' key to extras_dict
                 rescan = True
-        if isinstance(self.ci_key, bytes):
-            deprint(f'{repr(self.ci_key)} in Installers.dat')
-            self.ci_key = self.ci_key.decode('utf-8')
-        if not isinstance(self.ci_key, FName):
-            self.ci_key = FName(u'%s' % self.ci_key)
+        if isinstance(self.fn_key, bytes):
+            deprint(f'{repr(self.fn_key)} in Installers.dat')
+            self.fn_key = self.fn_key.decode('utf-8')
+        if not isinstance(self.fn_key, FName):
+            self.fn_key = FName(u'%s' % self.fn_key)
         if self.espmNots and not isinstance(next(iter(self.espmNots)), FName):
             self.espmNots = forward_compat_path_to_fn_list(self.espmNots,
                                                            ret_type=set)
@@ -382,7 +382,7 @@ class Installer(ListInfo):
     def __copy__(self):
         """Create a copy of self -- works for subclasses too (assuming
         subclasses don't add new data members)."""
-        clone = self.__class__(self.ci_key)
+        clone = self.__class__(self.fn_key)
         copier = copy.copy
         getter = object.__getattribute__ ##: is the object. necessary?
         setter = object.__setattr__ ##: is the object. necessary?
@@ -491,8 +491,8 @@ class Installer(ListInfo):
             parent_dir, fname = ('', rsplit[0]) if len(rsplit) == 1 else rsplit
             lower_parent = parent_dir.lower()
             lower_fname = fname.lower()
-            package_root = self.ci_key.ci_body if self._valid_exts_re else \
-                self.ci_key
+            package_root = self.fn_key.fn_body if self._valid_exts_re else \
+                self.fn_key
             lower_root = lower_fname[:-len(fileExt)]
             if lower_root in package_root.lower() and not self.hasReadme:
                 # This is named similarly to the package (with a doc ext), so
@@ -690,8 +690,8 @@ class Installer(ListInfo):
                         dirty_sizeCrc[filename] = sizeCrc
             self.ci_dest_sizeCrc.clear()
             return dest_src
-        archiveRoot = self.ci_key.ci_body if self._valid_exts_re else \
-            self.ci_key
+        archiveRoot = self.fn_key.fn_body if self._valid_exts_re else \
+            self.fn_key
         docExts = self.docExts
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
@@ -1188,7 +1188,7 @@ class Installer(ListInfo):
                 mods.add(dest_fname)
             elif ini_name := is_ini_tweak(dest_fname):
                 inis.add(FName(ini_name))
-            elif dest_fname.ci_ext == bsa_ext:
+            elif dest_fname.fn_ext == bsa_ext:
                 bsas.add(dest_fname)
             data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
             add_source(srcDirJoin(src))
@@ -1278,7 +1278,7 @@ class InstallerMarker(Installer):
 
     def unique_key(self, new_root, ext=u'', add_copy=False):
         new_name = new_root + (_(' Copy') if add_copy else '')
-        if u'%s' % new_name == u'%s' % self.ci_key: # allow change of case
+        if u'%s' % new_name == u'%s' % self.fn_key: # allow change of case
             return None
         return self.unique_name(new_name)
 
@@ -1295,7 +1295,7 @@ class InstallerMarker(Installer):
 
     def __reduce__(self):
         from . import InstallerMarker as boshInstallerMarker
-        return boshInstallerMarker, (self.ci_key,), ('%s' % self.ci_key,
+        return boshInstallerMarker, (self.fn_key,), ('%s' % self.fn_key,
             *(getattr(self, a) for a in self.persistent[1:]))
 
     @property
@@ -1311,7 +1311,7 @@ class InstallerMarker(Installer):
     def structure_string(self): return _(u'Structure: N/A')
 
     def log_package(self, log, showInactive):
-        log(f'{f"{self.order:03d}"} - {self.ci_key}')
+        log(f'{f"{self.order:03d}"} - {self.fn_key}')
 
     def _refreshSource(self, progress, recalculate_project_crc):
         """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
@@ -1322,9 +1322,9 @@ class InstallerMarker(Installer):
         pass
 
     def renameInstaller(self, name_new, idata_):
-        del idata_[self.ci_key]
-        self.ci_key = FName(name_new)  ##: make sure newName is fn
-        idata_[self.ci_key] = self
+        del idata_[self.fn_key]
+        self.fn_key = FName(name_new)  ##: make sure newName is fn
+        idata_[self.fn_key] = self
         return True, False, False
 
     def refreshBasic(self, progress, recalculate_project_crc=True):
@@ -1372,7 +1372,7 @@ class InstallerArchive(Installer):
 
     def __reduce__(self):
         from . import InstallerArchive as boshInstallerArchive
-        return boshInstallerArchive, (self.ci_key,), ('%s' % self.ci_key,
+        return boshInstallerArchive, (self.fn_key,), ('%s' % self.fn_key,
                 *(getattr(self, a) for a in self.persistent[1:]))
 
     #--File Operations --------------------------------------------------------
@@ -1543,9 +1543,9 @@ class InstallerArchive(Installer):
         """Returns a version of the name of this archive with the file
         extension changed to be writable (i.e. zip or 7z), if it isn't
         already."""
-        if self.ci_key.ci_ext in archives.writeExts:
-            return self.ci_key
-        return FName(self.ci_key.ci_body + archives.defaultExt)
+        if self.fn_key.fn_ext in archives.writeExts:
+            return self.fn_key
+        return FName(self.fn_key.fn_body + archives.defaultExt)
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -1560,7 +1560,7 @@ class InstallerProject(Installer):
 
     def __reduce__(self):
         from . import InstallerProject as boshInstallerProject
-        return boshInstallerProject, (self.ci_key,), ('%s' % self.ci_key,
+        return boshInstallerProject, (self.fn_key,), ('%s' % self.fn_key,
             *(getattr(self, a) for a in self.persistent[1:]))
 
     def _refresh_from_project_dir(self, progress=None,
@@ -1806,7 +1806,7 @@ class InstallersData(DataStore):
         # fixup: all markers had their archive attribute set to u'===='
         for key, value in self.items():
             if value.is_marker:
-                value.ci_key = key
+                value.fn_key = key
         self.loaded = True
         return True
 
@@ -1854,7 +1854,7 @@ class InstallersData(DataStore):
         apath = self.store_dir.join(item)
         apath.copyTo(self.store_dir.join(destName))
         self[destName] = installer = copy.copy(self[item])
-        installer.ci_key = FName(destName)
+        installer.fn_key = FName(destName)
         installer.is_active = False
         self.moveArchives([destName], self[item].order + 1)
 
@@ -1955,7 +1955,7 @@ class InstallersData(DataStore):
         pending = []
         for i, (installer, destArchive) in [*enumerate(zip(installers,
                 destArchives))]: # we may modify installers below
-            progress(i, installer.ci_key)
+            progress(i, installer.fn_key)
             #--Extract the embedded BCF and move it to the Converters folder
             unpack_dir = installer.unpackToTemp([installer.hasBCF],
                 SubProgress(progress, i, i + 0.5))
@@ -1978,7 +1978,7 @@ class InstallersData(DataStore):
                 installers.remove(installer)
             finally: bcfFile.remove()
         self.irefresh(what=u'I', pending=pending)
-        return pending, [x.ci_key for x in installers]
+        return pending, [x.fn_key for x in installers]
 
     def apply_converter(self, converter, destArchive, progress, msg,
                         installer=None, pending=None, show_warning=None,
@@ -2015,7 +2015,7 @@ class InstallersData(DataStore):
         boot.
         :rtype: InstallersData._RefreshInfo"""
         pending, installers = set(), set()
-        files = [f for f in files if f.ci_ext in readExts
+        files = [f for f in files if f.fn_ext in readExts
                  and not f.lower().startswith(__skip_prefixes)]
         folders = {f for f in folders if
             # skip Bash directories and user specified ones
@@ -2030,7 +2030,7 @@ class InstallersData(DataStore):
                     if inst is None:
                         pending.add(item)
                         continue
-                    if inst.ci_key != item: # some rename bug - corrupted
+                    if inst.fn_key != item: # some rename bug - corrupted
                         deprint(f'{item} invalid path: {inst.abs_path}')
                         del self[item] # delete the stored installer
                         pending.add(item)
@@ -2371,7 +2371,7 @@ class InstallersData(DataStore):
             iniAbsDataPath = bass.dirs[u'mods'].join(relPath)
             # Create a copy of the old one
             co_path = f'{iniAbsDataPath.sbody}, ~Old Settings ' \
-                      f'[{installer.ci_key}].ini'
+                      f'[{installer.fn_key}].ini'
             baseName = bass.dirs[u'ini_tweaks'].join(co_path)
             tweakPath = self.__tweakPath(baseName)
             iniAbsDataPath.copyTo(tweakPath)
@@ -2444,7 +2444,7 @@ class InstallersData(DataStore):
         from . import bsaInfos, modInfos, iniInfos
         for mod in mods.copy(): # size may change during iteration
             try:
-                modInfos.new_info(mod, owner=installer.ci_key)
+                modInfos.new_info(mod, owner=installer.fn_key)
             except FileError:
                 mods.discard(mod)
         # Notify the bsaInfos cache of any new BSAs, since we may have
@@ -2452,7 +2452,7 @@ class InstallersData(DataStore):
         # missing strings ##: Identical to mods loop above!
         for bsa in bsas:
             try:
-                bsaInfos.new_info(bsa, owner=installer.ci_key)
+                bsaInfos.new_info(bsa, owner=installer.fn_key)
             except FileError:
                 pass # corrupt, but we won't need the bsas set again, so ignore
         modInfos.cached_lo_append_if_missing(mods)
@@ -2466,7 +2466,7 @@ class InstallersData(DataStore):
             s, c, (d != -1 and d) or bass.dirs[u'mods'].join(dest).mtime)) for
             dest, (s, c, d) in data_sizeCrcDate_update.items())
         for ini_path in inis:
-            iniInfos.new_info(ini_path, owner=installer.ci_key)
+            iniInfos.new_info(ini_path, owner=installer.fn_key)
 
     def bain_install(self, packages, refresh_ui, progress=None, last=False,
                      override=True):
@@ -2486,7 +2486,7 @@ class InstallersData(DataStore):
             index = 0
             for inst in self.sorted_values(reverse=True):
                 if inst in to_install:
-                    progress(index, inst.ci_key)
+                    progress(index, inst.fn_key)
                     destFiles = set(inst.ci_dest_sizeCrc) - mask
                     if not override:
                         destFiles &= inst.missingFiles
@@ -2608,9 +2608,9 @@ class InstallersData(DataStore):
             if installer.ci_dest_sizeCrc[ci_dest] != \
                     self.data_sizeCrcDate.get(ci_dest,(0, 0, 0))[:2]:
                 # restore it from this installer
-                restores[ci_dest] = installer.ci_key
+                restores[ci_dest] = installer.fn_key
             else: # don't mind the FName(str()) below - done seldom
-                cede_ownership[installer.ci_key].add(FName(str(ci_dest)))
+                cede_ownership[installer.fn_key].add(FName(str(ci_dest)))
             removes.discard(ci_dest) # don't remove it anyway
         return files
 
@@ -2779,7 +2779,7 @@ class InstallersData(DataStore):
     #--Utils
     @staticmethod
     def _filter_installer_bsas(inst, active_bsas):
-        return [k for k in active_bsas if k.ci_key in inst.ci_dest_sizeCrc]
+        return [k for k in active_bsas if k.fn_key in inst.ci_dest_sizeCrc]
 
     @staticmethod
     def _parse_error(bsa_inf, reason):
@@ -2905,7 +2905,7 @@ class InstallersData(DataStore):
             try:
                 b_assets = b.assets - src_assets
             except BSAError:
-                self._parse_error(b, src_installer.ci_key)
+                self._parse_error(b, src_installer.fn_key)
                 continue
             if b_assets:
                 for b_asset in b_assets:

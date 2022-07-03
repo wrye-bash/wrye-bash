@@ -101,7 +101,7 @@ class _AMerger(ImportPatcher):
         touched = self.touched
         id_deltas = self.id_deltas
         mod_id_entries = self.mod_id_entries
-        modName = modFile.fileInfo.ci_key
+        modName = modFile.fileInfo.fn_key
         #--Master or source?
         if modName in self._masters_and_srcs:
             id_entries = mod_id_entries[modName] = {}
@@ -151,7 +151,7 @@ class _AMerger(ImportPatcher):
                                            changed_entries))
         # Copy the new records we want to keep, unless we're an IIM merger and
         # the mod is IIM-tagged
-        if modFile.fileInfo.ci_key not in self.inventOnlyMods:
+        if modFile.fileInfo.fn_key not in self.inventOnlyMods:
             for curr_sig in self._present_sigs:
                 if curr_sig not in modFile.tops: continue
                 patchBlock = self.patchFile.tops[curr_sig]
@@ -690,7 +690,7 @@ class _AListsMerger(ListPatcher):
 
     def scanModFile(self, modFile, progress):
         #--Begin regular scan
-        sc_name = modFile.fileInfo.ci_key
+        sc_name = modFile.fileInfo.fn_key
         #--PreScan for later Relevs/Delevs?
         if sc_name in self.de_masters:
             for list_type_sig in self._read_sigs:

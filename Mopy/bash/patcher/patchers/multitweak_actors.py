@@ -131,7 +131,7 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
             skeleton_dir = bass.dirs[u'mods'].join(u'Meshes', u'Characters',
                                                    u'_male')
             skel_nifs = [x for x in skeleton_dir.ilist() if  #[] if dir !exists
-                         x.lower().startswith('skel_') and x.ci_ext == '.nif']
+                         x.lower().startswith('skel_') and x.fn_ext == '.nif']
             skeleton_list = [x for x in skel_nifs
                              if not x.lower().startswith(u'skel_special_')]
             set_skeleton_list = set(skeleton_list)

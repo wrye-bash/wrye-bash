@@ -390,7 +390,7 @@ def _read_binary_ver(binary_path):
 def _iter_dir(parent_dir):
     """Takes a path and returns an iterator of the filenames (as strings) of
     files in that folder. .ghost extensions will be chopped off."""
-    return (f.ci_body if f.ci_ext == '.ghost' else f for f in parent_dir.ilist())
+    return (f.fn_body if f.fn_ext == '.ghost' else f for f in parent_dir.ilist())
 
 class Comparison(object):
     """Implements a comparison operator. Takes a unicode string containing the

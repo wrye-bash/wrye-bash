@@ -581,7 +581,7 @@ class WryeParser(ScriptParser.Parser):
             self._wiz_parent = wiz_parent
             self.installer = installer
             self.bArchive = installer.is_archive
-            self._path = installer.ci_key if installer else None
+            self._path = installer.fn_key if installer else None
             if installer and installer.fileRootIdex:
                 root_path = installer.extras_dict.get(u'root_path', u'')
                 self._path = os.path.join(self._path, root_path)
@@ -1422,7 +1422,7 @@ class WryeParser(ScriptParser.Parser):
         plugin_name = self._resolve_plugin_rename(plugin_name)
         if plugin_name:
             # Keep same extension
-            if plugin_name.ci_ext != new_plugin_name[-4:]:
+            if plugin_name.fn_ext != new_plugin_name[-4:]:
                 raise ScriptParser.ParserError(_(u'Cannot rename %s to %s: '
                                                  u'the extensions must '
                                                  u'match.') %

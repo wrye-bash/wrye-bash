@@ -94,7 +94,7 @@ class Screen_ConvertTo(EnabledLink):
         self._text = _('Convert to %s') % ext
 
     def _enable(self):
-        self.convertable = [s for s in self.selected if s.ci_ext != self._ext]
+        self.convertable = [s for s in self.selected if s.fn_ext != self._ext]
         return bool(self.convertable)
 
     def Execute(self):
@@ -227,7 +227,7 @@ class Master_Disable(AppendableLink, _Master_EditList):
     def _enable(self):
         if not super(Master_Disable, self)._enable(): return False
         # Only allow for .esm files, pointless on anything else
-        return self._selected_info.curr_name.ci_ext == u'.esm'
+        return self._selected_info.curr_name.fn_ext == u'.esm'
 
     def Execute(self):
         self._selected_info.disable_master()

@@ -193,7 +193,7 @@ class BackupSettings(object):
 def is_backup(backup_path):
     """Return True if the specified path is a backup. Currently only
     checks if the file extension is 7z."""
-    return backup_path.ci_ext == u'.7z'
+    return backup_path.fn_ext == u'.7z'
 
 #------------------------------------------------------------------------------
 class RestoreSettings(object):

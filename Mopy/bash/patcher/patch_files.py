@@ -155,9 +155,9 @@ class PatchFile(ModFile):
         self.patcher_mod_skipcount = defaultdict(Counter)
         #--Mods
         # checking for files to include in patch, investigate
-        self.all_plugins = load_order.cached_lower_loading(modInfo.ci_key)
+        self.all_plugins = load_order.cached_lower_loading(modInfo.fn_key)
         # exclude moding esms (those tend to be huge)
-        b, e = bush.game.master_file.ci_body, bush.game.master_file.ci_ext
+        b, e = bush.game.master_file.fn_body, bush.game.master_file.fn_ext
         excluded = {FName(f'{b}_{ver}{e}') for ver in
                     p_file_minfos.voAvailable}
         self.all_plugins = [k for k in self.all_plugins if k not in excluded]
@@ -180,7 +180,7 @@ class PatchFile(ModFile):
         new record inside the BP's FormID space), adds it to this patch and
         returns it."""
         if new_rec_fid is None:
-            new_rec_fid = (self.fileInfo.ci_key, self.tes4.getNextObject())
+            new_rec_fid = (self.fileInfo.fn_key, self.tes4.getNextObject())
         new_rec = MreRecord.type_class[new_rec_sig](RecHeader(new_rec_sig))
         new_rec.longFids = True
         new_rec.fid = new_rec_fid
@@ -304,7 +304,7 @@ class PatchFile(ModFile):
         # save the patch since it trims records and sets up the necessary
         # masters. Without it, we may blow up due to being unable to resolve
         # FormIDs while saving.
-        self._log_header(log, self.fileInfo.ci_key)
+        self._log_header(log, self.fileInfo.fn_key)
         # Run buildPatch on each patcher
         self.keepIds |= self.mergeIds
         if self._patcher_instances:

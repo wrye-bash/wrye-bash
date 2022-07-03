@@ -204,15 +204,15 @@ class _AliasesPatcherPanel(_PatcherPanel):
         """Sets alias text according to current aliases."""
         self.gAliases.text_content = u'\n'.join([
             f'{alias_target} >> {alias_repl}'
-            for alias_target, alias_repl in dict_sort(self._ci_aliases)])
+            for alias_target, alias_repl in dict_sort(self._fn_aliases)])
 
     def OnEditAliases(self):
         aliases_text = self.gAliases.text_content
-        self._ci_aliases.clear()
+        self._fn_aliases.clear()
         for line in aliases_text.split(u'\n'):
             fields = [s.strip() for s in line.split(u'>>')]
             if len(fields) != 2 or not fields[0] or not fields[1]: continue
-            self._ci_aliases[fields[0]] = FName(fields[1])
+            self._fn_aliases[fields[0]] = FName(fields[1])
         self.SetAliasText()
 
     #--Config Phase -----------------------------------------------------------
@@ -221,14 +221,14 @@ class _AliasesPatcherPanel(_PatcherPanel):
         config = super()._getConfig(configs)
         #--Update old configs to use Paths instead of strings.
         # call str twice in case v._s was a str subtype
-        self._ci_aliases = forward_compat_path_to_fn(config.get('aliases', {}),
+        self._fn_aliases = forward_compat_path_to_fn(config.get('aliases', {}),
             value_type=lambda v: FName(str('%s' % v)))
         return config
 
     def saveConfig(self, configs):
         """Save config to configs dictionary."""
         config = super(_AliasesPatcherPanel, self).saveConfig(configs)
-        config[u'aliases'] = self._ci_aliases
+        config[u'aliases'] = self._fn_aliases
         return config
 
     def _log_config(self, conf, config, clip, log):
@@ -240,7 +240,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
     def get_patcher_instance(self, patch_file):
         """Set patch_file aliases dict"""
         if self.isEnabled:
-            patch_file.pfile_aliases = self._ci_aliases
+            patch_file.pfile_aliases = self._fn_aliases
         return self.patcher_type(self.patcher_name, patch_file)
 
 #------------------------------------------------------------------------------

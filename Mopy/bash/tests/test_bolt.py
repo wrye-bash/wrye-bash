@@ -610,27 +610,27 @@ class TestFname(object):
         with pytest.raises(TypeError): assert empty <= False
         with pytest.raises(TypeError): assert (None <= empty)
 
-    def test_ci_ext(self):
+    def test_fn_ext(self):
         file_str = 'path.txt'
         FILE_STR = file_str.upper()
         assert (FN := FName(FILE_STR)) == (fn := FName(file_str))
-        assert FN.ci_ext == fn.ci_ext
-        assert FName('PATH.txt').ci_ext is fn.ci_ext
-        assert fn.ci_ext == '.txt'
-        assert fn.ci_ext == '.TXT'
-        assert not FName('').ci_ext
-        assert not FName('path').ci_ext
+        assert FN.fn_ext == fn.fn_ext
+        assert FName('PATH.txt').fn_ext is fn.fn_ext
+        assert fn.fn_ext == '.txt'
+        assert fn.fn_ext == '.TXT'
+        assert not FName('').fn_ext
+        assert not FName('path').fn_ext
 
-    def test_ci_body(self):
+    def test_fn_body(self):
         file_str = 'path.txt'
         FILE_STR = file_str.upper()
         assert (FN := FName(FILE_STR)) == (fn := FName(file_str))
-        assert FN.ci_body == fn.ci_body
-        assert FName('path.TXT').ci_body is fn.ci_body
-        assert fn.ci_body == 'path'
-        assert fn.ci_body == 'PATH'
-        assert not FName('').ci_body
-        assert not FName('.txt').ci_body
+        assert FN.fn_body == fn.fn_body
+        assert FName('path.TXT').fn_body is fn.fn_body
+        assert fn.fn_body == 'path'
+        assert fn.fn_body == 'PATH'
+        assert not FName('').fn_body
+        assert not FName('.txt').fn_body
 
     def test_immutable__new__(self):
         a = FName('abc')

@@ -152,7 +152,7 @@ class PatchDialog(DialogWindow):
         self.accept_modal()
         progress = None
         try:
-            patch_name = self.patchInfo.ci_key
+            patch_name = self.patchInfo.fn_key
             patch_size = self.patchInfo.fsize
             progress = balt.Progress(patch_name, abort=True)
             timer1 = time.process_time()
@@ -191,10 +191,10 @@ class PatchDialog(DialogWindow):
             logValue = log.out.getvalue()
             timerString = str(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
-            readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.ci_body + u'.txt')
+            readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.fn_body + u'.txt')
             docsDir = bass.dirs[u'mopy'].join(u'Docs')
             tempReadmeDir = Path.tempDir().join(u'Docs')
-            tempReadme = tempReadmeDir.join(patch_name.ci_body + u'.txt')
+            tempReadme = tempReadmeDir.join(patch_name.fn_body + u'.txt')
             #--Write log/readme to temp dir first
             with tempReadme.open(u'w', encoding=u'utf-8-sig') as file:
                 file.write(logValue)
@@ -298,14 +298,14 @@ class PatchDialog(DialogWindow):
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
-        exportConfig(patch_name=self.patchInfo.ci_key, config=config,
+        exportConfig(patch_name=self.patchInfo.fn_key, config=config,
                      win=self.parent, outDir=bass.dirs[u'patches'])
 
     __old_key = u'Saved Bashed Patch Configuration'
     __new_key = u'Saved Bashed Patch Configuration (%s)'
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
-        config_dat = f'{self.patchInfo.ci_key}_Configuration.dat'
+        config_dat = f'{self.patchInfo.fn_key}_Configuration.dat'
         textDir = bass.dirs[u'patches']
         textDir.makedirs()
         #--File dialog

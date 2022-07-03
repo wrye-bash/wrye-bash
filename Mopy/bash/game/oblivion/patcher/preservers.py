@@ -239,7 +239,7 @@ class MorphFactionsPatcher(_ExSpecialList):
         """Scan modFile."""
         id_info = self.id_stored_data[b'FACT']
         patchBlock = self.patchFile.tops[b'FACT']
-        if modFile.fileInfo.ci_key == cobl_main:
+        if modFile.fileInfo.fn_key == cobl_main:
             record = modFile.tops[b'FACT'].getRecord(self.mFactLong)
             if record:
                 patchBlock.setRecord(record.getTypeCopy())

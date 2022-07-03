@@ -59,7 +59,7 @@ def _is_mergeable_no_load(modInfo, reasons):
                     dir_list += u'\n  - ' + blocking_dir
             reasons.append((_(u'Has plugin-specific directory - one of the '
                               u'following:') + dir_list) % {
-                u'plugin_name': modInfo.ci_key})
+                u'plugin_name': modInfo.fn_key})
     # Client must make sure NoMerge tag not in tags - if in tags
     # don't show up as mergeable.
     return False if reasons else True
@@ -80,7 +80,7 @@ def _pbash_mergeable_no_load(modInfo, reasons):
         if not verbose: return False
         from . import oblivionIni
         reasons.append(_(u'Missing String Translation Files (Strings\\%s_%s.STRINGS, etc).') % (
-            modInfo.ci_key.ci_body, oblivionIni.get_ini_language()))
+            modInfo.fn_key.fn_body, oblivionIni.get_ini_language()))
     return False if reasons else True
 
 def isPBashMergeable(modInfo, minfos, reasons):
@@ -108,7 +108,7 @@ def isPBashMergeable(modInfo, minfos, reasons):
         reasons.append(_(u'Empty mod.'))
     #--New record
     newblocks = []
-    self_name = modInfo.ci_key
+    self_name = modInfo.fn_key
     for top_type,block in modFile.tops.items():
         for rfid, record in block.iter_present_records(): # skip deleted/ignored
             if rfid[0] == self_name:

@@ -336,7 +336,7 @@ class _AParser(_HandleAliases):
                 if not rec_block: continue
                 for rfid, record in rec_block.iter_present_records():
                     self.id_context[rfid] = self._read_record_fp(record)
-            self._fp_mods.add(mod_to_read.fileInfo.ci_key)
+            self._fp_mods.add(mod_to_read.fileInfo.fn_key)
         # Process the mod's masters first, but see if we need to sort them
         master_names = loaded_mod.tes4.masters
         if self._needs_fp_master_sort:
@@ -346,7 +346,7 @@ class _AParser(_HandleAliases):
             _fp_loop(self._load_plugin(bosh.modInfos[mod_name], keepAll=False,
                                        target_types=self._fp_types))
         # Finally, process the mod itself
-        if loaded_mod.fileInfo.ci_key in self._fp_mods: return
+        if loaded_mod.fileInfo.fn_key in self._fp_mods: return
         _fp_loop(loaded_mod)
 
     # TODO(inf) Might need second_pass parameter?
@@ -407,7 +407,7 @@ class _AParser(_HandleAliases):
         automatically clear id_stored_data to allow combining multiple sources.
 
         :param mod_info: The ModInfo instance to read from."""
-        self._current_mod = mod_info.ci_key
+        self._current_mod = mod_info.fn_key
         # Check if we need to read at all
         a_types = self.all_types
         if not a_types:
@@ -549,7 +549,7 @@ class ActorLevels(_HandleAliases):
         from . import bosh
         mod_id_levels, gotLevels = self.id_stored_data, self.gotLevels
         loadFactory = self._load_factory(keepAll=False)
-        for modName in (*modInfo.masterNames, modInfo.ci_key):
+        for modName in (*modInfo.masterNames, modInfo.fn_key):
             if modName in gotLevels: continue
             modFile = self._load_plugin(bosh.modInfos[modName],
                                         load_fact=loadFactory)
@@ -563,7 +563,7 @@ class ActorLevels(_HandleAliases):
 
     def writeToMod(self, modInfo):
         """Exports actor levels to specified mod."""
-        id_levels = self.id_stored_data.get(modInfo.ci_key,
+        id_levels = self.id_stored_data.get(modInfo.fn_key,
             self.id_stored_data.get('Unknown', None))
         if id_levels:
             # pretend we are a normal parser

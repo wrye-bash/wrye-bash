@@ -283,7 +283,7 @@ class SaveFile(object):
             self.preCreated = buff.getvalue()
             #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
             createdNum = unpack_int(ins)
-            with ModReader(self.fileInfo.ci_key, ins) as modReader:
+            with ModReader(self.fileInfo.fn_key, ins) as modReader:
                 for count in range(createdNum):
                     progress(ins.tell(), _('Reading created...'))
                     record = MreRecord(unpack_header(modReader), modReader)
@@ -389,7 +389,7 @@ class SaveFile(object):
         """Returns fid corresponding to iref."""
         if not iref: return default
         if iref >> 24 == 0xFF: return iref
-        if iref >= len(self.fids): raise ModError(self.fileInfo.ci_key,
+        if iref >= len(self.fids): raise ModError(self.fileInfo.fn_key,
                                                   u'IRef from Mars.')
         return self.fids[iref]
 
@@ -411,7 +411,7 @@ class SaveFile(object):
             if modIndex < len(self._masters):
                 return self._masters[modIndex]
             elif modIndex == 0xFF:
-                return self.fileInfo.ci_key
+                return self.fileInfo.fn_key
             else:
                 return _(u'Missing Master ')+hex(modIndex)
         #--ABomb
@@ -650,7 +650,7 @@ class SaveSpells(_SaveData):
                 self.importMod(modInfos[master])
         #--Extract created spells
         allSpells = self.allSpells
-        saveName = self.saveInfo.ci_key
+        saveName = self.saveInfo.fn_key
         progress(progress.full - 1, saveName)
         for rfid, record in self.saveFile.created.items():
             if record._rec_sig == b'SPEL':
@@ -692,7 +692,7 @@ class SaveSpells(_SaveData):
                 fid = saveFile.fids[iref]
             modIndex,objectIndex = getFormIndices(fid)
             if modIndex == 255:
-                master = self.saveInfo.ci_key
+                master = self.saveInfo.fn_key
             elif modIndex <= maxMasters:
                 master = masters_copy[modIndex]
             else: #--Bad fid?
@@ -726,7 +726,7 @@ class SaveEnchantments(_SaveData):
         progress = progress or bolt.Progress()
         self._load_save(SubProgress(progress,0,0.4))
         #--Extract created enchantments
-        progress(progress.full - 1, self.saveInfo.ci_key)
+        progress(progress.full - 1, self.saveInfo.fn_key)
         for rfid, record in self.saveFile.created.items():
             if record._rec_sig == b'ENCH':
                 record = record.getTypeCopy()

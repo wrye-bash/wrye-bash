@@ -122,12 +122,12 @@ def wrapPopenOut(fullPath, wrapper, errorMsg):
 
 #  WIP: http://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
 def _compressionSettings(fn_archive, blockSize, isSolid):
-    archiveType = writeExts.get(fn_archive.ci_ext)
+    archiveType = writeExts.get(fn_archive.fn_ext)
     if not archiveType:
         #--Always fall back to using the defaultExt
-        fn_archive = FName(fn_archive.ci_body + defaultExt)
+        fn_archive = FName(fn_archive.fn_body + defaultExt)
         archiveType = writeExts[defaultExt]
-    if fn_archive.ci_ext in noSolidExts: # zip
+    if fn_archive.fn_ext in noSolidExts: # zip
         solid = u''
     else:
         if isSolid:

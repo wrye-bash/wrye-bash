@@ -46,7 +46,7 @@ def get_tags_from_dir(plugin_name, ci_cached_bt_contents=None):
     :return: A tuple containing two sets of added and deleted tags."""
     tag_file = None
     # Check if the file even exists first, using the cache if possible
-    bt_file_name = f'{plugin_name.ci_body}.txt'
+    bt_file_name = f'{plugin_name.fn_body}.txt'
     if ci_cached_bt_contents is not None:
         if bt_file_name.lower() not in ci_cached_bt_contents:
             return set(), set()
@@ -88,7 +88,7 @@ def save_tags_to_dir(plugin_name, plugin_tag_diff):
         by its description and the LOOT masterlist / userlist.."""
     tag_files_dir = bass.dirs[u'tag_files']
     tag_files_dir.makedirs()
-    tag_file = tag_files_dir.join(f'{plugin_name.ci_body}.txt')
+    tag_file = tag_files_dir.join(f'{plugin_name.fn_body}.txt')
     # Calculate the diff and ignore the minus when sorting the result
     tag_diff_add, tag_diff_del = plugin_tag_diff
     processed_diff = sorted(tag_diff_add | {u'-' + t for t in tag_diff_del},
@@ -163,14 +163,14 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     should_deactivate = []
     should_activate = []
     for p_minf in all_present_minfs:
-        p_ci_key = p_minf.ci_key
-        p_active = p_ci_key in all_active_plugins
-        p_imported = p_ci_key in modInfos.imported
+        plugin_fn = p_minf.fn_key
+        p_active = plugin_fn in all_active_plugins
+        p_imported = plugin_fn in modInfos.imported
         p_tags = p_minf.getBashTags()
         if u'Deactivate' in p_tags and p_active:
-            should_deactivate.append(p_ci_key)
+            should_deactivate.append(plugin_fn)
         if u'MustBeActiveIfImported' in p_tags and not p_active and p_imported:
-            should_activate.append(p_ci_key)
+            should_activate.append(plugin_fn)
     # -------------------------------------------------------------------------
     # Check for missing or delinquent masters
     seen_plugins = set()
@@ -197,7 +197,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     # Check for cleaning information from LOOT.
     cleaning_messages = {}
     scan_for_cleaning = set()
-    dirty_msgs = [(m.ci_key, m.getDirtyMessage()) for m in all_present_minfs]
+    dirty_msgs = [(m.fn_key, m.getDirtyMessage()) for m in all_present_minfs]
     for x, y in dirty_msgs:
         if y[0]:
             cleaning_messages[x] = y[1]
@@ -206,15 +206,15 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     # -------------------------------------------------------------------------
     # Scan plugins to collect data for more detailed analysis.
     scanning_canceled = False
-    all_deleted_refs = defaultdict(list) # ci_key -> list[fid]
-    all_deleted_navms = defaultdict(list) # ci_key -> list[fid]
-    all_deleted_others = defaultdict(list) # ci_key -> list[fid]
-    old_weapon_records = defaultdict(list) # ci_key -> list[fid]
+    all_deleted_refs = defaultdict(list) # fn_key -> list[fid]
+    all_deleted_navms = defaultdict(list) # fn_key -> list[fid]
+    all_deleted_others = defaultdict(list) # fn_key -> list[fid]
+    old_weapon_records = defaultdict(list) # fn_key -> list[fid]
     # fid -> (is_injected, orig_plugin, list[(eid, sig, plugin)])
     record_type_collisions = {}
     # fid -> (orig_plugin, list[(eid, sig, plugin)])
     probable_injected_collisions = {}
-    all_hitmes = defaultdict(list) # ci_key -> list[fid]
+    all_hitmes = defaultdict(list) # fn_key -> list[fid]
     if scan_plugins:
         progress = None
         try:
@@ -229,7 +229,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                 mod_progress = SubProgress(load_progress, i, i + 1)
                 ext_data = ModHeaderReader.extract_mod_data(present_minf,
                                                             mod_progress)
-                all_extracted_data[present_minf.ci_key] = ext_data
+                all_extracted_data[present_minf.fn_key] = ext_data
             # Run over all plugin data once for efficiency, collecing
             # information such as deleted records and overrides
             scan_progress = SubProgress(progress, 0.7, 0.9)
@@ -239,9 +239,9 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             all_record_versions = defaultdict(list)
             # Whether or not the game uses SSE's form version (44)
             game_has_v44 = RecordHeader.plugin_form_version == 44
-            for i, (p_ci_key, ext_data) in enumerate(
+            for i, (plugin_fn, ext_data) in enumerate(
                     all_extracted_data.items()):
-                scan_progress(i, (_(u'Scanning: %s') % p_ci_key))
+                scan_progress(i, (_(u'Scanning: %s') % plugin_fn))
                 # Two situations where we can skip checking deleted records:
                 # 1. The game master can't have deleted records (deleting a
                 #    record from the master file that introduced it just
@@ -249,26 +249,26 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                 # 2. If we have a LOOT report for a plugin, we can skip every
                 #    deleted reference and deleted navmesh and just use the
                 #    LOOT report.
-                scan_deleted = (p_ci_key != game_master_name and
-                                p_ci_key in scan_for_cleaning)
+                scan_deleted = (plugin_fn != game_master_name and
+                                plugin_fn in scan_for_cleaning)
                 # We have to skip checking overrides if the plugin is inactive
                 # because a whole-LO FormID is not a valid concept for inactive
                 # plugins. Plus, collisions from inactive plugins are either
                 # harmless (if the plugin really is inactive) or will show up
                 # in the BP (if the plugin is actually merged into the BP).
-                scan_overrides = p_ci_key in all_active_plugins
+                scan_overrides = plugin_fn in all_active_plugins
                 # Skip checking for old WEAP records if the game is not based
                 # on SSE or the plugin is one of the vanilla masters (none of
                 # the vanilla masters have old weapon records, plus they
                 # couldn't be fixed even if they did)
                 scan_old_weapons = (game_has_v44 and
-                                    p_ci_key not in vanilla_masters)
-                add_deleted_ref = all_deleted_refs[p_ci_key].append
-                add_deleted_navm = all_deleted_navms[p_ci_key].append
-                add_deleted_rec = all_deleted_others[p_ci_key].append
-                add_old_weapon = old_weapon_records[p_ci_key].append
-                add_hitme = all_hitmes[p_ci_key].append
-                p_masters = (*modInfos[p_ci_key].masterNames, p_ci_key)
+                                    plugin_fn not in vanilla_masters)
+                add_deleted_ref = all_deleted_refs[plugin_fn].append
+                add_deleted_navm = all_deleted_navms[plugin_fn].append
+                add_deleted_rec = all_deleted_others[plugin_fn].append
+                add_old_weapon = old_weapon_records[plugin_fn].append
+                add_hitme = all_hitmes[plugin_fn].append
+                p_masters = (*modInfos[plugin_fn].masterNames, plugin_fn)
                 p_num_masters = len(p_masters)
                 for r, d in ext_data.items():
                     for r_fid, (r_header, r_eid) in d.items():
@@ -296,7 +296,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                                 p_masters[p_num_masters - 1 if is_hitme else
                                 r_mod_index]] << 24)
                             all_record_versions[lo_fid].append(
-                                (r_eid, r_header.recType, p_ci_key))
+                                (r_eid, r_header.recType, plugin_fn))
                         if (scan_old_weapons and w_rec_type == b'WEAP' and
                                 r_header.form_version < 44):
                             add_old_weapon(r_fid)
@@ -354,77 +354,77 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     # -------------------------------------------------------------------------
     # Check for deleted references
     if all_deleted_refs:
-        for p_ci_key, deleted_refrs in all_deleted_refs.items():
+        for plugin_fn, deleted_refrs in all_deleted_refs.items():
             # Rely on LOOT for detecting deleted references in vanilla files
-            plugin_is_vanilla = p_ci_key in vanilla_masters
+            plugin_is_vanilla = plugin_fn in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
             # mark records that exist in one plugin but not in the other
-            plugin_is_esu = p_ci_key.ci_ext == u'.esu'
+            plugin_is_esu = plugin_fn.fn_ext == u'.esu'
             if deleted_refrs and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_refrs)
                 if num_deleted == 1: # I hate natural languages :/
                     del_msg = _(u'1 deleted reference')
                 else:
                     del_msg = _(u'%d deleted references') % num_deleted
-                cleaning_messages[p_ci_key] = del_msg
+                cleaning_messages[plugin_fn] = del_msg
     # -------------------------------------------------------------------------
     # Check for deleted navmeshes
     deleted_navmeshes = {}
     if all_deleted_navms:
-        for p_ci_key, deleted_navms in all_deleted_navms.items():
+        for plugin_fn, deleted_navms in all_deleted_navms.items():
             # Deleted navmeshes can't and shouldn't be fixed in vanilla files,
             # so don't show warnings for them
-            plugin_is_vanilla = p_ci_key in vanilla_masters
+            plugin_is_vanilla = plugin_fn in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
             # mark records that exist in one plugin but not in the other
-            plugin_is_esu = p_ci_key.ci_ext == u'.esu'
+            plugin_is_esu = plugin_fn.fn_ext == u'.esu'
             if deleted_navms and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_navms)
                 if num_deleted == 1:
                     del_msg = _(u'1 deleted navmesh')
                 else:
                     del_msg = _(u'%d deleted navmeshes') % num_deleted
-                deleted_navmeshes[p_ci_key] = del_msg
+                deleted_navmeshes[plugin_fn] = del_msg
     # -------------------------------------------------------------------------
     # Check for deleted base records
     deleted_base_recs = {}
     if all_deleted_others:
-        for p_ci_key, deleted_others in all_deleted_others.items():
+        for plugin_fn, deleted_others in all_deleted_others.items():
             # Deleted navmeshes can't and shouldn't be fixed in vanilla files,
             # so don't show warnings for them
-            plugin_is_vanilla = p_ci_key in vanilla_masters
+            plugin_is_vanilla = plugin_fn in vanilla_masters
             # .esu files created by xEdit use deleted records on purpose to
             # mark records that exist in one plugin but not in the other
-            plugin_is_esu = p_ci_key.ci_ext == u'.esu'
+            plugin_is_esu = plugin_fn.fn_ext == u'.esu'
             if deleted_others and not plugin_is_vanilla and not plugin_is_esu:
                 num_deleted = len(deleted_others)
                 if num_deleted == 1:
                     del_msg = _(u'1 deleted base record')
                 else:
                     del_msg = _(u'%d deleted base records') % num_deleted
-                deleted_base_recs[p_ci_key] = del_msg
+                deleted_base_recs[plugin_fn] = del_msg
     # -------------------------------------------------------------------------
     # Check for old (form version < 44) WEAP records, which the game can't load
     # properly and which cannot be converted safely by the CK
     old_weaps = {}
     if old_weapon_records:
-        for p_ci_key, weap_recs in old_weapon_records.items():
+        for plugin_fn, weap_recs in old_weapon_records.items():
             if weap_recs:
                 num_weaps = len(weap_recs)
                 if num_weaps == 1:
                     weap_msg = _(u'1 old weapon record')
                 else:
                     weap_msg = _(u'%d old weapon records') % num_weaps
-                old_weaps[p_ci_key] = weap_msg
+                old_weaps[plugin_fn] = weap_msg
     # -------------------------------------------------------------------------
     # Check for HITMEs, i.e. records with a mod index that is > the number of
     # masters that the containing plugin has
     hitmes = {}
     if all_hitmes:
-        for p_ci_key, found_hitmes in all_hitmes.items():
+        for plugin_fn, found_hitmes in all_hitmes.items():
             # HITMEs can't and shouldn't be fixed in vanilla files, so don't
             # show warnings for them
-            plugin_is_vanilla = p_ci_key in vanilla_masters
+            plugin_is_vanilla = plugin_fn in vanilla_masters
             if found_hitmes and not plugin_is_vanilla:
                 num_hitmes = len(found_hitmes)
                 # No point in making these translatable, HITME is a fixed term
@@ -432,7 +432,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                     hitme_msg = u'1 HITME'
                 else:
                     hitme_msg = u'%d HITMEs' % num_hitmes
-                hitmes[p_ci_key] = hitme_msg
+                hitmes[plugin_fn] = hitme_msg
     # -------------------------------------------------------------------------
     # Some helpers for building the log
     def log_plugins(plugin_list_):
@@ -684,7 +684,7 @@ class NvidiaFogFixer(object):
         #--File stream
         minfo_path = self.modInfo.getPath()
         #--Scan/Edit
-        with ModReader(self.modInfo.ci_key, minfo_path.open(u'rb')) as ins:
+        with ModReader(self.modInfo.fn_key, minfo_path.open(u'rb')) as ins:
             with minfo_path.temp.open(u'wb') as  out:
                 def copy(bsize):
                     buff = ins.read(bsize)

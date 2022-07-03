@@ -165,7 +165,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
             # Skyrim LE - but these are also just dummy masters.
-            ciext = newInfo.ci_key.ci_ext
+            ciext = newInfo.fn_key.fn_ext
             if (is_esl := ciext == '.esl') or ciext == '.esm':
                 newFile.tes4.flags1.esm = True
                 newFile.tes4.flags1.eslFile = is_esl
@@ -1202,9 +1202,9 @@ class Mod_ScanDirty(ItemLink):
         # copy-pasted in case refactoring becomes possible in the future. See
         # there for comments on what this is doing as well.
         game_master_name = bush.game.master_file
-        all_deleted_refs = defaultdict(list) # ci_key -> list[fid]
-        all_deleted_navms = defaultdict(list) # ci_key -> list[fid]
-        all_deleted_others = defaultdict(list) # ci_key -> list[fid]
+        all_deleted_refs = defaultdict(list) # fn_key -> list[fid]
+        all_deleted_navms = defaultdict(list) # fn_key -> list[fid]
+        all_deleted_others = defaultdict(list) # fn_key -> list[fid]
         try:
             with balt.Progress(_('Deleted Records'), abort=True) as progress:
                 progress.setFull(len(all_present_minfs))
@@ -1212,21 +1212,21 @@ class Mod_ScanDirty(ItemLink):
                 load_progress.setFull(len(all_present_minfs))
                 all_extracted_data = OrderedDict() # PY3: dict?
                 for i, present_minf in enumerate(all_present_minfs):
-                    if present_minf.ci_key == game_master_name:
+                    if present_minf.fn_key == game_master_name:
                         continue # The game master can't have deleted records
                     mod_progress = SubProgress(load_progress, i, i + 1)
                     ext_data = ModHeaderReader.extract_mod_data(present_minf,
                                                                 mod_progress)
-                    all_extracted_data[present_minf.ci_key] = ext_data
+                    all_extracted_data[present_minf.fn_key] = ext_data
                 scan_progress = SubProgress(progress, 0.7, 0.9)
                 scan_progress.setFull(len(all_extracted_data))
                 all_ref_types = bush.game.Esp.reference_types
-                for i, (p_ci_key, ext_data) in enumerate(
+                for i, (plugin_fn, ext_data) in enumerate(
                         all_extracted_data.items()):
-                    scan_progress(i, (_(u'Scanning: %s') % p_ci_key))
-                    add_deleted_ref = all_deleted_refs[p_ci_key].append
-                    add_deleted_navm = all_deleted_navms[p_ci_key].append
-                    add_deleted_rec = all_deleted_others[p_ci_key].append
+                    scan_progress(i, (_(u'Scanning: %s') % plugin_fn))
+                    add_deleted_ref = all_deleted_refs[plugin_fn].append
+                    add_deleted_navm = all_deleted_navms[plugin_fn].append
+                    add_deleted_rec = all_deleted_others[plugin_fn].append
                     for r, d in ext_data.items():
                         for r_fid, (r_header, r_eid) in d.items():
                             w_rec_type = r_header.recType
@@ -1257,11 +1257,11 @@ class Mod_ScanDirty(ItemLink):
         clean_plugins = []
         skipped_plugins = []
         for i, modInfo in enumerate(all_present_minfs):
-            m_ci_key = modInfo.ci_key
-            del_navms = all_deleted_navms[m_ci_key]
-            del_refs = all_deleted_refs[m_ci_key]
-            del_others = all_deleted_others[m_ci_key]
-            if m_ci_key == game_master_name or m_ci_key.ci_ext == '.esu':
+            plugin_fn = modInfo.fn_key
+            del_navms = all_deleted_navms[plugin_fn]
+            del_refs = all_deleted_refs[plugin_fn]
+            del_others = all_deleted_others[plugin_fn]
+            if plugin_fn == game_master_name or plugin_fn.fn_ext == '.esu':
                 skipped_plugins.append(f'* __{modInfo}__')
             elif del_navms or del_refs or del_others:
                 full_dirty_msg = f'* __{modInfo}__:\n'
@@ -1377,8 +1377,8 @@ class _CopyToLink(EnabledLink):
         add_esm_flag = add_esl_flag or self._target_ext == '.esm'
         with BusyCursor(): # ONAM generation can take a bit
             for curName, minfo in self.iselected_pairs():
-                if self._target_ext == curName.ci_ext: continue
-                newName = FName(curName.ci_body + self._target_ext)
+                if self._target_ext == curName.fn_ext: continue
+                newName = FName(curName.fn_body + self._target_ext)
                 #--Replace existing file?
                 timeSource = None
                 if newName in modInfos:
@@ -1476,7 +1476,7 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                           ) % len(removed)
                 else:
                     m = _(u'No changes required.')
-                self._showOk(m, fileInfo.ci_key)
+                self._showOk(m, fileInfo.fn_key)
 
 #------------------------------------------------------------------------------
 class _Esm_Esl_Flip(EnabledLink):
@@ -1527,7 +1527,7 @@ class Mod_FlipEsm(_Esm_Esl_Flip):
         games the esp extension is even more important as .esm and .esl files
         implicitly have the master flag set no matter what."""
         first_is_esm = self._already_flagged
-        return all(m.ci_ext in (u'.esp', u'.esu') and
+        return all(m.fn_ext in (u'.esp', u'.esu') and
                    minfo.has_esm_flag() == first_is_esm
                    for m, minfo in self.iselected_pairs())
 
@@ -1559,7 +1559,7 @@ class Mod_FlipEsl(_Esm_Esl_Flip):
         """Allow if all selected mods have valid extensions, have same esl flag
         and are esl capable if converting to esl."""
         first_is_esl = self._already_flagged
-        return all(m.ci_ext in (u'.esm', u'.esp', u'.esu') and
+        return all(m.fn_ext in (u'.esm', u'.esp', u'.esu') and
                    minfo.has_esl_flag() == first_is_esl and
                    (first_is_esl or m in bosh.modInfos.mergeable)
                    for m, minfo in self.iselected_pairs())
@@ -1594,7 +1594,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
         modinfo_masters = present_mods[selection[0]].masterNames
         if len(selection) == 1 and len(modinfo_masters) > 1:
             self.espMasters = [m for m in modinfo_masters if
-                               m in present_mods and m.ci_ext == '.esp']
+                               m in present_mods and m.fn_ext == '.esp']
             self._do_enable = bool(self.espMasters)
         else:
             self.espMasters = []
@@ -1745,7 +1745,7 @@ class _Import_Export_Link(AppendableLink):
 class _Mod_Export_Link(_Import_Export_Link, _CsvExport_Link):
     def Execute(self):
         textPath = self._csv_out(
-            f'{self.selected[0].ci_body}{self.__class__.csvFile}')
+            f'{self.selected[0].fn_body}{self.__class__.csvFile}')
         if not textPath: return
         #--Export
         lo_plugins_set = set(load_order.cached_lo_tuple())

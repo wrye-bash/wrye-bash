@@ -89,7 +89,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
     def _pack(self, archive_path, installer, project, release=False):
         #--Archive configuration options
         blockSize = None
-        if archive_path.ci_ext in archives.noSolidExts:
+        if archive_path.fn_ext in archives.noSolidExts:
             isSolid = False
         else:
             if not u'-ms=' in bass.inisettings[u'7zExtraCompressionArguments']:
@@ -157,7 +157,7 @@ class _Installer_AWizardLink(_InstallerLink):
             title = _(u'Installing...')
             do_it = self.idata.bain_install
         with balt.Progress(title) as progress:
-            do_it([sel_package.ci_key], ui_refresh, progress)
+            do_it([sel_package.fn_key], ui_refresh, progress)
 
 class _Installer_AViewOrEditFile(_SingleInstallable):
     """Base class for View/Edit wizard/FOMOD links."""
@@ -202,7 +202,7 @@ class _Installer_ARunFomod(_Installer_AFomod):
                     with BusyCursor():
                         # Select the package we want to install - posts events
                         # to set details and update GUI
-                        self.window.SelectItem(sel_package.ci_key)
+                        self.window.SelectItem(sel_package.fn_key)
                         try:
                             fm_wizard = InstallerFomod(
                                 self.window, sel_package,
@@ -227,7 +227,7 @@ class _Installer_ARunFomod(_Installer_AFomod):
                           "properly. The BashBugDump.log in Wrye Bash's Mopy "
                           "folder contains additional details, please include "
                           "it in your report.") % {
-                            'package_name': sel_package.ci_key
+                            'package_name': sel_package.fn_key
                         }, title=_('Invalid FOMOD XML Syntax'))
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
@@ -261,7 +261,7 @@ class Installer_CaptureFomodOutput(_Installer_ARunFomod):
     def _execute_action(self, sel_package, ret, ui_refresh):
         working_on_archive = sel_package.is_archive
         proj_default = (sel_package.abs_path.sbody if working_on_archive
-                        else sel_package.ci_key)
+                        else sel_package.fn_key)
         proj_name = self._askFilename(_('Project Name'), proj_default,
             inst_type=bosh.InstallerProject, check_exists=False)
         if not proj_name:
@@ -338,7 +338,7 @@ class Installer_Wizard(_Installer_AWizardLink):
                 with BusyCursor():
                     # Select the package we want to install - posts events to
                     # set details and update GUI
-                    self.window.SelectItem(sel_package.ci_key)
+                    self.window.SelectItem(sel_package.fn_key)
                     # Switch away from FOMOD mode, the wizard may need plugin
                     # data from BAIN
                     idetails.set_fomod_mode(fomod_enabled=False)
@@ -398,7 +398,7 @@ class Installer_Wizard(_Installer_AWizardLink):
             with outFile.open(u'w', encoding=u'utf-8') as out:
                 out.write(u'\n'.join(generateTweakLines(wizardEdits, iniFile)))
                 out.write(u'\n')
-            bosh.iniInfos.new_info(outFile.stail, owner=installer.ci_key)
+            bosh.iniInfos.new_info(outFile.stail, owner=installer.fn_key)
             # trigger refresh UI
             ui_refresh[1] = True
             # We wont automatically apply tweaks to anything other than
@@ -489,7 +489,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         """Duplicate selected Installer."""
         is_arch = self._selected_info.is_archive
         fn_inst = self._selected_item
-        r, e = (fn_inst.ci_body, fn_inst.ci_ext) if is_arch else (fn_inst, '')
+        r, e = (fn_inst.fn_body, fn_inst.fn_ext) if is_arch else (fn_inst, '')
         newName = self._selected_info.unique_key(r, e, add_copy=True)
         allowed_exts = {e} if is_arch else set()
         result = self._askFilename(
@@ -635,7 +635,7 @@ class Installer_InstallSmart(_NoMarkerLink):
         it.
 
         :type link_instance: EnabledLink"""
-        link_instance._initData(self.window, [sel_package.ci_key])
+        link_instance._initData(self.window, [sel_package.fn_key])
         if link_instance._enable():
             link_instance.Execute()
             return True
@@ -691,7 +691,7 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
     def Execute(self):
         info_dir = bass.dirs[u'app'].join(self.__class__._mode_info_dir)
         info_dir.makedirs()
-        achlist = info_dir.join(self._selected_info.ci_key + u'.achlist')
+        achlist = info_dir.join(self._selected_info.fn_key + u'.achlist')
         ##: Windows-1252 is a guess. The CK is able to decode non-ASCII
         # characters encoded with it correctly, at the very least (UTF-8/UTF-16
         # both fail), but the encoding might depend on the game language?
@@ -813,7 +813,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
             return search_base + _mk_google_param(ma_tesa.group(1))
         # If even that fails, just use the whole string (except the file
         # extension)
-        return search_base + sel_inst_name.ci_body
+        return search_base + sel_inst_name.fn_body
 
 class Installer_OpenTESA(_Installer_OpenAt_Regex):
     _text = u'TES Alliance...'
@@ -1001,9 +1001,9 @@ class Installer_Espm_Rename(_Installer_Details_Link):
     def Execute(self):
         curName = self.window.get_espm(self.selected)
         newName = self._askText(_(u'Enter new name (without the extension):'),
-                                title=_(u'Rename Plugin'), default=curName.ci_body)
+                                title=_(u'Rename Plugin'), default=curName.fn_body)
         if not newName: return
-        if (newName := newName + curName.ci_ext) in \
+        if (newName := newName + curName.fn_ext) in \
                 self.window.espm_checklist_fns:
             return
         self._installer.setEspmName(curName, newName)
@@ -1135,7 +1135,7 @@ class InstallerArchive_Unpack(_ArchiveOnly):
         # any dialogs we pop up
         to_unpack = []
         for iname, installer in self.idata.sorted_pairs(self.selected):
-            project = iname.ci_body
+            project = iname.fn_body
             if len(self.selected) == 1:
                 project = self._askFilename(_('Unpack %s to Project:') % iname,
                     project, inst_type=bosh.InstallerProject, no_file=True)
@@ -1187,7 +1187,7 @@ class Installer_SyncFromData(_SingleInstallable):
                     self._selected_info.mismatchedFiles)
 
     def Execute(self):
-        was_rar = self._selected_item.ci_ext == u'.rar'
+        was_rar = self._selected_item.fn_ext == u'.rar'
         if was_rar:
             if not self._askYes('\n\n'.join([
                     _('.rar files cannot be modified. Wrye Bash can however '
@@ -1283,7 +1283,7 @@ class _InstallerConverter_Link(_ArchiveOnly):
         for crc_, installers in crcs_dict.items():
             if len(installers) > 1:
                 duplicates.append((crc_, u'  \n* ' + u'  \n* '.join(
-                    sorted(x.ci_key for x in installers))))
+                    sorted(x.fn_key for x in installers))))
         if duplicates:
             msg = _(u'Installers with identical content selected:') + u'\n'
             msg += '\n'.join(sorted(f'CRC: {k:08X}{v}' for k, v in duplicates))
@@ -1383,14 +1383,14 @@ class InstallerConverter_Create(_InstallerConverter_Link):
         if not destArchive: return
         #--Error Checking
         BCFArchive = destArchive = FName(destArchive.stail)
-        if not destArchive or destArchive.ci_ext not in archives.readExts:
+        if not destArchive or destArchive.fn_ext not in archives.readExts:
             self._showWarning(_(u'%s is not a valid archive name.') % destArchive)
             return
         if destArchive not in self.idata:
             self._showWarning(_(u'%s must be in the Bash Installers directory.') % destArchive)
             return
-        if BCFArchive.ci_body[-4:].lower() != u'-bcf':
-            BCFArchive = FName(BCFArchive.ci_body + u'-BCF' + archives.defaultExt)
+        if BCFArchive.fn_body[-4:].lower() != u'-bcf':
+            BCFArchive = FName(BCFArchive.fn_body + u'-BCF' + archives.defaultExt)
         #--List source archives and target archive
         message = _(u'Convert:')
         message += u'\n* ' + u'\n* '.join(sorted(
@@ -1402,8 +1402,8 @@ class InstallerConverter_Create(_InstallerConverter_Link):
                                        allowed_exts={archives.defaultExt})
         if not BCFArchive: return
         #--Error checking
-        if BCFArchive.ci_body[-4:].lower() != u'-bcf':
-            BCFArchive = FName(BCFArchive.ci_body + u'-BCF' + archives.defaultExt)
+        if BCFArchive.fn_body[-4:].lower() != u'-bcf':
+            BCFArchive = FName(BCFArchive.fn_body + u'-BCF' + archives.defaultExt)
         if (conv_path := bass.dirs[u'converters'].join(BCFArchive)).exists(): ##: use converter_dir!!
             #--It is safe to removeConverter, even if the converter isn't overwritten or removed
             #--It will be picked back up by the next refresh.

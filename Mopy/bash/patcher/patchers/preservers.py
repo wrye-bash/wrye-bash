@@ -87,8 +87,8 @@ class APreserver(ImportPatcher):
             all_attrs = chain.from_iterable(self.rec_type_attrs.values())
         self._deep_attrs = any(u'.' in a for a in all_attrs)
         # Split srcs based on CSV extension ##: move somewhere else?
-        self.csv_srcs = [s for s in p_sources if s.ci_ext == '.csv']
-        self.srcs = [s for s in p_sources if s.ci_ext != '.csv']
+        self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
+        self.srcs = [s for s in p_sources if s.fn_ext != '.csv']
         self.loadFactory = self._patcher_read_fact(by_sig=self.rec_type_attrs)
 
     # CSV helpers
