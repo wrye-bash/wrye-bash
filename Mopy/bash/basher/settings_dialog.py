@@ -475,8 +475,8 @@ class LanguagePage(_AScrollablePage):
     def __init__(self, parent, page_desc):
         super(LanguagePage, self).__init__(parent, page_desc)
         # Gather all localizations in the l10n directory
-        all_langs = [f.sbody for f in bass.dirs[u'l10n'].list()
-                     if f.cext == u'.po' and f.csbody[-3:] != u'new']
+        all_langs = [b for f in bass.dirs[u'l10n'].ilist() if f.fn_ext == u'.po'
+                     and (b := f.fn_body)[-3:].lower() != u'new']
         # Insert English since there's no localization file for that
         if u'en_US' not in all_langs:
             all_langs.append(u'en_US')
@@ -595,11 +595,7 @@ class LanguagePage(_AScrollablePage):
     @staticmethod
     def _gather_l10n():
         """Returns a list of all localization files in the l10n directory."""
-        all_l10n_files = []
-        for f in bass.dirs[u'l10n'].list():
-            if f.cext == u'.po':
-                all_l10n_files.append(f.tail)
-        return all_l10n_files
+        return [f for f in bass.dirs[u'l10n'].ilist() if f.fn_ext == u'.po']
 
     def _handle_editor_cfg_btn(self):
         """Internal callback, called when the 'Configure Editor...' button has
@@ -639,7 +635,7 @@ class LanguagePage(_AScrollablePage):
 
     def _populate_l10n_list(self):
         """Clears and repopulates the localization list."""
-        self._l10n_list.lb_set_items([l.s for l in self._gather_l10n()])
+        self._l10n_list.lb_set_items(self._gather_l10n())
 
     def _rename_l10n(self):
         """Renames the currently selected localization file."""
@@ -909,8 +905,7 @@ class BackupsPage(_AFixedPage):
 
     def _populate_backup_list(self):
         """Clears and repopulates the backups list."""
-        all_backups = [x.s for x in self._backup_dir.list()
-                       if barb.is_backup(x)]
+        all_backups = [x for x in self._backup_dir.ilist() if barb.is_backup(x)]
         self._backup_list.lb_set_items(all_backups)
         if not all_backups:
             # If there are no more backups left, we need to disable all

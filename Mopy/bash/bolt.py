@@ -28,6 +28,7 @@ from __future__ import annotations
 import collections
 import copy
 import datetime
+import functools
 import io
 import os
 import pickle
@@ -348,6 +349,99 @@ class CIstr(str):
     def __repr__(self):
         return f'{type(self).__name__}({super(CIstr, self).__repr__()})'
 
+class FName(str):
+    """Class modeling the case insensitive key in data stores, usually a
+    filename. It only accepts an instance of type str in its constructor.
+    FName is-a str as it is being used mostly as a plain str instance, apart
+    from comparisons. It compares case insensitive with both FName and str
+    which has a catch: classes that compare with str will compare with FName,
+    while FName won't compare with those. Special code was added to bolt.Path
+    for that purpose, but there is no way to make this work with types in the
+    wild. Note:
+      - currently we triple storage for each string (self, cache key and
+      fn_body). Apart from bsas code fn_body appears rarely
+      - we added no other special methods like __add__ or slice operations
+      to return FName - too much magic
+      - pickling: eventually we want to pickle strings as string type and
+      convert to internal format on load. Reason: backwards and forward
+      compatibility. Of course on unpickling we must ensure __new__ is called.
+      - __slots__ is not an option for variable length builtin overrides,
+      keep an eye for that.
+    """
+    _filenames_cache: dict[str, FName] = {}
+
+    def __new__(cls, unicode_str: None | FName | str, *args,
+                __cache=_filenames_cache, **kwargs):
+        if (typ := type(unicode_str)) is FName or unicode_str is None:
+            return unicode_str
+        if unicode_str in __cache: return __cache[unicode_str]
+        if typ is not str:
+            raise ValueError(f'{unicode_str!r} type is {typ} - a str is '
+                             f'required')
+        res = __cache[unicode_str] = super(FName, cls).__new__(
+            cls, unicode_str, *args, **kwargs)
+        return res
+
+    @functools.cached_property
+    def _lower(self): return super().lower()
+
+    def lower(self): return self._lower
+
+    @functools.cached_property
+    def fn_ext(self):
+        return FName('' if (dot := self.rfind('.')) == -1 else self[dot:])
+
+    @functools.cached_property
+    def fn_body(self):
+        return FName(self[:-len(self.fn_ext)]) if self.fn_ext else self
+
+    def __reduce__(self):##: [backwards compat] drop in 312+ (GPath_no_norm -> str)
+        return GPath_no_norm, (str(self),)
+
+    def __deepcopy__(self, memodict={}):
+        return self # immutable
+
+    def __copy__(self):
+        return self # immutable
+
+    #--Hash/Compare
+    def __hash__(self):
+        return hash(self._lower)
+    def __eq__(self, other):
+        try:
+            return self._lower == other._lower # (self is other) or self...
+        except AttributeError:
+            # this will blow if other is not a str even if it defines lower
+            return other is not None and self._lower == str.lower(other)
+    def __ne__(self, other):
+        try:
+            return self._lower != other._lower
+        except AttributeError:
+            return other is None or self._lower != str.lower(other)
+    def __lt__(self, other):
+        try:
+            return self._lower < other._lower
+        except AttributeError:
+            return self._lower < str.lower(other)
+    def __ge__(self, other):
+        try:
+            return self._lower >= other._lower
+        except AttributeError:
+            return self._lower >= str.lower(other)
+    def __gt__(self, other):
+        try:
+            return self._lower > other._lower
+        except AttributeError:
+            return self._lower > str.lower(other)
+    def __le__(self, other):
+        try:
+            return self._lower <= other._lower
+        except AttributeError:
+            return self._lower <= str.lower(other)
+    #--repr
+    def __repr__(self):
+        return f'{type(self).__name__}({super().__repr__()})'
+
 class LowerDict(dict):
     """Dictionary that transforms its keys to CIstr instances.
     See: https://stackoverflow.com/a/43457369/281545
@@ -403,6 +497,75 @@ class LowerDict(dict):
     def __repr__(self):
         return f'{type(self).__name__}({super().__repr__()})'
 
+class FNDict(dict):
+    """Dictionary that transforms its keys to FName instances. Only str keys
+    are accepted - FName will do the type check."""
+    __slots__ = () # no __dict__ - that would be redundant
+
+    @staticmethod # because this doesn't make sense as a global function.
+    def _process_args(mapping=(), **kwargs):
+        if hasattr(mapping, u'items'):
+            mapping = mapping.items()
+        return ((FName(k), v) for k, v in chain(mapping, kwargs.items()))
+
+    def __init__(self, mapping=(), **kwargs):
+        # dicts take a mapping or iterable as their optional first argument
+        super().__init__(self._process_args(mapping, **kwargs))
+
+    def __getitem__(self, k):
+        return super().__getitem__(FName(k))
+
+    def __setitem__(self, k, v):
+        return super().__setitem__(FName(k), v)
+
+    def __delitem__(self, k):
+        return super().__delitem__(FName(k))
+
+    def copy(self): # don't delegate w/ super - dict.copy() -> dict :(
+        return type(self)(self)
+
+    def get(self, k, default=None):
+        return super().get(FName(k), default)
+
+    def setdefault(self, k, default=None):
+        return super().setdefault(FName(k), default)
+
+    __no_default = object()
+    def pop(self, k, v=__no_default):
+        if v is FNDict.__no_default:
+            # super will raise KeyError if no default and key does not exist
+            return super().pop(FName(k))
+        return super().pop(FName(k), v)
+
+    def update(self, mapping=(), **kwargs):
+        super().update(self._process_args(mapping, **kwargs))
+
+    def __contains__(self, k):
+        return super().__contains__(FName(k))
+
+    @classmethod
+    def fromkeys(cls, keys, v=None):
+        return super(FNDict, cls).fromkeys((FName(k) for k in keys), v)
+
+    def __repr__(self):
+        return f'{type(self).__name__}({super().__repr__()})'
+
+    def __reduce__(self): #[backwards compat]we 'd rather not save custom types
+        return dict, (dict(self),)
+
+# Forward compat functions - as we only want to pickle std types those stay
+def forward_compat_path_to_fn(di, value_type=lambda x: x):
+    try:
+        return FNDict(('%s' % k, value_type(v)) for k, v in di.items())
+    except ValueError:
+        return FNDict((str('%s' % k), value_type(v)) for k, v in di.items())
+
+def forward_compat_path_to_fn_list(li, ret_type=list):
+    try:
+        return ret_type(map(FName, map(str, li)))
+    except ValueError: # tried to FName(str(path)) where type(path.s) == CIstr
+        return ret_type(map(FName, map(str,  map(str, li))))
+
 class DefaultLowerDict(LowerDict, collections.defaultdict):
     """LowerDict that inherits from defaultdict."""
     __slots__ = () # no __dict__ - that would be redundant
@@ -411,6 +574,22 @@ class DefaultLowerDict(LowerDict, collections.defaultdict):
         # note we can't use LowerDict __init__ directly
         super(LowerDict, self).__init__(default_factory,
                                         self._process_args(mapping, **kwargs))
+
+    def copy(self):
+        return type(self)(self.default_factory, self)
+
+    def __repr__(self):
+        return f'{type(self).__name__}({self.default_factory}, ' \
+               f'{super(collections.defaultdict, self).__repr__()})'
+
+class DefaultFNDict(FNDict, collections.defaultdict):
+    """FNDict that inherits from defaultdict."""
+    __slots__ = () # no __dict__ - that would be redundant
+
+    def __init__(self, default_factory=None, mapping=(), **kwargs):
+        # note we can't use FNDict __init__ directly
+        super(FNDict, self).__init__(default_factory,
+                                     self._process_args(mapping, **kwargs))
 
     def copy(self):
         return type(self)(self.default_factory, self)
@@ -459,9 +638,9 @@ def top_level_dirs(directory): # faster than listdir then isdir
 def top_level_items(directory):
     try:
         _directory, folders, files = next(os.walk(directory))
-    except StopIteration:
+    except StopIteration: # thrown also if directory does not exist
         return [], []
-    return folders, files
+    return map(FName, folders), map(FName, files)
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -628,10 +807,6 @@ class Path(os.PathLike):
         except AttributeError:
             self._sbody = os.path.basename(self.sroot)
             return self._sbody
-    @property
-    def csbody(self):
-        """For alpha\beta.gamma returns beta as string in normalized case."""
-        return self.sbody.lower()
 
     #--Head, tail
     @property
@@ -770,10 +945,11 @@ class Path(os.PathLike):
         norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
-    def list(self):
-        """For directory: Returns list of files."""
+    def ilist(self):
+        """For directory: Return list of files - bit weird this returns
+        FName but let's say Path and FName are friend classes."""
         try:
-            return [GPath_no_norm(x) for x in os.listdir(self._s)]
+            return map(FName, os.listdir(self._s))
         except FileNotFoundError:
             return []
 
@@ -1263,6 +1439,9 @@ class DataDict(object):
     """Mixin class that handles dictionary emulation, assuming that
     dictionary is its '_data' attribute."""
 
+    def __init__(self, data_dict):
+        self._data = data_dict # not final - see for instance InstallersData
+
     def __contains__(self,key):
         return key in self._data
     def __getitem__(self,key):
@@ -1529,10 +1708,10 @@ class Settings(DataDict):
         if self.dictFile:
             res = dictFile.load()
             self.vdata = dictFile.vdata.copy()
-            self._data = dictFile.pickled_data.copy()
+            super().__init__(dictFile.pickled_data.copy())
         else:
             self.vdata = {}
-            self._data = {}
+            super().__init__({})
         self.defaults = {}
 
     def loadDefaults(self, default_settings):
@@ -1707,16 +1886,19 @@ class DataTable(DataDict):
 
     def __init__(self,dictFile):
         """Initialize and read data from dictFile, if available."""
-        self.dictFile = dictFile
+        self.dictFile = dictFile # type: PickleDict
         dictFile.load()
         self.vdata = dictFile.vdata
-        self._data = dictFile.pickled_data
+        self.dictFile.pickled_data = _data = forward_compat_path_to_fn(
+            self.dictFile.pickled_data)
+        super().__init__(_data)
         self.hasChanged = False ##: move to PickleDict
 
     def save(self):
         """Saves to pickle file."""
         dictFile = self.dictFile
         if self.hasChanged and not dictFile.readOnly:
+            dictFile.pickled_data = self._data # note we reassign pickled_data
             self.hasChanged = not dictFile.save()
 
     def getItem(self,row,column,default=None):

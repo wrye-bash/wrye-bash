@@ -84,7 +84,7 @@ class Patcher(Abstract_Patcher):
         mod, but won't alter it. If adds record, should first convert it to
         long fids."""
         if not self.isActive: return # TODO(ut) raise
-        if (modFile.fileInfo.ci_key not in self.patchFile.merged_or_loaded and
+        if (modFile.fileInfo.fn_key not in self.patchFile.merged_or_loaded and
                 not self._scan_inactive):
             return # Skip if inactive and inactives should not be scanned
         self.scanModFile(modFile, progress)

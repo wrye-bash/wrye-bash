@@ -38,7 +38,7 @@ from copy import deepcopy
 
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
     ConditionFunc, ConditionNot, ConditionOr, is_regex
-from .bolt import deprint, LowerDict, Path, AFile
+from .bolt import deprint, LowerDict, Path, AFile, FNDict
 from .exception import LexerError, ParserError, BoltError, EvalError
 
 # Try to use the C version (way faster), if that isn't possible fall back to
@@ -77,7 +77,7 @@ class LOOTParser(object):
             must always exist.
         :type taglist_path: Path
         """
-        self._cached_masterlist = {}
+        self._cached_masterlist = FNDict()
         self._cached_regexes = {}
         self._cached_merges = {}
         deprint(u'Using these LOOT paths:')
@@ -144,10 +144,9 @@ class LOOTParser(object):
                 deprint(u'Error while evaluating LOOT condition',
                     traceback=True)
                 return set(), set()
-        plugin_s = plugin_name.s
-        if plugin_s in self._cached_merges:
-            return get_resolved_tags(self._cached_merges[plugin_s])
-        return get_resolved_tags(self._perform_merge(plugin_s))
+        if plugin_name in self._cached_merges:
+            return get_resolved_tags(self._cached_merges[plugin_name])
+        return get_resolved_tags(self._perform_merge(plugin_name))
 
     def load_lists(self, masterlist_path, userlist_path=None,
                    catch_errors=True):
@@ -182,15 +181,14 @@ class LOOTParser(object):
 
         :param plugin_name: The name of the plugin whose dirty info should be
             checked.
-        :type plugin_name: Path
+        :type plugin_name: FName
         :param mod_infos: bosh.modInfos. Must be up to date."""
         def check_dirty(res_entry):
             return (res_entry and mod_infos[plugin_name].cached_mod_crc()
                     in res_entry.dirty_crcs)
-        plugin_s = plugin_name.s
-        if plugin_s in self._cached_merges:
-            return check_dirty(self._cached_merges[plugin_s])
-        return check_dirty(self._perform_merge(plugin_s))
+        if plugin_name in self._cached_merges:
+            return check_dirty(self._cached_merges[plugin_name])
+        return check_dirty(self._perform_merge(plugin_name))
 
     def _perform_merge(self, plugin_s):
         """Checks the masterlist and all regexes for a match with the spcified
@@ -665,9 +663,9 @@ def _merge_lists(first_list, second_list):
     entries are simply copied over instead of merged.
 
     :param first_list: The list to merge information into.
-    :type first_list: LowerDict[str, _PluginEntry]
+    :type first_list: FNDict[str, _PluginEntry]
     :param second_list: The list to merge information from.
-    :type second_list: LowerDict[str, _PluginEntry]"""
+    :type second_list: FNDict[str, _PluginEntry]"""
     for plugin_name, second_entry in second_list.items():
         try:
             first_list[plugin_name].merge_with(second_entry)
@@ -676,14 +674,14 @@ def _merge_lists(first_list, second_list):
             first_list[plugin_name] = second_entry
 
 def _parse_list(list_path):
-    """Parses the specified masterlist or userlist and returns a LowerDict
+    """Parses the specified masterlist or userlist and returns a FNDict
     mapping plugins to _PluginEntry instances. To parse the YAML, PyYAML is
     used - the C version if possible.
 
     :param list_path: The path to the list that should be parsed.
     :type list_path: Path
-    :return: A LowerDict representing the list's contents.
-    :rtype: LowerDict[str, _PluginEntry]"""
+    :return: A FNDict representing the list's contents.
+    :rtype: FNDict[str, _PluginEntry]"""
     with list_path.open(u'r', encoding=u'utf-8') as ins:
         list_contents = yaml.load(ins, Loader=SafeLoader)
     # The list contents may be None if the list file exists, but is an entirely
@@ -692,6 +690,6 @@ def _parse_list(list_path):
     # a long string of random characters), return an empty dict as well.
     if not isinstance(list_contents, dict):
         deprint(f'Masterlist file {list_path} is empty or invalid')
-        return LowerDict()
-    return LowerDict({p[u'name']: _PluginEntry(p) for p
-                      in list_contents.get(u'plugins', ())})
+        return FNDict()
+    return FNDict({p[u'name']: _PluginEntry(p) for p in
+                   list_contents.get(u'plugins', ())})

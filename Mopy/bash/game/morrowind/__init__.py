@@ -22,7 +22,6 @@
 # =============================================================================
 """GameInfo override for TES III: Morrowind."""
 import struct as _struct
-from collections import defaultdict
 
 from ..patch_game import GameInfo, PatchGame
 from .. import WS_COMMON
@@ -41,7 +40,7 @@ class MorrowindGameInfo(PatchGame):
     game_detect_includes = [u'Morrowind.exe']
     game_detect_excludes = WS_COMMON
     version_detect_file = u'Morrowind.exe'
-    master_file = bolt.GPath_no_norm(u'Morrowind.esm')
+    master_file = bolt.FName(u'Morrowind.esm')
     mods_dir = u'Data Files'
     taglist_dir = u'Morrowind'
     loot_dir = u'Morrowind'
@@ -73,7 +72,7 @@ class MorrowindGameInfo(PatchGame):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
-        redate_dict = defaultdict(lambda: 1054674000, { # '2003-06-04'
+        redate_dict = bolt.DefaultFNDict(lambda: 1054674000, { # '2003-06-04'
             'Morrowind.bsa': 1020200400, # '2002-05-01'
             'Tribunal.bsa': 1036533600,  # '2002-11-06'
             'Bloodmoon.bsa': 1054587600, # '2003-06-03'

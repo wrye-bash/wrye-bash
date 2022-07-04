@@ -46,7 +46,7 @@ import functools
 from enum import Enum
 
 from . import bass, bush, env, bosh # for modInfos
-from .bolt import GPath, Path, LooseVersion
+from .bolt import GPath, Path, LooseVersion, FName
 from .exception import XMLParsingError
 from .fomod_schema import schema_string
 from .load_order import cached_is_active
@@ -225,8 +225,8 @@ class _FomodFileInfo(object):
     """Stores information about a single file that is going to be installed."""
     __slots__ = (u'file_source', u'file_destination', u'file_priority')
 
-    def __init__(self, file_source, file_destination, file_priority):
-        # type: (Path, Path, int) -> None
+    def __init__(self, file_source: Path, file_destination: Path,
+                 file_priority: int) -> None:
         """Creates a new _FomodFileInfo with the specified properties.
 
         :param file_source: The source path.
@@ -557,7 +557,7 @@ class FomodInstaller(object):
     }
 
     def _test_file_condition(self, condition):
-        test_file = GPath(condition.get(u'file'))
+        test_file = FName(condition.get('file'))
         target_type = _str_to_fs[condition.get('state')]
         # Check if it's missing, ghosted or (in)active
         if not self.dst_dir.join(test_file).exists():

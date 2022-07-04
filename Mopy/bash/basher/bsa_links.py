@@ -25,7 +25,7 @@ points to BashFrame.bsaList singleton."""
 
 from .. import archives, bass
 from ..balt import ItemLink, Progress
-from ..bolt import GPath, SubProgress
+from ..bolt import FName, SubProgress
 from ..gui import copy_text_to_clipboard
 
 __all__ = [u'BSA_ExtractToProject', u'BSA_ListContents']
@@ -41,20 +41,18 @@ class BSA_ExtractToProject(ItemLink):
     def Execute(self):
         selected_bsas = [x for x in self.iselected_infos()]
         if len(selected_bsas) == 1:
-            bsa_path = selected_bsas[0].abs_path
-            result = self._askText(
-                _(u'Extract %s to Project:') % bsa_path.tail,
-                default=bsa_path.sbody)
+            fn_bsa = selected_bsas[0].fn_key
+            result = self._askText(_(u'Extract %s to Project:') % fn_bsa,
+                                   default=fn_bsa.fn_body)
             if not result: return
             # Error checking
-            project = GPath(result).tail
-            if project.cext in archives.readExts:
+            if (result := FName(result)).fn_ext in archives.readExts:
                 self._showWarning(_(u'%s is not a valid project name.') %
                                   result)
                 return
-            to_unpack = [(project.s, selected_bsas[0])]
+            to_unpack = [(result, selected_bsas[0])]
         else:
-            to_unpack = [(bsa_inf.abs_path.sbody, bsa_inf) for bsa_inf
+            to_unpack = [(bsa_inf.fn_key.fn_body, bsa_inf) for bsa_inf
                          in selected_bsas]
         # More error checking
         # TODO(inf) Maybe create bosh.installers_data singleton?
@@ -98,7 +96,7 @@ class BSA_ListContents(ItemLink):
         full_text = u'=== Selected BSA Contents:'
         full_text += u'\n[spoiler]'
         for bsa_inf in self.iselected_infos():
-            full_text += f'\n\n* {bsa_inf.ci_key}:\n'
+            full_text += f'\n\n* {bsa_inf.fn_key}:\n'
             full_text += u'\n'.join(sorted(bsa_inf.assets))
         full_text += u'\n[/spoiler]'
         copy_text_to_clipboard(full_text)

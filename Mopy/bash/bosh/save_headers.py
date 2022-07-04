@@ -44,7 +44,7 @@ from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_str_int_delim, unpack_str16_delim, unpack_str_byte_delim, \
     unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short, \
     pack_float, pack_string, pack_str8, pack_bzstr8, structs_cache, \
-    struct_error, remove_newlines, deprint
+    struct_error, remove_newlines, deprint, FName
 from ..exception import SaveHeaderError, AbstractError
 
 # Utilities -------------------------------------------------------------------
@@ -120,9 +120,8 @@ class SaveFileHeader(object):
             append_master(unpack_str8(ins))
 
     def _decode_masters(self):
-        self.masters = [bolt.GPath_no_norm(decoder(
-            x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
-            for x in self.masters]
+        self.masters = [FName(decoder(x, bolt.pluginEncoding,
+            avoidEncodings=(u'utf8', u'utf-8'))) for x in self.masters]
 
     def calc_time(self): pass
 
@@ -172,10 +171,14 @@ class SaveFileHeader(object):
             oldMasters.append(unpack_str16(ins))
         #--Write new masters
         pack_byte(out, len(self.masters))
-        for master in self.masters:
-            pack_short(out, len(master))
-            out.write(encode(master.s))
+        self._encode_masters(out, self.masters)
         return oldMasters
+
+    def _encode_masters(self, out, masters_fns):
+        for fn_master in masters_fns:
+            encoded = encode(fn_master)
+            pack_short(out, len(encoded))
+            out.write(encoded)
 
     def _master_block_size(self):
         return 1 + sum(len(x) + 2 for x in self.masters)
@@ -232,7 +235,7 @@ class OblivionSaveHeader(SaveFileHeader):
     def __write_masters_ob(self, out):
         pack_byte(out, len(self.masters))
         for master in self.masters:
-            pack_str8(out, encode(master.s))
+            pack_str8(out, encode(master))
 
     def dump_header(self, out):
         out.write(self.__class__.save_magic)
@@ -354,12 +357,10 @@ class SkyrimSaveHeader(SaveFileHeader):
                                   f'not as expected ({mastersSize}).')
 
     def _decode_masters(self):
-        self.masters_regular = [bolt.GPath_no_norm(decoder(
-            x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
-            for x in self.masters_regular]
-        self.masters_esl = [bolt.GPath_no_norm(decoder(
-            x, bolt.pluginEncoding, avoidEncodings=(u'utf8', u'utf-8')))
-            for x in self.masters_esl]
+        self.masters_regular = [FName(decoder(x, bolt.pluginEncoding,
+            avoidEncodings=(u'utf8', u'utf-8'))) for x in self.masters_regular]
+        self.masters_esl = [FName(decoder(x, bolt.pluginEncoding,
+            avoidEncodings=(u'utf8', u'utf-8'))) for x in self.masters_esl]
 
     def _sse_compress(self, to_compress):
         """Compresses the specified data using either LZ4 or zlib, depending on
@@ -523,14 +524,10 @@ class SkyrimSaveHeader(SaveFileHeader):
         # encode here, since we may be writing to BytesIO instead of a file
         num_regulars = len(regular_masters)
         pack_byte(out, num_regulars)
-        for master in self.masters[:num_regulars]:
-            pack_short(out, len(master))
-            out.write(encode(master.s))
+        self._encode_masters(out, self.masters[:num_regulars])
         if has_esl_block:
             pack_short(out, len(esl_masters))
-            for master in self.masters[num_regulars:]:
-                pack_short(out, len(master))
-                out.write(encode(master.s))
+            self._encode_masters(out, self.masters[num_regulars:])
         return regular_masters + esl_masters
 
     def _master_block_size(self):
@@ -647,7 +644,7 @@ class FalloutNVSaveHeader(SaveFileHeader):
         for master in self.masters:
             pack_short(out, len(master))
             _pack_c(out, b'|')
-            out.write(encode(master.s))
+            out.write(encode(master))
             _pack_c(out, b'|')
         return oldMasters
 

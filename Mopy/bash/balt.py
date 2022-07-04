@@ -956,8 +956,7 @@ class UIList(wx.Panel):
         specified.
         :param itemDex: the index of the item in the list - must be given if
         item is None
-        :param item: a bolt.Path or an int (Masters) or a string (People),
-        the key in self.data
+        :param item: an FName or an int (Masters), the key in self.data
         """
         insert = False
         gl_set_item = self.__gList._native_widget.SetItem
@@ -972,11 +971,13 @@ class UIList(wx.Panel):
                 insert = True
         else: # no way we're inserting with a None item
             item = self.GetItem(itemDex)
+        ##: HACK or workaround for installer labels giving back Paths
+        str_label = '%s' % self.labels[allow_cols[0]](self, item)
         if insert:
             # We're inserting a new item, so we need special handling for the
             # first SetItem call - see InsertListCtrlItem
             self.__gList.InsertListCtrlItem(
-                itemDex, self.labels[allow_cols[0]](self, item), item,
+                itemDex, str_label, item,
                 decorate_cb=partial(self.__setUI, item, target_ini_setts))
         else:
             # The item is already in the UIList, so we only need to redecorate
@@ -985,10 +986,12 @@ class UIList(wx.Panel):
             self.__setUI(item, target_ini_setts, gItem)
             # Piggyback off the SetItem call we need for __setUI to also set
             # the first column's text
-            gItem.SetText(self.labels[allow_cols[0]](self, item))
+            gItem.SetText(str_label)
             gl_set_item(gItem)
         for col_index, col in enumerate(allow_cols[1:], start=1):
-            gl_set_item(itemDex, col_index, self.labels[col](self, item))
+            ##: HACK, same as above
+            gl_set_item(itemDex, col_index, '%s' % self.labels[col](
+                self, item))
 
     class _ListItemFormat(object):
         def __init__(self):
@@ -1410,7 +1413,7 @@ class UIList(wx.Panel):
     #--Item/Index Translation -------------------------------------------------
     def GetItem(self,index):
         """Return item (key in self.data_store) for specified list index.
-        :rtype: bolt.Path | str | int
+        :rtype: bolt.FName | int
         """
         return self.__gList.FindItemAt(index)
 
@@ -1552,16 +1555,16 @@ class UIList(wx.Panel):
 
     def hide(self, items):
         hidden_ = []
-        for ci_key_, inf in items:
+        for fnkey, inf in items:
             destDir = inf.get_hide_dir()
-            if destDir.join(ci_key_).exists():
+            if destDir.join(fnkey).exists():
                 message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % ci_key_)
+                             u'files directory. Overwrite it?') % fnkey)
                 if not askYes(self, message, _(u'Hide Files')): continue
             #--Do it
             with BusyCursor():
-                self.data_store.move_info(ci_key_, destDir)
-                hidden_.append(ci_key_)
+                self.data_store.move_info(fnkey, destDir)
+                hidden_.append(fnkey)
         #--Refresh stuff
         self.data_store.delete_refresh(hidden_, None, check_existence=True)
 
@@ -1662,7 +1665,7 @@ class Link(object):
         the column clicked on or the first column. Set in Links.popup_menu().
         :type window: UIList | wx.Panel | gui.buttons.Button | DnDStatusBar |
             gui.misc_components.CheckListBox
-        :type selection: list[Path | str | int] | int | None
+        :type selection: list[FName | int] | int | None
         """
         self.window = window
         self.selected = selection
@@ -2092,9 +2095,15 @@ class TreeCtrl(_AComponent):
         root = self._native_widget.AddRoot(title)
         self._native_widget.Bind(wx.EVT_MOTION, self.OnMotion)
         for item, subitems in items_dict.items():
-            child = self._native_widget.AppendItem(root, item.s)
+            if not isinstance(item, str):
+                deprint(f'{item!r} passed')
+                item = '%s' % item
+            child = self._native_widget.AppendItem(root, item)
             for subitem in subitems:
-                self._native_widget.AppendItem(child, subitem.s)
+                if not isinstance(subitem, str):
+                    deprint(f'{subitem!r} passed')
+                    subitem = '%s' % subitem
+                self._native_widget.AppendItem(child, subitem)
             self._native_widget.Expand(child)
 
     def OnMotion(self, event): return

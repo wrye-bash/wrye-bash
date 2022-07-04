@@ -24,7 +24,7 @@ from . import bEnableWizard
 from .constants import installercons
 from .. import bass, balt, bosh, bolt, bush, env, load_order
 from ..balt import colors
-from ..bolt import GPath_no_norm, top_level_dirs
+from ..bolt import FName, top_level_dirs
 from ..bosh import faces, ModInfo, InstallerProject
 from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
@@ -120,7 +120,7 @@ class ImportFaceDialog(DialogWindow):
         bass.settings[u'bash.faceImport.flags'] = int(pc_flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo, self.fdata[item],
                                         pc_flags)
-        balt.showOk(self, _(u'Face imported.'), self.fileInfo.ci_key)
+        balt.showOk(self, _(u'Face imported.'), self.fileInfo.fn_key)
         self.accept_modal()
 
 #------------------------------------------------------------------------------
@@ -131,7 +131,7 @@ class CreateNewProject(DialogWindow):
         super(CreateNewProject, self).__init__(parent)
         # Build a list of existing directories. The text control will use this
         # to change background color when name collisions occur.
-        self.existingProjects = {GPath_no_norm(x) for x in ##: use idata?
+        self.existingProjects = {x for x in  ##: use idata?
                                  top_level_dirs(bass.dirs[u'installers'])}
         #--Attributes
         self._project_name = TextField(self, _('Project Name Goes Here'))
@@ -186,16 +186,15 @@ class CreateNewProject(DialogWindow):
         self.OnCheckProjectsColorTextCtrl(self._project_name.text_content)
 
     def OnCheckProjectsColorTextCtrl(self, new_text):
-        projectName = bolt.GPath(new_text)
-        if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
+        projectName = FName(new_text)
+        if existing := projectName in self.existingProjects:
             self._project_name.set_background_color(colors['default.warn'])
             self._project_name.tooltip = _('There is already a project with '
                                            'that name!')
-            self.ok_button.enabled = False
         else:
             self._project_name.reset_background_color()
             self._project_name.tooltip = None
-            self.ok_button.enabled = True
+        self.ok_button.enabled = not existing
 
     def OnCheckBoxChange(self, is_checked=None):
         """Change the DialogWindow icon to represent what the project status
@@ -256,7 +255,7 @@ class CreateNewProject(DialogWindow):
             tempProject.join(u'Docs').makedirs()
         # HACK: shellMove fails unless it has at least one file - means
         # creating an empty project fails silently unless we make one
-        has_files = bool(tempProject.list())
+        has_files = bool([*tempProject.ilist()])
         if not has_files: tempProject.join(u'temp_hack').makedirs()
         # Move into the target location
         # TODO(inf) de-wx! Investigate further
@@ -311,7 +310,7 @@ class CreateNewPlugin(DialogWindow):
         self._master_search.on_text_changed.subscribe(self._handle_search)
         self._masters_box = CheckListBox(self)
         # Initially populate the masters list, checking only the game master
-        self._masters_dict = {m.s: m == bush.game.master_file for m in
+        self._masters_dict = {m: m == bush.game.master_file for m in
                               load_order.cached_lo_tuple()}
         self._masters_box.set_all_items(self._masters_dict)
         # Only once that's done do we subscribe - avoid all the initial events
@@ -427,7 +426,7 @@ class CreateNewPlugin(DialogWindow):
         pw.data_store.create_new_mod(chosen_name, windowSelected,
             esm_flag=self._esm_flag.is_checked,
             esl_flag=self._esl_flag.is_checked,
-            wanted_masters=[bolt.GPath(m) for m in self._chosen_masters])
+            wanted_masters=[*map(FName, self._chosen_masters)])
         if windowSelected:  # assign it the group of the first selected mod
             mod_group = pw.data_store.table.getColumn(u'group')
             mod_group[chosen_name] = mod_group.get(windowSelected[0], u'')

@@ -174,7 +174,7 @@ class _RecGroupDict(dict):
                            f'{sig_to_str(top_grup_sig)}')
         topClass = self._mod_file.loadFactory.getTopClass(top_grup_sig)
         if topClass is None:
-            raise ModError(self._mod_file.fileInfo.ci_key,
+            raise ModError(self._mod_file.fileInfo.fn_key,
                 f'Failed to retrieve top class for {sig_to_str(top_grup_sig)};'
                 f' load factory is {self._mod_file.loadFactory!r}')
         self[top_grup_sig] = topClass(TopGrupHeader(0, top_grup_sig, 0),
@@ -201,7 +201,7 @@ class ModFile(object):
         """Load file."""
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
-        with ModReader(self.fileInfo.ci_key, self.fileInfo.getPath().open(
+        with ModReader(self.fileInfo.fn_key, self.fileInfo.getPath().open(
                 u'rb')) as ins:
             insRecHeader = ins.unpackRecHeader
             # Main header of the mod file - generally has 'TES4' signature
@@ -217,7 +217,7 @@ class ModFile(object):
                 #--Get record info and handle it
                 header = insRecHeader()
                 if not header.is_top_group_header:
-                    raise ModError(self.fileInfo.ci_key, u'Improperly grouped file.')
+                    raise ModError(self.fileInfo.fn_key, u'Improperly grouped file.')
                 top_grup_sig = header.label
                 topClass = self.loadFactory.getTopClass(top_grup_sig)
                 try:
@@ -302,7 +302,7 @@ class ModFile(object):
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
         if self.tes4.num_masters > bush.game.Esp.master_limit:
-            raise ModError(self.fileInfo.ci_key,
+            raise ModError(self.fileInfo.fn_key,
                            f'Attempting to write a file with too many '
                            f'masters (>{bush.game.Esp.master_limit}).')
         outPath = outPath or self.fileInfo.getPath()
@@ -336,7 +336,7 @@ class ModFile(object):
 
     def augmented_masters(self):
         """List of plugin masters with the plugin's own name appended."""
-        return [*self.tes4.masters, self.fileInfo.ci_key]
+        return [*self.tes4.masters, self.fileInfo.fn_key]
 
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
@@ -375,7 +375,7 @@ class ModFile(object):
         for block in self.tops.values():
             block.updateMasters(masters_set.add)
         # The file itself is always implicitly available, so discard it here
-        masters_set.discard(self.fileInfo.ci_key)
+        masters_set.discard(self.fileInfo.fn_key)
         return masters_set.getOrdered()
 
     def _index_mgefs(self):
@@ -451,7 +451,7 @@ class ModHeaderReader(object):
     def formids_in_esl_range(mod_info):
         """Checks if all FormIDs in the specified mod are in the ESL range."""
         num_masters = len(mod_info.masterNames)
-        with ModReader(mod_info.ci_key, mod_info.abs_path.open(u'rb')) as ins:
+        with ModReader(mod_info.fn_key, mod_info.abs_path.open(u'rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
             try:
@@ -487,10 +487,10 @@ class ModHeaderReader(object):
         wanted_encoding = bolt.pluginEncoding
         avoided_encodings = (u'utf8', u'utf-8')
         minf_size = mod_info.fsize
-        minf_ci_key = mod_info.ci_key
+        plugin_fn = mod_info.fn_key
         sh_unpack = Subrecord.sub_header_unpack
         sh_size = Subrecord.sub_header_size
-        main_progress_msg = _(u'Loading: %s') % minf_ci_key
+        main_progress_msg = _(u'Loading: %s') % plugin_fn
         # Where we'll store all the collected record data
         group_records = defaultdict(lambda: defaultdict(tuple))
         # The current top GRUP label - starts out as TES4/TES3
@@ -506,7 +506,7 @@ class ModHeaderReader(object):
         #skip_eids = tg_label not in records_with_eids
         with mod_info.abs_path.open(u'rb') as ins:
             initial_bytes = ins.read()
-        with FastModReader(minf_ci_key, initial_bytes) as ins:
+        with FastModReader(plugin_fn, initial_bytes) as ins:
             # More local methods to avoid repeated dot access
             ins_tell = ins.tell
             ins_seek = ins.seek
@@ -542,7 +542,7 @@ class ModHeaderReader(object):
                             new_rec_data = zlib_decompress(ins_read(
                                 blob_siz - 4))
                         except zlib_error:
-                            if minf_ci_key == u'FalloutNV.esm':
+                            if plugin_fn == u'FalloutNV.esm':
                                 # Yep, FalloutNV.esm has a record with broken
                                 # zlib data. Just skip it.
                                 ins_seek(next_record)
@@ -554,7 +554,7 @@ class ModHeaderReader(object):
                                 f'{size_check}, got {len(new_rec_data)}.')
                     else:
                         new_rec_data = ins_read(blob_siz)
-                    recs = FastModReader(minf_ci_key, new_rec_data)
+                    recs = FastModReader(plugin_fn, new_rec_data)
                     recs_seek = recs.seek
                     recs_read = recs.read
                     recs_tell = recs.tell
@@ -565,7 +565,7 @@ class ModHeaderReader(object):
                         read_data = recs_read(sh_size)
                         if len(read_data) != sh_size:
                             raise ModReadError(
-                                minf_ci_key, [_rsig, u'SUB_HEAD'],
+                                plugin_fn, [_rsig, u'SUB_HEAD'],
                                 recs_tell() - len(read_data), recs_size)
                         mel_sig, mel_size = sh_unpack(read_data)
                         # Extended storage - very rare, so don't optimize
@@ -601,7 +601,7 @@ class ModHeaderReader(object):
         # We want to read only the children of these, so skip their tops
         interested_sigs = {b'CELL', b'WRLD'}
         tops_to_skip = interested_sigs | {bush.game.Esp.plugin_header_sig}
-        with ModReader(mod_info.ci_key, mod_info.abs_path.open('rb')) as ins:
+        with ModReader(mod_info.fn_key, mod_info.abs_path.open('rb')) as ins:
             ins_at_end = ins.atEnd
             ins_unpack_rec_header = ins.unpackRecHeader
             try:

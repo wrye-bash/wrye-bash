@@ -25,7 +25,7 @@ import io
 from .. import get_meta_value, iter_games, iter_resources, \
     resource_to_displayName, set_game
 from ... import bush
-from ...bolt import GPath, LogFile, Rounder
+from ...bolt import LogFile, Rounder
 from ...bosh.cosaves import get_cosave_types, xSECosave, _xSEHeader, \
     _xSEChunk, _xSEModListChunk, _xSEChunkPLGN, _Remappable, PluggyCosave
 from ...exception import AbstractError
@@ -111,7 +111,7 @@ class ATestACosave(object):
             test_log = LogFile(io.StringIO())
             # This wouldn't work on SSE/FO4, but save_masters_ is only used for
             # ARVR and STVR, which don't exist in SKSE/F4SE
-            sv_masters = [GPath(m) for m in curr_cosave.get_master_list()]
+            sv_masters = curr_cosave.get_master_list()
             curr_cosave.dump_to_log(test_log, sv_masters)
             assert isinstance(test_log.out.getvalue(), str)
             # Remapping should make the new filename appear in the log

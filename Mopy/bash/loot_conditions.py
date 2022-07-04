@@ -33,7 +33,7 @@ import os
 import re
 
 from . import bass, bush ##: drop the bush import!
-from .bolt import GPath, Path, deprint, LooseVersion
+from .bolt import FName, Path, deprint, LooseVersion
 from .env import get_file_version
 from .exception import AbstractError, EvalError, FileError
 ##: below is too tight coupling with Bash internals - pass those as
@@ -153,9 +153,9 @@ def _fn_active(path_or_regex):
         # Regex means we have to look at each active plugin - plugins can
         # obviously only be in Data, no need to process the path here
         matches_regex = re.compile(path_or_regex).match
-        return any(map(matches_regex, (p.s for p in cached_active_tuple())))
+        return any(map(matches_regex, cached_active_tuple()))
     else:
-        return cached_is_active(GPath(path_or_regex))
+        return cached_is_active(FName(path_or_regex))
 
 def _fn_checksum(file_path, expected_crc):
     # type: (str, int) -> bool
@@ -191,16 +191,15 @@ def _fn_file(path_or_regex):
     else:
         return _process_path(path_or_regex).exists()
 
-def _fn_is_master(file_path):
+def _fn_is_master(file_name):
     # type: (str) -> bool
-    """Takes a file path. Returns True iff a plugin with the specified name
+    """Takes a file name. Returns True iff a plugin with the specified name
     exists and is treated as a master by the currently managed game.
 
-    :param file_path: The file path to check."""
-    plugin_path = GPath(file_path)
+    :param file_name: The file path to check."""
     from .bosh import modInfos
     # Need to check if it's on disk first, otherwise modInfos[x] errors
-    return plugin_path in modInfos and modInfos[plugin_path].in_master_block()
+    return file_name in modInfos and modInfos[file_name].in_master_block()
 
 def _fn_many(path_regex):
     # type: (str) -> bool
@@ -231,7 +230,7 @@ def _fn_many_active(path_regex):
     # Check if we have more than one matching active plugin
     matching_count = 0
     for p in cached_active_tuple():
-        if matches_regex(p.s):
+        if matches_regex(p):
             matching_count += 1
             if matching_count > 1:
                 return True
@@ -303,7 +302,7 @@ def _fn_version(file_path, expected_ver, comparison):
         # Read version from the description
         from .bosh import modInfos
         actual_ver = LooseVersion(
-            modInfos.getVersion(file_path.tail) or '0')
+            modInfos.getVersion(file_path.stail) or '0')
     elif file_path.cext in ('.exe', '.dll'):
         # Read version from executable fields
         actual_ver = LooseVersion(_read_binary_ver(file_path.s))
@@ -391,7 +390,7 @@ def _read_binary_ver(binary_path):
 def _iter_dir(parent_dir):
     """Takes a path and returns an iterator of the filenames (as strings) of
     files in that folder. .ghost extensions will be chopped off."""
-    return (f.sroot if f.cext == u'.ghost' else f.s for f in parent_dir.list())
+    return (f.fn_body if f.fn_ext == '.ghost' else f for f in parent_dir.ilist())
 
 class Comparison(object):
     """Implements a comparison operator. Takes a unicode string containing the

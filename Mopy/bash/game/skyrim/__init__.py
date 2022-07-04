@@ -41,7 +41,7 @@ class SkyrimGameInfo(PatchGame):
     # Set to this because TESV.exe also exists for Enderal
     game_detect_includes = [u'SkyrimLauncher.exe']
     version_detect_file = u'TESV.exe'
-    master_file = bolt.GPath_no_norm(u'Skyrim.esm')
+    master_file = bolt.FName(u'Skyrim.esm')
     taglist_dir = u'Skyrim'
     loot_dir = u'Skyrim'
     boss_game_name = u'Skyrim'

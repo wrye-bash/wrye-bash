@@ -20,7 +20,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
+from __future__ import annotations
 import time
 from collections import defaultdict, Counter
 from itertools import chain
@@ -28,7 +28,7 @@ from operator import attrgetter
 from .. import bolt # for type hints
 from .. import bush # for game etc
 from .. import load_order, bass
-from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url
+from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url, FName
 from ..brec import MreRecord, RecHeader
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
@@ -37,7 +37,7 @@ from ..mod_files import ModFile, LoadFactory
 # the currently executing patch set in _Mod_Patch_Update before showing the
 # dialog - used in getAutoItems, to get mods loading before the patch
 ##: HACK ! replace with method param once gui_patchers are refactored
-executing_patch = None # type: bolt.Path
+executing_patch: bolt.FName | None = None
 
 class PatchFile(ModFile):
     """Base class of patch files. Wraps an executing bashed Patch."""
@@ -117,7 +117,7 @@ class PatchFile(ModFile):
             if version:
                 message += _(u'%s  [Version %s]') % (mname,version)
             else:
-                message += mname.s
+                message += mname
             log(message)
         #--Load Mods and error mods
         if self.pfile_aliases:
@@ -155,10 +155,10 @@ class PatchFile(ModFile):
         self.patcher_mod_skipcount = defaultdict(Counter)
         #--Mods
         # checking for files to include in patch, investigate
-        self.all_plugins = load_order.cached_lower_loading(modInfo.ci_key)
+        self.all_plugins = load_order.cached_lower_loading(modInfo.fn_key)
         # exclude moding esms (those tend to be huge)
-        b, e = bush.game.master_file.csbody, bush.game.master_file.cext
-        excluded = {bolt.GPath_no_norm(f'{b}_{ver}{e}') for ver in
+        b, e = bush.game.master_file.fn_body, bush.game.master_file.fn_ext
+        excluded = {FName(f'{b}_{ver}{e}') for ver in
                     p_file_minfos.voAvailable}
         self.all_plugins = [k for k in self.all_plugins if k not in excluded]
         loadMods = [m for m in self.all_plugins
@@ -180,7 +180,7 @@ class PatchFile(ModFile):
         new record inside the BP's FormID space), adds it to this patch and
         returns it."""
         if new_rec_fid is None:
-            new_rec_fid = (self.fileInfo.ci_key, self.tes4.getNextObject())
+            new_rec_fid = (self.fileInfo.fn_key, self.tes4.getNextObject())
         new_rec = MreRecord.type_class[new_rec_sig](RecHeader(new_rec_sig))
         new_rec.longFids = True
         new_rec.fid = new_rec_fid
@@ -304,7 +304,7 @@ class PatchFile(ModFile):
         # save the patch since it trims records and sets up the necessary
         # masters. Without it, we may blow up due to being unable to resolve
         # FormIDs while saving.
-        self._log_header(log, self.fileInfo.ci_key)
+        self._log_header(log, self.fileInfo.fn_key)
         # Run buildPatch on each patcher
         self.keepIds |= self.mergeIds
         if self._patcher_instances:

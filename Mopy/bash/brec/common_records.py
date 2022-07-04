@@ -35,7 +35,7 @@ from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID
 from .. import bolt, exception
-from ..bolt import decoder, GPath, struct_pack, structs_cache, \
+from ..bolt import decoder, FName, struct_pack, structs_cache, \
     remove_newlines, to_unix_newlines
 from ..exception import StateError
 
@@ -67,7 +67,7 @@ class MreHeaderBase(MelRecord):
                 # we want to use automatic encoding detection
                 master_name = decoder(bolt.cstrip(ins.read(size_, *debug_strs)),
                                       avoidEncodings=(u'utf8', u'utf-8'))
-                record.masters.append(GPath(master_name))
+                record.masters.append(FName(master_name))
             else: # sub_type == 'DATA'
                 # DATA is the size for TES3, but unknown/unused for later games
                 record.master_sizes.append(
@@ -78,7 +78,7 @@ class MreHeaderBase(MelRecord):
             for master_name, master_size in zip(record.masters,
                                                 record.master_sizes):
                 MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
-                    out, master_name.s)
+                    out, master_name)
                 MelBase(b'DATA', '').packSub(
                     out, struct_pack(u'Q', master_size))
 

@@ -108,7 +108,7 @@ class ModSizeError(ModError):
     def __init__(self, in_name, debug_str, expected_sizes, actual_size):
         """Indicates that a record or subrecord has the wrong size.
 
-        :type in_name: bolt.Path
+        :type in_name: bolt.FName
         :type debug_str: str|bytes|tuple[str|bytes]
         :type expected_sizes: tuple[int]
         :type actual_size: int"""

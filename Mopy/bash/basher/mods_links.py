@@ -31,7 +31,7 @@ from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link, MultiLink
-from ..bolt import GPath, dict_sort
+from ..bolt import FName, dict_sort
 from ..gui import BusyCursor, copy_text_to_clipboard, get_shift_down, \
     get_ctrl_down
 from ..parsers import CsvParser
@@ -157,7 +157,7 @@ class Mods_LoadList(ChoiceLink):
         if self.__class__.loadListsDict is self.__class__.__uninitialized:
             loadListData = load_order.get_active_mods_lists()
             loadListData[u'Vanilla'] = [
-                GPath(x) for x in bush.game.bethDataFiles if x.endswith(
+                FName(x) for x in bush.game.bethDataFiles if x.endswith(
                     u'.esm') # but avoid activating modding esms for oblivion
                 and (not re.match(bosh.reOblivion.pattern, x, re.I)
                      or x == u'oblivion.esm')]
@@ -435,8 +435,8 @@ class Mods_ImportBashTags(_Mods_BashTags):
             if len(csv_fields) != 2 or csv_fields != [u'Plugin', u'Tags']:
                 raise exception.BoltError(u'Header error: %s' % (csv_fields,))
             return
-        pl_name, curr_tags = GPath(csv_fields[0]), csv_fields[1]
-        if pl_name in bosh.modInfos:
+        pl_name, curr_tags = csv_fields
+        if (pl_name := FName(pl_name)) in bosh.modInfos:
             target_tags = {t.strip() for t in curr_tags.split(u',')}
             target_pl = bosh.modInfos[pl_name]
             # Only import if doing this would actually change anything and mark

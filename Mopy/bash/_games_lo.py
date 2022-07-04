@@ -35,7 +35,7 @@ from collections import defaultdict, OrderedDict
 
 # Local
 from . import bass, bolt, env, exception
-from .bolt import GPath_no_norm, dict_sort
+from .bolt import dict_sort, FName
 from .ini_files import get_ini_type_and_encoding
 
 def _write_plugins_txt_(path, lord, active, _star):
@@ -56,7 +56,7 @@ def __write_plugins(out, lord, active, _star):
         # plugins.txt.  Even activating through the SkyrimLauncher
         # doesn't work.
         try:
-            out.write(asterisk() + bolt.encode(mod.s, firstEncoding=u'cp1252'))
+            out.write(asterisk() + bolt.encode(mod, firstEncoding=u'cp1252'))
             out.write(b'\r\n')
         except UnicodeEncodeError:
             bolt.deprint(u'%s failed to properly encode and was not '
@@ -74,7 +74,7 @@ def _parse_plugins_txt_(path, mod_infos, _star):
     :type path: bolt.Path
     :type mod_infos: bosh.ModInfos
     :type _star: bool
-    :rtype: (list[bolt.Path], list[bolt.Path])
+    :rtype: (list[FName], list[FName])
     """
     with path.open(u'rb') as ins:
         #--Load Files
@@ -92,19 +92,18 @@ def _parse_plugins_txt_(path, mod_infos, _star):
             except UnicodeError:
                 bolt.deprint(f'{modname!r} failed to properly decode')
                 continue
-            mod_g_path = GPath_no_norm(test)
-            if mod_g_path.cext == '.ghost':  # Vortex keeps the .ghost extension!
-                mod_g_path = mod_g_path.body
+            mod_g_path = FName(test)
+            if mod_g_path.fn_ext == '.ghost':  # Vortex keeps the .ghost extension!
+                mod_g_path = mod_g_path.fn_body
             if mod_g_path not in mod_infos: # TODO(ut): is this really needed??
                 # The automatic encoding detector could have returned
                 # an encoding it actually wasn't.  Luckily, we
                 # have a way to double check: modInfos.data
                 for encoding in bolt.encodingOrder:
                     try:
-                        test2 = str(modname, encoding)
-                        mod_gpath_2 = GPath_no_norm(test2)
-                        if mod_gpath_2 in mod_infos:
-                            mod_g_path = mod_gpath_2
+                        test2 = str(modname, encoding) # FName does not accept bytes
+                        if test2 in mod_infos:
+                            mod_g_path = FName(test2)
                             break
                     except UnicodeError:
                         pass
@@ -201,7 +200,7 @@ class LoGame(object):
         super().__init__()
         self.plugins_txt_path = plugins_txt_path # type: bolt.Path
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
-        self.master_path = mod_infos._master_esm # type: bolt.Path
+        self.master_path = mod_infos._master_esm # type: bolt.FName
         self.mtime_plugins_txt = 0.0
         self.size_plugins_txt = 0
 
@@ -224,9 +223,9 @@ class LoGame(object):
         pass a cached value for either parameter this value will be returned
         unchanged, possibly validating the other one based on stale data.
         NOTE: modInfos must exist and be up to date for validation.
-        :type cached_load_order: tuple[bolt.Path]
-        :type cached_active_ordered: tuple[bolt.Path]
-        :rtype: (tuple[bolt.Path], tuple[bolt.Path])
+        :type cached_load_order: tuple[FName, ...]
+        :type cached_active_ordered: tuple[FName, ...]
+        :rtype: (tuple[FName, ...], tuple[FName, ...])
         """
         if cached_load_order is not None and cached_active_ordered is not None:
             return cached_load_order, cached_active_ordered # NOOP
@@ -381,12 +380,12 @@ class LoGame(object):
         raise exception.AbstractError
 
     def _fetch_load_order(self, cached_load_order, cached_active):
-        """:type cached_load_order: tuple[bolt.Path] | None
-        :type cached_active: tuple[bolt.Path]"""
+        """:type cached_load_order: tuple[FName, ...] | None
+        :type cached_active: tuple[FName, ...]"""
         raise exception.AbstractError
 
     def _fetch_active_plugins(self): # no override for AsteriskGame
-        """:rtype: list[bolt.Path]"""
+        """:rtype: list[FName]"""
         raise exception.AbstractError
 
     def _persist_load_order(self, lord, active, *, _cleaned=False):
@@ -408,7 +407,7 @@ class LoGame(object):
 
     # MODFILES PARSING --------------------------------------------------------
     def _parse_modfile(self, path, do_raise=False):
-        """:rtype: (list[bolt.Path], list[bolt.Path])"""
+        """:rtype: (list[FName], list[FName])"""
         #--Read file
         try:
             return _parse_plugins_txt_(path, self.mod_infos, _star=self._star)
@@ -422,7 +421,7 @@ class LoGame(object):
     # PLUGINS TXT -------------------------------------------------------------
     def _parse_plugins_txt(self):
         """Read plugins.txt file and return a tuple of (active, loadorder).
-        :rtype: (list[bolt.Path], list[bolt.Path])"""
+        :rtype: (list[FName], list[FName])"""
         try:
             acti_lo = self._parse_modfile(self.plugins_txt_path, do_raise=True)
             self.__update_plugins_txt_cache_info()
@@ -495,7 +494,7 @@ class LoGame(object):
         set_load_order() to check if a load order passed in is valid. Needs
         rethinking as save load and active should be an atomic operation -
         leads to hacks (like the _selected parameter).
-        :type lord: list[bolt.Path]
+        :type lord: list[FName]
         """
         if fix_lo is None: fix_lo = FixInfo() # discard fix info
         old_lord = lord[:]
@@ -558,7 +557,7 @@ class LoGame(object):
         # never be active
         cached_minfs = self.mod_infos
         acti_filtered = [x for x in acti if x in cached_minfs
-                         and x.cext != u'.esu']
+                         and x.fn_ext != u'.esu']
         # Use sets to avoid O(n) lookups due to lists
         acti_filtered_set = set(acti_filtered)
         lord_set = set(lord)
@@ -643,7 +642,7 @@ class LoGame(object):
 
     @staticmethod
     def _check_for_duplicates(plugins_list):
-        """:type plugins_list: list[bolt.Path]"""
+        """:type plugins_list: list[FName]"""
         mods, duplicates, j = set(), set(), 0
         mods_add = mods.add
         duplicates_add = duplicates.add
@@ -733,18 +732,18 @@ class INIGame(LoGame):
     @staticmethod
     def _read_ini(cached_ini, ini_key):
         """Reads a section specified INI using the specified key and returns
-        all its values, as bolt.Path objects. Handles missing INI file and an
+        all its values, as bolt.FName objects. Handles missing INI file and an
         absent section gracefully.
 
         :type cached_ini: bosh.ini_files.IniFile
         :type ini_key: tuple[str, str, str]
-        :rtype: list[bolt.Path]"""
-        # Returned format is dict[CIstr, tuple[str, int]], we want the
+        :rtype: list[bolt.FName]"""
+        # Returned format is dict[FName, tuple[str, int]], we want the
         # unicode (i.e. the mod names)
         section_mapping = cached_ini.get_setting_values(ini_key[1], {})
         # Sort by line number, then convert the values to paths and return
         section_vals = dict_sort(section_mapping, values_dex=[1])
-        return [GPath_no_norm(x[1][0]) for x in section_vals]
+        return [FName(x[1][0]) for x in section_vals] ##: unpack - is len(x)==2?
 
     @staticmethod
     def _write_ini(cached_ini, ini_key, mod_list):
@@ -752,14 +751,14 @@ class INIGame(LoGame):
 
         :type cached_ini: bosh.ini_files.IniFile
         :type ini_key: tuple[str, str, str]
-        :type mod_list: list[bolt.Path]"""
+        :type mod_list: list[FName]"""
         # Remove any existing section - also prevents duplicate sections with
         # different case
         cached_ini.remove_section(ini_key[1])
         # Now, write out the changed values - no backup here
         section_contents = OrderedDict()
         for i, lo_mod in enumerate(mod_list):
-            section_contents[ini_key[2] % {u'lo_idx': i}] = lo_mod.s
+            section_contents[ini_key[2] % {u'lo_idx': i}] = lo_mod
         cached_ini.saveSettings({ini_key[1]: section_contents})
 
     # Backups
@@ -1001,7 +1000,7 @@ class TimestampGame(LoGame):
         if fix_lo is not None and fix_lo.lo_added:
             # should not occur, except if undoing
             bolt.deprint(u'Incomplete load order passed in to set_load_order. '
-                u'Missing: ' + u', '.join(x.s for x in fix_lo.lo_added))
+                u'Missing: ' + u', '.join(fix_lo.lo_added))
             lord[:] = self.__calculate_mtime_order(mods=lord)
 
 # TimestampGame overrides
@@ -1025,8 +1024,7 @@ class TextfileGame(LoGame):
     def _active_entries_to_remove(self):
         # Starting with Skyrim LE, the Update.esm file needs to be removed from
         # plugins.txt too
-        return super()._active_entries_to_remove() | {
-            GPath_no_norm(u'Update.esm')}
+        return super()._active_entries_to_remove() | {FName(u'Update.esm')}
 
     def load_order_changed(self):
         # if active changed externally refetch load order to check for desync
@@ -1288,9 +1286,8 @@ class AsteriskGame(LoGame):
         any_dropped = set(active) - set(active_filtered)
         any_dropped |= set(lord) - set(lord_filtered)
         if any_dropped:
-            bolt.deprint(u'Removed %s from %s' % (
-                u', '.join(u'%s' % s for s in sorted(any_dropped)),
-                self.get_acti_file()))
+            bolt.deprint(f'Removed {_pl(sorted(any_dropped))} from '
+                         f'{self.get_acti_file()}')
             # We removed plugins that don't belong here, back up first
             self._backup_active_plugins()
             self._persist_load_order(lord_filtered, active_filtered,
@@ -1311,7 +1308,7 @@ class AsteriskGame(LoGame):
                 for ccc_line in ins.readlines():
                     try:
                         ccc_dec = bolt.decoder(ccc_line, encoding=u'cp1252')
-                        ccc_contents.append(GPath_no_norm(ccc_dec.strip()))
+                        ccc_contents.append(FName(ccc_dec.strip()))
                     except UnicodeError:
                         bolt.deprint(u'Failed to decode CCC entry %r'
                                      % ccc_line)
@@ -1415,22 +1412,21 @@ class WindowsStoreGame(LoGame):
 
 # TextfileGame overrides
 class Skyrim(TextfileGame):
-    must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
-        'Update.esm', 'Dawnguard.esm', 'HearthFires.esm',
-        'Dragonborn.esm'))
+    must_be_active_if_present = tuple(map(FName, (
+        'Update.esm', 'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm')))
 
 class Enderal(TextfileGame):
-    must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
-        u'Update.esm', u'Enderal - Forgotten Stories.esm'))
+    must_be_active_if_present = tuple(map(FName, (
+        u'Update.esm', u'Enderal - Forgotten Stories.esm')))
 
 # AsteriskGame overrides
 class Fallout4(AsteriskGame):
-    must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
+    must_be_active_if_present = tuple(map(FName, (
         u'DLCRobot.esm', u'DLCworkshop01.esm', u'DLCCoast.esm',
         u'DLCWorkshop02.esm', u'DLCWorkshop03.esm', u'DLCNukaWorld.esm',
-        u'DLCUltraHighResolution.esm'))
+        u'DLCUltraHighResolution.esm')))
     _ccc_filename = u'Fallout4.ccc'
-    _ccc_fallback = tuple(GPath_no_norm(p) for p in (
+    _ccc_fallback = tuple(map(FName, (
         # Up to date as of 2019/11/22
         u'ccBGSFO4001-PipBoy(Black).esl',
         u'ccBGSFO4002-PipBoy(Blue).esl',
@@ -1590,19 +1586,18 @@ class Fallout4(AsteriskGame):
         u'ccBGSFO4046-TesCan.esl',
         u'ccGCAFO4025-PAGunMM.esl',
         u'ccCRSFO4001-PipCoA.esl',
-    ))
+    )))
 
 class Fallout4VR(Fallout4):
-    must_be_active_if_present = Fallout4.must_be_active_if_present + (
-        GPath_no_norm(u'Fallout4_VR.esm'),)
+    must_be_active_if_present = (
+        *Fallout4.must_be_active_if_present, FName(u'Fallout4_VR.esm'))
     _ccc_filename = u''
 
 class SkyrimSE(AsteriskGame):
-    must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
-        'Update.esm', 'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm'
-    ))
+    must_be_active_if_present = tuple(map(FName, (
+        'Update.esm', 'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm')))
     _ccc_filename = u'Skyrim.ccc'
-    _ccc_fallback = tuple(GPath_no_norm(p) for p in (
+    _ccc_fallback = tuple(map(FName, (
         # Up to date as of 2021/11/19
         'ccASVSSE001-ALMSIVI.esm',
         'ccBGSSSE001-Fish.esm',
@@ -1678,25 +1673,25 @@ class SkyrimSE(AsteriskGame):
         'ccKRTSSE001_Altar.esl',
         'ccCBHSSE001-Gaunt.esl',
         'ccAFDSSE001-DweSanctuary.esm',
-    ))
+    )))
 
 class SkyrimVR(SkyrimSE):
-    must_be_active_if_present = SkyrimSE.must_be_active_if_present + (
-        GPath_no_norm(u'SkyrimVR.esm'),)
+    must_be_active_if_present = (
+    *SkyrimSE.must_be_active_if_present, FName(u'SkyrimVR.esm'))
     _ccc_filename = u''
 
 class EnderalSE(SkyrimSE):
     # Update.esm is forcibly loaded after the (empty) DLC plugins by the game
-    must_be_active_if_present = tuple(GPath_no_norm(p) for p in (
+    must_be_active_if_present = tuple(map(FName, (
         'Dawnguard.esm', 'HearthFires.esm', 'Dragonborn.esm', 'Update.esm',
         'Enderal - Forgotten Stories.esm',
-    ))
+    )))
 
     def _active_entries_to_remove(self):
         return super()._active_entries_to_remove() - {
             # Enderal - Forgotten Stories.esm is *not* hardcoded to load, so
             # don't remove it from the LO
-            GPath_no_norm(u'Enderal - Forgotten Stories.esm'),
+            FName(u'Enderal - Forgotten Stories.esm'),
         }
 
 # WindowsStoreGame overrides
@@ -1730,5 +1725,5 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
         return TimestampGame(mod_infos, plugins_txt_path)
 
 # Print helpers
-def _pl(it, legend=u'', joint=u', '):
-    return legend + joint.join(u'%s' % x for x in it) # use Path.__str__
+def _pl(it, legend='', joint=', '):
+    return legend + joint.join(it)

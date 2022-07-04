@@ -22,8 +22,6 @@
 # =============================================================================
 """GameInfo override for Fallout NV."""
 
-from collections import defaultdict
-
 from ..fallout3 import Fallout3GameInfo
 from ... import brec, bolt
 from ...brec import MreFlst, MreGlob
@@ -40,7 +38,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     launch_exe = u'FalloutNV.exe'
     game_detect_includes = [u'FalloutNV.exe']
     version_detect_file = u'FalloutNV.exe'
-    master_file = bolt.GPath_no_norm(u'FalloutNV.esm')
+    master_file = bolt.FName(u'FalloutNV.esm')
     taglist_dir = u'FalloutNV'
     loot_dir = u'FalloutNV'
     boss_game_name = u'FalloutNV'
@@ -61,7 +59,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         url_tip = u'http://nvse.silverlock.org/'
 
     class Bsa(Fallout3GameInfo.Bsa):
-        redate_dict = defaultdict(lambda: 1136066400, { # '2006-01-01'
+        redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
             u'Fallout - Meshes.bsa': 1104530400,    # '2005-01-01'
             u'Fallout - Meshes2.bsa': 1104616800,   # '2005-01-02'
             u'Fallout - Misc.bsa': 1104703200,      # '2005-01-03'

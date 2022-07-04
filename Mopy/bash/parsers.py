@@ -38,8 +38,9 @@ from operator import itemgetter
 from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
-from .bolt import GPath, decoder, deprint, setattr_deep, attrgetter_cache, \
-    str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort
+from .bolt import FName, decoder, deprint, setattr_deep, attrgetter_cache, \
+    str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, FNDict, \
+    DefaultFNDict
 from .brec import MreRecord, MelObject, genFid, RecHeader, attr_csv_struct
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
@@ -204,6 +205,7 @@ class _HandleAliases(CsvParser):
     _grup_index = None
     # the type of the values of id_stored_data
     _nested_type = dict
+    _id_data_type = defaultdict
 
     def __init__(self, aliases_, called_from_patcher=False):
         # Automatically set in _parse_csv_sources to the patch file's aliases -
@@ -215,7 +217,8 @@ class _HandleAliases(CsvParser):
         # (Mostly) map record sigs to dicts that map long fids to stored info
         # May have been retrieved from mod in second pass, or from a CSV file.
         # Need __class__ access to get a function rather than a bound method
-        self.id_stored_data = defaultdict(self.__class__._nested_type)
+        self.id_stored_data = self.__class__._id_data_type(
+            self.__class__._nested_type)
 
     def _coerce_fid(self, modname, hex_fid):
         """Create a long formid from a unicode modname and a unicode
@@ -223,8 +226,8 @@ class _HandleAliases(CsvParser):
         in the form 0x123abc abd check for aliases of modname."""
         if not hex_fid.startswith(u'0x'): raise ValueError # exit _parse_line
         # get alias for modname returned from _CsvReader
-        modname = GPath(modname)
-        return GPath(self.aliases.get(modname, modname)), int(hex_fid, 0)
+        modname = FName(modname)
+        return self.aliases.get(modname, modname), int(hex_fid, 0)
 
     def _parse_line(self, csv_fields):
         key1 = self._key1(csv_fields)
@@ -333,7 +336,7 @@ class _AParser(_HandleAliases):
                 if not rec_block: continue
                 for rfid, record in rec_block.iter_present_records():
                     self.id_context[rfid] = self._read_record_fp(record)
-            self._fp_mods.add(mod_to_read.fileInfo.ci_key)
+            self._fp_mods.add(mod_to_read.fileInfo.fn_key)
         # Process the mod's masters first, but see if we need to sort them
         master_names = loaded_mod.tes4.masters
         if self._needs_fp_master_sort:
@@ -343,7 +346,7 @@ class _AParser(_HandleAliases):
             _fp_loop(self._load_plugin(bosh.modInfos[mod_name], keepAll=False,
                                        target_types=self._fp_types))
         # Finally, process the mod itself
-        if loaded_mod.fileInfo.ci_key in self._fp_mods: return
+        if loaded_mod.fileInfo.fn_key in self._fp_mods: return
         _fp_loop(loaded_mod)
 
     # TODO(inf) Might need second_pass parameter?
@@ -404,7 +407,7 @@ class _AParser(_HandleAliases):
         automatically clear id_stored_data to allow combining multiple sources.
 
         :param mod_info: The ModInfo instance to read from."""
-        self._current_mod = mod_info.ci_key
+        self._current_mod = mod_info.fn_key
         # Check if we need to read at all
         a_types = self.all_types
         if not a_types:
@@ -534,18 +537,19 @@ class ActorLevels(_HandleAliases):
     _attr_dex = {'eid': 1, 'level_offset': 4, 'calcMin': 5, 'calcMax': 6}
     _key2_getter = itemgetter(2, 3)
     _row_sorter = partial(_key_sort, keys_dex=[0], values_key='eid')
+    _id_data_type = DefaultFNDict
 
     def __init__(self, aliases_=None, called_from_patcher=False):
         super(ActorLevels, self).__init__(aliases_, called_from_patcher)
         self.gotLevels = set()
-        self._skip_mods = {u'none', bush.game.master_file.s.lower()}
+        self._skip_mods = {'none', bush.game.master_file.lower()}
 
     def readFromMod(self,modInfo):
         """Imports actor level data from the specified mod and its masters."""
         from . import bosh
         mod_id_levels, gotLevels = self.id_stored_data, self.gotLevels
         loadFactory = self._load_factory(keepAll=False)
-        for modName in (*modInfo.masterNames, modInfo.ci_key):
+        for modName in (*modInfo.masterNames, modInfo.fn_key):
             if modName in gotLevels: continue
             modFile = self._load_plugin(bosh.modInfos[modName],
                                         load_fact=loadFactory)
@@ -559,8 +563,8 @@ class ActorLevels(_HandleAliases):
 
     def writeToMod(self, modInfo):
         """Exports actor levels to specified mod."""
-        id_levels = self.id_stored_data.get(modInfo.ci_key,
-            self.id_stored_data.get(GPath('Unknown'), None))
+        id_levels = self.id_stored_data.get(modInfo.fn_key,
+            self.id_stored_data.get('Unknown', None))
         if id_levels:
             # pretend we are a normal parser
             real = self.id_stored_data

@@ -31,8 +31,7 @@ from itertools import chain
 
 from .. import bolt, archives, bass, balt
 from ..archives import defaultExt, readExts
-from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files, \
-    GPath_no_norm
+from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files
 from ..exception import ArgumentError, StateError
 
 converters_dir: Path | None = None
@@ -43,6 +42,7 @@ class ConvertersData(DataDict):
 
     def __init__(self, bain_data_dir, converters_dir_, dup_bcfs_dir,
                  corrupt_bcfs_dir, installers_dir_):
+        super().__init__({})
         global converters_dir, installers_dir
         converters_dir = converters_dir_
         installers_dir = installers_dir_
@@ -81,15 +81,15 @@ class ConvertersData(DataDict):
 
     #--Converters
     @staticmethod
-    def validConverterName(path_name):
-        return path_name.cext == defaultExt and (
-            path_name.csbody[-4:] == u'-bcf' or u'-bcf-' in path_name.csbody)
+    def validConverterName(fn_conv):
+        ends_bcf = (lo := fn_conv.fn_body.lower())[-4:] == '-bcf'
+        return fn_conv.fn_ext == defaultExt and ends_bcf or '-bcf-' in lo
 
     def refreshConverters(self, progress=None, fullRefresh=False):
         """Refresh converter status, and move duplicate BCFs out of the way."""
         #--Current converters
         bcfs_list = [bcf_arch for bcf_arch in top_level_files(converters_dir)
-                     if self.validConverterName(GPath_no_norm(bcf_arch))] # few files  ##: drop GPath here!
+                     if self.validConverterName(bcf_arch)] # few files
         if changed := fullRefresh: # clear all data structures
             self.bcfPath_sizeCrcDate.clear()
             self.srcCRC_converters.clear()
@@ -440,7 +440,7 @@ class InstallerConverter(object):
                 nextStep += step
             #--Note all extracted files
             tmpDir = bass.getTempDir()
-            for crc in tmpDir.list():
+            for crc in tmpDir.ilist():
                 fpath = tmpDir.join(crc)
                 for root_dir, y, files in fpath.walk(): ##: replace with os walk!!
                     for file in files:

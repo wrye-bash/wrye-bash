@@ -87,25 +87,24 @@ class Screen_ConvertTo(EnabledLink):
     """Converts selected images to another type."""
     _help = _(u'Convert selected images to another format')
 
-    def __init__(self,ext,imageType):
+    def __init__(self, ext):
         super(Screen_ConvertTo, self).__init__()
-        self.ext = ext.lower()
-        self.imageType = imageType
-        self._text = _(u'Convert to %s') % self.ext
+        self._ext = f'.{ext}'
+        self.imageType = ImageWrapper.typesDict[ext]
+        self._text = _('Convert to %s') % ext
 
     def _enable(self):
-        self.convertable = [s for s in self.selected if
-                            s.cext != u'.' + self.ext]
+        self.convertable = [s for s in self.selected if s.fn_ext != self._ext]
         return bool(self.convertable)
 
     def Execute(self):
         try:
-            with balt.Progress(_(u'Converting to %s') % self.ext) as progress:
+            with balt.Progress(_('Converting to %s') % self._ext[1:]) as progress:
                 progress.setFull(len(self.convertable))
                 for index, fileName in enumerate(self.convertable):
-                    progress(index,fileName.s)
+                    progress(index, fileName)
                     srcPath = bosh.screen_infos[fileName].abs_path
-                    destPath = srcPath.root+u'.'+self.ext
+                    destPath = srcPath.root + self._ext
                     if srcPath == destPath or destPath.exists(): continue
                     bitmap = ImageWrapper.Load(srcPath, quality=bass.settings[
                         u'bash.screens.jpgQuality'])
@@ -204,12 +203,13 @@ class Master_ChangeTo(_Master_EditList):
             self._showError(_(u'File must be selected from %s '
                               u'directory.') % bush.game.mods_dir)
             return
-        elif newName == master_name:
+        elif newName.s == master_name: # case insensitive, good
             return
         #--Save Name
-        masterInfo.set_name(newName)
-        bass.settings[u'bash.mods.renames'][master_name] = newName
-        self.window.SetMasterlistEdited(repopulate=True)
+        if masterInfo.rename_if_present(newName.s):
+            ##: should be True but needs extra validation -> cycles?
+            bass.settings[u'bash.mods.renames'][master_name] = masterInfo.curr_name
+            self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
 class Master_Disable(AppendableLink, _Master_EditList):
@@ -227,14 +227,10 @@ class Master_Disable(AppendableLink, _Master_EditList):
     def _enable(self):
         if not super(Master_Disable, self)._enable(): return False
         # Only allow for .esm files, pointless on anything else
-        return self._selected_info.curr_name.cext == u'.esm'
+        return self._selected_info.curr_name.fn_ext == u'.esm'
 
     def Execute(self):
-        master_info = self._selected_info
-        ##: We could simplify this down to just unique_key if we had a ModInfo
-        # instance and could pass the new extension in directly
-        esp_name = GPath(u'XX%s.esp' % master_info.curr_name.sroot)
-        master_info.set_name(bosh.ModInfo.unique_name(esp_name))
+        self._selected_info.disable_master()
         self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
