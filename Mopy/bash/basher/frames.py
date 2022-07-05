@@ -127,12 +127,11 @@ class DocBrowser(WindowFrame):
         return FName(self._plugin_dropdown.get_value())
 
     @staticmethod
-    def _get_is_wtxt(doc_path):
+    def _get_is_wtxt(doc_path, *, __rx=re.compile(r'^=.+=#\s*$')):
         """Determines whether specified path is a wtxt file."""
-        rx = re.compile(r'^=.+=#\s*$', re.U)
         try:
             with doc_path.open(u'r', encoding=u'utf-8-sig') as text_file:
-                match_text = rx.match(text_file.readline())
+                match_text = __rx.match(text_file.readline())
             return match_text is not None
         except (OSError, UnicodeDecodeError):
             return False
@@ -140,24 +139,25 @@ class DocBrowser(WindowFrame):
     def _search_plugins(self, search_str, boot_search=False):
         """Called when text is entered into the search bar. Narrows the results
         in the dropdown."""
-        prev_doc_plugin = self._mod_name.s
+        # set_choices can change self._mod_name - we need the previous value so
+        # we can restore it after searching
+        prev_doc_plugin = self._mod_name
         search_lower = search_str.strip().lower()
         filtered_plugins = [p for p in self._full_lo
                             if search_lower in p.lower()]
-        lower_plugins = [p.lower() for p in filtered_plugins]
-        self._lower_lo = {pl: i for i, pl in enumerate(lower_plugins)}
+        self._lower_lo = {pl: i for i, pl in enumerate(filtered_plugins)}
         with self._plugin_dropdown.pause_drawing():
             self._plugin_dropdown.set_choices(filtered_plugins)
             # Check if the previous plugin can be restored now, otherwise
             # select the first plugin
             try:
-                new_doc_choice = lower_plugins.index(prev_doc_plugin.lower())
+                new_doc_choice = filtered_plugins.index(prev_doc_plugin)
             except ValueError:
                 new_doc_choice = 0
             self._plugin_dropdown.set_selection(new_doc_choice)
             if not boot_search:
                 # Update the doc viewer to match the new selection
-                self.SetMod(self._mod_name.s)
+                self.SetMod(self._mod_name)
 
     def _do_open(self):
         """Handle "Open Doc" button."""

@@ -2642,13 +2642,11 @@ class InstallersList(balt.UIList):
         action = settings[u'bash.installers.onDropFiles.action']
         if action not in (u'COPY', u'MOVE'):
             if filenames:
-                message = _(u'You have dragged the following files into Wrye '
-                            u'Bash:') + u'\n\n * '
-                message += u'\n * '.join(f.s for f in filenames) + u'\n'
-            else: message = _(u'You have dragged some converters into Wrye '
-                            u'Bash.')
-            message += u'\n' + _(u'What would you like to do with them?')
-            action, remember = CopyOrMovePopup.display_dialog(self, message,
+                msg = _('You have dragged the following files into Wrye Bash:'
+                    ) + '\n\n * ' + '\n * '.join(f.s for f in filenames) + '\n'
+            else: msg = _('You have dragged some converters into Wrye Bash.')
+            msg += '\n' + _('What would you like to do with them?')
+            action, remember = CopyOrMovePopup.display_dialog(self, msg,
                 sizes_dict=balt.sizes)
             if action and remember:
                 settings[u'bash.installers.onDropFiles.action'] = action
@@ -3257,8 +3255,8 @@ class InstallersPanel(BashTab):
         refresh_info = None
         if self.frameActivated:
             folders, files = map(list, top_level_items(bass.dirs[u'installers']))
-            omds = [GPath_no_norm(inst_path) for inst_path in files
-                    if inst_path.fn_ext in archives.omod_exts]
+            omds = [fninst for fninst in files if
+                    fninst.fn_ext in archives.omod_exts]
             if any(inst_path not in omods.failedOmods for inst_path in omds):
                 omod_projects = self.__extractOmods(omds) ##: change above to filter?
                 if omod_projects:
@@ -3299,13 +3297,13 @@ class InstallersPanel(BashTab):
             dirInstallersJoin = bass.dirs[u'installers'].join
             progress.setFull(max(len(omds), 1))
             omodMoves, omodRemoves = set(), set()
-            for i, omod in enumerate(omds):
-                progress(i, omod.s)
-                pr_name = bosh.InstallerProject.unique_name(omod.sbody,
+            for i, fn_omod in enumerate(omds):
+                progress(i, fn_omod)
+                pr_name = bosh.InstallerProject.unique_name(fn_omod.fn_body,
                                                             check_exists=True)
                 outDir = dirInstallersJoin(pr_name)
                 try:
-                    omod_path = dirInstallersJoin(omod)
+                    omod_path = dirInstallersJoin(fn_omod)
                     bosh.omods.OmodFile(omod_path).extractToProject(
                         outDir, SubProgress(progress, i))
                     omodRemoves.add(omod_path)
@@ -3313,10 +3311,10 @@ class InstallersPanel(BashTab):
                 except (CancelError, SkipError):
                     omodMoves.add(omod_path)
                 except:
-                    deprint(f"Error extracting OMOD '{omod}':", traceback=True)
+                    deprint(f"Error extracting OMOD '{fn_omod}':", traceback=True)
                     # Ensure we don't infinitely refresh if moving the omod
                     # fails
-                    bosh.omods.failedOmods.add(omod)
+                    bosh.omods.failedOmods.add(fn_omod)
                     omodMoves.add(omod_path)
             # Cleanup
             dialog_title = _(u'OMOD Extraction - Cleanup Error')
@@ -3338,9 +3336,9 @@ class InstallersPanel(BashTab):
                 else:
                     # User decided not to give permission.  Add omod to
                     # 'failedOmods' so we know not to try to extract them again
-                    for omod in omodRemoves:
-                        if omod.exists():
-                            bosh.omods.failedOmods.add(omod.tail)
+                    for omod_path in omodRemoves:
+                        if omod_path.exists():
+                            bosh.omods.failedOmods.add(FName(omod_path.stail))
             # Move bad omods
             def _move_omods(failed):
                 dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)

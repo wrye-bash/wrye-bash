@@ -379,11 +379,9 @@ class Save_Renumber(EnabledLink):
     _re_numbered_save = re.compile(r'^(save ?)(\d*)(.*)', re.I | re.U)
 
     def _enable(self):
-        self._matches = []
-        for sinf in self.iselected_infos():
-            save_match = self._re_numbered_save.match(u'%s' % sinf)
-            if save_match:
-                self._matches.append((u'%s' % sinf, save_match, sinf))
+        self._matches = [(s_groups, sinf) for sinf in self.iselected_infos() if
+            (save_match := self._re_numbered_save.match(sinf.fn_key)) and
+            (s_groups := save_match.groups())[1]]
         return bool(self._matches)
 
     @balt.conversation
@@ -395,11 +393,9 @@ class Save_Renumber(EnabledLink):
         if newNumber is None: return
         old_names = set()
         new_names = set()
-        for fn_save, maPattern, sinf in self._matches:
-            s_groups = maPattern.groups()
-            if not s_groups[1]: continue
+        for s_groups, sinf in self._matches:
             newFileName = FName(f'{s_groups[0]}{newNumber:d}{s_groups[2]}')
-            if newFileName != fn_save:
+            if newFileName != sinf.fn_key:
                 if self.window.try_rename(sinf, newFileName, new_names,
                                           old_names):
                     break

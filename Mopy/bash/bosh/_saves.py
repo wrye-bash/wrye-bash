@@ -665,7 +665,7 @@ class SaveSpells(_SaveData):
         #--Else extract spell list
         loadFactory = LoadFactory(False, by_sig=[b'SPEL'])
         modFile = ModFile(modInfo, loadFactory)
-        try: modFile.load(True)
+        try: modFile.load(True, catch_errors=False)
         except ModError as err:
             deprint(f'skipped mod due to read error ({err})')
             return
