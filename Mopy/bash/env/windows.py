@@ -984,7 +984,7 @@ def setUAC(handle, uac=True):
     if _isUAC and win32gui:
         win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
-@functools.lru_cache(maxsize=None) ##: Change to cache once we drop Win7
+@functools.cache
 def getJava():
     """Locate javaw.exe to launch jars from Bash."""
     try:
@@ -1024,11 +1024,7 @@ def fixup_taskbar_icon():
     https://stackoverflow.com/questions/1551605/how-to-set-applications-taskbar-icon-in-windows-7/1552105#1552105
 
     Note: this should be called before showing any top level windows."""
-    appid = u'Wrye Bash'
-    try:
-        windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
-    except AttributeError:
-        pass # On a pre-Win7
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID('Wrye Bash')
 
 def mark_high_dpi_aware():
     """Marks the current process as High DPI-aware."""
