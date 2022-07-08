@@ -187,15 +187,15 @@ class _ASettingsPage(WrappingTextMixin, ATreeMixin):
         self._mark_changed(self, False)
 
     def _rename_op(self, chosen_file, parent_dir, msg_title, msg):
-        new_fname = balt.askText(self, msg, title=msg_title,
+        new_fstr = balt.askText(self, msg, title=msg_title,
                                  default=chosen_file)
-        if not new_fname or new_fname == chosen_file:
+        if not new_fstr or new_fstr == chosen_file:
             return False # user canceled or entered identical name
-        new_fpath = parent_dir.join(new_fname)
+        new_fpath = parent_dir.join(new_fstr)
         old_fpath = parent_dir.join(chosen_file)
         if new_fpath.is_file():
             if not balt.askYes(self, _(u'The chosen filename (%s) already '
-                u'exists. Do you want to replace the file?') % new_fname,
+                u'exists. Do you want to replace the file?') % new_fstr,
                 title=_(u'Name Conflict')):
                 return False # don't want to replace it, so cancel
         try:
@@ -1167,9 +1167,10 @@ class ConfirmationsPage(_AFixedPage):
         """Returns a dict mapping confirmation descriptions to booleans
         indicating whether or not the user checked that entry."""
         # Cut off the internal key extension that may be present
-        return {self._confirmation_list.lb_get_str_item_at_index(i).split(
-            u'(')[0].strip(): self._confirmation_list.lb_is_checked_at_index(i)
-                for i in range(self._confirmation_list.lb_get_items_count())}
+        clist = self._confirmation_list
+        return {clist.lb_get_str_item_at_index(i).split('(')[0].strip():
+                    clist.lb_is_checked_at_index(i)
+                for i in range(clist.lb_get_items_count())}
 
     def on_apply(self):
         if self._is_changed(u'confirmed_prompts'):

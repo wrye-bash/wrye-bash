@@ -1114,9 +1114,10 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
     def Execute(self):
         subs = _(u'Sub-Packages List for %s:') % self._installer
         subs += u'\n[spoiler]\n'
-        for index in range(self.window.gSubList.lb_get_items_count()):
-            subs += [u'   ', u'** '][self.window.gSubList.lb_is_checked_at_index(
-                index)] + self.window.gSubList.lb_get_str_item_at_index(index) + u'\n'
+        sp_list = self.window.gSubList
+        for i in range(sp_list.lb_get_items_count()):
+            subs += ['   ', '** '][sp_list.lb_is_checked_at_index(i)]
+            subs += sp_list.lb_get_str_item_at_index(i) + '\n'
         subs += u'[/spoiler]'
         copy_text_to_clipboard(subs)
         self._showLog(subs, title=_(u'Sub-Package Lists'), fixedFont=False)

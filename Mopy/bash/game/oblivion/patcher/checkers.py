@@ -80,7 +80,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         for record in modFile.tops[b'BOOK'].getActiveRecords():
             book_fid = record.fid
             if book_fid in _book_fids and book_fid not in id_books:
-                patch_books.setRecord(book_fid)
+                patch_books.setRecord(record)
         id_ingred = self.id_ingred
         for record in modFile.tops[b'INGR'].getActiveRecords():
             if not record.full: continue #--Ingredient must have name!

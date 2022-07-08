@@ -97,15 +97,14 @@ class MultiChoicePopup(_TransientPopup):
     """A transient popup that shows a list of checkboxes with a search bar. To
     implement special behavior when an item is checked or unchecked, you have
     to override the on_item_checked and on_mass_select methods."""
-    def __init__(self, parent, all_choices, help_text=u'', aa_btn_tooltip=u'',
-                 ra_btn_tooltip=u''):
+    def __init__(self, parent, all_choices: dict[str, bool], help_text='',
+            aa_btn_tooltip='', ra_btn_tooltip=''):
         """Creates a new MultiChoicePopup with the specified parameters.
 
         :param parent: The object that this popup belongs to. May be a wx
             object or a component.
         :param all_choices: A dict mapping item names to booleans indicating
             whether or not that item is currently checked.
-        :type all_choices: dict[str, bool]
         :param help_text: A static help text to show at the top of the popup
             (optional).
         :param aa_btn_tooltip: A tooltip to show when hovering over the 'Add
