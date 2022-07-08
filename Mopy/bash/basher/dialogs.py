@@ -287,8 +287,7 @@ class CreateNewPlugin(DialogWindow):
     def __init__(self, parent):
         super(CreateNewPlugin, self).__init__(parent, sizes_dict=balt.sizes)
         self._parent_window = parent
-        default_ext = u'.esp'
-        self._plugin_ext = DropDown(self, value=default_ext,
+        self._plugin_ext = DropDown(self, value='.esp',
             choices=sorted(bush.game.espm_extensions), auto_tooltip=False)
         self._plugin_ext.tooltip = _(u'Select which extension the plugin will '
                                      u'have.')
@@ -369,29 +368,34 @@ class CreateNewPlugin(DialogWindow):
         count_limit = bush.game.Esp.master_limit
         limit_exceeded = count_checked > count_limit
         self._ok_btn.enabled = not limit_exceeded
-        self._too_many_masters.label_text = _(
-            u'Too many masters: %u checked, but only %u are allowed by the '
-            u'game.') % (count_checked, count_limit)
         self._too_many_masters.visible = limit_exceeded
+        if limit_exceeded:
+            # Only update if limit exceeded to avoid the wx update/redraw cost
+            self._too_many_masters.label_text = _(
+                'Too many masters: %u checked, but only %u are allowed by the '
+                'game.') % (count_checked, count_limit)
         self.update_layout()
 
     def _handle_plugin_ext(self, new_p_ext):
         """Internal callback to handle a change in extension."""
         # Enable the flags by default, but don't mess with their checked state
-        self._esm_flag.enabled = True
-        if (isesl := new_p_ext == u'.esl') or new_p_ext == u'.esm':
-            # For .esm and .esl files, force-check the ESM flag
-            self._esm_flag.enabled = False
+        p_is_esl = new_p_ext == '.esl'
+        p_is_master = p_is_esl or new_p_ext == '.esm'
+        # For .esm and .esl files, force-check the ESM flag
+        if p_is_master:
             self._esm_flag.is_checked = True
+        self._esm_flag.enabled = not p_is_master
         # For .esl files, force-check the ESL flag
-        if isesl: self._esl_flag.is_checked = True
-        self._esl_flag.enabled = not isesl
+        if p_is_esl:
+            self._esl_flag.is_checked = True
+        self._esl_flag.enabled = not p_is_esl
 
     def _handle_mass_select(self, mark_active):
         """Internal callback to handle the Select/Deselect All buttons."""
         self._masters_box.set_all_checkmarks(checked=mark_active)
         for m in self._masters_box.lb_get_str_items():
-            self._masters_dict[m] = mark_active # update only visible items!
+            # Update only visible items!
+            self._masters_dict[FName(m)] = mark_active
         self._check_master_limit()
 
     def _handle_master_checked(self, master_index):
@@ -399,7 +403,7 @@ class CreateNewPlugin(DialogWindow):
         independent of the contents of the masters box."""
         mast_name = self._masters_box.lb_get_str_item_at_index(master_index)
         mast_checked = self._masters_box.lb_is_checked_at_index(master_index)
-        self._masters_dict[mast_name] = mast_checked
+        self._masters_dict[FName(mast_name)] = mast_checked
         self._check_master_limit()
 
     def _handle_search(self, search_str):
