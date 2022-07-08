@@ -205,25 +205,15 @@ class Mod_OrderByName(EnabledLink):
             u'Note that some mods need to be in a specific order to work '
             u'correctly, and this sort operation may break that order.'))
         if not self._askContinue(message, u'bash.sortMods.continue',
-                                 _(u'Sort Mods')): return
+                                 title=self._text): return
         #--Do it
         self.selected.sort()
         self.selected.sort( # sort masters first
             key=lambda m: not bosh.modInfos[m].in_master_block())
-        if not bush.game.using_txt_file:
-            #--Get first time from first selected file.
-            newTime = min(x.mtime for x in self.iselected_infos())
-            for inf in self.iselected_infos():
-                inf.setmtime(newTime)
-                newTime += 60.0
-            #--Refresh
-            with load_order.Unlock():
-                bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
-        else:
-            lowest = load_order.get_ordered(self.selected)[0]
-            bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
-            # Reorder the actives too to avoid bogus LO warnings
-            bosh.modInfos.cached_lo_save_all()
+        lowest = load_order.get_ordered(self.selected)[0]
+        bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
+        # Reorder the actives too to avoid bogus LO warnings
+        bosh.modInfos.cached_lo_save_all()
         self.window.RefreshUI(refreshSaves=True)
 
 #------------------------------------------------------------------------------
