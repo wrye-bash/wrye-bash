@@ -240,9 +240,10 @@ class Mod_Move(EnabledLink):
     def Execute(self):
         entered_text = u''
         # Default to the index of the first selected active plugin, or 0
-        default_index = (load_order.cached_active_index(self.selected[0])
-                         if any(load_order.cached_is_active(p)
-                                for p in self.selected) else 0)
+        enabled_selected = [p for p in self.selected
+                            if load_order.cached_is_active(p)]
+        default_index = (load_order.cached_active_index(enabled_selected[0])
+                         if enabled_selected else 0)
         try:
             # Only accept hexadecimal numbers, trying to guess what they are
             # will just lead to sadness
