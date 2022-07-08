@@ -33,8 +33,7 @@ from ..exception import StateError
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
     web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
-    pdf_viewer_available, bell, copy_text_to_clipboard, FileOpen, FileSave, \
-    DropDown, SearchBar
+    bell, copy_text_to_clipboard, FileOpen, FileSave, DropDown, SearchBar
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -266,11 +265,9 @@ class DocBrowser(WindowFrame):
 
     def _load_data(self, doc_path=None, uni_str=None, editing=False,
                    __html_extensions=frozenset((u'.htm', u'.html', u'.mht'))):
-        if doc_path and doc_path.cext in __html_extensions and not editing \
-                and web_viewer_available():
+        if doc_path and doc_path.cext in __html_extensions and not editing:
             self._doc_ctrl.try_load_html(doc_path)
-        elif doc_path and doc_path.cext == u'.pdf' and not editing \
-                and pdf_viewer_available():
+        elif doc_path and doc_path.cext == '.pdf' and not editing:
             self._doc_ctrl.try_load_pdf(doc_path)
         else:
             if uni_str is None and doc_path:

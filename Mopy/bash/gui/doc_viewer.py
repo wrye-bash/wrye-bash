@@ -345,7 +345,7 @@ class DocumentViewer(_AComponent):
         if not pdf_valid:
             deprint(f'{file_path} is not a valid PDF')
         if pdf_valid and pdf_viewer_available():
-            self._pdf_ctrl.open_file('%s' % file_path)
+            self._pdf_ctrl.open_file(f'{file_path}')
             self.switch_to_pdf()
         else:
             self.try_load_text(file_path)
@@ -357,5 +357,5 @@ class DocumentViewer(_AComponent):
         # We can't assume that this is UTF-8 - e.g. some official Beth docs in
         # Morrowind are cp1252. However, it most likely is UTF-8 or
         # UTF-8-compatible (ASCII), so try that first.
-        with file_path.open(u'rb') as ins:
+        with open(file_path, 'rb') as ins:
             self.load_text(decoder(ins.read(), u'utf-8'))

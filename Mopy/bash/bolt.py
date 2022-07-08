@@ -660,11 +660,9 @@ def GPath(str_or_uni):
 def GPath_no_norm(str_or_uni):
     """Alternative to GPath that does not call normpath. It is up to the caller
     to ensure that the precondition name == os.path.normpath(name) holds for
-    all values pased into this method.
+    all values passed into this method. Only str instances accepted!
 
     :rtype: Path"""
-    if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
-    if not str_or_uni: return Path(u'') # needed, os.path.normpath(u'') = u'.'!
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
     return _gpaths.setdefault(str_or_uni, Path(str_or_uni))
 

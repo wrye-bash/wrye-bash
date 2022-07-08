@@ -354,7 +354,7 @@ class Mods_CrcRefresh(ItemLink):
         mismatched = {k: v for k, v in pairs.items() if v[0] != v[1]}
         if mismatched:
             message += u'  * ' + u'\n  * '.join(
-                [u'%s: cached %08X real %08X' % (k, v[1], v[0]) for k, v in
+                [f'{k}: cached {v[1]:08X} real {v[0]:08X}' for k, v in
                  mismatched.items()])
             self.window.RefreshUI(redraw=mismatched, refreshSaves=False)
         else: message += _(u'No stale cached CRC values detected')

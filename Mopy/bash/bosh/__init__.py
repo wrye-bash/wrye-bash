@@ -609,7 +609,7 @@ class ModInfo(FileInfo):
 
     def crc_string(self):
         try:
-            return u'%08X' % self.cached_mod_crc()
+            return f'{self.cached_mod_crc():08X}'
         except TypeError: # None, should not happen so let it show
             return u'UNKNOWN!'
 

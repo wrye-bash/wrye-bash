@@ -1240,9 +1240,8 @@ class Mod_ScanDirty(ItemLink):
             return u'%08X (from master %s)' % (form_id, modName)
         def log_fids(del_title, del_fids):
             nonlocal full_dirty_msg
-            full_dirty_msg += u'  * %s: %i\n' % (del_title, len(del_fids))
-            for d_fid in sorted(del_fids):
-                full_dirty_msg += u'    * %s\n' % strFid(d_fid)
+            full_dirty_msg += '\n'.join([f'  * {del_title}: {len(del_fids)}',
+                *(f'    * {strFid(d_fid)}' for d_fid in sorted(del_fids))])
         dirty_plugins = []
         clean_plugins = []
         skipped_plugins = []

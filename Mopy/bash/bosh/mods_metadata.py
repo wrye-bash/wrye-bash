@@ -254,7 +254,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             scan_progress.setFull(len(all_extracted_data))
             all_ref_types = bush.game.Esp.reference_types
             # Temporary place to collect (eid, sig, plugin)-lists
-            all_record_versions = defaultdict(list)
+            all_record_versions: dict[int, list] = defaultdict(list)
             # Whether or not the game uses SSE's form version (44)
             game_has_v44 = RecordHeader.plugin_form_version == 44
             for i, (plugin_fn, ext_data) in enumerate(
@@ -310,7 +310,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                             add_hitme(r_fid)
                         if scan_overrides:
                             # Convert into a load order FormID - ugly but fast,
-                            # inlined and hand-optmized from various methods.
+                            # inlined and hand-optimized from various methods.
                             # Calling them would be way too slow.
                             lo_fid = (r_fid & 0xFFFFFF | plugin_to_acti_index[
                                 p_masters[p_num_masters - 1 if is_hitme else
@@ -462,7 +462,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     def log_plugin_messages(plugin_dict):
         """Logs a list of plugins with a message after each plugin."""
         for p, p_msg in dict_sort(plugin_dict):
-            log(u'* __%s:__  %s' % (p, p_msg))
+            log(f'* __{p}:__  {p_msg}')
     if bush.game.has_esl:
         # Need to undo the offset we applied to sort ESLs after regulars
         sort_offset = load_order.max_espms() - 1
@@ -478,9 +478,9 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
             else:
                 return u'%02X%06X' % (proper_index, whole_lo_fid & 0x00FFFFFF)
     else:
-        def format_fid(whole_lo_fid, _fid_orig_plugin):
+        def format_fid(whole_lo_fid: int, _fid_orig_plugin):
             # For non-ESL games simple hexadecimal formatting will do
-            return u'%08X' % whole_lo_fid
+            return f'{whole_lo_fid:08X}'
     def log_collision(coll_fid, coll_inj, coll_plugin, coll_versions):
         """Logs a single collision with the specified FormID, injected status,
         origin plugin and collision info."""

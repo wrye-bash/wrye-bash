@@ -393,11 +393,10 @@ class PCFaces(object):
         for npc in modFile.tops[b'NPC_'].getActiveRecords():
             face = PCFaces.PCFace()
             face.face_masters = modFile.augmented_masters()
-            for a in (u'eid', u'race', u'eye', u'hair', u'hairLength',
-                      u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
-                      u'fggs_p', u'fgga_p', u'fgts_p', u'level_offset',
-                      u'skills', u'health', u'unused2', u'baseSpell',
-                      u'fatigue', u'attributes', u'iclass'):
+            for a in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
+                      'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
+                      'fgts_p', 'level_offset', 'skills', 'health', 'unused2',
+                      'baseSpell', 'fatigue', 'attributes', 'iclass'):
                 npc_val = getattr(npc, a)
                 if isinstance(npc_val, tuple): # Hacky check for FormIDs
                     npc_val = short_mapper(npc_val)

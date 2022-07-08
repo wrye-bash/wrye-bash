@@ -237,9 +237,8 @@ class _FomodFileInfo(object):
         self.file_priority = file_priority
 
     def __repr__(self):
-        return u'%s<%s -> %s with priority %s>' % (
-            self.__class__.__name__, self.file_source, self.file_destination,
-            self.file_priority)
+        return f'{self.__class__.__name__}<{self.file_source} -> ' \
+               f'{self.file_destination} with priority {self.file_priority}>'
 
     @classmethod
     def process_files(cls, files_elem, file_list, inst_root, is_usable):
