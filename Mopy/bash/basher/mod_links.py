@@ -472,7 +472,7 @@ class _ModGroups(CsvParser):
         """Imports mod groups from specified text file."""
         if len(csv_fields) >= 2 and bosh.ModInfos.rightFileType(csv_fields[0]):
             mod, mod_grp = csv_fields[:2]
-            self.mod_group[mod] = mod_grp
+            self.mod_group[FName(mod)] = mod_grp
 
     def _write_rows(self, out):
         """Exports eids to specified text file."""

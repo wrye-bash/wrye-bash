@@ -4128,7 +4128,7 @@ class MreRace(MelRecord):
         MelKeywords(),
         MelRaceData(b'DATA', # required
             [u'14b', u'2s', u'4f', u'I', u'7f', u'I', u'2i', u'f', u'i', u'5f',
-             u'i', u'4f', u'I', u'9f'], u'skills', u'unknown1',
+             'i', '4f', 'I', '9f'], ('skills', [0] * 14), 'unknown1',
             u'maleHeight', u'femaleHeight', u'maleWeight', u'femaleWeight',
             (_data_flags_1, u'data_flags_1'), u'starting_health',
             u'starting_magicka', u'starting_stamina', u'base_carry_weight',
