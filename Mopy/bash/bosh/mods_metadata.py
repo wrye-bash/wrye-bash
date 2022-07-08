@@ -117,8 +117,10 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     mc_parent should be the instance of PluginChecker, to scan."""
     # Setup some commonly used collections of plugin info
     full_acti = load_order.cached_active_tuple()
+    full_lo = load_order.cached_lo_tuple()
     plugin_to_acti_index = {p: i for i, p in enumerate(full_acti)}
-    all_present_minfs = [modInfos[x] for x in load_order.cached_lo_tuple()]
+    all_present_plugins = set(full_lo)
+    all_present_minfs = [modInfos[x] for x in full_lo]
     all_active_plugins = set(full_acti)
     game_master_name = bush.game.master_file
     vanilla_masters = bush.game.bethDataFiles
@@ -174,15 +176,31 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
     # -------------------------------------------------------------------------
     # Check for missing or delinquent masters
     seen_plugins = set()
+    cannot_scan_overrides = set()
     p_missing_masters = set()
     p_delinquent_masters = set()
-    for p in load_order.cached_active_tuple():
-        for p_master in modInfos[p].masterNames:
-            if p_master not in all_active_plugins:
-                p_missing_masters.add(p)
-            if p_master not in seen_plugins:
-                p_delinquent_masters.add(p)
-        seen_plugins.add(p)
+    for p in all_present_minfs:
+        p_fn_key = p.fn_key
+        if p_fn_key in all_active_plugins:
+            for p_master in p.masterNames:
+                if p_master not in all_present_plugins:
+                    # The plugin is active and a master is missing -> report
+                    p_missing_masters.add(p_fn_key)
+                else:
+                    if p_master not in seen_plugins:
+                        # The plugin is active and one of its masters hasn't
+                        # been checked, so that master is delinquent -> report
+                        p_delinquent_masters.add(p_fn_key)
+                    if p_master not in all_active_plugins:
+                        # Inactive master -> needed for scanning later
+                        cannot_scan_overrides.add(p_fn_key)
+        else:
+            for p_master in p.masterNames:
+                if p_master not in all_active_plugins:
+                    # Inactive master -> needed for scanning later
+                    cannot_scan_overrides.add(p_fn_key)
+        seen_plugins.add(p_fn_key)
+    cannot_scan_overrides |= p_missing_masters
     # -------------------------------------------------------------------------
     # Check for plugins with invalid TES4 version.
     valid_vers = bush.game.Esp.validHeaderVersions
@@ -252,11 +270,13 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                 scan_deleted = (plugin_fn != game_master_name and
                                 plugin_fn in scan_for_cleaning)
                 # We have to skip checking overrides if the plugin is inactive
-                # because a whole-LO FormID is not a valid concept for inactive
+                # or has inactive (or missing) masters because a whole-LO
+                # FormID is not a valid concept for inactive (or missing)
                 # plugins. Plus, collisions from inactive plugins are either
                 # harmless (if the plugin really is inactive) or will show up
                 # in the BP (if the plugin is actually merged into the BP).
-                scan_overrides = plugin_fn in all_active_plugins
+                scan_overrides = (plugin_fn in all_active_plugins and
+                                  plugin_fn not in cannot_scan_overrides)
                 # Skip checking for old WEAP records if the game is not based
                 # on SSE or the plugin is one of the vanilla masters (none of
                 # the vanilla masters have old weapon records, plus they
@@ -522,13 +542,13 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
               u'imported, but not active.'))
         log_plugins(should_activate)
     if p_missing_masters:
-        log.setHeader(_(u'Missing Masters'))
+        log.setHeader('=== ' + _('Missing Masters'))
         log(_(u'The following plugins have missing masters and are active. '
               u'This will cause a CTD at the main menu and must be '
               u'corrected.'))
         log_plugins(p_missing_masters)
     if p_delinquent_masters:
-        log.setHeader(_(u'Delinquent Masters'))
+        log.setHeader('=== ' + _('Delinquent Masters'))
         log(_(u'The following plugins have delinquent masters, i.e. masters '
               u'that are set to load after their dependent plugins. The game '
               u'will try to force them to load before the dependent plugins, '
