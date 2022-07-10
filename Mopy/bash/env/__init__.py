@@ -83,6 +83,8 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
                    parent=None, __shell=True):
     """Docs WIP
 
+    See also: https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shfileoperationa
+
     :param operation: one of FO_MOVE, FO_COPY, FO_DELETE, FO_RENAME
     :param source: a Path, string or an iterable of those (yak, only accept
        iterables)
@@ -93,9 +95,6 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
     :param renameOnCollision: FOF_RENAMEONCOLLISION
     :param silent: FOF_SILENT ("Do not display a progress dialog box")
     :param parent: HWND to the dialog's parent window
-    .. seealso:
-        `SHFileOperation <http://msdn.microsoft.com/en-us/library/windows
-        /desktop/bb762164(v=vs.85).aspx>`
     """
     if not source:
         return {}
