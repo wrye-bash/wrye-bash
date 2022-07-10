@@ -26,25 +26,28 @@ import io
 import os
 import re
 from collections import defaultdict
+from itertools import chain
 
 from ._shared import cobl_main, ExSpecial
 from .... import bush
-from ....brec import MreRecord, RecHeader
+from ....brec import MreRecord
 from ....patcher.base import ModLoader, Patcher
 
 # Cobl Catalogs ---------------------------------------------------------------
 _ingred_alchem = (
-    (1,0xCED, _(u'Alchemical Ingredients I'), 250),
-    (2,0xCEC, _(u'Alchemical Ingredients II'), 500),
-    (3,0xCEB, _(u'Alchemical Ingredients III'), 1000),
-    (4,0xCE7, _(u'Alchemical Ingredients IV'), 2000),
+    (1, 0xCED, _('Alchemical Ingredients I')),
+    (2, 0xCEC, _('Alchemical Ingredients II')),
+    (3, 0xCEB, _('Alchemical Ingredients III')),
+    (4, 0xCE7, _('Alchemical Ingredients IV')),
 )
 _effect_alchem = (
-    (1,0xCEA, _(u'Alchemical Effects I'), 500),
-    (2,0xCE9, _(u'Alchemical Effects II'), 1000),
-    (3,0xCE8, _(u'Alchemical Effects III'), 2000),
-    (4,0xCE6, _(u'Alchemical Effects IV'), 4000),
+    (1, 0xCEA, _('Alchemical Effects I')),
+    (2, 0xCE9, _('Alchemical Effects II')),
+    (3, 0xCE8, _('Alchemical Effects III')),
+    (4, 0xCE6, _('Alchemical Effects IV')),
 )
+_book_fids = {(cobl_main, book_data[1])
+              for book_data in chain(_ingred_alchem, _effect_alchem)}
 
 class CoblCatalogsPatcher(Patcher, ExSpecial):
     """Updates COBL alchemical catalogs."""
@@ -53,7 +56,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         [_(u"Update COBL's catalogs of alchemical ingredients and effects."),
          _(u'Will only run if Cobl Main.esm is loaded.')])
     _config_key = u'AlchemicalCatalogs'
-    _read_sigs = (b'INGR',)
+    _read_sigs = (b'BOOK', b'INGR')
 
     @classmethod
     def gui_cls_vars(cls):
@@ -72,6 +75,12 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch
         mod, but won't alter it."""
+        patch_books = self.patchFile.tops[b'BOOK']
+        id_books = patch_books.id_records
+        for record in modFile.tops[b'BOOK'].getActiveRecords():
+            book_fid = record.fid
+            if book_fid in _book_fids and book_fid not in id_books:
+                patch_books.setRecord(book_fid)
         id_ingred = self.id_ingred
         for record in modFile.tops[b'INGR'].getActiveRecords():
             if not record.full: continue #--Ingredient must have name!
@@ -92,38 +101,24 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         actorEffects = MreRecord.type_class[b'MGEF'].generic_av_effects
         from ..records import actor_values
         keep = self.patchFile.getKeeper()
-        #--Book generator
-        def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
-            book = MreRecord.type_class[b'BOOK'](RecHeader(b'BOOK', 0, 0, 0, 0))
-            book.longFids = True
-            book.changed = True
-            book.eid = eid
-            book.full = full
-            book.value = value
-            book.weight = 0.2
+        patch_books = self.patchFile.tops[b'BOOK']
+        def getBook(object_id, full):
+            """Helper method for grabbing a BOOK record by object ID and making
+            it ready for editing."""
+            book_fid = (cobl_main, object_id)
+            if book_fid not in patch_books.id_records:
+                return None # This shouldn't happen, but just in case...
+            book = patch_books.id_records[book_fid]
             book.book_text = u'<div align="left"><font face=3 color=4444>'
-            book.book_text += (_(u"Salan's Catalog of %s") + u'\r\n\r\n') % full
-            book.iconPath = iconPath
-            book.model = book.getDefault(u'model')
-            book.model.modPath = modelPath
-            book.model.modb_p = modb_p
-            book.modb = book
-            ##: In Cobl Main.esm, the books have a script attached
-            # (<cobGenDevalueOS [SCPT:01001DDD]>). This currently gets rid of
-            # that, should we keep it instead?
-            # book.script = (_cobl_main, 0x001DDD)
-            book.fid = (cobl_main, objectId)
-            keep(book.fid)
-            self.patchFile.tops[b'BOOK'].setRecord(book)
+            book.book_text += (_("Salan's Catalog of %s") + '\r\n\r\n') % full
+            book.changed = True
+            keep(book_fid)
             return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
-        iconPath, modPath, modb_p = (u'Clutter\\IconBook9.dds',
-                                     u'Clutter\\Books\\Octavo02.NIF',
-                                     b'\x03>@A')
-        for (num,objectId,full,value) in _ingred_alchem:
-            book = getBook(objectId, u'cobCatAlchemIngreds%s' % num, full,
-                           value, iconPath, modPath, modb_p)
+        for (num, objectId, full) in _ingred_alchem:
+            book = getBook(objectId, full)
+            if book is None: continue
             buff = io.StringIO(book.book_text)
             buff.seek(0, os.SEEK_END)
             buffWrite = buff.write
@@ -145,12 +140,9 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
                 if mgef in actorEffects: effectName += actor_values[actorValue]
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs
-        iconPath, modPath, modb_p = (u'Clutter\\IconBook7.dds',
-                                     u'Clutter\\Books\\Octavo01.NIF',
-                                     b'\x03>@A')
-        for (num, objectId, full, value) in _effect_alchem:
-            book = getBook(objectId, u'cobCatAlchemEffects%s' % num, full,
-                           value, iconPath, modPath, modb_p)
+        for (num, objectId, full) in _effect_alchem:
+            book = getBook(objectId, full)
+            if book is None: continue
             buff = io.StringIO(book.book_text)
             buff.seek(0, os.SEEK_END)
             buffWrite = buff.write
