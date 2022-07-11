@@ -2025,6 +2025,10 @@ def text_wrap(text_to_wrap, width=60):
 
 deprintOn = False
 
+# Constants used for censoring the user's home directory (see below)
+_USER_DIR = os.path.expanduser('~')
+_CENSORED_DIR = os.path.join(os.path.split(_USER_DIR)[0], '*****')
+
 def deprint(*args, traceback=False, trace=True, frame=1, on=False):
     """Prints message along with file and line location.
        Available keyword arguments:
@@ -2059,6 +2063,10 @@ def deprint(*args, traceback=False, trace=True, frame=1, on=False):
     if traceback:
         exc_fmt = _traceback.format_exc()
         msg += f'\n{exc_fmt}'
+    # Censor the user's home directory - we're on py3 now so no more need to
+    # worry about unicode weirdness, this is now just a way for people to
+    # unknowingly doxx themselves
+    msg = msg.replace(_USER_DIR, _CENSORED_DIR)
     try:
         # Should work if stdout/stderr is going to wxPython output
         print(msg, flush=True)

@@ -171,7 +171,10 @@ class LOOTParser(object):
                 try:
                     userlist = _parse_list(userlist_path)
                 except Exception:
-                    deprint('Failed to parse userlist', traceback=True)
+                    if not catch_errors:
+                        raise
+                    deprint(f'Failed to parse LOOT userlist {userlist_path}, '
+                            f'it likely has malformed syntax', traceback=True)
                 if userlist is not None:
                     _merge_lists(masterlist, userlist)
             self._cached_masterlist = masterlist
