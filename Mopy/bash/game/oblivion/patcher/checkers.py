@@ -22,8 +22,6 @@
 # =============================================================================
 
 import copy
-import io
-import os
 import re
 from collections import defaultdict
 from itertools import chain
@@ -95,7 +93,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         if not self.isActive: return
         #--Setup
         alt_names = copy.deepcopy(self.patchFile.getMgefName())
-        attr_or_skill = u'(%s|%s)' % (_(u'Attribute'), _(u'Skill'))
+        attr_or_skill = f"({_('Attribute')}|{_('Skill')})"
         for mgef in alt_names:
             alt_names[mgef] = re.sub(attr_or_skill, u'', alt_names[mgef])
         actorEffects = MreRecord.type_class[b'MGEF'].generic_av_effects
@@ -109,7 +107,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
             if book_fid not in patch_books.id_records:
                 return None # This shouldn't happen, but just in case...
             book = patch_books.id_records[book_fid]
-            book.book_text = u'<div align="left"><font face=3 color=4444>'
+            book.book_text = '<div align="left"><font face=3 color=4444>'
             book.book_text += (_("Salan's Catalog of %s") + '\r\n\r\n') % full
             book.changed = True
             keep(book_fid)
@@ -119,19 +117,18 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         for (num, objectId, full) in _ingred_alchem:
             book = getBook(objectId, full)
             if book is None: continue
-            buff = io.StringIO(book.book_text)
-            buff.seek(0, os.SEEK_END)
-            buffWrite = buff.write
+            effs = []
             for eid, eff_full, effects in sorted(id_ingred.values(),
                                                  key=lambda a: a[1].lower()):
-                buffWrite(eff_full + u'\r\n')
+                effs.append(eff_full)
                 for mgef, actorValue in effects[:num]:
                     effectName = alt_names[mgef]
                     if mgef in actorEffects:
                         effectName += actor_values[actorValue]
-                    buffWrite(u'  ' + effectName + u'\r\n')
-                buffWrite(u'\r\n')
-            book.book_text = re.sub(u'\r\n', u'<br>\r\n', buff.getvalue())
+                    effs.append(f'  {effectName}')
+                effs.append('')
+            book.book_text += '\r\n'.join(effs)
+            book.book_text = re.sub('\r\n', '<br>\r\n', book.book_text)
         #--Get Ingredients by Effect
         effect_ingred = defaultdict(list)
         for _fid,(eid,full,effects) in id_ingred.items():
@@ -143,25 +140,23 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         for (num, objectId, full) in _effect_alchem:
             book = getBook(objectId, full)
             if book is None: continue
-            buff = io.StringIO(book.book_text)
-            buff.seek(0, os.SEEK_END)
-            buffWrite = buff.write
+            effs = []
             for effectName in sorted(effect_ingred):
                 effects = [indexFull for indexFull in
                            effect_ingred[effectName] if indexFull[0] < num]
                 if effects:
-                    buffWrite(effectName + u'\r\n')
+                    effs.append(effectName)
                     for (index, eff_full) in sorted(effects, key=lambda a: a[
                         1].lower()):
                         exSpace = u' ' if index == 0 else u''
-                        buffWrite(u' %s%s %s\r\n' % (index + 1, exSpace,
-                                                     eff_full))
-                    buffWrite(u'\r\n')
-            book.book_text = re.sub(u'\r\n', u'<br>\r\n', buff.getvalue())
+                        effs.append(f' {index + 1}{exSpace} {eff_full}')
+                    effs.append('')
+            book.book_text += '\r\n'.join(effs)
+            book.book_text = re.sub('\r\n', '<br>\r\n', book.book_text)
         #--Log
         log.setHeader(u'= ' + self._patcher_name)
-        log(u'* '+_(u'Ingredients Cataloged') + u': %d' % len(id_ingred))
-        log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
+        log('* ' + _('Ingredients Cataloged') + f': {len(id_ingred)}')
+        log('* ' + _('Effects Cataloged') + f': {len(effect_ingred)}')
 
 #------------------------------------------------------------------------------
 _ob_path = bush.game.master_file

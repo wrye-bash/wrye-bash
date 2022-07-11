@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, \
     SignatureDecider, MelRaceData, MelFactions, MelActorSounds, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
-    MelEnchantment, MelValueWeight, null4, SpellFlags, int_unpacker
+    MelEnchantment, MelValueWeight, null4, SpellFlags
 
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
@@ -1645,15 +1645,9 @@ class MreMgef(MelRecord):
         b'ZXIV': [1, _(u'Summon Xivilai'), 200],
         b'ZZOM': [1, _(u'Summon Zombie'), 16.67],
     }
-    mgef_school = dict(chain.from_iterable(
-        ((int_unpacker(x)[0], y), (x, y)) for x, [y, z, a] in
-        _magic_effects.items()))
-    mgef_name = dict(chain.from_iterable(
-        ((int_unpacker(x)[0], z), (x, z)) for x, [y, z, a] in
-        _magic_effects.items()))
-    mgef_basevalue = dict(chain.from_iterable(
-        ((int_unpacker(x)[0], a), (x, a)) for x, [y, z, a] in
-        _magic_effects.items()))
+    mgef_school = {x: y for x, [y, z, a] in _magic_effects.items()}
+    mgef_name = {x: z for x, [y, z, a] in _magic_effects.items()}
+    mgef_basevalue = {x: a for x, [y, z, a] in _magic_effects.items()}
 
     # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
     # generic name.
@@ -1672,7 +1666,6 @@ class MreMgef(MelRecord):
         b'FOSK', #--Fortify Skill (Use Skill)
         b'REAT', #--Restore Attribute (Use Attribute)
     }
-    generic_av_effects |= {int_unpacker(x)[0] for x in generic_av_effects}
     # MGEFs that are considered hostile
     hostile_effects = {
         b'ABAT', #--Absorb Attribute
@@ -1711,7 +1704,6 @@ class MreMgef(MelRecord):
         b'WKPO', #--Weakness to Poison
         b'WKSH', #--Weakness to Shock
     }
-    hostile_effects |= {int_unpacker(x)[0] for x in hostile_effects}
 
     melSet = MelSet(
         MelEdid(),
