@@ -106,7 +106,7 @@ def setUAC(_handle, _uac=True):
 def is_uac():
     return False # Not a thing on Linux
 
-@functools.lru_cache(maxsize=None) ##: Change to cache once we drop Win7
+@functools.cache
 def getJava():
     try:
         java_home = _GPath(os.environ[u'JAVA_HOME'])
@@ -202,7 +202,7 @@ def get_file_version(filename):
         return ()
 
 def fixup_taskbar_icon():
-    pass ##: Probably not needed on Linux, only a Win7+ issue.
+    pass # Windows only
 
 def mark_high_dpi_aware():
     pass ##: Equivalent on Linux? Not needed?

@@ -109,7 +109,7 @@ class _AFomodBase(object):
         self._parent_installer = parent_installer
         self.sort_key = sort_key
 
-@functools.lru_cache(maxsize=None) ##: Change to cache once we drop Win7
+@functools.cache
 def _parsed_schema():
     return etree.fromstring(schema_string)
 

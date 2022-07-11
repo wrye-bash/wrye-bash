@@ -548,7 +548,6 @@ class MelStruct(MelBase):
         Note that each element of defaults and actions matches corresponding
         attr element. Example elements:
         ('level', 'unused1', (FID, 'listId', None), ('count', 1), 'unused2')
-        :type elements: (list[None|str|tuple])
         """
         if not isinstance(struct_formats, list):
             raise SyntaxError(f'Expected a list got "{struct_formats}"')

@@ -37,7 +37,7 @@ from ..bolt import deprint
 from ..exception import ArgumentError
 
 # Utilities -------------------------------------------------------------------
-@functools.lru_cache(maxsize=None) ##: Change to cache once we drop Win7
+@functools.cache
 def _csf():
     """Returns the content scale factor (CSF) needed for high DPI displays."""
     if platform.system() != u'Darwin': ##: Linux? os_name == 'nt' if so

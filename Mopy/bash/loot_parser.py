@@ -164,7 +164,16 @@ class LOOTParser(object):
         try:
             masterlist = _parse_list(masterlist_path)
             if userlist_path:
-                _merge_lists(masterlist, _parse_list(userlist_path))
+                userlist = None
+                # Userlists often end up in all kinds of wild formats, meaning
+                # they can cause all kinds of wild errors too - skip and
+                # complain if that happens
+                try:
+                    userlist = _parse_list(userlist_path)
+                except Exception:
+                    deprint('Failed to parse userlist', traceback=True)
+                if userlist is not None:
+                    _merge_lists(masterlist, userlist)
             self._cached_masterlist = masterlist
             self._cached_regexes = [(re.compile(r, re.I).match, e) for r, e in
                                     masterlist.items() if is_regex(r)]

@@ -3457,7 +3457,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
 
     def __init__(self, parent, ui_list_panel):
         super(ScreensDetails, self).__init__(parent)
-        self.screenshot_control = Picture(parent, 256, 192,
+        self.screenshot_control = Picture(self, 256, 192,
             background=colors[u'screens.bkgd.image'])
         self.displayed_screen = None # type: bolt.Path
         HLayout(item_expand=True, item_weight=1,
