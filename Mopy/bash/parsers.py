@@ -153,7 +153,8 @@ class CsvParser(_TextParser):
                     top_grup_sig, id_data, out)): continue
             for lfid, stored_data in self._row_sorter(id_data):
                 row = self._row_out(lfid, stored_data, *section_data)
-                if row: out.write(row)
+                if row and not row.isspace():
+                    out.write(row)
 
     def _write_section(self, top_grup_sig, id_data, out):
         return bool(id_data) and [sig_to_str(top_grup_sig)]
