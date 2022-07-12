@@ -28,10 +28,10 @@ chunk."""
 
 __author__ = u'Infernio'
 
-import binascii
 import io
 import string
 from typing import List
+from zlib import crc32
 
 from ..bolt import decoder, encode, struct_unpack, unpack_string, \
     unpack_int, unpack_short, unpack_4s, unpack_byte, unpack_str16, \
@@ -1605,7 +1605,7 @@ class PluggyCosave(ACosave):
                 ins.seek(0)
                 checksum_data = ins.read(total_size - 4)
                 expected_crc = unpack_int_signed(ins)
-            actual_crc = binascii.crc32(checksum_data)
+            actual_crc = crc32(checksum_data)
             if actual_crc != expected_crc:
                 raise InvalidCosaveError(self.abs_path.tail,
                     u'Checksum does not match (expected %X, but got '
@@ -1654,7 +1654,7 @@ class PluggyCosave(ACosave):
         prev_mtime = self.abs_path.mtime
         with out_path.open(u'wb') as out:
             out.write(final_data)
-            pack_int_signed(out, binascii.crc32(final_data))
+            pack_int_signed(out, crc32(final_data))
         out_path.mtime = prev_mtime
 
     def get_master_list(self):

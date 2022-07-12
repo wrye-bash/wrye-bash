@@ -30,10 +30,10 @@ import os
 import re
 import sys
 import time
-from binascii import crc32
 from functools import partial, wraps
 from itertools import groupby, chain
 from operator import itemgetter, attrgetter
+from zlib import crc32
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, \
     ModInfos, ListInfo
@@ -182,21 +182,20 @@ class Installer(ListInfo):
             progress(done, progress_msg + rpFile)
             sub = bolt.SubProgress(progress, done, done + siz + 1)
             sub.setFull(siz + 1)
-            crc = 0
+            final_crc = 0
             try:
                 with open(asFile, u'rb') as ins:
                     insTell = ins.tell
-                    for block in iter(partial(ins.read, 2097152), b''):
-                        crc = crc32(block, crc) # 2MB at a time, probably ok
+                    while block := ins.read(2097152): # 2MB at a time
+                        final_crc = crc32(block, final_crc)
                         sub(insTell())
             except OSError:
                 deprint(
                     f'Failed to calculate crc for {asFile} - please report '
                     f'this, and the following traceback:', traceback=True)
                 continue
-            crc &= 0xFFFFFFFF
             done += siz + 1
-            new_sizeCrcDate[rpFile] = (siz, crc, date, asFile)
+            new_sizeCrcDate[rpFile] = (siz, final_crc, date, asFile)
 
     #--Initialization, etc ----------------------------------------------------
     def initDefault(self):

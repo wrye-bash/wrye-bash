@@ -44,7 +44,6 @@ import tempfile
 import textwrap
 import traceback as _traceback
 import webbrowser
-from binascii import crc32
 from contextlib import contextmanager, redirect_stdout
 from functools import partial
 from itertools import chain
@@ -52,6 +51,7 @@ from keyword import iskeyword
 from operator import attrgetter
 from typing import Iterable
 from urllib.parse import quote
+from zlib import crc32
 
 import chardet
 
@@ -932,9 +932,9 @@ class Path(os.PathLike):
         """Calculates and returns crc value for self."""
         crc = 0
         with self.open(u'rb') as ins:
-            for block in iter(partial(ins.read, 2097152), b''):
-                crc = crc32(block, crc) # 2MB at a time, probably ok
-        return crc & 0xffffffff
+            while block := ins.read(2097152): # 2MB at a time
+                crc = crc32(block, crc)
+        return crc
 
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
