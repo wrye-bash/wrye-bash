@@ -292,6 +292,7 @@ class HyperlinkLabel(_ALabel):
             lambda event: [event.GetURL()])
 
 # Spinner - technically text, just limited to digits --------------------------
+# Unused right now, but don't remove - I have some plans that will need it
 class Spinner(_AComponent):
     """A field for entering integers. Features small arrow buttons on the right
     to decrement and increment the value.

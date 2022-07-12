@@ -2728,7 +2728,8 @@ class InstallersData(DataStore):
             if bp_doc: # path is absolute, convert to relative to the Data/ dir
                 try:
                     bp_doc = bp_doc.relpath(bass.dirs[u'mods'])
-                except ValueError: # https://bugs.python.org/issue7195
+                except ValueError:
+                    # https://github.com/python/cpython/issues/51444
                     # bp_doc on a different drive, will be skipped anyway
                     continue
                 # Keep both versions of the BP doc (.txt and .html)

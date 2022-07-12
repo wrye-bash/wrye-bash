@@ -44,7 +44,7 @@ def __init_gui_images(_wx):
     will not crash due to the mismatch between wx/python/OS locale
     conventions that seems to plague windoz. See:
     - https://github.com/wxWidgets/Phoenix/issues/1616
-    - https://bugs.python.org/issue43115
+    - https://github.com/python/cpython/issues/87281
     """
     wxart = _wx.ArtProvider.GetBitmap
     siz16 = (16, 16)

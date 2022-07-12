@@ -1402,6 +1402,7 @@ class TrustedBinariesPage(_AFixedPage):
             out.write(u'goodDlls # %s\n' % _(u'Binaries whose installation '
                                              u'you have allowed'))
             self._dump_dlls(bass.settings['bash.installers.goodDlls'], out)
+            out.write('\n')
             out.write(u'badDlls # %s\n' % _(u'Binaries whose installation you '
                                             u'have forbidden'))
             self._dump_dlls(bass.settings['bash.installers.badDlls'], out)

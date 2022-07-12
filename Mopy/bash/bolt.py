@@ -249,7 +249,7 @@ def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
 
 def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
-##: Keep an eye on https://bugs.python.org/issue31749
+##: Keep an eye on https://github.com/python/cpython/issues/75930
 def round_size(size_bytes):
     """Returns the specified size in bytes as a human-readable size string."""
     ##: Maybe offer an option to switch between KiB and KB?

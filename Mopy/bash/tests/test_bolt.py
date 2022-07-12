@@ -320,7 +320,7 @@ class TestDefaultLowerDict(TestLowerDict):
 
     def test_fromkeys(self):
         # see: defaultdict.fromkeys should accept a callable factory:
-        # https://bugs.python.org/issue23372 (rejected)
+        # https://github.com/python/cpython/issues/67561 (rejected)
         a = self.dict_type(int, dict(sape=4139, guido=4139, jack=4139))
         c = self.dict_type.fromkeys(['sape', 'guido', 'jack'], 4139)
         assert a == c # !!!
