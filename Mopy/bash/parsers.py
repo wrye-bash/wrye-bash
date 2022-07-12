@@ -1133,7 +1133,8 @@ class ItemPrices(_HandleAliases):
 
     def _row_out(self, lfid, stored_data, top_grup,
                  __getter=itemgetter(*_attr_dex)):
-        return '%s,"%d","%s","%s",%s\n' % (_fid_str(lfid), *__getter(stored_data), top_grup)
+        return '%s,"%d","%s","%s","%s"\n' % (
+            _fid_str(lfid), *__getter(stored_data), top_grup)
 
 #------------------------------------------------------------------------------
 class _UsesEffectsMixin(_HandleAliases):
