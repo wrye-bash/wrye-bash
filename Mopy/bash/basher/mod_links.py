@@ -1777,7 +1777,7 @@ class _Mod_Import_Link(_Import_Export_Link, OneItemLink):
                + espml + u';*.ghost'
 
     def _import_from(self):
-        textName = self._selected_item.root + self.__class__.csvFile
+        textName = self._selected_item.fn_body + self.__class__.csvFile
         textDir = bass.dirs[u'patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
