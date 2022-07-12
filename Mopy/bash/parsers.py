@@ -39,9 +39,9 @@ from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import FName, decoder, deprint, setattr_deep, attrgetter_cache, \
-    str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, FNDict, \
-    DefaultFNDict
-from .brec import MreRecord, MelObject, genFid, RecHeader, attr_csv_struct
+    str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, DefaultFNDict
+from .brec import MreRecord, MelObject, genFid, RecHeader, attr_csv_struct, \
+    null3
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
@@ -1175,6 +1175,13 @@ class _UsesEffectsMixin(_HandleAliases):
         for att, val in newStats.items():
             old_val = __attrgetters[att](record)
             if att == u'eid': old_eid = old_val
+            if att == 'effects':
+                # To avoid creating stupid noop edits due to the one unused
+                # field inside the SEFF struct, set the record's unused1 to
+                # three null bytes before comparing
+                for eff in old_val:
+                    if se := eff.scriptEffect:
+                        se.unused1 = null3
             if old_val != val:
                 imported = True
                 setattr_deep(record, att, val)
