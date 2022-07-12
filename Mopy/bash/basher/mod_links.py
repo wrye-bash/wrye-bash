@@ -33,6 +33,7 @@ from itertools import chain
 # Local
 from .constants import settingDefaults
 from .files_links import File_Redate
+from .dialogs import ExportScriptsDialog
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, all_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, load_order
@@ -41,9 +42,7 @@ from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink, \
 from ..bolt import FName, SubProgress, dict_sort, sig_to_str
 from ..brec import MreRecord
 from ..exception import AbstractError, BoltError, CancelError
-from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
-    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout, DialogWindow, \
-    ImageWrapper, BusyCursor, copy_text_to_clipboard
+from ..gui import ImageWrapper, BusyCursor, copy_text_to_clipboard
 from ..mod_files import LoadFactory, ModFile, ModHeaderReader
 from ..parsers import CsvParser
 from ..patcher import exportConfig, patch_files
@@ -1954,37 +1953,8 @@ class Mod_Scripts_Export(_Mod_Export_Link, OneItemLink):
     def Execute(self): # overrides _Mod_Export_Link
         fileInfo = next(self.iselected_infos()) # first selected info
         defaultPath = bass.dirs[u'patches'].join(f'{fileInfo} Exported Scripts')
-        def OnOk():
-            dialog.accept_modal()
-            bass.settings[u'bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
-            bass.settings[u'bash.mods.export.skip'] = gskip.text_content.strip()
-            bass.settings[u'bash.mods.export.skipcomments'] = gskipcomments.is_checked
-        dialog = DialogWindow(Link.Frame, _(u'Export Scripts Options'))
-        gskip = TextField(dialog)
-        gdeprefix = TextField(dialog)
-        gskipcomments = CheckBox(dialog, _(u'Filter Out Comments'),
-          chkbx_tooltip=_(u"If active doesn't export comments in the scripts"))
-        gskip.text_content = bass.settings[u'bash.mods.export.skip']
-        gdeprefix.text_content = bass.settings[u'bash.mods.export.deprefix']
-        gskipcomments.is_checked = bass.settings[u'bash.mods.export.skipcomments']
-        msg = [_(u'Remove prefix from file names i.e. enter cob to save '
-                 u'script cobDenockInit'),
-               _(u'as DenockInit.ext rather than as cobDenockInit.ext'),
-               _(u'(Leave blank to not cut any prefix, non-case sensitive):')]
-        ok_button = OkButton(dialog)
-        ok_button.on_clicked.subscribe(OnOk)
-        VLayout(border=6, spacing=4, items=[
-            Label(dialog, _(u'Skip prefix (leave blank to not skip any), '
-                            u'non-case sensitive):')),
-            (gskip, LayoutOptions(expand=True)), Spacer(10),
-            Label(dialog, u'\n'.join(msg)),
-            (gdeprefix, LayoutOptions(expand=True)), Spacer(10),
-            gskipcomments, Stretch(),
-            (HLayout(spacing=4, items=[ok_button, CancelButton(dialog)]),
-             LayoutOptions(h_align=RIGHT))
-        ]).apply_to(dialog, fit=True)
-        with dialog: questions = dialog.show_modal()
-        if not questions: return
+        if not ExportScriptsDialog.display_dialog(Link.Frame):
+            return
         def_exists = defaultPath.exists()
         if not def_exists:
             defaultPath.makedirs()

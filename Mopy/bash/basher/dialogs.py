@@ -24,14 +24,14 @@ from . import bEnableWizard
 from .constants import installercons
 from .. import bass, balt, bosh, bolt, bush, env, load_order
 from ..balt import colors
-from ..bolt import FName, top_level_dirs
+from ..bolt import FName, top_level_dirs, text_wrap
 from ..bosh import faces, ModInfo, InstallerProject
 from ..fomod_schema import default_moduleconfig
 from ..gui import BOTTOM, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, OkButton, RIGHT, Stretch, TextField, \
     VLayout, DialogWindow, ListBox, Picture, DropDown, CheckListBox, \
     HBoxedLayout, SelectAllButton, DeselectAllButton, VBoxedLayout, \
-    TextAlignment, SearchBar, bell, EventResult
+    TextAlignment, SearchBar, bell, EventResult, Spacer
 
 class ImportFaceDialog(DialogWindow):
     """Dialog for importing faces."""
@@ -436,3 +436,50 @@ class CreateNewPlugin(DialogWindow):
             mod_group[chosen_name] = mod_group.get(windowSelected[0], u'')
         pw.ClearSelected(clear_details=True)
         pw.RefreshUI(redraw=[chosen_name], refreshSaves=False)
+
+#------------------------------------------------------------------------------
+class ExportScriptsDialog(DialogWindow):
+    """Dialog for exporting script sources from a plugin."""
+    title = _('Export Scripts Options')
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self._skip_prefix = TextField(self)
+        self._skip_prefix.text_content = bass.settings[
+            'bash.mods.export.skip']
+        self._remove_prefix = TextField(self)
+        self._remove_prefix.text_content = bass.settings[
+            'bash.mods.export.deprefix']
+        self._skip_comments = CheckBox(self, _('Filter Out Comments'),
+          chkbx_tooltip=_('Whether or to include comments in the exported '
+                          'scripts.'))
+        self._skip_comments.is_checked = bass.settings[
+            'bash.mods.export.skipcomments']
+        msg = _('Removes a prefix from the exported file names, e.g. enter '
+                'cob to save script cobDenockInit as DenockInit.txt rather '
+                'than as cobDenockInit.txt (case-insensitive, leave blank to '
+                'not remove any prefix):')
+        ok_button = OkButton(self)
+        ok_button.on_clicked.subscribe(self._on_ok)
+        VLayout(border=6, spacing=4, items=[
+            Label(self, _('Skip prefix (leave blank to not skip any), '
+                          'case-insensitive):')),
+            (self._skip_prefix, LayoutOptions(expand=True)),
+            Spacer(10),
+            Label(self, text_wrap(msg, 80)),
+            (self._remove_prefix, LayoutOptions(expand=True)),
+            Spacer(10),
+            self._skip_comments, Stretch(),
+            (HLayout(spacing=4, items=[
+                ok_button,
+                CancelButton(self),
+            ]), LayoutOptions(h_align=RIGHT)),
+        ]).apply_to(self, fit=True)
+
+    def _on_ok(self):
+        pfx_skip = self._skip_prefix.text_content.strip()
+        bass.settings['bash.mods.export.skip'] = pfx_skip
+        pfx_remove = self._remove_prefix.text_content.strip()
+        bass.settings['bash.mods.export.deprefix'] = pfx_remove
+        cmt_skip = self._skip_comments.is_checked
+        bass.settings['bash.mods.export.skipcomments'] = cmt_skip
