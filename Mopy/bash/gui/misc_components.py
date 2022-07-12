@@ -50,7 +50,6 @@ class Font(_wx.Font):
 # Pictures --------------------------------------------------------------------
 class Picture(_AComponent):
     """Picture panel."""
-    _wx_widget_type = _wx.Window
 
     def __init__(self, parent, width, height, scaling=1,  ##: scaling unused
                  style=_wx.BORDER_SUNKEN, background=_wx.MEDIUM_GREY_BRUSH):
@@ -133,7 +132,6 @@ class PictureWithCursor(Picture, WithMouseEvents):
 class _ALine(_AComponent):
     """Abstract base class for simple graphical lines."""
     _line_style = None # override in subclasses
-    _wx_widget_type = _wx.StaticLine
     _native_widget: _wx.StaticLine
 
     def __init__(self, parent):
@@ -153,7 +151,6 @@ class Table(WithCharEvents):
     extensions like Ctrl+C/Ctrl+V support built in. Note that it was not built
     to allow customizing the row labels, one of its central assumptions is that
     they are always ints."""
-    _wx_widget_type = Grid
     _native_widget: Grid
 
     def __init__(self, parent, table_data, editable=True):
@@ -350,7 +347,6 @@ class GlobalMenu(_AComponent):
     """A global menu bar that populates JIT by repopulating its contents right
     before the menu is opened by the user. The menus are called 'categories' to
     differentiate them from regular context menus."""
-    _wx_widget_type = _wx.MenuBar
     _native_widget: _wx.MenuBar
 
     class _GMCategory(_wx.Menu):
@@ -361,7 +357,7 @@ class GlobalMenu(_AComponent):
             self.category_label = cat_lbl
 
     def __init__(self):
-        self._native_widget = self._wx_widget_type() # no parent
+        self._native_widget = _wx.MenuBar() # no parent
         self._category_handlers = {}
         # We need to do this once and only once, because wxPython does not
         # support binding multiple methods to one event source. Also, it *has*

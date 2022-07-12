@@ -79,7 +79,6 @@ class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
 class _TransientPopup(_AComponent):
     """Base class for transient popups, i.e. popups that disappear as soon as
     they lose focus."""
-    _wx_widget_type = _wx.PopupTransientWindow
     _native_widget: _wx.PopupTransientWindow
 
     def __init__(self, parent):
@@ -181,7 +180,6 @@ class MultiChoicePopup(_TransientPopup):
 # File Dialogs ----------------------------------------------------------------
 class _FileDialog(_AComponent):
     """Ask user for a filesystem path using the system dialogs."""
-    _wx_widget_type = _wx.FileDialog
     _native_widget: _wx.FileDialog
     _dialog_style = _wx.FD_OPEN | _wx.FD_FILE_MUST_EXIST
 
@@ -228,7 +226,6 @@ class FileSave(_FileDialog):
 
 class DirOpen(_FileDialog):
     """'Open directory' dialog."""
-    _wx_widget_type = _wx.DirDialog
     _native_widget: _wx.DirDialog
     _dialog_style = _wx.DD_DEFAULT_STYLE | _wx.DD_SHOW_HIDDEN
 

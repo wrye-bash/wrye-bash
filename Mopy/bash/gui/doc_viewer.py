@@ -97,8 +97,9 @@ class WebViewer(_AComponent):
     Basic control from the Python side is offered through methods for
     navigating the history, clearing the history, navigating to a URL and
     reloading the current page."""
-    _wx_widget_type = _wx_html2.WebView.New
     _native_widget: _wx_html2.WebView
+    # Can't instantiate WebView directly, so we need an override
+    _wx_type_override = _wx_html2.WebView.New
 
     def __init__(self, parent, reload_ico, buttons_parent=None):
         """Creates a new WebViewer with the specified parent.
@@ -206,7 +207,6 @@ class PDFViewer(_AComponent):
     """Implements a simple PDF viewer. Only available if PyMuPDF or PyPDF2 is
     installed. PyPDF2 is pure Python, but PyMuPDF is *vastly* more complete and
     hence preferred."""
-    _wx_widget_type = _PdfViewer
     _native_widget: _PdfViewer
 
     def __init__(self, parent):
@@ -222,7 +222,6 @@ class PDFViewer(_AComponent):
 class DocumentViewer(_AComponent):
     """A viewer for a variety of document types. Can display webpages, text and
     PDFs."""
-    _wx_widget_type = _wx.Window
 
     def __init__(self, parent):
         """Creates a new DocumentViewer with the specified parent.

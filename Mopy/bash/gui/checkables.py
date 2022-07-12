@@ -85,8 +85,8 @@ class _ACheckable(_AComponent):
 class CheckBox(_ACheckable):
     """Represents a simple two-state checkbox. See _ACheckable for event
     docstrings."""
-    _wx_widget_type = _wx.CheckBox
     _native_widget: _wx.CheckBox
+    _wx_type_override = _wx.CheckBox ##: Why is this one necessary?
 
     def __init__(self, parent, label=u'', chkbx_tooltip=None, checked=False):
         """Creates a new CheckBox with the specified properties.
@@ -119,8 +119,8 @@ class RadioButton(_ACheckable):
     that block_user will only 'freeze' the state of *this* particular radio
     button. You will have to implement some custom logic to freeze an entire
     group of radio buttons."""
-    _wx_widget_type = _wx.RadioButton
     _native_widget: _wx.RadioButton
+    _wx_type_override = _wx.RadioButton ##: Why is this one necessary?
 
     def __init__(self, parent, label, is_group=False):
         super(RadioButton, self).__init__(parent, label=label,

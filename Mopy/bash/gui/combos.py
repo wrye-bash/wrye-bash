@@ -206,7 +206,6 @@ class TreePanel(_APageComponent):
 
     Note that all pages and subpages will automatically be sorted by page
     name."""
-    _wx_widget_type = _wx.Treebook
     _native_widget: _wx.Treebook
 
     class _LinkPage(WrappingTextMixin, PanelWin):

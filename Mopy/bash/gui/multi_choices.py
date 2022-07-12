@@ -40,7 +40,6 @@ class DropDown(_AComponent):
     Events:
      - on_combo_select(selected_label: str): Posted when an item on the list is
      selected. The parameter is the new value of selection."""
-    _wx_widget_type = _wx.ComboBox
     _native_widget: _wx.ComboBox
 
     def __init__(self, parent, value, choices, auto_tooltip=True):
@@ -90,7 +89,6 @@ class DropDown(_AComponent):
 
 class ImageDropDown(DropDown):
     """A version of DropDown that shows a bitmap in front of each entry."""
-    _wx_widget_type = _adv.BitmapComboBox
     _native_widget: _adv.BitmapComboBox
 
     def set_bitmaps(self, bitmaps):
@@ -105,7 +103,6 @@ class ColorPicker(_AComponent):
     Events:
      - on_color_picker_evt(selected_label: bytes): Posted when the button is
      clicked."""
-    _wx_widget_type = _wx.ColourPickerCtrl
     _native_widget: _wx.ColourPickerCtrl
 
     def __init__(self, parent, color=None):
@@ -130,7 +127,6 @@ class ListBox(WithMouseEvents):
       event and the list item label
       - Mouse events - see gui.base_components.WithMouseEvents"""
     bind_motion = bind_rclick_down = bind_rclick_up = True
-    _wx_widget_type = _wx.ListBox
     _native_widget: _wx.ListBox
 
     def __init__(self, parent, choices=None, isSingle=True, isSort=False,
@@ -231,7 +227,6 @@ class CheckListBox(ListBox, WithCharEvents):
       - Key events - see gui.base_components.WithCharEvents."""
     # type _native_widget: wx.CheckListBox
     bind_mouse_leaving = bind_lclick_double = True
-    _wx_widget_type = _wx.CheckListBox
     _native_widget: _wx.CheckListBox
 
     # note isSingle=False by default

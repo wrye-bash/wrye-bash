@@ -2085,8 +2085,8 @@ class _CheckList_SelectAll(ItemLink):
 
 # TODO(inf) Needs renaming, also need to make a virtual version eventually...
 class TreeCtrl(_AComponent):
-    _wx_widget_type = wx.TreeCtrl
     _native_widget: wx.TreeCtrl
+    _wx_type_override = wx.TreeCtrl ##: Why is this one necessary?
 
     def __init__(self, parent, title, items_dict):
         super(TreeCtrl, self).__init__(parent, size=(150, 200),

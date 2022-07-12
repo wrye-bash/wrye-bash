@@ -114,14 +114,25 @@ class _ACFrozen(object):
 class _AComponent(object):
     """Abstract base class for all GUI items. Holds a reference to the native
     wx widget that we abstract over."""
-    _wx_widget_type: Type[_wx.Window]
     _native_widget: _wx.Window
+    # Only override this if the type annotation is not enough to determine the
+    # right type
+    _wx_type_override: Type[_wx.Window]
 
     def __init__(self, parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget
         with the specified parent, args and kwargs."""
-        self._native_widget = self._wx_widget_type(self._resolve(parent),
-                                                   *args, **kwargs)
+        try:
+            wx_widget_type = self.__class__._wx_type_override
+        except AttributeError:
+            wx_widget_type = self.__class__.__annotations__['_native_widget']
+            if not isinstance(wx_widget_type, type):
+                raise SyntaxError(f'Could not determine wx type from '
+                                  f'{self.__class__.__name__}._native_widget '
+                                  f'annotation, add a _wx_type_override to '
+                                  f'specify')
+        self._native_widget = wx_widget_type(self._resolve(parent), *args,
+                                             **kwargs)
 
     def _evt_handler(self, evt, arg_proc=null_processor):
         """Register an EventHandler on _native_widget"""

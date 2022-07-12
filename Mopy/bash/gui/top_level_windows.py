@@ -122,7 +122,6 @@ class WindowFrame(_TopLevelWin):
      """
     _frame_settings_key = None
     _min_size = _def_size = (250, 250)
-    _wx_widget_type = _wx.Frame
     _native_widget: _wx.Frame
 
     def __init__(self, parent, title, icon_bundle=None, _base_key=None,
@@ -159,7 +158,6 @@ class WindowFrame(_TopLevelWin):
 class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""
     title = u'OVERRIDE'
-    _wx_widget_type = _wx.Dialog
     _native_widget: _wx.Dialog
 
     def __init__(self, parent=None, title=None, icon_bundle=None,
@@ -223,7 +221,6 @@ class StartupDialog(DialogWindow):
 
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):
-    _wx_widget_type = _wx.Panel
     _native_widget: _wx.Panel
 
     def __init__(self, parent, no_border=True):
@@ -231,7 +228,6 @@ class PanelWin(_AComponent):
             parent, style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER))
 
 class Splitter(_AComponent):
-    _wx_widget_type = _wx.SplitterWindow
     _native_widget: _wx.SplitterWindow
 
     def __init__(self, parent, allow_split=True, min_pane_size=0,
@@ -294,7 +290,6 @@ class _APageComponent(_AComponent):
 
 class TabbedPanel(_APageComponent):
     """A panel with tabs, each of which contains a different panel."""
-    _wx_widget_type = _wx.Notebook
     _native_widget: _wx.Notebook
 
     def __init__(self, parent, multiline=False):
@@ -307,7 +302,6 @@ class TabbedPanel(_APageComponent):
 class ListPanel(_APageComponent):
     """A panel with a list of options that each correspond to a different
     panel."""
-    _wx_widget_type = _wx.Listbook
     _native_widget: _wx.Listbook
 
     def __init__(self, parent):
@@ -317,7 +311,6 @@ class ListPanel(_APageComponent):
 
 class ScrollableWindow(_AComponent):
     """A window with a scrollbar."""
-    _wx_widget_type = _wx.ScrolledWindow
     _native_widget: _wx.ScrolledWindow
 
     def __init__(self, parent, scroll_horizontal=True, scroll_vertical=True):
@@ -331,7 +324,6 @@ class ScrollableWindow(_AComponent):
 class CenteredSplash(_AComponent):
     """A centered splash screen without a timeout. Only disappears when either
     the entire application terminates or stop_splash is called."""
-    _wx_widget_type = _adv.SplashScreen
     _native_widget: _adv.SplashScreen
 
     def __init__(self, splash_path):
@@ -343,8 +335,8 @@ class CenteredSplash(_AComponent):
         splash_style = _adv.SPLASH_CENTER_ON_SCREEN | _adv.SPLASH_NO_TIMEOUT
         # Can't use _AComponent.__init__ here, because for some ungodly reason
         # parent is the *third* parameter in SplashScreen
-        self._native_widget = self._wx_widget_type(splash_bitmap, splash_style,
-                                                   1, None) # Timeout - ignored
+        self._native_widget = _adv.SplashScreen(
+            splash_bitmap, splash_style, 1, None) # Timeout - ignored
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.stop_splash)
         _wx.Yield() ##: huh?

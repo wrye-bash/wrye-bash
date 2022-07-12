@@ -38,7 +38,6 @@ class Button(_AComponent):
     Events:
      - on_clicked(): Posted when the button is clicked.
      - on_right_clicked(): Posted when the button is right-clicked."""
-    _wx_widget_type = _wx.Button
     _native_widget: _wx.Button
     # The ID that will be passed to wx. Controls some OS-specific behavior,
     # e.g. when pressing Tab

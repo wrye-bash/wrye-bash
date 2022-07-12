@@ -56,7 +56,6 @@ class _ATextInput(_AComponent):
        also posts this event, so if you have to change text in response to this
        event, use _ATextInput.modified to check if it was a user modification;
        otherwise, you risk getting into an infinite loop."""
-    _wx_widget_type = _wx.TextCtrl
     _native_widget: _wx.TextCtrl
 
     # TODO: (fixed) font(s)
@@ -206,7 +205,6 @@ class TextField(_ATextInput):
 
 class SearchBar(TextField):
     """A variant of TextField that looks like a typical search bar."""
-    _wx_widget_type = _wx.SearchCtrl
     _native_widget: _wx.SearchCtrl
 
     def __init__(self, parent, *args, hint=_('Search'), **kwargs):
@@ -243,7 +241,6 @@ class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
     interacted with by the user."""
     # _native_widget: type: _wx.StaticText
-    _wx_widget_type = _wx.StaticText
     _native_widget: _wx.StaticText
 
     def __init__(self, parent, init_text, alignment=TextAlignment.LEFT):
@@ -270,7 +267,6 @@ class HyperlinkLabel(_ALabel):
     Events:
         - on_link_clicked(target_url: str): Posted when the link is
         clicked on by the user."""
-    _wx_widget_type = _adv.HyperlinkCtrl
     _native_widget: _adv.HyperlinkCtrl
 
     def __init__(self, parent, init_text, url, always_unvisited=False):
@@ -300,7 +296,6 @@ class Spinner(_AComponent):
     Events:
       - on_spun(): Posted when a new value is entered into the spinner (whether
         manually or through the buttons)."""
-    _wx_widget_type = _wx.SpinCtrl
     _native_widget: _wx.SpinCtrl
 
     def __init__(self, parent, min_val=0, max_val=100, spin_tip=None):
