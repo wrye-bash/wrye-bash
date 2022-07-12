@@ -581,13 +581,14 @@ class MelStruct(MelBase):
     def setDefault(self,record):
         for attr, value, action in zip(self.attrs, self.defaults,
                                         self.actions):
-            if callable(action): value = action(value)
+            if action is not None: value = action(value)
             setattr(record, attr, value)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         unpacked = ins.unpack(self._unpacker, size_, *debug_strs)
         for attr, value, action in zip(self.attrs, unpacked, self.actions):
-            setattr(record, attr, action(value) if callable(action) else value)
+            setattr(record, attr,
+                    action(value) if action is not None else value)
 
     def pack_subrecord_data(self, record, *, __attrgetters=attrgetter_cache):
         values = [__attrgetters[a](record) for a in self.attrs]
@@ -613,7 +614,7 @@ class MelStruct(MelBase):
     def _parseElements(self, struct_formats, *elements):
         formAttrs = set()
         lenEls = len(elements)
-        attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [0] * lenEls
+        attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [None] * lenEls
         self._action_dexes = set()
         expanded_fmts = self._expand_formats(elements, struct_formats)
         for index, (element, fmt_str) in enumerate(zip(elements, expanded_fmts)):
@@ -634,7 +635,11 @@ class MelStruct(MelBase):
                     attrIndex = 1
                     self._action_dexes.add(index)
                 elif fmt_str == u'f':
-                    actions[index] = Rounder # note this overrides action
+                    if callable(el_0): # Don't overwrite an existing action
+                        attrIndex = 1
+                        actions[index] = el_0
+                    else:
+                        actions[index] = Rounder
                     self._action_dexes.add(index)
                 attrs[index] = element[attrIndex]
                 if len(element) - attrIndex == 2:

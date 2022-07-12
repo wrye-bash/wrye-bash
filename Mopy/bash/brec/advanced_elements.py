@@ -501,7 +501,7 @@ class MelTruncatedStruct(MelStruct):
         # we just unpacked
         for attr, value, action in zip(self.attrs, unpacked_val,
                                         self.actions):
-            if callable(action): value = action(value)
+            if action is not None: value = action(value)
             setattr(record, attr, value)
 
     def _pre_process_unpacked(self, unpacked_val):

@@ -2946,8 +2946,9 @@ class MreLgtm(MelRecord):
     class MelLgtmData(MelStruct):
         """Older format skips 8 bytes in the middle and has the same unpacked
         length, so we can't use MelTruncatedStruct."""
-        def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-            __unpacker=structs_cache[u'3Bs3Bs3Bs2f2i3f24s3Bs3f4s'].unpack
+
+        def load_mel(self, record, ins, sub_type, size_, *debug_strs,
+                __unpacker=structs_cache['3Bs3Bs3Bs2f2i3f24s3Bs3f4s'].unpack):
             if size_ == 92:
                 super(MreLgtm.MelLgtmData, self).load_mel(
                     record, ins, sub_type, size_, *debug_strs)
@@ -2955,12 +2956,11 @@ class MreLgtm(MelRecord):
             elif size_ == 84:
                 unpacked_val = ins.unpack(__unpacker, size_, *debug_strs)
                 # Pad it with 8 null bytes in the middle
-                unpacked_val = (unpacked_val[:19]
-                                + (unpacked_val[19] + null4 * 2,)
-                                + unpacked_val[20:])
+                unpacked_val = (*unpacked_val[:19],
+                    unpacked_val[19] + null4 * 2, *unpacked_val[20:])
                 for attr, value, action in zip(self.attrs, unpacked_val,
-                                                self.actions):
-                    if callable(action): value = action(value)
+                                               self.actions):
+                    if action is not None: value = action(value)
                     setattr(record, attr, value)
             else:
                 raise ModSizeError(ins.inName, debug_strs, (92, 84), size_)
