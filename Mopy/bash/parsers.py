@@ -874,21 +874,24 @@ class FullNames(_HandleAliases):
         self._attr_dex = {u'full': 4} if self._called_from_patcher else {
             u'eid': 3, u'full': 4}
 
+    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
+        if csv_fields[-1] == 'NO NAME':
+            raise ValueError # Leftover from pre-310 days, just skip it
+        super()._update_from_csv(top_grup_sig, csv_fields, index_dict)
+
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
         super()._read_record(record, id_data)
         rec_data = id_data[record.fid]
-        if not (full := rec_data['full']):
-            full = rec_data['full'] = record.rec_sig == b'LIGH' and 'NO NAME'
-        if not rec_data['eid'] or full: # never used from patcher
+        if not rec_data['full']: # No FULL -> skip this record
             del id_data[record.fid]
 
     def _write_record(self, record, di, changed):
-        full = record.full
-        newFull = di[u'full']
-        if newFull and newFull not in (full, u'NO NAME'):
-            record.full = newFull
+        old_full = record.full
+        new_full = di['full']
+        if new_full != old_full:
+            record.full = new_full
             record.setChanged()
-            changed[di[u'eid']] = (full, newFull)
+            changed[di['eid']] = (old_full, new_full)
 
     def _row_out(self, lfid, stored_data, top_grup):
         return ('"%s",%s,"%s","%s"\n' % (
