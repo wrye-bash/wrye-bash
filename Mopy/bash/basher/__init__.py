@@ -2177,7 +2177,7 @@ class SaveList(balt.UIList):
 
     @staticmethod
     def _unhide_wildcard():
-        starred = u'*' + bush.game.Ess.ext
+        starred = f'*{bush.game.Ess.ext};*.bak'
         return bush.game.displayName + u' ' + _(
             u'Save files') + u' (' + starred + u')|' + starred
 

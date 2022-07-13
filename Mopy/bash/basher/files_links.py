@@ -38,9 +38,9 @@ class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
     _text = _(u'Unhide...')
 
-    def __init__(self, files_type):
+    def __init__(self, files_help):
         super(Files_Unhide, self).__init__()
-        self._help = _(u'Unhides hidden %ss.') % files_type
+        self._help = files_help
 
     @balt.conversation
     def Execute(self):
@@ -57,15 +57,19 @@ class Files_Unhide(ItemLink):
                 self._showError(
                     _(u"You can't unhide files from this directory."))
                 return
-            #--File already unhidden?
+            # Validate that the file is valid and isn't already present
+            if not self.window.data_store.rightFileType(srcFileName.s):
+                self._showWarning(_('File skipped: %s. File is not '
+                                    'valid.') % srcFileName)
+                continue
             destPath = destDir.join(srcFileName)
             if destPath.exists() or (destPath + u'.ghost').exists():
-                self._showWarning(_(u'File skipped: %s. File is already '
-                                    u'present.') % (srcFileName,))
-            #--Move it?
-            else:
-                srcFiles.append(srcPath)
-                destFiles.append(destPath)
+                self._showWarning(_('File skipped: %s. File is already '
+                                    'present.') % srcFileName)
+                continue
+            # File
+            srcFiles.append(srcPath)
+            destFiles.append(destPath)
         #--Now move everything at once
         if not srcFiles:
             return

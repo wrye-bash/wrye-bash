@@ -198,7 +198,7 @@ def InitInstallerLinks():
     if True:
         files_menu = MenuLink(_(u'Files..'))
         files_menu.links.append(UIList_OpenStore())
-        files_menu.links.append(Files_Unhide(u'installer'))
+        files_menu.links.append(Files_Unhide(_('Unhides hidden installers.')))
         files_menu.links.append(SeparatorLink())
         files_menu.links.append(Installers_CreateNewProject())
         files_menu.links.append(Installers_AddMarker())
@@ -335,7 +335,7 @@ def InitInstallerLinks():
     # File Menu
     file_menu = InstallersList.global_links[_(u'File')]
     file_menu.append(UIList_OpenStore())
-    file_menu.append(Files_Unhide(u'installer'))
+    file_menu.append(Files_Unhide(_('Unhides hidden installers.')))
     file_menu.append(SeparatorLink())
     file_menu.append(Installers_CreateNewProject())
     file_menu.append(Installers_AddMarker())
@@ -435,7 +435,7 @@ def InitModLinks():
     if True:
         files_menu = MenuLink(_(u'Files..'))
         files_menu.links.append(UIList_OpenStore())
-        files_menu.links.append(Files_Unhide(u'mod'))
+        files_menu.links.append(Files_Unhide(_('Unhides hidden plugins.')))
         if bush.game.Esp.canBash:
             files_menu.links.append(SeparatorLink())
             files_menu.links.append(Mods_CreateBlank())
@@ -606,7 +606,7 @@ def InitModLinks():
     # File Menu
     file_menu = ModList.global_links[_(u'File')]
     file_menu.append(UIList_OpenStore())
-    file_menu.append(Files_Unhide(u'mod'))
+    file_menu.append(Files_Unhide(_('Unhides hidden plugins.')))
     if bush.game.Esp.canBash:
         file_menu.append(SeparatorLink())
         file_menu.append(Mods_CreateBlank())
@@ -668,7 +668,7 @@ def InitSaveLinks():
     if True:
         files_menu = MenuLink(_(u'Files..'))
         files_menu.links.append(UIList_OpenStore())
-        files_menu.links.append(Files_Unhide(u'save'))
+        files_menu.links.append(Files_Unhide(_('Unhides hidden saves.')))
     SaveList.column_links.append(files_menu)
     SaveList.column_links.append(SeparatorLink())
     if True: #--Save Profiles
@@ -744,7 +744,7 @@ def InitSaveLinks():
     # File Menu
     file_Menu = SaveList.global_links[_(u'File')]
     file_Menu.append(UIList_OpenStore())
-    file_Menu.append(Files_Unhide(u'save'))
+    file_Menu.append(Files_Unhide(_('Unhides hidden saves.')))
     # Edit Menu
     edit_menu = SaveList.global_links[_(u'Edit')]
     if bush.game.fsName == u'Oblivion':
@@ -782,7 +782,7 @@ def InitBSALinks():
     if True:
         files_menu = MenuLink(_(u'Files..'))
         files_menu.links.append(UIList_OpenStore())
-        files_menu.links.append(Files_Unhide(u'BSA'))
+        files_menu.links.append(Files_Unhide(_('Unhides hidden BSAs.')))
     BSAList.column_links.append(files_menu)
     BSAList.column_links.append(SeparatorLink())
     #--BSAList: Item Links
@@ -802,7 +802,7 @@ def InitBSALinks():
     # File Menu
     file_menu = BSAList.global_links[_(u'File')]
     file_menu.append(UIList_OpenStore())
-    file_menu.append(Files_Unhide(u'BSA'))
+    file_menu.append(Files_Unhide(_('Unhides hidden BSAs.')))
     # View Menu
     view_menu = BSAList.global_links[_(u'View')]
     view_menu.append(SortByMenu())

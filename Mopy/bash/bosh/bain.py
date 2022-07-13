@@ -1722,6 +1722,8 @@ class InstallersData(DataStore):
     overridden_skips = set() # populate with CIstr !
     __clean_overridden_after_load = True
     installers_dir_skips = set()
+    file_pattern = re.compile(
+        fr'\.(?:{"|".join(e[1:] for e in archives.readExts)})$', re.I)
 
     def __init__(self):
         super().__init__()
@@ -1748,6 +1750,11 @@ class InstallersData(DataStore):
 
     @property
     def hidden_dir(self): return bass.dirs[u'modsBash'].join(u'Hidden')
+
+    @classmethod
+    def rightFileType(cls, fileName: bolt.FName | str):
+        ##: What about projects? Do we have to just return True here?
+        return cls.file_pattern.search(fileName)
 
     def add_marker(self, marker_name, order):
         from . import InstallerMarker

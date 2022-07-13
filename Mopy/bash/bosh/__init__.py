@@ -3330,7 +3330,7 @@ class SaveInfos(FileInfos):
             del pd[oldName]
 
     @classmethod
-    def rightFileType(cls, fileName):
+    def rightFileType(cls, fileName: bolt.FName | str):
         return all(cls._parse_save_path(fileName))
 
     @classmethod
