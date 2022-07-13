@@ -1270,6 +1270,8 @@ class INIInfo(IniFile):
         """Returns ini tweak errors as text."""
         ini_infos_ini = iniInfos.ini
         errors = [u'%s:' % self.abs_path.stail]
+        pseudosections_lower = {s.lower() for s in
+                                OBSEIniFile.ci_pseudosections.values()}
         if self._incompatible(ini_infos_ini):
             errors.append(u' ' + _(u'Format mismatch:'))
             if isinstance(self, OBSEIniFile):
@@ -1283,24 +1285,30 @@ class INIInfo(IniFile):
             ini_settings = ini_infos_ini.get_ci_settings()
             if len(tweak_settings) == 0:
                 if not isinstance(self, OBSEIniFile):
-                    errors.append(_(u' No valid INI format lines.'))
+                    errors.append(' ' + _('No valid INI format lines.'))
                 else:
-                    errors.append(_(u' No valid Batch Script format lines.'))
+                    errors.append(' ' + _('No valid Batch Script format '
+                                          'lines.'))
             else:
                 missing_settings = []
                 for key in tweak_settings:
-                    if key not in ini_settings:
-                        errors.append(u' [%s] - %s' % (key,_(u'Invalid Header')))
+                    # Properly handle OBSE pseudosections - they're always
+                    # missing from the ini_settings
+                    is_pseudosection = key.lower() in pseudosections_lower
+                    if not is_pseudosection and key not in ini_settings:
+                        errors.append(f' [{key}] - ' + _("Invalid Header"))
                     else:
                         for item in tweak_settings[key]:
-                            if item not in ini_settings[key]:
+                            # Avoid modifying ini_settings by using get
+                            if item not in ini_settings.get(key, ()):
                                 missing_settings.append(
-                                    u'  [%s] %s' % (key, item))
+                                    f'  {item}' if is_pseudosection
+                                    else f'  [{key}] {item}')
                 if missing_settings:
-                    errors.append(u' ' + _(u'Settings missing from target ini:'))
+                    errors.append(' ' + _('Settings missing from target INI:'))
                     errors.extend(missing_settings)
         if len(errors) == 1:
-            errors.append(u' None')
+            errors.append(' ' + _('None'))
         log = bolt.LogFile(io.StringIO())
         for line in errors:
             log(line)

@@ -242,7 +242,7 @@ class Save_ActivateMasters(_Save_ChangeLO):
 
 #------------------------------------------------------------------------------
 class Save_ReorderMasters(_Save_ChangeLO):
-    """Changes the laod order to match the save game's masters."""
+    """Changes the load order to match the save game's masters."""
     _text = _(u'Reorder Masters')
     _help = _(u'Reorders the plugins in the current load order to match the '
               u'order of plugins in this save.')
