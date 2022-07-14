@@ -30,7 +30,7 @@ import os
 import platform
 import textwrap
 import wx as _wx
-from typing import Type
+from typing import Type, get_type_hints
 
 from .events import EventHandler, null_processor
 from ..bolt import deprint
@@ -122,15 +122,7 @@ class _AComponent(object):
     def __init__(self, parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget
         with the specified parent, args and kwargs."""
-        try:
-            wx_widget_type = self.__class__._wx_type_override
-        except AttributeError:
-            wx_widget_type = self.__class__.__annotations__['_native_widget']
-            if not isinstance(wx_widget_type, type):
-                raise SyntaxError(f'Could not determine wx type from '
-                                  f'{self.__class__.__name__}._native_widget '
-                                  f'annotation, add a _wx_type_override to '
-                                  f'specify')
+        wx_widget_type = get_type_hints(self.__class__)['_native_widget']
         self._native_widget = wx_widget_type(self._resolve(parent), *args,
                                              **kwargs)
 

@@ -1753,72 +1753,72 @@ class _StructsCache(dict):
         return self.setdefault(key, struct.Struct(key))
 
 structs_cache = _StructsCache()
-def unpack_str16(ins, __unpack=structs_cache[u'H'].unpack):
+def unpack_str16(ins, __unpack=structs_cache[u'H'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(2))[0])
-def unpack_str32(ins, __unpack=structs_cache[u'I'].unpack):
+def unpack_str32(ins, __unpack=structs_cache[u'I'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(4))[0])
-def unpack_int(ins, __unpack=structs_cache[u'I'].unpack):
+def unpack_int(ins, __unpack=structs_cache[u'I'].unpack) -> int:
     return __unpack(ins.read(4))[0]
-def pack_int(out, value, __pack=structs_cache[u'=I'].pack):
+def pack_int(out, value: int, __pack=structs_cache[u'=I'].pack):
     out.write(__pack(value))
-def unpack_short(ins, __unpack=structs_cache[u'H'].unpack):
+def unpack_short(ins, __unpack=structs_cache[u'H'].unpack) -> int:
     return __unpack(ins.read(2))[0]
-def pack_short(out, val, __pack=structs_cache[u'=H'].pack):
+def pack_short(out, val: int, __pack=structs_cache[u'=H'].pack):
     out.write(__pack(val))
-def unpack_float(ins, __unpack=structs_cache[u'f'].unpack):
+def unpack_float(ins, __unpack=structs_cache[u'f'].unpack) -> float:
     return __unpack(ins.read(4))[0]
-def pack_float(out, val, __pack=structs_cache[u'=f'].pack):
+def pack_float(out, val: float, __pack=structs_cache[u'=f'].pack):
     out.write(__pack(val))
-def unpack_double(ins, __unpack=structs_cache[u'd'].unpack):
+def unpack_double(ins, __unpack=structs_cache[u'd'].unpack) -> float:
     return __unpack(ins.read(8))[0]
-def pack_double(out, val, __pack=structs_cache[u'=d'].pack):
+def pack_double(out, val: float, __pack=structs_cache[u'=d'].pack):
     out.write(__pack(val))
-def unpack_byte(ins, __unpack=structs_cache[u'B'].unpack):
+def unpack_byte(ins, __unpack=structs_cache[u'B'].unpack) -> int:
     return __unpack(ins.read(1))[0]
-def pack_byte(out, val, __pack=structs_cache[u'=B'].pack):
+def pack_byte(out, val: int, __pack=structs_cache[u'=B'].pack):
     out.write(__pack(val))
-def unpack_int_signed(ins, __unpack=structs_cache[u'i'].unpack):
+def unpack_int_signed(ins, __unpack=structs_cache[u'i'].unpack) -> int:
     return __unpack(ins.read(4))[0]
-def pack_int_signed(out, val, __pack=structs_cache[u'=i'].pack):
+def pack_int_signed(out, val: int, __pack=structs_cache[u'=i'].pack):
     out.write(__pack(val))
-def unpack_int64_signed(ins, __unpack=structs_cache[u'q'].unpack):
+def unpack_int64_signed(ins, __unpack=structs_cache[u'q'].unpack) -> int:
     return __unpack(ins.read(8))[0]
-def unpack_4s(ins, __unpack=structs_cache[u'4s'].unpack):
+def unpack_4s(ins, __unpack=structs_cache[u'4s'].unpack) -> bytes:
     return __unpack(ins.read(4))[0]
-def pack_4s(out, val, __pack=structs_cache[u'=4s'].pack):
+def pack_4s(out, val: bytes, __pack=structs_cache[u'=4s'].pack):
     out.write(__pack(val))
-def unpack_str16_delim(ins, __unpack=structs_cache[u'Hc'].unpack):
+def unpack_str16_delim(ins, __unpack=structs_cache[u'Hc'].unpack) -> bytes:
     str_len = __unpack(ins.read(3))[0]
     # The actual string (including terminator) isn't stored for empty strings
     if not str_len: return b''
     str_value = ins.read(str_len)
     ins.seek(1, 1) # discard string terminator
     return str_value
-def unpack_str_int_delim(ins, __unpack=structs_cache[u'Ic'].unpack):
+def unpack_str_int_delim(ins, __unpack=structs_cache[u'Ic'].unpack) -> int:
     return __unpack(ins.read(5))[0]
-def unpack_str_byte_delim(ins, __unpack=structs_cache[u'Bc'].unpack):
+def unpack_str_byte_delim(ins, __unpack=structs_cache[u'Bc'].unpack) -> int:
     return __unpack(ins.read(2))[0]
-def unpack_str8(ins, __unpack=structs_cache[u'B'].unpack):
+def unpack_str8(ins, __unpack=structs_cache[u'B'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(1))[0])
-def pack_str8(out, val, __pack=structs_cache[u'=B'].pack):
+def pack_str8(out, val: bytes, __pack=structs_cache[u'=B'].pack):
     pack_byte(out, len(val))
     out.write(val)
-def pack_bzstr8(out, val, __pack=structs_cache[u'=B'].pack):
+def pack_bzstr8(out, val: bytes, __pack=structs_cache[u'=B'].pack):
     pack_byte(out, len(val) + 1)
     out.write(val)
     out.write(b'\x00')
-def unpack_string(ins, string_len):
+def unpack_string(ins, string_len) -> bytes:
     return struct_unpack(f'{string_len}s', ins.read(string_len))[0]
-def pack_string(out, val):
+def pack_string(out, val: bytes):
     out.write(val)
 
-def pack_byte_signed(out, value, __pack=structs_cache[u'b'].pack):
+def pack_byte_signed(out, value: int, __pack=structs_cache[u'b'].pack):
     out.write(__pack(value))
 
-def unpack_many(ins, fmt):
+def unpack_many(ins, fmt: str):
     return struct_unpack(fmt, ins.read(struct.calcsize(fmt)))
 
-def unpack_spaced_string(ins, replacement_char=b'\x07'):
+def unpack_spaced_string(ins, replacement_char=b'\x07') -> bytes:
     """Unpacks a space-terminated string. Occurs if someone used
     std::stringstream to convert struct data into strings. Obviously that means
     a replacement character is needed for spaces, which is \x07 by default."""

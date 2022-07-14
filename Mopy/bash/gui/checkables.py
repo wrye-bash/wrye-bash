@@ -22,9 +22,9 @@
 # =============================================================================
 """Components that can be in one of two states, checked or unchecked."""
 
-from __future__ import annotations
-
 __author__ = u'Infernio'
+
+from typing import Union
 
 import wx as _wx
 
@@ -43,7 +43,9 @@ class _ACheckable(_AComponent):
       - on_hovered(hovered: _ACheckable): Posted when the user hovers over this
         component. The parameter is the instance of _ACheckable that was
         hovered over."""
-    _native_widget: _wx.CheckBox | _wx.RadioButton
+    ##: PY3.10: Check if we can use '|' here now (in py3.9 doing it with
+    # from __future__ import annotations breaks typing.get_type_hints)
+    _native_widget: Union[_wx.CheckBox, _wx.RadioButton]
 
     def __init__(self, *args, **kwargs):
         checked = kwargs.pop(u'checked', False)
@@ -86,7 +88,6 @@ class CheckBox(_ACheckable):
     """Represents a simple two-state checkbox. See _ACheckable for event
     docstrings."""
     _native_widget: _wx.CheckBox
-    _wx_type_override = _wx.CheckBox ##: Why is this one necessary?
 
     def __init__(self, parent, label=u'', chkbx_tooltip=None, checked=False):
         """Creates a new CheckBox with the specified properties.
@@ -120,7 +121,6 @@ class RadioButton(_ACheckable):
     button. You will have to implement some custom logic to freeze an entire
     group of radio buttons."""
     _native_widget: _wx.RadioButton
-    _wx_type_override = _wx.RadioButton ##: Why is this one necessary?
 
     def __init__(self, parent, label, is_group=False):
         super(RadioButton, self).__init__(parent, label=label,

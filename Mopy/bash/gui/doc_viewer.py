@@ -98,8 +98,6 @@ class WebViewer(_AComponent):
     navigating the history, clearing the history, navigating to a URL and
     reloading the current page."""
     _native_widget: _wx_html2.WebView
-    # Can't instantiate WebView directly, so we need an override
-    _wx_type_override = _wx_html2.WebView.New
 
     def __init__(self, parent, reload_ico, buttons_parent=None):
         """Creates a new WebViewer with the specified parent.
@@ -110,7 +108,10 @@ class WebViewer(_AComponent):
         :param buttons_parent: The object that the navigation buttons belong
                                to. If None, the same parent will be used."""
         if buttons_parent is None: buttons_parent = parent
-        super().__init__(parent, backend=_browser_backend)
+        # Can't use _AComponent.__init__ because we can't instantiate WebView
+        # directly
+        self._native_widget = _wx_html2.WebView.New(
+            parent, backend=_browser_backend)
         self._back_button = BackwardButton(buttons_parent)
         self._back_button.on_clicked.subscribe(self.go_back)
         self._forward_button = ForwardButton(buttons_parent)

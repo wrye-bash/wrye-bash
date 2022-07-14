@@ -35,7 +35,7 @@ from collections import defaultdict, OrderedDict
 
 # Local
 from . import bass, bolt, env, exception
-from .bolt import dict_sort, FName
+from .bolt import dict_sort, FName, Path
 from .ini_files import get_ini_type_and_encoding
 
 def _write_plugins_txt_(path, lord, active, _star):
@@ -63,7 +63,8 @@ def __write_plugins(out, lord, active, _star):
                          u'included in plugins.txt' % mod)
 
 _re_plugins_txt_comment = re.compile(b'^#.*')
-def _parse_plugins_txt_(path, mod_infos, _star):
+def _parse_plugins_txt_(path: Path, mod_infos, _star: bool) -> \
+        tuple[list[FName], list[FName]]:
     """Parse loadorder.txt and plugins.txt files with or without stars.
 
     Return two lists which are identical except when _star is True, whereupon
@@ -71,10 +72,7 @@ def _parse_plugins_txt_(path, mod_infos, _star):
     all other cases use the first list, which is either the list of active
     mods (when parsing plugins.txt) or the load order (when parsing
     loadorder.txt)
-    :type path: bolt.Path
     :type mod_infos: bosh.ModInfos
-    :type _star: bool
-    :rtype: (list[FName], list[FName])
     """
     with path.open(u'rb') as ins:
         #--Load Files
@@ -185,7 +183,7 @@ class LoGame(object):
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
     allow_deactivate_master = False
-    must_be_active_if_present = ()
+    must_be_active_if_present: tuple[FName] = ()
     max_espms = 255
     max_esls = 0
     # If set to False, indicates that this game has no plugins.txt. Currently
@@ -196,11 +194,12 @@ class LoGame(object):
     has_plugins_txt = True
     _star = False # whether plugins.txt uses a star to denote an active plugin
 
-    def __init__(self, mod_infos, plugins_txt_path):
+    def __init__(self, mod_infos, plugins_txt_path: bolt.Path):
+        """:type mod_infos: bosh.ModInfos"""
         super().__init__()
-        self.plugins_txt_path = plugins_txt_path # type: bolt.Path
+        self.plugins_txt_path = plugins_txt_path
         self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
-        self.master_path = mod_infos._master_esm # type: bolt.FName
+        self.master_path = mod_infos._master_esm
         self.mtime_plugins_txt = 0.0
         self.size_plugins_txt = 0
 
@@ -711,13 +710,13 @@ class INIGame(LoGame):
 
     # INI directories, override if needed
     @property
-    def ini_dir_actives(self): # type: () -> bolt.Path
+    def ini_dir_actives(self) -> Path:
         """Returns the directory containing the actives INI. Defaults to the
         game path."""
         return bass.dirs[u'app']
 
     @property
-    def ini_dir_lo(self): # type: () -> bolt.Path
+    def ini_dir_lo(self) -> Path:
         """Returns the directory containing the load order INI. Defaults to the
         game path."""
         return bass.dirs[u'app']
@@ -1012,9 +1011,9 @@ class Morrowind(INIGame, TimestampGame):
 
 class TextfileGame(LoGame):
 
-    def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path):
+    def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path: Path):
         super().__init__(mod_infos, plugins_txt_path)
-        self.loadorder_txt_path = loadorder_txt_path # type: bolt.Path
+        self.loadorder_txt_path = loadorder_txt_path
         self.mtime_loadorder_txt = 0
         self.size_loadorder_txt = 0
 
