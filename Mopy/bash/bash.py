@@ -260,6 +260,16 @@ def dump_environment(wxver=None):
         yaml_ver = yaml.__version__
     except ImportError:
         yaml_ver = 'not found'
+    try:
+        import requests
+        requests_ver = requests.__version__
+    except ImportError:
+        requests_ver = 'not found (optional)'
+    try:
+        import websocket
+        websocket_client_ver = websocket.__version__
+    except ImportError:
+        websocket_client_ver = 'not found (optional)'
     wx_ver = wxver or 'not found'
     # Now that we have checked all dependencies (including potentially missing
     # ones), we can build the environment dump
@@ -276,6 +286,8 @@ def dump_environment(wxver=None):
         f' - PyMuPDF: {pymupdf_ver}',
         f' - python-lz4: {lz4_ver}',
         f' - PyYAML: {yaml_ver}',
+        f' - requests: {requests_ver}',
+        f' - websocket-client: {websocket_client_ver}',
         f' - wxPython: {wx_ver}',
         # Standalone: stdout will actually be pointing to stderr, which has no
         # 'encoding' attribute and stdin will be None
