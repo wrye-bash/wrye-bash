@@ -587,7 +587,7 @@ class MreHasEffects(object):
         while len(_effects) >= 13:
             _effect,_effects = _effects[1:13],_effects[13:]
             eff_name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
-            seschool,sevisual,seflags,sename = _effect
+            seschool,sevisual,se_hostile,sename = _effect
             eff_name = str_or_none(eff_name) #OBME not supported
             # (support requires adding a mod/objectid format to the
             # csv, this assumes all MGEFCodes are raw)
@@ -615,13 +615,17 @@ class MreHasEffects(object):
             semod = str_or_none(semod)
             if semod is None or not seobj.startswith('0x'):
                 continue
+            se_hostile = str_or_none(se_hostile)
+            if se_hostile is None:
+                continue
             seschool = str_or_none(seschool)
             if seschool:
                 seschool = schoolTypeName_Number.get(seschool.lower(),
                                                      int_or_zero(seschool))
-            seflags = int_or_none(seflags)
+            seflags = MelEffects.se_flags(0)
+            seflags.hostile = se_hostile.lower() == 'true'
             sename = str_or_none(sename)
-            if any(x is None for x in (seschool, seflags, sename)):
+            if None in (seschool, sename):
                 continue
             eff.scriptEffect = se = cls.getDefault('effects.scriptEffect')
             se.full = sename
@@ -637,7 +641,7 @@ class MreHasEffects(object):
                 sevisuals = __packer(sevisuals)
             sevisual = sevisuals
             se.visual = sevisual
-            se.flags = MelEffects.se_flags(seflags) # TODO TEST
+            se.flags = seflags
         return effects_list
 
     @classmethod

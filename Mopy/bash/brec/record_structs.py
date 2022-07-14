@@ -53,7 +53,7 @@ attr_csv_struct = {
     'calcMin': [int_or_zero, _('CalcMin')],
     'clipRounds': [int_or_zero, _('Clip Rounds')],
     'clipsize': [int_or_zero, _('Clip Size')],
-    'cost': [int_or_zero, _('Manual Cost')],
+    'cost': [int_or_zero, _('Cost')],
     'criticalDamage': [int_or_zero, _('Critical Damage')],
     'criticalEffect': [int_or_zero, _('Critical Effect')],
     'criticalMultiplier': [float_or_none, _('Critical Multiplier')],

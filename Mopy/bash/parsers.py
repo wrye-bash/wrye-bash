@@ -38,12 +38,16 @@ from operator import itemgetter
 from . import bush, load_order
 from .balt import Progress
 from .bass import dirs, inisettings
-from .bolt import FName, decoder, deprint, setattr_deep, attrgetter_cache, \
-    str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, FNDict, \
-    DefaultFNDict
-from .brec import MreRecord, MelObject, genFid, RecHeader, attr_csv_struct
+from .bolt import FName, deprint, setattr_deep, attrgetter_cache, \
+    str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, DefaultFNDict
+from .brec import MreRecord, MelObject, genFid, RecHeader, attr_csv_struct, \
+    null3
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
+
+##: In 311+, all of the BOM garbage (utf-8-sig) should go - that means adding
+# backwards compatiblity code. See TrustedBinariesPage._import_lists, we could
+# break that out into a bolt tool for reading an 'optional-BOM UTF-8' file
 
 # Utils
 def _key_sort(di, keys_dex=(), values_key='', by_value=False):
@@ -75,6 +79,14 @@ def _fid_str(fid_tuple): return '"%s","0x%06X"' % fid_tuple
 class _TextParser(object):
     """Basic read/write csv functionality - ScriptText handles script files
     not csvs though."""
+
+    def _coerce_fid(self, modname, hex_fid):
+        """Create a long formid from a unicode modname and a unicode
+        hexadecimal - it will blow with ValueError if hex_fid is not
+        in the form 0x123abc."""
+        if not hex_fid.startswith(u'0x'):
+            raise ValueError
+        return FName(modname), int(hex_fid, 16) # Starts with 0x, must be hex
 
     def write_text_file(self, textPath):
         """Export ____ to specified text file. You must override _write_rows.
@@ -153,7 +165,8 @@ class CsvParser(_TextParser):
                     top_grup_sig, id_data, out)): continue
             for lfid, stored_data in self._row_sorter(id_data):
                 row = self._row_out(lfid, stored_data, *section_data)
-                if row: out.write(row)
+                if row and not row.isspace():
+                    out.write(row)
 
     def _write_section(self, top_grup_sig, id_data, out):
         return bool(id_data) and [sig_to_str(top_grup_sig)]
@@ -168,7 +181,6 @@ class CsvParser(_TextParser):
         work. ScriptText is a special case.
 
         :param csv_path: The path to the CSV file that should be read."""
-        ##: drop utf-8-sig? backwards compat?
         with open(csv_path, encoding='utf-8-sig') as ins:
             first_line = ins.readline()
             ##: drop 'excel-tab' format and delimiter = ';'? backwards compat?
@@ -221,13 +233,9 @@ class _HandleAliases(CsvParser):
             self.__class__._nested_type)
 
     def _coerce_fid(self, modname, hex_fid):
-        """Create a long formid from a unicode modname and a unicode
-        hexadecimal - it will blow with ValueError if hex_fid is not
-        in the form 0x123abc abd check for aliases of modname."""
-        if not hex_fid.startswith(u'0x'): raise ValueError # exit _parse_line
-        # get alias for modname returned from _CsvReader
-        modname = FName(modname)
-        return self.aliases.get(modname, modname), int(hex_fid, 0)
+        """Version of _coerce_fid that also checks for aliases of modname."""
+        modname, hex_fid = super()._coerce_fid(modname, hex_fid)
+        return (self.aliases.get(modname), hex_fid)
 
     def _parse_line(self, csv_fields):
         key1 = self._key1(csv_fields)
@@ -874,21 +882,24 @@ class FullNames(_HandleAliases):
         self._attr_dex = {u'full': 4} if self._called_from_patcher else {
             u'eid': 3, u'full': 4}
 
+    def _update_from_csv(self, top_grup_sig, csv_fields, index_dict=None):
+        if csv_fields[-1] == 'NO NAME':
+            raise ValueError # Leftover from pre-310 days, just skip it
+        super()._update_from_csv(top_grup_sig, csv_fields, index_dict)
+
     def _read_record(self, record, id_data, __attrgetters=attrgetter_cache):
         super()._read_record(record, id_data)
         rec_data = id_data[record.fid]
-        if not (full := rec_data['full']):
-            full = rec_data['full'] = record.rec_sig == b'LIGH' and 'NO NAME'
-        if not rec_data['eid'] or full: # never used from patcher
+        if not rec_data['full']: # No FULL -> skip this record
             del id_data[record.fid]
 
     def _write_record(self, record, di, changed):
-        full = record.full
-        newFull = di[u'full']
-        if newFull and newFull not in (full, u'NO NAME'):
-            record.full = newFull
+        old_full = record.full
+        new_full = di['full']
+        if new_full != old_full:
+            record.full = new_full
             record.setChanged()
-            changed[di[u'eid']] = (full, newFull)
+            changed[di['eid']] = (old_full, new_full)
 
     def _row_out(self, lfid, stored_data, top_grup):
         return ('"%s",%s,"%s","%s"\n' % (
@@ -963,8 +974,15 @@ class ItemStats(_HandleAliases):
 
 #------------------------------------------------------------------------------
 class ScriptText(_TextParser):
-    #todo(ut): maybe standardize script line endings (read both write windows)?
-    """import & export functions for script text."""
+    """Import & export functions for script text.
+
+    Notes regarding line separator handling:
+     - We use the native platform's line separators when writing to exported
+       .txt files.
+     - We use CRLF (Windows-style) when writing to plugins (that seems more
+       common from a quick survey of Cobl's scripts).
+     - Internally we store lists of strings, i.e. with the newlines chopped
+       off."""
     _parser_sigs = [b'SCPT']
 
     def __init__(self):
@@ -979,12 +997,12 @@ class ScriptText(_TextParser):
         exportedScripts = []
         y = len(eid_data)
         r = len(deprefix)
-        for z, eid in enumerate(sorted(eid_data, key=lambda eid: (eid, eid_data[eid][1]))):
-            (scpt_txt, longid) = eid_data[eid]
-            scpt_txt = decoder(scpt_txt)
+        for z, eid in enumerate(sorted(eid_data,
+                key=lambda eid: (eid, eid_data[eid][1]))):
+            scpt_lines, longid = eid_data[eid]
             if skipcomments:
-                scpt_txt =  self._filter_comments(scpt_txt)
-                if not scpt_txt: continue
+                scpt_lines =  self._filter_comments(scpt_lines)
+                if not scpt_lines: continue
             progress((0.5 + (0.5 / y) * z), _(u'Exporting script %s.') % eid)
             if x == 0 or skip != eid[:x].lower():
                 fileName = eid
@@ -992,36 +1010,34 @@ class ScriptText(_TextParser):
                     fileName = fileName[r:]
                 outpath = dirs[u'patches'].join(folder).join(
                     fileName + inisettings[u'ScriptFileExt'])
-                self.__writting = (scpt_txt, longid, eid)
+                self._writing_state = (scpt_lines, longid, eid)
                 self.write_text_file(outpath)
-                del self.__writting
+                del self._writing_state
                 exportedScripts.append(eid)
         return exportedScripts
 
     @staticmethod
-    def _filter_comments(scpt_txt, __win_line_sep=u'\r\n'):
-        tmp = []
-        for line in scpt_txt.split(__win_line_sep):
-            pos = line.find(u';')
-            if pos == -1:  # note ''.find(u';') == -1
-                tmp.append(line)
-            elif pos == 0:
-                continue
-            else:
-                if line[:pos].isspace(): continue
-                tmp.append(line[:pos])
-        return __win_line_sep.join(tmp) if tmp else u''
+    def _filter_comments(scpt_lines):
+        tmp_lines = []
+        for scpt_line in scpt_lines:
+            comment_pos = scpt_line.find(';')
+            if comment_pos == -1:  # note ''.find(';') == -1
+                tmp_lines.append(scpt_line)
+            elif comment_pos != 0:
+                uncommented_line = scpt_line[:comment_pos]
+                if not uncommented_line.isspace():
+                    tmp_lines.append(uncommented_line)
+        return tmp_lines
 
-    def _header_row(self, out, __win_line_sep=u'\r\n'):
+    def _header_row(self, out):
         # __win_line_sep: scripts line separator - or so we trust
-        __, longid, eid = self.__writting
-        header = (__win_line_sep + u';').join(
-            (u'%s' % longid[0], u'0x%06X' % longid[1], eid))
-        out.write(u';%s%s' % (header, __win_line_sep))
+        _scpt_lines, longid, eid = self._writing_state
+        header = '\n;'.join((f'{longid[0]}', f'0x{longid[1]:06X}', eid))
+        out.write(f';{header}\n')
 
     def _write_rows(self, out):
-        scpt_txt, __fid, __eid = self.__writting
-        out.write(scpt_txt)
+        scpt_lines, _longid, _eid = self._writing_state
+        out.write('\n'.join(scpt_lines) + '\n')
 
     def readFromMod(self, modInfo):
         """Reads scripts from specified mod."""
@@ -1032,7 +1048,8 @@ class ScriptText(_TextParser):
             y = len(records)
             for z, (rfid, record) in enumerate(records):
                 progress(((0.5/y) * z), _(u'Reading scripts in %s.') % modInfo)
-                eid_data[record.eid] = (record.script_source, rfid)
+                eid_data[record.eid] = (record.script_source.splitlines(),
+                                        rfid)
 
     _changed_type = list
     def writeToMod(self, modInfo, makeNew=False):
@@ -1051,10 +1068,10 @@ class ScriptText(_TextParser):
             self._write_record(record, data_, changed)
 
     def _write_record(self, record, data_, changed):
-        newText, longid = data_
-        oldText = record.script_source
-        if oldText.lower() != newText.lower():
-            record.script_source = newText
+        new_lines, longid = data_
+        old_lines = record.script_source.splitlines()
+        if old_lines != new_lines:
+            record.script_source = '\r\n'.join(new_lines)
             record.setChanged()
             changed.append(record.eid)
         del self.eid_data[record.eid]
@@ -1062,13 +1079,14 @@ class ScriptText(_TextParser):
     def _additional_processing(self, changed, modFile):
         added = []
         if self.makeNew and self.eid_data:
-            tes4 = modFile.tes4
-            for eid, (newText, longid) in self.eid_data.items():
-                scriptFid = genFid(tes4.num_masters, tes4.getNextObject())
+            for eid, (new_lines, _longid) in self.eid_data.items():
+                ##: #480 - Maybe move create_record to ModFile and use it?
+                scriptFid = genFid(
+                    modFile.tes4.num_masters, modFile.tes4.getNextObject())
                 newScript = MreRecord.type_class[b'SCPT'](
                     RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0))
                 newScript.eid = eid
-                newScript.script_source = newText
+                newScript.script_source = '\r\n'.join(new_lines)
                 newScript.setChanged()
                 modFile.tops[b'SCPT'].records.append(newScript)
                 added.append(eid)
@@ -1090,18 +1108,19 @@ class ScriptText(_TextParser):
 
     def _read_script(self, textPath):
         with textPath.open(u'r', encoding=u'utf-8-sig') as ins:
-            modName = FormID = eid = u''
-            try:
-                modName, FormID, eid = next(ins)[1:-2], next(ins)[1:-2], next(
-                    ins)[1:-2]
-                # we need a seek else we get ValueError: Mixing iteration and
-                # read methods would lose data # 12 == what we chopped off + '\r\n'
-                ins.seek(sum(len(x) for x in (modName, FormID, eid)) + 12)
-                scriptText = ins.read() # read the rest in one blob
-                self.eid_data[eid] = (scriptText, FormID)
-            except (IndexError, StopIteration):
-                deprint(f'Skipped {textPath.tail} - malformed script header '
-                        f'lines:\n{u"".join((modName, FormID, eid))}')
+            all_lines = ins.read().splitlines()
+            if len(all_lines) > 3:
+                # First three lines are the header - strip off the comment
+                # prefixes
+                modName, FormID, eid = [x[1:] for x in all_lines[:3]]
+                try:
+                    self.eid_data[eid] = (all_lines[3:],
+                                          self._coerce_fid(modName, FormID))
+                except ValueError:
+                    deprint(f'Skipped {textPath.tail} - malformed script '
+                            f'header', traceback=True)
+            else:
+                deprint(f'Skipped {textPath.tail} - malformed script header')
 
 #------------------------------------------------------------------------------
 class ItemPrices(_HandleAliases):
@@ -1129,7 +1148,8 @@ class ItemPrices(_HandleAliases):
 
     def _row_out(self, lfid, stored_data, top_grup,
                  __getter=itemgetter(*_attr_dex)):
-        return '%s,"%d","%s","%s",%s\n' % (_fid_str(lfid), *__getter(stored_data), top_grup)
+        return '%s,"%d","%s","%s","%s"\n' % (
+            _fid_str(lfid), *__getter(stored_data), top_grup)
 
 #------------------------------------------------------------------------------
 class _UsesEffectsMixin(_HandleAliases):
@@ -1172,6 +1192,13 @@ class _UsesEffectsMixin(_HandleAliases):
         for att, val in newStats.items():
             old_val = __attrgetters[att](record)
             if att == u'eid': old_eid = old_val
+            if att == 'effects':
+                # To avoid creating stupid noop edits due to the one unused
+                # field inside the SEFF struct, set the record's unused1 to
+                # three null bytes before comparing
+                for eff in old_val:
+                    if se := eff.scriptEffect:
+                        se.unused1 = null3
             if old_val != val:
                 imported = True
                 setattr_deep(record, att, val)

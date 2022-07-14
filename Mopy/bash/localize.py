@@ -255,9 +255,9 @@ def dump_translator(out_path, lang):
         subprocess.call(gt_args, shell=True)
     # Fill in any already translated stuff...?
     try:
-        re_msg_ids_start = re.compile(u'#:')
+        re_msg_ids_start = re.compile(b'#:')
         re_encoding = re.compile(
-            r'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$', re.I)
+            br'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$', re.I)
         re_non_escaped_quote = re.compile(r'([^\\])"')
         def sub_quote(regex_match):
             return regex_match.group(1) + r'\"'
@@ -301,7 +301,7 @@ def dump_translator(out_path, lang):
                         ##: This is a neat, pragmatic implementation - but of
                         # course limits us to only ever dumping translations
                         # for the current language
-                        translated_line = _(stripped_line)
+                        translated_line: str = _(stripped_line)
                         # We're going to need the msgid either way
                         out.write(new_line)
                         if translated_line != stripped_line:
