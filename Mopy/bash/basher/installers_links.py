@@ -209,11 +209,11 @@ class Installers_UninstallAllPackages(Installers_Link):
     @balt.conversation
     def Execute(self):
         """Uninstall all packages."""
-        if not self._askYes(_(u'Really uninstall All Packages?')): return
+        if not self._askYes(_('Really uninstall all packages?')): return
         ui_refresh = [False, False]
         try:
             with balt.Progress(_('Uninstalling...')) as progress:
-                self.idata.bain_uninstall('ALL', ui_refresh, progress=progress)
+                self.idata.bain_uninstall_all(ui_refresh, progress=progress)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
 

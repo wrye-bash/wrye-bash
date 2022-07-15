@@ -2637,10 +2637,16 @@ class InstallersData(DataStore):
             removes.discard(ci_dest) # don't remove it anyway
         return files
 
+    def bain_uninstall_all(self, refresh_ui, progress=None):
+        """Uninstall all present packages."""
+        self._do_uninstall(frozenset(self.values()), refresh_ui, progress)
+
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
-        """Uninstall selected archives."""
-        if unArchives == u'ALL': unArchives = frozenset(self.values())
-        else: unArchives = frozenset(self[x] for x in unArchives)
+        """Uninstall selected packages."""
+        self._do_uninstall(frozenset(self[x] for x in unArchives), refresh_ui,
+            progress)
+
+    def _do_uninstall(self, unArchives, refresh_ui, progress):
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
