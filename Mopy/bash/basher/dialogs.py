@@ -263,7 +263,7 @@ class CreateNewProject(DialogWindow):
         tmpDir.rmtree(tmpDir.s)
         if not has_files:
             projectDir.join(u'temp_hack').rmtree(safety=u'temp_hack')
-        result_proj = projectDir.tail
+        fn_result_proj = FName(projectDir.stail)
         new_installer_order = 0
         sel_installers = self._parent.GetSelectedInfos()
         if sel_installers:
@@ -271,11 +271,11 @@ class CreateNewProject(DialogWindow):
         ##: This is mostly copy-pasted from InstallerArchive_Unpack
         with balt.Progress(_('Creating Project...')) as prog:
             InstallerProject.refresh_installer(
-                result_proj, self._parent.data_store, progress=prog,
+                fn_result_proj, self._parent.data_store, progress=prog,
                 install_order=new_installer_order, do_refresh=False)
         self._parent.data_store.irefresh(what='NS')
-        self._parent.RefreshUI(detail_item=result_proj)
-        self._parent.SelectItemsNoCallback([result_proj])
+        self._parent.RefreshUI(detail_item=fn_result_proj)
+        self._parent.SelectItemsNoCallback([fn_result_proj])
 
 #------------------------------------------------------------------------------
 class CreateNewPlugin(DialogWindow):
