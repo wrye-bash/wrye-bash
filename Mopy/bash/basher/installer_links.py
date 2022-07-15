@@ -1239,7 +1239,8 @@ class Installer_SyncFromData(_SingleInstallable):
                     final_package, self.idata, do_refresh=False,
                     progress=SubProgress(progress, 0.8, 0.9),
                     install_order=self._selected_info.order + 1)
-                self.idata[final_package].is_active = True
+                created_package = self.idata[final_package]
+                created_package.is_active = self._selected_info.is_active
             self.idata.irefresh(progress=SubProgress(progress, 0.9, 0.99),
                                 what=u'NS')
             self.window.RefreshUI()
