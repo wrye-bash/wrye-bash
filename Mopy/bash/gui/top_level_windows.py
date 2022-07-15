@@ -334,7 +334,7 @@ class CenteredSplash(_AComponent):
         # user or is explicitly destroyed when the main window is ready
         splash_style = _adv.SPLASH_CENTER_ON_SCREEN | _adv.SPLASH_NO_TIMEOUT
         # Can't use _AComponent.__init__ here, because for some ungodly reason
-        # parent is the *third* parameter in SplashScreen
+        # parent is the *fourth* parameter in SplashScreen
         self._native_widget = _adv.SplashScreen(
             splash_bitmap, splash_style, 1, None) # Timeout - ignored
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)

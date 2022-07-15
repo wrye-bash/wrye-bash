@@ -26,6 +26,7 @@ load_order.py."""
 ##: multiple backups? fixes can happen in rapid succession, so preserving
 # several older files in a directory would be useful (maybe limit to some
 # number, e.g. 5 older versions)
+from __future__ import annotations
 
 __author__ = u'Utumno'
 
@@ -37,6 +38,10 @@ from collections import defaultdict, OrderedDict
 from . import bass, bolt, env, exception
 from .bolt import dict_sort, FName, Path
 from .ini_files import get_ini_type_and_encoding
+
+# Typing
+_LoTuple = tuple[FName, ...]
+_ParsedLo = tuple[list[FName], list[FName]]
 
 def _write_plugins_txt_(path, lord, active, _star):
     try:
@@ -63,8 +68,7 @@ def __write_plugins(out, lord, active, _star):
                          u'included in plugins.txt' % mod)
 
 _re_plugins_txt_comment = re.compile(b'^#.*')
-def _parse_plugins_txt_(path: Path, mod_infos, _star: bool) -> \
-        tuple[list[FName], list[FName]]:
+def _parse_plugins_txt_(path: Path, mod_infos, _star: bool) -> _ParsedLo:
     """Parse loadorder.txt and plugins.txt files with or without stars.
 
     Return two lists which are identical except when _star is True, whereupon
@@ -183,7 +187,7 @@ class LoGame(object):
     """API for setting, getting and validating the active plugins and the
     load order (of all plugins) according to the game engine (in principle)."""
     allow_deactivate_master = False
-    must_be_active_if_present: tuple[FName] = ()
+    must_be_active_if_present: _LoTuple = ()
     max_espms = 255
     max_esls = 0
     # If set to False, indicates that this game has no plugins.txt. Currently
@@ -194,7 +198,7 @@ class LoGame(object):
     has_plugins_txt = True
     _star = False # whether plugins.txt uses a star to denote an active plugin
 
-    def __init__(self, mod_infos, plugins_txt_path: bolt.Path):
+    def __init__(self, mod_infos, plugins_txt_path: Path):
         """:type mod_infos: bosh.ModInfos"""
         super().__init__()
         self.plugins_txt_path = plugins_txt_path
@@ -210,8 +214,9 @@ class LoGame(object):
                            self.plugins_txt_path.size_mtime())
 
     # API ---------------------------------------------------------------------
-    def get_load_order(self, cached_load_order, cached_active_ordered,
-                       fix_lo=None):
+    def get_load_order(self, cached_load_order: _LoTuple,
+            cached_active_ordered: _LoTuple,
+            fix_lo=None) -> tuple[_LoTuple, _LoTuple]:
         """Get and validate current load order and active plugins information.
 
         Meant to fetch at once both load order and active plugins
@@ -221,11 +226,7 @@ class LoGame(object):
         The caller is responsible for passing a valid cached value in. If you
         pass a cached value for either parameter this value will be returned
         unchanged, possibly validating the other one based on stale data.
-        NOTE: modInfos must exist and be up to date for validation.
-        :type cached_load_order: tuple[FName, ...]
-        :type cached_active_ordered: tuple[FName, ...]
-        :rtype: (tuple[FName, ...], tuple[FName, ...])
-        """
+        NOTE: modInfos must exist and be up to date for validation."""
         if cached_load_order is not None and cached_active_ordered is not None:
             return cached_load_order, cached_active_ordered # NOOP
         lo, active = self._cached_or_fetch(cached_load_order,
@@ -378,20 +379,18 @@ class LoGame(object):
         load order plugins list."""
         raise exception.AbstractError
 
-    def _fetch_load_order(self, cached_load_order, cached_active):
-        """:type cached_load_order: tuple[FName, ...] | None
-        :type cached_active: tuple[FName, ...]"""
+    def _fetch_load_order(self, cached_load_order: _LoTuple | None,
+            cached_active: _LoTuple):
         raise exception.AbstractError
 
-    def _fetch_active_plugins(self): # no override for AsteriskGame
-        """:rtype: list[FName]"""
-        raise exception.AbstractError
+    def _fetch_active_plugins(self) -> list[FName]:
+        raise exception.AbstractError # no override for AsteriskGame
 
     def _persist_load_order(self, lord, active, *, _cleaned=False):
         """Persist the fixed lord to disk - will break conflicts for
         timestamp games.
         :param _cleaned: internal, used in AsteriskGame - whether lists are
-        already cleaned."""
+            already cleaned."""
         raise exception.AbstractError(f'{type(self)} does not define '
                                       f'_persist_load_order')
 
@@ -405,8 +404,7 @@ class LoGame(object):
         raise exception.AbstractError
 
     # MODFILES PARSING --------------------------------------------------------
-    def _parse_modfile(self, path, do_raise=False):
-        """:rtype: (list[FName], list[FName])"""
+    def _parse_modfile(self, path, do_raise=False) -> _ParsedLo:
         #--Read file
         try:
             return _parse_plugins_txt_(path, self.mod_infos, _star=self._star)
@@ -418,9 +416,8 @@ class LoGame(object):
         _write_plugins_txt_(path, lord, active, _star=self._star)
 
     # PLUGINS TXT -------------------------------------------------------------
-    def _parse_plugins_txt(self):
-        """Read plugins.txt file and return a tuple of (active, loadorder).
-        :rtype: (list[FName], list[FName])"""
+    def _parse_plugins_txt(self) -> _ParsedLo:
+        """Read plugins.txt file and return a tuple of (active, loadorder)."""
         try:
             acti_lo = self._parse_modfile(self.plugins_txt_path, do_raise=True)
             self.__update_plugins_txt_cache_info()
@@ -432,7 +429,8 @@ class LoGame(object):
         self._write_modfile(self.plugins_txt_path, lord, active)
         self.__update_plugins_txt_cache_info()
 
-    def _filter_actives(self, active, rem_from_acti):
+    @staticmethod
+    def _filter_actives(active, rem_from_acti):
         """Removes entries that are not supposed to be in the actives file."""
         return [x for x in active if
                 x not in rem_from_acti] if rem_from_acti else active
@@ -459,32 +457,28 @@ class LoGame(object):
         self.size_plugins_txt, self.mtime_plugins_txt = \
             self.plugins_txt_path.size_mtime()
 
-    def get_acti_file(self):
+    def get_acti_file(self) -> Path | None:
         """Returns the path of the file used by this game for storing active
-        plugins.
-
-        :rtype: bolt.Path"""
+        plugins."""
         return None # base case
 
-    def get_lo_file(self):
+    def get_lo_file(self) -> Path | None:
         """Returns the path of the file used by this game for storing load
-        order.
-
-        :rtype: bolt.Path"""
+        order."""
         return None # base case
 
-    def _set_acti_file(self, new_acti_file):
+    def _set_acti_file(self, new_acti_file: Path):
         """Sets the path of the file used by this game for storing active
         plugins."""
         pass # base case
 
-    def _set_lo_file(self, new_lo_file):
+    def _set_lo_file(self, new_lo_file: Path):
         """Sets the path of the file used by this game for storing load
         order."""
         pass # base case
 
     # VALIDATION --------------------------------------------------------------
-    def _fix_load_order(self, lord, fix_lo):
+    def _fix_load_order(self, lord: list[FName], fix_lo):
         """Fix inconsistencies between given loadorder and actually installed
         mod files as well as impossible load orders. We need a refreshed
         bosh.modInfos reflecting the contents of Data/.
@@ -492,9 +486,7 @@ class LoGame(object):
         Called in get_load_order() to fix a newly fetched LO and in
         set_load_order() to check if a load order passed in is valid. Needs
         rethinking as save load and active should be an atomic operation -
-        leads to hacks (like the _selected parameter).
-        :type lord: list[FName]
-        """
+        leads to hacks (like the _selected parameter)."""
         if fix_lo is None: fix_lo = FixInfo() # discard fix info
         old_lord = lord[:]
         # game's master might be out of place (if using timestamps for load
@@ -640,8 +632,7 @@ class LoGame(object):
         return index_of_first_esp
 
     @staticmethod
-    def _check_for_duplicates(plugins_list):
-        """:type plugins_list: list[FName]"""
+    def _check_for_duplicates(plugins_list: list[FName]):
         mods, duplicates, j = set(), set(), 0
         mods_add = mods.add
         duplicates_add = duplicates.add
@@ -729,14 +720,10 @@ class INIGame(LoGame):
         return ini_type(ini_fpath, ini_encoding)
 
     @staticmethod
-    def _read_ini(cached_ini, ini_key):
-        """Reads a section specified INI using the specified key and returns
-        all its values, as bolt.FName objects. Handles missing INI file and an
-        absent section gracefully.
-
-        :type cached_ini: bosh.ini_files.IniFile
-        :type ini_key: tuple[str, str, str]
-        :rtype: list[bolt.FName]"""
+    def _read_ini(cached_ini, ini_key: tuple[str, str, str]) -> list[FName]:
+        """Reads a section specified IniFile using the specified key and
+        returns all its values as FName objects. Handles missing INI file and
+        an absent section gracefully."""
         # Returned format is dict[FName, tuple[str, int]], we want the
         # unicode (i.e. the mod names)
         section_mapping = cached_ini.get_setting_values(ini_key[1], {})
@@ -745,12 +732,10 @@ class INIGame(LoGame):
         return [FName(x[1][0]) for x in section_vals] ##: unpack - is len(x)==2?
 
     @staticmethod
-    def _write_ini(cached_ini, ini_key, mod_list):
-        """Writes out the specified INI using the specified key and mod list.
-
-        :type cached_ini: bosh.ini_files.IniFile
-        :type ini_key: tuple[str, str, str]
-        :type mod_list: list[FName]"""
+    def _write_ini(cached_ini, ini_key: tuple[str, str, str],
+            mod_list: list[FName]):
+        """Writes out the specified IniFile using the specified key and mod
+        list."""
         # Remove any existing section - also prevents duplicate sections with
         # different case
         cached_ini.remove_section(ini_key[1])
@@ -888,13 +873,10 @@ class INIGame(LoGame):
 
 class TimestampGame(LoGame):
     """Oblivion and other games where load order is set using modification
-    times.
-
-    :type _mtime_mods: dict[int, set[bolt.Path]]
-    """
-
+    times."""
     allow_deactivate_master = True
-    _mtime_mods = defaultdict(set) # intentionally imprecise mtime cache
+    # Intentionally imprecise mtime cache
+    _mtime_mods: defaultdict[int, set[Path]] = defaultdict(set)
     _get_free_time_step = 1.0 # step by one second intervals
 
     @classmethod
@@ -1079,15 +1061,15 @@ class TextfileGame(LoGame):
             bolt.deprint(f'Tried to back up {self.loadorder_txt_path},'
                          f' but it did not exist')
 
-    def _fetch_load_order(self, cached_load_order, cached_active):
+    def _fetch_load_order(self, cached_load_order,
+            cached_active: tuple[Path] | list[Path]):
         """Read data from loadorder.txt file. If loadorder.txt does not
         exist create it and try reading plugins.txt so the load order of the
         user is preserved (note it will create the plugins.txt if not
         existing). Additional mods should be added by caller who should
         anyway call _fix_load_order. If cached_active is passed, the relative
         order of mods will be corrected to match their relative order in
-        cached_active.
-        :type cached_active: tuple[bolt.Path] | list[bolt.Path]"""
+        cached_active."""
         if not self.loadorder_txt_path.exists():
             mods = cached_active or []
             if (cached_active is not None
@@ -1323,6 +1305,9 @@ class AsteriskGame(LoGame):
 class WindowsStoreGame(LoGame):
     """Mixin for Windows Store games, which have a second, fallback directory
     which we must keep in sync with the main one."""
+    _second_acti_file: Path | None
+    _second_lo_file: Path | None
+
     @property
     def _fallback_lo_files(self):
         """Returns a tuple containing the fallback actives/LO files"""

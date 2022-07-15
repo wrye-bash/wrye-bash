@@ -1169,9 +1169,8 @@ class ImportRaces(_ImporterPatcherPanel):
     patcher_name = _(u'Import Races')
     patcher_desc = _('Import race eyes, hair, body, voice, etc. from source '
                      'plugins.')
-    ##: Move to a game constant -> multi-game plus decouples this
     autoKey = set(chain.from_iterable(d for d in
-        preservers.ImportRacesPatcher.rec_attrs.values()))
+        bush.game.import_races_attrs.values()))
     _config_key = u'ImportRaces'
     patcher_type = preservers.ImportRacesPatcher
 
