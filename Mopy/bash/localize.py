@@ -82,9 +82,8 @@ def setup_locale(cli_lang, _wx):
     otherwise we will still try to set the locale to the user specified/default
     Finally  remembers the locale we end up with as bass.active_locale.
 
-    bolt.deprint must be set up and ready to use (i.e. hooked up to the
-    BashBugDump if debug mode is enabled) and the working directory must be
-    correct (otherwise detection of translation files will not work and this
+    bolt.deprint must be set up and ready to use and the working directory must
+    be correct (otherwise detection of translation files will not work and this
     method will always set locale to English).
 
     :param cli_lang: The language the user specified on the command line, or

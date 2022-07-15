@@ -1202,9 +1202,8 @@ class GeneralPage(_AScrollablePage):
         _(u'Western European (English, French, German, etc)'): u'cp1252',
     }
     _encodings_reverse = {v: k for k, v in _all_encodings.items()}
-    _setting_ids = {u'alt_name_on', u'deprint_on', u'global_menu_on',
-                    u'res_scroll_on', u'managed_game', u'plugin_encoding',
-                    u'uac_restart'}
+    _setting_ids = {'alt_name_on', 'global_menu_on', 'res_scroll_on',
+                    'managed_game', 'plugin_encoding', 'uac_restart'}
 
     def __init__(self, parent, page_desc):
         super(GeneralPage, self).__init__(parent, page_desc)
@@ -1219,11 +1218,6 @@ class GeneralPage(_AScrollablePage):
                                           u'will use to read and write '
                                           u'plugins.')
         self._plugin_encoding.on_combo_select.subscribe(self._on_plugin_enc)
-        self._deprint_checkbox = CheckBox(self, _(u'Debug Mode'),
-            chkbx_tooltip=_(u'Turns on extra debug prints to help debug an '
-                            u'error or just for advanced testing.'),
-            checked=bolt.deprintOn)
-        self._deprint_checkbox.on_checked.subscribe(self._on_deprint)
         ##: The next two should belong to a subpage of Appearance
         self._global_menu_checkbox = CheckBox(self, _(u'Show Global Menu'),
             chkbx_tooltip=_(u'If checked, a global menu will be shown above '
@@ -1265,9 +1259,8 @@ class GeneralPage(_AScrollablePage):
                 ]),
             ]),
             VBoxedLayout(self, title=_(u'Miscellaneous'), spacing=6, items=[
-                self._deprint_checkbox, self._global_menu_checkbox,
-                self._alt_name_checkbox, self._restore_scroll_checkbox,
-                self._uac_restart_checkbox,
+                self._global_menu_checkbox, self._alt_name_checkbox,
+                self._restore_scroll_checkbox, self._uac_restart_checkbox,
             ]),
         ]).apply_to(self)
 
@@ -1278,9 +1271,6 @@ class GeneralPage(_AScrollablePage):
     def _on_alt_name(self, checked):
         self._mark_setting_changed(u'alt_name_on',
             checked != bass.settings[u'bash.useAltName'])
-
-    def _on_deprint(self, checked):
-        self._mark_setting_changed(u'deprint_on', checked != bolt.deprintOn)
 
     def _on_global_menu(self, checked):
         self._mark_setting_changed(u'global_menu_on',
@@ -1323,11 +1313,6 @@ class GeneralPage(_AScrollablePage):
             bolt.pluginEncoding = internal_encoding
             # Request a restart so that alrady loaded plugins can be reparsed
             self._request_restart(_(u'Plugin Encoding: %s') % chosen_encoding)
-        # Debug Mode
-        if self._is_changed(u'deprint_on'):
-            deprint(u'Debug Printing: Off')
-            bolt.deprintOn = self._deprint_checkbox.is_checked
-            deprint(u'Debug Printing: On')
         # Show Global Menu
         if self._is_changed(u'global_menu_on'):
             new_gm_on = self._global_menu_checkbox.is_checked

@@ -99,9 +99,8 @@ def parse():
     parser.add_argument(u'-d', u'--debug',
                         action=u'store_true',
                         dest=u'debug',
-                        help=u'Useful if bash is crashing on startup or if '
-                             u'you want to print a lot of information'
-                             u' (e.g. while developing or debugging).')
+                        help='DEPRECATED. This does nothing anymore. Debug '
+                             'printing is now always enabled.')
     parser.add_argument(u'--no-uac',
                         action=u'store_true',
                         dest=u'noUac',

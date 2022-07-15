@@ -1167,7 +1167,6 @@ tab. The directories skipped are:
                 changes to the enabled/disabled status of plugins in your load order as well.</td></tr>
             <tr><td colspan="2">ESL-Flag Bashed Patches</td><td><em>Skyrim&colon; Special Edition &amp; Fallout 4 only.</em> If enabled,
                 then any built Bashed Patches will automatically be ESL-flagged, saving a load order slot.</td></tr>
-            <tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
             <tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
             <tr><td colspan="2">Check mods against LOOT's dirty mod list</td><td>LOOT's masterlist contains information on dirty plugins that
                 can be used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this
@@ -9262,12 +9261,6 @@ noted in the description of the tweak.</p>
                 try selecting another encoding from this dropdown.</td>
         </tr>
         <tr>
-            <td>Debug Mode</td>
-            <td>Enables debug mode, which will enable extra debug prints and
-                will print errors into a <code>BashBugDump.log</code> instead
-                of showing them on screen.</td>
-        </tr>
-        <tr>
             <td>Show Global Menu</td>
             <td>If checked, a global menu will be shown above the tabs. If
                 disabled, its options will still be accessible by
@@ -9557,9 +9550,11 @@ noted in the description of the tweak.</p>
             <th>Function
     <tbody>
         <tr>
-            <td><code>-d, --debug</code>
-            <td>Useful if bash is crashing on startup or if you want to
-                print a lot of information (e.g. while developing or debugging).
+            <td><code>-d, --debug</code></td>
+            <td>DEPRECATED. This does nothing anymore. Debug printing is now
+                always enabled. Kept around so that existing scripts and
+                shortcuts don't fail due to an unknown CLI switch.</td>
+        </tr>
         <tr>
             <td><code>-L&nbsp;LANGUAGE, --language=LANGUAGE</code>
             <td>Specify the user language overriding the system language

@@ -1741,17 +1741,13 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 
 <h2 id="trouble">Troubleshooting <a class="back2top" href="#contents">Back to top</a></h2>
 <h3 id="trouble-dump">Generating A Bug Dump <a class="back2top" href="#contents">Back to top</a></h3>
-<p>If Wrye Bash encounters an issue, it will generate a bug dump that will appear in a popup window. If an issue is encountered during startup, Wrye Bash may be unable to create the popup window, and so the bug dump will be saved to a log file, either <code>bash.log</code> or <code>Wrye Bash.exe.log</code> depending on the version of Wrye Bash you use. If no log file is present, then you will have to generate it yourself, using the steps below.
-<ol>
-    <li>Open a command prompt. This can be done by selecting Start-&gt;Programs-&gt;Accessories-&gt;Command Prompt.
-    <li>Change the working directory to the <code>Mopy</code> directory. E.g. <code>cd /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code> if Wrye Bash is installed for Oblivion.
-    <li>If using the Python version of Wrye Bash: Run <code>"Wrye Bash Debug.py" -d &gt; bash.log</code>.
-    <ul>
-        <li>If that does not work, try <code>py -3 "Wrye Bash Debug.py" -d</code>. This assumes that you have the Python launcher for Windows installed. Use an absolute path to your Python installation if you do not.</li>
-    </ul>
-    If using the Standalone version of Wrye Bash: Run <code>"Wrye Bash.exe" -d</code>.
-</ol>
-<p>The log file will detail the cause of the problem that is stopping Wrye Bash from starting. Read it and the rest of this section to see if the problem is something you can fix yourself. If not, report it to an official Wrye Bash thread for support.</p>
+<p>Wrye Bash writes debug information and error reports into a BashBugDump.log
+    file next to the <code>Wrye Bash.exe</code> file (or next to the
+    <code>Wrye Bash Launcher.pyw</code> file if using the Python version).</p>
+<p>That log file will detail the cause of the problem that is stopping Wrye
+    Bash from starting. Read it and the rest of this section to see if the
+    problem is something you can fix yourself. If not, report it to an official
+    Wrye Bash thread for support.</p>
 
 <h3 id="trouble-permissions">File Permissions <a class="back2top" href="#contents">Back to top</a></h3>
 <p>If you are running Windows Vista or later, Wrye Bash (and other modding programs) may be prevented from working correctly by the UAC security feature.  For Windows Store games, there are no workarounds to this, if you receive errors you must launch as as Administrator (workaround 4). There are four common workarounds to this problem:

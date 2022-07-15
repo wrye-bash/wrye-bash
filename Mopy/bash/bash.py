@@ -44,11 +44,21 @@ _bugdump_handle = None
 # The one and only wx
 _wx = None
 
-def _early_setup(debug):
-    """Executes (very) early setup by changing working directory and debug
-    mode.
-
-    :param debug: True if debug mode is enabled."""
+def _early_setup():
+    """Executes (very) early setup by changing working directory and installing
+    the BashBugDump hooks."""
+    # Install a hook to handle unraisable error messages (at least when a tty
+    # is attached)
+    def unraisable_hook(unraisable):
+        def _print(s):
+            print(s, file=sys.__stderr__)
+        _print(f'An unraisable exception occurred: {unraisable.exc_value!r}')
+        _print(f'Affected object: {unraisable.object!r}')
+        if unraisable.exc_traceback:
+            _print('Traceback:')
+            for tb_line in traceback.format_tb(unraisable.exc_traceback):
+                _print(tb_line.rstrip()) # Drop newlines, print will add them
+    sys.unraisablehook = unraisable_hook
     # ensure we are in the correct directory so relative paths will work
     # properly
     if bass.is_standalone:
@@ -57,23 +67,27 @@ def _early_setup(debug):
         pathToProg = os.path.dirname(sys.argv[0])
     if pathToProg:
         os.chdir(pathToProg)
-    bolt.deprintOn = debug
-    # useful for understanding context of bug reports
-    if debug or bass.is_standalone: ##: currently debug==True for standalone
-        # Standalone stdout is NUL no matter what.   Redirect it to stderr.
-        # Also, setup stdout/stderr to the debug log if debug mode /
-        # standalone before wxPython is up
-        global _bugdump_handle
-        _bugdump_handle = open(
-            os.path.join(os.getcwd(), u'BashBugDump.log'), u'w', buffering=1,
-            encoding=u'utf-8')
+    global _bugdump_handle
+    _bugdump_handle = open(os.path.join(os.getcwd(), 'BashBugDump.log'), 'w',
+        buffering=1, encoding='utf-8')
+    _install_bugdump()
+
+def _install_bugdump():
+    """Replaces sys.stdout/sys.stderr with tees that copy the output into the
+    BashBugDump as well."""
+    if sys.stdout:
+        sys.stdout = bolt.Tee(sys.stdout, _bugdump_handle)
+    else:
         sys.stdout = _bugdump_handle
+    if sys.stderr:
+        sys.stderr = bolt.Tee(sys.stderr, _bugdump_handle)
+    else:
         sys.stderr = _bugdump_handle
 
 # Wx --------------------------------------------------------------------------
 # locale/image calls in wx work once an App object is instantiated and in scope
 bash_app = None  ##: typing
-def _import_wx(debug):
+def _import_wx():
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
     try:
         global _wx
@@ -94,7 +108,14 @@ def _import_wx(debug):
                     locale.setlocale(locale.LC_CTYPE, 'C') # pass?
         # Initialize the App instance once
         global bash_app
-        bash_app = _BaseApp(not debug) # redirect std out
+        bash_app = _BaseApp(bass.is_standalone)
+        if bass.is_standalone:
+            # No console on the standalone version, so we have wxPython take
+            # over. However, we don't want it to grab the stdout stream (since
+            # that's where all the boring debug printing goes that the user can
+            # view just fine in the BashBugDump)
+            sys.stdout = sys.__stdout__
+            _install_bugdump()
         # Disable image loading errors - wxPython is missing the actual flag
         # constants for some reason, so just use 0 (no flags)
         _wx.Image.SetDefaultLoadFlags(0)
@@ -178,9 +199,6 @@ def exit_cleanup():
                     file_.remove()
             except: ##: tighten this except
                 pass
-    # make sure to flush the BashBugDump.log
-    if _bugdump_handle is not None:
-        _bugdump_handle.close()
     if bass.is_restarting:
         cli = cmd_line = bass.sys_argv # list of cli args
         try:
@@ -203,10 +221,11 @@ def exit_cleanup():
                 subprocess.Popen(cmd_line, # a list, no need to escape spaces
                                  close_fds=True)
         except Exception as error:
-            print(error)
-            print(u'Error Attempting to Restart Wrye Bash!')
-            print(f'cmd line: {cmd_line}')
-            print()
+            # Use __stdout__ here, stdout/bugdump might have been closed
+            print(error, file=sys.__stdout__)
+            print('Error Attempting to Restart Wrye Bash!',file=sys.__stdout__)
+            print(f'cmd line: {cmd_line}', file=sys.__stdout__)
+            print(file=sys.__stdout__)
             raise
 
 def dump_environment(wxver=None):
@@ -276,10 +295,9 @@ def main(opts):
                           f"the moment. If you know what you're doing, use "
                           f"the --unix switch to bypass this raise statement.")
     # Change working dir and logging
-    opts.debug = opts.debug or bass.is_standalone # always enable bugdump for standalone
-    _early_setup(opts.debug)
+    _early_setup()
     # wx is needed to initialize locale, so that's first
-    wxver = _import_wx(opts.debug)
+    wxver = _import_wx()
     try:
         # Next, initialize locale so that we can show a translated error
         # message if WB crashes
@@ -335,8 +353,7 @@ def _main(opts, wx_locale, wxver):
     # barg doesn't import anything else, so can be imported whenever we want
     from . import barg
     bass.sys_argv = barg.convert_to_long_options(sys.argv)
-    if opts.debug:
-        dump_environment(wxver)
+    dump_environment(wxver)
     # Check if there are other instances of Wrye Bash running
     instance = _wx.SingleInstanceChecker(u'Wrye Bash') # must stay alive !
     assure_single_instance(instance)
@@ -403,11 +420,6 @@ def _main(opts, wx_locale, wxver):
     basher.InitLinks()
     basher.InitImages()
     #--Start application
-    if opts.debug and bass.is_standalone:
-        # Special case for py2exe version
-        # Regain control of stdout/stderr from wxPython - TODO(inf) needed?
-        sys.stdout = _bugdump_handle
-        sys.stderr = _bugdump_handle
     bapp = basher.BashApp(bash_app)
     # Set the window title for stdout/stderr messages
     bash_app.SetOutputWindowAttributes(u'Wrye Bash stdout/stderr:')

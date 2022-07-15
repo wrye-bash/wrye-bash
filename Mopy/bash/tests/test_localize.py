@@ -38,15 +38,6 @@ _img_folder = _pj(os.path.dirname(__file__), '..', 'images')
 
 class TestLocalize:
     """Test setup_locale WIP"""
-
-    @classmethod
-    def setup_class(cls):
-        bolt.deprintOn = True
-
-    @classmethod
-    def teardown_class(cls):
-        bolt.deprintOn = False
-
     def _test_locale(self, loc, capsys):
         with capsys.disabled():
             print(f'\n\n******* Testing {loc=} *******')

@@ -42,6 +42,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import traceback
 import traceback as _traceback
 import webbrowser
 from contextlib import contextmanager, redirect_stdout
@@ -218,6 +219,25 @@ def encode_complex_string(string_val, max_size=None, min_size=None,
     if min_size and len(string_val) < min_size:
         string_val += b'\x00' * (min_size - len(string_val))
     return string_val
+
+class Tee:
+    """Similar to the Unix utility tee, this class redirects writes etc. to two
+    separate IO streams. The name comes from T-splitters (often called tees),
+    which combine or divide streams of fluid.
+
+    Note that it is currently pretty geared for its use case of handling the
+    BashBugDump, e.g. it lacks methods for closing/reading/etc."""
+    def __init__(self, stream_a, stream_b):
+        self._stream_a = stream_a
+        self._stream_b = stream_b
+
+    def flush(self) -> None:
+        self._stream_a.flush()
+        self._stream_b.flush()
+
+    def write(self, s: str) -> int:
+        self._stream_a.write(s)
+        return self._stream_b.write(s)
 
 def to_unix_newlines(s): # type: (str) -> str
     """Replaces non-UNIX newlines in the specified string with Unix newlines.
@@ -2021,13 +2041,11 @@ def text_wrap(text_to_wrap, width=60):
     pars = [textwrap.fill(line, width) for line in text_to_wrap.split(u'\n')]
     return u'\n'.join(pars)
 
-deprintOn = False
-
 # Constants used for censoring the user's home directory (see below)
 _USER_DIR = os.path.expanduser('~')
 _CENSORED_DIR = os.path.join(os.path.split(_USER_DIR)[0], '*****')
 
-def deprint(*args, traceback=False, trace=True, frame=1, on=False):
+def deprint(*args, traceback=False, trace=True, frame=1):
     """Prints message along with file and line location.
        Available keyword arguments:
        trace: (default True) - if a Truthy value, displays the module,
@@ -2037,7 +2055,6 @@ def deprint(*args, traceback=False, trace=True, frame=1, on=False):
        frame: (default 1) - With `trace`, determines the function caller's
               frame for getting the function name
     """
-    if not deprintOn and not on: return
     if trace:
         # Warning: This may be CPython-only due to _getframe usage - if we ever
         # want to run on something besides CPython, add a fallback path that
@@ -2058,19 +2075,17 @@ def deprint(*args, traceback=False, trace=True, frame=1, on=False):
                 msg += u' %s' % x
             except UnicodeError:
                 msg += u' %r' % x
+    # Print to stdout by default, but change to stderr if we have an error
+    target_stream = sys.stdout
     if traceback:
+        target_stream = sys.stderr
         exc_fmt = _traceback.format_exc()
         msg += f'\n{exc_fmt}'
     # Censor the user's home directory - we're on py3 now so no more need to
     # worry about unicode weirdness, this is now just a way for people to
     # unknowingly doxx themselves
     msg = msg.replace(_USER_DIR, _CENSORED_DIR)
-    try:
-        # Should work if stdout/stderr is going to wxPython output
-        print(msg, flush=True)
-    except UnicodeError:
-        # Nope, it's going somewhere else
-        print(msg.encode(Path.sys_fs_enc))
+    print(msg, flush=True, file=target_stream)
 
 @contextmanager
 def redirect_stdout_to_deprint(use_bytes=False):
