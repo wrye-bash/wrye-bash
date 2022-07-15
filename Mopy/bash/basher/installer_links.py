@@ -1169,8 +1169,9 @@ class InstallerArchive_Unpack(_ArchiveOnly):
 #------------------------------------------------------------------------------
 class InstallerProject_OmodConfig(_SingleProject):
     """Projects only. Allows you to read/write omod configuration info."""
-    _text = _(u'Omod Info...')
-    _help = _(u'Projects only. Allows you to read/write omod configuration info')
+    _text = _('OMOD Info...')
+    _help = _('Projects only. Allows you to read/write OMOD configuration '
+              'info.')
 
     def Execute(self):
         InstallerProject_OmodConfigDialog(self.window,
