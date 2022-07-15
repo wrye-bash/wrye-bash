@@ -261,6 +261,8 @@ class _ListPatcherPanel(_PatcherPanel):
     def __init__(self):
         super().__init__()
         self.configItems: list[FName] = []
+        self.configChecks: dict[FName, bool] = {}
+        self.configChoices: dict[FName, set[str]] = {}
         # List of items that are currently visible (according to the search)
         self._curr_items: list[FName] = []
         # Set of items that are new and hence need to remain bolded
@@ -457,15 +459,44 @@ class _ListPatcherPanel(_PatcherPanel):
         self.remove_empty_sublists = config.get(
             u'remove_empty_sublists',
             self.__class__.default_remove_empty_sublists)
-        self.configItems = forward_compat_path_to_fn_list(
-            config.get('configItems', []))
-        compat_path_to_fn = forward_compat_path_to_fn
-        self.configChecks = compat_path_to_fn(config.get('configChecks', {}))
-        self.configChoices = compat_path_to_fn(config.get('configChoices', {}))
+        # Merge entries from the config with existing ones - if we're loading
+        # the first config, the existing ones will be empty. Otherwise, we're
+        # restoring a config into an existing state, so don't delete the
+        # already present items
+        existing_config_items = set(self.configItems)
+        for cfg_item in forward_compat_path_to_fn_list(
+                config.get('configItems', [])):
+            if cfg_item not in existing_config_items:
+                self.configItems.append(cfg_item)
         #--Verify file existence
         self.configItems = [srcPath for srcPath in self.configItems if (
                 srcPath in bosh.modInfos or (srcPath.fn_ext == '.csv' and
                                              srcPath in patches_set()))]
+        if self._was_present:
+            present_config_items = set(self.configItems)
+            # We first have to reset the checked/choices state for each newer
+            # item (on first load there are no newer items, so this is a
+            # noop)...
+            for fn_item in list(self.configChecks):
+                self.configChecks[fn_item] = False
+            for fn_item in list(self.configChoices):
+                self.configChoices[fn_item] = set()
+            # ...and then we can restore the old checked/choices state (if the
+            # items in question are actually still present in the Data folder)
+            for fn_item, item_checked in forward_compat_path_to_fn(
+                    config.get('configChecks', {})).items():
+                if fn_item in present_config_items:
+                    self.configChecks[fn_item] = item_checked
+            for fn_item, choices_set in forward_compat_path_to_fn(
+                    config.get('configChoices', {})).items():
+                if fn_item in present_config_items:
+                    self.configChoices[fn_item] = choices_set
+        else:
+            # There was no config for us, so simply reset these two to their
+            # default values so they get filled with defaults during list
+            # population later on
+            self.configChecks = {}
+            self.configChoices = {}
         if self.__class__.forceItemCheck:
             for item in self.configItems:
                 self.configChecks[item] = True
