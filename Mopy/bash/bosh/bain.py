@@ -441,8 +441,7 @@ class Installer(ListInfo):
         if bass.settings[u'bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')
         if bass.settings[u'bash.installers.skipLandscapeLODMeshes']:
-            meshes_lod = os_sep.join((u'meshes', u'landscape', u'lod'))
-            Installer._global_start_skips.append(meshes_lod)
+            Installer._global_start_skips.append(bush.game.Bain.lod_meshes_dir)
         if bass.settings[u'bash.installers.skipScreenshots']:
             Installer._global_start_skips.extend(Installer.screenshot_dirs)
         # LOD textures
@@ -451,13 +450,31 @@ class Installer(ListInfo):
         skipLODNormals = bass.settings[
             u'bash.installers.skipLandscapeLODNormals']
         skipAllTextures = skipLODTextures and skipLODNormals
-        tex_gen = os_sep.join((u'textures', u'landscapelod', u'generated'))
+        tex_gen = bush.game.Bain.lod_textures_dir
+        normals_ext = f'{bush.game.Bain.lod_textures_normals_suffix}.dds'
+        def _mk_lod_tex_func(normals):
+            """Helper for generating a skip function fitting the current game
+            and whether normal or diffuse textures are targeted."""
+            if bush.game.fsName in ('Fallout3', 'FalloutNV'):
+                if normals:
+                    return lambda f: (f.startswith(tex_gen) and
+                                      'normals' in f.split(os_sep))
+                else:
+                    return lambda f: (f.startswith(tex_gen) and
+                                      'normals' not in f.split(os_sep))
+            else:
+                if normals:
+                    return lambda f: (f.startswith(tex_gen) and
+                                      f.endswith(normals_ext))
+                else:
+                    return lambda f: (f.startswith(tex_gen) and
+                                      not f.endswith(normals_ext))
         if skipAllTextures:
             Installer._global_start_skips.append(tex_gen)
-        elif skipLODTextures: Installer._global_skips.append(
-            lambda f: f.startswith(tex_gen) and not f.endswith(u'_fn.dds'))
-        elif skipLODNormals: Installer._global_skips.append(
-            lambda f: f.startswith(tex_gen) and f.endswith(u'_fn.dds'))
+        elif skipLODTextures:
+            Installer._global_skips.append(_mk_lod_tex_func(normals=False))
+        elif skipLODNormals:
+            Installer._global_skips.append(_mk_lod_tex_func(normals=True))
         # Skipped extensions
         skipObse = not bass.settings[u'bash.installers.allowOBSEPlugins']
         if skipObse:

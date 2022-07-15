@@ -589,7 +589,8 @@ class Installers_GlobalSkips(balt.MenuLink):
         self.append(_Installers_SkipScriptSources())
         self.append(_Installers_SkipImages())
         self.append(_Installers_SkipDocs())
-        self.append(_Installers_SkipDistantLOD())
+        if 'distantlod' in bush.game.Bain.data_dirs:
+            self.append(_Installers_SkipDistantLOD())
         self.append(_Installers_SkipLandscapeLODMeshes())
         self.append(_Installers_SkipLandscapeLODTextures())
         self.append(_Installers_SkipLandscapeLODNormals())

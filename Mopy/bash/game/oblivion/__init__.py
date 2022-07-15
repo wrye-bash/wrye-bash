@@ -147,6 +147,9 @@ class OblivionGameInfo(PatchGame):
             _j(u'Meshes', u'Characters', u'_Male', u'specialanims',
                 u'0FemaleVariableWalk_'),
         }
+        lod_meshes_dir = _j('meshes', 'landscape', 'lod')
+        lod_textures_dir = _j('textures', 'landscapelod', 'generated')
+        lod_textures_normals_suffix = '_fn'
         skip_bain_refresh = {
             u'tes4edit backups',
             u'tes4edit cache',
