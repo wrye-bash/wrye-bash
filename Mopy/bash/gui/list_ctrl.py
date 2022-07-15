@@ -22,6 +22,7 @@
 # =============================================================================
 """List control wrapper - this is the main control that Bash uses to display
 mods, saves, inis, installers etc"""
+from __future__ import annotations
 
 __author__ = u'Lojack, Utumno'
 
@@ -225,8 +226,8 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
                 lambda event: [event.IsEditCancelled(), event.GetLabel(),
                     event.GetIndex(), self.FindItemAt(event.GetIndex())])
         #--Item/Id mapping
-        self._item_itemId = {} # :type: dict[bolt.Path | str | int, int]
-        self._itemId_item = {} # :type: dict[int, bolt.Path | str | int]
+        self._item_itemId: dict[bolt.FName | str | int, int] = {}
+        self._itemId_item: dict[int, bolt.FName | str | int] = {}
 
     # API (beta) -------------------------------------------------------------
     # Internal id <-> item mappings used in wx._controls.ListCtrl.SortItems
