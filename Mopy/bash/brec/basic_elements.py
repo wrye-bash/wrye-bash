@@ -635,11 +635,9 @@ class MelStruct(MelBase):
                     attrIndex = 1
                     self._action_dexes.add(index)
                 elif fmt_str == u'f':
-                    if callable(el_0): # Don't overwrite an existing action
-                        attrIndex = 1
-                        actions[index] = el_0
-                    else:
-                        actions[index] = Rounder
+                    # If el_0 is an action we entered the previous elif, so
+                    # this does not overwrite an existing action
+                    actions[index] = Rounder
                     self._action_dexes.add(index)
                 attrs[index] = element[attrIndex]
                 if len(element) - attrIndex == 2:

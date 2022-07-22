@@ -56,7 +56,10 @@ class ValidatorPopup(DialogWindow):
         'this package does not conform to the FOMOD specification. This '
         'should be reported to and fixed by the mod author. Please share the '
         'error log shown below with them as well. You can use the "Copy Log" '
-        'button to easily copy it.') + '\n\n'
+        'button to easily copy it.') + '\n\n' + _(
+        'This warning can also be turned off globally via "Settings > '
+        'Validate FOMODs", but be aware that by doing so, Wrye Bash may fail '
+        'to install or incorrectly install invalid packages.') + '\n\n'
 
     def __init__(self, parent, fm_name, error_lines):
         super().__init__(parent,
