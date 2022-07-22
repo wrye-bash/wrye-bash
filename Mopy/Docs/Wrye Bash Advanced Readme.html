@@ -634,10 +634,60 @@ tab. The directories skipped are:
         </tr>
         <tr><td id="bainSkipImages">Skip Images<td>If checked, image files will be skipped.
         <tr><td id="bainSkipDocs">Skip Docs<td>If checked, document files will be skipped vice being swept to the <code>Docs</code> directory.
-        <tr><td id="bainSkipDistantLOD">Skip DistantLOD<td>If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
-        <tr><td id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
-        <tr><td id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
-        <tr><td id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
+        <tr>
+            <td id="bainSkipDistantLOD">Skip DistantLOD</td>
+            <td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas only.</em> If checked, then
+                <code>DistantLOD</code> files in packages will be ignored.
+                Useful if you're using Tes4LodGen to generate DistantLOD
+                files.</td>
+        </tr>
+        <tr>
+            <td id="bainSkipLODMeshes">Skip LOD Meshes</td>
+            <td>If checked, landscape LOD meshes will be skipped. This refers
+                to all files installed into the following folders:
+                <ul>
+                    <li><code>meshes\landscape\lod</code> &mdash; <em>Oblivion,
+                        Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                        Fallout&colon; New Vegas</em></li>
+                    <li><code>meshes\lod</code> &mdash; <em>Skyrim,
+                        Enderal&colon; Forgotten Stories, Skyrim&colon; Special
+                        Edition &amp; Fallout 4</em></li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="bainSkipLODTextures">Skip LOD Textures</td>
+            <td>If checked, landscape LOD textures will be skipped. This refers
+                to <code>.dds</code> files (except normals, see below)
+                installed into the following folders:
+                <ul>
+                    <li><code>textures\landscapelod\generated</code> &mdash;
+                        <em>Oblivion, Nehrim&colon; At Fate's Edge</em></li>
+                    <li><code>textures\landscape\lod</code> &mdash;
+                        <em>Fallout 3 &amp; Fallout&colon; New Vegas</em></li>
+                    <li><code>textures\lod</code> &mdash; <em>Skyrim,
+                        Enderal&colon; Forgotten Stories, Skyrim&colon; Special
+                        Edition &amp; Fallout 4</em></li>
+                </ul>
+            </td>
+        <tr>
+            <td id="bainSkipLODNormals">Skip LOD Normals</td>
+            <td>If checked, landscape LOD normals will be skipped. This refers
+                to the following files installed into the following folders:
+                <ul>
+                    <li><code>textures\landscapelod\generated\*_fn.dds</code>
+                        &mdash; <em>Oblivion, Nehrim&colon; At Fate's Edge</em>
+                    </li>
+                    <li><code>textures\landscape\lod\*\normals\*.dds</code>
+                        &mdash; <em>Fallout 3 &amp; Fallout&colon; New
+                            Vegas</em></li>
+                    <li><code>textures\lod\*_n.dds</code> &mdash; <em>Skyrim,
+                        Enderal&colon; Forgotten Stories, Skyrim&colon; Special
+                        Edition &amp; Fallout 4</em></li>
+                </ul>
+            </td>
+        </tr>
         <tr><td id="bainSkipBSLFiles">Skip BSL Files</td><td><em>Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon; Special Edition only.</em> If checked, BSL Files will be skipped.</td></tr>
         <tr><td rowspan="3">Global Redirects</td></tr>
         <tr>
@@ -712,7 +762,7 @@ tab. The directories skipped are:
             <td>Attempts to open the selected package's page on TES Alliance. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
         </tr>
         <tr>
-            <td colspan="3" id="bainOpenReadme">Open Readme</td>
+            <td id="bainOpenReadme">Open Readme</td>
             <td>If BAIN detects a readme in the selected package, it will be opened.</td>
         </tr>
         <tr>
@@ -746,7 +796,7 @@ tab. The directories skipped are:
                 wizard if it exists.</td>
         </tr>
         <tr>
-            <td rowspan="10">Advanced Installation..</td>
+            <td rowspan="11">Advanced Installation..</td>
             <td colspan="2" id="bainInstallConfigured">Install Configured</td>
             <td>Fully installs the package except for files that would be overridden by later packages.</td>
         </tr>

@@ -301,7 +301,7 @@ class OmodFile(object):
 class OmodConfig(object):
     """Tiny little omod config class."""
     def __init__(self, omod_proj):
-        self.omod_proj = omod_proj.s
+        self.omod_proj = omod_proj
         self.vMajor = 0
         self.vMinor = 1
         self.vBuild = 0

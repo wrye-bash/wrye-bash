@@ -31,7 +31,8 @@ from itertools import chain
 
 from .. import bolt, archives, bass, balt
 from ..archives import defaultExt, readExts
-from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files
+from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files, \
+    forward_compat_path_to_fn_list
 from ..exception import ArgumentError, StateError
 
 converters_dir: Path | None = None
@@ -207,7 +208,7 @@ class InstallerConverter(object):
         self.crc = None
         #--fullPath is saved in Converters.dat, but it is also updated on
         # every refresh in case of renaming
-        self.fullPath = full_path
+        self.fullPath: Path = full_path
         #--Semi-Persistent variables are loaded only when and as needed.
         # They're always read from BCF.dat
         #--Do NOT reorder settings,volatile,addedSettings or you will break
@@ -354,7 +355,10 @@ class InstallerConverter(object):
     def applySettings(self, destInstaller):
         """Applies the saved settings to an Installer"""
         for a in self._converter_settings + self.addedSettings:
-            setattr(destInstaller, a, getattr(self, a))
+            v = getattr(self, a)
+            if a == 'espmNots':
+                v = forward_compat_path_to_fn_list(v, ret_type=set)
+            setattr(destInstaller, a, v)
 
     def _arrangeFiles(self,progress):
         """Copy and/or move extracted files into their proper arrangement."""

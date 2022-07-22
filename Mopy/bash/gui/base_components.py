@@ -30,7 +30,7 @@ import os
 import platform
 import textwrap
 import wx as _wx
-from typing import Type, get_type_hints
+from typing import get_type_hints
 
 from .events import EventHandler, null_processor
 from ..bolt import deprint
@@ -115,9 +115,6 @@ class _AComponent(object):
     """Abstract base class for all GUI items. Holds a reference to the native
     wx widget that we abstract over."""
     _native_widget: _wx.Window
-    # Only override this if the type annotation is not enough to determine the
-    # right type
-    _wx_type_override: Type[_wx.Window]
 
     def __init__(self, parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget

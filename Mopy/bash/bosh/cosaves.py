@@ -1051,8 +1051,8 @@ class _PluggyNameBlock(_PluggyBlock):
 
         def dump_to_log(self, log, save_masters_):
             log(_(u'    - RefID : 0x%08X') % self.reference_id)
-            printable_name = ''.join([c if c in string.printable else ''
-                                      for c in self.name_data])
+            printable_name = ''.join([c for c in self.name_data
+                                      if c in string.printable])
             log(_(u'      Name  : %s') % printable_name)
 
     def __init__(self, ins, record_type):

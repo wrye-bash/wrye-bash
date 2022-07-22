@@ -111,7 +111,7 @@ class WebViewer(_AComponent):
         # Can't use _AComponent.__init__ because we can't instantiate WebView
         # directly
         self._native_widget = _wx_html2.WebView.New(
-            parent, backend=_browser_backend)
+            self._resolve(parent), backend=_browser_backend)
         self._back_button = BackwardButton(buttons_parent)
         self._back_button.on_clicked.subscribe(self.go_back)
         self._forward_button = ForwardButton(buttons_parent)

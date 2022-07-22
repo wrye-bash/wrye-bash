@@ -171,6 +171,7 @@ tabInfo = {
 #------------------------------------------------------------------------------
 # Panels ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
+_same_file = object() # None already has special meaning, so use this default
 class _DetailsViewMixin(NotebookPanel):
     """Mixin to add detailsPanel attribute to a Panel with a details view.
 
@@ -180,7 +181,7 @@ class _DetailsViewMixin(NotebookPanel):
     def _setDetails(self, fileName):
         self.detailsPanel.SetFile(fileName=fileName)
     def ClearDetails(self): self._setDetails(None)
-    def SetDetails(self, fileName=u'SAME'): self._setDetails(fileName)
+    def SetDetails(self, fileName=_same_file): self._setDetails(fileName)
 
     def RefreshUIColors(self):
         super(_DetailsViewMixin, self).RefreshUIColors()
@@ -1343,11 +1344,11 @@ class _DetailsMixin(object):
     def _resetDetails(self): raise AbstractError
 
     # Details panel API
-    def SetFile(self, fileName=u'SAME'):
+    def SetFile(self, fileName=_same_file):
         """Set file to be viewed. Leave fileName empty to reset.
         :type fileName: str | FName | None"""
         #--Reset?
-        if fileName == u'SAME':
+        if fileName is _same_file:
             if self.displayed_item not in self.file_infos:
                 fileName = None
             else:
@@ -1371,7 +1372,7 @@ class _EditableMixin(_DetailsMixin):
         self._cancel_btn.enabled = False
 
     # Details panel API
-    def SetFile(self, fileName=u'SAME'):
+    def SetFile(self, fileName=_same_file):
         #--Edit State
         self.edited = False
         self._save_btn.enabled = False
@@ -1588,7 +1589,7 @@ class ModDetails(_ModsSavesDetails):
         self.descriptionStr = u''
         self.versionStr = u'v0.00'
 
-    def SetFile(self, fileName=u'SAME'):
+    def SetFile(self, fileName=_same_file):
         fileName = super(ModDetails, self).SetFile(fileName)
         if fileName:
             modInfo = self.modInfo = bosh.modInfos[fileName]
@@ -1958,7 +1959,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
 
     def _resetDetails(self): pass
 
-    def SetFile(self, fileName=u'SAME'):
+    def SetFile(self, fileName=_same_file):
         fileName = super(INIDetailsPanel, self).SetFile(fileName)
         self._ini_detail = fileName
         self.tweakContents.refresh_tweak_contents(fileName)
@@ -2057,9 +2058,10 @@ class INIPanel(BashTab):
         self.uiList.RefreshUI(focus_list=False)
         self.detailsPanel.ShowPanel(target_changed=True)
 
+    _ini_same_item = object()
     def ShowPanel(self, refresh_infos=False, refresh_target=True,
-                  clean_targets=False, focus_list=True, detail_item=u'SAME',
-                  **kwargs):
+            clean_targets=False, focus_list=True, detail_item=_ini_same_item,
+            **kwargs):
         # Have to do this first, since IniInfos.refresh will otherwise use the
         # old INI and report no change, so we won't refresh the INI in the
         # details panel
@@ -2070,8 +2072,11 @@ class INIPanel(BashTab):
         super(INIPanel, self).ShowPanel(target_changed=target_ch,
                                         clean_targets=clean_targets)
         if changes or target_ch: # we need this to be more granular
-            self.uiList.RefreshUI(focus_list=focus_list,
-                                  detail_item=detail_item)
+            if detail_item is not self._ini_same_item:
+                self.uiList.RefreshUI(focus_list=focus_list,
+                                      detail_item=detail_item)
+            else:
+                self.uiList.RefreshUI(focus_list=focus_list)
 
     def _sbCount(self):
         stati = self.uiList.CountTweakStatus()
@@ -2298,7 +2303,7 @@ class SaveDetails(_ModsSavesDetails):
         self.playMinutes = 0
         self.coSaves = u'--\n--'
 
-    def SetFile(self, fileName=u'SAME'):
+    def SetFile(self, fileName=_same_file):
         fileName = super(SaveDetails, self).SetFile(fileName)
         if fileName:
             saveInfo = self.saveInfo = bosh.saveInfos[fileName]
@@ -2942,7 +2947,7 @@ class InstallersDetails(_SashDetailsPanel):
             inst.comments = self.gComments.text_content
             self._idata.setChanged()
 
-    def SetFile(self, fileName=u'SAME'):
+    def SetFile(self, fileName=_same_file):
         """Refreshes detail view associated with data from item."""
         if self._displayed_installer is not None:
             self._save_comments()
@@ -3472,7 +3477,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def _resetDetails(self):
         self.screenshot_control.set_bitmap(None)
 
-    def SetFile(self, fileName=u'SAME'):
+    def SetFile(self, fileName=_same_file):
         """Set file to be viewed."""
         #--Reset?
         self.displayed_screen = super(ScreensDetails, self).SetFile(fileName)
@@ -3553,7 +3558,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         self._bsa_info = None
         self.fileStr = u''
 
-    def SetFile(self, fileName=u'SAME'):
+    def SetFile(self, fileName=_same_file):
         """Set file to be viewed."""
         fileName = super(BSADetails, self).SetFile(fileName)
         if fileName:

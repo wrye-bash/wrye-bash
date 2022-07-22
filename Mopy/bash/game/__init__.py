@@ -374,6 +374,12 @@ class GameInfo(object):
         keep_data_files = set()
         # File prefixes in the Data folder to exclude from Clean Data
         keep_data_file_prefixes = set()
+        # The directory into which LOD meshes are installed
+        lod_meshes_dir = _j('meshes', 'lod')
+        # The directory into which LOD textures are installed
+        lod_textures_dir = _j('textures', 'lod')
+        # The suffix that LOD textures used as normals have in this game
+        lod_textures_normals_suffix = '_n'
         # Files BAIN shouldn't skip
         no_skip = ()
         # Directories where specific file extensions should not be skipped
