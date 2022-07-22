@@ -30,7 +30,7 @@ from operator import itemgetter, attrgetter
 
 # Wrye Bash imports
 from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
-from .utils_constants import group_types, fid_key
+from .utils_constants import group_types, fid_key, strFid
 from ..bolt import pack_int, structs_cache, attrgetter_cache, deprint, \
     sig_to_str, dict_sort
 from ..exception import AbstractError, ModError, ModFidMismatchError
@@ -484,10 +484,6 @@ class MobDial(MobObjects):
         loadSetIsSuperset = loadSet.issuperset
         # First, check the main DIAL record
         src_dial = block.dial
-        src_dial_fid = src_dial.fid
-        if self.dial.fid != src_dial_fid:
-            raise ModFidMismatchError(self.inName, u'DIAL', self.dial.fid,
-                src_dial_fid)
         if not src_dial.flags1.ignored:
             # If we're Filter-tagged, perform merge filtering first
             if doFilter:
@@ -504,7 +500,7 @@ class MobDial(MobObjects):
             if not iiSkipMerge:
                 # We're past all hurdles - mark the record as merged, and stick
                 # a copy into ourselves
-                mergeIdsAdd(src_dial_fid)
+                mergeIdsAdd(src_dial.fid)
                 self.dial = src_dial.getTypeCopy()
             # Now we're ready to filter and merge the INFO children
             super(MobDial, self).merge_records(block, loadSet, mergeIds,
@@ -517,16 +513,12 @@ class MobDial(MobObjects):
 
     def updateRecords(self, srcBlock, mergeIds):
         src_dial = srcBlock.dial
-        src_dial_fid = src_dial.fid
-        if self.dial.fid != src_dial_fid:
-            raise ModFidMismatchError(self.inName, u'DIAL', self.dial.fid,
-                src_dial_fid)
         # Copy the latest version of the DIAL record over. We can safely mark
         # it as not merged because keepRecords above ensures that we never
         # discard a DIAL when it still has INFO children
         if not src_dial.flags1.ignored:
             self.dial = src_dial.getTypeCopy()
-            mergeIds.discard(src_dial_fid)
+            mergeIds.discard(src_dial.fid)
         super(MobDial, self).updateRecords(srcBlock, mergeIds)
 
     def _sort_group(self):
@@ -983,14 +975,9 @@ class MobCell(MobBase):
         for attr, (myRecord, record) in zip((u'cell', u'pgrd', u'land'),
                                              self_src_attrs):
             if myRecord and record:
-                src_rec_fid = record.fid
-                if myRecord.fid != src_rec_fid:
-                    raise ModFidMismatchError(self.inName, myRecord.rec_str,
-                                              myRecord.fid, src_rec_fid)
                 if not record.flags1.ignored:
-                    record = record.getTypeCopy()
-                    setattr(self, attr, record)
-                    mergeDiscard(src_rec_fid)
+                    setattr(self, attr, record.getTypeCopy())
+                    mergeDiscard(record.fid)
         for attr, (self_rec_list, src_rec_list) in zip(
                 (u'persistent_refs', u'temp_refs', u'distant_refs'),
                 self_src_attrs[3:]):
@@ -1042,10 +1029,6 @@ class MobCell(MobBase):
                         continue
                 # In IIM, skip all merging (duh)
                 if iiSkipMerge: continue
-                dest_rec = getattr(self, single_attr)
-                if dest_rec and dest_rec.fid != src_rec.fid:
-                    raise ModFidMismatchError(self.inName, dest_rec.rec_str,
-                                              dest_rec.fid, src_rec.fid)
                 # We're past all hurdles - stick a copy of this record into
                 # ourselves and mark it as merged
                 mergeIdsAdd(src_rec.fid)
@@ -1540,9 +1523,10 @@ class MobWorld(MobCells):
             record = getattr(srcBlock, attr)
             if myRecord and record:
                 src_rec_fid = record.fid
+                ##: This may be wrong, check if ROAD behaves like PGRD/LAND
                 if myRecord.fid != src_rec_fid:
                     raise ModFidMismatchError(self.inName, myRecord.rec_str,
-                                              myRecord.fid, src_rec_fid)
+                        strFid(myRecord.fid), strFid(src_rec_fid))
                 if not record.flags1.ignored:
                     record = record.getTypeCopy()
                     setattr(self, attr, record)
@@ -1589,9 +1573,10 @@ class MobWorld(MobCells):
                 # In IIM, skip all merging (duh)
                 if iiSkipMerge: continue
                 dest_rec = getattr(self, single_attr)
+                ##: This may be wrong, check if ROAD behaves like PGRD/LAND
                 if dest_rec and dest_rec.fid != src_rec.fid:
                     raise ModFidMismatchError(self.inName, dest_rec.rec_str,
-                                              dest_rec.fid, src_rec.fid)
+                        strFid(dest_rec.fid), strFid(src_rec.fid))
                 # We're past all hurdles - stick a copy of this record into
                 # ourselves and mark it as merged
                 mergeIdsAdd(src_rec.fid)

@@ -122,8 +122,8 @@ class ModFidMismatchError(ModError):
     def __init__(self, in_name, debug_str, fid_expected, fid_actual):
         debug_str = _join_sigs(debug_str)
         message_form = f'{debug_str}: FormIDs do not match - expected ' \
-                       f'{fid_expected!r} but got {fid_actual!r}'
-        super(ModFidMismatchError, self).__init__(in_name, message_form)
+                       f'{fid_expected} but got {fid_actual}'
+        super().__init__(in_name, message_form)
 
 class ModSigMismatchError(ModError):
     """Mod Error: A record is getting overridden by a record with a different
