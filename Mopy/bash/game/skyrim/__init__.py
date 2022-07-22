@@ -134,7 +134,7 @@ class SkyrimGameInfo(PatchGame):
             'strings',
             'tools', # 3P: FNIS
         }
-        keep_data_dirs = {u'LSData'}
+        keep_data_dirs = {'lsdata'}
         no_skip = (
             # These are all in the Interface folder. Apart from the skyui_
             # files, they are all present in vanilla.

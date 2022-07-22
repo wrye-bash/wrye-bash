@@ -93,13 +93,13 @@ class MorrowindGameInfo(PatchGame):
             'shaders',
             'splash',
         }
+        # 'Mash' is not used by us, but kept here so we don't clean out Wrye
+        # Mash table files
+        keep_data_dirs = {'mash'}
         skip_bain_refresh = {
             u'tes3edit backups',
             u'tes3edit cache',
         }
-        # 'Mash' is not used by us, but kept here so we don't clean out Wrye
-        # Mash table files
-        wrye_bash_data_dirs = GameInfo.Bain.wrye_bash_data_dirs | {u'Mash'}
 
     class Esp(GameInfo.Esp):
         check_master_sizes = True

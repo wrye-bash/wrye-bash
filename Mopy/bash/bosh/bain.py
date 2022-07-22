@@ -94,8 +94,8 @@ class Installer(ListInfo):
     skipExts.update(set(readExts))
     commonlyEditedExts = {'.txt', '.ini', '.cfg', '.xml'}
     #--Regular game directories - needs update after bush.game has been set
-    dataDirsPlus = screenshot_dirs | {'bash patches', 'bashtags', 'ini tweaks',
-                                      'docs'}
+    dataDirsPlus = screenshot_dirs | {'docs'} | {
+        d.lower() for d in bush.game.Bain.wrye_bash_data_dirs}
     # Files that may be installed in top Data/ directory - note that all
     # top-level file extensions commonly found in the wild need to go here,
     # even ones we'll end up skipping, since this is for the detection of
@@ -1506,8 +1506,8 @@ class InstallerArchive(Installer):
         list_text.sort()
         #--Output
         for node, isdir_ in list_text:
-            log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
-                os.sep if isdir_ else u''))
+            log(u'  ' * node.count(os_sep) + os.path.split(node)[1] + (
+                os_sep if isdir_ else u''))
 
     def _open_txt_file(self, rel_path):
         with gui.BusyCursor():
@@ -2271,7 +2271,7 @@ class InstallersData(DataStore):
         root_files = []
         norm_ghost_get = Installer.getGhosted().get
         for data_path in dest_paths:
-            sp = data_path.rsplit(os.sep, 1) # split into ['rel_path, 'file']
+            sp = data_path.rsplit(os_sep, 1) # split into ['rel_path, 'file']
             if len(sp) == 1: # top level file
                 data_path = norm_ghost_get(data_path, data_path)
                 root_files.append((bass.dirs[u'mods'].s, data_path))
@@ -2767,16 +2767,13 @@ class InstallersData(DataStore):
                 ci_keep_files.add(CIstr(bp_doc.root.s + (
                     u'.txt' if bp_doc.cext == u'.html' else u'.html')))
         removes = set(self.data_sizeCrcDate) - ci_keep_files
-        # don't remove files in Wrye Bash-related directories or INI Tweaks
-        skipPrefixes = [skipDir.lower() + os.sep for skipDir in
+        # Don't remove files in Wrye Bash-related directories or INI Tweaks
+        skipPrefixes = [skipDir + os_sep for skipDir in
                         bush.game.Bain.wrye_bash_data_dirs |
                         bush.game.Bain.keep_data_dirs]
-        skipPrefixes.extend([skipPrefix.lower() for skipPrefix
-                             in bush.game.Bain.keep_data_file_prefixes])
+        skipPrefixes.extend(bush.game.Bain.keep_data_file_prefixes)
         skipPrefixes = tuple(skipPrefixes)
-        filtered_removes = [f for f in removes
-                            if not f.lower().startswith(skipPrefixes)]
-        return filtered_removes
+        return [f for f in removes if not f.lower().startswith(skipPrefixes)]
 
     def clean_data_dir(self, removes,  refresh_ui):
         destDir = bass.dirs[u'bainData'].join(u'%s Folder Contents (%s)' % (

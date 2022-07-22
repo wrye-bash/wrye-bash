@@ -136,16 +136,16 @@ class OblivionGameInfo(PatchGame):
             'trees',
         }
         keep_data_dirs = {
-            _j(u'OBSE', u'Plugins', u'ComponentDLLs', u'CSE'),
-            u'LSData'
+            _j('obse', 'plugins', 'componentdlls', 'cse'),
+            'lsdata'
         }
         keep_data_files = {
-            _j(u'OBSE', u'Plugins', u'Construction Set Extender.dll'),
-            _j(u'OBSE', u'Plugins', u'Construction Set Extender.ini'),
+            _j('obse', 'plugins', 'construction set extender.dll'),
+            _j('obse', 'plugins', 'construction set extender.ini'),
         }
         keep_data_file_prefixes = {
-            _j(u'Meshes', u'Characters', u'_Male', u'specialanims',
-                u'0FemaleVariableWalk_'),
+            _j('meshes', 'characters', '_male', 'specialanims',
+                '0femalevariablewalk_'),
         }
         lod_meshes_dir = _j('meshes', 'landscape', 'lod')
         lod_textures_dir = _j('textures', 'landscapelod', 'generated')
@@ -156,7 +156,7 @@ class OblivionGameInfo(PatchGame):
             u'bgsee',
             u'conscribe logs',
         }
-        wrye_bash_data_files = {u'ArchiveInvalidationInvalidated!.bsa'}
+        wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
         canBash = True

@@ -123,12 +123,12 @@ class Fallout3GameInfo(PatchGame):
             'shaders',
             'trees',
         }
-        keep_data_dirs = {u'LSData'}
-        keep_data_files = {u'Fallout - AI!.bsa'}
+        keep_data_dirs = {'lsdata'}
+        keep_data_files = {'fallout - ai!.bsa'}
         lod_meshes_dir = _j('meshes', 'landscape', 'lod')
         lod_textures_dir = _j('textures', 'landscape', 'lod')
         skip_bain_refresh = {u'fo3edit backups', u'fo3edit cache'}
-        wrye_bash_data_files = {u'ArchiveInvalidationInvalidated!.bsa'}
+        wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
         canBash = True

@@ -358,7 +358,8 @@ class GameInfo(object):
         xe_key_prefix = u''
 
     class Bain(object):
-        """Information about what BAIN should do for this game."""
+        """Information about what BAIN should do for this game. All strings in
+        here must be lower-cased!"""
         # The allowed default data directories that BAIN can install to
         data_dirs = {
             'ini',
@@ -393,8 +394,8 @@ class GameInfo(object):
         )
         # Wrye Bash files to exclude from Clean Data
         wrye_bash_data_files = set()
-        # Wrye Bash directories to exclude from Clean Data
-        wrye_bash_data_dirs = {u'Bash Patches', u'BashTags', u'INI Tweaks'}
+        # Wrye Bash directories to install and exclude from Clean Data
+        wrye_bash_data_dirs = {'bash patches', 'bashtags', 'ini tweaks'}
 
     # Plugin format stuff
     class Esp(object):
