@@ -1090,13 +1090,14 @@ class MobCells(MobBase):
         super(MobCells, self).__init__(header, loadFactory, ins, do_unpack)
 
     def setCell(self,cell):
-        """Adds record to record list and indexed."""
-        cfid = cell.fid
+        """Adds a copy of the specified CELL to this CELLs block."""
+        cell_copy = cell.getTypeCopy()
+        cfid = cell_copy.fid
         if cfid in self.id_cellBlock:
-            self.id_cellBlock[cfid].cell = cell
+            self.id_cellBlock[cfid].cell = cell_copy
         else:
             cellBlock = MobCell(GrupHeader(0, 0, 6, self.stamp), ##: Note label is 0 here - specialized GrupHeader subclass?
-                                self.loadFactory, cell)
+                                self.loadFactory, cell_copy)
             cellBlock.setChanged()
             self.id_cellBlock[cfid] = cellBlock
 
@@ -1193,7 +1194,6 @@ class MobCells(MobBase):
             dest_cell_block = lookup_cell_block(src_fid)
             if not dest_cell_block:
                 # We do not, add it and then look up again
-                ##: Shouldn't all the setCell calls use getTypeCopy?
                 self.setCell(src_cell_block.cell)
                 dest_cell_block = lookup_cell_block(src_fid)
                 was_newly_added = True
@@ -1476,14 +1476,15 @@ class MobWorld(MobCells):
             return worldSize
 
     def set_persistent_cell(self, cell):
-        """Updates the persistent CELL block to use the specified CELL or
-        creates a new persistent CELL block if one does not already exist in
-        this world."""
+        """Updates the persistent CELL block to use a copy of the specified
+        CELL or creates a new persistent CELL block if one does not already
+        exist in this world."""
+        cell_copy = cell.getTypeCopy()
         if self.worldCellBlock:
-            self.worldCellBlock.cell = cell
+            self.worldCellBlock.cell = cell_copy
         else:
             new_pers_block = MobCell(GrupHeader(0, 0, 6, self.stamp), ##: Note label is 0 here - specialized GrupHeader subclass?
-                                     self.loadFactory, cell)
+                                     self.loadFactory, cell_copy)
             new_pers_block.setChanged()
             self.worldCellBlock = new_pers_block
 
@@ -1744,15 +1745,16 @@ class MobWorlds(MobBase):
                 worldBlock.updateRecords(srcWorldBlock, mergeIds)
 
     def setWorld(self, world):
-        """Adds record to record list and indexed."""
-        fid = world.fid
-        if fid in self.id_worldBlocks:
-            self.id_worldBlocks[fid].world = world
+        """Adds a copy of the specified WRLD to this WRLDs block."""
+        world_copy = world.getTypeCopy()
+        wfid = world_copy.fid
+        if wfid in self.id_worldBlocks:
+            self.id_worldBlocks[wfid].world = world_copy
         else:
             worldBlock = MobWorld(GrupHeader(0, 0, 1, self.stamp), ##: groupType = 1
-                                  self.loadFactory, world)
+                                  self.loadFactory, world_copy)
             worldBlock.setChanged()
-            self.id_worldBlocks[fid] = worldBlock
+            self.id_worldBlocks[wfid] = worldBlock
 
     def remove_world(self, world):
         """Removes the specified world from this block. The exact world object
@@ -1781,7 +1783,6 @@ class MobWorlds(MobBase):
             dest_world_block = lookup_world_block(src_fid)
             if not dest_world_block:
                 # We do not, add it and then look up again
-                ##: Shouldn't all the setWorld calls use getTypeCopy?
                 self.setWorld(src_world_block.world)
                 dest_world_block = lookup_world_block(src_fid)
                 was_newly_added = True
