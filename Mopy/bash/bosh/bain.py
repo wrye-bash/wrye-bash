@@ -2453,7 +2453,7 @@ class InstallersData(DataStore):
                 ini_.writelines(lines)
             # We notify BAIN below, although highly improbable the created ini
             # is included to a package
-            iniInfos.new_info(tweakPath.tail, notify_bain=True)
+            iniInfos.new_info(tweakPath.stail, notify_bain=True)
         tweaksCreated -= removed
 
     def __installer_install(self, installer, destFiles, index, progress,

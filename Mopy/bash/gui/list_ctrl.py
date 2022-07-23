@@ -242,7 +242,8 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         """Insert an item to the list control giving it an internal id.
 
         :param decorate_cb: A callback that will be passed the created wx item.
-            Use this to set properties on the item once before it is """
+            Use this to set properties on the item once before it is inserted
+            into the ListCtrl via SetItem."""
         i = self.__id(item)
         new_index = self._native_widget.InsertItem(index, value)
         if new_index == -1:

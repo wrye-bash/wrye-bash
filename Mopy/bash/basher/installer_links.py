@@ -419,9 +419,9 @@ class Installer_Wizard(_Installer_AWizardLink):
                     manuallyApply.append((outFile, iniFile))
                     continue
                 target_ini_file = bosh.BestIniFile(target_path)
-            if INIList.apply_tweaks((bosh.iniInfos[outFile.tail],),
+            if INIList.apply_tweaks((bosh.iniInfos[outFile.stail],),
                                     target_ini_file):
-                lastApplied = outFile.tail
+                lastApplied = FName(outFile.stail)
         #--Refresh after all the tweaks are applied
         if lastApplied is not None:
             target_updated = bosh.INIInfos.update_targets(new_targets)
