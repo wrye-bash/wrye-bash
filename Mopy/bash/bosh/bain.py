@@ -94,8 +94,8 @@ class Installer(ListInfo):
     skipExts.update(set(readExts))
     commonlyEditedExts = {'.txt', '.ini', '.cfg', '.xml'}
     #--Regular game directories - needs update after bush.game has been set
-    dataDirsPlus = screenshot_dirs | {'docs'} | {
-        d.lower() for d in bush.game.Bain.wrye_bash_data_dirs}
+    dataDirsPlus = screenshot_dirs | bush.game.Bain.wrye_bash_data_dirs | {
+        'docs'}
     # Files that may be installed in top Data/ directory - note that all
     # top-level file extensions commonly found in the wild need to go here,
     # even ones we'll end up skipping, since this is for the detection of
