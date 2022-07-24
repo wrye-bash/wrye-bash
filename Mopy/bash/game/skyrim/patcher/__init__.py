@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -451,8 +451,8 @@ namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'AVIF', b'BOOK',
               b'CLAS', b'CLFM', b'CONT', b'DOOR', b'ENCH', b'EXPL', b'EYES',
               b'FACT', b'FLOR', b'FURN', b'HAZD', b'HDPT', b'INGR', b'KEYM',
               b'LCTN', b'LIGH', b'MESG', b'MGEF', b'MISC', b'MSTT', b'NPC_',
-              b'PERK', b'PROJ', b'RACE', b'SCRL', b'SHOU', b'SLGM', b'SNCT',
-              b'SPEL', b'TACT', b'TREE', b'WATR', b'WEAP', b'WOOP'}
+              b'PERK', b'PROJ', b'QUST', b'RACE', b'SCRL', b'SHOU', b'SLGM',
+              b'SNCT', b'SPEL', b'TACT', b'TREE', b'WATR', b'WEAP', b'WOOP'}
 
 #------------------------------------------------------------------------------
 # Import Prices
@@ -463,21 +463,24 @@ pricesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'INGR', b'KEYM',
 #------------------------------------------------------------------------------
 # Import Stats
 #------------------------------------------------------------------------------
+# The contents of these tuples has to stay fixed because of CSV parsers
 statsTypes = {
-        b'ALCH':(u'eid', u'weight', u'value'),
-        b'AMMO':(u'eid', u'value', u'damage'),
-        b'APPA':(u'eid', u'weight', u'value'),
-        b'ARMO':(u'eid', u'weight', u'value', u'armorRating'),
-        b'BOOK':(u'eid', u'weight', u'value'),
-        b'INGR':(u'eid', u'weight', u'value'),
-        b'KEYM':(u'eid', u'weight', u'value'),
-        b'LIGH':(u'eid', u'weight', u'value', u'duration'),
-        b'MISC':(u'eid', u'weight', u'value'),
-        b'SLGM':(u'eid', u'weight', u'value'),
-        b'WEAP':(u'eid', u'weight', u'value', u'damage', u'speed', u'reach',
-                 u'enchantPoints', u'stagger', u'critDamage',
-                 u'criticalMultiplier', u'criticalEffect',),
-    }
+    b'ALCH': ('eid', 'weight', 'value'),
+    b'AMMO': ('eid', 'value', 'damage'),
+    b'APPA': ('eid', 'weight', 'value'),
+    b'ARMO': ('eid', 'weight', 'value', 'armorRating'),
+    b'BOOK': ('eid', 'weight', 'value'),
+    b'EYES': ('eid', 'flags'),
+    b'HDPT': ('eid', 'flags'),
+    b'INGR': ('eid', 'weight', 'value'),
+    b'KEYM': ('eid', 'weight', 'value'),
+    b'LIGH': ('eid', 'weight', 'value', 'duration'),
+    b'MISC': ('eid', 'weight', 'value'),
+    b'SLGM': ('eid', 'weight', 'value'),
+    b'WEAP': ('eid', 'weight', 'value', 'damage', 'speed', 'reach',
+              'enchantPoints', 'stagger', 'criticalDamage',
+              'criticalMultiplier', 'criticalEffect'),
+}
 
 #------------------------------------------------------------------------------
 # Import Sounds
@@ -623,13 +626,17 @@ graphicsTypes = {
               u'startFrameVariation', u'endFrame', u'loopStartFrame',
               u'loopStartVariation', u'frameCount', u'frameCountVariation',
               u'flags', u'fillTextScaleU', u'fillTextScaleV',
-              u'sceneGraphDepthLimit',),
+              u'sceneGraphDepthLimit', u'fillTexture', u'particleTexture',
+              u'holesTexture', u'membranePaletteTexture',
+              u'particlePaletteTexture'),
     b'FLOR': (u'model',),
     b'FURN': (u'model',),
     b'GRAS': (u'model',),
     b'INGR': (u'iconPath', u'model'),
     b'KEYM': (u'iconPath', u'model'),
-    b'LIGH': (u'iconPath', u'model'),
+    b'LIGH': ('iconPath', 'model', 'radius', 'red', 'green', 'blue', 'flags',
+              'falloff', 'fov', 'nearClip', 'fePeriod', 'feIntensityAmplitude',
+              'feMovementAmplitude', 'fade'),
     b'LSCR': (u'iconPath',),
     b'MGEF': (u'dual_casting_scale',),
     b'MISC': (u'iconPath', u'model'),
@@ -672,25 +679,30 @@ keywords_types = (b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'BOOK', b'FLOR',
 # Import Text
 #------------------------------------------------------------------------------
 text_types = {
-    b'ACTI': (u'activate_text_override',),
-    b'ALCH': (u'description',),
-    b'AMMO': (u'description',),
-    b'APPA': (u'description',),
-    b'ARMO': (u'description',),
-    b'AVIF': (u'description',),
-    b'BOOK': (u'description', u'book_text'),
-    b'CLAS': (u'description',),
-    #b'COLL': (u'description',), # seems fairly useless to patch this
-    b'LSCR': (u'description',),
-    b'MESG': (u'description',),
-    b'MGEF': (u'magic_item_description',),
-    b'PERK': (u'description',),
-    #b'QUST': (u'description',), # no other patchers and seems unused
+    b'ACTI': ('activate_text_override',),
+    b'ALCH': ('description',),
+    b'AMMO': ('description', 'short_name'),
+    b'APPA': ('description',),
+    b'ARMO': ('description',),
+    b'ASTP': ('male_parent_title', 'female_parent_title', 'male_child_title',
+              'female_child_title'),
+    b'AVIF': ('description', 'abbreviation'),
+    b'BOOK': ('description', 'book_text'),
+    b'CLAS': ('description',),
+    b'COLL': ('description',),
+    b'FLOR': ('activate_text_override',),
+    b'LSCR': ('description',),
+    b'MESG': ('description',),
+    b'MGEF': ('magic_item_description',),
+    b'NPC_': ('short_name',),
+    b'PERK': ('description',),
+    b'QUST': ('description',),
     # omit RACE - covered by R.Description
-    b'SCRL': (u'description',),
-    b'SHOU': (u'description',),
-    b'SPEL': (u'description',),
-    b'WEAP': (u'description',),
+    b'SCRL': ('description',),
+    b'SHOU': ('description',),
+    b'SPEL': ('description',),
+    b'WEAP': ('description',),
+    b'WOOP': ('translation',),
 }
 
 #------------------------------------------------------------------------------
@@ -757,6 +769,7 @@ actor_importer_attrs = {
                            u'energyLevel', u'mood', u'responsibility', u'warn',
                            u'warnAttack'),
         u'Actors.CombatStyle': (u'combatStyle',),
+        'Actors.DeathItem': ('deathItem',),
         u'Actors.RecordFlags': (u'flags1',),
         u'Actors.Stats': (u'alchemySO', u'alchemySV', u'alterationSO',
                           u'alterationSV', u'blockSO', u'blockSV',
@@ -781,7 +794,7 @@ actor_importer_attrs = {
         u'NPC.Race': (u'race',),
     },
 }
-actor_types = (b'NPC_',)
+spell_types = (b'LVSP', b'SPEL')
 
 #------------------------------------------------------------------------------
 # Import Spell Stats
@@ -821,6 +834,89 @@ assorted_tweaks = {
     u'AssortedTweak_BookWeight',
 }
 staff_condition = (u'animationType', 8)
+
+#------------------------------------------------------------------------------
+# Tweak Names
+#------------------------------------------------------------------------------
+names_tweaks = {
+    'NamesTweak_BodyPartCodes',
+    'NamesTweak_Body_Armor_Tes5',
+    'NamesTweak_Scrolls',
+    'NamesTweak_Spells_Tes5',
+    'NamesTweak_Weapons_Tes5',
+    'NamesTweak_DwarvenToDwemer',
+    'NamesTweak_DwarfsToDwarves',
+    'NamesTweak_StaffsToStaves',
+    'NamesTweak_RenameGold',
+}
+body_part_codes = ('HAGBMRS', 'HBALMRS')
+text_replacer_rpaths = {
+    b'ACTI': ('full', 'activate_text_override'),
+    b'ALCH': ('full', 'description'),
+    b'AMMO': ('full', 'description', 'short_name'),
+    b'APPA': ('full', 'description'),
+    b'ARMO': ('full', 'description'),
+    b'ASTP': ('male_parent_title', 'female_parent_title', 'male_child_title',
+              'female_child_title'),
+    b'AVIF': ('full', 'description', 'abbreviation'),
+    b'BOOK': ('full', 'description', 'book_text'),
+    b'CLAS': ('full', 'description'),
+    b'CLFM': ('full',),
+    b'COLL': ('description',),
+    b'CONT': ('full',),
+    b'DOOR': ('full',),
+    b'ENCH': ('full',),
+    b'EXPL': ('full',),
+    b'EYES': ('full',),
+    b'FACT': ('full', 'ranks[i].male_title', 'ranks[i].female_title'),
+    b'FLOR': ('full', 'activate_text_override'),
+    b'FURN': ('full',),
+    b'GMST': ('value',),
+    b'HAZD': ('full',),
+    b'HDPT': ('full',),
+    b'INGR': ('full',),
+    b'KEYM': ('full',),
+    b'LCTN': ('full',),
+    b'LIGH': ('full',),
+    b'LSCR': ('description',),
+    b'MESG': ('full', 'description', 'menu_buttons[i].button_text'),
+    b'MGEF': ('full', 'magic_item_description'),
+    b'MISC': ('full',),
+    b'MSTT': ('full',),
+    b'NPC_': ('full', 'short_name'),
+    b'PERK': ('full', 'description'),
+    b'PROJ': ('full',),
+    b'QUST': ('full', 'description', 'stages[i].log_entries[i].log_entry_text',
+              'objectives[i].display_text'),
+    b'RACE': ('full', 'description'),
+    b'SCRL': ('full', 'description'),
+    b'SHOU': ('full', 'description'),
+    b'SLGM': ('full',),
+    b'SNCT': ('full',),
+    b'SPEL': ('full', 'description'),
+    b'TACT': ('full',),
+    b'TREE': ('full',),
+    b'WATR': ('full',),
+    b'WEAP': ('full', 'description'),
+    b'WOOP': ('full',),
+}
+gold_attrs = lambda _self_ignore, gm_master: {
+    'eid': 'Gold001',
+    'bounds.boundX1': -2,
+    'bounds.boundY1': -2,
+    'bounds.boundZ1': 0,
+    'bounds.boundX2': 2,
+    'bounds.boundY2': 2,
+    'bounds.boundZ2': 0,
+    'model.modPath': r'Clutter\Coin01.nif',
+    'model.alternateTextures': None,
+    'iconPath': r'Clutter\Coin01.dds',
+    'pickupSound': (gm_master, 0x03E952), # ITMGoldUpSD
+    'dropSound': (gm_master, 0x03E955), # ITMGoldDownSD
+    'keywords': [(gm_master, 0x0914E9)], # VendorItemClutter
+    'value': 1,
+    'weight': 0.0,
+}
 
 #------------------------------------------------------------------------------
 # Tweak Settings
@@ -864,7 +960,8 @@ settings_tweaks = {
     u'GmstTweak_Combat_MaximumArmorRating_Tes5',
     u'GmstTweak_Arrow_MaxArrowsAttachedToNPC',
     u'GmstTweak_Combat_DisableProjectileDodging',
-    u'GmstTweak_Combat_MaxAllyHits_Tes5',
+    u'GmstTweak_Combat_MaxAllyHitsInCombat',
+    u'GmstTweak_Combat_MaxAllyHitsOutOfCombat',
     u'GmstTweak_Actor_MerchantRestockTime',
     u'GmstTweak_Player_FallDamageThreshold',
     u'GmstTweak_Player_SprintingCost',
@@ -905,17 +1002,16 @@ settings_tweaks = {
     u'GmstTweak_Prompt_Take',
     u'GmstTweak_Prompt_Talk',
     u'GmstTweak_Msg_NoSoulGemLargeEnough',
+    u'GmstTweak_Combat_SpeakOnHitChance',
+    u'GmstTweak_Combat_SpeakOnHitThreshold',
+    u'GmstTweak_Combat_MaxFriendHitsInCombat',
+    u'GmstTweak_Combat_MaxFriendHitsOutOfCombat',
 }
 
 #------------------------------------------------------------------------------
 # Import Relations
 #------------------------------------------------------------------------------
 relations_attrs = (u'faction', u'mod', u'group_combat_reaction')
-relations_csv_header = (
-    _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
-    _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'),
-    _(u'Group Combat Reaction'))
-relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
 
 #------------------------------------------------------------------------------
 # Import Enchantment Stats
@@ -953,6 +1049,11 @@ import_races_attrs = {
         u'R.Voice-M': (u'maleVoice',),
     },
 }
+
+#------------------------------------------------------------------------------
+# Import Enchantments
+#------------------------------------------------------------------------------
+enchantment_types = {b'ARMO', b'EXPL', b'WEAP'}
 
 #------------------------------------------------------------------------------
 # Tweak Races

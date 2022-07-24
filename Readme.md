@@ -1,3 +1,5 @@
+<img align="left" src="Mopy/bash/images/bash.svg" width="120" alt="Wrye Bash Icon">
+
 Wrye Bash
 =========
 
@@ -20,34 +22,36 @@ contributing.
 Here is a list of supported games with the minimal patch version that Bash was
 tested on (previous versions or latest versions may or may not work):
 
-* Morrowind (very early support, patch 1.6.1820)
-* Oblivion (patch 1.2.0.416)
-* Nehrim (patch 2.0.2.4)
-* Fallout 3 (patch 1.7.0.3)
-* Fallout New Vegas (patch 1.4.0.525)
-* Skyrim (patch 1.9.36.0)
 * Enderal (patch 1.6.4.0)
+* Enderal: Special Edition (patch 2.0.11)
+* Fallout 3 (patch 1.7.0.3)
 * Fallout 4 (patch 1.10.163.0)
-* Skyrim Special Edition (patch 1.5.97.0)
-* Enderal Special Edition (patch 2.0.8)
+* Fallout 4 VR (patch 1.2.72.0)
+* Fallout New Vegas (patch 1.4.0.525)
+* Morrowind (very early support, patch 1.6.1820)
+* Nehrim (patch 2.0.2.4)
+* Oblivion (patch 1.2.0.416)
+* Skyrim (patch 1.9.36.0)
+* Skyrim Special Edition (patch 1.6.353.0)
+* Skyrim VR (patch 1.4.15.0)
 
-**Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 4 and
-Skyrim Special Edition are supported as well.
+**Note**: The Windows Store versions of Morrowind, Oblivion, Fallout 3,
+Fallout New Vegas, Fallout 4 and Skyrim Special Edition are supported as well.
 
 ### Download
 
-* [Oblivion Nexus][2]
-* [Nehrim Nexus][23]
-* [Fallout 3 Nexus][3]
-* [Fallout New Vegas Nexus][4]
-* [Skyrim Nexus][5]
+* [GitHub][8] (all releases)
 * [Enderal Nexus][22]
-* [Fallout 4 Nexus][6]
-* [Skyrim Special Edition Nexus][7]
 * [Enderal Special Edition Nexus][25]
-* [Github][8] (all releases)
+* [Fallout 3 Nexus][3]
+* [Fallout 4 Nexus][6]
+* [Fallout New Vegas Nexus][4]
+* [Nehrim Nexus][23]
+* [Oblivion Nexus][2]
+* [Skyrim Nexus][5]
+* [Skyrim Special Edition Nexus][7]
 
-Docs are included in the download but we are setting them up also online
+Docs are included in the download, but we are also setting them up online
  [here][9].
 
 ### Installation
@@ -61,7 +65,7 @@ To run Wrye Bash from the latest `dev` code (download from [here][12])
 you need:
 
 * A game to manage from the supported games.
-* [Python 2.7 64-bit](http://www.python.org/) (latest 2.7 is recommended)
+* [Python 3.9 64-bit](http://www.python.org/) (latest 3.9 is recommended)
 
 **NB**: the 64-bit version is **required**. 32-bit operating systems are no
 longer supported.
@@ -69,8 +73,10 @@ longer supported.
 Once you have those, install the required packages by running:
 
 ```bash
-path/to/python.exe -m pip install -r requirements.txt
+py -3 -m pip install -r requirements.txt
 ```
+
+*Note: you will have to use a more specific version for `py -3` if you have multiple versions of Python 3 installed.*
 
 Refer to the readmes linked above for detailed instructions. In short:
 
@@ -93,7 +99,7 @@ We are currently monitoring [this thread][17] at the AFK Mods forum and
 [the Wrye Bash Discord][18].
 Please be sure to ask there first before reporting an issue here. If asking for
 help please provide the info detailed in our [Reporting a bug][19] wiki page.
-In particular it is _essential_ you produce a [bashbugdump.log][20].
+In particular, it is _essential_ you produce a [bashbugdump.log][20].
 
 #### Latest betas
 
@@ -126,7 +132,7 @@ bleeding edge branch. Commits land here for testing.
   [5]: https://www.nexusmods.com/skyrim/mods/1840
   [6]: https://www.nexusmods.com/fallout4/mods/20032
   [7]: https://www.nexusmods.com/skyrimspecialedition/mods/6837
-  [8]: https://github.com/wrye-bash/wrye-bash/releases
+  [8]: https://github.com/wrye-bash/wrye-bash/releases/latest
   [9]: http://wrye-bash.github.io/
   [10]: http://wrye-bash.github.io/docs/Wrye%20Bash%20General%20Readme.html#install
   [11]: http://wrye-bash.github.io/docs/Wrye%20Bash%20Advanced%20Readme.html#install

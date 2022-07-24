@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -31,15 +31,15 @@ https://loot-api.readthedocs.io/en/latest/metadata/conditions.html."""
 
 __author__ = u'Infernio'
 
-import copy
 import re
 import yaml
 from collections import deque
+from copy import deepcopy
 
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
     ConditionFunc, ConditionNot, ConditionOr, is_regex
-from ..bolt import deprint, LowerDict, Path, AFile
-from ..exception import LexerError, ParserError, BoltError, EvalError
+from .bolt import deprint, LowerDict, Path, AFile, FNDict
+from .exception import LexerError, ParserError, BoltError, EvalError
 
 # Try to use the C version (way faster), if that isn't possible fall back to
 # the pure Python version
@@ -52,8 +52,8 @@ except ImportError:
             u'version')
 
 # API
-libloot_version = u'0.16.x' # The libloot version with which this
-                            # implementation is compatible
+libloot_version = '0.18.x' # The libloot version with which this implementation
+                           # is compatible
 
 class LOOTParser(object):
     """The main frontend for interacting with LOOT's masterlists. Provides
@@ -77,7 +77,7 @@ class LOOTParser(object):
             must always exist.
         :type taglist_path: Path
         """
-        self._cached_masterlist = {}
+        self._cached_masterlist = FNDict()
         self._cached_regexes = {}
         self._cached_merges = {}
         deprint(u'Using these LOOT paths:')
@@ -90,6 +90,8 @@ class LOOTParser(object):
         self._refresh_tags_cache(_force=True)
         # Old api
         self._tagCache = {}
+        deprint(f'Initialized loot_parser, compatible with libloot '
+                f'v{libloot_version}')
 
     def _refresh_tags_cache(self, _force=False):
         try:
@@ -101,7 +103,7 @@ class LOOTParser(object):
                     self._userlist.abs_path)
                 self.load_lists(*args)
                 return True
-        except (OSError, IOError, yaml.YAMLError):
+        except (OSError, yaml.YAMLError):
         #--No masterlist or an error occurred while reading it, use the taglist
             try:
                 if self._taglist.do_update(raise_on_error=True) or _force:
@@ -113,8 +115,8 @@ class LOOTParser(object):
                 pass
             except yaml.YAMLError as e:
                 raise BoltError(
-                    u'%s could not be parsed (%r). Please ensure Wrye Bash is '
-                    u'installed correctly.' % (e, self._taglist.abs_path))
+                    f'{self._taglist.abs_path} could not be parsed ({e!r}). '
+                    f'Please ensure Wrye Bash is installed correctly.')
         return False
 
     def get_plugin_tags(self, plugin_name, catch_errors=True):
@@ -130,22 +132,21 @@ class LOOTParser(object):
             to handle them manually. Intended for unit tests.
         :return: A tuple containing two sets, one with added and one with
             removed tags.
-        :rtype: tuple[set[unicode], set[unicode]]"""
+        :rtype: tuple[set[str], set[str]]"""
         def get_resolved_tags(res_entry):
             # We may have to evaluate conditions now
             try:
-                return (_ConditionalTag.resolve_tags(res_entry.tags_added),
-                        _ConditionalTag.resolve_tags(res_entry.tags_removed))
+                return (_resolve_tags(res_entry.tags_added),
+                        _resolve_tags(res_entry.tags_removed))
             except (LexerError, ParserError, EvalError):
                 if not catch_errors:
                     raise
                 deprint(u'Error while evaluating LOOT condition',
                     traceback=True)
                 return set(), set()
-        plugin_s = plugin_name.s
-        if plugin_s in self._cached_merges:
-            return get_resolved_tags(self._cached_merges[plugin_s])
-        return get_resolved_tags(self._perform_merge(plugin_s))
+        if plugin_name in self._cached_merges:
+            return get_resolved_tags(self._cached_merges[plugin_name])
+        return get_resolved_tags(self._perform_merge(plugin_name))
 
     def load_lists(self, masterlist_path, userlist_path=None,
                    catch_errors=True):
@@ -163,17 +164,28 @@ class LOOTParser(object):
         try:
             masterlist = _parse_list(masterlist_path)
             if userlist_path:
-                _merge_lists(masterlist, _parse_list(userlist_path))
+                userlist = None
+                # Userlists often end up in all kinds of wild formats, meaning
+                # they can cause all kinds of wild errors too - skip and
+                # complain if that happens
+                try:
+                    userlist = _parse_list(userlist_path)
+                except Exception:
+                    if not catch_errors:
+                        raise
+                    deprint(f'Failed to parse LOOT userlist {userlist_path}, '
+                            f'it likely has malformed syntax', traceback=True)
+                if userlist is not None:
+                    _merge_lists(masterlist, userlist)
             self._cached_masterlist = masterlist
-            self._cached_regexes = [(re.compile(r, re.I | re.U).match, e)
-                                    for r, e in masterlist.iteritems()
-                                    if is_regex(r)]
+            self._cached_regexes = [(re.compile(r, re.I).match, e) for r, e in
+                                    masterlist.items() if is_regex(r)]
             self._cached_merges = {}
         except (re.error, TypeError, yaml.YAMLError):
             if not catch_errors:
                 raise
-            deprint(u'Error when parsing LOOT masterlist %s, it likely has '
-                    u'malformed syntax' % masterlist_path, traceback=True)
+            deprint(f'Error when parsing LOOT masterlist {masterlist_path}, '
+                    f'it likely has malformed syntax', traceback=True)
 
     def is_plugin_dirty(self, plugin_name, mod_infos):
         """Checks if the specified plugin is dirty according to the information
@@ -181,15 +193,14 @@ class LOOTParser(object):
 
         :param plugin_name: The name of the plugin whose dirty info should be
             checked.
-        :type plugin_name: Path
+        :type plugin_name: FName
         :param mod_infos: bosh.modInfos. Must be up to date."""
         def check_dirty(res_entry):
             return (res_entry and mod_infos[plugin_name].cached_mod_crc()
                     in res_entry.dirty_crcs)
-        plugin_s = plugin_name.s
-        if plugin_s in self._cached_merges:
-            return check_dirty(self._cached_merges[plugin_s])
-        return check_dirty(self._perform_merge(plugin_s))
+        if plugin_name in self._cached_merges:
+            return check_dirty(self._cached_merges[plugin_name])
+        return check_dirty(self._perform_merge(plugin_name))
 
     def _perform_merge(self, plugin_s):
         """Checks the masterlist and all regexes for a match with the spcified
@@ -206,9 +217,13 @@ class LOOTParser(object):
         if not all_entries:
             # Plugin has no entry in the masterlist, this is fine
             merged_entry = _PluginEntry({})
+        elif len(all_entries) == 1:
+            # There is only one entry, so we can avoid the deepcopy (we only
+            # ever mutate deepcopied entries, so this is safe)
+            merged_entry = all_entries[0]
         else:
             # Merge the later entries with the first one
-            merged_entry = copy.deepcopy(all_entries[0])
+            merged_entry = deepcopy(all_entries[0])
             for plugin_entry in all_entries[1:]:
                 merged_entry.merge_with(plugin_entry)
         self._cached_merges[plugin_s] = merged_entry
@@ -232,12 +247,6 @@ class LOOTParser(object):
             return ca_tags
 
 # Implementation
-def _loot_decode(raw_str): # PY3: drop entirely, pyyaml is fully unicode on py3
-    """LOOT masterlists are always encoded in UTF-8, but simply opening the
-    file in UTF-8 mode is not enough. PyYAML stores everything it can encode as
-    ASCII as bytestrings, and everything else as unicode. No idea why."""
-    return raw_str if isinstance(raw_str, unicode) else raw_str.decode(u'utf-8')
-
 class _PluginEntry(object):
     """Represents stored information about a plugin's entry in the LOOT
     masterlist and/or userlist."""
@@ -268,14 +277,13 @@ class _PluginEntry(object):
         for tag in yaml_entry.get(u'tag', ()):
             try:
                 removes = tag[0] == u'-'
-                target_tag = _loot_decode(tag[1:] if removes else tag)
+                target_tag = tag[1:] if removes else tag
             except KeyError:
                 # This is a dict, means we'll have to handle conditions later
                 tag_name = tag[u'name']
                 removes = tag_name[0] == u'-'
                 target_tag = _ConditionalTag(
-                    _loot_decode(tag_name[1:] if removes else tag_name),
-                    _loot_decode(tag[u'condition']))
+                    (tag_name[1:] if removes else tag_name), tag[u'condition'])
             target_set = self.tags_removed if removes else self.tags_added
             target_set.add(target_tag)
 
@@ -299,7 +307,7 @@ class _ConditionalTag(object):
     """Represents a tag that may or may not be applied to a mod right now,
     depending on whether or not its condition evaluates to True.
 
-    :type tag_condition: unicode | _ACondition"""
+    :type tag_condition: str | _ACondition"""
     __slots__ = (u'tag_name', u'tag_condition')
 
     def __init__(self, tag_name, tag_condition):
@@ -307,11 +315,11 @@ class _ConditionalTag(object):
         condition.
 
         :param tag_name: The name of the tag.
-        :type tag_name: unicode
+        :type tag_name: str
         :param tag_condition: A condition string that determines whether or not
             this tag will be applied. See the links at the top of this file for
             more information.
-        :type tag_condition: unicode"""
+        :type tag_condition: str"""
         self.tag_name = tag_name
         self.tag_condition = tag_condition
 
@@ -328,28 +336,28 @@ class _ConditionalTag(object):
             return self.tag_condition.evaluate()
 
     def __repr__(self):
-        return u'%s if %r' % (self.tag_name, self.tag_condition)
+        return f'{self.tag_name} if {self.tag_condition!r}'
 
-    @staticmethod
-    def resolve_tags(tag_set):
-        """Convenience method to evaluate conditions for a set of tags (may
-        contain both conditional and unconditional (i.e. just a string) tags)
-        and return only the names of those tags that will actually apply.
+def _resolve_tags(tag_set):
+    """Convenience method to evaluate conditions for a set of tags (may
+    contain both conditional and unconditional (i.e. just a string) tags)
+    and return only the names of those tags that will actually apply.
 
-        :param tag_set: The set of tags to resolve.
-        :type tag_set: set[unicode|_ConditionalTag]
-        :return: A set of strings, containing only unconditional tags and
-            conditional tags whose conditions evaluated to True.
-        :rtype: set[unicode]"""
-        resulting_tags = set()
-        for tag in tag_set:
-            # Most tags are unconditional, so avoid try-except
-            if isinstance(tag, _ConditionalTag):
-                if tag.eval_condition():
-                    resulting_tags.add(tag.tag_name)
-            else:
-                resulting_tags.add(tag)
-        return resulting_tags
+    :param tag_set: The set of tags to resolve.
+    :type tag_set: set[str|_ConditionalTag]
+    :return: A set of strings, containing only unconditional tags and
+        conditional tags whose conditions evaluated to True.
+    :rtype: set[str]"""
+    resulting_tags = set()
+    add_resulting_tag = resulting_tags.add
+    for tag in tag_set:
+        # Most tags are unconditional, so avoid try-except
+        if isinstance(tag, _ConditionalTag):
+            if tag.eval_condition():
+                add_resulting_tag(tag.tag_name)
+        else:
+            add_resulting_tag(tag)
+    return resulting_tags
 
 ##: A lot of the lexing/parsing stuff here could probably be moved to a
 # generic top-level file and used to eventually write a better wizard parser
@@ -359,7 +367,7 @@ def _process_condition_string(condition_string):
     tokens, resulting in an _ACondition-derived object.
 
     :param condition_string: The condition string to process.
-    :type condition_string: unicode
+    :type condition_string: str
     :return: The resulting condition object.
     :rtype: _ACondition"""
     return _parse_condition(_lex_condition_string(condition_string))
@@ -374,15 +382,15 @@ class _Token(object):
 
         :param token_tag: The tag to assign to this token. This can be used to
             handle different 'types' of tokens (e.g. strings, keywords, etc.).
-        :type token_tag: unicode
+        :type token_tag: str
         :param token_text: The text that this matched this token's regex.
-        :type token_text: unicode
+        :type token_text: str
         :param line_offset: The offset inside the condition string at which
             this token was created. Used when printing errors.
         :type line_offset: int
         :param condition_str: The entire condition string that this token was
             in. Used when printing errors.
-        :type condition_str: unicode"""
+        :type condition_str: str"""
         self.token_tag = token_tag
         self.token_text = token_text
         self.line_offset = line_offset
@@ -449,7 +457,7 @@ def _lex_condition_string(condition_string):
     condition substring, an error is raised.
 
     :param condition_string: The string to lex.
-    :type condition_string: unicode
+    :type condition_string: str
     :return: A deque containing each stored token.
     :rtype: deque[_Token]"""
     tokens = deque()
@@ -573,10 +581,9 @@ def _parse_atom(tokens, accept_not=True):
         _pop_token(tokens, _NOT)
         return ConditionNot(_parse_atom(tokens, accept_not=False))
     else:
-        raise ParserError(
-            u'Unexpected token %s - expected one of %s' % (
-                ttag, u'[%s]' % u', '.join([_FUNCTION, _LPAREN, _NOT])),
-            *_pop_token(tokens, ttag).debug_info)
+        raise ParserError(f'Unexpected token {ttag} - expected one of '
+                          f'{[_FUNCTION, _LPAREN, _NOT]}',
+                          *_pop_token(tokens, ttag).debug_info)
 
 def _parse_function(tokens):
     """Parses the specified deque of tokens, returning a function call. These
@@ -606,7 +613,7 @@ def _parse_argument(tokens):
     :param tokens: The deque of tokens that should be parsed.
     :type tokens: deque[_Token]
     :return: The parsed function call.
-    :rtype: unicode|int|Comparison"""
+    :rtype: str|int|Comparison"""
     token = _pop_token(tokens)
     ttag = token.token_tag
     # Ordered by frequency - for performance
@@ -646,7 +653,7 @@ def _pop_token(tokens, expected_tag=None):
     :param expected_tag: The tag that we expect to pop. If set to a truthy
         value and the popped token's tag does not match this, an error will be
         raised.
-    :type expected_tag: unicode
+    :type expected_tag: str
     :return: The popped token."""
     if not tokens:
         raise ParserError(
@@ -668,10 +675,10 @@ def _merge_lists(first_list, second_list):
     entries are simply copied over instead of merged.
 
     :param first_list: The list to merge information into.
-    :type first_list: LowerDict[unicode, _PluginEntry]
+    :type first_list: FNDict[str, _PluginEntry]
     :param second_list: The list to merge information from.
-    :type second_list: LowerDict[unicode, _PluginEntry]"""
-    for plugin_name, second_entry in second_list.iteritems():
+    :type second_list: FNDict[str, _PluginEntry]"""
+    for plugin_name, second_entry in second_list.items():
         try:
             first_list[plugin_name].merge_with(second_entry)
         except KeyError:
@@ -679,19 +686,22 @@ def _merge_lists(first_list, second_list):
             first_list[plugin_name] = second_entry
 
 def _parse_list(list_path):
-    """Parses the specified masterlist or userlist and returns a LowerDict
+    """Parses the specified masterlist or userlist and returns a FNDict
     mapping plugins to _PluginEntry instances. To parse the YAML, PyYAML is
     used - the C version if possible.
 
     :param list_path: The path to the list that should be parsed.
     :type list_path: Path
-    :return: A LowerDict representing the list's contents.
-    :rtype: LowerDict[unicode, _PluginEntry]"""
+    :return: A FNDict representing the list's contents.
+    :rtype: FNDict[str, _PluginEntry]"""
     with list_path.open(u'r', encoding=u'utf-8') as ins:
         list_contents = yaml.load(ins, Loader=SafeLoader)
     # The list contents may be None if the list file exists, but is an entirely
-    # empty YAML file. Just return an empty dict in that case.
-    if not list_contents:
-        return LowerDict()
-    return LowerDict({_loot_decode(p[u'name']): _PluginEntry(p) for p
-                      in list_contents.get(u'plugins', ())})
+    # empty YAML file. Just return an empty dict in that case. Similarly, if
+    # parsing the contents does not result in a dict (e.g. if the file is just
+    # a long string of random characters), return an empty dict as well.
+    if not isinstance(list_contents, dict):
+        deprint(f'Masterlist file {list_path} is empty or invalid')
+        return FNDict()
+    return FNDict({p[u'name']: _PluginEntry(p) for p in
+                   list_contents.get(u'plugins', ())})

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,15 +25,12 @@ through a list, a dropdown, or even a color picker."""
 
 __author__ = u'nycz, Utumno'
 
-from itertools import izip
-
 import wx as _wx
 import wx.adv as _adv
 
 from .base_components import _AComponent, Color, WithCharEvents, \
     WithMouseEvents
 from .misc_components import Font ##: de-wx, then move to base_components
-from ..bolt import deprint
 
 class DropDown(_AComponent):
     """Shows a dropdown with multiple options to pick one from. Often called a
@@ -41,9 +38,9 @@ class DropDown(_AComponent):
     wider than width of control.
 
     Events:
-     - on_combo_select(selected_label: bytes): Posted when an item on the list is
+     - on_combo_select(selected_label: str): Posted when an item on the list is
      selected. The parameter is the new value of selection."""
-    _wx_widget_type = _wx.ComboBox
+    _native_widget: _wx.ComboBox
 
     def __init__(self, parent, value, choices, auto_tooltip=True):
         """Creates a new DropDown with the specified properties.
@@ -77,20 +74,22 @@ class DropDown(_AComponent):
         else: tt = u''
         self.tooltip = tt
 
-    def set_choices(self, combo_choices):
-        """Set the combobox items"""
-        self._native_widget.SetItems(combo_choices)
+    def set_choices(self, dd_choices):
+        """Set the choices shown in this dropdown."""
+        self._native_widget.SetItems(dd_choices)
 
-    def set_selection(self, combo_choice):
-        """Set the combobox selected item"""
-        self._native_widget.SetSelection(combo_choice)
+    def set_selection(self, dd_selection: int):
+        """Set the choice that is currently selected in this dropdown."""
+        self._native_widget.SetSelection(dd_selection)
 
     def get_value(self):
+        """Get the value of the choice that is currently selected in this
+        dropdown."""
         return self._native_widget.GetValue()
 
 class ImageDropDown(DropDown):
     """A version of DropDown that shows a bitmap in front of each entry."""
-    _wx_widget_type = _adv.BitmapComboBox
+    _native_widget: _adv.BitmapComboBox
 
     def set_bitmaps(self, bitmaps):
         """Changes the bitmaps shown in the dropdown."""
@@ -104,7 +103,7 @@ class ColorPicker(_AComponent):
     Events:
      - on_color_picker_evt(selected_label: bytes): Posted when the button is
      clicked."""
-    _wx_widget_type = _wx.ColourPickerCtrl
+    _native_widget: _wx.ColourPickerCtrl
 
     def __init__(self, parent, color=None):
         super(ColorPicker, self).__init__(parent)
@@ -123,14 +122,12 @@ class ListBox(WithMouseEvents):
     """A list of options, of which one or more can be selected.
 
     Events:
-      - on_list_box(lb_dex: int, item_text: unicode): Posted when user selects
+      - on_list_box(lb_dex: int, item_text: str): Posted when user selects
       an item from list. The default arg processor extracts the index of the
       event and the list item label
       - Mouse events - see gui.base_components.WithMouseEvents"""
-    # PY3: typing!
-    # type _native_widget: wx.ListBox
     bind_motion = bind_rclick_down = bind_rclick_up = True
-    _wx_widget_type = _wx.ListBox
+    _native_widget: _wx.ListBox
 
     def __init__(self, parent, choices=None, isSingle=True, isSort=False,
                  isHScroll=False, isExtended=False, onSelect=None):
@@ -148,7 +145,8 @@ class ListBox(WithMouseEvents):
             self.on_list_box.subscribe(onSelect)
 
     def lb_select_index(self, lb_selection_dex):
-        self._native_widget.SetSelection(lb_selection_dex)
+        self._native_widget.SetSelection( # clear selection if dex is None
+            _wx.NOT_FOUND if lb_selection_dex is None else lb_selection_dex)
 
     def lb_insert(self, str_item, lb_selection_dex):
         self._native_widget.Insert(str_item, lb_selection_dex)
@@ -181,11 +179,7 @@ class ListBox(WithMouseEvents):
         self._native_widget.SetItemFont(lb_selection_dex, styled_font)
 
     # Getters - we should encapsulate index access
-    def lb_get_next_item(self, item, geometry=_wx.LIST_NEXT_ALL,
-                         state=_wx.LIST_STATE_SELECTED):
-        return self._native_widget.GetNextItem(item, geometry, state)
-
-    def lb_get_str_item_at_index(self, lb_selection_dex):
+    def lb_get_str_item_at_index(self, lb_selection_dex): ##: && ->& ?
         return self._native_widget.GetString(lb_selection_dex)
 
     def lb_get_str_items(self):
@@ -194,7 +188,11 @@ class ListBox(WithMouseEvents):
     def lb_get_selections(self): return self._native_widget.GetSelections()
 
     def lb_index_for_str_item(self, str_item):
-        return self._native_widget.FindString(str_item)
+        # return self._native_widget.FindString(str_item) ##: fails on mac check on windows
+        try:
+            return self.lb_get_str_items().index(str_item)
+        except ValueError:
+            return None
 
     def lb_get_vertical_scroll_pos(self):
         return self._native_widget.GetScrollPos(_wx.VERTICAL)
@@ -208,13 +206,13 @@ class ListBox(WithMouseEvents):
 
     def lb_select_none(self):
         """Entirely clears the selection of this ListBox."""
-        self.lb_select_index(_wx.NOT_FOUND)
+        self.lb_select_index(None)
 
     def lb_select_all(self):
         """Selects all items in the ListBox. Pointless if isSingle=True was
         passed to this ListBox."""
         with self.pause_drawing():
-            for i in xrange(self.lb_get_items_count()):
+            for i in range(self.lb_get_items_count()):
                 self.lb_select_index(i)
 
 class CheckListBox(ListBox, WithCharEvents):
@@ -227,14 +225,15 @@ class CheckListBox(ListBox, WithCharEvents):
         right-clicked.
       - Mouse events - see gui.base_components.WithMouseEvents.
       - Key events - see gui.base_components.WithCharEvents."""
-    # PY3: typing!
     # type _native_widget: wx.CheckListBox
     bind_mouse_leaving = bind_lclick_double = True
-    _wx_widget_type = _wx.CheckListBox
+    _native_widget: _wx.CheckListBox
 
     # note isSingle=False by default
     def __init__(self, parent, choices=None, isSingle=False, isSort=False,
-                 isHScroll=False, isExtended=False, onSelect=None):
+                 isHScroll=False, isExtended=False, onSelect=None,
+                 ampersand=False):
+        if ampersand: choices = [x.replace(u'&', u'&&') for x in choices]
         super(CheckListBox, self).__init__(parent, choices, isSingle, isSort,
                                            isHScroll, isExtended, onSelect)
         self.on_box_checked = self._evt_handler(_wx.EVT_CHECKLISTBOX,
@@ -256,43 +255,36 @@ class CheckListBox(ListBox, WithCharEvents):
         """Sets all checkmarks to the specified state - checked if True,
         unchecked if False."""
         with self.pause_drawing():
-            for i in xrange(self.lb_get_items_count()):
+            for i in range(self.lb_get_items_count()):
                 self.lb_check_at_index(i, checked)
 
-    def get_checked_strings(self):
-        """Returns a list of string representations of all checked items."""
-        return self._native_widget.GetCheckedStrings()
-
-    def set_all_items(self, all_keys, all_values): # PY3: dict (sorted!)
+    def set_all_items(self, keys_values): ##: & ->  &&
         """Completely clears the list and repopulates it using the specified
         key and value lists. Much faster than set_all_items_keep_pos, but
         discards the current scroll position."""
         with self.pause_drawing():
             self.lb_clear()
-            for i, (k, v) in enumerate(izip(all_keys, all_values)):
+            for i, (k, v) in enumerate(keys_values.items()):
                 self.lb_append(k)
                 self.lb_check_at_index(i, v)
 
     ##: Test that the claim below is actually accurate
-    def set_all_items_keep_pos(self, names, checkmarks):
+    def set_all_items_keep_pos(self, keys_values):
         """Convenience method for setting a bunch of wxCheckListBox items. The
         main advantage of this is that it doesn't clear the list unless it
         needs to, which is good if you want to preserve the scroll position
         of the list. If you do not need that behavior, however, use
         set_all_items instead as it is much faster."""
-        if not names:
+        if not keys_values:
             self.lb_clear()
             return
         with self.pause_drawing():
-            for index, (lab, ch) in enumerate(izip(names, checkmarks)):
+            for index, (lab, ch) in enumerate(keys_values.items()):
+                lab = lab.replace('&', '&&')
                 if index >= self.lb_get_items_count():
                     self.lb_append(lab)
                 else:
-                    if index == -1:
-                        deprint(u'index = -1, label = %s, '
-                                u'check = %s' % (lab, ch))
-                        continue
                     self.lb_set_label_at_index(index, lab)
                 self.lb_check_at_index(index, ch)
-            for index in xrange(self.lb_get_items_count(), len(names), -1):
+            for index in range(self.lb_get_items_count(), len(keys_values), -1):
                 self.lb_delete_at_index(index - 1)

@@ -16,17 +16,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
 import struct as _struct
-from collections import defaultdict
-from os.path import join as _j
 
 from ..oblivion import OblivionGameInfo
-from ... import brec
+from ... import brec, bolt
 from ...brec import MreGlob, MreLand
 
 class NehrimGameInfo(OblivionGameInfo):
@@ -35,7 +33,7 @@ class NehrimGameInfo(OblivionGameInfo):
     bash_root_prefix = u'Nehrim'
     bak_game_name = u'Nehrim'
     game_detect_includes = [u'NehrimLauncher.exe']
-    master_file = u'Nehrim.esm'
+    master_file = bolt.FName(u'Nehrim.esm')
     loot_dir = u'Nehrim'
     boss_game_name = u'Nehrim'
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
@@ -43,14 +41,14 @@ class NehrimGameInfo(OblivionGameInfo):
     nexusKey = u'bash.installers.openNehrimNexus.continue'
 
     class Bsa(OblivionGameInfo.Bsa):
-        redate_dict = defaultdict(lambda: u'2006-01-01', {
-            u'N - Textures1.bsa': u'2005-01-01',
-            u'N - Textures2.bsa': u'2005-01-02',
-            u'L - Voices.bsa': u'2005-01-03',
-            u'N - Meshes.bsa': u'2005-01-04',
-            u'N - Sounds.bsa': u'2005-01-05',
-            u'L - Misc.bsa': u'2005-01-06',
-            u'N - Misc.bsa': u'2005-01-07',
+        redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
+            u'N - Textures1.bsa': 1104530400, # '2005-01-01'
+            u'N - Textures2.bsa': 1104616800, # '2005-01-02'
+            u'L - Voices.bsa': 1104703200,    # '2005-01-03'
+            u'N - Meshes.bsa': 1104789600,    # '2005-01-04'
+            u'N - Sounds.bsa': 1104876000,    # '2005-01-05'
+            u'L - Misc.bsa': 1104962400,      # '2005-01-06'
+            u'N - Misc.bsa': 1105048800,      # '2005-01-07'
         })
 
     # Oblivion minus Oblivion-specific patchers (Cobl Catalogs, Cobl
@@ -81,15 +79,15 @@ class NehrimGameInfo(OblivionGameInfo):
     }
 
     bethDataFiles = {
-        u'nehrim.esm',
-        u'translation.esp',
-        u'l - misc.bsa',
-        u'l - voices.bsa',
-        u'n - meshes.bsa',
-        u'n - misc.bsa',
-        u'n - sounds.bsa',
-        u'n - textures1.bsa',
-        u'n - textures2.bsa',
+        'l - misc.bsa',
+        'l - voices.bsa',
+        'n - meshes.bsa',
+        'n - misc.bsa',
+        'n - sounds.bsa',
+        'n - textures1.bsa',
+        'n - textures2.bsa',
+        'nehrim.esm',
+        'translation.esp',
     }
 
     nirnroots = _(u'Vynroots')

@@ -16,16 +16,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from collections import OrderedDict
+import copy
 
 import pytest
 
 from ..bolt import LowerDict, DefaultLowerDict, OrderedLowerDict, decoder, \
-    encode, getbestencoding, GPath, Path, Rounder
+    encode, getbestencoding, GPath, Path, Rounder, SigToStr, StrToSig, \
+    LooseVersion, FName, FNDict, os_name, CIstr, GPath_no_norm, DefaultFNDict
 
 def test_getbestencoding():
     """Tests getbestencoding. Keep this one small, we don't want to test
@@ -38,9 +39,10 @@ def test_getbestencoding():
     assert getbestencoding(b'\x8cx\x8d\x90')[0] == None
     # Wrong - this is GBK, not ISO-8859-1!
     assert getbestencoding(b'\xbe\xaf\xb8\xe6')[0] == u'ISO-8859-1'
-    # Wrong - this is Windows-1251, not MacCyrillic!
+    # Since chardet 5.0, detected correctly as Windows-1251 - before 5.0 it got
+    # wrongly detected as MacCyrillic
     assert getbestencoding(b'\xc2\xed\xe8\xec\xe0\xed\xe8'
-                           b'\xe5')[0] == u'MacCyrillic'
+                           b'\xe5')[0] == 'cp1251'
 
 class TestDecoder(object):
     def test_decoder_basics(self):
@@ -62,65 +64,59 @@ class TestDecoder(object):
         assert decoder(b'Aten\xc3\xa7\xc3\xa3o') == u'Atenção'
         # Russian (UTF-8)
         assert decoder(b'\xd0\x92\xd0\xbd\xd0\xb8\xd0\xbc\xd0\xb0\xd0\xbd\xd0'
-                      b'\xb8\xd0\xb5') == u'Внимание'
-        # Russian (Windows-1251), but gets autodetected as MacCyrillic
-        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5') != u'Внимание'
+                       b'\xb8\xd0\xb5') == 'Внимание'
+        # Russian (Windows-1251), before chardet 5.0 this got wrongly detected
+        # as MacCyrillic
+        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5') == 'Внимание'
 
     def test_decoder_encoding(self):
         """Tests the 'encoding' parameter of decoder."""
         # UTF-8-encoded 'Warning' in Chinese, fed to various encodings
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'ascii') == u'警告'
+                       encoding='ascii') == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'gbk') == u'璀﹀憡'
+                       encoding='gbk') == '璀﹀憡'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'cp932') == u'警告'
+                       encoding='cp932') == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'cp949') == u'警告'
+                       encoding='cp949') == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'cp1252') == u'è\xad¦å‘Š'
+                       encoding='cp1252') == 'è\xad¦å‘Š'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'utf8') == u'警告'
+                       encoding='utf8') == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'cp500') == u'YÝwVj«'
+                       encoding='cp500') == 'YÝwVj«'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      encoding=u'UTF-16LE') == u'귨誑'
+                       encoding='UTF-16LE') == '귨誑'
         # Bad detections from above, with the correct encoding
-        assert decoder(b'\xbe\xaf\xb8\xe6', encoding=u'gbk') == u'警告'
-        assert decoder(b'\x8cx\x8d\x90', encoding=u'cp932') == u'警告'
+        assert decoder(b'\x8cx\x8d\x90', encoding='cp932') == '警告'
+        assert decoder(b'\xbe\xaf\xb8\xe6', encoding='gbk') == '警告'
+        # This one works since chardet 5.0, still keeping it here just in case
         assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
-                      encoding=u'cp1251') == u'Внимание'
+                       encoding='cp1251') == 'Внимание'
 
     def test_decoder_avoidEncodings(self):
-        """Tests the 'avoidEncodings' parameter of avoidEncodings."""
+        """Tests the 'avoidEncodings' parameter of decoder."""
         # UTF-8-encoded 'Warning' in Chinese, fed to various encodings
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'ascii',)) == u'警告'
+                       avoidEncodings=('ascii',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'gbk',)) == u'警告'
+                       avoidEncodings=('gbk',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'cp932',)) == u'警告'
+                       avoidEncodings=('cp932',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'cp949',)) == u'警告'
+                       avoidEncodings=('cp949',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'cp1252',)) == u'警告'
+                       avoidEncodings=('cp1252',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'utf8',)) == u'璀﹀憡'
+                       avoidEncodings=('utf8',)) == '璀﹀憡'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'cp500',)) == u'警告'
+                       avoidEncodings=('cp500',)) == '警告'
         assert decoder(b'\xe8\xad\xa6\xe5\x91\x8a',
-                      avoidEncodings=(u'UTF-16LE',)) == u'警告'
+                       avoidEncodings=('UTF-16LE',)) == '警告'
         # Bad detections from above - this one works now...
         assert decoder(b'\xbe\xaf\xb8\xe6',
-                      avoidEncodings=(u'ISO-8859-1',)) == u'警告'
-        # But this one still fails because GBK is next in line and happens to
-        # not error when given those bytes. Even avoiding GBK does not help
-        # because the only thing the 'avoidEncodings' parameter does is avoid
-        # bad chardet detections.
-        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
-                      avoidEncodings=(u'MacCyrillic',)) != u'Внимание'
-        assert decoder(b'\xc2\xed\xe8\xec\xe0\xed\xe8\xe5',
-                      avoidEncodings=(u'MacCyrillic', u'gbk')) != u'Внимание'
+                       avoidEncodings=('ISO-8859-1',)) == '警告'
 
     def decode_already_decoded(self):
         """Tests if passing in a unicode string doesn't try any decoding."""
@@ -175,32 +171,54 @@ def test_decoder_encode_roundtrip():
               u'Atenção', u'Внимание'):
         assert decoder(encode(s)) == s
 
+# encode/decode dicts
+class TestSigToStr:
+
+    def test___missing__(self):
+        sigtostr = SigToStr()
+        assert sigtostr[b'TES4'] == 'TES4'
+        assert sigtostr[b'\x00IAD'] == '\0IAD' # game/falloutnv/records.py:473
+        # other values just pass through - use in f'{val}'but not in join(vals)
+        assert sigtostr[42] == 42
+        assert sigtostr['42'] == '42'
+
+class TestStrToSig:
+
+    def test___missing__(self):
+        strtosig = StrToSig()
+        assert strtosig['TES4'] == b'TES4'
+        assert strtosig['\x00IAD'] == b'\x00IAD'
+        with pytest.raises(AttributeError): strtosig[42]
+        with pytest.raises(AttributeError): strtosig[b'42']
+
 class TestLowerDict(object):
     dict_type = LowerDict
+    key_type = CIstr
+    dict_arg = dict(sape=4139, guido=4127, jack=4098)
 
     def test___delitem__(self):
         a = self.dict_type()
         a.update(dict(sape=4139, guido=4127, jack=4098))
-        del a[u'sAPe']
-        assert u'sape' not in a
-        del a[u'GUIDO']
-        assert u'guido' not in a
+        del a['sAPe']
+        assert 'sape' not in a
+        del a['GUIDO']
+        assert 'guido' not in a
 
     def test___getitem__(self):
-        a = self.dict_type(dict(sape=4139, guido=4127, jack=4098))
-        assert a[u'sape'] == 4139
-        assert a[u'SAPE'] == 4139
-        assert a[u'SAPe'] == 4139
-
+        a = self.dict_type(self.dict_arg)
+        assert a['sape'] == 4139
+        assert a['SAPE'] == 4139
+        assert a['SAPe'] == 4139
     def test___init__(self):
-        a = self.dict_type(dict(sape=4139, guido=4127, jack=4098))
+        assert list(self.dict_arg) == ['sape', 'guido', 'jack'] # assert py >= 3.7
+        a = self.dict_type(self.dict_arg)
         b = self.dict_type(sape=4139, guido=4127, jack=4098)
-        c = self.dict_type([(u'sape', 4139), (u'guido', 4127),
-                            (u'jack', 4098)])
+        c = self.dict_type([('sape', 4139), ('guido', 4127),
+                            ('jack', 4098)])
         d = self.dict_type(c)
         e = self.dict_type(c, sape=4139, guido=4127, jack=4098)
         f = e.copy()
-        del f[u'JACK']
+        del f['JACK']
         f = self.dict_type(f, jack=4098)
         assert a == b
         assert a == c
@@ -210,52 +228,53 @@ class TestLowerDict(object):
 
     def test___setitem__(self):
         a = self.dict_type()
-        a[u'sape'] = 4139
-        assert a[u'sape'] == 4139
-        assert a[u'SAPE'] == 4139
-        assert a[u'SAPe'] == 4139
-        a[u'sape'] = u'None'
-        assert a[u'sape'] == u'None'
-        assert a[u'SAPE'] == u'None'
-        assert a[u'SAPe'] == u'None'
+        a['sape'] = 4139
+        assert a['sape'] == 4139
+        assert a['SAPE'] == 4139
+        assert a['SAPe'] == 4139
+        a['sape'] = 'None'
+        assert a['sape'] == 'None'
+        assert a['SAPE'] == 'None'
+        assert a['SAPe'] == 'None'
 
     def test_fromkeys(self):
-        a = self.dict_type(dict(sape=4139, guido=4139, jack=4139))
-        c = self.dict_type.fromkeys([u'sape', u'guido', u'jack'], 4139)
+        a = self.dict_type(dict.fromkeys(self.dict_arg, 4139))
+        c = self.dict_type.fromkeys(self.dict_arg, 4139)
         assert a == c
-        c = self.dict_type.fromkeys([u'sApe', u'guIdo', u'jaCK'], 4139)
+        c = self.dict_type.fromkeys(['sApe', 'guIdo', 'jaCK'], 4139)
         assert a == c
+        assert type(c) is self.dict_type
 
     def test_get(self):
-        a = self.dict_type(dict(sape=4139, guido=4127, jack=4098))
-        assert a.get(u'sape') == 4139
-        assert a.get(u'SAPE') == 4139
-        assert a.get(u'SAPe') == 4139
+        a = self.dict_type(self.dict_arg)
+        assert a.get('sape') == 4139
+        assert a.get('SAPE') == 4139
+        assert a.get('SAPe') == 4139
 
     def test_setdefault(self):
         a = self.dict_type()
-        a[u'sape'] = 4139
-        assert a.setdefault(u'sape') == 4139
-        assert a.setdefault(u'SAPE') == 4139
-        assert a.setdefault(u'SAPe') == 4139
-        assert a.setdefault(u'GUIDO', 4127) == 4127
-        assert a.setdefault(u'guido') == 4127
-        assert a.setdefault(u'GUido') == 4127
+        a['sape'] = 4139
+        assert a.setdefault('sape') == 4139
+        assert a.setdefault('SAPE') == 4139
+        assert a.setdefault('SAPe') == 4139
+        assert a.setdefault('GUIDO', 4127) == 4127
+        assert a.setdefault('guido') == 4127
+        assert a.setdefault('GUido') == 4127
 
     def test_pop(self):
         a = self.dict_type()
-        a[u'sape'] = 4139
-        assert a[u'sape'] == 4139
-        assert a[u'SAPE'] == 4139
-        assert a[u'SAPe'] == 4139
+        a['sape'] = 4139
+        assert a['sape'] == 4139
+        assert a['SAPE'] == 4139
+        assert a['SAPe'] == 4139
 
     def test_update(self):
         a = self.dict_type()
         a.update(dict(sape=4139, guido=4127, jack=4098))
-        assert a[u'sape'] == 4139
-        assert a[u'SAPE'] == 4139
-        assert a[u'guido'] == 4127
-        assert a[u'GUido'] == 4127
+        assert a['sape'] == 4139
+        assert a['SAPE'] == 4139
+        assert a['guido'] == 4127
+        assert a['GUido'] == 4127
 
     def test___repr__(self):
         a = self.dict_type()
@@ -264,14 +283,18 @@ class TestLowerDict(object):
         from ..bolt import CIstr
         assert eval(repr(a)) == a
 
+    def test_key_type(self):
+        d = self.dict_type({'key': 'val'})
+        assert type(list(d)[0]) is self.key_type
+
 class TestDefaultLowerDict(TestLowerDict):
     dict_type = DefaultLowerDict
 
     def test___init__(self):
         a = self.dict_type(LowerDict, dict(sape=4139, guido=4127, jack=4098))
         b = self.dict_type(LowerDict, sape=4139, guido=4127, jack=4098)
-        c = self.dict_type(LowerDict, [(u'sape', 4139), (u'guido', 4127),
-                                       (u'jack', 4098)])
+        c = self.dict_type(LowerDict, [('sape', 4139), ('guido', 4127),
+                                       ('jack', 4098)])
         d = self.dict_type(LowerDict, c)
         e = self.dict_type(LowerDict, c, sape=4139, guido=4127, jack=4098)
         f = e.copy()
@@ -283,87 +306,93 @@ class TestDefaultLowerDict(TestLowerDict):
 
     def test___getitem__(self):
         a = self.dict_type(LowerDict, dict(sape=4139, guido=4127, jack=4098))
-        assert a[u'sape'] == 4139
-        assert a[u'SAPE'] == 4139
-        assert a[u'SAPe'] == 4139
-        assert a[u'NEW_KEY'] == LowerDict()
+        assert a['sape'] == 4139
+        assert a['SAPE'] == 4139
+        assert a['SAPe'] == 4139
+        assert a['NEW_KEY'] == LowerDict()
 
     def test_get(self):
         a = self.dict_type(int, dict(sape=4139, guido=4127, jack=4098))
-        assert a.get(u'sape') == 4139
-        assert a.get(u'SAPE') == 4139
-        assert a.get(u'SAPe') == 4139
-        assert a.get(u'NEW_KEY') == None
+        assert a.get('sape') == 4139
+        assert a.get('SAPE') == 4139
+        assert a.get('SAPe') == 4139
+        assert a.get('NEW_KEY') == None
 
     def test_fromkeys(self):
         # see: defaultdict.fromkeys should accept a callable factory:
-        # https://bugs.python.org/issue23372 (rejected)
+        # https://github.com/python/cpython/issues/67561 (rejected)
         a = self.dict_type(int, dict(sape=4139, guido=4139, jack=4139))
-        c = self.dict_type.fromkeys([u'sape', u'guido', u'jack'], 4139)
+        c = self.dict_type.fromkeys(['sape', 'guido', 'jack'], 4139)
         assert a == c # !!!
-        c = self.dict_type.fromkeys([u'sApe', u'guIdo', u'jaCK'], 4139)
+        c = self.dict_type.fromkeys(['sApe', 'guIdo', 'jaCK'], 4139)
         assert a == c # !!!
+
+    def test_key_type(self):
+        d = self.dict_type(None, {'key': 'val'})
+        assert type(list(d)[0]) is self.key_type
 
 class TestOrderedLowerDict(TestLowerDict):
     dict_type = OrderedLowerDict
 
     def test___init__(self):
-        # Using dict here would discard order!
-        ao = OrderedDict()
-        ao[u'sape'] = 4193
-        ao[u'guido'] = 4127
-        ao[u'jack'] = 4098
-        a = self.dict_type(ao)
+        super(TestOrderedLowerDict, self).test___init__()
+        a = self.dict_type(self.dict_arg)
         b = OrderedLowerDict()
-        b[u'sape'] = 4193
-        b[u'guido'] = 4127
-        b[u'jack'] = 4098
+        b['sape'] = 4139
+        b['guido'] = 4127
+        b['jack'] = 4098
         assert a == b
         # Order differs, so these are unequal
         c = OrderedLowerDict()
-        b[u'sape'] = 4193
-        b[u'jack'] = 4098
-        b[u'guido'] = 4127
+        c['sape'] = 4139
+        c['jack'] = 4098
+        c['guido'] = 4127
         assert a != c
         assert b != c
 
-    def test_fromkeys(self):
-        # Using dict here would discard order!
-        a = self.dict_type()
-        a[u'sape'] = a[u'guido'] = a[u'jack'] = 4139
-        c = self.dict_type.fromkeys([u'sape', u'guido', u'jack'], 4139)
-        assert a == c
-        c = self.dict_type.fromkeys([u'sApe', u'guIdo', u'jaCK'], 4139)
-        assert a == c
-
     def test_keys(self):
-        a = self.dict_type([(u'sape', 4139), (u'guido', 4127),
-                            (u'jack', 4098)])
-        assert list(a) == [u'sape', u'guido', u'jack']
+        a = self.dict_type([('sape', 4139), ('guido', 4127),
+                            ('jack', 4098)])
+        assert list(a) == ['sape', 'guido', 'jack']
+
+class TestStringLike:
+
+    def test_std_strings(self):
+        # reminder
+        assert 'abc' != b'abc'
+        for other in (b'', [], [1], None, True, False, 55):
+            assert '' != other
+
+    def test__le__(self):
+        # reminder
+        with pytest.raises(TypeError): assert ('' <= b'')
+        with pytest.raises(TypeError): assert ('123' <= b'123')
+        with pytest.raises(TypeError): assert (None <= '')
+        with pytest.raises(TypeError): assert not ('' <= [])
+        with pytest.raises(TypeError): assert not ('' <= [1])
+        with pytest.raises(TypeError): assert not ('' <= None)
+        with pytest.raises(TypeError): assert not ('' <= True)
+        with pytest.raises(TypeError): assert not ('' <= 55)
 
 class TestPath(object):
     """Path's odds and ends."""
 
     def test__eq__(self):
-        # reminder
-        assert u'' == b'' # Py3 False!
-        assert u'123' == b'123' # Py3 False!
-        assert not (u'' == [])
-        assert not (u'' == [1])
-        assert not (u'' == None)
-        assert not (u'' == True)
-        assert not (u'' == 55)
         # paths and unicode
-        p = GPath(u'c:/random/path.txt')
-        assert u'c:/random/path.txt' == p
-        assert u'' r'c:\random\path.txt' == p
-        assert GPath(u'c:/random/path.txt') == p
-        assert GPath(u'' r'c:\random\path.txt') == p
+        p = GPath('c:/random/path.txt')
+        assert 'c:/random/path.txt' == p
+        if os_name == 'nt':
+            assert r'c:\random\path.txt' == p
+            assert GPath(r'c:\random\path.txt') == p
+        assert GPath('c:/random/path.txt') == p
         # paths and bytes
-        assert b'c:/random/path.txt' == p
-        assert b'' r'c:\random\path.txt' == p
-        assert GPath(b'c:/random/path.txt') == p
-        assert GPath(b'' r'c:\random\path.txt') == p
+        with pytest.raises(TypeError): assert b'c:/random/path.txt' == p
+        with pytest.raises(TypeError): assert p == b'c:/random/path.txt'
+        with pytest.raises(SyntaxError):
+            eval(r"assert b'' r'c:\random\path.txt' == p")
+        assert GPath(b'c:/random/path.txt') != p
+        with pytest.raises(SyntaxError):
+            eval(r"assert GPath(b'' r'c:\random\path.txt') == p")
         # paths and None
         assert not (None == p)
         # test comp with Falsy - previously assertions passed
@@ -371,62 +400,58 @@ class TestPath(object):
         with pytest.raises(TypeError): assert not (p == False)
         with pytest.raises(TypeError): assert not (p == [1])
         # Falsy and "empty" Path
-        empty = GPath(u'')
-        assert empty == Path(u'')
-        assert empty == u''
-        assert empty == b''
+        empty = GPath('')
+        assert empty == Path('')
+        assert empty == ''
+        with pytest.raises(TypeError): assert empty == b''
+        with pytest.raises(TypeError): assert b'' == empty
         assert not (None == empty)
         with pytest.raises(TypeError): assert empty == []
         with pytest.raises(TypeError): assert empty == False
         with pytest.raises(TypeError): assert not (empty == [1])
 
     def test__le__(self):
-        # reminder
-        assert u'' <= b'' # Py3 False!
-        assert u'123' <= b'123' # Py3 False!
-        assert  (None <= u'') ## !
-        assert not (u'' <= [])
-        assert not (u'' <= [1])
-        assert not (u'' <= None)
-        assert not (u'' <= True)
-        assert not (u'' <= 55)
         # paths and unicode
-        p = GPath(u'c:/random/path.txt')
-        assert u'c:/random/path.txt' <= p
-        assert u'' r'c:\random\path.txt' <= p
-        assert GPath(u'c:/random/path.txt') <= p
-        assert GPath(u'' r'c:\random\path.txt') <= p
+        p = GPath('c:/random/path.txt')
+        assert 'c:/random/path.txt' <= p
+        if os_name == 'nt':
+            assert r'c:\random\path.txt' <= p
+            assert GPath(r'c:\random\path.txt') <= p
+        assert GPath('c:/random/path.txt') <= p
         # paths and bytes
-        assert b'c:/random/path.txt' <= p
-        assert b'' r'c:\random\path.txt' <= p
-        assert GPath(b'c:/random/path.txt') <= p
-        assert GPath(b'' r'c:\random\path.txt') <= p
+        with pytest.raises(TypeError): assert b'c:/random/path.txt' <= p
+        with pytest.raises(SyntaxError):
+            eval(r"assert b'' r'c:\random\path.txt' <= p")
+        with pytest.raises(TypeError): assert GPath(b'c:/random/path.txt') <= p
+        with pytest.raises(SyntaxError):
+            eval(r"assert GPath(b'' r'c:\random\path.txt') <= p")
         # test comp with None
-        assert (None <= p)
+        with pytest.raises(TypeError): assert (None <= p)
         # unrelated types - previously assertions passed
         with pytest.raises(TypeError): assert not (p <= [])
         with pytest.raises(TypeError): assert not (p <= False)
         with pytest.raises(TypeError): assert not (p <= [1])
         # Falsy and "empty" Path
-        empty = GPath(u'')
-        assert empty <= Path(u'')
-        assert empty <= u''
-        assert empty <= b''
-        assert (None <= p)  ## !
-        assert not (p <= None)
+        empty = GPath('')
+        assert empty <= Path('')
+        assert empty <= ''
+        with pytest.raises(TypeError): assert empty <= b''
+        with pytest.raises(TypeError): assert (None <= p)
+        with pytest.raises(TypeError): assert not (p <= None)
         with pytest.raises(TypeError): assert empty <= []
         with pytest.raises(TypeError): assert empty <= False
         with pytest.raises(TypeError): assert not (empty <= [1])
 
     def test_dict_keys(self):
-        d = {GPath(u'c:/random/path.txt'): 1}
-        assert not (u'c:/random/path.txt' in d) ## oops
-        assert u'' r'c:\random\path.txt' in d
-        assert GPath(u'c:/random/path.txt') in d
-        assert GPath(u'' r'c:\random\path.txt') in d
-        dd = {u'c:/random/path.txt': 1}
-        assert not GPath(u'c:/random/path.txt') in dd
-        assert not GPath(u'' r'c:\random\path.txt') in dd
+        d = {GPath('c:/random/path.txt'): 1}
+        if os_name == 'nt':
+            assert not ('c:/random/path.txt' in d) ## oops
+            assert r'c:\random\path.txt' in d
+            assert GPath(r'c:\random\path.txt') in d
+        assert GPath('c:/random/path.txt') in d
+        dd = {'c:/random/path.txt': 1}
+        if os_name == 'nt': assert not GPath('c:/random/path.txt') in dd
+        assert not GPath(r'c:\random\path.txt') in dd
 
 class TestRounder(object):
 
@@ -451,3 +476,216 @@ class TestRounder(object):
         assert not (rounder_5th == None)
         assert not (rounder_5th == True)
         assert not (rounder_5th == 55)
+
+class TestLooseVersion:
+    def test_repr(self):
+        """Tests that parsing and __repr__ work correctly."""
+        assert repr(LooseVersion('1.0')) == '1.0'
+        assert repr(LooseVersion('1-0')) == '1.0'
+        assert repr(LooseVersion('a.b.c')) == 'a.b.c'
+        # Watch out - we treat this as a separate component, hence it looks
+        # like this (that's correct, though it may be surprising at first)
+        assert repr(LooseVersion('1.2.2.alpha1')) == '1.2.2.alpha.1'
+        assert repr(LooseVersion('1.0-rc1+')) == '1.0.rc.1.+'
+        # Unicode should work fine too
+        assert repr(LooseVersion('0.9-ä-⻨-❓')) == '0.9.ä.⻨.❓'
+        assert repr(LooseVersion('0.9-ä⻨❓')) == '0.9.ä⻨❓'
+
+    def test_eq(self):
+        """Tests that __eq__ (and __ne__, by extension) work correctly."""
+        assert LooseVersion('1.0') != LooseVersion('1.1')
+        assert LooseVersion('1.0') == LooseVersion('1.0')
+        assert LooseVersion('1.1') != LooseVersion('1.0')
+        # Test with alphabetic characters and a length mismatch too
+        assert LooseVersion('1.1') != LooseVersion('1.1a')
+        assert LooseVersion('1.1a') == LooseVersion('1.1a')
+        assert LooseVersion('1.1a') != LooseVersion('1.1')
+
+    def test_lt(self):
+        """Tests that __lt__ works correctly."""
+        assert LooseVersion('1.0') < LooseVersion('1.1')
+        assert not (LooseVersion('1.0') < LooseVersion('1.0'))
+        assert not (LooseVersion('1.1') < LooseVersion('1.0'))
+        # Test with alphabetic characters and a length mismatch too
+        assert LooseVersion('1.1') < LooseVersion('1.1a')
+        assert not (LooseVersion('1.1a') < LooseVersion('1.1a'))
+        assert not (LooseVersion('1.1a') < LooseVersion('1.1'))
+
+    def test_le(self):
+        """Tests that __le__ works correctly."""
+        assert LooseVersion('1.0') <= LooseVersion('1.1')
+        assert LooseVersion('1.0') <= LooseVersion('1.0')
+        assert not (LooseVersion('1.1') <= LooseVersion('1.0'))
+        # Test with alphabetic characters and a length mismatch too
+        assert LooseVersion('1.1') <= LooseVersion('1.1a')
+        assert LooseVersion('1.1a') <= LooseVersion('1.1a')
+        assert not (LooseVersion('1.1a') <= LooseVersion('1.1'))
+
+    def test_gt(self):
+        """Tests that __gt__ works correctly."""
+        assert not (LooseVersion('1.0') > LooseVersion('1.1'))
+        assert not (LooseVersion('1.0') > LooseVersion('1.0'))
+        assert LooseVersion('1.1') > LooseVersion('1.0')
+        # Test with alphabetic characters and a length mismatch too
+        assert not (LooseVersion('1.1') > LooseVersion('1.1a'))
+        assert not (LooseVersion('1.1a') > LooseVersion('1.1a'))
+        assert LooseVersion('1.1a') > LooseVersion('1.1')
+
+    def test_ge(self):
+        """Tests that __ge__ works correctly."""
+        assert not (LooseVersion('1.0') >= LooseVersion('1.1'))
+        assert LooseVersion('1.0') >= LooseVersion('1.0')
+        assert LooseVersion('1.1') >= LooseVersion('1.0')
+        # Test with alphabetic characters and a length mismatch too
+        assert not (LooseVersion('1.1') >= LooseVersion('1.1a'))
+        assert LooseVersion('1.1a') >= LooseVersion('1.1a')
+        assert LooseVersion('1.1a') >= LooseVersion('1.1')
+
+    def test_not_implemented(self):
+        """Tests that comparing LooseVersion with incompatible types raises
+        errors (or returns False for __eq__/__ne__)."""
+        assert not (LooseVersion('1.0') == 'foo')
+        assert LooseVersion('1.0') != 'foo'
+        with pytest.raises(TypeError): assert LooseVersion('1.0') < 'foo'
+        with pytest.raises(TypeError): assert LooseVersion('1.0') <= 'foo'
+        with pytest.raises(TypeError): assert LooseVersion('1.0') > 'foo'
+        with pytest.raises(TypeError): assert LooseVersion('1.0') >= 'foo'
+
+class TestFname(object):
+    """Fname vs Paths, strings and bytes."""
+
+    def test__eq__(self):
+        assert (fn := FName('path.txt')) == FName('Path.txt')
+        assert FName('path.txt') is fn # note they are identical
+        # fname and unicode strings
+        assert 'path.txt' == fn
+        assert 'Path.txt' == fn
+        # fname and bytes
+        with pytest.raises(TypeError): assert b'path.txt' != fn
+        # fname and paths
+        with pytest.raises(TypeError): assert fn == GPath('path.txt')
+        with pytest.raises(TypeError): assert GPath('Path.txt') == fn
+        # fname and CIstr
+        assert fn == CIstr('Path.txt')
+        assert CIstr('Path.txt') == fn
+        assert fn == CIstr('pAth.txt')
+        # fname and None
+        assert not (None == fn)
+        # test comp with Falsy/other types
+        for other in (b'', [], [1], True, False, 55):
+            with pytest.raises(TypeError): assert fn != other
+        # Falsy and "empty" FName
+        empty = FName('')
+        assert FName('') is empty
+        assert not empty
+        assert empty == ''
+        with pytest.raises(TypeError): assert empty != GPath('')
+        for other in (b'', [], [1], True, False, 55):
+            with pytest.raises(TypeError): assert empty != other
+        assert not (None == empty)
+        assert not (empty == None)
+        assert not (empty is None)
+
+    def test__le__(self):
+        # fnames and unicode
+        fn = FName('path.txt')
+        assert 'path.txt' <= fn
+        with pytest.raises(TypeError): assert GPath('path.txt') <= fn
+        # fnames and bytes
+        with pytest.raises(TypeError): assert b'path.txt' <= fn
+        # unrelated types - previously assertions passed
+        with pytest.raises(TypeError): assert not (fn <= [])
+        with pytest.raises(TypeError): assert not (fn <= [1])
+        with pytest.raises(TypeError): assert not (fn <= False)
+        with pytest.raises(TypeError): assert (None <= fn)
+        with pytest.raises(TypeError): assert not (fn <= None)
+        # Falsy and "empty" FName
+        empty = FName('')
+        with pytest.raises(TypeError): assert empty <= Path('')
+        with pytest.raises(TypeError): assert Path('') <= empty
+        assert empty <= ''
+        with pytest.raises(TypeError): assert empty <= b''
+        with pytest.raises(TypeError): assert empty <= []
+        with pytest.raises(TypeError): assert not (empty <= [1])
+        with pytest.raises(TypeError): assert empty <= False
+        with pytest.raises(TypeError): assert (None <= empty)
+
+    def test_fn_ext(self):
+        file_str = 'path.txt'
+        FILE_STR = file_str.upper()
+        assert (FN := FName(FILE_STR)) == (fn := FName(file_str))
+        assert FN.fn_ext == fn.fn_ext
+        assert FName('PATH.txt').fn_ext is fn.fn_ext
+        assert fn.fn_ext == '.txt'
+        assert fn.fn_ext == '.TXT'
+        assert not FName('').fn_ext
+        assert not FName('path').fn_ext
+
+    def test_fn_body(self):
+        file_str = 'path.txt'
+        FILE_STR = file_str.upper()
+        assert (FN := FName(FILE_STR)) == (fn := FName(file_str))
+        assert FN.fn_body == fn.fn_body
+        assert FName('path.TXT').fn_body is fn.fn_body
+        assert fn.fn_body == 'path'
+        assert fn.fn_body == 'PATH'
+        assert not FName('').fn_body
+        assert not FName('.txt').fn_body
+
+    def test_immutable__new__(self):
+        a = FName('abc')
+        b = FName('abc')
+        assert a is b
+
+    def test_lower(self):
+        file_str = 'path.txt'
+        FILE_STR = file_str.upper()
+        assert (lo := ((FN := FName(FILE_STR)).lower())) == file_str
+        assert lo is FN.lower() # immutable
+
+    def test_copy(self):
+        file_str = 'path.txt'
+        fn = FName(file_str)
+        assert copy.copy(fn) is copy.deepcopy(fn) is fn # immutable
+
+    # Non unit tests ----------------------------------------------------------
+    def test_gpath_on_fname(self):
+        assert type(GPath(FName('Passes through os.path.normpath')).s) is str
+
+    def test_gpath_no_norm_on_fname(self):
+        assert type(GPath_no_norm(FName('Passes through!')).s) is FName ##: oopsie
+
+    def test_path_join_fname(self):
+        assert type(GPath('c:\\users\\mrd').join(FName('wrye')).s) is str
+
+    def test_containers(self):
+        """Test membership of FN's vs paths and strings in various container
+        types - beware of hashed containers."""
+        file_str = 'path.txt'
+        FILE_STR = file_str.upper()
+        assert (FN := FName(FILE_STR)) == (fn := FName(file_str))
+        path = GPath(file_str)
+        PATH = GPath(FILE_STR)
+        containers = zip((set, list, dict), ({fn}, [fn], {fn: 1}),
+                         ({file_str}, [file_str], {file_str: 1}))
+        for cont_type, fn_cont, string_cont in containers:
+            assert file_str in fn_cont
+            if cont_type is set or cont_type is dict: ##: oopsie we need an FNDict!
+                assert FILE_STR not in fn_cont
+            else:
+                assert FILE_STR in fn_cont
+            assert FN in fn_cont # yey
+            with pytest.raises(TypeError): assert path in fn_cont
+            with pytest.raises(TypeError): assert PATH in fn_cont
+            assert path in string_cont
+            assert PATH in string_cont
+            assert fn in string_cont
+            assert FN in string_cont
+
+class TestFNDict(TestLowerDict):
+    dict_type = FNDict
+    key_type = FName
+
+class TestDefaultFNDict(TestDefaultLowerDict):
+    dict_type = DefaultFNDict
+    key_type = FName

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # GPL License and Copyright Notice ============================================
@@ -17,21 +17,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
-from __future__ import absolute_import, division, print_function
+from __future__ import annotations
 
-import errno
 import logging
 import math
 import os
+import re
 import subprocess
 import sys
-from contextlib import contextmanager
-from urllib2 import urlopen
+from urllib.request import urlopen
 
 # verbosity:
 #  quiet (warnings and above)
@@ -78,13 +77,13 @@ def convert_bytes(size_bytes):
     i = int(math.floor(math.log(size_bytes, 1024)))
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
-    return u'{}{}'.format(s, size_name[i])
+    return f'{s}{size_name[i]}'
 
 def download_file(url, fpath):
     file_name = os.path.basename(fpath)
     response = urlopen(url)
     meta = response.info()
-    file_size = int(meta.getheaders(u'Content-Length')[0])
+    file_size = int(meta.get('Content-Length'))
     converted_size = convert_bytes(file_size)
     file_size_dl = 0
     block_sz = 8192
@@ -96,9 +95,8 @@ def download_file(url, fpath):
             file_size_dl += len(buff)
             dl_file.write(buff)
             percentage = file_size_dl * 100.0 / file_size
-            status = u'{0:>20}  -----  [{3:6.2f}%] {1:>10}/{2}'.format(
-                file_name, convert_bytes(file_size_dl), converted_size, percentage
-            )
+            status = f'{file_name:>20}  -----  [{percentage:6.2f}%] ' \
+                     f'{convert_bytes(file_size_dl):>10}/{converted_size}'
             status = status + chr(8) * (len(status) + 1)
             print(status, end=u' ')
     print()
@@ -111,7 +109,7 @@ def run_subprocess(command, logger, **kwargs):
         universal_newlines=True,
         **kwargs
     )
-    logger.debug(u'Running command: %s' % u' '.join(command))
+    logger.debug(f'Running command: {u" ".join(command)}')
     stdout, _stderr = sp.communicate()
     if sp.returncode != 0:
         logger.error(stdout)
@@ -120,22 +118,64 @@ def run_subprocess(command, logger, **kwargs):
     logger.debug(stdout)
     logger.debug(u'---  COMMAND OUTPUT END  ---')
 
-def relpath(path):
-    return os.path.relpath(path, os.getcwd())
+# Copy-pasted from bolt.py
+# We need to split every time we hit a new 'type' of component. So greedily
+# match as many of one type as possible (except dots and dashes, since those
+# are guaranteed to start a new component)
+_component_re = re.compile(r'(\.|-|\d+|[^\d.-]+)')
+_separators = frozenset({'.', '-'})
+class LooseVersion:
+    """A class for representing and comparing versions, where the term
+    'version' refers to any and every possible string. The way this class works
+    is pretty simple: there are three 'types' of components to a LooseVersion:
 
-@contextmanager
-def suppress(*exceptions):
-    try:
-        yield
-    except exceptions:
-        pass
+     - separators (dots and dashes)
+     - digits
+     - everything else
 
-# https://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
-def mkdir(path, exists_ok=True):
-    try:
-        os.makedirs(path)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(path) and exists_ok:
-            pass
-        else:
-            raise
+    Separators begin a new component to the version, but are not part of the
+    version themselves. Digits are compared numerically, so 2 < 10. Everything
+    else is compared alphabetically, so 'a' < 'm'. A whole version is compared
+    by comparing the components in it as a tuple."""
+    _parsed_version: tuple[int | str]
+
+    def __init__ (self, ver_string: str):
+        ver_components = _component_re.split(ver_string)
+        parsed_version = []
+        for ver_comp in ver_components:
+            if not ver_comp or ver_comp in _separators:
+                # Empty components and separators are not part of the version
+                continue
+            try:
+                parsed_version.append(int(ver_comp))
+            except ValueError:
+                parsed_version.append(ver_comp)
+        self._parsed_version = tuple(parsed_version)
+
+    def __repr__(self):
+        return '.'.join([str(c) for c in self._parsed_version])
+
+    def __eq__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version == other._parsed_version
+
+    def __lt__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version < other._parsed_version
+
+    def __le__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version <= other._parsed_version
+
+    def __gt__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version > other._parsed_version
+
+    def __ge__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version >= other._parsed_version

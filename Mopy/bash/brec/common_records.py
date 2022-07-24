@@ -16,16 +16,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Builds on the rest of brec to provide full definitions and base classes for
 some commonly needed records."""
 
-from __future__ import division
 
-from itertools import izip
 from operator import attrgetter
 
 from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
@@ -37,7 +35,7 @@ from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID
 from .. import bolt, exception
-from ..bolt import decoder, GPath, struct_pack, structs_cache, \
+from ..bolt import decoder, FName, struct_pack, structs_cache, \
     remove_newlines, to_unix_newlines
 from ..exception import StateError
 
@@ -69,24 +67,18 @@ class MreHeaderBase(MelRecord):
                 # we want to use automatic encoding detection
                 master_name = decoder(bolt.cstrip(ins.read(size_, *debug_strs)),
                                       avoidEncodings=(u'utf8', u'utf-8'))
-                record.masters.append(GPath(master_name))
+                record.masters.append(FName(master_name))
             else: # sub_type == 'DATA'
                 # DATA is the size for TES3, but unknown/unused for later games
                 record.master_sizes.append(
                     ins.unpack(__unpacker, size_, *debug_strs)[0])
 
         def dumpData(self,record,out):
-            # Truncate or pad the sizes with zeroes as needed
-            # TODO(inf) For Morrowind, this will have to query the files for
-            #  their size and then store that
-            num_masters = len(record.masters)
-            num_sizes = len(record.master_sizes)
-            record.master_sizes = record.master_sizes[:num_masters] + [0] * (
-                    num_masters - num_sizes)
-            for master_name, master_size in izip(record.masters,
-                                                 record.master_sizes):
+            record._truncate_masters()
+            for master_name, master_size in zip(record.masters,
+                                                record.master_sizes):
                 MelUnicode(b'MAST', '', encoding=u'cp1252').packSub(
-                    out, master_name.s)
+                    out, master_name)
                 MelBase(b'DATA', '').packSub(
                     out, struct_pack(u'Q', master_size))
 
@@ -113,13 +105,18 @@ class MreHeaderBase(MelRecord):
     def author(self, new_author):
         self.author_pstr = new_author
 
-    def loadData(self, ins, endPos):
-        super(MreHeaderBase, self).loadData(ins, endPos)
-        num_masters = len(self.masters)
+    def loadData(self, ins, endPos, *, file_offset=0):
+        super().loadData(ins, endPos, file_offset=file_offset)
+        self._truncate_masters()
+
+    def _truncate_masters(self):
+        # TODO(inf) For Morrowind, this will have to query the files for
+        #  their size and then store that
+        num_masters = self.num_masters
         num_sizes = len(self.master_sizes)
         # Just in case, truncate or pad the sizes with zeroes as needed
         self.master_sizes = self.master_sizes[:num_masters] + [0] * (
-                num_masters - num_sizes)
+                num_masters - num_sizes) # [] * (-n) == []
 
     def getNextObject(self):
         """Gets next object index and increments it for next time."""
@@ -139,7 +136,7 @@ class MreFlst(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFids(b'LNAM', u'formIDInList'), # do *not* sort!
+        MelFids('formIDInList', MelFid(b'LNAM')),  # do *not* sort!
     )
 
     __slots__ = melSet.getSlotsUsed() + [u'mergeOverLast', u'mergeSources',
@@ -147,10 +144,10 @@ class MreFlst(MelRecord):
                                          u're_records']
 
     def __init__(self, header, ins=None, do_unpack=False):
-        super(MreFlst, self).__init__(header, ins, do_unpack)
+        super(MreFlst, self).__init__(header, ins, do_unpack=do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
-        self.items  = None #--Set of items included in list
+        self.items = None #--Set of items included in list
         #--Set of items deleted by list (Deflst mods) unused for Skyrim
         self.de_records = None #--Set of items deleted by list (Deflst mods)
         self.re_records = None # unused, needed by patcher
@@ -167,8 +164,9 @@ class MreFlst(MelRecord):
         #--Remove items based on other.removes
         if other.de_records:
             removeItems = self.items & other.de_records
-            self.formIDInList = [fi for fi in self.formIDInList if fi not in removeItems]
-            self.items = (self.items | other.de_records)
+            self.formIDInList = [fi for fi in self.formIDInList
+                                 if fi not in removeItems]
+            self.items |= other.de_records
         #--Add new items from other
         newItems = set()
         formIDInListAppend = self.formIDInList.append
@@ -183,7 +181,7 @@ class MreFlst(MelRecord):
         if len(self.formIDInList) != len(other.formIDInList):
             self.mergeOverLast = True
         else:
-            for selfEntry, otherEntry in izip(self.formIDInList,
+            for selfEntry, otherEntry in zip(self.formIDInList,
                                               other.formIDInList):
                 if selfEntry != otherEntry:
                     self.mergeOverLast = True
@@ -277,12 +275,8 @@ class MreLeveledListBase(MelRecord):
           chanceNone
           flags
     """
-    _flags = bolt.Flags(0,bolt.Flags.getNames(
-        (0, u'calcFromAllLevels'),
-        (1, u'calcForEachItem'),
-        (2, u'useAllSpells'),
-        (3, u'specialLoot'),
-        ))
+    _flags = bolt.Flags.from_names(u'calcFromAllLevels', u'calcForEachItem',
+                                   u'useAllSpells', u'specialLoot')
     top_copy_attrs = ()
     # TODO(inf) Only overriden for FO3/FNV right now - Skyrim/FO4?
     entry_copy_attrs = (u'listId', u'level', u'count')
@@ -291,10 +285,10 @@ class MreLeveledListBase(MelRecord):
                 # + ['flags', 'entries'] # define those in the subclasses
 
     def __init__(self, header, ins=None, do_unpack=False):
-        super(MreLeveledListBase, self).__init__(header, ins, do_unpack)
+        super().__init__(header, ins, do_unpack=do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
-        self.items  = None #--Set of items included in list
+        self.items = None #--Set of items included in list
         self.de_records = None #--Set of items deleted by list (Delev and Relev mods)
         self.re_records = None #--Set of items relevelled by list (Relev mods)
 
@@ -312,7 +306,7 @@ class MreLeveledListBase(MelRecord):
         if other.re_records:
             for attr in self.__class__.top_copy_attrs:
                 setattr(self, attr, getattr(other, attr))
-            self.flags = other.flags()
+            self.flags = other.flags() # Flags copy!
         else:
             for attr in self.__class__.top_copy_attrs:
                 otherAttr = getattr(other, attr)
@@ -363,7 +357,7 @@ class MreLeveledListBase(MelRecord):
                 # Then, check the sort-attributes, same story
                 otherlist = other.entries
                 otherlist.sort(key=entry_copy_attrs_key)
-                for selfEntry, otherEntry in izip(self.entries, otherlist):
+                for selfEntry, otherEntry in zip(self.entries, otherlist):
                     for attr in self.__class__.entry_copy_attrs:
                         if getattr(selfEntry, attr) != getattr(
                                 otherEntry, attr):

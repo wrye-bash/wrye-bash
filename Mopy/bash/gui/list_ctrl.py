@@ -16,16 +16,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """List control wrapper - this is the main control that Bash uses to display
 mods, saves, inis, installers etc"""
+from __future__ import annotations
 
 __author__ = u'Lojack, Utumno'
 
-import cPickle as pickle  # PY3
+import pickle
 
 import wx as _wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -68,7 +69,8 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                     return _wx.DragResult.DragCopy
                 elif dtype == self.dataList.GetFormat().GetType():
                     # ListCtrl indexes
-                    _data = pickle.loads(self.dataList.GetData().tobytes())
+                    _data = pickle.loads(self.dataList.GetData().tobytes(),
+                                         encoding='bytes')
                     self.window._OnDropList(x, y, _data)
                     return _wx.DragResult.DragCopy
             return _wx.DragResult.DragNone
@@ -116,9 +118,9 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
 
     def OnBeginDrag(self, event):
         if not self.fnDndAllow(event): return
-        indices = []
+        indexes = []
         start = stop = -1
-        for index in xrange(self.GetItemCount()):
+        for index in range(self.GetItemCount()):
             if self.GetItemState(index, _wx.LIST_STATE_SELECTED):
                 if stop >= 0 and self.dndOnlyCont:
                     # Only allow moving selections if they are in a
@@ -126,12 +128,12 @@ class _DragListCtrl(_wx.ListCtrl, ListCtrlAutoWidthMixin):
                     return
                 if start < 0:
                     start = index
-                indices.append(index)
+                indexes.append(index)
             else:
                 if start >=0 > stop:
                     stop = index - 1
         if stop < 0: stop = self.GetItemCount()
-        selected = pickle.dumps(indices, 1)
+        selected = pickle.dumps(indexes, 1)
         ldata = _wx.CustomDataObject(u'ListIndexes')
         ldata.SetData(selected)
         data_object = _wx.DataObjectComposite()
@@ -197,7 +199,7 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
     """
     bind_motion = True
     bind_mouse_leaving = bind_lclick_double = bind_lclick_down = True
-    _wx_widget_type = _DragListCtrl
+    _native_widget: _DragListCtrl
 
     def __init__(self, parent, allow_edit, is_border_sunken, is_single_cell,
             *args, **kwargs):
@@ -224,8 +226,8 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
                 lambda event: [event.IsEditCancelled(), event.GetLabel(),
                     event.GetIndex(), self.FindItemAt(event.GetIndex())])
         #--Item/Id mapping
-        self._item_itemId = {} # :type: dict[bolt.Path | unicode | int, int]
-        self._itemId_item = {} # :type: dict[int, bolt.Path | unicode | int]
+        self._item_itemId: dict[bolt.FName | str | int, int] = {}
+        self._itemId_item: dict[int, bolt.FName | str | int] = {}
 
     # API (beta) -------------------------------------------------------------
     # Internal id <-> item mappings used in wx._controls.ListCtrl.SortItems
@@ -236,14 +238,27 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         self._itemId_item[self.__item_id] = item
         return self.__item_id
 
-    def InsertListCtrlItem(self, index, value, item):
-        """Insert an item to the list control giving it an internal id."""
+    def InsertListCtrlItem(self, index, value, item, decorate_cb):
+        """Insert an item to the list control giving it an internal id.
+
+        :param decorate_cb: A callback that will be passed the created wx item.
+            Use this to set properties on the item once before it is inserted
+            into the ListCtrl via SetItem."""
         i = self.__id(item)
-        some_long = self._native_widget.InsertItem(index, value) # index ?
-        gItem = self._native_widget.GetItem(index) # that's what Tank did
-        gItem.SetData(i)  # Associate our id with that row.
-        self._native_widget.SetItem(gItem) # this is needed too - yak
-        return some_long
+        new_index = self._native_widget.InsertItem(index, value)
+        if new_index == -1:
+            raise RuntimeError(f'Failed to insert UIList item {value}')
+        # The item/row is inserted now, but all ancillary data has to be added
+        # to the actual wx object, then committed (see below)
+        gItem = self._native_widget.GetItem(new_index)
+        # Associate our internal id with this item/row
+        gItem.SetData(i)
+        ##: de-wx! This is a wx object escaping - should be internal-only,
+        # need to absorb __setUI in gui and export a public API like
+        # _ListItemFormat for that
+        decorate_cb(gItem)
+        # This commits the actual changed data in the ListCtrl
+        self._native_widget.SetItem(gItem)
 
     def RemoveItemAt(self, index):
         """Remove item at specified list index."""
@@ -272,20 +287,28 @@ class UIListCtrl(WithMouseEvents, WithCharEvents):
         self._native_widget.SortItems(lambda x, y: bolt.cmp_(sortDict[x], sortDict[y]))
 
     # native edit control wrappers
+    def __ec(self): # may return None on mac
+        return self._native_widget.GetEditControl()
+
     def ec_set_selection(self, start, stop):
-        return self._native_widget.GetEditControl().SetSelection(start, stop)
+        (ec := self.__ec()) and ec.SetSelection(start, stop)
 
     def ec_get_selection(self):
-        return self._native_widget.GetEditControl().GetSelection()
+        return (ec := self.__ec()) and ec.GetSelection()
 
     def ec_set_f2_handler(self, on_char_handler):
         """Sets a handler for when the F2 key is pressed. Note that you have to
         return EventResult.FINISH when handling this event."""
-        on_char = EventHandler(self._native_widget.GetEditControl(),
-            _wx.EVT_KEY_DOWN, lambda event: [
-                event.GetKeyCode() == _wx.WXK_F2,
-                self._native_widget.GetEditControl().GetValue(), self])
+        ec = self.__ec()
+        if ec is None: return
+        on_char = EventHandler(ec, _wx.EVT_KEY_DOWN,
+                               lambda event: [event.GetKeyCode() == _wx.WXK_F2,
+                                              ec.GetValue(), self])
         on_char.subscribe(on_char_handler)
+
+    def ec_rename_prompt_opened(self):
+        """Returns True if the rename prompt is currently open."""
+        return self.__ec() is not None
 
     ##: column wrappers - belong to a superclass that wraps ListCtrl
     def lc_get_columns_count(self):

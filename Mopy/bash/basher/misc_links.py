@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -43,7 +43,7 @@ class Screens_NextScreenShot(EnabledLink):
     """Sets screenshot base name and number."""
     _text = _(u'Next Shot...')
     _help = _(u'Set screenshot base name and number')
-    rePattern = re.compile(u'' r'^(.+?)(\d*)$', re.I | re.U)
+    rePattern = re.compile(r'^(.+?)(\d*)$', re.I | re.U)
 
     def _enable(self):
         return not bosh.oblivionIni.isCorrupted \
@@ -75,7 +75,7 @@ class Screens_NextScreenShot(EnabledLink):
         settings_screens[enabled_key[0]][enabled_key[1]] = enabled_key[2]
         screens_dir = GPath(new_base).head
         if screens_dir:
-            if not screens_dir.isabs():
+            if not screens_dir.is_absolute():
                 screens_dir = bass.dirs[u'app'].join(screens_dir)
             screens_dir.makedirs()
         bosh.oblivionIni.saveSettings(settings_screens)
@@ -87,25 +87,24 @@ class Screen_ConvertTo(EnabledLink):
     """Converts selected images to another type."""
     _help = _(u'Convert selected images to another format')
 
-    def __init__(self,ext,imageType):
+    def __init__(self, ext):
         super(Screen_ConvertTo, self).__init__()
-        self.ext = ext.lower()
-        self.imageType = imageType
-        self._text = _(u'Convert to %s') % self.ext
+        self._ext = f'.{ext}'
+        self.imageType = ImageWrapper.typesDict[ext]
+        self._text = _('Convert to %s') % ext
 
     def _enable(self):
-        self.convertable = [s for s in self.selected if
-                            s.cext != u'.' + self.ext]
+        self.convertable = [s for s in self.selected if s.fn_ext != self._ext]
         return bool(self.convertable)
 
     def Execute(self):
         try:
-            with balt.Progress(_(u'Converting to %s') % self.ext) as progress:
+            with balt.Progress(_('Converting to %s') % self._ext[1:]) as progress:
                 progress.setFull(len(self.convertable))
                 for index, fileName in enumerate(self.convertable):
-                    progress(index,fileName.s)
+                    progress(index, fileName)
                     srcPath = bosh.screen_infos[fileName].abs_path
-                    destPath = srcPath.root+u'.'+self.ext
+                    destPath = srcPath.root + self._ext
                     if srcPath == destPath or destPath.exists(): continue
                     bitmap = ImageWrapper.Load(srcPath, quality=bass.settings[
                         u'bash.screens.jpgQuality'])
@@ -122,9 +121,9 @@ class Screens_JpgQuality(RadioLink):
     _help = _(u'Sets JPEG quality for saving')
 
     def __init__(self, quality):
-        super(Screens_JpgQuality, self).__init__()
+        super().__init__()
         self.quality = quality
-        self._text = u'%i' % self.quality
+        self._text = f'{self.quality:d}'
 
     def _check(self):
         return self.quality == bass.settings[u'bash.screens.jpgQuality']
@@ -136,8 +135,7 @@ class Screens_JpgQuality(RadioLink):
 class Screens_JpgQualityCustom(Screens_JpgQuality):
     """Sets a custom JPG quality."""
     def __init__(self):
-        super(Screens_JpgQualityCustom, self).__init__(
-            bass.settings[u'bash.screens.jpgCustomQuality'])
+        super().__init__(bass.settings['bash.screens.jpgCustomQuality'])
         self._text = _(u'Custom [%i]') % self.quality
 
     def Execute(self):
@@ -147,7 +145,7 @@ class Screens_JpgQualityCustom(Screens_JpgQuality):
         self.quality = quality
         bass.settings[u'bash.screens.jpgCustomQuality'] = self.quality
         self._text = _(u'Custom [%i]') % quality
-        super(Screens_JpgQualityCustom, self).Execute()
+        super().Execute()
 
 #------------------------------------------------------------------------------
 class Screen_Rename(UIList_Rename):
@@ -195,7 +193,7 @@ class Master_ChangeTo(_Master_EditList):
         master_name = masterInfo.curr_name
         #--File Dialog
         wildcard = bosh.modInfos.plugin_wildcard()
-        newPath = self._askOpen(title=_(u'Change master name to:'),
+        newPath = self._askOpen(title=_('Change master name to:'),
                                 defaultDir=bosh.modInfos.store_dir,
                                 defaultFile=master_name, wildcard=wildcard)
         if not newPath: return
@@ -205,12 +203,13 @@ class Master_ChangeTo(_Master_EditList):
             self._showError(_(u'File must be selected from %s '
                               u'directory.') % bush.game.mods_dir)
             return
-        elif newName == master_name:
+        elif newName.s == master_name: # case insensitive, good
             return
         #--Save Name
-        masterInfo.set_name(newName)
-        bass.settings.getChanged(u'bash.mods.renames')[master_name] = newName
-        self.window.SetMasterlistEdited(repopulate=True)
+        if masterInfo.rename_if_present(newName.s):
+            ##: should be True but needs extra validation -> cycles?
+            bass.settings[u'bash.mods.renames'][master_name] = masterInfo.curr_name
+            self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
 class Master_Disable(AppendableLink, _Master_EditList):
@@ -228,14 +227,10 @@ class Master_Disable(AppendableLink, _Master_EditList):
     def _enable(self):
         if not super(Master_Disable, self)._enable(): return False
         # Only allow for .esm files, pointless on anything else
-        return self._selected_info.curr_name.cext == u'.esm'
+        return self._selected_info.curr_name.fn_ext == u'.esm'
 
     def Execute(self):
-        master_info = self._selected_info
-        ##: We could simplify this down to just unique_key if we had a ModInfo
-        # instance and could pass the new extension in directly
-        esp_name = GPath(u'XX%s.esp' % master_info.curr_name.sroot)
-        master_info.set_name(bosh.ModInfo.unique_name(esp_name))
+        self._selected_info.disable_master()
         self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
@@ -272,14 +267,14 @@ class _Column(CheckLink, EnabledLink):
     def _check(self): return self.colName in self.window.cols
 
     def Execute(self):
-        if self.colName in self.window.cols:
-            self.window.cols.remove(self.colName)
+        window_cols = self.window.cols
+        if self.colName in window_cols:
+            window_cols.remove(self.colName)
         else:
             #--Ensure the same order each time
-            cols = self.window.cols[:]
-            del self.window.cols[:]
-            self.window.cols.extend([x for x in self.window.allCols if
-                                     x in cols or x == self.colName])
+            cols_set = set(window_cols)
+            window_cols[:] = [x for x in self.window.allCols if
+                              x in cols_set or x == self.colName]
         self.window.PopulateColumns()
         self.window.RefreshUI()
 
@@ -313,7 +308,7 @@ class ColumnsMenu(ChoiceMenuLink):
     extraItems = [_Manual(), _Contents(), _Header(), SeparatorLink()]
 
     @property
-    def _choices(self): return self.window.allCols
+    def _choices(self): return self.window.all_allowed_cols
 
 # Sort By menu ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -345,7 +340,7 @@ class SortByMenu(ChoiceMenuLink):
             self.extraItems = sort_options + [SeparatorLink()]
 
     @property
-    def _choices(self): return self.window.cols
+    def _choices(self): return self.window.allowed_cols
 
 # Settings Dialog -------------------------------------------------------------
 #------------------------------------------------------------------------------

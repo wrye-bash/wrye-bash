@@ -16,17 +16,25 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Sets up the necessary environment to run Wrye Bash tests. This whole file is
 quite hacky, but running tests for WB is going to be a bit hacky no matter
 what."""
-
+import gettext
+import locale
 import os
-import toml
+import sys
 import traceback
+
+import tomli
+import wx as _wx
+
+# set in _emulate_startup used in set_game - we need to init translations
+# before importing
+bush = None
 
 class FailedTest(Exception):
     """Misc exception for when a test should fail for meta reasons."""
@@ -42,10 +50,11 @@ def get_meta_value(base_file_path, meta_key):
         parsed_meta = _meta_cache[base_file_path]
     except KeyError:
         try:
-            parsed_meta = _meta_cache[base_file_path] = toml.load(meta_file)
-        except TypeError: # File is missing
+            with open(meta_file, 'rb') as ins:
+                parsed_meta = _meta_cache[base_file_path] = tomli.load(ins)
+        except FileNotFoundError:
             raise FailedTest(u'%s is missing a .meta file.' % base_file_path)
-        except toml.TomlDecodeError: # File has incorrect syntax
+        except tomli.TOMLDecodeError:
             traceback.print_exc()
             raise FailedTest(u'%s has malformed TOML syntax. Check the log '
                              u'for a traceback pointing to the '
@@ -114,13 +123,29 @@ def set_game(game_fsName):
         new_game.init()
         _game_cache[game_fsName] = new_game
 
+_wx_app = None
+
+class _BaseApp(_wx.App):
+    """Copy paste from bash.py"""
+    def MainLoop(self, restore_stdio=True):
+        """Not sure what RestoreStdio does so I omit the call in game
+        selection dialog.""" # TODO: check standalone also
+        rv = _wx.PyApp.MainLoop(self)
+        if restore_stdio: self.RestoreStdio()
+        return rv
+    def InitLocale(self):
+        if sys.platform.startswith('win') and sys.version_info > (3,8):
+            locale.setlocale(locale.LC_CTYPE, 'C')
+
 def _emulate_startup():
     """Emulates a normal Wrye Bash startup, but without launching basher
     etc."""
     # bush needs _() to be available, so need to do it like this
     global bush
-    from .. import localize
-    localize.setup_locale(u'English')
+    global _wx_app
+    _wx_app = _BaseApp()
+    trans = gettext.NullTranslations()
+    trans.install()
     from .. import bush
     # noinspection PyProtectedMember
     bush._supportedGames()

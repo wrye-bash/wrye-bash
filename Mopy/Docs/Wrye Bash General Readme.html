@@ -124,16 +124,18 @@
 </ul>
 <p>It currently supports the following games:</p>
 <ul>
-    <li>Morrowind (very early support, Steam and Windows Store versions)</li>
-    <li>Oblivion (Steam and Windows Store versions)</li>
-    <li>Nehrim&colon; At Fate's Edge</li>
-    <li>Fallout 3</li>
-    <li>Fallout&colon; New Vegas</li>
-    <li>Skyrim</li>
     <li>Enderal&colon; Forgotten Stories</li>
-    <li>Fallout 4 (Steam and Windows Store versions)</li>
-    <li>Skyrim&colon; Special Edition (Steam and Windows Store versions)</li>
     <li>Enderal&colon; Forgotten Stories&colon; Special Edition</li>
+    <li>Fallout 3 (Steam and Windows Store versions)</li>
+    <li>Fallout 4 (Steam and Windows Store versions)</li>
+    <li>Fallout 4 VR</li>
+    <li>Fallout&colon; New Vegas (Steam and Windows Store versions)</li>
+    <li>Morrowind (very early support, Steam and Windows Store versions)</li>
+    <li>Nehrim&colon; At Fate's Edge</li>
+    <li>Oblivion (Steam and Windows Store versions)</li>
+    <li>Skyrim</li>
+    <li>Skyrim&colon; Special Edition (Steam and Windows Store versions)</li>
+    <li>Skyrim VR</li>
 </ul>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
 <p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.</p>
@@ -159,16 +161,18 @@
     <table>
         <thead><tr><th>Game</th><th>Master File</th></tr></thead>
         <tbody>
-            <tr><td>Morrowind</td><td>Morrowind.esm</td></tr>
-            <tr><td>Oblivion</td><td>Oblivion.esm</td></tr>
-            <tr><td>Nehrim&colon; At Fate's Edge</td><td>Nehrim.esm</td></tr>
-            <tr><td>Fallout 3</td><td>Fallout3.esm</td></tr>
-            <tr><td>Fallout&colon; New Vegas</td><td>FalloutNV.esm</td></tr>
-            <tr><td>Skyrim</td><td>Skyrim.esm</td></tr>
             <tr><td>Enderal&colon; Forgotten Stories</td><td>Skyrim.esm</td></tr>
-            <tr><td>Fallout 4</td><td>Fallout4.esm</td></tr>
-            <tr><td>Skyrim&colon; Special Edition</td><td>Skyrim.esm</td></tr>
             <tr><td>Enderal&colon; Forgotten Stories&colon; Special Edition</td><td>Skyrim.esm</td></tr>
+            <tr><td>Fallout 3</td><td>Fallout3.esm</td></tr>
+            <tr><td>Fallout 4</td><td>Fallout4.esm</td></tr>
+            <tr><td>Fallout 4 VR</td><td>Fallout4.esm</td></tr>
+            <tr><td>Fallout&colon; New Vegas</td><td>FalloutNV.esm</td></tr>
+            <tr><td>Morrowind</td><td>Morrowind.esm</td></tr>
+            <tr><td>Nehrim&colon; At Fate's Edge</td><td>Nehrim.esm</td></tr>
+            <tr><td>Oblivion</td><td>Oblivion.esm</td></tr>
+            <tr><td>Skyrim</td><td>Skyrim.esm</td></tr>
+            <tr><td>Skyrim&colon; Special Edition</td><td>Skyrim.esm</td></tr>
+            <tr><td>Skyrim VR</td><td>Skyrim.esm</td></tr>
         </tbody>
     </table>
     <li><strong>Conflicts</strong> occur when two different mods try to change the same game variable or resource, which could be anything from a specific object in game to a script or a texture. Conflicts can cause problems, including CTDs or save game corruption, but they are not inherently bad, and most modding is the result of purposeful conflicts.</li>
@@ -190,7 +194,7 @@
 <p><strong>Windows Vista, 7, 8 &amp; 10 users:</strong> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Installation:
 <ol>
-    <li>Download and install the <a href="https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe">MSVC 2010 Redistributable (x64)</a>.
+    <li>Download and install the <a href="https://aka.ms/vs/16/release/vc_redist.x64.exe">latest MSVC Redistributable (x64)</a>.
     <li>You now have a choice:</li>
     <ul>
         <li>Extract the downloaded Wrye Bash archive into any folder.</li>
@@ -207,7 +211,7 @@
         See the <a href="Wrye%20Bash%20Advanced%20Readme.html#install-components">Python Components</a> section of the Advanced readme
         for the list of included libraries and their versions. If you have previously installed Python and any Python libraries,
         you may not need to install them again.
-    <li>Download and install the <a href="https://download.microsoft.com/download/3/2/2/3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/vcredist_x64.exe">MSVC 2010 Redistributable (x64)</a>.
+    <li>Download and install the <a href="https://aka.ms/vs/16/release/vc_redist.x64.exe">latest MSVC Redistributable (x64)</a>.
     <li>Extract the downloaded Wrye Bash archive into your game folder (e.g. <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q>, depending on the game) so that the Mopy
     directory appears by the game executable. See the
     <a href="Wrye%20Bash%20Advanced%20Readme.html#install-alternate">Alternative Install Locations</a> if you wish to install to a different directory.
@@ -278,34 +282,106 @@ be restructured.</p>
 
 <h3 id="bain-structure">BAIN-Compatible installer layout <a class="back2top" href="#contents">Back to top</a></h3>
 
-<p>When scanning an installer (package or project) BAIN follows some rules to decide what's in there and if it can be installed. BAIN
-    will search for specific directories and file extensions (bsa/ba2, ini, all plugin extensions). All directory detection is <em>case insensitive</em>.
-    Directories BAIN is aware of, independently of the game, are:</p>
+<p>When scanning an installer (package or project) BAIN follows some rules to
+    decide what's in there and if it can be installed. BAIN will search for
+    specific directories and file extensions (bsa/ba2, ini, all plugin
+    extensions). All directory detection is <em>case insensitive</em>.
+    Directories BAIN is aware of, independent of the game, are:</p>
 <table>
-    <thead><tr><th>Wrye Bash Directory</th><th>Notes</th></tr></thead>
+    <thead>
+        <tr>
+            <th>Wrye Bash Directory</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>bashtags</td><td>Its contents will be copied inside <code>Data/BashTags</code>.</td></tr>
-        <tr><td>bash patches</td><td>BAIN will install files in this folder from packages, usually in the form of <code>.csv</code> files.</td></tr>
-        <tr><td>docs</td><td>Its contents will be copied inside <code>Data/Docs</code>.</td></tr>
-        <tr><td>ini tweaks</td><td>INI tweaks inside this will be installed in <code>Data/Ini Tweaks/</code> and appear on the INI Tab - do <strong>not</strong> include subfolders in <code>ini tweaks</code>.</td></tr>
-        <tr><td>screenshots</td><td>Its contents will be copied inside <code>Data/Docs</code>.</td></tr>
-        <tr class="tabttl"><th colspan="2">Game Directories Supported For All Games</th>
+        <tr>
+            <td>bashtags</td>
+            <td>Its contents will be copied into
+                <code>Data/BashTags</code>.</td>
+        </tr>
+        <tr>
+            <td>bash patches</td>
+            <td>BAIN will install files in this folder from packages, usually
+                in the form of <code>.csv</code> files.</td>
+        </tr>
+        <tr>
+            <td>docs</td>
+            <td>Its contents will be copied into <code>Data/Docs</code>.</td>
+        </tr>
+        <tr>
+            <td>ini tweaks</td>
+            <td>INI tweaks inside this will be installed in
+                <code>Data/INI Tweaks</code> and appear on the INI Tab - do
+                <strong>not</strong> include subfolders in
+                <code>ini tweaks</code>.</td>
+        </tr>
+        <tr>
+            <td>screenshots</td>
+            <td>Its contents will be copied into <code>Data/Docs</code>.</td>
+        </tr>
+        <tr>
+            <td>screens</td>
+            <td>Its contents will be copied into <code>Data/Docs</code>.</td>
+        </tr>
+        <tr>
+            <td>ss</td>
+            <td>Its contents will be copied into <code>Data/Docs</code>.</td>
+        </tr>
+        <tr class="tabttl">
+            <th colspan="2">Game Directories Supported For All Games</th>
+        </tr>
     <tbody>
-        <tr><td colspan="2"><div class="bain-structure-txtcnt">ini, meshes, music, sound, textures, video</div></td></tr>
+        <tr>
+            <td colspan="2">
+                <div class="bain-structure-txtcnt">ini, meshes, music, sound,
+                    textures, video</div>
+            </td>
+        </tr>
     </tbody>
 </table>
 
 <p>There are also game-specific directories:</p>
 
 <table>
-    <thead><tr><th>Game</th><th>Extra Game Directories</th></tr></thead>
+    <thead>
+        <tr>
+            <th>Game</th>
+            <th>Extra Game Directories</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td><td>_tejon, distantlod, facegen, fonts, menus, obse, pluggy, scripts, shaders, streamline, trees</td></tr>
-        <tr><td>Fallout 3</td><td>config, distantlod, facegen, fonts, fose, menus, uio, scripts, shaders, trees</td></tr>
-        <tr><td>Fallout&colon; New Vegas</td><td>config, distantlod, facegen, fonts, menus, nvse, uio, scripts, shaders, trees</td></tr>
-        <tr><td>Skyrim &amp; Enderal&colon; Forgotten Stories</td><td>asi, calientetools, dialogueviews, dyndolod, grass, interface, lodsettings, scripts, seq, shadersfx, skse, skyproc patchers, strings, tools</td></tr>
-        <tr><td>Fallout 4</td><td>f4se, interface, lodsettings, materials, mcm, misc, programs, scripts, seq, shadersfx, strings, tools, vis</td></tr>
-        <tr><td>Skyrim&colon; Special Edition &amp; Enderal&colon; Forgotten Stories&colon; Special Edition</td><td>asi, calientetools, dialogueviews, dyndolod, grass, interface, lodsettings, scripts, seq, shadersfx, skse, skyproc patchers, source, strings, tools</td></tr>
+        <tr>
+            <td>Morrowind</td>
+            <td>animation, bookart, distantland, fonts, icons, mwse, shaders,
+                splash</td>
+        </tr>
+        <tr>
+            <td>Oblivion</td>
+            <td>_tejon, distantlod, facegen, fonts, menus, obse, pluggy,
+                scripts, shaders, streamline, trees</td>
+        </tr>
+        <tr>
+            <td>Fallout 3</td>
+            <td>config, distantlod, facegen, fonts, fose, menus, uio, scripts,
+                shaders, trees</td>
+        </tr>
+        <tr>
+            <td>Fallout&colon; New Vegas</td>
+            <td>config, distantlod, facegen, fonts, menus, nvse, uio, scripts,
+                shaders, trees</td>
+        </tr>
+        <tr>
+            <td>Skyrim</td>
+            <td>asi, autobody, calientetools, dialogueviews, dyndolod, grass,
+                interface, lodsettings, nemesis_engine, osa, scripts, seq,
+                shadersfx, skse, skyproc patchers, strings, tools</td>
+        </tr>
+        <tr>
+            <td>Fallout 4</td>
+            <td>f4se, interface, lodsettings, materials, mcm, misc, programs,
+                scripts, seq, shadersfx, strings, tools, vis</td>
+        </tr>
     </tbody>
 </table>
 
@@ -361,7 +437,7 @@ will be skipped (and their content listed in Skipped tab). There are also some d
 </ol>
 <p>If a package has an FOMOD wizard (i.e. there is an FOMOD radio button):</p>
 <ol>
-    <li>Right-click the package and select <a href="bainFomod">FOMOD Installer...</a>.</li>
+    <li>Right-click the package and select <a href="#bainFomod">Run FOMOD...</a>.</li>
     <li>Navigate through the steps and choose options.</li>
     <li>At the wizard's finish screen, click the <q>Finish</q> button to apply its selections.</li>
 </ol>
@@ -534,7 +610,7 @@ from other packages previously overridden by the uninstalled package's
             order errors according to the package configuration.</td></tr>
         <tr><td colspan="3" id="bainInstall">Install...</td><td>Installs the selected package, preferring a
             BAIN or FOMOD wizard if those are available (see options below).</td></tr>
-        <tr><td rowspan="3">Advanced Installation..</td>
+        <tr><td rowspan="4">Advanced Installation..</td>
             <td colspan="2" id="bainInstallConfigured">Install Configured</td> <td>Fully installs the package as configured
             except for files that would be overridden by later packages.</td></tr>
             <tr><td rowspan="2">Wizard Installer..</td>
@@ -542,6 +618,11 @@ from other packages previously overridden by the uninstalled package's
                     one.</td></tr>
             <tr><td id="bainAutoWizard">Auto Wizard...</td><td>Runs the Wizard for the package, if
                 it has one, selecting the default options.</td></tr>
+            <tr>
+                <td rowspan="1">FOMOD Installer..</td>
+                <td id="bainFomod">Run FOMOD...</td>
+                <td>Runs the FOMOD for the package, if it has one.</td>
+            </tr>
         <tr><td colspan="3" id="bainUninstall">Uninstall<td>Uninstalls the package. If
             <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a> is active
             (the default) then files from earlier packages that were previously overridden will be
@@ -827,21 +908,6 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>All but Fallout 4</td>
         </tr>
         <tr>
-            <td>Import Actors: Animations</td>
-            <td>Preserves the changes made to actor animations by all the mods
-                selected.</td>
-            <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
-                Fallout&colon; New Vegas</td>
-        </tr>
-        <tr>
-            <td>Import Actors: Death Items</td>
-            <td>Preserves the changes made to the items added to an actor when
-                it dies by the mods selected.</td>
-            <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>All but Fallout 4</td>
-        </tr>
-        <tr>
             <td id="patchImportActorsFaces">Import Actors: Faces</td>
             <td>Preserves the changes made to NPC faces by the mods
                 selected.</td>
@@ -894,6 +960,13 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 effects.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
             <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Import Enchantments</td>
+            <td>Preserves the changes made to the enchantments of items like
+                armor, weapons, etc.</td>
+            <td>Always, unless you are told otherwise by a mod's readme.</td>
+            <td>All but Fallout 4.</td>
         </tr>
         <tr>
             <td>Import Enchantment Stats</td>
@@ -969,9 +1042,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <td>Merges additions, changes and deletions to race abilities and
                 spells.</td>
             <td>Always, unless you are told otherwise by a mod's readme.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td id="patchImportRelations">Import Relations</td>
@@ -1095,8 +1166,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
                 the game. Most change the names to change how they are sorted
                 in your inventory.</td>
             <td>The decision is entirely based on user preference.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
-                Fallout&colon; New Vegas</td>
+            <td>All but Fallout 4</td>
         </tr>
         <tr><td id="patchTweakRaces">Tweak Races</td>
             <td>Contains a set of tweaks that alter race-related things (e.g.
@@ -1252,7 +1322,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <figcaption class="ini-overview-figcap">Wrye Bash's INI Edits tab, editing SkyrimPrefs.ini, Oblivion.ini, and All Natural.ini, a mod's configuration file.</figcaption>
 </figure>
 
-<p>The Ini Edits tab allows the user to quickly apply edits to the games's INI file (e.g. Oblivion.ini, Skyrim.ini, Fallout4Custom.ini, etc.) depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\Ini Tweaks</code> folder, and may be installed through BAIN or placed there manually.
+<p>The Ini Edits tab allows the user to quickly apply edits to the games's INI file (e.g. Oblivion.ini, Skyrim.ini, Fallout4Custom.ini, etc.) depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\INI Tweaks</code> folder, and may be installed through BAIN or placed there manually.
 <p>The drop-down box allows you to select the current ini file. The <q>Browse...</q> option in the drop-down box can be used to select an ini file not listed.
 <p>Selecting a tweak will display its contents in the middle column, and highlights the changes it applies to the current ini file in the right column. To apply a tweak, right click it and select <a href="#tweakApply">Apply</a>.
 <p><strong>Warning:</strong> Incorrect INI settings in the game INI can cause bugs, CTDs or other damage to your game. Advanced settings in particular tend to be machine-specific and should not be casually copied from one computer to another.</p>
@@ -1377,46 +1447,82 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 <table>
     <thead>
         <tr>
-            <th colspan="2">Oblivion</th>
-            <th colspan="2">Nehrim&colon; At Fate's Edge</th>
-            <th colspan="2">Fallout 3</th>
-            <th colspan="2">Fallout&colon; New Vegas</th>
-            <th colspan="2">Skyrim</th>
-            <th colspan="2">Enderal&colon; Forgotten Stories</th>
-            <th colspan="2">Fallout 4</th>
-            <th colspan="2">Skyrim&colon; Special Edition</th>
-        </tr>
-        <tr>
-            <th>Icon</th><th>Application</th>
-            <th>Icon</th><th>Application</th>
-            <th>Icon</th><th>Application</th>
-            <th>Icon</th><th>Application</th>
-            <th>Icon</th><th>Application</th>
-            <th>Icon</th><th>Application</th>
-            <th>Icon</th><th>Application</th>
-            <th>Icon</th><th>Application</th>
+            <th colspan="2">Game</th>
+            <th colspan="2">Editor</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td><img alt="Oblivion Icon" src="../bash/images/oblivion_32.png" width="32" height="32"/></td><td>Oblivion</td>
-            <td><img alt="Nehrim Icon" src="../bash/images/nehrim_32.png" width="32" height="32"/></td><td>Nehrim&colon; At Fate's Edge</td>
-            <td><img alt="Fallout 3 Icon" src="../bash/images/fallout3_32.png" width="32" height="32"/></td><td>Fallout 3</td>
-            <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/falloutnv_32.png" width="32" height="32"/></td><td>Fallout&colon; New Vegas</td>
-            <td><img alt="Skyrim Icon" src="../bash/images/skyrim_32.png" width="32" height="32"/></td><td>Skyrim</td>
-            <td><img alt="Enderal Icon" src="../bash/images/enderal_32.png" width="32" height="32"/></td><td>Enderal&colon; Forgotten Stories</td>
-            <td><img alt="Fallout 4 Icon" src="../bash/images/fallout4_32.png" width="32" height="32"/></td><td>Fallout 4</td>
-            <td><img alt="Skyrim&colon; Special Edition Icon" src="../bash/images/skyrim_32.png" width="32" height="32"/></td><td>Skyrim&colon; Special Edition</td>
+            <td><img alt="Enderal Icon" src="../bash/images/enderal_32.png" width="32" height="32"/></td>
+            <td>Enderal&colon; Forgotten Stories</td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a></td>
         </tr>
         <tr>
-            <td><img alt="Oblivion CS Icon" src="../bash/images/tescs32.png" width="32" height="32"/></td><td><a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">TES Construction Set</a></td>
-            <td><img alt="Oblivion CS Icon" src="../bash/images/tescs32.png" width="32" height="32"/></td><td><a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">TES Construction Set</a></td>
-            <td><img alt="Fallout 3 GECK Icon" src="../bash/images/geck32.png" width="32" height="32"/></td><td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
-            <td><img alt="Fallout&colon; New Vegas GECK Icon" src="../bash/images/geck32.png" width="32" height="32"/></td><td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td><td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a></td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td><td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a></td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td><td><a href="https://www.creationkit.com/">Fallout 4 Creation Kit</a></td>
-            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td><td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
+            <td><img alt="Enderal Icon" src="../bash/images/enderalse_32.png" width="32" height="32"/></td>
+            <td>Enderal&colon; Forgotten Stories&colon; Special Edition</td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
+        </tr>
+        <tr>
+            <td><img alt="Fallout 3 Icon" src="../bash/images/fallout3_32.png" width="32" height="32"/></td>
+            <td>Fallout 3</td>
+            <td><img alt="Fallout 3 GECK Icon" src="../bash/images/geck32.png" width="32" height="32"/></td>
+            <td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
+        </tr>
+        <tr>
+            <td><img alt="Fallout 4 Icon" src="../bash/images/fallout4_32.png" width="32" height="32"/></td>
+            <td>Fallout 4</td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><a href="https://www.creationkit.com/">Fallout 4 Creation Kit</a></td>
+        </tr>
+        <tr>
+            <td><img alt="Fallout 4 VR Icon" src="../bash/images/fallout4vr_32.png" width="32" height="32"/></td>
+            <td>Fallout 4 VR</td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><a href="https://www.creationkit.com/">Fallout 4 Creation Kit</a></td>
+        </tr>
+        <tr>
+            <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/falloutnv_32.png" width="32" height="32"/></td>
+            <td>Fallout&colon; New Vegas</td>
+            <td><img alt="Fallout&colon; New Vegas GECK Icon" src="../bash/images/geck32.png" width="32" height="32"/></td>
+            <td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
+        </tr>
+        <tr>
+            <td><img alt="Morrowind Icon" src="../bash/images/morrowind_32.png" width="32" height="32"/></td>
+            <td>Morrowind</td>
+            <td><img alt="Morrowind CS Icon" src="../bash/images/tescs32.png" width="32"/></td>
+            <td><a href="https://en.uesp.net/wiki/Morrowind_Mod:Construction_Set">Morrowind Construction Set</a></td>
+        </tr>
+        <tr>
+            <td><img alt="Nehrim Icon" src="../bash/images/nehrim_32.png" width="32" height="32"/></td>
+            <td>Nehrim&colon; At Fate's Edge</td>
+            <td><img alt="Oblivion CS Icon" src="../bash/images/tescs32.png" width="32" height="32"/></td><td>
+            <a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">Oblivion Construction Set</a></td>
+        </tr>
+        <tr>
+            <td><img alt="Oblivion Icon" src="../bash/images/oblivion_32.png" width="32" height="32"/></td>
+            <td>Oblivion</td>
+            <td><img alt="Oblivion CS Icon" src="../bash/images/tescs32.png" width="32" height="32"/></td>
+            <td><a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">Oblivion Construction Set</a></td>
+        </tr>
+        <tr>
+            <td><img alt="Skyrim Icon" src="../bash/images/skyrim_32.png" width="32" height="32"/></td>
+            <td>Skyrim</td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a></td>
+        </tr>
+        <tr>
+            <td><img alt="Skyrim&colon; Special Edition Icon" src="../bash/images/skyrimse_32.png" width="32" height="32"/></td>
+            <td>Skyrim&colon; Special Edition</td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
+        </tr>
+        <tr>
+            <td><img alt="Skyrim VR Icon" src="../bash/images/skyrimvr_32.png" width="32" height="32"/></td>
+            <td>Skyrim VR</td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td>
+            <td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
         </tr>
     </tbody>
 </table>
@@ -1635,17 +1741,13 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
 
 <h2 id="trouble">Troubleshooting <a class="back2top" href="#contents">Back to top</a></h2>
 <h3 id="trouble-dump">Generating A Bug Dump <a class="back2top" href="#contents">Back to top</a></h3>
-<p>If Wrye Bash encounters an issue, it will generate a bug dump that will appear in a popup window. If an issue is encountered during startup, Wrye Bash may be unable to create the popup window, and so the bug dump will be saved to a log file, either <code>bash.log</code> or <code>Wrye Bash.exe.log</code> depending on the version of Wrye Bash you use. If no log file is present, then you will have to generate it yourself, using the steps below.
-<ol>
-    <li>Open a command prompt. This can be done by selecting Start-&gt;Programs-&gt;Accessories-&gt;Command Prompt.
-    <li>Change the working directory to the <code>Mopy</code> directory. E.g. <code>cd /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code> if Wrye Bash is installed for Oblivion.
-    <li>If using the Python version of Wrye Bash: Run <code>"Wrye Bash Debug.py" -d &gt; bash.log</code>.
-    <ul>
-        <li>If that does not work, try <code>"C:\python27\python.exe" "Wrye Bash Debug.py" -d</code>. This assumes that you have Python 2.7 installed to the default directory. Adjust the above to reference the correct path if not.
-    </ul>
-    If using the Standalone version of Wrye Bash: Run <code>"Wrye Bash.exe" -d</code>.
-</ol>
-<p>The log file will detail the cause of the problem that is stopping Wrye Bash from starting. Read it and the rest of this section to see if the problem is something you can fix yourself. If not, report it to an official Wrye Bash thread for support.</p>
+<p>Wrye Bash writes debug information and error reports into a BashBugDump.log
+    file next to the <code>Wrye Bash.exe</code> file (or next to the
+    <code>Wrye Bash Launcher.pyw</code> file if using the Python version).</p>
+<p>That log file will detail the cause of the problem that is stopping Wrye
+    Bash from starting. Read it and the rest of this section to see if the
+    problem is something you can fix yourself. If not, report it to an official
+    Wrye Bash thread for support.</p>
 
 <h3 id="trouble-permissions">File Permissions <a class="back2top" href="#contents">Back to top</a></h3>
 <p>If you are running Windows Vista or later, Wrye Bash (and other modding programs) may be prevented from working correctly by the UAC security feature.  For Windows Store games, there are no workarounds to this, if you receive errors you must launch as as Administrator (workaround 4). There are four common workarounds to this problem:
@@ -1763,7 +1865,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
                 and remove the Documents folder from OneDrive.</td>
         </tr>
         <tr>
-            <td>IOError: [Errno 22] Invalid argument</td>
+            <td>OSError: [Errno 22] Invalid argument</td>
             <td>This is almost always caused by OneDrive taking control of your
                 My Documents folder.</td>
             <td>Follow the directions found in
@@ -1999,7 +2101,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
 </div>
 
 <div id="footer">
-    <div id="version">Wrye Bash v309.1</div>
+    <div id="version">Wrye Bash v310</div>
     General&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

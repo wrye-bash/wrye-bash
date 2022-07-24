@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,7 +29,7 @@ import re
 import wx as _wx
 from wx.grid import Grid
 from collections import defaultdict
-from itertools import chain, imap
+from itertools import chain
 
 from .base_components import _AComponent, Color, WithMouseEvents, \
     ImageWrapper, WithCharEvents
@@ -39,7 +39,7 @@ from ..bolt import Path, dict_sort
 
 class Font(_wx.Font):
     @staticmethod
-    def Style(font_, bold=False, slant=False, underline=False):
+    def Style(font_: _wx.Font, bold=False, slant=False, underline=False):
         if bold: font_.SetWeight(_wx.FONTWEIGHT_BOLD)
         else: font_.SetWeight(_wx.FONTWEIGHT_NORMAL)
         if slant: font_.SetStyle(_wx.FONTSTYLE_SLANT)
@@ -50,7 +50,6 @@ class Font(_wx.Font):
 # Pictures --------------------------------------------------------------------
 class Picture(_AComponent):
     """Picture panel."""
-    _wx_widget_type = _wx.Window
 
     def __init__(self, parent, width, height, scaling=1,  ##: scaling unused
                  style=_wx.BORDER_SUNKEN, background=_wx.MEDIUM_GREY_BRUSH):
@@ -86,9 +85,7 @@ class Picture(_AComponent):
         """Set the bitmap on the native_widget and return the wx object for
         caching"""
         if isinstance(bmp, Path):
-            bmp = (bmp.isfile() and ImageWrapper(bmp).GetBitmap()) or None
-        elif isinstance(bmp, tuple):
-            bmp = ImageWrapper.GetImage(*bmp).ConvertToBitmap()
+            bmp = (bmp.is_file() and ImageWrapper(bmp).get_bitmap()) or None
         self.bitmap = bmp
         self._handle_resize()
         return self.bitmap
@@ -110,8 +107,8 @@ class Picture(_AComponent):
             pos_x = max(0,x-new_x)/2
             pos_y = max(0,y-new_y)/2
             image = self.bitmap.ConvertToImage()
-            image.Rescale(new_x, new_y, _wx.IMAGE_QUALITY_HIGH)
-            dc.DrawBitmap(_wx.Bitmap(image), pos_x, pos_y)
+            image.Rescale(int(new_x), int(new_y), _wx.IMAGE_QUALITY_HIGH)
+            dc.DrawBitmap(_wx.Bitmap(image), int(pos_x), int(pos_y))
         del dc
         self._native_widget.Refresh()
         self._native_widget.Update()
@@ -135,7 +132,7 @@ class PictureWithCursor(Picture, WithMouseEvents):
 class _ALine(_AComponent):
     """Abstract base class for simple graphical lines."""
     _line_style = None # override in subclasses
-    _wx_widget_type = _wx.StaticLine
+    _native_widget: _wx.StaticLine
 
     def __init__(self, parent):
         super(_ALine, self).__init__(parent, style=self._line_style)
@@ -154,7 +151,7 @@ class Table(WithCharEvents):
     extensions like Ctrl+C/Ctrl+V support built in. Note that it was not built
     to allow customizing the row labels, one of its central assumptions is that
     they are always ints."""
-    _wx_widget_type = Grid
+    _native_widget: Grid
 
     def __init__(self, parent, table_data, editable=True):
         """Creates a new Table with the specified parent and table data.
@@ -163,14 +160,14 @@ class Table(WithCharEvents):
             object or a component.
         :param table_data: The data to show in the table. Maps column names to
             the data displayed in the column.
-        :type table_data: dict[unicode, list[unicode]]
+        :type table_data: dict[str, list[str]]
         :param editable: True if the user may edit the contents of the
             table."""
         super(Table, self).__init__(parent)
         # Verify that all columns are identically sized
-        column_len = len(next(table_data.itervalues()))
+        column_len = len(next(iter(table_data.values())))
         if any(len(column_data) != column_len for column_data
-               in table_data.itervalues()):
+               in table_data.values()):
             raise SyntaxError(u'Table columns must all have the same size')
         if not all(table_data):
             raise SyntaxError(u'Table rows must be nonempty strings')
@@ -197,7 +194,7 @@ class Table(WithCharEvents):
                     self._native_widget.ClearSelection()
                 else:
                     # Ctrl+A - select all cells
-                    for c in xrange(self._native_widget.GetNumberCols()):
+                    for c in range(self._native_widget.GetNumberCols()):
                         self._native_widget.SelectCol(c, True)
             elif kcode == ord(u'C'):
                 # Ctrl+C - copy contents of selected cells
@@ -225,7 +222,7 @@ class Table(WithCharEvents):
         elif len(sel_cells) == 1:
             # Selection is limited to a single column, format as a
             # newline-separated list
-            sorted_cells = dict_sort(next(sel_cells.itervalues()),
+            sorted_cells = dict_sort(next(iter(sel_cells.values())),
                                      key_f=lambda k: int(k))
             return u'\n'.join(t[1] for t in sorted_cells)
         else:
@@ -233,14 +230,14 @@ class Table(WithCharEvents):
             # row/column separators, proper spacing and labels
             clip_text = []
             row_labels = set(chain.from_iterable(
-                r for r in sel_cells.itervalues()))
+                r for r in sel_cells.values()))
             col_labels = list(sel_cells) ##: do we need the list here?
             # First calculate the maximum label lengths we'll have to pad to
-            max_row_length = max(imap(len, row_labels))
+            max_row_length = max(map(len, row_labels))
             max_col_lengths = {}
-            for col_label, col_cells in sel_cells.iteritems():
+            for col_label, col_cells in sel_cells.items():
                 max_col_lengths[col_label] = max(
-                    imap(len, col_cells.viewvalues()))
+                    map(len, col_cells.values()))
             # We now have enough info to format the header, so do that
             first_header_line = u' ' * max_row_length + u' | '
             first_header_line += u' | '.join(l.ljust(max_col_lengths[l])
@@ -256,14 +253,14 @@ class Table(WithCharEvents):
             for row_label in sorted(row_labels, key=int):
                 curr_line = row_label.ljust(max_row_length) + u' | '
                 cell_vals = []
-                for col_label, col_cells in sel_cells.iteritems():
+                for col_label, col_cells in sel_cells.items():
                     cell_vals.append(col_cells.get(row_label, u'').ljust(
                         max_col_lengths[col_label]))
                 curr_line += u' | '.join(cell_vals)
                 clip_text.append(curr_line)
             return u'\n'.join(l.rstrip() for l in clip_text)
 
-    _complex_start = re.compile(u'' r' +\|')
+    _complex_start = re.compile(r' +\|')
     def _parse_clipboard_contents(self, clipboard_contents):
         """Parses the specified clipboard contents into a dictionary
         containing instructions for how to edit the table."""
@@ -296,7 +293,7 @@ class Table(WithCharEvents):
             focused_col = self.get_focused_column()
             focused_row = self._native_widget.GetGridCursorRow() + 1
             for r, cell_value in enumerate(all_lines):
-                ret_dict[focused_col][unicode(focused_row + r)] = cell_value
+                ret_dict[focused_col][str(focused_row + r)] = cell_value
         return ret_dict
 
     def get_cell_value(self, col_label, row_label):
@@ -328,19 +325,19 @@ class Table(WithCharEvents):
         # May seem inefficient, but the alternative is incredibly complex; plus
         # this takes < 1/2s for a table with several thousand entries
         sel_dict = defaultdict(dict)
-        for c in xrange(self._native_widget.GetNumberCols()):
+        for c in range(self._native_widget.GetNumberCols()):
             col_label = self._native_widget.GetColLabelValue(c)
-            for r in xrange(self._native_widget.GetNumberRows()):
+            for r in range(self._native_widget.GetNumberRows()):
                 if self._native_widget.IsInSelection(r, c):
-                    sel_dict[col_label][unicode(r + 1)] = (
+                    sel_dict[col_label][str(r + 1)] = (
                         self._native_widget.GetCellValue(r, c))
         return sel_dict
 
     def edit_cells(self, cell_edits):
         """Applies a series of as described by the specified dict mapping
         column labels to row labels to cell values."""
-        for col_label, target_cells in cell_edits.iteritems():
-            for row_label, target_val in target_cells.iteritems():
+        for col_label, target_cells in cell_edits.items():
+            for row_label, target_val in target_cells.items():
                 # Skip any that would go out of bounds
                 if int(row_label) - 1 < self._native_widget.GetNumberRows():
                     self.set_cell_value(col_label, row_label, target_val)
@@ -350,7 +347,7 @@ class GlobalMenu(_AComponent):
     """A global menu bar that populates JIT by repopulating its contents right
     before the menu is opened by the user. The menus are called 'categories' to
     differentiate them from regular context menus."""
-    _wx_widget_type = _wx.MenuBar
+    _native_widget: _wx.MenuBar
 
     class _GMCategory(_wx.Menu):
         """wx-derived class used to differentiate between events on regular
@@ -360,7 +357,7 @@ class GlobalMenu(_AComponent):
             self.category_label = cat_lbl
 
     def __init__(self):
-        self._native_widget = self._wx_widget_type() # no parent
+        self._native_widget = _wx.MenuBar() # no parent
         self._category_handlers = {}
         # We need to do this once and only once, because wxPython does not
         # support binding multiple methods to one event source. Also, it *has*

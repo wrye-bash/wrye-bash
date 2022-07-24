@@ -16,22 +16,21 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """Patch dialog"""
 import copy
-import errno
 import io
 import re
 import time
 from datetime import timedelta
-from . import BashFrame, configIsCBash  ##: drop this - decouple !
+
+from . import BashFrame  ##: drop this - decouple !
 from .. import balt, bass, bolt, bosh, bush, env, load_order
 from ..balt import Link, Resources
-from ..bolt import SubProgress, GPath, Path
+from ..bolt import SubProgress, Path, GPath_no_norm
 from ..exception import BoltError, CancelError, FileEditError, \
     PluginsFullError, SkipError, BPConfigError
 from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
@@ -52,25 +51,17 @@ class PatchDialog(DialogWindow):
     """
     _min_size = (400, 300)
 
-    def __init__(self, parent, patchInfo, mods_to_reselect):
+    def __init__(self, parent, patchInfo, mods_to_reselect, patchConfigs):
         self.mods_to_reselect = mods_to_reselect
         self.parent = parent
-        title = _(u'Update ') + u'%s' % patchInfo
+        title = _(u'Update ') + f'{patchInfo}'
         super(PatchDialog, self).__init__(parent, title=title,
             icon_bundle=Resources.bashBlue, sizes_dict=balt.sizes,
-            # PY3: drop the unicode()
-            size=balt.sizes.get(unicode(self.__class__.__name__), (500, 600)))
+            size=balt.sizes.get(self.__class__.__name__, (500, 600)))
         #--Data
         list_patches_dir() # refresh cached dir
-        patchConfigs = patchInfo.get_table_prop(u'bash.patch.configs', {})
-        if configIsCBash(patchConfigs):
-            patchConfigs = {}
-        isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
         self._gui_patchers = [copy.deepcopy(p) for p in all_gui_patchers]
-        for patcher in self._gui_patchers:
-            patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
-            patcher.SetIsFirstLoad(isFirstLoad)
         self.currentPatcher = None
         patcherNames = [patcher.patcher_name for patcher in self._gui_patchers]
         #--GUI elements
@@ -100,8 +91,6 @@ class PatchDialog(DialogWindow):
         self.gRevertToDefault = RevertButton(self,
                                              btn_label=_(u'Revert To Default'))
         self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
-        for index,patcher in enumerate(self._gui_patchers):
-            self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this '
                                 u'patch was built are displayed in bold.')
         self.gTipText = Label(self,self.defaultTipText)
@@ -129,6 +118,10 @@ class PatchDialog(DialogWindow):
             ]),
         ]).apply_to(self)
         #--Patcher panels
+        # load the config
+        self.patchConfigs = patchConfigs
+        isFirstLoad = 0 == len(patchConfigs)
+        self._load_config(patchConfigs, isFirstLoad, _decouple=True) ##: _decouple == True to short circuit _import_config
         for patcher in self._gui_patchers:
             patcher.GetConfigPanel(self, self.config_layout,
                 self.gTipText).visible = False
@@ -136,7 +129,6 @@ class PatchDialog(DialogWindow):
         if initial_select >= 0:
             self.gPatchers.lb_select_index(initial_select) # callback not fired
             self.ShowPatcher(self._gui_patchers[initial_select]) # so this is needed
-        self._update_ok_btn()
 
     #--Core -------------------------------
     def _update_ok_btn(self):
@@ -160,10 +152,10 @@ class PatchDialog(DialogWindow):
         self.accept_modal()
         progress = None
         try:
-            patch_name = self.patchInfo.ci_key
+            patch_name = self.patchInfo.fn_key
             patch_size = self.patchInfo.fsize
-            progress = balt.Progress(patch_name.s,(u' '*60+u'\n'), abort=True)
-            timer1 = time.clock()
+            progress = balt.Progress(patch_name, abort=True)
+            timer1 = time.process_time()
             #--Save configs
             config = self.__config()
             self.patchInfo.set_table_prop(u'bash.patch.configs', config)
@@ -186,22 +178,23 @@ class PatchDialog(DialogWindow):
                     % bush.game.Esp.master_limit)
                 return # Abort, we'll just blow up on saving it
             #--Save
-            progress.setCancel(False, u'%s\n' % patch_name + _(u'Saving...'))
+            progress.setCancel(False, f'{patch_name}\n' + _(u'Saving...'))
             progress(0.9)
             self._save_pbash(patchFile, patch_name)
             #--Done
-            progress.Destroy(); progress = None
-            timer2 = time.clock()
+            progress.Destroy()
+            progress = None
+            timer2 = time.process_time()
             #--Readme and log
             log.setHeader(None)
             log(u'{{CSS:wtxt_sand_small.css}}')
             logValue = log.out.getvalue()
-            timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
+            timerString = str(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
-            readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.sroot + u'.txt')
+            readme = bosh.modInfos.store_dir.join(u'Docs', patch_name.fn_body + u'.txt')
             docsDir = bass.dirs[u'mopy'].join(u'Docs')
             tempReadmeDir = Path.tempDir().join(u'Docs')
-            tempReadme = tempReadmeDir.join(patch_name.sroot + u'.txt')
+            tempReadme = tempReadmeDir.join(patch_name.fn_body + u'.txt')
             #--Write log/readme to temp dir first
             with tempReadme.open(u'w', encoding=u'utf-8-sig') as file:
                 file.write(logValue)
@@ -232,13 +225,13 @@ class PatchDialog(DialogWindow):
             count, message = 0, _(u'Activate %s?') % patch_name
             if load_order.cached_is_active(patch_name) or (
                         bass.inisettings[u'PromptActivateBashedPatch'] and
-                        balt.askYes(self.parent, message, patch_name.s)):
+                        balt.askYes(self.parent, message, patch_name)):
                 try:
                     changedFiles = bosh.modInfos.lo_activate(patch_name,
                                                              doSave=True)
                     count = len(changedFiles)
                     if count > 1: Link.Frame.set_status_info(
-                            _(u'Masters Activated: ') + unicode(count - 1))
+                            _(u'Masters Activated: ') + str(count - 1))
                 except PluginsFullError:
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
@@ -257,7 +250,7 @@ class PatchDialog(DialogWindow):
             pass
         except BPConfigError as e: # User configured BP incorrectly
             self._error(_(u'The configuration of the Bashed Patch is '
-                          u'incorrect.') + u'\n' + e.message)
+                          u'incorrect.') + f'\n{e}')
         except (BoltError, FileEditError) as e: # Nonfatal error
             self._error(u'%s' % e)
         except Exception as e: # Fatal error
@@ -280,9 +273,7 @@ class PatchDialog(DialogWindow):
                 # shellMove, not sure if ever a Windows or Cancel are raised
                 patchFile.safeSave()
                 return
-            except (CancelError, SkipError, OSError, IOError) as werr:
-                if isinstance(werr, OSError) and werr.errno != errno.EACCES:
-                    raise
+            except (CancelError, SkipError, PermissionError):
                 ##: Ugly warts below (see also FIXME above)
                 if balt.askYes(self,
                     (_(u'Bash encountered an error when saving '
@@ -307,14 +298,14 @@ class PatchDialog(DialogWindow):
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
-        exportConfig(patch_name=self.patchInfo.ci_key, config=config,
+        exportConfig(patch_name=self.patchInfo.fn_key, config=config,
                      win=self.parent, outDir=bass.dirs[u'patches'])
 
-    __old_key = GPath(u'Saved Bashed Patch Configuration')
+    __old_key = u'Saved Bashed Patch Configuration'
     __new_key = u'Saved Bashed Patch Configuration (%s)'
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
-        config_dat = self.patchInfo.ci_key + u'_Configuration.dat'
+        config_dat = f'{self.patchInfo.fn_key}_Configuration.dat'
         textDir = bass.dirs[u'patches']
         textDir.makedirs()
         #--File dialog
@@ -322,25 +313,20 @@ class PatchDialog(DialogWindow):
             u'Import Bashed Patch configuration from:'), textDir, config_dat,
             u'*.dat')
         if not textPath: return
-        table = bolt.DataTable(bolt.PickleDict(textPath))
+        pickle_dict = bolt.PickleDict(textPath, load_pickle=True).pickled_data
+        table_get = lambda x: (conf := pickle_dict.get(GPath_no_norm(x))) and (
+            conf.get('bash.patch.configs', {}))
         # try the current Bashed Patch mode.
-        patchConfigs = table.getItem(GPath(self.__new_key % u'Python'),
-            u'bash.patch.configs', {})
-        convert = False
+        patchConfigs = table_get(self.__new_key % 'Python')
         if not patchConfigs: # try the non-current Bashed Patch mode
-            patchConfigs = table.getItem(GPath(self.__new_key % u'CBash'),
-                u'bash.patch.configs', {})
-            convert = bool(patchConfigs)
-        if not patchConfigs: # try the old format
-            patchConfigs = table.getItem(self.__old_key, u'bash.patch.configs',
-                {})
-            convert = bool(patchConfigs)
-        if not patchConfigs:
-            balt.showWarning(self,
-                _(u'No patch config data found in %s') % textPath,
-                title=_(u'Import Config'))
-            return
-        if convert:
+            patchConfigs = table_get(self.__new_key % 'CBash')
+            if not patchConfigs: # try the old format
+                patchConfigs = table_get(self.__old_key)
+            if not patchConfigs:
+                balt.showWarning(self,
+                    _(u'No patch config data found in %s') % textPath,
+                    title=_(u'Import Config'))
+                return
             balt.showError(self,
                 _(u'The patch config data in %s is too old for this version '
                   u'of Wrye Bash to handle or was created with CBash. Please '
@@ -351,17 +337,17 @@ class PatchDialog(DialogWindow):
             return
         self._load_config(patchConfigs)
 
-    def _load_config(self, patchConfigs, set_first_load=False, default=False):
+    def _load_config(self, patchConfigs, set_first_load=False, default=False,
+                     _decouple=False): ##: hacky param due to SetItems/GetConfigPanel overlap
         for index, patcher in enumerate(self._gui_patchers):
             patcher.import_config(patchConfigs, set_first_load=set_first_load,
-                                  default=default)
+                                  default=default, _decouple=_decouple)
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)
         self._update_ok_btn()
 
     def RevertConfig(self):
         """Revert configuration back to saved"""
-        patchConfigs = self.patchInfo.get_table_prop(u'bash.patch.configs', {})
-        self._load_config(patchConfigs)
+        self._load_config(self.patchConfigs)
 
     def DefaultConfig(self):
         """Revert configuration back to default"""

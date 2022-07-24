@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,7 +28,7 @@ from .base import MultiTweaker, MultiTweakItem, CustomChoiceTweak
 # Patchers: 30 ----------------------------------------------------------------
 class _AClothesTweak(MultiTweakItem):
     tweak_read_classes = b'CLOT',
-    clothes_flags = {
+    clothes_flags: dict[str, int] = {
         u'hoods':    0x00000002,
         u'shirts':   0x00000004,
         u'pants':    0x00000008,
@@ -105,6 +105,7 @@ class ClothesTweak_MaxWeightHoods(_AClothesTweak_MaxWeight):
 class _AClothesTweak_Unblock(_AClothesTweak):
     """Unlimited rings, amulets."""
     tweak_log_msg = _(u'Clothes Tweaked: %(total_changed)d')
+    _unblock_flags: int
 
     @property
     def unblock_flags(self):

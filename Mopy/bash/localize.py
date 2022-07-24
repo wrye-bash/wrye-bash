@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -34,96 +34,125 @@ import re
 import subprocess
 import sys
 import time
-import traceback
 
 # Minimal local imports - needs to be imported early in bash
 from . import bass, bolt
 
+def __init_gui_images(_wx):
+    """The images API to be - we need to initialize wx images before we
+    touch the locale and once we have a wx app instance. This is in hopes we
+    will not crash due to the mismatch between wx/python/OS locale
+    conventions that seems to plague windoz. See:
+    - https://github.com/wxWidgets/Phoenix/issues/1616
+    - https://github.com/python/cpython/issues/87281
+    """
+    wxart = _wx.ArtProvider.GetBitmap
+    siz16 = (16, 16)
+    for wx_id, internal_id in [(_wx.ART_PLUS, 'ART_PLUS'),
+                               (_wx.ART_MINUS, 'ART_MINUS')]:
+        bass.wx_bitmap[internal_id] = wxart(wx_id, size=siz16)
+    ids = [(_wx.ART_GO_BACK, 'ART_GO_BACK', siz16),
+           (_wx.ART_GO_FORWARD, 'ART_GO_FORWARD', siz16),
+           (_wx.ART_ERROR, 'ART_ERROR', (32, 32))]
+    fromdip = _wx.Window.FromDIP ##: should we dpi previous also?
+    for wx_id, internal_id, size_tup in ids:
+        bass.wx_bitmap[internal_id] = wxart(wx_id, _wx.ART_HELP_BROWSER,
+                                            size=fromdip(size_tup, None))
+    bass.wx_bitmap['ART_WARNING'] = wxart(_wx.ART_WARNING,
+        _wx.ART_MESSAGE_BOX, size=fromdip((32, 32), None))
+    for ico_size in (16, 24, 32):
+        bass.wx_bitmap[('ART_UNDO', ico_size)] = wxart(_wx.ART_UNDO,
+            _wx.ART_TOOLBAR, size=fromdip((ico_size, ico_size), None))
+
+def set_c_locale():
+    # Hack see: https://discuss.wxpython.org/t/wxpython4-1-1-python3-8-locale-wxassertionerror/35168/3
+    if sys.platform.startswith('win') and sys.version_info > (3, 8):
+        for cat in (locale.LC_COLLATE, locale.LC_CTYPE, locale.LC_MONETARY,
+                    locale.LC_TIME):  # locale.LC_NUMERIC
+            locale.setlocale(cat, 'C')
+
 #------------------------------------------------------------------------------
 # Locale Detection & Setup
-def setup_locale(cli_lang):
-    """Sets up wx and Wrye Bash locales, ensuring they match or falling back
-    to English if that is impossible. Also considers cli_lang as an override,
-    installs the gettext translation and remembers the locale we end up with
-    as bass.active_locale.
+def setup_locale(cli_lang, _wx):
+    """Set up wx Locale and Wrye Bash translations. If cli_lang is given,
+    will validate it is a supported wx language code, otherwise will fallback
+    to user default locale. Then will try to find a matching translation file
+    in the 'Mopy/bash/l10n' folder. If a translation file was found (even for
+    a similar language) we will try to install the gettext translation
+    otherwise we will still try to set the locale to the user specified/default
+    Finally  remembers the locale we end up with as bass.active_locale.
 
-    bolt.deprint must be set up and ready to use (i.e. hooked up to the
-    BashBugDump if debug mode is enabled) and the working directory must be
-    correct (otherwise detection of translation files will not work and this
+    bolt.deprint must be set up and ready to use and the working directory must
+    be correct (otherwise detection of translation files will not work and this
     method will always set locale to English).
 
     :param cli_lang: The language the user specified on the command line, or
         None.
     :return: The wx.Locale object we ended up using."""
-    # We need a throwaway wx.App so that the calls below work
-    import wx as _wx
-    _temp_app = _wx.App(False)
+    # try loading the images before we touch the locale
+    __init_gui_images(_wx)
     # Set the wx language - otherwise we will crash when loading any images
     cli_target = cli_lang and _wx.Locale.FindLanguageInfo(cli_lang)
     if cli_target:
         # The user specified a language that wx recognizes
-        target_language = cli_target.Language
+        target_name = cli_target.CanonicalName
     else:
         # Fall back on the default language
-        target_language = _wx.LANGUAGE_DEFAULT
+        language_code, enc = locale.getdefaultlocale()
+        bolt.deprint(f'{cli_lang=} - {cli_target=} - falling back to '
+                     f'({language_code}, {enc}) from getdefaultlocale')
+        lang_info = _wx.Locale.FindLanguageInfo(language_code)
+        target_name = lang_info and lang_info.CanonicalName
+        bolt.deprint(f'wx gave back {target_name}')
     # We now have a language that wx supports, but we don't know if WB supports
     # it - so check that next
-    target_locale = _wx.Locale(target_language)
-    target_name = target_locale.GetCanonicalName()
-    trans_path = os.path.join(os.getcwdu(), u'bash', u'l10n')
-    if not os.path.exists(trans_path):
-        # HACK: the CI has to run tests from the top dir, which causes us to
-        # have a non-Mopy working dir here. Real fix is ditching the fake
-        # startup and adding a real headless mode to WB (see #568 and #554)
-        trans_path = os.path.join(os.getcwdu(), u'Mopy', u'bash', u'l10n')
-    supported_l10ns = [l[:-3] for l in os.listdir(trans_path)
-                       if l[-3:] == u'.po']
-    if target_name not in supported_l10ns:
-        # We don't support this exact language. Check if we support any similar
-        # languages (i.e. same prefix)
-        wanted_prefix = target_name.split(u'_', 1)[0]
-        for l in supported_l10ns:
-            if l.split(u'_', 1)[0] == wanted_prefix:
-                bolt.deprint(u"No translation file for language '%s', "
-                             u"using similar language with translation file "
-                             u"'%s' instead" % (target_name, l))
-                target_name = l
-                # Try switching wx to this locale as well
-                lang_info = _wx.Locale.FindLanguageInfo(target_name)
-                if lang_info:
-                    target_locale = _wx.Locale(lang_info.Language)
-                else:
-                    # Didn't work, try the prefix to get a similar language
-                    lang_info = _wx.Locale.FindLanguageInfo(wanted_prefix)
-                    if lang_info:
-                        target_locale = _wx.Locale(lang_info.Language)
-                        bolt.deprint(u"wxPython does not support language "
-                                     u"'%s', using supported language '%s' "
-                                     u"instead" % (
-                            target_name, target_locale.GetCanonicalName()))
-                    else:
-                        # If even that didn't work, all we can do is complain
-                        # about it and fall back to English
-                        bolt.deprint(u"wxPython does not support the language "
-                                     u"family '%s', will fall back to "
-                                     u"English" % wanted_prefix)
-                break
-    po, mo = (os.path.join(trans_path, target_name + ext)
-              for ext in (u'.po', u'.mo'))
+    trans_path = __get_translations_dir()
     # English is the default, so it doesn't have a translation file
     # For all other languages, check if we have a translation
-    if not target_name.startswith(u'en_') and not os.path.isfile(po):
-        # WB does not support the default language, use English instead
-        target_locale = _wx.Locale(_wx.LANGUAGE_ENGLISH)
-        fallback_name = target_locale.GetCanonicalName()
-        bolt.deprint(u"No translation file for language '%s', falling back to "
-                     u"'%s'" % (target_name, fallback_name))
-        target_name = fallback_name
-    bolt.deprint(u"Set wxPython language to '%s'" %
-                 target_locale.GetCanonicalName())
-    bolt.deprint(u"Set Wrye Bash language to '%s'" % target_name)
+    po = mo = None
+    if not target_name or target_name.startswith('en_'): # en_ gives en_GB on my system
+        target_name = 'en_US'
+    else:
+        supported_l10ns = [f[:-3] for f in os.listdir(trans_path) if
+                           f[-3:] == '.po']
+        # Check if we support this exact language or any similar
+        # languages (i.e. same prefix)
+        wanted_prefix = target_name.split('_', 1)[0]
+        matches = [f for f in supported_l10ns if
+                   target_name == f or f.split('_', 1)[0] == wanted_prefix]
+        # first check exact target then similar languages
+        for f in sorted(matches, key=lambda x: x != target_name):
+            # Try switching wx to this locale as well
+            lang_info = _wx.Locale.FindLanguageInfo(f)
+            if lang_info:
+                if target_name == f:
+                    bolt.deprint(f"Found translation file for language "
+                                 f"'{target_name}'")
+                else:  # Note we pick the first similar we run across
+                    bolt.deprint(f"No translation file for language "
+                                 f"'{target_name}', using similar language "
+                                 f"with translation file '{f}' instead")
+                    target_name = f
+                po, mo = (os.path.join(trans_path, target_name + ext) for ext
+                          in (u'.po', u'.mo'))
+                break
+        else:
+            if not matches: # TODO: is this any use? we set C locale anyway
+                bolt.deprint(f"Wrye Bash does not support the language "
+                             f"family '{wanted_prefix}', will however "
+                             f"try to set locale to '{target_name}'")
+            else: # TODO: needs more tweaking - probably we should unify with above
+                # If that didn't work, all we can do is complain
+                # about it and fall back to English
+                bolt.deprint(f"wxPython does not support the language family '"
+                             f"{wanted_prefix}', will fall back to "
+                             f"'{target_name := 'en_US'}'")
+    lang_info = _wx.Locale.FindLanguageInfo(target_name)
+    target_language = lang_info.Language
+    target_locale = _wx.Locale(target_language)
+    bolt.deprint(f"Set wxPython locale to '{target_name}'")
     # Next, set the Wrye Bash locale based on the one we grabbed from wx
-    if not os.path.isfile(po) and not os.path.isfile(mo):
+    if po is mo is None:
         # We're using English or don't have a translation file - either way,
         # prepare the English translation
         trans = gettext.NullTranslations()
@@ -151,16 +180,24 @@ def setup_locale(cli_lang):
             with open(mo, u'rb') as trans_file:
                 trans = gettext.GNUTranslations(trans_file)
         except (UnicodeError, OSError):
-            bolt.deprint(u'Error loading translation file:')
-            traceback.print_exc()
+            bolt.deprint('Error loading translation file:', traceback=True)
             trans = gettext.NullTranslations()
     # Everything has gone smoothly, install the translation and remember what
     # we ended up with as the final locale
-    # PY3: drop the unicode=True, gone in py3 (this is always unicode now)
-    trans.install(unicode=True)
+    trans.install()
     bass.active_locale = target_name
-    del _temp_app
+    # adieu, user locale
+    set_c_locale()
     return target_locale
+
+def __get_translations_dir():
+    trans_path = os.path.join(os.getcwd(), u'bash', u'l10n')
+    if not os.path.exists(trans_path):
+        # HACK: the CI has to run tests from the top dir, which causes us to
+        # have a non-Mopy working dir here. Real fix is ditching the fake
+        # startup and adding a real headless mode to WB (see #568, #554 and #600)
+        trans_path = os.path.join(os.getcwd(), u'Mopy', u'bash', u'l10n')
+    return trans_path
 
 #------------------------------------------------------------------------------
 # Internationalization
@@ -172,7 +209,7 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
     :param cur_dir: The directory to look for modules in. Defaults to cwd.
     :param _files: Internal parameter used to collect file recursively."""
     if bash_path is None: bash_path = u''
-    if cur_dir is None: cur_dir = os.getcwdu()
+    if cur_dir is None: cur_dir = os.getcwd()
     if _files is None: _files = []
     _files.extend([os.path.join(bash_path, m) for m in os.listdir(cur_dir)
                    if m.lower().endswith((u'.py', u'.pyw'))]) ##: glob?
@@ -195,9 +232,9 @@ def dump_translator(out_path, lang):
         bass.dirs[u'l10n'].
     :param lang: The language to dump a text file for.
     :return: The path to the file that the dump was written to."""
-    new_po = os.path.join(out_path, u'%sNEW.po' % lang)
-    tmp_po = os.path.join(out_path, u'%sNEW.tmp' % lang)
-    old_po = os.path.join(out_path, u'%s.po' % lang)
+    new_po = os.path.join(out_path, f'{lang}NEW.po')
+    tmp_po = os.path.join(out_path, f'{lang}NEW.tmp')
+    old_po = os.path.join(out_path, f'{lang}.po')
     gt_args = [u'p', u'-a', u'-o', new_po]
     gt_args.extend(_find_all_bash_modules())
     # Need to do this differently on standalone
@@ -211,15 +248,16 @@ def dump_translator(out_path, lang):
     else:
         # pygettext is only in Tools, so call it explicitly
         gt_args[0] = sys.executable
-        gt_args.insert(1, os.path.join(sys.prefix, u'Tools', u'i18n',
+        from .env import python_tools_dir
+        gt_args.insert(1, os.path.join(python_tools_dir(), u'i18n',
                                        u'pygettext.py'))
         subprocess.call(gt_args, shell=True)
     # Fill in any already translated stuff...?
     try:
-        re_msg_ids_start = re.compile(u'#:')
+        re_msg_ids_start = re.compile(b'#:')
         re_encoding = re.compile(
-            u'' r'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$', re.I)
-        re_non_escaped_quote = re.compile(u'' r'([^\\])"')
+            br'"Content-Type:\s*text/plain;\s*charset=(.*?)\\n"$', re.I)
+        re_non_escaped_quote = re.compile(r'([^\\])"')
         def sub_quote(regex_match):
             return regex_match.group(1) + r'\"'
         target_enc = None
@@ -234,8 +272,7 @@ def dump_translator(out_path, lang):
                             old_line.rstrip(b'\r\n'))
                         if encoding_match:
                             # Encoding names are all ASCII, so this is safe
-                            target_enc = unicode(encoding_match.group(1),
-                                                 u'ascii')
+                            target_enc = str(encoding_match.group(1), 'ascii')
                     if re_msg_ids_start.match(old_line):
                         break # Break once we hit the first translatable string
                     out.write(old_line)
@@ -253,7 +290,7 @@ def dump_translator(out_path, lang):
                         continue
                     elif new_line.startswith(b'msgid "'):
                         # Decode the line and retrieve only the msgid contents
-                        stripped_line = unicode(new_line, target_enc)
+                        stripped_line = str(new_line, target_enc)
                         stripped_line = stripped_line.strip(u'\r\n')[7:-1]
                         # Replace escape sequences - Quote, Tab, Backslash
                         stripped_line = stripped_line.replace(u'\\"', u'"')
@@ -263,7 +300,7 @@ def dump_translator(out_path, lang):
                         ##: This is a neat, pragmatic implementation - but of
                         # course limits us to only ever dumping translations
                         # for the current language
-                        translated_line = _(stripped_line)
+                        translated_line: str = _(stripped_line)
                         # We're going to need the msgid either way
                         out.write(new_line)
                         if translated_line != stripped_line:
@@ -286,7 +323,7 @@ def dump_translator(out_path, lang):
                         continue
                     else:
                         out.write(new_line)
-    except (OSError, IOError, UnicodeError):
+    except (OSError, UnicodeError):
         bolt.deprint(u'Error while dumping translation file:', traceback=True)
         try: os.remove(tmp_po)
         except OSError: pass
@@ -304,29 +341,28 @@ def dump_translator(out_path, lang):
 
 #------------------------------------------------------------------------------
 # Formatting
-def format_date(secs): # type: (float) -> unicode
+def format_date(secs): # type: (float) -> str
     """Convert time to string formatted to to locale's default date/time.
 
     :param secs: Formats the specified number of seconds into a string."""
     try:
         local = time.localtime(secs)
-    except ValueError: # local time in windows can't handle negative values
+    except (OSError, ValueError):
+        # local time in windows can't handle negative values
         local = time.gmtime(secs)
-    return bolt.decoder(time.strftime(u'%c', local), ##: decoder?
-                        locale.getpreferredencoding(do_setlocale=False))
+    return time.strftime(u'%c', local)
 
 # PY3: Probably drop in py3?
 def unformat_date(date_str):
     """Basically a wrapper around time.strptime. Exists to get around bug in
     strptime for Japanese locale.
 
-    :type date_str: unicode"""
+    :type date_str: str"""
     try:
         return time.strptime(date_str, u'%c')
     except ValueError:
         if bass.active_locale.startswith(u'ja_'):
-            date_str = re.sub(u'^([0-9]{4})/([1-9])', r'\1/0\2', date_str,
-                              flags=re.U)
+            date_str = re.sub('^([0-9]{4})/([1-9])', r'\1/0\2', date_str)
             return time.strptime(date_str, u'%c')
         else:
             raise

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,7 +26,7 @@ that isn't a component, basically."""
 import wx as _wx
 
 from .base_components import _AComponent
-from ..exception import ArgumentError
+from .. import bass
 
 class _OpenClipboard(object):
     """Internal wrapper around wx.TheClipboard for use with Python's 'with'
@@ -87,7 +87,7 @@ def read_from_clipboard():
 
 def read_files_from_clipboard_cb(files_callback):
     """Reads file paths from the clipboard and passes them to the specified
-    callback once the current even chain is done executing."""
+    callback once the current event chain is done executing."""
     if not files_callback: return
     with _OpenClipboard() as clip_opened:
         if not clip_opened: return
@@ -100,7 +100,7 @@ def get_ctrl_down(): # type: () -> bool
     """Returns True if the Ctrl key is currently down."""
     return _wx.GetKeyState(_wx.WXK_CONTROL)
 
-def get_key_down(key_char): # type: (unicode) -> bool
+def get_key_down(key_char): # type: (str) -> bool
     """Returns True if the key corresponding to the specified character is
     currently down."""
     return _wx.GetKeyState(ord(key_char))
@@ -110,14 +110,7 @@ def get_shift_down(): # type: () -> bool
     return _wx.GetKeyState(_wx.WXK_SHIFT)
 
 # TODO(inf) de-wx! Actually, don't - absorb via better API
-def staticBitmap(parent, bitmap=None, size=(32, 32), special=u'warn'):
+def staticBitmap(parent, bitmap=None):
     """Tailored to current usages - IAW: do not use."""
-    if bitmap is None:
-        bmp = _wx.ArtProvider.GetBitmap
-        if special == u'warn':
-            bitmap = bmp(_wx.ART_WARNING, _wx.ART_MESSAGE_BOX, size)
-        elif special == u'undo':
-            return bmp(_wx.ART_UNDO, _wx.ART_TOOLBAR, size)
-        else: raise ArgumentError(
-            u'special must be either warn or undo: %r given' % special)
-    return _wx.StaticBitmap(_AComponent._resolve(parent), bitmap=bitmap)
+    return _wx.StaticBitmap(_AComponent._resolve(parent),
+        bitmap=bass.wx_bitmap['ART_WARNING'] if bitmap is None else bitmap)

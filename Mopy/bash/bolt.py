@@ -16,22 +16,23 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
+from __future__ import annotations
+
 # Imports ---------------------------------------------------------------------
 #--Standard
-from __future__ import division, print_function
-
-import cPickle as pickle  # PY3
 import collections
 import copy
 import datetime
-import errno
+import functools
 import io
 import os
+import pickle
+import platform
 import re
 import shutil
 import stat
@@ -42,13 +43,16 @@ import sys
 import tempfile
 import textwrap
 import traceback
-from binascii import crc32
+import traceback as _traceback
+import webbrowser
+from contextlib import contextmanager, redirect_stdout
 from functools import partial
-from itertools import chain, izip
+from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
-from urllib import quote
-from contextlib import contextmanager
+from typing import Iterable
+from urllib.parse import quote
+from zlib import crc32
 
 import chardet
 
@@ -63,17 +67,10 @@ struct_calcsize = struct.calcsize
 
 #-- To make commands executed with Popen hidden
 startupinfo = None
-if os.name == u'nt':
+os_name = os.name ##: usages probably belong to env
+if os_name == u'nt':
     startupinfo = subprocess.STARTUPINFO()
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-
-# speed up os.walk
-try:
-    import scandir
-    _walk = walkdir = scandir.walk
-except ImportError:
-    _walk = walkdir = os.walk
-    scandir = None
 
 # Unicode ---------------------------------------------------------------------
 #--decode unicode strings
@@ -89,7 +86,7 @@ encodingOrder = (
     u'cp500',
     u'UTF-16LE',
 )
-if os.name == u'nt':
+if os_name == u'nt':
     encodingOrder += (u'mbcs',)
 
 _encodingSwap = {
@@ -124,24 +121,24 @@ def getbestencoding(bitstream):
 
 def decoder(byte_str, encoding=None, avoidEncodings=()):
     """Decode a byte string to unicode, using heuristics on encoding."""
-    if isinstance(byte_str, unicode) or byte_str is None: return byte_str
+    if isinstance(byte_str, str) or byte_str is None: return byte_str
     # Try the user specified encoding first
     if encoding:
         # TODO(ut) monkey patch
         if encoding == u'cp65001':
             encoding = u'utf-8'
-        try: return unicode(byte_str, encoding)
+        try: return str(byte_str, encoding)
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
     encoding, confidence = getbestencoding(byte_str)
     if encoding and confidence >= 0.55 and (
             encoding not in avoidEncodings or confidence == 1.0) and (
             encoding not in _blocked_encodings):
-        try: return unicode(byte_str, encoding)
+        try: return str(byte_str, encoding)
         except UnicodeDecodeError: pass
     # If even that fails, fall back to the old method, trial and error
     for encoding in encodingOrder:
-        try: return unicode(byte_str, encoding)
+        try: return str(byte_str, encoding)
         except UnicodeDecodeError: pass
     raise UnicodeDecodeError(u'Text could not be decoded using any method')
 
@@ -223,12 +220,31 @@ def encode_complex_string(string_val, max_size=None, min_size=None,
         string_val += b'\x00' * (min_size - len(string_val))
     return string_val
 
-def to_unix_newlines(s): # type: (unicode) -> unicode
+class Tee:
+    """Similar to the Unix utility tee, this class redirects writes etc. to two
+    separate IO streams. The name comes from T-splitters (often called tees),
+    which combine or divide streams of fluid.
+
+    Note that it is currently pretty geared for its use case of handling the
+    BashBugDump, e.g. it lacks methods for closing/reading/etc."""
+    def __init__(self, stream_a, stream_b):
+        self._stream_a = stream_a
+        self._stream_b = stream_b
+
+    def flush(self) -> None:
+        self._stream_a.flush()
+        self._stream_b.flush()
+
+    def write(self, s: str) -> int:
+        self._stream_a.write(s)
+        return self._stream_b.write(s)
+
+def to_unix_newlines(s): # type: (str) -> str
     """Replaces non-UNIX newlines in the specified string with Unix newlines.
     Handles both CR-LF (Windows) and pure CR (macOS)."""
     return s.replace(u'\r\n', u'\n').replace(u'\r', u'\n')
 
-def remove_newlines(s): # type: (unicode) -> unicode
+def remove_newlines(s): # type: (str) -> str
     """Removes all newlines (whether they are in LF, CR-LF or CR form) from the
     specified string."""
     return to_unix_newlines(s).replace(u'\n', u'')
@@ -242,7 +258,7 @@ def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
         new_dict = o.copy()
         new_dict.clear()
         new_dict.update(((conv_obj(k, conv_enc), conv_obj(v, conv_enc))
-                         for k, v in o.iteritems()))
+                         for k, v in o.items()))
         return new_dict
     elif type(o) in __list_types:
         return type(o)(conv_obj(e, conv_enc) for e in o)
@@ -253,7 +269,7 @@ def conv_obj(o, conv_enc=u'utf-8', __list_types=frozenset((list, set, tuple))):
 
 def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
-##: Keep an eye on https://bugs.python.org/issue31749
+##: Keep an eye on https://github.com/python/cpython/issues/75930
 def round_size(size_bytes):
     """Returns the specified size in bytes as a human-readable size string."""
     ##: Maybe offer an option to switch between KiB and KB?
@@ -262,11 +278,34 @@ def round_size(size_bytes):
     for prefix_pt1 in (u'K', u'M', u'G', u'T', u'P', u'E', u'Z', u'Y'):
         if size_bytes < 1024:
             # Show a single decimal digit, but never show trailing zeroes
-            return u'%s %s' % (
-                    (u'%.1f' % size_bytes).rstrip(u'0').rstrip(u'.'),
-                    prefix_pt1 + prefix_pt2)
+            return f'{f"{size_bytes:.1f}".rstrip("0").rstrip(".")} ' \
+                   f'{prefix_pt1 + prefix_pt2}'
         size_bytes /= 1024
     return _(u'<very large>') # ;)
+
+# Decode/encode dicts
+class SigToStr(dict):
+    """Dict of decoded record signatures - will decode unknown keys."""
+    __slots__ = ()
+
+    def __missing__(self, key):
+        try:
+            return self.setdefault(key, key.decode('iso-8859-1'))
+        except AttributeError:
+            return key
+
+_sig_to_str = SigToStr()
+sig_to_str = _sig_to_str.__getitem__
+
+class StrToSig(dict):
+    """Dict of encoded record strings - will encode unknown keys."""
+    __slots__ = ()
+
+    def __missing__(self, key):
+        return self.setdefault(key, key.encode('ascii'))
+
+_str_to_sig = StrToSig()
+str_to_sig = _str_to_sig.__getitem__
 
 # Helpers ---------------------------------------------------------------------
 def sortFiles(files, __split=os.path.split):
@@ -294,16 +333,8 @@ def float_or_none(uni_str):
     except ValueError:
         return None
 
-# PY3: Dicts are ordered by default on py3.7, so drop this in favor of just
-# collections.defaultdict
-class OrderedDefaultDict(collections.OrderedDict, collections.defaultdict):
-    """A defaultdict that preserves order."""
-    def __init__(self, default_factory=None, *args, **kwargs):
-        super(OrderedDefaultDict, self).__init__(*args, **kwargs)
-        self.default_factory = default_factory
-
 # LowStrings ------------------------------------------------------------------
-class CIstr(unicode):
+class CIstr(str):
     """See: http://stackoverflow.com/q/43122096/281545"""
     __slots__ = ()
 
@@ -336,7 +367,100 @@ class CIstr(unicode):
         return NotImplemented
     #--repr
     def __repr__(self):
-        return u'%s(%s)' % (type(self).__name__, super(CIstr, self).__repr__())
+        return f'{type(self).__name__}({super(CIstr, self).__repr__()})'
+
+class FName(str):
+    """Class modeling the case insensitive key in data stores, usually a
+    filename. It only accepts an instance of type str in its constructor.
+    FName is-a str as it is being used mostly as a plain str instance, apart
+    from comparisons. It compares case insensitive with both FName and str
+    which has a catch: classes that compare with str will compare with FName,
+    while FName won't compare with those. Special code was added to bolt.Path
+    for that purpose, but there is no way to make this work with types in the
+    wild. Note:
+      - currently we triple storage for each string (self, cache key and
+      fn_body). Apart from bsas code fn_body appears rarely
+      - we added no other special methods like __add__ or slice operations
+      to return FName - too much magic
+      - pickling: eventually we want to pickle strings as string type and
+      convert to internal format on load. Reason: backwards and forward
+      compatibility. Of course on unpickling we must ensure __new__ is called.
+      - __slots__ is not an option for variable length builtin overrides,
+      keep an eye for that.
+    """
+    _filenames_cache: dict[str, FName] = {}
+
+    def __new__(cls, unicode_str: None | FName | str, *args,
+                __cache=_filenames_cache, **kwargs):
+        if (typ := type(unicode_str)) is FName or unicode_str is None:
+            return unicode_str
+        if unicode_str in __cache: return __cache[unicode_str]
+        if typ is not str:
+            raise ValueError(f'{unicode_str!r} type is {typ} - a str is '
+                             f'required')
+        res = __cache[unicode_str] = super(FName, cls).__new__(
+            cls, unicode_str, *args, **kwargs)
+        return res
+
+    @functools.cached_property
+    def _lower(self): return super().lower()
+
+    def lower(self): return self._lower
+
+    @functools.cached_property
+    def fn_ext(self):
+        return FName('' if (dot := self.rfind('.')) == -1 else self[dot:])
+
+    @functools.cached_property
+    def fn_body(self):
+        return FName(self[:-len(self.fn_ext)]) if self.fn_ext else self
+
+    def __reduce__(self):##: [backwards compat] drop in 312+ (GPath_no_norm -> str)
+        return GPath_no_norm, (str(self),)
+
+    def __deepcopy__(self, memodict={}):
+        return self # immutable
+
+    def __copy__(self):
+        return self # immutable
+
+    #--Hash/Compare
+    def __hash__(self):
+        return hash(self._lower)
+    def __eq__(self, other):
+        try:
+            return self._lower == other._lower # (self is other) or self...
+        except AttributeError:
+            # this will blow if other is not a str even if it defines lower
+            return other is not None and self._lower == str.lower(other)
+    def __ne__(self, other):
+        try:
+            return self._lower != other._lower
+        except AttributeError:
+            return other is None or self._lower != str.lower(other)
+    def __lt__(self, other):
+        try:
+            return self._lower < other._lower
+        except AttributeError:
+            return self._lower < str.lower(other)
+    def __ge__(self, other):
+        try:
+            return self._lower >= other._lower
+        except AttributeError:
+            return self._lower >= str.lower(other)
+    def __gt__(self, other):
+        try:
+            return self._lower > other._lower
+        except AttributeError:
+            return self._lower > str.lower(other)
+    def __le__(self, other):
+        try:
+            return self._lower <= other._lower
+        except AttributeError:
+            return self._lower <= str.lower(other)
+    #--repr
+    def __repr__(self):
+        return f'{type(self).__name__}({super().__repr__()})'
 
 class LowerDict(dict):
     """Dictionary that transforms its keys to CIstr instances.
@@ -346,66 +470,121 @@ class LowerDict(dict):
 
     @staticmethod # because this doesn't make sense as a global function.
     def _process_args(mapping=(), **kwargs):
-        if hasattr(mapping, u'iteritems'): # PY3: items
-            mapping = getattr(mapping, u'iteritems')()
-        # PY3: fix mess below - kwargs keys are bytes im py2
-        return ((CIstr(k) if type(k) is unicode else k, v) for k, v in chain(
-            ((k.decode(u'ascii') if type(k) is bytes else k, v) for k, v in
-             mapping),
-            ((k.decode(u'ascii') if type(k) is bytes else k, v) for k, v in
-             getattr(kwargs, u'iteritems')())))
+        if hasattr(mapping, u'items'):
+            mapping = mapping.items()
+        return ((CIstr(k), v) for k, v in chain(mapping, kwargs.items()))
 
     def __init__(self, mapping=(), **kwargs):
         # dicts take a mapping or iterable as their optional first argument
-        super(LowerDict, self).__init__(self._process_args(mapping, **kwargs))
+        super().__init__(self._process_args(mapping, **kwargs))
 
     def __getitem__(self, k):
-        return super(LowerDict, self).__getitem__(
-            CIstr(k) if type(k) is unicode else k)
+        return super().__getitem__(CIstr(k) if type(k) is str else k)
 
     def __setitem__(self, k, v):
-        return super(LowerDict, self).__setitem__(
-            CIstr(k) if type(k) is unicode else k, v)
+        return super().__setitem__(CIstr(k) if type(k) is str else k, v)
 
     def __delitem__(self, k):
-        return super(LowerDict, self).__delitem__(
-            CIstr(k) if type(k) is unicode else k)
+        return super().__delitem__(CIstr(k) if type(k) is str else k)
 
     def copy(self): # don't delegate w/ super - dict.copy() -> dict :(
         return type(self)(self)
 
     def get(self, k, default=None):
-        return super(LowerDict, self).get(
-            CIstr(k) if type(k) is unicode else k, default)
+        return super().get(CIstr(k) if type(k) is str else k, default)
 
     def setdefault(self, k, default=None):
-        return super(LowerDict, self).setdefault(
-            CIstr(k) if type(k) is unicode else k, default)
+        return super().setdefault(CIstr(k) if type(k) is str else k, default)
 
     __no_default = object()
     def pop(self, k, v=__no_default):
         if v is LowerDict.__no_default:
             # super will raise KeyError if no default and key does not exist
-            return super(LowerDict, self).pop(
-                CIstr(k) if type(k) is unicode else k)
-        return super(LowerDict, self).pop(
-            CIstr(k) if type(k) is unicode else k, v)
+            return super().pop(CIstr(k) if type(k) is str else k)
+        return super().pop(CIstr(k) if type(k) is str else k, v)
 
     def update(self, mapping=(), **kwargs):
-        super(LowerDict, self).update(self._process_args(mapping, **kwargs))
+        super().update(self._process_args(mapping, **kwargs))
 
     def __contains__(self, k):
-        return super(LowerDict, self).__contains__(
-            CIstr(k) if type(k) is unicode else k)
+        return super().__contains__(CIstr(k) if type(k) is str else k)
 
     @classmethod
     def fromkeys(cls, keys, v=None):
-        return super(LowerDict, cls).fromkeys((CIstr(k) if type(
-            k) is unicode else k for k in keys), v)
+        return super().fromkeys(
+            (CIstr(k) if type(k) is str else k for k in keys), v)
 
     def __repr__(self):
-        return u'%s(%s)' % (
-            type(self).__name__, super(LowerDict, self).__repr__())
+        return f'{type(self).__name__}({super().__repr__()})'
+
+class FNDict(dict):
+    """Dictionary that transforms its keys to FName instances. Only str keys
+    are accepted - FName will do the type check."""
+    __slots__ = () # no __dict__ - that would be redundant
+
+    @staticmethod # because this doesn't make sense as a global function.
+    def _process_args(mapping=(), **kwargs):
+        if hasattr(mapping, u'items'):
+            mapping = mapping.items()
+        return ((FName(k), v) for k, v in chain(mapping, kwargs.items()))
+
+    def __init__(self, mapping=(), **kwargs):
+        # dicts take a mapping or iterable as their optional first argument
+        super().__init__(self._process_args(mapping, **kwargs))
+
+    def __getitem__(self, k):
+        return super().__getitem__(FName(k))
+
+    def __setitem__(self, k, v):
+        return super().__setitem__(FName(k), v)
+
+    def __delitem__(self, k):
+        return super().__delitem__(FName(k))
+
+    def copy(self): # don't delegate w/ super - dict.copy() -> dict :(
+        return type(self)(self)
+
+    def get(self, k, default=None):
+        return super().get(FName(k), default)
+
+    def setdefault(self, k, default=None):
+        return super().setdefault(FName(k), default)
+
+    __no_default = object()
+    def pop(self, k, v=__no_default):
+        if v is FNDict.__no_default:
+            # super will raise KeyError if no default and key does not exist
+            return super().pop(FName(k))
+        return super().pop(FName(k), v)
+
+    def update(self, mapping=(), **kwargs):
+        super().update(self._process_args(mapping, **kwargs))
+
+    def __contains__(self, k):
+        return super().__contains__(FName(k))
+
+    @classmethod
+    def fromkeys(cls, keys, v=None):
+        return super(FNDict, cls).fromkeys((FName(k) for k in keys), v)
+
+    def __repr__(self):
+        return f'{type(self).__name__}({super().__repr__()})'
+
+    def __reduce__(self): #[backwards compat]we 'd rather not save custom types
+        return dict, (dict(self),)
+
+# Forward compat functions - as we only want to pickle std types those stay
+def forward_compat_path_to_fn(di, value_type=lambda x: x):
+    try:
+        return FNDict(('%s' % k, value_type(v)) for k, v in di.items())
+    except ValueError:
+        return FNDict((str('%s' % k), value_type(v)) for k, v in di.items())
+
+def forward_compat_path_to_fn_list(li, ret_type=list):
+    try:
+        return ret_type(map(FName, map(str, li)))
+    except ValueError: # tried to FName(str(path)) where type(path.s) == CIstr
+        return ret_type(map(FName, map(str,  map(str, li))))
 
 class DefaultLowerDict(LowerDict, collections.defaultdict):
     """LowerDict that inherits from defaultdict."""
@@ -420,19 +599,36 @@ class DefaultLowerDict(LowerDict, collections.defaultdict):
         return type(self)(self.default_factory, self)
 
     def __repr__(self):
-        return u'%s(%s, %s)' % (type(self).__name__, self.default_factory,
-            super(collections.defaultdict, self).__repr__())
+        return f'{type(self).__name__}({self.default_factory}, ' \
+               f'{super(collections.defaultdict, self).__repr__()})'
+
+class DefaultFNDict(FNDict, collections.defaultdict):
+    """FNDict that inherits from defaultdict."""
+    __slots__ = () # no __dict__ - that would be redundant
+
+    def __init__(self, default_factory=None, mapping=(), **kwargs):
+        # note we can't use FNDict __init__ directly
+        super(FNDict, self).__init__(default_factory,
+                                     self._process_args(mapping, **kwargs))
+
+    def copy(self):
+        return type(self)(self.default_factory, self)
+
+    def __repr__(self):
+        return f'{type(self).__name__}({self.default_factory}, ' \
+               f'{super(collections.defaultdict, self).__repr__()})'
 
 class OrderedLowerDict(LowerDict, collections.OrderedDict):
-    """LowerDict that inherits from OrdererdDict."""
+    """LowerDict that inherits from OrderedDict."""
     __slots__ = () # no __dict__ - that would be redundant
 
 #------------------------------------------------------------------------------
 # cache attrgetter objects
 class _AttrGettersCache(dict):
+    __slots__ = ()
     def __missing__(self, ag_key):
         return self.setdefault(ag_key, attrgetter(ag_key) if isinstance(
-            ag_key, unicode) else attrgetter(*ag_key))
+            ag_key, str) else attrgetter(*ag_key))
 
 attrgetter_cache = _AttrGettersCache()
 
@@ -453,6 +649,19 @@ def setattr_deep(obj, attr, value, __attrgetters=attrgetter_cache,
     setattr(__attrgetters[parent_attr](obj) if parent_attr else obj,
         leaf_attr, value)
 
+def top_level_files(directory): # faster than listdir then is_file
+    return top_level_items(directory)[1]
+
+def top_level_dirs(directory): # faster than listdir then isdir
+    return top_level_items(directory)[0]
+
+def top_level_items(directory):
+    try:
+        _directory, folders, files = next(os.walk(directory))
+    except StopIteration: # thrown also if directory does not exist
+        return [], []
+    return map(FName, folders), map(FName, files)
+
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 _gpaths = {}
@@ -471,11 +680,9 @@ def GPath(str_or_uni):
 def GPath_no_norm(str_or_uni):
     """Alternative to GPath that does not call normpath. It is up to the caller
     to ensure that the precondition name == os.path.normpath(name) holds for
-    all values pased into this method.
+    all values passed into this method. Only str instances accepted!
 
     :rtype: Path"""
-    if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
-    if not str_or_uni: return Path(u'') # needed, os.path.normpath(u'') = u'.'!
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
     return _gpaths.setdefault(str_or_uni, Path(str_or_uni))
 
@@ -503,17 +710,17 @@ def GPathPurge():
 
 #------------------------------------------------------------------------------
 _conv_seps = None
-class Path(object):
+class Path(os.PathLike):
     """Paths are immutable objects that represent file directory paths.
      May be just a directory, filename or full path."""
 
     #--Class Vars/Methods -------------------------------------------
     sys_fs_enc = sys.getfilesystemencoding() or u'mbcs'
-    invalid_chars_re = re.compile(u'' r'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
+    invalid_chars_re = re.compile(r'(.*)([/\\:*?"<>|]+)(.*)', re.I) # \\ needed
 
     @staticmethod
     def getNorm(str_or_path):
-        # type: (unicode|bytes|Path) -> unicode
+        # type: (str|bytes|Path) -> str
         """Return the normpath for specified basename/Path object."""
         if isinstance(str_or_path, Path): return str_or_path._s
         elif not str_or_path: return u'' # and not maybe b''
@@ -522,15 +729,15 @@ class Path(object):
 
     @staticmethod
     def getcwd():
-        return Path(os.getcwdu())
+        return Path(os.getcwd())
 
     def setcwd(self):
         """Set cwd."""
         os.chdir(self._s)
 
     @staticmethod
-    def has_invalid_chars(string):
-        match = Path.invalid_chars_re.match(string)
+    def has_invalid_chars(path_str):
+        match = Path.invalid_chars_re.match(path_str)
         if not match: return None
         return match.groups()[1]
 
@@ -541,7 +748,7 @@ class Path(object):
                  u'_cext', u'_sbody')
 
     def __init__(self, norm_str):
-        # type: (unicode) -> None
+        # type: (str) -> None
         """Initialize with unicode - call only in GPath."""
         self._s = norm_str # path must be normalized
         self._cs = norm_str.lower()
@@ -568,9 +775,12 @@ class Path(object):
         return len(self._s)
 
     def __repr__(self):
-        return u'bolt.Path(%r)' % self._s
+        return f'bolt.Path({self._s!r})'
 
     def __str__(self):
+        return self._s
+
+    def __fspath__(self):
         return self._s
 
     #--Properties--------------------------------------------------------
@@ -615,10 +825,6 @@ class Path(object):
         except AttributeError:
             self._sbody = os.path.basename(self.sroot)
             return self._sbody
-    @property
-    def csbody(self):
-        """For alpha\beta.gamma returns beta as string in normalized case."""
-        return self.sbody.lower()
 
     #--Head, tail
     @property
@@ -662,37 +868,17 @@ class Path(object):
     @property
     def temp(self):
         """Temp file path."""
-        baseDir = GPath(unicode(tempfile.gettempdir(), Path.sys_fs_enc)).join(
-            u'WryeBash_temp')
+        baseDir = GPath(tempfile.gettempdir()).join(u'WryeBash_temp')
         baseDir.makedirs()
         return baseDir.join(self.tail + u'.tmp')
 
     @staticmethod
     def tempDir(prefix=u'WryeBash_'):
-        # workaround for http://bugs.python.org/issue1681974 see there - PY3: ?
-        try:
-            return GPath(tempfile.mkdtemp(prefix=prefix))
-        except UnicodeDecodeError:
-            try:
-                traceback.print_exc()
-                print(u'Trying to pass temp dir in...')
-                tempdir = unicode(tempfile.gettempdir(), Path.sys_fs_enc)
-                return GPath(tempfile.mkdtemp(prefix=prefix, dir=tempdir))
-            except UnicodeDecodeError:
-                try:
-                    traceback.print_exc()
-                    print(u'Trying to encode temp dir prefix...')
-                    return GPath(tempfile.mkdtemp(
-                        prefix=prefix.encode(Path.sys_fs_enc)).decode(
-                        Path.sys_fs_enc))
-                except:
-                    traceback.print_exc()
-                    print(u'Failed to create tmp dir, Bash will not function '
-                          u'correctly.')
+        return GPath(tempfile.mkdtemp(prefix=prefix))
 
     @staticmethod
     def baseTempDir():
-        return GPath(unicode(tempfile.gettempdir(), Path.sys_fs_enc))
+        return GPath(tempfile.gettempdir())
 
     @property
     def backup(self):
@@ -703,12 +889,12 @@ class Path(object):
     @property
     def psize(self):
         """Size of file or directory."""
-        if self.isdir():
+        if self.is_dir():
             join = os.path.join
             op_size = os.path.getsize
             try:
                 return sum(sum(op_size(join(x, f)) for f in files)
-                           for x, _y, files in _walk(self._s))
+                           for x, _y, files in os.walk(self._s))
             except ValueError:
                 return 0
         else:
@@ -764,9 +950,9 @@ class Path(object):
         """Calculates and returns crc value for self."""
         crc = 0
         with self.open(u'rb') as ins:
-            for block in iter(partial(ins.read, 2097152), b''):
-                crc = crc32(block, crc) # 2MB at a time, probably ok
-        return crc & 0xffffffff
+            while block := ins.read(2097152): # 2MB at a time
+                crc = crc32(block, crc)
+        return crc
 
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
@@ -777,25 +963,25 @@ class Path(object):
         norms = [Path.getNorm(x) for x in args] # join(..,None,..) -> TypeError
         return GPath(os.path.join(*norms))
 
-    def list(self):
-        """For directory: Returns list of files."""
+    def ilist(self):
+        """For directory: Return list of files - bit weird this returns
+        FName but let's say Path and FName are friend classes."""
         try:
-            return [GPath_no_norm(x) for x in os.listdir(self._s)]
-        except OSError as e:
-            if e.errno != errno.ENOENT: raise
+            return map(FName, os.listdir(self._s))
+        except FileNotFoundError:
             return []
 
-    def walk(self,topdown=True,onerror=None,relative=False):
+    def walk(self, topdown=True, onerror=None, *, relative=False):
         """Like os.walk."""
         if relative:
             start = len(self._s)
-            for root_dir,dirs,files in _walk(self._s, topdown, onerror):
+            for root_dir,dirs,files in os.walk(self._s, topdown, onerror):
                 yield (GPath(root_dir[start:]),
                        [GPath_no_norm(x) for x in dirs],
                        [GPath_no_norm(x) for x in files])
         else:
-            for root_dir,dirs,files in _walk(self._s, topdown, onerror):
-                yield (GPath(root_dir),
+            for root_dir,dirs,files in os.walk(self._s, topdown, onerror):
+                yield (GPath(root_dir), ##: leaves the leading path separator?
                        [GPath_no_norm(x) for x in dirs],
                        [GPath_no_norm(x) for x in files])
 
@@ -807,14 +993,13 @@ class Path(object):
         return GPath(os.path.splitdrive(self._s)[0])
 
     #--File system info
-    #--THESE REALLY OUGHT TO BE PROPERTIES.
     def exists(self):
         return os.path.exists(self._s)
-    def isdir(self):
+    def is_dir(self):
         return os.path.isdir(self._s)
-    def isfile(self):
+    def is_file(self):
         return os.path.isfile(self._s)
-    def isabs(self):
+    def is_absolute(self):
         return os.path.isabs(self._s)
 
     #--File system manipulation
@@ -829,7 +1014,7 @@ class Path(object):
 
     def clearRO(self):
         """Clears RO flag on self"""
-        if not self.isdir():
+        if not self.is_dir():
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
         else:
             try:
@@ -837,7 +1022,7 @@ class Path(object):
             except UnicodeError:
                 stat_flags = stat.S_IWUSR|stat.S_IWOTH
                 chmod = os.chmod
-                for root_dir,dirs,files in _walk(self._s):
+                for root_dir,dirs,files in os.walk(self._s):
                     rootJoin = root_dir.join
                     for directory in dirs:
                         try: chmod(rootJoin(directory),stat_flags)
@@ -847,15 +1032,19 @@ class Path(object):
                         except: pass
 
     def open(self,*args,**kwdargs):
-        if self.shead and not os.path.exists(self.shead):
-            os.makedirs(self.shead)
-        return io.open(self._s, *args, **kwdargs)
-    def makedirs(self):
         try:
-            os.makedirs(self._s)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+            return open(self._s, *args, **kwdargs)
+        except FileNotFoundError:
+            # We rarely need to do this, so avoid the stat call from
+            # os.path.exists unless it's unavoidable
+            if self.shead and not os.path.exists(self.shead):
+                os.makedirs(self.shead)
+                return open(self._s, *args, **kwdargs)
+            raise
+
+    def makedirs(self):
+        os.makedirs(self._s, exist_ok=True)
+
     def remove(self):
         try:
             if self.exists(): os.remove(self._s)
@@ -870,7 +1059,7 @@ class Path(object):
             os.removedirs(self._s)
     def rmtree(self,safety=u'PART OF DIRECTORY NAME'):
         """Removes directory tree. As a safety factor, a part of the directory name must be supplied."""
-        if self.isdir() and safety and safety.lower() in self._cs:
+        if self.is_dir() and safety and safety.lower() in self._cs:
             shutil.rmtree(self._s,onerror=Path._onerror)
 
     #--start, move, copy, touch, untemp
@@ -882,60 +1071,45 @@ class Path(object):
             else:
                 subprocess.Popen(exeArgs, executable=self._s, close_fds=True)
         else:
-            os.startfile(self._s)
+            if sys.platform == 'darwin':
+                webbrowser.open(f'file://{self._s}')
+            elif platform.system() == u'Windows':
+                os.startfile(self._s)
+            else: ##: TTT linux - WIP move this switch to env launch_file
+                subprocess.call(['xdg-open', f'{self._s}'])
     def copyTo(self,destName):
         """Copy self to destName, make dirs if necessary and preserve mtime."""
         destName = GPath(destName)
-        if self.isdir():
+        if self.is_dir():
             shutil.copytree(self._s,destName._s)
-        else:
-            if destName.shead and not os.path.exists(destName.shead):
-                os.makedirs(destName.shead)
+            return
+        try:
             shutil.copyfile(self._s,destName._s)
             destName.mtime = self.mtime
-    def moveTo(self,destName):
-        if not self.exists():
-            raise exception.StateError(self._s + u' cannot be moved because it does not exist.')
+        except FileNotFoundError:
+            if not (dest_par := destName.shead) or os.path.exists(dest_par):
+                raise
+            os.makedirs(dest_par)
+            shutil.copyfile(self._s,destName._s)
+            destName.mtime = self.mtime
+    def moveTo(self, destName, check_exist=True):
+        if check_exist and not self.exists():
+            raise exception.StateError(f'{self._s} cannot be moved because it '
+                                       f'does not exist.')
         destPath = GPath(destName)
         if destPath._cs == self._cs: return
-        if destPath.shead and not os.path.exists(destPath.shead):
-            os.makedirs(destPath.shead)
-        elif destPath.exists():
+        if destPath.exists(): ##: needed for dirs? (files will just replace)
             destPath.remove()
         try:
+            shutil.move(self._s,destPath._s)
+        except FileNotFoundError:
+            if not (dest_par := destPath.shead) or os.path.exists(dest_par):
+                raise
+            os.makedirs(dest_par)
             shutil.move(self._s,destPath._s)
         except OSError:
             self.clearRO()
             shutil.move(self._s,destPath._s)
-
-    def tempMoveTo(self,destName):
-        """Temporarily rename/move an object.  Use with the 'with' statement"""
-        class _temp_file(object):
-            def __init__(self,oldPath,newPath):
-                self.newPath = GPath(newPath)
-                self.oldPath = GPath(oldPath)
-
-            def __enter__(self): return self.newPath
-            def __exit__(self, exc_type, exc_value, exc_traceback): self.newPath.moveTo(self.oldPath)
-        self.moveTo(destName)
-        return _temp_file(self,destName)
-
-    def unicodeSafe(self): # PY3: investigate if obsoleted.
-        """Temporarily rename (only if necessary) the file to a unicode safe
-        name. Use with the 'with' statement. Meant to be used with Popen (which
-        automatically tries to encode the name)."""
-        try:
-            self._s.encode(u'ascii')
-            class _noop_file(object):
-                def __init__(self, _fpath):
-                    self._fpath = _fpath
-                def __enter__(self): return self._fpath
-                def __exit__(self, exc_type, exc_value, exc_traceback): pass
-            return _noop_file(self)
-        except UnicodeEncodeError:
-            safe_path = unicode(self._s.encode(u'ascii', u'xmlcharrefreplace'),
-                u'ascii') + u'_unicode_safe.tmp'
-            return self.tempMoveTo(safe_path)
 
     def untemp(self,doBackup=False):
         """Replaces file with temp version, optionally making backup of file first."""
@@ -949,9 +1123,7 @@ class Path(object):
                     # (unexpectedly) a directory
                     try:
                         os.remove(self._s)
-                    except OSError as e:
-                        if e.errno != errno.EACCES:
-                            raise
+                    except PermissionError:
                         self.clearRO()
                         os.remove(self._s)
             shutil.move(self.temp._s, self._s)
@@ -973,114 +1145,210 @@ class Path(object):
                     pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
-    # directly compare to unicode|bytes|Path|None and will blow for anything
-    # else
+    # directly compare to str|Path|None and will blow for anything else
     def __hash__(self):
         return hash(self._cs)
     def __eq__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs == other._cs
-        # get unicode or None - will blow on most other types - identical below
-        dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs == (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            # Only compare with unicode or None - will blow on other types -
+            # similar code in rest of the methods below
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            elif other is not None:
+                raise TypeError(
+                    f'Comparing Path with {typ} not supported: {other!r}')
+        return self._cs == other
     def __ne__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs != other._cs
-        dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs != (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            elif other is not None:
+                raise TypeError(
+                    f'Comparing Path with {typ} not supported: {other!r}')
+        return self._cs != other
     def __lt__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs < other._cs
-        dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs < (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            else: raise TypeError(f'Comparing Path with {typ} not supported: '
+                                  f'{other!r}')
+        return self._cs < other
     def __ge__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs >= other._cs
-        dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs >= (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            else: raise TypeError(f'Comparing Path with {typ} not supported: '
+                                  f'{other!r}')
+        return self._cs >= other
     def __gt__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs > other._cs
-        dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs > (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            else: raise TypeError(f'Comparing Path with {typ} not supported: '
+                                  f'{other!r}')
+        return self._cs > other
     def __le__(self, other):
-        if isinstance(other, Path):
+        try:
             return self._cs <= other._cs
-        dec = other if isinstance(other, unicode) else decoder(other)
-        return self._cs <= (os.path.normpath(dec).lower() if dec else dec)
+        except AttributeError:
+            if (typ := type(other)) is str:
+                other = os.path.normpath(other).lower() if other else other
+            else: raise TypeError(f'Comparing Path with {typ} not supported: '
+                                  f'{other!r}')
+        return self._cs <= other
+
+    # avoid setstate/getstate round trip
+    def __deepcopy__(self, memodict={}):
+        return self # immutable
+
+    def __copy__(self):
+        return self # immutable
+
+# We need to split every time we hit a new 'type' of component. So greedily
+# match as many of one type as possible (except dots and dashes, since those
+# are guaranteed to start a new component)
+_component_re = re.compile(r'(\.|-|\d+|[^\d.-]+)')
+_separators = frozenset({'.', '-'})
+class LooseVersion:
+    """A class for representing and comparing versions, where the term
+    'version' refers to any and every possible string. The way this class works
+    is pretty simple: there are three 'types' of components to a LooseVersion:
+
+     - separators (dots and dashes)
+     - digits
+     - everything else
+
+    Separators begin a new component to the version, but are not part of the
+    version themselves. Digits are compared numerically, so 2 < 10. Everything
+    else is compared alphabetically, so 'a' < 'm'. A whole version is compared
+    by comparing the components in it as a tuple."""
+    _parsed_version: tuple[int | str]
+
+    def __init__ (self, ver_string: str):
+        ver_components = _component_re.split(ver_string)
+        parsed_version = []
+        for ver_comp in ver_components:
+            if not ver_comp or ver_comp in _separators:
+                # Empty components and separators are not part of the version
+                continue
+            try:
+                parsed_version.append(int(ver_comp))
+            except ValueError:
+                parsed_version.append(ver_comp)
+        self._parsed_version = tuple(parsed_version)
+
+    def __repr__(self):
+        return '.'.join([str(c) for c in self._parsed_version])
+
+    def __eq__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version == other._parsed_version
+
+    def __lt__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version < other._parsed_version
+
+    def __le__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version <= other._parsed_version
+
+    def __gt__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version > other._parsed_version
+
+    def __ge__(self, other):
+        if not isinstance(other, LooseVersion):
+            return NotImplemented
+        return self._parsed_version >= other._parsed_version
+
+def popen_common(popen_cmd, **kwargs):
+    """Wrapper around subprocess.Popen with commonly needed parameters."""
+    return subprocess.Popen(popen_cmd, stdin=subprocess.DEVNULL,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            startupinfo=startupinfo, **kwargs)
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
-    cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath
-    subprocess.call(cmd, startupinfo=startupinfo)
-
-# TMP functions to deprecate Paths functionality for simple filenames - SLOW!
-def cext_(string_val):
-    return os.path.splitext(string_val)[-1].lower()
-def body_(string_val):
-    return os.path.basename(os.path.splitext(string_val)[0])
+    if os_name == 'nt':
+        cmd = fr'attrib -R "{dirPath}\*" /S /D'
+        subprocess.call(cmd, startupinfo=startupinfo)
+        return
+    # elif platform.system() == u'Darwin':
+    #     cmd = f'chflags -R nouchg {dirPath}'
+    else: # https://stackoverflow.com/a/36285142/281545 - last & needed on mac
+        cmds = (fr'find {dirPath} -not -executable -exec chmod a=rw {{}} \; &',
+                fr'find {dirPath} -executable -exec chmod a=rwx {{}} \; &')
+    for cmd in cmds: os.system(cmd) # returns 0 with the final &, 256 otherwise
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
-reUnixNewLine = re.compile(u'' r'(?<!\r)\n', re.U)
+reUnixNewLine = re.compile(r'(?<!\r)\n', re.U)
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Flags(object):
     """Represents a flag field."""
-    __slots__ = [u'_names', u'_field', u'_unknown_is_unused']
+    __slots__ = [u'_field']
+    _names = {}
 
-    @staticmethod
-    def getNames(*names):
-        """Returns dictionary mapping names to indices.
+    @classmethod
+    def from_names(cls, *names):
+        """Return Flag subtype with specified names to index dictionary.
         Indices range may not be contiguous.
         Names are either strings or (index,name) tuples.
-        E.g., Flags.getNames('isQuest','isHidden',None,(4,'isDark'),(7,'hasWater'))"""
+        E.g., Flags.from_names('isQuest', 'isHidden', None, (4, 'isDark'),
+        (7, 'hasWater'))."""
         namesDict = {}
         for index,flg_name in enumerate(names):
             if isinstance(flg_name,tuple):
                 namesDict[flg_name[1]] = flg_name[0]
             elif flg_name: #--skip if "name" is 0 or None
                 namesDict[flg_name] = index
-        return namesDict
+        class __Flags(cls):
+            __slots__ = []
+            _names = namesDict
+        return __Flags
 
     #--Generation
-    def __init__(self, value=0, names=None, unknown_is_unused=False):
-        """Initialize. Attrs, if present, is mapping of attribute names to
-        indices. unknown_is_unused will discard unknown flags."""
-        object.__setattr__(self, u'_names', names or {})
+    def __init__(self, value=0):
+        """Set the internal int value."""
         object.__setattr__(self, u'_field', int(value))
-        object.__setattr__(self, u'_unknown_is_unused', unknown_is_unused)
-        self._clean_unused_flags()
 
-    def __call__(self,newValue=None):
+    def __call__(self,newValue=None): ##: ideally drop in favor of copy (explicit)
         """Returns a clone of self, optionally with new value."""
         if newValue is not None:
-            return Flags(int(newValue), self._names, self._unknown_is_unused)
+            return self.__class__(int(newValue))
         else:
-            return Flags(self._field, self._names, self._unknown_is_unused)
+            return self.__class__(self._field)
 
     def __deepcopy__(self, memo):
-        newFlags = Flags(self._field, self._names, self._unknown_is_unused)
+        newFlags = self.__class__(self._field)
         memo[id(self)] = newFlags ##: huh?
         return newFlags
 
-    def _clean_unused_flags(self):
-        """Removes all unknown flags if that option was set in __init__."""
-        if self._unknown_is_unused:
-            final_flags = 0
-            for flg_name, flg_idx in self._names.iteritems():
-                if getattr(self, flg_name):
-                    final_flags |= 1 << flg_idx
-            self._field = final_flags
+    def __copy__(self):
+        return self.__class__(self._field)
 
     #--As hex string
     def hex(self):
         """Returns hex string of value."""
-        return u'%08X' % (self._field,)
+        return f'{self._field:08X}'
     def dump(self):
         """Returns value for packing"""
-        self._clean_unused_flags()
         return self._field
 
     #--As int
@@ -1088,15 +1356,8 @@ class Flags(object):
         """Return as integer value for saving."""
         return self._field
     def __index__(self):
-        """Same as __int__, needed for packing in py3."""
+        """Same as __int__, needed for packing in python3."""
         return self._field
-    def __getstate__(self): ##: do we even use this?
-        """Return values for pickling."""
-        return self._field, self._names
-    def __setstate__(self,fields):
-        """Used by unpickler."""
-        self._field = fields[0]
-        self._names = fields[1]
 
     #--As list
     def __getitem__(self, index):
@@ -1113,18 +1374,17 @@ class Flags(object):
     def __getattr__(self, attr_key):
         """Get value by flag name. E.g. flags.isQuestItem"""
         try:
-            names = object.__getattribute__(self, u'_names')
-            index = names[attr_key]
+            index = self.__class__._names[attr_key]
             return (object.__getattribute__(self, u'_field') >> index) & 1 == 1
         except KeyError:
             raise AttributeError(attr_key)
 
     def __setattr__(self, attr_key, value):
         """Set value by flag name. E.g., flags.isQuestItem = False"""
-        if attr_key in (u'_field', u'_names'):
+        if attr_key == u'_field':
             object.__setattr__(self, attr_key, value)
         else:
-            self.__setitem__(self._names[attr_key], value)
+            self.__setitem__(self.__class__._names[attr_key], value)
 
     #--Native operations
     def __eq__( self, other):
@@ -1144,37 +1404,61 @@ class Flags(object):
     def __and__(self,other):
         """Bitwise and."""
         if isinstance(other,Flags): other = other._field
-        return self(self._field & other)
+        return self.__class__(self._field & other)
 
     def __invert__(self):
         """Bitwise inversion."""
-        return self(~self._field)
+        return self.__class__(~self._field)
 
     def __or__(self,other):
         """Bitwise or."""
         if isinstance(other,Flags): other = other._field
-        return self(self._field | other)
+        return self.__class__(self._field | other)
 
     def __xor__(self,other):
         """Bitwise exclusive or."""
         if isinstance(other,Flags): other = other._field
-        return self(self._field ^ other)
+        return self.__class__(self._field ^ other)
 
     def getTrueAttrs(self):
         """Returns attributes that are true."""
-        trueNames = [flname for flname in self._names if getattr(self, flname)]
-        trueNames.sort(key=lambda xxx: self._names[xxx])
+        trueNames = [flname for flname in self.__class__._names if
+                     getattr(self, flname)]
         return tuple(trueNames)
 
     def __repr__(self):
         """Shows all set flags."""
         all_flags = u', '.join(self.getTrueAttrs()) if self._field else u'None'
-        return u'0x%s (%s)' % (self.hex(), all_flags)
+        return f'0x{self.hex()} ({all_flags})'
+
+class TrimmedFlags(Flags):
+    """Flag subtype that will discard unnamed flags on __init__ and dump
+    (or perform other kind of trimming)."""
+    __slots__ = []
+
+    def __init__(self, value=0):
+        super().__init__(value)
+        self._clean_flags()
+
+    def _clean_flags(self):
+        """Remove all unnamed flags."""
+        final_flags = 0
+        for flg_name, flg_idx in self.__class__._names.items():
+            if getattr(self, flg_name):
+                final_flags |= 1 << flg_idx
+        self._field = final_flags
+
+    def dump(self):
+        self._clean_flags()
+        return super(TrimmedFlags, self).dump()
 
 #------------------------------------------------------------------------------
 class DataDict(object):
     """Mixin class that handles dictionary emulation, assuming that
-    dictionary is its 'data' attribute."""
+    dictionary is its '_data' attribute."""
+
+    def __init__(self, data_dict):
+        self._data = data_dict # not final - see for instance InstallersData
 
     def __contains__(self,key):
         return key in self._data
@@ -1190,17 +1474,9 @@ class DataDict(object):
     def __iter__(self):
         return iter(self._data)
     def values(self):
-        return self._data.viewvalues()
-    def itervalues(self): # PY3: Drop
-        return self.values()
-    def viewvalues(self): # PY3: Drop
-        return self.values()
+        return self._data.values()
     def items(self):
-        return self._data.viewitems()
-    def iteritems(self): # PY3: Drop
-        return self.items()
-    def viewitems(self): # PY3: Drop
-        return self.items()
+        return self._data.items()
     def get(self,key,default=None):
         return self._data.get(key, default)
     def pop(self,key,default=None):
@@ -1219,7 +1495,7 @@ class AFile(object):
         #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
             self._reset_cache(self._stat_tuple(), load_cache)
-        except (OSError, IOError):
+        except OSError:
             if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
 
@@ -1229,15 +1505,18 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._file_key = val
 
-    def do_update(self, raise_on_error=False):
+    def do_update(self, raise_on_error=False, itsa_ghost=None):
         """Check cache, reset it if needed. Return True if reset else False.
         If the stat call fails and this instance was previously stat'ed we
         consider the file deleted and return True except if raise_on_error is
         True, whereupon raise the OSError we got in stat(). If raise_on_error
-        is False user must check if file exists."""
+        is False user must check if file exists.
+        :param itsa_ghost: in ModInfos if we have the ghosting info available
+                           skip recalculating it.
+        """
         try:
             stat_tuple = self._stat_tuple()
-        except (OSError, IOError): # PY3: FileNotFoundError case?
+        except OSError: # PY3: FileNotFoundError case?
             file_was_stated = self._file_changed(self._null_stat)
             self._reset_cache(self._null_stat, load_cache=False)
             if raise_on_error: raise
@@ -1262,8 +1541,8 @@ class AFile(object):
         """
         self.fsize, self._file_mod_time = stat_tuple
 
-    def __repr__(self): return u'%s<%s>' % (self.__class__.__name__,
-                                            self.abs_path.stail)
+    def __repr__(self): return f'{self.__class__.__name__}<' \
+                               f'{self.abs_path.stail}>'
 
 #------------------------------------------------------------------------------
 class MainFunctions(object):
@@ -1306,8 +1585,8 @@ class MainFunctions(object):
         #--Separate out keywords args
         keywords = {}
         argDex = 0
-        reKeyArg  = re.compile(u'' r'^-(\D\w+)', re.U)
-        reKeyBool = re.compile(u'' r'^\+(\D\w+)', re.U)
+        reKeyArg  = re.compile(r'^-(\D\w+)', re.U)
+        reKeyBool = re.compile(r'^\+(\D\w+)', re.U)
         while argDex < len(args):
             arg = args[argDex]
             if reKeyArg.match(arg):
@@ -1336,22 +1615,23 @@ def mainfunc(func):
 class PickleDict(object):
     """Dictionary saved in a pickle file.
     Note: self.vdata and self.data are not reassigned! (Useful for some clients.)"""
-    def __init__(self, pkl_path, readOnly=False):
+    def __init__(self, pkl_path, readOnly=False, load_pickle=False):
         """Initialize."""
         self._pkl_path = pkl_path
         self.backup = pkl_path.backup
         self.readOnly = readOnly
         self.vdata = {}
         self.pickled_data = {}
+        if load_pickle: self.load()
 
     def exists(self):
         return self._pkl_path.exists() or self.backup.exists()
 
     class Mold(Exception):
         def __init__(self, moldedFile):
-            msg = (u'Your settings in %s come from an ancient Bash version. '
-                   u'Please load them in 306 so they are converted '
-                   u'to the newer format' % moldedFile)
+            msg = (f'Your settings in {moldedFile} come from an ancient Bash '
+                   f'version. Please load them in 307 so they are converted '
+                   f'to the newer format')
             super(PickleDict.Mold, self).__init__(msg)
 
     def load(self):
@@ -1373,8 +1653,8 @@ class PickleDict(object):
         self.pickled_data.clear()
         cor = cor_name =  None
         def _perform_load():
-            self.vdata.update(pickle.load(ins))
-            self.pickled_data.update(pickle.load(ins))
+            self.vdata.update(pickle.load(ins, encoding='bytes'))
+            self.pickled_data.update(pickle.load(ins, encoding='bytes'))
         for path in (self._pkl_path, self.backup):
             if cor is not None:
                 cor.moveTo(cor_name)
@@ -1383,13 +1663,12 @@ class PickleDict(object):
                 resave = False
                 with path.open(u'rb') as ins:
                     try:
-                        firstPickle = pickle.load(ins)
+                        firstPickle = pickle.load(ins, encoding='bytes')
                     except ValueError:
                         cor = path
-                        cor_name = GPath(
-                            u'%s (%s).corrupted' % (path, timestamp()))
-                        deprint(u'Unable to load %s (will be moved to "%s")' %(
-                                path, cor_name.tail), traceback=True)
+                        cor_name = GPath(f'{path} ({timestamp()}).corrupted')
+                        deprint(f'Unable to load {path} (will be moved to '
+                                f'"{cor_name.tail}")', traceback=True)
                         continue  # file corrupt - try next file
                     if firstPickle == u'VDATA3':
                         _perform_load() # new format, simply load
@@ -1398,7 +1677,7 @@ class PickleDict(object):
                         _perform_load()
                         self.vdata = conv_obj(self.vdata)
                         self.pickled_data = conv_obj(self.pickled_data)
-                        deprint(u'Converted %s to VDATA3 format' % path)
+                        deprint(f'Converted {path} to VDATA3 format')
                         resave = True
                     else:
                         raise PickleDict.Mold(path)
@@ -1409,7 +1688,7 @@ class PickleDict(object):
                     path.copyTo(path.root + u'-vdata2.dat.bak')
                     self.save()
                 return 1 + (path == self.backup)
-            except (OSError, IOError, EOFError, ValueError,
+            except (OSError, EOFError, ValueError,
                     pickle.UnpicklingError): #PY3:FileNotFound
                 pass
         else:
@@ -1423,7 +1702,7 @@ class PickleDict(object):
 
         Three objects are writen - a version string and the vdata and
         pickled_data dictionaries, in this order. Current version string is
-        VDATA2."""
+        VDATA3."""
         if self.readOnly: return False
         #--Pickle it
         with self._pkl_path.temp.open(u'wb') as out:
@@ -1438,83 +1717,52 @@ class Settings(DataDict):
 
     Default setting for configurations are either set in bulk (by the
     loadDefaults function) or are set as needed in the code (e.g., various
-    auto-continue settings for bash. Only settings that have been changed from
-    the default values are saved in persistent storage.
-
-    Directly setting a value in the dictionary will mark it as changed (and thus
-    to be archived). However, an indirect change (e.g., to a value that is a
-    list) must be manually marked as changed by using the setChanged method."""
+    auto-continue settings for bash). Only settings that have been changed from
+    the default values are saved in persistent storage."""
 
     def __init__(self, dictFile):
         """Initialize. Read settings from dictFile."""
         self.dictFile = dictFile
-        self.cleanSave = False
         if self.dictFile:
             res = dictFile.load()
-            self.cleanSave = res == 0 # no data read - do not attempt to read on save
             self.vdata = dictFile.vdata.copy()
-            self._data = dictFile.pickled_data.copy()
+            super().__init__(dictFile.pickled_data.copy())
         else:
             self.vdata = {}
-            self._data = {}
+            super().__init__({})
         self.defaults = {}
-        self.changed = set()
-        self.deleted = set()
 
     def loadDefaults(self, default_settings):
-        """Add default settings to dictionary. Will not replace values that are already set."""
+        """Add default settings to dictionary."""
         self.defaults = default_settings
-        for key in default_settings: # PY3: ChainMap?
-            if key not in self:
-                self[key] = copy.deepcopy(default_settings[key])
+        #--Clean colors dictionary
+        if (color_dict := self.get(u'bash.colors', None)) is not None:
+            currentColors = set(color_dict)
+            defaultColors = set(default_settings[u'bash.colors'])
+            invalidColors = currentColors - defaultColors
+            missingColors = defaultColors - currentColors
+            for key in invalidColors:
+                del self[u'bash.colors'][key]
+            for key in missingColors:
+                self[u'bash.colors'][key] = default_settings[u'bash.colors'][key]
+        # fill up missing settings from defaults, making sure we do not
+        # modify the latter
+        self._data = collections.ChainMap(self._data,
+                                          copy.deepcopy(self.defaults))
 
     def save(self):
-        """Save to pickle file. Only key/values marked as changed are saved."""
+        """Save to pickle file. Only key/values differing from defaults are
+        saved."""
         dictFile = self.dictFile
-        if not dictFile or dictFile.readOnly: return
-        # on a clean save ignore BashSettings.dat.bak possibly corrupt
-        if not self.cleanSave: dictFile.load()
         dictFile.vdata = self.vdata.copy()
-        for del_key in self.deleted:
-            dictFile.pickled_data.pop(del_key, None)
-        for changed_key in self.changed:
-            if self[changed_key] == self.defaults.get(changed_key, None):
-                dictFile.pickled_data.pop(changed_key, None)
-            else:
-                dictFile.pickled_data[changed_key] = self[changed_key]
+        to_save = {}
+        for sett_key, sett_val in self.items():
+            if sett_key in self.defaults and self.defaults[
+                sett_key] == sett_val: # not all settings are in defaults
+                continue
+            to_save[sett_key] = sett_val
+        self.dictFile.pickled_data = to_save
         dictFile.save()
-
-    def setChanged(self,key):
-        """Marks given key as having been changed. Use if value is a dictionary, list or other object."""
-        if key not in self:
-            raise exception.ArgumentError(u'No settings data for ' + key)
-        self.changed.add(key)
-
-    def getChanged(self,key,default=None):
-        """Gets and marks as changed."""
-        if default is not None and key not in self:
-            self[key] = default
-        self.setChanged(key)
-        return self.get(key)
-
-    #--Dictionary Emulation
-    def __setitem__(self,key,value):
-        """Dictionary emulation. Marks key as changed."""
-        if key in self.deleted: self.deleted.remove(key)
-        self.changed.add(key)
-        self._data[key] = value
-
-    def __delitem__(self,key):
-        """Dictionary emulation. Marks key as deleted."""
-        if key in self.changed: self.changed.remove(key)
-        self.deleted.add(key)
-        del self._data[key]
-
-    def pop(self,key,default=None):
-        """Dictionary emulation: extract value and delete from dictionary."""
-        if key in self.changed: self.changed.remove(key)
-        self.deleted.add(key)
-        return self._data.pop(key, default)
 
 # Structure wrappers ----------------------------------------------------------
 class _StructsCache(dict):
@@ -1523,72 +1771,72 @@ class _StructsCache(dict):
         return self.setdefault(key, struct.Struct(key))
 
 structs_cache = _StructsCache()
-def unpack_str16(ins, __unpack=structs_cache[u'H'].unpack):
+def unpack_str16(ins, __unpack=structs_cache[u'H'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(2))[0])
-def unpack_str32(ins, __unpack=structs_cache[u'I'].unpack):
+def unpack_str32(ins, __unpack=structs_cache[u'I'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(4))[0])
-def unpack_int(ins, __unpack=structs_cache[u'I'].unpack):
+def unpack_int(ins, __unpack=structs_cache[u'I'].unpack) -> int:
     return __unpack(ins.read(4))[0]
-def pack_int(out, value, __pack=structs_cache[u'=I'].pack):
+def pack_int(out, value: int, __pack=structs_cache[u'=I'].pack):
     out.write(__pack(value))
-def unpack_short(ins, __unpack=structs_cache[u'H'].unpack):
+def unpack_short(ins, __unpack=structs_cache[u'H'].unpack) -> int:
     return __unpack(ins.read(2))[0]
-def pack_short(out, val, __pack=structs_cache[u'=H'].pack):
+def pack_short(out, val: int, __pack=structs_cache[u'=H'].pack):
     out.write(__pack(val))
-def unpack_float(ins, __unpack=structs_cache[u'f'].unpack):
+def unpack_float(ins, __unpack=structs_cache[u'f'].unpack) -> float:
     return __unpack(ins.read(4))[0]
-def pack_float(out, val, __pack=structs_cache[u'=f'].pack):
+def pack_float(out, val: float, __pack=structs_cache[u'=f'].pack):
     out.write(__pack(val))
-def unpack_double(ins, __unpack=structs_cache[u'd'].unpack):
+def unpack_double(ins, __unpack=structs_cache[u'd'].unpack) -> float:
     return __unpack(ins.read(8))[0]
-def pack_double(out, val, __pack=structs_cache[u'=d'].pack):
+def pack_double(out, val: float, __pack=structs_cache[u'=d'].pack):
     out.write(__pack(val))
-def unpack_byte(ins, __unpack=structs_cache[u'B'].unpack):
+def unpack_byte(ins, __unpack=structs_cache[u'B'].unpack) -> int:
     return __unpack(ins.read(1))[0]
-def pack_byte(out, val, __pack=structs_cache[u'=B'].pack):
+def pack_byte(out, val: int, __pack=structs_cache[u'=B'].pack):
     out.write(__pack(val))
-def unpack_int_signed(ins, __unpack=structs_cache[u'i'].unpack):
+def unpack_int_signed(ins, __unpack=structs_cache[u'i'].unpack) -> int:
     return __unpack(ins.read(4))[0]
-def pack_int_signed(out, val, __pack=structs_cache[u'=i'].pack):
+def pack_int_signed(out, val: int, __pack=structs_cache[u'=i'].pack):
     out.write(__pack(val))
-def unpack_int64_signed(ins, __unpack=structs_cache[u'q'].unpack):
+def unpack_int64_signed(ins, __unpack=structs_cache[u'q'].unpack) -> int:
     return __unpack(ins.read(8))[0]
-def unpack_4s(ins, __unpack=structs_cache[u'4s'].unpack):
+def unpack_4s(ins, __unpack=structs_cache[u'4s'].unpack) -> bytes:
     return __unpack(ins.read(4))[0]
-def pack_4s(out, val, __pack=structs_cache[u'=4s'].pack):
+def pack_4s(out, val: bytes, __pack=structs_cache[u'=4s'].pack):
     out.write(__pack(val))
-def unpack_str16_delim(ins, __unpack=structs_cache[u'Hc'].unpack):
+def unpack_str16_delim(ins, __unpack=structs_cache[u'Hc'].unpack) -> bytes:
     str_len = __unpack(ins.read(3))[0]
     # The actual string (including terminator) isn't stored for empty strings
     if not str_len: return b''
     str_value = ins.read(str_len)
     ins.seek(1, 1) # discard string terminator
     return str_value
-def unpack_str_int_delim(ins, __unpack=structs_cache[u'Ic'].unpack):
+def unpack_str_int_delim(ins, __unpack=structs_cache[u'Ic'].unpack) -> int:
     return __unpack(ins.read(5))[0]
-def unpack_str_byte_delim(ins, __unpack=structs_cache[u'Bc'].unpack):
+def unpack_str_byte_delim(ins, __unpack=structs_cache[u'Bc'].unpack) -> int:
     return __unpack(ins.read(2))[0]
-def unpack_str8(ins, __unpack=structs_cache[u'B'].unpack):
+def unpack_str8(ins, __unpack=structs_cache[u'B'].unpack) -> bytes:
     return ins.read(__unpack(ins.read(1))[0])
-def pack_str8(out, val, __pack=structs_cache[u'=B'].pack):
+def pack_str8(out, val: bytes, __pack=structs_cache[u'=B'].pack):
     pack_byte(out, len(val))
     out.write(val)
-def pack_bzstr8(out, val, __pack=structs_cache[u'=B'].pack):
+def pack_bzstr8(out, val: bytes, __pack=structs_cache[u'=B'].pack):
     pack_byte(out, len(val) + 1)
     out.write(val)
     out.write(b'\x00')
-def unpack_string(ins, string_len):
-    return struct_unpack(u'%ds' % string_len, ins.read(string_len))[0]
-def pack_string(out, val):
+def unpack_string(ins, string_len) -> bytes:
+    return struct_unpack(f'{string_len}s', ins.read(string_len))[0]
+def pack_string(out, val: bytes):
     out.write(val)
 
-def pack_byte_signed(out, value, __pack=structs_cache[u'b'].pack):
+def pack_byte_signed(out, value: int, __pack=structs_cache[u'b'].pack):
     out.write(__pack(value))
 
-def unpack_many(ins, fmt):
+def unpack_many(ins, fmt: str):
     return struct_unpack(fmt, ins.read(struct.calcsize(fmt)))
 
-def unpack_spaced_string(ins, replacement_char=b'\x07'):
+def unpack_spaced_string(ins, replacement_char=b'\x07') -> bytes:
     """Unpacks a space-terminated string. Occurs if someone used
     std::stringstream to convert struct data into strings. Obviously that means
     a replacement character is needed for spaces, which is \x07 by default."""
@@ -1609,26 +1857,18 @@ class DataTableColumn(object):
     def __iter__(self):
         """Dictionary emulation."""
         column = self.column
-        return (key for key, col_dict in self._table.iteritems() if
+        return (key for key, col_dict in self._table.items() if
                 column in col_dict)
     def values(self):
         """Dictionary emulation."""
         tableData = self._table._data
         column = self.column
         return (tableData[k][column] for k in self)
-    def itervalues(self): # PY3: drop, 2to3 will have made it unused
-        return self.values()
-    def viewvalues(self): # PY3: drop, 2to3 will have made it unused
-        return self.values()
     def items(self):
         """Dictionary emulation."""
         tableData = self._table._data
         column = self.column
         return ((k, tableData[k][column]) for k in self)
-    def iteritems(self): # PY3: Drop
-        return self.items()
-    def viewitems(self): # PY3: Drop
-        return self.items()
     def clear(self):
         """Dictionary emulation."""
         self._table.delColumn(self.column)
@@ -1664,16 +1904,19 @@ class DataTable(DataDict):
 
     def __init__(self,dictFile):
         """Initialize and read data from dictFile, if available."""
-        self.dictFile = dictFile
+        self.dictFile = dictFile # type: PickleDict
         dictFile.load()
         self.vdata = dictFile.vdata
-        self._data = dictFile.pickled_data
+        self.dictFile.pickled_data = _data = forward_compat_path_to_fn(
+            self.dictFile.pickled_data)
+        super().__init__(_data)
         self.hasChanged = False ##: move to PickleDict
 
     def save(self):
         """Saves to pickle file."""
         dictFile = self.dictFile
         if self.hasChanged and not dictFile.readOnly:
+            dictFile.pickled_data = self._data # note we reassign pickled_data
             self.hasChanged = not dictFile.save()
 
     def getItem(self,row,column,default=None):
@@ -1709,7 +1952,7 @@ class DataTable(DataDict):
     ##: DataTableColumn.clear is the only usage, and that seems unused too
     def delColumn(self,column):
         """Deletes column of data."""
-        for rowData in self._data.itervalues():
+        for rowData in self._data.values():
             if column in rowData:
                 del rowData[column]
                 self.hasChanged = True
@@ -1751,8 +1994,7 @@ class Rounder(float):
 
     #--Hash/Compare
     def __hash__(self):
-        raise exception.AbstractError(
-            u'%s does not define __hash__' % type(self))
+        raise TypeError(f'unhashable type: {type(self)}')
     def __eq__(self, b, rel_tol=1e-06, abs_tol=1e-12):
         """Check if the two floats are equal to the sixth place (relatively)
         or to the twelfth place (absolutely). Note that these parameters
@@ -1779,10 +2021,9 @@ class Rounder(float):
         return self == other or super(Rounder, self).__gt__(other)
     #--repr
     def __repr__(self):
-        return u'%s(%s)' % (
-            type(self).__name__, super(Rounder, self).__repr__())
+        return f'{type(self).__name__}({super(Rounder, self).__repr__()})'
     def __str__(self):
-        return u'%.6f' % round(self, 6) # for writing out in csv
+        return f'{round(self, 6):.6f}'  # for writing out in csv
 
     # Action API --------------------------------------------------------------
     def dump(self): return self  ##: TODO round?
@@ -1800,18 +2041,13 @@ def text_wrap(text_to_wrap, width=60):
     pars = [textwrap.fill(line, width) for line in text_to_wrap.split(u'\n')]
     return u'\n'.join(pars)
 
-_formats = dict.fromkeys(u'bBhHiIlLqQ', u'%d')
-_formats.update({u'f': u'%f', u'd': u'%f', u's': u'"%s"'})
-def csvFormat(format_chars, __formats=_formats):
-    """Returns csv format for specified structure format."""
-    return u','.join([__formats[c] for c in format_chars])
+# Constants used for censoring the user's home directory (see below)
+_USER_DIR = os.path.expanduser('~')
+_CENSORED_DIR = os.path.join(os.path.split(_USER_DIR)[0], '*****')
 
-deprintOn = False
-
-import inspect
-def deprint(*args,**keyargs):
+def deprint(*args, traceback=False, trace=True, frame=1):
     """Prints message along with file and line location.
-       Available keyword arguements:
+       Available keyword arguments:
        trace: (default True) - if a Truthy value, displays the module,
               line number, and function this was used from
        traceback: (default False) - if a Truthy value, prints any tracebacks
@@ -1819,16 +2055,18 @@ def deprint(*args,**keyargs):
        frame: (default 1) - With `trace`, determines the function caller's
               frame for getting the function name
     """
-    if not deprintOn and not keyargs.get(u'on'): return
-    if keyargs.get(u'trace', True):
-        frame = keyargs.get(u'frame', 1)
-        stack = inspect.stack()
-        file_, line, function = stack[frame][1:4]
-        msg = u'%s %4d %s: ' % (GPath(file_).tail, line, function)
+    if trace:
+        # Warning: This may be CPython-only due to _getframe usage - if we ever
+        # want to run on something besides CPython, add a fallback path that
+        # uses the (much slower) inspect.stack() API
+        parent_frame = sys._getframe(frame)
+        code_obj = parent_frame.f_code
+        msg = f'{os.path.basename(code_obj.co_filename)} ' \
+              f'{parent_frame.f_lineno:4d} {code_obj.co_name}: '
     else:
         msg = u''
     try:
-        msg += u' '.join([u'%s'%x for x in args]) # OK, even with unicode args
+        msg += ' '.join(['%s' % x for x in args]) # OK, even with unicode args
     except UnicodeError:
         # If the args failed to convert to unicode for some reason
         # we still want the message displayed any way we can
@@ -1837,51 +2075,33 @@ def deprint(*args,**keyargs):
                 msg += u' %s' % x
             except UnicodeError:
                 msg += u' %r' % x
-    if keyargs.get(u'traceback',False):
-        exc_fmt = traceback.format_exc()
-        # PY3: This should be good to go
-        if isinstance(exc_fmt, bytes):
-            try:
-                msg += u'\n%s' % unicode(exc_fmt, u'utf-8')
-            except UnicodeError:
-                traceback.print_exc()
-                msg += u'\n%r' % exc_fmt
-        else:
-            msg += u'\n%s' % exc_fmt
-    try:
-        # Should work if stdout/stderr is going to wxPython output
-        print(msg)
-    except UnicodeError:
-        # Nope, it's going somewhere else
-        print(msg.encode(Path.sys_fs_enc))
+    # Print to stdout by default, but change to stderr if we have an error
+    target_stream = sys.stdout
+    if traceback:
+        target_stream = sys.stderr
+        exc_fmt = _traceback.format_exc()
+        msg += f'\n{exc_fmt}'
+    # Censor the user's home directory - we're on py3 now so no more need to
+    # worry about unicode weirdness, this is now just a way for people to
+    # unknowingly doxx themselves
+    msg = msg.replace(_USER_DIR, _CENSORED_DIR)
+    print(msg, flush=True, file=target_stream)
 
 @contextmanager
-def redirect_stdout_to_deprint(use_bytes=True): # PY3: redirect_stdout
-    old_stdout = sys.stdout
-    io_type = (io.StringIO, io.BytesIO)[use_bytes]
-    with io_type() as io_stream:
-        sys.stdout = io_stream
-        try:
-            yield
-        finally:
-            sys.stdout = old_stdout
-            # 1 = this function's frame
-            # 2 = @contextmanager's frame
-            # 3 = caller's frame
-            # rstrip to remove newlines due to using io.<*>IO
-            deprint(io_stream.getvalue().rstrip(), frame=3)
+def redirect_stdout_to_deprint(use_bytes=False):
+    io_stream = (io.StringIO, io.BytesIO)[use_bytes]()
+    with redirect_stdout(io_stream):
+        yield
+    # 1 = this function's frame
+    # 2 = @contextmanager's frame
+    # 3 = caller's frame
+    # rstrip to remove newlines due to using io.<*>IO
+    deprint(io_stream.getvalue().rstrip(), frame=3)
 
 def getMatch(reMatch,group=0):
     """Returns the match or an empty string."""
     if reMatch: return reMatch.group(group)
     else: return u''
-
-def intArg(arg,default=None):
-    """Returns argument as an integer. If argument is a string, then it converts it using int(arg,0)."""
-    if arg is None: return default
-    elif isinstance(arg, (unicode, bytes)): ##: this smells, hunt down
-        return int(arg, 0)
-    else: return int(arg)
 
 def winNewLines(inString):
     """Converts unix newlines to windows newlines."""
@@ -1957,7 +2177,6 @@ class Progress(object):
         self.message = u''
         self.full = 1.0 * full
         self.state = 0
-        self.debug = False
 
     def getParent(self):
         return None
@@ -1974,9 +2193,9 @@ class Progress(object):
 
     def __call__(self,state,message=u''):
         """Update progress with current state. Progress is state/full."""
-        if (1.0*self.full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')
+        if self.full == 0:
+            raise exception.ArgumentError('Full must be non-zero!')
         if message: self.message = message
-        if self.debug: deprint(u'%0.3f %s' % (1.0*state/self.full, self.message))
         self._do_progress(1.0 * state / self.full, self.message)
         self.state = state
 
@@ -2033,48 +2252,33 @@ class StringTable(dict):
         u'russian': u'cp1251',
     }
 
-    def load(self, modFilePath, lang=u'English', progress=Progress()):
-        baseName = modFilePath.tail.body
-        baseDir = modFilePath.head.join(u'Strings')
-        files = (baseName + u'_' + lang + x for x in
-                 (u'.STRINGS', u'.DLSTRINGS', u'.ILSTRINGS'))
-        files = (baseDir.join(file) for file in files)
-        self.clear()
-        progress.setFull(3)
-        for i,file in enumerate(files):
-            progress(i)
-            self.loadFile(file,SubProgress(progress,i,i+1))
-
     def loadFile(self, path, progress, lang=u'english'):
         formatted = path.cext != u'.strings'
         backupEncoding = self.encodings.get(lang.lower(), u'cp1252')
         try:
-            with open(path.s, u'rb') as ins:
+            with open(path, u'rb') as ins:
                 insSeek = ins.seek
                 insTell = ins.tell
-
                 insSeek(0,os.SEEK_END)
                 eof = insTell()
                 insSeek(0)
                 if eof < 8:
-                    deprint(u"Warning: Strings file '%s' file size (%d) is "
-                            u'less than 8 bytes.  8 bytes are the minimum '
-                            u'required by the expected format, assuming the '
-                            u'Strings file is empty.' % (path, eof))
+                    deprint(f"Warning: Strings file '{path}' file size "
+                            f"({eof}) is less than 8 bytes.  8 bytes are "
+                            f"the minimum required by the expected format, "
+                            f"assuming the Strings file is empty.")
                     return
-
                 numIds,dataSize = unpack_many(ins, u'=2I')
                 progress.setFull(max(numIds,1))
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
-                    deprint(u"Warning: Strings file '%s' dataSize element "
-                            u'(%d) results in a string start location of %d, '
-                            u'but the expected location is %d'
-                            % (path, dataSize, eof-dataSize, stringsStart))
-
+                    deprint(f"Warning: Strings file '{path}' dataSize element "
+                            f"({dataSize}) results in a string start location "
+                            f"of {eof - dataSize}, but the expected location "
+                            f"is {stringsStart}")
                 id_ = -1
                 offset = -1
-                for x in xrange(numIds):
+                for x in range(numIds):
                     try:
                         progress(x)
                         id_,offset = unpack_many(ins, u'=2I')
@@ -2087,37 +2291,36 @@ class StringTable(dict):
                         else:
                             value = readCString(ins, path) #drops the null byte
                         try:
-                            value = unicode(value, u'utf-8')
+                            value = str(value, u'utf-8')
                         except UnicodeDecodeError:
-                            value = unicode(value,backupEncoding)
+                            value = str(value,backupEncoding)
                         insSeek(pos)
                         self[id_] = value
                     except:
-                        deprint(u'Error reading string file:')
-                        deprint(u'id:', id_)
-                        deprint(u'offset:', offset)
-                        deprint(u'filePos:',  insTell())
+                        deprint('\n'.join(
+                            ['Error reading string file:', f'id: {id_}',
+                             f'offset: {offset}', f'filePos: {insTell()}']))
                         raise
         except:
             deprint(u'Error loading string file:', path.stail, traceback=True)
             return
 
 #------------------------------------------------------------------------------
-_esub_component = re.compile(u'' r'\$(\d+)\(([^)]+)\)')
-_rsub_component = re.compile(u'' r'\\(\d+)')
-_plain_component = re.compile(u'' r'[^\\\$]+', re.U)
+_esub_component = re.compile(r'\$(\d+)\(([^)]+)\)')
+_rsub_component = re.compile(r'\\(\d+)')
+_plain_component = re.compile(r'[^\\\$]+', re.U)
 
 def build_esub(esub_str):
-    """Builds an esub (enhanced substitution) callable and returns it. These
+    r"""Builds an esub (enhanced substitution) callable and returns it. These
     expand normal re.sub syntax to allow the case of a match to be preserved,
     even while the letters change.
 
     The syntax looks like this:
-        my_sub = build_sub('$1(s)tamina')
+        my_sub = build_esub('$1(s)tamina')
         print(re.sub(r'\b(f|F)atigue\b', my_sub, u'Fatigue'))
         # prints 'Stamina'
 
-    The $1(s) part is what's important. The $2 identifies which regex group to
+    The $1(s) part is what's important. The $1 identifies which regex group to
     target. The part in parentheses will be what the case of the group gets
     applied to."""
     # Callables we'll chain together at the end
@@ -2133,7 +2336,7 @@ def build_esub(esub_str):
             def esub_impl(ma_obj, g=esub_group, s=target_str):
                 wip_str = []
                 wip_append = wip_str.append
-                for t, o in izip(s, ma_obj.group(g)):
+                for t, o in zip(s, ma_obj.group(g)):
                     # Carry forward the target string, but keep the case
                     wip_append(t.upper() if o.isupper() else t.lower())
                 # Add in the rest of the target string unchanged
@@ -2158,106 +2361,91 @@ def build_esub(esub_str):
             final_components.append(lambda _ma_obj, p=plain_contents: p)
             i = plain_match.end(0)
             continue # skip the error check
-        raise SyntaxError(u'Could not parse esub string %r' % esub_str)
+        raise SyntaxError(f'Could not parse esub string {esub_str!r}')
     def final_impl(ma_obj):
         return u''.join(c(ma_obj) for c in final_components)
     return final_impl
 
 #------------------------------------------------------------------------------
 # no re.U, we want our record attrs to be ASCII
-_valid_rpath_attr = re.compile(u'' r'^[^\d\W]\w*\Z')
+_valid_rpath_attr = re.compile(r'^[^\d\W]\w*\Z', re.ASCII)
 
 class _ARP_Subpath(object):
     """Abstract base class for all subpaths of a larger record path."""
     __slots__ = (u'_subpath_attr', u'_next_subpath',)
 
     def __init__(self, sub_rpath, rest_rpath):
-        # type: (unicode, unicode) -> None
+        # type: (str, str) -> None
         if not _valid_rpath_attr.match(sub_rpath):
-            raise SyntaxError(u"'%s' is not a valid subpath. Your record path "
-                              u'likely contains a typo.' % sub_rpath)
+            raise SyntaxError(f"'{sub_rpath}' is not a valid subpath. "
+                              f"Your record path likely contains a typo.")
         elif iskeyword(sub_rpath):
-            raise SyntaxError(u'Record path subpaths may not be Python '
-                              u"keywords (was '%s')." % sub_rpath)
+            raise SyntaxError(f"Record path subpaths may not be "
+                              f"Python keywords (was '{sub_rpath}').")
         self._subpath_attr = sub_rpath
         self._next_subpath = _parse_rpath(rest_rpath)
 
     # See RecPath for documentation of these methods
-    def rp_eval(self, record):
-        """:rtype: list"""
+    def rp_eval(self, record) -> list:
         raise exception.AbstractError(u'rp_eval not implemented')
 
-    def rp_exists(self, record):
-        """:rtype: bool"""
-        raise exception.AbstractError(u'rp_exists not implemented')
-
-    def rp_map(self, record, func):
+    def rp_map(self, record, func, *args) -> None:
         raise exception.AbstractError(u'rp_map not implemented')
 
 class _RP_Subpath(_ARP_Subpath):
     """A simple, intermediate subpath. Simply forwards all calls to the next
     part of the record path."""
-    def rp_eval(self, record):
-        return self._next_subpath.rp_eval(getattr(record, self._subpath_attr))
-
-    def rp_exists(self, record):
+    def rp_eval(self, record) -> Iterable:
         try:
-            return self._next_subpath.rp_exists(getattr(
+            return self._next_subpath.rp_eval(getattr(
                 record, self._subpath_attr))
-        except AttributeError:
-            return False
+        except AttributeError: # if getattr returns None next rp_eval will blow
+            return []
 
-    def rp_map(self, record, func):
-        self._next_subpath.rp_map(getattr(record, self._subpath_attr), func)
+    def rp_map(self, record, func, *args) -> None:
+        self._next_subpath.rp_map(getattr(record, self._subpath_attr), func,
+                                  *args)
 
     def __repr__(self):
-        return u'%s.%r' % (self._subpath_attr, self._next_subpath)
+        return f'{self._subpath_attr}.{self._next_subpath!r}'
 
 class _RP_LeafSubpath(_ARP_Subpath):
-    """The final part of a record path. This the part that actually gets and
-    sets values."""
+    """The final part of a record path. This is the part that actually gets
+    and sets values. Those values must be str instances."""
+
     def rp_eval(self, record):
-        return [getattr(record, self._subpath_attr)]
+        rec_val = getattr(record, self._subpath_attr, None)
+        return [rec_val] if rec_val is not None else []
 
-    def rp_exists(self, record):
-        return hasattr(record, self._subpath_attr)
-
-    def rp_map(self, record, func):
+    def rp_map(self, record, func, *args) -> None:
         s_attr = self._subpath_attr
-        setattr(record, s_attr, func(getattr(record, s_attr)))
+        rec_val = getattr(record, s_attr, None)
+        if rec_val is not None:
+            setattr(record, s_attr, func(*args, rec_val))
 
     def __repr__(self):
         return self._subpath_attr
 
 class _RP_IteratedSubpath(_ARP_Subpath):
-    """An iterated part of a record path. A record path can't resolve to more
+    """An iterated part of a record path, corresponding to a record attribute
+    that holds a list of (Mel) objects. A record path can't resolve to more
     than one value unless it involves at least one of these."""
     def __init__(self, sub_rpath, rest_rpath):
         if not rest_rpath: raise SyntaxError(u'A RecPath may not end with an '
                                              u'iterated subpath.')
         super(_RP_IteratedSubpath, self).__init__(sub_rpath, rest_rpath)
 
-    def rp_eval(self, record):
+    def rp_eval(self, record) -> Iterable:
         eval_next = self._next_subpath.rp_eval
-        return chain.from_iterable(eval_next(iter_attr) for iter_attr
-                                   in getattr(record, self._subpath_attr))
+        return chain(*map(eval_next, getattr(record, self._subpath_attr)))
 
-    def rp_exists(self, record):
-        num_iterated = 0
-        next_exists = self._next_subpath.rp_exists
-        for iter_attr in getattr(record, self._subpath_attr):
-            if not next_exists(iter_attr):
-                return False # short-circuit
-            num_iterated += 1
-        return num_iterated > 0 # faster than bool()
-
-    def rp_map(self, record, func):
+    def rp_map(self, record, func, *args) -> None:
         map_next = self._next_subpath.rp_map
-        for iter_attr in getattr(record, self._subpath_attr):
-            map_next(iter_attr, func)
+        for rec_element in getattr(record, self._subpath_attr):
+            map_next(rec_element, func, *args)
 
     def __repr__(self):
-        return u'%s[i].%r' % (self._subpath_attr, self._next_subpath)
+        return f'{self._subpath_attr}[i].{self._next_subpath!r}'
 
 class _RP_OptionalSubpath(_RP_Subpath):
     """An optional part of a record path. If it doesn't exist, mapping and
@@ -2267,20 +2455,20 @@ class _RP_OptionalSubpath(_RP_Subpath):
                                              u'optional subpath.')
         super(_RP_OptionalSubpath, self).__init__(sub_rpath, rest_rpath)
 
-    def rp_eval(self, record):
+    def rp_eval(self, record) -> Iterable:
         try:
             return super(_RP_OptionalSubpath, self).rp_eval(record)
         except AttributeError:
             return [] # Attribute did not exist, rest of the path evals to []
 
-    def rp_map(self, record, func):
+    def rp_map(self, record, func, *args) -> None:
         try:
-            super(_RP_OptionalSubpath, self).rp_map(record, func)
+            super(_RP_OptionalSubpath, self).rp_map(record, func, *args)
         except AttributeError:
             pass # Attribute did not exist, can't map any further
 
     def __repr__(self):
-        return u'%s?.%r' % (self._subpath_attr, self._next_subpath)
+        return f'{self._subpath_attr}?.{self._next_subpath!r}'
 
 class RecPath(object):
     """Record paths (or 'rpaths' for short) provide a way to get and set
@@ -2288,32 +2476,31 @@ class RecPath(object):
     complex (e.g. contains repeated or optional attributes). Does quite a bit
     of validation and preprocessing, making it much faster and safer than a
     'naive' solution. See the wiki page '[dev] Record Paths' for a full
-    overview of syntax and usage."""
+    overview of syntax and usage. Curent implementation supports paths to
+    record attributes of type str, using None to signal the absence of the
+    attribute."""
     __slots__ = (u'_root_subpath',)
 
-    def __init__(self, rpath_str): # type: (unicode) -> None
+    def __init__(self, rpath_str): # type: (str) -> None
         self._root_subpath = _parse_rpath(rpath_str)
 
-    def rp_eval(self, record):
+    def rp_eval(self, record) -> Iterable:
         """Evaluates this record path for the specified record, returning a
         list of all attribute values that it resolved to."""
         return self._root_subpath.rp_eval(record)
 
-    def rp_exists(self, record):
-        """Returns True if this record path will resolve to a non-empty list
-        for the specified record."""
-        return self._root_subpath.rp_exists(record)
-
-    def rp_map(self, record, func):
+    def rp_map(self, record, func, *args) -> None:
         """Maps the specified function over all the values that this record
         path points to and assigns the altered values to the corresponding
-        attributes on the specified record."""
-        self._root_subpath.rp_map(record, func)
+        attributes on the specified record. *args is an array of arguments
+        for func that are passed first, followed by the record value, as in
+        func(*args, rec_val)"""
+        self._root_subpath.rp_map(record, func, *args)
 
     def __repr__(self):
         return repr(self._root_subpath)
 
-def _parse_rpath(rpath_str): # type: (unicode) -> _ARP_Subpath
+def _parse_rpath(rpath_str): # type: (str) -> _ARP_Subpath
     """Parses the given unicode string as an RPath subpath."""
     if not rpath_str: return None
     sub_rpath, rest_rpath = (rpath_str.split(u'.', 1) if u'.' in rpath_str
@@ -2340,7 +2527,7 @@ def natural_key():
         """Helper function that prepares substrings for comparison."""
         return int(sub_str) if sub_str.isdigit() else sub_str.lower()
     return lambda curr_str: [_to_cmp(s) for s in
-                             _digit_re.split(u'%s' % curr_str)]
+                             _digit_re.split(f'{curr_str}')]
 
 def dict_sort(di, values_dex=(), by_value=False, key_f=None, reverse=False):
     """WIP wrap common dict sorting patterns - key_f if passed takes
@@ -2358,7 +2545,7 @@ def readme_url(mopy, advanced=False, skip_local=False):
     readme_name = (u'Wrye Bash Advanced Readme.html' if advanced else
                    u'Wrye Bash General Readme.html')
     readme = mopy.join(u'Docs', readme_name)
-    if not skip_local and readme.isfile():
+    if not skip_local and readme.is_file():
         readme = u'file:///' + readme.s.replace(u'\\', u'/')
     else:
         # Fallback to Git repository
@@ -2447,7 +2634,7 @@ class WryeText(object):
     def genHtml(ins, out=None, *css_dirs):
         """Reads a wtxt input stream and writes an html output stream."""
         # Path or Stream? -----------------------------------------------
-        if isinstance(ins, (Path, unicode)):
+        if isinstance(ins, (Path, str)):
             srcPath = GPath(ins)
             outPath = GPath(out) or srcPath.root+u'.html'
             css_dirs = (srcPath.head,) + css_dirs
@@ -2467,12 +2654,12 @@ class WryeText(object):
         #--List
         reWryeList = re.compile(u'( *)([-x!?.+*o])(.*)',re.U)
         #--Code
-        reCode = re.compile(u'' r'\[code\](.*?)\[/code\]', re.I | re.U)
-        reCodeStart = re.compile(u'' r'(.*?)\[code\](.*?)$', re.I | re.U)
-        reCodeEnd = re.compile(u'' r'(.*?)\[/code\](.*?)$', re.I | re.U)
-        reCodeBoxStart = re.compile(u'' r'\s*\[codebox\](.*?)', re.I | re.U)
-        reCodeBoxEnd = re.compile(u'' r'(.*?)\[/codebox\]\s*', re.I | re.U)
-        reCodeBox = re.compile(u'' r'\s*\[codebox\](.*?)\[/codebox\]\s*', re.I | re.U)
+        reCode = re.compile(r'\[code\](.*?)\[/code\]', re.I | re.U)
+        reCodeStart = re.compile(r'(.*?)\[code\](.*?)$', re.I | re.U)
+        reCodeEnd = re.compile(r'(.*?)\[/code\](.*?)$', re.I | re.U)
+        reCodeBoxStart = re.compile(r'\s*\[codebox\](.*?)', re.I | re.U)
+        reCodeBoxEnd = re.compile(r'(.*?)\[/codebox\]\s*', re.I | re.U)
+        reCodeBox = re.compile(r'\s*\[codebox\](.*?)\[/codebox\]\s*', re.I | re.U)
         codeLines = None
         codeboxLines = None
         def subCode(match):
@@ -2482,34 +2669,29 @@ class WryeText(object):
                 return match(1)
         #--Misc. text
         reHr = re.compile(u'^------+$',re.U)
-        reEmpty = re.compile(u'' r'\s+$', re.U)
+        reEmpty = re.compile(r'\s+$', re.U)
         reMDash = re.compile(u' -- ',re.U)
         rePreBegin = re.compile(u'<pre',re.I|re.U)
         rePreEnd = re.compile(u'</pre>',re.I|re.U)
         anchorlist = [] #to make sure that each anchor is unique.
         def subAnchor(match):
             text = match.group(1)
-            # This one's weird.  Encode the url to utf-8, then allow urllib to do it's magic.
-            # urllib will automatically take any unicode characters and escape them, so to
-            # convert back to unicode for purposes of storing the string, everything will
-            # be in cp1252, due to the escapings.
-            anchor = unicode(quote(reWd.sub(u'', text).encode(u'utf8')),
-                             u'cp1252')
+            anchor = quote(reWd.sub(u'', text))
             count = 0
-            if re.match(u'' r'\d', anchor):
+            if re.match(r'\d', anchor):
                 anchor = u'_' + anchor
             while anchor in anchorlist and count < 10:
                 count += 1
                 if count == 1:
-                    anchor += unicode(count)
+                    anchor += str(count)
                 else:
-                    anchor = anchor[:-1] + unicode(count)
+                    anchor = anchor[:-1] + str(count)
             anchorlist.append(anchor)
             return u"<a id='%s'>%s</a>" % (anchor,text)
         #--Bold, Italic, BoldItalic
         reBold = re.compile(u'__',re.U)
         reItalic = re.compile(u'~~',re.U)
-        reBoldItalic = re.compile(u'' r'\*\*',re.U)
+        reBoldItalic = re.compile(r'\*\*',re.U)
         states = {u'bold':False,u'italic':False,u'boldItalic':False,u'code':0}
         def subBold(match):
             state = states[u'bold'] = not states[u'bold']
@@ -2522,14 +2704,14 @@ class WryeText(object):
             return u'<i><b>' if state else u'</b></i>'
         #--Preformatting
         #--Links
-        reLink = re.compile(u'' r'\[\[(.*?)\]\]', re.U)
+        reLink = re.compile(r'\[\[(.*?)\]\]', re.U)
         reHttp = re.compile(u' (http://[_~a-zA-Z0-9./%-]+)',re.U)
-        reWww = re.compile(u'' r' (www\.[_~a-zA-Z0-9./%-]+)', re.U)
-        reWd = re.compile(u'' r'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace(u'_',u'')), re.U)
-        rePar = re.compile(u'' r'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)', re.U)
-        reFullLink = re.compile(u'' r'(:|#|\.[a-zA-Z0-9]{2,4}$)', re.U)
-        reColor = re.compile(u'' r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]', re.I | re.U)
-        reBGColor = re.compile(u'' r'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]', re.I | re.U)
+        reWww = re.compile(r' (www\.[_~a-zA-Z0-9./%-]+)', re.U)
+        reWd = re.compile(r'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace(u'_',u'')), re.U)
+        rePar = re.compile(r'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)', re.U)
+        reFullLink = re.compile(r'(:|#|\.[a-zA-Z0-9]{2,4}$)', re.U)
+        reColor = re.compile(r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]', re.I | re.U)
+        reBGColor = re.compile(r'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]', re.I | re.U)
         def subColor(match):
             return u'<span style="color:%s;">%s</span>' % (match.group(1),match.group(2))
         def subBGColor(match):
@@ -2538,8 +2720,7 @@ class WryeText(object):
             address = text = match.group(1).strip()
             if u'|' in text:
                 (address,text) = [chunk.strip() for chunk in text.split(u'|',1)]
-                if address == u'#': address += unicode(quote(reWd.sub(
-                    u'', text).encode(u'utf8')), u'cp1252')
+                if address == u'#': address += quote(reWd.sub(u'', text))
             if address.startswith(u'!'):
                 newWindow = u' target="_blank"'
                 if address == text:
@@ -2553,9 +2734,9 @@ class WryeText(object):
             return u'<a href="%s"%s>%s</a>' % (address,newWindow,text)
         #--Tags
         reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)
-        reContentsTag = re.compile(u'' r'\s*{{CONTENTS=?(\d+)}}\s*$', re.U)
-        reAnchorHeadersTag = re.compile(u'' r'\s*{{ANCHORHEADERS=(\d+)}}\s*$', re.U)
-        reCssTag = re.compile(u'' r'\s*{{CSS:(.+?)}}\s*$',re.U)
+        reContentsTag = re.compile(r'\s*{{CONTENTS=?(\d+)}}\s*$', re.U)
+        reAnchorHeadersTag = re.compile(r'\s*{{ANCHORHEADERS=(\d+)}}\s*$',re.U)
+        reCssTag = re.compile(r'\s*{{CSS:(.+?)}}\s*$',re.U)
         #--Defaults ----------------------------------------------------------
         title = u''
         spaces = u''
@@ -2659,19 +2840,18 @@ class WryeText(object):
             elif maHead:
                 lead,text = maHead.group(1,2)
                 text = re.sub(u' *=*#?$', u'', text.strip())
-                anchor = unicode(quote(reWd.sub(u'', text).encode(u'utf8')),
-                                 u'cp1252')
+                anchor = quote(reWd.sub(u'', text))
                 level_ = len(lead)
                 if anchorHeaders:
-                    if re.match(u'' r'\d', anchor):
+                    if re.match(r'\d', anchor):
                         anchor = u'_' + anchor
                     count = 0
                     while anchor in anchorlist and count < 10:
                         count += 1
                         if count == 1:
-                            anchor += unicode(count)
+                            anchor += str(count)
                         else:
-                            anchor = anchor[:-1] + unicode(count)
+                            anchor = anchor[:-1] + str(count)
                     anchorlist.append(anchor)
                     line = (headFormatNA,headFormat)[anchorHeaders] % (level_,anchor,text,level_)
                     if addContents: contents.append((level_,anchor,text))
@@ -2706,8 +2886,8 @@ class WryeText(object):
             line = reAnchorTag.sub(subAnchor,line)
             #--Hyperlinks
             line = reLink.sub(subLink,line)
-            line = reHttp.sub(u'' r' <a href="\1">\1</a>', line)
-            line = reWww.sub(u'' r' <a href="http://\1">\1</a>', line)
+            line = reHttp.sub(r' <a href="\1">\1</a>', line)
+            line = reWww.sub(r' <a href="http://\1">\1</a>', line)
             #--Save line ------------------
             #print line,
             outLines.append(line)
@@ -2716,12 +2896,12 @@ class WryeText(object):
             css = WryeText.defaultCss
         else:
             if cssName.ext != u'.css':
-                raise exception.BoltError(u'Invalid Css file: %s' % cssName)
+                raise exception.BoltError(f'Invalid Css file: {cssName}')
             for css_dir in css_dirs:
                 cssPath = GPath(css_dir).join(cssName)
                 if cssPath.exists(): break
             else:
-                raise exception.BoltError(u'Css file not found: %s' % cssName)
+                raise exception.BoltError(f'Css file not found: {cssName}')
             with cssPath.open(u'r', encoding=u'utf-8-sig') as cssIns:
                 css = u''.join(cssIns.readlines())
             if u'<' in css:

@@ -16,16 +16,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """GameInfo override for Fallout NV."""
 
-from collections import defaultdict
-
 from ..fallout3 import Fallout3GameInfo
-from ... import brec
+from ... import brec, bolt
 from ...brec import MreFlst, MreGlob
 
 class FalloutNVGameInfo(Fallout3GameInfo):
@@ -40,7 +38,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     launch_exe = u'FalloutNV.exe'
     game_detect_includes = [u'FalloutNV.exe']
     version_detect_file = u'FalloutNV.exe'
-    master_file = u'FalloutNV.esm'
+    master_file = bolt.FName(u'FalloutNV.esm')
     taglist_dir = u'FalloutNV'
     loot_dir = u'FalloutNV'
     boss_game_name = u'FalloutNV'
@@ -61,14 +59,14 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         url_tip = u'http://nvse.silverlock.org/'
 
     class Bsa(Fallout3GameInfo.Bsa):
-        redate_dict = defaultdict(lambda: u'2006-01-01', {
-            u'Fallout - Meshes.bsa': u'2005-01-01',
-            u'Fallout - Meshes2.bsa': u'2005-01-02',
-            u'Fallout - Misc.bsa': u'2005-01-03',
-            u'Fallout - Sound.bsa': u'2005-01-04',
-            u'Fallout - Textures.bsa': u'2005-01-05',
-            u'Fallout - Textures2.bsa': u'2005-01-06',
-            u'Fallout - Voices1.bsa': u'2005-01-07',
+        redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
+            u'Fallout - Meshes.bsa': 1104530400,    # '2005-01-01'
+            u'Fallout - Meshes2.bsa': 1104616800,   # '2005-01-02'
+            u'Fallout - Misc.bsa': 1104703200,      # '2005-01-03'
+            u'Fallout - Sound.bsa': 1104789600,     # '2005-01-04'
+            u'Fallout - Textures.bsa': 1104876000,  # '2005-01-05'
+            u'Fallout - Textures2.bsa': 1104962400, # '2005-01-06'
+            u'Fallout - Voices1.bsa': 1105048800,   # '2005-01-07'
         })
 
     class Xe(Fallout3GameInfo.Xe):
@@ -76,51 +74,58 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         xe_key_prefix = u'fnvView'
 
     class Bain(Fallout3GameInfo.Bain):
-        data_dirs = (Fallout3GameInfo.Bain.data_dirs - {u'fose'}) | {u'nvse'}
+        data_dirs = (Fallout3GameInfo.Bain.data_dirs - {'fose'}) | {'nvse'}
         skip_bain_refresh = {u'fnvedit backups', u'fnvedit cache'}
 
     class Esp(Fallout3GameInfo.Esp):
         validHeaderVersions = (0.94, 1.32, 1.33, 1.34)
 
     allTags = Fallout3GameInfo.allTags | {u'WeaponMods'}
-    patchers = Fallout3GameInfo.patchers | {u'ImportWeaponMods'}
+    patchers = Fallout3GameInfo.patchers | {u'ImportWeaponModifications'}
 
     bethDataFiles = {
-        #--Vanilla
-        u'falloutnv.esm',
-        u'fallout - invalidation.bsa',
-        u'fallout - meshes.bsa',
-        u'fallout - meshes2.bsa',
-        u'fallout - misc.bsa',
-        u'fallout - sound.bsa',
-        u'fallout - textures.bsa',
-        u'fallout - textures2.bsa',
-        u'fallout - voices1.bsa',
-        #--Preorder Packs
-        u'caravanpack.esm',
-        u'caravanpack - main.bsa',
-        u'classicpack.esm',
-        u'classicpack - main.bsa',
-        u'mercenarypack.esm',
-        u'mercenarypack - main.bsa',
-        u'tribalpack.esm',
-        u'tribalpack - main.bsa',
-        #--DLCs
-        u'deadmoney.esm',
-        u'deadmoney - main.bsa',
-        u'deadmoney - sounds.bsa',
-        u'gunrunnersarsenal.esm',
-        u'gunrunnersarsenal - main.bsa',
-        u'gunrunnersarsenal - sounds.bsa',
-        u'honesthearts.esm',
-        u'honesthearts - main.bsa',
-        u'honesthearts - sounds.bsa',
-        u'oldworldblues.esm',
-        u'oldworldblues - main.bsa',
-        u'oldworldblues - sounds.bsa',
-        u'lonesomeroad.esm',
-        u'lonesomeroad - main.bsa',
-        u'lonesomeroad - sounds.bsa',
+        'caravanpack - main.bsa',
+        'caravanpack.esm',
+        'caravanpack.nam',
+        'classicpack - main.bsa',
+        'classicpack.esm',
+        'classicpack.nam',
+        'deadmoney - main.bsa',
+        'deadmoney - sounds.bsa',
+        'deadmoney.esm',
+        'deadmoney.nam',
+        'fallout - invalidation.bsa',
+        'fallout - meshes.bsa',
+        'fallout - meshes2.bsa',
+        'fallout - misc.bsa',
+        'fallout - sound.bsa',
+        'fallout - textures.bsa',
+        'fallout - textures2.bsa',
+        'fallout - voices1.bsa',
+        'falloutnv.esm',
+        'gunrunnersarsenal - main.bsa',
+        'gunrunnersarsenal - sounds.bsa',
+        'gunrunnersarsenal.esm',
+        'gunrunnersarsenal.nam',
+        'honesthearts - main.bsa',
+        'honesthearts - sounds.bsa',
+        'honesthearts.esm',
+        'honesthearts.nam',
+        'lonesomeroad - main.bsa',
+        'lonesomeroad - sounds.bsa',
+        'lonesomeroad.esm',
+        'lonesomeroad.nam',
+        'mercenarypack - main.bsa',
+        'mercenarypack.esm',
+        'mercenarypack.nam',
+        'oldworldblues - main.bsa',
+        'oldworldblues - sounds.bsa',
+        'oldworldblues.esm',
+        'oldworldblues.nam',
+        'tribalpack - main.bsa',
+        'tribalpack.esm',
+        'tribalpack.nam',
+        'update.bsa',
     }
 
     @classmethod
@@ -128,7 +133,9 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         super(FalloutNVGameInfo, cls)._dynamic_import_modules(package_name)
         from .patcher import preservers
         cls.game_specific_import_patchers = {
-            u'ImportWeaponMods': preservers.WeaponModsPatcher, }
+            u'ImportWeaponModifications':
+                preservers.ImportWeaponModificationsPatcher,
+        }
 
     @classmethod
     def init(cls):

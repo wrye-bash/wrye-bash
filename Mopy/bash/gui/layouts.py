@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,7 +29,7 @@ __author__ = u'nycz'
 
 import wx as _wx
 
-from .base_components import _AComponent, csf
+from .base_components import _AComponent, scaled
 
 CENTER, LEFT, RIGHT, TOP, BOTTOM = (u'center', u'left', u'right', u'top',
                                     u'bottom')
@@ -86,7 +86,7 @@ class LayoutOptions(object):
 
     def __init__(self, border=None, expand=None, weight=None,
                  h_align=None, v_align=None, col_span=None, row_span=None):
-        # type: (int, bool, int, unicode, unicode, int, int) -> None
+        # type: (int, bool, int, str, str, int, int) -> None
         self.border = border
         self.expand = expand
         self.weight = weight
@@ -123,8 +123,8 @@ class LayoutOptions(object):
 class _ALayout(object):
     """Abstract base class for all layouts."""
 
-    def __init__(self, sizer, border=0, item_border=0, item_expand=False,
-                 item_h_align=None, item_v_align=None): # PY3: require kwargs (,*,)
+    def __init__(self, sizer, *, border=0, item_border=0, item_expand=False,
+                 item_h_align=None, item_v_align=None):
         """Initiate the layout.
         The item_* arguments are for when those options are not provided
         when adding an item. See LayoutOptions for more information.
@@ -137,7 +137,7 @@ class _ALayout(object):
             self._border_wrapper = _wx.BoxSizer(_wx.VERTICAL)
             self._border_wrapper.Add(self._sizer, proportion=1,
                                      flag=_wx.ALL | _wx.EXPAND,
-                                     border=border * csf())
+                                     border=scaled(border))
         else:
             self._border_wrapper = None
         self._default_item_loptions = LayoutOptions(item_border, item_expand,
@@ -205,17 +205,17 @@ class _ALineLayout(_ALayout):
                 self._add_spacer(self.spacing)
             lt_flags = options.layout_flags(use_horizontal=self._is_vertical,
                                             use_vertical=not self._is_vertical)
-            self._sizer.Add(item, proportion=options.weight * csf(),
-                            flag=lt_flags, border=options.border * csf())
+            self._sizer.Add(item, proportion=scaled(options.weight),
+                            flag=lt_flags, border=scaled(options.border))
             self._sizer.SetItemMinSize(item, -1, -1)
 
     def _add_spacer(self, length=4):
         """Add a fixed space to the layout."""
-        self._sizer.AddSpacer(length * csf())
+        self._sizer.AddSpacer(scaled(length))
 
     def _add_stretch(self, weight=1):
         """Add a growing space to the layout."""
-        self._sizer.AddStretchSpacer(prop=weight * csf())
+        self._sizer.AddStretchSpacer(prop=scaled(weight))
 
     def replace_component(self, old_component, new_component):
         """Replaces one component with another."""
@@ -272,7 +272,7 @@ class GridLayout(_ALayout):
         :param items: Items or (item, options) pairs to add directly.
         """
         super(GridLayout, self).__init__(_wx.GridBagSizer(
-            hgap=h_spacing * csf(), vgap=v_spacing * csf()), **kwargs)
+            hgap=scaled(h_spacing), vgap=scaled(v_spacing)), **kwargs)
         self._default_item_loptions.row_span = 1
         self._default_item_loptions.col_span = 1
         if items:
@@ -291,7 +291,7 @@ class GridLayout(_ALayout):
         self._sizer.Add(item, (row, col), span=(options.row_span,
                                                 options.col_span),
                         flag=options.layout_flags(),
-                        border=options.border * csf())
+                        border=scaled(options.border))
         self._sizer.SetItemMinSize(item, -1, -1)
 
     def append_row(self, items):

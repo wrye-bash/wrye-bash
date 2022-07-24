@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -60,40 +60,43 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
         skip_bain_refresh = {u'enderalseedit backups', u'enderalseedit cache'}
 
     bethDataFiles = {
-        u'skyrim.esm',
-        u'dawnguard.esm',
-        u'hearthfires.esm',
-        u'dragonborn.esm',
-        u'update.esm',
-        u'enderal - forgotten stories.esm',
-        u'e - meshes.bsa',
-        u'e - scripts.bsa',
-        u'e - se.bsa',
-        u'e - sounds.bsa',
-        u'e - textures1.bsa',
-        u'e - textures2.bsa',
-        u'e - textures3.bsa',
-        u'l - textures.bsa',
-        u'l - voices.bsa',
-        u'skyrim - animations.bsa',
-        u'skyrim - interface.bsa',
-        u'skyrim - meshes0.bsa',
-        u'skyrim - meshes1.bsa',
-        u'skyrim - misc.bsa',
-        u'skyrim - patch.bsa',
-        u'skyrim - shaders.bsa',
-        u'skyrim - sounds.bsa',
-        u'skyrim - textures0.bsa',
-        u'skyrim - textures1.bsa',
-        u'skyrim - textures2.bsa',
-        u'skyrim - textures3.bsa',
-        u'skyrim - textures4.bsa',
-        u'skyrim - textures5.bsa',
-        u'skyrim - textures6.bsa',
-        u'skyrim - textures7.bsa',
-        u'skyrim - textures8.bsa',
+        'dawnguard.esm',
+        'dragonborn.esm',
+        'e - meshes.bsa',
+        'e - scripts.bsa',
+        'e - se.bsa',
+        'e - sounds.bsa',
+        'e - textures1.bsa',
+        'e - textures2.bsa',
+        'e - textures3.bsa',
+        'enderal - forgotten stories.esm',
+        'hearthfires.esm',
+        'l - textures.bsa',
+        'l - voices.bsa',
+        'skyrim - animations.bsa',
+        'skyrim - interface.bsa',
+        'skyrim - meshes0.bsa',
+        'skyrim - meshes1.bsa',
+        'skyrim - misc.bsa',
+        'skyrim - patch.bsa',
+        'skyrim - shaders.bsa',
+        'skyrim - sounds.bsa',
+        'skyrim - textures0.bsa',
+        'skyrim - textures1.bsa',
+        'skyrim - textures2.bsa',
+        'skyrim - textures3.bsa',
+        'skyrim - textures4.bsa',
+        'skyrim - textures5.bsa',
+        'skyrim - textures6.bsa',
+        'skyrim - textures7.bsa',
+        'skyrim - textures8.bsa',
+        'skyrim.esm',
+        'skyui_se.bsa',
+        'skyui_se.esp',
+        'update.esm',
     }
 
+    _patcher_package = 'bash.game.enderalse' # We need to override tweaks
     @classmethod
     def init(cls):
         # Copy-pasted from Skyrim
@@ -157,11 +160,11 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
             b'MUST', b'DLVW', b'WOOP', b'SHOU', b'EQUP', b'RELA', b'SCEN',
             b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
             b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS', b'VOLI']
-        #-> this needs updating for Skyrim
         header_type.valid_header_sigs = set(
             header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
                                          b'ACRE', b'LAND', b'INFO', b'NAVM',
-                                         b'PHZD', b'PGRE'])
+                                         b'PARW', b'PBAR', b'PBEA', b'PCON',
+                                         b'PFLA', b'PGRE', b'PHZD', b'PMIS'])
         header_type.plugin_form_version = 44
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,

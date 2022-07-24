@@ -16,17 +16,16 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """GameInfo override for Fallout 3."""
 
-from collections import defaultdict
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
-from ... import brec
+from ... import brec, bolt
 from ...brec import MreFlst, MreGlob
 
 class Fallout3GameInfo(PatchGame):
@@ -42,7 +41,7 @@ class Fallout3GameInfo(PatchGame):
     launch_exe = u'Fallout3.exe'
     game_detect_includes = [u'Fallout3.exe']
     version_detect_file = u'Fallout3.exe'
-    master_file = u'Fallout3.esm'
+    master_file = bolt.FName(u'Fallout3.esm')
     taglist_dir = u'Fallout3'
     loot_dir = u'Fallout3'
     boss_game_name = u'Fallout3'
@@ -93,13 +92,13 @@ class Fallout3GameInfo(PatchGame):
 
     class Bsa(GameInfo.Bsa):
         allow_reset_timestamps = True
-        redate_dict = defaultdict(lambda: u'2006-01-01', {
-            u'Fallout - MenuVoices.bsa': u'2005-01-01',
-            u'Fallout - Meshes.bsa': u'2005-01-02',
-            u'Fallout - Misc.bsa': u'2005-01-03',
-            u'Fallout - Sound.bsa': u'2005-01-04',
-            u'Fallout - Textures.bsa': u'2005-01-05',
-            u'Fallout - Voices.bsa': u'2005-01-06',
+        redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01'
+            'Fallout - MenuVoices.bsa': 1104530400,  # '2005-01-01',
+            'Fallout - Meshes.bsa': 1104616800,      # '2005-01-02',
+            'Fallout - Misc.bsa': 1104703200,        # '2005-01-03',
+            'Fallout - Sound.bsa': 1104789600,       # '2005-01-04',
+            'Fallout - Textures.bsa': 1104876000,    # '2005-01-05',
+            'Fallout - Voices.bsa': 1104962400,      # '2005-01-06',
         })
         # ArchiveInvalidation Invalidated, which we shipped unmodified for a
         # long time, uses an Oblivion BSA with version 0x67, so we have to
@@ -112,22 +111,24 @@ class Fallout3GameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
-            u'config', # mod config files (INIs)
-            u'distantlod',
-            u'docs',
-            u'facegen',
-            u'fonts',
-            u'fose',
-            u'menus',
-            u'uio', # User Interface Organizer
-            u'scripts',
-            u'shaders',
-            u'trees',
+            'config', # 3P: mod config files (INIs)
+            'distantlod',
+            'docs',
+            'facegen',
+            'fonts',
+            'fose', # 3P: FOSE
+            'menus',
+            'uio', # 3P: User Interface Organizer
+            'scripts',
+            'shaders',
+            'trees',
         }
-        keep_data_dirs = {u'LSData'}
-        keep_data_files = {u'Fallout - AI!.bsa'}
+        keep_data_dirs = {'lsdata'}
+        keep_data_files = {'fallout - ai!.bsa'}
+        lod_meshes_dir = _j('meshes', 'landscape', 'lod')
+        lod_textures_dir = _j('textures', 'landscape', 'lod')
         skip_bain_refresh = {u'fo3edit backups', u'fo3edit cache'}
-        wrye_bash_data_files = {u'ArchiveInvalidationInvalidated!.bsa'}
+        wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
         canBash = True
@@ -148,8 +149,8 @@ class Fallout3GameInfo(PatchGame):
 
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'FormIDLists', u'ImportActors',
-        u'ImportActorsAIPackages', u'ImportActorsAnimations', u'NpcChecker',
-        u'ImportActorsDeathItems', u'ImportActorsFaces', u'RaceChecker',
+        'ImportActorsAIPackages', 'NpcChecker',
+        'ImportActorsFaces', 'RaceChecker',
         u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
         u'ImportDestructible', u'ImportEffectsStats', u'ImportRaces',
         u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
@@ -158,6 +159,7 @@ class Fallout3GameInfo(PatchGame):
         u'ImportText', u'LeveledLists', u'MergePatches', u'TweakActors',
         u'TweakAssorted', u'TweakSettings', u'ImportRacesRelations',
         u'TweakRaces', u'TimescaleChecker', u'TweakNames',
+        'ImportEnchantments',
     }
 
     weaponTypes = (
@@ -267,30 +269,28 @@ class Fallout3GameInfo(PatchGame):
         }
 
     bethDataFiles = {
-        #--Vanilla
-        u'fallout3.esm',
-        u'fallout - menuvoices.bsa',
-        u'fallout - meshes.bsa',
-        u'fallout - misc.bsa',
-        u'fallout - sound.bsa',
-        u'fallout - textures.bsa',
-        u'fallout - voices.bsa',
-        #-- DLC
-        u'anchorage.esm',
-        u'anchorage - main.bsa',
-        u'anchorage - sounds.bsa',
-        u'thepitt.esm',
-        u'thepitt - main.bsa',
-        u'thepitt - sounds.bsa',
-        u'brokensteel.esm',
-        u'brokensteel - main.bsa',
-        u'brokensteel - sounds.bsa',
-        u'pointlookout.esm',
-        u'pointlookout - main.bsa',
-        u'pointlookout - sounds.bsa',
-        u'zeta.esm',
-        u'zeta - main.bsa',
-        u'zeta - sounds.bsa',
+        'anchorage - main.bsa',
+        'anchorage - sounds.bsa',
+        'anchorage.esm',
+        'brokensteel - main.bsa',
+        'brokensteel - sounds.bsa',
+        'brokensteel.esm',
+        'fallout - menuvoices.bsa',
+        'fallout - meshes.bsa',
+        'fallout - misc.bsa',
+        'fallout - sound.bsa',
+        'fallout - textures.bsa',
+        'fallout - voices.bsa',
+        'fallout3.esm',
+        'pointlookout - main.bsa',
+        'pointlookout - sounds.bsa',
+        'pointlookout.esm',
+        'thepitt - main.bsa',
+        'thepitt - sounds.bsa',
+        'thepitt.esm',
+        'zeta - main.bsa',
+        'zeta - sounds.bsa',
+        'zeta.esm',
     }
 
     @classmethod

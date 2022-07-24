@@ -16,15 +16,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module houses checkers. A checker is a patcher that verifies certain
 properties about records and either notifies the user or attempts a fix when it
 notices a problem."""
-
-from __future__ import division
 
 import random
 import re
@@ -34,7 +32,7 @@ from itertools import chain
 from .base import is_templated
 from ..base import Patcher, ModLoader
 from ... import bush, bolt
-from ...bolt import GPath, deprint, dict_sort
+from ...bolt import FName, deprint, dict_sort, sig_to_str
 from ...brec import strFid
 from ...mod_files import LoadFactory
 
@@ -45,7 +43,7 @@ class ContentsCheckerPatcher(Patcher):
     patcher_order = 50
     contType_entryTypes = bush.game.cc_valid_types
     contTypes = set(contType_entryTypes)
-    entryTypes = set(chain.from_iterable(contType_entryTypes.viewvalues()))
+    entryTypes = set(chain.from_iterable(contType_entryTypes.values()))
     _read_sigs = tuple(contTypes | entryTypes)
 
     def __init__(self, p_name, p_file):
@@ -144,7 +142,7 @@ class ContentsCheckerPatcher(Patcher):
                         keep(record.fid)
                 # Log the result if we removed at least one entry
                 if id_removed:
-                    log(u'\n=== ' + rec_type)
+                    log(u'\n=== ' + sig_to_str(rec_type))
                     for contId in sorted(id_removed):
                         log(u'* ' + id_eid[contId])
                         for removedId in sorted(id_removed[contId]):
@@ -152,7 +150,7 @@ class ContentsCheckerPatcher(Patcher):
                                                    removedId[1]))
 
 #------------------------------------------------------------------------------
-_main_master = GPath(bush.game.master_file)
+_main_master = bush.game.master_file
 class EyeCheckerPatcher(Patcher):
     patcher_group = u'Special'
     patcher_order = 29 # Run before Tweak Races
@@ -181,8 +179,8 @@ class EyeCheckerPatcher(Patcher):
                 # Don't complain if the FULL is missing, that probably means
                 # it's an internal or unused RACE
                 if record.full:
-                    deprint(u'No right and/or no left eye recorded in race '
-                        u'%s, from mod %s' % (record.full, modFile.fileInfo))
+                    deprint(f'No right and/or no left eye recorded in race '
+                            f'{record.full}, from mod {modFile.fileInfo}')
                 continue
             for eye in record.eyes:
                 if eye in srcEyes:
@@ -218,8 +216,7 @@ class EyeCheckerPatcher(Patcher):
             if not race.eyes: continue  #--Sheogorath. Assume is handled
             # correctly.
             if not race.rightEye or not race.leftEye: continue #--WIPZ race?
-            if re.match(u'^117[a-zA-Z]', race.eid, flags=re.U): continue  #--
-            #  x117 race?
+            if re.match('^117[a-zA-Z]', race.eid): continue #--x117 race?
             raceChanged = False
             mesh_eye = {}
             for eye in race.eyes:
@@ -306,19 +303,19 @@ class RaceCheckerPatcher(Patcher):
             if (race.flags.playable or race.fid == (
                     _main_master, 0x038010)) and race.eyes:
                 prev_hairs = race.hairs[:]
-                race.hairs.sort(key=lambda x: hairNames.get(x))
+                race.hairs.sort(key=lambda x: hairNames.get(x) or '')
                 prev_eyes = race.eyes[:]
-                race.eyes.sort(key=lambda x: eyeNames.get(x))
+                race.eyes.sort(key=lambda x: eyeNames.get(x) or '')
                 if race.hairs != prev_hairs or race.eyes != prev_eyes:
                     racesSorted.append(race.eid)
                     keep(race.fid)
-        log.setHeader(u'= ' + self._patcher_name)
-        log(u'\n=== ' + _(u'Eyes/Hair Sorted'))
+        log.setHeader(f'= {self._patcher_name}')
+        log(f'\n=== {_("Eyes/Hair Sorted")}')
         if not racesSorted:
-            log(u'. ~~%s~~' % _(u'None'))
+            log(f'. ~~{_("None")}~~')
         else:
             for eid in sorted(racesSorted):
-                log(u'* ' + eid)
+                log(f'* {eid}')
 
 #------------------------------------------------------------------------------
 def _find_vanilla_eyes():
@@ -328,9 +325,9 @@ def _find_vanilla_eyes():
         rc_file, rc_obj = rc_fid
         if rc_file is None: # special case: None = game master
             rc_file = bush.game.master_file
-        return GPath(rc_file), rc_obj
+        return FName(rc_file), rc_obj
     ret = {}
-    for race_fid, race_eyes in bush.game.default_eyes.iteritems():
+    for race_fid, race_eyes in bush.game.default_eyes.items():
         new_key = _conv_fid(race_fid)
         new_val = [_conv_fid(eye_fid) for eye_fid in race_eyes]
         ret[new_key] = new_val
@@ -418,7 +415,7 @@ class NpcCheckerPatcher(Patcher):
         if mod_npcsFixed:
             log(u'\n=== ' + _(u'Eyes/Hair Assigned for NPCs'))
             for src_mod, num_fixed in dict_sort(mod_npcsFixed):
-                log(u'* %s: %d' % (src_mod, num_fixed))
+                log(f'* {src_mod}: {num_fixed:d}')
 
 #------------------------------------------------------------------------------
 class TimescaleCheckerPatcher(ModLoader):
@@ -460,7 +457,8 @@ class TimescaleCheckerPatcher(ModLoader):
         # reversed order)
         if final_timescale is None:
             pf_minfs = self.patchFile.p_file_minfos
-            relevant_plugins = [pf_minfs[p] for p in self.patchFile.allMods]
+            relevant_plugins = [pf_minfs[p] for p
+                                in self.patchFile.merged_or_loaded_ord]
             for r_plugin in reversed(relevant_plugins):
                 final_timescale = find_timescale(self._mod_file_read(r_plugin))
                 if final_timescale is not None:

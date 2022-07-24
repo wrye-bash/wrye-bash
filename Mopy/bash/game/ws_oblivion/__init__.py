@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,7 +28,7 @@ from ..windows_store_game import WindowsStoreMixin
 class WSOblivionGameInfo(WindowsStoreMixin, OblivionGameInfo):
     displayName = u'Oblivion (WS)'
     # `appdata_name` and `my_games_name` use the original locations, unlike
-    # other Windows Store games.
+    # newer Windows Store games.
 
     class Ws(OblivionGameInfo.Ws):
         publisher_name = u'Bethesda'

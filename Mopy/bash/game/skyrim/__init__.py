@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,7 +25,7 @@
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
-from ... import brec
+from ... import brec, bolt
 from ...brec import MreFlst, MreGlob
 
 class SkyrimGameInfo(PatchGame):
@@ -41,7 +41,7 @@ class SkyrimGameInfo(PatchGame):
     # Set to this because TESV.exe also exists for Enderal
     game_detect_includes = [u'SkyrimLauncher.exe']
     version_detect_file = u'TESV.exe'
-    master_file = u'Skyrim.esm'
+    master_file = bolt.FName(u'Skyrim.esm')
     taglist_dir = u'Skyrim'
     loot_dir = u'Skyrim'
     boss_game_name = u'Skyrim'
@@ -114,24 +114,27 @@ class SkyrimGameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
-            u'asi', # script dragon
-            u'calientetools', # bodyslide
-            u'dialogueviews',
-            u'dyndolod',
-            u'grass',
-            u'interface',
-            u'lodsettings',
-            u'scripts',
-            u'seq',
-            u'shadersfx',
-            u'skse',
-            u'skyproc patchers',
-            u'slanims', # nsfw mods
-            u'source', # see Psc.source_redirects above
-            u'strings',
-            u'tools', # FNIS
+            'asi', # 3P: Script Dragon
+            'autobody', # 3P: AutoBody
+            'calientetools', # 3P: BodySlide
+            'dialogueviews',
+            'dyndolod', # 3P: DynDOLOD
+            'grass',
+            'interface',
+            'lodsettings',
+            'nemesis_engine', # 3P: Nemesis Unlimited Behavior Engine
+            'osa', # 3P: OSA Animation Framework
+            'scripts',
+            'seq',
+            'shadersfx',
+            'skse', # 3P: SKSE
+            'skyproc patchers', # 3P: SkyProc
+            'slanims', # 3P: SL Animation Loader
+            'source', # see Psc.source_redirects above
+            'strings',
+            'tools', # 3P: FNIS
         }
-        keep_data_dirs = {u'LSData'}
+        keep_data_dirs = {'lsdata'}
         no_skip = (
             # These are all in the Interface folder. Apart from the skyui_
             # files, they are all present in vanilla.
@@ -149,11 +152,10 @@ class SkyrimGameInfo(PatchGame):
             u'keyboard_spanish.txt',
             u'keyboard_italian.txt',
         )
-        no_skip_dirs = GameInfo.Bain.no_skip_dirs.copy() # PY3: dict join
-        no_skip_dirs.update({
+        no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.
             _j(u'interface', u'translations'): [u'.txt']
-        })
+        }
         skip_bain_refresh = {u'tes5edit backups', u'tes5edit cache'}
 
     class Esp(GameInfo.Esp):
@@ -164,10 +166,10 @@ class SkyrimGameInfo(PatchGame):
         max_lvl_list_size = 255
         biped_flag_names = (
             u'head', u'hair', u'body', u'hands', u'forearms', u'amulet',
-            u'ring', u'feet', u'calves', u'shield', u'bodyaddon1_tail',
-            u'long_hair', u'circlet', u'bodyaddon2', u'dragon_head',
+            u'ring', u'feet', u'calves', u'shield', u'addon_tail',
+            u'long_hair', u'circlet', u'addon_ears', u'dragon_head',
             u'dragon_lwing', u'dragon_rwing', u'dragon_body', u'bodyaddon7',
-            u'bodyaddon8', u'decapate_head', u'decapate', u'bodyaddon9',
+            u'bodyaddon8', u'decapitate_head', u'decapitate', u'bodyaddon9',
             u'bodyaddon10', u'bodyaddon11', u'bodyaddon12', u'bodyaddon13',
             u'bodyaddon14', u'bodyaddon15', u'bodyaddon16', u'bodyaddon17',
             u'fx01')
@@ -178,7 +180,7 @@ class SkyrimGameInfo(PatchGame):
 
     patchers = {
         u'AliasModNames', u'ContentsChecker', u'ImportActors', u'ImportRaces',
-        u'ImportActorsAIPackages', u'ImportActorsDeathItems',
+        'ImportActorsAIPackages',
         u'ImportActorsFactions', u'ImportActorsSpells', u'ImportCells',
         u'ImportDestructible', u'ImportEffectsStats', u'ImportRacesSpells',
         u'ImportEnchantmentStats', u'ImportGraphics', u'ImportInventory',
@@ -187,6 +189,7 @@ class SkyrimGameInfo(PatchGame):
         u'ImportSpellStats', u'ImportStats', u'ImportText', u'LeveledLists',
         u'MergePatches', u'TweakActors', u'TweakAssorted', u'TweakSettings',
         u'TweakRaces', u'ImportActorsPerks', u'TimescaleChecker',
+        'ImportEnchantments', 'TweakNames',
     }
 
     weaponTypes = (
@@ -248,31 +251,30 @@ class SkyrimGameInfo(PatchGame):
         }
 
     bethDataFiles = {
-        #--Vanilla
-        u'skyrim.esm',
-        u'update.esm',
-        u'update.bsa',
-        u'dawnguard.esm',
-        u'dawnguard.bsa',
-        u'hearthfires.bsa',
-        u'hearthfires.esm',
-        u'dragonborn.esm',
-        u'dragonborn.bsa',
-        u'skyrim - animations.bsa',
-        u'skyrim - interface.bsa',
-        u'skyrim - meshes.bsa',
-        u'skyrim - misc.bsa',
-        u'skyrim - shaders.bsa',
-        u'skyrim - sounds.bsa',
-        u'skyrim - textures.bsa',
-        u'skyrim - voices.bsa',
-        u'skyrim - voicesextra.bsa',
-        u'highrestexturepack01.esp',
-        u'highrestexturepack02.esp',
-        u'highrestexturepack03.esp',
-        u'highrestexturepack01.bsa',
-        u'highrestexturepack02.bsa',
-        u'highrestexturepack03.bsa',
+        'dawnguard.bsa',
+        'dawnguard.esm',
+        'dragonborn.bsa',
+        'dragonborn.esm',
+        'hearthfires.bsa',
+        'hearthfires.esm',
+        'highrestexturepack01.bsa',
+        'highrestexturepack01.esp',
+        'highrestexturepack02.bsa',
+        'highrestexturepack02.esp',
+        'highrestexturepack03.bsa',
+        'highrestexturepack03.esp',
+        'skyrim - animations.bsa',
+        'skyrim - interface.bsa',
+        'skyrim - meshes.bsa',
+        'skyrim - misc.bsa',
+        'skyrim - shaders.bsa',
+        'skyrim - sounds.bsa',
+        'skyrim - textures.bsa',
+        'skyrim - voices.bsa',
+        'skyrim - voicesextra.bsa',
+        'skyrim.esm',
+        'update.bsa',
+        'update.esm',
     }
 
     _patcher_package = u'bash.game.skyrim'
@@ -354,11 +356,11 @@ class SkyrimGameInfo(PatchGame):
             b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
             b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
         ]
-        #-> this needs updating for Skyrim
         header_type.valid_header_sigs = set(
             header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
                                          b'ACRE', b'LAND', b'INFO', b'NAVM',
-                                         b'PHZD', b'PGRE'])
+                                         b'PARW', b'PBAR', b'PBEA', b'PCON',
+                                         b'PFLA', b'PGRE', b'PHZD', b'PMIS'])
         header_type.plugin_form_version = 43
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,

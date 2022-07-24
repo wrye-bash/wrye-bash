@@ -16,40 +16,29 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Houses the parts of brec that didn't fit anywhere else or were needed by
 almost all other parts of brec."""
-
-from __future__ import division
+import sys
 
 from .. import bolt
 from ..bolt import cstrip, decoder, Flags, structs_cache, attrgetter_cache
 # no local imports, imported everywhere in brec
 
 # Random stuff ----------------------------------------------------------------
-_int_unpacker = structs_cache[u'I'].unpack
+int_unpacker = structs_cache['I'].unpack
 
-def _make_hashable(target_obj):
-    """Bit of a HACK, but at least it fixes any code that just *assumed* set
-    lookups with MelObject worked."""
-    if isinstance(target_obj, dict):
-        return tuple([(k, _make_hashable(v))
-                      for k, v in target_obj.iteritems()])
-    elif isinstance(target_obj, (list, set, tuple)):
-        return tuple([_make_hashable(x) for x in target_obj])
-    return target_obj
-
-class FixedString(unicode):
+class FixedString(str):
     """An action for MelStructs that will decode and encode a fixed-length
     string. Note that you do not need to specify defaults when using this."""
     __slots__ = (u'str_length',)
     _str_encoding = bolt.pluginEncoding
 
     def __new__(cls, str_length, target_str=b''):
-        if isinstance(target_str, unicode):
+        if isinstance(target_str, str):
             decoded_str = target_str
         else:
             decoded_str = u'\n'.join(
@@ -62,7 +51,7 @@ class FixedString(unicode):
 
     def __call__(self, new_str):
         # 0 is the default, so replace it with whatever we currently have
-        return FixedString(self.str_length, new_str or unicode(self))
+        return FixedString(self.str_length, new_str or str(self))
 
     def dump(self):
         return bolt.encode_complex_string(self, max_size=self.str_length,
@@ -76,45 +65,46 @@ class AutoFixedString(FixedString):
 def strFid(form_id):
     """Return a string representation of the fid."""
     if isinstance(form_id, tuple):
-        return u'(%s, %06X)' % (form_id[0], form_id[1])
+        return f'({form_id[0]}, {form_id[1]:06X})'
     else:
-        return u'%08X' % form_id
+        return f'{form_id:08X}'
 
-# PY3: drop the int() calls in these four methods
 def genFid(modIndex,objectIndex):
     """Generates a fid from modIndex and ObjectIndex."""
-    return int(objectIndex) | (int(modIndex) << 24)
+    return objectIndex | (modIndex << 24)
 
 def getModIndex(form_id):
     """Returns the modIndex portion of a fid."""
-    return int(form_id >> 24)
+    return form_id >> 24
 
 def getObjectIndex(form_id):
     """Returns the objectIndex portion of a fid."""
-    return int(form_id & 0x00FFFFFF)
+    return form_id & 0x00FFFFFF
 
 def getFormIndices(form_id):
     """Returns tuple of modIndex and ObjectIndex of fid."""
-    return int(form_id >> 24), int(form_id & 0x00FFFFFF)
+    return form_id >> 24, form_id & 0x00FFFFFF
 
 # Common flags ----------------------------------------------------------------
 ##: xEdit marks these as unknown_is_unused, at least in Skyrim, but it makes no
 # sense because it also marks all 32 of its possible flags as known
 class BipedFlags(Flags):
     """Biped flags element. Includes biped flag set by default."""
-    def __init__(self, flag_default=0, new_flag_names=None):
+    __slots__ = []
+
+    @classmethod
+    def from_names(cls, *names):
         from .. import bush
-        flag_names = Flags.getNames(*bush.game.Esp.biped_flag_names)
-        if new_flag_names: flag_names.update(new_flag_names)
-        super(BipedFlags, self).__init__(flag_default, flag_names)
+        flag_names = *bush.game.Esp.biped_flag_names, *names
+        return super(BipedFlags, cls).from_names(*flag_names)
 
 # Sort Keys -------------------------------------------------------------------
 fid_key = attrgetter_cache[u'fid']
 
 _perk_type_to_attrs = {
-    0: attrgetter_cache[(u'quest', u'quest_stage')],
-    1: attrgetter_cache[u'ability'],
-    2: attrgetter_cache[(u'entry_point', u'function')],
+    0: attrgetter_cache[('quest', 'quest_stage')],
+    1: attrgetter_cache['ability'],
+    2: attrgetter_cache[('entry_point', 'function')],
 }
 
 def perk_effect_key(e):
@@ -125,9 +115,11 @@ def perk_effect_key(e):
     extra_vals = _perk_type_to_attrs[perk_effect_type](e)
     if not isinstance(extra_vals, tuple):
         # Second case from above, only a single attribute returned
-        return (e.rank, e.priority, perk_effect_type, extra_vals)
+        # DATA subrecords sometimes are absent after the PRKE subrecord leading
+        # to a None for ability - sort those last (valid ids shouldn't be 0)
+        return e.rank, e.priority, perk_effect_type, extra_vals or sys.maxsize
     else:
-        return (e.rank, e.priority, perk_effect_type) + extra_vals
+        return e.rank, e.priority, perk_effect_type, *extra_vals
 
 vmad_fragments_key = attrgetter_cache[u'fragment_index']
 vmad_properties_key = attrgetter_cache[u'prop_name']

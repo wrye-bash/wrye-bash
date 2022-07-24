@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,18 +26,16 @@ this file involve conditional loading and are much less commonly used. Relies
 on some of the elements defined in basic_elements, e.g. MelBase, MelObject and
 MelStruct."""
 
-from __future__ import division
-
 __author__ = u'Infernio'
 
 import copy
 from collections import OrderedDict
-from itertools import chain, izip
+from itertools import chain
 
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct, \
-    MelSequential
+    MelSequential, MelNum
 from .. import exception
-from ..bolt import GPath, structs_cache, attrgetter_cache
+from ..bolt import structs_cache, attrgetter_cache, deprint
 
 #------------------------------------------------------------------------------
 class _MelDistributor(MelNull):
@@ -45,7 +43,7 @@ class _MelDistributor(MelNull):
     See the wiki page '[dev] Plugin Format: Distributors' for a detailed
     overview of this class and the semi-DSL it implements.
 
-    :type _attr_to_loader: dict[unicode, MelBase]
+    :type _attr_to_loader: dict[str, MelBase]
     :type _sig_to_loader: dict[bytes, MelBase]
     :type _target_sigs: set[bytes]"""
     def __init__(self, distributor_config): # type: (dict) -> None
@@ -61,7 +59,7 @@ class _MelDistributor(MelNull):
         self._pre_process()
 
     def _raise_syntax_error(self, error_msg):
-        raise SyntaxError(u'Invalid distributor syntax: %s' % error_msg)
+        raise SyntaxError(f'Invalid distributor syntax: {error_msg}')
 
     ##: Needs to change to only accept unicode strings as attributes, but keep
     # accepting only bytestrings as signatures
@@ -69,35 +67,33 @@ class _MelDistributor(MelNull):
         """Ensures that the distributor config defined above has correct syntax
         and resolves shortcuts (e.g. A|B syntax)."""
         if not isinstance(self.distributor_config, dict):
-            self._raise_syntax_error(
-                u'distributor_config must be a dict (actual type: %s)' %
-                type(self.distributor_config))
+            self._raise_syntax_error(f'distributor_config must be a dict '
+                f'(actual type: {type(self.distributor_config)})')
         mappings_to_iterate = [self.distributor_config] # TODO(inf) Proper name for dicts / mappings (scopes?)
         while mappings_to_iterate:
             mapping = mappings_to_iterate.pop()
             for signature_str in list(mapping):
                 if not isinstance(signature_str, bytes):
                     self._raise_syntax_error(
-                        u'All keys must be signature bytestrings (offending '
-                        u'key: %r)' % signature_str)
+                        f'All keys must be signature bytestrings (offending '
+                        f'key: {signature_str!r})')
                 # Resolve 'A|B' syntax
                 split_sigs = signature_str.split(b'|')
                 resolved_entry = mapping[signature_str]
                 if not resolved_entry:
-                    self._raise_syntax_error(
-                        u'Mapped values may not be empty (offending value: '
-                        u'%s)' % resolved_entry)
+                    self._raise_syntax_error(f'Mapped values may not be empty '
+                        f'(offending value: {resolved_entry})')
                 # Delete the 'A|B' entry, not needed anymore
                 del mapping[signature_str]
                 for signature in split_sigs:
                     if len(signature) != 4:
                         self._raise_syntax_error(
-                            u'Signature strings must have length 4 (offending '
-                            u'string: %s)' % signature)
+                            f'Signature strings must have length 4 (offending '
+                            f'string: {signature})')
                     if signature in mapping:
                         self._raise_syntax_error(
-                            u'Duplicate signature string (offending string: '
-                            u'%s)' % signature)
+                            f'Duplicate signature string (offending string: '
+                            f'{signature})')
                     # For each option in A|B|..|Z, make a new entry
                     mapping[signature] = resolved_entry
                 re_type = type(resolved_entry)
@@ -107,12 +103,12 @@ class _MelDistributor(MelNull):
                 elif re_type == tuple:
                     # TODO(inf) Proper name for tuple values
                     if (len(resolved_entry) != 2
-                            or not isinstance(resolved_entry[0], unicode)
+                            or not isinstance(resolved_entry[0], str)
                             or not isinstance(resolved_entry[1], dict)):
                         self._raise_syntax_error(
-                            u'Tuples used as values must always have two '
-                            u'elements - an attribute string and a dict '
-                            u'(offending tuple: %s)' % repr(resolved_entry))
+                            f'Tuples used as values must always have two '
+                            f'elements - an attribute string and a dict '
+                            f'(offending tuple: {resolved_entry!r})')
                     # If the signature maps to a tuple, recurse into the
                     # dict stored in its second element
                     mappings_to_iterate.append(resolved_entry[1])
@@ -124,21 +120,21 @@ class _MelDistributor(MelNull):
                             # Ensure that the tuple is correctly formatted
                             if (len(seq_entry) != 2
                                     or not isinstance(seq_entry[0], bytes)
-                                    or not isinstance(seq_entry[1], unicode)):
+                                    or not isinstance(seq_entry[1], str)):
                                 self._raise_syntax_error(
-                                    u'Sequential tuples must always have two '
-                                    u'elements, a bytestring and a string '
-                                    u'(offending sequential entry: %s)' %
-                                    repr(seq_entry))
+                                    f'Sequential tuples must always have two '
+                                    f'elements, a bytestring and a string '
+                                    f'(offending sequential entry: '
+                                    f'{seq_entry!r})')
                         elif not isinstance(seq_entry, bytes):
                             self._raise_syntax_error(
-                                u'Sequential entries must either be '
-                                u'tuples or bytestrings (actual type: %r)' %
-                                type(seq_entry))
-                elif re_type != unicode:
+                                f'Sequential entries must either be tuples '
+                                f'or bytestrings (actual type: '
+                                f'{type(seq_entry)})')
+                elif re_type != str:
                     self._raise_syntax_error(
-                        u'Only dicts, lists, strings and tuples may occur as '
-                        u'values (offending type: %r)' % re_type)
+                        f'Only dicts, lists, strings and tuples may occur as '
+                        f'values (offending type: {re_type})')
 
     def getLoaders(self, loaders):
         # We need a copy of the unmodified signature-to-loader dictionary
@@ -164,7 +160,7 @@ class _MelDistributor(MelNull):
                     mappings_to_iterate.append(resolved_entry[1])
                 elif re_type == list:
                     # If the signature maps to a list, record the signatures of
-                    # each entry (bytes or tuple[bytes, unicode])
+                    # each entry (bytes or tuple[bytes, str])
                     self._target_sigs.update([t[0] if isinstance(t, tuple) else t
                                               for t in resolved_entry])
                 # If it's not a dict, list or tuple, then this is a leaf node,
@@ -247,7 +243,7 @@ class _MelDistributor(MelNull):
             record._seq_index = 1 # we'll load the first element right now
             self._distribute_load(mapped_el[0], record, ins, size_,
                                   *debug_strs)
-        else: # el_type == unicode, verified in _pre_process
+        else: # el_type == str, verified in _pre_process
             # Targets -----------------------------------------------------
             # A target - don't add the signature to the load state and
             # distribute the load by attribute name.
@@ -320,7 +316,7 @@ class MelArray(MelBase):
         """Creates a new MelArray with the specified attribute and element.
 
         :param array_attr: The attribute name to give the entire array.
-        :type array_attr: unicode
+        :type array_attr: str
         :param element: The element that each entry in this array will be
             loaded and dumped by.
         :type element: MelBase
@@ -336,16 +332,23 @@ class MelArray(MelBase):
             raise SyntaxError(u'MelArray may only be used with elements that '
                               u'resolve to exactly one signature')
         # Use this instead of element.mel_sig to support e.g. unions
-        super(MelArray, self).__init__(next(iter(element.signatures)),
-            array_attr)
+        element_sig = next(iter(element.signatures))
+        super(MelArray, self).__init__(element_sig, array_attr)
         self._element = element
         self._element_has_fids = False
         # Underscore means internal usage only - e.g. distributor state
         self.array_element_attrs = [s for s in element.getSlotsUsed() if
                                     not s.startswith(u'_')]
-        if prelude and prelude.mel_sig != element.mel_sig:
-            raise SyntaxError(u'MelArray preludes must have the same '
-                              u'signature as the main element')
+        # Validate that the prelude is valid if it's present (i.e. it must have
+        # only one signature and it must match the element's signature)
+        if prelude:
+            prelude_sigs = prelude.signatures
+            if len(prelude_sigs) != 1:
+                raise SyntaxError(u'MelArray preludes must have exactly one '
+                                  u'signature')
+            if next(iter(prelude_sigs)) != element_sig:
+                raise SyntaxError(u'MelArray preludes must have the same '
+                                  u'signature as the main element')
         self._prelude = prelude
         self._prelude_has_fids = False
         try:
@@ -373,26 +376,32 @@ class MelArray(MelBase):
             self._prelude.setDefault(record)
         setattr(record, self.attr, [])
 
-    def mapFids(self,record,function,save=False):
+    def mapFids(self, record, function, save_fids=False):
         if self._prelude_has_fids:
-            self._prelude.mapFids(record, function, save)
+            self._prelude.mapFids(record, function, save_fids)
+        self._map_array_fids(record, function, save_fids)
+
+    def _map_array_fids(self, record, function, save_fids):
         if self._element_has_fids:
             array_val = getattr(record, self.attr)
             if array_val:
                 map_entry = self._element.mapFids
                 for arr_entry in array_val:
-                    map_entry(arr_entry, function, save)
+                    map_entry(arr_entry, function, save_fids)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        append_entry = getattr(record, self.attr).append
-        entry_slots = self.array_element_attrs
-        entry_size = self._element_size
-        load_entry = self._element.load_mel
         if self._prelude:
             self._prelude.load_mel(record, ins, sub_type, self._prelude_size,
                                    *debug_strs)
             size_ -= self._prelude_size
-        for x in xrange(size_ // entry_size):
+        self._load_array(record, ins, sub_type, size_, debug_strs)
+
+    def _load_array(self, record, ins, sub_type, size_, debug_strs):
+        append_entry = getattr(record, self.attr).append
+        entry_slots = self.array_element_attrs
+        entry_size = self._element_size
+        load_entry = self._element.load_mel
+        for x in range(size_ // entry_size):
             arr_entry = MelObject()
             append_entry(arr_entry)
             arr_entry.__slots__ = entry_slots
@@ -404,11 +413,47 @@ class MelArray(MelBase):
         if not array_val: return None # don't dump out empty arrays
         if self._prelude:
             sub_data = self._prelude.pack_subrecord_data(record)
+            if sub_data is None:
+                deprint(f'{record}: prelude={self._prelude} '
+                        f'for attr={self.attr} returned None packed data')
+                sub_data = b''
         else:
             sub_data = b''
-        sub_data += b''.join([self._element.pack_subrecord_data(arr_entry)
-                              for arr_entry in array_val])
+        sub_data += self._pack_array_data(array_val)
         return sub_data
+
+    def _pack_array_data(self, array_val):
+        return b''.join(
+            [self._element.pack_subrecord_data(arr_entry) for arr_entry in
+             array_val])
+
+#------------------------------------------------------------------------------
+class MelSimpleArray(MelArray):
+    """A MelArray of simple elements (currently MelNum) - override loading and
+    dumping of the array to avoid creating mel objects."""
+    _element: MelNum
+
+    def __init__(self, array_attr, element):
+        if not isinstance(element, MelNum):
+            raise SyntaxError(f'MelSimpleArray only accepts MelNum, passed: '
+                              f'{element!r}')
+        super().__init__(array_attr, element)
+
+    def _load_array(self, record, ins, sub_type, size_, *debug_strs):
+        entry_size = self._element_size
+        getattr(record, self.attr).extend(
+            self._element.load_bytes(ins, entry_size, *debug_strs) for x in
+            range(size_ // entry_size))
+
+    def _map_array_fids(self, record, function, save_fids):
+        if self._element_has_fids:
+            array_val = getattr(record, self.attr)
+            mapped = [function(arr_entry) for arr_entry in array_val]
+            if save_fids:
+                setattr(record, self.attr, mapped)
+
+    def _pack_array_data(self, array_val):
+        return b''.join(map(self._element.packer, array_val))
 
 #------------------------------------------------------------------------------
 class MelTruncatedStruct(MelStruct):
@@ -419,13 +464,12 @@ class MelTruncatedStruct(MelStruct):
 
         :param sub_sig: The subrecord signature of this struct.
         :param sub_fmt: The format of this struct.
-        :param elements: The element syntax of this struct. Passed to
-            parseElements, see that method for syntax explanations.
+        :param elements: The element syntax of this struct.
         :param kwargs: Must contain an old_versions keyword argument, which
             specifies the older formats that are supported by this struct. The
             keyword argument is_optional can be supplied, which determines
-            whether or not this struct should behave like MelOptStruct. May
-            also contain any keyword arguments that MelStruct supports."""
+            whether this struct should behave like MelOptStruct. May also
+            contain any keyword arguments that MelStruct supports."""
         try:
             old_versions = kwargs.pop('old_versions')
         except KeyError:
@@ -455,9 +499,9 @@ class MelTruncatedStruct(MelStruct):
         unpacked_val = self._pre_process_unpacked(unpacked_val)
         # Apply any actions and then set the attributes according to the values
         # we just unpacked
-        for attr, value, action in izip(self.attrs, unpacked_val,
+        for attr, value, action in zip(self.attrs, unpacked_val,
                                         self.actions):
-            if callable(action): value = action(value)
+            if action is not None: value = action(value)
             setattr(record, attr, value)
 
     def _pre_process_unpacked(self, unpacked_val):
@@ -472,7 +516,7 @@ class MelTruncatedStruct(MelStruct):
             # If this struct is optional, compare the current values to the
             # defaults and skip the dump conditionally - basically the same
             # thing MelOptStruct does
-            for attr, default in izip(self.attrs, self.defaults):
+            for attr, default in zip(self.attrs, self.defaults):
                 curr_val = getattr(record, attr)
                 if curr_val is not None and curr_val != default:
                     break
@@ -492,12 +536,12 @@ class MelLists(MelStruct):
     """Convenience subclass to collect unpacked attributes to lists.
     'actions' is discarded"""
     # map attribute names to slices/indexes of the tuple of unpacked elements
-    _attr_indexes = OrderedDict() # type: OrderedDict[unicode, slice | int]
+    _attr_indexes = OrderedDict() # type: OrderedDict[str, slice | int]
 
     def __init__(self, mel_sig, struct_formats, *elements):
         if len(struct_formats) != len(elements):
-            raise SyntaxError(u'MelLists: struct_formats (%r) do not match '
-                              u'elements (%r)' % (struct_formats, elements))
+            raise SyntaxError(f'MelLists: struct_formats ({struct_formats}) '
+                              f'do not match elements ({elements})')
         super(MelLists, self).__init__(mel_sig, struct_formats, *elements)
 
     @staticmethod
@@ -509,7 +553,7 @@ class MelLists(MelStruct):
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         unpacked = list(ins.unpack(self._unpacker, size_, *debug_strs))
-        for attr, _slice in self.__class__._attr_indexes.iteritems():
+        for attr, _slice in self.__class__._attr_indexes.items():
             setattr(record, attr, unpacked[_slice])
 
     def pack_subrecord_data(self, record):
@@ -576,15 +620,14 @@ class FidNotNullDecider(ACommonDecider):
         """Creates a new FidNotNullDecider with the specified attribute.
 
         :param target_attr: The name of the attribute to check.
-        :type target_attr: unicode"""
+        :type target_attr: str"""
         self._target_attr = target_attr
 
     def _decide_common(self, record):
         ##: Wasteful, but bush imports brec which uses this decider, so we
         # can't import bush in __init__...
         from .. import bush
-        return getattr(record, self._target_attr) != (
-            GPath(bush.game.master_file), 0)
+        return getattr(record, self._target_attr) != (bush.game.master_file, 0)
 
 class AttrValDecider(ACommonDecider):
     """Decider that returns an attribute value (may optionally apply a function
@@ -599,7 +642,7 @@ class AttrValDecider(ACommonDecider):
 
         :param target_attr: The name of the attribute to return the value
             for.
-        :type target_attr: unicode
+        :type target_attr: str
         :param transformer: A function that takes a single argument, the value
             read from target_attr, and returns some other value. Can be used to
             e.g. return only the first character of an eid.
@@ -693,7 +736,7 @@ class SaveDecider(ADecider):
         self._save_ext = bush.game.Ess.ext
 
     def decide_load(self, record, ins, sub_type, rec_size):
-        return ins.inName.cext == self._save_ext
+        return ins.inName.fn_ext == self._save_ext
 
 class SignatureDecider(ADecider):
     """Very simple decider that just returns the subrecord type (aka
@@ -759,26 +802,28 @@ class MelUnion(MelBase):
         :param fallback: The fallback element to use. Defaults to None, which
             will raise an error if the decider returns an unknown value.
         :type fallback: MelBase"""
+        # Decide on the decider
+        if not isinstance(decider, ADecider):
+            raise exception.ArgumentError('decider must be an ADecider')
+        self.decider = decider
         # Preprocess the element mapping to split tuples
         processed_mapping = {}
-        for decider_val, element in element_mapping.iteritems():
+        for decider_val, element in element_mapping.items():
             if not isinstance(decider_val, tuple):
                 decider_val = (decider_val,)
             for split_val in decider_val:
                 if split_val in processed_mapping:
-                    raise SyntaxError(u'Invalid union mapping: Duplicate key '
-                                      u"'%s'" % repr(split_val))
+                    raise SyntaxError(f"Invalid union mapping: Duplicate key "
+                                      f"'{repr(split_val)}'")
                 processed_mapping[split_val] = element
         self.element_mapping = processed_mapping
         self.fid_elements = set()
-        if not isinstance(decider, ADecider):
-            raise exception.ArgumentError(u'decider must be an ADecider')
-        self.decider = decider
-        self.decider_result_attr = u'_union_type_%u' % MelUnion._union_index
+        # Create a unique attribute name to dynamically cache decider result
+        self.decider_result_attr = f'_union_type_{MelUnion._union_index}'
         MelUnion._union_index += 1
         self.fallback = fallback
         self._possible_sigs = {s for element
-                               in self.element_mapping.itervalues()
+                               in self.element_mapping.values()
                                for s in element.signatures}
         if self.fallback:
             self._possible_sigs.update(self.fallback.signatures)
@@ -793,8 +838,8 @@ class MelUnion(MelBase):
         element = self.element_mapping.get(decider_ret, self.fallback)
         if not element:
             raise exception.ArgumentError(
-                u'Specified element mapping did not handle a decider return '
-                u'value (%r) and there is no fallback' % decider_ret)
+                f'Specified element mapping did not handle a decider return '
+                f'value ({decider_ret!r}) and there is no fallback')
         return element
 
     def _get_element_from_record(self, record):
@@ -810,7 +855,7 @@ class MelUnion(MelBase):
         elif not hasattr(record, self.decider_result_attr):
             # We're dealing with a record that was just created, but the
             # decider can't be used - default to some element
-            return next(self.element_mapping.itervalues())
+            return next(iter(self.element_mapping.values()))
         else:
             # We can use the result we decided earlier
             return self._get_element(
@@ -820,7 +865,7 @@ class MelUnion(MelBase):
         # We need to reserve every possible slot, since we can't know what
         # we'll resolve to yet. Use a set to avoid duplicates.
         slots_ret = {self.decider_result_attr}
-        for element in self.element_mapping.itervalues():
+        for element in self.element_mapping.values():
             slots_ret.update(element.getSlotsUsed())
         if self.fallback: slots_ret.update(self.fallback.getSlotsUsed())
         return tuple(slots_ret)
@@ -829,7 +874,7 @@ class MelUnion(MelBase):
         # We need to collect all signatures and assign ourselves for them all
         # to handle unions with different signatures
         temp_loaders = {}
-        for element in self.element_mapping.itervalues():
+        for element in self.element_mapping.values():
             element.getLoaders(temp_loaders)
         if self.fallback: self.fallback.getLoaders(temp_loaders)
         for signature in temp_loaders:
@@ -839,7 +884,7 @@ class MelUnion(MelBase):
         # Ask each of our elements, and remember the ones where we'd have to
         # actually forward the mapFids call. We can't just blindly call
         # mapFids, since MelBase.mapFids is abstract.
-        for element in self.element_mapping.itervalues():
+        for element in self.element_mapping.values():
             temp_elements = set()
             element.hasFids(temp_elements)
             if temp_elements:
@@ -855,7 +900,7 @@ class MelUnion(MelBase):
         # Ask each element - but we *don't* want to set our _union_type
         # attributes here! If we did, then we'd have no way to distinguish
         # between a loaded and a freshly constructed record.
-        for element in self.element_mapping.itervalues():
+        for element in self.element_mapping.values():
             element.setDefault(record)
         if self.fallback: self.fallback.setDefault(record)
         # This is somewhat hacky. We let all FormID elements set their defaults
@@ -865,10 +910,10 @@ class MelUnion(MelBase):
         for element in self.fid_elements:
             element.setDefault(record)
 
-    def mapFids(self, record, function, save=False):
+    def mapFids(self, record, function, save_fids=False):
         element = self._get_element_from_record(record)
         if element in self.fid_elements:
-            element.mapFids(record, function, save)
+            element.mapFids(record, function, save_fids)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         # Ask the decider, and save the result for later - even if the decider
@@ -888,7 +933,7 @@ class MelUnion(MelBase):
 
     @property
     def static_size(self):
-        all_elements = list(self.element_mapping.itervalues())
+        all_elements = list(self.element_mapping.values())
         if self.fallback:
             all_elements.append(self.fallback)
         first_size = all_elements[0].static_size # pick arbitrary element size
@@ -934,8 +979,8 @@ class _MelWrapper(MelBase):
     def pack_subrecord_data(self, record):
         self._wrapped_mel.pack_subrecord_data(record)
 
-    def mapFids(self, record, function, save=False):
-        self._wrapped_mel.mapFids(record, function, save)
+    def mapFids(self, record, function, save_fids=False):
+        self._wrapped_mel.mapFids(record, function, save_fids)
 
     @property
     def signatures(self):
@@ -961,7 +1006,7 @@ class MelCounter(_MelWrapper):
         :param counter_mel: The element that stores the counter's value.
         :type counter_mel: _MelField
         :param counts: The attribute name that this counter counts.
-        :type counts: unicode"""
+        :type counts: str"""
         super(MelCounter, self).__init__(counter_mel)
         self.counted_attr = counts
 
@@ -982,9 +1027,9 @@ class MelPartialCounter(MelCounter):
         :param counter_mel: The element that stores the counter's value.
         :type counter_mel: MelStruct
         :param counter: The attribute name of the counter.
-        :type counter: unicode
+        :type counter: str
         :param counts: The attribute name that this counter counts.
-        :type counts: unicode"""
+        :type counts: str"""
         super(MelPartialCounter, self).__init__(counter_mel, counts)
         self.counter_attr = counter
 
@@ -1026,17 +1071,16 @@ class MelSorted(_MelWrapper):
             elif isinstance(sorted_mel, MelArray):
                 all_child_attrs = set(sorted_mel.array_element_attrs)
             else:
-                raise SyntaxError(u'sort_by_attrs is not supported for %s '
-                                  u'instances' % type(sorted_mel))
+                raise SyntaxError(f'sort_by_attrs is not supported for '
+                                  f'{type(sorted_mel)} instances')
             # Note that sort_by_attrs could be either a single attr or a tuple
             # of attrs
             wanted_attrs = set(sort_by_attrs) if isinstance(
                 sort_by_attrs, tuple) else {sort_by_attrs}
             missing_attrs = wanted_attrs - all_child_attrs
             if missing_attrs:
-                raise SyntaxError(u'The following attributes passed to '
-                                  u'sort_by_attrs do not exist: %s'
-                                  % sorted(missing_attrs))
+                raise SyntaxError(f'The following attributes passed to '
+                    f'sort_by_attrs do not exist: {sorted(missing_attrs)}')
             self._attr_key_func = attrgetter_cache[sort_by_attrs]
         else:
             # Simply use the default key function (whole list entries)

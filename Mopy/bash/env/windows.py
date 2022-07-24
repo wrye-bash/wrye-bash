@@ -16,19 +16,18 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Encapsulates Windows-specific classes and methods."""
 
+import datetime
+import functools
 import os
 import re
-import sys
-import datetime
-import struct
+import winreg
 import xml.etree.ElementTree as xml
-import _winreg as winreg  # PY3
 from ctypes import byref, c_wchar_p, c_void_p, POINTER, Structure, windll, \
     wintypes, WINFUNCTYPE, c_uint, c_long, Union, c_ushort, c_int, \
     c_longlong, c_ulong, c_wchar, sizeof, wstring_at, ARRAY
@@ -38,16 +37,82 @@ import win32api
 import win32com.client as win32client
 import win32gui
 
-from ..bolt import GPath, deprint, Path
-from ..exception import AccessDeniedError, BoltError, NonExistentDriveError
-from .common import get_env_var, WinAppInfo, WinAppVersionInfo
+from .common import WinAppInfo, WinAppVersionInfo, real_sys_prefix
+# some hiding as pycharm is confused in __init__.py by the import *
+from ..bolt import Path as _Path
+from ..bolt import GPath as _GPath
+from ..bolt import deprint as _deprint
+from ..exception import AccessDeniedError, BoltError, SkipError, \
+    FileOperationError
+from ..exception import CancelError as _CancelError
+
+# File operations -------------------------------------------------------------
+try:
+    from win32com.shell import shell, shellcon
+    from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, \
+        FO_RENAME, FOF_NOCONFIRMMKDIR
+
+    # NOTE(lojack): AccessDenied can be a result of many error codes,
+    # According to
+    # https://docs.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shfileoperationa
+    # If you receive an error code not on that list, then you assume it is
+    # one of the default WinError.h error codes, in this case 5 is
+    # `ERROR_ACCESS_DENIED`. I actually DO get error code 5, when the game
+    # detection for WS games wasn't including the language directories (
+    # which caused us to attempt one directory too high in the tree).
+    _file_op_error_map = {
+        # Returned for Windows Store games that need admin access
+        5: AccessDeniedError,    # ERROR_ACCESS_DENIED
+        17: AccessDeniedError,   # ERROR_INVALID_ACCESS
+        120: AccessDeniedError,  # DE_ACCESSDENIEDSRC -> source AccessDenied
+        # https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--1000-1299-
+        1223: _CancelError,
+    }
+    def shfo(operation, source, target=None, allowUndo=True,
+             confirm=True, renameOnCollision=False, silent=False,
+             parent=None):
+        """Wrapper around (deprecated!) SHFileOperation."""
+        # flags
+        flgs = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
+        flgs |= FOF_NOCONFIRMMKDIR # never ask user for creating dirs
+        flgs |= (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
+        if allowUndo: flgs |= shellcon.FOF_ALLOWUNDO
+        if not confirm: flgs |= shellcon.FOF_NOCONFIRMATION
+        if renameOnCollision: flgs |= shellcon.FOF_RENAMEONCOLLISION
+        if silent: flgs |= shellcon.FOF_SILENT
+        # null terminated strings
+        _source, _target = source, target # keep to display in debug messages
+        source = u'\x00'.join(source) # don't add a null! # + u'\x00'
+        target = u'\x00'.join(target)
+        # get the handle to parent window to feed to win api
+        parent = parent.GetHandle() if parent else None
+        # See SHFILEOPSTRUCT for deciphering return values
+        # result: a windows error code (or 0 for success)
+        # aborted: True if any operations aborted, False otherwise
+        # mapping: maps the old and new names of the renamed files
+        result, aborted, mapping = shell.SHFileOperation(
+            (parent, operation, source, target, flgs, None, None))
+        if result == 0:
+            if aborted: raise SkipError()
+            return dict(mapping)
+        elif result == 2 and operation == FO_DELETE:
+            # Delete failed because file didnt exist
+            return dict(mapping)
+        else:
+            if result == 124:
+                src_list = u'\n'.join(_source)
+                trg_list = u'\n'.join(_target)
+                _deprint(f'Invalid paths:\nsource: {src_list}\ntarget: '
+                         f'{trg_list}\nRetrying')
+                return None
+            raise _file_op_error_map.get(result, FileOperationError(result))
+except ImportError:
+    shell = shellcon = shfo = None
 
 # API - Constants =============================================================
 _isUAC = False
 
 from ctypes.wintypes import MAX_PATH
-from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, \
-    FO_RENAME, FOF_NOCONFIRMMKDIR
 
 try:
     _indirect = windll.comctl32.TaskDialogIndirect
@@ -64,13 +129,13 @@ BTN_NO                          = 5104
 GOOD_EXITS                      = (BTN_OK, BTN_YES)
 
 # Internals ===================================================================
-_re_env = re.compile(u'' r'%(\w+)%', re.U)
+_re_env = re.compile(r'%(\w+)%', re.U)
 
 def _subEnv(match):
     env_var = match.group(1).upper()
     # NOTE: On Python 3, this would be better as a try...except KeyError,
     # then raise BoltError(...) from None
-    env_val = get_env_var(env_var, None)
+    env_val = os.environ.get(env_var, None)
     if not env_val:
         raise BoltError(u"Can't find user directories in windows registry."
             u'\n>> See "If Bash Won\'t Start" in bash docs for help.')
@@ -96,7 +161,7 @@ def _get_default_app_icon(idex, target):
     if winreg is None: # FIXME(inf) linux.py
         return u'not\\a\\path', idex
     try:
-        if target.isdir():
+        if target.is_dir():
             global __folderIcon
             if not __folderIcon:
                 # Special handling of the Folder icon
@@ -112,7 +177,7 @@ def _get_default_app_icon(idex, target):
             file_association = winreg.QueryValue(winreg.HKEY_CLASSES_ROOT,
                                                  target.cext)
             pathKey = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,
-                                     u'%s\\DefaultIcon' % file_association)
+                                     f'{file_association}\\DefaultIcon')
             filedata = winreg.EnumValue(pathKey, 0)[1]
             winreg.CloseKey(pathKey)
         if os.path.isabs(filedata) and os.path.isfile(filedata):
@@ -122,13 +187,13 @@ def _get_default_app_icon(idex, target):
             icon = os.path.expandvars(icon)
         if not os.path.isabs(icon):
             # Get the correct path to the dll
-            for dir_ in get_env_var(u'PATH').split(u';'):
+            for dir_ in os.environ[u'PATH'].split(u';'):
                 test = os.path.join(dir_, icon)
                 if os.path.exists(test):
                     icon = test
                     break
     except: # TODO(ut) comment the code above - what exception can I get here?
-        deprint(u'Error finding icon for %s:' % target, traceback=True)
+        _deprint(f'Error finding icon for {target}:', traceback=True)
         icon = u'not\\a\\path'
     return icon, idex
 
@@ -143,9 +208,9 @@ def _get_app_links(apps_dir):
     links = {}
     try:
         sh = win32client.Dispatch(u'WScript.Shell')
-        for lnk in apps_dir.list():
+        for lnk in apps_dir.ilist():
             lnk = apps_dir.join(lnk)
-            if lnk.cext == u'.lnk' and lnk.isfile():
+            if lnk.cext == u'.lnk' and lnk.is_file():
                 shortcut = sh.CreateShortCut(lnk.s)
                 shortcut_descr = shortcut.Description
                 if not shortcut_descr:
@@ -154,7 +219,7 @@ def _get_app_links(apps_dir):
                               # shortcut.WorkingDirectory, shortcut.Arguments,
                               shortcut_descr)
     except:
-        deprint(u'Error initializing links:', traceback=True)
+        _deprint(u'Error initializing links:', traceback=True)
     return links
 
 def _should_ignore_ver(test_ver):
@@ -185,8 +250,7 @@ def _query_string_field_version(file_name, version_prefix):
     except win32api.error:
         # File does not have a string field section
         return 0, 0, 0, 0
-    ver_query = u'\\StringFileInfo\\%04X%04X\\%s' % (lang, codepage,
-                                                     version_prefix)
+    ver_query = f'\\StringFileInfo\\{lang:04X}{codepage:04X}\\{version_prefix}'
     full_ver = win32api.GetFileVersionInfo(file_name, ver_query)
     return _parse_version_string(full_ver)
 
@@ -214,8 +278,8 @@ def _query_fixed_field_version(file_name, version_prefix):
     except win32api.error:
         # File does not have a fixed field section
         return 0, 0, 0, 0
-    ms = info[u'%sMS' % version_prefix]
-    ls = info[u'%sLS' % version_prefix]
+    ms = info[f'{version_prefix}MS']
+    ls = info[f'{version_prefix}LS']
     return win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), \
            win32api.LOWORD(ls)
 
@@ -251,13 +315,9 @@ class _WindowsStoreFinder(object):
     @staticmethod
     def _read_registry_filetime(reg_key, filetime_name):
         filetime, value_type = winreg.QueryValueEx(reg_key, filetime_name)
-        if value_type == 11: # REG_QWORD on Python 3.6+
-            try:
-                filetime, = struct.unpack('q', filetime)
-            except struct.error:
-                return datetime.datetime(0)
+        if value_type == winreg.REG_QWORD:
             return _datetime_from_windows_filetime(filetime)
-        return datetime.datetime(0)
+        return datetime.datetime.fromtimestamp(0)
 
     @classmethod
     def _get_package_locations(cls, package_index):
@@ -294,14 +354,13 @@ class _WindowsStoreFinder(object):
     def _get_package_full_names(package_name):
         """Get all `package_full_name`s for this app."""
         try:
-            full_names = []
             with winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,
                 r'Local Settings\Software\Microsoft\Windows\CurrentVersion'
                 r'\AppModel\Repository\Families') as families_key:
                 with winreg.OpenKey(families_key, package_name) as family_key:
                     num_families = winreg.QueryInfoKey(family_key)[0]
                     return [winreg.EnumKey(family_key, i)
-                            for i in xrange(num_families)]
+                            for i in range(num_families)]
         except WindowsError:
             # Windows version without apps, or not installed
             return []
@@ -353,7 +412,7 @@ class _WindowsStoreFinder(object):
             entry = root.find(entry_template % (namespace, namespace))
             if entry is not None:
                 entry_point = entry.get(u'Id')
-        except (xml.ParseError, IOError):
+        except (xml.ParseError, OSError):
             # Parsing error, or the file doesn't exist
             pass
         return version, entry_point
@@ -379,8 +438,8 @@ class _WindowsStoreFinder(object):
             package_index = self._get_package_index(full_name)
             install_location, mutable_location = \
                 self._get_package_locations(package_index)
-            install_location = GPath(install_location)
-            mutable_location = GPath(mutable_location)
+            install_location = _GPath(install_location)
+            mutable_location = _GPath(mutable_location)
             install_time = self._get_package_install_time(package_name,
                                                           full_name)
             version, entry_point = self._get_manifest_info(mutable_location,
@@ -400,132 +459,166 @@ _win_store_finder = _WindowsStoreFinder()
 # All code starting from the 'BEGIN MIT-LICENSED PART' comment and until the
 # 'END MIT-LICENSED PART' comment is based on
 # https://gist.github.com/mkropat/7550097 by Michael Kropat
-# Modifications made for py3 compatibility and to conform to our code style
+# Modifications made for python3 compatibility, to conform to our code style
+# and to keep it up to date with Windows API additions/changes
 # BEGIN MIT-LICENSED PART =====================================================
-# http://msdn.microsoft.com/en-us/library/windows/desktop/aa373931.aspx
+# https://docs.microsoft.com/en-us/windows/win32/api/guiddef/ns-guiddef-guid
 class _GUID(Structure):
     _fields_ = [
-        (u'Data1', wintypes.DWORD),
-        (u'Data2', wintypes.WORD),
-        (u'Data3', wintypes.WORD),
-        (u'Data4', wintypes.BYTE * 8)
+        ('Data1', wintypes.DWORD),
+        ('Data2', wintypes.WORD),
+        ('Data3', wintypes.WORD),
+        ('Data4', wintypes.BYTE * 8)
     ]
 
     def __init__(self, uuid_):
-        super(_GUID, self).__init__()
+        super().__init__()
         self.Data1, self.Data2, self.Data3, self.Data4[0], self.Data4[1], \
         rest = uuid_.fields
-        for i in xrange(2, 8):
-            self.Data4[i] = rest>>(8 - i - 1)*8 & 0xff
+        for i in range(2, 8):
+            self.Data4[i] = rest >> (8 - i - 1) * 8 & 0xff
 
-# http://msdn.microsoft.com/en-us/library/windows/desktop/dd378457.aspx
+# https://docs.microsoft.com/en-us/windows/win32/shell/knownfolderid
 class _FOLDERID(object):
-    AccountPictures         = UUID(u'{008ca0b1-55b4-4c56-b8a8-4de4b299d3be}')
-    AdminTools              = UUID(u'{724EF170-A42D-4FEF-9F26-B60E846FBA4F}')
-    ApplicationShortcuts    = UUID(u'{A3918781-E5F2-4890-B3D9-A7E54332328C}')
-    CameraRoll              = UUID(u'{AB5FB87B-7CE2-4F83-915D-550846C9537B}')
-    CDBurning               = UUID(u'{9E52AB10-F80D-49DF-ACB8-4330F5687855}')
-    CommonAdminTools        = UUID(u'{D0384E7D-BAC3-4797-8F14-CBA229B392B5}')
-    CommonOEMLinks          = UUID(u'{C1BAE2D0-10DF-4334-BEDD-7AA20B227A9D}')
-    CommonPrograms          = UUID(u'{0139D44E-6AFE-49F2-8690-3DAFCAE6FFB8}')
-    CommonStartMenu         = UUID(u'{A4115719-D62E-491D-AA7C-E74B8BE3B067}')
-    CommonStartup           = UUID(u'{82A5EA35-D9CD-47C5-9629-E15D2F714E6E}')
-    CommonTemplates         = UUID(u'{B94237E7-57AC-4347-9151-B08C6C32D1F7}')
-    Contacts                = UUID(u'{56784854-C6CB-462b-8169-88E350ACB882}')
-    Cookies                 = UUID(u'{2B0F765D-C0E9-4171-908E-08A611B84FF6}')
-    Desktop                 = UUID(u'{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}')
-    DeviceMetadataStore     = UUID(u'{5CE4A5E9-E4EB-479D-B89F-130C02886155}')
-    Documents               = UUID(u'{FDD39AD0-238F-46AF-ADB4-6C85480369C7}')
-    DocumentsLibrary        = UUID(u'{7B0DB17D-9CD2-4A93-9733-46CC89022E7C}')
-    Downloads               = UUID(u'{374DE290-123F-4565-9164-39C4925E467B}')
-    Favorites               = UUID(u'{1777F761-68AD-4D8A-87BD-30B759FA33DD}')
-    Fonts                   = UUID(u'{FD228CB7-AE11-4AE3-864C-16F3910AB8FE}')
-    GameTasks               = UUID(u'{054FAE61-4DD8-4787-80B6-090220C4B700}')
-    History                 = UUID(u'{D9DC8A3B-B784-432E-A781-5A1130A75963}')
-    ImplicitAppShortcuts    = UUID(u'{BCB5256F-79F6-4CEE-B725-DC34E402FD46}')
-    InternetCache           = UUID(u'{352481E8-33BE-4251-BA85-6007CAEDCF9D}')
-    Libraries               = UUID(u'{1B3EA5DC-B587-4786-B4EF-BD1DC332AEAE}')
-    Links                   = UUID(u'{bfb9d5e0-c6a9-404c-b2b2-ae6db6af4968}')
-    LocalAppData            = UUID(u'{F1B32785-6FBA-4FCF-9D55-7B8E7F157091}')
-    LocalAppDataLow         = UUID(u'{A520A1A4-1780-4FF6-BD18-167343C5AF16}')
-    LocalizedResourcesDir   = UUID(u'{2A00375E-224C-49DE-B8D1-440DF7EF3DDC}')
-    Music                   = UUID(u'{4BD8D571-6D19-48D3-BE97-422220080E43}')
-    MusicLibrary            = UUID(u'{2112AB0A-C86A-4FFE-A368-0DE96E47012E}')
-    NetHood                 = UUID(u'{C5ABBF53-E17F-4121-8900-86626FC2C973}')
-    OriginalImages          = UUID(u'{2C36C0AA-5812-4b87-BFD0-4CD0DFB19B39}')
-    PhotoAlbums             = UUID(u'{69D2CF90-FC33-4FB7-9A0C-EBB0F0FCB43C}')
-    PicturesLibrary         = UUID(u'{A990AE9F-A03B-4E80-94BC-9912D7504104}')
-    Pictures                = UUID(u'{33E28130-4E1E-4676-835A-98395C3BC3BB}')
-    Playlists               = UUID(u'{DE92C1C7-837F-4F69-A3BB-86E631204A23}')
-    PrintHood               = UUID(u'{9274BD8D-CFD1-41C3-B35E-B13F55A758F4}')
-    Profile                 = UUID(u'{5E6C858F-0E22-4760-9AFE-EA3317B67173}')
-    ProgramData             = UUID(u'{62AB5D82-FDC1-4DC3-A9DD-070D1D495D97}')
-    ProgramFiles            = UUID(u'{905e63b6-c1bf-494e-b29c-65b732d3d21a}')
-    ProgramFilesX64         = UUID(u'{6D809377-6AF0-444b-8957-A3773F02200E}')
-    ProgramFilesX86         = UUID(u'{7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E}')
-    ProgramFilesCommon      = UUID(u'{F7F1ED05-9F6D-47A2-AAAE-29D317C6F066}')
-    ProgramFilesCommonX64   = UUID(u'{6365D5A7-0F0D-45E5-87F6-0DA56B6A4F7D}')
-    ProgramFilesCommonX86   = UUID(u'{DE974D24-D9C6-4D3E-BF91-F4455120B917}')
-    Programs                = UUID(u'{A77F5D77-2E2B-44C3-A6A2-ABA601054A51}')
-    Public                  = UUID(u'{DFDF76A2-C82A-4D63-906A-5644AC457385}')
-    PublicDesktop           = UUID(u'{C4AA340D-F20F-4863-AFEF-F87EF2E6BA25}')
-    PublicDocuments         = UUID(u'{ED4824AF-DCE4-45A8-81E2-FC7965083634}')
-    PublicDownloads         = UUID(u'{3D644C9B-1FB8-4f30-9B45-F670235F79C0}')
-    PublicGameTasks         = UUID(u'{DEBF2536-E1A8-4c59-B6A2-414586476AEA}')
-    PublicLibraries         = UUID(u'{48DAF80B-E6CF-4F4E-B800-0E69D84EE384}')
-    PublicMusic             = UUID(u'{3214FAB5-9757-4298-BB61-92A9DEAA44FF}')
-    PublicPictures          = UUID(u'{B6EBFB86-6907-413C-9AF7-4FC2ABF07CC5}')
-    PublicRingtones         = UUID(u'{E555AB60-153B-4D17-9F04-A5FE99FC15EC}')
-    PublicUserTiles         = UUID(u'{0482af6c-08f1-4c34-8c90-e17ec98b1e17}')
-    PublicVideos            = UUID(u'{2400183A-6185-49FB-A2D8-4A392A602BA3}')
-    QuickLaunch             = UUID(u'{52a4f021-7b75-48a9-9f6b-4b87a210bc8f}')
-    Recent                  = UUID(u'{AE50C081-EBD2-438A-8655-8A092E34987A}')
-    RecordedTVLibrary       = UUID(u'{1A6FDBA2-F42D-4358-A798-B74D745926C5}')
-    ResourceDir             = UUID(u'{8AD10C31-2ADB-4296-A8F7-E4701232C972}')
-    Ringtones               = UUID(u'{C870044B-F49E-4126-A9C3-B52A1FF411E8}')
-    RoamingAppData          = UUID(u'{3EB685DB-65F9-4CF6-A03A-E3EF65729F3D}')
-    RoamedTileImages        = UUID(u'{AAA8D5A5-F1D6-4259-BAA8-78E7EF60835E}')
-    RoamingTiles            = UUID(u'{00BCFC5A-ED94-4e48-96A1-3F6217F21990}')
-    SampleMusic             = UUID(u'{B250C668-F57D-4EE1-A63C-290EE7D1AA1F}')
-    SamplePictures          = UUID(u'{C4900540-2379-4C75-844B-64E6FAF8716B}')
-    SamplePlaylists         = UUID(u'{15CA69B3-30EE-49C1-ACE1-6B5EC372AFB5}')
-    SampleVideos            = UUID(u'{859EAD94-2E85-48AD-A71A-0969CB56A6CD}')
-    SavedGames              = UUID(u'{4C5C32FF-BB9D-43b0-B5B4-2D72E54EAAA4}')
-    SavedSearches           = UUID(u'{7d1d3a04-debb-4115-95cf-2f29da2920da}')
-    Screenshots             = UUID(u'{b7bede81-df94-4682-a7d8-57a52620b86f}')
-    SearchHistory           = UUID(u'{0D4C3DB6-03A3-462F-A0E6-08924C41B5D4}')
-    SearchTemplates         = UUID(u'{7E636BFE-DFA9-4D5E-B456-D7B39851D8A9}')
-    SendTo                  = UUID(u'{8983036C-27C0-404B-8F08-102D10DCFD74}')
-    SidebarDefaultParts     = UUID(u'{7B396E54-9EC5-4300-BE0A-2482EBAE1A26}')
-    SidebarParts            = UUID(u'{A75D362E-50FC-4fb7-AC2C-A8BEAA314493}')
-    SkyDrive                = UUID(u'{A52BBA46-E9E1-435f-B3D9-28DAA648C0F6}')
-    SkyDriveCameraRoll      = UUID(u'{767E6811-49CB-4273-87C2-20F355E1085B}')
-    SkyDriveDocuments       = UUID(u'{24D89E24-2F19-4534-9DDE-6A6671FBB8FE}')
-    SkyDrivePictures        = UUID(u'{339719B5-8C47-4894-94C2-D8F77ADD44A6}')
-    StartMenu               = UUID(u'{625B53C3-AB48-4EC1-BA1F-A1EF4146FC19}')
-    Startup                 = UUID(u'{B97D20BB-F46A-4C97-BA10-5E3608430854}')
-    System                  = UUID(u'{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}')
-    SystemX86               = UUID(u'{D65231B0-B2F1-4857-A4CE-A8E7C6EA7D27}')
-    Templates               = UUID(u'{A63293E8-664E-48DB-A079-DF759E0509F7}')
-    UserPinned              = UUID(u'{9E3995AB-1F9C-4F13-B827-48B24B6C7174}')
-    UserProfiles            = UUID(u'{0762D272-C50A-4BB0-A382-697DCD729B80}')
-    UserProgramFiles        = UUID(u'{5CD7AEE2-2219-4A67-B85D-6C9CE15660CB}')
-    UserProgramFilesCommon  = UUID(u'{BCBD3057-CA5C-4622-B42D-BC56DB0AE516}')
-    Videos                  = UUID(u'{18989B1D-99B5-455B-841C-AB7C74E4DDFC}')
-    VideosLibrary           = UUID(u'{491E922F-5643-4AF4-A7EB-4E7A138D8174}')
-    Windows                 = UUID(u'{F38BF404-1D43-42F2-9305-67DE0B28FC23}')
+    AccountPictures         = UUID('{008ca0b1-55b4-4c56-b8a8-4de4b299d3be}')
+    AddNewPrograms          = UUID('{de61d971-5ebc-4f02-a3a9-6c82895e5c04}')
+    AdminTools              = UUID('{724EF170-A42D-4FEF-9F26-B60E846FBA4F}')
+    AppDataDesktop          = UUID('{B2C5E279-7ADD-439F-B28C-C41FE1BBF672}')
+    AppDataDocuments        = UUID('{7BE16610-1F7F-44AC-BFF0-83E15F2FFCA1}')
+    AppDataFavorites        = UUID('{7CFBEFBC-DE1F-45AA-B843-A542AC536CC9}')
+    AppDataProgramData      = UUID('{559D40A3-A036-40FA-AF61-84CB430A4D34}')
+    ApplicationShortcuts    = UUID('{A3918781-E5F2-4890-B3D9-A7E54332328C}')
+    AppsFolder              = UUID('{1e87508d-89c2-42f0-8a7e-645a0f50ca58}')
+    AppUpdates              = UUID('{a305ce99-f527-492b-8b1a-7e76fa98d6e4}')
+    CameraRoll              = UUID('{AB5FB87B-7CE2-4F83-915D-550846C9537B}')
+    CDBurning               = UUID('{9E52AB10-F80D-49DF-ACB8-4330F5687855}')
+    ChangeRemovePrograms    = UUID('{df7266ac-9274-4867-8d55-3bd661de872d}')
+    CommonAdminTools        = UUID('{D0384E7D-BAC3-4797-8F14-CBA229B392B5}')
+    CommonOEMLinks          = UUID('{C1BAE2D0-10DF-4334-BEDD-7AA20B227A9D}')
+    CommonPrograms          = UUID('{0139D44E-6AFE-49F2-8690-3DAFCAE6FFB8}')
+    CommonStartMenu         = UUID('{A4115719-D62E-491D-AA7C-E74B8BE3B067}')
+    CommonStartup           = UUID('{82A5EA35-D9CD-47C5-9629-E15D2F714E6E}')
+    CommonTemplates         = UUID('{B94237E7-57AC-4347-9151-B08C6C32D1F7}')
+    ComputerFolder          = UUID('{0AC0837C-BBF8-452A-850D-79D08E667CA7}')
+    ConflictFolder          = UUID('{4bfefb45-347d-4006-a5be-ac0cb0567192}')
+    ConnectionsFolder       = UUID('{6F0CD92B-2E97-45D1-88FF-B0D186B8DEDD}')
+    Contacts                = UUID('{56784854-C6CB-462b-8169-88E350ACB882}')
+    ControlPanelFolder      = UUID('{82A74AEB-AEB4-465C-A014-D097EE346D63}')
+    Cookies                 = UUID('{2B0F765D-C0E9-4171-908E-08A611B84FF6}')
+    Desktop                 = UUID('{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}')
+    DeviceMetadataStore     = UUID('{5CE4A5E9-E4EB-479D-B89F-130C02886155}')
+    Documents               = UUID('{FDD39AD0-238F-46AF-ADB4-6C85480369C7}')
+    DocumentsLibrary        = UUID('{7B0DB17D-9CD2-4A93-9733-46CC89022E7C}')
+    Downloads               = UUID('{374DE290-123F-4565-9164-39C4925E467B}')
+    Favorites               = UUID('{1777F761-68AD-4D8A-87BD-30B759FA33DD}')
+    Fonts                   = UUID('{FD228CB7-AE11-4AE3-864C-16F3910AB8FE}')
+    # Deprecated since Windows 10, version 1803 - returns E_INVALIDARG
+    Games                   = UUID('{CAC52C1A-B53D-4edc-92D7-6B2E8AC19434}')
+    GameTasks               = UUID('{054FAE61-4DD8-4787-80B6-090220C4B700}')
+    History                 = UUID('{D9DC8A3B-B784-432E-A781-5A1130A75963}')
+    HomeGroup               = UUID('{52528A6B-B9E3-4ADD-B60D-588C2DBA842D}')
+    HomeGroupCurrentUser    = UUID('{9B74B6A3-0DFD-4f11-9E78-5F7800F2E772}')
+    ImplicitAppShortcuts    = UUID('{BCB5256F-79F6-4CEE-B725-DC34E402FD46}')
+    InternetCache           = UUID('{352481E8-33BE-4251-BA85-6007CAEDCF9D}')
+    InternetFolder          = UUID('{4D9F7874-4E0C-4904-967B-40B0D20C3E4B}')
+    Libraries               = UUID('{1B3EA5DC-B587-4786-B4EF-BD1DC332AEAE}')
+    Links                   = UUID('{bfb9d5e0-c6a9-404c-b2b2-ae6db6af4968}')
+    LocalAppData            = UUID('{F1B32785-6FBA-4FCF-9D55-7B8E7F157091}')
+    LocalAppDataLow         = UUID('{A520A1A4-1780-4FF6-BD18-167343C5AF16}')
+    LocalizedResourcesDir   = UUID('{2A00375E-224C-49DE-B8D1-440DF7EF3DDC}')
+    Music                   = UUID('{4BD8D571-6D19-48D3-BE97-422220080E43}')
+    MusicLibrary            = UUID('{2112AB0A-C86A-4FFE-A368-0DE96E47012E}')
+    NetHood                 = UUID('{C5ABBF53-E17F-4121-8900-86626FC2C973}')
+    NetworkFolder           = UUID('{D20BEEC4-5CA8-4905-AE3B-BF251EA09B53}')
+    Objects3D               = UUID('{31C0DD25-9439-4F12-BF41-7FF4EDA38722}')
+    OriginalImages          = UUID('{2C36C0AA-5812-4b87-BFD0-4CD0DFB19B39}')
+    PhotoAlbums             = UUID('{69D2CF90-FC33-4FB7-9A0C-EBB0F0FCB43C}')
+    PicturesLibrary         = UUID('{A990AE9F-A03B-4E80-94BC-9912D7504104}')
+    Pictures                = UUID('{33E28130-4E1E-4676-835A-98395C3BC3BB}')
+    Playlists               = UUID('{DE92C1C7-837F-4F69-A3BB-86E631204A23}')
+    PrintersFolder          = UUID('{76FC4E2D-D6AD-4519-A663-37BD56068185}')
+    PrintHood               = UUID('{9274BD8D-CFD1-41C3-B35E-B13F55A758F4}')
+    Profile                 = UUID('{5E6C858F-0E22-4760-9AFE-EA3317B67173}')
+    ProgramData             = UUID('{62AB5D82-FDC1-4DC3-A9DD-070D1D495D97}')
+    ProgramFiles            = UUID('{905e63b6-c1bf-494e-b29c-65b732d3d21a}')
+    ProgramFilesX64         = UUID('{6D809377-6AF0-444b-8957-A3773F02200E}')
+    ProgramFilesX86         = UUID('{7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E}')
+    ProgramFilesCommon      = UUID('{F7F1ED05-9F6D-47A2-AAAE-29D317C6F066}')
+    ProgramFilesCommonX64   = UUID('{6365D5A7-0F0D-45E5-87F6-0DA56B6A4F7D}')
+    ProgramFilesCommonX86   = UUID('{DE974D24-D9C6-4D3E-BF91-F4455120B917}')
+    Programs                = UUID('{A77F5D77-2E2B-44C3-A6A2-ABA601054A51}')
+    Public                  = UUID('{DFDF76A2-C82A-4D63-906A-5644AC457385}')
+    PublicDesktop           = UUID('{C4AA340D-F20F-4863-AFEF-F87EF2E6BA25}')
+    PublicDocuments         = UUID('{ED4824AF-DCE4-45A8-81E2-FC7965083634}')
+    PublicDownloads         = UUID('{3D644C9B-1FB8-4f30-9B45-F670235F79C0}')
+    PublicGameTasks         = UUID('{DEBF2536-E1A8-4c59-B6A2-414586476AEA}')
+    PublicLibraries         = UUID('{48DAF80B-E6CF-4F4E-B800-0E69D84EE384}')
+    PublicMusic             = UUID('{3214FAB5-9757-4298-BB61-92A9DEAA44FF}')
+    PublicPictures          = UUID('{B6EBFB86-6907-413C-9AF7-4FC2ABF07CC5}')
+    PublicRingtones         = UUID('{E555AB60-153B-4D17-9F04-A5FE99FC15EC}')
+    PublicUserTiles         = UUID('{0482af6c-08f1-4c34-8c90-e17ec98b1e17}')
+    PublicVideos            = UUID('{2400183A-6185-49FB-A2D8-4A392A602BA3}')
+    QuickLaunch             = UUID('{52a4f021-7b75-48a9-9f6b-4b87a210bc8f}')
+    Recent                  = UUID('{AE50C081-EBD2-438A-8655-8A092E34987A}')
+    # RecordedTV is no longer defined as of Windows 7
+    RecordedTVLibrary       = UUID('{1A6FDBA2-F42D-4358-A798-B74D745926C5}')
+    RecycleBinFolder        = UUID('{B7534046-3ECB-4C18-BE4E-64CD4CB7D6AC}')
+    ResourceDir             = UUID('{8AD10C31-2ADB-4296-A8F7-E4701232C972}')
+    Ringtones               = UUID('{C870044B-F49E-4126-A9C3-B52A1FF411E8}')
+    RoamingAppData          = UUID('{3EB685DB-65F9-4CF6-A03A-E3EF65729F3D}')
+    RoamedTileImages        = UUID('{AAA8D5A5-F1D6-4259-BAA8-78E7EF60835E}')
+    RoamingTiles            = UUID('{00BCFC5A-ED94-4e48-96A1-3F6217F21990}')
+    SampleMusic             = UUID('{B250C668-F57D-4EE1-A63C-290EE7D1AA1F}')
+    SamplePictures          = UUID('{C4900540-2379-4C75-844B-64E6FAF8716B}')
+    SamplePlaylists         = UUID('{15CA69B3-30EE-49C1-ACE1-6B5EC372AFB5}')
+    SampleVideos            = UUID('{859EAD94-2E85-48AD-A71A-0969CB56A6CD}')
+    SavedGames              = UUID('{4C5C32FF-BB9D-43b0-B5B4-2D72E54EAAA4}')
+    SavedPictures           = UUID('{3B193882-D3AD-4eab-965A-69829D1FB59F}')
+    SavedPicturesLibrary    = UUID('{E25B5812-BE88-4bd9-94B0-29233477B6C3}')
+    SavedSearches           = UUID('{7d1d3a04-debb-4115-95cf-2f29da2920da}')
+    Screenshots             = UUID('{b7bede81-df94-4682-a7d8-57a52620b86f}')
+    SEARCH_CSC              = UUID('{ee32e446-31ca-4aba-814f-a5ebd2fd6d5e}')
+    SearchHistory           = UUID('{0D4C3DB6-03A3-462F-A0E6-08924C41B5D4}')
+    SearchHome              = UUID('{190337d1-b8ca-4121-a639-6d472d16972a}')
+    SEARCH_MAPI             = UUID('{98ec0e18-2098-4d44-8644-66979315a281}')
+    SearchTemplates         = UUID('{7E636BFE-DFA9-4D5E-B456-D7B39851D8A9}')
+    SendTo                  = UUID('{8983036C-27C0-404B-8F08-102D10DCFD74}')
+    SidebarDefaultParts     = UUID('{7B396E54-9EC5-4300-BE0A-2482EBAE1A26}')
+    SidebarParts            = UUID('{A75D362E-50FC-4fb7-AC2C-A8BEAA314493}')
+    SkyDrive                = UUID('{A52BBA46-E9E1-435f-B3D9-28DAA648C0F6}')
+    SkyDriveCameraRoll      = UUID('{767E6811-49CB-4273-87C2-20F355E1085B}')
+    SkyDriveDocuments       = UUID('{24D89E24-2F19-4534-9DDE-6A6671FBB8FE}')
+    SkyDrivePictures        = UUID('{339719B5-8C47-4894-94C2-D8F77ADD44A6}')
+    StartMenu               = UUID('{625B53C3-AB48-4EC1-BA1F-A1EF4146FC19}')
+    Startup                 = UUID('{B97D20BB-F46A-4C97-BA10-5E3608430854}')
+    SyncManagerFolder       = UUID('{43668BF8-C14E-49B2-97C9-747784D784B7}')
+    SyncResultsFolder       = UUID('{289a9a43-be44-4057-a41b-587a76d7e7f9}')
+    SyncSetupFolder         = UUID('{0F214138-B1D3-4a90-BBA9-27CBC0C5389A}')
+    System                  = UUID('{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}')
+    SystemX86               = UUID('{D65231B0-B2F1-4857-A4CE-A8E7C6EA7D27}')
+    Templates               = UUID('{A63293E8-664E-48DB-A079-DF759E0509F7}')
+    # TreeProperties is no longer defined as of Windows 7
+    UserPinned              = UUID('{9E3995AB-1F9C-4F13-B827-48B24B6C7174}')
+    UserProfiles            = UUID('{0762D272-C50A-4BB0-A382-697DCD729B80}')
+    UserProgramFiles        = UUID('{5CD7AEE2-2219-4A67-B85D-6C9CE15660CB}')
+    UserProgramFilesCommon  = UUID('{BCBD3057-CA5C-4622-B42D-BC56DB0AE516}')
+    UsersFiles              = UUID('{f3ce0f7c-4901-4acc-8648-d5d44b04ef8f}')
+    UsersLibraries          = UUID('{A302545D-DEFF-464b-ABE8-61C8648D939B}')
+    Videos                  = UUID('{18989B1D-99B5-455B-841C-AB7C74E4DDFC}')
+    VideosLibrary           = UUID('{491E922F-5643-4AF4-A7EB-4E7A138D8174}')
+    Windows                 = UUID('{F38BF404-1D43-42F2-9305-67DE0B28FC23}')
 
-# http://msdn.microsoft.com/en-us/library/windows/desktop/bb762188.aspx
+# https://docs.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shgetknownfolderpath
 class _UserHandle(object):
     current = wintypes.HANDLE(0)
     common  = wintypes.HANDLE(-1)
 
-# http://msdn.microsoft.com/en-us/library/windows/desktop/ms680722.aspx
+# https://docs.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cotaskmemfree
 _CoTaskMemFree = windll.ole32.CoTaskMemFree
 _CoTaskMemFree.restype= None
 _CoTaskMemFree.argtypes = [c_void_p]
 
-# http://msdn.microsoft.com/en-us/library/windows/desktop/bb762188.aspx
+# https://docs.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shgetknownfolderpath
 # http://web.archive.org/web/20111025090317/http://www.themacaque.com/?p=954
 _SHGetKnownFolderPath = windll.shell32.SHGetKnownFolderPath
 _SHGetKnownFolderPath.argtypes = [
@@ -538,9 +631,9 @@ def _get_known_path(known_folder_id, user_handle=_UserHandle.current):
     S_OK = 0
     if _SHGetKnownFolderPath(byref(kf_id), 0, user_handle,
                              byref(pPath)) != S_OK:
-        raise RuntimeError(u"Failed to retrieve known folder path '%r' - this "
-                           u"is most likely caused by OneDrive, see General "
-                           u"Readme" % known_folder_id)
+        raise RuntimeError(
+            f"Failed to retrieve known folder path '{known_folder_id!r}' - "
+            f"this is most likely caused by OneDrive, see General Readme")
     path = pPath.value
     _CoTaskMemFree(pPath)
     return path
@@ -571,7 +664,7 @@ def _get_known_path(known_folder_id, user_handle=_UserHandle.current):
 #       MA 02110-1301, USA.
 #
 # Edits have been made to it to fit Wrye Bash's code style and to port it to
-# 64bit/py3.
+# 64bit/python3.
 # BEGIN TASKDIALOG PART =======================================================
 _BUTTONID_OFFSET                 = 1000
 
@@ -788,6 +881,10 @@ _HEADING = 3
 # END TASKDIALOG PART =========================================================
 
 # API - Functions =============================================================
+def drive_exists(dir_path):
+    """Check if the drive the dir is on exists."""
+    return dir_path.s.startswith('\\') or dir_path.drive().exists()
+
 def get_registry_path(subkey, entry, test_path_callback):
     """Check registry for a path to a program."""
     if not winreg: return None
@@ -795,13 +892,13 @@ def get_registry_path(subkey, entry, test_path_callback):
         for wow6432 in (u'', u'Wow6432Node\\'):
             try:
                 reg_key = winreg.OpenKey(
-                    hkey, u'Software\\%s%s' % (wow6432, subkey), 0,
+                    hkey, f'Software\\{wow6432}{subkey}', 0,
                     winreg.KEY_READ | winreg.KEY_WOW64_64KEY)
                 reg_val = winreg.QueryValueEx(reg_key, entry)
             except OSError:
                 continue
             if reg_val[1] != winreg.REG_SZ: continue
-            installPath = GPath(reg_val[0])
+            installPath = _GPath(reg_val[0])
             if not installPath.exists(): continue
             if not test_path_callback(installPath): continue
             return installPath
@@ -825,26 +922,26 @@ def get_win_store_game_info(submod):
         app_name, publisher_name, publisher_id)
 
 def get_personal_path():
-    return (GPath(_get_known_path(_FOLDERID.Documents)),
+    return (_GPath(_get_known_path(_FOLDERID.Documents)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
 def get_local_app_data_path():
-    return (GPath(_get_known_path(_FOLDERID.LocalAppData)),
+    return (_GPath(_get_known_path(_FOLDERID.LocalAppData)),
             _(u'Folder path retrieved via SHGetKnownFolderPath'))
 
 def init_app_links(apps_dir, badIcons, iconList):
     init_params = []
     for path, (target, icon, shortcut_descr) in _get_app_links(
-            apps_dir).iteritems():
+            apps_dir).items():
         # msi shortcuts: dc0c8de
-        if target.lower().find(u'' r'installer\{') != -1:
+        if target.lower().find(r'installer\{') != -1:
             target = path
         else:
-            target = GPath(target)
+            target = _GPath(target)
         if not target.exists(): continue
         # Target exists - extract path, icon and shortcut_descr
         # First try a custom icon #TODO(ut) docs - also comments methods here!
-        fileName = u'%s%%i.png' % path.sbody
+        fileName = f'{path.sbody}%i.png'
         customIcons = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
         if customIcons[0].exists():
             icon = customIcons
@@ -861,10 +958,10 @@ def init_app_links(apps_dir, badIcons, iconList):
                             u'%SystemRoot%\\System32\\shell32.dll'), u'2'
                 else:
                     icon, idex = _get_default_app_icon(idex, target)
-            icon = GPath(icon)
+            icon = _GPath(icon)
             if icon.exists():
                 fileName = u';'.join((icon.s, idex))
-                icon = iconList(GPath(fileName))
+                icon = iconList(_GPath(fileName))
                 # Last, use the 'x' icon
             else:
                 icon = badIcons
@@ -901,8 +998,8 @@ def get_file_version(filename):
     return _query_string_field_version(filename, u'FileVersion')
 
 def testUAC(gameDataPath):
-    deprint(u'Testing if game folder is UAC-protected')
-    tmpDir = Path.tempDir()
+    _deprint(u'Testing if game folder is UAC-protected')
+    tmpDir = _Path.tempDir()
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
     with tempFile.open(u'wb'): pass # create the file
@@ -921,18 +1018,19 @@ def setUAC(handle, uac=True):
     if _isUAC and win32gui:
         win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
-def getJava(): # PY3: cache this
+@functools.cache
+def getJava():
     """Locate javaw.exe to launch jars from Bash."""
     try:
-        java_home = GPath(get_env_var(u'JAVA_HOME'))
+        java_home = _GPath(os.environ[u'JAVA_HOME'])
         java_bin_path = java_home.join(u'bin', u'javaw.exe')
-        if java_bin_path.isfile(): return java_bin_path
+        if java_bin_path.is_file(): return java_bin_path
     except KeyError: # no JAVA_HOME
         pass
-    sys_root = GPath(get_env_var(u'SYSTEMROOT'))
+    sys_root = _GPath(os.environ[u'SYSTEMROOT'])
     # Default location: Windows\System32\javaw.exe
     java_bin_path = sys_root.join(u'system32', u'javaw.exe')
-    if not java_bin_path.isfile():
+    if not java_bin_path.is_file():
         # 1st possibility:
         #  - Bash is running as 32-bit
         #  - The only Java installed is 64-bit
@@ -940,7 +1038,7 @@ def getJava(): # PY3: cache this
         # Windows\SysWOW64.  So look in the ACTUAL System32 folder
         # by using Windows\SysNative
         java_bin_path = sys_root.join(u'sysnative', u'javaw.exe')
-    if not java_bin_path.isfile():
+    if not java_bin_path.is_file():
         # 2nd possibility
         #  - Bash is running as 64-bit
         #  - The only Java installed is 32-bit
@@ -960,11 +1058,7 @@ def fixup_taskbar_icon():
     https://stackoverflow.com/questions/1551605/how-to-set-applications-taskbar-icon-in-windows-7/1552105#1552105
 
     Note: this should be called before showing any top level windows."""
-    appid = u'Wrye Bash'
-    try:
-        windll.shell32.SetCurrentProcessExplicitAppUserModelID(appid)
-    except AttributeError:
-        pass # On a pre-Win7
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID('Wrye Bash')
 
 def mark_high_dpi_aware():
     """Marks the current process as High DPI-aware."""
@@ -976,7 +1070,7 @@ def mark_high_dpi_aware():
 def python_tools_dir():
     """Returns the absolute path to the Tools directory of the currently used
     Python installation."""
-    return os.path.join(sys.prefix, u'Tools') # easy on Windows
+    return os.path.join(real_sys_prefix(), u'Tools') # easy on Windows
 
 def convert_separators(p):
     """Converts other OS's path separators to separators for this OS."""
@@ -1148,7 +1242,7 @@ class TaskDialog(object):
         if button.value >= _BUTTONID_OFFSET:
             button = self.__custom_buttons[button.value - _BUTTONID_OFFSET][0]
         else:
-            for stock_btn, stock_val in self.stock_button_ids.iteritems():
+            for stock_btn, stock_val in self.stock_button_ids.items():
                 if stock_val == button.value:
                     button = stock_btn
                     break
@@ -1311,7 +1405,7 @@ class TaskDialog(object):
                 button = self.__custom_buttons[wparam - _BUTTONID_OFFSET][0]
                 args.append(button)
             else:
-                for stock_btn, stock_val in self.stock_button_ids.iteritems():
+                for stock_btn, stock_val in self.stock_button_ids.items():
                     if stock_val == wparam:
                         button = stock_btn
                         break

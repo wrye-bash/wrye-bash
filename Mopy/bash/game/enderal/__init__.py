@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -93,29 +93,31 @@ class EnderalGameInfo(SkyrimGameInfo):
     }
 
     bethDataFiles = {
-        u'skyrim.esm',
-        u'update.esm',
-        u'update.bsa',
-        u'enderal - forgotten stories.esm',
-        u'e - meshes.bsa',
-        u'e - music.bsa',
-        u'e - scripts.bsa',
-        u'e - sounds.bsa',
-        u'e - textures1.bsa',
-        u'e - textures2.bsa',
-        u'e - textures3.bsa',
-        u'l - textures.bsa',
-        u'l - voices.bsa',
-        u'skyrim - animations.bsa',
-        u'skyrim - interface.bsa',
-        u'skyrim - meshes.bsa',
-        u'skyrim - misc.bsa',
-        u'skyrim - shaders.bsa',
-        u'skyrim - sounds.bsa',
-        u'skyrim - textures.bsa',
+        'e - meshes.bsa',
+        'e - music.bsa',
+        'e - scripts.bsa',
+        'e - sounds.bsa',
+        'e - textures1.bsa',
+        'e - textures2.bsa',
+        'e - textures3.bsa',
+        'enderal - forgotten stories.esm',
+        'l - textures.bsa',
+        'l - voices.bsa',
+        'skyrim - animations.bsa',
+        'skyrim - interface.bsa',
+        'skyrim - meshes.bsa',
+        'skyrim - misc.bsa',
+        'skyrim - shaders.bsa',
+        'skyrim - sounds.bsa',
+        'skyrim - textures.bsa',
+        'skyrim.esm',
+        'update.bsa',
+        'update.esm',
     }
 
     nirnroots = _(u'Vynroots')
+
+    _patcher_package = 'bash.game.enderal' # We need to override tweaks
     @classmethod
     def init(cls):
         # Copy-pasted from Skyrim
@@ -179,7 +181,8 @@ class EnderalGameInfo(SkyrimGameInfo):
         header_type.valid_header_sigs = set(
             header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
                                          b'ACRE', b'LAND', b'INFO', b'NAVM',
-                                         b'PHZD', b'PGRE'])
+                                         b'PARW', b'PBAR', b'PBEA', b'PCON',
+                                         b'PFLA', b'PGRE', b'PHZD', b'PMIS'])
         header_type.plugin_form_version = 43
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,

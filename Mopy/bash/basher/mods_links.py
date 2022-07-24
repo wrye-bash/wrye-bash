@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -31,7 +31,7 @@ from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link, MultiLink
-from ..bolt import GPath, dict_sort
+from ..bolt import FName, dict_sort
 from ..gui import BusyCursor, copy_text_to_clipboard, get_shift_down, \
     get_ctrl_down
 from ..parsers import CsvParser
@@ -157,7 +157,7 @@ class Mods_LoadList(ChoiceLink):
         if self.__class__.loadListsDict is self.__class__.__uninitialized:
             loadListData = load_order.get_active_mods_lists()
             loadListData[u'Vanilla'] = [
-                GPath(x) for x in bush.game.bethDataFiles if x.endswith(
+                FName(x) for x in bush.game.bethDataFiles if x.endswith(
                     u'.esm') # but avoid activating modding esms for oblivion
                 and (not re.match(bosh.reOblivion.pattern, x, re.I)
                      or x == u'oblivion.esm')]
@@ -214,7 +214,8 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         bosh.modInfos.setOblivionVersion(self._version_key)
         self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
-            bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,u'vOblivion', self._version_key)
+            bosh.saveInfos.set_profile_attr(bosh.saveInfos.localSave,
+                                            'vOblivion', self._version_key)
         Link.Frame.set_bash_frame_title()
 
 # "File" submenu --------------------------------------------------------------
@@ -222,21 +223,16 @@ class Mods_CreateBlankBashedPatch(ItemLink):
     """Create a new bashed patch."""
     _text = _(u'New Bashed Patch')
     _help = _(u'Create a new Bashed Patch.')
+    _keyboard_hint = 'Ctrl+Shift+N'
 
     def Execute(self):
-        newPatchName = bosh.modInfos.generateNextBashedPatch(
-            self.window.GetSelected())
-        if newPatchName is not None:
-            self.window.ClearSelected(clear_details=True)
-            self.window.RefreshUI(redraw=[newPatchName], refreshSaves=False)
-        else:
-            self._showWarning(u'Unable to create new bashed patch: '
-                              u'10 bashed patches already exist!')
+        self.window.new_bashed_patch()
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
     _text = _(u'New Plugin...')
     _help = _(u'Create a new blank plugin.')
+    _keyboard_hint = 'Ctrl+N'
 
     def Execute(self):
         CreateNewPlugin.display_dialog(self.window)
@@ -245,14 +241,14 @@ class Mods_CreateBlank(ItemLink):
 class Mods_ListMods(ItemLink):
     """Copies list of mod files to clipboard."""
     _text = _(u'List Mods...')
-    _help = _(u'Copies list of active mod files to clipboard.')
+    _help = _(u'Copies list of active plugins to clipboard.')
 
     def Execute(self):
         #--Get masters list
         list_txt = bosh.modInfos.getModList(showCRC=get_shift_down(),
                                             showVersion=not get_ctrl_down())
         copy_text_to_clipboard(list_txt)
-        self._showLog(list_txt, title=_(u'Active Mod Files'), fixedFont=False)
+        self._showLog(list_txt, title=_(u'Active Plugins'), fixedFont=False)
 
 #------------------------------------------------------------------------------
 # Basically just a convenient 'whole LO' version of Mod_ListBashTags
@@ -273,14 +269,14 @@ class Mods_CleanDummyMasters(EnabledLink):
     _help = _(u"Clean up after using a 'Create Dummy Masters...' command")
 
     def _enable(self):
-        for fileInfo in bosh.modInfos.itervalues():
+        for fileInfo in bosh.modInfos.values():
             if fileInfo.header.author == u'BASHED DUMMY':
                 return True
         return False
 
     def Execute(self):
         remove = []
-        for fileName, fileInfo in bosh.modInfos.iteritems():
+        for fileName, fileInfo in bosh.modInfos.items():
             if fileInfo.header.author == u'BASHED DUMMY':
                 remove.append(fileName)
         remove = load_order.get_ordered(remove)
@@ -355,11 +351,11 @@ class Mods_CrcRefresh(ItemLink):
     def Execute(self):
         message = u'== %s' % _(u'Mismatched CRCs') + u'\n\n'
         with BusyCursor(): pairs = bosh.modInfos.refresh_crcs()
-        mismatched = {k: v for k, v in pairs.iteritems() if v[0] != v[1]}
+        mismatched = {k: v for k, v in pairs.items() if v[0] != v[1]}
         if mismatched:
             message += u'  * ' + u'\n  * '.join(
-                [u'%s: cached %08X real %08X' % (k, v[1], v[0]) for k, v in
-                 mismatched.iteritems()])
+                [f'{k}: cached {v[1]:08X} real {v[0]:08X}' for k, v in
+                 mismatched.items()])
             self.window.RefreshUI(redraw=mismatched, refreshSaves=False)
         else: message += _(u'No stale cached CRC values detected')
         self._showWryeLog(message)
@@ -386,9 +382,9 @@ class Mods_ExportBashTags(_Mods_BashTags):
     _csv_header = u'Plugin', u'Tags'
 
     def Execute(self):
-        exp_path = self._askSave(title=_(u'Export bash tags to CSV file:'),
-            defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
-            wildcard=u'*.csv')
+        exp_path = self._askSave(title=_('Export bash tags to CSV file:'),
+            defaultDir=bass.dirs['patches'], defaultFile='SavedTags.csv',
+            wildcard='*.csv')
         if not exp_path: return
         self.plugins_exported = 0
         self.write_text_file(exp_path)
@@ -400,8 +396,7 @@ class Mods_ExportBashTags(_Mods_BashTags):
         for pl_name, p in dict_sort(bosh.modInfos):
             curr_tags = p.getBashTags()
             if curr_tags:
-                out.write(u'"%s","%s"\n' % (
-                    pl_name, u', '.join(sorted(curr_tags))))
+                out.write(f'"{pl_name}","{u", ".join(sorted(curr_tags))}"\n')
                 self.plugins_exported += 1
 
 #------------------------------------------------------------------------------
@@ -418,14 +413,14 @@ class Mods_ImportBashTags(_Mods_BashTags):
               u'listed in the CSV file will not be touched.') + u'\n\n' +
             _(u'Are you sure you want to proceed?')):
             return
-        imp_path = self._askOpen(title=_(u'Import bash tags from CSV file:'),
-            defaultDir=bass.dirs[u'patches'], defaultFile=u'SavedTags.csv',
-            wildcard=u'*.csv')
+        imp_path = self._askOpen(title=_('Import bash tags from CSV file:'),
+            defaultDir=bass.dirs['patches'], defaultFile='SavedTags.csv',
+            wildcard='*.csv')
         if not imp_path: return
         self.first_line = True
         self.plugins_imported = []
         try:
-            self.readFromText(imp_path)
+            self.read_csv(imp_path)
         except exception.BoltError:
             self._showError(_(u'The selected file is not a valid '
                               u'bash tags CSV export.'))
@@ -440,11 +435,16 @@ class Mods_ImportBashTags(_Mods_BashTags):
             if len(csv_fields) != 2 or csv_fields != [u'Plugin', u'Tags']:
                 raise exception.BoltError(u'Header error: %s' % (csv_fields,))
             return
-        pl_name, curr_tags = GPath(csv_fields[0]), csv_fields[1]
-        if pl_name in bosh.modInfos:
-            self.plugins_imported.append(pl_name)
-            bosh.modInfos[pl_name].setBashTags(
-                {t.strip() for t in curr_tags.split(u',')})
+        pl_name, curr_tags = csv_fields
+        if (pl_name := FName(pl_name)) in bosh.modInfos:
+            target_tags = {t.strip() for t in curr_tags.split(u',')}
+            target_pl = bosh.modInfos[pl_name]
+            # Only import if doing this would actually change anything and mark
+            # as non-automatic (otherwise they'll just get deleted immediately)
+            if target_pl.getBashTags() != target_tags:
+                self.plugins_imported.append(pl_name)
+                target_pl.setBashTags(target_tags)
+                target_pl.set_auto_tagged(False)
 
 #------------------------------------------------------------------------------
 class Mods_ClearManualBashTags(ItemLink):
@@ -461,7 +461,7 @@ class Mods_ClearManualBashTags(ItemLink):
                 _(u'Are you sure you want to proceed?')):
             return
         pl_reset = []
-        for pl_name, p in bosh.modInfos.iteritems():
+        for pl_name, p in bosh.modInfos.items():
             if not p.is_auto_tagged():
                 pl_reset.append(pl_name)
                 p.set_auto_tagged(True)

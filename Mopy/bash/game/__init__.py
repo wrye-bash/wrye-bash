@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -26,11 +26,10 @@ active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
 
 import importlib
-from collections import defaultdict
 from itertools import chain
 from os.path import join as _j
 
-from .. import brec
+from .. import brec, bolt
 
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
@@ -89,7 +88,7 @@ class GameInfo(object):
     # and therefore needs a different file here).
     version_detect_file = u''
     # The main plugin Wrye Bash should look for
-    master_file = u''
+    master_file: bolt.FName = bolt.FName('')
     # The directory in which mods and other data files reside. This is relative
     # to the game directory.
     mods_dir = u'Data'
@@ -329,11 +328,11 @@ class GameInfo(object):
         # Whether or not the Archive.exe tool for this game creates BSL files
         has_bsl = False
         # Maps BSA names to the date to which they should be redated. Fallback
-        # will be used for BSAs which are not explicitly listed. Format is
-        # ISO 8601 (year-month-day). Generally used to redate the vanilla BSAs
-        # before all mod BSAs, and all BSAs before loose files by choosing
-        # dates older than the game's release date.
-        redate_dict = defaultdict(lambda: u'2006-01-01')
+        # will be used for BSAs which are not explicitly listed. We hardcode
+        # time.mktime result due to locale issues. Generally used to redate
+        # the vanilla BSAs before all mod BSAs, and all BSAs before loose
+        # files by choosing dates older than the game's release date.
+        redate_dict = bolt.DefaultFNDict(lambda: 1136066400) # '2006-01-01'
         # All BSA versions accepted by this game. If empty, indicates that this
         # game does not use BSA versions and so BSA version checks will be
         # skipped entirely.
@@ -359,15 +358,16 @@ class GameInfo(object):
         xe_key_prefix = u''
 
     class Bain(object):
-        """Information about what BAIN should do for this game."""
+        """Information about what BAIN should do for this game. All strings in
+        here must be lower-cased!"""
         # The allowed default data directories that BAIN can install to
         data_dirs = {
-            u'ini',
-            u'meshes',
-            u'music',
-            u'sound',
-            u'textures',
-            u'video'
+            'ini',
+            'meshes',
+            'music',
+            'sound',
+            'textures',
+            'video'
         }
         # Directories in the Data folder to exclude from Clean Data
         keep_data_dirs = set()
@@ -375,6 +375,12 @@ class GameInfo(object):
         keep_data_files = set()
         # File prefixes in the Data folder to exclude from Clean Data
         keep_data_file_prefixes = set()
+        # The directory into which LOD meshes are installed
+        lod_meshes_dir = _j('meshes', 'lod')
+        # The directory into which LOD textures are installed
+        lod_textures_dir = _j('textures', 'lod')
+        # The suffix that LOD textures used as normals have in this game
+        lod_textures_normals_suffix = '_n'
         # Files BAIN shouldn't skip
         no_skip = ()
         # Directories where specific file extensions should not be skipped
@@ -388,8 +394,8 @@ class GameInfo(object):
         )
         # Wrye Bash files to exclude from Clean Data
         wrye_bash_data_files = set()
-        # Wrye Bash directories to exclude from Clean Data
-        wrye_bash_data_dirs = {u'Bash Patches', u'BashTags', u'INI Tweaks'}
+        # Wrye Bash directories to install and exclude from Clean Data
+        wrye_bash_data_dirs = {'bash patches', 'bashtags', 'ini tweaks'}
 
     # Plugin format stuff
     class Esp(object):
@@ -433,6 +439,12 @@ class GameInfo(object):
         # groups and place some sort of thing into the cell (e.g. ACHR, REFR,
         # PMIS, etc.)
         reference_types = set()
+        # Whether to warn about plugins with header form
+        # versions < RecordHeader.plugin_form_version
+        warn_older_form_versions = False
+        # Whether to sort LVSPs after SPELs in actors (CREA/NPC_)
+        ##: Workaround, see MelSpellsTes4 for the proper solution
+        sort_lvsp_after_spel = False
 
     # Class attributes moved to constants module, set dynamically at init
     #--Game ESM/ESP/BSA files
@@ -494,7 +506,7 @@ class GameInfo(object):
     def _validate_records():
         """Performs validation on the record syntax for all decoded records."""
         sr_to_r = brec.MreRecord.subrec_sig_to_record_sig
-        for rec_class in brec.MreRecord.type_class.itervalues():
+        for rec_class in brec.MreRecord.type_class.values():
             if issubclass(rec_class, brec.MelRecord):
                 rec_class.validate_record_syntax()
                 for sr_sig in rec_class.melSet.loaders:

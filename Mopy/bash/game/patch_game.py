@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -81,23 +81,22 @@ class PatchGame(GameInfo):
     _constants_members = {
         # patcher and tweaks constants
         u'actor_importer_attrs', u'actor_tweaks', u'actor_types',
-        u'actor_values', u'assorted_tweaks', u'names_tweaks', u'cc_passes',
-        u'cc_valid_types', u'cellRecAttrs',
+        u'assorted_tweaks', u'names_tweaks', u'cc_passes',
+        'cc_valid_types', 'cellRecAttrs', 'spell_types',
         u'cell_skip_interior_attrs', u'condition_function_data',
         u'default_eyes', u'destructible_types', u'ench_stats_attrs',
-        u'generic_av_effects', u'getvatsvalue_index', u'graphicsFidTypes',
-        u'graphicsModelAttrs', u'graphicsTypes', u'hostile_effects',
+        u'getvatsvalue_index', u'graphicsFidTypes',
+        u'graphicsModelAttrs', u'graphicsTypes',
         u'import_races_attrs', u'inventoryTypes', u'default_wp_timescale',
-        u'keywords_types', u'listTypes', u'mgef_basevalue', u'mgef_name',
-        u'mgef_school', u'mgef_stats_attrs', u'namesTypes',
+        u'keywords_types', u'listTypes',
+        u'mgef_stats_attrs', u'namesTypes',
         u'nonplayable_biped_flags', u'not_playable_flag', u'body_part_codes',
         u'object_bounds_types', u'pricesTypes', u'race_tweaks',
-        u'race_tweaks_need_collection', u'relations_attrs',
-        u'relations_csv_header', u'relations_csv_row_format',
+        'race_tweaks_need_collection', 'relations_attrs', 'gold_attrs',
         u'save_rec_types', u'scripts_types', u'settings_tweaks',
         u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
-        u'spell_stats_types', u'staff_condition',
-        u'static_attenuation_rec_type', u'statsTypes',
+        u'spell_stats_types', u'staff_condition', 'enchantment_types',
+        u'static_attenuation_rec_type', u'statsTypes', 'text_replacer_rpaths',
         u'text_types',
     }
 
@@ -201,7 +200,8 @@ class PatchGame(GameInfo):
     # Import Actors
     #--------------------------------------------------------------------------
     actor_importer_attrs = {}
-    actor_types = ()
+    actor_types = (b'NPC_',)
+    spell_types = (b'SPEL',)
 
     #--------------------------------------------------------------------------
     # Import Spell Stats
@@ -219,6 +219,13 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     names_tweaks = set()
     body_part_codes = ()
+    text_replacer_rpaths = {}
+    ##: This is a pretty ugly hack. We need to be able to create FormIDs in
+    # these for newer games than Oblivion, but master_file is only defined in
+    # here and importing it in the patcher files is probably a huge headache.
+    # The first parameter is required since Python automatically passes it when
+    # called: bush.game.gold_attrs(x) -> _gm_master == x
+    gold_attrs = lambda _self_ignore, _gm_master: {}
 
     #--------------------------------------------------------------------------
     # Tweak Settings
@@ -229,8 +236,6 @@ class PatchGame(GameInfo):
     # Import Relations
     #--------------------------------------------------------------------------
     relations_attrs = ()
-    relations_csv_header = u''
-    relations_csv_row_format = u''
 
     #--------------------------------------------------------------------------
     # Import Enchantment Stats
@@ -241,6 +246,11 @@ class PatchGame(GameInfo):
     # Import Effect Stats
     #--------------------------------------------------------------------------
     mgef_stats_attrs = ()
+
+    #--------------------------------------------------------------------------
+    # Import Enchantments
+    #--------------------------------------------------------------------------
+    enchantment_types = set()
 
     #--------------------------------------------------------------------------
     # Tweak Assorted
@@ -280,24 +290,3 @@ class PatchGame(GameInfo):
     # The effective timescale to which the wave periods of this game's grass
     # are specified
     default_wp_timescale = 10
-
-    #--------------------------------------------------------------------------
-    # Magic Effects - Oblivion-specific
-    #--------------------------------------------------------------------------
-    # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
-    # generic name.
-    # Ex: Absorb Attribute becomes Absorb Magicka if the effect's actorValue
-    #     field contains 9, but it is actually using an attribute rather than
-    #     an actor value
-    # Ex: Burden uses an actual actor value (encumbrance) but it isn't listed
-    #     since its name doesn't change
-    generic_av_effects = set()
-    # MGEFs that are considered hostile
-    hostile_effects = set()
-    # Maps MGEF signatures to certain MGEF properties
-    mgef_basevalue = {}
-    mgef_name = {}
-    mgef_school = {}
-
-    # Human-readable names for each actor value
-    actor_values = []

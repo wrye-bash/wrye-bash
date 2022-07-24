@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -109,6 +109,8 @@ Return Values:
 
 __author__ = u'Infernio'
 
+from enum import Enum
+
 from ..exception import UnknownListener, ListenerBound
 # no other imports, everything else needs to be able to import this
 
@@ -116,8 +118,7 @@ def null_processor(_event):
     """Argument processor that simply discards the event."""
     return []
 
-# PY3: Turn into enum
-class EventResult(object):
+class EventResult(Enum):
     """Implements the return values for EventHandler listeners."""
     CONTINUE = 0
     """This return value indicates that the event was successfully processed,
@@ -176,21 +177,20 @@ class EventHandler(object):
         for listener in self._listeners:
             result = listener(*listener_args)
             # result will be None if method didn't return anything
-            if result is None or result == EventResult.CONTINUE:
+            if result is None or result is EventResult.CONTINUE:
                 continue
-            elif result == EventResult.FINISH:
+            elif result is EventResult.FINISH:
                 return # to avoid event.Skip()
-            elif result == EventResult.CANCEL:
+            elif result is EventResult.CANCEL:
                 try:
                     event.Veto()
                     return # to avoid event.Skip()
                 except AttributeError:
-                    raise RuntimeError(u'An attempt was made to cancel a type '
-                                       u'of event (%r) that cannot be '
-                                       u'canceled.' % event.__class__)
-            else:
-                raise RuntimeError(u'Incorrect return value (%r) for '
-                                   u'EventHandler listener.' % result)
+                    raise RuntimeError(
+                        f'An attempt was made to cancel a type of event ('
+                        f'{event.__class__!r}) that cannot be canceled.')
+            else:raise RuntimeError(f'Incorrect return value ({result!r}) for '
+                                    f'EventHandler listener.')
         # Need to propagate it up the wx chain
         event.Skip()
 

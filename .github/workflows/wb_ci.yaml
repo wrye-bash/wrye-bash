@@ -10,10 +10,10 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Set up Python 2.7
+    - name: Set up Python 3.9
       uses: actions/setup-python@v2
       with:
-        python-version: 2.7
+        python-version: 3.9
         architecture: 'x64'
     - name: Restore dependencies cache
       uses: actions/cache@v2
@@ -24,14 +24,44 @@ jobs:
           ${{ runner.os }}-pip-
     - name: Install dependencies
       run: |
-        python -m pip install -U pip
+        python -m pip install -U pip setuptools wheel
         python -m pip install -r requirements.txt
+    - name: Test Wrye Bash
+      run: |
+        python -m pytest
     - name: Build Wrye Bash
       # Note the configs - needed for build.py
       run: |
         git config --local user.name "GitHub Actions"
         git config --local user.email "github-action@users.noreply.github.com"
         python scripts/build.py --verbose
-    - name: Test Wrye Bash
+    - name: Copy executable/license files
       run: |
-        python -m pytest
+        cp "scripts/build/standalone/dist/Wrye Bash.exe" Mopy
+        cp LICENSE.md Mopy/LICENSE.md
+#    - name: Create Apps folder # does not work
+#      run: mkdir Mopy/Apps
+    - name: Upload Standalone Build Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ format('Wrye Bash CI {0}.{1}', github.ref_name, github.sha) }}
+        path: |
+          Mopy/*
+          Mopy/LICENSE.md
+          !Mopy/**.py
+          !Mopy/**.pyw
+          !Mopy/**.pyd
+          !Mopy/**.bat
+          !Mopy/**.template
+          !Mopy/redist
+          !Mopy/__pycache__
+          !Mopy/bash/**.py
+          !Mopy/bash/__pycache__
+          !Mopy/bash/basher
+          !Mopy/bash/bosh
+          !Mopy/bash/brec
+          !Mopy/bash/env
+          !Mopy/bash/game
+          !Mopy/bash/gui
+          !Mopy/bash/patcher
+          !Mopy/bash/tests

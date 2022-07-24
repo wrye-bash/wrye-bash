@@ -24,8 +24,10 @@ desktop.ini
 .dropbox
 .DS_Store
 
-# Release archives.
-scripts/dist/*.7z
+# Build-related folders
+scripts/build/standalone/dist/
+scripts/build/standalone/temp/
+scripts/dist/
 
 # Local NSIS
 scripts/build/nsis/
@@ -35,7 +37,7 @@ Mopy/redist/
 
 # translation files
 Mopy/bash/l10n/*.mo
-Mopy/bash/l10n/*NEW.txt
+Mopy/bash/l10n/*NEW.po
 
 # IDE files
 .idea/
@@ -43,6 +45,15 @@ Mopy/bash/l10n/*NEW.txt
 # if a symlink
 .idea
 .vscode
+
+# Common virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # pytest-cov
 .coverage

@@ -16,33 +16,31 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Builds on the basic elements defined in base_elements.py to provide
 definitions for some commonly needed subrecords."""
-
-from __future__ import division
 from collections import defaultdict
-from itertools import chain, izip
+from itertools import chain
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion, PartialLoadDecider, FlagDecider, MelSorted
+    MelUnion, PartialLoadDecider, FlagDecider, MelSorted, MelSimpleArray
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
-    MelStrings, MelUInt8, MelFidList
-from .utils_constants import _int_unpacker, FID, null1
+    MelStrings, MelUInt8
+from .utils_constants import int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
-    dict_sort
+    dict_sort, TrimmedFlags, structs_cache
 from ..exception import ModError, ModSizeError
 
 #------------------------------------------------------------------------------
 class MelActionFlags(MelUInt32Flags):
     """XACT (Action Flags) subrecord for REFR records."""
-    _act_flags = Flags(0, Flags.getNames(u'act_use_default', u'act_activate',
-        u'act_open', u'act_open_by_default'))
+    _act_flags = Flags.from_names(u'act_use_default', u'act_activate',
+                                  u'act_open', u'act_open_by_default')
 
     def __init__(self):
         super(MelActionFlags, self).__init__(b'XACT', u'action_flags',
@@ -52,14 +50,13 @@ class MelActionFlags(MelUInt32Flags):
     # with the ability to mark subrecords as required (e.g. for QSDT)
     def pack_subrecord_data(self, record):
         flag_val = getattr(record, self.attr)
-        return (self._packer(flag_val.dump())
-                if flag_val != self._flag_default else None)
+        return self.packer(
+            flag_val) if flag_val != self._flag_default else None
 
 #------------------------------------------------------------------------------
 class MelActivateParents(MelGroup):
     """XAPD/XAPR (Activate Parents) subrecords for REFR records."""
-    _ap_flags = Flags(0, Flags.getNames(u'parent_activate_only'),
-        unknown_is_unused=True)
+    _ap_flags = TrimmedFlags.from_names(u'parent_activate_only')
 
     def __init__(self):
         super(MelActivateParents, self).__init__(u'activate_parents',
@@ -89,11 +86,11 @@ class MelCtda(MelUnion):
     # This is technically a lot more complex (the highest three bits also
     # encode the comparison operator), but we only care about use_global, so we
     # can treat the rest as unknown flags and just carry them forward
-    _ctda_type_flags = Flags(0, Flags.getNames(
+    _ctda_type_flags = Flags.from_names(
         u'do_or', u'use_aliases', u'use_global', u'use_packa_data',
-        u'swap_subject_and_target'))
+        u'swap_subject_and_target')
 
-    def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=[],
+    def __init__(self, ctda_sub_sig=b'CTDA', suffix_fmt=None,
                  suffix_elements=None, old_suffix_fmts=None):
         """Creates a new MelCtda instance with the specified properties.
 
@@ -106,23 +103,24 @@ class MelCtda(MelUnion):
         :param old_suffix_fmts: A set of old versions to pass to
             MelTruncatedStruct. Must conform to the same syntax as suffix_fmt.
             May be empty.
-        :type old_suffix_fmts: set[unicode]"""
-        if old_suffix_fmts is None: old_suffix_fmts = set()
+        :type old_suffix_fmts: set[str]"""
+        if suffix_fmt is None: suffix_fmt = []
         if suffix_elements is None: suffix_elements = []
+        if old_suffix_fmts is None: old_suffix_fmts = set()
         from .. import bush
         super(MelCtda, self).__init__({
             # Build a (potentially truncated) struct for each function index
             func_index: self._build_struct(func_data, ctda_sub_sig, suffix_fmt,
                                            suffix_elements, old_suffix_fmts)
             for func_index, func_data
-            in bush.game.condition_function_data.iteritems()
+            in bush.game.condition_function_data.items()
         }, decider=PartialLoadDecider(
             # Skip everything up to the function index in one go, we'll be
             # discarding this once we rewind anyways.
             loader=MelStruct(ctda_sub_sig, [u'8s', u'H'], u'ctda_ignored', u'ifunc'),
             decider=AttrValDecider(u'ifunc'),
         ))
-        self._ctda_mel = next(self.element_mapping.itervalues()) # type: MelStruct
+        self._ctda_mel = next(iter(self.element_mapping.values())) # type: MelStruct
 
     # Helper methods - Note that we skip func_data[0]; the first element is
     # the function name, which is only needed for puny human brains
@@ -159,6 +157,7 @@ class MelCtda(MelUnion):
         """Builds a list of struct elements to pass to MelTruncatedStruct."""
         # First, build up a list of the parameter elemnts to use
         func_elements = [
+            # 2 == FormID, see PatchGame.condition_function_data
             (FID, u'param%u' % i) if func_param == 2 else u'param%u' % i
             for i, func_param in enumerate(func_data[1:], start=1)]
         # Then, combine the suffix, parameter and suffix elements
@@ -173,11 +172,11 @@ class MelCtda(MelUnion):
         record.compValue = struct_unpack(u'fI'[record.operFlag.use_global],
                                          record.compValue)[0]
 
-    def mapFids(self, record, function, save=False):
-        super(MelCtda, self).mapFids(record, function, save)
+    def mapFids(self, record, function, save_fids=False):
+        super(MelCtda, self).mapFids(record, function, save_fids)
         if record.operFlag.use_global:
             new_comp_val = function(record.compValue)
-            if save: record.compValue = new_comp_val
+            if save_fids: record.compValue = new_comp_val
 
     def dumpData(self, record, out):
         # See _build_struct comments above for an explanation of this
@@ -189,17 +188,17 @@ class MelCtda(MelUnion):
     # To avoid having to ask 100s of unions to each set their defaults,
     # declare they have fids, etc. Wastes a *lot* of time.
     def hasFids(self, formElements):
-        self.fid_elements = list(self.element_mapping.itervalues())
+        self.fid_elements = list(self.element_mapping.values())
         formElements.add(self)
 
     def getLoaders(self, loaders):
         loaders[self._ctda_mel.mel_sig] = self
 
-    def getSlotsUsed(self): # PY3: unpack
-        return (self.decider_result_attr,) + self._ctda_mel.getSlotsUsed()
+    def getSlotsUsed(self):
+        return self.decider_result_attr, *self._ctda_mel.getSlotsUsed()
 
     def setDefault(self, record):
-        next(self.element_mapping.itervalues()).setDefault(record)
+        next(iter(self.element_mapping.values())).setDefault(record)
 
 class MelCtdaFo3(MelCtda):
     """Version of MelCtda that handles the additional complexities that were
@@ -221,8 +220,8 @@ class MelCtdaFo3(MelCtda):
     # The param #1 values that indicate param #2 is a FormID
     _vats_param2_fid = {0, 1, 2, 3, 9, 10}
 
-    def __init__(self, suffix_fmt=u'', suffix_elements=[],
-                 old_suffix_fmts=set()):
+    def __init__(self, suffix_fmt=None, suffix_elements=None,
+                 old_suffix_fmts=None):
         super(MelCtdaFo3, self).__init__(suffix_fmt=suffix_fmt,
                                          suffix_elements=suffix_elements,
                                          old_suffix_fmts=old_suffix_fmts)
@@ -237,15 +236,15 @@ class MelCtdaFo3(MelCtda):
             record.param2 = struct_unpack(self._vats_param2_fmt[record.param1],
                                           record.param2)[0]
 
-    def mapFids(self, record, function, save=False):
-        super(MelCtdaFo3, self).mapFids(record, function, save)
+    def mapFids(self, record, function, save_fids=False):
+        super(MelCtdaFo3, self).mapFids(record, function, save_fids)
         if record.runOn == 2 and record.ifunc not in self._ignore_ifuncs:
             new_reference = function(record.reference)
-            if save: record.reference = new_reference
+            if save_fids: record.reference = new_reference
         if (record.ifunc == self._getvatsvalue_ifunc and
                 record.param1 in self._vats_param2_fid):
             new_param2 = function(record.param2)
-            if save: record.param2 = new_param2
+            if save_fids: record.param2 = new_param2
 
     def dumpData(self, record, out):
         if record.ifunc == self._getvatsvalue_ifunc:
@@ -255,12 +254,12 @@ class MelCtdaFo3(MelCtda):
 
 #------------------------------------------------------------------------------
 class MelDecalData(MelOptStruct):
-    _decal_data_flags = Flags(0, Flags.getNames(
+    _decal_data_flags = TrimmedFlags.from_names(
         u'parallax',
         u'alphaBlending',
         u'alphaTesting',
         u'noSubtextures', # Skyrim+, will just be ignored for earlier games
-    ), unknown_is_unused=True)
+    )
 
     def __init__(self):
         super(MelDecalData, self).__init__(b'DODT',
@@ -406,10 +405,8 @@ class MelDropSound(MelFid):
 #------------------------------------------------------------------------------
 class MelEnchantment(MelFid):
     """Represents the common enchantment/object effect subrecord."""
-    ##: Would be better renamed to object_effect, but used in tons of places
-    # that need renaming/reworking first
-    def __init__(self):
-        super(MelEnchantment, self).__init__(b'EITM', u'enchantment')
+    def __init__(self, ench_sig=b'EITM'):
+        super(MelEnchantment, self).__init__(ench_sig, u'enchantment')
 
 #------------------------------------------------------------------------------
 class MelPickupSound(MelFid):
@@ -450,15 +447,16 @@ class MelRaceData(MelTruncatedStruct):
         unpacked = ins.unpack(target_unpacker, size_, *debug_strs)
         unpacked = self._pre_process_unpacked(unpacked)
         record.skills = unpacked[:14]
-        for attr, value, action in izip(self.attrs[1:], unpacked[14:],
+        for attr, value, action in zip(self.attrs[1:], unpacked[14:],
                                         self.actions[1:]):
-            setattr(record, attr, action(value) if callable(action) else value)
+            setattr(record, attr,
+                    action(value) if action is not None else value)
 
     def pack_subrecord_data(self, record):
         values = list(record.skills)
         values.extend(
-            action(value).dump() if callable(action) else value
-            for value, action in izip(
+            action(value).dump() if action is not None else value
+            for value, action in zip(
                 (getattr(record, a) for a in self.attrs[1:]),
                 self.actions[1:]))
         return self._packer(*values)
@@ -476,7 +474,7 @@ class MelRaceParts(MelNull):
         :param indx_to_attr: A mapping from the INDX values to the final
             record attributes that will be used for the subsequent
             subrecords.
-        :type indx_to_attr: dict[int, unicode]
+        :type indx_to_attr: dict[int, str]
         :param group_loaders: A callable that takes the INDX value and
             returns an iterable with one or more MelBase-derived subrecord
             loaders. These will be loaded and dumped directly after each
@@ -486,28 +484,28 @@ class MelRaceParts(MelNull):
         # Create loaders for use at runtime
         self._indx_to_loader = {
             part_indx: MelGroup(part_attr, *group_loaders(part_indx))
-            for part_indx, part_attr in indx_to_attr.iteritems()
+            for part_indx, part_attr in indx_to_attr.items()
         }
         self._possible_sigs = {s for element
-                               in self._indx_to_loader.itervalues()
+                               in self._indx_to_loader.values()
                                for s in element.signatures}
 
     def getLoaders(self, loaders):
         temp_loaders = {}
-        for element in self._indx_to_loader.itervalues():
+        for element in self._indx_to_loader.values():
             element.getLoaders(temp_loaders)
         for signature in temp_loaders:
             loaders[signature] = self
 
     def getSlotsUsed(self):
-        return tuple(self._indx_to_attr.itervalues())
+        return tuple(self._indx_to_attr.values())
 
     def setDefault(self, record):
-        for element in self._indx_to_loader.itervalues():
+        for element in self._indx_to_loader.values():
             element.setDefault(record)
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        __unpacker=_int_unpacker # PY3: keyword only search for __unpacker
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs,
+                 __unpacker=int_unpacker):
         if sub_type == b'INDX':
             self._last_indx = ins.unpack(__unpacker, size_, *debug_strs)[0]
         else:
@@ -546,13 +544,10 @@ class MelScript(MelFid):
 #------------------------------------------------------------------------------
 class MelScriptVars(MelSorted):
     """Handles SLSD and SCVR combos defining script variables."""
-    _var_flags = Flags(0, Flags.getNames(u'is_long_or_short'))
-
     def __init__(self):
         super(MelScriptVars, self).__init__(MelGroups(u'script_vars',
             MelStruct(b'SLSD', [u'I', u'12s', u'B', u'7s'], u'var_index',
-                      u'unused1', (self._var_flags, u'var_flags'),
-                      u'unused2'),
+                      'unused1', 'var_type', 'unused2'),
             MelString(b'SCVR', u'var_name'),
         ), sort_by_attrs=u'var_index')
 
@@ -561,7 +556,7 @@ class MelEnableParent(MelOptStruct):
     """Enable Parent struct for a reference record (REFR, ACHR, etc.)."""
     # The pop_in flag doesn't technically exist for all XESP subrecords, but it
     # will just be ignored for those where it doesn't exist, so no problem.
-    _parent_flags = Flags(0, Flags.getNames(u'opposite_parent', u'pop_in'))
+    _parent_flags = Flags.from_names(u'opposite_parent', u'pop_in')
 
     def __init__(self):
         super(MelEnableParent, self).__init__(
@@ -573,8 +568,8 @@ class MelMapMarker(MelGroup):
     """Map marker struct for a reference record (REFR, ACHR, etc.). Also
     supports the WMI1 subrecord from FNV."""
     # Same idea as above - show_all_hidden is FO3+, but that's no problem.
-    _marker_flags = Flags(0, Flags.getNames(
-        u'visible', u'can_travel_to', u'show_all_hidden'))
+    _marker_flags = Flags.from_names('visible', 'can_travel_to',
+                                     'show_all_hidden')
 
     def __init__(self, with_reputation=False):
         group_elems = [
@@ -590,43 +585,46 @@ class MelMapMarker(MelGroup):
 #------------------------------------------------------------------------------
 class MelMODS(MelBase):
     """MODS/MO2S/etc/DMDS subrecord"""
+    _fid_element = MelFid(null1) # dummy MelFid instance to use its loader
+
     def hasFids(self,formElements):
         formElements.add(self)
 
     def setDefault(self,record):
         setattr(record, self.attr, None)
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        __unpacker=_int_unpacker
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs,
+                 __unpacker=int_unpacker, __load_fid=_fid_element.load_bytes):
         insUnpack = ins.unpack
         insRead32 = ins.readString32
         count, = insUnpack(__unpacker, 4, *debug_strs)
         mods_data = []
         dataAppend = mods_data.append
-        for x in xrange(count):
+        for x in range(count):
             string = insRead32(*debug_strs)
-            fid = ins.unpackRef()
+            int_fid = __load_fid(ins, 4)
             index, = insUnpack(__unpacker, 4, *debug_strs)
-            dataAppend((string,fid,index))
+            dataAppend((string, int_fid, index))
         setattr(record, self.attr, mods_data)
 
-    def pack_subrecord_data(self,record):
+    def pack_subrecord_data(self, record, *, __packer=structs_cache['I'].pack,
+                            __fid_packer=_fid_element.packer):
         mods_data = getattr(record, self.attr)
         if mods_data is not None:
             # Sort by 3D Name and 3D Index
             mods_data.sort(key=lambda e: (e[0], e[2]))
-            return b''.join(chain([struct_pack(u'I', len(mods_data))],
-                *([struct_pack(u'I', len(string)), encode(string),
-                   struct_pack(u'=2I', fid, index)]
-                  for (string, fid, index) in mods_data)))
+            return b''.join([__packer(len(mods_data)), *(chain(*(
+                [__packer(len(string)), encode(string), __fid_packer(int_fid),
+                 __packer(index)] for (string, int_fid, index) in
+            mods_data)))])
 
-    def mapFids(self,record,function,save=False):
+    def mapFids(self, record, function, save_fids=False):
         attr = self.attr
         mods_data = getattr(record, attr)
         if mods_data is not None:
             mods_data = [(string,function(fid),index) for (string,fid,index)
-                         in getattr(record, attr)]
-            if save: setattr(record, attr, mods_data)
+                         in mods_data]
+            if save_fids: setattr(record, attr, mods_data)
 
 #------------------------------------------------------------------------------
 class MelRegnEntrySubrecord(MelUnion):
@@ -666,7 +664,7 @@ class MelRefScale(MelFloat):
 class MelSpells(MelSorted):
     """Handles the common SPLO subrecord."""
     def __init__(self):
-        super(MelSpells, self).__init__(MelFids(b'SPLO', u'spells'))
+        super(MelSpells, self).__init__(MelFids('spells', MelFid(b'SPLO')))
 
 #------------------------------------------------------------------------------
 class MelWorldBounds(MelSequential):
@@ -713,11 +711,11 @@ class MelDebrData(MelStruct):
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         byte_data = ins.read(size_, *debug_strs)
-        (record.percentage,) = unpack_byte(ins, byte_data[0:1])
+        record.percentage = unpack_byte(ins, byte_data[0:1])[0]
         record.modPath = byte_data[1:-2]
         if byte_data[-2] != null1:
-            raise ModError(ins.inName,u'Unexpected subrecord: %s' % (debug_strs,))
-        (record.flags,) = struct_unpack(u'B',byte_data[-1])
+            raise ModError(ins.inName, f'Unexpected subrecord: {debug_strs}')
+        record.flags = struct_unpack(u'B', byte_data[-1])[0]
 
     def pack_subrecord_data(self, record):
         return b''.join(
@@ -778,7 +776,7 @@ class MelActorSounds(MelSorted):
 class MelRegions(MelSorted):
     """Handles the CELL subrecord XCLR (Regions)."""
     def __init__(self):
-        super(MelRegions, self).__init__(MelFidList(b'XCLR', u'regions'))
+        super(MelRegions, self).__init__(MelSimpleArray('regions', MelFid(b'XCLR')))
 
 #------------------------------------------------------------------------------
 class MelWeatherTypes(MelSorted):
@@ -817,7 +815,7 @@ class MelLscrLocations(MelSorted):
 #------------------------------------------------------------------------------
 class MelReflectedRefractedBy(MelSorted):
     """Reflected/Refracted By for a reference record (REFR, ACHR, etc.)."""
-    _watertypeFlags = Flags(0, Flags.getNames(u'reflection', u'refraction'))
+    _watertypeFlags = Flags.from_names(u'reflection', u'refraction')
 
     def __init__(self):
         super(MelReflectedRefractedBy, self).__init__(
@@ -825,3 +823,26 @@ class MelReflectedRefractedBy(MelSorted):
                 MelStruct(b'XPWR', [u'2I'], (FID, u'waterReference'),
                           (self._watertypeFlags, u'waterFlags')),
         ), sort_by_attrs=u'waterReference')
+
+#------------------------------------------------------------------------------
+class MelValueWeight(MelStruct):
+    """Handles a common variant of the DATA subrecord that consists of one
+    integer (the value of an object) and one float (the weight of an
+    object)."""
+    def __init__(self):
+        super().__init__(b'DATA', ['I', 'f'], 'value', 'weight')
+
+#------------------------------------------------------------------------------
+class _SpellFlags(Flags):
+    """For SpellFlags, immuneToSilence activates bits 1 AND 3."""
+    __slots__ = []
+
+    def __setitem__(self, index, value):
+        setter = Flags.__setitem__
+        setter(self, index, value)
+        if index == 1:
+            setter(self, 3, value)
+
+SpellFlags = _SpellFlags.from_names('noAutoCalc','immuneToSilence',
+    'startSpell', None, 'ignoreLOS', 'scriptEffectAlwaysApplies',
+    'disallowAbsorbReflect', 'touchExplodesWOTarget')

@@ -16,18 +16,19 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Top level windows in wx is Frame and Dialog. I added some more like Panels
-and the wx.wiz stuff."""
+and the wx.adv (wizards) stuff."""
 __author__ = u'Utumno, Infernio'
 
 import wx as _wx
 import wx.adv as _adv
 
-from .base_components import _AComponent, Color, csf
+from .base_components import _AComponent, Color, scaled
+from ..bolt import deprint
 
 # Special constant defining a window as having whatever position the underlying
 # GUI implementation picks for it by default.
@@ -41,6 +42,7 @@ class _TopLevelWin(_AComponent):
     _def_pos = _wx.DefaultPosition
     _def_size = _wx.DefaultSize
     _min_size = _size_key = _pos_key = None
+    _native_widget: _wx.TopLevelWindow
 
     def __init__(self, parent, sizes_dict, icon_bundle, *args, **kwargs):
         # dict holding size/pos info ##: can be bass.settings or balt.sizes
@@ -120,7 +122,7 @@ class WindowFrame(_TopLevelWin):
      """
     _frame_settings_key = None
     _min_size = _def_size = (250, 250)
-    _wx_widget_type = _wx.Frame
+    _native_widget: _wx.Frame
 
     def __init__(self, parent, title, icon_bundle=None, _base_key=None,
                  sizes_dict={}, caption=False, style=_wx.DEFAULT_FRAME_STYLE,
@@ -139,7 +141,9 @@ class WindowFrame(_TopLevelWin):
                                              lambda event: [event.GetActive()])
         self.set_background_color(self._bkg_color())
 
-    def show_frame(self): self._native_widget.Show()
+    def show_frame(self, center=False):
+        self._native_widget.Show()
+        if center: self._native_widget.Center()
 
     def raise_frame(self): self._native_widget.Raise()
 
@@ -154,13 +158,12 @@ class WindowFrame(_TopLevelWin):
 class DialogWindow(_TopLevelWin):
     """Wrap a dialog control."""
     title = u'OVERRIDE'
-    _wx_widget_type = _wx.Dialog
+    _native_widget: _wx.Dialog
 
     def __init__(self, parent=None, title=None, icon_bundle=None,
                  sizes_dict=None, caption=False, size_key=None, pos_key=None,
                  style=0, **kwargs):
-        # PY3: drop the unicode()
-        self._size_key = size_key or unicode(self.__class__.__name__)
+        self._size_key = size_key or self.__class__.__name__
         self._pos_key = pos_key
         self.title = title or self.__class__.title
         style |= _wx.DEFAULT_DIALOG_STYLE
@@ -181,6 +184,11 @@ class DialogWindow(_TopLevelWin):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.destroy_component()
 
+    def on_closing(self, destroy=False): # flip destroy to False
+        # dialogs are shown via the context manager above, if we destroy
+        # them here they won't be destroyed on __exit__ on mac at least
+        super(DialogWindow, self).on_closing(destroy)
+
     @classmethod
     def display_dialog(cls, *args, **kwargs):
         """Instantiate a dialog, display it and return the ShowModal result."""
@@ -193,27 +201,17 @@ class DialogWindow(_TopLevelWin):
 
         :return: True if the dialog was closed with a good exit code (e.g. by
             clicking an 'OK' or 'Yes' button), False otherwise."""
-        return self.show_modal_raw() in (_wx.ID_OK, _wx.ID_YES)
-
-    # TODO(inf) Investigate uses, they all seem to have weird, fragile logic
-    def show_modal_raw(self):
-        """Begins a new modal dialog and returns the raw exit code."""
-        return self._native_widget.ShowModal()
+        return self._native_widget.ShowModal() in (_wx.ID_OK, _wx.ID_YES)
 
     def accept_modal(self):
         """Closes the modal dialog with a 'normal' exit code. Equivalent to
         clicking the OK button."""
-        self.exit_modal(_wx.ID_OK)
+        self._native_widget.EndModal(_wx.ID_OK)
 
     def cancel_modal(self):
         """Closes the modal dialog with an 'abnormal' exit code. Equivalent to
         clicking the Cancel button."""
-        self.exit_modal(_wx.ID_CANCEL)
-
-    # TODO(inf) Investigate uses, see show_modal_raw above
-    def exit_modal(self, custom_code):
-        """Closes the modal dialog with a custom exit code."""
-        self._native_widget.EndModal(custom_code)
+        self._native_widget.EndModal(_wx.ID_CANCEL)
 
 class StartupDialog(DialogWindow):
     """Dialog shown during early boot, generally due to errors."""
@@ -223,14 +221,14 @@ class StartupDialog(DialogWindow):
 
 # Panels ----------------------------------------------------------------------
 class PanelWin(_AComponent):
-    _wx_widget_type = _wx.Panel
+    _native_widget: _wx.Panel
 
     def __init__(self, parent, no_border=True):
         super(PanelWin, self).__init__(
             parent, style=_wx.TAB_TRAVERSAL | (no_border and _wx.NO_BORDER))
 
 class Splitter(_AComponent):
-    _wx_widget_type = _wx.SplitterWindow
+    _native_widget: _wx.SplitterWindow
 
     def __init__(self, parent, allow_split=True, min_pane_size=0,
                  sash_gravity=0):
@@ -260,7 +258,7 @@ class Splitter(_AComponent):
         self._native_widget.SetSashPosition(sash_position)
 
     def set_min_pane_size(self, min_pane_size):
-        self._native_widget.SetMinimumPaneSize(min_pane_size * csf())
+        self._native_widget.SetMinimumPaneSize(scaled(min_pane_size))
 
     def set_sash_gravity(self, sash_gravity):
         self._native_widget.SetSashGravity(sash_gravity)
@@ -268,18 +266,31 @@ class Splitter(_AComponent):
 class _APageComponent(_AComponent):
     """Abstract base class for 'page' compoenents, i.e. notebooks and
     listbooks."""
+    _native_widget: _wx.BookCtrlBase
+
     def add_page(self, page_component, page_title):
         self._native_widget.AddPage(self._resolve(page_component), page_title)
 
     def get_selected_page_index(self):
         return self._native_widget.GetSelection()
 
-    def set_selected_page_index(self, page_index):
-        self._native_widget.SetSelection(page_index)
+    def set_selected_page_index(self, page_index: int) -> None:
+        corrected_index = max(0, min(self.page_count - 1, page_index))
+        if corrected_index != page_index:
+            deprint(
+                f'warning: attempted to set selected page to {page_index}, '
+                f'out of range of available pages (0-{self.page_count - 1}). '
+                f'Using {corrected_index} instead.'
+            )
+        self._native_widget.SetSelection(corrected_index)
+
+    @property
+    def page_count(self) -> int:
+        return self._native_widget.PageCount
 
 class TabbedPanel(_APageComponent):
     """A panel with tabs, each of which contains a different panel."""
-    _wx_widget_type = _wx.Notebook
+    _native_widget: _wx.Notebook
 
     def __init__(self, parent, multiline=False):
         super(TabbedPanel, self).__init__(
@@ -291,7 +302,7 @@ class TabbedPanel(_APageComponent):
 class ListPanel(_APageComponent):
     """A panel with a list of options that each correspond to a different
     panel."""
-    _wx_widget_type =  _wx.Listbook
+    _native_widget: _wx.Listbook
 
     def __init__(self, parent):
         super(ListPanel, self).__init__(parent)
@@ -300,20 +311,20 @@ class ListPanel(_APageComponent):
 
 class ScrollableWindow(_AComponent):
     """A window with a scrollbar."""
-    _wx_widget_type = _wx.ScrolledWindow
+    _native_widget: _wx.ScrolledWindow
 
     def __init__(self, parent, scroll_horizontal=True, scroll_vertical=True):
         super(ScrollableWindow, self).__init__(parent)
-        scroll_h = (20 if scroll_horizontal else 0) * csf()
-        scroll_v = (20 if scroll_vertical else 0) * csf()
-        units_h = (50 if scroll_horizontal else 0) * csf()
-        units_v = (50 if scroll_vertical else 0) * csf()
+        scroll_h = scaled(20 if scroll_horizontal else 0)
+        scroll_v = scaled(20 if scroll_vertical else 0)
+        units_h = scaled(50 if scroll_horizontal else 0)
+        units_v = scaled(50 if scroll_vertical else 0)
         self._native_widget.SetScrollbars(scroll_h, scroll_v, units_h, units_v)
 
 class CenteredSplash(_AComponent):
     """A centered splash screen without a timeout. Only disappears when either
     the entire application terminates or stop_splash is called."""
-    _wx_widget_type = _adv.SplashScreen
+    _native_widget: _adv.SplashScreen
 
     def __init__(self, splash_path):
         """Creates a new CenteredSplash with an image read from the specified
@@ -323,9 +334,9 @@ class CenteredSplash(_AComponent):
         # user or is explicitly destroyed when the main window is ready
         splash_style = _adv.SPLASH_CENTER_ON_SCREEN | _adv.SPLASH_NO_TIMEOUT
         # Can't use _AComponent.__init__ here, because for some ungodly reason
-        # parent is the *third* parameter in SplashScreen
-        self._native_widget = self._wx_widget_type(splash_bitmap, splash_style,
-                                                   1, None) # Timeout - ignored
+        # parent is the *fourth* parameter in SplashScreen
+        self._native_widget = _adv.SplashScreen(
+            splash_bitmap, splash_style, 1, None) # Timeout - ignored
         self._on_close_evt = self._evt_handler(_wx.EVT_CLOSE)
         self._on_close_evt.subscribe(self.stop_splash)
         _wx.Yield() ##: huh?

@@ -16,21 +16,23 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Assorted Multitweaker - as well as the tweaker itself."""
-from __future__ import division
+
+from __future__ import annotations
+
 import random
 import re
 # Internal
 from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak, \
     IndexingTweak
 from ... import bush, load_order, bolt
-from ...bolt import GPath, deprint
+from ...bolt import deprint
 
 #------------------------------------------------------------------------------
 class _AShowsTweak(MultiTweakItem):
@@ -208,13 +210,12 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
     tweak_choices = [(u'default', u'default')]
     tweak_log_msg = _(u'Books DarNified: %(total_changed)d')
     _align_text = {u'^^': u'center', u'<<': u'left', u'>>': u'right'}
-    _re_align = re.compile(u'' r'^(<<|\^\^|>>)', re.M)
-    _re_bold = re.compile(u'' r'(__|\*\*|~~)')
+    _re_align = re.compile(r'^(<<|\^\^|>>)', re.M)
+    _re_bold = re.compile(r'(__|\*\*|~~)')
     _re_color = re.compile(u'<font color="?([a-fA-F0-9]+)"?>', re.I + re.M)
     _re_div = re.compile(u'<div', re.I + re.M)
-    _re_head_2 = re.compile(u'' r'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',
-                            re.M)
-    _re_head_3 = re.compile(u'' r'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n', re.M)
+    _re_head_2 = re.compile(r'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n', re.M)
+    _re_head_3 = re.compile(r'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n', re.M)
     _re_font = re.compile(u'<font', re.I + re.M)
     _re_font_1 = re.compile(u'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',
                             re.I | re.M)
@@ -237,14 +238,14 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
         rec_text = record.book_text.replace(u'\u201d', u'')
         if self._re_head_2.match(rec_text):
             rec_text = self._re_head_2.sub(
-                u'' r'\1<font face=1 color=220000>\2<font face=3 '
-                u'' r'color=444444>\r\n', rec_text)
+                r'\1<font face=1 color=220000>\2<font face=3 '
+                r'color=444444>\r\n', rec_text)
             rec_text = self._re_head_3.sub(
-                u'' r'\1<font face=3 color=220000>\2<font face=3 '
-                u'' r'color=444444>\r\n', rec_text)
+                r'\1<font face=3 color=220000>\2<font face=3 '
+                r'color=444444>\r\n', rec_text)
             rec_text = self._re_align.sub(self._replace_align, rec_text)
             rec_text = self._re_bold.sub(self._replace_bold, rec_text)
-            rec_text = re.sub(u'' r'\r\n', u'' r'<br>\r\n', rec_text)
+            rec_text = re.sub(r'\r\n', r'<br>\r\n', rec_text)
         else:
             ma_color = self._re_color.search(rec_text)
             if ma_color:
@@ -254,7 +255,7 @@ class AssortedTweak_DarnBooks(MultiTweakItem):
             else:
                 color = u'444444'
             font_face = u'<font face=3 color='+color+u'>'
-            rec_text = self._re_tag_in_word.sub(u'' r'\1', rec_text)
+            rec_text = self._re_tag_in_word.sub(r'\1', rec_text)
             if (self._re_div.search(rec_text) and
                     not self._re_font.search(rec_text)):
                 rec_text = font_face + rec_text
@@ -302,7 +303,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
         if b'CELL' not in mod_file.tops: return
         should_add_cell = self.wants_record
         add_cell = patch_file.tops[b'CELL'].setCell
-        for cell_block in mod_file.tops[b'CELL'].cellBlocks:
+        for cell_block in mod_file.tops[b'CELL'].id_cellBlock.values():
             current_cell = cell_block.cell
             if should_add_cell(current_cell):
                 add_cell(current_cell)
@@ -310,12 +311,12 @@ class AssortedTweak_FogFix(MultiTweakItem):
     def tweak_build_patch(self, log, count, patch_file):
         """Adds merged lists to patchfile."""
         keep = patch_file.getKeeper()
-        for cellBlock in patch_file.tops[b'CELL'].cellBlocks:
+        for cfid, cellBlock in patch_file.tops[b'CELL'].id_cellBlock.items():
             cell = cellBlock.cell
             if self.wants_record(cell):
                 self.tweak_record(cell)
-                keep(cell.fid)
-                count[cell.fid[0]] += 1
+                keep(cfid)
+                count[cfid[0]] += 1
 
 #------------------------------------------------------------------------------
 class AssortedTweak_NoLightFlicker(MultiTweakItem):
@@ -348,7 +349,7 @@ class _AWeightTweak(CustomChoiceTweak):
         log.setHeader(u'=== ' + self.tweak_log_header)
         log(self._log_weight_value % self.chosen_weight)
         log(u'* ' + self.tweak_log_msg % {
-            u'total_changed': sum(count.itervalues())})
+            u'total_changed': sum(count.values())})
         for src_plugin in load_order.get_ordered(count):
             log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
 
@@ -383,13 +384,12 @@ class AssortedTweak_PotionWeight(_AWeightTweak_SEFF):
     tweak_log_msg = _(u'Potions Reweighed: %(total_changed)d')
     _log_weight_value = _(u'Potions set to maximum weight of %f.')
 
-    def validate_values(self, chosen_values):
+    def validate_values(self, chosen_values: tuple) -> str | None:
         if chosen_values[0] >= 1.0:
-            return _(u'Maximum potion weight cannot exceed 1.0. Potions with '
-                     u'higher weight are ignored by this tweak (since they '
-                     u"are usually special 'potion in name only' items).")
-        return super(AssortedTweak_PotionWeight, self).validate_values(
-            chosen_values)
+            return _("Maximum potion weight cannot exceed 1.0. Potions with "
+                     "higher weight are ignored by this tweak (since they "
+                     "are usually special 'potion in name only' items).")
+        return super().validate_values(chosen_values)
 
     def wants_record(self, record):
         return record.weight < 1.0 and super(
@@ -474,9 +474,9 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     tweak_tip = _(u'Script Effect will be silenced and have no graphics.')
     tweak_key = u'SilentScriptEffect'
     tweak_choices = [(u'0', 0)]
-    tweak_log_msg = _(u'Script Effect silenced.')
+    tweak_log_msg = _(u'Script Effect Silenced.')
     default_enabled = True
-    _null_ref = (GPath(bush.game.master_file), 0)
+    _null_ref = (bush.game.master_file, 0)
     _silent_attrs = {u'model': None, u'projectileSpeed': 9999,
                      u'light': _null_ref, u'effectShader': _null_ref,
                      u'enchantEffect': _null_ref, u'castingSound': _null_ref,
@@ -486,11 +486,11 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     def wants_record(self, record):
         # u'' here is on purpose! We're checking the EDID, which gets decoded
         return record.eid == u'SEFF' and any(
-            getattr(record, a) != v for a, v in self._silent_attrs.iteritems())
+            getattr(record, a) != v for a, v in self._silent_attrs.items())
 
     def tweak_record(self, record):
-        s_attrs = self._silent_attrs
-        for attr in s_attrs: setattr(record, attr, s_attrs[attr])
+        for mgef_attr, mgef_val in self._silent_attrs.items():
+            setattr(record, mgef_attr, mgef_val)
         record.flags.noHitEffect = True
 
     def tweak_log(self, log, count):
@@ -726,7 +726,8 @@ class _AAttenuationTweak(CustomChoiceTweak):
     @classmethod
     def _is_nirnroot(cls, record):
         """Helper method for checking whether a record is a nirnroot."""
-        return any(x in record.eid.lower() for x in cls._nirnroot_words)
+        return (reid := record.eid) and any(
+            x in reid.lower() for x in cls._nirnroot_words)
 
     @property
     def chosen_atten(self): return self.choiceValues[self.chosen][0] / 100

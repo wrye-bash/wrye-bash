@@ -16,34 +16,34 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """BAIN Converters aka BCFs"""
 
-from __future__ import division
+from __future__ import annotations
 
-import cPickle as pickle  # PY3
 import io
-import re
-import sys
-from itertools import izip
+import pickle
+from collections import defaultdict
+from itertools import chain
 
-from .. import bolt, archives, bass
-from ..archives import defaultExt, readExts, compressionSettings, \
-    compressCommand
-from ..bolt import DataDict, PickleDict, GPath, Path, SubProgress
+from .. import bolt, archives, bass, balt
+from ..archives import defaultExt, readExts
+from ..bolt import DataDict, PickleDict, Path, SubProgress, top_level_files, \
+    forward_compat_path_to_fn_list
 from ..exception import ArgumentError, StateError
 
-converters_dir = None
-installers_dir = None
+converters_dir: Path | None = None
+installers_dir: Path | None = None
 
 class ConvertersData(DataDict):
     """Converters Data singleton, initialized in InstallersData."""
 
     def __init__(self, bain_data_dir, converters_dir_, dup_bcfs_dir,
                  corrupt_bcfs_dir, installers_dir_):
+        super().__init__({})
         global converters_dir, installers_dir
         converters_dir = converters_dir_
         installers_dir = installers_dir_
@@ -51,7 +51,7 @@ class ConvertersData(DataDict):
         self.corrupt_bcfs_dir = corrupt_bcfs_dir
         #--Persistent data
         self.converterFile = PickleDict(bain_data_dir.join(u'Converters.dat'))
-        self.srcCRC_converters = {}
+        self.srcCRC_converters = defaultdict(list)
         self.bcfCRC_converter = {}
         #--Volatile
         self.bcfPath_sizeCrcDate = {}
@@ -60,186 +60,155 @@ class ConvertersData(DataDict):
         self.converterFile.load()
         convertData = self.converterFile.pickled_data
         self.bcfCRC_converter = convertData.get(u'bcfCRC_converter', {})
-        self.srcCRC_converters = convertData.get(u'srcCRC_converters', {})
+        self.srcCRC_converters = defaultdict(list, convertData.get(
+            'srcCRC_converters', {}))
+        convs = set(self.bcfCRC_converter.values())
+        refs = set(chain(*self.srcCRC_converters.values()))
+        if not ((has_scr := convs & refs) == convs):
+            bolt.deprint(f'converters with no source: {len(convs - has_scr)}')
+        if references_miss := refs - convs:
+            bolt.deprint(f'missing converters for {len(references_miss)}')
+            self.__prune_srcCRC(lambda c: c not in convs)
+        #Partly reconstruct bcfPath_sizeCrcDate to avoid a full refresh on boot
+        self.bcfPath_sizeCrcDate = {co.fullPath: (None, c, None) for c, co in
+                                    self.bcfCRC_converter.items()}
         return True
 
     def save(self):
-        self.converterFile.pickled_data[u'bcfCRC_converter'] = self.bcfCRC_converter
-        self.converterFile.pickled_data[u'srcCRC_converters'] = self.srcCRC_converters
+        pickle_dict = self.converterFile.pickled_data
+        pickle_dict['bcfCRC_converter'] = self.bcfCRC_converter
+        pickle_dict['srcCRC_converters'] = dict(self.srcCRC_converters)
         self.converterFile.save()
-
-    def refreshConvertersNeeded(self):
-        """Return True if refreshConverters is necessary."""
-        self._prune_converters()
-        archives_set = set()
-        scanned = set()
-        convertersJoin = converters_dir.join
-        converterGet = self.bcfPath_sizeCrcDate.get
-        archivesAdd = archives_set.add
-        scannedAdd = scanned.add
-        for bcf_archive in converters_dir.list():
-            apath = convertersJoin(bcf_archive)
-            if apath.isfile() and self.validConverterName(bcf_archive):
-                scannedAdd(apath)
-        if len(scanned) != len(self.bcfPath_sizeCrcDate):
-            return True
-        for bcf_archive in scanned:
-            size, crc, modified = converterGet(bcf_archive, (None, None, None))
-            if crc is None or (size, modified) != bcf_archive.size_mtime():
-                return True
-            archivesAdd(bcf_archive)
-        #--Added/removed packages?
-        return archives_set != set(self.bcfPath_sizeCrcDate)
 
     #--Converters
     @staticmethod
-    def validConverterName(path_name):
-        return path_name.cext == defaultExt and (
-            path_name.csbody[-4:] == u'-bcf' or u'-bcf-' in path_name.csbody)
+    def validConverterName(fn_conv):
+        ends_bcf = (lo := fn_conv.fn_body.lower())[-4:] == '-bcf'
+        return fn_conv.fn_ext == defaultExt and ends_bcf or '-bcf-' in lo
 
     def refreshConverters(self, progress=None, fullRefresh=False):
         """Refresh converter status, and move duplicate BCFs out of the way."""
-        progress = progress or bolt.Progress()
-        pending = set()
-        bcfCRC_converter = self.bcfCRC_converter
-        convJoin = converters_dir.join
         #--Current converters
-        newData = dict()
-        if fullRefresh:
+        bcfs_list = [bcf_arch for bcf_arch in top_level_files(converters_dir)
+                     if self.validConverterName(bcf_arch)] # few files
+        if changed := fullRefresh: # clear all data structures
             self.bcfPath_sizeCrcDate.clear()
             self.srcCRC_converters.clear()
-        for bcf_archive in converters_dir.list():
-            bcfPath = convJoin(bcf_archive)
-            if bcfPath.isdir(): continue
-            if self.validConverterName(bcf_archive):
-                size, crc, modified = self.bcfPath_sizeCrcDate.get(bcfPath, (
+            self.bcfCRC_converter.clear()
+            pending = {*map(converters_dir.join, bcfs_list)}
+        else:
+            pending = set()
+            newData = {}
+            present_bcfs = [*map(converters_dir.join, bcfs_list)]
+            for bcf_archive, bcfPath in [*zip(bcfs_list, present_bcfs)]:
+                # on first run it needs to repopulate the bcfPath_sizeCrcDate
+                size, crc, mod_time = self.bcfPath_sizeCrcDate.get(bcfPath, (
                     None, None, None))
                 size_mtime = bcfPath.size_mtime()
-                if crc is None or (size, modified) != size_mtime:
-                    crc = bcfPath.crc
-                    (size, modified) = size_mtime
-                    if crc in bcfCRC_converter and bcfPath != bcfCRC_converter[
-                        crc].fullPath:
-                        self.bcfPath_sizeCrcDate.pop(bcfPath, None)
-                        if bcfCRC_converter[crc].fullPath.exists():
-                            bcfPath.moveTo(
-                                    self.dup_bcfs_dir.join(bcfPath.tail))
+                if crc is None or (size, mod_time) != size_mtime:
+                    crc_changed = crc != (crc := bcfPath.crc)
+                    self.bcfPath_sizeCrcDate[bcfPath] = (size_mtime[0], crc,
+                                                         size_mtime[1])
+                    if crc_changed:
+                        changed = True  # added or changed - we must re-add it
+                        pending.add(bcfPath)
                         continue
-                self.bcfPath_sizeCrcDate[bcfPath] = (size, crc, modified)
-                if fullRefresh or crc not in bcfCRC_converter:
-                    pending.add(bcf_archive)
-                else:
-                    newData[crc] = bcfCRC_converter[crc]
-                    newData[crc].fullPath = bcfPath
-        #--New/update crcs?
-        self.bcfCRC_converter = newData
-        pendingChanged = False
-        if bool(pending):
-            progress(0, _(u'Scanning Converters...'))
-            progress.setFull(len(pending))
-            for index, bcf_archive in enumerate(sorted(pending)):
-                progress(index,
-                         _(u'Scanning Converter...') + u'\n%s' % bcf_archive)
-                pendingChanged |= self.addConverter(bcf_archive)
-        changed = pendingChanged or (len(newData) != len(bcfCRC_converter))
-        self._prune_converters()
+                newData[crc] = self.bcfCRC_converter[crc] # should be unique
+                newData[crc].fullPath = bcfPath ##: why???
+            # Remove any converters that no longer exist
+            for bcfPath in list(self.bcfPath_sizeCrcDate):
+                if bcfPath not in present_bcfs:
+                    changed = True
+                    self.removeConverter(bcfPath)
+            old_new = set(newData.values())
+            self.__prune_srcCRC(
+                lambda c: c.fullPath not in present_bcfs or c not in old_new)
+            #--New/update crcs?
+            self.bcfCRC_converter = newData  # empty on first run
+        if pending:
+            progress = progress or balt.Progress(_('Refreshing Converters...'))
+            with progress:
+                progress(0, _('Scanning Converters...'))
+                progress.setFull(len(pending))
+                for index, bcfPath in enumerate(sorted(pending)):
+                    progress(index,
+                             _('Scanning Converter...') + f'\n{bcfPath}')
+                    try:
+                        path_crc = self.bcfPath_sizeCrcDate[bcfPath][1]
+                        converter = InstallerConverter.from_path(bcfPath,
+                            cached_crc=path_crc)
+                    except:
+                        cor_dir = self.corrupt_bcfs_dir
+                        bolt.deprint(f'{bcfPath} is corrupt, moving to '
+                                     f'{cor_dir}', traceback=True)
+                        bcfPath.moveTo(cor_dir.join(bcfPath.tail))
+                        del self.bcfPath_sizeCrcDate[bcfPath]
+                        continue
+                    changed |= self.addConverter(converter, update_cache=False)
         return changed
 
-    def _prune_converters(self):
-        """Remove any converters that no longer exist."""
-        for bcfPath in list(self.bcfPath_sizeCrcDate):
-            if not bcfPath.exists() or bcfPath.isdir():
-                self.removeConverter(bcfPath)
-
-    def addConverter(self, converter):
+    def addConverter(self, converter: InstallerConverter, update_cache=True):
         """Links the new converter to installers"""
-        if isinstance(converter, (unicode, bytes)): ##: investigate
-            #--Adding a new file
-            converter = GPath(converter).tail
-        if isinstance(converter, InstallerConverter):
-            #--Adding a new InstallerConverter
-            newConverter = converter
-        else:
-            #--Adding a new file
-            try:
-                newConverter = InstallerConverter(converter)
-            except:
-                fullPath = converters_dir.join(converter)
-                fullPath.moveTo(self.corrupt_bcfs_dir.join(converter.tail))
-                del self.bcfPath_sizeCrcDate[fullPath]
-                return False
         #--Check if overriding an existing converter
-        oldConverter = self.bcfCRC_converter.get(newConverter.crc)
+        oldConverter = self.bcfCRC_converter.pop(converter.crc, None)
         if oldConverter:
             oldConverter.fullPath.moveTo(
                     self.dup_bcfs_dir.join(oldConverter.fullPath.tail))
+            self.bcfPath_sizeCrcDate.pop(oldConverter.fullPath, None)
             self.removeConverter(oldConverter)
         #--Link converter to Bash
-        srcCRC_converters = self.srcCRC_converters
-        [srcCRC_converters[srcCRC].append(newConverter) for srcCRC in
-         newConverter.srcCRCs if srcCRC_converters.setdefault(
-                srcCRC, [newConverter]) != [newConverter]]
-        self.bcfCRC_converter[newConverter.crc] = newConverter
-        s, m = newConverter.fullPath.size_mtime()
-        self.bcfPath_sizeCrcDate[newConverter.fullPath] = (
-            s, newConverter.crc, m)
+        for srcCRC in converter.srcCRCs:
+            self.srcCRC_converters[srcCRC].append(converter)
+        self.bcfCRC_converter[converter.crc] = converter
+        if update_cache:
+            s, m = converter.fullPath.size_mtime()
+            self.bcfPath_sizeCrcDate[converter.fullPath] = (
+                s, converter.crc, m)
         return True
 
-    def removeConverter(self, converter):
+    def removeConverter(self, oldConverter):
         """Unlink the old converter from installers and delete it."""
-        if isinstance(converter, Path):
+        if isinstance(oldConverter, Path):
             #--Removing by filepath
-            converter = converter.stail
-        if isinstance(converter, InstallerConverter):
-            #--Removing existing converter
-            oldConverter = self.bcfCRC_converter.pop(converter.crc, None)
-            self.bcfPath_sizeCrcDate.pop(converter.fullPath, None)
-        else:
-            #--Removing by filepath
-            bcfPath = converters_dir.join(converter)
-            size, crc, modified = self.bcfPath_sizeCrcDate.pop(bcfPath, (
-                None, None, None))
-            if crc is not None:
-                oldConverter = self.bcfCRC_converter.pop(crc, None)
+            _size, crc, _mod_time = self.bcfPath_sizeCrcDate.pop(oldConverter,
+                (None, None, None))
+            oldConverter = self.bcfCRC_converter.pop(crc, None)
         #--Sanity check
         if oldConverter is None: return
         #--Unlink the converter from Bash
-        for srcCRC in list(self.srcCRC_converters):
-            for converter in self.srcCRC_converters[srcCRC][:]:
-                if converter is oldConverter:
-                    self.srcCRC_converters[srcCRC].remove(converter)
-            if len(self.srcCRC_converters[srcCRC]) == 0:
+        self.__prune_srcCRC(lambda conv: conv is oldConverter) ##: are we sure those are the same object??
+
+    def __prune_srcCRC(self, remove_f):
+        for srcCRC, parent_converters in list(self.srcCRC_converters.items()):
+            for conv in parent_converters[:]:
+                if remove_f(conv):
+                    parent_converters.remove(conv)
+            if not parent_converters:
                 del self.srcCRC_converters[srcCRC]
-        del oldConverter
 
 class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
+    #--Persistent variables are saved in the data tank for normal operations.
+    #--_persistBCF is read one time from BCF.dat, and then saved in
+    #  Converters.dat to keep archive extractions to a minimum
+    #--_persistDAT has operational variables that are saved in Converters.dat
+    #--Do NOT reorder _persistBCF,_persistDAT,addedPersist or you will break
+    #  existing BCFs!
+    #--Do NOT add new attributes to _persistBCF, _persistDAT.
+    _persistBCF = ['srcCRCs']
+    _persistDAT = ['crc', 'fullPath']
+    #--Any new BCF persistent variables are not allowed. Additional work
+    #  needed to support backwards compat.
+    #--Any new DAT persistent variables must be appended to _addedPersistDAT.
+    #----They must be able to handle being set to None
+    _addedPersistDAT = []
 
-    def __init__(self, srcArchives=None, idata=None, destArchive=None,
-                 BCFArchive=None, blockSize=None, progress=None,
-                 crc_installer=None):
-        #--Persistent variables are saved in the data tank for normal
-        # operations.
-        #--persistBCF is read one time from BCF.dat, and then saved in
-        # Converters.dat to keep archive extractions to a minimum
-        #--persistDAT has operational variables that are saved in
-        # Converters.dat
-        #--Do NOT reorder persistBCF,persistDAT,addedPersist or you will
-        # break existing BCFs!
-        #--Do NOT add new attributes to persistBCF, persistDAT.
-        self.persistBCF = [u'srcCRCs']
-        self.persistDAT = [u'crc', u'fullPath']
-        #--Any new BCF persistent variables are not allowed. Additional work
-        #  needed to support backwards compat.
-        #--Any new DAT persistent variables must be appended to
-        # addedPersistDAT.
-        #----They must be able to handle being set to None
-        self.addedPersistDAT = []
+    def __init__(self, full_path='//\\Loading from __setstate__//\\'):
         self.srcCRCs = set()
         self.crc = None
         #--fullPath is saved in Converters.dat, but it is also updated on
         # every refresh in case of renaming
-        self.fullPath = u'BCF: Missing!'
+        self.fullPath: Path = full_path
         #--Semi-Persistent variables are loaded only when and as needed.
         # They're always read from BCF.dat
         #--Do NOT reorder settings,volatile,addedSettings or you will break
@@ -253,47 +222,52 @@ class InstallerConverter(object):
         self.addedSettings = [u'blockSize']
         self.convertedFiles = []
         self.dupeCount = {}
-        #--Cheap init overloading...
-        if idata is not None:
-            #--Build a BCF from scratch
-            self.fullPath = converters_dir.join(BCFArchive)
-            self.build(srcArchives, idata, destArchive, BCFArchive, blockSize,
-                       progress, crc_installer)
-            self.crc = self.fullPath.crc
-        elif isinstance(srcArchives, bolt.Path):
-            #--Load a BCF from file
-            self.fullPath = converters_dir.join(srcArchives)
-            self.load()
-            self.crc = self.fullPath.crc
-        #--Else is loading from Converters.dat, called by __setstate__
+
+    @classmethod
+    def from_path(cls, full_path, cached_crc=None):
+        """Load a BCF from file."""
+        ret = cls(full_path)
+        ret.load()
+        ret.crc = cached_crc or ret.fullPath.crc
+        return ret
+
+    @classmethod
+    def from_scratch(cls, srcArchives, idata, destArchive, BCFArchive,
+                     blockSize, progress):
+        """Build a BCF from scratch."""
+        ret = cls(converters_dir.join(BCFArchive))
+        ret.build(srcArchives, idata, destArchive, BCFArchive, blockSize,
+                  progress)
+        ret.crc = ret.fullPath.crc
+        return ret
 
     def __getstate__(self):
         """Used by pickler to save object state. Used for Converters.dat"""
-        return tuple(getattr(self, a) for a in
-                     self.persistBCF + self.persistDAT + self.addedPersistDAT)
+        return tuple(getattr(self, a) for a in self._persistBCF +
+                     self._persistDAT + self._addedPersistDAT)
 
     def __setstate__(self, values):
         """Used by unpickler to recreate object. Used for Converters.dat"""
         self.__init__()
-        for a, v in izip(self.persistBCF + self.persistDAT +
-                         self.addedPersistDAT, values):
+        for a, v in zip(self._persistBCF + self._persistDAT +
+                        self._addedPersistDAT, values):
             setattr(self, a, v)
 
     def __reduce__(self):
         from . import InstallerConverter as boshInstallerConverter
         return boshInstallerConverter, (), tuple(
             getattr(self, a) for a in
-            self.persistBCF + self.persistDAT + self.addedPersistDAT)
+            self._persistBCF + self._persistDAT + self._addedPersistDAT)
 
     def load(self, fullLoad=False):
         """Load BCF.dat. Called once when a BCF is first installed, during a
         fullRefresh, and when the BCF is applied"""
         if not self.fullPath.exists(): raise StateError(
-                u"\nLoading %s:\nBCF doesn't exist." % self.fullPath)
+            f"\nLoading {self.fullPath}:\nBCF doesn't exist.")
         def translate(out):
-            ##: Does this usage (including translator and decode) work?
             stream = io.BytesIO(out)
             # translate data types to new hierarchy
+            _old_modules = {b'bolt', b'bosh'}
             class _Translator(object):
                 def __init__(self, streamToWrap):
                     self._stream = streamToWrap
@@ -303,22 +277,19 @@ class InstallerConverter(object):
                     return self._translate(self._stream.readline())
                 @staticmethod
                 def _translate(s):
-                    return re.sub(u'^(bolt|bosh)$', u'' r'bash.\1',
-                                  s.decode(u'utf-8'), flags=re.U)
+                    return b'bash.' + s if s in _old_modules else s
             translator = _Translator(stream)
-            for a, v in izip(self.persistBCF, pickle.load(translator)):
+            for a, v in zip(self._persistBCF, pickle.load(
+                    translator, encoding='bytes')):
                 setattr(self, a, v)
             if fullLoad:
-                for a, v in izip(self._converter_settings + self.volatile +
+                for a, v in zip(self._converter_settings + self.volatile +
                                  self.addedSettings,
-                                 pickle.load(translator)):
+                                 pickle.load(translator, encoding='bytes')):
                     setattr(self, a, v)
-        with self.fullPath.unicodeSafe() as converter_path:
-            # Temp rename if its name wont encode correctly
-            command = u'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
-                archives.exe7z, converter_path)
-            archives.wrapPopenOut(command, translate, errorMsg=
-            u'\nLoading %s:\nBCF extraction failed.' % self.fullPath)
+        # Temp rename if its name wont encode correctly
+        err_msg = f'\nLoading {self.fullPath}:\nBCF extraction failed.'
+        archives.wrapPopenOut(self.fullPath, translate, errorMsg=err_msg)
 
     def save(self, destInstaller):
         #--Dump settings into BCF.dat
@@ -326,11 +297,10 @@ class InstallerConverter(object):
             pickle.dump(tuple(getattr(self, a) for a in att), dat, -1)
         try:
             with bass.getTempDir().join(u'BCF.dat').open(u'wb') as f:
-                _dump(self.persistBCF, f)
+                _dump(self._persistBCF, f)
                 _dump(self._converter_settings + self.volatile + self.addedSettings, f)
         except Exception as e:
-            raise StateError, (u'Error creating BCF.dat:\nError: %s' % e), \
-                sys.exc_info()[2]
+            raise StateError(f'Error creating BCF.dat:\nError: {e}') from e
 
     def apply(self, destArchive, crc_installer, progress=None, embedded=0):
         """Applies the BCF and packages the converted archive"""
@@ -339,11 +309,10 @@ class InstallerConverter(object):
         bass.rmTempDir()
         tmpDir = bass.newTempDir()
         #--Extract BCF
-        if progress: progress(0, self.fullPath.stail + u'\n' + _(
-                u'Extracting files...'))
-        with self.fullPath.unicodeSafe() as tempPath:
-            # don't pass progress in as we haven't got the count of BCF's files
-            archives.extract7z(tempPath, tmpDir, progress=None)
+        if progress:
+            progress(0, self.fullPath.stail + '\n' + _('Extracting files...'))
+        # don't pass progress in as we haven't got the count of BCF's files
+        archives.extract7z(self.fullPath, tmpDir, progress=None)
         #--Extract source archives
         lastStep = 0
         if embedded:
@@ -355,11 +324,11 @@ class InstallerConverter(object):
         else:
             srcCRCs = realCRCs = self.srcCRCs
         nextStep = step = 0.4 / len(srcCRCs)
-        for srcCRC, realCRC in izip(srcCRCs, realCRCs):
+        for srcCRC, realCRC in zip(srcCRCs, realCRCs):
             srcInstaller = crc_installer[srcCRC]
             files = bolt.sortFiles([x[0] for x in srcInstaller.fileSizeCrcs])
             if not files: continue
-            progress(0, (u'%s\n' % srcInstaller) + _(u'Extracting files...'))
+            progress(0, f'{srcInstaller}\n' + _(u'Extracting files...'))
             tempCRC = srcInstaller.crc
             srcInstaller.crc = realCRC
             self._unpack(srcInstaller, files,
@@ -386,7 +355,10 @@ class InstallerConverter(object):
     def applySettings(self, destInstaller):
         """Applies the saved settings to an Installer"""
         for a in self._converter_settings + self.addedSettings:
-            setattr(destInstaller, a, getattr(self, a))
+            v = getattr(self, a)
+            if a == 'espmNots':
+                v = forward_compat_path_to_fn_list(v, ret_type=set)
+            setattr(destInstaller, a, v)
 
     def _arrangeFiles(self,progress):
         """Copy and/or move extracted files into their proper arrangement."""
@@ -394,30 +366,24 @@ class InstallerConverter(object):
         destDir = bass.newTempDir()
         progress(0, _(u'Moving files...'))
         progress.setFull(1 + len(self.convertedFiles))
-        #--Make a copy of dupeCount
-        dupes = dict(self.dupeCount)
+        dupes = self.dupeCount.copy()
         destJoin = destDir.join
         tempJoin = tmpDir.join
-
         #--Move every file
         for index, (crcValue, srcDir_File, destFile) in enumerate(
                 self.convertedFiles):
-            srcDir = srcDir_File[0]
-            srcFile = srcDir_File[1]
-            if isinstance(srcDir, (Path, (unicode, bytes))): ##: investigate
-                #--either 'BCF-Missing', or crc read from 7z l -slt
-                srcDir = u'%s' % srcDir # Path defines __str__()
-                srcFile = tempJoin(srcDir, srcFile)
-            else:
-                srcFile = tempJoin(u'%08X' % srcDir, srcFile)
+            srcDir, srcFile = srcDir_File
+            #--srcDir is either 'BCF-Missing', or crc read from 7z l -slt
+            srcFile = tempJoin(
+                srcDir if type(srcDir) is str else f'{srcDir:08X}', srcFile)
             destFile = destJoin(destFile)
             if not srcFile.exists():
-                raise StateError(u'%s: Missing source file:\n%s' % (
-                    self.fullPath.stail, srcFile))
+                raise StateError(
+                    f'{self.fullPath.stail}: Missing source file:\n{srcFile}')
             if destFile is None:
                 raise StateError(
-                    u'%s: Unable to determine file destination for:\n%s' % (
-                    self.fullPath.stail, srcFile))
+                    f'{self.fullPath.stail}: Unable to determine file '
+                    f'destination for:\n{srcFile}')
             numDupes = dupes[crcValue]
             #--Keep track of how many times the file is referenced by
             # convertedFiles
@@ -434,7 +400,7 @@ class InstallerConverter(object):
         tmpDir.rmtree(safety=tmpDir.s)
 
     def build(self, srcArchives, idata, destArchive, BCFArchive, blockSize,
-              progress=None, crc_installer=None):
+              progress=None, *, __read_ext=tuple(readExts)):
         """Builds and packages a BCF"""
         progress = progress if progress else bolt.Progress()
         #--Initialization
@@ -444,62 +410,57 @@ class InstallerConverter(object):
         destInstaller = idata[destArchive]
         self.bcf_missing_files = []
         self.blockSize = blockSize
-        subArchives = dict()
-        srcAdd = self.srcCRCs.add
+        subArchives = defaultdict(list)
         convertedFileAppend = self.convertedFiles.append
         destFileAppend = destFiles.append
-        missingFileAppend = self.bcf_missing_files.append
         dupeGet = self.dupeCount.get
-        subGet = subArchives.get
         lastStep = 0
         #--Get settings
         attrs = self._converter_settings
         for a in attrs:
             setattr(self, a, getattr(destInstaller, a))
         #--Make list of source files
-        for installer in [idata[x] for x in srcArchives]:
+        for installer in [idata[x] for x in srcArchives]: # few items
             installerCRC = installer.crc
-            srcAdd(installerCRC)
-            fileList = subGet(installerCRC, [])
-            fileAppend = fileList.append
-            for fileName, __size, fileCRC in installer.fileSizeCrcs:
+            self.srcCRCs.add(installerCRC)
+            for fileName, __size, fileCRC in installer.fileSizeCrcs: # type: str, int, int
                 srcFiles[fileCRC] = (installerCRC, fileName)
                 #--Note any subArchives
-                if GPath(fileName).cext in readExts:
-                    fileAppend(fileName)
-            if len(fileList): subArchives[installerCRC] = fileList
-        # TODO(inf) Hacky temp fix - real fix is probably passing a valid
-        #  crc_installer param to this method
-        if len(subArchives) and crc_installer:
+                if fileName.endswith(__read_ext):
+                    subArchives[installerCRC].append(fileName)
+        if subArchives:
+            crc_installer = {(inst := idata[ikey]).crc: inst for ikey in
+                             idata.ipackages(idata)} #TODO(ut) what happens with duplicate crcs?
             archivedFiles = dict()
             nextStep = step = 0.3 / len(subArchives)
             #--Extract any subArchives
             #--It would be faster to read them with 7z l -slt
             #--But it is easier to use the existing recursive extraction
-            for index, (installerCRC) in enumerate(subArchives):
+            for index, (installerCRC, subs) in enumerate(subArchives.items()):
                 installer = crc_installer[installerCRC]
-                self._unpack(installer, subArchives[installerCRC],
+                self._unpack(installer, subs,
                              SubProgress(progress, lastStep, nextStep))
                 lastStep = nextStep
                 nextStep += step
             #--Note all extracted files
             tmpDir = bass.getTempDir()
-            for crc in tmpDir.list():
+            for crc in tmpDir.ilist():
                 fpath = tmpDir.join(crc)
-                for root_dir, y, files in fpath.walk():
+                for root_dir, y, files in fpath.walk(): ##: replace with os walk!!
                     for file in files:
                         file = root_dir.join(file)
-                        archivedFiles[file.crc] = (crc, file.s[len(fpath)+1:])
+                        archivedFiles[file.crc] = (crc, file.s[len(fpath)+1:]) # +1 for '/'
             #--Add the extracted files to the source files list
             srcFiles.update(archivedFiles)
             bass.rmTempDir()
         #--Make list of destination files
+        bcf_missing = u'BCF-Missing'
         for fileName, __size, fileCRC in destInstaller.fileSizeCrcs:
             destFileAppend((fileCRC, fileName))
             #--Note files that aren't in any of the source files
             if fileCRC not in srcFiles:
-                missingFileAppend(fileName)
-                srcFiles[fileCRC] = (u'BCF-Missing', fileName)
+                self.bcf_missing_files.append(fileName)
+                srcFiles[fileCRC] = (bcf_missing, fileName)
             self.dupeCount[fileCRC] = dupeGet(fileCRC, 0) + 1
         #--Monkey around with the progress step values
         #--Smooth the progress bar progression since some of the subroutines
@@ -522,16 +483,16 @@ class InstallerConverter(object):
                 #--No files to pack, but subArchives were unpacked
                 sProgress = SubProgress(progress, lastStep, lastStep + 0.5)
                 lastStep += 0.5
-        sProgress(0, u'%s\n' % BCFArchive + _(u'Mapping files...'))
+        sProgress(0, f'{BCFArchive}\n' + _(u'Mapping files...'))
         sProgress.setFull(1 + len(destFiles))
         #--Map the files
         for index, (fileCRC, fileName) in enumerate(destFiles):
             convertedFileAppend((fileCRC, srcFiles.get(fileCRC), fileName))
-            sProgress(index, u'%s\n' % BCFArchive + _(
-                    u'Mapping files...') + u'\n' + fileName)
+            sProgress(index, f'{BCFArchive}\n' + _(
+                u'Mapping files...') + u'\n' + fileName)
         #--Build the BCF
-        tempDir2 = bass.newTempDir().join(u'BCF-Missing')
         if len(self.bcf_missing_files):
+            tempDir2 = bass.newTempDir().join(bcf_missing)
             #--Unpack missing files
             bass.rmTempDir()
             unpack_dir = destInstaller.unpackToTemp(self.bcf_missing_files,
@@ -541,7 +502,7 @@ class InstallerConverter(object):
             #--Work around since moveTo doesn't allow direct moving of a
             # directory into its own subdirectory
             unpack_dir.moveTo(tempDir2)
-            tempDir2.moveTo(unpack_dir.join(u'BCF-Missing'))
+            tempDir2.moveTo(unpack_dir.join(bcf_missing))
         #--Make the temp dir in case it doesn't exist
         tmpDir = bass.getTempDir()
         tmpDir.makedirs()
@@ -556,24 +517,19 @@ class InstallerConverter(object):
 
     def _pack(self, srcFolder, destArchive, outDir, progress=None):
         """Creates the BAIN'ified archive and cleans up temp"""
-        #--Determine settings for 7z
-        destArchive, archiveType, solid = compressionSettings(destArchive,
-                self.blockSize, self.isSolid)
-        with outDir.join(destArchive).unicodeSafe() as dest_safe:
-            command = compressCommand(dest_safe, outDir, srcFolder, solid,
-                archiveType)
-            archives.compress7z(command, dest_safe, destArchive, srcFolder,
-                progress)
+        archives.compress7z(outDir.join(destArchive), destArchive, srcFolder,
+            progress, is_solid=self.isSolid, blockSize=self.blockSize)
         bass.rmTempDir()
 
-    def _unpack(self, srcInstaller, fileNames, progress=None):
+    def _unpack(self, srcInstaller, fileNames, progress=None, *,
+                __read_ext=tuple(readExts)):
         """Recursive function: completely extracts the source installer to
         subTempDir. It does NOT clear the temp folder.  This should be done
         prior to calling the function. Each archive and sub-archive is
         extracted to its own sub-directory to prevent file thrashing"""
         #--Sanity check
         if not fileNames: raise ArgumentError(
-                u'No files to extract for %s.' % srcInstaller)
+            f'No files to extract for {srcInstaller}.')
         tmpDir = bass.getTempDir()
         tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
         #--Dump file list
@@ -582,24 +538,23 @@ class InstallerConverter(object):
             with tempList.open(u'w', encoding=u'utf-8-sig') as out:
                 out.write(u'\n'.join(fileNames))
         except Exception as e:
-            raise StateError, (u'Error creating file list for 7z:\nError: %s'
-                               % e), sys.exc_info()[2]
+            raise StateError(
+                f'Error creating file list for 7z:\nError: {e}') from e
         #--Determine settings for 7z
         installerCRC = srcInstaller.crc
         apath = srcInstaller if isinstance(srcInstaller,
                                            Path) else srcInstaller.abs_path
-        subTempDir = tmpDir.join(u'%08X' % installerCRC)
+        subTempDir = tmpDir.join(f'{installerCRC:08X}')
         if progress:
-            progress(0, u'%s\n' % apath + _(u'Extracting files...'))
+            progress(0, f'{apath}\n' + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))
         #--Extract files
-        with apath.unicodeSafe() as arch:
-            try:
-                subArchives = archives.extract7z(arch, subTempDir, progress,
-                    readExtensions=readExts, filelist_to_extract=tempList.s)
-            finally:
-                tempList.remove()
-                bolt.clearReadOnly(subTempDir) ##: do this once
+        try:
+            subArchives = archives.extract7z(apath, subTempDir, progress,
+                    read_exts=__read_ext, filelist_to_extract=tempList.s)
+        finally:
+            tempList.remove()
+            bolt.clearReadOnly(subTempDir)  ##: do this once
         #--Recursively unpack subArchives
-        for archive in (subTempDir.join(a) for a in subArchives):
-            self._unpack(archive, [u'*']) # it will also unpack the embedded BCF if any...
+        for sub_archive in (subTempDir.join(a) for a in subArchives):
+            self._unpack(sub_archive, [u'*']) # it will also unpack the embedded BCF if any...

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -70,19 +70,16 @@ class CopyOrMovePopup(DialogWindow): ##: wx.PopupWindow?
         self._ret_action = new_ret
         self.accept_modal()
 
-    def get_action(self):
-        """Returns the choice the user made. Either the string 'MOVE' or the
-        string 'COPY'."""
-        return self._ret_action
-
-    def should_remember(self):
-        """Returns True if the choice the user made should be remembered."""
-        return self._gCheckBox.is_checked
+    def show_modal(self):
+        """Return the choice the user made (either the string 'MOVE' or the
+        string 'COPY') and whether that choice should be remembered."""
+        result = super(CopyOrMovePopup, self).show_modal()
+        return result and self._ret_action, self._gCheckBox.is_checked
 
 class _TransientPopup(_AComponent):
     """Base class for transient popups, i.e. popups that disappear as soon as
     they lose focus."""
-    _wx_widget_type = _wx.PopupTransientWindow
+    _native_widget: _wx.PopupTransientWindow
 
     def __init__(self, parent):
         # Note: the style (second parameter) may not be passed as a keyword
@@ -99,15 +96,14 @@ class MultiChoicePopup(_TransientPopup):
     """A transient popup that shows a list of checkboxes with a search bar. To
     implement special behavior when an item is checked or unchecked, you have
     to override the on_item_checked and on_mass_select methods."""
-    def __init__(self, parent, all_choices, help_text=u'', aa_btn_tooltip=u'',
-                 ra_btn_tooltip=u''):
+    def __init__(self, parent, all_choices: dict[str, bool], help_text='',
+            aa_btn_tooltip='', ra_btn_tooltip=''):
         """Creates a new MultiChoicePopup with the specified parameters.
 
         :param parent: The object that this popup belongs to. May be a wx
             object or a component.
         :param all_choices: A dict mapping item names to booleans indicating
             whether or not that item is currently checked.
-        :type all_choices: dict[unicode, bool]
         :param help_text: A static help text to show at the top of the popup
             (optional).
         :param aa_btn_tooltip: A tooltip to show when hovering over the 'Add
@@ -115,7 +111,7 @@ class MultiChoicePopup(_TransientPopup):
         :param ra_btn_tooltip: A tooltip to show when hovering over the 'Remove
             All' button (optional)."""
         super(MultiChoicePopup, self).__init__(parent)
-        self._all_choices = list(dict_sort(all_choices))
+        self._all_choices = dict(dict_sort(all_choices))
         choice_search = SearchBar(self)
         choice_search.on_text_changed.subscribe(self._search_choices)
         choice_search.set_focus()
@@ -139,36 +135,40 @@ class MultiChoicePopup(_TransientPopup):
 
     def _select_all_choices(self):
         """Internal callback for the Select All button."""
-        self._choice_box.set_all_checkmarks(checked=True)
-        self.on_mass_select(curr_choices=self._choice_box.lb_get_str_items(),
-                            choices_checked=True)
+        self._mass_select_shared(choices_checked=True)
 
     def _deselect_all_choices(self):
         """Internal callback for the Deselect All button."""
-        self._choice_box.set_all_checkmarks(checked=False)
-        self.on_mass_select(curr_choices=self._choice_box.lb_get_str_items(),
-                            choices_checked=False)
+        self._mass_select_shared(choices_checked=False)
+
+    def _mass_select_shared(self, *, choices_checked: bool):
+        """Shared code of _select_all_choices and _deselect_all_choices."""
+        self._choice_box.set_all_checkmarks(checked=choices_checked)
+        curr_choice_strs = self._choice_box.lb_get_str_items()
+        # Remember this for when we update the choice box contents via search
+        for choice_str in curr_choice_strs:
+            self._all_choices[choice_str] = choices_checked
+        self.on_mass_select(curr_choices=curr_choice_strs,
+                            choices_checked=choices_checked)
 
     def _search_choices(self, search_str):
         """Internal callback for searching via the search bar."""
-        search_lower = search_str.lower().strip()
-        choice_keys = []
-        choice_values = []
-        for k, v in self._all_choices:
-            if search_lower in k.lower():
-                choice_keys.append(k)
-                choice_values.append(v)
-        self._choice_box.set_all_items(choice_keys, choice_values)
+        search_lower = search_str.strip().lower()
+        choices_dict = {k: v for k, v in self._all_choices.items() if
+                        search_lower in k.lower()}
+        self._choice_box.set_all_items(choices_dict)
 
     def _handle_item_checked(self, choice_index):
         """Internal callback for checking or unchecking an item, forwards to
         the abstract on_item_checked method."""
         choice_name = self._choice_box.lb_get_str_item_at_index(choice_index)
         choice_checked = self._choice_box.lb_is_checked_at_index(choice_index)
+        # Remember this for when we update the choice box contents via search
+        self._all_choices[choice_name] = choice_checked
         self.on_item_checked(choice_name, choice_checked)
 
     def on_item_checked(self, choice_name, choice_checked):
-        # type: (unicode, bool) -> None
+        # type: (str, bool) -> None
         """Called when a single item has been checked or unchecked."""
         raise AbstractError(u'on_item_checked not implemented')
 
@@ -180,17 +180,17 @@ class MultiChoicePopup(_TransientPopup):
 # File Dialogs ----------------------------------------------------------------
 class _FileDialog(_AComponent):
     """Ask user for a filesystem path using the system dialogs."""
-    _wx_widget_type = _wx.FileDialog
+    _native_widget: _wx.FileDialog
     _dialog_style = _wx.FD_OPEN | _wx.FD_FILE_MUST_EXIST
 
-    def __init__(self, parent, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u'', allow_create=False):
-        defaultDir,defaultFile = [GPath(x).s for x in (defaultDir,defaultFile)]
+    def __init__(self, parent, title='', defaultDir='', defaultFile='',
+                 wildcard='', allow_create=False):
+        defaultDir, defaultFile = map(str, (defaultDir, defaultFile))
         style_ = self.__class__._dialog_style
         if allow_create and style_ & _wx.FD_FILE_MUST_EXIST:
             style_ ^= _wx.FD_FILE_MUST_EXIST
-        super(_FileDialog, self).__init__(parent, title, defaultDir,
-                                          defaultFile, wildcard, style=style_)
+        super().__init__(parent, title, defaultDir, defaultFile, wildcard,
+                         style=style_)
 
     def __enter__(self): return self
     def __exit__(self, exc_type, exc_val, exc_tb): self.destroy_component()
@@ -213,10 +213,9 @@ class FileOpenMultiple(_FileDialog):
     """'Open files' dialog that returns a *list* of files to open."""
     _dialog_style = _wx.FD_OPEN | _wx.FD_MULTIPLE | _wx.FD_FILE_MUST_EXIST
 
-    def __init__(self, parent, title=u'', defaultDir=u'', defaultFile=u'',
-                 wildcard=u''): ##:mustExist seems True given the FD_FILE_MUST_EXIST?
-        super(FileOpenMultiple, self).__init__(parent, title, defaultDir,
-                                               defaultFile, wildcard)
+    def __init__(self, parent, title='', defaultDir='', defaultFile='',
+                 wildcard=''): ##:mustExist seems True given the FD_FILE_MUST_EXIST?
+        super().__init__(parent, title, defaultDir, defaultFile, wildcard)
 
     def _validate_input(self):
         return [GPath(p) for p in self._native_widget.GetPaths()]
@@ -224,3 +223,15 @@ class FileOpenMultiple(_FileDialog):
 class FileSave(_FileDialog):
     """'Save as' dialog."""
     _dialog_style = _wx.FD_SAVE | _wx.FD_OVERWRITE_PROMPT
+
+class DirOpen(_FileDialog):
+    """'Open directory' dialog."""
+    _native_widget: _wx.DirDialog
+    _dialog_style = _wx.DD_DEFAULT_STYLE | _wx.DD_SHOW_HIDDEN
+
+    def __init__(self, parent, title='', defaultPath='', create_dir=False):
+        st = self.__class__._dialog_style
+        st |= _wx.DD_NEW_DIR_BUTTON if create_dir else _wx.DD_DIR_MUST_EXIST
+        # we call _FileDialog parent in mro so we need to stringify defaultPath
+        super(_FileDialog, self).__init__(parent, title, '%s' % defaultPath,
+                                          style=st)

@@ -16,18 +16,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
 import struct as _struct
-from collections import defaultdict
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
 from .. import WS_COMMON
-from ... import brec
+from ... import brec, bolt
 from ...brec import MreGlob, MreLand
 
 class OblivionGameInfo(PatchGame):
@@ -47,7 +46,7 @@ class OblivionGameInfo(PatchGame):
     game_detect_includes = [_j(u'Data', u'Oblivion.esm')]
     game_detect_excludes = WS_COMMON
     version_detect_file = u'Oblivion.exe'
-    master_file = u'Oblivion.esm'
+    master_file = bolt.FName(u'Oblivion.esm')
     taglist_dir = u'Oblivion'
     loot_dir = u'Oblivion'
     boss_game_name = u'Oblivion'
@@ -109,12 +108,12 @@ class OblivionGameInfo(PatchGame):
         # Oblivion accepts the base name and literally *anything* after
         # that. E.g. MyModMeshes.bsa will load from a MyMod.esp plugin
         attachment_regex = u'.*'
-        redate_dict = defaultdict(lambda: u'2006-01-01', {
-            u'Oblivion - Voices1.bsa': u'2005-01-02',
-            u'Oblivion - Voices2.bsa': u'2005-01-03',
-            u'Oblivion - Meshes.bsa': u'2005-01-04',
-            u'Oblivion - Sounds.bsa': u'2005-01-05',
-            u'Oblivion - Misc.bsa': u'2005-01-06',
+        redate_dict = bolt.DefaultFNDict(lambda: 1136066400, { # '2006-01-01',
+            u'Oblivion - Voices1.bsa': 1104616800, # '2005-01-02'
+            u'Oblivion - Voices2.bsa': 1104703200, # '2005-01-03'
+            u'Oblivion - Meshes.bsa': 1104789600,  # '2005-01-04'
+            u'Oblivion - Sounds.bsa': 1104876000,  # '2005-01-05'
+            u'Oblivion - Misc.bsa': 1104962400,    # '2005-01-06'
         })
         valid_versions = {0x67}
 
@@ -124,37 +123,40 @@ class OblivionGameInfo(PatchGame):
 
     class Bain(GameInfo.Bain):
         data_dirs = GameInfo.Bain.data_dirs | {
-            u'_tejon',
-            u'distantlod',
-            u'facegen',
-            u'fonts',
-            u'menus',
-            u'obse',
-            u'pluggy',
-            u'scripts',
-            u'shaders',
-            u'streamline',
-            u'trees',
+            '_tejon',
+            'distantlod',
+            'facegen',
+            'fonts',
+            'menus',
+            'obse', # 3P: OBSE
+            'pluggy', # 3P: Pluggy
+            'scripts',
+            'shaders',
+            'streamline',
+            'trees',
         }
         keep_data_dirs = {
-            _j(u'OBSE', u'Plugins', u'ComponentDLLs', u'CSE'),
-            u'LSData'
+            _j('obse', 'plugins', 'componentdlls', 'cse'),
+            'lsdata'
         }
         keep_data_files = {
-            _j(u'OBSE', u'Plugins', u'Construction Set Extender.dll'),
-            _j(u'OBSE', u'Plugins', u'Construction Set Extender.ini'),
+            _j('obse', 'plugins', 'construction set extender.dll'),
+            _j('obse', 'plugins', 'construction set extender.ini'),
         }
         keep_data_file_prefixes = {
-            _j(u'Meshes', u'Characters', u'_Male', u'specialanims',
-                u'0FemaleVariableWalk_'),
+            _j('meshes', 'characters', '_male', 'specialanims',
+                '0femalevariablewalk_'),
         }
+        lod_meshes_dir = _j('meshes', 'landscape', 'lod')
+        lod_textures_dir = _j('textures', 'landscapelod', 'generated')
+        lod_textures_normals_suffix = '_fn'
         skip_bain_refresh = {
             u'tes4edit backups',
             u'tes4edit cache',
             u'bgsee',
             u'conscribe logs',
         }
-        wrye_bash_data_files = {u'ArchiveInvalidationInvalidated!.bsa'}
+        wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
         canBash = True
@@ -166,13 +168,13 @@ class OblivionGameInfo(PatchGame):
                             u'amulet', u'weapon', u'backWeapon', u'sideWeapon',
                             u'quiver', u'shield', u'torch', u'tail')
         reference_types = {b'ACHR', b'ACRE', b'REFR'}
+        sort_lvsp_after_spel = True
 
     allTags = PatchGame.allTags | {u'IIM', u'NoMerge'}
 
     patchers = {
         u'AliasModNames', u'CoblCatalogs', u'CoblExhaustion',
         u'ContentsChecker', u'ImportActors', u'ImportActorsAIPackages',
-        u'ImportActorsAnimations', u'ImportActorsDeathItems',
         u'ImportActorsFaces', u'ImportActorsFactions', u'ImportActorsSpells',
         u'ImportCells', u'ImportEffectsStats', u'ImportEnchantmentStats',
         u'ImportGraphics', u'ImportInventory', u'ImportNames',
@@ -182,7 +184,7 @@ class OblivionGameInfo(PatchGame):
         u'SEWorldTests', u'TweakActors', u'TweakAssorted', u'TweakClothes',
         u'TweakNames', u'TweakSettings', u'ImportRaces', u'ImportRacesSpells',
         u'ImportRacesRelations', u'EyeChecker', u'TweakRaces', u'RaceChecker',
-        u'TimescaleChecker',
+        'TimescaleChecker', 'ImportEnchantments',
     }
 
     weaponTypes = (
@@ -245,26 +247,40 @@ class OblivionGameInfo(PatchGame):
         }
 
     bethDataFiles = {
-        #--Vanilla
-        u'oblivion.esm',
-        u'oblivion_1.1.esm',
-        u'oblivion_si.esm',
-        u'oblivion - meshes.bsa',
-        u'oblivion - misc.bsa',
-        u'oblivion - sounds.bsa',
-        u'oblivion - textures - compressed.bsa',
-        u'oblivion - textures - compressed.bsa.orig',
-        u'oblivion - voices1.bsa',
-        u'oblivion - voices2.bsa',
-        #--Shivering Isles
-        u'dlcshiveringisles.esp',
-        u'dlcshiveringisles - meshes.bsa',
-        u'dlcshiveringisles - sounds.bsa',
-        u'dlcshiveringisles - textures.bsa',
-        u'dlcshiveringisles - voices.bsa',
-        #--Knights of the Nine - shipped with all WS versions
-        u'knights.esp',
-        u'knights.bsa',
+        'dlcbattlehorncastle.bsa',
+        'dlcbattlehorncastle.esp',
+        'dlcfrostcrag.bsa',
+        'dlcfrostcrag.esp',
+        'dlchorsearmor.bsa',
+        'dlchorsearmor.esp',
+        'dlcmehrunesrazor.esp',
+        'dlcorrery.bsa',
+        'dlcorrery.esp',
+        'dlcshiveringisles - meshes.bsa',
+        'dlcshiveringisles - sounds.bsa',
+        'dlcshiveringisles - textures.bsa',
+        'dlcshiveringisles - voices.bsa',
+        'dlcshiveringisles.esp',
+        'dlcspelltomes.esp',
+        'dlcthievesden.bsa',
+        'dlcthievesden.esp',
+        'dlcvilelair.bsa',
+        'dlcvilelair.esp',
+        'knights.bsa',
+        'knights.esp',
+        'oblivion - meshes.bsa',
+        'oblivion - misc.bsa',
+        'oblivion - sounds.bsa',
+        'oblivion - textures - compressed.bsa',
+        'oblivion - textures - compressed.bsa.orig',
+        'oblivion - voices1.bsa',
+        'oblivion - voices2.bsa',
+        'oblivion.esm',
+        'oblivion_1.1b.esm',
+        'oblivion_1.1.esm',
+        'oblivion_gbr si.esm',
+        'oblivion_goty non-si.esm',
+        'oblivion_si.esm',
     }
 
     @classmethod

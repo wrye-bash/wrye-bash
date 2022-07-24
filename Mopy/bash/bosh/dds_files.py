@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -32,8 +32,6 @@ References:
 https://docs.microsoft.com/en-us/windows/win32/direct3ddds/dx-graphics-dds-pguide
 https://github.com/microsoft/DirectXTex
 https://github.com/ModOrganizer2/modorganizer-preview_dds"""
-
-from __future__ import division
 
 __author__ = u'Infernio'
 
@@ -63,12 +61,12 @@ _MAGIC_GRGB = b'GRGB'
 _MAGIC_YUY2 = b'YUY2'
 _MAGIC_BC6H = b'BC6H'
 
-_CAPS_FLAGS = Flags(0, Flags.getNames(
+_CAPS_FLAGS = Flags.from_names(
     (3,  u'DDSCAPS_COMPLEX'), # 0x8
     (12, u'DDSCAPS_TEXTURE'), # 0x1000
     (22, u'DDSCAPS_MIPMAP'),  # 0x400000
-))
-_CAPS2_FLAGS = Flags(0, Flags.getNames(
+)
+_CAPS2_FLAGS = Flags.from_names(
     (9,  u'DDSCAPS2_CUBEMAP'),           # 0x200
     (10, u'DDSCAPS2_CUBEMAP_POSITIVEX'), # 0x400
     (11, u'DDSCAPS2_CUBEMAP_NEGATIVEX'), # 0x800
@@ -77,8 +75,8 @@ _CAPS2_FLAGS = Flags(0, Flags.getNames(
     (14, u'DDSCAPS2_CUBEMAP_POSITIVEZ'), # 0x4000
     (15, u'DDSCAPS2_CUBEMAP_NEGATIVEZ'), # 0x8000
     (21, u'DDSCAPS2_VOLUME'),            # 0x200000
-))
-_DDS_FLAGS = Flags(0, Flags.getNames(
+)
+_DDS_FLAGS = Flags.from_names(
     (0,  u'DDSD_CAPS'),        # 0x1
     (1,  u'DDSD_HEIGHT'),      # 0x2
     (2,  u'DDSD_WIDTH'),       # 0x4
@@ -86,15 +84,15 @@ _DDS_FLAGS = Flags(0, Flags.getNames(
     (12, u'DDSD_PIXELFORMAT'), # 0x1000
     (17, u'DDSD_MIPMAPCOUNT'), # 0x20000
     (19, u'DDSD_LINEARSIZE'),  # 0x80000
-))
-_PF_FLAGS = Flags(0, Flags.getNames(
+)
+_PF_FLAGS = Flags.from_names(
     (0,  u'DDPF_ALPHAPIXELS'), # 0x1
     (1,  u'DDPF_ALPHA'),       # 0x2
     (2,  u'DDPF_FOURCC'),      # 0x4
     (6,  u'DDPF_RGB'),         # 0x40
     (9,  u'DDPF_YUV'),         # 0x200
     (17, u'DDPF_LUMINANCE'),   # 0x20000
-))
+)
 
 # PY3: These are redundant, see above - IntFlag would help
 _DDPF_ALPHAPIXELS = _PF_FLAGS(0x1)
@@ -150,7 +148,7 @@ class _DDSPixelFormat(object):
 def _new_pf(**pf_props):
     """Builds a pixel format with the specified non-default properties."""
     ret = _DDSPixelFormat()
-    for prop_name, prop_val in pf_props.viewitems():
+    for prop_name, prop_val in pf_props.items():
         setattr(ret, prop_name, prop_val)
     return ret
 
@@ -228,7 +226,7 @@ class _DXGIFormat(object): # PY3: enums sorely missed...
         properties. Automatically aquires a a
 
         :param fmt_name: The standardized name of this format.
-        :type fmt_name: unicode
+        :type fmt_name: str
         :param fmt_ddspf: The pixel format to use with this DXGI format.
         :type fmt_ddspf: _DDSPixelFormat
         :param fmt_bpp: The bits per pixel.
@@ -545,7 +543,7 @@ class _DDSHeader(object):
         self.dw_pitch_or_linear_size = unpack_int(ins)
         self.dw_depth = unpack_int(ins)
         self.dw_mip_map_count = unpack_int(ins)
-        for x in xrange(len(self.dw_reserved1)):
+        for x in range(len(self.dw_reserved1)):
             self.dw_reserved1[x] = unpack_int(ins)
         self.ddspf.load_format(ins)
         self.dw_caps = unpack_int(ins)

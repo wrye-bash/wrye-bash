@@ -16,21 +16,20 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Houses very low-level classes for reading and writing bytes in plugin
 files."""
-
-from __future__ import division
 import os
 from io import BytesIO
 
 # no local imports beyond this, imported everywhere in brec
-from .utils_constants import _int_unpacker, group_types, null1, strFid
+from .utils_constants import int_unpacker, group_types, null1, strFid
 from .. import bolt
-from ..bolt import decoder, struct_pack, struct_unpack, structs_cache
+from ..bolt import decoder, struct_pack, struct_unpack, structs_cache, \
+    sig_to_str
 from ..exception import ModError, ModReadError, ModSizeError
 
 #------------------------------------------------------------------------------
@@ -49,10 +48,10 @@ class RecordHeader(object):
     # precompiled unpacker for record headers
     header_unpack = structs_cache[rec_pack_format_str].unpack
     # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups
-    pack_formats = {0: u'=4sI4s3I'} # Top Type
-    pack_formats.update({x: u'=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
-    pack_formats.update({x: u'=4sIi3I' for x in {2, 3}})  #Interior Cell Blocks
-    pack_formats.update({x: u'=4sIhh3I' for x in {4, 5}}) #Exterior Cell Blocks
+    pack_formats = {0: '=4sI4s3I'} # Top Group
+    pack_formats.update({x: '=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
+    pack_formats.update({x: '=4sIi3I' for x in {2, 3}})  # Interior Cell Blocks
+    pack_formats.update({x: '=4sIhh3I' for x in {4, 5}}) # Exterior Cell Blocks
     #--Top types in order of the main ESM
     top_grup_sigs = []
     #--Record Types: all recognized record types (not just the top types)
@@ -113,8 +112,8 @@ class RecHeader(RecordHeader):
         return self.size
 
     def __repr__(self):
-        return u'<Record Header: [%s:%s] v%u>' % (
-            self.recType, strFid(self.fid), self.form_version)
+        return f'<Record Header: [{sig_to_str(self.recType)}:' \
+               f'{strFid(self.fid)}] v{self.form_version:d}>'
 
 class GrupHeader(RecordHeader):
     """Fixed size structure serving as a fencepost in the plugin file,
@@ -167,8 +166,8 @@ class GrupHeader(RecordHeader):
         return self.size - self.__class__.rec_header_size
 
     def __repr__(self):
-        return u'<GRUP Header: %s, %s>' % (
-            group_types[self.groupType], self.label)
+        return f'<GRUP Header: {group_types[self.groupType]}, ' \
+               f'{sig_to_str(self.label)}>'
 
 class TopGrupHeader(GrupHeader):
     """Fixed size structure signaling a top level group of records."""
@@ -176,8 +175,7 @@ class TopGrupHeader(GrupHeader):
     is_top_group_header = True
 
     def __init__(self, grup_size=0, grup_records_sig=b'', arg3=0, arg4=0):
-        super(TopGrupHeader, self).__init__(grup_size, grup_records_sig, 0,
-                                            arg3, arg4)
+        super().__init__(grup_size, grup_records_sig, 0, arg3, arg4)
 
     def pack_head(self, __rh=RecordHeader):
         pack_args = [__rh.pack_formats[0], b'GRUP', self.size,
@@ -189,25 +187,27 @@ class TopGrupHeader(GrupHeader):
 def unpack_header(ins, __rh=RecordHeader):
     """Header factory."""
     # args = header_sig, size, uint0, uint1, uint2[, uint3]
-    args = ins.unpack(__rh.header_unpack, __rh.rec_header_size, u'REC_HEADER') # PY3: header_sig, *args = ...
+    header_sig, *args = ins.unpack(__rh.header_unpack, __rh.rec_header_size,
+                                   u'REC_HEADER')
     #--Bad type?
-    header_sig = args[0]
     if header_sig not in __rh.valid_header_sigs:
-        raise ModError(ins.inName, u'Bad header type: %r' % header_sig)
+        raise ModError(ins.inName, f'Bad header type: '
+                                   f'{sig_to_str(header_sig)}')
     #--Record
     if header_sig != b'GRUP':
-        return RecHeader(*args)
+        return RecHeader(header_sig, *args)
     #--Top Group
-    elif args[3] == 0: #groupType == 0 (Top Type)
-        str0 = struct_pack(u'I', args[2])
+    elif args[2] == 0: # groupType == 0 (Top Type)
+        str0 = struct_pack(u'I', args[1])
         if str0 in __rh.top_grup_sigs:
             args = list(args)
-            args[2] = str0
-            del args[3]
-            return TopGrupHeader(*args[1:])
+            args[1] = str0
+            del args[2]
+            return TopGrupHeader(*args)
         else:
-            raise ModError(ins.inName, u'Bad Top GRUP type: %r' % str0)
-    return GrupHeader(*args[1:])
+            raise ModError(ins.inName, f'Bad Top GRUP type: '
+                                       f'{sig_to_str(str0)}')
+    return GrupHeader(*args)
 
 #------------------------------------------------------------------------------
 # Low-level reading/writing ---------------------------------------------------
@@ -216,14 +216,16 @@ class ModReader(object):
     Will throw a ModReaderror if read operation fails to return correct size.
     """
 
-    def __init__(self,inName,ins):
+    def __init__(self, inName, ins, ins_size=None):
         self.inName = inName
         self.ins = ins
         #--Get ins size
-        curPos = ins.tell()
-        ins.seek(0,os.SEEK_END)
-        self.size = ins.tell()
-        ins.seek(curPos)
+        if ins_size is None:
+            curPos = ins.tell()
+            ins.seek(0, os.SEEK_END)
+            ins_size = ins.tell()
+            ins.seek(curPos)
+        self.size = ins_size
         self.strings = {}
         self.hasStrings = False
 
@@ -262,38 +264,36 @@ class ModReader(object):
         if endPos == -1:
             return filePos == self.size
         elif filePos > endPos:
-            raise ModError(self.inName,
-                           u'Exceeded limit of: %s' % (debug_strs,))
+            raise ModReadError(self.inName, debug_strs, filePos, endPos)
         else:
             return filePos == endPos
 
     #--Read/Unpack ----------------------------------------
-    def read(self, size, *debug_strs):
+    def read(self, size, *debug_strs, file_offset=None):
         """Read from file."""
-        endPos = self.ins.tell() + size
+        endPos = (file_offset if file_offset is not None else self.ins.tell()
+                  ) + size
         if endPos > self.size:
             target_size = size - (endPos - self.size)
             raise ModSizeError(self.inName, debug_strs, (target_size,), size)
         return self.ins.read(size)
 
-    def readLString(self, size, *debug_strs):
+    def readLString(self, size, *debug_strs, __unpacker=int_unpacker):
         """Read translatable string. If the mod has STRINGS files, this is a
         uint32 to lookup the string in the string table. Otherwise, this is a
         zero-terminated string."""
-        __unpacker = _int_unpacker
         if self.hasStrings:
             if size != 4:
                 endPos = self.ins.tell() + size
                 raise ModReadError(self.inName, debug_strs, endPos, self.size)
             id_, = self.unpack(__unpacker, 4, *debug_strs)
-            if id_ == 0: return u''
-            else: return self.strings.get(id_,u'LOOKUP FAILED!') #--Same as Skyrim
+            if id_ == 0: return ''
+            return self.strings.get(id_, 'LOOKUP FAILED!') #--Same as Skyrim
         else:
             return self.readString(size, *debug_strs)
 
-    def readString32(self, *debug_str):
+    def readString32(self, *debug_str, __unpacker=int_unpacker):
         """Read wide pascal string: uint32 is used to indicate length."""
-        __unpacker = _int_unpacker
         strLen, = self.unpack(__unpacker, 4, debug_str)
         return self.readString(strLen, *debug_str)
 
@@ -314,10 +314,6 @@ class ModReader(object):
         if endPos > self.size:
             raise ModReadError(self.inName, debug_strs, endPos, self.size)
         return struct_unpacker(self.ins.read(size))
-
-    def unpackRef(self, __unpacker=_int_unpacker):
-        """Read a ref (fid)."""
-        return self.unpack(__unpacker, 4)[0]
 
     def unpackRecHeader(self, __head_unpack=unpack_header):
         return __head_unpack(self)

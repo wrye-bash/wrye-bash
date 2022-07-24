@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,7 +24,7 @@
 necessary."""
 
 from ..fallout4 import Fallout4GameInfo
-from ... import brec
+from ... import brec, bolt
 
 class Fallout4VRGameInfo(Fallout4GameInfo):
     displayName = u'Fallout 4 VR'
@@ -38,7 +38,8 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     launch_exe = u'Fallout4VR.exe'
     game_detect_includes = [u'Fallout4VR.exe']
     version_detect_file = u'Fallout4VR.exe'
-    master_file = u'Fallout4.esm'
+    master_file = bolt.FName(u'Fallout4.esm')
+    taglist_dir = 'Fallout4VR'
     loot_dir = u'Fallout4VR'
     regInstallKeys = (u'Bethesda Softworks\\Fallout 4 VR', u'Installed Path')
 
@@ -70,33 +71,13 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     allTags = Fallout4GameInfo.allTags | {u'NoMerge'}
     patchers = Fallout4GameInfo.patchers | {u'MergePatches'}
 
-    bethDataFiles = {
-        u'fallout4.esm',
-        u'fallout4.cdx',
-        u'fallout4 - animations.ba2',
-        u'fallout4 - geometry.csg',
-        u'fallout4 - interface.ba2',
-        u'fallout4 - materials.ba2',
-        u'fallout4 - meshes.ba2',
-        u'fallout4 - meshesextra.ba2',
-        u'fallout4 - misc.ba2',
-        u'fallout4 - shaders.ba2',
-        u'fallout4 - sounds.ba2',
-        u'fallout4 - startup.ba2',
-        u'fallout4 - textures1.ba2',
-        u'fallout4 - textures2.ba2',
-        u'fallout4 - textures3.ba2',
-        u'fallout4 - textures4.ba2',
-        u'fallout4 - textures5.ba2',
-        u'fallout4 - textures6.ba2',
-        u'fallout4 - textures7.ba2',
-        u'fallout4 - textures8.ba2',
-        u'fallout4 - textures9.ba2',
-        u'fallout4 - voices.ba2',
-        u'fallout4_vr.esm',
-        u'fallout4_vr - main.ba2',
-        u'fallout4_vr - shaders.ba2',
-        u'fallout4_vr - textures.ba2',
+    bethDataFiles = Fallout4GameInfo.bethDataFiles | {
+        'fallout4 - misc - beta.ba2',
+        'fallout4 - misc - debug.ba2',
+        'fallout4_vr - main.ba2',
+        'fallout4_vr - shaders.ba2',
+        'fallout4_vr - textures.ba2',
+        'fallout4_vr.esm',
     }
 
     # ---------------------------------------------------------------------

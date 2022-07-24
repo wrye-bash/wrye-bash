@@ -16,25 +16,24 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
 import re
 import string
-import wx
 from collections import OrderedDict
 
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import Link, Resources
-from ..bolt import GPath
-from ..bosh import omods
-from ..bosh import mods_metadata
+from ..bolt import GPath, FName
+from ..bosh import mods_metadata, empty_path, omods
+from ..exception import StateError
 from ..gui import Button, CancelButton, CheckBox, GridLayout, HLayout, Label, \
     LayoutOptions, SaveButton, Spacer, Stretch, TextArea, TextField, VLayout, \
     web_viewer_available, Splitter, WindowFrame, ListBox, DocumentViewer, \
-    pdf_viewer_available, bell, copy_text_to_clipboard, FileOpen, FileSave
+    bell, copy_text_to_clipboard, FileOpen, FileSave, DropDown, SearchBar
 
 class DocBrowser(WindowFrame):
     """Doc Browser frame."""
@@ -43,12 +42,11 @@ class DocBrowser(WindowFrame):
 
     def __init__(self):
         # Data
-        self._mod_name = GPath(u'')
         self._db_doc_paths = bosh.modInfos.table.getColumn(u'doc')
         self._db_is_editing = bosh.modInfos.table.getColumn(u'docEdit')
         self._doc_is_wtxt = False
         # Clean data
-        for mod_name, doc in list(self._db_doc_paths.iteritems()):
+        for mod_name, doc in list(self._db_doc_paths.items()):
             if not isinstance(doc, bolt.Path):
                 self._db_doc_paths[mod_name] = GPath(doc)
         # Singleton
@@ -62,10 +60,20 @@ class DocBrowser(WindowFrame):
         mod_list_window, main_window = root_window.make_panes(250,
                                                               vertically=True)
         # Mod Name
-        self._mod_name_box = TextField(mod_list_window, editable=False)
+        self._full_lo = [FName(''), # == no plugin selected
+                         *sorted(load_order.cached_lo_tuple())]
+        self._lower_lo = {}
+        self._plugin_search = SearchBar(mod_list_window,
+            hint=_('Search Plugins'))
+        self._plugin_search.on_text_changed.subscribe(self._search_plugins)
+        self._plugin_dropdown = DropDown(mod_list_window, value='',
+            choices=[''])
+        self._plugin_dropdown.on_combo_select.subscribe(self._do_select_free)
+        # Start out with an empty search -> everything shown
+        self._search_plugins(search_str='', boot_search=True)
         self._mod_list = ListBox(mod_list_window,
-             choices=sorted(x.s for x in self._db_doc_paths),
-             isSort=True, onSelect=self._do_select_mod)
+             choices=sorted(self._db_doc_paths),
+             isSort=True, onSelect=self._do_select_existing)
         # Buttons
         self._set_btn = Button(main_window, _(u'Set Doc...'),
                                btn_tooltip=u'Associates this plugin file with '
@@ -97,7 +105,9 @@ class DocBrowser(WindowFrame):
                          self._next_btn, self._reload_btn]
         #--Mod list
         VLayout(spacing=4, item_expand=True, items=[
-            self._mod_name_box, (self._mod_list, LayoutOptions(weight=1)),
+            self._plugin_search,
+            self._plugin_dropdown,
+            (self._mod_list, LayoutOptions(weight=1)),
         ]).apply_to(mod_list_window)
         #--Text field and buttons
         VLayout(spacing=4, item_expand=True, items=[
@@ -110,25 +120,52 @@ class DocBrowser(WindowFrame):
         for btn in self._buttons:
             btn.enabled = False
 
+    @property
+    def _mod_name(self):
+        """Return the currently selected plugin."""
+        return FName(self._plugin_dropdown.get_value())
+
     @staticmethod
-    def _get_is_wtxt(doc_path):
+    def _get_is_wtxt(doc_path, *, __rx=re.compile(r'^=.+=#\s*$')):
         """Determines whether specified path is a wtxt file."""
-        rx = re.compile(u'' r'^=.+=#\s*$', re.U)
         try:
             with doc_path.open(u'r', encoding=u'utf-8-sig') as text_file:
-                match_text = rx.match(text_file.readline())
+                match_text = __rx.match(text_file.readline())
             return match_text is not None
         except (OSError, UnicodeDecodeError):
             return False
+
+    def _search_plugins(self, search_str, boot_search=False):
+        """Called when text is entered into the search bar. Narrows the results
+        in the dropdown."""
+        # set_choices can change self._mod_name - we need the previous value so
+        # we can restore it after searching
+        prev_doc_plugin = self._mod_name
+        search_lower = search_str.strip().lower()
+        filtered_plugins = [p for p in self._full_lo
+                            if search_lower in p.lower()]
+        self._lower_lo = {pl: i for i, pl in enumerate(filtered_plugins)}
+        with self._plugin_dropdown.pause_drawing():
+            self._plugin_dropdown.set_choices(filtered_plugins)
+            # Check if the previous plugin can be restored now, otherwise
+            # select the first plugin
+            try:
+                new_doc_choice = filtered_plugins.index(prev_doc_plugin)
+            except ValueError:
+                new_doc_choice = 0
+            self._plugin_dropdown.set_selection(new_doc_choice)
+            if not boot_search:
+                # Update the doc viewer to match the new selection
+                self.SetMod(self._mod_name)
 
     def _do_open(self):
         """Handle "Open Doc" button."""
         doc_path = self._db_doc_paths.get(self._mod_name)
         if not doc_path:
             return bell()
-        if not doc_path.isfile():
-            balt.showWarning(self, _(u'The assigned document is not present:')
-                             + u'\n  %s' % doc_path)
+        if not doc_path.is_file():
+            balt.showWarning(self, _('The assigned document is not '
+                                     'present:') + f'\n  {doc_path}')
         else:
             doc_path.start()
 
@@ -141,41 +178,46 @@ class DocBrowser(WindowFrame):
                         editing=is_editing)
 
     def _do_forget(self):
-        """Handle "Forget Doc" button click.
-        Sets help document for current mod name to None."""
+        """Handle "Forget Doc" button click. Drops the associated help document
+        for the current plugin."""
         if self._mod_name not in self._db_doc_paths:
             return
-        index = self._mod_list.lb_index_for_str_item(self._mod_name.s)
-        if index != wx.NOT_FOUND:
-            self._mod_list.lb_delete_at_index(index)
+        p_index = self._mod_list.lb_index_for_str_item(self._mod_name)
+        if p_index is not None:
+            self._mod_list.lb_delete_at_index(p_index)
         del self._db_doc_paths[self._mod_name]
-        self.DoSave()
-        for btn in (self._edit_box, self._forget_btn, self._rename_btn,
-                    self._open_btn):
-            btn.enabled = False
-        self._doc_name_box.text_content = u''
-        self._load_data(uni_str=u'')
+        remaining_plugins = self._mod_list.lb_get_str_items()
+        # If there are plugins remaining, switch to the one right before
+        # the one that was removed
+        if remaining_plugins:
+            self.SetMod(remaining_plugins[max(p_index - 1, 0)])
+        else:
+            self._clear_doc()
 
-    def _do_select_mod(self, _lb_selection_dex, lb_selection_str):
-        """Handle mod name combobox selection."""
+    def _do_select_free(self, selection_label):
+        """Called when a plugin is selected from the dropdown."""
+        self.SetMod(selection_label)
+
+    def _do_select_existing(self, _lb_selection_dex, lb_selection_str):
+        """Called when a plugin is selected in the left-hand list."""
         self.SetMod(lb_selection_str)
 
     def _do_set(self):
         """Handle "Set Doc" button click."""
         #--Already have mod data?
-        mod_name = self._mod_name
+        mod_name = FName(self._plugin_dropdown.get_value())
         if mod_name in self._db_doc_paths:
             (docs_dir, file_name) = self._db_doc_paths[mod_name].headTail
         else:
             docs_dir = bass.settings[u'bash.modDocs.dir'] or bass.dirs[u'mods']
-            file_name = GPath(u'')
+            file_name = ''
         doc_path = FileOpen.display_dialog(self,
-            _(u'Select doc for %s:') % mod_name, docs_dir, file_name, u'*.*',
+            _('Select doc for %s:') % mod_name, docs_dir, file_name, '*.*',
             allow_create=True)
         if not doc_path: return
         bass.settings[u'bash.modDocs.dir'] = doc_path.head
         if mod_name not in self._db_doc_paths:
-            self._mod_list.lb_append(mod_name.s)
+            self._mod_list.lb_append(mod_name)
         self._db_doc_paths[mod_name] = doc_path
         self.SetMod(mod_name)
 
@@ -192,17 +234,28 @@ class DocBrowser(WindowFrame):
         old_path.moveTo(dest_path)
         if self._doc_is_wtxt:
             old_html, new_html = (x.root+u'.html' for x in (old_path,dest_path))
-            if old_html.exists(): old_html.moveTo(new_html)
-            else: new_html.remove()
+            try: old_html.moveTo(new_html)
+            except StateError: new_html.remove()
         #--Remember change
         self._db_doc_paths[self._mod_name] = dest_path
         self._doc_name_box.text_content = dest_path.stail
 
+    def _clear_doc(self):
+        """Clears the contents of the doc browser's text boxes, doc viewer,
+        etc."""
+        self.DoSave()
+        for btn in self._buttons:
+            btn.enabled = False
+        self._doc_name_box.text_content = ''
+        self._mod_list.lb_select_none()
+        self._plugin_dropdown.set_selection(0)
+        self._load_data(uni_str='')
+
     def DoSave(self):
         """Saves doc, if necessary."""
-        if not self._doc_ctrl.is_text_modified(): return
         doc_path = self._db_doc_paths.get(self._mod_name)
         if not doc_path: return  # nothing to save if no file is loaded
+        if not self._doc_ctrl.is_text_modified(): return
         self._doc_ctrl.set_text_modified(False)
         with doc_path.open(u'w', encoding=u'utf-8-sig') as out:
             out.write(self._doc_ctrl.fallback_text)
@@ -212,11 +265,9 @@ class DocBrowser(WindowFrame):
 
     def _load_data(self, doc_path=None, uni_str=None, editing=False,
                    __html_extensions=frozenset((u'.htm', u'.html', u'.mht'))):
-        if doc_path and doc_path.cext in __html_extensions and not editing \
-                and web_viewer_available():
+        if doc_path and doc_path.cext in __html_extensions and not editing:
             self._doc_ctrl.try_load_html(doc_path)
-        elif doc_path and doc_path.cext == u'.pdf' and not editing \
-                and pdf_viewer_available():
+        elif doc_path and doc_path.cext == '.pdf' and not editing:
             self._doc_ctrl.try_load_pdf(doc_path)
         else:
             if uni_str is None and doc_path:
@@ -230,18 +281,22 @@ class DocBrowser(WindowFrame):
         # defaults
         self._edit_box.is_checked = False
         self._doc_ctrl.set_text_editable(False)
-        mod_name = GPath(mod_name)
-        self._mod_name = mod_name
-        self._mod_name_box.text_content = mod_name.s
         if not mod_name:
-            self._load_data(uni_str=u'')
-            for btn in self._buttons:
-                btn.enabled = False
+            self._clear_doc()
             return
+        plugin_lower = mod_name.lower()
+        search_lower = self._plugin_search.text_content.strip().lower()
+        if search_lower not in plugin_lower:
+            # Clear the search since we ended up selecting something outside
+            # the search just now (this directly calls the subscribed
+            # _search_plugins and waits until it's done)
+            self._plugin_search.text_content = ''
+        self._plugin_dropdown.set_selection(self._lower_lo[plugin_lower])
         self._set_btn.enabled = True
-        self._mod_list.lb_select_index(self._mod_list.lb_index_for_str_item(mod_name.s))
+        self._mod_list.lb_select_index(
+            self._mod_list.lb_index_for_str_item(mod_name))
         # Doc path
-        doc_path = self._db_doc_paths.get(mod_name, GPath(u''))
+        doc_path = self._db_doc_paths.get(mod_name, empty_path)
         self._doc_name_box.text_content = doc_path.stail
         for btn in (self._forget_btn, self._rename_btn, self._edit_box,
                     self._open_btn):
@@ -252,17 +307,16 @@ class DocBrowser(WindowFrame):
         # Create new file if none exists
         elif not doc_path.exists():
             for template_file in (bosh.modInfos.store_dir.join(
-                    u'Docs', u'{} Readme Template'.format(fname))
-                                  for fname in (u'My', u'Bash')):
+                    'Docs', f'{s} Readme Template') for s in (u'My', u'Bash')):
                 if template_file.exists():
                     with template_file.open(u'rb') as ins:
                         template = bolt.decoder(ins.read())
                     break
             else:
-                template = u'= $modName {}#\n{}'.format(u'=' * (74-len(mod_name)),
-                                                        doc_path.s)
+                template = f'= $modName {u"=" * (74 - len(mod_name))}#\n' \
+                           f'{doc_path}'
             self._load_data(uni_str=string.Template(template).substitute(
-                modName=mod_name.s))
+                modName=mod_name))
             # Start edit mode
             self._edit_box.is_checked = True
             self._doc_ctrl.set_text_editable(True)
@@ -293,7 +347,7 @@ class DocBrowser(WindowFrame):
 
 #------------------------------------------------------------------------------
 _BACK, _FORWARD, _MOD_LIST, _CRC, _VERSION, _LOAD_PLUGINS, _COPY_TEXT, \
-_UPDATE = xrange(8)
+_UPDATE = range(8)
 
 def _get_mod_checker_setting(key, default=None):
     return bass.settings.get(u'bash.modChecker.show%s' % key, default)
@@ -370,7 +424,7 @@ class PluginChecker(WindowFrame):
     def OnCopyText(self):
         """Copies text of report to clipboard."""
         text_ = u'[spoiler]\n' + self.check_mods_text + u'[/spoiler]'
-        text_ = re.sub(u'' r'\[\[.+?\|\s*(.+?)\]\]', u'' r'\1', text_, re.U)
+        text_ = re.sub(r'\[\[.+?\|\s*(.+?)\]\]', r'\1', text_, re.U)
         text_ = re.sub(u'(__|\*\*|~~)', u'', text_, re.U)
         text_ = re.sub(u'&bull; &bull;', u'**', text_, re.U)
         text_ = re.sub(u'<[^>]+>', u'', text_, re.U)
@@ -393,10 +447,9 @@ class PluginChecker(WindowFrame):
         self.__merged = bosh.modInfos.merged.copy()
         self.__imported = bosh.modInfos.imported.copy()
         #--Do it
-        self.check_mods_text = mods_metadata.checkMods(
-            self, *[_get_mod_checker_setting(self._setting_names[setting_key])
-                    for setting_key in (_MOD_LIST, _CRC, _VERSION,
-                                        _LOAD_PLUGINS)])
+        self.check_mods_text = mods_metadata.checkMods(self, bosh.modInfos,
+            *[_get_mod_checker_setting(self._setting_names[setting_key])
+            for setting_key in (_MOD_LIST, _CRC, _VERSION, _LOAD_PLUGINS)])
         if web_viewer_available():
             log_path = bass.dirs[u'saveBase'].join(u'ModChecker.html')
             css_dir = bass.dirs[u'mopy'].join(u'Docs')
@@ -438,13 +491,13 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         self.config = config = omods.OmodConfig.getOmodConfig(project)
         #--GUI
         super(InstallerProject_OmodConfigDialog, self).__init__(parent,
-            title=_(u'Omod Config: ') + project.s,
+            title=f"{_('OMOD Config')}: {project}",
             icon_bundle=Resources.bashBlue, sizes_dict=bass.settings,
             caption=True, clip_children=True, tab_traversal=True)
         #--Fields
         self.gName = TextField(self, init_text=config.omod_proj,max_length=100)
-        self.gVersion = TextField(self, u'{:d}.{:02d}'.format(
-            config.vMajor, config.vMinor), max_length=32)
+        self.gVersion = TextField(self, f'{config.vMajor:d}.'
+                                        f'{config.vMinor:02d}', max_length=32)
         self.gWebsite = TextField(self, config.website, max_length=512)
         self.gAuthor = TextField(self, config.omod_author, max_length=512)
         self.gEmail = TextField(self, init_text=config.email, max_length=512)
@@ -482,10 +535,10 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         config.email = self.gEmail.text_content.strip()
         config.abstract = self.gAbstract.text_content.strip()
         #--Version
-        maVersion = re.match(u'' r'(\d+)\.(\d+)',
-                             self.gVersion.text_content.strip(), flags=re.U)
+        maVersion = re.match(r'(\d+)\.(\d+)',
+                             self.gVersion.text_content.strip())
         if maVersion:
-            config.vMajor,config.vMinor = (int(g) for g in maVersion.groups())
+            config.vMajor, config.vMinor = map(int, maVersion.groups())
         else:
             config.vMajor,config.vMinor = (0,0)
         #--Done

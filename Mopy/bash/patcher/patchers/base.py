@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,7 +28,7 @@ from itertools import chain
 from .. import getPatchesPath
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, ListPatcher
 from ... import load_order, bush
-from ...bolt import GPath, deprint
+from ...bolt import deprint
 from ...brec import MreRecord
 from ...exception import AbstractError
 from ...mod_files import LoadFactory, ModFile
@@ -98,7 +98,7 @@ class IndexingTweak(MultiTweakItem):
 
     def prepare_for_tweaking(self, patch_file):
         pf_minfs = patch_file.p_file_minfos
-        for pl_path in patch_file.allMods:
+        for pl_path in patch_file.merged_or_loaded_ord: ##: all_plugins?
             index_plugin = self._mod_file_read(pf_minfs[pl_path])
             for index_sig in self._index_sigs:
                 id_dict = self._indexed_records[index_sig]
@@ -145,7 +145,7 @@ class MultiTweaker(AMultiTweaker,Patcher):
                         pool_record(record)
                         break # Exit as soon as a tweak is interested
         # Finally, copy all pooled records in one fell swoop
-        for top_grup_sig, pooled_records in rec_pool.iteritems():
+        for top_grup_sig, pooled_records in rec_pool.items():
             if pooled_records: # only copy if we could pool
                 self.patchFile.tops[top_grup_sig].copy_records(pooled_records)
 
@@ -179,7 +179,12 @@ class MultiTweaker(AMultiTweaker,Patcher):
                         # that we now want to keep the record. Note that we
                         # can't break early here, because more than one tweak
                         # may want to touch this record
-                        p_tweak.tweak_record(record)
+                        try:
+                            p_tweak.tweak_record(record)
+                        except:
+                            deprint(record.error_string('tweaking'),
+                                    traceback=True)
+                            continue
                         keep(record.fid)
                         tweak_counter[p_tweak][record.fid[0]] += 1
         # We're done with all tweaks, give them a chance to clean up and do any
@@ -230,10 +235,9 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
         if not self.isActive: return
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            try: self.readFromText(getPatchesPath(srcFile))
-            except OSError: deprint(
-                u'%s is no longer in patches set' % srcPath, traceback=True)
+            try: self.read_csv(getPatchesPath(srcFile))
+            except OSError: deprint(f'{srcFile} is no longer in patches set',
+                                    traceback=True)
             progress.plus()
 
     def scanModFile(self,modFile,progress):
@@ -247,9 +251,8 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
 ##                if record.fid in self.old_new:
 ##                    self.patchFile.tops[top_grup_sig].setRecord(record)
         if b'CELL' in modFile.tops:
-            for cellBlock in modFile.tops[b'CELL'].cellBlocks:
+            for cfid, cellBlock in modFile.tops[b'CELL'].id_cellBlock.items():
                 cellImported = False
-                cfid = cellBlock.cell.fid
                 if cfid in patchCells.id_cellBlock:
                     patchCells.id_cellBlock[cfid].cell = cellBlock.cell
                     cellImported = True
@@ -282,15 +285,13 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                             patchCells.id_cellBlock[
                                 cfid].persistent_refs.append(record)
         if b'WRLD' in modFile.tops:
-            for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
+            for wfid, worldBlock in modFile.tops[b'WRLD'].id_worldBlocks.items():
                 worldImported = False
-                wfid = worldBlock.world.fid
                 if wfid in patchWorlds.id_worldBlocks:
                     patchWorlds.id_worldBlocks[wfid].world = worldBlock.world
                     worldImported = True
-                for cellBlock in worldBlock.cellBlocks:
+                for wcfid, cellBlock in worldBlock.id_cellBlock.items():
                     cellImported = False
-                    wcfid = cellBlock.cell.fid
                     if wfid in patchWorlds.id_worldBlocks and wcfid in patchWorlds.id_worldBlocks[wfid].id_cellBlock:
                         patchWorlds.id_worldBlocks[
                             wfid].id_cellBlock[wcfid].cell = cellBlock.cell
@@ -352,8 +353,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
 ####                    record.mapFids(swapper,True)
 ##                    record.setChanged()
 ##                    keep(record.fid)
-        for cellBlock in self.patchFile.tops[b'CELL'].cellBlocks:
-            cfid = cellBlock.cell.fid
+        for cfid, cellBlock in self.patchFile.tops[b'CELL'].id_cellBlock.items():
             for record in cellBlock.temp_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
@@ -368,10 +368,10 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
-        for worldBlock in self.patchFile.tops[b'WRLD'].worldBlocks:
+        for worldId, worldBlock in self.patchFile.tops[
+            b'WRLD'].id_worldBlocks.items():
             keepWorld = False
-            for cellBlock in worldBlock.cellBlocks:
-                cfid = cellBlock.cell.fid
+            for cfid, cellBlock in worldBlock.id_cellBlock.items():
                 for record in cellBlock.temp_refs:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
@@ -389,13 +389,12 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                         keep(record.fid)
                         keepWorld = True
             if keepWorld:
-                keep(worldBlock.world.fid)
-
-        log.setHeader(u'= ' + self._patcher_name)
+                keep(worldId)
+        log.setHeader(f'= {self._patcher_name}')
         self._srcMods(log)
         log(u'\n=== '+_(u'Records Patched'))
         for srcMod in load_order.get_ordered(count):
-            log(u'* %s: %d' % (srcMod,count[srcMod]))
+            log(f'* {srcMod}: {count[srcMod]:d}')
 
 #------------------------------------------------------------------------------
 def is_templated(record, flag_name):

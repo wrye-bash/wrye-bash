@@ -16,17 +16,17 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Temp module to encapsulate some shared dependencies left over from splitting
 special.py."""
 
-from ....bolt import GPath
+from ....bolt import FName
 from ....patcher.base import Abstract_Patcher
 
-cobl_main = GPath(u'Cobl Main.esm')
+cobl_main = FName(u'Cobl Main.esm')
 
 class ExSpecial(Abstract_Patcher):
     """Those used to be subclasses of SpecialPatcher that did not make much
@@ -35,7 +35,7 @@ class ExSpecial(Abstract_Patcher):
     patcher_order = 40
     patcher_name = u'UNDEFINED'
     patcher_desc = u'UNDEFINED'
-    _config_key = None # type: unicode
+    _config_key = None # type: str
 
     @classmethod
     def gui_cls_vars(cls):

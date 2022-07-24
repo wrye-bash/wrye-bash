@@ -16,23 +16,22 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
-from __future__ import unicode_literals
-
 import io
 import re
 from collections import OrderedDict
 from itertools import chain
 
 from ... import brec
-from ...bolt import Flags, int_or_zero
-from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
-    MelString, MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, \
-    MelFids, MreHeaderBase, MelBase, MelFidList, MelBodyParts, MelAnimations, \
+from ...bolt import Flags, int_or_zero, structs_cache, str_or_none, \
+    int_or_none, str_to_sig, sig_to_str
+from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
+    MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
+    MreHeaderBase, MelBase, MelSimpleArray, MelBodyParts, MelAnimations, \
     MreGmstBase, MelReferences, MelRegnEntrySubrecord, MelSorted, MelRegions, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelRaceParts, MelRaceVoices, null1, null2, MelScriptVars, MelRelations, \
@@ -41,9 +40,11 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
-    MelDescription, BipedFlags, MelSpells, MelUInt8Flags, MelUInt32Flags, \
+    MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, \
     SignatureDecider, MelRaceData, MelFactions, MelActorSounds, \
-    MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct
+    MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
+    MelEnchantment, MelValueWeight, null4, SpellFlags
+
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
 
@@ -89,6 +90,24 @@ class MelConditions(MelGroups):
                 suffix_elements=[u'unused3'], old_suffix_fmts={u''})),
             }, decider=_CtdaDecider()),
         )
+
+# Common Flags
+aiService = Flags.from_names(
+    (0,'weapons'),
+    (1,'armor'),
+    (2,'clothing'),
+    (3,'books'),
+    (4,'ingredients'),
+    (7,'lights'),
+    (8,'apparatus'),
+    (10,'miscItems'),
+    (11,'spells'),
+    (12,'magicItems'),
+    (13,'potions'),
+    (14,'training'),
+    (16,'recharge'),
+    (17,'repair')
+)
 
 #------------------------------------------------------------------------------
 # A distributor config for use with MelEffects, since MelEffects also contains
@@ -144,7 +163,7 @@ class MelEffects(MelSequential):
     which is why it's so complex. The challenge is that we basically have to
     redirect every procedure to one of two lists of elements, depending on
     whether an 'OBME' subrecord exists or not."""
-    se_flags = Flags(0, Flags.getNames(u'hostile'))
+    se_flags = Flags.from_names(u'hostile')
 
     def __init__(self):
         # Vanilla Elements ----------------------------------------------------
@@ -195,21 +214,15 @@ class MelEffects(MelSequential):
                     MelUnion({
                         0: MelStruct(b'SCIT', [u'4s', u'I', u'4s', u'B', u'3s'],
                                      u'efix_param', u'school', u'visual',
-                                     (MelEffects.se_flags, u'flags'),
+                                     se_fl := (MelEffects.se_flags, u'flags'),
                                      u'unused1'),
                         1: MelStruct(b'SCIT', [u'2I', u'4s', u'B', u'3s'], (FID, u'efix_param'),
-                                     u'school', u'visual',
-                                     (MelEffects.se_flags, u'flags'),
-                                     u'unused1'),
+                                     u'school', u'visual', se_fl, u'unused1'),
                         2: MelStruct(b'SCIT', [u'4s', u'I', u'4s', u'B', u'3s'],
                                      (u'efix_param', b'REHE'), u'school',
-                                     u'visual',
-                                     (MelEffects.se_flags, u'flags'),
-                                     u'unused1'),
+                                     u'visual', se_fl, u'unused1'),
                         3: MelStruct(b'SCIT', [u'2I', u'4s', u'B', u'3s'], (FID, u'efit_param'),
-                                     u'school', u'visual',
-                                     (MelEffects.se_flags, u'flags'),
-                                     u'unused1'),
+                                     u'school', u'visual', se_fl, u'unused1'),
                     }, decider=AttrValDecider(u'efix_param_info')),
                     MelFull(),
                 ),
@@ -227,8 +240,7 @@ class MelEffects(MelSequential):
         self._obme_loaders = {}
         self._obme_form_elements = set()
         # Only for setting the possible signatures, redirected in load_mel etc.
-        super(MelEffects, self).__init__(*(self._vanilla_elements +
-                                           self._obme_elements))
+        super().__init__(*self._vanilla_elements, *self._obme_elements)
 
     # Note that we only support creating vanilla effects, as our records system
     # isn't expressive enough to pass more info along here
@@ -267,12 +279,12 @@ class MelEffects(MelSequential):
         for element in target_elements:
             element.dumpData(record, out)
 
-    def mapFids(self, record, function, save=False):
+    def mapFids(self, record, function, save_fids=False):
         target_form_elements = (self._obme_form_elements
                                 if record.obme_record_version is not None
                                 else self._vanilla_form_elements)
         for form_element in target_form_elements:
-            form_element.mapFids(record, function, save)
+            form_element.mapFids(record, function, save_fids)
 
 class MelEffectsObmeFull(MelString):
     """Hacky class for handling the extra FULL that OBME includes after the
@@ -374,7 +386,7 @@ class MelObme(MelOptStruct):
         struct_contents += extra_contents
         # Always ends with a statically sized reserved byte array
         struct_contents += [(u'obme_unused', null1 * reserved_byte_count)]
-        str_fmts =[ u'4B'] + extra_format +  [u'%ds' % reserved_byte_count]
+        str_fmts = ['4B', *extra_format, f'{reserved_byte_count}s']
         super(MelObme, self).__init__(struct_sig, str_fmts, *struct_contents)
 
 #------------------------------------------------------------------------------
@@ -388,31 +400,149 @@ class MelOwnershipTes4(brec.MelOwnership):
         )
 
 #------------------------------------------------------------------------------
+class MelSpellsTes4(MelFids): ##: HACKy workaround, see docstring
+    """Handles the common SPLO subrecord. This is a workaround to fix Oblivion
+    hanging on load in some edge cases. The CS does some sort of processing or
+    sorting to SPLOs that we don't fully understand yet. All we know for sure
+    so far is that it always seems to put SPLOs that link to LVSPs after ones
+    that link to SPELs, and we can't handle that without loading the plugin's
+    masters (see #282 and #577 for two issues that need this as well)."""
+    def __init__(self):
+        super().__init__('spells', MelFid(b'SPLO'))
+
+#------------------------------------------------------------------------------
 ##: Could technically be reworked for non-Oblivion games, but is broken and
-# unused outside of Oblivion right now
+# unused outside of Oblivion right now - for actor values in particular see
+# FO3/FNV: https://geck.bethsoft.com/index.php?title=Actor_Value_Codes
+# TES5: https://en.uesp.net/wiki/Tes5Mod:Actor_Value_Indices
+actor_values = [ # Human-readable names for each actor value
+    _('Strength'), #--00
+    _('Intelligence'),
+    _('Willpower'),
+    _('Agility'),
+    _('Speed'),
+    _('Endurance'),
+    _('Personality'),
+    _('Luck'),
+    _('Health'),
+    _('Magicka'),
+    _('Fatigue'), #--10
+    _('Encumbrance'),
+    _('Armorer'),
+    _('Athletics'),
+    _('Blade'),
+    _('Block'),
+    _('Blunt'),
+    _('Hand To Hand'),
+    _('Heavy Armor'),
+    _('Alchemy'),
+    _('Alteration'), #--20
+    _('Conjuration'),
+    _('Destruction'),
+    _('Illusion'),
+    _('Mysticism'),
+    _('Restoration'),
+    _('Acrobatics'),
+    _('Light Armor'),
+    _('Marksman'),
+    _('Mercantile'),
+    _('Security'), #--30
+    _('Sneak'),
+    _('Speechcraft'),
+    'Aggression', # TODO(inf) Why do the translations stop here??
+    'Confidence',
+    'Energy',
+    'Responsibility',
+    'Bounty',
+    'UNKNOWN 38',
+    'UNKNOWN 39',
+    'MagickaMultiplier', #--40
+    'NightEyeBonus',
+    'AttackBonus',
+    'DefendBonus',
+    'CastingPenalty',
+    'Blindness',
+    'Chameleon',
+    'Invisibility',
+    'Paralysis',
+    'Silence',
+    'Confusion', #--50
+    'DetectItemRange',
+    'SpellAbsorbChance',
+    'SpellReflectChance',
+    'SwimSpeedMultiplier',
+    'WaterBreathing',
+    'WaterWalking',
+    'StuntedMagicka',
+    'DetectLifeRange',
+    'ReflectDamage',
+    'Telekinesis', #--60
+    'ResistFire',
+    'ResistFrost',
+    'ResistDisease',
+    'ResistMagic',
+    'ResistNormalWeapons',
+    'ResistParalysis',
+    'ResistPoison',
+    'ResistShock',
+    'Vampirism',
+    'Darkness', #--70
+    'ResistWaterDamage',
+]
+
 class MreHasEffects(object):
     """Mixin class for magic items."""
     __slots__ = []
+    _recipient_number_name = {None: 'NONE', 0: 'Self', 1: 'Touch', 2: 'Target'}
+    _recipient_name_number = {y.lower(): x for x, y in
+                              _recipient_number_name.items() if x is not None}
+    _actor_val_number_name = {x: y for x, y in enumerate(actor_values)}
+    _actor_val_name_number = {y.lower(): x for x, y
+                              in _actor_val_number_name.items()}
+    _actor_val_number_name[None] = 'NONE'
+    _school_number_name = {None: 'NONE', 0: 'Alteration', 1: 'Conjuration',
+                           2: 'Destruction', 3: 'Illusion', 4: 'Mysticism',
+                           5: 'Restoration'}
+    _school_name_number = {y.lower(): x for x, y in _school_number_name.items()
+                           if x is not None}
+    # Add 'effects/script_fid' to attr_csv_struct (column headers are tuples!)
+    _effect_headers = (
+        _('Effect'), _('Name'), _('Magnitude'), _('Area'), _('Duration'),
+        _('Range'), _('Actor Value'), _('SE Mod Name'), _('SE ObjectIndex'),
+        _('SE school'), _('SE visual'), _('SE Is Hostile'), _('SE Name'))
+    _effect_headers = (
+        *_effect_headers * 2, _('Additional Effects (Same format)'))
+    attr_csv_struct['effects'] = [None, _effect_headers, lambda val:
+        MreHasEffects._write_effects(val)[1:]] # chop off the first comma...
+    attr_csv_struct['script_fid'] = [None, (_('Script Mod Name'),
+        _('Script ObjectIndex')), lambda val:(
+    '"None","None"' if val is None else '"%s","0x%06X"' % val)]
+
+    @classmethod
+    def parse_csv_line(cls, csv_fields, index_dict, reuse=False):
+        effects_tuple = index_dict.pop('effects', None)
+        attr_dex = super(MreHasEffects, cls).parse_csv_line(csv_fields,
+                                                            index_dict, reuse)
+        if effects_tuple is not None:
+            effects_start, coerce_fid = effects_tuple
+            attr_dex['effects'] = cls._read_effects(csv_fields[effects_start:],
+                                                    coerce_fid)
+            if not reuse:
+                index_dict['effects'] = effects_tuple
+        return attr_dex
 
     def getEffects(self):
         """Returns a summary of effects. Useful for alchemical catalog."""
-        from ... import bush
-        effects = []
-        effectsAppend = effects.append
-        for effect in self.effects:
-            mgef, actorValue = effect.effect_sig, effect.actorValue
-            if mgef not in bush.game.generic_av_effects:
-                actorValue = 0
-            effectsAppend((mgef,actorValue))
-        return effects
+        return [(mgef := effect.effect_sig,
+            effect.actorValue if mgef in MreMgef.generic_av_effects else 0)
+                for effect in self.effects]
 
-    def getSpellSchool(self):
+    def _get_spell_school(self):
         """Returns the school based on the highest cost spell effect."""
-        from ... import bush
         spellSchool = [0,0]
         for effect in self.effects:
-            school = bush.game.mgef_school[effect.effect_sig]
-            effectValue = bush.game.mgef_basevalue[effect.effect_sig]
+            school = MreMgef.mgef_school[effect.effect_sig]
+            effectValue = MreMgef.mgef_basevalue[effect.effect_sig]
             if effect.magnitude:
                 effectValue *= effect.magnitude
             if effect.area:
@@ -425,28 +555,135 @@ class MreHasEffects(object):
 
     def getEffectsSummary(self):
         """Return a text description of magic effects."""
-        from ... import bush
         buff = io.StringIO()
-        avEffects = bush.game.generic_av_effects
-        aValues = bush.game.actor_values
+        avEffects = MreMgef.generic_av_effects
+        aValues = actor_values
         buffWrite = buff.write
         if self.effects:
-            school = self.getSpellSchool()
+            school = self._get_spell_school()
             buffWrite(aValues[20 + school] + u'\n')
         for index, effect in enumerate(self.effects):
-            if effect.scriptEffect:
+            if effect.scriptEffect: ##: #480 - setDefault commit - return None
                 effectName = effect.scriptEffect.full or u'Script Effect'
             else:
-                effectName = bush.game.mgef_name[effect.effect_sig]
+                effectName = MreMgef.mgef_name[effect.effect_sig]
                 if effect.effect_sig in avEffects:
                     effectName = re.sub(_(u'(Attribute|Skill)'),
                                         aValues[effect.actorValue], effectName)
-            buffWrite(u'o+*'[effect.recipient] + u' ' + effectName)
-            if effect.magnitude: buffWrite(u' %sm' % effect.magnitude)
-            if effect.area: buffWrite(u' %sa' % effect.area)
-            if effect.duration > 1: buffWrite(u' %sd' % effect.duration)
+            buffWrite('o+*'[effect.recipient] + f' {effectName}')
+            if effect.magnitude: buffWrite(f' {effect.magnitude}m')
+            if effect.area: buffWrite(f' {effect.area}a')
+            if effect.duration > 1: buffWrite(f' {effect.duration}d')
             buffWrite(u'\n')
         return buff.getvalue()
+
+    @classmethod
+    def _read_effects(cls, _effects, _coerce_fid, *,
+                      __packer=structs_cache['I'].pack):
+        schoolTypeName_Number = cls._school_name_number
+        recipientTypeName_Number = cls._recipient_name_number
+        actorValueName_Number = cls._actor_val_name_number
+        effects_list = []
+        while len(_effects) >= 13:
+            _effect,_effects = _effects[1:13],_effects[13:]
+            eff_name,magnitude,area,duration,range_,actorvalue,semod,seobj,\
+            seschool,sevisual,se_hostile,sename = _effect
+            eff_name = str_or_none(eff_name) #OBME not supported
+            # (support requires adding a mod/objectid format to the
+            # csv, this assumes all MGEFCodes are raw)
+            magnitude, area, duration = map(int_or_none,
+                                            (magnitude, area, duration))
+            range_ = str_or_none(range_)
+            if range_:
+                range_ = recipientTypeName_Number.get(range_.lower(),
+                                                      int_or_zero(range_))
+            actorvalue = str_or_none(actorvalue)
+            if actorvalue:
+                actorvalue = actorValueName_Number.get(actorvalue.lower(),
+                                                       int_or_zero(actorvalue))
+            if None in (eff_name,magnitude,area,duration,range_,actorvalue):
+                continue
+            eff = cls.getDefault('effects')
+            effects_list.append(eff)
+            eff.effect_sig = str_to_sig(eff_name)
+            eff.magnitude = magnitude
+            eff.area = area
+            eff.duration = duration
+            eff.recipient = range_
+            eff.actorValue = actorvalue
+            # script effect
+            semod = str_or_none(semod)
+            if semod is None or not seobj.startswith('0x'):
+                continue
+            se_hostile = str_or_none(se_hostile)
+            if se_hostile is None:
+                continue
+            seschool = str_or_none(seschool)
+            if seschool:
+                seschool = schoolTypeName_Number.get(seschool.lower(),
+                                                     int_or_zero(seschool))
+            seflags = MelEffects.se_flags(0)
+            seflags.hostile = se_hostile.lower() == 'true'
+            sename = str_or_none(sename)
+            if None in (seschool, sename):
+                continue
+            eff.scriptEffect = se = cls.getDefault('effects.scriptEffect')
+            se.full = sename
+            se.script_fid = _coerce_fid(semod, seobj)
+            se.school = seschool
+            sevisuals = int_or_none(sevisual) #OBME not
+            # supported (support requires adding a mod/objectid format to
+            # the csv, this assumes visual MGEFCode is raw)
+            if sevisuals is None: # it was no int try to read unicode MGEF Code
+                sevisuals = str_or_none(sevisual)
+                sevisuals = str_to_sig(sevisuals) if sevisuals else null4
+            else: # pack int to bytes
+                sevisuals = __packer(sevisuals)
+            sevisual = sevisuals
+            se.visual = sevisual
+            se.flags = seflags
+        return effects_list
+
+    @classmethod
+    def _write_effects(cls, effects):
+        schoolTypeNumber_Name = cls._school_number_name
+        recipientTypeNumber_Name = cls._recipient_number_name
+        actorValueNumber_Name = cls._actor_val_number_name
+        effectFormat = ',,"%s","%d","%d","%d","%s","%s"'
+        scriptEffectFormat = ',"%s","0x%06X","%s","%s","%s","%s"'
+        noscriptEffectFiller = ',"None","None","None","None","None","None"'
+        output = []
+        for effect in effects:
+            efname, magnitude, area, duration, range_, actorvalue = \
+                sig_to_str(effect.effect_sig), effect.magnitude, effect.area, \
+                effect.duration, effect.recipient, effect.actorValue
+            range_ = recipientTypeNumber_Name.get(range_,range_)
+            actorvalue = actorValueNumber_Name.get(actorvalue,actorvalue)
+            output.append(effectFormat % (
+                efname,magnitude,area,duration,range_,actorvalue))
+            if effect.scriptEffect: ##: #480 - setDefault commit - return None
+                se = effect.scriptEffect
+                longid, seschool, sevisual, seflags, sename = \
+                    se.script_fid, se.school, se.visual, se.flags, se.full
+                sevisual = 'NONE' if sevisual == null4 else sig_to_str(
+                    sevisual)
+                seschool = schoolTypeNumber_Name.get(seschool,seschool)
+                output.append(scriptEffectFormat % (*longid,
+                    seschool, sevisual, bool(int(seflags)), sename))
+            else:
+                output.append(noscriptEffectFiller)
+        return ''.join(output)
+
+    # Tweaks APIs -------------------------------------------------------------
+    def is_harmful(self, cached_hostile):
+        """Return True if all of the effects on the specified record are
+        harmful/hostile."""
+        for rec_eff in self.effects:
+            is_effect_hostile = se.flags.hostile if (se := rec_eff.scriptEffect
+                ) else rec_eff.effect_sig in cached_hostile
+            if not is_effect_hostile:
+                return False
+        return True
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
@@ -515,11 +752,11 @@ class MreActi(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreAlch(MelRecord,MreHasEffects):
+class MreAlch(MreHasEffects, MelRecord):
     """Potion."""
     rec_sig = b'ALCH'
 
-    _flags = Flags(0, Flags.getNames('autoCalc','isFood'))
+    _flags = Flags.from_names('autoCalc', 'isFood')
 
     melSet = MelSet(
         MelEdid(),
@@ -539,14 +776,14 @@ class MreAmmo(MelRecord):
     """Ammunition."""
     rec_sig = b'AMMO'
 
-    _flags = Flags(0, Flags.getNames('notNormalWeapon'))
+    _flags = Flags.from_names('notNormalWeapon')
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelFid(b'ENAM','enchantment'),
+        MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelStruct(b'DATA', [u'f', u'B', u'3s', u'I', u'f', u'H'], 'speed', (_flags, u'flags'),
                   'unused1', 'value', 'weight', 'damage'),
@@ -583,16 +820,14 @@ class MreArmo(MelRecord):
     """Armor."""
     rec_sig = b'ARMO'
 
-    _flags = BipedFlags(0, Flags.getNames((16, u'hideRings'),
-                                          (17, u'hideAmulet'),
-                                          (22, u'notPlayable'),
-                                          (23, u'heavyArmor')))
+    _flags = BipedFlags.from_names((16, u'hideRings'), (17, u'hideAmulet'),
+                                   (22, u'notPlayable'), (23, u'heavy_armor'))
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelScript(),
-        MelFid(b'ENAM','enchantment'),
+        MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelUInt32Flags(b'BMDT', u'biped_flags', _flags),
         MelModel(u'maleBody', 0),
@@ -609,7 +844,7 @@ class MreBook(MelRecord):
     """Book."""
     rec_sig = b'BOOK'
 
-    _flags = Flags(0,Flags.getNames('isScroll','isFixed'))
+    _flags = Flags.from_names('isScroll', 'isFixed')
 
     melSet = MelSet(
         MelEdid(),
@@ -618,12 +853,12 @@ class MreBook(MelRecord):
         MelIcon(),
         MelDescription(u'book_text'),
         MelScript(),
-        MelFid(b'ENAM','enchantment'),
+        MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelStruct(b'DATA', [u'B', u'b', u'I', u'f'], (_flags, u'flags'), ('teaches', -1),
                   'value', 'weight'),
     )
-    __slots__ = melSet.getSlotsUsed() + ['modb']
+    __slots__ = [*melSet.getSlotsUsed(), 'modb']
 
 class MreBsgn(MelRecord):
     """Birthsign."""
@@ -634,7 +869,7 @@ class MreBsgn(MelRecord):
         MelFull(),
         MelIcon(),
         MelDescription(),
-        MelSpells(),
+        MelSpellsTes4(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -642,7 +877,7 @@ class MreCell(MelRecord):
     """Cell."""
     rec_sig = b'CELL'
 
-    cellFlags = Flags(0, Flags.getNames(
+    cellFlags = Flags.from_names(
         (0, u'isInterior'),
         (1, u'hasWater'),
         (2, u'invertFastTravel'),
@@ -650,7 +885,7 @@ class MreCell(MelRecord):
         (5, u'publicPlace'),
         (6, u'handChanged'),
         (7, u'behaveLikeExterior')
-    ))
+    )
 
     melSet = MelSet(
         MelEdid(),
@@ -658,8 +893,8 @@ class MreCell(MelRecord):
         MelUInt8Flags(b'DATA', u'flags', cellFlags),
         # None defaults here are on purpose - XCLC does not necessarily exist,
         # but 0 is a valid value for both coordinates (duh)
-        MelSkipInterior(MelOptStruct(b'XCLC', [u'2i'], (u'posX', None),
-            (u'posY', None))),
+        MelSkipInterior(MelOptStruct(b'XCLC', ['2i'],
+                                     ('posX', None), ('posY', None))),
         MelOptStruct(b'XCLL', [u'3B', u's', u'3B', u's', u'3B', u's', u'2f', u'2i', u'2f'], u'ambientRed',
             u'ambientGreen', u'ambientBlue', u'unused1',
             u'directionalRed', u'directionalGreen', u'directionalBlue',
@@ -679,25 +914,7 @@ class MreClas(MelRecord):
     """Class."""
     rec_sig = b'CLAS'
 
-    _flags = Flags(0, Flags.getNames(
-        u'class_playable',
-        u'class_guard',
-    ))
-    aiService = Flags(0, Flags.getNames(
-        (0,'weapons'),
-        (1,'armor'),
-        (2,'clothing'),
-        (3,'books'),
-        (4,'ingredients'),
-        (7,'lights'),
-        (8,'apparatus'),
-        (10,'miscItems'),
-        (11,'spells'),
-        (12,'magicItems'),
-        (13,'potions'),
-        (14,'training'),
-        (16,'recharge'),
-        (17,'repair'),))
+    _flags = Flags.from_names(u'class_playable', u'class_guard')
 
     melSet = MelSet(
         MelEdid(),
@@ -732,15 +949,14 @@ class MreClot(MelRecord):
     """Clothing."""
     rec_sig = b'CLOT'
 
-    _flags = BipedFlags(0, Flags.getNames((16, u'hideRings'),
-                                          (17, u'hideAmulet'),
-                                          (22, u'notPlayable')))
+    _flags = BipedFlags.from_names((16, u'hideRings'), (17, u'hideAmulet'),
+                                   (22, u'notPlayable'))
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelScript(),
-        MelFid(b'ENAM','enchantment'),
+        MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelUInt32Flags(b'BMDT', u'biped_flags', _flags),
         MelModel(u'maleBody', 0),
@@ -749,7 +965,7 @@ class MreClot(MelRecord):
         MelModel(u'femaleBody', 3),
         MelModel(u'femaleWorld', 4),
         MelIco2(u'femaleIconPath'),
-        MelStruct(b'DATA', [u'I', u'f'],'value','weight'),
+        MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -757,7 +973,7 @@ class MreCont(MreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
-    _flags = Flags(0,Flags.getNames(None,'respawns'))
+    _flags = Flags.from_names(None,'respawns')
 
     melSet = MelSet(
         MelEdid(),
@@ -775,7 +991,7 @@ class MreCrea(MreActorBase):
     """Creature."""
     rec_sig = b'CREA'
 
-    _flags = Flags(0, Flags.getNames(
+    _flags = Flags.from_names(
         ( 0,'biped'),
         ( 1,'essential'),
         ( 2,'weaponAndShield'),
@@ -793,29 +1009,14 @@ class MreCrea(MreActorBase):
         (18,'noCombatInWater'),
         (19,'noShadow'),
         (20,'noCorpseCheck'),
-        ))
-    aiService = Flags(0, Flags.getNames(
-        (0,'weapons'),
-        (1,'armor'),
-        (2,'clothing'),
-        (3,'books'),
-        (4,'ingredients'),
-        (7,'lights'),
-        (8,'apparatus'),
-        (10,'miscItems'),
-        (11,'spells'),
-        (12,'magicItems'),
-        (13,'potions'),
-        (14,'training'),
-        (16,'recharge'),
-        (17,'repair'),))
+    )
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelModel(),
         MelItems(),
-        MelSpells(),
+        MelSpellsTes4(),
         MelBodyParts(),
         MelBase(b'NIFT','nift_p'), # Texture File Hashes
         MelStruct(b'ACBS', [u'I', u'3H', u'h', u'2H'],
@@ -828,7 +1029,7 @@ class MreCrea(MreActorBase):
             ('aggression',5),('confidence',50),('energyLevel',50),
             ('responsibility',50),(aiService, u'services'),'trainSkill',
             'trainLevel','unused1'),
-        MelFids(b'PKID','aiPackages'),
+        MelFids('aiPackages', MelFid(b'PKID')),
         MelAnimations(),
         MelStruct(b'DATA', [u'5B', u's', u'H', u'2s', u'H', u'8B'],'creatureType','combatSkill','magic',
                   'stealth','soul','unused2','health',
@@ -850,7 +1051,7 @@ class MreCrea(MreActorBase):
 class MreCsty(MelRecord):
     """Combat Style."""
     rec_sig = b'CSTY'
-    _flagsA = Flags(0, Flags.getNames(
+    _flagsA = Flags.from_names(
         ( 0,'advanced'),
         ( 1,'useChanceForAttack'),
         ( 2,'ignoreAllies'),
@@ -859,10 +1060,8 @@ class MreCsty(MelRecord):
         ( 5,'fleeingDisabled'),
         ( 6,'prefersRanged'),
         ( 7,'meleeAlertOK'),
-        ))
-    _flagsB = Flags(0, Flags.getNames(
-        ( 0,'doNotAcquire'),
-        ))
+    )
+    _flagsB = Flags.from_names('doNotAcquire')
 
     melSet = MelSet(
         MelEdid(),
@@ -904,8 +1103,8 @@ class MreDial(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelSorted(MelFids(b'QSTI', 'added_quests')),
-        MelSorted(MelFids(b'QSTR', 'removed_quests')),
+        MelSorted(MelFids('added_quests', MelFid(b'QSTI'))),
+        MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
         MelUInt8(b'DATA', u'dialType'),
     )
@@ -915,8 +1114,8 @@ class MreDoor(MelRecord):
     """Door."""
     rec_sig = b'DOOR'
 
-    _flags = Flags(0, Flags.getNames('oblivionGate', 'automatic', 'hidden',
-                                     'minimalUse'))
+    _flags = Flags.from_names('oblivionGate', 'automatic', 'hidden',
+                              'minimalUse')
 
     melSet = MelSet(
         MelEdid(),
@@ -927,7 +1126,7 @@ class MreDoor(MelRecord):
         MelFid(b'ANAM','soundClose'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', _flags),
-        MelSorted(MelFids(b'TNAM', 'destinations')),
+        MelSorted(MelFids('destinations', MelFid(b'TNAM'))),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -935,12 +1134,12 @@ class MreEfsh(MelRecord):
     """Effect Shader."""
     rec_sig = b'EFSH'
 
-    _flags = Flags(0, Flags.getNames(
+    _flags = Flags.from_names(
         (0, u'noMemShader'),
         (3, u'noPartShader'),
         (4, u'edgeInverse'),
         (5, u'memSkinOnly'),
-    ))
+    )
 
     melSet = MelSet(
         MelEdid(),
@@ -971,11 +1170,11 @@ class MreEfsh(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreEnch(MelRecord,MreHasEffects):
+class MreEnch(MreHasEffects, MelRecord):
     """Enchantment."""
     rec_sig = b'ENCH'
 
-    _flags = Flags(0, Flags.getNames('noAutoCalc'))
+    _flags = Flags.from_names('noAutoCalc')
 
     melSet = MelSet(
         MelEdid(),
@@ -992,7 +1191,7 @@ class MreEyes(MelRecord):
     """Eyes."""
     rec_sig = b'EYES'
 
-    _flags = Flags(0, Flags.getNames('playable',))
+    _flags = Flags.from_names('playable')
 
     melSet = MelSet(
         MelEdid(),
@@ -1006,8 +1205,8 @@ class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
 
-    _general_flags = Flags(0, Flags.getNames(u'hidden_from_pc', u'evil',
-                                             u'special_combat'))
+    _general_flags = Flags.from_names(u'hidden_from_pc', u'evil',
+                                      u'special_combat')
 
     melSet = MelSet(
         MelEdid(),
@@ -1037,7 +1236,7 @@ class MreFurn(MelRecord):
     """Furniture."""
     rec_sig = b'FURN'
 
-    _flags = Flags() #--Governs type of furniture and which anims are available
+    _flags = Flags #--Governs type of furniture and which anims are available
     #--E.g., whether it's a bed, and which of the bed entry/exit animations
     # are available
 
@@ -1057,7 +1256,7 @@ class MreGras(MelRecord):
     """Grass."""
     rec_sig = b'GRAS'
 
-    _flags = Flags(0,Flags.getNames('vLighting','uScaling','fitSlope'))
+    _flags = Flags.from_names('vLighting','uScaling','fitSlope')
 
     melSet = MelSet(
         MelEdid(),
@@ -1073,7 +1272,7 @@ class MreHair(MelRecord):
     """Hair."""
     rec_sig = b'HAIR'
 
-    _flags = Flags(0, Flags.getNames('playable','notMale','notFemale','fixed'))
+    _flags = Flags.from_names('playable', 'notMale', 'notFemale', 'fixed')
 
     melSet = MelSet(
         MelEdid(),
@@ -1103,8 +1302,8 @@ class MreInfo(MelRecord):
     """Dialog Response."""
     rec_sig = b'INFO'
 
-    _flags = Flags(0, Flags.getNames(u'goodbye', u'random', u'sayOnce',
-        u'runImmediately', u'infoRefusal', u'randomEnd', u'runForRumors'))
+    _flags = Flags.from_names(u'goodbye', u'random', u'sayOnce',
+        u'runImmediately', u'infoRefusal', u'randomEnd', u'runForRumors')
 
     melSet = MelSet(
         MelTruncatedStruct(b'DATA', [u'3B'], u'dialType', u'nextSpeaker',
@@ -1112,7 +1311,7 @@ class MreInfo(MelRecord):
         MelFid(b'QSTI', u'info_quest'),
         MelFid(b'TPIC', u'info_topic'),
         MelFid(b'PNAM', u'prev_info'),
-        MelFids(b'NAME', u'addTopics'),
+        MelFids('addTopics', MelFid(b'NAME')),
         MelGroups(u'responses',
             MelStruct(b'TRDT', [u'I', u'i', u'4s', u'B', u'3s'], u'emotionType', u'emotionValue',
                 u'unused1', u'responseNum', u'unused2'),
@@ -1120,17 +1319,17 @@ class MreInfo(MelRecord):
             MelString(b'NAM2', u'actorNotes'),
         ),
         MelConditions(),
-        MelFids(b'TCLT', u'choices'),
-        MelFids(b'TCLF', u'linksFrom'),
+        MelFids('choices', MelFid(b'TCLT')),
+        MelFids('linksFrom', MelFid(b'TCLF')),
         MelEmbeddedScript(),
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreIngr(MelRecord,MreHasEffects):
+class MreIngr(MreHasEffects, MelRecord):
     """Ingredient."""
     rec_sig = b'INGR'
 
-    _flags = Flags(0, Flags.getNames('noAutoCalc','isFood'))
+    _flags = Flags.from_names('noAutoCalc', 'isFood')
 
     melSet = MelSet(
         MelEdid(),
@@ -1156,7 +1355,7 @@ class MreKeym(MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelStruct(b'DATA', [u'i', u'f'],'value','weight'),
+        MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1164,9 +1363,9 @@ class MreLigh(MelRecord):
     """Light."""
     rec_sig = b'LIGH'
 
-    _flags = Flags(0,  Flags.getNames(
+    _flags = Flags.from_names(
         'dynamic', 'canTake', 'negative', 'flickers', 'unk1', 'offByDefault',
-        'flickerSlow', 'pulse', 'pulseSlow', 'spotLight', 'spotShadow'))
+        'flickerSlow', 'pulse', 'pulseSlow', 'spotLight', 'spotShadow')
 
     melSet = MelSet(
         MelEdid(),
@@ -1200,7 +1399,7 @@ class MreLtex(MelRecord):
     """Landscape Texture."""
     rec_sig = b'LTEX'
 
-    _flags = Flags(0, Flags.getNames(
+    _flags = Flags.from_names(
         ( 0,'stone'),
         ( 1,'cloth'),
         ( 2,'dirt'),
@@ -1215,7 +1414,8 @@ class MreLtex(MelRecord):
         (11,'heavyMetal'),
         (12,'heavyWood'),
         (13,'chain'),
-        (14,'snow'),))
+        (14,'snow')
+    )
 
     melSet = MelSet(
         MelEdid(),
@@ -1223,7 +1423,7 @@ class MreLtex(MelRecord):
         MelOptStruct(b'HNAM', [u'3B'], (_flags, 'flags'), 'friction',
                      'restitution'), ##: flags are actually an enum....
         MelUInt8(b'SNAM', 'specular'),
-        MelSorted(MelFids(b'GNAM', 'grass')),
+        MelSorted(MelFids('grass', MelFid(b'GNAM'))),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1246,17 +1446,17 @@ class MreMgef(MelRecord):
     """Magic Effect."""
     rec_sig = b'MGEF'
 
-    _obme_flag_overrides = Flags(0, Flags.getNames(
-        (2,  u'ov_param_flag_a'),
-        (3,  u'ov_beneficial'),
+    _obme_flag_overrides = Flags.from_names(
+        ( 2,  u'ov_param_flag_a'),
+        ( 3,  u'ov_beneficial'),
         (16, u'ov_param_flag_b'),
         (17, u'ov_magnitude_is_range'),
         (18, u'ov_atomic_resistance'),
         (19, u'ov_param_flag_c'),
         (20, u'ov_param_flag_d'),
         (30, u'ov_hidden'),
-    ))
-    _flags = Flags(0, Flags.getNames(
+    )
+    _flags = Flags.from_names(
         ( 0, u'hostile'),
         ( 1, u'recover'),
         ( 2, u'detrimental'),
@@ -1279,11 +1479,235 @@ class MreMgef(MelRecord):
         (24, u'useAV'),
         (25, u'sprayType'),
         (26, u'boltType'),
-        (27, u'noHitEffect'),))
+        (27, u'noHitEffect')
+    )
+
+    _magic_effects = {
+        b'ABAT': [5, _(u'Absorb Attribute'), 0.95],
+        b'ABFA': [5, _(u'Absorb Fatigue'), 6],
+        b'ABHE': [5, _(u'Absorb Health'), 16],
+        b'ABSK': [5, _(u'Absorb Skill'), 2.1],
+        b'ABSP': [5, _(u'Absorb Magicka'), 7.5],
+        b'BA01': [1, _(u'Bound Armor Extra 01'), 0],#--Formid == 0
+        b'BA02': [1, _(u'Bound Armor Extra 02'), 0],#--Formid == 0
+        b'BA03': [1, _(u'Bound Armor Extra 03'), 0],#--Formid == 0
+        b'BA04': [1, _(u'Bound Armor Extra 04'), 0],#--Formid == 0
+        b'BA05': [1, _(u'Bound Armor Extra 05'), 0],#--Formid == 0
+        b'BA06': [1, _(u'Bound Armor Extra 06'), 0],#--Formid == 0
+        b'BA07': [1, _(u'Bound Armor Extra 07'), 0],#--Formid == 0
+        b'BA08': [1, _(u'Bound Armor Extra 08'), 0],#--Formid == 0
+        b'BA09': [1, _(u'Bound Armor Extra 09'), 0],#--Formid == 0
+        b'BA10': [1, _(u'Bound Armor Extra 10'), 0],#--Formid == 0
+        b'BABO': [1, _(u'Bound Boots'), 12],
+        b'BACU': [1, _(u'Bound Cuirass'), 12],
+        b'BAGA': [1, _(u'Bound Gauntlets'), 8],
+        b'BAGR': [1, _(u'Bound Greaves'), 12],
+        b'BAHE': [1, _(u'Bound Helmet'), 12],
+        b'BASH': [1, _(u'Bound Shield'), 12],
+        b'BRDN': [0, _(u'Burden'), 0.21],
+        b'BW01': [1, _(u'Bound Order Weapon 1'), 1],
+        b'BW02': [1, _(u'Bound Order Weapon 2'), 1],
+        b'BW03': [1, _(u'Bound Order Weapon 3'), 1],
+        b'BW04': [1, _(u'Bound Order Weapon 4'), 1],
+        b'BW05': [1, _(u'Bound Order Weapon 5'), 1],
+        b'BW06': [1, _(u'Bound Order Weapon 6'), 1],
+        b'BW07': [1, _(u'Summon Staff of Sheogorath'), 1],
+        b'BW08': [1, _(u'Bound Priest Dagger'), 1],
+        b'BW09': [1, _(u'Bound Weapon Extra 09'), 0],#--Formid == 0
+        b'BW10': [1, _(u'Bound Weapon Extra 10'), 0],#--Formid == 0
+        b'BWAX': [1, _(u'Bound Axe'), 39],
+        b'BWBO': [1, _(u'Bound Bow'), 95],
+        b'BWDA': [1, _(u'Bound Dagger'), 14],
+        b'BWMA': [1, _(u'Bound Mace'), 91],
+        b'BWSW': [1, _(u'Bound Sword'), 235],
+        b'CALM': [3, _(u'Calm'), 0.47],
+        b'CHML': [3, _(u'Chameleon'), 0.63],
+        b'CHRM': [3, _(u'Charm'), 0.2],
+        b'COCR': [3, _(u'Command Creature'), 0.6],
+        b'COHU': [3, _(u'Command Humanoid'), 0.75],
+        b'CUDI': [5, _(u'Cure Disease'), 1400],
+        b'CUPA': [5, _(u'Cure Paralysis'), 500],
+        b'CUPO': [5, _(u'Cure Poison'), 600],
+        b'DARK': [3, _(u'DO NOT USE - Darkness'), 0],
+        b'DEMO': [3, _(u'Demoralize'), 0.49],
+        b'DGAT': [2, _(u'Damage Attribute'), 100],
+        b'DGFA': [2, _(u'Damage Fatigue'), 4.4],
+        b'DGHE': [2, _(u'Damage Health'), 12],
+        b'DGSP': [2, _(u'Damage Magicka'), 2.45],
+        b'DIAR': [2, _(u'Disintegrate Armor'), 6.2],
+        b'DISE': [2, _(u'Disease Info'), 0], #--Formid == 0
+        b'DIWE': [2, _(u'Disintegrate Weapon'), 6.2],
+        b'DRAT': [2, _(u'Drain Attribute'), 0.7],
+        b'DRFA': [2, _(u'Drain Fatigue'), 0.18],
+        b'DRHE': [2, _(u'Drain Health'), 0.9],
+        b'DRSK': [2, _(u'Drain Skill'), 0.65],
+        b'DRSP': [2, _(u'Drain Magicka'), 0.18],
+        b'DSPL': [4, _(u'Dispel'), 3.6],
+        b'DTCT': [4, _(u'Detect Life'), 0.08],
+        b'DUMY': [2, _(u'Mehrunes Dagon'), 0], #--Formid == 0
+        b'FIDG': [2, _(u'Fire Damage'), 7.5],
+        b'FISH': [0, _(u'Fire Shield'), 0.95],
+        b'FOAT': [5, _(u'Fortify Attribute'), 0.6],
+        b'FOFA': [5, _(u'Fortify Fatigue'), 0.04],
+        b'FOHE': [5, _(u'Fortify Health'), 0.14],
+        b'FOMM': [5, _(u'Fortify Magicka Multiplier'), 0.04],
+        b'FOSK': [5, _(u'Fortify Skill'), 0.6],
+        b'FOSP': [5, _(u'Fortify Magicka'), 0.15],
+        b'FRDG': [2, _(u'Frost Damage'), 7.4],
+        b'FRNZ': [3, _(u'Frenzy'), 0.04],
+        b'FRSH': [0, _(u'Frost Shield'), 0.95],
+        b'FTHR': [0, _(u'Feather'), 0.1],
+        b'INVI': [3, _(u'Invisibility'), 40],
+        b'LGHT': [3, _(u'Light'), 0.051],
+        b'LISH': [0, _(u'Shock Shield'), 0.95],
+        b'LOCK': [0, _(u'DO NOT USE - Lock'), 30],
+        b'MYHL': [1, _(u'Summon Mythic Dawn Helm'), 110],
+        b'MYTH': [1, _(u'Summon Mythic Dawn Armor'), 120],
+        b'NEYE': [3, _(u'Night-Eye'), 22],
+        b'OPEN': [0, _(u'Open'), 4.3],
+        b'PARA': [3, _(u'Paralyze'), 475],
+        b'POSN': [2, _(u'Poison Info'), 0],
+        b'RALY': [3, _(u'Rally'), 0.03],
+        b'REAN': [1, _(u'Reanimate'), 10],
+        b'REAT': [5, _(u'Restore Attribute'), 38],
+        b'REDG': [4, _(u'Reflect Damage'), 2.5],
+        b'REFA': [5, _(u'Restore Fatigue'), 2],
+        b'REHE': [5, _(u'Restore Health'), 10],
+        b'RESP': [5, _(u'Restore Magicka'), 2.5],
+        b'RFLC': [4, _(u'Reflect Spell'), 3.5],
+        b'RSDI': [5, _(u'Resist Disease'), 0.5],
+        b'RSFI': [5, _(u'Resist Fire'), 0.5],
+        b'RSFR': [5, _(u'Resist Frost'), 0.5],
+        b'RSMA': [5, _(u'Resist Magic'), 2],
+        b'RSNW': [5, _(u'Resist Normal Weapons'), 1.5],
+        b'RSPA': [5, _(u'Resist Paralysis'), 0.75],
+        b'RSPO': [5, _(u'Resist Poison'), 0.5],
+        b'RSSH': [5, _(u'Resist Shock'), 0.5],
+        b'RSWD': [5, _(u'Resist Water Damage'), 0], #--Formid == 0
+        b'SABS': [4, _(u'Spell Absorption'), 3],
+        b'SEFF': [0, _(u'Script Effect'), 0],
+        b'SHDG': [2, _(u'Shock Damage'), 7.8],
+        b'SHLD': [0, _(u'Shield'), 0.45],
+        b'SLNC': [3, _(u'Silence'), 60],
+        b'STMA': [2, _(u'Stunted Magicka'), 0],
+        b'STRP': [4, _(u'Soul Trap'), 30],
+        b'SUDG': [2, _(u'Sun Damage'), 9],
+        b'TELE': [4, _(u'Telekinesis'), 0.49],
+        b'TURN': [1, _(u'Turn Undead'), 0.083],
+        b'VAMP': [2, _(u'Vampirism'), 0],
+        b'WABR': [0, _(u'Water Breathing'), 14.5],
+        b'WAWA': [0, _(u'Water Walking'), 13],
+        b'WKDI': [2, _(u'Weakness to Disease'), 0.12],
+        b'WKFI': [2, _(u'Weakness to Fire'), 0.1],
+        b'WKFR': [2, _(u'Weakness to Frost'), 0.1],
+        b'WKMA': [2, _(u'Weakness to Magic'), 0.25],
+        b'WKNW': [2, _(u'Weakness to Normal Weapons'), 0.25],
+        b'WKPO': [2, _(u'Weakness to Poison'), 0.1],
+        b'WKSH': [2, _(u'Weakness to Shock'), 0.1],
+        b'Z001': [1, _(u'Summon Rufio\'s Ghost'), 13],
+        b'Z002': [1, _(u'Summon Ancestor Guardian'), 33.3],
+        b'Z003': [1, _(u'Summon Spiderling'), 45],
+        b'Z004': [1, _(u'Summon Flesh Atronach'), 1],
+        b'Z005': [1, _(u'Summon Bear'), 47.3],
+        b'Z006': [1, _(u'Summon Gluttonous Hunger'), 61],
+        b'Z007': [1, _(u'Summon Ravenous Hunger'), 123.33],
+        b'Z008': [1, _(u'Summon Voracious Hunger'), 175],
+        b'Z009': [1, _(u'Summon Dark Seducer'), 1],
+        b'Z010': [1, _(u'Summon Golden Saint'), 1],
+        b'Z011': [1, _(u'Wabba Summon'), 0],
+        b'Z012': [1, _(u'Summon Decrepit Shambles'), 45],
+        b'Z013': [1, _(u'Summon Shambles'), 87.5],
+        b'Z014': [1, _(u'Summon Replete Shambles'), 150],
+        b'Z015': [1, _(u'Summon Hunger'), 22],
+        b'Z016': [1, _(u'Summon Mangled Flesh Atronach'), 22],
+        b'Z017': [1, _(u'Summon Torn Flesh Atronach'), 32.5],
+        b'Z018': [1, _(u'Summon Stitched Flesh Atronach'), 75.5],
+        b'Z019': [1, _(u'Summon Sewn Flesh Atronach'), 195],
+        b'Z020': [1, _(u'Extra Summon 20'), 0],
+        b'ZCLA': [1, _(u'Summon Clannfear'), 75.56],
+        b'ZDAE': [1, _(u'Summon Daedroth'), 123.33],
+        b'ZDRE': [1, _(u'Summon Dremora'), 72.5],
+        b'ZDRL': [1, _(u'Summon Dremora Lord'), 157.14],
+        b'ZFIA': [1, _(u'Summon Flame Atronach'), 45],
+        b'ZFRA': [1, _(u'Summon Frost Atronach'), 102.86],
+        b'ZGHO': [1, _(u'Summon Ghost'), 22],
+        b'ZHDZ': [1, _(u'Summon Headless Zombie'), 56],
+        b'ZLIC': [1, _(u'Summon Lich'), 350],
+        b'ZSCA': [1, _(u'Summon Scamp'), 30],
+        b'ZSKA': [1, _(u'Summon Skeleton Guardian'), 32.5],
+        b'ZSKC': [1, _(u'Summon Skeleton Champion'), 152],
+        b'ZSKE': [1, _(u'Summon Skeleton'), 11.25],
+        b'ZSKH': [1, _(u'Summon Skeleton Hero'), 66],
+        b'ZSPD': [1, _(u'Summon Spider Daedra'), 195],
+        b'ZSTA': [1, _(u'Summon Storm Atronach'), 125],
+        b'ZWRA': [1, _(u'Summon Faded Wraith'), 87.5],
+        b'ZWRL': [1, _(u'Summon Gloom Wraith'), 260],
+        b'ZXIV': [1, _(u'Summon Xivilai'), 200],
+        b'ZZOM': [1, _(u'Summon Zombie'), 16.67],
+    }
+    mgef_school = {x: y for x, [y, z, a] in _magic_effects.items()}
+    mgef_name = {x: z for x, [y, z, a] in _magic_effects.items()}
+    mgef_basevalue = {x: a for x, [y, z, a] in _magic_effects.items()}
+
+    # Doesn't list MGEFs that use actor values, but rather MGEFs that have a
+    # generic name.
+    # Ex: Absorb Attribute becomes Absorb Magicka if the effect's actorValue
+    #     field contains 9, but it is actually using an attribute rather than
+    #     an actor value
+    # Ex: Burden uses an actual actor value (encumbrance) but it isn't listed
+    #     since its name doesn't change
+    generic_av_effects = {
+        b'ABAT', #--Absorb Attribute (Use Attribute)
+        b'ABSK', #--Absorb Skill (Use Skill)
+        b'DGAT', #--Damage Attribute (Use Attribute)
+        b'DRAT', #--Drain Attribute (Use Attribute)
+        b'DRSK', #--Drain Skill (Use Skill)
+        b'FOAT', #--Fortify Attribute (Use Attribute)
+        b'FOSK', #--Fortify Skill (Use Skill)
+        b'REAT', #--Restore Attribute (Use Attribute)
+    }
+    # MGEFs that are considered hostile
+    hostile_effects = {
+        b'ABAT', #--Absorb Attribute
+        b'ABFA', #--Absorb Fatigue
+        b'ABHE', #--Absorb Health
+        b'ABSK', #--Absorb Skill
+        b'ABSP', #--Absorb Magicka
+        b'BRDN', #--Burden
+        b'DEMO', #--Demoralize
+        b'DGAT', #--Damage Attribute
+        b'DGFA', #--Damage Fatigue
+        b'DGHE', #--Damage Health
+        b'DGSP', #--Damage Magicka
+        b'DIAR', #--Disintegrate Armor
+        b'DIWE', #--Disintegrate Weapon
+        b'DRAT', #--Drain Attribute
+        b'DRFA', #--Drain Fatigue
+        b'DRHE', #--Drain Health
+        b'DRSK', #--Drain Skill
+        b'DRSP', #--Drain Magicka
+        b'FIDG', #--Fire Damage
+        b'FRDG', #--Frost Damage
+        b'FRNZ', #--Frenzy
+        b'PARA', #--Paralyze
+        b'SHDG', #--Shock Damage
+        b'SLNC', #--Silence
+        b'STMA', #--Stunted Magicka
+        b'STRP', #--Soul Trap
+        b'SUDG', #--Sun Damage
+        b'TURN', #--Turn Undead
+        b'WKDI', #--Weakness to Disease
+        b'WKFI', #--Weakness to Fire
+        b'WKFR', #--Weakness to Frost
+        b'WKMA', #--Weakness to Magic
+        b'WKNW', #--Weakness to Normal Weapons
+        b'WKPO', #--Weakness to Poison
+        b'WKSH', #--Weakness to Shock
+    }
 
     melSet = MelSet(
         MelEdid(),
-        MelObme(extra_format=[u'2B', u'2s', u'4s', u'I', u'4s'], extra_contents=[
+        MelObme(extra_format=['2B', '2s', '4s', 'I', '4s'], extra_contents=[
             u'obme_param_a_info', u'obme_param_b_info', u'obme_unused_mgef',
             u'obme_handler', (_obme_flag_overrides, u'obme_flag_overrides'),
             u'obme_param_b']),
@@ -1322,7 +1746,7 @@ class MreMisc(MelRecord):
         MelIcon(),
         MelScript(),
         MelUnion({
-            False: MelStruct(b'DATA', [u'i', u'f'], u'value', u'weight'),
+            False: MelValueWeight(),
             True: MelStruct(b'DATA', [u'2I'], (FID, u'value'), u'weight'),
         }, decider=FlagDecider(u'flags1', [u'borderRegion', u'turnFireOff'])),
     )
@@ -1332,7 +1756,7 @@ class MreNpc(MreActorBase):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 
-    _flags = Flags(0, Flags.getNames(
+    _flags = Flags.from_names(
         ( 0,'female'),
         ( 1,'essential'),
         ( 3,'respawn'),
@@ -1342,23 +1766,8 @@ class MreNpc(MreActorBase):
         (13,'noRumors'),
         (14,'summonable'),
         (15,'noPersuasion'),
-        (20,'canCorpseCheck'),))
-
-    aiService = Flags(0, Flags.getNames(
-        (0,'weapons'),
-        (1,'armor'),
-        (2,'clothing'),
-        (3,'books'),
-        (4,'ingredients'),
-        (7,'lights'),
-        (8,'apparatus'),
-        (10,'miscItems'),
-        (11,'spells'),
-        (12,'magicItems'),
-        (13,'potions'),
-        (14,'training'),
-        (16,'recharge'),
-        (17,'repair'),))
+        (20,'canCorpseCheck')
+    )
 
     class MelNpcData(MelLists):
         """Convert npc stats into skills, health, attributes."""
@@ -1376,19 +1785,19 @@ class MreNpc(MreActorBase):
         MelFactions(),
         MelFid(b'INAM','deathItem'),
         MelFid(b'RNAM','race'),
-        MelItems(),
-        MelSpells(),
+        MelSpellsTes4(),
         MelScript(),
+        MelItems(),
         MelStruct(b'AIDT', [u'4B', u'I', u'b', u'B', u'2s'], ('aggression', 5), ('confidence', 50),
                   ('energyLevel', 50), ('responsibility', 50),
                   (aiService, u'services'), 'trainSkill', 'trainLevel',
                   'unused1'),
-        MelFids(b'PKID','aiPackages'),
+        MelFids('aiPackages', MelFid(b'PKID')),
         MelAnimations(),
         MelFid(b'CNAM','iclass'),
         MelNpcData(b'DATA', [u'21B', u'H', u'2s', u'8B'],
-                   (u'skills', [0 for _x in xrange(21)]), u'health',
-                   u'unused2', (u'attributes', [0 for _y in xrange(8)])),
+                   (u'skills', [0 for _x in range(21)]), u'health',
+                   u'unused2', (u'attributes', [0 for _y in range(8)])),
         MelFid(b'HNAM', 'hair'),
         MelFloat(b'LNAM', u'hairLength'),
         ##: This is a FormID array in xEdit, but I haven't found any NPC_
@@ -1432,14 +1841,14 @@ class MrePack(MelRecord):
     """AI Package."""
     rec_sig = b'PACK'
 
-    _flags = Flags(0,Flags.getNames(
+    _flags = Flags.from_names(
         'offersServices','mustReachLocation','mustComplete','lockAtStart',
         'lockAtEnd','lockAtLocation','unlockAtStart','unlockAtEnd',
         'unlockAtLocation','continueIfPcNear','oncePerDay',None,
         'skipFallout','alwaysRun',None,None,
         None,'alwaysSneak','allowSwimming','allowFalls',
         'unequipArmor','unequipWeapons','defensiveCombat','useHorse',
-        'noIdleAnims',))
+        'noIdleAnims',)
 
     melSet = MelSet(
         MelEdid(),
@@ -1496,10 +1905,10 @@ class MreQust(MelRecord):
     """Quest."""
     rec_sig = b'QUST'
 
-    _questFlags = Flags(0, Flags.getNames('startGameEnabled', None,
-                                          'repeatedTopics', 'repeatedStages'))
-    stageFlags = Flags(0,Flags.getNames('complete'))
-    targetFlags = Flags(0,Flags.getNames('ignoresLocks'))
+    _questFlags = Flags.from_names('startGameEnabled', None, 'repeatedTopics',
+                                   'repeatedStages')
+    stageFlags = Flags.from_names('complete')
+    targetFlags = Flags.from_names('ignoresLocks')
 
     melSet = MelSet(
         MelEdid(),
@@ -1539,13 +1948,13 @@ class MreRace(MelRecord):
     """Race."""
     rec_sig = b'RACE'
 
-    _flags = Flags(0, Flags.getNames(u'playable'))
+    _flags = Flags.from_names(u'playable')
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelDescription(),
-        MelSpells(),
+        MelSpellsTes4(),
         MelRelations(with_gcr=False),
         MelRaceData(b'DATA', [u'14b', u'2s', u'4f', u'I'],
                     (u'skills', [0] * 14), 'unused1', 'maleHeight',
@@ -1609,8 +2018,8 @@ class MreRace(MelRecord):
         # Note: xEdit marks both HNAM and ENAM as sorted. They are not, but
         # changing it would cause too many conflicts. We do *not* want to mark
         # them as sorted here, because that's what the Race Checker is for!
-        MelFidList(b'HNAM','hairs'),
-        MelFidList(b'ENAM','eyes'),
+        MelSimpleArray('hairs', MelFid(b'HNAM')),
+        MelSimpleArray('eyes', MelFid(b'ENAM')),
         MelBase(b'FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
         MelBase(b'FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
         MelBase(b'FGTS','fgts_p'), ####FaceGen Texture-Symmetric
@@ -1634,7 +2043,7 @@ class MreRefr(MelRecord):
     """Placed Object."""
     rec_sig = b'REFR'
 
-    _lockFlags = Flags(0, Flags.getNames((2, u'leveledLock')))
+    _lockFlags = Flags.from_names((2, u'leveledLock'))
 
     class MelRefrXloc(MelTruncatedStruct):
         """Skips unused2, in the middle of the struct."""
@@ -1689,9 +2098,8 @@ class MreRegn(MelRecord):
     """Region."""
     rec_sig = b'REGN'
 
-    rdatFlags = Flags(0, Flags.getNames(
-        ( 0,'Override'),))
-    obflags = Flags(0, Flags.getNames(
+    rdatFlags = Flags.from_names('Override')
+    obflags = Flags.from_names(
         ( 0,'conform'),
         ( 1,'paintVertices'),
         ( 2,'sizeVariance'),
@@ -1699,12 +2107,12 @@ class MreRegn(MelRecord):
         ( 4,'deltaY'),
         ( 5,'deltaZ'),
         ( 6,'Tree'),
-        ( 7,'hugeRock'),))
-    sdflags = Flags(0, Flags.getNames(
+        ( 7,'hugeRock'),)
+    sdflags = Flags.from_names(
         ( 0,'pleasant'),
         ( 1,'cloudy'),
         ( 2,'rainy'),
-        ( 3,'snowy'),))
+        ( 3,'snowy'),)
 
     melSet = MelSet(
         MelEdid(),
@@ -1780,7 +2188,7 @@ class MreScpt(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreSgst(MelRecord,MreHasEffects):
+class MreSgst(MreHasEffects, MelRecord):
     """Sigil Stone."""
     rec_sig = b'SGST'
 
@@ -1824,7 +2232,7 @@ class MreSlgm(MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelStruct(b'DATA', [u'I', u'f'],'value','weight'),
+        MelValueWeight(),
         MelUInt8(b'SOUL', u'soul'),
         MelUInt8(b'SLCP', u'capacity', 1),
     )
@@ -1835,8 +2243,8 @@ class MreSoun(MelRecord):
     rec_sig = b'SOUN'
     _has_duplicate_attrs = True # SNDD is an older version of SNDX
 
-    _flags = Flags(0, Flags.getNames('randomFrequencyShift', 'playAtRandom',
-        'environmentIgnored', 'randomLocation', 'loop','menuSound', '2d', '360LFE'))
+    _flags = Flags.from_names('randomFrequencyShift', 'playAtRandom',
+        'environmentIgnored', 'randomLocation', 'loop','menuSound', '2d', '360LFE')
 
     melSet = MelSet(
         MelEdid(),
@@ -1853,50 +2261,38 @@ class MreSoun(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-class MreSpel(MelRecord,MreHasEffects):
+class MreSpel(MreHasEffects, MelRecord):
     """Spell."""
     rec_sig = b'SPEL'
     ##: use LowerDict and get rid of the lower() in callers
-    spellTypeNumber_Name = {None: u'NONE',
+    _spell_type_num_name = {None: u'NONE',
                             0   : u'Spell',
                             1   : u'Disease',
                             2   : u'Power',
                             3   : u'LesserPower',
                             4   : u'Ability',
                             5   : u'Poison'}
-    spellTypeName_Number = {y.lower(): x for x, y in # if name is None it will
-                            spellTypeNumber_Name.iteritems() if x is not None}
-    levelTypeNumber_Name = {None : u'NONE',
+    _spell_type_name_num = {y.lower(): x for x, y in
+                            _spell_type_num_name.items() if x is not None}
+    _level_type_num_name = {None : u'NONE',
                             0    : u'Novice',
                             1    : u'Apprentice',
                             2    : u'Journeyman',
                             3    : u'Expert',
                             4    : u'Master'}
-    levelTypeName_Number = {y.lower(): x for x, y in
-                            levelTypeNumber_Name.iteritems() if x is not None}
+    _level_type_name_num = {y.lower(): x for x, y in
+                            _level_type_num_name.items() if x is not None}
     attr_csv_struct[u'level'][2] = \
-        lambda val: u'"%s"' % MreSpel.levelTypeNumber_Name.get(val, val)
+        lambda val: f'"{MreSpel._level_type_num_name.get(val, val)}"'
     attr_csv_struct[u'spellType'][2] = \
-        lambda val: u'"%s"' % MreSpel.spellTypeNumber_Name.get(val, val)
-
-    class SpellFlags(Flags):
-        """For SpellFlags, immuneToSilence activates bits 1 AND 3."""
-        def __setitem__(self,index,value):
-            setter = Flags.__setitem__
-            setter(self,index,value)
-            if index == 1:
-                setter(self,3,value)
-
-    _SpellFlags = SpellFlags(0, Flags.getNames('noAutoCalc','immuneToSilence',
-        'startSpell', None, 'ignoreLOS', 'scriptEffectAlwaysApplies',
-        'disallowAbsorbReflect', 'touchExplodesWOTarget'))
+        lambda val: f'"{MreSpel._spell_type_num_name.get(val, val)}"'
 
     melSet = MelSet(
         MelEdid(),
         MelObme(),
         MelFull(),
         MelStruct(b'SPIT', [u'3I', u'B', u'3s'], 'spellType', 'cost', 'level',
-                  (_SpellFlags, u'flags'), 'unused1'),
+                  (SpellFlags, 'spell_flags'), 'unused1'),
         MelEffects(),
         MelEffectsObmeFull(),
     ).with_distributor(_effects_distributor)
@@ -1908,12 +2304,13 @@ class MreSpel(MelRecord,MreHasEffects):
                                                        reuse)
         try:
             lvl = attr_dict[u'level'] # KeyError on 'detailed' pass
-            attr_dict[u'level'] = cls.levelTypeName_Number.get(lvl.lower(),
+            attr_dict[u'level'] = cls._level_type_name_num.get(lvl.lower(),
                 int_or_zero(lvl))
             stype = attr_dict[u'spellType']
-            attr_dict[u'spellType'] = cls.spellTypeName_Number.get(
+            attr_dict[u'spellType'] = cls._spell_type_name_num.get(
                 stype.lower(), int_or_zero(stype))
-            attr_dict[u'flags'] = cls._SpellFlags(attr_dict.get(u'flags', 0))
+            attr_dict['spell_flags'] = SpellFlags(
+                attr_dict.get('spell_flags', 0))
         except KeyError:
             """We are called for reading the 'detailed' attributes"""
         return attr_dict
@@ -1957,7 +2354,7 @@ class MreWatr(MelRecord):
     """Water."""
     rec_sig = b'WATR'
 
-    _flags = Flags(0, Flags.getNames('causesDmg','reflective'))
+    _flags = Flags.from_names('causesDmg', 'reflective')
 
     melSet = MelSet(
         MelEdid(),
@@ -1984,7 +2381,7 @@ class MreWatr(MelRecord):
             ('dispDampner', 10.0000), ('dispSize', 0.0500), 'damage',
             old_versions={'11f3Bs3Bs3BsB3s6f2s', '11f3Bs3Bs3BsB3s2s',
                           '10f2s', '2s'}),
-        MelFidList(b'GNAM','relatedWaters'),
+        MelSimpleArray('relatedWaters', MelFid(b'GNAM')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1992,7 +2389,7 @@ class MreWeap(MelRecord):
     """Weapon."""
     rec_sig = b'WEAP'
 
-    _flags = Flags(0, Flags.getNames('notNormalWeapon'))
+    _flags = Flags.from_names('notNormalWeapon')
 
     melSet = MelSet(
         MelEdid(),
@@ -2000,7 +2397,7 @@ class MreWeap(MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelFid(b'ENAM','enchantment'),
+        MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelStruct(b'DATA', [u'I', u'2f', u'3I', u'f', u'H'],'weaponType','speed','reach',(_flags, u'flags'),
             'value','health','weight','damage'),
@@ -2011,7 +2408,7 @@ class MreWrld(MelRecord):
     """Worldspace."""
     rec_sig = b'WRLD'
 
-    _flags = Flags(0, Flags.getNames('smallWorld','noFastTravel','oblivionWorldspace',None,'noLODWater'))
+    _flags = Flags.from_names('smallWorld','noFastTravel','oblivionWorldspace',None,'noLODWater')
 
     melSet = MelSet(
         MelEdid(),

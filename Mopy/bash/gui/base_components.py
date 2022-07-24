@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,25 +25,31 @@ more specialized parts (e.g. _AComponent)."""
 
 __author__ = u'nycz, Infernio'
 
+import functools
 import os
 import platform
 import textwrap
 import wx as _wx
+from typing import get_type_hints
+
 from .events import EventHandler, null_processor
 from ..bolt import deprint
 from ..exception import ArgumentError
 
 # Utilities -------------------------------------------------------------------
-_cached_csf = None
-def csf(): ##: This is ugly, is there no nicer way?
+@functools.cache
+def _csf():
     """Returns the content scale factor (CSF) needed for high DPI displays."""
-    global _cached_csf
-    if _cached_csf is None:
-        if platform.system() != u'Darwin': ##: Linux? os.name == 'nt' if so
-           _cached_csf = _wx.Window().GetContentScaleFactor()
-        else:
-            _cached_csf = 1.0 # Everything scales automatically on macOS
-    return _cached_csf
+    if platform.system() != u'Darwin': ##: Linux? os_name == 'nt' if so
+        return _wx.Window().GetContentScaleFactor()
+    else:
+        return 1.0 # Everything scales automatically on macOS
+
+def scaled(unscaled_size):
+    scaled = unscaled_size * _csf()
+    if isinstance(unscaled_size, int):
+        scaled = int(scaled)
+    return scaled
 
 def wrapped_tooltip(tooltip_text, wrap_width=50):
     """Returns tooltip with wrapped copy of text."""
@@ -53,7 +59,7 @@ def wrapped_tooltip(tooltip_text, wrap_width=50):
 class Color(object):
     """A simple RGB(A) color class used to avoid having to return wx.Colour
     objects."""
-    def __init__(self, red, green, blue, alpha=255): # type: (int, int, int, int) -> None
+    def __init__(self, red: int, green: int, blue: int, alpha=255):
         """Creates a new color object with the specified color properties.
         Note that all color components must be in the range [0-255] (inclusive
         on both ends), otherwise a RuntimeException is raised.
@@ -83,8 +89,8 @@ class Color(object):
                 and self.alpha == other.alpha)
 
     def __repr__(self):
-        return u'Color(red=%s, green=%s, blue=%s, alpha=%s)' % (
-            self.red, self.green, self.blue, self.alpha)
+        return f'Color(red={self.red}, green={self.green}, ' \
+               f'blue={self.blue}, alpha={self.alpha})'
 
     @classmethod
     def from_wx(cls, color): # type: (_wx.Colour) -> Color
@@ -94,27 +100,6 @@ class Color(object):
         :param color: The wx.Colour object to copy.
         :return: A Color object representing the same color."""
         return cls(color.Red(), color.Green(), color.Blue(), color.Alpha())
-
-class Colors(object):
-    """Color collection and wrapper for wx.ColourDatabase. Provides
-    dictionary syntax access (colors[key]) and predefined colors."""
-    def __init__(self):
-        self._colors = {}
-
-    def __setitem__(self, key_, value):
-        """Add a color to the database."""
-        if isinstance(value, Color):
-            self._colors[key_] = value
-        else:
-            self._colors[key_] = Color(*value)
-
-    def __getitem__(self, key_):
-        """Dictionary syntax: color = colors[key]."""
-        return self._colors[key_]
-
-    def __iter__(self):
-        for key_ in self._colors:
-            yield key_
 
 class _ACFrozen(object):
     """Helper for _AComponent.pause_drawing."""
@@ -128,15 +113,15 @@ class _ACFrozen(object):
 # Base Elements ---------------------------------------------------------------
 class _AComponent(object):
     """Abstract base class for all GUI items. Holds a reference to the native
-    wx widget that we abstract over.
-    # :type _native_widget: _wx.Window FIXME(ut) PY3: add type info"""
-    _wx_widget_type = None # type: type
+    wx widget that we abstract over."""
+    _native_widget: _wx.Window
 
     def __init__(self, parent, *args, **kwargs):
         """Creates a new _AComponent instance by initializing the wx widget
         with the specified parent, args and kwargs."""
-        self._native_widget = self._wx_widget_type(self._resolve(parent),
-                                                   *args, **kwargs)
+        wx_widget_type = get_type_hints(self.__class__)['_native_widget']
+        self._native_widget = wx_widget_type(self._resolve(parent), *args,
+                                             **kwargs)
 
     def _evt_handler(self, evt, arg_proc=null_processor):
         """Register an EventHandler on _native_widget"""
@@ -160,16 +145,16 @@ class _AComponent(object):
         elif obj is None:
             return None
         else:
-            raise RuntimeError(u"Failed to resolve object '%r' to wx object." %
-                               obj)
+            raise RuntimeError(f"Failed to resolve object '{obj!r}' to wx "
+                               f"object.")
 
-    def get_component_name(self): # type: () -> unicode
+    def get_component_name(self): # type: () -> str
         """Returns the name of this component.
 
         :return: This component's name."""
         return self._native_widget.GetName()
 
-    def set_component_name(self, new_ctrl_name): # type: (unicode) -> None
+    def set_component_name(self, new_ctrl_name): # type: (str) -> None
         """Sets the name of this component to the specified name.
 
         :param new_ctrl_name: The string to change this component's name to."""
@@ -207,7 +192,7 @@ class _AComponent(object):
         self._native_widget.Enable(is_enabled)
 
     @property
-    def tooltip(self): # type: () -> unicode
+    def tooltip(self): # type: () -> str
         """Returns the current contents of this component's tooltip. If no
         tooltip is set, returns an empty string.
 
@@ -215,7 +200,7 @@ class _AComponent(object):
         return self._native_widget.GetToolTipText() or u''
 
     @tooltip.setter
-    def tooltip(self, new_tooltip): # type: (unicode) -> None
+    def tooltip(self, new_tooltip): # type: (str) -> None
         """Sets the tooltip of this component to the specified string. If the
         string is empty or None, the tooltip is simply removed.
 
@@ -241,6 +226,7 @@ class _AComponent(object):
 
     def reset_background_color(self):
         """Resets the background color of this component to the default one."""
+        if _wx.Platform == '__WXMAC__': return ##: check what we need to do on linux
         self._native_widget.SetBackgroundColour(_wx.NullColour)
         self._native_widget.Refresh()
 
@@ -471,15 +457,15 @@ class ImageWrapper(object):
         try:
             self._img_type = imageType or self.typesDict[filename.cext[1:]]
         except KeyError:
-            deprint(u'Unknown image extension %s' % filename.cext)
+            deprint(f'Unknown image extension {filename.cext}')
             self._img_type = _wx.BITMAP_TYPE_ANY
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
         if not os.path.exists(self._img_path.split(u';')[0]):
-            raise ArgumentError(u'Missing resource file: %s.' % filename)
+            raise ArgumentError(f'Missing resource file: {filename}.')
 
-    def GetBitmap(self):
+    def get_bitmap(self):
         if not self.bitmap:
             if self._img_type == _wx.BITMAP_TYPE_ICO:
                 self.GetIcon()
@@ -506,11 +492,11 @@ class ImageWrapper(object):
                     self.icon = _wx.Icon(self._img_path, _wx.BITMAP_TYPE_ICO)
             else:
                 self.icon = _wx.Icon()
-                self.icon.CopyFromBitmap(self.GetBitmap())
+                self.icon.CopyFromBitmap(self.get_bitmap())
         return self.icon
 
     @staticmethod
-    def from_bitstream(bm_width, bm_height, stream_data, with_alpha):
+    def bmp_from_bitstream(bm_width, bm_height, stream_data, with_alpha):
         """Creates a bitmap from the specified stream data."""
         wx_depth = (32 if with_alpha else 24)
         wx_fmt = (_wx.BitmapBufferFormat_RGBA if with_alpha
@@ -518,13 +504,6 @@ class ImageWrapper(object):
         bm = _wx.Bitmap(bm_width, bm_height, wx_depth)
         bm.CopyFromBuffer(stream_data, wx_fmt)
         return bm
-
-    @staticmethod
-    def GetImage(width, height, image_data):
-        """Hasty wrapper around wx.Image - absorb to GetBitmap."""
-        image = _wx.Image(width, height)
-        image.SetData(image_data)
-        return image
 
     @staticmethod
     def Load(srcPath, quality):

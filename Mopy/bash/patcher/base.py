@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,9 +29,11 @@ from this module outside of the patcher package."""
 # unhelpful) docs from overriding methods to save some (100s) lines. We must
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
-from .. import load_order, bush
-from ..bolt import dict_sort
-from ..exception import AbstractError
+from __future__ import annotations
+
+from .. import load_order
+from ..bolt import dict_sort, sig_to_str
+from ..exception import AbstractError, BPConfigError
 from ..mod_files import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
@@ -58,6 +60,10 @@ class Abstract_Patcher(object):
 class Patcher(Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
+    # Whether or not this patcher will get inactive plugins passed to its
+    # scanModFile method
+    ##: Once _AMerger is rewritten, this may become obsolete
+    _scan_inactive = False
 
     @property
     def active_read_sigs(self):
@@ -78,6 +84,9 @@ class Patcher(Abstract_Patcher):
         mod, but won't alter it. If adds record, should first convert it to
         long fids."""
         if not self.isActive: return # TODO(ut) raise
+        if (modFile.fileInfo.fn_key not in self.patchFile.merged_or_loaded and
+                not self._scan_inactive):
+            return # Skip if inactive and inactives should not be scanned
         self.scanModFile(modFile, progress)
 
     def scanModFile(self,modFile,progress):
@@ -104,10 +113,10 @@ class ListPatcher(Patcher):
         """Logs the Source mods for this patcher."""
         log(self.__class__.srcsHeader)
         if not self.srcs:
-            log(u'. ~~%s~~' % _(u'None'))
+            log(f'. ~~{_("None")}~~')
         else:
             for srcFile in self.srcs:
-                log(u'* %s' % srcFile)
+                log(f'* {srcFile}')
 
 class AMultiTweaker(Abstract_Patcher):
     """Combines a number of sub-tweaks which can be individually enabled and
@@ -116,8 +125,19 @@ class AMultiTweaker(Abstract_Patcher):
     patcher_order = 30
     _tweak_classes = set() # override in implementations
 
-    def __init__(self, p_name, p_file, enabled_tweaks):
+    def __init__(self, p_name, p_file, enabled_tweaks: list[AMultiTweakItem]):
         super(AMultiTweaker, self).__init__(p_name, p_file)
+        for e_tweak in enabled_tweaks:
+            if e_tweak.custom_choice:
+                e_values = tuple(e_tweak.choiceValues[e_tweak.chosen])
+                validation_err = e_tweak.validate_values(e_values)
+                # We've somehow ended up with a custom value that is not
+                # accepted by the tweak itself, this will almost certainly fail
+                # at runtime so abort the BP process now with a more
+                # informative error message
+                if validation_err is not None:
+                    err_header = e_tweak.validation_error_header(e_values)
+                    raise BPConfigError(err_header + '\n\n' + validation_err)
         self.enabled_tweaks = enabled_tweaks
         self.isActive = bool(enabled_tweaks)
 
@@ -167,7 +187,7 @@ class AMultiTweakItem(object):
     # self.choiceValues[self.chosen][0], the selected value (24 or 48) will be
     # returned, which the tweak could use to e.g. change a record attribute
     # controlling how long a quest is delayed.
-    tweak_choices = []
+    tweak_choices = [] ##: Replace with a dict now that we're on py3?
     # The choice label (see tweak_choices above) that should be selected by
     # default.
     default_choice = None
@@ -242,7 +262,7 @@ class AMultiTweakItem(object):
         """Logs the total changes and details for each plugin."""
         log.setHeader(u'=== ' + self.tweak_log_header)
         log(u'* ' + self.tweak_log_msg % {
-            u'total_changed': sum(count.itervalues())})
+            u'total_changed': sum(count.values())})
         for src_plugin in load_order.get_ordered(count):
             log(u'  * %s: %d' % (src_plugin, count[src_plugin]))
 
@@ -294,7 +314,7 @@ class AMultiTweakItem(object):
             tweakname += u' [' + self.choiceLabels[self.chosen] + u']'
         return tweakname
 
-    def validate_values(self, chosen_values):
+    def validate_values(self, chosen_values: tuple) -> str | None:
         """Gives this tweak a chance to check if the specified values (given
         as a tuple, as if they were retrieved via
         self.choiceValues[self.chosen][0]) are valid for this tweak. Return a
@@ -302,6 +322,19 @@ class AMultiTweakItem(object):
         message to the user. Return None if the values are valid, the values
         will then be accepted and the tweak will be activated."""
         return None
+
+    def validation_error_header(self, error_values: tuple) -> str:
+        """Gives this tweak a chacne to customize the error header that will be
+        shown to the user if validate_values returns a non-None result."""
+        t_val = (', '.join(map(str, error_values)) if len(error_values) > 1
+                 else error_values[0])
+        return (_("The values you entered (%(t_val)s) are not valid for the "
+                  "'%(t_name)s' tweak.") % {'t_val': t_val,
+                                            't_name': self.tweak_name}
+                 if len(error_values) > 1 else
+                _("The value you entered (%(t_val)s) is not valid for the "
+                  "'%(t_name)s' tweak.") % {'t_val': t_val,
+                                            't_name': self.tweak_name})
 
     def wants_record(self, record):
         """Return a truthy value if you want to get a chance to change the
@@ -353,9 +386,9 @@ class ImportPatcher(ListPatcher, ModLoader):
         log(self.__class__.logMsg)
         for top_grup_sig, count in dict_sort(type_count):
             if count: log(u'* ' + _(u'Modified %(type)s Records: %(count)d')
-                % {u'type': top_grup_sig.decode(u'ascii'), u'count': count})
+                % {u'type': sig_to_str(top_grup_sig), u'count': count})
 
     def _plog1(self,log,mod_count): # common logging variation
-        log(self.__class__.logMsg % sum(mod_count.itervalues()))
+        log(self.__class__.logMsg % sum(mod_count.values()))
         for mod in load_order.get_ordered(mod_count):
             log(u'* %s: %3d' % (mod, mod_count[mod]))

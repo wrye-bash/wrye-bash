@@ -17,13 +17,13 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 from pytest import fail
 
-from ...bosh.loot_parser import _process_condition_string
+from ...loot_parser import _process_condition_string
 from ...exception import LexerError, ParserError
 
 # Conditions: Canonical representation tests ----------------------------------

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -39,6 +39,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     launch_exe = u'SkyrimVR.exe'
     game_detect_includes = [u'SkyrimVR.exe']
     version_detect_file = u'SkyrimVR.exe'
+    taglist_dir = 'SkyrimVR'
     loot_dir = u'Skyrim VR'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim VR', u'Installed Path')
 
@@ -67,32 +68,9 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     allTags = SkyrimSEGameInfo.allTags | {u'NoMerge'}
     patchers = SkyrimSEGameInfo.patchers | {u'MergePatches'}
 
-    bethDataFiles = {
-        u'skyrim.esm',
-        u'update.esm',
-        u'dawnguard.esm',
-        u'dragonborn.esm',
-        u'hearthfires.esm',
-        u'skyrimvr.esm',
-        u'skyrim - animations.bsa',
-        u'skyrim - interface.bsa',
-        u'skyrim - meshes0.bsa',
-        u'skyrim - meshes1.bsa',
-        u'skyrim - misc.bsa',
-        u'skyrim - patch.bsa',
-        u'skyrim - shaders.bsa',
-        u'skyrim - sounds.bsa',
-        u'skyrim - textures0.bsa',
-        u'skyrim - textures1.bsa',
-        u'skyrim - textures2.bsa',
-        u'skyrim - textures3.bsa',
-        u'skyrim - textures4.bsa',
-        u'skyrim - textures5.bsa',
-        u'skyrim - textures6.bsa',
-        u'skyrim - textures7.bsa',
-        u'skyrim - textures8.bsa',
-        u'skyrim - voices_en0.bsa',
-        u'skyrim_vr - main.bsa'
+    bethDataFiles = SkyrimSEGameInfo.bethDataFiles | {
+        'skyrimvr.esm',
+        'skyrim_vr - main.bsa',
     }
 
     @classmethod
@@ -158,11 +136,11 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT', b'SNDR', b'DUAL',
             b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'LENS', b'VOLI',
         ]
-        #-> this needs updating for Skyrim
         header_type.valid_header_sigs = set(
             header_type.top_grup_sigs + [b'GRUP', b'TES4', b'REFR', b'ACHR',
                                          b'ACRE', b'LAND', b'INFO', b'NAVM',
-                                         b'PHZD', b'PGRE'])
+                                         b'PARW', b'PBAR', b'PBEA', b'PCON',
+                                         b'PFLA', b'PGRE', b'PHZD', b'PMIS'])
         header_type.plugin_form_version = 44
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,

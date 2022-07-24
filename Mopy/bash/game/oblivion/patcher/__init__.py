@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -257,10 +257,11 @@ listTypes = (b'LVLC',b'LVLI',b'LVSP',)
 #------------------------------------------------------------------------------
 # Import Prices
 #------------------------------------------------------------------------------
-namesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN', b'CLAS',
-              b'CLOT', b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT',
-              b'FLOR', b'HAIR', b'INGR', b'KEYM', b'LIGH', b'MGEF', b'MISC',
-              b'NPC_', b'RACE', b'SGST', b'SLGM', b'SPEL', b'WEAP'}
+namesTypes = {b'ACTI', b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'BSGN',
+              b'CLAS', b'CLOT', b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES',
+              b'FACT', b'FLOR', b'HAIR', b'INGR', b'KEYM', b'LIGH', b'MGEF',
+              b'MISC', b'NPC_', b'QUST', b'RACE', b'SGST', b'SLGM', b'SPEL',
+              b'WEAP'}
 
 #------------------------------------------------------------------------------
 # Import Prices
@@ -271,20 +272,24 @@ pricesTypes = {b'ALCH', b'AMMO', b'APPA', b'ARMO', b'BOOK', b'CLOT', b'INGR',
 #------------------------------------------------------------------------------
 # Import Stats
 #------------------------------------------------------------------------------
+# The contents of these tuples has to stay fixed because of CSV parsers
 statsTypes = {
-    b'ALCH':(u'eid', u'weight', u'value'),
-    b'AMMO':(u'eid', u'weight', u'value', u'damage', u'speed', u'enchantPoints'),
-    b'APPA':(u'eid', u'weight', u'value', u'quality'),
-    b'ARMO':(u'eid', u'weight', u'value', u'health', u'strength'),
-    b'BOOK':(u'eid', u'weight', u'value', u'enchantPoints'),
-    b'CLOT':(u'eid', u'weight', u'value', u'enchantPoints'),
-    b'INGR':(u'eid', u'weight', u'value'),
-    b'KEYM':(u'eid', u'weight', u'value'),
-    b'LIGH':(u'eid', u'weight', u'value', u'duration'),
-    b'MISC':(u'eid', u'weight', u'value'),
-    b'SGST':(u'eid', u'weight', u'value', u'uses'),
-    b'SLGM':(u'eid', u'weight', u'value'),
-    b'WEAP':(u'eid', u'weight', u'value', u'health', u'damage', u'speed', u'reach', u'enchantPoints'),
+    b'ALCH': ('eid', 'weight', 'value'),
+    b'AMMO': ('eid', 'weight', 'value', 'damage', 'speed', 'enchantPoints'),
+    b'APPA': ('eid', 'weight', 'value', 'quality'),
+    b'ARMO': ('eid', 'weight', 'value', 'health', 'strength'),
+    b'BOOK': ('eid', 'weight', 'value', 'enchantPoints'),
+    b'CLOT': ('eid', 'weight', 'value', 'enchantPoints'),
+    b'EYES': ('eid', 'flags'),
+    b'HAIR': ('eid', 'flags'),
+    b'INGR': ('eid', 'weight', 'value'),
+    b'KEYM': ('eid', 'weight', 'value'),
+    b'LIGH': ('eid', 'weight', 'value', 'duration'),
+    b'MISC': ('eid', 'weight', 'value'),
+    b'SGST': ('eid', 'weight', 'value', 'uses'),
+    b'SLGM': ('eid', 'weight', 'value'),
+    b'WEAP': ('eid', 'weight', 'value', 'health', 'damage', 'speed', 'reach',
+              'enchantPoints'),
 }
 
 #------------------------------------------------------------------------------
@@ -367,7 +372,8 @@ graphicsTypes = {
     b'HAIR': (u'iconPath', u'model'),
     b'INGR': (u'iconPath', u'model'),
     b'KEYM': (u'iconPath', u'model'),
-    b'LIGH': (u'iconPath', u'model'),
+    b'LIGH': ('iconPath', 'model', 'radius', 'red', 'green', 'blue', 'flags',
+              'falloff', 'fov', 'fade'),
     b'LSCR': (u'iconPath',),
     b'LTEX': (u'iconPath',),
     b'MGEF': (u'iconPath', u'model'),
@@ -393,40 +399,35 @@ inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
 #------------------------------------------------------------------------------
 # NPC Checker
 #------------------------------------------------------------------------------
-# Note that we use _x to avoid exposing these to the dynamic importer
 def _fid(_x): return None, _x # None <=> game master
-def _cobl(_x): return u'Cobl Main.esm', _x
-_standard_eyes = [_fid(_x) for _x in (0x27306, 0x27308, 0x27309)] + \
-                 [_cobl(_x) for _x in (0x000821, 0x000823, 0x000825, 0x000828,
-                                       0x000834, 0x000837, 0x000839, 0x00084F)]
+def _cobl(_x): return 'Cobl Main.esm', _x
+_standard_eyes = [*map(_fid, (0x27306, 0x27308, 0x27309)), *map(_cobl, (
+    0x000821, 0x000823, 0x000825, 0x000828, 0x000834, 0x000837, 0x000839,
+    0x00084F))]
 default_eyes = {
     #--Oblivion.esm
     # Argonian
-    _fid(0x23FE9): [_fid(0x3E91E)] +
-                   [_cobl(_x) for _x in (0x01F407, 0x01F408, 0x01F40B,
-                                         0x01F40C, 0x01F410, 0x01F411,
-                                         0x01F414, 0x01F416, 0x01F417,
-                                         0x01F41A, 0x01F41B, 0x01F41E,
-                                         0x01F41F, 0x01F422, 0x01F424)],
+    _fid(0x23FE9): [_fid(0x3E91E), *map(_cobl, (
+        0x01F407, 0x01F408, 0x01F40B, 0x01F40C, 0x01F410, 0x01F411, 0x01F414,
+        0x01F416, 0x01F417, 0x01F41A, 0x01F41B, 0x01F41E, 0x01F41F, 0x01F422,
+        0x01F424))],
     # Breton
     _fid(0x0224FC): _standard_eyes,
     # Dark Elf
-    _fid(0x0191C1): [_fid(0x27307)] +
-                    [_cobl(_x) for _x in (0x000861, 0x000864, 0x000851)],
+    _fid(0x0191C1): [_fid(0x27307),
+                     *map(_cobl, (0x000861, 0x000864, 0x000851))],
     # High Elf
     _fid(0x019204): _standard_eyes,
     # Imperial
     _fid(0x000907): _standard_eyes,
     # Khajiit
-    _fid(0x022C37): [_fid(0x375c8)] +
-                    [_cobl(_x) for _x in (0x00083B, 0x00083E, 0x000843,
-                                          0x000846, 0x000849, 0x00084C)],
+    _fid(0x022C37): [_fid(0x375c8), *map(_cobl, (
+        0x00083B, 0x00083E, 0x000843, 0x000846, 0x000849, 0x00084C))],
     # Nord
     _fid(0x0224FD): _standard_eyes,
     # Orc
-    _fid(0x0191C0): [_fid(0x2730A)] +
-                    [_cobl(_x) for _x in (0x000853, 0x000855, 0x000858,
-                                          0x00085A, 0x00085C, 0x00085E)],
+    _fid(0x0191C0): [_fid(0x2730A), *map(_cobl, (
+        0x000853, 0x000855, 0x000858, 0x00085A, 0x00085C, 0x00085E))],
     # Redguard
     _fid(0x000D43): _standard_eyes,
     # Wood Elf
@@ -435,26 +436,21 @@ default_eyes = {
     # cobRaceAureal
     _cobl(0x07948): [_fid(0x54BBA)],
     # cobRaceHidden
-    _cobl(0x02B60): [_cobl(_x) for _x in (0x01F43A, 0x01F438, 0x01F439,
-                                          0x0015A7, 0x01792C, 0x0015AC,
-                                          0x0015A8, 0x0015AB, 0x0015AA)],
+    _cobl(0x02B60): [*map(_cobl, (
+        0x01F43A, 0x01F438, 0x01F439, 0x0015A7, 0x01792C, 0x0015AC, 0x0015A8,
+        0x0015AB, 0x0015AA))],
     # cobRaceMazken
     _cobl(0x07947): [_fid(0x54BB9)],
     # cobRaceOhmes
-    _cobl(0x1791B): [_cobl(_x) for _x in (0x017901, 0x017902, 0x017903,
-                                          0x017904, 0x017905, 0x017906,
-                                          0x017907, 0x017908, 0x017909,
-                                          0x01790A, 0x01790B, 0x01790C,
-                                          0x01790D, 0x01790E, 0x01790F,
-                                          0x017910, 0x017911, 0x017912,
-                                          0x017913, 0x017914, 0x017915,
-                                          0x017916, 0x017917, 0x017918,
-                                          0x017919, 0x01791A, 0x017900)],
+    _cobl(0x1791B): [*map(_cobl, (
+        0x017901, 0x017902, 0x017903, 0x017904, 0x017905, 0x017906, 0x017907,
+        0x017908, 0x017909, 0x01790A, 0x01790B, 0x01790C, 0x01790D, 0x01790E,
+        0x01790F, 0x017910, 0x017911, 0x017912, 0x017913, 0x017914, 0x017915,
+        0x017916, 0x017917, 0x017918, 0x017919, 0x01791A, 0x017900))],
     # cobRaceXivilai
-    _cobl(0x1F43C): [_cobl(_x) for _x in (0x01F437, 0x00531B, 0x00531C,
-                                          0x00531D, 0x00531E, 0x00531F,
-                                          0x005320, 0x005321, 0x01F43B,
-                                          0x00DBE1)],
+    _cobl(0x1F43C): [*map(_cobl, (
+        0x01F437, 0x00531B, 0x00531C, 0x00531D, 0x00531E, 0x00531F, 0x005320,
+        0x005321, 0x01F43B, 0x00DBE1))],
 }
 # Clean these up, no need to keep them around now
 del _cobl, _fid
@@ -516,7 +512,9 @@ actor_importer_attrs = {
         u'Actors.AIData': (u'aggression', u'confidence', u'energyLevel',
                            u'responsibility', u'services', u'trainLevel',
                            u'trainSkill'),
+        'Actors.Anims': ('animations',),
         u'Actors.CombatStyle': (u'combatStyle',),
+        'Actors.DeathItem': ('deathItem',),
         u'Actors.RecordFlags': (u'flags1',),
         u'Actors.Skeleton': (u'model',),
         u'Actors.Stats': (u'agility', u'attackDamage', u'combatSkill',
@@ -539,7 +537,9 @@ actor_importer_attrs = {
         u'Actors.AIData': (u'aggression', u'confidence', u'energyLevel',
                            u'responsibility', u'services', u'trainSkill',
                            u'trainLevel'),
+        'Actors.Anims': ('animations',),
         u'Actors.CombatStyle': (u'combatStyle',),
+        'Actors.DeathItem': ('deathItem',),
         u'Actors.RecordFlags': (u'flags1',),
         u'Actors.Skeleton': (u'model',),
         u'Actors.Stats': (u'attributes', u'health', u'skills',),
@@ -550,11 +550,12 @@ actor_importer_attrs = {
     },
 }
 actor_types = (b'CREA', b'NPC_')
+spell_types = (b'LVSP', b'SPEL')
 
 #------------------------------------------------------------------------------
 # Import Spell Stats
 #------------------------------------------------------------------------------
-spell_stats_attrs = (u'eid', u'cost', u'level', u'spellType', u'flags')
+spell_stats_attrs = (u'eid', u'cost', u'level', u'spellType', u'spell_flags')
 
 #------------------------------------------------------------------------------
 # Tweak Actors
@@ -577,22 +578,66 @@ actor_tweaks = {
 # Tweak Names
 #------------------------------------------------------------------------------
 names_tweaks = {
-    u'NamesTweak_BodyPartCodes',
-    u'NamesTweak_Body_Armor_Tes4',
-    u'NamesTweak_Body_Clothes',
-    u'NamesTweak_Ingestibles_Tes4',
-    u'NamesTweak_Scrolls',
-    u'NamesTweak_Spells',
-    u'NamesTweak_Weapons_Tes4',
-    u'NamesTweak_DwarvenToDwemer',
-    u'NamesTweak_DwarfsToDwarves',
-    u'NamesTweak_StaffsToStaves',
-    u'NamesTweak_FatigueToStamina',
-    u'NamesTweak_MarksmanToArchery',
-    u'NamesTweak_SecurityToLockpicking',
-    u'NamesTweak_AmmoWeight',
+    'NamesTweak_BodyPartCodes',
+    'NamesTweak_Body_Armor_Tes4',
+    'NamesTweak_Body_Clothes',
+    'NamesTweak_Ingestibles_Tes4',
+    'NamesTweak_NotesScrolls',
+    'NamesTweak_Spells',
+    'NamesTweak_Weapons_Tes4',
+    'NamesTweak_DwarvenToDwemer',
+    'NamesTweak_DwarfsToDwarves',
+    'NamesTweak_StaffsToStaves',
+    'NamesTweak_FatigueToStamina',
+    'NamesTweak_MarksmanToArchery',
+    'NamesTweak_SecurityToLockpicking',
+    'NamesTweak_AmmoWeight',
+    'NamesTweak_RenameGold',
 }
 body_part_codes = (u'ARGHTCCPBS', u'ABGHINOPSL')
+text_replacer_rpaths = {
+    b'ALCH': ('full', 'effects[i].scriptEffect?.full'),
+    b'AMMO': ('full',),
+    b'APPA': ('full',),
+    b'ARMO': ('full',),
+    b'BOOK': ('full', 'book_text'),
+    b'BSGN': ('full', 'description'),
+    b'CLAS': ('full', 'description'),
+    b'CLOT': ('full',),
+    b'CONT': ('full',),
+    b'CREA': ('full',),
+    b'DOOR': ('full',),
+    b'ENCH': ('full', 'effects[i].scriptEffect?.full',),
+    b'EYES': ('full',),
+    b'FACT': ('full',), ##: maybe add male_title/female_title?
+    b'FLOR': ('full',),
+    b'FURN': ('full',),
+    b'GMST': ('value',),
+    b'HAIR': ('full',),
+    b'INGR': ('full', 'effects[i].scriptEffect?.full'),
+    b'KEYM': ('full',),
+    b'LIGH': ('full',),
+    b'LSCR': ('description',),
+    b'MGEF': ('full', 'description'),
+    b'MISC': ('full',),
+    b'NPC_': ('full',),
+    b'QUST': ('full', 'stages[i].entries[i].text'),
+    b'RACE': ('full', 'description'),
+    b'SGST': ('full', 'effects[i].scriptEffect?.full'),
+    b'SKIL': ('description', 'apprentice', 'journeyman', 'expert', 'master'),
+    b'SLGM': ('full',),
+    b'SPEL': ('full', 'effects[i].scriptEffect?.full'),
+    b'WEAP': ('full',),
+}
+gold_attrs = lambda _self_ignore, _gm_master: {
+    'eid': 'Gold001',
+    'model.modPath': r'Clutter\goldCoin01.NIF',
+    'model.modb': 1.0,
+    'model.modt_p': None,
+    'iconPath': r'Clutter\IconGold.dds',
+    'value': 1,
+    'weight': 0.0,
+}
 
 #------------------------------------------------------------------------------
 # Tweak Settings
@@ -640,7 +685,7 @@ settings_tweaks = {
     u'GmstTweak_CostMultiplier_SpellMaking',
     u'GmstTweak_AI_MaxActiveActors',
     u'GmstTweak_Magic_MaxPlayerSummons',
-    u'GmstTweak_Combat_MaxAllyHits',
+    u'GmstTweak_Combat_MaxAllyHitsInCombat_Tes4',
     u'GmstTweak_Magic_MaxNPCSummons',
     u'GmstTweak_Bounty_Assault',
     u'GmstTweak_Bounty_HorseTheft',
@@ -676,16 +721,19 @@ settings_tweaks = {
     u'GmstTweak_Prompt_Take_Tes4',
     u'GmstTweak_Prompt_Talk_Tes4',
     u'GmstTweak_Msg_NoSoulGemLargeEnough',
+    u'GmstTweak_Combat_SpeakOnAttackChance',
+    u'GmstTweak_Combat_SpeakOnHitChance_Tes4',
+    u'GmstTweak_Combat_SpeakOnHitThreshold_Tes4',
+    u'GmstTweak_Combat_SpeakOnPowerAttackChance_Tes4',
+    u'GmstTweak_Combat_RandomTauntChance',
+    u'GmstTweak_LevelUp_SkillCount',
+    u'GmstTweak_Combat_MaxFriendHitsInCombat_Tes4',
 }
 
 #------------------------------------------------------------------------------
 # Import Relations
 #------------------------------------------------------------------------------
 relations_attrs = (u'faction', u'mod') ##: mod?
-relations_csv_header = (
-    _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
-    _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'))
-relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
 
 #------------------------------------------------------------------------------
 # Import Enchantment Stats
@@ -775,6 +823,11 @@ import_races_attrs = {
 }
 
 #------------------------------------------------------------------------------
+# Import Enchantments
+#------------------------------------------------------------------------------
+enchantment_types = {b'AMMO', b'ARMO', b'BOOK', b'CLOT', b'WEAP'}
+
+#------------------------------------------------------------------------------
 # Tweak Races
 #------------------------------------------------------------------------------
 race_tweaks = {
@@ -796,321 +849,3 @@ race_tweaks_need_collection = True
 # periods for their grass to match, hence we keep default_wp_timescale at 30
 # for Nehrim too
 default_wp_timescale = 30
-
-#------------------------------------------------------------------------------
-# Magic Effects
-#------------------------------------------------------------------------------
-import struct as _struct # hide from dynamic importer
-_strU = _struct.Struct('I').unpack
-generic_av_effects = {
-    b'ABAT', #--Absorb Attribute (Use Attribute)
-    b'ABSK', #--Absorb Skill (Use Skill)
-    b'DGAT', #--Damage Attribute (Use Attribute)
-    b'DRAT', #--Drain Attribute (Use Attribute)
-    b'DRSK', #--Drain Skill (Use Skill)
-    b'FOAT', #--Fortify Attribute (Use Attribute)
-    b'FOSK', #--Fortify Skill (Use Skill)
-    b'REAT', #--Restore Attribute (Use Attribute)
-}
-generic_av_effects |= {_strU(x)[0] for x in generic_av_effects}
-hostile_effects = {
-    b'ABAT', #--Absorb Attribute
-    b'ABFA', #--Absorb Fatigue
-    b'ABHE', #--Absorb Health
-    b'ABSK', #--Absorb Skill
-    b'ABSP', #--Absorb Magicka
-    b'BRDN', #--Burden
-    b'DEMO', #--Demoralize
-    b'DGAT', #--Damage Attribute
-    b'DGFA', #--Damage Fatigue
-    b'DGHE', #--Damage Health
-    b'DGSP', #--Damage Magicka
-    b'DIAR', #--Disintegrate Armor
-    b'DIWE', #--Disintegrate Weapon
-    b'DRAT', #--Drain Attribute
-    b'DRFA', #--Drain Fatigue
-    b'DRHE', #--Drain Health
-    b'DRSK', #--Drain Skill
-    b'DRSP', #--Drain Magicka
-    b'FIDG', #--Fire Damage
-    b'FRDG', #--Frost Damage
-    b'FRNZ', #--Frenzy
-    b'PARA', #--Paralyze
-    b'SHDG', #--Shock Damage
-    b'SLNC', #--Silence
-    b'STMA', #--Stunted Magicka
-    b'STRP', #--Soul Trap
-    b'SUDG', #--Sun Damage
-    b'TURN', #--Turn Undead
-    b'WKDI', #--Weakness to Disease
-    b'WKFI', #--Weakness to Fire
-    b'WKFR', #--Weakness to Frost
-    b'WKMA', #--Weakness to Magic
-    b'WKNW', #--Weakness to Normal Weapons
-    b'WKPO', #--Weakness to Poison
-    b'WKSH', #--Weakness to Shock
-}
-hostile_effects |= {_strU(x)[0] for x in hostile_effects}
-_magic_effects = {
-    b'ABAT': [5, _(u'Absorb Attribute'), 0.95],
-    b'ABFA': [5, _(u'Absorb Fatigue'), 6],
-    b'ABHE': [5, _(u'Absorb Health'), 16],
-    b'ABSK': [5, _(u'Absorb Skill'), 2.1],
-    b'ABSP': [5, _(u'Absorb Magicka'), 7.5],
-    b'BA01': [1, _(u'Bound Armor Extra 01'), 0],#--Formid == 0
-    b'BA02': [1, _(u'Bound Armor Extra 02'), 0],#--Formid == 0
-    b'BA03': [1, _(u'Bound Armor Extra 03'), 0],#--Formid == 0
-    b'BA04': [1, _(u'Bound Armor Extra 04'), 0],#--Formid == 0
-    b'BA05': [1, _(u'Bound Armor Extra 05'), 0],#--Formid == 0
-    b'BA06': [1, _(u'Bound Armor Extra 06'), 0],#--Formid == 0
-    b'BA07': [1, _(u'Bound Armor Extra 07'), 0],#--Formid == 0
-    b'BA08': [1, _(u'Bound Armor Extra 08'), 0],#--Formid == 0
-    b'BA09': [1, _(u'Bound Armor Extra 09'), 0],#--Formid == 0
-    b'BA10': [1, _(u'Bound Armor Extra 10'), 0],#--Formid == 0
-    b'BABO': [1, _(u'Bound Boots'), 12],
-    b'BACU': [1, _(u'Bound Cuirass'), 12],
-    b'BAGA': [1, _(u'Bound Gauntlets'), 8],
-    b'BAGR': [1, _(u'Bound Greaves'), 12],
-    b'BAHE': [1, _(u'Bound Helmet'), 12],
-    b'BASH': [1, _(u'Bound Shield'), 12],
-    b'BRDN': [0, _(u'Burden'), 0.21],
-    b'BW01': [1, _(u'Bound Order Weapon 1'), 1],
-    b'BW02': [1, _(u'Bound Order Weapon 2'), 1],
-    b'BW03': [1, _(u'Bound Order Weapon 3'), 1],
-    b'BW04': [1, _(u'Bound Order Weapon 4'), 1],
-    b'BW05': [1, _(u'Bound Order Weapon 5'), 1],
-    b'BW06': [1, _(u'Bound Order Weapon 6'), 1],
-    b'BW07': [1, _(u'Summon Staff of Sheogorath'), 1],
-    b'BW08': [1, _(u'Bound Priest Dagger'), 1],
-    b'BW09': [1, _(u'Bound Weapon Extra 09'), 0],#--Formid == 0
-    b'BW10': [1, _(u'Bound Weapon Extra 10'), 0],#--Formid == 0
-    b'BWAX': [1, _(u'Bound Axe'), 39],
-    b'BWBO': [1, _(u'Bound Bow'), 95],
-    b'BWDA': [1, _(u'Bound Dagger'), 14],
-    b'BWMA': [1, _(u'Bound Mace'), 91],
-    b'BWSW': [1, _(u'Bound Sword'), 235],
-    b'CALM': [3, _(u'Calm'), 0.47],
-    b'CHML': [3, _(u'Chameleon'), 0.63],
-    b'CHRM': [3, _(u'Charm'), 0.2],
-    b'COCR': [3, _(u'Command Creature'), 0.6],
-    b'COHU': [3, _(u'Command Humanoid'), 0.75],
-    b'CUDI': [5, _(u'Cure Disease'), 1400],
-    b'CUPA': [5, _(u'Cure Paralysis'), 500],
-    b'CUPO': [5, _(u'Cure Poison'), 600],
-    b'DARK': [3, _(u'DO NOT USE - Darkness'), 0],
-    b'DEMO': [3, _(u'Demoralize'), 0.49],
-    b'DGAT': [2, _(u'Damage Attribute'), 100],
-    b'DGFA': [2, _(u'Damage Fatigue'), 4.4],
-    b'DGHE': [2, _(u'Damage Health'), 12],
-    b'DGSP': [2, _(u'Damage Magicka'), 2.45],
-    b'DIAR': [2, _(u'Disintegrate Armor'), 6.2],
-    b'DISE': [2, _(u'Disease Info'), 0], #--Formid == 0
-    b'DIWE': [2, _(u'Disintegrate Weapon'), 6.2],
-    b'DRAT': [2, _(u'Drain Attribute'), 0.7],
-    b'DRFA': [2, _(u'Drain Fatigue'), 0.18],
-    b'DRHE': [2, _(u'Drain Health'), 0.9],
-    b'DRSK': [2, _(u'Drain Skill'), 0.65],
-    b'DRSP': [2, _(u'Drain Magicka'), 0.18],
-    b'DSPL': [4, _(u'Dispel'), 3.6],
-    b'DTCT': [4, _(u'Detect Life'), 0.08],
-    b'DUMY': [2, _(u'Mehrunes Dagon'), 0], #--Formid == 0
-    b'FIDG': [2, _(u'Fire Damage'), 7.5],
-    b'FISH': [0, _(u'Fire Shield'), 0.95],
-    b'FOAT': [5, _(u'Fortify Attribute'), 0.6],
-    b'FOFA': [5, _(u'Fortify Fatigue'), 0.04],
-    b'FOHE': [5, _(u'Fortify Health'), 0.14],
-    b'FOMM': [5, _(u'Fortify Magicka Multiplier'), 0.04],
-    b'FOSK': [5, _(u'Fortify Skill'), 0.6],
-    b'FOSP': [5, _(u'Fortify Magicka'), 0.15],
-    b'FRDG': [2, _(u'Frost Damage'), 7.4],
-    b'FRNZ': [3, _(u'Frenzy'), 0.04],
-    b'FRSH': [0, _(u'Frost Shield'), 0.95],
-    b'FTHR': [0, _(u'Feather'), 0.1],
-    b'INVI': [3, _(u'Invisibility'), 40],
-    b'LGHT': [3, _(u'Light'), 0.051],
-    b'LISH': [0, _(u'Shock Shield'), 0.95],
-    b'LOCK': [0, _(u'DO NOT USE - Lock'), 30],
-    b'MYHL': [1, _(u'Summon Mythic Dawn Helm'), 110],
-    b'MYTH': [1, _(u'Summon Mythic Dawn Armor'), 120],
-    b'NEYE': [3, _(u'Night-Eye'), 22],
-    b'OPEN': [0, _(u'Open'), 4.3],
-    b'PARA': [3, _(u'Paralyze'), 475],
-    b'POSN': [2, _(u'Poison Info'), 0],
-    b'RALY': [3, _(u'Rally'), 0.03],
-    b'REAN': [1, _(u'Reanimate'), 10],
-    b'REAT': [5, _(u'Restore Attribute'), 38],
-    b'REDG': [4, _(u'Reflect Damage'), 2.5],
-    b'REFA': [5, _(u'Restore Fatigue'), 2],
-    b'REHE': [5, _(u'Restore Health'), 10],
-    b'RESP': [5, _(u'Restore Magicka'), 2.5],
-    b'RFLC': [4, _(u'Reflect Spell'), 3.5],
-    b'RSDI': [5, _(u'Resist Disease'), 0.5],
-    b'RSFI': [5, _(u'Resist Fire'), 0.5],
-    b'RSFR': [5, _(u'Resist Frost'), 0.5],
-    b'RSMA': [5, _(u'Resist Magic'), 2],
-    b'RSNW': [5, _(u'Resist Normal Weapons'), 1.5],
-    b'RSPA': [5, _(u'Resist Paralysis'), 0.75],
-    b'RSPO': [5, _(u'Resist Poison'), 0.5],
-    b'RSSH': [5, _(u'Resist Shock'), 0.5],
-    b'RSWD': [5, _(u'Resist Water Damage'), 0], #--Formid == 0
-    b'SABS': [4, _(u'Spell Absorption'), 3],
-    b'SEFF': [0, _(u'Script Effect'), 0],
-    b'SHDG': [2, _(u'Shock Damage'), 7.8],
-    b'SHLD': [0, _(u'Shield'), 0.45],
-    b'SLNC': [3, _(u'Silence'), 60],
-    b'STMA': [2, _(u'Stunted Magicka'), 0],
-    b'STRP': [4, _(u'Soul Trap'), 30],
-    b'SUDG': [2, _(u'Sun Damage'), 9],
-    b'TELE': [4, _(u'Telekinesis'), 0.49],
-    b'TURN': [1, _(u'Turn Undead'), 0.083],
-    b'VAMP': [2, _(u'Vampirism'), 0],
-    b'WABR': [0, _(u'Water Breathing'), 14.5],
-    b'WAWA': [0, _(u'Water Walking'), 13],
-    b'WKDI': [2, _(u'Weakness to Disease'), 0.12],
-    b'WKFI': [2, _(u'Weakness to Fire'), 0.1],
-    b'WKFR': [2, _(u'Weakness to Frost'), 0.1],
-    b'WKMA': [2, _(u'Weakness to Magic'), 0.25],
-    b'WKNW': [2, _(u'Weakness to Normal Weapons'), 0.25],
-    b'WKPO': [2, _(u'Weakness to Poison'), 0.1],
-    b'WKSH': [2, _(u'Weakness to Shock'), 0.1],
-    b'Z001': [1, _(u'Summon Rufio\'s Ghost'), 13],
-    b'Z002': [1, _(u'Summon Ancestor Guardian'), 33.3],
-    b'Z003': [1, _(u'Summon Spiderling'), 45],
-    b'Z004': [1, _(u'Summon Flesh Atronach'), 1],
-    b'Z005': [1, _(u'Summon Bear'), 47.3],
-    b'Z006': [1, _(u'Summon Gluttonous Hunger'), 61],
-    b'Z007': [1, _(u'Summon Ravenous Hunger'), 123.33],
-    b'Z008': [1, _(u'Summon Voracious Hunger'), 175],
-    b'Z009': [1, _(u'Summon Dark Seducer'), 1],
-    b'Z010': [1, _(u'Summon Golden Saint'), 1],
-    b'Z011': [1, _(u'Wabba Summon'), 0],
-    b'Z012': [1, _(u'Summon Decrepit Shambles'), 45],
-    b'Z013': [1, _(u'Summon Shambles'), 87.5],
-    b'Z014': [1, _(u'Summon Replete Shambles'), 150],
-    b'Z015': [1, _(u'Summon Hunger'), 22],
-    b'Z016': [1, _(u'Summon Mangled Flesh Atronach'), 22],
-    b'Z017': [1, _(u'Summon Torn Flesh Atronach'), 32.5],
-    b'Z018': [1, _(u'Summon Stitched Flesh Atronach'), 75.5],
-    b'Z019': [1, _(u'Summon Sewn Flesh Atronach'), 195],
-    b'Z020': [1, _(u'Extra Summon 20'), 0],
-    b'ZCLA': [1, _(u'Summon Clannfear'), 75.56],
-    b'ZDAE': [1, _(u'Summon Daedroth'), 123.33],
-    b'ZDRE': [1, _(u'Summon Dremora'), 72.5],
-    b'ZDRL': [1, _(u'Summon Dremora Lord'), 157.14],
-    b'ZFIA': [1, _(u'Summon Flame Atronach'), 45],
-    b'ZFRA': [1, _(u'Summon Frost Atronach'), 102.86],
-    b'ZGHO': [1, _(u'Summon Ghost'), 22],
-    b'ZHDZ': [1, _(u'Summon Headless Zombie'), 56],
-    b'ZLIC': [1, _(u'Summon Lich'), 350],
-    b'ZSCA': [1, _(u'Summon Scamp'), 30],
-    b'ZSKA': [1, _(u'Summon Skeleton Guardian'), 32.5],
-    b'ZSKC': [1, _(u'Summon Skeleton Champion'), 152],
-    b'ZSKE': [1, _(u'Summon Skeleton'), 11.25],
-    b'ZSKH': [1, _(u'Summon Skeleton Hero'), 66],
-    b'ZSPD': [1, _(u'Summon Spider Daedra'), 195],
-    b'ZSTA': [1, _(u'Summon Storm Atronach'), 125],
-    b'ZWRA': [1, _(u'Summon Faded Wraith'), 87.5],
-    b'ZWRL': [1, _(u'Summon Gloom Wraith'), 260],
-    b'ZXIV': [1, _(u'Summon Xivilai'), 200],
-    b'ZZOM': [1, _(u'Summon Zombie'), 16.67],
-}
-# Note that ordering matters here, because of py2 bleeding the parameters into
-# the outer scope. Also, we have to use underscores to hide them from the
-# dynamic importer. Ugh.
-mgef_school = {_x: _y for _x, [_y, _z, _num] in _magic_effects.iteritems()}
-mgef_name = {_x: _z for _x, [_y, _z, __num] in _magic_effects.iteritems()}
-mgef_basevalue = {_x: _a for _x, [_y, _z, _a] in _magic_effects.iteritems()}
-mgef_school.update({_strU(_x)[0]: _y for _x, [_y, _z, _a]
-                    in _magic_effects.iteritems()})
-mgef_name.update({_strU(_x)[0]: _z for _x, [_y, _z, _a]
-                  in _magic_effects.iteritems()})
-mgef_basevalue.update({_strU(_x)[0]: _a for _x, [_y, _z, _a]
-                       in _magic_effects.iteritems()})
-# Clean this up, no need to keep it around now
-del _strU
-
-# TODO(inf) This could be updated for other games, see links below. Not done
-#  yet because it's only used in completely Oblivion-specific code
-# FO3/FNV: https://geck.bethsoft.com/index.php?title=Actor_Value_Codes
-# TES5: https://en.uesp.net/wiki/Tes5Mod:Actor_Value_Indices
-actor_values = [
-    _(u'Strength'), #--00
-    _(u'Intelligence'),
-    _(u'Willpower'),
-    _(u'Agility'),
-    _(u'Speed'),
-    _(u'Endurance'),
-    _(u'Personality'),
-    _(u'Luck'),
-    _(u'Health'),
-    _(u'Magicka'),
-
-    _(u'Fatigue'), #--10
-    _(u'Encumbrance'),
-    _(u'Armorer'),
-    _(u'Athletics'),
-    _(u'Blade'),
-    _(u'Block'),
-    _(u'Blunt'),
-    _(u'Hand To Hand'),
-    _(u'Heavy Armor'),
-    _(u'Alchemy'),
-
-    _(u'Alteration'), #--20
-    _(u'Conjuration'),
-    _(u'Destruction'),
-    _(u'Illusion'),
-    _(u'Mysticism'),
-    _(u'Restoration'),
-    _(u'Acrobatics'),
-    _(u'Light Armor'),
-    _(u'Marksman'),
-    _(u'Mercantile'),
-
-    _(u'Security'), #--30
-    _(u'Sneak'),
-    _(u'Speechcraft'),
-    u'Aggression', # TODO(inf) Why do the translations stop here??
-    u'Confidence',
-    u'Energy',
-    u'Responsibility',
-    u'Bounty',
-    u'UNKNOWN 38',
-    u'UNKNOWN 39',
-
-    u'MagickaMultiplier', #--40
-    u'NightEyeBonus',
-    u'AttackBonus',
-    u'DefendBonus',
-    u'CastingPenalty',
-    u'Blindness',
-    u'Chameleon',
-    u'Invisibility',
-    u'Paralysis',
-    u'Silence',
-
-    u'Confusion', #--50
-    u'DetectItemRange',
-    u'SpellAbsorbChance',
-    u'SpellReflectChance',
-    u'SwimSpeedMultiplier',
-    u'WaterBreathing',
-    u'WaterWalking',
-    u'StuntedMagicka',
-    u'DetectLifeRange',
-    u'ReflectDamage',
-
-    u'Telekinesis', #--60
-    u'ResistFire',
-    u'ResistFrost',
-    u'ResistDisease',
-    u'ResistMagic',
-    u'ResistNormalWeapons',
-    u'ResistParalysis',
-    u'ResistPoison',
-    u'ResistShock',
-    u'Vampirism',
-
-    u'Darkness', #--70
-    u'ResistWaterDamage',
-]

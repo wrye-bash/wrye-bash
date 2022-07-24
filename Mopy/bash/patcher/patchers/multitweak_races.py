@@ -16,38 +16,47 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains the MultiTweakItem classes that tweak RACE records."""
 
 from collections import defaultdict
-from itertools import izip
+from typing import Union, Optional
 
 from .base import MultiTweakItem, MultiTweaker
 from ... import bush
-from ...bolt import attrgetter_cache
+from ...bolt import attrgetter_cache, Path
 
 _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
                   u'dark seducer', u'golden saint', u'high elf', u'imperial',
                   u'khajiit', u'nord', u'orc', u'redguard', u'wood elf']
 
+_FidList = list[tuple[Path, int]]
+_FacePartDict = defaultdict[str, _FidList]
+# PY3.10: Union -> |, can't do this here with __future__ annotations
+##: Also, we really need a less hacky solution than this 'mixed dict'
+_MixedDict = dict[Union[bytes, str], Union[_FidList, dict[str, _FidList]]]
+
 class _ARaceTweak(MultiTweakItem):
     """ABC for race tweaks."""
     tweak_read_classes = b'RACE',
     tweak_log_msg = _(u'Races Tweaked: %(total_changed)d')
-    tweak_races_data = None # sentinel, set by the tweaker
+    tweak_races_data: Optional[_MixedDict] = None # sentinel, set by tweaker
+    _cached_changed_eyes: _FacePartDict
+    _cached_changed_hairs: _FacePartDict
 
-    def _calc_changed_face_parts(self, face_attr, collected_races_data):
+    def _calc_changed_face_parts(self, face_attr: str,
+            collected_races_data: _MixedDict) -> _FacePartDict:
         """Calculates a changes dictionary for the specified face attribute,
         using the specified collected races data."""
-        changed_parts = defaultdict(list)
+        changed_parts: _FacePartDict = defaultdict(list)
         #process hair lists
         if self.choiceValues[self.chosen][0] == 1:
             # Merge face parts only from vanilla races to custom parts
             for race in collected_races_data:
-                if race in (b'HAIR', b'EYES'): continue # ugh
+                if isinstance(race, bytes): continue # ugh
                 old_r_data = collected_races_data[race][face_attr]
                 for r in _vanilla_races:
                     if r in race:
@@ -60,7 +69,7 @@ class _ARaceTweak(MultiTweakItem):
                             changed_parts[race] = list(merged_r_data)
         else: # full back and forth merge!
             for race in collected_races_data:
-                if race in (b'HAIR', b'EYES'): continue # ugh
+                if isinstance(race, bytes): continue # ugh
                 old_r_data = collected_races_data[race][face_attr]
                 # nasty processing slog
                 rs = race.split(u'(')
@@ -69,7 +78,7 @@ class _ARaceTweak(MultiTweakItem):
                     rs[0] = rs[0] + u' ' + rs[1]
                     del(rs[1])
                 for r in collected_races_data:
-                    if r == race: continue
+                    if isinstance(r, bytes) or r == race: continue
                     for s in rs:
                         if s in r:
                             new_r_data = collected_races_data[r][face_attr]
@@ -125,12 +134,12 @@ class RaceTweak_BiggerOrcsAndNords(_ARaceTweak):
         rec_full = record.full.lower()
         is_orc = u'orc' in rec_full
         return (u'nord' in rec_full or is_orc) and any(
-            getattr(record, a) != v for a, v in izip(
+            getattr(record, a) != v for a, v in zip(
                 self._tweak_attrs, self.choiceValues[self.chosen][0][is_orc]))
 
     def tweak_record(self, record):
         is_orc = u'orc' in record.full.lower()
-        for tweak_attr, tweak_val in izip(
+        for tweak_attr, tweak_val in zip(
                 self._tweak_attrs, self.choiceValues[self.chosen][0][is_orc]):
             setattr(record, tweak_attr, tweak_val)
 
@@ -192,6 +201,9 @@ class _ARUnblockTweak(_ARaceTweak):
     _sig_and_attr = (b'OVERRIDE', u'OVERRIDE')
 
     def wants_record(self, record):
+        if record._rec_sig != b'RACE':
+            # We have to load HAIR/EYES, but we don't want to tweak them
+            return False
         race_sig, race_attr = self._sig_and_attr
         # If this is None, we don't have race data yet and have to blindly
         # forward records until the patcher sends it to us
@@ -206,6 +218,7 @@ class _ARUnblockTweak(_ARaceTweak):
 # -----------------------------------------------------------------------------
 class RaceTweak_AllHairs(_ARUnblockTweak):
     """Gives all races ALL hairs."""
+    tweak_read_classes = b'HAIR', b'RACE',
     tweak_name = _(u'Races Have All Hairs')
     tweak_tip = _(u'Gives all races every available hair.')
     tweak_key = u'hairyraces'
@@ -215,6 +228,7 @@ class RaceTweak_AllHairs(_ARUnblockTweak):
 # -----------------------------------------------------------------------------
 class RaceTweak_AllEyes(_ARUnblockTweak):
     """Gives all races ALL eyes."""
+    tweak_read_classes = b'EYES', b'RACE',
     tweak_name = _(u'Races Have All Eyes')
     tweak_tip = _(u'Gives all races every available eye.')
     tweak_key = u'eyeyraces'
@@ -299,8 +313,8 @@ class _ARFBGGTweak(_ARaceTweak):
                      (_(u'Invert'), u'invert_gender'),]
     # Variables based on whether or not we're targeting the female graph
     # (0 = male, 1 = female)
-    _graph_defaults = (u'' r'Actors\Character\DefaultMale.hkx',
-                       u'' r'Actors\Character\DefaultFemale.hkx')
+    _graph_defaults = (r'Actors\Character\DefaultMale.hkx',
+                       r'Actors\Character\DefaultFemale.hkx')
     _graph_defaults_lower = tuple(g.lower() for g in reversed(_graph_defaults))
     _graph_attrs = (u'male_behavior_graph', u'female_behavior_graph')
     # Whether to target the male or female behavior graph
@@ -353,7 +367,7 @@ class TweakRacesPatcher(MultiTweaker):
     def initData(self, progress):
         super(TweakRacesPatcher, self).initData(progress)
         if bush.game.race_tweaks_need_collection:
-            self.collected_tweak_data = {b'EYES': [], b'HAIR': []}
+            self.collected_tweak_data: _MixedDict = {b'EYES': [], b'HAIR': []}
 
     def scanModFile(self, modFile, progress):
         if bush.game.race_tweaks_need_collection:
@@ -361,8 +375,11 @@ class TweakRacesPatcher(MultiTweaker):
             tweak_data = self.collected_tweak_data
             for tweak_type in (b'EYES', b'HAIR'):
                 if tweak_type not in modFile.tops: continue
+                type_data = tweak_data[tweak_type]
+                type_data_set = set(type_data)
                 for record in modFile.tops[tweak_type].getActiveRecords():
-                    tweak_data[tweak_type].append(record.fid)
+                    if record.fid not in type_data_set:
+                        type_data.append(record.fid)
         super(TweakRacesPatcher, self).scanModFile(modFile, progress)
 
     def buildPatch(self, log, progress):

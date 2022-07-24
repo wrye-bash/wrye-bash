@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -40,7 +40,7 @@ class APreserver(ImportPatcher):
     """Fairly mature base class for preservers. Some parts could (read should)
     be moved to ImportPatcher and used to eliminate duplication with _AMerger.
 
-    :type rec_attrs: dict[bytes, tuple] | dict[bytes, dict[unicode, tuple]]"""
+    :type rec_attrs: dict[bytes, tuple] | dict[bytes, dict[str, tuple]]"""
     rec_attrs = {}
     # Record attributes that are FormIDs. These will be checked to see if their
     # FormID is valid before being imported
@@ -72,23 +72,23 @@ class APreserver(ImportPatcher):
         if self._multi_tag: ##: This is hideous
             def collect_attrs(r, tag_dict):
                 return {t: a + self._fid_rec_attrs.get(r, {}).get(t, ())
-                        for t, a in tag_dict.iteritems()}
+                        for t, a in tag_dict.items()}
         else:
             def collect_attrs(r, a):
                 return a + self._fid_rec_attrs.get(r, ())
         self.rec_type_attrs = {r: collect_attrs(r, a)
-                               for r, a in self.rec_attrs.iteritems()}
+                               for r, a in self.rec_attrs.items()}
         # Check if we need to use setattr_deep to set attributes
         if self._multi_tag:
             all_attrs = chain.from_iterable(
-                v for d in self.rec_type_attrs.itervalues()
-                for v in d.itervalues())
+                v for d in self.rec_type_attrs.values()
+                for v in d.values())
         else:
-            all_attrs = chain.from_iterable(self.rec_type_attrs.viewvalues())
+            all_attrs = chain.from_iterable(self.rec_type_attrs.values())
         self._deep_attrs = any(u'.' in a for a in all_attrs)
         # Split srcs based on CSV extension ##: move somewhere else?
-        self.csv_srcs = [s for s in p_sources if s.cext == u'.csv']
-        self.srcs = [s for s in p_sources if s.cext != u'.csv']
+        self.csv_srcs = [s for s in p_sources if s.fn_ext == '.csv']
+        self.srcs = [s for s in p_sources if s.fn_ext != '.csv']
         self.loadFactory = self._patcher_read_fact(by_sig=self.rec_type_attrs)
 
     # CSV helpers
@@ -98,7 +98,7 @@ class APreserver(ImportPatcher):
                                            called_from_patcher=True)
         for src_path in self.csv_srcs:
             try:
-                parser_instance.readFromText(getPatchesPath(src_path))
+                parser_instance.read_csv(getPatchesPath(src_path))
             except OSError:
                 deprint(u'%s is no longer in patches set' % src_path,
                     traceback=True)
@@ -110,11 +110,11 @@ class APreserver(ImportPatcher):
         # Filter out any entries that don't actually have data or don't
         # actually exist (for this game at least)
         ##: make sure k is always bytes and drop encode below
-        filtered_dict = {k.encode(u'ascii') if type(k) is unicode else k: v
-                         for k, v in parsed_sources.iteritems()
+        filtered_dict = {k.encode(u'ascii') if isinstance(k, str) else k: v
+                         for k, v in parsed_sources.items()
                          if v and k in MreRecord.type_class}
         self.srcs_sigs.update(filtered_dict)
-        for src_data in filtered_dict.itervalues():
+        for src_data in filtered_dict.values():
             self.id_data.update(src_data)
 
     @property
@@ -130,9 +130,9 @@ class APreserver(ImportPatcher):
             # For multi-tag importers, we need to look up the applied bash tags
             # and use those to find all applicable attributes
             recAttrs = set(chain.from_iterable(
-                attrs for t, attrs in recAttrs.iteritems() if t in mod_tags))
+                attrs for t, attrs in recAttrs.items() if t in mod_tags))
             fid_attrs = set(chain.from_iterable(
-                attrs for t, attrs in fid_attrs.iteritems() if t in mod_tags))
+                attrs for t, attrs in fid_attrs.items() if t in mod_tags))
         for rfid, record in srcFile.tops[top_grup_sig].iter_present_records():
             # If we have FormID attributes, check those before importing
             if fid_attrs:
@@ -186,12 +186,12 @@ class APreserver(ImportPatcher):
                         continue
                     for rfid, record in masterFile.tops[rsig].iter_present_records():
                         if rfid not in mod_id_data: continue
-                        for attr, value in mod_id_data[rfid].iteritems():
+                        for attr, val in mod_id_data[rfid].items():
                             try:
-                                if value == __attrgetters[attr](record):
+                                if val == __attrgetters[attr](record):
                                     continue
                                 else:
-                                    id_data[rfid][attr] = value
+                                    id_data[rfid][attr] = val
                             except AttributeError:
                                 raise ModSigMismatchError(master, record)
             progress.plus()
@@ -212,8 +212,8 @@ class APreserver(ImportPatcher):
                 # Skip if we've already copied this record or if we're not
                 # interested in it
                 if rfid in copied_records or rfid not in id_data: continue
-                for attr, value in id_data[rfid].iteritems():
-                    if __attrgetters[attr](record) != value:
+                for attr, val in id_data[rfid].items():
+                    if __attrgetters[attr](record) != val:
                         patchBlock.setRecord(record.getTypeCopy())
                         break
 
@@ -224,11 +224,11 @@ class APreserver(ImportPatcher):
         id_data = self.id_data
         for rfid, record in records:
             if rfid not in id_data: continue
-            for attr, value in id_data[rfid].iteritems():
-                if __attrgetters[attr](record) != value: break
+            for attr, val in id_data[rfid].items():
+                if __attrgetters[attr](record) != val: break
             else: continue
-            for attr, value in id_data[rfid].iteritems():
-                loop_setattr(record, attr, value)
+            for attr, val in id_data[rfid].items():
+                loop_setattr(record, attr, val)
             keep(rfid)
             type_count[top_mod_rec] += 1
 
@@ -261,16 +261,6 @@ class APreserver(ImportPatcher):
 class ImportActorsPatcher(APreserver):
     rec_attrs = bush.game.actor_importer_attrs
     _multi_tag = True
-
-#------------------------------------------------------------------------------
-##: Could be absorbed by ImportActors, but would break existing configs
-class ImportActorsAnimationsPatcher(APreserver):
-    rec_attrs = {x: (u'animations',) for x in bush.game.actor_types}
-
-#------------------------------------------------------------------------------
-##: Could be absorbed by ImportActors, but would break existing configs
-class ImportActorsDeathItemsPatcher(APreserver):
-    rec_attrs = {x: (u'deathItem',) for x in bush.game.actor_types}
 
 #------------------------------------------------------------------------------
 class ImportActorsFacesPatcher(APreserver):
@@ -310,6 +300,11 @@ class ImportEffectsStatsPatcher(APreserver):
     rec_attrs = {b'MGEF': bush.game.mgef_stats_attrs}
 
 #------------------------------------------------------------------------------
+class ImportEnchantmentsPatcher(APreserver):
+    """Preserves changes to EITM (enchantment/object effect) subrecords."""
+    rec_attrs = {x: ('enchantment',) for x in bush.game.enchantment_types}
+
+#------------------------------------------------------------------------------
 class ImportEnchantmentStatsPatcher(APreserver):
     """Preserves changes to ENCH stats."""
     rec_attrs = {b'ENCH': bush.game.ench_stats_attrs}
@@ -345,7 +340,8 @@ class ImportSpellStatsPatcher(APreserver):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     rec_attrs = {x: bush.game.spell_stats_attrs
                  for x in bush.game.spell_stats_types}
-    _csv_parser = parsers.SpellRecords
+    _csv_parser = parsers.SpellRecords if bush.game.fsName == 'Oblivion' \
+        else None
 
 #------------------------------------------------------------------------------
 class ImportStatsPatcher(APreserver):
@@ -356,7 +352,7 @@ class ImportStatsPatcher(APreserver):
     # Don't patch Editor IDs - those are only in statsTypes for the
     # Export/Import links
     rec_attrs = {r: tuple(x for x in a if x != u'eid')
-                 for r, a in bush.game.statsTypes.iteritems()}
+                 for r, a in bush.game.statsTypes.items()}
     _csv_parser = parsers.ItemStats
 
 #------------------------------------------------------------------------------
@@ -376,7 +372,7 @@ class ImportCellsPatcher(ImportPatcher):
     def __init__(self, p_name, p_file, p_sources):
         super(ImportCellsPatcher, self).__init__(p_name, p_file, p_sources)
         self.cellData = defaultdict(dict)
-        self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[unicode]]
+        self.recAttrs = bush.game.cellRecAttrs # dict[str, tuple[str]]
         self.loadFactory = self._patcher_read_fact()
 
     def initData(self, progress, __attrgetters=attrgetter_cache):
@@ -427,21 +423,19 @@ class ImportCellsPatcher(ImportPatcher):
             # values from the value in any of srcMod's masters.
             tempCellData = defaultdict(dict)
             srcInfo = minfs[srcMod]
-            srcFile = self._mod_file_read(srcInfo)
-            cachedMasters[srcMod] = srcFile
             bashTags = srcInfo.getBashTags()
-            # print bashTags
             tags = bashTags & set(self.recAttrs)
             if not tags: continue
+            srcFile = self._mod_file_read(srcInfo)
+            cachedMasters[srcMod] = srcFile
             attrs = set(chain.from_iterable(
-                self.recAttrs[bashKey] for bashKey in tags
-                if bashKey in self.recAttrs))
+                self.recAttrs[bashKey] for bashKey in tags))
             if b'CELL' in srcFile.tops:
-                for cellBlock in srcFile.tops[b'CELL'].cellBlocks:
+                for cellBlock in srcFile.tops[b'CELL'].id_cellBlock.values():
                     importCellBlockData(cellBlock)
             if b'WRLD' in srcFile.tops:
-                for worldBlock in srcFile.tops[b'WRLD'].worldBlocks:
-                    for cellBlock in worldBlock.cellBlocks:
+                for worldBlock in srcFile.tops[b'WRLD'].id_worldBlocks.values():
+                    for cellBlock in worldBlock.id_cellBlock.values():
                         importCellBlockData(cellBlock)
                     if worldBlock.worldCellBlock:
                         importCellBlockData(worldBlock.worldCellBlock)
@@ -454,38 +448,37 @@ class ImportCellsPatcher(ImportPatcher):
                     masterFile = self._mod_file_read(masterInfo)
                     cachedMasters[master] = masterFile
                 if b'CELL' in masterFile.tops:
-                    for cellBlock in masterFile.tops[b'CELL'].cellBlocks:
+                    for cellBlock in masterFile.tops[b'CELL'].id_cellBlock.values():
                         checkMasterCellBlockData(cellBlock)
                 if b'WRLD' in masterFile.tops:
-                    for worldBlock in masterFile.tops[b'WRLD'].worldBlocks:
-                        for cellBlock in worldBlock.cellBlocks:
+                    for worldBlock in masterFile.tops[b'WRLD'].id_worldBlocks.values():
+                        for cellBlock in worldBlock.id_cellBlock.values():
                             checkMasterCellBlockData(cellBlock)
                         if worldBlock.worldCellBlock:
                             checkMasterCellBlockData(worldBlock.worldCellBlock)
-            tempCellData = {}
             progress.plus()
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add lists from modFile."""
-        if not self.isActive or not (set(modFile.tops) & {b'CELL', b'WRLD'}):
+        if not (b'CELL' in modFile.tops or b'WRLD' in modFile.tops):
             return
         cellData = self.cellData
         patchCells = self.patchFile.tops[b'CELL']
         patchWorlds = self.patchFile.tops[b'WRLD']
         if b'CELL' in modFile.tops:
-            for cellBlock in modFile.tops[b'CELL'].cellBlocks:
-                if cellBlock.cell.fid in cellData:
+            for cfid, cellBlock in modFile.tops[b'CELL'].id_cellBlock.items():
+                if cfid in cellData:
                     patchCells.setCell(cellBlock.cell)
         if b'WRLD' in modFile.tops:
-            for worldBlock in modFile.tops[b'WRLD'].worldBlocks:
+            for wfid, worldBlock in modFile.tops[b'WRLD'].id_worldBlocks.items():
                 patchWorlds.setWorld(worldBlock.world)
-                curr_pworld = patchWorlds.id_worldBlocks[worldBlock.world.fid]
-                for cellBlock in worldBlock.cellBlocks:
-                    if cellBlock.cell.fid in cellData:
+                curr_pworld = patchWorlds.id_worldBlocks[wfid]
+                for cfid, cellBlock in worldBlock.id_cellBlock.items():
+                    if cfid in cellData:
                         curr_pworld.setCell(cellBlock.cell)
                 pers_cell_block = worldBlock.worldCellBlock
                 if pers_cell_block and pers_cell_block.cell.fid in cellData:
-                    curr_pworld.worldCellBlock = pers_cell_block
+                    curr_pworld.set_persistent_cell(pers_cell_block.cell)
 
     def buildPatch(self, log, progress, __attrgetters=attrgetter_cache):
         """Adds merged lists to patchfile."""
@@ -498,36 +491,36 @@ class ImportCellsPatcher(ImportPatcher):
             If the CellData value is different, then the value is copied
             to the bash patch, and the cell is flagged as modified.
             Modified cell Blocks are kept, the other are discarded."""
-            modified = False
-            patch_cell_fid = patchCellBlock.cell.fid
-            for attr,value in cellData[patch_cell_fid].iteritems():
-                curr_value = __attrgetters[attr](patchCellBlock.cell)
+            cell_modified = False
+            patch_cell = patchCellBlock.cell
+            patch_cell_fid = patch_cell.fid
+            for attr, val in cellData[patch_cell_fid].items():
+                curr_value = __attrgetters[attr](patch_cell)
                 ##: If we made MelSorted sort on load too, we could drop this -
                 # but that might be too expensive? Maybe add a parameter to
                 # MelSorted to sort on load only for specific subrecords?
                 if attr == u'regions':
-                    if set(value).difference(set(curr_value)):
-                        setattr_deep(patchCellBlock.cell, attr, value)
-                        modified = True
+                    if set(val).difference(set(curr_value)):
+                        setattr_deep(patch_cell, attr, val)
+                        cell_modified = True
                 else:
-                    if value != curr_value:
-                        setattr_deep(patchCellBlock.cell, attr, value)
-                        modified = True
-            if modified:
-                patchCellBlock.cell.setChanged()
+                    if val != curr_value:
+                        setattr_deep(patch_cell, attr, val)
+                        cell_modified = True
+            if cell_modified:
+                patch_cell.setChanged()
                 keep(patch_cell_fid)
-            return modified
+            return cell_modified
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, Counter()
-        for cellBlock in self.patchFile.tops[b'CELL'].cellBlocks:
-            cell_fid = cellBlock.cell.fid
+        for cell_fid, cellBlock in self.patchFile.tops[b'CELL'].id_cellBlock.items():
             if cell_fid in cellData and handlePatchCellBlock(cellBlock):
                 count[cell_fid[0]] += 1
-        for worldBlock in self.patchFile.tops[b'WRLD'].worldBlocks:
+        for worldId, worldBlock in self.patchFile.tops[
+            b'WRLD'].id_worldBlocks.items():
             keepWorld = False
-            for cellBlock in worldBlock.cellBlocks:
-                cell_fid = cellBlock.cell.fid
+            for cell_fid, cellBlock in worldBlock.id_cellBlock.items():
                 if cell_fid in cellData and handlePatchCellBlock(cellBlock):
                     count[cell_fid[0]] += 1
                     keepWorld = True
@@ -538,7 +531,7 @@ class ImportCellsPatcher(ImportPatcher):
                     count[cell_fid[0]] += 1
                     keepWorld = True
             if keepWorld:
-                keep(worldBlock.world.fid)
+                keep(worldId)
         self.cellData.clear()
         self._patchLog(log, count)
 
@@ -557,24 +550,27 @@ class ImportGraphicsPatcher(APreserver):
         id_data = self.id_data
         for rfid, record in records:
             if rfid not in id_data: continue
-            for attr, value in id_data[rfid].iteritems():
+            for attr, val in id_data[rfid].items():
                 rec_attr = __attrgetters[attr](record)
-                if isinstance(rec_attr, unicode) and isinstance(
-                        value, unicode):
-                    if rec_attr.lower() != value.lower():
+                if isinstance(rec_attr, str) and isinstance(val, str):
+                    if rec_attr.lower() != val.lower():
                         break
                     continue
                 elif attr in bush.game.graphicsModelAttrs:
                     try:
-                        if rec_attr.modPath.lower() != value.modPath.lower():
+                        if rec_attr.modPath.lower() != val.modPath.lower():
                             break
                         continue
-                    except: break  # assume they are not equal (ie they
-                        # aren't __both__ NONE)
-                if rec_attr != value: break
+                    except AttributeError:
+                        if rec_attr is val is None: continue
+                        if rec_attr is None or val is None: # not both
+                            break
+                        if rec_attr.modPath is val.modPath is None: continue
+                        break
+                if rec_attr != val: break
             else: continue
-            for attr, value in id_data[rfid].iteritems():
-                setattr(record, attr, value)
+            for attr, val in id_data[rfid].items():
+                setattr(record, attr, val)
             keep(rfid)
             type_count[top_mod_rec] += 1
 
@@ -589,17 +585,17 @@ class ImportRacesPatcher(APreserver):
         id_data = self.id_data
         for rfid, record in records:
             if rfid not in id_data: continue
-            for attr, value in id_data[rfid].iteritems():
+            for attr, val in id_data[rfid].items():
                 record_val = __attrgetters[attr](record)
                 if attr in (u'eyes', u'hairs'):
-                    if set(record_val) != set(value): break
+                    if set(record_val) != set(val): break
                 else:
                     if attr in (u'leftEye', u'rightEye') and not record_val:
                         deprint(u'Very odd race %s found - %s is None' % (
                             record.full, attr))
-                    elif record_val != value: break
+                    elif record_val != val: break
             else: continue
-            for attr, value in id_data[rfid].iteritems():
-                loop_setattr(record, attr, value)
+            for attr, val in id_data[rfid].items():
+                loop_setattr(record, attr, val)
             keep(rfid)
             type_count[top_mod_rec] += 1

@@ -16,38 +16,37 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
 import io
 import re
-from itertools import izip
-
 from . import SaveInfo
 from ._saves import SreNPC, SaveFile
-from .. import bush, bolt
-from ..bolt import Flags, encode, Path, struct_pack, struct_unpack, \
-    pack_int, pack_byte
-from ..brec import getModIndex, MreRecord, genFid, RecHeader, null2
+from .. import bush
+from ..bolt import Flags, encode, Path, struct_pack, struct_unpack, pack_int, \
+    pack_byte, structs_cache
+from ..brec import getModIndex, MreRecord, genFid, RecHeader, null2, \
+    int_unpacker
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
 class PCFaces(object):
     """Package: Objects and functions for working with face data."""
-    pcf_flags = Flags(0, Flags.getNames(u'pcf_name', u'race', u'gender',
-                                        u'hair', u'eye', u'iclass', u'stats',
-                                        u'factions', u'modifiers', u'spells'))
+    pcf_flags = Flags.from_names('pcf_name', 'race', 'gender', 'hair', 'eye',
+                                 'iclass', 'stats', 'factions', 'modifiers',
+                                 'spells')
 
     class PCFace(object):
         """Represents a face."""
         __slots__ = (
-            u'face_masters', u'eid', u'pcName', u'race', u'gender', u'eye',
-            u'hair', u'hairLength', u'hairRed', u'hairBlue', u'hairGreen',
-            u'unused3', u'fggs_p', u'fgga_p', u'fgts_p', u'level_offset',
-            u'attributes', u'skills', u'health', u'unused2', u'baseSpell',
-            u'fatigue', u'iclass', u'factions', u'modifiers', u'spells')
+            'face_masters', 'eid', 'pcName', 'race', 'gender', 'eye', 'hair',
+            'hairLength', 'hairRed', 'hairBlue', 'hairGreen', 'unused3',
+            'fggs_p', 'fgga_p', 'fgts_p', 'level_offset', 'attributes',
+            'skills', 'health', 'unused2', 'baseSpell', 'fatigue', 'iclass',
+            'factions', 'modifiers', 'spells')
 
         def __init__(self):
             self.face_masters = []
@@ -75,7 +74,7 @@ class PCFaces(object):
                 sValues = list(struct_unpack(f, getattr(self, a)))
                 fValues = list(struct_unpack(f, getattr(fromRace, a)))
                 tValues = list(struct_unpack(f, getattr(toRace, a)))
-                for index, (sValue, fValue, tValue) in list(enumerate(izip(
+                for index, (sValue, fValue, tValue) in list(enumerate(zip(
                         sValues, fValues, tValues))):
                     sValues[index] = sValue + fValue - tValue
                 setattr(self, a, struct_pack(f, *sValues))
@@ -86,78 +85,62 @@ class PCFaces(object):
         """Safely finds position of name within save ACHR data."""
         namePos = data.find(pcName)
         if namePos == -1:
-            raise SaveFileError(saveName,u'Failed to find pcName in PC ACHR record.')
+            raise SaveFileError(saveName,
+                                'Failed to find pcName in PC ACHR record.')
         namePos2 = data.find(pcName,namePos+1)
         if namePos2 != -1:
             raise SaveFileError(saveName,
-                u'Uncertain about position of face data, probably because '
-                u'player character name is too short. Try renaming player '
-                u'character in save game.')
+                'Uncertain about position of face data, probably because '
+                'player character name is too short. Try renaming player '
+                'character in save game.')
         return namePos
 
     # Save Get ----------------------------------------------------------------
     @staticmethod
     def save_getFaces(saveFile):
         """Returns player and created faces from a save file or saveInfo."""
-        if isinstance(saveFile,SaveInfo):
-            saveInfo = saveFile
-            saveFile = SaveFile(saveInfo)
-            saveFile.load()
-        faces = PCFaces.save_getCreatedFaces(saveFile)
+        faces = PCFaces._save_getCreatedFaces(saveFile)
         playerFace = PCFaces.save_getPlayerFace(saveFile)
         faces[7] = playerFace
         return faces
 
     @staticmethod
-    def save_getCreatedFace(saveFile,targetid):
-        """Gets a particular created face."""
-        return PCFaces.save_getCreatedFaces(saveFile,targetid).get(targetid)
-
-    @staticmethod
-    def save_getCreatedFaces(saveFile,targetid=None):
+    def _save_getCreatedFaces(saveFile):
         """Returns created faces from savefile. If fid is supplied, will only
         return created face with that fid.
         Note: Created NPCs do NOT use irefs!"""
-        targetid = bolt.intArg(targetid)
-        if isinstance(saveFile,SaveInfo):
-            saveInfo = saveFile
-            saveFile = SaveFile(saveInfo)
-            saveFile.load()
         faces = {}
-        for record in saveFile.created:
+        for rfid, record in saveFile.created.items():
             if record._rec_sig != b'NPC_': continue
             #--Created NPC record
-            if targetid and record.fid != targetid: continue
             npc = record.getTypeCopy()
             face = faces[npc.fid] = PCFaces.PCFace()
             face.face_masters = saveFile._masters
-            for a in (u'eid', u'race', u'eye', u'hair', u'hairLength',
-                      u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
-                      u'fggs_p', u'fgga_p', u'fgts_p', u'level_offset',
-                      u'skills', u'health', u'unused2', u'baseSpell',
-                      u'fatigue', u'attributes', u'iclass'):
+            for a in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
+                      'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
+                      'fgts_p', 'level_offset', 'skills', 'health', 'unused2',
+                      'baseSpell', 'fatigue', 'attributes', 'iclass'):
                 setattr(face, a, getattr(npc, a))
             face.gender = (0,1)[npc.flags.female]
             face.pcName = npc.full
             #--Changed NPC Record
-            PCFaces.save_getChangedNpc(saveFile,record.fid,face)
+            PCFaces.save_getChangedNpc(saveFile, rfid, face)
         return faces
 
     @staticmethod
-    def save_getChangedNpc(saveFile,fid,face=None):
+    def save_getChangedNpc(saveFile, npc_fid, face=None):
         """Update face with data from npc change record."""
         face = face or PCFaces.PCFace()
-        changeRecord = saveFile.getRecord(fid)
-        if not changeRecord:
+        changeRecord = saveFile.get_npc(npc_fid)
+        if changeRecord is None:
             return face
-        fid,_recType,recFlags,version,data = changeRecord
-        npc = SreNPC(recFlags,data)
+        npc, _version = changeRecord
         if npc.acbs:
             face.gender = npc.acbs.flags.female
             face.level_offset = npc.acbs.level_offset
             face.baseSpell = npc.acbs.baseSpell
             face.fatigue = npc.acbs.fatigue
-        for a in (u'attributes', u'skills', u'health', u'unused2'):
+        for a in ('attributes', 'skills', 'health', 'unused2'):
             npc_val = getattr(npc, a)
             if npc_val is not None:
                 setattr(face, a, npc_val)
@@ -166,13 +149,11 @@ class PCFaces(object):
         face.spells = [getFid(x) for x in (npc.spells or [])]
         face.factions = [(getFid(x),y) for x,y in (npc.factions or [])]
         face.modifiers = (npc.modifiers or [])[:]
-        #delist('npc.spells:',[strFid(x) for x in face.spells])
-        #delist('npc.factions:',face.factions)
-        #delist('npc.modifiers:',face.modifiers)
         return face
 
     @staticmethod
-    def save_getPlayerFace(saveFile):
+    def save_getPlayerFace(saveFile, *, __unpacker=int_unpacker,
+            __faceunpack=structs_cache['=200s120s200s3If3BsB'].unpack):
         """Extract player face from save file."""
         if isinstance(saveFile,SaveInfo):
             saveInfo = saveFile
@@ -182,15 +163,16 @@ class PCFaces(object):
         face.pcName = saveFile.header.pcName
         face.face_masters = saveFile._masters
         #--Player ACHR
-        record = saveFile.getRecord(0x14)
+        record = saveFile.fid_recNum.get(0x14)
         data = record[-1]
-        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.ci_key, data,
+        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.fn_key, data,
                                           encode(saveFile.header.pcName))
         (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair, face.eye,
-            face.hairLength, face.hairRed, face.hairBlue, face.hairGreen, face.unused3, face.gender) = struct_unpack(
-            u'=200s120s200s3If3BsB',data[namePos-542:namePos-1])
+         face.hairLength, face.hairRed, face.hairBlue, face.hairGreen,
+         face.unused3, face.gender) = __faceunpack(
+            data[namePos - 542:namePos - 1])
         classPos = namePos + len(saveFile.header.pcName) + 1
-        face.iclass, = struct_unpack(u'I', data[classPos:classPos+4])
+        face.iclass, = __unpacker(data[classPos:classPos+4])
         #--Iref >> fid
         getFid = saveFile.getFid
         face.race = getFid(face.race)
@@ -212,30 +194,28 @@ class PCFaces(object):
         saveFile.safeSave()
 
     @staticmethod
-    def save_setCreatedFace(saveFile,targetid,face):
+    def save_setCreatedFace(saveFile, targetid: int, face): ##: UNUSED!
         """Sets created face in savefile to specified face.
         Note: Created NPCs do NOT use irefs!"""
-        targetid = bolt.intArg(targetid)
         #--Find record
-        for index,record in enumerate(saveFile.created):
-            if record.fid == targetid:
+        for rfid, record in saveFile.created.items():
+            if rfid == targetid:
                 if record._rec_sig != b'NPC_':
-                    raise StateError(u'Record %08X in %s is not an NPC.' % (
-                        targetid, saveFile.fileInfo))
+                    raise StateError(f'Record {targetid:08X} in '
+                                     f'{saveFile.fileInfo} is not an NPC.')
                 npc = record.getTypeCopy()
-                saveFile.created[index] = npc
+                saveFile.created[rfid] = npc
                 break
         else:
-            raise StateError(u'Record %08X not found in %s.' % (
-                targetid, saveFile.fileInfo))
+            raise StateError(f'Record {targetid:08X} not found in '
+                             f'{saveFile.fileInfo}.')
         #--Update masters
-        for fid in (face.race, face.eye, face.hair):
-            if not fid: continue
+        for save_rec_fid in (face.race, face.eye, face.hair):
+            if not save_rec_fid: continue
             maxMaster = len(face.face_masters) - 1
-            mod = getModIndex(fid)
+            mod = getModIndex(save_rec_fid)
             master = face.face_masters[min(mod, maxMaster)]
-            if master not in saveFile._masters:
-                saveFile._masters.append(master)
+            saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
         #--Set face
         npc.full = face.pcName
@@ -260,13 +240,11 @@ class PCFaces(object):
         if face.iclass: npc.iclass = face.iclass
         npc.setChanged()
         npc.getSize()
-
         #--Change record?
-        changeRecord = saveFile.getRecord(npc.fid)
+        changeRecord = saveFile.get_npc(npc_int_fid := npc.fid)
         if changeRecord is None: return
-        fid,_recType,recFlags,version,data = changeRecord
-        npc = SreNPC(recFlags,data)
-        if not npc.acbs: npc.acbs = npc.getDefault(u'acbs')
+        npc, version = changeRecord
+        if not npc.acbs: npc.acbs = SreNPC.ACBS()
         npc.acbs.flags.female = face.gender
         npc.acbs.level_offset = face.level_offset
         npc.acbs.baseSpell = face.baseSpell
@@ -276,12 +254,11 @@ class PCFaces(object):
         getIref = saveFile.getIref
         npc.spells = [getIref(x) for x in face.spells]
         npc.factions = [(getIref(x),y) for x,y in face.factions]
-
         #--Done
-        saveFile.setRecord(npc.getTuple(fid,version))
+        saveFile.fid_recNum[npc_int_fid] = npc.getTuple(version)
 
     @staticmethod
-    def save_setPlayerFace(saveFile, face, pcf_flags=0, morphFacts=None):
+    def save_setPlayerFace(saveFile, face, pcf_flags=0):
         """Write a pcFace to a save file."""
         pcf_flags = PCFaces.pcf_flags(pcf_flags)
         #--Update masters
@@ -290,10 +267,8 @@ class PCFaces(object):
             maxMaster = len(face.face_masters) - 1
             mod = getModIndex(fid)
             master = face.face_masters[min(mod, maxMaster)]
-            if master not in saveFile._masters:
-                saveFile._masters.append(master)
+            saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
-
         #--Player ACHR
         #--Buffer for modified record data
         buff = io.BytesIO()
@@ -306,9 +281,9 @@ class PCFaces(object):
                 pack_int(buff, newRef)
             else:
                 buff.seek(4,1)
-        oldRecord = saveFile.getRecord(0x14)
+        oldRecord = saveFile.fid_recNum.get(0x14)
         oldData = oldRecord[-1]
-        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.ci_key, oldData,
+        namePos = PCFaces.save_getNamePos(saveFile.fileInfo.fn_key, oldData,
                                           encode(saveFile.header.pcName))
         buff.write(oldData)
         #--Modify buffer with face data.
@@ -349,13 +324,10 @@ class PCFaces(object):
             if customClass not in (newClass,oldClass):
                 buff.seek(pos)
                 buffPackRef(newClass)
-
         newData = buff.getvalue()
-        saveFile.setRecord(oldRecord[:-1]+(newData,))
-
+        saveFile.fid_recNum[0x14] = (*oldRecord[:-1], newData)
         #--Player NPC
-        (fid,_recType,recFlags,version,data) = saveFile.getRecord(7)
-        npc = SreNPC(recFlags,data)
+        npc, version = saveFile.get_npc()
         #--Gender
         if pcf_flags.gender and npc.acbs:
             npc.acbs.flags.female = face.gender
@@ -372,11 +344,10 @@ class PCFaces(object):
         #--Modifiers, Spells, Name
         if pcf_flags.modifiers: npc.modifiers = face.modifiers[:]
         if pcf_flags.spells:
-            #delist('Set PC Spells:',face.spells)
             npc.spells = [saveFile.getIref(x) for x in face.spells]
         npc.full = None
         #--Save
-        saveFile.setRecord(npc.getTuple(fid,version))
+        saveFile.fid_recNum[7] = npc.getTuple(version)
 
     # Save Misc ----------------------------------------------------------------
     @staticmethod
@@ -386,9 +357,9 @@ class PCFaces(object):
         if no repair was necessary."""
         saveFile = SaveFile(saveInfo)
         saveFile.load()
-        record = saveFile.getRecord(0x14)
+        record = saveFile.fid_recNum.get(0x14)
         data = record[-1]
-        namePos = PCFaces.save_getNamePos(saveInfo.ci_key, data,
+        namePos = PCFaces.save_getNamePos(saveInfo.fn_key, data,
                                           encode(saveFile.header.pcName))
         raceRef,hairRef = struct_unpack(u'2I', data[namePos-22:namePos-14])
         if hairRef != 0: return False
@@ -400,10 +371,9 @@ class PCFaces(object):
             hairForm = bush.game.raceHairMale.get(raceForm,0x90475)
         hairRef = saveFile.getIref(hairForm)
         data = data[:namePos-18]+struct_pack(u'I', hairRef)+data[namePos-14:]
-        saveFile.setRecord(record[:-1]+(data,))
+        saveFile.fid_recNum[0x14] = (*record[:-1], data)
         saveFile.safeSave()
         return True
-
     # MODS --------------------------------------------------------------------
     @staticmethod
     def _mod_load_fact(modInfo, keepAll=False, by_sig=None):
@@ -423,11 +393,10 @@ class PCFaces(object):
         for npc in modFile.tops[b'NPC_'].getActiveRecords():
             face = PCFaces.PCFace()
             face.face_masters = modFile.augmented_masters()
-            for a in (u'eid', u'race', u'eye', u'hair', u'hairLength',
-                      u'hairRed', u'hairBlue', u'hairGreen', u'unused3',
-                      u'fggs_p', u'fgga_p', u'fgts_p', u'level_offset',
-                      u'skills', u'health', u'unused2', u'baseSpell',
-                      u'fatigue', u'attributes', u'iclass'):
+            for a in ('eid', 'race', 'eye', 'hair', 'hairLength', 'hairRed',
+                      'hairBlue', 'hairGreen', 'unused3', 'fggs_p', 'fgga_p',
+                      'fgts_p', 'level_offset', 'skills', 'health', 'unused2',
+                      'baseSpell', 'fatigue', 'attributes', 'iclass'):
                 npc_val = getattr(npc, a)
                 if isinstance(npc_val, tuple): # Hacky check for FormIDs
                     npc_val = short_mapper(npc_val)
@@ -463,14 +432,13 @@ class PCFaces(object):
             tes4.author = u'[wb]'
         if not tes4.description:
             tes4.description = _(u'Face dump from save game.')
-        from . import modInfos ##: put it here so I know it's initialized...
-        if modInfos.masterName not in tes4.masters:
-            tes4.masters.append(modInfos.masterName)
+        if bush.game.master_file not in tes4.masters:
+            tes4.masters.append(bush.game.master_file)
         masterMap = MasterMap(face.face_masters, modFile.augmented_masters())
         #--Eid
         npcEids = {record.eid for record in modFile.tops[b'NPC_'].records}
-        eidForm = u''.join((u'sg', bush.game.raceShortNames.get(face.race, u'Unk'),
-            (face.gender and u'a' or u'u'), re.sub(u'' r'\W', u'', face.pcName), u'%02d'))
+        eidForm = u''.join(('sg', bush.game.raceShortNames.get(face.race, 'Unk'),
+            (face.gender and 'a' or 'u'), re.sub(r'\W', '', face.pcName), '%02d'))
         count,eid = 0, eidForm % 0
         while eid in npcEids:
             count += 1

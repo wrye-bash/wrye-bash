@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -172,6 +172,7 @@ settingDefaults = { # keep current naming format till refactored
     u'bash.pluginEncoding': u'cp1252',    # Western European
     u'bash.show_internal_keys': False,
     u'bash.restore_scroll_positions': False,
+    u'bash.autoSizeListColumns': 0,
     #--Colors
     u'bash.colors': {
         #--Common Colors
@@ -240,6 +241,7 @@ settingDefaults = { # keep current naming format till refactored
         u'Author': _(u'Author'),
         u'Cell': _(u'Cell'),
         u'CRC': _(u'CRC'),
+        'Current Index': _('Current Index'),
         u'Current Order': _(u'Current LO'),
         u'File': _(u'File'),
         u'Files': _(u'Files'),
@@ -267,6 +269,8 @@ settingDefaults = { # keep current naming format till refactored
         u'File': 80,
         u'Num': 30,
         u'Current Order': 60,
+        'Indices': 50,
+        'Current Index': 50,
     },
     #--Wrye Bash: Mod Docs
     u'bash.modDocs.show': False,
@@ -284,6 +288,7 @@ settingDefaults = { # keep current naming format till refactored
         u'Files': 55,
     },
     u'bash.installers.page': 0,
+    u'bash.installers.isFirstRun': True,
     u'bash.installers.enabled': True,
     u'bash.installers.autoAnneal': True,
     u'bash.installers.autoWizard': True,
@@ -292,6 +297,7 @@ settingDefaults = { # keep current naming format till refactored
     u'bash.installers.autoRefreshBethsoft': False,
     u'bash.installers.autoRefreshProjects': True,
     u'bash.installers.ignore_fomods': False,
+    'bash.installers.validate_fomods': True,
     u'bash.installers.removeEmptyDirs': True,
     u'bash.installers.skipScreenshots': False,
     u'bash.installers.skipScriptSources': False,
@@ -355,6 +361,8 @@ settingDefaults = { # keep current naming format till refactored
         u'CRC': 60,
         u'Mod Status': 50,
     },
+    u'bash.mods.details.colWidths': {},
+    u'bash.mods.details.colReverse': {},
     u'bash.mods.renames': {},
     u'bash.mods.scanDirty': True,
     u'bash.mods.export.skip': u'',
@@ -375,6 +383,8 @@ settingDefaults = { # keep current naming format till refactored
         u'Player': 70,
         u'Cell': 80,
     },
+    u'bash.saves.details.colWidths': {},
+    u'bash.saves.details.colReverse': {},
     #--Wrye Bash: BSAs
     u'bash.BSAs.cols': [u'File', u'Modified', u'Size'],
     u'bash.BSAs.sort': u'File',
@@ -413,8 +423,9 @@ if bush.game.Esp.check_master_sizes:
     settingDefaults[u'bash.colors'][u'mods.bkgd.size_mismatch'] = (255, 238,
                                                                    217)
 
-if bush.game.has_esl: # Enable Index column by default for ESL games
+if bush.game.has_esl: # Enable Index columns by default for ESL games
     settingDefaults[u'bash.mods.cols'].insert(2, u'Indices')
+    settingDefaults['bash.masters.cols'].extend(['Indices', 'Current Index'])
 
 # Images ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -482,7 +493,7 @@ installercons.images.extend({
     u'on.yellow.dir.wiz': _png(u'diamond_yellow_inc_wiz.png'),
     #--Broken
     u'corrupt':   _png(u'red_x.png'),
-}.viewitems())
+}.items())
 
 #--Buttons
 def imageList(template):

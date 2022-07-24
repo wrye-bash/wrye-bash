@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,10 +29,12 @@ from .. import balt, bass, bolt, bush, env
 from ..balt import EnabledLink, Links, colors
 from ..exception import AbstractError
 from ..fomod import FailedCondition, FomodInstaller, InstallerGroup, \
-    InstallerOption, InstallerPage
+    InstallerOption, InstallerPage, GroupType, OptionType
 from ..gui import CENTER, CheckBox, VBoxedLayout, HLayout, Label, \
     LayoutOptions, TextArea, VLayout, WizardDialog, PictureWithCursor, \
-    RadioButton, ScrollableWindow, Stretch, Table, BusyCursor, WizardPage
+    RadioButton, ScrollableWindow, Stretch, Table, BusyCursor, WizardPage, \
+    DialogWindow, HorizontalLine, OkButton, CancelButton, Button, \
+    copy_text_to_clipboard, TOP
 
 class FomodInstallInfo(object):
     __slots__ = (u'canceled', u'install_files', u'should_install')
@@ -45,10 +47,63 @@ class FomodInstallInfo(object):
         # should_install: boolean on whether to install the files
         self.should_install = True
 
+class ValidatorPopup(DialogWindow):
+    """Implements the error popup shown to the user when schema validation
+    fails."""
+    _def_size = (650, 400)
+    _warning_msg = _(
+        'The ModuleConfig.xml file used to specify the FOMOD installer for '
+        'this package does not conform to the FOMOD specification. This '
+        'should be reported to and fixed by the mod author. Please share the '
+        'error log shown below with them as well. You can use the "Copy Log" '
+        'button to easily copy it.') + '\n\n' + _(
+        'This warning can also be turned off globally via "Settings > '
+        'Validate FOMODs", but be aware that by doing so, Wrye Bash may fail '
+        'to install or incorrectly install invalid packages.') + '\n\n'
+
+    def __init__(self, parent, fm_name, error_lines):
+        super().__init__(parent,
+            title=_('FOMOD Validation Failed - %s') % fm_name,
+            sizes_dict=balt.sizes)
+        copy_log_btn = Button(self, _('Copy Log'))
+        copy_log_btn.tooltip = _('Copies the contents of the error log to the '
+                                 'clipboard.')
+        copy_log_btn.on_clicked.subscribe(self._handle_copy)
+        self._error_log = TextArea(self,
+            self._warning_msg + '\n'.join(error_lines), auto_tooltip=False,
+            editable=False)
+        continue_btn = OkButton(self, _('Continue Anyway'))
+        continue_btn.tooltip = _(
+            'If you continue regardless, Wrye Bash may fail to install the '
+            'package or have to make guesses as to what was intended.')
+        VLayout(item_expand=True, border=10, spacing=6, items=[
+            (HLayout(spacing=10, items=[
+                (balt.staticBitmap(self), LayoutOptions(v_align=TOP)),
+                (self._error_log, LayoutOptions(expand=True, weight=1)),
+            ]), LayoutOptions(weight=1)),
+            HLayout(items=[
+                Stretch(),
+                copy_log_btn,
+            ]),
+            HorizontalLine(self),
+            HLayout(items=[
+                continue_btn,
+                Stretch(),
+                CancelButton(self, _('Cancel Installation')),
+            ]),
+        ]).apply_to(self)
+
+    def _handle_copy(self):
+        """Called when the Copy Log button is clicked. Simply copies the
+        contents of the error log to the clipboard, minus the warning
+        message."""
+        copy_text_to_clipboard(
+            self._error_log.text_content[len(self._warning_msg):])
+
 class InstallerFomod(WizardDialog):
     _def_size = (600, 500)
 
-    def __init__(self, parent_window, target_installer):
+    def __init__(self, parent_window, target_installer, show_install_chkbox):
         # saving this list allows for faster processing of the files the fomod
         # installer will return.
         self.files_list = [a[0] for a in target_installer.fileSizeCrcs]
@@ -57,6 +112,7 @@ class InstallerFomod(WizardDialog):
             target_installer.extras_dict.get(u'root_path', u'')
             if target_installer.fileRootIdex else u'')
         fm_file = target_installer.fomod_file().s
+        self._show_install_checkbox = show_install_chkbox
         # Get the game version, be careful about Windows Store games
         test_path = bass.dirs[u'app'].join(bush.game.version_detect_file)
         try:
@@ -65,7 +121,7 @@ class InstallerFomod(WizardDialog):
                 gver = env.get_game_version_fallback(test_path, bush.ws_info)
         except OSError:
             gver = env.get_game_version_fallback(test_path, bush.ws_info)
-        version_string = u'.'.join([unicode(i) for i in gver])
+        version_string = u'.'.join([str(i) for i in gver])
         self.fomod_parser = FomodInstaller(
             fm_file, self.files_list, self.installer_root, bass.dirs[u'mods'],
             version_string)
@@ -73,7 +129,7 @@ class InstallerFomod(WizardDialog):
             parent_window, sizes_dict=bass.settings,
             title=_(u'FOMOD Installer - %s') % self.fomod_parser.fomod_name,
             size_key=u'bash.fomod.size', pos_key=u'bash.fomod.pos')
-        self.is_arch = target_installer.is_archive()
+        self.is_arch = target_installer.is_archive
         if self.is_arch:
             self.archive_path = bass.getTempDir()
         else:
@@ -100,7 +156,7 @@ class InstallerFomod(WizardDialog):
             sel_opts = None
         next_page = self.fomod_parser.move_to_next(sel_opts)
         if next_page is None:
-            return PageFinish(self)
+            return PageFinish(self, self._show_install_checkbox)
         else:
             return PageSelect(self, next_page)
 
@@ -120,9 +176,9 @@ class InstallerFomod(WizardDialog):
         try:
             self.fomod_parser.check_start_conditions()
         except FailedCondition as e:
-            fm_warning = _(u'This installer cannot start due to the following '
-                           u'unmet conditions:') + u'\n  ' + u'\n  '.join(
-                (u'%s' % e).splitlines()) + u'\n'
+            fm_warning = _('This installer cannot start due to the following '
+                           'unmet conditions:') + '\n' + '\n'.join(
+                f' - {l}' for l in str(e).splitlines())
             balt.showWarning(self, fm_warning,
                              title=_(u'Cannot Run Installer'), do_center=True)
             self._cancel_wizard()
@@ -132,11 +188,28 @@ class InstallerFomod(WizardDialog):
             # have to do it just in time
             self.fm_ret.install_files = bolt.LowerDict({
                 v: k for k, v
-                in self.fomod_parser.get_fomod_files().iteritems()})
+                in self.fomod_parser.get_fomod_files().items()})
         # Clean up temp files
         if self.is_arch:
             bass.rmTempDir()
         return self.fm_ret
+
+    def validate_fomod(self):
+        """Validates this FOMOD installer against the schema."""
+        if not bass.settings['bash.installers.validate_fomods']:
+            return True
+        was_valid, error_log = self.fomod_parser.try_validate()
+        if was_valid:
+            return True
+        error_lines = []
+        for xml_error in error_log:
+            error_lines.append(f'Line {xml_error.line}, column '
+                               f'{xml_error.column}:')
+            error_lines.append(f'  {xml_error.message}')
+            error_lines.append(f'  XML Path: {xml_error.path}')
+            error_lines.append('')
+        return ValidatorPopup.display_dialog(self,
+            self.fomod_parser.fomod_name, error_lines)
 
 class PageInstaller(WizardPage):
     """Base class for all the parser wizard pages, just to handle a couple
@@ -148,7 +221,6 @@ class PageInstaller(WizardPage):
 
     def on_next(self):
         """Create flow control objects etc, implemented by sub-classes."""
-        pass
 
 class PageSelect(PageInstaller):
     """A Page that shows a message up top, with a selection box on the left
@@ -156,14 +228,15 @@ class PageSelect(PageInstaller):
     description for each option, shown when that item is selected."""
     # Syntax: tuple containing text to show for an option of this type and a
     # boolean indicating whether to mark the text as a warning or not
-    _option_type_info = defaultdict(lambda: (u'', False))
-    _option_type_info[u'Required'] = (_(u'This option is required.'), False)
-    _option_type_info[u'Recommended'] = (_(u'This option is recommended.'),
-                                         False)
-    _option_type_info[u'CouldBeUsable'] = (_(u'This option could result in '
-                                             u'instability.'), True)
-    _option_type_info[u'NotUsable'] = (_(u'This option cannot be selected.'),
-                                       True)
+    _option_type_info = defaultdict(lambda: ('', False))
+    _option_type_info[OptionType.REQUIRED] = (
+        _('This option is required.'), False)
+    _option_type_info[OptionType.RECOMMENDED] = (
+        _('This option is recommended.'), False)
+    _option_type_info[OptionType.COULD_BE_USABLE] = (
+        _('This option could result in instability.'), True)
+    _option_type_info[OptionType.NOT_USABLE] = (
+        _('This option cannot be selected.'), True)
 
     def __init__(self, page_parent, inst_page):
         """:type inst_page: InstallerPage"""
@@ -196,8 +269,8 @@ class PageSelect(PageInstaller):
             first_selectable = None
             any_selected = False
             gtype = grp.group_type
-            group_force_selection = gtype in (u'SelectExactlyOne',
-                                              u'SelectAtLeastOne')
+            group_force_selection = gtype in (GroupType.SELECT_EXACTLY_ONE,
+                                              GroupType.SELECT_AT_LEAST_ONE)
             # A set of all option checkables to block in this group
             checkables_to_block = set()
             # Whether or not to block *all* checkables in this group. Whenever
@@ -207,7 +280,8 @@ class PageSelect(PageInstaller):
             block_all_in_group = False
             for option in grp: # type: InstallerOption
                 otype = option.option_type
-                if gtype in (u'SelectExactlyOne', u'SelectAtMostOne'):
+                if gtype in (GroupType.SELECT_EXACTLY_ONE,
+                             GroupType.SELECT_AT_MOST_ONE):
                     checkable = RadioButton(panel_groups,
                                             label=option.option_name,
                                             is_group=option is grp[0])
@@ -216,28 +290,30 @@ class PageSelect(PageInstaller):
                                          label=option.option_name)
                     # Mass selection makes no sense on radio buttons
                     checkable.on_context.subscribe(self._handle_context_menu)
-                    if gtype == u'SelectAll':
+                    if gtype is GroupType.SELECT_ALL:
                         checkable.is_checked = True
                         any_selected = True
                         checkables_to_block.add(checkable)
                 # Remember the first checkable we created for later
                 if not first_checkable:
                     first_checkable = checkable
-                if otype == u'Required':
+                if otype is OptionType.REQUIRED:
                     checkable.is_checked =  True
                     any_selected = True
-                    if gtype in (u'SelectExactlyOne', u'SelectAtMostOne'):
+                    if gtype in (GroupType.SELECT_EXACTLY_ONE,
+                                 GroupType.SELECT_AT_MOST_ONE):
                         block_all_in_group = True
                     else:
                         checkables_to_block.add(checkable)
-                elif otype == u'Recommended':
+                elif otype is OptionType.RECOMMENDED:
                     if not any_selected or not group_force_selection:
                         checkable.is_checked = True
                         any_selected = True
-                elif otype in (u'Optional', u'CouldBeUsable'):
+                elif otype in (OptionType.OPTIONAL,
+                               OptionType.COULD_BE_USABLE):
                     if first_selectable is None:
                         first_selectable = checkable
-                elif otype == u'NotUsable':
+                elif otype is OptionType.NOT_USABLE:
                     checkable.is_checked = False
                     checkables_to_block.add(checkable)
                 self.checkable_to_option[checkable] = option
@@ -257,7 +333,7 @@ class PageSelect(PageInstaller):
             # option
             initial_state = {c: c.is_checked for c in
                              self.group_option_map[grp]}
-            if gtype == u'SelectAtMostOne':
+            if gtype is GroupType.SELECT_AT_MOST_ONE:
                 none_button = RadioButton(panel_groups, label=_(u'None'))
                 if not any_selected:
                     none_button.is_checked = True
@@ -308,12 +384,12 @@ class PageSelect(PageInstaller):
         ##: Could maybe be de-wx'd further and moved to gui? RadioButtonGroup?
         frozen_state = self._frozen_states.get(block_checkable)
         if frozen_state:
-            for chk, chk_state in frozen_state.iteritems():
+            for chk, chk_state in frozen_state.items():
                 chk.is_checked = chk_state
         block_option = self.checkable_to_option[block_checkable]
         # Adjust the warning based on whether the problem is due to this option
         # or another one in the same group
-        if block_option.option_type == u'NotUsable':
+        if block_option.option_type is OptionType.NOT_USABLE:
             balt.showWarning(self, _(u'This option cannot be enabled.'))
         elif isinstance(block_checkable, CheckBox):
             balt.showWarning(self, _(u'This option is required and cannot be '
@@ -341,10 +417,11 @@ class PageSelect(PageInstaller):
         self._img_cache[opt_img] = self._bmp_item.set_bitmap(final_image)
         # Check if we need to display a special string above the description
         type_desc, type_warn = self._option_type_info[option.option_type]
-        if self.checkable_to_group[checkable].group_type == u'SelectAll':
+        cg_type = self.checkable_to_group[checkable].group_type
+        if cg_type is GroupType.SELECT_ALL:
             # Ugh. Some FOMODs set SelectAll but don't mark the options as
             # required. In such a case, we let the SelectAll win.
-            type_desc, type_warn = self._option_type_info[u'Required']
+            type_desc, type_warn = self._option_type_info[OptionType.REQUIRED]
         self._option_type_label.label_text = type_desc
         if type_warn:
             self._option_type_label.set_foreground_color(
@@ -361,25 +438,26 @@ class PageSelect(PageInstaller):
 
     def on_next(self):
         sel_options = []
-        for grp, option_chks in self.group_option_map.iteritems():
+        for grp, option_chks in self.group_option_map.items():
             opts_selected = [self.checkable_to_option[c] for c in option_chks
                              if c.is_checked]
             option_len = len(opts_selected)
             gtype = grp.group_type
-            if gtype == u'SelectExactlyOne' and option_len != 1:
+            if gtype is GroupType.SELECT_EXACTLY_ONE and option_len != 1:
                 fm_err = _(u'Group "{}" should have exactly 1 option selected '
                            u'but has {}.').format(grp.group_name, option_len)
                 self.show_fomod_error(fm_err)
-            elif gtype == u'SelectAtMostOne' and option_len > 1:
+            elif gtype is GroupType.SELECT_AT_MOST_ONE and option_len > 1:
                 fm_err = _(u'Group "{}" should have at most 1 option selected '
                            u'but has {}.').format(grp.group_name, option_len)
                 self.show_fomod_error(fm_err)
-            elif gtype == u'SelectAtLeast' and option_len < 1:
+            elif gtype is GroupType.SELECT_AT_LEAST_ONE and option_len < 1:
                 fm_err = _(u'Group "{}" should have at least 1 option '
                            u'selected but has {}.').format(grp.group_name,
                                                            option_len)
                 self.show_fomod_error(fm_err)
-            elif gtype == u'SelectAll' and option_len != len(option_chks):
+            elif (gtype is GroupType.SELECT_ALL
+                  and option_len != len(option_chks)):
                 fm_err = _(u'Group "{}" should have all options selected but '
                            u'has only {}.').format(grp.group_name,
                                                    option_len)
@@ -388,18 +466,19 @@ class PageSelect(PageInstaller):
         return sel_options
 
     def apply_selection(self, opt_selection):
-        for checkable_list in self.group_option_map.itervalues():
+        for checkable_list in self.group_option_map.values():
             for checkable in checkable_list:
                 if self.checkable_to_option[checkable] in opt_selection:
                     checkable.is_checked = True
 
 class PageFinish(PageInstaller):
-    def __init__(self, page_parent):
+    def __init__(self, page_parent, show_install_chkbox):
         super(PageFinish, self).__init__(page_parent)
         check_install = CheckBox(
             self, _(u'Install this package'),
             checked=self._page_parent.fm_ret.should_install)
         check_install.on_checked.subscribe(self._on_check_install)
+        check_install.visible = show_install_chkbox
         use_table = bass.settings[u'bash.fomod.use_table']
         check_tab_view = CheckBox(
             self, _(u'Use Table View'), checked=use_table,
@@ -453,8 +532,8 @@ class PageFinish(PageInstaller):
     @staticmethod
     def display_files(file_dict):
         if not file_dict: return u''
-        lines = [u'{} -> {}'.format(v, k) for k, v in file_dict.iteritems()]
-        lines.sort(key=unicode.lower)
+        lines = [f'{v} -> {k}' for k, v in file_dict.items()]
+        lines.sort(key=str.lower)
         return u'\n'.join(lines)
 
 # Some links for easier mass (de)selection of options
@@ -486,7 +565,7 @@ class _Group_MassSelect(_GroupLink):
         for checkable in self.window.group_option_map[self.selected_group]:
             # NotUsable options can't ever be enabled, so skip those
             otype = self.window.checkable_to_option[checkable].option_type
-            checkable.is_checked = (otype != u'NotUsable'
+            checkable.is_checked = (otype is not OptionType.NOT_USABLE
                                     and self._should_enable(checkable))
 
     def _should_enable(self, checkable):

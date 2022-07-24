@@ -16,14 +16,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains only the overrides of record classes needed for
 FO4VR."""
 
-from ...brec import MreHeaderBase, MelSet, MelStruct, MelBase, MelFidList
+from ...brec import MreHeaderBase, MelSet, MelStruct, MelBase, MelFid, \
+    MelSimpleArray
 
 # Only difference from FO4 is the default version, but this seems less hacky
 # than adding a game var just for this and dynamically importing it in FO4
@@ -38,7 +39,7 @@ class MreTes4(MreHeaderBase):
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelFidList(b'ONAM', u'overrides',),
+        MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', u'screenshot'),
         MelBase(b'INTV', u'unknownINTV'),
         MelBase(b'INCC', u'unknownINCC'),

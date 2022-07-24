@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -56,7 +56,8 @@ class WizardDialog(DialogWindow):
         ])
         self._wiz_layout.apply_to(self)
 
-    def on_closing(self, destroy=True):
+    def on_closing(self, destroy=True):  ##: this is again True -> not called
+        # via display_dialog context manager
         if destroy:
             # We were closed via the dialog 'X' button, mark the wizard as
             # canceled in this case too

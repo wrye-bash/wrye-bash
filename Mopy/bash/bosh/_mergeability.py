@@ -16,13 +16,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """Tmp module to get mergeability stuff out of bosh.__init__.py."""
 import os
+
 from .. import bush
+from ..bolt import sig_to_str
 from ..exception import ModError
 from ..mod_files import LoadFactory, ModHeaderReader, ModFile
 
@@ -35,6 +37,13 @@ def _is_mergeable_no_load(modInfo, reasons):
     if modInfo.isBP():
         if not verbose: return False
         reasons.append(_(u'Is Bashed Patch.'))
+    # Plugin INIs would get deactivated if the plugin got merged
+    plugin_ini_name = modInfo.get_ini_name()
+    plugin_inis_lower = {p.abs_path.stail.lower()
+                         for p in modInfo.get_store().ini_files()}
+    if plugin_ini_name.lower() in plugin_inis_lower:
+        if not verbose: return False
+        reasons.append(_('Has plugin INI (%s).') % plugin_ini_name)
     #--Bsa / blocking resources?
     has_resources = modInfo.hasResources()
     if has_resources != (False, False):
@@ -50,7 +59,7 @@ def _is_mergeable_no_load(modInfo, reasons):
                     dir_list += u'\n  - ' + blocking_dir
             reasons.append((_(u'Has plugin-specific directory - one of the '
                               u'following:') + dir_list) % {
-                u'plugin_name': modInfo.ci_key})
+                u'plugin_name': modInfo.fn_key})
     # Client must make sure NoMerge tag not in tags - if in tags
     # don't show up as mergeable.
     return False if reasons else True
@@ -71,7 +80,7 @@ def _pbash_mergeable_no_load(modInfo, reasons):
         if not verbose: return False
         from . import oblivionIni
         reasons.append(_(u'Missing String Translation Files (Strings\\%s_%s.STRINGS, etc).') % (
-            modInfo.name.sbody, oblivionIni.get_ini_language()))
+            modInfo.fn_key.fn_body, oblivionIni.get_ini_language()))
     return False if reasons else True
 
 def isPBashMergeable(modInfo, minfos, reasons):
@@ -87,42 +96,42 @@ def isPBashMergeable(modInfo, minfos, reasons):
         modFile.load(True,loadStrings=False)
     except ModError as error:
         if not verbose: return False
-        reasons.append(u'%s.' % error)
+        reasons.append(f'{error}.')
     #--Skipped over types?
     if modFile.topsSkipped:
         if not verbose: return False
-        reasons.append(_(u'Unsupported types: ') + u'%s.' % _join_sigs(
-            modFile.topsSkipped))
+        reasons.append(
+            _(u'Unsupported types: ') + f'{_join_sigs(modFile.topsSkipped)}.')
     #--Empty mod
     elif not modFile.tops:
         if not verbose: return False
         reasons.append(_(u'Empty mod.'))
     #--New record
     newblocks = []
-    self_name = modInfo.ci_key
-    for top_type,block in modFile.tops.iteritems():
+    self_name = modInfo.fn_key
+    for top_type,block in modFile.tops.items():
         for rfid, record in block.iter_present_records(): # skip deleted/ignored
             if rfid[0] == self_name:
                 if not verbose: return False
                 newblocks.append(top_type)
                 break
     if newblocks: reasons.append(
-        _(u'New record(s) in block(s): ') + u'%s.' % _join_sigs(newblocks))
+        _(u'New record(s) in block(s): ') + f'{_join_sigs(newblocks)}.')
     dependent = _dependent(self_name, minfos)
     if dependent:
         if not verbose: return False
         reasons.append(_(u'Is a master of non-mergeable mod(s): ')+u', '.join(sorted(dependent))+u'.')
     return False if reasons else True
 
-def _join_sigs(modFile):
-    return u', '.join(x.decode(u'ascii') for x in sorted(modFile))
+def _join_sigs(sigs):
+    return ', '.join(map(sig_to_str, sorted(sigs)))
 
 def _dependent(minfo_key, minfos):
     """Get mods for which modInfo is a master mod (excluding BPs and
     mergeable)."""
-    dependent = [mname.s for mname, info in minfos.iteritems() if
-                 not info.isBP() and minfo_key in info.masterNames and
-                 mname not in minfos.mergeable]
+    dependent = [mname for mname, info in minfos.items() if not info.isBP() and
+                 minfo_key in info.masterNames and mname not in
+                 minfos.mergeable]
     return dependent
 
 def is_esl_capable(modInfo, _minfos, reasons):

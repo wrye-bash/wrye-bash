@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -293,7 +293,7 @@ namesTypes = {
     b'ACTI', b'ALCH', b'AMMO', b'ARMO', b'AVIF', b'BOOK', b'CLAS', b'COBJ',
     b'CONT', b'CREA', b'DOOR', b'ENCH', b'EYES', b'FACT', b'HAIR', b'INGR',
     b'KEYM', b'LIGH', b'MESG', b'MGEF', b'MISC', b'NOTE', b'NPC_', b'PERK',
-    b'RACE', b'SPEL', b'TACT', b'TERM', b'WEAP',
+    b'QUST', b'RACE', b'SPEL', b'TACT', b'TERM', b'WEAP',
 }
 
 #------------------------------------------------------------------------------
@@ -305,28 +305,31 @@ pricesTypes = {b'ALCH', b'AMMO', b'ARMA', b'ARMO', b'BOOK', b'INGR', b'KEYM',
 #------------------------------------------------------------------------------
 # Import Stats
 #------------------------------------------------------------------------------
+# The contents of these tuples has to stay fixed because of CSV parsers
 statsTypes = {
-    b'ALCH': (u'eid', u'weight', u'value'),
-    b'AMMO': (u'eid', u'value', u'speed', u'clipRounds'),
-    b'ARMA': (u'eid', u'weight', u'value', u'health', u'dr'),
-    b'ARMO': (u'eid', u'weight', u'value', u'health', u'dr'),
-    b'BOOK': (u'eid', u'weight', u'value'),
-    b'INGR': (u'eid', u'weight', u'value'),
-    b'KEYM': (u'eid', u'weight', u'value'),
-    b'LIGH': (u'eid', u'weight', u'value', u'duration'),
-    b'MISC': (u'eid', u'weight', u'value'),
+    b'ALCH': ('eid', 'weight', 'value'),
+    b'AMMO': ('eid', 'value', 'speed', 'clipRounds'),
+    b'ARMA': ('eid', 'weight', 'value', 'health', 'dr'),
+    b'ARMO': ('eid', 'weight', 'value', 'health', 'dr'),
+    b'BOOK': ('eid', 'weight', 'value'),
+    b'EYES': ('eid', 'flags'),
+    b'HAIR': ('eid', 'flags'),
+    b'HDPT': ('eid', 'flags'),
+    b'INGR': ('eid', 'weight', 'value'),
+    b'KEYM': ('eid', 'weight', 'value'),
+    b'LIGH': ('eid', 'weight', 'value', 'duration'),
+    b'MISC': ('eid', 'weight', 'value'),
     b'WEAP': (
-        u'eid', u'weight', u'value', u'health', u'damage', u'clipsize',
-        u'animationMultiplier', u'reach', u'ammoUse', u'minSpread', u'spread',
-        u'sightFov', u'baseVatsToHitChance', u'projectileCount', u'minRange',
-        u'maxRange', u'animationAttackMultiplier', u'fireRate',
-        u'overrideActionPoint', u'rumbleLeftMotorStrength',
-        u'rumbleRightMotorStrength', u'rumbleDuration',
-        u'overrideDamageToWeaponMult', u'attackShotsPerSec', u'reloadTime',
-        u'jamTime', u'aimArc', u'rumbleWavelength', u'limbDmgMult',
-        u'sightUsage', u'semiAutomaticFireDelayMin',
-        u'semiAutomaticFireDelayMax', u'criticalDamage',
-        u'criticalMultiplier'),
+        'eid', 'weight', 'value', 'health', 'damage', 'clipsize',
+        'animationMultiplier', 'reach', 'ammoUse', 'minSpread', 'spread',
+        'sightFov', 'baseVatsToHitChance', 'projectileCount', 'minRange',
+        'maxRange', 'animationAttackMultiplier', 'fireRate',
+        'overrideActionPoint', 'rumbleLeftMotorStrength',
+        'rumbleRightMotorStrength', 'rumbleDuration',
+        'overrideDamageToWeaponMult', 'attackShotsPerSec', 'reloadTime',
+        'jamTime', 'aimArc', 'rumbleWavelength', 'limbDmgMult', 'sightUsage',
+        'semiAutomaticFireDelayMin', 'semiAutomaticFireDelayMax',
+        'criticalDamage', 'criticalMultiplier'),
 }
 
 #------------------------------------------------------------------------------
@@ -336,6 +339,7 @@ soundsTypes = {
     b'ACTI': (u'soundLooping', u'soundActivation'),
     b'ADDN': (u'ambientSound',),
     b'ALCH': (u'dropSound', u'pickupSound', u'soundConsume'),
+    b'ARMO': (u'pickupSound', u'dropSound'),
     b'ASPC': (u'soundLooping', u'useSoundFromRegion'),
     b'COBJ': (u'pickupSound', u'dropSound'),
     b'CONT': (u'soundOpen', u'soundClose'),
@@ -435,8 +439,10 @@ graphicsTypes = {
               u'addonModelsScaleEnd', u'addonModelsScaleInTime',
               u'addonModelsScaleOutTime'),
     b'EXPL': (u'model',),
+    b'EYES': (u'iconPath',),
     b'FURN': (u'model',),
     b'GRAS': (u'model',),
+    b'HAIR': (u'iconPath', u'model'),
     b'HDPT': (u'model',),
     b'INGR': (u'iconPath', u'model'),
     b'IPCT': (u'model', u'effectDuration', u'effectOrientation',
@@ -445,8 +451,8 @@ graphicsTypes = {
               u'parallaxScale', u'parallaxPasses', u'decalFlags', u'redDecal',
               u'greenDecal', u'blueDecal'),
     b'KEYM': (u'iconPath', u'smallIconPath', u'model'),
-    b'LIGH': (u'iconPath', u'model', u'duration', u'radius', u'red', u'green',
-              u'blue', u'flags', u'falloff', u'fade'),
+    b'LIGH': ('iconPath', 'model', 'radius', 'red', 'green', 'blue', 'flags',
+              'falloff', 'fov', 'fade'),
     b'LSCR': (u'iconPath',),
     b'MGEF': (u'iconPath', u'model'),
     b'MICN': (u'iconPath', u'smallIconPath'),
@@ -471,20 +477,17 @@ graphicsTypes = {
               u'reloadAnimation'),
 }
 graphicsFidTypes = {
-    b'ARMO': (u'enchantment',),
-    b'CREA': (u'enchantment', u'bodyPartData'),
+    b'CREA': ('bodyPartData',),
     b'EFSH': (u'addonModels',),
-    b'EXPL': (u'enchantment', u'imageSpaceModifier', u'light',
-              u'impactDataset', u'placedImpactObject'),
+    b'EXPL': ('imageSpaceModifier', 'light', 'impactDataset',
+              'placedImpactObject'),
     b'IPCT': (u'textureSet',),
     b'IPDS': (u'stone', u'dirt', u'grass', u'metal', u'wood', u'organic',
               u'cloth', u'water', u'hollowMetal', u'organicBug',
               u'organicGlow'),
     b'MGEF': (u'light', u'effectShader', u'enchantEffect'),
-    b'NPC_': (u'enchantment',),
     b'PROJ': (u'light', u'muzzleFlash', u'explosion'),
-    b'WEAP': (u'enchantment', u'scopeEffect', u'impactDataset',
-              u'firstPersonModel'),
+    b'WEAP': ('scopeEffect', 'impactDataset', 'firstPersonModel'),
 }
 graphicsModelAttrs = (u'model', u'shellCasingModel', u'scopeModel',
                       u'worldModel', u'maleBody', u'maleWorld', u'femaleBody',
@@ -499,16 +502,17 @@ inventoryTypes = (b'CREA',b'NPC_',b'CONT',)
 # Import Text
 #------------------------------------------------------------------------------
 text_types = {
-    b'AVIF': (u'description',),
-    b'BOOK': (u'book_text',),
-    b'CLAS': (u'description',),
-    b'LSCR': (u'description',),
-    b'MESG': (u'description',),
-    b'MGEF': (u'description',),
-    b'NOTE': (u'textTopic',),
-    b'PERK': (u'description',),
+    b'AMMO': ('short_name',),
+    b'AVIF': ('description', 'short_name'),
+    b'BOOK': ('book_text',),
+    b'CLAS': ('description',),
+    b'LSCR': ('description',),
+    b'MESG': ('description',),
+    b'MGEF': ('description',),
+    b'NOTE': ('textTopic',),
+    b'PERK': ('description',),
     # omit RACE - covered by R.Description
-    b'TERM': (u'description',),
+    b'TERM': ('description',),
 }
 
 #------------------------------------------------------------------------------
@@ -546,10 +550,6 @@ cc_passes = (
 #------------------------------------------------------------------------------
 # Import Scripts
 #------------------------------------------------------------------------------
-# In valda's version: 'WEAP', 'ACTI', 'ALCH', 'ARMO', 'BOOK', 'CONT', 'CREA',
-#                     'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
-#                     'QUST', 'TERM', 'TACT'
-# In valda's FNV version, only 'CCRD' got added
 # INGR and COBJ are unused - still including them, see e.g. APPA in Skyrim
 scripts_types = {b'ACTI', b'ALCH', b'ARMO', b'BOOK', b'COBJ', b'CONT', b'CREA',
                  b'DOOR', b'FURN', b'INGR', b'KEYM', b'LIGH', b'MISC', b'NPC_',
@@ -589,7 +589,9 @@ actor_importer_attrs = {
                            u'confidence', u'energyLevel', u'mood',
                            u'responsibility', u'services', u'trainLevel',
                            u'trainSkill'),
+        'Actors.Anims': ('animations',),
         u'Actors.CombatStyle': (u'combatStyle',),
+        'Actors.DeathItem': ('deathItem',),
         u'Actors.RecordFlags': (u'flags1',),
         u'Actors.Skeleton': (u'model',),
         u'Actors.Stats': (u'agility', u'charisma', u'combatSkill', u'damage',
@@ -618,7 +620,9 @@ actor_importer_attrs = {
                            u'confidence', u'energyLevel', u'mood',
                            u'responsibility', u'services', u'trainLevel',
                            u'trainSkill'),
+        'Actors.Anims': ('animations',),
         u'Actors.CombatStyle': (u'combatStyle',),
+        'Actors.DeathItem': ('deathItem',),
         u'Actors.RecordFlags': (u'flags1',),
         u'Actors.Skeleton': (u'model',),
         u'Actors.Stats': (u'attributes', u'health', u'skillOffsets',
@@ -635,7 +639,7 @@ actor_types = (b'CREA', b'NPC_')
 #------------------------------------------------------------------------------
 # Import Spell Stats
 #------------------------------------------------------------------------------
-spell_stats_attrs = (u'eid', u'cost', u'level', u'spellType', u'flags')
+spell_stats_attrs = (u'eid', u'cost', u'level', u'spellType', u'spell_flags')
 
 #------------------------------------------------------------------------------
 # Tweak Actors
@@ -649,13 +653,33 @@ actor_tweaks = {
 # Tweak Names
 #------------------------------------------------------------------------------
 names_tweaks = {
-    u'NamesTweak_BodyPartCodes',
-    u'NamesTweak_Body_Armor_Fo3',
-    u'NamesTweak_Ingestibles_Fo3',
-    u'NamesTweak_Weapons_Fo3',
-    u'NamesTweak_AmmoWeight_Fo3',
+    'NamesTweak_BodyPartCodes',
+    'NamesTweak_Body_Armor_Fo3',
+    'NamesTweak_Ingestibles_Fo3',
+    'NamesTweak_Weapons_Fo3',
+    'NamesTweak_AmmoWeight_Fo3',
+    'NamesTweak_RenameCaps',
 }
 body_part_codes = (u'HAGPBFE', u'HBGPEFE')
+gold_attrs = lambda _self_ignore, gm_master: {
+    'eid': 'Caps001',
+    'bounds.boundX1': -2,
+    'bounds.boundY1': -2,
+    'bounds.boundZ1': -1,
+    'bounds.boundX2': 2,
+    'bounds.boundY2': 2,
+    'bounds.boundZ2': 0,
+    'model.modPath': r'Clutter\Junk\NukaColaCap.NIF',
+    'model.modb_p': None,
+    'model.modt_p': None,
+    'model.alternateTextures': None,
+    'model.facegen_model_flags': None,
+    'iconPath': r'Interface\Icons\PipboyImages\Items\items_nuka_cola_cap.dds',
+    'pickupSound': (gm_master, 0x0864D8), # ITMBottlecapsUp
+    'dropSound': (gm_master, 0x0864D7), # ITMBottlecapsDown
+    'value': 1,
+    'weight': 0.0,
+}
 
 #------------------------------------------------------------------------------
 # Tweak Settings
@@ -696,6 +720,13 @@ settings_tweaks = {
     u'GmstTweak_Prompt_Sit_Tes4',
     u'GmstTweak_Prompt_Take_Tes4',
     u'GmstTweak_Prompt_Talk_Tes4',
+    u'GmstTweak_Combat_SpeakOnHitChance',
+    u'GmstTweak_Combat_SpeakOnHitThreshold',
+    u'GmstTweak_Combat_SpeakOnPowerAttackChance',
+    u'GmstTweak_Combat_MaxAllyHitsInCombat',
+    u'GmstTweak_Combat_MaxAllyHitsOutOfCombat',
+    u'GmstTweak_Combat_MaxFriendHitsInCombat',
+    u'GmstTweak_Combat_MaxFriendHitsOutOfCombat',
 }
 
 #------------------------------------------------------------------------------
@@ -725,11 +756,6 @@ static_attenuation_rec_type = b'SOUN'
 # Import Relations
 #------------------------------------------------------------------------------
 relations_attrs = (u'faction', u'mod', u'group_combat_reaction')
-relations_csv_header = (
-    _(u'Main Eid'), _(u'Main Mod'), _(u'Main Object'), _(u'Other Eid'),
-    _(u'Other Mod'), _(u'Other Object'), _(u'Modifier'),
-    _(u'Group Combat Reaction'))
-relations_csv_row_format = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s","%s"\n'
 
 #------------------------------------------------------------------------------
 # Import Enchantment Stats
@@ -771,6 +797,11 @@ import_races_attrs = {
 }
 
 #------------------------------------------------------------------------------
+# Import Enchantments
+#------------------------------------------------------------------------------
+enchantment_types = {b'ARMO', b'CREA', b'EXPL', b'NPC_', b'WEAP'}
+
+#------------------------------------------------------------------------------
 # Tweak Races
 #------------------------------------------------------------------------------
 race_tweaks = {
@@ -788,9 +819,8 @@ race_tweaks_need_collection = True
 #------------------------------------------------------------------------------
 # NPC Checker
 #------------------------------------------------------------------------------
-# Note that we use _x to avoid exposing these to the dynamic importer
 def _fid(_x): return None, _x # None <=> game master
-_standard_eyes = [_fid(_x) for _x in (0x4252, 0x4253, 0x4254, 0x4255, 0x4256)]
+_standard_eyes = [*map(_fid, (0x4252, 0x4253, 0x4254, 0x4255, 0x4256))]
 default_eyes = {
     #--FalloutNV.esm
     # Caucasian

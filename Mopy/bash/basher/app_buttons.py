@@ -16,12 +16,10 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-from __future__ import division
-
 import os
 import subprocess
 import webbrowser
@@ -32,8 +30,7 @@ from .. import bass, bosh, bolt, balt, bush, load_order
 from ..balt import ItemLink, Link, Links, SeparatorLink, BoolLink
 from ..env import getJava, get_game_version_fallback
 from ..exception import AbstractError
-from ..gui import ClickableImage, EventResult, staticBitmap, get_key_down, \
-    get_shift_down
+from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down
 
 __all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
            u'TESCS_Button', u'App_Tes4View', u'App_BOSS', u'App_Help',
@@ -72,8 +69,7 @@ class StatusBar_Button(ItemLink):
         self.canHide = canHide
         self.gButton = None
         self._tip = button_tip or self.__class__._tip
-        # PY3: drop the unicode()
-        if uid is None: uid = (unicode(self.__class__.__name__), self._tip)
+        if uid is None: uid = (self.__class__.__name__, self._tip)
         self.uid = uid
 
     def IsPresent(self):
@@ -85,7 +81,7 @@ class StatusBar_Button(ItemLink):
     def GetBitmapButton(self, window, image=None, onRClick=None):
         """Create and return gui button - you must define imageKey - WIP overrides"""
         btn_image = image or balt.images[self.imageKey % bass.settings[
-            u'bash.statusbar.iconSize']].GetBitmap()
+            u'bash.statusbar.iconSize']].get_bitmap()
         if self.gButton is not None:
             self.gButton.destroy_component()
         self.gButton = ClickableImage(window, btn_image,
@@ -172,7 +168,7 @@ class _App_Button(StatusBar_Button):
         iconSize = bass.settings[u'bash.statusbar.iconSize'] # 16, 24, 32
         idex = (iconSize // 8) - 2 # 0, 1, 2, duh
         super(_App_Button, self).GetBitmapButton(
-            window, self.images[idex].GetBitmap(), onRClick)
+            window, self.images[idex].get_bitmap(), onRClick)
         if self.obseTip is not None:
             _App_Button.obseButtons.append(self)
             if BashStatusBar.obseButton.button_state:
@@ -181,9 +177,9 @@ class _App_Button(StatusBar_Button):
 
     def ShowError(self,error):
         balt.showError(Link.Frame,
-                       (u'%s'%error + u'\n\n' +
-                        _(u'Used Path: ') + u'%s\n' % self.exePath +
-                        _(u'Used Arguments: ') + u'%s' % (self.exeArgs,)),
+                       (f'{error}\n\n' +
+                        _(u'Used Path: ') + f'{self.exePath}\n' +
+                        _(u'Used Arguments: ') + f'{self.exeArgs}'),
                        _(u"Could not launch '%s'") % self.exePath.stail)
 
     def _showUnicodeError(self):
@@ -201,9 +197,9 @@ class _App_Button(StatusBar_Button):
         self._app_button_execute()
 
     def _app_button_execute(self):
-        dir_ = os.getcwdu()
-        args = u'"%s"' % self.exePath
-        args += u' '.join([u'%s' % arg for arg in self.exeArgs])
+        dir_ = os.getcwd()
+        args = f'"{self.exePath}"'
+        args += u' '.join([f'{arg}' for arg in self.exeArgs])
         try:
             import win32api
             r, executable = win32api.FindExecutable(self.exePath.s)
@@ -244,7 +240,6 @@ class _ExeButton(_App_Button):
         cwd = bolt.Path.getcwd()
         exe_path.head.setcwd()
         try:
-            ##: Same unicodeSafe problem here - see Path.start
             popen = subprocess.Popen(exe_args, close_fds=True)
             if self.wait:
                 popen.wait()
@@ -327,7 +322,7 @@ def app_button_factory(exePathArgs, *args, **kwargs):
         return _ExeButton(exePath, exeArgs, *args, **kwargs)
     if exePath and exePath.cext == u'.jar':
         return _JavaButton(exePath, exeArgs, *args, **kwargs)
-    if exePath and( exePath.cext == u'.lnk' or exePath.isdir()):
+    if exePath and( exePath.cext == u'.lnk' or exePath.is_dir()):
         return _LnkOrDirButton(exePath, exeArgs, *args, **kwargs)
     return _App_Button(exePath, exeArgs, *args, **kwargs)
 
@@ -388,8 +383,8 @@ class App_Tes4View(_ExeButton):
             self.mainMenu.append(_Mods_xEditExpert())
             self.mainMenu.append(_Mods_xEditSkipBSAs())
 
-    def IsPresent(self): # FIXME(inf) What on earth is this? What's the point??
-        if self.exePath in bosh.undefinedPaths or not self.exePath.exists():
+    def IsPresent(self): # FIXME(inf) What on earth is this? What's the point?? --> check C:\not\a\valid\path.exe in default.ini
+        if not super().IsPresent():
             testPath = bass.tooldirs[u'Tes4ViewPath']
             if testPath not in bosh.undefinedPaths and testPath.exists():
                 self.exePath = testPath
@@ -463,7 +458,7 @@ class App_BOSS(_ExeButton):
                 # on timestamp method scan the data dir, if not loadorder.txt
                 # should have changed, refreshLoadOrder should detect that
                 bosh.modInfos.refresh(
-                    refresh_infos=not bosh.load_order.using_txt_file())
+                    refresh_infos=not bush.game.using_txt_file)
             # Refresh UI, so WB is made aware of the changes to load order
             BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
 
@@ -507,14 +502,14 @@ class Game_Button(_ExeButton):
             exe_path = self.exePath # Default to the regular launcher
             if BashStatusBar.laaButton.button_state:
                 # Should use the LAA Launcher if it's present
-                exe_path = (exe_laa if exe_laa.isfile() else exe_path)
+                exe_path = (exe_laa if exe_laa.is_file() else exe_path)
             elif BashStatusBar.obseButton.button_state:
                 # OBSE refuses to start when its EXE is launched on a Steam
                 # installation
                 if (bush.game.fsName != u'Oblivion'
                         or u'steam' not in bass.dirs[u'app'].cs):
                     # Should use the xSE launcher if it's present
-                    exe_path = (exe_xse if exe_xse.isfile() else exe_path)
+                    exe_path = (exe_xse if exe_xse.is_file() else exe_path)
             self._run_exe(exe_path, [exe_path.s])
         if bass.settings.get(u'bash.autoQuit.on', False):
             Link.Frame.close_win(True)
@@ -573,7 +568,7 @@ class TESCS_Button(_ExeButton):
     def _app_button_execute(self):
         exe_xse = bass.dirs[u'app'].join(bush.game.Se.exe)
         if (self.xse_args and BashStatusBar.obseButton.button_state
-                and exe_xse.isfile()):
+                and exe_xse.is_file()):
             # If the script extender for this game has CK support, the xSE
             # loader is present and xSE is enabled, use that executable and
             # pass the editor argument to it
@@ -600,7 +595,7 @@ class _StatefulButton(StatusBar_Button):
             self.button_state = True ^ self.button_state
         if self.gButton:
             self.gButton.image = balt.images[self.imageKey % bass.settings[
-                u'bash.statusbar.iconSize']].GetBitmap()
+                u'bash.statusbar.iconSize']].get_bitmap()
             self.gButton.tooltip = self.sb_button_tip
 
     @property
@@ -734,8 +729,7 @@ class App_Restart(StatusBar_Button):
     def GetBitmapButton(self, window, image=None, onRClick=None):
         iconSize = bass.settings[u'bash.statusbar.iconSize']
         return super(App_Restart, self).GetBitmapButton(window,
-            staticBitmap(window, special=u'undo', size=(iconSize, iconSize)),
-            onRClick)
+            bass.wx_bitmap[('ART_UNDO', iconSize)], onRClick)
 
     def Execute(self): Link.Frame.Restart()
 

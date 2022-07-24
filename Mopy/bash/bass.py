@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,8 +29,11 @@ and environment issues - do not modify or imitate (ut)."""
 
 # The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
-AppVersion = u'309.1'  # must represent a valid float
+AppVersion = '310'  # must represent a valid float
 is_standalone = False # whether or not we're on standalone
+
+# wx bitmaps cached to workaround locale issues
+wx_bitmap = {}
 
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()
@@ -77,7 +80,7 @@ def rmTempDir():
         _tempDir.rmtree(safety=_tempDir.stail)
     except OSError:
         from .bolt import deprint
-        deprint(u'Failed to remove %s' % _tempDir, traceback=True)
+        deprint(f'Failed to remove {_tempDir}', traceback=True)
     _tempDir = None
 
 def newTempDir():

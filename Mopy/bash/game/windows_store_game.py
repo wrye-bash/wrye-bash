@@ -17,7 +17,7 @@
 #  along with Wrye Bash; if not, write to the Free Software Foundation,
 #  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -43,8 +43,8 @@ class WindowsStoreMixin(object):
         return super(WindowsStoreMixin,
             cls).game_detect_includes + [u'appxmanifest.xml']
 
-    # Disable any tools that require hooking into the game's executable. Even if
-    # the user manually installs these, they will not work, with no workable
+    # Disable any tools that require hooking into the game's executable. Even
+    # if the user manually installs these, they will not work, with no workable
     # solution found by the tool devs.
     class Se(GameInfo.Se):
         pass

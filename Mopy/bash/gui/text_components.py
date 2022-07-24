@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,7 +29,7 @@ __author__ = u'nycz, Infernio'
 import wx as _wx
 import wx.adv as _adv
 
-from .base_components import _AComponent, csf
+from .base_components import _AComponent, scaled
 from .events import EventResult
 
 # Text Input ------------------------------------------------------------------
@@ -51,13 +51,12 @@ class _ATextInput(_AComponent):
      - on_focus_lost(): Posted when this text input goes out of focus. Used in
        WB to auto-save edits.
      - on_right_clicked(): Posted when this text input is right-clicked.
-     - on_text_changed(new_text: unicode): Posted when the text in this text
+     - on_text_changed(new_text: str): Posted when the text in this text
        input changes. Be warned that changing it via _ATextInput.text_content
        also posts this event, so if you have to change text in response to this
        event, use _ATextInput.modified to check if it was a user modification;
        otherwise, you risk getting into an infinite loop."""
-    # PY3: typing # type _native_widget: _wx.TextCtrl
-    _wx_widget_type = _wx.TextCtrl
+    _native_widget: _wx.TextCtrl
 
     # TODO: (fixed) font(s)
     def __init__(self, parent, init_text=None, multiline=True, editable=True,
@@ -104,7 +103,7 @@ class _ATextInput(_AComponent):
             self._on_size_changed.subscribe(self._on_size_change)
             self.on_text_changed.subscribe(self._update_tooltip)
 
-    def _update_tooltip(self, new_text): # type: (unicode) -> None
+    def _update_tooltip(self, new_text): # type: (str) -> None
         """Internal callback that shows or hides the tooltip depending on the
         length of the currently entered text and the size of this text input.
 
@@ -135,14 +134,14 @@ class _ATextInput(_AComponent):
         self._native_widget.SetEditable(is_editable)
 
     @property
-    def text_content(self): # type: () -> unicode
+    def text_content(self): # type: () -> str
         """Returns the text that is currently inside this text input.
 
         :return: The entered text."""
         return self._native_widget.GetValue()
 
     @text_content.setter
-    def text_content(self, new_text): # type: (unicode) -> None
+    def text_content(self, new_text): # type: (str) -> None
         """Changes the text inside this text input to the specified string.
 
         :param new_text: What to change this text input's text to."""
@@ -165,6 +164,9 @@ class _ATextInput(_AComponent):
                             modified."""
         self._native_widget.SetModified(is_modified)
 
+    def select_all_text(self):
+        self._native_widget.SelectAll()
+
 class TextArea(_ATextInput):
     """A multi-line text edit widget. See the documentation for _ATextInput
     for a list of the events this component offers."""
@@ -175,7 +177,7 @@ class TextArea(_ATextInput):
         :param do_wrap: Whether or not to wrap text inside this text area."""
         wrap_style = _wx.TE_DONTWRAP if not kwargs.pop('do_wrap', True) else 0
         super(TextArea, self).__init__(parent, *args, style=wrap_style,
-            **kwargs)
+                                       **kwargs)
 
 class TextField(_ATextInput):
     """A single-line text edit widget. Pressing Enter while it is focused will
@@ -203,20 +205,31 @@ class TextField(_ATextInput):
 
 class SearchBar(TextField):
     """A variant of TextField that looks like a typical search bar."""
-    _wx_widget_type = _wx.SearchCtrl
+    _native_widget: _wx.SearchCtrl
+
+    def __init__(self, parent, *args, hint=_('Search'), **kwargs):
+        """Creates a new TextField instance with the specified properties.
+        See _ATextInput for documentation on kwargs.
+
+        :param hint: The string to show if nothing has been entered into
+            the search bar. Optional, defaults to 'Search'."""
+        super().__init__(parent, *args, **kwargs)
+        ##: Not sure what the difference between SetHint and SetDescriptiveText
+        # is supposed to be, but this one works while SetHint does not...
+        self._native_widget.SetDescriptiveText(hint)
 
 # Labels ----------------------------------------------------------------------
 class _ALabel(_AComponent):
     """Abstract base class for labels."""
     @property
-    def label_text(self): # type: () -> unicode
+    def label_text(self): # type: () -> str
         """Returns the text of this label as a string.
 
         :return: The text of this label."""
         return self._native_widget.GetLabel()
 
     @label_text.setter
-    def label_text(self, new_text): # type: (unicode) -> None
+    def label_text(self, new_text): # type: (str) -> None
         """Changes the text of this label to the specified string.
 
         :param new_text: The new text to use."""
@@ -228,7 +241,7 @@ class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
     interacted with by the user."""
     # _native_widget: type: _wx.StaticText
-    _wx_widget_type = _wx.StaticText
+    _native_widget: _wx.StaticText
 
     def __init__(self, parent, init_text, alignment=TextAlignment.LEFT):
         """Creates a new Label with the specified parent and text.
@@ -245,16 +258,16 @@ class Label(_ALabel):
 
         :param max_length: The maximum number of device-independent pixels
             (DIP) a line may be long."""
-        self._native_widget.Wrap(max_length * csf())
+        self._native_widget.Wrap(scaled(max_length))
 
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a
     browser. Typically styled blue.
 
     Events:
-        - on_link_clicked(target_url: unicode): Posted when the link is
+        - on_link_clicked(target_url: str): Posted when the link is
         clicked on by the user."""
-    _wx_widget_type = _adv.HyperlinkCtrl
+    _native_widget: _adv.HyperlinkCtrl
 
     def __init__(self, parent, init_text, url, always_unvisited=False):
         """Creates a new HyperlinkLabel with the specified parent, text and
@@ -275,6 +288,7 @@ class HyperlinkLabel(_ALabel):
             lambda event: [event.GetURL()])
 
 # Spinner - technically text, just limited to digits --------------------------
+# Unused right now, but don't remove - I have some plans that will need it
 class Spinner(_AComponent):
     """A field for entering integers. Features small arrow buttons on the right
     to decrement and increment the value.
@@ -282,7 +296,7 @@ class Spinner(_AComponent):
     Events:
       - on_spun(): Posted when a new value is entered into the spinner (whether
         manually or through the buttons)."""
-    _wx_widget_type = _wx.SpinCtrl
+    _native_widget: _wx.SpinCtrl
 
     def __init__(self, parent, min_val=0, max_val=100, spin_tip=None):
         super(Spinner, self).__init__(parent, style=_wx.SP_ARROW_KEYS,

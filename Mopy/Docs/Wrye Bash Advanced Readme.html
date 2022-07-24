@@ -181,14 +181,14 @@
 <h3 id="install-components">Python Components <a class="back2top" href="#contents">Back to top</a></h3>
 <p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.</p>
 <p class="emphasis">Note that the 64-bit versions are <em>required</em> - we no longer support 32-bit operating systems.</p>
-<p><a href="https://www.python.org/ftp/python/2.7.18/python-2.7.18.amd64.msi">Python 2.7.18</a>: Versions prior to this one may work with Wrye Bash,
+<p><a href="https://www.python.org/ftp/python/3.9.2/python-3.9.2-amd64.exe">Python 3.9.2</a>: Versions prior to this one may work with Wrye Bash,
     but have not been tested. Updating is recommended for bug and security fixes.</p>
 <p>Installation is easiest by just using pip, which comes with Python (see above). Simply run <code>path/to/python.exe -m pip install -r requirements.txt</code>
     (obviously replacing <code>path/to/python.exe</code> with the actual path to your python.exe).</p>
 <p>If you want to do it manually, the rest of this section will list out each
     dependency and what it's used for. Using the latest version of these is
-    recommended. If that one doesn't work / isn't available for Python 2, use
-    the newest version that does work.</p>
+    recommended. If that one doesn't work, use the newest version that does
+    work.</p>
 <p>Required libaries:</p>
 <ul>
     <li><a href="https://pypi.org/project/chardet">chardet</a>: Used to detect
@@ -205,8 +205,6 @@
 </ul>
 <p>Optional libaries:</p>
 <ul>
-    <li><a href="https://pypi.org/project/scandir">scandir</a>: Many refresh
-        and BAIN operations will become faster if this is installed.</li>
     <li><a href="https://pypi.org/project/PyMuPDF">PyMuPDF</a>: The doc browser
         will be able to display PDFs if this is installed.</li>
 </ul>
@@ -264,7 +262,6 @@
     <li>Silent skips. These are <em>not</em> listed on the <q>Skipped</q> panel on the right and are:
         <ul>
             <li><code>thumbs.db</code> and <code>desktop.ini</code> files
-            <li>any path that ends in <code>config</code>
             <li>the omod conversion directory (<code>omod conversion data</code>, <code>fomod</code>) if on the top level of package or subpackage
             <li>the <code>wizard images</code> directory (again if on the top level of package or subpackage)
             <li>Developer files. Any file or directory that begins with <code>'--'</code> and is at the top level of a package or a subpackage will be silently skipped. This is so that mod
@@ -313,8 +310,18 @@ tab. The directories skipped are:
         <tr><td>docs<td colspan="2">If <a href="#bainSkipDocs">Skip Docs</a>  <strong>and</strong> <a href="#bainSkipImages">Skip Images</a> are
             <strong>both</strong> checked
         <tr><td>Script extender<td colspan="2">If <a href="#bainSkipSEPlugins">Skip **SE Plugins</a> is checked (see game specific below)
-        <tr><td>screenshots<td colspan="2">If <a href="#bainSkipScreenshots">Skip Screenshots</a> is checked <!-- (that may change as Skip Screenshots will
-            skip a screenshots directory in the package, whose contents would be currently installed in Data/Docs, not Data/Screenshots). -->
+        <tr>
+            <td>screenshots</td>
+            <td colspan="2">If <a href="#bainSkipScreenshots">Skip Screenshots</a> is checked</td>
+        </tr>
+        <tr>
+            <td>screens</td>
+            <td colspan="2">See <q>screenshots</q> above</td>
+        </tr>
+        <tr>
+            <td>ss</td>
+            <td colspan="2">See <q>screenshots</q> above</td>
+        </tr>
         <tr class="tabttl"><th colspan="3">Skipped file extensions
     <tbody>
     <tr><td colspan="3">.001, .7z, .7z.001, .ace, .bz2, .ckm, .db, .exe, .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar, .tb2, .tgz, .zip
@@ -505,7 +512,7 @@ tab. The directories skipped are:
         <tr><td>Modified<td>Display the (date) Modified column.
         <tr><td>Size<td>Display the Size column.
         <tr><td>Files<td>Display the (number of) Files column.
-        <tr><td rowspan="3">Files..</td>
+        <tr><td rowspan="4">Files..</td>
             <td id="bainOpenDir">Open Folder...</td><td>Opens the Installers directory in Windows
                 Explorer.</td></tr>
             <tr><td id="bainUnhide">Unhide...</td><td>Opens a dialogue window
@@ -515,6 +522,11 @@ tab. The directories skipped are:
                 <td id="bainNewProject">New Project...</td>
                 <td>Displays a dialog that allows you to create a new project
                     and select some starting files for it.</td>
+            </tr>
+            <tr>
+                <td id="bainAddMarker">New Marker...</td>
+                <td>Creates a marker for organising your packages. The
+                    <q>==</q> will be added for you.</td>
             </tr>
         <tr><td colspan="2" id="bainRefreshData">Refresh Data<td>Re-scans the Data directory (and all packages). Scanning of the Data directory is done once per run of Wrye Bash, when the
             Installers tab is first opened. If you manually alter files in the Data directory after that, <em>you had to run this command to update BAIN to reflect the changes</em>. However
@@ -530,19 +542,28 @@ tab. The directories skipped are:
         <tr><td colspan="2" id="bainFullRefresh">Full Refresh<td>This does a full refresh <em>of all data files</em>, both the contents of the game Data directory tree and Bash Installers
             folder, bypassing all skip refresh flags for projects. Notably this will recalculate <abbr title="Cyclic redundancy check, digital signature of the file">CRCs</abbr> for all files
             inside Data and Bash Installers (including project directories). Running this command will likely take <em>aeons</em>, and you seldom need it.
-        <tr><td colspan="2" id="bainAddMarker">New Marker...<td>Creates a marker for organising your packages. The <q>==</q> will be added for you.
         <tr><td colspan="2" id="bainMonitorExternalInstallation">Monitor External Installation...<td>When you absolutely cannot install a mod via BAIN, you can put BAIN into Monitor Mode using this command.  It will scan the Data folder before and after you install the mod, then provide an option to create a Project from the changes it detects.
         <tr><td colspan="2" id="bainListPackages">List Packages...<td>Displays a list of projects and archives and copies the list to your clipboard. This is useful for posting your package order on forums, eg. when troubleshooting an install.
         <tr><td colspan="2" id="bainAnnealAll">Anneal All<td>Installs any missing files for active installers and corrects all install order errors.
         <tr><td colspan="2" id="bainUninstallAll">Uninstall All Packages<td>Uninstalls all the packages in the package list.
-        <tr><td colspan="2" id="bainCleanData">Clean Data<td>Removes files from the Data folder that are not from one of the following sources:
-            <ul>
-                <li>Vanilla game content.
-                <li>Official DLC content.
-                <li>Wrye Bash (including the Bashed patches and their corresponding docs in Data/Docs - such as <em>Bashed Patch, 0.html/txt</em>).
-                <li>Installed BAIN packages.
-            </ul>
-        The files are not deleted, but moved to the <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents [timestamp]</code> folder instead, where <code>[timestamp]</code> is the date and time the command was run.
+        <tr>
+            <td colspan="2" id="bainCleanData">Clean Data...</td>
+            <td>Removes files from the Data folder that are not from one of the
+                following sources:
+                <ul>
+                    <li>Vanilla game content.</li>
+                    <li>Official DLC content.</li>
+                    <li>Wrye Bash (including the Bashed Patches and their
+                        corresponding docs in <code>Data/Docs</code>, e.g.
+                        <code>Bashed Patch, 0.html</code>).</li>
+                    <li>Installed BAIN packages.</li>
+                </ul>
+                The files are not deleted, but moved to the
+                <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents
+                    [timestamp]</code> folder instead, where
+                <code>[timestamp]</code> is the date and time the command was
+                run.</td>
+        </tr>
         <tr><td colspan="2" id="bainApplyEmbeddedBCFs">Apply Embedded BCFs<td>Automatically apply Embedded BCFs to archives that have one. The new package will be
             created next to the archive that contains the BCF, and named as this archive prepended with "[Auto applied BCF] ". If a package with that name exists it will be
             <em>overridden</em>. BAIN used to try and do that automatically on refresh based on a setting (set by this column menu item), but this had many issues and was removed.
@@ -556,9 +577,20 @@ tab. The directories skipped are:
             manually refresh) - so it's recommended to leave this enabled. If you are concerned about a particularly big project then consider enabling the <a href="#bainDontRefresh">Don't
                 Refresh</a> flag <em>on that particular project</em>. Keep in mind that Projects will be anyway refreshed once on Bash restart, irrespective of this setting (except if popular
             demand arises).
-        <tr><td colspan="2">Ignore FOMODs</td><td>If checked, then the 'smart'
-            <a href="#install">Install...</a> command will ignore FOMODs and
-            only run wizards or the manual procedure.</td></tr>
+        <tr>
+            <td colspan="2">Ignore FOMODs</td>
+            <td>If checked, then the 'smart' <a href="#install">Install...</a>
+                command will ignore FOMODs and only run wizards or the manual
+                procedure. You can still run FOMODs manually via
+                <a href="#bain-run-fomod">Run FOMOD...</a>.</td>
+        </tr>
+        <tr>
+            <td colspan="2">Validate FOMODs</td>
+            <td>If checked, then BAIN will validate FOMODs against the official
+                XML schema and shows a warning if validation fails. You can
+                find more information on
+                <a href="https://modding.wiki/en/vortex/developer/mod-installer-repair">this modding.wiki page</a>.</td>
+        </tr>
         <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will
             also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the
             timestamps on the Bethsoft BSAs are changed. However, disabling this setting is the only way to allow BAIN to install Vanilla
@@ -591,17 +623,71 @@ tab. The directories skipped are:
         <tr><td rowspan="12" id="bainGlobalSkips">Global Skips</td>
         <tr><td id="bainSkipSEPlugins">Skip **SE Plugins</td><td><em>Non-Skyrim only.</em> If this is checked, files to go in the <code>Data\[**SE]\Plugins</code> folder will not be installed.</td></tr>
         <tr><td>Skip SKSE/Script Dragon Plugins</td><td><em>Skyrim and Enderal&colon; Forgotten Stories only.</em> If this is checked, files to go in the <code>Data\SKSE\Plugins</code> or <code>Data\asi</code> folder will not be installed.</td></tr>
-        <tr><td id="bainSkipScreenshots">Skip Screenshots</td><td>If checked, then files from a <code>Data\Screenshots</code> directory will be skipped.</td></tr>
+        <tr>
+            <td id="bainSkipScreenshots">Skip Screenshots</td>
+            <td>If checked, then files from screenshots directories
+                (<code>screenshots</code>, <code>screens</code> and
+                <code>ss</code>) will be skipped.</td></tr>
         <tr>
           <td id="bainSkipScriptSources">Skip Script Sources</td>
           <td><em>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon; Special Edition &amp; Fallout 4 only.</em> If checked, loose script sources (.psc files) will be skipped.</td>
         </tr>
         <tr><td id="bainSkipImages">Skip Images<td>If checked, image files will be skipped.
-        <tr><td id="bainSkipDocs">Skip Docs<td>If checked, document files will be skipped vice being swept to the Docs\ directory.
-        <tr><td id="bainSkipDistantLOD">Skip DistantLOD<td>If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
-        <tr><td id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
-        <tr><td id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
-        <tr><td id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
+        <tr><td id="bainSkipDocs">Skip Docs<td>If checked, document files will be skipped vice being swept to the <code>Docs</code> directory.
+        <tr>
+            <td id="bainSkipDistantLOD">Skip DistantLOD</td>
+            <td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas only.</em> If checked, then
+                <code>DistantLOD</code> files in packages will be ignored.
+                Useful if you're using Tes4LodGen to generate DistantLOD
+                files.</td>
+        </tr>
+        <tr>
+            <td id="bainSkipLODMeshes">Skip LOD Meshes</td>
+            <td>If checked, landscape LOD meshes will be skipped. This refers
+                to all files installed into the following folders:
+                <ul>
+                    <li><code>meshes\landscape\lod</code> &mdash; <em>Oblivion,
+                        Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                        Fallout&colon; New Vegas</em></li>
+                    <li><code>meshes\lod</code> &mdash; <em>Skyrim,
+                        Enderal&colon; Forgotten Stories, Skyrim&colon; Special
+                        Edition &amp; Fallout 4</em></li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="bainSkipLODTextures">Skip LOD Textures</td>
+            <td>If checked, landscape LOD textures will be skipped. This refers
+                to <code>.dds</code> files (except normals, see below)
+                installed into the following folders:
+                <ul>
+                    <li><code>textures\landscapelod\generated</code> &mdash;
+                        <em>Oblivion, Nehrim&colon; At Fate's Edge</em></li>
+                    <li><code>textures\landscape\lod</code> &mdash;
+                        <em>Fallout 3 &amp; Fallout&colon; New Vegas</em></li>
+                    <li><code>textures\lod</code> &mdash; <em>Skyrim,
+                        Enderal&colon; Forgotten Stories, Skyrim&colon; Special
+                        Edition &amp; Fallout 4</em></li>
+                </ul>
+            </td>
+        <tr>
+            <td id="bainSkipLODNormals">Skip LOD Normals</td>
+            <td>If checked, landscape LOD normals will be skipped. This refers
+                to the following files installed into the following folders:
+                <ul>
+                    <li><code>textures\landscapelod\generated\*_fn.dds</code>
+                        &mdash; <em>Oblivion, Nehrim&colon; At Fate's Edge</em>
+                    </li>
+                    <li><code>textures\landscape\lod\*\normals\*.dds</code>
+                        &mdash; <em>Fallout 3 &amp; Fallout&colon; New
+                            Vegas</em></li>
+                    <li><code>textures\lod\*_n.dds</code> &mdash; <em>Skyrim,
+                        Enderal&colon; Forgotten Stories, Skyrim&colon; Special
+                        Edition &amp; Fallout 4</em></li>
+                </ul>
+            </td>
+        </tr>
         <tr><td id="bainSkipBSLFiles">Skip BSL Files</td><td><em>Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon; Special Edition only.</em> If checked, BSL Files will be skipped.</td></tr>
         <tr><td rowspan="3">Global Redirects</td></tr>
         <tr>
@@ -676,7 +762,7 @@ tab. The directories skipped are:
             <td>Attempts to open the selected package's page on TES Alliance. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
         </tr>
         <tr>
-            <td colspan="3" id="bainOpenReadme">Open Readme</td>
+            <td id="bainOpenReadme">Open Readme</td>
             <td>If BAIN detects a readme in the selected package, it will be opened.</td>
         </tr>
         <tr>
@@ -710,25 +796,41 @@ tab. The directories skipped are:
                 wizard if it exists.</td>
         </tr>
         <tr>
-            <td rowspan="8">Advanced Installation..</td>
-            <td colspan="2" id="bainInstallConfigured">Install Config</td>
+            <td rowspan="11">Advanced Installation..</td>
+            <td colspan="2" id="bainInstallConfigured">Install Configured</td>
             <td>Fully installs the package except for files that would be overridden by later packages.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainInstallMissing">Install Missing Files</td>
+            <td colspan="2">Install Missing Files</td>
             <td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainInstallLast">Install Last</td>
+            <td colspan="2">Install Last</td>
             <td>Moves the package to the end of the order list and installs it.</td>
         </tr>
         <tr>
-            <td colspan="2" id="bainFomod">FOMOD Installer...</td>
-            <td>Runs the FOMOD wizard for this package, if it has one.</td>
+            <td rowspan="4">FOMOD Installer..</td>
+            <td id="bain-run-fomod">Run FOMOD...</td>
+            <td>Runs the FOMOD for this package and installs the output into
+                the Data folder via BAIN.</td>
         </tr>
         <tr>
-            <td rowspan="4" id="bainWizardMenu">Wizard Installer...</td>
-            <td id="bainWizard">Manual Wizard...</td>
+            <td>Capture FOMOD Output...</td>
+            <td>Runs the FOMOD for this package and creates a new BAIN project
+                containing the output.</td>
+        </tr>
+        <tr>
+            <td>View FOMOD...</td>
+            <td>Archives only. Opens the ModuleConfig.xml for viewing.</td>
+        </tr>
+        <tr>
+            <td>Edit FOMOD...</td>
+            <td>Projects only. Opens the ModuleConfig.xml in your system's
+                default <code>.xml</code> editor.</td>
+        </tr>
+        <tr>
+            <td rowspan="4">Wizard Installer...</td>
+            <td>Manual Wizard...</td>
             <td>Runs the BAIN wizard for the package, if it has one.</td>
         </tr>
         <tr>
@@ -936,14 +1038,38 @@ tab. The directories skipped are:
 </ul>
 <p>CSV files can also be used when building the Bashed Patch, for a number of options. The Bashed Patch builder will automatically detect the presence of any CSV files in the <code>Data\Bash Patches</code> folder and have the correct filename ending. These filename endings are:
 <table>
-    <thead><tr><th>Import Type<th>Required Filename Ending
+    <thead>
+        <tr>
+            <th>Import Type</th>
+            <th>Required Filename Ending</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Replace Form IDs<td>Formids.csv
-        <tr><td>Import Factions<td>Factions.csv
-        <tr><td>Import Names<td>Names.csv
-        <tr><td>Import Relations<td>Relations.csv
-        <tr><td>Import Spell Stats<td>Spells.csv
-        <tr><td>Import Stats<td>Stats.csv
+        <tr>
+            <td>Replace Form IDs</td>
+            <td>Formids.csv</td>
+        </tr>
+        <tr>
+            <td>Import Actors: Factions</td>
+            <td>Factions.csv</td>
+        </tr>
+        <tr>
+            <td>Import Names</td>
+            <td>Names.csv</td>
+        </tr>
+        <tr>
+            <td>Import Relations</td>
+            <td>Relations.csv</td>
+        </tr>
+        <tr>
+            <td>Import Spell Stats</td>
+            <td>Spells.csv</td>
+        </tr>
+        <tr>
+            <td>Import Stats</td>
+            <td>Stats.csv</td>
+        </tr>
+    </tbody>
 </table>
 
 
@@ -970,9 +1096,17 @@ tab. The directories skipped are:
             <tr><td rowspan="5">Files..</td>
                 <td>Open Folder...</td><td>Opens the Data folder in Windows Explorer.</td></tr>
                 <tr><td>Unhide...</td><td>Opens a dialogue window allowing you to select which hidden plugins to unhide.</td></tr>
-                <tr><td>New Bashed Patch...</td><td>Creates a new Bashed Patch plugin. Useful if you accidentally delete your current one or wish to have more than one.</td></tr>
-                <tr><td>New Plugin...</td><td>Displays a dialog that allows you
-                    to create an empty plugin with various options.</td></tr>
+                <tr>
+                    <td>New Plugin...</td>
+                    <td>Displays a dialog that allows you to create an empty
+                        plugin with various options.</td>
+                </tr>
+                <tr>
+                    <td>New Bashed Patch...</td>
+                    <td>Creates a new Bashed Patch plugin. Useful if you
+                        accidentally delete your current one or wish to have
+                        more than one.</td>
+                </tr>
                 <tr>
                     <td>Open &lt;<em>file</em>&gt;</td>
                     <td>One or more options of this form may be here, depending
@@ -1033,7 +1167,6 @@ tab. The directories skipped are:
                 changes to the enabled/disabled status of plugins in your load order as well.</td></tr>
             <tr><td colspan="2">ESL-Flag Bashed Patches</td><td><em>Skyrim&colon; Special Edition &amp; Fallout 4 only.</em> If enabled,
                 then any built Bashed Patches will automatically be ESL-flagged, saving a load order slot.</td></tr>
-            <tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
             <tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
             <tr><td colspan="2">Check mods against LOOT's dirty mod list</td><td>LOOT's masterlist contains information on dirty plugins that
                 can be used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this
@@ -1223,9 +1356,18 @@ tab. The directories skipped are:
                 </ol>
                 <p>If you've completely swapped from one base plugin to another, you may wish to remove the old dependency. This can be done using TES4Edit's <q>Clean Masters</q> command or TES4Gecko's <q>Edit Master List</q> command. The former only removes totally unused masters while the latter can remove used masters with the appropriate cleanup, and is not an automated procedure.</p>
                 <strong>Note:</strong> You can also use TES4Edit to change the Form IDs using its <q>Batch Change Referencing Records</q> command together with the CSV file created. TES4Edit will also change the definition of a Form ID, rather than just any references to it, unlike Wrye Bash.
-            <tr><td rowspan="6">Mod Cleaning<td>Don't check against LOOT's dirty mod list<td>Overrides the setting in the column header context menu for the specific plugin(s) selected.
-            <tr><td id="modsScanForDirtyEdits">Scan for Dirty Edits<td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em> Scans the selected plugin for Identical To Master records and deleted references, outputting counts of the dirty edits found. The dirty edit counts may differ from the output provided by TES4Edit as that includes other "junk" records in the <abbr title="Identical To Master record">ITM</abbr> count. Wrye Bash does not count these junk records as they are non-harmful.
-            <tr><td>Scan for <abbr title="Undeleted and Disabled Reference">UDR</abbr>'s</td><td><em>All but Oblivion &amp; Nehrim&colon; At Fate's Edge.</em> Behaves as the above <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a>, but only for deleted references.</td></tr>
+            <tr><td rowspan="4">Mod Cleaning<td>Don't check against LOOT's dirty mod list<td>Overrides the setting in the column header context menu for the specific plugin(s) selected.
+            <tr>
+                <td>Scan for Deleted Records</td>
+                <td>Scans the selected plugin(s) for deleted records (i.e.
+                    deleted references, deleted base records and, for games
+                    that have them, deleted navmeshes), outputting counts and
+                    FormIDs of the found records. This will skip the game
+                    master (since it cannot contain deleted records) and
+                    plugins with the <code>.esu</code> extension, since those
+                    use deleted records on purpose to mark a record existing in
+                    one version of the plugin but not in the other one.</td>
+            </tr>
             <tr><td id="modsRemoveWorldOrphans">Remove World Orphans<td>Some plugins have a mild form of corruption where exterior cells of new worldspaces in an esp master of the plugin are included in the plugin even if they are not edited, but the parent worldspace is not included, creating "orphaned" cells. This command removes these "orphans".
             <tr>
                 <td id="modsNvidiaFogFix">Nvidia Fog Fix</td>
@@ -1237,8 +1379,6 @@ tab. The directories skipped are:
                     <br><br><strong>It is advised that mod authors use this on
                         their mods before release.</strong></td>
             </tr>
-            <tr><td id="modsUndeleteRefs">Undelete Refs<td><strong>Removed.</strong> Use xEdit for cleaning.</td></tr>
-            <tr><td colspan="2">Add Master...<td><strong>Removed.</strong> Use xEdit for such low-level editing.</td></tr>
             <tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
             <tr><td colspan="2" id="modsEsmifySelf">Add/Remove ESM Flag<td>The distinction between esp and esm plugins is not dependent on their file
                 extensions, but on a bit in the file. This command toggles this bit so that .esp files behave as .esm files and vice versa. It is
@@ -1495,6 +1635,10 @@ C.Location, -C.LockList
             <td>Older name for R.Eyes.</td>
         </tr>
         <tr>
+            <td>Factions</td>
+            <td>Older name for Actors.Factions.</td>
+        </tr>
+        <tr>
             <td>Hair</td>
             <td>Older name for R.Hair.</td>
         </tr>
@@ -1655,6 +1799,21 @@ C.Location, -C.LockList
                         <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
                     </li>
                     <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.Factions</td>
+            <td>Changes Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) or Non-Player Character factions.</td>
+            <td>Addition or removal of a faction, or change of faction rank in (NPC_) Non-Player Character or (CREA) Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) records.
+                <ul>
+                    <li>Factions
+                        <ul>
+                            <li>(SNAM) Faction</li>
+                            <li>(SNAM) Faction - Rank</li>
+                        </ul>
+                    </li>
                 </ul>
                 <strong>Not available for Fallout 4.</strong>
             </td>
@@ -2002,7 +2161,7 @@ C.Location, -C.LockList
                     <li>(XNAM) Water Noise Texture &mdash;
                         <strong>Not available for Oblivion &amp; Nehrim&colon; At Fate's Edge.</strong>
                     </li>
-                    <li>(XWEN) Water Environment Map &mdash;
+                    <li>(XWEM) Water Environment Map &mdash;
                         <strong>Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon; Special Edition only.</strong>
                     </li>
                 </ul>
@@ -2172,6 +2331,45 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>Enchantments</td>
+            <td>Modifies enchantments / object effects applied to objects.</td>
+            <td>The following records and subrecords:
+                <ul>
+                    <li><strong>Oblivion &amp; Nehrim&colon; At Fate's Edge
+                        only:</strong>
+                        <ul>
+                            <li>(AMMO) Ammunition: (ENAM) Enchantment</li>
+                            <li>(ARMO) Armor: (ENAM) Enchantment</li>
+                            <li>(BOOK) Book: (ENAM) Enchantment</li>
+                            <li>(CLOT) Clothing: (ENAM) Enchantment</li>
+                            <li>(WEAP) Weapon: (ENAM) Enchantment</li>
+                        </ul>
+                    </li>
+                    <li><strong>Fallout 3 &amp; Fallout&colon; New Vegas
+                        only:</strong>
+                        <ul>
+                            <li>(ARMO) Armor: (EITM) Object Effect</li>
+                            <li>(CREA) Creature: (EITM) Unarmed Attack
+                                Effect</li>
+                            <li>(EXPL) Explosion: (EITM) Object Effect</li>
+                            <li>(NPC_) Non-Player Character: (EITM) Unarmed
+                                Attack Effect</li>
+                            <li>(WEAP) Weapon: (EITM) Object Effect</li>
+                        </ul>
+                    </li>
+                    <li><strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
+                        Skyrim&colon; Special Edition only:</strong>
+                        <ul>
+                            <li>(ARMO) Armor: (EITM) Enchantment</li>
+                            <li>(EXPL) Explosion: (EITM) Enchantment</li>
+                            <li>(WEAP) Weapon: (EITM) Enchantment</li>
+                        </ul>
+                    </li>
+                </ul>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>EnchantmentStats</td>
             <td>Modifies (ENCH) Enchantment / Object Effect stats.</td>
             <td>The following fields of the (ENIT) Effect Data subrecord in
@@ -2197,21 +2395,6 @@ C.Location, -C.LockList
                     <li>Charge Time</li>
                     <li>Base Enchantment</li>
                     <li>Worn Restrictions</li>
-                </ul>
-                <strong>Not available for Fallout 4.</strong>
-            </td>
-        </tr>
-        <tr>
-            <td>Factions</td>
-            <td>Changes Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) or Non-Player Character factions.</td>
-            <td>Addition or removal of a faction, or change of faction rank in (NPC_) Non-Player Character or (CREA) Creature (<strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>) records.
-                <ul>
-                    <li>Factions
-                        <ul>
-                            <li>(SNAM) Faction</li>
-                            <li>(SNAM) Faction - Rank</li>
-                        </ul>
-                    </li>
                 </ul>
                 <strong>Not available for Fallout 4.</strong>
             </td>
@@ -2413,7 +2596,7 @@ C.Location, -C.LockList
                 <ul>
                     <li>(FGGS) FaceGen Geometry-Symmetric</li>
                     <li>(FGGA) FaceGen Geometry-Asymmetric</li>
-                    <li>(FGTS) FaceGen Texture-Symmetry </li>
+                    <li>(FGTS) FaceGen Texture-Symmetry</li>
                 </ul>
                 <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
                     Fallout&colon; New Vegas only.</strong>
@@ -2422,10 +2605,12 @@ C.Location, -C.LockList
         <tr>
             <td>NPC.Hair</td>
             <td>Modifies Non-Player Character hair.</td>
-            <td>The (HNAM) Hair subrecord of (NPC_) Non-Player Character
-                records.
-                <br>
-                <br>
+            <td>The following (NPC_) Non-Player Character subrecords:
+                <ul>
+                    <li>(HNAM) Hair</li>
+                    <li>(LNAM) Hair length</li>
+                    <li>(HCLR) Hair color</li>
+                </ul>
                 <strong>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
                     Fallout&colon; New Vegas only.</strong>
             </td>
@@ -2450,7 +2635,7 @@ C.Location, -C.LockList
                         <ul>
                             <li>(FGGS) FaceGen Geometry-Symmetric</li>
                             <li>(FGGA) FaceGen Geometry-Asymmetric</li>
-                            <li>(FGTS) FaceGen Texture-Symmetry </li>
+                            <li>(FGTS) FaceGen Texture-Symmetry</li>
                         </ul>
                     </li>
                     <li>(ENAM) Eyes</li>
@@ -2857,7 +3042,6 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <!-- TODO(inf) Stats patches EDIDs. Need to edit all the game-specific ones to mention this. -->
             <td>Stats</td>
             <td>Modifies the stats (e.g. weight, value, etc.) of items and other objects.</td>
             <td>See the game-specific sections below for record types:
@@ -3110,14 +3294,31 @@ C.Location, -C.LockList
                             </li>
                         </ul>
                     </li>
-                    <li>(EYES) Eyes: (ICON) Icon Filename</li>
+                    <li>(EYES) Eyes: (ICON) Texture</li>
                     <li>(FLOR) Flora: Model</li>
                     <li>(FURN) Furniture: Model</li>
                     <li>(GRAS) Grass: Model</li>
-                    <li>(HAIR) Hair: (ICON) Icon Filename, Model</li>
+                    <li>(HAIR) Hair: (ICON) Texture, Model</li>
                     <li>(INGR) Ingredient: (ICON) Icon Filename, Model</li>
                     <li>(KEYM) Key: (ICON) Icon Filename, Model</li>
-                    <li>(LIGH) Light: (ICON) Icon Filename, Model</li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(ICON) Icon Filename</li>
+                            <li>Model</li>
+                            <li>(DATA) Radius</li>
+                            <li>(DATA) Color
+                                <ul>
+                                    <li>Red</li>
+                                    <li>Green</li>
+                                    <li>Blue</li>
+                                </ul>
+                            </li>
+                            <li>(DATA) Flags</li>
+                            <li>(DATA) Falloff Exponent</li>
+                            <li>(DATA) FOV</li>
+                            <li>(FNAM) Fade</li>
+                        </ul>
+                    </li>
                     <li>(LSCR) Load Screen: (ICON) Icon Filename</li>
                     <li>(LTEX) Landscape Texture: (ICON) Icon Filename</li>
                     <li>(MGEF) Magic Effect:
@@ -3150,6 +3351,7 @@ C.Location, -C.LockList
             <td>Changes the names of things.</td>
             <td>The (FULL) Name subrecord in the following record types:
                 <ul>
+                    <li>(ACTI) Activator</li>
                     <li>(ALCH) Potion</li>
                     <li>(AMMO) Ammunition</li>
                     <li>(APPA) Alchemical Apparatus</li>
@@ -3172,6 +3374,7 @@ C.Location, -C.LockList
                     <li>(MGEF) Magic Effect</li>
                     <li>(MISC) Misc. Item</li>
                     <li>(NPC_) Non-Player Character</li>
+                    <li>(QUST) Quest</li>
                     <li>(RACE) Race</li>
                     <li>(SGST) Sigil Stone</li>
                     <li>(SLGM) Soul Gem</li>
@@ -3397,89 +3600,153 @@ C.Location, -C.LockList
                 <ul>
                     <li>(ALCH) Potion:
                         <ul>
+                            <li>(EDID) Editor ID</li>
                             <li>(DATA) Weight</li>
                             <li>(ENIT) Value</li>
                         </ul>
                     </li>
                     <li>(AMMO) Ammunition:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Damage</li>
-                            <li>(DATA) Speed</li>
+                            <li>(EDID) Editor ID</li>
                             <li>(ANAM) Enchantment Points</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Speed</li>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                    <li>Damage</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(APPA) Alchemical Apparatus:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Quality</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                    <li>Quality</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(ARMO) Armor:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Health</li>
-                            <li>(DATA) Strength</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Strength</li>
+                                    <li>Value</li>
+                                    <li>Health</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(BOOK) Book:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
                             <li>(ANAM) Enchantment Points</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(CLOT) Clothing:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
                             <li>(ANAM) Enchantment Points</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(EYES) Eyes:
+                        <ul>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA) Flags</li>
+                        </ul>
+                    </li>
+                    <li>(HAIR) Hair:
+                        <ul>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA) Flags</li>
                         </ul>
                     </li>
                     <li>(INGR) Ingredient:
                         <ul>
+                            <li>(EDID) Editor ID</li>
                             <li>(DATA) Weight</li>
                             <li>(ENIT) Value</li>
                         </ul>
                     </li>
                     <li>(KEYM) Key:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(LIGH) Light:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Duration</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Time</li>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(MISC) Misc. Item:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(SGST) Sigil Stone:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Uses</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Uses</li>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(WEAP) Weapon:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Health</li>
-                            <li>(DATA) Damage</li>
-                            <li>(DATA) Speed</li>
-                            <li>(DATA) Reach</li>
+                            <li>(EDID) Editor ID</li>
                             <li>(ANAM) Enchantment Points</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Speed</li>
+                                    <li>Reach</li>
+                                    <li>Value</li>
+                                    <li>Health</li>
+                                    <li>Weight</li>
+                                    <li>Damage</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -3765,7 +4032,6 @@ C.Location, -C.LockList
                             <li>(ICO2) Female Icon Filename</li>
                             <li>(MIC2) Female Small Icon Filename</li>
                             <li>(DNAM) 'Modulates Voice' Flag</li>
-                            <li>(EITM) Object Effect</li>
                             <li>(BMDT) Biped Flags</li>
                         </ul>
                     </li>
@@ -3803,6 +4069,12 @@ C.Location, -C.LockList
                             <li>(MICO) Small Icon</li>
                         </ul>
                     </li>
+                    <li>(CHAL) Challenge:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                            <li>(MICO) Small Icon</li>
+                        </ul>
+                    </li>
                     <li>(CLAS) Class:
                         <ul>
                             <li>(ICON) Icon</li>
@@ -3832,7 +4104,6 @@ C.Location, -C.LockList
                             <li>(MODL) Model</li>
                             <li>(NIFZ) Model List</li>
                             <li>(NIFT) Texture File Hashes</li>
-                            <li>(EITM) Unarmed Attack Effect</li>
                         </ul>
                     </li>
                     <li>(CSNO) Casino - <strong>Fallout&colon; New Vegas only</strong>
@@ -3862,11 +4133,15 @@ C.Location, -C.LockList
                     <li>(EXPL) Explosion:
                         <ul>
                             <li>(MODL) Model</li>
-                            <li>(EITM) Object Effect</li>
                             <li>(MNAM) Image Space Modifier</li>
                             <li>(DATA) Light</li>
                             <li>(DATA) Impact Dataset</li>
                             <li>(INAM) Placed Impact Object</li>
+                        </ul>
+                    </li>
+                    <li>(EYES) Eyes:
+                        <ul>
+                            <li>(ICON) Texture</li>
                         </ul>
                     </li>
                     <li>(FURN) Furniture:
@@ -3877,6 +4152,12 @@ C.Location, -C.LockList
                     <li>(GRAS) Grass:
                         <ul>
                             <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(HAIR) Hair:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Texture</li>
                         </ul>
                     </li>
                     <li>(HDPT) Head Part:
@@ -3965,7 +4246,6 @@ C.Location, -C.LockList
                         <ul>
                             <li>(MODL) Model</li>
                             <li>(ICON) Icon</li>
-                            <li>(DATA) Duration</li>
                             <li>(DATA) Radius</li>
                             <li>(DATA) Color
                                 <ul>
@@ -3976,6 +4256,7 @@ C.Location, -C.LockList
                             </li>
                             <li>(DATA) Flags</li>
                             <li>(DATA) Falloff Exponent</li>
+                            <li>(DATA) FOV</li>
                             <li>(FNAM) Fade</li>
                         </ul>
                     </li>
@@ -4021,11 +4302,6 @@ C.Location, -C.LockList
                             <li>(MICO) Small Icon</li>
                             <li>(MODL) Model</li>
                             <li>(XNAM) Texture</li>
-                        </ul>
-                    </li>
-                    <li>(NPC_) Non-Player Character:
-                        <ul>
-                            <li>(EITM) Unnarmed Attack Effect</li>
                         </ul>
                     </li>
                     <li>(PERK) Perk:
@@ -4121,12 +4397,16 @@ C.Location, -C.LockList
                             <li>(MODL) Model</li>
                             <li>(ICON) Icon</li>
                             <li>(MICO) Small Icon</li>
-                            <li>(EITM) Object Effect</li>
                             <li>(MOD2) Shell Casing Model</li>
                             <li>(MOD3) Scope Model</li>
                             <li>(EFSD) Scope Effect</li>
                             <li>(MOD4) World Model</li>
-                            <li>Model With Mods - <strong>Fallout&colon; New Vegas only</strong>
+                            <li>Model With Mods - <strong>Note:</strong>
+                                these are shared with
+                                <a href="#WeaponMods">WeaponMods</a> for
+                                backwards compatibility reasons. Please use the
+                                more specific WeaponMods for these subrecords.
+                                <strong>Fallout&colon; New Vegas only</strong>.
                                 <ul>
                                     <li>(MWD1) Mod 1</li>
                                     <li>(MWD2) Mod 2</li>
@@ -4139,7 +4419,12 @@ C.Location, -C.LockList
                             </li>
                             <li>(INAM) Impact Dataset</li>
                             <li>(WNAM) First Person Model</li>
-                            <li>First Person Model With Mods - <strong>Fallout&colon; New Vegas only</strong>
+                            <li>First Person Model With Mods -
+                                <strong>Note:</strong> These are shared with
+                                <a href="#WeaponMods">WeaponMods</a> for
+                                backwards compatibility reasons. Please use the
+                                more specific WeaponMods for these subrecords.
+                                <strong>Fallout&colon; New Vegas only</strong>.
                                 <ul>
                                     <li>(WNM1) Mod 1</li>
                                     <li>(WNM2) Mod 2</li>
@@ -4192,6 +4477,7 @@ C.Location, -C.LockList
                     <li>(NOTE) Note</li>
                     <li>(NPC_) Non-Player Character</li>
                     <li>(PERK) Perk</li>
+                    <li>(QUST) Quest</li>
                     <li>(RACE) Race</li>
                     <li>(RCCT) Recipe Category - <strong>Fallout&colon; New Vegas only</strong></li>
                     <li>(RCPE) Recipe - <strong>Fallout&colon; New Vegas only</strong></li>
@@ -4435,6 +4721,12 @@ C.Location, -C.LockList
                             <li>(ENIT) Sound - Consume</li>
                         </ul>
                     </li>
+                    <li>(ARMO) Armor:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Drop</li>
+                        </ul>
+                    </li>
                     <li>(ASPC) Acoustic Space:
                         <ul>
                             <li>(SNAM) Sound - Looping</li>
@@ -4476,7 +4768,7 @@ C.Location, -C.LockList
                     </li>
                     <li>(EXPL) Explosion:
                         <ul>
-                            <li>DATA
+                            <li>(DATA)
                                 <ul>
                                     <li>Sound Level</li>
                                     <li>Sound 1</li>
@@ -4549,8 +4841,18 @@ C.Location, -C.LockList
                             <li>(UNAM) Sound - Idle</li>
                             <li>(NAM9) Sound - Equip</li>
                             <li>(NAM8) Sound - Unequip</li>
-                            <li>(WMS1) Sound - Mod 1 - Shoot 3D - <strong>Fallout&colon; New Vegas only</strong></li>
-                            <li>(WMS1) Sound - Mod 1 - Shoot Dist - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>Sound - Mod 1 - <strong>Note:</strong> These
+                                are shared with
+                                <a href="#WeaponMods">WeaponMods</a> for
+                                backwards compatibility reasons. Please use the
+                                more specific WeaponMods for these subrecords.
+                                <strong>Fallout&colon; New Vegas only</strong>
+                                <ul>
+                                    <li>(WMS1) Shoot 3D</li>
+                                    <li>(WMS1) Shoot Dist</li>
+                                    <li>(WMS2) Shoot 2D</li>
+                                </ul>
+                            </li>
                             <li>(VNAM) Sound Level</li>
                         </ul>
                     </li>
@@ -4578,41 +4880,90 @@ C.Location, -C.LockList
                 <ul>
                     <li>(ALCH) Ingestible:
                         <ul>
+                            <li>(EDID) Editor ID</li>
                             <li>(DATA) Weight</li>
                             <li>(ENIT) Value</li>
                         </ul>
                     </li>
                     <li>(AMMO) Ammunition:
                         <ul>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Speed</li>
-                            <li>(DATA) Clip Rounds</li>
-                            <li>(DAT2) Proj. Per Shot - <strong>Fallout&colon; New Vegas only</strong></li>
-                            <li>(DAT2) Weight - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Speed</li>
+                                    <li>Value</li>
+                                    <li>Clip Rounds</li>
+                                </ul>
+                            </li>
+                            <li>(DAT2) - <strong>Fallout&colon; New Vegas only</strong>
+                                <ul>Proj. Per Shot</ul>
+                                <ul>Weight</ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(ARMA) Armor Addon:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Max Condition</li>
-                            <li>(DNAM) DR</li>
-                            <li>(DNAM) DT - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Max Condition</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
+                            <li>(DNAM)
+                                <ul>
+                                    <li>DR</li>
+                                    <li>DT - <strong>Fallout&colon; New Vegas only</strong></li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(ARMO) Armor:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Max Condition</li>
-                            <li>(DNAM) DR</li>
-                            <li>(DNAM) DT - <strong>Fallout&colon; New Vegas only</strong></li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Max Condition</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
+                            <li>(DNAM)
+                                <ul>
+                                    <li>DR</li>
+                                    <li>DT - <strong>Fallout&colon; New Vegas only</strong></li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(BOOK) Book:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(EYES) Eyes:
+                        <ul>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA) Flags</li>
+                        </ul>
+                    </li>
+                    <li>(HAIR) Hair:
+                        <ul>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA) Flags</li>
+                        </ul>
+                    </li>
+                    <li>(HDPT) Head Part:
+                        <ul>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA) Flags</li>
                         </ul>
                     </li>
                     <li>(INGR) Ingredient:
@@ -4623,37 +4974,53 @@ C.Location, -C.LockList
                     </li>
                     <li>(KEYM) Key:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(LIGH) Light:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
-                            <li>(DATA) Time</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Time</li>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(MISC) Misc. Item:
                         <ul>
-                            <li>(DATA) Weight</li>
-                            <li>(DATA) Value</li>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Value</li>
+                                    <li>Weight</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                     <li>(WEAP) Weapon:
                         <ul>
+                            <li>(EDID) Editor ID</li>
                             <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
                                     <li>Health</li>
+                                    <li>Weight</li>
                                     <li>Base Damage</li>
                                     <li>Clip Size</li>
                                 </ul>
                             </li>
                             <li>(DNAM)
                                 <ul>
-                                    <li>Animation multiplier</li>
+                                    <li>Animation Multiplier</li>
                                     <li>Reach</li>
                                     <li>Ammo Use</li>
                                     <li>Min Spread</li>
@@ -4696,7 +5063,7 @@ C.Location, -C.LockList
                                 <ul>
                                     <li>Skill</li>
                                     <li>Dam. Mult</li>
-                                    <li>AP (Action points)</li>
+                                    <li>AP</li>
                                 </ul>
                             </li>
                         </ul>
@@ -4709,9 +5076,22 @@ C.Location, -C.LockList
             <td>Modifies long-form text (e.g. the text in a book or the text on a loading screen) of things.</td>
             <td>The following subrecords:
                 <ul>
+                    <li>(ACTI) Activator:
+                        <ul>
+                            <li>(XATO) Activation Prompt - <strong>Fallout&colon; New Vegas only</strong>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(AMMO) Ammunition:
+                        <ul>
+                            <li>(ONAM) Short Name</li>
+                            <li>(QNAM) Abbreviation - <strong>Fallout&colon; New Vegas only</strong></li>
+                        </ul>
+                    </li>
                     <li>(AVIF) Actor Value Information:
                         <ul>
                             <li>(DESC) Description</li>
+                            <li>(ANAM) Short Name</li>
                         </ul>
                     </li>
                     <li>(BOOK) Book:
@@ -4766,6 +5146,74 @@ C.Location, -C.LockList
                     </li>
                 </ul>
                 <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
+            </td>
+        </tr>
+        <tr>
+            <td id="WeaponMods">WeaponMods</td>
+            <td>Modifies weapon modifications.
+                <br>
+                <br>
+                <strong>Note:</strong> Several subrecords listed here are
+                shared with <a href="#GraphicsFO3">Graphics</a> and
+                <a href="#SoundFO3">Sound</a> for backwards compatibility
+                reasons. Please use the more specific WeaponMods in those
+                cases.</td>
+            <td>The following (WEAP) Weapon subrecords:
+                <ul>
+                    <li>Model With Mods
+                        <ul>
+                            <li>(MWD1) Mod 1</li>
+                            <li>(MWD2) Mod 2</li>
+                            <li>(MWD3) Mod 1 and 2</li>
+                            <li>(MWD4) Mod 3</li>
+                            <li>(MWD5) Mod 1 and 3</li>
+                            <li>(MWD6) Mod 2 and 3</li>
+                            <li>(MWD7) Mod 1, 2 and 3</li>
+                        </ul>
+                    </li>
+                    <li>First Person Model With Mods
+                        <ul>
+                            <li>(WNM1) Mod 1</li>
+                            <li>(WNM2) Mod 2</li>
+                            <li>(WNM3) Mod 1 and 2</li>
+                            <li>(WNM4) Mod 3</li>
+                            <li>(WNM5) Mod 1 and 3</li>
+                            <li>(WNM6) Mod 2 and 3</li>
+                            <li>(WNM7) Mod 1, 2 and 3</li>
+                        </ul>
+                    </li>
+                    <li>Weapon Mods
+                        <ul>
+                            <li>(WMI1) Weapon Mod 1</li>
+                            <li>(WMI2) Weapon Mod 2</li>
+                            <li>(WMI3) Weapon Mod 3</li>
+                        </ul>
+                    </li>
+                    <li>Sound - Mod 1
+                        <ul>
+                            <li>(WMS1) Shoot 3D</li>
+                            <li>(WMS1) Shoot Dist</li>
+                            <li>(WMS2) Shoot 2D</li>
+                        </ul>
+                    </li>
+                    <li>(DNAM) Data 2
+                        <ul>
+                            <li>Flags 2 - Scope From Mod</li>
+                            <li>Effect - Mod 1</li>
+                            <li>Effect - Mod 2</li>
+                            <li>Effect - Mod 3</li>
+                            <li>Value A - Mod 1</li>
+                            <li>Value A - Mod 2</li>
+                            <li>Value A - Mod 3</li>
+                            <li>Reload Animation - Mod</li>
+                            <li>Value B - Mod 1</li>
+                            <li>Value B - Mod 2</li>
+                            <li>Value B - Mod 3</li>
+                        </ul>
+                    </li>
+                    <li>(VATS) VATS - Mod Required</li>
+                </ul>
+                <strong>Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
     </tbody>
@@ -4951,13 +5399,47 @@ C.Location, -C.LockList
                     <li>(CLAS) Class: (ICON) Icon</li>
                     <li>(CONT) Container: (MODL) Model</li>
                     <li>(DOOR) Door: (MODL) Model</li>
-                    <li>(EFSH) Effect Shader: All (DATA) subrecords.</li>
+                    <li>(EFSH) Effect Shader:
+                        <ul>
+                            <li>(ICON) Fill Texture</li>
+                            <li>(ICO2) Particle Shader Texture</li>
+                            <li>(NAM7) Holes Texture</li>
+                            <li>(NAM8) Membrane Palette Texture</li>
+                            <li>(NAM9) Particle Palette Texture</li>
+                            <li>(DATA) All</li>
+                        </ul>
+                    </li>
                     <li>(FLOR) Flora: (MODL) Model</li>
                     <li>(FURN) Furniture: (MODL) Model</li>
                     <li>(GRAS) Grass: (MODL) Model</li>
                     <li>(INGR) Ingredient: (ICON) Icon, (MODL) Model</li>
                     <li>(KEYM) Key: (ICON) Icon, (MODL) Model</li>
-                    <li>(LIGH) Light (ICON) Icon, (MODL) Model</li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                            <li>(MODL) Model</li>
+                            <li>(DATA) Radius</li>
+                            <li>(DATA) Color
+                                <ul>
+                                    <li>Red</li>
+                                    <li>Green</li>
+                                    <li>Blue</li>
+                                </ul>
+                            </li>
+                            <li>(DATA) Flags</li>
+                            <li>(DATA) Falloff Exponent</li>
+                            <li>(DATA) FOV</li>
+                            <li>(DATA) Near Clip</li>
+                            <li>(DATA) Flicker Effect
+                                <ul>
+                                    <li>Period</li>
+                                    <li>Intensity Amplitude</li>
+                                    <li>Movement Amplitude</li>
+                                </ul>
+                            </li>
+                            <li>(FNAM) Fade</li>
+                        </ul>
+                    </li>
                     <li>(LSCR) Load Screen: (ICON) Icon</li>
                     <li>(MGEF) Magic Effect:
                         <ul>
@@ -5032,6 +5514,7 @@ C.Location, -C.LockList
                     <li>(MSTT) Movable Static</li>
                     <li>(NPC_) Non Player Character</li>
                     <li>(PERK) Perk</li>
+                    <li>(QUST) Quest</li>
                     <li>(RACE) Race</li>
                     <li>(SCRL) Scroll</li>
                     <li>(SHOU) Shout</li>
@@ -5042,7 +5525,7 @@ C.Location, -C.LockList
                     <li>(TREE) Tree</li>
                     <li>(WATR) Water</li>
                     <li>(WEAP) Weapon</li>
-                    <li>(WOOP) Word Of Power</li>
+                    <li>(WOOP) Word of Power</li>
                 </ul>
             </td>
         </tr>
@@ -5323,36 +5806,41 @@ C.Location, -C.LockList
                 <ul>
                     <li>(ALCH) Ingestible:
                         <ul>
+                            <li>(EDID) Editor ID</li>
                             <li>(DATA) Weight</li>
                             <li>(ENIT) Value</li>
                         </ul>
                     </li>
                     <li>(AMMO) Ammunition:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Damage</li>
+                                    <li>Value</li>
+                                    <li>Weight - <strong>Skyrim&colon; Special Edition only</strong></li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(APPA) Alchemical Apparatus:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(ARMO) Armor:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                             <li>(DNAM) Armor Rating</li>
@@ -5360,71 +5848,91 @@ C.Location, -C.LockList
                     </li>
                     <li>(BOOK) Book:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(INGR) Ingredient:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
+                    <li>(EYES) Eyes:
+                        <ul>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA) Flags</li>
+                        </ul>
+                    </li>
+                    <li>(HDPT) Head Part:
+                        <ul>
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA) Flags</li>
+                        </ul>
+                    </li>
                     <li>(KEYM) Key:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(LIGH) Light:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
-                                    <li>Value</li>
                                     <li>Time</li>
+                                    <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(MISC) Misc. Item:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(SLGM) Soul Gem:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                 </ul>
                             </li>
                         </ul>
                     </li>
                     <li>(WEAP) Weapon:
                         <ul>
-                            <li>DATA
+                            <li>(EDID) Editor ID</li>
+                            <li>(EAMT) Enchantment Amount</li>
+                            <li>(DATA)
                                 <ul>
-                                    <li>Weight</li>
                                     <li>Value</li>
+                                    <li>Weight</li>
                                     <li>Damage</li>
                                 </ul>
                             </li>
@@ -5435,7 +5943,6 @@ C.Location, -C.LockList
                                     <li>Stagger</li>
                                 </ul>
                             </li>
-                            <li>(EAMT) Enchantment Amount</li>
                             <li>(CRTD) Critical Data
                                 <ul>
                                     <li>Damage</li>
@@ -5466,6 +5973,7 @@ C.Location, -C.LockList
                     <li>(AMMO) Ammunition:
                         <ul>
                             <li>(DESC) Description</li>
+                            <li>(ONAM) Short Name</li>
                         </ul>
                     </li>
                     <li>(APPA) Alchemical Apparatus:
@@ -5478,9 +5986,18 @@ C.Location, -C.LockList
                             <li>(DESC) Description</li>
                         </ul>
                     </li>
+                    <li>(ASTP) Association Type:
+                        <ul>
+                            <li>(MPRT) Male Parent Title</li>
+                            <li>(FPRT) Female Parent Title</li>
+                            <li>(MCHT) Male Child Title</li>
+                            <li>(FCHT) Female Child Title</li>
+                        </ul>
+                    </li>
                     <li>(AVIF) Actor Value Information:
                         <ul>
                             <li>(DESC) Description</li>
+                            <li>(ANAM) Abbreviation</li>
                         </ul>
                     </li>
                     <li>(BOOK) Book:
@@ -5492,6 +6009,16 @@ C.Location, -C.LockList
                     <li>(CLAS) Class:
                         <ul>
                             <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(COLL) Collision Layer:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(FLOR) Flora:
+                        <ul>
+                            <li>(RNAM) Activate Text Override</li>
                         </ul>
                     </li>
                     <li>(LSCR) Loading Screen:
@@ -5509,9 +6036,19 @@ C.Location, -C.LockList
                             <li>(DNAM) Magic Item Description</li>
                         </ul>
                     </li>
+                    <li>(NPC_) Non-Player Character:
+                        <ul>
+                            <li>(SHRT) Short Name</li>
+                        </ul>
+                    </li>
                     <li>(PERK) Perk:
                         <ul>
                             <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(QUST) Quest:
+                        <ul>
+                            <li>(NNAM) Description</li>
                         </ul>
                     </li>
                     <li>(SCRL) Scroll:
@@ -5532,6 +6069,11 @@ C.Location, -C.LockList
                     <li>(WEAP) Weapon:
                         <ul>
                             <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(WOOP) Word of Power
+                        <ul>
+                            <li>(TNAM) Translation</li>
                         </ul>
                     </li>
                 </ul>
@@ -5867,9 +6409,7 @@ C.Location, -C.LockList
             <td>Harvest Chance</td>
             <td>Sets the harvest chance of all flora to the desired
                 chance.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Magic: Script Effect Icon Changer</td>
@@ -5961,9 +6501,7 @@ C.Location, -C.LockList
             <td>Reweigh: Ingredients</td>
             <td>Reweighs ingredients to a maximum weight. This does not affect
                 ingredients with script effects or ones with OBME effects.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Reweigh: Potions (Maximum)</td>
@@ -5974,16 +6512,12 @@ C.Location, -C.LockList
                 this is similar to, but not the same as, the Reweigh Potions
                 command for savegames, which reweighs user created potions
                 rather than mod created potions.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Reweigh: Staffs/Staves</td>
             <td>Reweighs staves to a maximum weight.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Right Hand Rings</td>
@@ -6137,14 +6671,18 @@ noted in the description of the tweak.</p>
                     Wanderers Edition (FWE)</a> installed. If you do have it
                 installed, it uses the FWE ammo weight to rename.
                 <br>
+                For <strong>Skyrim&colon; Special Edition</strong>, arrow weight
+                is only used if you have the
+                <a href="https://en.uesp.net/wiki/Skyrim:Survival_Mode">Survival Mode</a>
+                creation installed.
                 <br>
                 You can also specify a custom format. It must contain a single
                 <code>%s</code> specifier, which will be replaced by the
                 ammunition weight. For example, the custom format
                 <code>&nbsp;%s</code> would rename ammunition called <q>BB</q>
                 with a weight of 0.01 to <q>BB 0.01</q>.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
-                Fallout&colon; New Vegas</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3, Fallout&colon; New
+                Vegas &amp; Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td id="patch-tweak-names-bpc">Body Part Codes</td>
@@ -6155,15 +6693,15 @@ noted in the description of the tweak.</p>
                 <table>
                     <thead>
                         <tr>
-                            <th>Oblivion &amp; Nehrim&colon; At Fate's
-                                Edge</th>
-                            <th>Fallout 3 &amp; Fallout&colon; New Vegas</th>
+                            <th>Game</th>
+                            <th>Body Part Codes</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td>
-                                10 categories of items:
+                            <td>Oblivion &amp; Nehrim&colon; At Fate's
+                                Edge</td>
+                            <td>10 categories of items:
                                 <ul>
                                     <li>Amulets</li>
                                     <li>Rings (left or right ring)</li>
@@ -6180,6 +6718,9 @@ noted in the description of the tweak.</p>
                                 will assign <q>A</q> to amulets, <q>R</q> to
                                 rings, <q>G</q> to gloves, etc.
                             </td>
+                        </tr>
+                        <tr>
+                            <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
                             <td>
                                 7 categories of items:
                                 <ul>
@@ -6199,33 +6740,85 @@ noted in the description of the tweak.</p>
                                 body armor, <q>G</q> to gloves, etc.
                             </td>
                         </tr>
+                        <tr>
+                            <td>Skyrim, Enderal&colon; Forgotten Stories and
+                                Skyrim&colon; Special Edition</td>
+                            <td>
+                                7 categories of items:
+                                <ul>
+                                    <li>Head (head, hair, circlet, long
+                                        hair or ears)</li>
+                                    <li>Body</li>
+                                    <li>Arms (hands or forearms)</li>
+                                    <li>Legs (feet or calves)</li>
+                                    <li>Amulets</li>
+                                    <li>Rings</li>
+                                    <li>Shields</li>
+                                </ul>
+                                For example, the value <code>HAGBMRS</code>
+                                will assign <q>H</q> to helmets, <q>A</q> to
+                                armor and clothing, <q>G</q> to gloves, etc.
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
                 You can specify a custom value as well. It is specified as a
                 string that must have the same length as the number of codes.
                 See the examples in the table up above.
             </td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
-                Fallout&colon; New Vegas</td>
+            <td>All but Fallout 4</td>
         </tr>
         <tr>
-            <td>Lore Friendly Text: Dwarven -&gt; Dwemer</td>
-            <td>Changes any usage of the word <q>Dwarven</q> or <q>Dwarf</q> to
-                use <q>Dwemer</q> instead in order to better follow lore
-                (case-insensitive, but preserves case).</td>
-            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+            <td id="patchTweakNamesLFTDwemer">Lore Friendly Text: Dwarven -&gt;
+                Dwemer</td>
+            <td>Changes any usage of the words <q>Dwarven</q>, <q>Dwarf</q>,
+                <q>Dwarfs</q> or <q>Dwarves</q> to <q>Dwemer</q> in order to
+                better follow lore (case-insensitive, but preserves
+                case).</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas &amp; Fallout
+                4</td>
         </tr>
         <tr>
             <td>Proper English Text: Dwarfs -&gt; Dwarves</td>
             <td>Renames any instances of <q>Dwarfs</q> to <q>Dwarves</q>
-                (case-insensitive, but preserves case).</td>
-            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+                (case-insensitive, but preserves case).
+                <br>
+                <br>
+                <strong>Note:</strong> If both this tweak and
+                <a href="#patchTweakNamesLFTDwemer">Lore Friendly Text: Dwarven
+                    -&gt; Dwemer</a> are active, that tweak will take
+                preference.</td>
+             <td>All but Fallout 3, Fallout&colon; New Vegas &amp; Fallout
+                4</td>
         </tr>
         <tr>
             <td>Proper English Text: Staffs -&gt; Staves</td>
             <td>Renames any instances of <q>Staffs</q> to <q>Staves</q>
                 (case-insensitive, but preserves case).</td>
-            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+             <td>All but Fallout 3, Fallout&colon; New Vegas &amp; Fallout
+                4</td>
+        </tr>
+        <tr>
+            <td>Rename Bottle Caps</td>
+            <td>Changes the (FULL) Name of bottle caps
+                (<code>Caps001 [MISC:0000000F]</code>) to something else. You
+                may choose a custom name.</td>
+            <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Rename Gold</td>
+            <td>Changes the (FULL) Name of gold
+                (<code>Gold001 [MISC:0000000F]</code>) to something else. You
+                may choose a custom name.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim &amp;
+                Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
+            <td>Rename Pennies</td>
+            <td>Changes the (FULL) Name of Endralean penny coins
+                (<code>Gold001 [MISC:0000000F]</code>) to something else. You
+                may choose a custom name.</td>
+            <td>Enderal&colon; Forgotten Stories</td>
         </tr>
         <tr>
             <td>Skyrim-style Text: Fatigue -&gt; Stamina</td>
@@ -6276,12 +6869,18 @@ noted in the description of the tweak.</p>
                 the two anymore.
                 <br>
                 <br>
-                For Fallout 3 &amp; Fallout&colon; New Vegas, the second letter
-                can also be <q>P</q>, which indicates power armor.
+                For <strong>Fallout 3 &amp; Fallout&colon; New Vegas</strong>,
+                the second letter can also be <q>P</q>, which indicates power
+                armor.
                 <br>
-                For Fallout&colon; New Vegas, it can also be <q>M</q>, which
-                indicates medium armor.</td>
-            <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
+                For <strong>Fallout&colon; New Vegas</strong>, it can also be
+                <q>M</q>, which indicates medium armor.
+                <br>
+                For <strong>Skyrim, Enderal&colon; Forgotten Stories &amp;
+                Skyrim&colon; Special Edition</strong>, it can also be
+                <q>C</q>, which indicates clothing.</td>
+            <td>All but Oblivion, Nehrim&colon; At Fate's Edge &amp;
+                Fallout 4</td>
         </tr>
         <tr>
             <td id="patch-tweak-names-sc">Sort: Clothes</td>
@@ -6315,51 +6914,17 @@ noted in the description of the tweak.</p>
                         a drink called <q>Beer</q> would be renamed to
                         <q>.Beer</q>.
                         <br>
+                        <br>
                         Poisons (potions with only harmful effects) will have
                         two letters prepended: an <q>X</q> and a letter
-                        corresponding to the primary effect's school:
-                        <table id="patch-tweak-names-schools">
-                            <thead>
-                                <tr>
-                                    <th>School</th>
-                                    <th>Code</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Alteration</td>
-                                    <td>A</td>
-                                </tr>
-                                <tr>
-                                    <td>Conjuration</td>
-                                    <td>C</td>
-                                </tr>
-                                <tr>
-                                    <td>Destruction</td>
-                                    <td>D</td>
-                                </tr>
-                                <tr>
-                                    <td>Illusion</td>
-                                    <td>I</td>
-                                </tr>
-                                <tr>
-                                    <td>Mysticism</td>
-                                    <td>M</td>
-                                </tr>
-                                <tr>
-                                    <td>Restoration</td>
-                                    <td>R</td>
-                                </tr>
-                                <tr>
-                                    <td>Unknown</td>
-                                    <td>U</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        For example, using the format <code>%s:&nbsp;</code>, a
-                        poison called called <q>Poison of Weakness</q> with a
-                        primary effect from the school of Destruction would be
-                        renamed to <q>XD: Poison of Weakness</q>.
+                        corresponding to the primary effect's school (see
+                        <a href="#patch-tweak-names-schools">the table in the
+                            <q>Sort: Spells</q> entry.</a>). For example, using
+                        the format <code>%s:&nbsp;</code>, a poison called
+                        called <q>Poison of Weakness</q> with a primary effect
+                        from the school of Destruction would be renamed to
+                        <q>XD: Poison of Weakness</q>.
+                        <br>
                         <br>
                         Potions (all ALCH records that don't fall into the two
                         categories above) will only have the primary effect
@@ -6438,29 +7003,120 @@ noted in the description of the tweak.</p>
                 prepend the <q>~</q> to enchanted scrolls and the <q>.</q> to
                 notes. Formats that start with a <q>.</q> function in reverse.
                 You can also choose to include a letter denoting the magic
-                school that the first effect on the scroll belongs to.
+                school that the first effect on the scroll belongs to (see
+                <a href="#patch-tweak-names-schools">the table in the <q>Sort:
+                    Spells</q> entry.</a>)
                 <br>
                 <br>
                 You can specify a custom value as well. It must start with
                 either <q>~</q> or <q>.</q>, as described above, and may
                 contain a single <code>%s</code> specifier, which will be
-                replaced by a letter matching the primary effect's school (see
-                <a href="#patch-tweak-names-schools">the table from above</a>).
-                For example, the custom format <code>~&lt;%s&gt;&nbsp;</code> would rename
-                an enchanted scroll called <q>Fireball</q> to <q>~&lt;D&gt;
-                    Fireball</q> and a regular note called <q>Handwritten
-                    Note</q> to <q>.Handwritten Note</q>.
+                replaced by a letter matching the primary effect's school. For
+                example, the custom format <code>~&lt;%s&gt;&nbsp;</code> would
+                rename an enchanted scroll called <q>Fireball</q> to
+                <q>~&lt;D&gt; Fireball</q> and a regular note called
+                <q>Handwritten Note</q> to <q>.Handwritten Note</q>.
             </td>
             <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td>Sort: Scrolls</td>
+            <td>Tweaks names of scrolls to make them sort more easily
+                in the inventory. Each scroll will have a letter denoting the
+                magic school that the first effect on the scroll belongs to
+                prepended (see <a href="#patch-tweak-names-schools">the table
+                    in the <q>Sort: Spells</q> entry.</a>).
+                <br>
+                <br>
+                You can specify a custom value as well. It must contain a
+                single <code>%s</code> specifier, which will be replaced by a
+                letter matching the primary effect's school. For example, the
+                custom format <code>@%s&nbsp;</code> would rename a scroll
+                called <q>Fireball</q> to <q>@D Fireball</q>.
+            </td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon; Special
+                Edition</td>
         </tr>
         <tr>
             <td>Sort: Spells</td>
             <td>Tweaks names of spells to make them sort more easily in the
                 menu. Each spell can have a letter denoting its primary school
-                (see <a href="#patch-tweak-names-schools">the table from
-                    above</a>) and/or the spell level prepended.
+                and/or the spell level prepended.
                 <br>
                 <br>
+                The primary school is the magic school to which the first
+                effect of the record belongs:
+                <table id="patch-tweak-names-schools">
+                    <thead>
+                        <tr>
+                            <th>School</th>
+                            <th>Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Alteration</td>
+                            <td>A</td>
+                        </tr>
+                        <tr>
+                            <td>Conjuration</td>
+                            <td>C</td>
+                        </tr>
+                        <tr>
+                            <td>Destruction</td>
+                            <td>D</td>
+                        </tr>
+                        <tr>
+                            <td>Illusion</td>
+                            <td>I</td>
+                        </tr>
+                        <tr>
+                            <td>Mysticism - <strong>Oblivion &amp; Nehrim&colon; At Fate's Edge only</strong></td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>Restoration</td>
+                            <td>R</td>
+                        </tr>
+                        <tr>
+                            <td>Unknown</td>
+                            <td>U</td>
+                        </tr>
+                    </tbody>
+                </table>
+                The spell level is a simple
+                integer representing how proficient you have
+                to be in the associated school to cast the spell:
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Spell Level</th>
+                            <th>Meaning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>0</td>
+                            <td>Novice</td>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>Apprentice</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Adept/Journeyman</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Expert</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>Master</td>
+                        </tr>
+                    </tbody>
+                </table>
                 You can specify a custom value as well. It may contain a single
                 <code>%s</code> specifier, a single <code>%02d</code>
                 specifier, both, or neither. For example, the custom format
@@ -6468,17 +7124,23 @@ noted in the description of the tweak.</p>
                 <q>Fireball</q> from the school of Destruction with a level of
                 2 to <q>D|02 Fireball</q>.
             </td>
-            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td id="patch-tweak-names-swa">Sort: Weapons/Ammunition</td>
             <td>Tweaks names of weapons and ammunition to make them sort more
-                easily in the inventory. For (WEAP) Weapon records, a single
-                letter indicating the weapon type is prepended:
+                easily in the inventory.
+                <br>
+                <br>
+                For (WEAP) Weapon records, a single letter indicating the
+                weapon type is prepended.
+                <br>
+                For <strong>Oblivion &amp; Nehrim&colon; At Fate's
+                    Edge</strong>, the (DATA) Type is used:
                 <table>
                     <thead>
                         <tr>
-                            <th>Weapon Type</th>
+                            <th>(DATA) Type</th>
                             <th>Code</th>
                         </tr>
                     </thead>
@@ -6513,9 +7175,67 @@ noted in the description of the tweak.</p>
                         </tr>
                     </tbody>
                 </table>
+                For <strong>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
+                    Special Edition</strong>, the (DATA) Animation Type is
+                used:
+                <table>
+                    <thead>
+                        <tr>
+                            <th>(DATA) Animation Type</th>
+                            <th>Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Hand To Hand Melee (0)</td>
+                            <td>H</td>
+                        </tr>
+                        <tr>
+                            <td>One Hand Sword (1)</td>
+                            <td>S</td>
+                        </tr>
+                        <tr>
+                            <td>One Hand Dagger (2)</td>
+                            <td>D</td>
+                        </tr>
+                        <tr>
+                            <td>One Hand Axe (3)</td>
+                            <td>X</td>
+                        </tr>
+                        <tr>
+                            <td>One Hand Mace (4)</td>
+                            <td>M</td>
+                        </tr>
+                        <tr>
+                            <td>Two Hand Sword (5)</td>
+                            <td>G</td>
+                        </tr>
+                        <tr>
+                            <td>Two Hand Axe (6)</td>
+                            <td>W</td>
+                        </tr>
+                        <tr>
+                            <td>Bow (7)</td>
+                            <td>B</td>
+                        </tr>
+                        <tr>
+                            <td>Staff (8)</td>
+                            <td>T</td>
+                        </tr>
+                        <tr>
+                            <td>Crossbow (9)</td>
+                            <td>C</td>
+                        </tr>
+                        <tr>
+                            <td>Other (any other value)</td>
+                            <td>O</td>
+                        </tr>
+                    </tbody>
+                </table>
                 For (AMMO) Ammunition records, an <q>A</q> is used instead.
                 In either case, you can also choose to include the damage dealt
                 by the weapon/ammunition.
+                <br>
                 <br>
                 <strong>Note:</strong> This tweak does not ignore records
                 starting with the <a href="#patch-tweak-names-note">special
@@ -6528,7 +7248,7 @@ noted in the description of the tweak.</p>
                 <code>W%s%02d&nbsp;</code> would rename a weapon called
                 <q>Elven Bow</q> with a damage of 14 to <q>WB14 Elven Bow</q>.
             </td>
-            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Sort: Weapons</td>
@@ -6716,9 +7436,7 @@ noted in the description of the tweak.</p>
         <tr>
             <td>Actor: Greeting Distance</td>
             <td>Distance at which NPCs will greet the player.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Actor: Max Companions</td>
@@ -6749,9 +7467,7 @@ noted in the description of the tweak.</p>
         <tr>
             <td>Actor: Training Limit</td>
             <td>Sets the training limit per level allowed by trainers.
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Actor: Unconsciousness Duration</td>
@@ -6778,16 +7494,12 @@ noted in the description of the tweak.</p>
         <tr>
             <td>AI: Conversation Chance</td>
             <td>Chance of NPCs engaging in conversation in exteriors.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>AI: Conversation Chance - Interior</td>
             <td>Chance of NPCs engaging in conversation in interiors.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>AI: Max Active Actors</td>
@@ -6830,51 +7542,37 @@ noted in the description of the tweak.</p>
             <td>Arrow: Recovery from Actor</td>
             <td>Your chance of recovering an arrow shot into an actor
                 (including arrows shot into player).</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Arrow: Speed</td>
             <td>Speed at which a full power arrow travels.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Bounty: Assault</td>
             <td>The bounty for attacking a "good" npc when observed.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Bounty: Horse Theft</td>
             <td>The bounty for stealing a horse.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Bounty: Jailbreak</td>
             <td>The bounty for escaping from jail.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Bounty: Murder</td>
             <td>The bounty for committing a witnessed murder.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Bounty: Pickpocketing</td>
             <td>The bounty for pickpocketing.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Bounty: Shapeshifting</td>
@@ -6886,16 +7584,12 @@ noted in the description of the tweak.</p>
         <tr>
             <td>Bounty: Theft</td>
             <td>The bounty for stealing as a fraction of the item's value.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Bounty: Trespassing</td>
             <td>The bounty for trespassing.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Camera: Chase Distance</td>
@@ -6923,9 +7617,7 @@ noted in the description of the tweak.</p>
             <td>By default, you cannot craft alchemy items in combat.
                 Disallowing it encourages you to be ready for battle ahead of
                 time.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Auto Aim Fix</td>
@@ -6961,19 +7653,37 @@ noted in the description of the tweak.</p>
             <td>All but Fallout 4</td>
         </tr>
         <tr>
-            <td>Combat: Max Ally Hits</td>
+            <td>Combat: Max Ally Hits In Combat</td>
             <td>The maximum number of hits on an ally allowed in combat before
                 the ally will attack the hitting character.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Combat: Max Ally Hits Out Of Combat</td>
+            <td>The maximum number of hits on an ally allowed out of combat
+                before the ally will attack the hitting character.</td>
+            <td>Fallout 3, Fallout&colon; New Vegas, Skyrim, Enderal&colon;
+                Forgotten Stories &amp; Skyrim&colon; Special Edition</td>
+        </tr>
+        <tr>
+            <td>Combat: Max Friend Hits In Combat</td>
+            <td>The maximum number of hits on a non-ally friend allowed in
+                combat before the friend will attack the hitting character.
+            </td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Combat: Max Friend Hits Out Of Combat</td>
+            <td>The maximum number of hits on a non-ally friend allowed out of
+                combat before the friend will attack the hitting character.
+            </td>
+            <td>Fallout 3, Fallout&colon; New Vegas, Skyrim, Enderal&colon;
+                Forgotten Stories &amp; Skyrim&colon; Special Edition</td>
         </tr>
         <tr>
             <td>Combat: Maximum Armor Rating</td>
             <td>The maximum armor rating that you can get.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: NPC Death XP Threshold</td>
@@ -6982,12 +7692,15 @@ noted in the description of the tweak.</p>
             <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
         </tr>
         <tr>
+            <td>Combat: Random Taunt Chance</td>
+            <td>Determines how often actors randomly taunt during combat.</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
             <td>Combat: Recharge Weapons</td>
             <td>By default, you can recharge weapons during combat. Disallowing
                 that encourages you to be ready for battle ahead of time.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Combat: Repair</td>
@@ -7001,6 +7714,34 @@ noted in the description of the tweak.</p>
                 crossbows while sneaking.</td>
             <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon;
                 Special Edition</td>
+        </tr>
+        <tr>
+            <td>Combat: Speak on Attack Chance</td>
+            <td>The chance that an actor will speak after performing an attack.
+            </td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+        </tr>
+        <tr>
+            <td id="patchCombatSpeakOnHitChance">Combat: Speak on Hit Chance
+            </td>
+            <td>The chance that an actor will speak after being hit with a
+                weapon.</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Combat: Speak on Hit Threshold</td>
+            <td>The percentage of an actor's health an attack must deal for the
+                actor to speak when hit (independent of
+                <a href="#patchCombatSpeakOnHitChance">Combat: Speak on Hit
+                Chance</a>).</td>
+            <td>All but Fallout 4</td>
+        </tr>
+        <tr>
+            <td>Combat: Speak on Power Attack Chance</td>
+            <td>The chance that an actor will speak after performing a power
+                attack.</td>
+            <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
+                Fallout&colon; New Vegas</td>
         </tr>
         <tr>
             <td>Combat: VATS Player Damage Multiplier</td>
@@ -7029,9 +7770,7 @@ noted in the description of the tweak.</p>
         <tr>
             <td>Cost Multiplier: Enchantment</td>
             <td>The cost multiplier factor for enchanting.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Cost Multiplier: Recharge</td>
@@ -7052,9 +7791,7 @@ noted in the description of the tweak.</p>
             <td>Crime: Alarm Distance</td>
             <td>The distance from the player that NPCs will be alerted to
                 crimes.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Crime: Force Jail</td>
@@ -7066,18 +7803,14 @@ noted in the description of the tweak.</p>
             <td>Crime: Pickpocketing Chance</td>
             <td>Improve chances of successful pickpocketing. Custom values can
             set min and max chance.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Crime: Prison Duration Modifier</td>
             <td>Changes the bounty modifier for the amount of days you will
                 spend in prison when choosing to serve your sentence. Days in
                 prison is your bounty divided by this number.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Gore: Combat Dismember Part Chance</td>
@@ -7101,14 +7834,20 @@ noted in the description of the tweak.</p>
             <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
         </tr>
         <tr>
-            <td>Leveled Creature Max Level Difference</td>
+            <td>Level Difference: Creature Max</td>
             <td>Maximum difference to player level for leveled creatures.</td>
             <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
         <tr>
-            <td>Leveled Item Max Level Difference</td>
+            <td>Level Difference: Item Max</td>
             <td>Maximum difference to player level for leveled items.</td>
             <td>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp; Fallout&colon; New Vegas</td>
+        </tr>
+        <tr>
+            <td>Level Up: Skill Count</td>
+            <td>The number of major skill point increases needed to level up.
+            </td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
         </tr>
         <tr>
             <td>Magic: Bolt Speed</td>
@@ -7187,9 +7926,7 @@ noted in the description of the tweak.</p>
             <td>Msg: Auto Saving</td>
             <td>Sets the message on autosaving to blank or either "." or
                 "Hmm..." or a custom value entered by user.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Msg: Cannot Equip Item Fix</td>
@@ -7240,43 +7977,33 @@ noted in the description of the tweak.</p>
             <td>Sets the message when attempting to fast travel when it is
                 prohibited to blank or either "." or "Hmm..." or a custom value
                 entered by user.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Msg: No Soul Gem Large Enough</td>
             <td>Sets the message when there is no soul gem large enough for a
                 captured soul to blank or either "." or "Hmm..." or a custom
                 value entered by user.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Msg: Not Enough Charge</td>
             <td>Sets the message on attempting to use an enchanted item with
                 insufficient charge to blank or either "." or "Hmm..." or a
                 custom value entered by user.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Msg: Quick Load</td>
             <td>Sets the message on quick loading to blank or either "." or
                 "Hmm..." or a custom value entered by user.
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Msg: Quick Save</td>
             <td>Sets the message on quick saving to blank or either "." or
                 "Hmm..." or a custom value entered by user.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Msg: Soul Captured</td>
@@ -7302,9 +8029,7 @@ noted in the description of the tweak.</p>
             <td>Player: Horse Turning Speed</td>
             <td>Default Horse turning speed is rather slow. This allows you to
                 increase it.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Player: Inventory Quantity Prompt</td>
@@ -7471,18 +8196,14 @@ noted in the description of the tweak.</p>
             <td>Sets the minimum distance a hostile actor has to be from the
                 player to allow the player to sleep/fast travel/etc. in
                 exteriors.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>Warning: Interior Distance To Hostiles</td>
             <td>Sets the minimum distance a hostile actor has to be from the
                 player to allow the player to sleep/fast travel/etc. in
                 interiors.</td>
-            <td>Oblivion, Nehrim&colon; At Fate's Edge, Skyrim,
-                Enderal&colon; Forgotten Stories &amp;
-                Skyrim&colon; Special Edition</td>
+            <td>All but Fallout 3, Fallout&colon; New Vegas and Fallout 4</td>
         </tr>
         <tr>
             <td>World: Cell Respawn Time</td>
@@ -7510,7 +8231,7 @@ noted in the description of the tweak.</p>
 
 
 <h3 id="patch-csv">Default CSV Files <a class="back2top" href="#contents">Back to top</a></h3>
-<p>The following CSV files are supplied with Wrye Bash and are can be used when building your Bashed Patch.
+<p>The following CSV files are supplied with Wrye Bash and can be used when building your Bashed Patch.
 <table>
     <thead>
         <tr><th colspan="3">Default CSV Files
@@ -8540,12 +9261,6 @@ noted in the description of the tweak.</p>
                 try selecting another encoding from this dropdown.</td>
         </tr>
         <tr>
-            <td>Debug Mode</td>
-            <td>Enables debug mode, which will enable extra debug prints and
-                will print errors into a <code>BashBugDump.log</code> instead
-                of showing them on screen.</td>
-        </tr>
-        <tr>
             <td>Show Global Menu</td>
             <td>If checked, a global menu will be shown above the tabs. If
                 disabled, its options will still be accessible by
@@ -8630,7 +9345,7 @@ noted in the description of the tweak.</p>
     <a href="Wrye%20Bash%20General%20Readme.html#launchersPluginChecker">Plugin
         Checker button</a> in the status bar or by using the
     <a href="#modsPluginChecker">Plugin Checker menu option</a>.
-<p>At the top of the report is the Active Mod Files section, which lists your
+<p>At the top of the report is the Active Plugins section, which lists your
     load order if you enabled it using the
     <a href="#pluginCheckerPluginList">Plugin List</a> toggle. After that comes
     a report of all problems that were detected. A full list of problems
@@ -8666,18 +9381,52 @@ noted in the description of the tweak.</p>
     </figcaption>
   </figure>
   <table>
-    <thead>
-        <tr><th colspan="2">Plugin Checker Controls
-        <tr><th>Control<th>Function
-    <tbody>
-        <tr><td>Forward/Back Arrows<td>The Plugin Checker report may contain links to other pages. These two buttons allow navigation between pages viewed, similar to the forward/back buttons in a web browser.
-        <tr><td>Reload</td><td>Reloads the current page. Works identically to a browser's reload button.</td></tr>
-        <tr><td id="pluginCheckerPluginList">Plugin List<td>Toggles the display of the Active Mod Files list.
-        <tr><td>Version Numbers<td>Toggles display of version numbers where found for the plugins in the Active Mod Files list.
-        <tr><td>CRCs<td>Toggles display of the CRCs for the plugins in the Active Mod Files list.
-        <tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Plugin Checker's report.
-        <tr><td>Copy Text<td>Copies the text of the report to the clipboard. Useful for posting on forums.
-        <tr><td>Update<td>Forces a refresh of the report.
+      <thead>
+          <tr><th colspan="2">Plugin Checker Controls</th></tr>
+          <tr><th>Control</th><th>Function</th></tr>
+      </thead>
+      <tbody>
+          <tr>
+              <td>Forward/Back Arrows</td>
+              <td>The Plugin Checker report may contain links to other pages.
+                  These two buttons allow navigation between pages viewed,
+                  similar to the forward/back buttons in a web browser.</td>
+          </tr>
+          <tr>
+              <td>Reload</td>
+              <td>Reloads the current page. Works identically to a browser's
+                  reload button.</td>
+          </tr>
+          <tr>
+              <td id="pluginCheckerPluginList">Plugin List</td>
+              <td>Toggles the display of the Active Plugins list.</td>
+          </tr>
+          <tr>
+              <td>Version Numbers</td>
+              <td>Toggles display of version numbers (where found) for the
+                  plugins in the Active Plugins list.</td>
+          </tr>
+          <tr>
+              <td>CRCs</td>
+              <td>Toggles display of the CRCs for the plugins in the Active
+                  Plugins list.</td>
+          </tr>
+          <tr>
+              <td>Load Plugins</td>
+              <td>Toggles the full loading and scanning of plugins. Much
+                  slower, but many more advanced types of problems can be found
+                  when this is enabled.</td>
+          </tr>
+          <tr>
+              <td>Copy Text</td>
+              <td>Copies the text of the report to the clipboard. Useful for
+                  posting on forums.</td>
+          </tr>
+          <tr>
+              <td>Update</td>
+              <td>Forces a refresh of the report.</td>
+          </tr>
+      </tbody>
   </table>
 </div>
 
@@ -8714,27 +9463,69 @@ noted in the description of the tweak.</p>
     </thead>
     <tbody>
         <tr>
-            <td><code>ctrl-numpad plus (+)</code></td>
+            <td><code>Ctrl+Numpad Plus (+)</code></td>
             <td>Auto-sizes the columns to fit what is displayable.</td>
         </tr>
         <tr>
-            <td><code>ctrl-a</code></td>
+            <td><code>Ctrl+Up Arrow (↑)</code></td>
+            <td>Move the selected item(s) up (Installers, Mods).</td>
+        </tr>
+        <tr>
+            <td><code>Ctrl+Down Arrow (↓)</code></td>
+            <td>Move the selected item(s) down (Installers, Mods).</td>
+        </tr>
+        <tr>
+            <td><code>Ctrl+A</code></td>
             <td>Selects all items.</td>
         </tr>
         <tr>
-            <td><code>shift-ctrl-a</code></td>
+            <td><code>Ctrl+Shift+A</code></td>
             <td>Deselects all items.</td>
         </tr>
         <tr>
-            <td><code>ctrl-o</code></td>
+            <td><code>Ctrl+C</code></td>
+            <td>Copies files to the clipboard (Mods, Saves, Installers,
+                Screens).</td>
+        </tr>
+        <tr>
+            <td><code>Ctrl+N</code></td>
+            <td>
+                <ul>
+                    <li>New Project (Installers).</li>
+                    <li>New Plugin (Mods).</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td><code>Ctrl+Shift+N</code></td>
+            <td>
+                <ul>
+                    <li>New Marker (Installers).</li>
+                    <li>New Bashed Patch (Mods).</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td><code>Ctrl+O</code></td>
             <td>Opens the related data directory - for instance in the Mods
                 tab will open the Data folder, the INI Edits tab will open the
                 INI Tweaks folder etc.</td>
         </tr>
         <tr>
-            <td><code>ctrl-c</code></td>
-            <td>Copies files to the clipboard (Mods, Saves, Installers,
-                Screens).</td>
+            <td><code>Ctrl+Y</code></td>
+            <td>Redo load order state change (Mods).</td>
+        </tr>
+        <tr>
+            <td><code>Ctrl+Z</code></td>
+            <td>Undo load order state change (Mods).</td>
+        </tr>
+        <tr>
+            <td><code>Ctrl+Shift+Z</code></td>
+            <td>Redo load order state change (Mods).</td>
+        </tr>
+        <tr>
+            <td><code>Enter</code></td>
+            <td>Open the selected file(s) (Installers, Screens).</td>
         </tr>
         <tr>
             <td><code>F2</code></td>
@@ -8742,20 +9533,8 @@ noted in the description of the tweak.</p>
                 items for details.</td>
         </tr>
         <tr>
-            <td><code>ctrl-z</code></td>
-            <td>Undo load order state change (Mods).</td>
-        </tr>
-        <tr>
-            <td><code>ctrl-y</code></td>
-            <td>Redo load order state change (Mods).</td>
-        </tr>
-        <tr>
-            <td><code>ctrl-shift-z</code></td>
-            <td>Redo load order state change (Mods).</td>
-        </tr>
-        <tr>
-            <td><code>ctrl-shift-n</code></td>
-            <td>New Marker (Installers).</td>
+            <td><code>Space</code></td>
+            <td>Enable/disable selected plugin(s) (Mods).</td>
         </tr>
     </tbody>
 </table>
@@ -8771,9 +9550,11 @@ noted in the description of the tweak.</p>
             <th>Function
     <tbody>
         <tr>
-            <td><code>-d, --debug</code>
-            <td>Useful if bash is crashing on startup or if you want to
-                print a lot of information (e.g. while developing or debugging).
+            <td><code>-d, --debug</code></td>
+            <td>DEPRECATED. This does nothing anymore. Debug printing is now
+                always enabled. Kept around so that existing scripts and
+                shortcuts don't fail due to an unknown CLI switch.</td>
+        </tr>
         <tr>
             <td><code>-L&nbsp;LANGUAGE, --language=LANGUAGE</code>
             <td>Specify the user language overriding the system language
@@ -8930,7 +9711,7 @@ msgstr "Möchten Sie das Profil %s und die %d saves, die es enthält, löschen?"
 </div>
 
 <div id="footer">
-    <div id="version">Wrye Bash v309.1</div>
+    <div id="version">Wrye Bash v310</div>
     <a href="Wrye Bash General Readme.html">General</a>&#160;&#x2726;&#160;Advanced&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
     <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
 </div>

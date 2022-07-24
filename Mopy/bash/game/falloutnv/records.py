@@ -16,23 +16,21 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains the falloutnv record classes."""
-from __future__ import division, unicode_literals
-
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelDestructible, MelConditions
 from ...bolt import Flags, struct_calcsize
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
-    MelFid, MelFids, MelBase, MelFidList, MreHeaderBase, MelFloat, MelUInt8, \
+    MelFid, MelFids, MelBase, MelSimpleArray, MreHeaderBase, MelFloat, MelUInt8, \
     MelUInt32, MelBounds, null1, MelTruncatedStruct, MelIcons, MelIcon, \
     MelIco2, MelEdid, MelFull, MelArray, MelObject, MelNull, MelScript, \
     MelDescription, MelPickupSound, MelDropSound, MelUInt8Flags, MelSInt32, \
-    MelSorted
+    MelSorted, MelValueWeight
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------
@@ -50,7 +48,7 @@ class MreTes4(MreHeaderBase):
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelFidList(b'ONAM','overrides'),
+        MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -70,12 +68,12 @@ class MreAloc(MelRecord):
         MelUInt32(b'NAM5', 'dayStart'),
         MelUInt32(b'NAM6', 'nightStart'),
         MelUInt32(b'NAM7', 'retrigerDelay'),
-        MelSorted(MelFids(b'HNAM', 'neutralSets')),
-        MelSorted(MelFids(b'ZNAM', 'allySets')),
-        MelSorted(MelFids(b'XNAM', 'friendSets')),
-        MelSorted(MelFids(b'YNAM', 'enemySets')),
-        MelSorted(MelFids(b'LNAM', 'locationSets')),
-        MelSorted(MelFids(b'GNAM', 'battleSets')),
+        MelSorted(MelFids('neutralSets', MelFid(b'HNAM'))),
+        MelSorted(MelFids('allySets', MelFid(b'ZNAM'))),
+        MelSorted(MelFids('friendSets', MelFid(b'XNAM'))),
+        MelSorted(MelFids('enemySets', MelFid(b'YNAM'))),
+        MelSorted(MelFids('locationSets', MelFid(b'LNAM'))),
+        MelSorted(MelFids('battleSets', MelFid(b'GNAM'))),
         MelFid(b'RNAM','conditionalFaction'),
         MelUInt32(b'FNAM', 'fnam'),
     )
@@ -127,7 +125,7 @@ class MreCdck(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelSorted(MelFids(b'CARD', 'cards')),
+        MelSorted(MelFids('cards', MelFid(b'CARD'))),
         MelUInt32(b'DATA', 'count'), # 'Count (broken)' in xEdit - unused?
     )
     __slots__ = melSet.getSlotsUsed()
@@ -140,6 +138,7 @@ class MreChal(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
+        MelIcons(),
         MelScript(),
         MelDescription(),
         MelStruct(b'DATA', [u'4I', u'2s', u'2s', u'4s'],'type','threshold','flags','interval',
@@ -226,7 +225,7 @@ class MreDial(MelRecord):
     """Dialogue."""
     rec_sig = b'DIAL'
 
-    _DialFlags = Flags(0, Flags.getNames('rumors', 'toplevel'))
+    _DialFlags = Flags.from_names('rumors', 'toplevel')
 
     melSet = MelSet(
         MelEdid(),
@@ -242,7 +241,7 @@ class MreDial(MelRecord):
             ),
         ), sort_by_attrs='added_quest'),
         # Apparently unused, but xEdit has it so we should keep it too
-        MelSorted(MelFids(b'QSTR', 'removed_quests')),
+        MelSorted(MelFids('removed_quests', MelFid(b'QSTR'))),
         MelFull(),
         MelFloat(b'PNAM', 'priority'),
         MelString(b'TDUM', 'dumb_response'),
@@ -284,7 +283,7 @@ class MreImod(MelRecord):
         MelDestructible(),
         MelPickupSound(),
         MelDropSound(),
-        MelStruct(b'DATA', [u'I', u'f'],'value','weight'),
+        MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -307,14 +306,14 @@ class MreMset(MelRecord):
     """Media Set."""
     rec_sig = b'MSET'
 
-    _flags = Flags(0, Flags.getNames(
+    _flags = Flags.from_names(
         ( 0,'dayOuter'),
         ( 1,'dayMiddle'),
         ( 2,'dayInner'),
         ( 3,'nightOuter'),
         ( 4,'nightMiddle'),
         ( 5,'nightInner'),
-        ))
+    )
 
     melSet = MelSet(
         MelEdid(),
@@ -455,7 +454,7 @@ class MelWthrColorsFnv(MelArray):
             entry_slots = self._element_old.attrs
             entry_size = struct_calcsize(u'3Bs3Bs3Bs3Bs')
             load_entry = self._element_old.load_mel
-            for x in xrange(size_ // entry_size):
+            for x in range(size_ // entry_size):
                 arr_entry = MelObject()
                 append_entry(arr_entry)
                 arr_entry.__slots__ = entry_slots

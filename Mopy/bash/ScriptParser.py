@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -59,8 +59,6 @@
 #  TokensToRPN
 #  ExecuteRPN
 #==================================================
-from __future__ import division
-
 import operator
 from string import digits, whitespace
 
@@ -94,9 +92,14 @@ def validNumber(string):
 # Define Some Constants ---------------------------
 
 # Some error string
-ERR_CANNOT_SET = u"Cannot set %s '%s': type is '%s'."
-ERR_TOO_FEW_ARGS = u"Too few arguments to %s '%s':  got %s, expected %s."
-ERR_TOO_MANY_ARGS = u"Too many arguments to %s '%s':  got %s, expected %s."
+def err_too_few_args(obj_type, obj_name, got, expected):
+    error(f"Too few arguments to {obj_type} '{obj_name}':  got {got}, "
+          f"expected {expected}.")
+def err_too_many_args(obj_type, obj_name, got, expected):
+    error(f"Too many arguments to {obj_type} '{obj_name}':  got {got}, "
+          f"expected {expected}.")
+def err_cant_set(obj_type, obj_name, type_enum):
+    error(f"Cannot set {obj_type} '{obj_name}': type is '{Types[type_enum]}'.")
 
 class KEY(object):
     # Constants for keyword args
@@ -160,36 +163,6 @@ Types = {UNKNOWN:u'UNKNOWN',
          COLON:u'COLON',
          }
 
-# getType ---------------------------------------
-#  determines the type of a string.  If 'parser'
-#  is passed, then it will attempt it against
-#  various names as well.
-#------------------------------------------------
-def getType(item, parser=None):
-    if isinstance(item, unicode):
-        if not parser: return STRING
-        if item in parser.constants: return CONSTANT
-        if item in parser.variables: return VARIABLE
-        if item in parser.keywords : return KEYWORD
-        if item in parser.functions: return FUNCTION
-        if item in parser.operators: return OPERATOR
-        if item == u'(': return OPEN_PARENS
-        if item == u')': return CLOSE_PARENS
-        if item == u'[': return OPEN_BRACKET
-        if item == u']': return CLOSE_BRACKET
-        if item == u':': return COLON
-        if item == u',': return COMMA
-        if validName(item): return NAME
-        if validNumber(item):
-            if u'.' in item: return DECIMAL
-            return INTEGER
-        for i in item:
-            if i not in whitespace: return UNKNOWN
-        return WHITESPACE
-    if isinstance(item, int): return INTEGER
-    if isinstance(item, float): return DECIMAL
-    return UNKNOWN
-
 # FlowControl -------------------------------------
 #  Flow control object, to hold info about a flow
 #  control statement
@@ -223,10 +196,40 @@ def error(msg):
 # Parser ------------------------------------------
 #  This is where the magic happens
 #--------------------------------------------------
+def _get_type_basic(token_or_num):
+    """Determines a token's type without considering a parser's type system."""
+    if isinstance(token_or_num, str): return STRING
+    if isinstance(token_or_num, int): return INTEGER
+    if isinstance(token_or_num, float): return DECIMAL
+    return UNKNOWN
+
 class Parser(object):
     class ParserType(object):
         @property
         def Type(self): return self.__class__.__name__
+
+    def getType(self, token_or_num):
+        """Determine a token's type in self's type system."""
+        if isinstance(token_or_num, str): ##: use a dict here?
+            if token_or_num in self.constants: return CONSTANT
+            if token_or_num in self.variables: return VARIABLE
+            if token_or_num in self.keywords : return KEYWORD
+            if token_or_num in self.functions: return FUNCTION
+            if token_or_num in self.operators: return OPERATOR
+            if token_or_num == u'(': return OPEN_PARENS
+            if token_or_num == u')': return CLOSE_PARENS
+            if token_or_num == u'[': return OPEN_BRACKET
+            if token_or_num == u']': return CLOSE_BRACKET
+            if token_or_num == u':': return COLON
+            if token_or_num == u',': return COMMA
+            if validName(token_or_num): return NAME
+            if validNumber(token_or_num):
+                if u'.' in token_or_num: return DECIMAL
+                return INTEGER
+            for i in token_or_num:
+                if i not in whitespace: return UNKNOWN
+            return WHITESPACE
+        return _get_type_basic(token_or_num)
 
     class Callable(ParserType):
         def __init__(self, callable_name, function, min_args=0,
@@ -251,24 +254,20 @@ class Parser(object):
             numArgs = len(args)
             if self.maxArgs != KEY.NO_MAX and numArgs > self.maxArgs:
                 if self.minArgs == self.maxArgs:
-                    error(ERR_TOO_MANY_ARGS % (
-                        self.Type, self.callable_name, numArgs, self.minArgs))
+                    err_too_many_args(self.Type, self.callable_name, numArgs,
+                                      self.minArgs)
                 else:
-                    error(ERR_TOO_MANY_ARGS % (
-                        self.Type, self.callable_name, numArgs,
-                        u'min: %s, max: %s' % (self.minArgs,self.maxArgs)))
+                    err_too_many_args(self.Type, self.callable_name, numArgs,
+                        f'min: {self.minArgs}, max: {self.maxArgs}')
             if numArgs < self.minArgs:
+                args = self.Type, self.callable_name, numArgs
                 if self.maxArgs == KEY.NO_MAX:
-                    error(ERR_TOO_FEW_ARGS % (
-                        self.Type, self.callable_name, numArgs,
-                        u'min: %s' % self.minArgs))
+                    err_too_few_args(*args, f'min: {self.minArgs}')
                 elif self.minArgs == self.maxArgs:
-                    error(ERR_TOO_FEW_ARGS % (
-                        self.Type, self.callable_name, numArgs, self.minArgs))
+                    err_too_few_args(*args, self.minArgs)
                 else:
-                    error(ERR_TOO_FEW_ARGS % (
-                        self.Type, self.callable_name, numArgs,
-                        u'min: %s, max: %s' % (self.minArgs, self.maxArgs)))
+                    err_too_few_args(*args, f'min: {self.minArgs}, '
+                                            f'max: {self.maxArgs}')
             return self.function(*args)
 
     class Operator(Callable):
@@ -336,7 +335,16 @@ class Parser(object):
                 self.numArgs = token_or_text.numArgs
             else:
                 self.text = token_or_text
-                self.type = Type or getType(token_or_text, parser)
+                if Type:
+                    # We were passed a type, so use that
+                    self.type = Type
+                elif parser:
+                    # We have a parser, so we can query for reliable type info
+                    self.type = parser.getType(token_or_text)
+                else:
+                    # We do not have a parser, so we can only query for basic
+                    # type info
+                    self.type = _get_type_basic(token_or_text)
                 self.parser = parser
                 self.line = line
                 self.pos = pos
@@ -344,7 +352,7 @@ class Parser(object):
 
         def GetData(self):
             """:rtype: Parser.Function | Parser.Keyword | Parser.Operator |
-            unicode | int | float
+            str | int | float
             """
             if self.parser:
                 if self.type == FUNCTION: return self.parser.functions[self.text]
@@ -396,14 +404,14 @@ class Parser(object):
         def __and__(self, other): return Parser.Token(self.tkn & other.tkn)
         def __xor__(self, other): return Parser.Token(self.tkn ^ other.tkn)
         def __or__(self, other): return Parser.Token(self.tkn | other.tkn)
-        def __nonzero__(self): return bool(self.tkn)
+        def __bool__(self): return bool(self.tkn)
         def __neg__(self): return Parser.Token(-self.tkn)
         def __pos__(self): return Parser.Token(+self.tkn)
         def __abs__(self): return abs(self.tkn)
         def __int__(self): return int(self.tkn)
         def __index__(self): return operator.index(self.tkn)
         def __float__(self): return float(self.tkn)
-        def __str__(self): return unicode(self.tkn)
+        def __str__(self): return str(self.tkn)
 
         def __repr__(self): return u'<Token-%s:%s>' % (Types[self.type],self.text)
 
@@ -484,31 +492,31 @@ class Parser(object):
             error(_(u'Index out of bounds.'))
 
     def SetOperator(self, op_name, *args, **kwdargs):
-        type_ = getType(op_name, self)
+        type_ = self.getType(op_name)
         if type_ not in [NAME,OPERATOR,UNKNOWN]:
-            error(ERR_CANNOT_SET % (u'operator', op_name, Types[type_]))
+            err_cant_set(u'operator', op_name,  type_)
         self.operators[op_name] = Parser.Operator(op_name, *args, **kwdargs)
         for i in op_name:
             if i not in self.opChars: self.opChars += i
     def SetKeyword(self, keywrd_name, *args, **kwdargs):
-        type_ = getType(keywrd_name, self)
+        type_ = self.getType(keywrd_name)
         if type_ not in [NAME,KEYWORD]:
-            error(ERR_CANNOT_SET % (u'keyword', keywrd_name, Types[type_]))
+            err_cant_set(u'keyword', keywrd_name,  type_)
         self.keywords[keywrd_name] = Parser.Keyword(keywrd_name, *args, **kwdargs)
     def SetFunction(self, fun_name, *args, **kwdargs):
-        type_ = getType(fun_name, self)
+        type_ = self.getType(fun_name)
         if type_ not in [NAME,FUNCTION]:
-            error(ERR_CANNOT_SET % (u'function', fun_name, Types[type_]))
+            err_cant_set(u'function', fun_name,  type_)
         self.functions[fun_name] = Parser.Function(fun_name, *args, **kwdargs)
     def SetConstant(self, const_name, value):
-        type_ = getType(const_name, self)
+        type_ = self.getType(const_name)
         if type_ not in [NAME,CONSTANT]:
-            error(ERR_CANNOT_SET % (u'constant', const_name, Types[type_]))
+            err_cant_set(u'constant', const_name,  type_)
         self.constants[const_name] = value
     def SetVariable(self, var_name, value):
-        type_ = getType(var_name, self)
+        type_ = self.getType(var_name)
         if type_ not in [NAME, VARIABLE]:
-            error(ERR_CANNOT_SET % (u'variable', var_name, Types[type_]))
+            err_cant_set(u'variable', var_name,  type_)
         self.variables[var_name] = value
 
     # Flow control stack
@@ -725,10 +733,10 @@ class Parser(object):
         stack = []
         for i in rpn:
             if i.type == OPERATOR:
-                if len(stack) < i.tkn.minArgs:
-                    error(ERR_TOO_FEW_ARGS % (u'operator', i.text, len(stack), i.tkn.minArgs))
+                if len(stack) < (tkn_min_args := i.tkn.minArgs):
+                    err_too_few_args('operator',i.text,len(stack),tkn_min_args)
                 args = []
-                while len(args) < i.tkn.minArgs:
+                while len(args) < tkn_min_args:
                     args.append(stack.pop())
                 args.reverse()
                 ret = i(*args)
@@ -738,7 +746,7 @@ class Parser(object):
                     stack.append(Parser.Token(ret))
             elif i.type == FUNCTION:
                 if len(stack) < i.numArgs:
-                    error(ERR_TOO_FEW_ARGS % (u'function', i.text, len(stack), i.numArgs))
+                    err_too_few_args('function', i.text, len(stack), i.numArgs)
                 args = []
                 while len(args) < i.numArgs:
                     args.append(stack.pop())
@@ -768,13 +776,13 @@ class Parser(object):
         word = word or self.word
         if word is None: return
         if self.wordStart is None: self.wordStart = self.cCol - 1
-        type_ = type_ or getType(word, self)
+        type_ = type_ or self.getType(word)
 
         # Try to figure out if it's multiple operators bunched together
         rightWord = None
         if type_ == UNKNOWN:
-            for idex in xrange(len(word),0,-1):
-                newType = getType(word[0:idex], self)
+            for idex in range(len(word),0,-1):
+                newType = self.getType(word[0:idex])
                 if newType != UNKNOWN:
                     rightWord = word[idex:]
                     rightWordStart = self.wordStart + idex

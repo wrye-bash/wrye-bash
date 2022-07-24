@@ -16,14 +16,13 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains oblivion multitweak item patcher classes that belong
 to the Settings Multitweaker - as well as the tweaker itself."""
-
-from itertools import izip
+from __future__ import annotations
 
 from .base import MultiTweakItem, MultiTweaker, CustomChoiceTweak
 from ... import bush  # for game
@@ -128,6 +127,7 @@ class GlobalsTweak_Crime_ForceJail(_AGlobalsTweak):
 class _AGmstTweak(_ASettingsTweak):
     """Sets a GMST to specified value."""
     tweak_read_classes = b'GMST',
+    _eid_was_itpo: dict[str, bool]
 
     @property
     def chosen_eids(self):
@@ -148,7 +148,7 @@ class _AGmstTweak(_ASettingsTweak):
     def _find_chosen_value(self, wanted_eid):
         """Returns the value the user chose for the game setting with the
         specified editor ID. Note that wanted_eid must be lower-case!"""
-        for test_eid, test_val in izip(self.chosen_eids, self.chosen_values):
+        for test_eid, test_val in zip(self.chosen_eids, self.chosen_values):
             if wanted_eid == test_eid.lower():
                 return test_val
         return None
@@ -161,18 +161,18 @@ class _AGmstTweak(_ASettingsTweak):
                 return orig_eid
         return lower_eid # fallback, should never happen
 
-    def validate_values(self, chosen_values):
-        if bush.game.fsName == u'Oblivion': ##: add a comment why TES4 only!
+    def validate_values(self, chosen_values: tuple) -> str | None:
+        if bush.game.fsName == 'Oblivion': ##: add a comment why TES4 only!
             for target_value in chosen_values:
-                if target_value < 0:
-                    return _(u"Oblivion GMST values can't be negative")
-        for target_eid, target_value in izip(self.chosen_eids, chosen_values):
+                if not isinstance(target_value, str) and target_value < 0:
+                    return _("Oblivion GMST values can't be negative")
+        for target_eid, target_value in zip(self.chosen_eids, chosen_values):
             if target_eid.startswith(u'f') and not isinstance(
                     target_value, float):
-                    return _(u"The value chosen for GMST '%s' must be a "
-                             u'float, but is currently of type %s (%s).') % (
+                    return _("The value chosen for GMST '%s' must be a float, "
+                             "but is currently of type %s (%s).") % (
                         target_eid, type(target_value).__name__, target_value)
-        return super(_AGmstTweak, self).validate_values(chosen_values)
+        return super().validate_values(chosen_values)
 
     def wants_record(self, record):
         if record.fid[0] not in bush.game.bethDataFiles:
@@ -195,7 +195,7 @@ class _AGmstTweak(_ASettingsTweak):
         if len(self.choiceLabels) > 1:
             chosen_label = self.choiceLabels[self.chosen]
             if chosen_label == self.custom_choice:
-                if isinstance(self.chosen_values[0], unicode):
+                if isinstance(self.chosen_values[0], str):
                     log(u'* %s: %s %s' % (self.tweak_name, chosen_label,
                                           self.chosen_values[0]))
                 else:
@@ -208,7 +208,7 @@ class _AGmstTweak(_ASettingsTweak):
 
     def finish_tweaking(self, patch_file):
         # Create new records for any remaining EDIDs
-        for remaining_eid, was_itpo in self.eid_was_itpo.iteritems():
+        for remaining_eid, was_itpo in self.eid_was_itpo.items():
             if not was_itpo:
                 patch_file.new_gmst(self._find_original_eid(remaining_eid),
                     self._find_chosen_value(remaining_eid))
@@ -253,6 +253,32 @@ class _ASoulTrapTweak(_AGmstCCTweak):
                      (u'16', 16),
                      (u'28', 28),
                      (u'38', 38)]
+
+class _ATauntTweak(_AGmstTweak):
+    """Base class for tweaks that change the chance of actors taunting or
+    speaking when certain events (e.g. being hit) occur."""
+    tweak_choices = [(_(u'0% (Disabled)'), 0.0),
+                     (u'1%',              0.01),
+                     (u'20%',              0.2),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (u'75%',             0.75),
+                     (_(u'100% (Always)'), 1.0)]
+    custom_choice = _(u'Custom (Max: 1.0)')
+
+#------------------------------------------------------------------------------
+class _AHitsTweak(_AGmstTweak):
+    """Base class for tweaks that change the amount of hits on a friendly actor
+    before they return the attack."""
+    tweak_choices = [(u'0',               0),
+                     (u'3',               3),
+                     (u'4',               4),
+                     (u'5',               5),
+                     (u'8',               8),
+                     (u'10',             10),
+                     (u'15',             15),
+                     (_(u'Unlimited'), 1000)]
+    custom_choice = _(u'Custom (Unlimited: 1000 or higher)')
 
 #------------------------------------------------------------------------------
 class GmstTweak_Arrow_LitterCount(_AGmstCCTweak):
@@ -717,24 +743,67 @@ class GmstTweak_Magic_MaxPlayerSummons(_AGmstCCTweak):
     default_choice = u'1'
 
 #------------------------------------------------------------------------------
-class GmstTweak_Combat_MaxAllyHits(_AGmstCCTweak):
-    tweak_name = _(u'Combat: Max Ally Hits')
+class GmstTweak_Combat_MaxAllyHitsInCombat(_AHitsTweak):
+    tweak_name = _(u'Combat: Max Ally Hits In Combat')
+    tweak_tip = _(u'Number of hits allowed by allies in combat before '
+                  u'attacking the player.')
+    tweak_key = (u'iAllyHitCombatAllowed',)
+    default_choice = _(u'Unlimited')
+
+class GmstTweak_Combat_MaxAllyHitsInCombat_Tes4(
+    GmstTweak_Combat_MaxAllyHitsInCombat):
     tweak_tip = _(u'Maximum number of hits on an ally allowed in combat '
                   u'before the ally will attack the hitting character.')
     tweak_key = (u'iAllyHitAllowed',)
-    tweak_choices = [(u'0',   0),
-                     (u'3',   3),
-                     (u'5',   5),
-                     (u'8',   8),
-                     (u'10', 10),
-                     (u'15', 15)]
+    tweak_choices = [(u'1',            1),
+                     (u'3',            3),
+                     (u'5',            5),
+                     (u'8',            8),
+                     (u'10',          10),
+                     (u'15',          15),
+                     (_(u'Unlimited'), 0)]
     default_choice = u'5'
+    custom_choice = _(u'Custom (Unlimited: 0)')
 
-class GmstTweak_Combat_MaxAllyHits_Tes5(GmstTweak_Combat_MaxAllyHits):
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_MaxAllyHitsOutOfCombat(_AHitsTweak):
+    tweak_name = _(u'Combat: Max Ally Hits Out Of Combat')
     tweak_tip = _(u'Number of hits allowed by allies out of combat before '
                   u'attacking the player.')
     tweak_key = (u'iAllyHitNonCombatAllowed',)
     default_choice = u'3'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_MaxFriendHitsInCombat(_AHitsTweak):
+    tweak_name = _(u'Combat: Max Friend Hits In Combat')
+    tweak_tip = _(u'Number of hits allowed by non-ally friends in combat '
+                  u'before attacking the player.')
+    tweak_key = (u'iFriendHitCombatAllowed',)
+    default_choice = u'4'
+
+class GmstTweak_Combat_MaxFriendHitsInCombat_Tes4(
+    GmstTweak_Combat_MaxFriendHitsInCombat):
+    tweak_tip = _(u'Maximum number of hits on a non-ally friend allowed in '
+                  u'combat before the friend will attack the hitting '
+                  u'character.')
+    tweak_key = (u'iFriendHitAllowed',)
+    tweak_choices = [(u'1',            1),
+                     (u'3',            3),
+                     (u'5',            5),
+                     (u'8',            8),
+                     (u'10',          10),
+                     (u'15',          15),
+                     (_(u'Unlimited'), 0)]
+    default_choice = u'3'
+    custom_choice = _(u'Custom (Unlimited: 0)')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_MaxFriendHitsOutOfCombat(_AHitsTweak):
+    tweak_name = _(u'Combat: Max Friend Hits Out Of Combat')
+    tweak_tip = _(u'Number of hits allowed by non-ally friends out of combat '
+                  u'before attacking the player.')
+    tweak_key = (u'iFriendHitNonCombatAllowed',)
+    default_choice = u'0'
 
 #------------------------------------------------------------------------------
 class GmstTweak_Magic_MaxNPCSummons(_AGmstCCTweak):
@@ -1366,8 +1435,8 @@ class GmstTweak_Combat_CriticalHitChance(_AGmstTweak):
     tweak_tip = _(u'The chance of a strike being a critical hit.')
     tweak_key = (u'fWeaponConditionCriticalChanceMult',)
     tweak_choices = [(_(u'0% (Disabled)'), 0.0),
-                     (u'1%',               0.1),
-                     (u'5%',               0.5),
+                     (u'1%',              0.01),
+                     (u'5%',              0.05),
                      (u'10%',              0.1),
                      (u'25%',             0.25),
                      (u'50%',              0.5),
@@ -1381,11 +1450,11 @@ class GmstTweak_Arrow_MaxArrowsAttachedToNPC(_AGmstCCTweak):
     tweak_tip = _(u'The Maximum number of arrows that can be sticking out of '
                   u'an actor.')
     tweak_key = (u'iMaxAttachedArrows',)
-    tweak_choices = [(u'3',       3),
-                     (u'10',   10.0),
-                     (u'30',   30.0),
-                     (u'50',   50.0),
-                     (u'100', 100.0)]
+    tweak_choices = [(u'3',     3),
+                     (u'10',   10),
+                     (u'30',   30),
+                     (u'50',   50),
+                     (u'100', 100)]
     default_choice = u'3'
 
 #------------------------------------------------------------------------------
@@ -1403,7 +1472,6 @@ class GmstTweak_Actor_MerchantRestockTime(_AGmstTweak):
                   u'and gold.')
     tweak_key = (u'iDaysToRespawnVendor',)
     tweak_choices = [(_(u'Instant'),    0),
-                     (_(u'12 Hours'), 0.5),
                      (_(u'1 Day'),      1),
                      (_(u'2 Days'),     2),
                      (_(u'4 Days'),     4),
@@ -1714,6 +1782,80 @@ class GmstTweak_Msg_NoSoulGemLargeEnough(_AMsgTweak):
     tweak_tip = _(u'Message when there is no soul gem large enough for a '
                   u'captured soul.')
     tweak_key = (u'sSoulGemTooSmall',)
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnAttackChance(_ATauntTweak):
+    tweak_name = _(u'Combat: Speak on Attack Chance')
+    tweak_tip = _(u'The chance that an actor will speak after performing an '
+                  u'attack.')
+    tweak_key = (u'fCombatSpeakAttackChance',)
+    tweak_choices = [(_(u'0% (Disabled)'), 0.0),
+                     (u'8%',              0.08),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (u'75%',             0.75),
+                     (_(u'100% (Always)'), 1.0)]
+    default_choice = u'8%'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnHitChance(_ATauntTweak):
+    tweak_name = _(u'Combat: Speak on Hit Chance')
+    tweak_tip = _(u'The chance that an actor will speak after being hit with '
+                  u'a weapon.')
+    tweak_key = (u'fCombatSpeakHitChance',)
+    default_choice = u'1%'
+
+class GmstTweak_Combat_SpeakOnHitChance_Tes4(
+    GmstTweak_Combat_SpeakOnHitChance):
+    default_choice = u'20%'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnHitThreshold(_ATauntTweak):
+    tweak_name = _(u'Combat: Speak on Hit Threshold')
+    tweak_tip = _(u"The percentage of an actor's health an attack must deal "
+                  u'for the actor to speak when hit.')
+    tweak_key = (u'fCombatSpeakHitThreshold',)
+    tweak_choices = [(_(u'0% (Always)'), 0.0),
+                     (u'1%',              0.01),
+                     (u'10%',              0.1),
+                     (u'25%',             0.25),
+                     (u'50%',              0.5),
+                     (u'75%',             0.75),
+                     (_(u'100% (Disabled)'), 1.0)]
+    default_choice = u'1%'
+
+class GmstTweak_Combat_SpeakOnHitThreshold_Tes4(
+    GmstTweak_Combat_SpeakOnHitThreshold):
+    default_choice = u'10%'
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_SpeakOnPowerAttackChance(_ATauntTweak):
+    tweak_name = _(u'Combat: Speak on Power Attack Chance')
+    tweak_tip = _(u'The chance that an actor will speak after performing a '
+                  u'power attack.')
+    tweak_key = (u'fCombatSpeakPowerAttackChance',)
+
+class GmstTweak_Combat_SpeakOnPowerAttackChance_Tes4(
+    GmstTweak_Combat_SpeakOnPowerAttackChance):
+    default_choice = _(u'100% (Always)')
+
+#------------------------------------------------------------------------------
+class GmstTweak_Combat_RandomTauntChance(_ATauntTweak):
+    tweak_name = _(u'Combat: Random Taunt Chance')
+    tweak_tip = _(u'Determines how often actors randomly taunt during combat.')
+    tweak_key = (u'fCombatSpeakTauntChance',)
+
+#------------------------------------------------------------------------------
+class GmstTweak_LevelUp_SkillCount(_AGmstCCTweak):
+    tweak_name = _(u'Level Up: Skill Count')
+    tweak_tip = _(u'The number of major skill point increases needed to level '
+                  u'up.')
+    tweak_key = (u'iLevelUpSkillCount',)
+    tweak_choices = [(u'1',   1),
+                     (u'5',   5),
+                     (u'10', 10),
+                     (u'20', 20)]
+    default_choice = u'10'
 
 #------------------------------------------------------------------------------
 class TweakSettingsPatcher(MultiTweaker):

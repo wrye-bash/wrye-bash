@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #  Mopy/bash/load_order.py copyright (C) 2016 Utumno: Original design
 #
@@ -37,21 +37,19 @@ lo/active from inside Bash.
 delegate to the game_handle.
 """
 
-from __future__ import division
-
 __author__ = u'Utumno'
 
-import sys
-import math
 import collections
+import math
+import sys
 import time
-from itertools import izip
-# Internal
-from . import bass, bolt, bush, exception
-# Game instance providing load order operations API
-from . import _games_lo
 
-_game_handle = None # type: _games_lo.Game
+# Internal
+from . import bass, bolt, exception
+from . import _games_lo # LoGame instance providing load order operations API
+from .bolt import sig_to_str, forward_compat_path_to_fn_list
+
+_game_handle = None # type: _games_lo.LoGame
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 # Load order locking
 locked = False
@@ -62,9 +60,6 @@ _LORDS_PICKLE_VERSION = 2
 # them to BashloadOrder.dat
 __active_mods_sentinel = {}
 _active_mods_lists = {}
-
-def in_master_block(minf):
-    return _game_handle.in_master_block(minf) # minf is a master or mod info
 
 def check_active_limit(mods):
     return _game_handle.check_active_limit(mods)
@@ -86,10 +81,9 @@ def initialize_load_order_files():
     _loadorder_txt_path = _dir.join(u'loadorder.txt')
     _lord_pickle_path = bass.dirs[u'saveBase'].join(u'BashLoadOrders.dat')
 
-def initialize_load_order_handle(mod_infos):
+def initialize_load_order_handle(mod_infos, fsname):
     global _game_handle
-    _game_handle = _games_lo.game_factory(bush.game.fsName, mod_infos,
-                                          _plugins_txt_path,
+    _game_handle = _games_lo.game_factory(fsname, mod_infos, _plugins_txt_path,
                                           _loadorder_txt_path)
     _game_handle.parse_ccc_file()
     _game_handle.print_lo_paths()
@@ -103,12 +97,12 @@ class LoadOrder(object):
     def __init__(self, loadOrder=__empty, active=__none):
         """:type loadOrder: list | set | tuple
         :type active: list | set | tuple"""
-        if set(active) - set(loadOrder):
+        set_act = frozenset(active)
+        if missing := (set_act - set(loadOrder)):
             raise exception.BoltError(
-                u'Active mods with no load order: ' + u', '.join(
-                    [x.s for x in (set(active) - set(loadOrder))]))
+                u'Active mods with no load order: ' + u', '.join(missing))
         self._loadOrder = tuple(loadOrder)
-        self._active = frozenset(active)
+        self._active = set_act
         self.__mod_loIndex = {a: i for i, a in enumerate(loadOrder)}
         # below would raise key error if active have no loadOrder
         self._activeOrdered = tuple(
@@ -132,7 +126,7 @@ class LoadOrder(object):
     def lorder(self, paths):
         """Return a tuple containing the given paths in their load order.
         :param paths: iterable of paths that must all have a load order
-        :type paths: collections.Iterable[bolt.Path]
+        :type paths: collections.Iterable[FName]
         :rtype: tuple
         """
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
@@ -143,9 +137,12 @@ class LoadOrder(object):
                 u'_loadOrder': self.loadOrder}
 
     def __setstate__(self, dct):
-        if not isinstance(next(iter(dct)), unicode):# PY3: TTT accepts bytes keys?
-            dct = {(k if type(k) is unicode else k.decode(u'ascii')): v for
-                   k, v in dct.iteritems()}
+        if not all(isinstance(k, str) for k in dct): # bytes keys from older versions
+            dct = {sig_to_str(k): v for k, v in dct.items()}
+        for k in ('_activeOrdered', '_loadOrder'):
+            if k not in dct:
+                bolt.deprint(f'Unpickling {dct} missing "{k}"')
+                dct[k] = tuple()
         self.__dict__.update(dct)   # update attributes # __dict__ prints empty
         self._active = frozenset(self._activeOrdered)
         self.__mod_loIndex = {a: i for i, a in enumerate(self._loadOrder)}
@@ -198,14 +195,14 @@ def _keep_max(max_to_keep, length):
 def cached_active_tuple():
     """Return the currently cached active mods in load order as a tuple.
 
-    :rtype: tuple[bolt.Path]"""
+    :rtype: tuple[FName, ...]"""
     return cached_lord.activeOrdered
 
 def cached_lo_tuple():
     """Return the currently cached load order (including inactive mods) as a
     tuple.
 
-    :rtype: tuple[bolt.Path]"""
+    :rtype: tuple[FName, ...]"""
     return cached_lord.loadOrder
 
 def cached_is_active(mod):
@@ -235,8 +232,8 @@ def get_ordered(mod_paths):
     If some elements do not have a load order they are appended to the list
     in alphabetical, case insensitive order (used also to resolve
     modification time conflicts).
-    :type mod_paths: collections.Iterable[bolt.Path]
-    :rtype : list[bolt.Path]
+    :type mod_paths: collections.Iterable[FName]
+    :rtype : list[FName]
     """
     # resolve time conflicts or no load order
     mod_paths = sorted(mod_paths)
@@ -256,7 +253,7 @@ def find_first_difference(lo_a, acti_a, lo_b, acti_b):
     lindex_b = {p: i for i, p in enumerate(lo_b)}
     # Look for the first difference between the LOs
     low_diff = (None, None)
-    for a, b in izip(lo_a, lo_b):
+    for a, b in zip(lo_a, lo_b):
         if a != b:
             low_diff = (a, b)
             break
@@ -271,7 +268,7 @@ def find_first_difference(lo_a, acti_a, lo_b, acti_b):
     else: low_lo = None # no difference in LO
     # Then do the exact same thing with actives
     low_diff = (None, None)
-    for a, b in izip(acti_a, acti_b):
+    for a, b in zip(acti_a, acti_b):
         if a != b:
             low_diff = (a, b)
             break
@@ -306,8 +303,8 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
 
 def _update_cache(lord=None, acti_sorted=None, __index_move=0):
     """
-    :type lord: tuple[bolt.Path] | list[bolt.Path]
-    :type acti_sorted: tuple[bolt.Path] | list[bolt.Path]
+    :type lord: tuple[FName, ...] | list[FName]
+    :type acti_sorted: tuple[FName, ...] | list[FName]
     """
     global cached_lord
     try:
@@ -389,6 +386,13 @@ def __load_pickled_load_orders():
     if b'Bethesda ESMs' in _active_mods_lists: ##: backwards compat
         _active_mods_lists[u'Vanilla'] = _active_mods_lists[b'Bethesda ESMs']
         del _active_mods_lists[b'Bethesda ESMs']
+    # transform load orders to FName
+    _saved_load_orders = [lo_entry(date, LoadOrder(
+        forward_compat_path_to_fn_list(lo.loadOrder),
+        forward_compat_path_to_fn_list(lo.active, ret_type=set)))
+                          for (date, lo) in _saved_load_orders]
+    _active_mods_lists = {k: forward_compat_path_to_fn_list(v) for k, v in
+                          _active_mods_lists.items()}
     locked = bass.settings.get(u'bosh.modInfos.resetMTimes', False)
 
 def get_active_mods_lists():
@@ -421,14 +425,13 @@ def _restore_lo(index_move):
                    __index_move=index_move, quiet=True)
 
 # API helpers
-def swap(old_dir, new_dir): _game_handle.swap(old_dir, new_dir)
+def swap(old_dir, new_dir):
+    return _game_handle.swap(old_dir, new_dir)
 
 def must_be_active_if_present():
     return set(_game_handle.must_be_active_if_present) | (
         set() if _game_handle.allow_deactivate_master else {
             _game_handle.master_path})
-
-def using_txt_file(): return bush.game.using_txt_file
 
 def using_ini_file(): return isinstance(_game_handle, _games_lo.INIGame)
 

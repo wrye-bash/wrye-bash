@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -28,11 +28,10 @@ to eventually absorb all of them under the _AMerger base class."""
 import copy
 from collections import defaultdict, Counter
 from itertools import chain
-from operator import attrgetter
 # Internal
 from ..base import ImportPatcher, ListPatcher
-from ... import bush
-from ...bolt import GPath
+from ... import bush, load_order
+from ...bolt import FName
 from ...exception import AbstractError, BoltError, ModSigMismatchError
 
 #------------------------------------------------------------------------------
@@ -40,7 +39,8 @@ from ...exception import AbstractError, BoltError, ModSigMismatchError
 ##: add ForceAdd support
 ##: once the two tasks above are done, absorb all other mergers
 ##: a lot of code still shared with _APreserver - move to ImportPatcher
-##: add CSV support - we broke Import Relations when we made it an _AMerger
+##: add CSV support - we broke Import Relations when we made it an _AMerger -
+##: see gui_patchers.ImportRelations
 # instance (the GUI will still list them too)
 class _AMerger(ImportPatcher):
     """Still very WIP base class for mergers."""
@@ -52,14 +52,14 @@ class _AMerger(ImportPatcher):
     _remove_tag = None
     # Dict mapping each record type to the subrecord we want to merge for it
     _wanted_subrecord = {}
+    # We want inactives since we process our sources in scanModFiles
+    _scan_inactive = True
 
     def __init__(self, p_name, p_file, p_sources):
-        p_sources = [x for x in p_sources if
-                     x in p_file.p_file_minfos and x in p_file.allSet]
         super(_AMerger, self).__init__(p_name, p_file, p_sources)
         self.id_deltas = defaultdict(list)
         merger_masters = set(chain.from_iterable(
-            self._recurse_masters(srcMod, p_file.p_file_minfos)
+            p_file.p_file_minfos.recurse_masters(srcMod)
             for srcMod in self.srcs))
         self._masters_and_srcs = merger_masters | set(self.srcs)
         # Set of record signatures that are actually provided by sources
@@ -69,16 +69,6 @@ class _AMerger(ImportPatcher):
         self.inventOnlyMods = (
             {x for x in self.srcs if x in p_file.mergeSet and u'IIM' in
              p_file.p_file_minfos[x].getBashTags()} if self.iiMode else set())
-
-    ##: Move to ModInfo? get_recursive_masters()?
-    def _recurse_masters(self, srcMod, minfs):
-        """Recursively collects all masters of srcMod."""
-        ret_masters = set()
-        src_masters = minfs[srcMod].masterNames if srcMod in minfs else []
-        for src_master in src_masters:
-            ret_masters.add(src_master)
-            ret_masters.update(self._recurse_masters(src_master, minfs))
-        return ret_masters
 
     ##: post-tweak pooling, see if we can use RecPath for this
     def _entry_key(self, subrecord_entry):
@@ -108,11 +98,10 @@ class _AMerger(ImportPatcher):
         self.isActive = bool(self._present_sigs)
 
     def scanModFile(self, modFile, progress):
-        if not self.isActive: return
         touched = self.touched
         id_deltas = self.id_deltas
         mod_id_entries = self.mod_id_entries
-        modName = modFile.fileInfo.ci_key
+        modName = modFile.fileInfo.fn_key
         #--Master or source?
         if modName in self._masters_and_srcs:
             id_entries = mod_id_entries[modName] = {}
@@ -138,7 +127,7 @@ class _AMerger(ImportPatcher):
             for master in modFile.tes4.masters:
                 if master in mod_id_entries:
                     id_entries.update(mod_id_entries[master])
-            for fid,entries in mod_id_entries[modName].iteritems():
+            for fid,entries in mod_id_entries[modName].items():
                 masterEntries = id_entries.get(fid)
                 if masterEntries is None: continue
                 master_keys = {en_key(x) for x in masterEntries}
@@ -162,7 +151,7 @@ class _AMerger(ImportPatcher):
                                            changed_entries))
         # Copy the new records we want to keep, unless we're an IIM merger and
         # the mod is IIM-tagged
-        if modFile.fileInfo.ci_key not in self.inventOnlyMods:
+        if modFile.fileInfo.fn_key not in self.inventOnlyMods:
             for curr_sig in self._present_sigs:
                 if curr_sig not in modFile.tops: continue
                 patchBlock = self.patchFile.tops[curr_sig]
@@ -338,7 +327,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
             srcFile = self._mod_file_read(srcInfo)
-            bashTags = srcInfo.getBashTags()
+            force_add = 'Actors.AIPackagesForceAdd' in srcInfo.getBashTags()
             for rsig in read_sigs:
                 if rsig not in srcFile.tops: continue
                 for record in srcFile.tops[rsig].getActiveRecords():
@@ -357,8 +346,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                     for record in masterFile.tops[rsig].getActiveRecords():
                         fi = record.fid
                         if fi not in tempData: continue
-                        if record.aiPackages == tempData[fi] and not \
-                            u'Actors.AIPackagesForceAdd' in bashTags:
+                        if record.aiPackages == tempData[fi] and not force_add:
                             # if subrecord is identical to the last master
                             # then we don't care about older masters.
                             del tempData[fi]
@@ -366,7 +354,7 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                         if fi in mer_del:
                             if tempData[fi] == mer_del[fi][u'merged']:
                                 continue
-                        recordData = {u'deleted':[],u'merged':tempData[fi]}
+                        recordData = {'deleted': [], 'merged': tempData[fi]}
                         for pkg in record.aiPackages:
                             if pkg not in tempData[fi]:
                                 recordData[u'deleted'].append(pkg)
@@ -379,32 +367,29 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
                                 mer_del[fi][u'deleted'].append(pkg)
                             if mer_del[fi][u'merged'] == []:
                                 for pkg in recordData[u'merged']:
-                                    if pkg in mer_del[fi][u'deleted'] and not \
-                                      u'Actors.AIPackagesForceAdd' in bashTags:
+                                    if pkg in mer_del[fi][u'deleted'] and not force_add:
                                         continue
                                     mer_del[fi][u'merged'].append(pkg)
                                 continue
                             for index, pkg in enumerate(recordData[u'merged']):
-                                if pkg not in mer_del[fi][u'merged']:# so needs
-                                    #  to be added... (unless deleted that is)
+                                fi_merged = mer_del[fi]['merged']
+                                if pkg not in fi_merged: # so needs to be
+                                    # added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if pkg in mer_del[fi][u'deleted'] and not \
-                                      u'Actors.AIPackagesForceAdd' in bashTags:
-                                        continue  # previously deleted
-                                    self._insertPackage(mer_del, fi, index,
-                                                        pkg, recordData)
+                                    if force_add or pkg not in mer_del[fi][
+                                            'deleted']:
+                                        self._insertPackage(mer_del, fi, index,
+                                                            pkg, recordData)
                                     continue # Done with this package
-                                elif index == mer_del[fi][u'merged'].index(
-                                        pkg) or (
-                                    len(recordData[u'merged']) - index) == (
-                                    len(mer_del[fi][u'merged']) - mer_del[fi][
-                                    u'merged'].index(pkg)):
+                                if index == (dex := fi_merged.index(pkg)) or (
+                                        len(recordData['merged']) - index) == (
+                                        len(fi_merged) - dex):
                                     continue  # pkg same in both lists.
-                                else:  # this import is later loading so we'll
-                                    #  assume it is better order
-                                    mer_del[fi][u'merged'].remove(pkg)
-                                    self._insertPackage(mer_del, fi, index,
-                                                        pkg, recordData)
+                                # this import is later loading so we'll assume
+                                # it is better order
+                                fi_merged.remove(pkg)
+                                self._insertPackage(mer_del, fi, index,
+                                                    pkg, recordData)
             progress.plus()
 
     def scanModFile(self, modFile, progress): # scanModFile2: loop, LongTypes..
@@ -443,29 +428,38 @@ class ImportActorsAIPackagesPatcher(ImportPatcher):
 #------------------------------------------------------------------------------
 class ImportActorsSpellsPatcher(ImportPatcher):
     logMsg = u'\n=== ' + _(u'Spell Lists Changed') + u': %d'
-    _read_sigs = bush.game.actor_types
+    _actor_sigs = bush.game.actor_types
+    _spel_sigs = bush.game.spell_types
+    if bush.game.Esp.sort_lvsp_after_spel:
+        # We need to read LVSP & SPEL to properly sort spell lists in actors
+        ##: This is a workaround, see MelSpellsTes4 for the proper solution
+        _read_sigs = _actor_sigs + _spel_sigs
+    else:
+        _read_sigs = _actor_sigs
 
     def __init__(self, p_name, p_file, p_sources):
         super(ImportActorsSpellsPatcher, self).__init__(p_name, p_file, p_sources)
         # long_fid -> {u'merged':list[long_fid], u'deleted':list[long_fid]}
-        self.id_merged_deleted = {}
+        self._id_merged_deleted = {}
+        # long_fid -> rec_sig
+        self._spel_type = {}
 
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        read_sigs = self._read_sigs
+        actor_sigs = self._actor_sigs
         self.loadFactory = self._patcher_read_fact()
         progress.setFull(len(self.srcs))
         cachedMasters = {}
-        mer_del = self.id_merged_deleted
+        mer_del = self._id_merged_deleted
         minfs = self.patchFile.p_file_minfos
-        for index,srcMod in enumerate(self.srcs):
+        for srcMod in self.srcs:
             tempData = {}
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
             srcFile = self._mod_file_read(srcInfo)
-            bashTags = srcInfo.getBashTags()
-            for rsig in read_sigs:
+            force_add = 'Actors.SpellsForceAdd' in srcInfo.getBashTags()
+            for rsig in actor_sigs:
                 if rsig not in srcFile.tops: continue
                 for record in srcFile.tops[rsig].getActiveRecords():
                     tempData[record.fid] = record.spells
@@ -477,13 +471,13 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                     masterInfo = minfs[master]
                     masterFile = self._mod_file_read(masterInfo)
                     cachedMasters[master] = masterFile
-                for rsig in read_sigs:
+                for rsig in actor_sigs:
                     if rsig not in srcFile.tops or rsig not in masterFile.tops:
                         continue
                     for record in masterFile.tops[rsig].getActiveRecords():
                         fid = record.fid
                         if fid not in tempData: continue
-                        if record.spells == tempData[fid] and not u'Actors.SpellsForceAdd' in bashTags:
+                        if record.spells == tempData[fid] and not force_add:
                             # if subrecord is identical to the last master then we don't care about older masters.
                             del tempData[fid]
                             continue
@@ -502,89 +496,101 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                                 mer_del[fid][u'deleted'].append(spell)
                             if mer_del[fid][u'merged'] == []:
                                 for spell in recordData[u'merged']:
-                                    if spell in mer_del[fid][u'deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue
+                                    if spell in mer_del[fid][u'deleted'] and not force_add: continue
                                     mer_del[fid][u'merged'].append(spell)
                                 continue
-                            for index, spell in enumerate(recordData[u'merged']):
-                                if spell not in mer_del[fid][u'merged']: # so needs to be added... (unless deleted that is)
+                            len_mer = len(rec_merged := recordData['merged'])
+                            fi_merged = mer_del[fid]['merged']
+                            for index, spell in enumerate(rec_merged):
+                                if spell not in fi_merged: # so needs to be added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if spell in mer_del[fid][u'deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
-                                    if index == 0:
-                                        mer_del[fid][u'merged'].insert(0, spell) #insert as first item
-                                    elif index == (len(recordData[u'merged'])-1):
-                                        mer_del[fid][u'merged'].append(spell) #insert as last item
+                                    if spell in mer_del[fid][u'deleted'] and not force_add: continue #previously deleted
+                                    if index == 0: #insert as first item
+                                        fi_merged.insert(0, spell)
+                                    elif index == (len_mer - 1):
+                                        fi_merged.append(spell) #insert as last item
                                     else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
-                                        i = index - 1
-                                        while i >= 0:
-                                            if recordData[u'merged'][i] in mer_del[fid][u'merged']:
-                                                slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i]) + 1
-                                                mer_del[fid][u'merged'].insert(slot, spell)
+                                        for i in range(index - 1, -1, -1):
+                                            try:
+                                                slot = fi_merged.index(rec_merged[i]) + 1
+                                                fi_merged.insert(slot, spell)
                                                 break
-                                            i -= 1
+                                            except ValueError: continue
                                         else:
-                                            i = index + 1
-                                            while i != len(recordData[u'merged']):
-                                                if recordData[u'merged'][i] in mer_del[fid][u'merged']:
-                                                    slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i])
-                                                    mer_del[fid][u'merged'].insert(slot, spell)
+                                            for i in range(index + 1, len_mer):
+                                                try:
+                                                    slot = fi_merged.index(rec_merged[i])
+                                                    fi_merged.insert(slot, spell)
                                                     break
-                                                i += 1
+                                                except ValueError: continue
                                     continue # Done with this package
-                                elif index == mer_del[fid][u'merged'].index(spell) or (len(recordData[u'merged'])-index) == (len(mer_del[fid][u'merged'])-mer_del[fid][u'merged'].index(spell)): continue #spell same in both lists.
+                                elif index == (dex := fi_merged.index(spell)) or (len_mer - index) == (len(fi_merged) - dex): continue #spell same in both lists.
                                 else: #this import is later loading so we'll assume it is better order
-                                    mer_del[fid][u'merged'].remove(spell)
-                                    if index == 0:
-                                        mer_del[fid][u'merged'].insert(0, spell) #insert as first item
-                                    elif index == (len(recordData[u'merged'])-1):
-                                        mer_del[fid][u'merged'].append(spell) #insert as last item
+                                    fi_merged.remove(spell)
+                                    if index == 0: # insert as first item
+                                        fi_merged.insert(0, spell)
+                                    elif index == (len_mer - 1):
+                                        fi_merged.append(spell) # insert as last item
                                     else:
-                                        i = index - 1
-                                        while i >= 0:
-                                            if recordData[u'merged'][i] in mer_del[fid][u'merged']:
-                                                slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i]) + 1
-                                                mer_del[fid][u'merged'].insert(slot, spell)
+                                        for i in range(index - 1, -1, -1):
+                                            try:
+                                                slot = fi_merged.index(rec_merged[i]) + 1
+                                                fi_merged.insert(slot, spell)
                                                 break
-                                            i -= 1
+                                            except ValueError: continue
                                         else:
-                                            i = index + 1
-                                            while i != len(recordData[u'merged']):
-                                                if recordData[u'merged'][i] in mer_del[fid][u'merged']:
-                                                    slot = mer_del[fid][u'merged'].index(recordData[u'merged'][i])
-                                                    mer_del[fid][u'merged'].insert(slot, spell)
+                                            for i in range(index + 1, len_mer):
+                                                try:
+                                                    slot = fi_merged.index(rec_merged[i])
+                                                    fi_merged.insert(slot, spell)
                                                     break
-                                                i += 1
+                                                except ValueError: continue
             progress.plus()
 
     def scanModFile(self, modFile, progress): # scanModFile2
         """Add record from modFile."""
-        merged_deleted = self.id_merged_deleted
-        for top_grup_sig in self._read_sigs:
-            patchBlock = self.patchFile.tops[top_grup_sig]
+        merged_deleted = self._id_merged_deleted
+        for top_grup_sig in self._actor_sigs:
+            patch_set = self.patchFile.tops[top_grup_sig].setRecord
             for record in modFile.tops[top_grup_sig].getActiveRecords():
                 fid = record.fid
-                if fid in merged_deleted:
-                    if record.spells != merged_deleted[fid][u'merged']:
-                        patchBlock.setRecord(record.getTypeCopy())
+                if (fid in merged_deleted and
+                        record.spells != merged_deleted[fid]['merged']):
+                    patch_set(record.getTypeCopy())
+        if bush.game.Esp.sort_lvsp_after_spel:
+            # Track the record signatures of every LSVP/SPEL
+            spel_type = self._spel_type
+            for spel_top_sig in self._spel_sigs:
+                for record in modFile.tops[spel_top_sig].getActiveRecords():
+                    spel_type[record.fid] = record._rec_sig
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        merged_deleted = self.id_merged_deleted
+        merged_deleted = self._id_merged_deleted
+        special_lvsp_sort = bush.game.Esp.sort_lvsp_after_spel
+        spel_type = self._spel_type
         mod_count = Counter()
-        for top_grup_sig in self._read_sigs:
+        def sorted_spells(spell_list):
+            # First pass: sort by the final load order (and ObjectID)
+            spells_ret = sorted(spell_list,
+                key=lambda s: (load_order.cached_lo_index(s[0]), s[1]))
+            if special_lvsp_sort:
+                # Second pass: sort LVSP after SPEL
+                spells_ret.sort(key=lambda s: spel_type[s] == b'LVSP')
+            return spells_ret
+        for top_grup_sig in self._actor_sigs:
             for record in self.patchFile.tops[top_grup_sig].records:
-                fid = record.fid
-                if fid not in merged_deleted: continue
-                changed = False
-                mergedSpells = sorted(merged_deleted[fid][u'merged'])
-                if sorted(record.spells) != mergedSpells:
-                    record.spells = mergedSpells
-                    changed = True
-                if changed:
+                if record.fid not in merged_deleted:
+                    continue
+                merged_spells = sorted_spells(
+                    merged_deleted[record.fid]['merged'])
+                if sorted_spells(record.spells) != merged_spells:
+                    record.spells = merged_spells
                     keep(record.fid)
                     mod_count[record.fid[0]] += 1
-        self.id_merged_deleted.clear()
+        self._id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
@@ -602,19 +608,20 @@ class _AListsMerger(ListPatcher):
     _sig_to_label = {}
     _de_re_header = None
 
-    def _overhaul_compat(self, mods, _skip_id):
-        OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
-                   GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
-        FransMods = {GPath(u"Francesco's Leveled Creatures-Items Mod.esm"),
-                     GPath(u'Francesco.esp')}
-        WCMods = {GPath(u'Oblivion Warcry.esp'),
-                  GPath(u'Oblivion Warcry EV.esp')}
-        TIEMods = {GPath(u'TIE.esp')}
-        OverhaulCompat = GPath(u'Unofficial Oblivion Patch.esp') in mods and (
+    def _overhaul_compat(self, mods):
+        OOOMods = {*map(FName, (f"Oscuro's_Oblivion_Overhaul.{x}" for x in
+                                ('esm', 'esp')))}
+        FransMods = {*map(FName, (
+            'Francesco.esp', "Francesco's Leveled Creatures-Items Mod.esm"))}
+        WCMods = {FName('Oblivion Warcry.esp'),
+                  FName('Oblivion Warcry EV.esp')}
+        TIEMods = FName('TIE.esp')
+        OverhaulCompat = FName('Unofficial Oblivion Patch.esp') in mods and (
                 (OOOMods | WCMods) & mods) or (
-                                 FransMods & mods and not (TIEMods & mods))
+                                 FransMods & mods and not (TIEMods in mods))
         if OverhaulCompat:
-            self.OverhaulUOPSkips = {_skip_id(x) for x in [
+            self.OverhaulUOPSkips = {*map(
+                lambda x: (bush.game.master_file, x), [
                     0x03AB5D,  # VendorWeaponBlunt
                     0x03C7F1,  # LL0LootWeapon0Magic4Dwarven100
                     0x03C7F2,  # LL0LootWeapon0Magic7Ebony100
@@ -640,7 +647,7 @@ class _AListsMerger(ListPatcher):
                     0x053D82,  # LL0LootArmor0MagicLight5Elven100
                     0x053D83,  # LL0LootArmor0MagicLight6Glass100
                     0x052D89,  # LL0LootArmor0MagicLight4Mithril100
-                ]}
+                ])}
         else:
             self.OverhaulUOPSkips = set()
 
@@ -652,14 +659,14 @@ class _AListsMerger(ListPatcher):
         strings, e.g. u'Delev'), defaulting to an empty set.
 
         :type remove_empty: bool
-        :type tag_choices: defaultdict[bolt.Path, set[unicode]]"""
+        :type tag_choices: defaultdict[bolt.Path, set[str]]"""
         super(_AListsMerger, self).__init__(p_name, p_file, p_sources)
         self.isActive |= bool(p_file.loadSet) # Can do meaningful work even without sources
         self.type_list = {rsig: {} for rsig in self._read_sigs}
         self.masterItems = defaultdict(dict)
         # Calculate levelers/de_masters first, using unmodified self.srcs
         self.levelers = [leveler for leveler in self.srcs if
-                         leveler in self.patchFile.allSet]
+                         leveler in self.patchFile.merged_or_loaded]
         # de_masters is a set of all the masters of each leveler, i.e. each
         # tagged plugin. These are the masters we have to consider records from
         # when determining whether or not to carry forward removals done by a
@@ -683,7 +690,7 @@ class _AListsMerger(ListPatcher):
 
     def scanModFile(self, modFile, progress):
         #--Begin regular scan
-        sc_name = modFile.fileInfo.ci_key
+        sc_name = modFile.fileInfo.fn_key
         #--PreScan for later Relevs/Delevs?
         if sc_name in self.de_masters:
             for list_type_sig in self._read_sigs:
@@ -743,13 +750,13 @@ class _AListsMerger(ListPatcher):
         for leveler in self.levelers:
             log(u'* ' + self.annotate_plugin(leveler))
         # Save to patch file
-        for list_type_sig, list_label in self._sig_to_label.iteritems():
+        for list_type_sig, list_label in self._sig_to_label.items():
             if list_type_sig not in self._read_sigs: continue
             log.setHeader(u'=== ' + _(u'Merged %s Lists') % list_label)
             patch_block = self.patchFile.tops[list_type_sig]
             stored_lists = self.type_list[list_type_sig]
-            for stored_list in sorted(stored_lists.viewvalues(),
-                                      key=attrgetter(u'eid')):
+            for stored_list in sorted(stored_lists.values(),
+                                      key=lambda l: l.eid or ''):
                 if not stored_list.mergeOverLast: continue
                 list_fid = stored_list.fid
                 keep(list_fid)
@@ -760,7 +767,7 @@ class _AListsMerger(ListPatcher):
                 self._check_list(stored_list, log)
         #--Discard empty sublists
         if not self.remove_empty_sublists: return
-        for list_type_sig, list_label in self._sig_to_label.iteritems():
+        for list_type_sig, list_label in self._sig_to_label.items():
             if list_type_sig not in self._read_sigs: continue
             patch_block = self.patchFile.tops[list_type_sig]
             stored_lists = self.type_list[list_type_sig]
@@ -768,7 +775,7 @@ class _AListsMerger(ListPatcher):
             # Build a dict mapping leveled lists to other leveled lists that
             # they are sublists in
             sub_supers = {x: [] for x in stored_lists} ##: defaultdict??
-            for stored_list in sorted(stored_lists.itervalues()):
+            for stored_list in stored_lists.values():
                 list_fid = stored_list.fid
                 if not stored_list.items:
                     empty_lists.append(list_fid)
@@ -806,11 +813,11 @@ class _AListsMerger(ListPatcher):
                         cleaned_lists.add(stored_list.eid)
                         keep(sub_super)
             log.setHeader(u'=== ' + _(u'Empty %s Sublists') % list_label)
-            for list_eid in sorted(removed_empty_sublists, key=unicode.lower):
+            for list_eid in sorted(removed_empty_sublists, key=str.lower):
                 log(u'* ' + list_eid)
             log.setHeader(u'=== ' + _(u'Empty %s Sublists Removed') %
                           list_label)
-            for list_eid in sorted(cleaned_lists, key=unicode.lower):
+            for list_eid in sorted(cleaned_lists, key=str.lower):
                 log(u'* ' + list_eid)
 
     # Methods for patchers to override
@@ -840,8 +847,7 @@ class LeveledListsPatcher(_AListsMerger):
         super(LeveledListsPatcher, self).__init__(p_name, p_file, p_sources,
                                           remove_empty, tag_choices)
         self.empties = set()
-        _skip_id = lambda x: (GPath(bush.game.master_file), x)
-        self._overhaul_compat(self.srcs, _skip_id)
+        self._overhaul_compat(self.srcs)
 
     def _check_list(self, record, log):
         # Emit a warning for lists that may have exceeded 255 - note that
@@ -957,7 +963,7 @@ class ImportRacesSpellsPatcher(ImportPatcher):
         self._srcMods(log)
         log(u'\n=== ' + _(u'Merged'))
         if not racesPatched:
-            log(u'. ~~%s~~' % _(u'None'))
+            log(f'. ~~{_("None")}~~')
         else:
             for eid in sorted(racesPatched):
-                log(u'* ' + eid)
+                log(f'* {eid}')

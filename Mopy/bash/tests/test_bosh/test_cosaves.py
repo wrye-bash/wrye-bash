@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,7 +25,7 @@ import io
 from .. import get_meta_value, iter_games, iter_resources, \
     resource_to_displayName, set_game
 from ... import bush
-from ...bolt import GPath, LogFile, Rounder
+from ...bolt import LogFile, Rounder
 from ...bosh.cosaves import get_cosave_types, xSECosave, _xSEHeader, \
     _xSEChunk, _xSEModListChunk, _xSEChunkPLGN, _Remappable, PluggyCosave
 from ...exception import AbstractError
@@ -34,7 +34,7 @@ from ...exception import AbstractError
 _xse_cosave_exts = (u'.obse', u'.fose', u'.nvse', u'.skse', u'.f4se')
 _pluggy_cosave_exts = (u'.pluggy',)
 _cosave_exts = _xse_cosave_exts + _pluggy_cosave_exts
-def iter_cosaves(filter_by_game=frozenset()):
+def iter_cosaves(filter_by_game: set = frozenset()):
     """Version of iter_resources('saves') that only yields cosaves."""
     for r in iter_resources(u'saves', filter_by_game):
         if r.endswith(_cosave_exts):
@@ -75,7 +75,7 @@ class ATestACosave(object):
 
     def test_write_cosave(self):
         """Tests if writing out all cosaves produces the same checksum."""
-        def _check_writing(curr_cosave): # type: (xSECosave) -> None
+        def _check_writing(curr_cosave: xSECosave):
             temp_cosave_path = curr_cosave.abs_path.temp
             curr_cosave.write_cosave(temp_cosave_path)
             assert curr_cosave.abs_path.crc == temp_cosave_path.crc
@@ -90,15 +90,14 @@ class ATestACosave(object):
 
     def test_get_master_list(self):
         """Tests if get_master_list is correctly implemented."""
-        def _check_get_master_list(curr_cosave): # type: (xSECosave) -> None
+        def _check_get_master_list(curr_cosave: xSECosave):
             assert curr_cosave.get_master_list() == get_meta_value(
                 curr_cosave.abs_path, u'cosave_body')[u'cosave_masters']
         self._do_map_cosaves(_check_get_master_list)
 
     def test_has_accurate_master_list(self):
         """Tests if has_accurate_master_list is correctly implemented."""
-        def _check_has_accurate_master_list(curr_cosave):
-            # type: (xSECosave) -> None
+        def _check_has_accurate_master_list(curr_cosave: xSECosave):
             assert (not bush.game.has_esl or
                     curr_cosave.has_accurate_master_list() ==
                     get_meta_value(curr_cosave.abs_path, u'cosave_body')[
@@ -107,13 +106,13 @@ class ATestACosave(object):
 
     def test_dump_to_log(self):
         """Tests that dump_to_log is correctly implemented."""
-        def _check_dump_to_log(curr_cosave): # type: (xSECosave) -> None
+        def _check_dump_to_log(curr_cosave: xSECosave):
             test_log = LogFile(io.StringIO())
-            # This wouldn't work on SSE/FO4, but save_masters is only used for
+            # This wouldn't work on SSE/FO4, but save_masters_ is only used for
             # ARVR and STVR, which don't exist in SKSE/F4SE
-            sv_masters = [GPath(m) for m in curr_cosave.get_master_list()]
+            sv_masters = curr_cosave.get_master_list()
             curr_cosave.dump_to_log(test_log, sv_masters)
-            assert isinstance(test_log.out.getvalue(), unicode)
+            assert isinstance(test_log.out.getvalue(), str)
             # Remapping should make the new filename appear in the log
             curr_cosave.remap_plugins({
                 curr_cosave.get_master_list()[0]: _impossible_master})
@@ -123,7 +122,7 @@ class ATestACosave(object):
 
     def test_remap_plugins(self):
         """Tests that remap_plugins is correctly implemented."""
-        def _check_remap_plugins(curr_cosave): # type: (xSECosave) -> None
+        def _check_remap_plugins(curr_cosave: xSECosave):
             # Check that it doesn't throw errors
             first_master = curr_cosave.get_master_list()[0]
             curr_cosave.remap_plugins({first_master: _impossible_master})
@@ -149,7 +148,7 @@ class TestxSECosave(ATestACosave):
     def test_read_cosave_light(self):
         """Tests if light-loading all cosaves works and only loads the first
         chunk."""
-        def _check_reading_light(curr_cosave): # type: (xSECosave) -> None
+        def _check_reading_light(curr_cosave: xSECosave):
             curr_cosave.read_cosave(light=True)
             # The first plugin chunk, which belongs to the script extender,
             # must *always* be present, otherwise the cosave is invalid
@@ -162,7 +161,7 @@ class TestxSECosave(ATestACosave):
     def test_read_cosave(self):
         """Tests if full-loading all cosaves works and if the number of cosave
         chunks matches the expected number specified in the header."""
-        def _check_reading_full(curr_cosave): # type: (xSECosave) -> None
+        def _check_reading_full(curr_cosave: xSECosave):
             curr_cosave.read_cosave()
             assert (len(curr_cosave.cosave_chunks) ==
                     curr_cosave.cosave_header.num_plugin_chunks)
@@ -171,7 +170,7 @@ class TestxSECosave(ATestACosave):
 class Test_xSEHeader(object):
     def test_write_header(self):
         """Tests that the output of write_header is acceptable."""
-        def _check_write_header(curr_cosave): # type: (xSECosave) -> None
+        def _check_write_header(curr_cosave: xSECosave):
             # Check that it matches the first 20 bytes
             curr_cosave.read_cosave(light=True)
             with curr_cosave.abs_path.open(u'rb') as ins:
@@ -189,7 +188,7 @@ class Test_xSEHeader(object):
     def test_header_attrs(self):
         """Tests if the header attributes we read match the ones in the meta
         file."""
-        def _check_header_attrs(curr_cosave): # type: (xSECosave) -> None
+        def _check_header_attrs(curr_cosave: xSECosave):
             curr_cosave.read_cosave(light=True)
             cosv_path = curr_cosave.abs_path
             meta_header = get_meta_value(cosv_path, u'cosave_header')
@@ -203,7 +202,7 @@ class Test_xSEHeader(object):
 class Test_xSEPluginChunk(object):
     def test_chunk_length(self):
         """Tests that chunk_length is correctly implemented."""
-        def _check_chunk_length(curr_cosave): # type: (xSECosave) -> None
+        def _check_chunk_length(curr_cosave: xSECosave):
             curr_cosave.read_cosave()
             for pchunk in curr_cosave.cosave_chunks:
                 assert pchunk.chunk_length() == pchunk.orig_size
@@ -211,7 +210,7 @@ class Test_xSEPluginChunk(object):
 
     def test_remap_plugins(self):
         """Tests that remap_plugins is correctly implemented."""
-        def _check_remap_plugins(curr_cosave): # type: (xSECosave) -> None
+        def _check_remap_plugins(curr_cosave: xSECosave):
             curr_cosave.read_cosave()
             first_master = curr_cosave.get_master_list()[0]
             test_mapping = {first_master: first_master + u'1'}
@@ -229,7 +228,7 @@ class ATest_xSEChunk(object):
     _target_chunk_sig = u'OVERRIDE'
 
     # Helpers and overrides ---------------------------------------------------
-    def _get_remapping(self, curr_chunk): # type: (_xSEChunk) -> dict
+    def _get_remapping(self, curr_chunk: _xSEChunk) -> dict:
         """Returns a dictionary that can be passed to cchunk.remap_plugins.
         Must increase the size of exactly one master by exactly one byte."""
         raise AbstractError(u'_get_remapping not implemented')
@@ -237,7 +236,7 @@ class ATest_xSEChunk(object):
     def _map_chunks(self, map_func):
         """Maps the specified functions over all chunks with signature
         _target_chunk_sig."""
-        def _process_cosave(curr_cosave): # type: (xSECosave) -> None
+        def _process_cosave(curr_cosave: xSECosave):
             curr_cosave.read_cosave()
             for pchunk in curr_cosave.cosave_chunks:
                 for cchunk in pchunk.chunks:
@@ -245,20 +244,20 @@ class ATest_xSEChunk(object):
                         map_func(cchunk)
         map_xse_cosaves(_process_cosave)
 
-    def _wants_chunk(self, curr_chunk):  # type: (_xSEChunk) -> bool
+    def _wants_chunk(self, curr_chunk: _xSEChunk) -> bool:
         """Whether or not _map_chunks should map over this chunk."""
         return curr_chunk.chunk_type == self._target_chunk_sig
 
     # Actual test cases -------------------------------------------------------
     def test_chunk_length(self):
         """Tests that chunk_length is correctly implemented."""
-        def _check_chunk_length(curr_chunk): # type: (_xSEChunk) -> None
+        def _check_chunk_length(curr_chunk: _xSEChunk):
             assert curr_chunk.chunk_length() == curr_chunk.data_len
         self._map_chunks(_check_chunk_length)
 
     def test_remap_plugins(self):
         """Tests that remap_plugins is correctly implemented."""
-        def _check_remap_plugins(curr_chunk): # type: (_xSEChunk) -> None
+        def _check_remap_plugins(curr_chunk: _xSEChunk):
             if not isinstance(curr_chunk, _Remappable): return
             curr_chunk.remap_plugins(self._get_remapping(curr_chunk))
             # PyCharm/py2 is too stupid to combine _Remappable and _xSEChunk
@@ -266,7 +265,7 @@ class ATest_xSEChunk(object):
         self._map_chunks(_check_remap_plugins)
 
 class ATest_xSEModListChunk(ATest_xSEChunk):
-    def _get_remapping(self, curr_chunk): # type: (_xSEModListChunk) -> dict
+    def _get_remapping(self, curr_chunk: _xSEModListChunk) -> dict:
         first_master = curr_chunk.mod_names[0]
         return {first_master: first_master + u'1'}
 
@@ -288,7 +287,7 @@ class Test_xSEChunk_MODS(ATest_xSEModListChunk):
 class Test_xSEChunk_PLGN(ATest_xSEChunk):
     _target_chunk_sig = u'PLGN'
 
-    def _get_remapping(self, curr_chunk):  # type: (_xSEChunkPLGN) -> dict
+    def _get_remapping(self, curr_chunk: _xSEChunkPLGN) -> dict:
         first_master = curr_chunk.mod_entries[0].mod_name
         return {first_master: first_master + u'1'}
 

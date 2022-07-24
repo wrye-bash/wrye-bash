@@ -3,19 +3,6 @@
 
 ;-------------------------------- The Installation Sections:
 
-    Section "Prerequisites" Prereq
-        SectionIn RO
-
-        ClearErrors
-
-        ; Install MSVC 2010, needed for python-lz4
-        SetOutPath "$TEMP"
-        DetailPrint "Running Visual C++ 2010 x64 Redistributable Setup..."
-        File "${WB_CLEAN_MOPY}\redist\vcredist_2010_x64.exe"
-        ExecWait '"$TEMP\vcredist_2010_x64.exe" /quiet /norestart'
-        DetailPrint "Finished Visual C++ 2010 x64 Redistributable Setup"
-    SectionEnd
-
     Section "Wrye Bash" Main
         SectionIn RO
 
@@ -114,12 +101,13 @@
     Section "Start Menu Shortcuts" Shortcuts_SM
         CreateDirectory "$SMPROGRAMS\Wrye Bash"
         CreateShortCut "$SMPROGRAMS\Wrye Bash\Uninstall.lnk" "$COMMONFILES\Wrye Bash\uninstall.exe" "" "$COMMONFILES\Wrye Bash\uninstall.exe" 0
+        ; Since 310, debug mode has been removed, so delete the debug shortcuts
+        Delete "$SMPROGRAMS\Wrye Bash\*(Debug Log).lnk"
 
         ${If} $CheckState_OB == ${BST_CHECKED}
             ${If} $Path_OB != $Empty
                 SetOutPath $Path_OB\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion (Debug Log).lnk" "$Path_OB\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
@@ -127,7 +115,6 @@
             ${If} $Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim (Debug Log).lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
@@ -135,7 +122,6 @@
             ${If} $Path_Skyrim != $Empty
                 SetOutPath $Path_Skyrim\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Skyrim.lnk" "$Path_Skyrim\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Skyrim (Debug Log).lnk" "$Path_Skyrim\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
@@ -143,7 +129,6 @@
             ${If} $Path_Fallout4 != $Empty
                 SetOutPath $Path_Fallout4\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout4.lnk" "$Path_Fallout4\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout4 (Debug Log).lnk" "$Path_Fallout4\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
@@ -151,7 +136,6 @@
             ${If} $Path_SkyrimSE != $Empty
                 SetOutPath $Path_SkyrimSE\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE.lnk" "$Path_SkyrimSE\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE (Debug Log).lnk" "$Path_SkyrimSE\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
@@ -159,7 +143,6 @@
             ${If} $Path_Fallout3 != $Empty
                 SetOutPath $Path_Fallout3\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout3.lnk" "$Path_Fallout3\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout3 (Debug Log).lnk" "$Path_Fallout3\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
@@ -167,7 +150,6 @@
             ${If} $Path_FalloutNV != $Empty
                 SetOutPath $Path_FalloutNV\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV.lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV (Debug Log).lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
@@ -175,7 +157,6 @@
             ${If} $Path_Enderal != $Empty
                 SetOutPath $Path_Enderal\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Enderal.lnk" "$Path_Enderal\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Enderal (Debug Log).lnk" "$Path_Enderal\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
@@ -183,7 +164,6 @@
             ${If} $Path_EnderalSE != $Empty
                 SetOutPath $Path_EnderalSE\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - EnderalSE.lnk" "$Path_EnderalSE\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - EnderalSE (Debug Log).lnk" "$Path_EnderalSE\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
@@ -191,7 +171,6 @@
             ${If} $Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1 (Debug Log).lnk" "$Path_Ex1\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
 
@@ -199,7 +178,6 @@
             ${If} $Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2\Mopy
                 CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\Mopy\Wrye Bash.exe"
-                CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2 (Debug Log).lnk" "$Path_Ex2\Mopy\Wrye Bash.exe" "-d"
             ${EndIf}
         ${EndIf}
     SectionEnd

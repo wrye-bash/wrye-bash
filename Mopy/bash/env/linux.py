@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -25,16 +25,21 @@
 import os
 import subprocess
 import sys
+import functools
 
-from ..bolt import deprint, GPath, structs_cache, Path
+from .common import WinAppInfo
+# some hiding as pycharm is confused in __init__.py by the import *
+from ..bolt import Path as _Path
+from ..bolt import GPath as _GPath
+from ..bolt import deprint as _deprint
+from ..bolt import structs_cache, dict_sort
 from ..exception import EnvError
-from .common import get_env_var, iter_env_vars, WinAppInfo
 
 # API - Constants =============================================================
 try:
-    MAX_PATH = int(subprocess.check_output([u'getconf', u'PATH_MAX', u'/']))
+    MAX_PATH = int(subprocess.check_output([u'getconf', u'PATH_MAX', u'/'])) # 1024 on mac!
 except (ValueError, subprocess.CalledProcessError, OSError):
-    deprint(u'calling getconf failed - error:', traceback=True)
+    _deprint(u'calling getconf failed - error:', traceback=True)
     MAX_PATH = 4096
 
 FO_MOVE = 1
@@ -53,15 +58,22 @@ GOOD_EXITS = (BTN_OK, BTN_YES)
 # Internals ===================================================================
 def _getShellPath(folderKey): ##: mkdirs
     home = os.path.expanduser(u'~')
-    return GPath({u'Personal': home,
-                  u'Local AppData': home + u'/.local/share'}[folderKey])
+    return _GPath({u'Personal': home,
+                   u'Local AppData': home + u'/.local/share'}[folderKey])
 
 def _get_error_info():
-    return u'\n'.join(u'  %s: %s' % (key, get_env_var(key))
-                      for key in sorted(iter_env_vars()))
+    return '\n'.join(f'  {k}: {v}' for k, v in dict_sort(os.environ))
 
 # API - Functions =============================================================
 ##: Several of these should probably raise instead
+def drive_exists(dir_path):
+    """Check if a drive exists by trying to create a dir."""
+    try:
+        dir_path.makedirs() # exist_ok=True - will create the directories!
+        return True # TODO drive detection in posix - test in linux
+    except PermissionError: # as e: # PE on mac
+        return False # [Errno 13] Permission denied: '/Volumes/Samsung_T5'
+
 def get_registry_path(_subkey, _entry, _test_path_callback):
     return None # no registry on Linux
 
@@ -94,21 +106,23 @@ def setUAC(_handle, _uac=True):
 def is_uac():
     return False # Not a thing on Linux
 
-def getJava(): # PY3: cache this
+@functools.cache
+def getJava():
     try:
-        java_home = GPath(get_env_var(u'JAVA_HOME'))
+        java_home = _GPath(os.environ[u'JAVA_HOME'])
         java_bin_path = java_home.join(u'bin', u'java')
-        if java_bin_path.isfile(): return java_bin_path
+        if java_bin_path.is_file(): return java_bin_path
     except KeyError: # no JAVA_HOME
         pass
     try:
-        binary_path = subprocess.check_output(u'command -v java', shell=True)
-        java_bin_path = binary_path.decode(Path.sys_fs_enc).rstrip(u'\n')
+        java_bin_path = subprocess.check_output(
+            u'command -v java', shell=True,
+            encoding=_Path.sys_fs_enc).rstrip(u'\n')
     except subprocess.CalledProcessError:
         # Fall back to the likely correct path on most distros - but probably
         # Java is missing entirely if command can't find it
         java_bin_path = u'/usr/bin/java'
-    return GPath(java_bin_path)
+    return _GPath(java_bin_path)
 
 # TODO(inf) This method needs support for string fields and product versions
 def get_file_version(filename):
@@ -120,7 +134,7 @@ def get_file_version(filename):
         target_struct = structs_cache[target_fmt]
         file_obj.seek(offset, not absolute)
         result = [target_struct.unpack(file_obj.read(target_struct.size))[0]
-                  for _x in xrange(count)] ##: array.fromfile(f, n)
+                  for _x in range(count)] ##: array.fromfile(f, n)
         return result[0] if count == 1 else result
     def _find_version(file_obj, pos, offset):
         """Look through the RT_VERSION and return VS_VERSION_INFO."""
@@ -129,8 +143,8 @@ def get_file_version(filename):
         file_obj.seek(pos + offset)
         len_, val_len, type_ = _read(_WORD, file_obj, count=3)
         info = u''
-        for i in xrange(200):
-            info += unichr(_read(_WORD, file_obj))
+        for i in range(200):
+            info += chr(_read(_WORD, file_obj))
             if info[-1] == u'\x00': break
         offset = _pad(file_obj.tell()) - pos
         file_obj.seek(pos + offset)
@@ -160,7 +174,7 @@ def get_file_version(filename):
         # jump to the datatable and check the third entry
         resources_va = _read(_DWORD, f, offset=98 + 2*8)
         section_table_pos = optional_header_pos + optional_header_size
-        for section_num in xrange(section_count):
+        for section_num in range(section_count):
             section_pos = section_table_pos + 40 * section_num
             f.seek(section_pos)
             if f.read(8).rstrip(b'\x00') != b'.rsrc':  # section name_
@@ -170,11 +184,11 @@ def get_file_version(filename):
             section_resources_pos = raw_data_pos + resources_va - section_va
             num_named, num_id = _read(_WORD, f, count=2, absolute=True,
                                       offset=section_resources_pos + 12)
-            for resource_num in xrange(num_named + num_id):
+            for resource_num in range(num_named + num_id):
                 resource_pos = section_resources_pos + 16 + 8 * resource_num
                 name_ = _read(_DWORD, f, offset=resource_pos, absolute=True)
                 if name_ != 16: continue # RT_VERSION
-                for i in xrange(3):
+                for i in range(3):
                     res_offset = _read(_DWORD, f)
                     if i < 2:
                         res_offset &= 0x7FFFFFFF
@@ -188,7 +202,7 @@ def get_file_version(filename):
         return ()
 
 def fixup_taskbar_icon():
-    pass ##: Probably not needed on Linux, only a Win7+ issue.
+    pass # Windows only
 
 def mark_high_dpi_aware():
     pass ##: Equivalent on Linux? Not needed?
@@ -204,20 +218,15 @@ def python_tools_dir():
         if all(os.path.isfile(p) for p in try_paths):
             return tools_path
     # Fall back on /usr/lib/python*.* - this should never happen
-    deprint(u'Failed to find Python Tools dir on sys.path')
-    return u'/usr/lib/python%d.%d' % (sys.version_info.major,
-                                      sys.version_info.minor)
+    _deprint(u'Failed to find Python Tools dir on sys.path')
+    return f'/usr/lib/python{sys.version_info.major:d}.' \
+           f'{sys.version_info.minor:d}'
 
 def convert_separators(p):
     return p.replace(u'\\', u'/')
 
 # API - Classes ===============================================================
 class TaskDialog(object):
-    def __init__(self, _title, _heading, _content, _buttons=(),
-                 _main_icon=None, _parenthwnd=None, _footer=None):
+    def __init__(self, title, heading, content, buttons=(), 
+                 main_icon=None, parenthwnd=None, footer=None):
         raise EnvError(u'TaskDialog')
-
-# Linux is still mostly broken, so raise on import
-raise ImportError(u'Wrye Bash only partially supports Linux at the moment. If '
-                  u"you know what you're doing, edit linux.py to remove this "
-                  u'raise statement.')

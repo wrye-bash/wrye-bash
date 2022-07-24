@@ -16,17 +16,15 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 """This module contains the Fallout 4 record classes. The great majority are
 imported from skyrim, but only after setting MelModel to the FO4 format."""
-from __future__ import unicode_literals
-
 from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
-    MelStruct, MelNull, MelFidList, MreLeveledListBase, MelFid, \
+    MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, \
     MelArray, MreGmstBase, MelUInt8Flags
 
@@ -77,7 +75,7 @@ class MreTes4(MreHeaderBase):
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelFidList(b'ONAM','overrides',),
+        MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelBase(b'INTV', 'unknownINTV'),
         MelBase(b'INCC', 'unknownINCC'),

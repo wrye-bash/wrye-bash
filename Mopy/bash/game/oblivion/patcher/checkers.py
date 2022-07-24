@@ -16,36 +16,36 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
 
 import copy
-import io
-import os
 import re
 from collections import defaultdict
+from itertools import chain
 
 from ._shared import cobl_main, ExSpecial
 from .... import bush
-from ....bolt import GPath
-from ....brec import MreRecord, RecHeader
+from ....brec import MreRecord
 from ....patcher.base import ModLoader, Patcher
 
 # Cobl Catalogs ---------------------------------------------------------------
 _ingred_alchem = (
-    (1,0xCED, _(u'Alchemical Ingredients I'), 250),
-    (2,0xCEC, _(u'Alchemical Ingredients II'), 500),
-    (3,0xCEB, _(u'Alchemical Ingredients III'), 1000),
-    (4,0xCE7, _(u'Alchemical Ingredients IV'), 2000),
+    (1, 0xCED, _('Alchemical Ingredients I')),
+    (2, 0xCEC, _('Alchemical Ingredients II')),
+    (3, 0xCEB, _('Alchemical Ingredients III')),
+    (4, 0xCE7, _('Alchemical Ingredients IV')),
 )
 _effect_alchem = (
-    (1,0xCEA, _(u'Alchemical Effects I'), 500),
-    (2,0xCE9, _(u'Alchemical Effects II'), 1000),
-    (3,0xCE8, _(u'Alchemical Effects III'), 2000),
-    (4,0xCE6, _(u'Alchemical Effects IV'), 4000),
+    (1, 0xCEA, _('Alchemical Effects I')),
+    (2, 0xCE9, _('Alchemical Effects II')),
+    (3, 0xCE8, _('Alchemical Effects III')),
+    (4, 0xCE6, _('Alchemical Effects IV')),
 )
+_book_fids = {(cobl_main, book_data[1])
+              for book_data in chain(_ingred_alchem, _effect_alchem)}
 
 class CoblCatalogsPatcher(Patcher, ExSpecial):
     """Updates COBL alchemical catalogs."""
@@ -54,7 +54,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         [_(u"Update COBL's catalogs of alchemical ingredients and effects."),
          _(u'Will only run if Cobl Main.esm is loaded.')])
     _config_key = u'AlchemicalCatalogs'
-    _read_sigs = (b'INGR',)
+    _read_sigs = (b'BOOK', b'INGR')
 
     @classmethod
     def gui_cls_vars(cls):
@@ -73,6 +73,12 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
     def scanModFile(self,modFile,progress):
         """Scans specified mod file to extract info. May add record to patch
         mod, but won't alter it."""
+        patch_books = self.patchFile.tops[b'BOOK']
+        id_books = patch_books.id_records
+        for record in modFile.tops[b'BOOK'].getActiveRecords():
+            book_fid = record.fid
+            if book_fid in _book_fids and book_fid not in id_books:
+                patch_books.setRecord(record)
         id_ingred = self.id_ingred
         for record in modFile.tops[b'INGR'].getActiveRecords():
             if not record.full: continue #--Ingredient must have name!
@@ -87,93 +93,73 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         if not self.isActive: return
         #--Setup
         alt_names = copy.deepcopy(self.patchFile.getMgefName())
-        attr_or_skill = u'(%s|%s)' % (_(u'Attribute'), _(u'Skill'))
+        attr_or_skill = f"({_('Attribute')}|{_('Skill')})"
         for mgef in alt_names:
             alt_names[mgef] = re.sub(attr_or_skill, u'', alt_names[mgef])
-        actorEffects = bush.game.generic_av_effects
-        actorNames = bush.game.actor_values
+        actorEffects = MreRecord.type_class[b'MGEF'].generic_av_effects
+        from ..records import actor_values
         keep = self.patchFile.getKeeper()
-        #--Book generator
-        def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
-            book = MreRecord.type_class[b'BOOK'](RecHeader(b'BOOK', 0, 0, 0, 0))
-            book.longFids = True
+        patch_books = self.patchFile.tops[b'BOOK']
+        def getBook(object_id, full):
+            """Helper method for grabbing a BOOK record by object ID and making
+            it ready for editing."""
+            book_fid = (cobl_main, object_id)
+            if book_fid not in patch_books.id_records:
+                return None # This shouldn't happen, but just in case...
+            book = patch_books.id_records[book_fid]
+            book.book_text = '<div align="left"><font face=3 color=4444>'
+            book.book_text += (_("Salan's Catalog of %s") + '\r\n\r\n') % full
             book.changed = True
-            book.eid = eid
-            book.full = full
-            book.value = value
-            book.weight = 0.2
-            book.book_text = u'<div align="left"><font face=3 color=4444>'
-            book.book_text += (_(u"Salan's Catalog of %s") + u'\r\n\r\n') % full
-            book.iconPath = iconPath
-            book.model = book.getDefault(u'model')
-            book.model.modPath = modelPath
-            book.model.modb_p = modb_p
-            book.modb = book
-            ##: In Cobl Main.esm, the books have a script attached
-            # (<cobGenDevalueOS [SCPT:01001DDD]>). This currently gets rid of
-            # that, should we keep it instead?
-            # book.script = (_cobl_main, 0x001DDD)
-            book.fid = (cobl_main, objectId)
-            keep(book.fid)
-            self.patchFile.tops[b'BOOK'].setRecord(book)
+            keep(book_fid)
             return book
         #--Ingredients Catalog
         id_ingred = self.id_ingred
-        iconPath, modPath, modb_p = (u'Clutter\\IconBook9.dds',
-                                     u'Clutter\\Books\\Octavo02.NIF',
-                                     b'\x03>@A')
-        for (num,objectId,full,value) in _ingred_alchem:
-            book = getBook(objectId, u'cobCatAlchemIngreds%s' % num, full,
-                           value, iconPath, modPath, modb_p)
-            buff = io.StringIO(book.book_text)
-            buff.seek(0, os.SEEK_END)
-            buffWrite = buff.write
-            for eid, eff_full, effects in sorted(id_ingred.viewvalues(),
+        for (num, objectId, full) in _ingred_alchem:
+            book = getBook(objectId, full)
+            if book is None: continue
+            effs = []
+            for eid, eff_full, effects in sorted(id_ingred.values(),
                                                  key=lambda a: a[1].lower()):
-                buffWrite(eff_full + u'\r\n')
+                effs.append(eff_full)
                 for mgef, actorValue in effects[:num]:
                     effectName = alt_names[mgef]
                     if mgef in actorEffects:
-                        effectName += actorNames[actorValue]
-                    buffWrite(u'  ' + effectName + u'\r\n')
-                buffWrite(u'\r\n')
-            book.book_text = re.sub(u'\r\n', u'<br>\r\n', buff.getvalue())
+                        effectName += actor_values[actorValue]
+                    effs.append(f'  {effectName}')
+                effs.append('')
+            book.book_text += '\r\n'.join(effs)
+            book.book_text = re.sub('\r\n', '<br>\r\n', book.book_text)
         #--Get Ingredients by Effect
         effect_ingred = defaultdict(list)
-        for _fid,(eid,full,effects) in id_ingred.iteritems():
+        for _fid,(eid,full,effects) in id_ingred.items():
             for index,(mgef,actorValue) in enumerate(effects):
                 effectName = alt_names[mgef]
-                if mgef in actorEffects: effectName += actorNames[actorValue]
+                if mgef in actorEffects: effectName += actor_values[actorValue]
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs
-        iconPath, modPath, modb_p = (u'Clutter\\IconBook7.dds',
-                                     u'Clutter\\Books\\Octavo01.NIF',
-                                     b'\x03>@A')
-        for (num, objectId, full, value) in _effect_alchem:
-            book = getBook(objectId, u'cobCatAlchemEffects%s' % num, full,
-                           value, iconPath, modPath, modb_p)
-            buff = io.StringIO(book.book_text)
-            buff.seek(0, os.SEEK_END)
-            buffWrite = buff.write
+        for (num, objectId, full) in _effect_alchem:
+            book = getBook(objectId, full)
+            if book is None: continue
+            effs = []
             for effectName in sorted(effect_ingred):
                 effects = [indexFull for indexFull in
                            effect_ingred[effectName] if indexFull[0] < num]
                 if effects:
-                    buffWrite(effectName + u'\r\n')
+                    effs.append(effectName)
                     for (index, eff_full) in sorted(effects, key=lambda a: a[
                         1].lower()):
                         exSpace = u' ' if index == 0 else u''
-                        buffWrite(u' %s%s %s\r\n' % (index + 1, exSpace,
-                                                     eff_full))
-                    buffWrite(u'\r\n')
-            book.book_text = re.sub(u'\r\n', u'<br>\r\n', buff.getvalue())
+                        effs.append(f' {index + 1}{exSpace} {eff_full}')
+                    effs.append('')
+            book.book_text += '\r\n'.join(effs)
+            book.book_text = re.sub('\r\n', '<br>\r\n', book.book_text)
         #--Log
         log.setHeader(u'= ' + self._patcher_name)
-        log(u'* '+_(u'Ingredients Cataloged') + u': %d' % len(id_ingred))
-        log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
+        log('* ' + _('Ingredients Cataloged') + f': {len(id_ingred)}')
+        log('* ' + _('Effects Cataloged') + f': {len(effect_ingred)}')
 
 #------------------------------------------------------------------------------
-_ob_path = GPath(bush.game.master_file)
+_ob_path = bush.game.master_file
 class SEWorldTestsPatcher(ExSpecial, ModLoader):
     """Suspends Cyrodiil quests while in Shivering Isles."""
     patcher_name = _(u'SEWorld Tests')
@@ -202,7 +188,7 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
         self.isActive = bool(self.cyrodiilQuests)
 
     def scanModFile(self,modFile,progress):
-        if modFile.fileInfo.ci_key == _ob_path: return
+        if modFile.fileInfo.fn_key == _ob_path: return
         cyrodiilQuests = self.cyrodiilQuests
         patchBlock = self.patchFile.tops[b'QUST']
         for record in modFile.tops[b'QUST'].getActiveRecords():
@@ -235,4 +221,4 @@ class SEWorldTestsPatcher(ExSpecial, ModLoader):
                 keep(rec_fid)
                 patched.append(record.eid)
         log.setHeader(u'= ' + self._patcher_name)
-        log(u'==='+_(u'Quests Patched') + u': %d' % (len(patched),))
+        log(u'===' + _(u'Quests Patched') + f': {len(patched)}')

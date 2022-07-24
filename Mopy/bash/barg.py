@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -98,11 +98,9 @@ def parse():
     #### Individual Arguments ####
     parser.add_argument(u'-d', u'--debug',
                         action=u'store_true',
-                        default=False,
                         dest=u'debug',
-                        help=u'Useful if bash is crashing on startup or if '
-                             u'you want to print a lot of information'
-                             u' (e.g. while developing or debugging).')
+                        help='DEPRECATED. This does nothing anymore. Debug '
+                             'printing is now always enabled.')
     parser.add_argument(u'--no-uac',
                         action=u'store_true',
                         dest=u'noUac',
@@ -120,6 +118,10 @@ def parse():
                         dest=u'language',
                         help=u'Specify the user language overriding the '
                              u'system language settings.')
+    parser.add_argument(u'-n', u'--unix',
+                        action=u'store_true',
+                        help=u'Allow bash to run on unix systems ['
+                             u'EXPERIMENTTAL].')
     # parse and error check backup options
     args = parser.parse_args()
     if args.backup and args.restore:
@@ -135,6 +137,7 @@ _short_to_long = {
     u'-f': u'--filename',
     u'-L': u'--Language',
     u'-l': u'--localAppDataPath',
+    u'-n': u'--unix',
     u'-o': u'--oblivionPath',
     u'-p': u'--personalPath',
     u'-q': u'--quiet-quit',

@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -24,10 +24,9 @@
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to BashFrame.iniList singleton.
 """
-
-from itertools import imap
 from .. import bass, bosh, balt
 from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
+from ..bolt import FName
 from ..gui import copy_text_to_clipboard
 
 __all__ = [u'INI_SortValid', u'INI_AllowNewLines', u'INI_ListINIs',
@@ -73,7 +72,7 @@ class INI_ListErrors(EnabledLink):
     _help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
     def _enable(self):
-        return any(imap(lambda inf: inf.tweak_status() < 0,
+        return any(map(lambda inf: inf.tweak_status() < 0,
                         self.iselected_infos()))
 
     def Execute(self):
@@ -107,10 +106,8 @@ class INI_FileOpenOrCopy(EnabledLink):
                    u"tweak(s).")][self._targets_default()]
 
     def Execute(self):
-        newly_copied = []
-        for i in self.selected:
-            if bosh.iniInfos.open_or_copy(i):
-                newly_copied.append(i)
+        newly_copied = [i for i in self.selected if
+                        bosh.iniInfos.open_or_copy(i)]
         self.window.RefreshUI(redraw=newly_copied)
 
 #------------------------------------------------------------------------------
@@ -145,7 +142,7 @@ class INI_Apply(EnabledLink):
             u'ini': self.window.current_ini_name}
 
     def _enable(self):
-        return all(imap(bosh.INIInfo.is_applicable, self.iselected_infos()))
+        return all(map(bosh.INIInfo.is_applicable, self.iselected_infos()))
 
     def Execute(self):
         """Handle applying INI Tweaks."""
@@ -162,23 +159,23 @@ class INI_CreateNew(OneItemLink):
     def link_help(self):
         if not len(self.selected) == 1:
             return _(u'Please choose one Ini Tweak')
-        else:
-            return _(u"Creates a new tweak based on '%(tweak)s' but with "
-                          u"values from '%(ini)s'.") % {
-                u'tweak': (self.selected[0]), u'ini': self.window.current_ini_name}
+        return _(u"Creates a new tweak based on '%(tweak)s' but with "
+                 u"values from '%(ini)s'.") % {u'tweak': (self.selected[0]),
+                   u'ini': self.window.current_ini_name}
 
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
-                              self._selected_info.tweak_status >= 0
+                              self._selected_info.tweak_status() >= 0
 
     @balt.conversation
     def Execute(self):
         """Handle creating a new INI tweak."""
         pathFrom = self._selected_item
-        fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
+        fileName = f'{pathFrom.fn_body} - Copy{pathFrom.fn_ext}'
         tweak_path = self._askSave(
             title=_(u'Copy Tweak with current settings...'),
             defaultDir=bass.dirs[u'ini_tweaks'], defaultFile=fileName,
             wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
-        if bosh.iniInfos.duplicate_ini(pathFrom, tweak_path):
-            self.window.RefreshUI(redraw=[tweak_path.tail], # to_add
-                                  detail_item=tweak_path.tail)
+        fn_tweak = FName(tweak_path.stail)
+        if bosh.iniInfos.duplicate_ini(self._selected_item, fn_tweak):
+            ##: we need a 'to_add' param in RefreshUI
+            self.window.RefreshUI(redraw=[fn_tweak], detail_item=fn_tweak)

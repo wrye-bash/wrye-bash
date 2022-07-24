@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU General Public License
 #  along with Wrye Bash.  If not, see <https://www.gnu.org/licenses/>.
 #
-#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2021 Wrye Bash Team
+#  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2022 Wrye Bash Team
 #  https://github.com/wrye-bash
 #
 # =============================================================================
@@ -29,7 +29,6 @@ import re
 # Internal
 from .base import MultiTweakItem, MultiTweaker, is_templated
 from ... import bass, bush
-from ...bolt import GPath
 from ...exception import AbstractError
 
 class _AActorTweak(MultiTweakItem):
@@ -47,7 +46,7 @@ class _AActorTweak(MultiTweakItem):
 class _ANpcTweak(_AActorTweak):
     """Base for all NPC_ tweaks."""
     tweak_read_classes = b'NPC_',
-    _player_fid = (GPath(bush.game.master_file), 0x000007)
+    _player_fid = (bush.game.master_file, 0x000007)
 
 class _ACreatureTweak(_AActorTweak):
     """Base for all CREA tweaks."""
@@ -116,6 +115,8 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
     tweak_key = u'VORB'
     tweak_log_header = _(u"VadersApp's Oblivion Real Bodies")
     _skeleton_dir = u'Characters\\_male'
+    _skeleton_list: list[str]
+    _skeleton_specials: set[str]
 
     def _get_skeleton_collections(self):
         """construct skeleton mesh collections. skeleton_list gets files that
@@ -129,14 +130,13 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
             # we do this here
             skeleton_dir = bass.dirs[u'mods'].join(u'Meshes', u'Characters',
                                                    u'_male')
-            list_skel_dir = skeleton_dir.list() # empty if dir does not exist
-            skel_nifs = [x for x in list_skel_dir if
-                         x.cs.startswith(u'skel_') and x.cext == u'.nif']
+            skel_nifs = [x for x in skeleton_dir.ilist() if  #[] if dir !exists
+                         x.lower().startswith('skel_') and x.fn_ext == '.nif']
             skeleton_list = [x for x in skel_nifs
-                             if not x.cs.startswith(u'skel_special_')]
+                             if not x.lower().startswith(u'skel_special_')]
             set_skeleton_list = set(skeleton_list)
-            skeleton_specials = {x.s for x in skel_nifs
-                                 if x not in set_skeleton_list}
+            skeleton_specials = {x for x in skel_nifs if
+                                 x not in set_skeleton_list}
             self._skeleton_list, self._skeleton_specials = (skeleton_list,
                                                             skeleton_specials)
             return skeleton_list, skeleton_specials
@@ -148,11 +148,10 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
             return self._get_skeleton_path(record) # leave unchanged
         special_skel_mesh = u'skel_special_%X.nif' % record.fid[1]
         if special_skel_mesh in skeleton_specials:
-            return u'%s\\%s' % (self._skeleton_dir, special_skel_mesh)
+            return f'{self._skeleton_dir}\\{special_skel_mesh}'
         else:
             random.seed(record.fid[1]) # make it deterministic
-            rand_index = random.randint(1, len(skeleton_list)) - 1 ##: choice?
-            return u'%s\\%s' % (self._skeleton_dir, skeleton_list[rand_index])
+            return f'{self._skeleton_dir}\\{random.choice(skeleton_list)}'
 
 #------------------------------------------------------------------------------
 class VanillaNPCSkeletonPatcher(_ASkeletonTweak):
@@ -184,7 +183,7 @@ class RedguardNPCPatcher(_ANpcTweak):
     tweak_key = u'RedguardFGTSPatcher'
     tweak_log_msg = _(u'Redguard NPCs Tweaked: %(total_changed)d')
     tweak_choices = [(u'1.0', u'1.0')]
-    _redguard_fid = (GPath(bush.game.master_file), 0x00000D43)
+    _redguard_fid = (bush.game.master_file, 0x000D43)
 
     def wants_record(self, record):
         # Only affect NPCs with the redguard race
@@ -226,9 +225,9 @@ class AsIntendedImpsPatcher(_ACreatureTweak):
                      (_(u'Only fullsize imps'), u'big'),
                      (_(u'Only implings'), u'small')]
     tweak_log_msg = _(u'Imps Tweaked: %(total_changed)d')
-    _imp_mod_path = re.compile(u'' r'(imp(?!erial)|gargoyle)\\.', re.I | re.U)
+    _imp_mod_path = re.compile(r'(imp(?!erial)|gargoyle)\\.', re.I | re.U)
     _imp_part  = re.compile(u'(imp(?!erial)|gargoyle)', re.I | re.U)
-    _imp_spell = (GPath(bush.game.master_file), 0x02B53F)
+    _imp_spell = (bush.game.master_file, 0x02B53F)
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)
@@ -254,9 +253,9 @@ class AsIntendedBoarsPatcher(_ACreatureTweak):
     tweak_key = u'vicious boars!'
     tweak_choices = [(u'1.0', u'1.0')]
     tweak_log_msg = _(u'Boars Tweaked: %(total_changed)d')
-    _boar_mod_path = re.compile(u'' r'(boar)\\.', re.I | re.U)
+    _boar_mod_path = re.compile(r'(boar)\\.', re.I | re.U)
     _boar_part  = re.compile(u'(boar)', re.I | re.U)
-    _boar_spell = (GPath(bush.game.master_file), 0x02B54E)
+    _boar_spell = (bush.game.master_file, 0x02B54E)
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)
