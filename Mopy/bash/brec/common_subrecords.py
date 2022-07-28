@@ -77,6 +77,17 @@ class MelBounds(MelGroup):
         )
 
 #------------------------------------------------------------------------------
+class MelCoed(MelOptStruct):
+    """Handles the COED (Owner Data) subrecord used for inventory items and
+    leveled lists since Skyrim."""
+    ##: Needs custom unpacker to look at FormID type of owner.  If owner is an
+    # NPC then it is followed by a FormID.  If owner is a faction then it is
+    # followed by an signed integer or '=Iif' instead of '=IIf' - see #282
+    def __init__(self):
+        super().__init__(b'COED', ['I', 'I', 'f'], (FID, 'owner'),
+            (FID, 'glob'), 'itemCondition')
+
+#------------------------------------------------------------------------------
 class MelCtda(MelUnion):
     """Handles a condition. The difficulty here is that the type of its
     parameters depends on its function index. We handle it by building what

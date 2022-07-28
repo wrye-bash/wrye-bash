@@ -22,7 +22,7 @@
 # =============================================================================
 """This module contains the skyrim record classes."""
 from collections import OrderedDict
-from ... import brec, bolt, bush
+from ... import bolt, bush
 from ...bolt import Flags, struct_pack, structs_cache, unpack_str16, \
     TrimmedFlags
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
@@ -44,43 +44,12 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MelActorSounds, MelFactionRanks, MelSorted, vmad_properties_key, \
     vmad_qust_fragments_key, vmad_fragments_key, vmad_script_key, \
     vmad_qust_aliases_key, MelReflectedRefractedBy, perk_effect_key, \
-    MelValueWeight, int_unpacker
+    MelValueWeight, int_unpacker, MelCoed
 from ...exception import ModError, ModSizeError, StateError
 
-# Set MelModel in brec but only if unset, otherwise we are being imported from
-# fallout4.records
-if brec.MelModel is None:
-
-    class _MelModel(MelGroup):
-        """Represents a model record."""
-        # MODB and MODD are no longer used by TES5Edit
-        typeSets = {
-            b'MODL': (b'MODL', b'MODT', b'MODS'),
-            b'MOD2': (b'MOD2', b'MO2T', b'MO2S'),
-            b'MOD3': (b'MOD3', b'MO3T', b'MO3S'),
-            b'MOD4': (b'MOD4', b'MO4T', b'MO4S'),
-            b'MOD5': (b'MOD5', b'MO5T', b'MO5S'),
-            b'DMDL': (b'DMDL', b'DMDT', b'DMDS'),
-        }
-
-        def __init__(self, attr=u'model', mel_sig=b'MODL'):
-            types = self.__class__.typeSets[mel_sig]
-            MelGroup.__init__(
-                self, attr,
-                MelString(types[0], u'modPath'),
-                # Ignore texture hashes - they're only an optimization, plenty
-                # of records in Skyrim.esm are missing them
-                MelNull(types[1]),
-                MelMODS(types[2], u'alternateTextures')
-            )
-
-    brec.MelModel = _MelModel
-from ...brec import MelModel
-
-#------------------------------------------------------------------------------
 _is_sse = bush.game.fsName in (
-    u'Skyrim Special Edition', u'Skyrim VR', u'Enderal Special Edition',
-    u'Skyrim Special Edition MS')
+    'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition',
+    'Skyrim Special Edition MS')
 def if_sse(le_version, se_version):
     """Resolves to one of two different objects, depending on whether we're
     managing Skyrim LE or SE."""
@@ -96,6 +65,29 @@ def sse_only(sse_obj):
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
+#------------------------------------------------------------------------------
+class MelModel(MelGroup):
+    """Represents a model subrecord."""
+    # MODB and MODD are no longer used by TES5Edit
+    typeSets = {
+        b'MODL': (b'MODL', b'MODT', b'MODS'),
+        b'MOD2': (b'MOD2', b'MO2T', b'MO2S'),
+        b'MOD3': (b'MOD3', b'MO3T', b'MO3S'),
+        b'MOD4': (b'MOD4', b'MO4T', b'MO4S'),
+        b'MOD5': (b'MOD5', b'MO5T', b'MO5S'),
+        b'DMDL': (b'DMDL', b'DMDT', b'DMDS'),
+    }
+
+    def __init__(self, mel_sig=b'MODL', attr='model'):
+        types = self.__class__.typeSets[mel_sig]
+        super().__init__(attr,
+            MelString(types[0], 'modPath'),
+            # Ignore texture hashes - they're only an optimization, plenty
+            # of records in Skyrim.esm are missing them
+            MelNull(types[1]),
+            MelMODS(types[2], 'alternateTextures')
+        )
+
 #------------------------------------------------------------------------------
 ##: See what we can do with MelUnion & MelTruncatedStruct here
 class MelBipedObjectData(MelStruct):
@@ -169,15 +161,6 @@ class MelAttacks(MelSorted):
         ), sort_by_attrs='attack_chance')
 
 #------------------------------------------------------------------------------
-class MelCoed(MelOptStruct):
-    """Needs custom unpacker to look at FormID type of owner.  If owner is an
-    NPC then it is followed by a FormID.  If owner is a faction then it is
-    followed by an signed integer or '=Iif' instead of '=IIf' """ # see #282
-    def __init__(self):
-        MelOptStruct.__init__(self,b'COED', [u'I', u'I', u'f'],(FID,'owner'),(FID,'glob'),
-                              'itemCondition')
-
-#------------------------------------------------------------------------------
 class MelConditions(MelGroups):
     """A list of conditions. See also MelConditionCounter, which is commonly
     combined with this class."""
@@ -214,7 +197,7 @@ class MelDestructible(MelGroup):
                           (MelDestructible.MelDestStageFlags, u'flagsDest'),
                           u'selfDamagePerSecond', (FID, u'explosion'),
                           (FID, u'debris'), u'debrisCount'),
-                MelModel(u'model', b'DMDL'),
+                MelModel(b'DMDL'),
                 MelBase(b'DSTF','footer'),
             ),
         )
@@ -283,6 +266,30 @@ class MelKeywords(MelSequential):
                        counts=u'keywords'),
             MelSorted(MelSimpleArray('keywords', MelFid(b'KWDA'))),
         )
+
+#------------------------------------------------------------------------------
+class MreLeveledList(MreLeveledListBase):
+    """Skyrim Leveled item/creature/spell list. Defines some common
+    subrecords."""
+    __slots__ = []
+
+    class MelLlct(MelCounter):
+        def __init__(self):
+            super().__init__(MelUInt8(b'LLCT', 'entry_count'),
+                counts='entries')
+
+    class MelLvlo(MelSorted):
+        def __init__(self, with_coed=True):
+            lvl_elements = [
+                MelStruct(b'LVLO', ['H', '2s', 'I', 'H', '2s'], 'level',
+                    'unknown1', (FID, 'listId'), ('count', 1), 'unknown2'),
+            ]
+            lvl_sort_attrs = ('level', 'listId', 'count')
+            if with_coed:
+                lvl_elements.append(MelCoed())
+                lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
+            super().__init__(MelGroups('entries', *lvl_elements),
+                sort_by_attrs=lvl_sort_attrs)
 
 #------------------------------------------------------------------------------
 class MelLinkedReferences(MelSorted):
@@ -1466,10 +1473,10 @@ class MreArma(MelRecord):
                   (WeightSliderFlags, u'maleFlags'),
                   (WeightSliderFlags, u'femaleFlags'),
                   'unknown','detectionSoundValue','unknown1','weaponAdjust',),
-        MelModel(u'male_model', b'MOD2'),
-        MelModel(u'female_model', b'MOD3'),
-        MelModel(u'male_model_1st', b'MOD4'),
-        MelModel(u'female_model_1st', b'MOD5'),
+        MelModel(b'MOD2', 'male_model'),
+        MelModel(b'MOD3', 'female_model'),
+        MelModel(b'MOD4', 'male_model_1st'),
+        MelModel(b'MOD5', 'female_model_1st'),
         MelFid(b'NAM0', 'skin0'),
         MelFid(b'NAM1', 'skin1'),
         MelFid(b'NAM2', 'skin2'),
@@ -1492,9 +1499,9 @@ class MreArmo(MelRecord):
         MelFull(),
         MelEnchantment(),
         MelSInt16(b'EAMT', 'enchantmentAmount'),
-        MelModel(u'model2', b'MOD2'),
+        MelModel(b'MOD2', 'model2'),
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),
-        MelModel(u'model4', b'MOD4'),
+        MelModel(b'MOD4', 'model4'),
         MelIcons2(),
         MelBipedObjectData(),
         MelDestructible(),
@@ -3069,30 +3076,6 @@ class MreLtex(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase):
-    """Skyrim Leveled item/creature/spell list. Defines some common
-    subrecords."""
-    __slots__ = []
-
-    class MelLlct(MelCounter):
-        def __init__(self):
-            MelCounter.__init__(
-                self, MelUInt8(b'LLCT', u'entry_count'), counts=u'entries')
-
-    class MelLvlo(MelSorted):
-        def __init__(self, with_coed=True):
-            lvl_elements = [
-                MelStruct(b'LVLO', [u'2H', u'I', u'2H'], u'level', u'unknown1',
-                          (FID, u'listId'), (u'count', 1), u'unknown2'),
-            ]
-            lvl_sort_attrs = ('level', 'listId', 'count')
-            if with_coed:
-                lvl_elements.append(MelCoed())
-                lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
-            MelSorted.__init__(self, MelGroups(u'entries', *lvl_elements),
-                               sort_by_attrs=lvl_sort_attrs)
-
-#------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
@@ -4189,9 +4172,9 @@ class MreRace(MelRecord):
         MelBase(b'NAM2', u'marker_nam2_2'),
         MelBase(b'NAM3', u'behavior_graph_marker', b''), # required
         MelBase(b'MNAM', u'male_graph_marker', b''), # required
-        MelModel(u'male_behavior_graph'),
+        MelModel(b'MODL', 'male_behavior_graph'),
         MelBase(b'FNAM', u'female_graph_marker', b''), # required
-        MelModel(u'female_behavior_graph'),
+        MelModel(b'MODL', 'female_behavior_graph'),
         MelFid(b'NAM4', u'material_type'),
         MelFid(b'NAM5', u'impact_data_set'),
         MelFid(b'NAM7', u'decapitation_fx'),
@@ -4259,7 +4242,7 @@ class MreRace(MelRecord):
         ), sort_by_attrs='face_texture_set'),
         MelFid(b'DFTM', u'male_default_face_texture'),
         _MelTintMasks(u'male_tint_masks'),
-        MelModel(u'male_head_model'),
+        MelModel(b'MODL', 'male_head_model'),
         MelBase(b'NAM0', u'female_head_data_marker'),
         MelBase(b'FNAM', u'female_head_parts_marker'),
         MelSorted(MelGroups(u'female_head_parts',
@@ -4287,7 +4270,7 @@ class MreRace(MelRecord):
         ), sort_by_attrs='face_texture_set'),
         MelFid(b'DFTF', u'female_default_face_texture'),
         _MelTintMasks(u'female_tint_masks'),
-        MelModel(u'female_head_model'),
+        MelModel(b'MODL', 'female_head_model'),
         MelFid(b'NAM8', u'morph_race'),
         MelFid(b'RNAM', u'armor_race'),
     ).with_distributor({
@@ -5193,7 +5176,7 @@ class MreWeap(MelRecord):
         MelVmad(),
         MelBounds(),
         MelFull(),
-        MelModel(u'model1', b'MODL'),
+        MelModel(b'MODL', 'model1'),
         MelIcons(),
         MelEnchantment(),
         MelUInt16(b'EAMT', 'enchantPoints'),
@@ -5205,7 +5188,7 @@ class MreWeap(MelRecord):
         MelDropSound(),
         MelKeywords(),
         MelDescription(),
-        MelModel(u'model2', b'MOD3'),
+        MelModel(b'MOD3', 'model2'),
         MelBase(b'NNAM','unused1'),
         MelFid(b'INAM','impactDataSet',),
         MelFid(b'WNAM','firstPersonModelObject',),
@@ -5315,7 +5298,7 @@ class MreWrld(MelRecord):
         MelOptStruct(b'DNAM', [u'2f'],'defaultLandHeight',
                      'defaultWaterHeight',),
         MelIcon(u'mapImage'),
-        MelModel(u'cloudModel', b'MODL'),
+        MelModel(b'MODL', 'cloudModel'),
         MelTruncatedStruct(b'MNAM', [u'2i', u'4h', u'3f'], 'usableDimensionsX',
                            'usableDimensionsY', 'cellCoordinatesX',
                            'cellCoordinatesY', 'seCellX', 'seCellY',
@@ -5478,7 +5461,7 @@ class MreWthr(MelRecord):
         ),
         MelBase(b'NAM2', 'unused6'),
         MelBase(b'NAM3', 'unused7'),
-        MelModel(u'aurora', b'MODL'),
+        MelModel(b'MODL', 'aurora'),
         sse_only(MelFid(b'GNAM', 'sunGlareLensFlare')),
     )
     __slots__ = melSet.getSlotsUsed()

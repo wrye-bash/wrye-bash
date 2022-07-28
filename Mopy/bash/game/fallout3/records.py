@@ -25,7 +25,7 @@ __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
 from collections import OrderedDict
 
-from ... import brec, bush
+from ... import bush
 from ...bolt import Flags, structs_cache, TrimmedFlags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, \
@@ -46,40 +46,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags
 from ...exception import ModSizeError
-# Set MelModel in brec but only if unset
-if brec.MelModel is None:
 
-    class _MelModel(MelGroup):
-        """Represents a model record."""
-        typeSets = ((b'MODL', b'MODB', b'MODT', b'MODS', b'MODD'),
-                    (b'MOD2', b'MO2B', b'MO2T', b'MO2S'),
-                    (b'MOD3', b'MO3B', b'MO3T', b'MO3S', b'MOSD'),
-                    (b'MOD4', b'MO4B', b'MO4T', b'MO4S'))
-
-        _facegen_model_flags = Flags.from_names(u'head', u'torso',
-                                                u'rightHand', u'leftHand')
-
-        def __init__(self, attr=u'model', index=0, with_facegen_flags=True):
-            """Initialize. Index is 0,2,3,4 for corresponding type id."""
-            types = self.__class__.typeSets[index - 1 if index > 0 else 0]
-            model_elements = [
-                MelString(types[0], u'modPath'),
-                MelBase(types[1], u'modb_p'),
-                # Texture File Hashes
-                MelBase(types[2], u'modt_p'),
-                MelMODS(types[3], u'alternateTextures'),
-            ]
-            # No MODD/MOSD equivalent for MOD2 and MOD4
-            if len(types) == 5 and with_facegen_flags:
-                model_elements += [
-                    MelUInt8Flags(types[4], u'facegen_model_flags',
-                                  _MelModel._facegen_model_flags)]
-            super(_MelModel, self).__init__(attr, *model_elements)
-
-    brec.MelModel = _MelModel
-from ...brec import MelModel
-
-#------------------------------------------------------------------------------
 _is_fnv = bush.game.fsName == u'FalloutNV'
 def if_fnv(fo3_version, fnv_version):
     """Resolves to one of two different objects, depending on whether we're
@@ -113,6 +80,34 @@ aiService = Flags.from_names(
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
+#------------------------------------------------------------------------------
+class MelModel(MelGroup):
+    """Represents a model subrecord."""
+    typeSets = {
+        b'MODL': (b'MODL', b'MODB', b'MODT', b'MODS', b'MODD'),
+        b'MOD2': (b'MOD2', b'MO2B', b'MO2T', b'MO2S'),
+        b'MOD3': (b'MOD3', b'MO3B', b'MO3T', b'MO3S', b'MOSD'),
+        b'MOD4': (b'MOD4', b'MO4B', b'MO4T', b'MO4S'),
+    }
+
+    _facegen_model_flags = Flags.from_names('head', 'torso', 'rightHand',
+                                            'leftHand')
+
+    def __init__(self, mel_sig=b'MODL', attr='model', with_facegen_flags=True):
+        types = self.__class__.typeSets[mel_sig]
+        model_elements = [
+            MelString(types[0], 'modPath'),
+            MelBase(types[1], 'modb_p'),
+            MelBase(types[2], 'modt_p'), # Texture File Hashes
+            MelMODS(types[3], 'alternateTextures'),
+        ]
+        # No MODD/MOSD equivalent for MOD2 and MOD4
+        if len(types) == 5 and with_facegen_flags:
+            model_elements += [
+                MelUInt8Flags(types[4], 'facegen_model_flags',
+                              self.__class__._facegen_model_flags)]
+        super().__init__(attr, *model_elements)
+
 #------------------------------------------------------------------------------
 class MreActor(MreActorBase):
     """Creatures and NPCs."""
@@ -541,11 +536,11 @@ class MreArma(MelRecord):
         MelBounds(),
         MelFull(),
         MelBipedData(),
-        MelModel(u'maleBody'),
-        MelModel(u'maleWorld', 2),
+        MelModel(b'MODL', 'maleBody'),
+        MelModel(b'MOD2', 'maleWorld'),
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),
-        MelModel(u'femaleBody', 3),
-        MelModel(u'femaleWorld', 4),
+        MelModel(b'MOD3', 'femaleBody'),
+        MelModel(b'MOD4', 'femaleWorld'),
         MelIcons2(),
         MelEquipmentType(),
         MelStruct(b'DATA', [u'I', u'I', u'f'],'value','health','weight'),
@@ -574,11 +569,11 @@ class MreArmo(MelRecord):
         MelScript(),
         MelEnchantment(),
         MelBipedData(),
-        MelModel(u'maleBody'),
-        MelModel(u'maleWorld', 2),
+        MelModel(b'MODL', 'maleBody'),
+        MelModel(b'MOD2', 'maleWorld'),
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),
-        MelModel(u'femaleBody', 3),
-        MelModel(u'femaleWorld', 4),
+        MelModel(b'MOD3', 'femaleBody'),
+        MelModel(b'MOD4', 'femaleWorld'),
         MelIcons2(),
         MelString(b'BMCT','ragdollTemplatePath'),
         MelDestructible(),
@@ -3201,10 +3196,10 @@ class MreWeap(MelRecord):
         MelFid(b'BIPL','bipedModelList'),
         MelPickupSound(),
         MelDropSound(),
-        MelModel(u'shellCasingModel', 2),
-        MelModel(u'scopeModel', 3, with_facegen_flags=False),
+        MelModel(b'MOD2', 'shellCasingModel'),
+        MelModel(b'MOD3', 'scopeModel', with_facegen_flags=False),
         MelFid(b'EFSD','scopeEffect'),
-        MelModel(u'worldModel', 4),
+        MelModel(b'MOD4', 'worldModel'),
         fnv_only(MelGroup('modelWithMods',
             MelString(b'MWD1', 'mod1Path'),
             MelString(b'MWD2', 'mod2Path'),
