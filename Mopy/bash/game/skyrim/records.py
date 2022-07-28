@@ -1268,7 +1268,7 @@ class MreAact(MelRecord):
     rec_sig = b'AACT'
     melSet = MelSet(
         MelEdid(),
-        MelColorO(b'CNAM'),
+        MelColorO(),
     )
     __slots__ = melSet.getSlotsUsed()
 

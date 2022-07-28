@@ -25,7 +25,7 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelCounter, \
     MelArray, MreGmstBase, MelUInt8Flags, MelCoed, MelSorted, MelGroups, \
-    MelUInt32
+    MelUInt32, MelRecord, MelColorO, MelFull
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -106,6 +106,21 @@ class MreTes4(MreHeaderBase):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreAact(MelRecord):
+    """Action."""
+    rec_sig = b'AACT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelColorO(),
+        MelString(b'DNAM', 'action_notes'),
+        MelUInt32(b'TNAM', 'action_type'),
+        MelFid(b'DATA', 'attraction_rule'),
+        MelFull(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
@@ -116,7 +131,7 @@ class MreLvli(MreLeveledList):
     rec_sig = b'LVLI'
 
     top_copy_attrs = ('chanceNone','maxCount','glob','filterKeywordChances',
-                 'epicLootChance','overrideName')
+                      'epicLootChance','overrideName')
 
     melSet = MelSet(
         MelEdid(),
@@ -141,7 +156,7 @@ class MreLvln(MreLeveledList):
     rec_sig = b'LVLN'
 
     top_copy_attrs = ('chanceNone','maxCount','glob','filterKeywordChances',
-                 'model','modt_p')
+                      'model','modt_p')
 
     melSet = MelSet(
         MelEdid(),
