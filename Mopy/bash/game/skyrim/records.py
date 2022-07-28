@@ -31,7 +31,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, \
     MreGmstBase, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
-    MelUInt16, MelUInt32, MelActionFlags, MelCounter, MelRaceData, \
+    MelUInt16, MelUInt32, MelActionFlags, MelCounter, MelRaceData, MelBaseR, \
     MelPartialCounter, MelBounds, null3, null4, MelSequential, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, MelFactions, MelReadOnly, \
@@ -184,21 +184,22 @@ class MelConditionCounter(MelCounter):
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
-    """Represents a set of destruct record."""
+    """Represents a collection of destruction-related subrecords."""
+    _dest_stage_flags = Flags.from_names('cap_damage', 'disable', 'destroy',
+                                         'ignore_external_damage')
 
-    MelDestStageFlags = Flags.from_names('capDamage', 'disable', 'destroy',
-                                         'ignoreExternalDmg')
-    def __init__(self,attr='destructible'):
-        MelGroup.__init__(self,attr,
-            MelStruct(b'DEST', [u'i', u'2B', u'2s'],'health','count','vatsTargetable','dest_unused'),
+    def __init__(self):
+        super().__init__('destructible',
+            MelStruct(b'DEST', ['i', '2B', '2s'], 'health', 'count',
+                'vats_targetable', 'dest_unknown'),
             MelGroups('stages',
-                MelStruct(b'DSTD', [u'4B', u'i', u'2I', u'i'], u'health', u'index',
-                          u'damageStage',
-                          (MelDestructible.MelDestStageFlags, u'flagsDest'),
-                          u'selfDamagePerSecond', (FID, u'explosion'),
-                          (FID, u'debris'), u'debrisCount'),
+                MelStruct(b'DSTD', ['4B', 'i', '2I', 'i'], 'health', 'index',
+                          'damage_stage',
+                          (MelDestructible._dest_stage_flags, 'stage_flags'),
+                          'self_damage_per_second', (FID, 'explosion'),
+                          (FID, 'debris'), 'debris_count'),
                 MelModel(b'DMDL'),
-                MelBase(b'DSTF','footer'),
+                MelBaseR(b'DSTF', 'dest_end_marker'),
             ),
         )
 
@@ -4130,11 +4131,11 @@ class MreRace(MelRecord):
             (u'dismount_offset_z', 65.0), u'mount_camera_offset_x',
             (u'mount_camera_offset_y', -300.0), u'mount_camera_offset_z',
             old_versions={u'14b2s4fI7fI2ifi5fi4fI'}),
-        MelBase(b'MNAM', u'male_marker', b''), # required
+        MelBaseR(b'MNAM', 'male_marker'), # required
         MelString(b'ANAM', u'male_skeletal_model'),
         # Texture hash - we have to give it a name for the distributor
         MelReadOnly(MelBase(b'MODT', u'male_hash')),
-        MelBase(b'FNAM', u'female_marker', b''), # required
+        MelBaseR(b'FNAM', 'female_marker'), # required
         MelString(b'ANAM', u'female_skeletal_model'),
         # Texture hash - we have to give it a name for the distributor
         MelReadOnly(MelBase(b'MODT', u'female_hash')),
@@ -4155,13 +4156,13 @@ class MreRace(MelRecord):
         MelFloat(b'UNAM', u'facegen_face_clamp'), # required
         MelFid(b'ATKR', u'attack_race'),
         MelAttacks(),
-        MelBase(b'NAM1', u'body_data_marker', b''), # required
-        MelBase(b'MNAM', u'male_data_marker', b''), # required
+        MelBaseR(b'NAM1', 'body_data_marker'), # required
+        MelBaseR(b'MNAM', 'male_data_marker'), # required
         MelSorted(MelGroups(u'male_body_data',
             MelUInt32(b'INDX', u'body_part_index'), # required
             MelModel(),
         ), sort_by_attrs='body_part_index'),
-        MelBase(b'FNAM', u'female_data_marker', b''), # required
+        MelBaseR(b'FNAM', 'female_data_marker'), # required
         MelSorted(MelGroups(u'female_body_data',
             MelUInt32(b'INDX', u'body_part_index'), # required
             MelModel(),
@@ -4172,10 +4173,10 @@ class MreRace(MelRecord):
         MelSorted(MelSimpleArray('eyes', MelFid(b'ENAM'))),
         MelFid(b'GNAM', u'body_part_data'), # required
         MelBase(b'NAM2', u'marker_nam2_2'),
-        MelBase(b'NAM3', u'behavior_graph_marker', b''), # required
-        MelBase(b'MNAM', u'male_graph_marker', b''), # required
+        MelBaseR(b'NAM3', 'behavior_graph_marker'), # required
+        MelBaseR(b'MNAM', 'male_graph_marker'), # required
         MelModel(b'MODL', 'male_behavior_graph'),
-        MelBase(b'FNAM', u'female_graph_marker', b''), # required
+        MelBaseR(b'FNAM', 'female_graph_marker'), # required
         MelModel(b'MODL', 'female_behavior_graph'),
         MelFid(b'NAM4', u'material_type'),
         MelFid(b'NAM5', u'impact_data_set'),

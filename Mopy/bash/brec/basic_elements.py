@@ -234,6 +234,14 @@ class MelBase(Subrecord):
         :rtype: int"""
         raise exception.AbstractError()
 
+# -----------------------------------------------------------------------------
+class MelBaseR(MelBase):
+    """A required subrecord whose contents are unknown/unused/unimportant.
+    Often used for markers, which the game engine uses when parsing to keep
+    track of where it is."""
+    def __init__(self, mel_sig, attr):
+        super().__init__(mel_sig, attr, b'')
+
 # Simple static Fields --------------------------------------------------------
 class MelNum(MelBase):
     """A simple static subrecord representing a number."""

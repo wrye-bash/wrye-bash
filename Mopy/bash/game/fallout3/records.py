@@ -44,7 +44,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
-    MelReflectedRefractedBy, MelValueWeight, SpellFlags
+    MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -88,6 +88,7 @@ class MelModel(MelGroup):
         b'MOD2': (b'MOD2', b'MO2B', b'MO2T', b'MO2S'),
         b'MOD3': (b'MOD3', b'MO3B', b'MO3T', b'MO3S', b'MOSD'),
         b'MOD4': (b'MOD4', b'MO4B', b'MO4T', b'MO4S'),
+        b'DMDL': (b'DMDL', b'DMDT'),
     }
 
     _facegen_model_flags = Flags.from_names('head', 'torso', 'rightHand',
@@ -95,17 +96,19 @@ class MelModel(MelGroup):
 
     def __init__(self, mel_sig=b'MODL', attr='model', with_facegen_flags=True):
         types = self.__class__.typeSets[mel_sig]
-        model_elements = [
-            MelString(types[0], 'modPath'),
-            MelBase(types[1], 'modb_p'),
-            MelBase(types[2], 'modt_p'), # Texture File Hashes
-            MelMODS(types[3], 'alternateTextures'),
-        ]
+        model_elements = [MelString(types[0], 'modPath')]
+        if mel_sig != b'DMDL':
+            model_elements.extend([
+                MelBase(types[1], 'modb_p'),
+                MelBase(types[2], 'modt_p'), # Texture File Hashes
+                MelMODS(types[3], 'alternateTextures'),
+            ])
+        else: # DMDL skips the '*B' subrecord
+            model_elements.append(MelBase(types[1], 'modt_p'))
         # No MODD/MOSD equivalent for MOD2 and MOD4
         if len(types) == 5 and with_facegen_flags:
-            model_elements += [
-                MelUInt8Flags(types[4], 'facegen_model_flags',
-                              self.__class__._facegen_model_flags)]
+            model_elements.append(MelUInt8Flags(types[4],
+                'facegen_model_flags', self.__class__._facegen_model_flags))
         super().__init__(attr, *model_elements)
 
 #------------------------------------------------------------------------------
@@ -153,24 +156,23 @@ class MelConditions(MelGroups):
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
-    """Represents a set of destruct record."""
+    """Represents a collection of destruction-related subrecords."""
+    _dest_header_flags = TrimmedFlags.from_names('vats_targetable')
+    _dest_stage_flags = Flags.from_names('cap_damage', 'disable', 'destroy')
 
-    MelDestVatsFlags = TrimmedFlags.from_names(u'vatsTargetable')
-    MelDestStageFlags = Flags.from_names(u'capDamage', u'disable', u'destroy')
-
-    def __init__(self, attr=u'destructible'):
-        super(MelDestructible, self).__init__(attr,
-            MelStruct(b'DEST', [u'i', u'2B', u'2s'], u'health', u'count',
-                (MelDestructible.MelDestVatsFlags, u'flagsDest'), u'unused'),
-            MelGroups(u'stages',
-                MelStruct(b'DSTD', [u'4B', u'i', u'2I', u'i'], u'health', u'index',
-                          u'damageStage',
-                          (MelDestructible.MelDestStageFlags, u'flagsDest'),
-                          u'selfDamagePerSecond', (FID, u'explosion'),
-                          (FID, u'debris'), u'debrisCount'),
-                MelString(b'DMDL', u'model'),
-                MelBase(b'DMDT', u'dmdt'),
-                MelBase(b'DSTF', u'footer'),
+    def __init__(self):
+        super().__init__('destructible',
+            MelStruct(b'DEST', ['i', '2B', '2s'], 'health', 'count',
+                (MelDestructible._dest_header_flags, 'dest_flags'),
+                'dest_unused'),
+            MelGroups('stages',
+                MelStruct(b'DSTD', ['4B', 'i', '2I', 'i'], 'health', 'index',
+                          'damage_stage',
+                          (MelDestructible._dest_stage_flags, 'stage_flags'),
+                          'self_damage_per_second', (FID, 'explosion'),
+                          (FID, 'debris'), 'debris_count'),
+                MelModel(b'DMDL'),
+                MelBaseR(b'DSTF', 'dest_end_marker'),
             ),
         )
 
@@ -2550,7 +2552,7 @@ class MreRace(MelRecord):
                     (_flags, u'flags')),
         MelFid(b'ONAM','Older'),
         MelFid(b'YNAM','Younger'),
-        MelBase(b'NAM2','_nam2',b''),
+        MelBaseR(b'NAM2', 'unknown_marker'),
         MelRaceVoices(b'VTCK', [u'2I'], (FID, 'maleVoice'), (FID, 'femaleVoice')),
         MelOptStruct(b'DNAM', [u'2I'],(FID, u'defaultHairMale'),(FID, u'defaultHairFemale')),
         # Int corresponding to GMST sHairColorNN
@@ -2558,8 +2560,8 @@ class MreRace(MelRecord):
         MelFloat(b'PNAM', 'mainClamp'),
         MelFloat(b'UNAM', 'faceClamp'),
         MelStruct(b'ATTR', [u'2s'], u'unused_attributes'), # leftover
-        MelBase(b'NAM0', 'head_data_marker', b''),
-        MelBase(b'MNAM', 'male_head_data_marker', b''),
+        MelBaseR(b'NAM0', 'head_data_marker'),
+        MelBaseR(b'MNAM', 'male_head_data_marker'),
         MelRaceParts({
             0: u'maleHead',
             1: u'maleEars',
@@ -2570,7 +2572,7 @@ class MreRace(MelRecord):
             6: u'maleLeftEye',
             7: u'maleRightEye',
         }, group_loaders=lambda indx: (MelRaceHeadPart(indx),)),
-        MelBase(b'FNAM', u'female_head_data_marker', b''),
+        MelBaseR(b'FNAM', 'female_head_data_marker'),
         MelRaceParts({
             0: u'femaleHead',
             1: u'femaleEars',
@@ -2581,8 +2583,8 @@ class MreRace(MelRecord):
             6: u'femaleLeftEye',
             7: u'femaleRightEye',
         }, group_loaders=lambda indx: (MelRaceHeadPart(indx),)),
-        MelBase(b'NAM1', u'body_data_marker', b''),
-        MelBase(b'MNAM', u'male_body_data_marker', b''),
+        MelBaseR(b'NAM1', 'body_data_marker'),
+        MelBaseR(b'MNAM', 'male_body_data_marker'),
         MelRaceParts({
             0: u'maleUpperBody',
             1: u'maleLeftHand',
@@ -2592,7 +2594,7 @@ class MreRace(MelRecord):
             MelIcons(),
             MelModel(),
         )),
-        MelBase(b'FNAM', u'female_body_data_marker', b''),
+        MelBaseR(b'FNAM', 'female_body_data_marker'),
         MelRaceParts({
             0: u'femaleUpperBody',
             1: u'femaleLeftHand',
@@ -2607,9 +2609,9 @@ class MreRace(MelRecord):
         # them as sorted here, because that's what the Race Checker is for!
         MelSimpleArray('hairs', MelFid(b'HNAM')),
         MelSimpleArray('eyes', MelFid(b'ENAM')),
-        MelBase(b'MNAM', 'male_facegen_marker', b''),
+        MelBaseR(b'MNAM', 'male_facegen_marker'),
         MelRaceFaceGen('maleFaceGen'),
-        MelBase(b'FNAM', 'female_facegen_marker', b''),
+        MelBaseR(b'FNAM', 'female_facegen_marker'),
         MelRaceFaceGen('femaleFaceGen'),
     ).with_distributor({
         b'NAM0': {

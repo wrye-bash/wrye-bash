@@ -40,7 +40,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
     MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, MelLists, \
-    SignatureDecider, MelRaceData, MelFactions, MelActorSounds, \
+    SignatureDecider, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership
 
@@ -226,7 +226,7 @@ class MelEffects(MelSequential):
                     u'efix_flags', u'efix_base_cost', (FID, u'resist_av'),
                     u'efix_reserved'),
             ),
-            MelBase(b'EFXX', u'effects_end_marker', b''),
+            MelBaseR(b'EFXX', 'effects_end_marker'),
         ]
         # Split everything by Vanilla/OBME
         self._vanilla_loaders = {}
@@ -1967,7 +1967,7 @@ class MreRace(MelRecord):
                   'femaleSpeed', 'femaleEndurance', 'femalePersonality',
                   'femaleLuck'),
         # Indexed Entries
-        MelBase(b'NAM0', u'face_data_marker', b''),
+        MelBaseR(b'NAM0', 'face_data_marker'),
         MelRaceParts({
             0: u'head',
             1: u'maleEars',
@@ -1988,8 +1988,8 @@ class MreRace(MelRecord):
             MelBase(b'MODT', 'modt_p'),
             MelIcon(),
         )),
-        MelBase(b'NAM1', u'body_data_marker', b''),
-        MelBase(b'MNAM', u'male_body_data_marker', b''),
+        MelBaseR(b'NAM1', 'body_data_marker'),
+        MelBaseR(b'MNAM', 'male_body_data_marker'),
         MelModel(b'MODL', 'maleTailModel'),
         MelRaceParts({
             0: u'maleUpperBodyPath',
@@ -1998,7 +1998,7 @@ class MreRace(MelRecord):
             3: u'maleFootPath',
             4: u'maleTailPath',
         }, group_loaders=lambda _indx: (MelIcon(),)),
-        MelBase(b'FNAM', u'female_body_data_marker', b''),
+        MelBaseR(b'FNAM', 'female_body_data_marker'),
         MelModel(b'MODL', 'femaleTailModel'),
         MelRaceParts({
             0: u'femaleUpperBodyPath',
