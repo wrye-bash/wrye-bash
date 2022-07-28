@@ -21,13 +21,13 @@
 #
 # =============================================================================
 """This module contains the falloutnv record classes."""
-from ..fallout3.records import MelDestructible, MelConditions, MelModel
+from ..fallout3.records import MelDestructible, MelConditionsFo3, MelModel
 from ...bolt import Flags, struct_calcsize
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
     MelFid, MelFids, MelBase, MelSimpleArray, MreHeaderBase, MelFloat, MelUInt8, \
     MelUInt32, MelBounds, null1, MelTruncatedStruct, MelIcons, MelIcon, \
     MelIco2, MelEdid, MelFull, MelArray, MelObject, MelNull, MelScript, \
-    MelDescription, MelPickupSound, MelDropSound, MelUInt8Flags, MelSInt32, \
+    MelDescription, MelSoundPickup, MelSoundDrop, MelUInt8Flags, MelSInt32, \
     MelSorted, MelValueWeight
 from ...exception import ModSizeError
 
@@ -101,8 +101,8 @@ class MreCcrd(MelRecord):
         MelModel(),
         MelIcons(),
         MelScript(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelString(b'TX00','textureFace'),
         MelString(b'TX01','textureBack'),
         MelUInt32(b'INTV', 'card_suit'),
@@ -158,8 +158,8 @@ class MreChip(MelRecord):
         MelModel(),
         MelIcons(),
         MelDestructible(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -174,8 +174,8 @@ class MreCmny(MelRecord):
         MelFull(),
         MelModel(),
         MelIcons(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelUInt32(b'DATA', 'absoluteValue'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -279,8 +279,8 @@ class MreImod(MelRecord):
         MelScript(),
         MelDescription(),
         MelDestructible(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -366,7 +366,7 @@ class MreRcpe(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelConditions(),
+        MelConditionsFo3(),
         MelStruct(b'DATA', [u'4I'],'skill','level',(FID,'category'),(FID,'subCategory')),
         MelGroups('ingredients',
             MelFid(b'RCIL','item'),

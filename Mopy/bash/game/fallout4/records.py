@@ -21,11 +21,14 @@
 #
 # =============================================================================
 """This module contains the Fallout 4 record classes."""
+from ...bolt import Flags
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
-    MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, \
+    MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, MelAttx, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelCounter, \
     MelArray, MreGmstBase, MelUInt8Flags, MelCoed, MelSorted, MelGroups, \
-    MelUInt32, MelRecord, MelColorO, MelFull
+    MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
+    MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, \
+    MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -39,21 +42,64 @@ class MelModel(MelGroup):
         b'MOD3': (b'MOD3', b'MODT', b'MO3C', b'MO3S', b'MO3F'),
         b'MOD4': (b'MOD4', b'MODT', b'MO4C', b'MO4S', b'MO4F'),
         b'MOD5': (b'MOD5', b'MODT', b'MO5C', b'MO5S', b'MO5F'),
-        # Destructible
         b'DMDL': (b'DMDL', b'DMDT', b'DMDC', b'DMDS'),
     }
 
     def __init__(self, mel_sig=b'MODL', attr='model'):
         types = self.__class__.typeSets[mel_sig]
-        super().__init__(attr,
+        model_elements = [
             MelString(types[0], 'modPath'),
             # Ignore texture hashes - they're only an optimization, plenty
             # of records in Skyrim.esm are missing them
             MelNull(types[1]),
-            MelFloat(types[2], 'colorRemappingIndex'),
-            MelFid(types[3], 'materialSwap'),
-            MelBase(types[3], 'modf_p')
+            MelFloat(types[2], 'color_remapping_index'),
+            MelFid(types[3], 'material_swap'),
+        ]
+        if len(types) == 5:
+            model_elements.append(MelBase(types[4], 'unknownMODF'))
+        super().__init__(attr, *model_elements)
+
+#------------------------------------------------------------------------------
+class MelAnimationSound(MelFid):
+    """Handles the common STCP (Animation Sound) subrecord."""
+    def __init__(self):
+        super().__init__(b'STCP', 'animation_sound')
+
+#------------------------------------------------------------------------------
+class MelDestructible(MelGroup):
+    """Represents a collection of destruction-related subrecords."""
+    _dest_header_flags = Flags.from_names('vats_targetable',
+                                          'large_actor_destroys')
+    _dest_stage_flags = Flags.from_names('cap_damage', 'disable', 'destroy',
+                                         'ignore_external_damage',
+                                         'becomes_dynamic')
+
+    def __init__(self):
+        super().__init__('destructible',
+            MelStruct(b'DEST', ['i', '2B', '2s'], 'health', 'count',
+                (MelDestructible._dest_header_flags, 'dest_flags'),
+                'dest_unknown'),
+            MelSorted(MelArray('resistances',
+                MelStruct(b'DAMC', ['2I'], (FID, 'damage_type'),
+                    'resistance_value'),
+            ), sort_by_attrs='damage_type'),
+            MelGroups('stages',
+                MelStruct(b'DSTD', ['4B', 'i', '2I', 'i'], 'health', 'index',
+                          'damage_stage',
+                          (MelDestructible._dest_stage_flags, 'stage_flags'),
+                          'self_damage_per_second', (FID, 'explosion'),
+                          (FID, 'debris'), 'debris_count'),
+                MelString(b'DSTA', 'sequence_name'),
+                MelModel(b'DMDL'),
+                MelBaseR(b'DSTF', 'dest_end_marker'),
+            ),
         )
+
+#------------------------------------------------------------------------------
+class MelFtyp(MelFid):
+    """Handles the common FTYP (Forced Loc Ref Type) subrecord."""
+    def __init__(self):
+        super().__init__(b'FTYP', 'forced_loc_ref_type')
 
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase): ##: some duplication with skyrim
@@ -78,6 +124,37 @@ class MreLeveledList(MreLeveledListBase): ##: some duplication with skyrim
                 lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
             super().__init__(MelGroups('entries', *lvl_elements),
                 sort_by_attrs=lvl_sort_attrs)
+
+#------------------------------------------------------------------------------
+class MelNativeTerminal(MelFid):
+    """Handles the common NTRM (Native Terminal) subrecord."""
+    def __init__(self):
+        super().__init__(b'NTRM', 'native_terminal')
+
+#------------------------------------------------------------------------------
+class MelNvnm(MelBase): ##: Implement and use for Skyrim too!
+    def __init__(self):
+        super().__init__(b'NVNM', 'navmesh_geometry')
+
+#------------------------------------------------------------------------------
+class MelPreviewTransform(MelFid):
+    """Handles the common PTRN (Preview Transform) subrecord."""
+    def __init__(self):
+        super().__init__(b'PTRN', 'preview_transform')
+
+#------------------------------------------------------------------------------
+class MelProperties(MelSorted):
+    """Handles the common PRPS (Properites) subrecord."""
+    def __init__(self):
+        super().__init__(MelArray('properties',
+            MelStruct(b'PRPS', ['I', 'f'], (FID, 'prop_actor_value'),
+                'prop_value'),
+        ))
+
+#------------------------------------------------------------------------------
+class MelVmad(MelNull): # TODO(inf) Refactor Skyrim's MelVmad and remove this
+    def __init__(self):
+        super().__init__(b'VMAD')
 
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------
@@ -117,6 +194,39 @@ class MreAact(MelRecord):
         MelUInt32(b'TNAM', 'action_type'),
         MelFid(b'DATA', 'attraction_rule'),
         MelFull(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreActi(MelRecord):
+    """Activator."""
+    rec_sig = b'ACTI'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelAnimationSound(),
+        MelFull(),
+        MelModel(),
+        MelDestructible(),
+        MelKeywords(),
+        MelProperties(),
+        MelNativeTerminal(),
+        MelFtyp(),
+        MelColor(b'PNAM'),
+        MelSoundLooping(),
+        MelSoundActivation(),
+        MelWaterType(),
+        MelAttx(),
+        MelActiFlags(),
+        MelInteractionKeyword(),
+        MelTruncatedStruct(b'RADR', ['I', '2f', '2B'], (FID, 'rr_sound_model'),
+            'rr_frequency', 'rr_volume', 'rr_starts_active',
+            'rr_no_signal_static', old_versions={'I2fB'}),
+        MelConditions(),
+        MelNvnm(),
     )
     __slots__ = melSet.getSlotsUsed()
 

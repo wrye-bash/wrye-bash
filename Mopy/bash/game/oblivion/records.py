@@ -42,7 +42,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, MelLists, \
     SignatureDecider, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
-    MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership
+    MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
+    MelSoundLooping
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -72,16 +73,16 @@ class _CtdaDecider(SignatureDecider):
     def decide_dump(self, record):
         return b'CTDA'
 
-class MelConditions(MelGroups):
+class MelConditionsTes4(MelGroups):
     """A list of conditions. Can contain the old CTDT format as well, which
     will be upgraded on dump."""
     def __init__(self):
-        super(MelConditions, self).__init__(u'conditions', MelUnion({
-            b'CTDA': MelCtda(suffix_fmt=[u'4s'],
-                suffix_elements=[u'unused3']),
+        super().__init__('conditions', MelUnion({
+            b'CTDA': MelCtda(suffix_fmt=['4s'],
+                suffix_elements=['unused3']),
             # The old (CTDT) format is length 20 and has no suffix
-            b'CTDT': MelReadOnly(MelCtda(b'CTDT', suffix_fmt=[u'4s'],
-                suffix_elements=[u'unused3'], old_suffix_fmts={u''})),
+            b'CTDT': MelReadOnly(MelCtda(b'CTDT', suffix_fmt=['4s'],
+                suffix_elements=['unused3'], old_suffix_fmts={''})),
             }, decider=_CtdaDecider()),
         )
 
@@ -741,7 +742,7 @@ class MreActi(MelRecord):
         MelFull(),
         MelModel(),
         MelScript(),
-        MelFid(b'SNAM','sound'),
+        MelSoundLooping(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1283,7 +1284,7 @@ class MreIdle(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelConditions(),
+        MelConditionsTes4(),
         MelUInt8(b'ANAM', 'group'),
         MelArray('related_animations',
             MelStruct(b'DATA', [u'2I'], (FID, 'parent'), (FID, 'prevId')),
@@ -1311,7 +1312,7 @@ class MreInfo(MelRecord):
             MelString(b'NAM1', u'responseText'),
             MelString(b'NAM2', u'actorNotes'),
         ),
-        MelConditions(),
+        MelConditionsTes4(),
         MelFids('choices', MelFid(b'TCLT')),
         MelFids('linksFrom', MelFid(b'TCLF')),
         MelEmbeddedScript(),
@@ -1866,7 +1867,7 @@ class MrePack(MelRecord):
             loader=MelSInt32(b'PTDT', u'targetType'),
             decider=AttrValDecider(u'targetType'),
         )),
-        MelConditions(),
+        MelConditionsTes4(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1909,12 +1910,12 @@ class MreQust(MelRecord):
         MelFull(),
         MelIcon(),
         MelStruct(b'DATA', [u'B', u'B'],(_questFlags, u'questFlags'),'priority'),
-        MelConditions(),
+        MelConditionsTes4(),
         MelSorted(MelGroups('stages',
             MelSInt16(b'INDX', 'stage'),
             MelGroups('entries',
                 MelUInt8Flags(b'QSDT', u'flags', stageFlags),
-                MelConditions(),
+                MelConditionsTes4(),
                 MelString(b'CNAM','text'),
                 MelEmbeddedScript(),
             ),
@@ -1922,7 +1923,7 @@ class MreQust(MelRecord):
         MelGroups('targets',
             MelStruct(b'QSTA', [u'I', u'B', u'3s'], (FID, 'targetId'),
                       (targetFlags, 'flags'), 'unused1'),
-            MelConditions(),
+            MelConditionsTes4(),
         ),
     ).with_distributor({
         b'EDID|DATA': { # just in case one is missing
