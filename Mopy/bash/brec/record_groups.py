@@ -39,9 +39,9 @@ class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not
     support unpacking, but can report its number of records and be written."""
 
-    __slots__ = [u'header',u'size',u'label',u'groupType', u'stamp', u'debug',
-                 u'data', u'changed', u'numRecords', u'loadFactory',
-                 u'inName'] ##: nice collection of forbidden names, including header -> grup_header
+    __slots__ = ['header', 'size', 'label', 'groupType', 'stamp',
+                 'data', 'changed', 'numRecords', 'loadFactory',
+                 'inName'] ##: nice collection of forbidden names, including header -> grup_header
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         self.header = header

@@ -28,7 +28,8 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelArray, MreGmstBase, MelUInt8Flags, MelCoed, MelSorted, MelGroups, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
     MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, \
-    MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct
+    MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
+    AMelNvnm, ANvnmContext
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -132,9 +133,15 @@ class MelNativeTerminal(MelFid):
         super().__init__(b'NTRM', 'native_terminal')
 
 #------------------------------------------------------------------------------
-class MelNvnm(MelBase): ##: Implement and use for Skyrim too!
-    def __init__(self):
-        super().__init__(b'NVNM', 'navmesh_geometry')
+class MelNvnm(AMelNvnm):
+    """Handles the NVNM (Navmesh Geometry) subrecord."""
+    class _NvnmContextFo4(ANvnmContext):
+        """Provides NVNM context for Fallout 4."""
+        max_nvnm_ver = 15
+        cover_tri_mapping_has_covers = True
+        nvnm_has_waypoints = True
+
+    _nvnm_context_class = _NvnmContextFo4
 
 #------------------------------------------------------------------------------
 class MelPreviewTransform(MelFid):

@@ -35,7 +35,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     MelPartialCounter, MelBounds, null3, null4, MelSequential, MelKeywords, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, MelFactions, MelReadOnly, MelRelations, \
-    MreActorBase, MreWithItems, MelRef3D, MelXlod, MelActiFlags, \
+    MreActorBase, MreWithItems, MelRef3D, MelXlod, MelActiFlags, AMelNvnm, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelSoundPickup, MelSoundDrop, MelActivateParents, BipedFlags, MelColor, \
@@ -45,7 +45,8 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     vmad_qust_fragments_key, vmad_fragments_key, vmad_script_key, \
     vmad_qust_aliases_key, MelReflectedRefractedBy, perk_effect_key, \
     MelValueWeight, int_unpacker, MelCoed, MelSoundLooping, MelWaterType, \
-    MelSoundActivation, MelInteractionKeyword, MelConditionList, MelConditions
+    MelSoundActivation, MelInteractionKeyword, MelConditionList, \
+    MelConditions, ANvnmContext
 from ...exception import ModError, ModSizeError, StateError
 
 _is_sse = bush.game.fsName in (
@@ -289,6 +290,17 @@ class MelLocation(MelUnion):
         )
 
 #------------------------------------------------------------------------------
+class MelNvnm(AMelNvnm):
+    """Handles the NVNM (Navmesh Geometry) subrecord."""
+    class _NvnmContextTes5(ANvnmContext):
+        """Provides NVNM context for Skyrim."""
+        max_nvnm_ver = 12
+        cover_tri_mapping_has_covers = False
+        nvnm_has_waypoints = False
+
+    _nvnm_context_class = _NvnmContextTes5
+
+#------------------------------------------------------------------------------
 class MelSMFlags(MelStruct):
     """Handles Story Manager flags shared by SMBN, SMQN and SMEN."""
     _node_flags = Flags.from_names(u'sm_random', u'no_child_warn')
@@ -365,6 +377,7 @@ class MelWaterVelocities(MelSequential):
 
 #------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapters
+#------------------------------------------------------------------------------
 def _dump_str16(str_val, __packer=structs_cache[u'H'].pack):
     """Encodes the specified string using the plugin encoding and returns data
     for both its length (as a 16-bit integer) and its encoded value."""
