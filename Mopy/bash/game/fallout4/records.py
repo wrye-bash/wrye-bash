@@ -24,7 +24,8 @@
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelCounter, \
-    MelArray, MreGmstBase, MelUInt8Flags, MelCoed, MelSorted, MelGroups
+    MelArray, MreGmstBase, MelUInt8Flags, MelCoed, MelSorted, MelGroups, \
+    MelUInt32
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -88,14 +89,19 @@ class MreTes4(MreHeaderBase):
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',
             (u'nextObject', 0x001)),
-        MelBase(b'TNAM', 'tnam_p'),
+        MelNull(b'OFST'), # obsolete
+        MelNull(b'DELE'), # obsolete
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
         MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
-        MelBase(b'INTV', 'unknownINTV'),
-        MelBase(b'INCC', 'unknownINCC'),
+        MelGroups('transient_types',
+            MelSimpleArray('unknownTNAM', MelFid(b'TNAM'),
+                prelude=MelUInt32(b'TNAM', 'form_type')),
+        ),
+        MelUInt32(b'INTV', 'unknownINTV'),
+        MelUInt32(b'INCC', 'internal_cell_count'),
     )
     __slots__ = melSet.getSlotsUsed()
 

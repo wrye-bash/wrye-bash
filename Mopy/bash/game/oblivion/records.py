@@ -689,12 +689,11 @@ class MreTes4(MreHeaderBase):
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',
             (u'nextObject', 0x800)),
-        MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
-        MelBase(b'DELE','dele_p',),  #--Obsolete?
+        MelNull(b'OFST'), # obsolete
+        MelNull(b'DELE'), # obsolete
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelNull(b'DATA'),
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -433,16 +433,16 @@ class MelSimpleArray(MelArray):
     dumping of the array to avoid creating mel objects."""
     _element: MelNum
 
-    def __init__(self, array_attr, element):
+    def __init__(self, array_attr, element, prelude=None):
         if not isinstance(element, MelNum):
             raise SyntaxError(f'MelSimpleArray only accepts MelNum, passed: '
                               f'{element!r}')
-        super().__init__(array_attr, element)
+        super().__init__(array_attr, element, prelude)
 
     def _load_array(self, record, ins, sub_type, size_, *debug_strs):
         entry_size = self._element_size
         getattr(record, self.attr).extend(
-            self._element.load_bytes(ins, entry_size, *debug_strs) for x in
+            self._element.load_bytes(ins, entry_size, *debug_strs) for _x in
             range(size_ // entry_size))
 
     def _map_array_fids(self, record, function, save_fids):

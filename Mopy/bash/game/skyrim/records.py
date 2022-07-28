@@ -1250,6 +1250,8 @@ class MreTes4(MreHeaderBase):
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], ('version', 1.7), 'numRecords',
                   ('nextObject', 0x800)),
+        MelNull(b'OFST'), # obsolete
+        MelNull(b'DELE'), # obsolete
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),

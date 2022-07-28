@@ -41,8 +41,8 @@ class MreTes4(MreHeaderBase):
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], ('version', 1.34), 'numRecords',
                   ('nextObject', 0x800)),
-        MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
-        MelBase(b'DELE','dele_p',),  #--Obsolete?
+        MelNull(b'OFST'), # obsolete
+        MelNull(b'DELE'), # obsolete
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
