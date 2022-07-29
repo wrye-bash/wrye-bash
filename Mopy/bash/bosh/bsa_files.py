@@ -44,6 +44,7 @@ from .dds_files import DDSFile, mk_dxgi_fmt
 from ..bolt import deprint, Progress, struct_unpack, unpack_byte, \
     unpack_string, unpack_int, Flags, AFile, structs_cache, struct_calcsize, \
     struct_error
+from ..env import convert_separators
 from ..exception import AbstractError, BSAError, BSADecodingError, \
     BSAFlagError, BSACompressionError, BSADecompressionError, \
     BSADecompressionSizeError
@@ -54,7 +55,7 @@ path_sep = u'\\'
 # Utilities -------------------------------------------------------------------
 def _decode_path(string_path, bsa_name):
     try:
-        return str(string_path, encoding=_bsa_encoding)
+        return str(string_path, encoding=_bsa_encoding).replace('/', path_sep)
     except UnicodeDecodeError:
         raise BSADecodingError(bsa_name, string_path)
 
@@ -504,7 +505,7 @@ class ABsa(AFile):
     def _map_files_to_folders(asset_paths): # lowercase keys and values
         folder_file = []
         for a in asset_paths:
-            split = a.rsplit(path_sep, 1)
+            split = a.rsplit(os.sep, 1)
             if len(split) == 1:
                 split = [u'', split[0]]
             folder_file.append(split)
@@ -520,12 +521,11 @@ class ABsa(AFile):
         """Extracts certain assets from this BSA into the specified folder.
 
         :param asset_paths: An iterable specifying which files should be
-            extracted.
+            extracted. Path separators in these *must* match the OS.
         :param dest_folder: The folder into which the results should be
             extracted.
         :param progress: The progress callback to use. None if unwanted."""
-        folder_files_dict = self._map_files_to_folders(
-            map(str.lower, asset_paths))
+        folder_files_dict = self._map_files_to_folders(asset_paths)
         del asset_paths # forget about this
         # load the bsa - this should be reworked to load only needed records
         self._load_bsa()
@@ -544,7 +544,7 @@ class ABsa(AFile):
                     i += 1
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
-                target_dir = os.path.join(dest_folder, *folder.split(u'\\'))
+                target_dir = os.path.join(dest_folder, *folder.split(path_sep))
                 os.makedirs(target_dir, exist_ok=True)
                 for filename, record in file_records:
                     data_size = record.raw_data_size()
@@ -594,23 +594,27 @@ class ABsa(AFile):
 
     # API - delegates to abstract methods above
     def has_assets(self, asset_paths):
+        """Checks if this BSA has the requested assets and returns a list of
+        assets out of those that it contains.
+
+        :param asset_paths: The paths to check. Path separators in these *must*
+            match the OS."""
         cached_assets = self.assets
         matched_assets = []
         add_asset = matched_assets.append
         for a in asset_paths:
+            # self.assets uses OS path separators, so this is fine
             if a.lower() in cached_assets:
                 add_asset(a)
         return matched_assets
 
     @property
-    def assets(self):
-        """Set of full paths in the bsa in lowercase.
-        :rtype: frozenset[str]
-        """
+    def assets(self) -> frozenset[str]:
+        """Set of full paths in the bsa in lowercase and using the OS path
+        separator."""
         wanted_assets = self._assets
         if wanted_assets is None:
             self.__load(names_only=True)
-            from ..env import convert_separators
             self._assets = wanted_assets = frozenset(
                 convert_separators(f.lower()) for f in self._filenames)
             del self._filenames[:]
@@ -650,7 +654,7 @@ class BSA(ABsa):
             rec.load_record(bsa_file)
             file_records.append(rec)
 
-    def _load_bsa_light(self, __ps=path_sep):
+    def _load_bsa_light(self):
         folder_records = [] # we need those to parse the folder names
         _filenames = []
         folder_name_record = {} # type: dict[str, _BsaHashedRecord]
@@ -676,7 +680,7 @@ class BSA(ABsa):
                     deprint(f'{list_index=}')
                     deprint(f'{filename=}')
                     raise BSAError(self.bsa_name, 'failed to read bsa') from ie
-                filenames_append(f'{folder_path}{__ps}{filename}')
+                filenames_append(f'{folder_path}{path_sep}{filename}')
         self._filenames = _filenames
 
     def _read_bsa_file(self, folder_records, read_file_records) -> list[bytes]:
@@ -773,7 +777,7 @@ class BA2(ABsa):
                     i += 1
                 # BSA paths always have backslashes, so we need to convert them
                 # to the platform's path separators before we extract
-                target_dir = os.path.join(dest_folder, *folder.split(u'\\'))
+                target_dir = os.path.join(dest_folder, *folder.split(path_sep))
                 os.makedirs(target_dir, exist_ok=True)
                 for filename, record in file_records:
                     if is_dx10:
@@ -820,7 +824,7 @@ class BA2(ABsa):
             filename = _decode_path(
                 file_names_block[2:name_size + 2].tobytes(), self.bsa_name)
             file_names_block = file_names_block[name_size + 2:]
-            folder_dex = filename.rfind(u'\\')
+            folder_dex = filename.rfind(path_sep)
             if folder_dex == -1:
                 folder_name = u''
             else:
