@@ -87,30 +87,36 @@ class _LoadLink(ItemLink):
         modFile.load(True, **kwargs)
         return modFile
 
-class Mod_FullLoad(OneItemLink, _LoadLink):
+class Mod_FullLoad(_LoadLink):
     """Tests all record definitions against a specific mod"""
-    _text = _('Test Full Record Definitions...')
-    _help = _('Tests all record definitions against the selected mod')
+    _text = _('Test Record Definitions...')
+    _help = _('Tests the current record definitions for this game against the '
+              'selected plugins.')
     _load_sigs = tuple(MreRecord.type_class) # all available (decoded) records
 
     def Execute(self):
-        msg = _(u'Loading:') + f'\n{self._selected_item}'
-        with balt.Progress(msg) as progress:
-            bolt.deprint(MreRecord.type_class)
-            try:
-                self._load_mod(self._selected_info, keepAll=False,
-                               progress=progress, catch_errors=False)
-            except:
-                failed_msg = (_('File failed to verify using current record '
-                                'definitions. The original traceback is '
-                                'available in the BashBugDump.') + '\n\n' +
-                              traceback.format_exc())
-                self._showError(failed_msg, title=_('Verification Failed'))
-                bolt.deprint(f'Exception loading {self._selected_info}:\n',
-                             traceback=True)
-                return
-        self._showOk(_('File fully verified using current record '
-                       'definitions.'), title=_('Verification Succeeded'))
+        bolt.deprint(MreRecord.type_class)
+        dbg_infos = list(self.iselected_infos())
+        with balt.Progress() as progress:
+            progress.setFull(len(dbg_infos))
+            for i, dbg_inf in enumerate(dbg_infos):
+                try:
+                    self._load_mod(dbg_inf, keepAll=False,
+                        progress=SubProgress(progress, i, i + 1),
+                        catch_errors=False)
+                except:
+                    failed_msg = (_('%s failed to verify using current record '
+                                    'definitions. The original traceback is '
+                                    'available in the '
+                                    'BashBugDump.') % dbg_inf.fn_key + '\n\n' +
+                                  traceback.format_exc())
+                    self._showError(failed_msg, title=_('Verification Failed'))
+                    bolt.deprint(f'Exception loading {dbg_inf.fn_key}:',
+                                 traceback=True)
+                    return
+        self._showOk(_('All selected files fully verified using current '
+                       'record definitions.'),
+            title=_('Verification Succeeded'))
 
 class Mod_RecalcRecordCounts(OneItemLink, _LoadLink):
     """Useful for debugging if any getNumRecords implementations are broken.

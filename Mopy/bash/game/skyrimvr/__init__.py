@@ -95,7 +95,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
             MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
             MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
-            MreRace
+            MreRace, MreNavm
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
@@ -159,8 +159,8 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
             MreWthr, MreCell, MreWrld, MreVoli, MreLens, MreQust, MreTes4,
-            MrePack, MreRace,
-            # MreNavm, MreNavi
+            MrePack, MreRace, MreNavm,
+            # MreNavi
         )}
         brec.MreRecord.simpleTypes = (
                 set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',

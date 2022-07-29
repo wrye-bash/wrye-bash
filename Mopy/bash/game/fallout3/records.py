@@ -25,7 +25,7 @@ __once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
 file must be imported till then."""
 from collections import OrderedDict
 
-from ... import brec, bush
+from ... import bush
 from ...bolt import Flags, structs_cache, TrimmedFlags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, \
@@ -40,46 +40,14 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
     MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
-    MelDecalData, MelDescription, MelLists, MelPickupSound, MelDropSound, \
+    MelDecalData, MelDescription, MelLists, MelSoundPickup, MelSoundDrop, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
-    MelReflectedRefractedBy, MelValueWeight, SpellFlags
+    MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
+    MelSoundLooping, MelSoundActivation, MelWaterType
 from ...exception import ModSizeError
-# Set MelModel in brec but only if unset
-if brec.MelModel is None:
 
-    class _MelModel(MelGroup):
-        """Represents a model record."""
-        typeSets = ((b'MODL', b'MODB', b'MODT', b'MODS', b'MODD'),
-                    (b'MOD2', b'MO2B', b'MO2T', b'MO2S'),
-                    (b'MOD3', b'MO3B', b'MO3T', b'MO3S', b'MOSD'),
-                    (b'MOD4', b'MO4B', b'MO4T', b'MO4S'))
-
-        _facegen_model_flags = Flags.from_names(u'head', u'torso',
-                                                u'rightHand', u'leftHand')
-
-        def __init__(self, attr=u'model', index=0, with_facegen_flags=True):
-            """Initialize. Index is 0,2,3,4 for corresponding type id."""
-            types = self.__class__.typeSets[index - 1 if index > 0 else 0]
-            model_elements = [
-                MelString(types[0], u'modPath'),
-                MelBase(types[1], u'modb_p'),
-                # Texture File Hashes
-                MelBase(types[2], u'modt_p'),
-                MelMODS(types[3], u'alternateTextures'),
-            ]
-            # No MODD/MOSD equivalent for MOD2 and MOD4
-            if len(types) == 5 and with_facegen_flags:
-                model_elements += [
-                    MelUInt8Flags(types[4], u'facegen_model_flags',
-                                  _MelModel._facegen_model_flags)]
-            super(_MelModel, self).__init__(attr, *model_elements)
-
-    brec.MelModel = _MelModel
-from ...brec import MelModel
-
-#------------------------------------------------------------------------------
 _is_fnv = bush.game.fsName == u'FalloutNV'
 def if_fnv(fo3_version, fnv_version):
     """Resolves to one of two different objects, depending on whether we're
@@ -114,6 +82,37 @@ aiService = Flags.from_names(
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
 #------------------------------------------------------------------------------
+class MelModel(MelGroup):
+    """Represents a model subrecord."""
+    typeSets = {
+        b'MODL': (b'MODL', b'MODB', b'MODT', b'MODS', b'MODD'),
+        b'MOD2': (b'MOD2', b'MO2B', b'MO2T', b'MO2S'),
+        b'MOD3': (b'MOD3', b'MO3B', b'MO3T', b'MO3S', b'MOSD'),
+        b'MOD4': (b'MOD4', b'MO4B', b'MO4T', b'MO4S'),
+        b'DMDL': (b'DMDL', b'DMDT'),
+    }
+
+    _facegen_model_flags = Flags.from_names('head', 'torso', 'rightHand',
+                                            'leftHand')
+
+    def __init__(self, mel_sig=b'MODL', attr='model', with_facegen_flags=True):
+        types = self.__class__.typeSets[mel_sig]
+        model_elements = [MelString(types[0], 'modPath')]
+        if mel_sig != b'DMDL':
+            model_elements.extend([
+                MelBase(types[1], 'modb_p'),
+                MelBase(types[2], 'modt_p'), # Texture File Hashes
+                MelMODS(types[3], 'alternateTextures'),
+            ])
+        else: # DMDL skips the '*B' subrecord
+            model_elements.append(MelBase(types[1], 'modt_p'))
+        # No MODD/MOSD equivalent for MOD2 and MOD4
+        if len(types) == 5 and with_facegen_flags:
+            model_elements.append(MelUInt8Flags(types[4],
+                'facegen_model_flags', self.__class__._facegen_model_flags))
+        super().__init__(attr, *model_elements)
+
+#------------------------------------------------------------------------------
 class MreActor(MreActorBase):
     """Creatures and NPCs."""
     TemplateFlags = Flags.from_names(
@@ -147,35 +146,32 @@ class MelBipedData(MelStruct):
             (self._general_flags, u'generalFlags'), u'biped_unused')
 
 #------------------------------------------------------------------------------
-class MelConditions(MelGroups):
+class MelConditionsFo3(MelGroups):
     """A list of conditions."""
     def __init__(self):
         # Note that reference can be a fid - handled in MelCtdaFo3.mapFids
-        super(MelConditions, self).__init__(u'conditions',
-            MelCtdaFo3(suffix_fmt=[u'2I'],
-                       suffix_elements=[u'runOn', u'reference'],
-                       old_suffix_fmts={u'I', u''}))
+        super().__init__('conditions', MelCtdaFo3(suffix_fmt=['2I'],
+            suffix_elements=['runOn', 'reference'], old_suffix_fmts={'I', ''}))
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
-    """Represents a set of destruct record."""
+    """Represents a collection of destruction-related subrecords."""
+    _dest_header_flags = TrimmedFlags.from_names('vats_targetable')
+    _dest_stage_flags = Flags.from_names('cap_damage', 'disable', 'destroy')
 
-    MelDestVatsFlags = TrimmedFlags.from_names(u'vatsTargetable')
-    MelDestStageFlags = Flags.from_names(u'capDamage', u'disable', u'destroy')
-
-    def __init__(self, attr=u'destructible'):
-        super(MelDestructible, self).__init__(attr,
-            MelStruct(b'DEST', [u'i', u'2B', u'2s'], u'health', u'count',
-                (MelDestructible.MelDestVatsFlags, u'flagsDest'), u'unused'),
-            MelGroups(u'stages',
-                MelStruct(b'DSTD', [u'4B', u'i', u'2I', u'i'], u'health', u'index',
-                          u'damageStage',
-                          (MelDestructible.MelDestStageFlags, u'flagsDest'),
-                          u'selfDamagePerSecond', (FID, u'explosion'),
-                          (FID, u'debris'), u'debrisCount'),
-                MelString(b'DMDL', u'model'),
-                MelBase(b'DMDT', u'dmdt'),
-                MelBase(b'DSTF', u'footer'),
+    def __init__(self):
+        super().__init__('destructible',
+            MelStruct(b'DEST', ['i', '2B', '2s'], 'health', 'count',
+                (MelDestructible._dest_header_flags, 'dest_flags'),
+                'dest_unused'),
+            MelGroups('stages',
+                MelStruct(b'DSTD', ['4B', 'i', '2I', 'i'], 'health', 'index',
+                          'damage_stage',
+                          (MelDestructible._dest_stage_flags, 'stage_flags'),
+                          'self_damage_per_second', (FID, 'explosion'),
+                          (FID, 'debris'), 'debris_count'),
+                MelModel(b'DMDL'),
+                MelBaseR(b'DSTF', 'dest_end_marker'),
             ),
         )
 
@@ -187,7 +183,7 @@ class MelEffects(MelGroups):
             MelFid(b'EFID', u'baseEffect'),
             MelStruct(b'EFIT', [u'4I', u'i'], u'magnitude', u'area', u'duration',
                 u'recipient', u'actorValue'),
-            MelConditions(),
+            MelConditionsFo3(),
         )
 
 #------------------------------------------------------------------------------
@@ -338,8 +334,8 @@ class MreTes4(MreHeaderBase):
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], ('version', 0.94), 'numRecords',
                   ('nextObject', 0x800)),
-        MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
-        MelBase(b'DELE','dele_p',),  #--Obsolete?
+        MelNull(b'OFST'), # obsolete
+        MelNull(b'DELE'), # obsolete
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
@@ -437,11 +433,11 @@ class MreActi(MelRecord):
         MelModel(),
         MelScript(),
         MelDestructible(),
-        MelFid(b'SNAM', u'soundLooping'),
-        MelFid(b'VNAM', u'soundActivation'),
+        MelSoundLooping(),
+        MelSoundActivation(),
         fnv_only(MelFid(b'INAM', 'radioTemplate')),
         MelFid(b'RNAM', u'radioStation'),
-        MelFid(b'WNAM', u'waterType'),
+        MelWaterType(),
         fnv_only(MelActivationPrompt()),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -476,8 +472,8 @@ class MreAlch(MelRecord):
         MelIcons(),
         MelScript(),
         MelDestructible(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelEquipmentType(),
         MelFloat(b'DATA', 'weight'),
         MelStruct(b'ENIT', [u'i', u'B', u'3s', u'I', u'f', u'I'], u'value', (_flags, u'flags'),
@@ -502,8 +498,8 @@ class MreAmmo(MelRecord):
         MelIcons(),
         fnv_only(MelScript()),
         MelDestructible(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelStruct(b'DATA', [u'f', u'B', u'3s', u'i', u'B'],'speed',(_flags, u'flags'),'ammoData1',
                   'value','clipRounds'),
         fnv_only(MelTruncatedStruct(
@@ -541,11 +537,11 @@ class MreArma(MelRecord):
         MelBounds(),
         MelFull(),
         MelBipedData(),
-        MelModel(u'maleBody'),
-        MelModel(u'maleWorld', 2),
+        MelModel(b'MODL', 'maleBody'),
+        MelModel(b'MOD2', 'maleWorld'),
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),
-        MelModel(u'femaleBody', 3),
-        MelModel(u'femaleWorld', 4),
+        MelModel(b'MOD3', 'femaleBody'),
+        MelModel(b'MOD4', 'femaleWorld'),
         MelIcons2(),
         MelEquipmentType(),
         MelStruct(b'DATA', [u'I', u'I', u'f'],'value','health','weight'),
@@ -574,19 +570,19 @@ class MreArmo(MelRecord):
         MelScript(),
         MelEnchantment(),
         MelBipedData(),
-        MelModel(u'maleBody'),
-        MelModel(u'maleWorld', 2),
+        MelModel(b'MODL', 'maleBody'),
+        MelModel(b'MOD2', 'maleWorld'),
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),
-        MelModel(u'femaleBody', 3),
-        MelModel(u'femaleWorld', 4),
+        MelModel(b'MOD3', 'femaleBody'),
+        MelModel(b'MOD4', 'femaleWorld'),
         MelIcons2(),
         MelString(b'BMCT','ragdollTemplatePath'),
         MelDestructible(),
         MelFid(b'REPL','repairList'),
         MelFid(b'BIPL','bipedModelList'),
         MelEquipmentType(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelStruct(b'DATA', [u'2i', u'f'],'value','health','weight'),
         if_fnv(
             fo3_version=MelStruct(
@@ -616,7 +612,9 @@ class MreAspc(MelRecord):
         MelEdid(),
         MelBounds(),
         if_fnv(
-            fo3_version=MelFid(b'SNAM', 'soundLooping'),
+            fo3_version=MelSoundLooping(),
+            # Technically five subrecords with the same signature, but it's
+            # easier to load them like this than with a distributor
             fnv_version=MelFids('soundLooping', MelFid(b'SNAM')),
         ),
         fnv_only(MelUInt32(b'WNAM', 'wallaTrigerCount')),
@@ -656,8 +654,8 @@ class MreBook(MelRecord):
         MelScript(),
         MelDescription(u'book_text'),
         MelDestructible(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelStruct(b'DATA', [u'B', u'b', u'I', u'f'],(_flags, u'flags'),('teaches',-1),'value','weight'),
     )
     __slots__ = [*melSet.getSlotsUsed(), 'modb']
@@ -877,8 +875,8 @@ class MreCobj(MelRecord):
         MelModel(),
         MelIcons(),
         MelScript(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -912,7 +910,7 @@ class MreCpth(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelConditions(),
+        MelConditionsFo3(),
         MelSimpleArray('relatedCameraPaths', MelFid(b'ANAM')),
         MelUInt8(b'DATA', 'cameraZoom'),
         MelFids('cameraShots', MelFid(b'SNAM')),
@@ -1377,7 +1375,7 @@ class MreIdle(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelConditions(),
+        MelConditionsFo3(),
         MelStruct(b'ANAM', [u'I', u'I'],(FID,'parent'),(FID,'prevId')),
         MelTruncatedStruct(b'DATA', [u'3B', u's', u'h', u'B', u's'], 'group', 'loopMin', 'loopMax',
                            'unknown1', 'delay', 'flags',
@@ -1603,7 +1601,7 @@ class MreInfo(MelRecord):
             MelFid(b'SNAM','speakerAnimation'),
             MelFid(b'LNAM','listenerAnimation'),
         ),
-        MelConditions(),
+        MelConditionsFo3(),
         MelFids('choices', MelFid(b'TCLT')),
         MelFids('linksFrom', MelFid(b'TCLF')),
         fnv_only(MelFids('follow_up', MelFid(b'TCFU'))),
@@ -1689,8 +1687,8 @@ class MreKeym(MelRecord):
         MelIcons(),
         MelScript(),
         MelDestructible(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelValueWeight(),
         fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
     )
@@ -1812,7 +1810,7 @@ class MreMesg(MelRecord):
         MelUInt32(b'TNAM', 'displayTime'),
         MelGroups('menu_buttons',
             MelString(b'ITXT', 'button_text'),
-            MelConditions(),
+            MelConditionsFo3(),
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1894,8 +1892,8 @@ class MreMisc(MelRecord):
         MelIcons(),
         MelScript(),
         MelDestructible(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelValueWeight(),
         fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
     )
@@ -1947,6 +1945,7 @@ class MreNavi(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+# Not mergeable due to the way this record is linked to NAVI records
 class MreNavm(MelRecord):
     """Navigation Mesh."""
     rec_sig = b'NAVM'
@@ -1986,8 +1985,8 @@ class MreNote(MelRecord):
         MelFull(),
         MelModel(),
         MelIcons(),
-        MelPickupSound(),
-        MelDropSound(),
+        MelSoundPickup(),
+        MelSoundDrop(),
         MelUInt8(b'DATA', 'dataType'),
         MelSorted(MelSimpleArray('quests', MelFid(b'ONAM'))),
         MelString(b'XNAM','texture'),
@@ -2186,7 +2185,7 @@ class MrePack(MelRecord):
             loader=MelSInt32(b'PTDT', u'targetType'),
             decider=AttrValDecider(u'targetType'),
         )),
-        MelConditions(),
+        MelConditionsFo3(),
         MelGroup('idleAnimations',
             MelUInt8(b'IDLF', 'animationFlags'),
             MelPartialCounter(MelStruct(b'IDLC', [u'B', u'3s'], 'animation_count',
@@ -2259,7 +2258,7 @@ class MrePerk(MelRecord):
         MelFull(),
         MelDescription(),
         MelIcons(),
-        MelConditions(),
+        MelConditionsFo3(),
         MelTruncatedStruct(b'DATA', ['5B'], 'trait', 'minLevel',
                            'ranks', 'playable', 'hidden', old_versions={'4B'}),
         MelSorted(MelGroups('effects',
@@ -2273,7 +2272,7 @@ class MrePerk(MelRecord):
             }, decider=AttrValDecider('type')),
             MelSorted(MelGroups('effectConditions',
                 MelSInt8(b'PRKC', 'runOn'),
-                MelConditions(),
+                MelConditionsFo3(),
             ), sort_by_attrs='runOn'),
             MelGroups('effectParams',
                 # EPFT has the following meanings:
@@ -2494,12 +2493,12 @@ class MreQust(MelRecord):
         MelTruncatedStruct(b'DATA', [u'2B', u'2s', u'f'], (_questFlags, u'questFlags'),
                            'priority', 'unused2',
                            'questDelay', old_versions={'2B'}),
-        MelConditions(),
+        MelConditionsFo3(),
         MelSorted(MelGroups('stages',
             MelSInt16(b'INDX', 'stage'),
             MelGroups('entries',
                 MelUInt8Flags(b'QSDT', u'flags', stageFlags),
-                MelConditions(),
+                MelConditionsFo3(),
                 MelString(b'CNAM','text'),
                 MelEmbeddedScript(),
                 MelFid(b'NAM0', 'nextQuest'),
@@ -2510,7 +2509,7 @@ class MreQust(MelRecord):
             MelString(b'NNAM', 'display_text'),
             MelGroups('targets',
                 MelStruct(b'QSTA', [u'I', u'B', u'3s'],(FID,'targetId'),(targetFlags,'flags'),'unused1'),
-                MelConditions(),
+                MelConditionsFo3(),
             ),
         ),
     ).with_distributor({
@@ -2555,7 +2554,7 @@ class MreRace(MelRecord):
                     (_flags, u'flags')),
         MelFid(b'ONAM','Older'),
         MelFid(b'YNAM','Younger'),
-        MelBase(b'NAM2','_nam2',b''),
+        MelBaseR(b'NAM2', 'unknown_marker'),
         MelRaceVoices(b'VTCK', [u'2I'], (FID, 'maleVoice'), (FID, 'femaleVoice')),
         MelOptStruct(b'DNAM', [u'2I'],(FID, u'defaultHairMale'),(FID, u'defaultHairFemale')),
         # Int corresponding to GMST sHairColorNN
@@ -2563,8 +2562,8 @@ class MreRace(MelRecord):
         MelFloat(b'PNAM', 'mainClamp'),
         MelFloat(b'UNAM', 'faceClamp'),
         MelStruct(b'ATTR', [u'2s'], u'unused_attributes'), # leftover
-        MelBase(b'NAM0', 'head_data_marker', b''),
-        MelBase(b'MNAM', 'male_head_data_marker', b''),
+        MelBaseR(b'NAM0', 'head_data_marker'),
+        MelBaseR(b'MNAM', 'male_head_data_marker'),
         MelRaceParts({
             0: u'maleHead',
             1: u'maleEars',
@@ -2575,7 +2574,7 @@ class MreRace(MelRecord):
             6: u'maleLeftEye',
             7: u'maleRightEye',
         }, group_loaders=lambda indx: (MelRaceHeadPart(indx),)),
-        MelBase(b'FNAM', u'female_head_data_marker', b''),
+        MelBaseR(b'FNAM', 'female_head_data_marker'),
         MelRaceParts({
             0: u'femaleHead',
             1: u'femaleEars',
@@ -2586,8 +2585,8 @@ class MreRace(MelRecord):
             6: u'femaleLeftEye',
             7: u'femaleRightEye',
         }, group_loaders=lambda indx: (MelRaceHeadPart(indx),)),
-        MelBase(b'NAM1', u'body_data_marker', b''),
-        MelBase(b'MNAM', u'male_body_data_marker', b''),
+        MelBaseR(b'NAM1', 'body_data_marker'),
+        MelBaseR(b'MNAM', 'male_body_data_marker'),
         MelRaceParts({
             0: u'maleUpperBody',
             1: u'maleLeftHand',
@@ -2597,7 +2596,7 @@ class MreRace(MelRecord):
             MelIcons(),
             MelModel(),
         )),
-        MelBase(b'FNAM', u'female_body_data_marker', b''),
+        MelBaseR(b'FNAM', 'female_body_data_marker'),
         MelRaceParts({
             0: u'femaleUpperBody',
             1: u'femaleLeftHand',
@@ -2612,9 +2611,9 @@ class MreRace(MelRecord):
         # them as sorted here, because that's what the Race Checker is for!
         MelSimpleArray('hairs', MelFid(b'HNAM')),
         MelSimpleArray('eyes', MelFid(b'ENAM')),
-        MelBase(b'MNAM', 'male_facegen_marker', b''),
+        MelBaseR(b'MNAM', 'male_facegen_marker'),
         MelRaceFaceGen('maleFaceGen'),
-        MelBase(b'FNAM', 'female_facegen_marker', b''),
+        MelBaseR(b'FNAM', 'female_facegen_marker'),
         MelRaceFaceGen('femaleFaceGen'),
     ).with_distributor({
         b'NAM0': {
@@ -2988,7 +2987,7 @@ class MreTerm(MelRecord):
         MelScript(),
         MelDestructible(),
         MelDescription(),
-        MelFid(b'SNAM','soundLooping'),
+        MelSoundLooping(), ##: Why aren't we patching this in Import Sounds?
         MelFid(b'PNAM','passwordNote'),
         MelTruncatedStruct(b'DNAM', [u'3B', u's'], 'baseHackingDifficulty',
                            (_flags,'flags'), 'serverType', 'unused1',
@@ -3000,7 +2999,7 @@ class MreTerm(MelRecord):
             MelFid(b'INAM','displayNote'),
             MelFid(b'TNAM','subMenu'),
             MelEmbeddedScript(),
-            MelConditions(),
+            MelConditionsFo3(),
         ),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3199,12 +3198,12 @@ class MreWeap(MelRecord):
         MelFid(b'REPL','repairList'),
         MelEquipmentType(),
         MelFid(b'BIPL','bipedModelList'),
-        MelPickupSound(),
-        MelDropSound(),
-        MelModel(u'shellCasingModel', 2),
-        MelModel(u'scopeModel', 3, with_facegen_flags=False),
+        MelSoundPickup(),
+        MelSoundDrop(),
+        MelModel(b'MOD2', 'shellCasingModel'),
+        MelModel(b'MOD3', 'scopeModel', with_facegen_flags=False),
         MelFid(b'EFSD','scopeEffect'),
-        MelModel(u'worldModel', 4),
+        MelModel(b'MOD4', 'worldModel'),
         fnv_only(MelGroup('modelWithMods',
             MelString(b'MWD1', 'mod1Path'),
             MelString(b'MWD2', 'mod2Path'),
@@ -3310,7 +3309,7 @@ class MreWrld(MelRecord):
         MelOptStruct(b'PNAM', [u'B', u'B'],(pnamFlags, u'parentFlags'),('unknownff',0xff)),
         MelFid(b'CNAM','climate'),
         MelFid(b'NAM2','water'),
-        MelFid(b'NAM3','waterType'),
+        MelFid(b'NAM3', 'lod_water_type'),
         MelFloat(b'NAM4', 'waterHeight'),
         MelStruct(b'DNAM', [u'f', u'f'],'defaultLandHeight','defaultWaterHeight'),
         MelIcon(u'mapPath'),

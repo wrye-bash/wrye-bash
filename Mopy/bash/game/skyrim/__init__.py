@@ -296,23 +296,8 @@ class SkyrimGameInfo(PatchGame):
             MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MreRace
-        # ---------------------------------------------------------------------
-        # Unused records, they have empty GRUP in skyrim.esm-------------------
-        # CLDC HAIR PWAT RGDL SCOL SCPT
-        # ---------------------------------------------------------------------
-        # These Are normally not mergeable but added to brec.MreRecord.type_class
-        #
-        #       MreCell,
-        # ---------------------------------------------------------------------
-        # These have undefined FormIDs Do not merge them
-        #
-        #       MreNavi, MreNavm,
-        # ---------------------------------------------------------------------
-        # These need syntax revision but can be merged once that is corrected
-        #
-        #       MreAchr, MreDial, MreInfo,
-        # ---------------------------------------------------------------------
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MreRace, \
+            MreNavm
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (# MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
@@ -331,10 +316,6 @@ class SkyrimGameInfo(PatchGame):
             MreWatr, MreWeap, MreWoop, MreWthr, MreQust, MrePack, MreFact,
             MreRace,
         )}
-
-        # MreScpt is Oblivion/FO3/FNV Only
-        # MreMgef, has not been verified to be used here for Skyrim
-
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
@@ -379,11 +360,12 @@ class SkyrimGameInfo(PatchGame):
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
             MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack, MreRace,
-            # MreNavm, MreNavi
+            MreNavm, # MreNavi
         )}
         brec.MreRecord.simpleTypes = (
                 set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',
-                                                  b'DIAL', b'INFO', b'WRLD'})
+                                                  b'DIAL', b'INFO', b'NAVM',
+                                                  b'WRLD'})
         cls._validate_records()
 
 GAME_TYPE = SkyrimGameInfo

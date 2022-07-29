@@ -26,7 +26,6 @@ import re
 from collections import OrderedDict
 from itertools import chain
 
-from ... import brec
 from ...bolt import Flags, int_or_zero, structs_cache, str_or_none, \
     int_or_none, str_to_sig, sig_to_str
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
@@ -40,36 +39,32 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
     MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
-    MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, \
-    SignatureDecider, MelRaceData, MelFactions, MelActorSounds, \
+    MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, MelLists, \
+    SignatureDecider, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
-    MelEnchantment, MelValueWeight, null4, SpellFlags
-
-# Set brec MelModel to the one for Oblivion
-if brec.MelModel is None:
-
-    class _MelModel(MelGroup):
-        """Represents a model record."""
-        typeSets = ((b'MODL', b'MODB', b'MODT'),
-                    (b'MOD2', b'MO2B', b'MO2T'),
-                    (b'MOD3', b'MO3B', b'MO3T'),
-                    (b'MOD4', b'MO4B', b'MO4T'))
-
-        def __init__(self, attr=u'model', index=0):
-            """Initialize. Index is 0,2,3,4 for corresponding type id."""
-            types = self.__class__.typeSets[index - 1 if index > 1 else 0]
-            super(_MelModel, self).__init__(attr,
-                MelString(types[0], u'modPath'),
-                MelFloat(types[1], u'modb'),
-                # Texture File Hashes
-                MelBase(types[2], u'modt_p')
-            )
-
-    brec.MelModel = _MelModel
-from ...brec import MelModel, MelLists
+    MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
+    MelSoundLooping
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MelModel(MelGroup):
+    """Represents a model subrecord."""
+    typeSets = {
+        b'MODL': (b'MODL', b'MODB', b'MODT'),
+        b'MOD2': (b'MOD2', b'MO2B', b'MO2T'),
+        b'MOD3': (b'MOD3', b'MO3B', b'MO3T'),
+        b'MOD4': (b'MOD4', b'MO4B', b'MO4T'),
+    }
+
+    def __init__(self, mel_sig=b'MODL', attr='model'):
+        types = self.__class__.typeSets[mel_sig]
+        super().__init__(attr,
+            MelString(types[0], 'modPath'),
+            MelFloat(types[1], 'modb'),
+            MelBase(types[2], 'modt_p') # Texture File Hashes
+        )
+
 #------------------------------------------------------------------------------
 class _CtdaDecider(SignatureDecider):
     """Loads based on signature, but always dumps out the newer CTDA format."""
@@ -78,16 +73,16 @@ class _CtdaDecider(SignatureDecider):
     def decide_dump(self, record):
         return b'CTDA'
 
-class MelConditions(MelGroups):
+class MelConditionsTes4(MelGroups):
     """A list of conditions. Can contain the old CTDT format as well, which
     will be upgraded on dump."""
     def __init__(self):
-        super(MelConditions, self).__init__(u'conditions', MelUnion({
-            b'CTDA': MelCtda(suffix_fmt=[u'4s'],
-                suffix_elements=[u'unused3']),
+        super().__init__('conditions', MelUnion({
+            b'CTDA': MelCtda(suffix_fmt=['4s'],
+                suffix_elements=['unused3']),
             # The old (CTDT) format is length 20 and has no suffix
-            b'CTDT': MelReadOnly(MelCtda(b'CTDT', suffix_fmt=[u'4s'],
-                suffix_elements=[u'unused3'], old_suffix_fmts={u''})),
+            b'CTDT': MelReadOnly(MelCtda(b'CTDT', suffix_fmt=['4s'],
+                suffix_elements=['unused3'], old_suffix_fmts={''})),
             }, decider=_CtdaDecider()),
         )
 
@@ -232,7 +227,7 @@ class MelEffects(MelSequential):
                     u'efix_flags', u'efix_base_cost', (FID, u'resist_av'),
                     u'efix_reserved'),
             ),
-            MelBase(b'EFXX', u'effects_end_marker', b''),
+            MelBaseR(b'EFXX', 'effects_end_marker'),
         ]
         # Split everything by Vanilla/OBME
         self._vanilla_loaders = {}
@@ -390,13 +385,13 @@ class MelObme(MelOptStruct):
         super(MelObme, self).__init__(struct_sig, str_fmts, *struct_contents)
 
 #------------------------------------------------------------------------------
-class MelOwnershipTes4(brec.MelOwnership):
+class MelOwnershipTes4(MelOwnership):
     """Handles XOWN, XRNK, and XGLB for cells and cell children."""
-    def __init__(self, attr=u'ownership'):
-        super(brec.MelOwnership, self).__init__(attr,
-            MelFid(b'XOWN', u'owner'),
-            MelSInt32(b'XRNK', u'rank'),
-            MelFid(b'XGLB', u'global'),
+    def __init__(self, attr='ownership'):
+        super(MelOwnership, self).__init__(attr,
+            MelFid(b'XOWN', 'owner'),
+            MelSInt32(b'XRNK', 'rank'),
+            MelFid(b'XGLB', 'global'),
         )
 
 #------------------------------------------------------------------------------
@@ -695,12 +690,11 @@ class MreTes4(MreHeaderBase):
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',
             (u'nextObject', 0x800)),
-        MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
-        MelBase(b'DELE','dele_p',),  #--Obsolete?
+        MelNull(b'OFST'), # obsolete
+        MelNull(b'DELE'), # obsolete
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
-        MelNull(b'DATA'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -748,7 +742,7 @@ class MreActi(MelRecord):
         MelFull(),
         MelModel(),
         MelScript(),
-        MelFid(b'SNAM','sound'),
+        MelSoundLooping(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -830,11 +824,11 @@ class MreArmo(MelRecord):
         MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelUInt32Flags(b'BMDT', u'biped_flags', _flags),
-        MelModel(u'maleBody', 0),
-        MelModel(u'maleWorld', 2),
+        MelModel(b'MODL', 'maleBody'),
+        MelModel(b'MOD2', 'maleWorld'),
         MelIcon(u'maleIconPath'),
-        MelModel(u'femaleBody', 3),
-        MelModel(u'femaleWorld', 4),
+        MelModel(b'MOD3', 'femaleBody'),
+        MelModel(b'MOD4', 'femaleWorld'),
         MelIco2(u'femaleIconPath'),
         MelStruct(b'DATA', [u'H', u'I', u'I', u'f'],'strength','value','health','weight'),
     )
@@ -959,11 +953,11 @@ class MreClot(MelRecord):
         MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelUInt32Flags(b'BMDT', u'biped_flags', _flags),
-        MelModel(u'maleBody', 0),
-        MelModel(u'maleWorld', 2),
+        MelModel(b'MODL', 'maleBody'),
+        MelModel(b'MOD2', 'maleWorld'),
         MelIcon(u'maleIconPath'),
-        MelModel(u'femaleBody', 3),
-        MelModel(u'femaleWorld', 4),
+        MelModel(b'MOD3', 'femaleBody'),
+        MelModel(b'MOD4', 'femaleWorld'),
         MelIco2(u'femaleIconPath'),
         MelValueWeight(),
     )
@@ -1290,7 +1284,7 @@ class MreIdle(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelConditions(),
+        MelConditionsTes4(),
         MelUInt8(b'ANAM', 'group'),
         MelArray('related_animations',
             MelStruct(b'DATA', [u'2I'], (FID, 'parent'), (FID, 'prevId')),
@@ -1318,7 +1312,7 @@ class MreInfo(MelRecord):
             MelString(b'NAM1', u'responseText'),
             MelString(b'NAM2', u'actorNotes'),
         ),
-        MelConditions(),
+        MelConditionsTes4(),
         MelFids('choices', MelFid(b'TCLT')),
         MelFids('linksFrom', MelFid(b'TCLF')),
         MelEmbeddedScript(),
@@ -1873,7 +1867,7 @@ class MrePack(MelRecord):
             loader=MelSInt32(b'PTDT', u'targetType'),
             decider=AttrValDecider(u'targetType'),
         )),
-        MelConditions(),
+        MelConditionsTes4(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1916,12 +1910,12 @@ class MreQust(MelRecord):
         MelFull(),
         MelIcon(),
         MelStruct(b'DATA', [u'B', u'B'],(_questFlags, u'questFlags'),'priority'),
-        MelConditions(),
+        MelConditionsTes4(),
         MelSorted(MelGroups('stages',
             MelSInt16(b'INDX', 'stage'),
             MelGroups('entries',
                 MelUInt8Flags(b'QSDT', u'flags', stageFlags),
-                MelConditions(),
+                MelConditionsTes4(),
                 MelString(b'CNAM','text'),
                 MelEmbeddedScript(),
             ),
@@ -1929,7 +1923,7 @@ class MreQust(MelRecord):
         MelGroups('targets',
             MelStruct(b'QSTA', [u'I', u'B', u'3s'], (FID, 'targetId'),
                       (targetFlags, 'flags'), 'unused1'),
-            MelConditions(),
+            MelConditionsTes4(),
         ),
     ).with_distributor({
         b'EDID|DATA': { # just in case one is missing
@@ -1974,7 +1968,7 @@ class MreRace(MelRecord):
                   'femaleSpeed', 'femaleEndurance', 'femalePersonality',
                   'femaleLuck'),
         # Indexed Entries
-        MelBase(b'NAM0', u'face_data_marker', b''),
+        MelBaseR(b'NAM0', 'face_data_marker'),
         MelRaceParts({
             0: u'head',
             1: u'maleEars',
@@ -1995,9 +1989,9 @@ class MreRace(MelRecord):
             MelBase(b'MODT', 'modt_p'),
             MelIcon(),
         )),
-        MelBase(b'NAM1', u'body_data_marker', b''),
-        MelBase(b'MNAM', u'male_body_data_marker', b''),
-        MelModel(u'maleTailModel'),
+        MelBaseR(b'NAM1', 'body_data_marker'),
+        MelBaseR(b'MNAM', 'male_body_data_marker'),
+        MelModel(b'MODL', 'maleTailModel'),
         MelRaceParts({
             0: u'maleUpperBodyPath',
             1: u'maleLowerBodyPath',
@@ -2005,8 +1999,8 @@ class MreRace(MelRecord):
             3: u'maleFootPath',
             4: u'maleTailPath',
         }, group_loaders=lambda _indx: (MelIcon(),)),
-        MelBase(b'FNAM', u'female_body_data_marker', b''),
-        MelModel(u'femaleTailModel'),
+        MelBaseR(b'FNAM', 'female_body_data_marker'),
+        MelModel(b'MODL', 'femaleTailModel'),
         MelRaceParts({
             0: u'femaleUpperBodyPath',
             1: u'femaleLowerBodyPath',

@@ -26,11 +26,12 @@ from collections import defaultdict
 from itertools import chain
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
-    MelUnion, PartialLoadDecider, FlagDecider, MelSorted, MelSimpleArray
+    MelUnion, PartialLoadDecider, FlagDecider, MelSorted, MelSimpleArray, \
+    MelCounter
 from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
-    MelStrings, MelUInt8
+    MelStrings, MelUInt8, MelUInt16Flags
 from .utils_constants import int_unpacker, FID, null1
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
     dict_sort, TrimmedFlags, structs_cache
@@ -54,6 +55,18 @@ class MelActionFlags(MelUInt32Flags):
             flag_val) if flag_val != self._flag_default else None
 
 #------------------------------------------------------------------------------
+class MelActiFlags(MelUInt16Flags):
+    """Handles the FNAM (Flags) subrecord in ACTI records."""
+    _acti_flags = Flags.from_names(
+        (0, 'no_displacement'),
+        (1, 'ignored_by_sandbox'),
+        (4, 'is_a_radio'), # Introduced in FO4
+    )
+
+    def __init__(self):
+        super().__init__(b'FNAM', 'acti_flags', self._acti_flags)
+
+#------------------------------------------------------------------------------
 class MelActivateParents(MelGroup):
     """XAPD/XAPR (Activate Parents) subrecords for REFR records."""
     _ap_flags = TrimmedFlags.from_names(u'parent_activate_only')
@@ -67,6 +80,13 @@ class MelActivateParents(MelGroup):
         )
 
 #------------------------------------------------------------------------------
+class MelAttx(MelLString):
+    """Handles the common ATTX (Activate Text Override) subrecord. Skyrim uses
+    an RNAM signature instead."""
+    def __init__(self, mel_sig=b'ATTX'):
+        super().__init__(mel_sig, 'activate_text_override')
+
+#------------------------------------------------------------------------------
 class MelBounds(MelGroup):
     """Wrapper around MelGroup for the common task of defining OBND - Object
     Bounds. Uses MelGroup to avoid merging them when importing."""
@@ -75,6 +95,17 @@ class MelBounds(MelGroup):
             MelStruct(b'OBND', [u'6h'], u'boundX1', u'boundY1', u'boundZ1',
                       u'boundX2', u'boundY2', u'boundZ2')
         )
+
+#------------------------------------------------------------------------------
+class MelCoed(MelOptStruct):
+    """Handles the COED (Owner Data) subrecord used for inventory items and
+    leveled lists since Skyrim."""
+    ##: Needs custom unpacker to look at FormID type of owner.  If owner is an
+    # NPC then it is followed by a FormID.  If owner is a faction then it is
+    # followed by an signed integer or '=Iif' instead of '=IIf' - see #282
+    def __init__(self):
+        super().__init__(b'COED', ['I', 'I', 'f'], (FID, 'owner'),
+            (FID, 'glob'), 'itemCondition')
 
 #------------------------------------------------------------------------------
 class MelCtda(MelUnion):
@@ -253,6 +284,31 @@ class MelCtdaFo3(MelCtda):
         super(MelCtdaFo3, self).dumpData(record, out)
 
 #------------------------------------------------------------------------------
+class MelConditionList(MelGroups):
+    """A list of conditions without a counter. Applies to Skyrim and newer
+    games. See also MelConditions, which includes a counter for this class."""
+    def __init__(self, conditions_attr='conditions'):
+        super().__init__(conditions_attr,
+            MelGroups('condition_list',
+                MelCtdaFo3(suffix_fmt=['2I', 'i'],
+                    suffix_elements=['runOn', (FID, 'reference'), 'param3'],
+                    old_suffix_fmts={'2I', 'I', ''}),
+            ),
+            MelString(b'CIS1', 'param_cis1'),
+            MelString(b'CIS2', 'param_cis2'),
+        )
+
+class MelConditions(MelSequential):
+    """Wraps MelSequential to define a condition list with an associated
+    counter."""
+    def __init__(self):
+        super().__init__(
+            MelConditionList(),
+            MelCounter(MelUInt32(b'CITC', 'conditionCount'),
+                counts='conditions'),
+        )
+
+#------------------------------------------------------------------------------
 class MelDecalData(MelOptStruct):
     _decal_data_flags = TrimmedFlags.from_names(
         u'parallax',
@@ -378,6 +434,23 @@ class MelIco2(MelIcons2):
         super(MelIco2, self).__init__(ico2_attr=ico2_attr, mic2_attr=u'')
 
 #------------------------------------------------------------------------------
+class MelInteractionKeyword(MelFid):
+    """Handles the KNAM (Interaction Keyword) subrecord of ACTI records."""
+    def __init__(self):
+        super().__init__(b'KNAM', 'interaction_keyword')
+
+#------------------------------------------------------------------------------
+class MelKeywords(MelSequential):
+    """Wraps MelSequential for the common task of defining a list of keywords
+    and a corresponding counter."""
+    def __init__(self):
+        super().__init__(
+            MelCounter(MelUInt32(b'KSIZ', 'keyword_count'),
+                       counts='keywords'),
+            MelSorted(MelSimpleArray('keywords', MelFid(b'KWDA'))),
+        )
+
+#------------------------------------------------------------------------------
 class MelMdob(MelFid):
     """Represents the common Menu Display Object subrecord."""
     def __init__(self):
@@ -397,22 +470,10 @@ class MelWthrColors(MelStruct):
             u'unused4')
 
 #------------------------------------------------------------------------------
-class MelDropSound(MelFid):
-    """Handles the common ZNAM - Drop Sound subrecord."""
-    def __init__(self):
-        super(MelDropSound, self).__init__(b'ZNAM', u'dropSound')
-
-#------------------------------------------------------------------------------
 class MelEnchantment(MelFid):
     """Represents the common enchantment/object effect subrecord."""
     def __init__(self, ench_sig=b'EITM'):
         super(MelEnchantment, self).__init__(ench_sig, u'enchantment')
-
-#------------------------------------------------------------------------------
-class MelPickupSound(MelFid):
-    """Handles the common YNAM - Pickup Sound subrecord."""
-    def __init__(self):
-        super(MelPickupSound, self).__init__(b'YNAM', u'pickupSound')
 
 #------------------------------------------------------------------------------
 ##: This is a strange fusion of MelLists, MelStruct and MelTruncatedStruct
@@ -550,6 +611,30 @@ class MelScriptVars(MelSorted):
                       'unused1', 'var_type', 'unused2'),
             MelString(b'SCVR', u'var_name'),
         ), sort_by_attrs=u'var_index')
+
+#------------------------------------------------------------------------------
+class MelSoundActivation(MelFid):
+    """Handles the VNAM (Sound - Activation) subrecord in ACTI records."""
+    def __init__(self):
+        super().__init__(b'VNAM', 'soundActivation')
+
+#------------------------------------------------------------------------------
+class MelSoundDrop(MelFid):
+    """Handles the common ZNAM (Drop Sound) subrecord."""
+    def __init__(self):
+        super().__init__(b'ZNAM', 'dropSound')
+
+#------------------------------------------------------------------------------
+class MelSoundLooping(MelFid):
+    """Handles the common SNAM (Sound - Looping) subrecord."""
+    def __init__(self):
+        super().__init__(b'SNAM', 'soundLooping')
+
+#------------------------------------------------------------------------------
+class MelSoundPickup(MelFid):
+    """Handles the common YNAM (Pickup Sound) subrecord."""
+    def __init__(self):
+        super().__init__(b'YNAM', 'pickupSound')
 
 #------------------------------------------------------------------------------
 class MelEnableParent(MelOptStruct):
@@ -831,6 +916,12 @@ class MelValueWeight(MelStruct):
     object)."""
     def __init__(self):
         super().__init__(b'DATA', ['I', 'f'], 'value', 'weight')
+
+#------------------------------------------------------------------------------
+class MelWaterType(MelFid):
+    """Handles the common WNAM (Water Type) subrecord."""
+    def __init__(self):
+        super().__init__(b'WNAM', 'water_type')
 
 #------------------------------------------------------------------------------
 class _SpellFlags(Flags):

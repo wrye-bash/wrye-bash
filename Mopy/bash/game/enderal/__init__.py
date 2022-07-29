@@ -138,7 +138,7 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
             MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk, MreRace, \
-            MreDial
+            MreDial, MreNavm
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (# MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
@@ -201,11 +201,12 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
             MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
             MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack, MreRace,
-            # MreNavm, MreNavi
+            MreNavm, # MreNavi
         )}
         brec.MreRecord.simpleTypes = (
-                set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',
-                                                  b'DIAL', b'INFO', b'WRLD'})
+            set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',
+                                              b'DIAL', b'INFO', b'NAVM',
+                                              b'WRLD'})
         cls._validate_records()
 
 GAME_TYPE = EnderalGameInfo

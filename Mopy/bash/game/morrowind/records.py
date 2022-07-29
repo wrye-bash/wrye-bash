@@ -25,7 +25,6 @@ and subrecords used for the saves - see MorrowindSaveHeader for more
 information."""
 from collections import OrderedDict
 
-from ... import brec
 from ...bolt import Flags
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
@@ -35,18 +34,16 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MelFixedString, FixedString, AutoFixedString, MreGmstBase, \
     MreLeveledListBase, MelUInt16, SizeDecider, MelLists, \
     MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags
-if brec.MelModel is None:
 
-    class _MelModel(MelGroup):
-        def __init__(self):
-            super(_MelModel, self).__init__(u'model',
-                MelString(b'MODL', u'modPath'))
-
-    brec.MelModel = _MelModel
-from ...brec import MelModel
 
 #------------------------------------------------------------------------------
-# Utilities -------------------------------------------------------------------
+# Record Elements -------------------------------------------------------------
+#------------------------------------------------------------------------------
+class MelModel(MelGroup):
+    """Represents a model subrecord."""
+    def __init__(self):
+        super().__init__('model', MelString(b'MODL', 'modPath'))
+
 #------------------------------------------------------------------------------
 class MelAIData(MelStruct):
     """Handles the AIDT subrecord shared between CREA and NPC_."""

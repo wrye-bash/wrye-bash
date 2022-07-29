@@ -26,8 +26,8 @@ classes used to build up the PBash record definitions for each game, as well as
 shared definitions for some common records and subrecords. Any code outside the
 brec package should import from here, so that classes may be moved around
 without breaking third-party code."""
-
 from .advanced_elements import *
+from .complex_subrecords import *
 from .basic_elements import *
 from .common_records import *
 from .common_subrecords import *

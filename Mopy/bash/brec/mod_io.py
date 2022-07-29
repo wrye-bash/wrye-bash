@@ -228,6 +228,7 @@ class ModReader(object):
         self.size = ins_size
         self.strings = {}
         self.hasStrings = False
+        self.debug_offset = 0
 
     # with statement
     def __enter__(self): return self
@@ -253,6 +254,12 @@ class ModReader(object):
     def tell(self):
         """File tell."""
         return self.ins.tell()
+
+    def tell_debug(self):
+        """ONLY USE WHEN DEBUGGING! Gives the true index into the underlying
+        file. This is necessary because we wrap the original stream for
+        decompressed data using ByteIOs."""
+        return self.tell() + self.debug_offset
 
     def close(self):
         """Close file."""
