@@ -45,8 +45,8 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     vmad_qust_fragments_key, vmad_fragments_key, vmad_script_key, \
     vmad_qust_aliases_key, MelReflectedRefractedBy, perk_effect_key, \
     MelValueWeight, int_unpacker, MelCoed, MelSoundLooping, MelWaterType, \
-    MelSoundActivation, MelInteractionKeyword, MelConditionList, \
-    MelConditions, ANvnmContext
+    MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
+    MelConditions, ANvnmContext, MelNodeIndex
 from ...exception import ModError, ModSizeError, StateError
 
 _is_sse = bush.game.fsName in (
@@ -1333,16 +1333,13 @@ class MreAddn(MelRecord):
     """Addon Node."""
     rec_sig = b'ADDN'
 
-    _AddnFlags = Flags.from_names((1, 'alwaysLoaded'))
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelSInt32(b'DATA', 'node_index'),
-        MelFid(b'SNAM', 'ambientSound'),
-        MelStruct(b'DNAM', [u'2H'], 'master_particle_system_cap',
-                  (_AddnFlags, 'addon_flags')),
+        MelNodeIndex(),
+        MelSoundLooping(),
+        MelAddnDnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1526,7 +1523,7 @@ class MreAspc(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelFid(b'SNAM', 'ambientSound'),
+        MelSoundLooping(),
         MelFid(b'RDAT', 'regionData'),
         MelFid(b'BNAM', 'reverb'),
     )

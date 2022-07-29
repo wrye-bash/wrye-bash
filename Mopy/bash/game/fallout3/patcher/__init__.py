@@ -337,7 +337,7 @@ statsTypes = {
 #------------------------------------------------------------------------------
 soundsTypes = {
     b'ACTI': (u'soundLooping', u'soundActivation'),
-    b'ADDN': (u'ambientSound',),
+    b'ADDN': ('soundLooping',),
     b'ALCH': (u'dropSound', u'pickupSound', u'soundConsume'),
     b'ARMO': (u'pickupSound', u'dropSound'),
     b'ASPC': (u'soundLooping', u'useSoundFromRegion'),

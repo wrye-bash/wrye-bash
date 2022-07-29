@@ -91,6 +91,15 @@ class MelActorSounds(MelSorted):
         ), sort_by_attrs='type')
 
 #------------------------------------------------------------------------------
+class MelAddnDnam(MelStruct):
+    """Handles the ADDN subrecord DNAM (Data)."""
+    def __init__(self):
+        # addon_flags is 2 unknown bytes in FO3/FNV, but decoding it as a short
+        # can't hurt and is much simpler
+        super().__init__(b'DNAM', ['2H'], 'master_particle_system_cap',
+            'addon_flags') # not really flags, behaves more like an enum
+
+#------------------------------------------------------------------------------
 class MelAnimations(MelSorted): ##: case insensitive
     """Handles the common KFFZ (Animations) subrecord."""
     def __init__(self):
@@ -377,6 +386,12 @@ class MelMODS(MelBase):
             mods_data = [(string,function(fid),index) for (string,fid,index)
                          in mods_data]
             if save_fids: setattr(record, attr, mods_data)
+
+#------------------------------------------------------------------------------
+class MelNodeIndex(MelSInt32):
+    """Handles the ADDN subrecord DATA (Node Index)."""
+    def __init__(self):
+        super().__init__(b'DATA', 'node_index')
 
 #------------------------------------------------------------------------------
 class MelOwnership(MelGroup):

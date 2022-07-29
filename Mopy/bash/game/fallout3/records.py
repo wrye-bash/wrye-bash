@@ -45,7 +45,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
-    MelSoundLooping, MelSoundActivation, MelWaterType, MelConditionsFo3
+    MelSoundLooping, MelSoundActivation, MelWaterType, MelConditionsFo3, \
+    MelNodeIndex, MelAddnDnam
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -443,9 +444,9 @@ class MreAddn(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelSInt32(b'DATA', 'nodeIndex'),
-        MelFid(b'SNAM', u'ambientSound'),
-        MelStruct(b'DNAM', [u'H', u'2s'],'mastPartSysCap','unknown',),
+        MelNodeIndex(),
+        MelSoundLooping(),
+        MelAddnDnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 

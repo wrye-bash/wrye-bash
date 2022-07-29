@@ -29,7 +29,7 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
     MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
-    AMelNvnm, ANvnmContext
+    AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -234,6 +234,22 @@ class MreActi(MelRecord):
             'rr_no_signal_static', old_versions={'I2fB'}),
         MelConditions(),
         MelNvnm(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAddn(MelRecord):
+    """Addon Node."""
+    rec_sig = b'ADDN'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelModel(),
+        MelNodeIndex(),
+        MelSoundLooping(),
+        MelFid(b'LNAM', 'addon_light'),
+        MelAddnDnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 

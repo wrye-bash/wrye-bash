@@ -487,17 +487,17 @@ statsTypes = {
 #------------------------------------------------------------------------------
 soundsTypes = {
     b'ACTI': (u'soundLooping', u'soundActivation'),
-    b'ADDN': (u'ambientSound',),
+    b'ADDN': ('soundLooping',),
     b'ALCH': (u'dropSound', u'pickupSound', u'soundConsume'),
     b'AMMO': (u'pickupSound', u'dropSound'),
     b'APPA': (u'pickupSound', u'dropSound'),
     b'ARMA': (u'footstepSound',),
     b'ARMO': (u'pickupSound', u'dropSound'),
-    b'ASPC': (u'ambientSound', u'regionData', u'reverb'),
+    b'ASPC': ('soundLooping', 'regionData', 'reverb'),
     b'BOOK': (u'pickupSound', u'dropSound'),
     b'CONT': (u'soundOpen', u'soundClose'),
     b'DOOR': (u'soundOpen', u'soundClose', u'soundLoop'),
-    b'EFSH': (u'ambientSound',),
+    b'EFSH': (u'ambientSound',), ##: This is also in graphicsTypes!
     b'EXPL': (u'sound1', u'sound2'),
     b'FLOR': (u'harvestSound',),
     b'HAZD': (u'sound',),
