@@ -408,9 +408,9 @@ class AMelNvnm(MelBase):
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         # We'll need to know the position at which the NVNM subrecord ends
         # later, so figure it out now
-        ins.seek(size_, 1)
+        ins.seek(size_, 1, *debug_strs)
         end_of_nvnm = ins.tell()
-        ins.seek(-size_, 1)
+        ins.seek(-size_, 1, *debug_strs)
         # Load the header, verify version
         record.navmesh_geometry = nvnm = _NvnmMain()
         nvnm_ver = _nvnm_unpack_int(ins, *debug_strs)
@@ -420,14 +420,15 @@ class AMelNvnm(MelBase):
                                        f'for this game (at most version '
                                        f'{nvnm_max_ver} supported)')
         # Now we can create the context and load the various components
-        nvnm_ctx = self._nvnm_context_class(nvnm_ver,
-            record.header.form_version)
+        nvnm_ctx = self._nvnm_context_class(
+            nvnm_ver, record.header.form_version)
         nvnm.load_comp(ins, nvnm_ctx, *debug_strs)
         # This last part is identical between all games and does not contain
         # any FormIDs, but its size is complex to determine. Much easier to
         # just read all leftover bytes in the subrecord and store them as a
         # bytestring
-        nvnm.nvnm_navmesh_grid = ins.read(end_of_nvnm - ins.tell())
+        nvnm.nvnm_navmesh_grid = ins.read(
+            end_of_nvnm - ins.tell(), *debug_strs)
 
     def pack_subrecord_data(self, record):
         out = BytesIO()

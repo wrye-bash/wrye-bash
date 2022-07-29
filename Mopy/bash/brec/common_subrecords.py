@@ -303,9 +303,9 @@ class MelConditions(MelSequential):
     counter."""
     def __init__(self):
         super().__init__(
-            MelConditionList(),
             MelCounter(MelUInt32(b'CITC', 'conditionCount'),
                 counts='conditions'),
+            MelConditionList(),
         )
 
 #------------------------------------------------------------------------------

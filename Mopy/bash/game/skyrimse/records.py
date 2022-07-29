@@ -44,9 +44,9 @@ class MreLens(MelRecord):
         MelGroups('lensFlareSprites',
             MelString(b'DNAM','spriteID'),
             MelString(b'FNAM','texture'),
-            MelStruct(b'LFSD', [u'f', u'8I'], 'tintRed', 'tintGreen', 'tintBlue',
+            MelStruct(b'LFSD', ['8f', 'I'], 'tintRed', 'tintGreen', 'tintBlue',
                 'width', 'height', 'position', 'angularFade', 'opacity',
-                (LensFlareFlags, u'lensFlags'), ),
+                (LensFlareFlags, 'lensFlags')),
         )
     ).with_distributor({
         b'DNAM': u'fadeDistanceRadiusScale',
