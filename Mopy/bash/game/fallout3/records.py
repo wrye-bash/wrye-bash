@@ -1945,6 +1945,7 @@ class MreNavi(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+# Not mergeable due to the way this record is linked to NAVI records
 class MreNavm(MelRecord):
     """Navigation Mesh."""
     rec_sig = b'NAVM'

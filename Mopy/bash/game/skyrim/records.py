@@ -3362,57 +3362,17 @@ class MreNavi(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-# Not Mergable - FormIDs unaccounted for
+# Not mergeable due to the way this record is linked to NAVI records
 class MreNavm(MelRecord):
     """Navigation Mesh."""
     rec_sig = b'NAVM'
 
-    NavmTrianglesFlags = Flags.from_names(
-        (0, 'edge01link'),
-        (1, 'edge12link'),
-        (2, 'edge20link'),
-        (3, 'unknown4'),
-        (4, 'unknown5'),
-        (5, 'unknown6'),
-        (6, 'preferred'),
-        (7, 'unknown8'),
-        (8, 'unknown9'),
-        (9, 'water'),
-        (10, 'door'),
-        (11, 'found'),
-        (12, 'unknown13'),
-        (13, 'unknown14'),
-        (14, 'unknown15'),
-        (15, 'unknown16'),
-    )
-
-    NavmCoverFlags = Flags.from_names(
-        (0, 'edge01wall'),
-        (1, 'edge01ledgecover'),
-        (2, 'unknown3'),
-        (3, 'unknown4'),
-        (4, 'edge01left'),
-        (5, 'edge01right'),
-        (6, 'edge12wall'),
-        (7, 'edge12ledgecover'),
-        (8, 'unknown9'),
-        (9, 'unknown10'),
-        (10, 'edge12left'),
-        (11, 'edge12right'),
-        (12, 'unknown13'),
-        (13, 'unknown14'),
-        (14, 'unknown15'),
-        (15, 'unknown16'),
-    )
-
     melSet = MelSet(
         MelEdid(),
-        # NVNM, ONAM, PNAM, NNAM would need special routines to handle them
-        # If no mitigation is needed, then leave it as MelBase
-        MelBase(b'NVNM','navMeshGeometry'), # door triangles are sorted
-        MelBase(b'ONAM','onam_p'),
-        MelBase(b'PNAM','pnam_p'),
-        MelBase(b'NNAM','nnam_p'),
+        MelNvnm(),
+        MelBase(b'ONAM', 'unknownONAM'),
+        MelBase(b'PNAM', 'unknownPNAM'),
+        MelBase(b'NNAM', 'unknownNNAM'),
     )
     __slots__ = melSet.getSlotsUsed()
 
