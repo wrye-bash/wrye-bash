@@ -376,11 +376,14 @@ class MreRecord(object):
             if not do_unpack: return  #--Read, but don't analyze.
             if self.__class__ is MreRecord: return  # nothing to be done
             ins_ins, ins_size = ins.ins, ins.size
+            ins_debug_offset = ins.debug_offset
             try: # swap the wrapped io stream with our (decompressed) data
                 ins.ins, ins.size = self.getDecompressed()
+                ins.debug_offset = ins_debug_offset + file_offset
                 self.loadData(ins, ins.size, file_offset=file_offset)
             finally: # restore the wrapped stream to read next record
                 ins.ins, ins.size = ins_ins, ins_size
+                ins.debug_offset = ins_debug_offset
 
     def __repr__(self):
         reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''
