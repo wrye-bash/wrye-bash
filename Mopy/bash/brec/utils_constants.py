@@ -22,6 +22,7 @@
 # =============================================================================
 """Houses the parts of brec that didn't fit anywhere else or were needed by
 almost all other parts of brec."""
+from __future__ import annotations
 import sys
 
 from .. import bolt

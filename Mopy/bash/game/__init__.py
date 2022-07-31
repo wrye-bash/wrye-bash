@@ -24,7 +24,6 @@
 state and methods. game.GameInfo#init classmethod is used to import rest of
 active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
-
 import importlib
 from itertools import chain
 from os.path import join as _j
