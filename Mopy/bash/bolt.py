@@ -28,7 +28,6 @@ from __future__ import annotations
 import collections
 import copy
 import datetime
-import functools
 import io
 import os
 import pickle
@@ -42,7 +41,6 @@ import subprocess
 import sys
 import tempfile
 import textwrap
-import traceback
 import traceback as _traceback
 import webbrowser
 from contextlib import contextmanager, redirect_stdout
@@ -50,6 +48,7 @@ from functools import partial
 from itertools import chain
 from keyword import iskeyword
 from operator import attrgetter
+from types import GenericAlias
 from typing import Iterable
 from urllib.parse import quote
 from zlib import crc32
@@ -333,6 +332,27 @@ def float_or_none(uni_str):
     except ValueError:
         return None
 
+_not_cached = object()
+
+class fast_cached_property:
+    """Similar to functools.cached_property, but ~2x faster because it does not
+    feature locking and lacks that decorator's runtime error checking."""
+    def __init__(self, wrapped_func):
+        self._wrapped_func = wrapped_func
+        self._wrapped_attr = None # set later
+
+    def __set_name__(self, owner, name):
+        self._wrapped_attr = name
+
+    def __get__(self, instance, owner=None):
+        ##: PY3.11: EAFP is slower here right now, test again with 0-cost-try
+        wrapped_val = instance.__dict__.get(self._wrapped_attr, _not_cached)
+        if wrapped_val is _not_cached:
+            # This whole branch is only done once, so can afford to be slower
+            wrapped_val = self._wrapped_func(instance)
+            instance.__dict__[self._wrapped_attr] = wrapped_val
+        return wrapped_val
+
 # LowStrings ------------------------------------------------------------------
 class CIstr(str):
     """See: http://stackoverflow.com/q/43122096/281545"""
@@ -402,16 +422,16 @@ class FName(str):
             cls, unicode_str, *args, **kwargs)
         return res
 
-    @functools.cached_property
+    @fast_cached_property
     def _lower(self): return super().lower()
 
     def lower(self): return self._lower
 
-    @functools.cached_property
+    @fast_cached_property
     def fn_ext(self):
         return FName('' if (dot := self.rfind('.')) == -1 else self[dot:])
 
-    @functools.cached_property
+    @fast_cached_property
     def fn_body(self):
         return FName(self[:-len(self.fn_ext)]) if self.fn_ext else self
 
