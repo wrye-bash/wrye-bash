@@ -555,6 +555,12 @@ class MobDial(MobObjects):
                     break
             else:
                 # Not in the sorted INFOs, check for a cycle/unknown record
+                ##: This isn't wholly correct - really, we'd have to check for
+                # cycles and missing FIDs here, then behave as follows:
+                #  - missing PNAM FID: Exactly like right now, append to sorted
+                #  - cycle: raise error/deprint
+                #  - otherwise: re-appendleft the FID again, keep going until
+                #    we've added its PNAM
                 if curr_info.fid in visited_fids:
                     # Either the PNAM points to a record that's not in our
                     # file (which is fine and happens all the time), or this

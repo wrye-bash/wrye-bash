@@ -225,7 +225,7 @@ class PatchFile(ModFile):
             if is_loaded and should_filter:
                 self.unFilteredMods.append(modName)
             try:
-                loadFactory = (self.readFactory,self.mergeFactory)[modName in self.mergeSet]
+                loadFactory = (self.readFactory, self.mergeFactory)[is_merged]
                 progress(index, u'%s\n' % modName + _(u'Loading...'))
                 modFile = ModFile(modInfo,loadFactory)
                 modFile.load(True,SubProgress(progress,index,index+0.5))

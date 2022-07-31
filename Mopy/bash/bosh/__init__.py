@@ -1566,7 +1566,8 @@ class DataStore(DataDict):
                 rename_paths.remove(tup)
         env.shellMove(*list(zip(*rename_paths)))
         old_key = member_info.fn_key
-        member_info.fn_key = FName(newName) ##: we should pass an FName in
+        ##: Make sure we pass FName in, then drop this FName call
+        member_info.fn_key = FName(newName)
         #--FileInfos
         self[newName] = member_info
         del self[old_key]

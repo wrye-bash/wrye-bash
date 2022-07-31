@@ -1689,7 +1689,8 @@ class ModDetails(_ModsSavesDetails):
     def DoSave(self):
         modInfo = self.modInfo
         #--Change Tests
-        changeName = (file_str := self.fileStr.strip()) != modInfo.fn_key
+        file_str = FName(self.fileStr.strip())
+        changeName = file_str != modInfo.fn_key
         changeDate = (self.modifiedStr != format_date(modInfo.mtime))
         changeHedr = (self.authorStr != modInfo.header.author or
                       self.descriptionStr != modInfo.header.description)
@@ -1714,7 +1715,7 @@ class ModDetails(_ModsSavesDetails):
         if changeName:
             oldName,newName = modInfo.fn_key, file_str
             #--Bad name?
-            if (bosh.modInfos.isBadFileName(newName) and
+            if (bosh.modInfos.isBadFileName(str(newName)) and
                 not balt.askContinue(self,_(
                     u'File name %s cannot be encoded to ASCII. %s may not be '
                     u'able to activate this plugin because of this. Do you '
