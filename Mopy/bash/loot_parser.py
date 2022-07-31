@@ -38,7 +38,7 @@ from copy import deepcopy
 
 from .loot_conditions import _ACondition, Comparison, ConditionAnd, \
     ConditionFunc, ConditionNot, ConditionOr, is_regex
-from .bolt import deprint, LowerDict, Path, AFile, FNDict
+from .bolt import deprint, Path, AFile, FNDict
 from .exception import LexerError, ParserError, BoltError, EvalError
 
 # Try to use the C version (way faster), if that isn't possible fall back to
