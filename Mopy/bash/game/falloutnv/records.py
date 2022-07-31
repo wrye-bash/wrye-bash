@@ -21,14 +21,14 @@
 #
 # =============================================================================
 """This module contains the falloutnv record classes."""
-from ..fallout3.records import MelDestructible, MelConditionsFo3, MelModel
+from ..fallout3.records import MelDestructible, MelModel
 from ...bolt import Flags, struct_calcsize
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
-    MelFid, MelFids, MelBase, MelSimpleArray, MreHeaderBase, MelFloat, MelUInt8, \
+    MelFid, MelFids, MelBase, MelSimpleArray, MreHeaderBase, MelFloat, \
     MelUInt32, MelBounds, null1, MelTruncatedStruct, MelIcons, MelIcon, \
     MelIco2, MelEdid, MelFull, MelArray, MelObject, MelNull, MelScript, \
     MelDescription, MelSoundPickup, MelSoundDrop, MelUInt8Flags, MelSInt32, \
-    MelSorted, MelValueWeight
+    MelSorted, MelValueWeight, MelConditionsFo3, MelUInt8
 from ...exception import ModSizeError
 
 #------------------------------------------------------------------------------

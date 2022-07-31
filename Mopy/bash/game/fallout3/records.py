@@ -38,14 +38,14 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelSkipInterior, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
-    MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
+    MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelLists, MelSoundPickup, MelSoundDrop, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
-    MelSoundLooping, MelSoundActivation, MelWaterType
+    MelSoundLooping, MelSoundActivation, MelWaterType, MelConditionsFo3
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -144,14 +144,6 @@ class MelBipedData(MelStruct):
         super(MelBipedData, self).__init__(b'BMDT', [u'I', u'B', u'3s'],
             (self._biped_flags, u'biped_flags'),
             (self._general_flags, u'generalFlags'), u'biped_unused')
-
-#------------------------------------------------------------------------------
-class MelConditionsFo3(MelGroups):
-    """A list of conditions."""
-    def __init__(self):
-        # Note that reference can be a fid - handled in MelCtdaFo3.mapFids
-        super().__init__('conditions', MelCtdaFo3(suffix_fmt=['2I'],
-            suffix_elements=['runOn', 'reference'], old_suffix_fmts={'I', ''}))
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):

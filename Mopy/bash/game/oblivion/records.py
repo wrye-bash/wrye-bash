@@ -37,10 +37,10 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
     MelTruncatedStruct, MelSkipInterior, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MelObject, MreActorBase, MreWithItems, \
-    MelReadOnly, MelCtda, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
+    MelReadOnly, MelRef3D, MelXlod, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
     MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, MelLists, \
-    SignatureDecider, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
+    MelConditionsTes4, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
     MelSoundLooping
@@ -66,26 +66,6 @@ class MelModel(MelGroup):
         )
 
 #------------------------------------------------------------------------------
-class _CtdaDecider(SignatureDecider):
-    """Loads based on signature, but always dumps out the newer CTDA format."""
-    can_decide_at_dump = True
-
-    def decide_dump(self, record):
-        return b'CTDA'
-
-class MelConditionsTes4(MelGroups):
-    """A list of conditions. Can contain the old CTDT format as well, which
-    will be upgraded on dump."""
-    def __init__(self):
-        super().__init__('conditions', MelUnion({
-            b'CTDA': MelCtda(suffix_fmt=['4s'],
-                suffix_elements=['unused3']),
-            # The old (CTDT) format is length 20 and has no suffix
-            b'CTDT': MelReadOnly(MelCtda(b'CTDT', suffix_fmt=['4s'],
-                suffix_elements=['unused3'], old_suffix_fmts={''})),
-            }, decider=_CtdaDecider()),
-        )
-
 # Common Flags
 aiService = Flags.from_names(
     (0,'weapons'),
