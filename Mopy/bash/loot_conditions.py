@@ -369,14 +369,16 @@ def _process_path(file_path):
             parents_done = True
             child_components.append(path_component)
     relative_path = bass.dirs[u'mods']
-    # Move up by the number of requested parents
+    # Move up by the number of requested parents, then join with the requested
+    # child components
     for x in range(parents):
         relative_path = relative_path.head
-    # If that put us outside the game folder, the path is invalid
-    if not os.path.realpath(relative_path).startswith(bass.dirs[u'app'].s):
+    final_path = relative_path.join(*child_components)
+    # If moving up put us outside the game folder, the path is invalid
+    if not final_path.cs.startswith(bass.dirs[u'app'].cs + os.sep):
         raise EvalError(u'Illegal file path: May not specify paths that '
                         u'resolve to outside the game folder.', file_path)
-    return relative_path.join(*child_components)
+    return final_path
 
 def _read_binary_ver(binary_path):
     """Reads version information from a binary at the specified path, returning
