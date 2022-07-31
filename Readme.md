@@ -14,8 +14,7 @@ This is a fork of the Wrye Bash related code from the
 [SVN 3177 trunk revision][1].
 We are in the process of refactoring the code to eventually support more games,
 offering the same feature set for all of them.
-Please read the [Contributing](#contributing) section below if interested in
-contributing.
+Please see our [Contributing.md][24] if interested in contributing.
 
 #### Supported Games
 

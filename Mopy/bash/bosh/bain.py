@@ -229,7 +229,7 @@ class Installer(ListInfo):
         self.order = -1 #--Set by user/interface.
         self.is_active = False
         self.espmNots = set() #--Plugin FNames that user has decided not to install.
-        self._remaps = {}
+        self._remaps = bolt.FNDict() # Pickles to dict, equivalent to previous
         #--Volatiles (not pickled values)
         #--Volatiles: directory specific
         self.project_refreshed = False
@@ -361,6 +361,9 @@ class Installer(ListInfo):
         if self.espmNots and not isinstance(next(iter(self.espmNots)), FName):
             self.espmNots = forward_compat_path_to_fn_list(self.espmNots,
                                                            ret_type=set)
+        if self._remaps and not isinstance(next(iter(self._remaps)), FName):
+            self._remaps = forward_compat_path_to_fn(self._remaps,
+                value_type=lambda v: FName('%s' % v)) # Path -> FName
         if isinstance(self, InstallerMarker): return
         if not self.abs_path.exists(): # pickled installer deleted outside bash
             return  # don't do anything should be deleted from our data soon
@@ -568,13 +571,13 @@ class Installer(ListInfo):
                     self.skipDirFiles.add(_(u'[Bethesda Content]') + u' ' +
                                           full)
                     return None # FIXME - after renames ?
-            file_relative = self._remaps.get(file_relative, file_relative)
             fn_mod = FName(file_relative)
+            fn_mod = self._remaps.get(fn_mod, fn_mod)
             if fn_mod not in self.espmMap[sub]:
                 self.espmMap[sub].append(fn_mod)
             self.espms.add(fn_mod)
             if fn_mod in self.espmNots: return None # skip
-            return file_relative
+            return str(fn_mod) # will end up in a LowerDict - so str
         for extension in bush.game.espm_extensions:
             Installer._attributes_process[extension] = _remap_espms
         Installer._extensions_to_process = set(Installer._attributes_process)

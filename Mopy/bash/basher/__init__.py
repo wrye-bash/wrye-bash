@@ -3008,10 +3008,16 @@ class InstallersDetails(_SashDetailsPanel):
                 files = bolt.sortFiles(files)
                 if header: buff.append(header)
                 for file in files:
-                    oldName = installer.getEspmName(file)
-                    if oldName != file:
-                        oldName = f'{oldName} -> {file}'
-                    buff.append(oldName)
+                    fn_file_dump = FName(str(file))
+                    # Avoid running through _remaps over and over for
+                    # non-plugins (can't use 'in modInfos' since the plugins
+                    # may not be installed)
+                    if bosh.modInfos.rightFileType(fn_file_dump):
+                        oldName = installer.getEspmName(fn_file_dump)
+                        if oldName != fn_file_dump:
+                            buff.append(f'{oldName} -> {fn_file_dump}')
+                            continue
+                    buff.append(fn_file_dump)
                 return buff.append('') or '\n'.join(buff) # add a newline
             elif header:
                 return header+u'\n'

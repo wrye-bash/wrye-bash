@@ -547,9 +547,8 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
 
     @property
     def link_help(self):
-        return _(
-            u'Override global file type skipping for %(installername)s.') % (
-                {u'installername': self._selected_item}) + u'  '+ _(u'BETA!')
+        return _('Override global file type skipping for '
+                 '%(installername)s.') % {'installername': self._selected_item}
 
     def _check(self):
         return self._enable() and self._selected_info.overrideSkips
