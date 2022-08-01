@@ -651,6 +651,12 @@ class MelScriptVars(MelSorted):
         ), sort_by_attrs='var_index')
 
 #------------------------------------------------------------------------------
+class MelShortName(MelLString):
+    """Defines a 'Short Name' subrecord. Most common signature is ONAM."""
+    def __init__(self, sn_sig=b'ONAM'):
+        super().__init__(sn_sig, 'short_name')
+
+#------------------------------------------------------------------------------
 class MelSkipInterior(MelUnion):
     """Union that skips dumping if we're in an interior."""
     def __init__(self, element):

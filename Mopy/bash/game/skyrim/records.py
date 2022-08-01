@@ -47,7 +47,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     MelValueWeight, int_unpacker, MelCoed, MelSoundLooping, MelWaterType, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
-    MelEffects, AMelLLItems, MelUnloadEvent
+    MelEffects, AMelLLItems, MelUnloadEvent, MelShortName
 from ...exception import ModError, ModSizeError, StateError
 
 _is_sse = bush.game.fsName in (
@@ -1362,6 +1362,8 @@ class MreAmmo(MelRecord):
                 (FID, 'projectile'), (AmmoTypeFlags, 'flags'),
                 'damage', 'value', 'weight', old_versions={'2IfI'}),
         ),
+        # Skyrim has strings but this one isn't localized, so we can't use
+        # MelShortName here unfortunately
         MelString(b'ONAM', 'short_name'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3429,7 +3431,7 @@ class MreNpc(MreActorBase):
         MelKeywords(),
         MelFid(b'CNAM', 'iclass'),
         MelFull(),
-        MelLString(b'SHRT', 'short_name'),
+        MelShortName(b'SHRT'),
         MelBase(b'DATA', 'marker'),
         MelStruct(b'DNAM', [u'36B', u'H', u'H', u'H', u'2s', u'f', u'B', u'3s'],
             'oneHandedSV','twoHandedSV','marksmanSV','blockSV','smithingSV',

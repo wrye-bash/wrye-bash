@@ -25,13 +25,13 @@ from ...bolt import Flags
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, MelAttx, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelUnloadEvent, \
-    MelArray, MreGmstBase, MelUInt8Flags, MelSorted, MelGroups, \
+    MelArray, MreGmstBase, MelUInt8Flags, MelSorted, MelGroups, MelShortName, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
     MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
     AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
     AttrValDecider, MelSoundPickup, MelSoundDrop, MelEquipmentType, \
-    MelDescription, MelEffects, AMelLLItems
+    MelDescription, MelEffects, AMelLLItems, MelValueWeight
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -309,6 +309,32 @@ class MreAmdl(MelRecord):
             'recoil_max_per_shot', 'recoil_min_per_shot', 'recoil_hip_mult',
             'runaway_recoil_shots', 'recoil_arc', 'recoil_arc_rotate',
             'cof_iron_sights_mult', 'base_stability'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAmmo(MelRecord):
+    """Ammunition."""
+    rec_sig = b'AMMO'
+
+    _ammo_flags = Flags.from_names('notNormalWeapon', 'nonPlayable',
+        'has_count_based_3d')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelDestructible(),
+        MelSoundPickup(),
+        MelSoundDrop(),
+        MelDescription(),
+        MelKeywords(),
+        MelValueWeight(),
+        MelStruct(b'DNAM', ['I', 'B', '3s', 'f', 'I'], (FID, 'projectile'),
+            (_ammo_flags, 'flags'), 'unused_dnam', 'damage', 'health'),
+        MelShortName(),
     )
     __slots__ = melSet.getSlotsUsed()
 

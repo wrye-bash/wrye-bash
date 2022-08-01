@@ -46,7 +46,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
     MelSoundLooping, MelSoundActivation, MelWaterType, MelConditionsFo3, \
-    MelNodeIndex, MelAddnDnam, MelEffectsFo3
+    MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -487,7 +487,7 @@ class MreAmmo(MelRecord):
             b'DAT2', [u'2I', u'f', u'I', u'f'], 'projPerShot',
             (FID, u'projectile'), 'weight', (FID, 'consumedAmmo'),
             'consumedPercentage', old_versions={'2If'})),
-        MelString(b'ONAM', 'short_name'),
+        MelShortName(),
         fnv_only(MelString(b'QNAM', 'abbreviation')),
         fnv_only(MelFids('effects', MelFid(b'RCIL'))),
     )
@@ -615,7 +615,7 @@ class MreAvif(MelRecord):
         MelFull(),
         MelDescription(),
         MelIcons(),
-        MelString(b'ANAM', 'short_name'),
+        MelShortName(b'ANAM'),
     )
     __slots__ = melSet.getSlotsUsed()
 
