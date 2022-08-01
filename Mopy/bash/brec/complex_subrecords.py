@@ -26,13 +26,16 @@ from __future__ import annotations
 
 from collections import defaultdict
 from io import BytesIO
+from itertools import chain
 from typing import Type
 
 from .advanced_elements import MelUnion, PartialLoadDecider, AttrValDecider, \
     MelTruncatedStruct, SignatureDecider, MelCounter
 from .basic_elements import MelBase, MelStruct, MelGroups, MelReadOnly, \
-    MelString, MelSequential, MelUInt32, MelFid
-from .utils_constants import get_structs, FID
+    MelString, MelSequential, MelUInt32, MelFid, MelGroup, MelObject, \
+    MelOptStruct, MelBaseR
+from .common_subrecords import MelFull
+from .utils_constants import get_structs, FID, null1
 from ..bolt import pack_int, pack_byte, attrgetter_cache, Flags, struct_pack, \
     struct_unpack
 from ..exception import AbstractError, ModError
@@ -270,6 +273,241 @@ class MelConditions(MelSequential):
             MelConditionList(),
         )
 
+#------------------------------------------------------------------------------
+# OBME - Oblivion Magic Extender
+#------------------------------------------------------------------------------
+# Helpers ---------------------------------------------------------------------
+class _MelObmeScitGroup(MelGroup):
+    """Fun HACK for the whole family. We need to carry efix_param_info into
+    this group, since '../' syntax is not yet supported (see MrePerk in Skyrim
+    for another part of the code that's suffering from this). And we can't
+    simply not put this in a group, because a bunch of code relies on a group
+    called 'scriptEffect' existing..."""
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        target = getattr(record, self.attr)
+        if target is None:
+            class _MelHackyObject(MelObject):
+                @property
+                def efix_param_info(self):
+                    return record.efix_param_info
+                @efix_param_info.setter
+                def efix_param_info(self, new_efix_info):
+                    record.efix_param_info = new_efix_info
+            target = _MelHackyObject()
+            for element in self.elements:
+                element.setDefault(target)
+            target.__slots__ = [s for element in self.elements for s in
+                                element.getSlotsUsed()]
+            setattr(record, self.attr, target)
+        self.loaders[sub_type].load_mel(target, ins, sub_type, size_,
+            *debug_strs)
+
+# API -------------------------------------------------------------------------
+class MelObme(MelOptStruct):
+    """Oblivion Magic Extender subrecord. Prefixed every attribute with obme_
+    both for easy grouping in debugger views and to differentiate them from
+    vanilla attrs."""
+    def __init__(self, struct_sig=b'OBME', extra_format=None,
+                 extra_contents=None, reserved_byte_count=28):
+        """Initializes a MelObme instance. Supports customization for the
+        variations that exist for effects subrecords and MGEF records."""
+        if extra_format is None:
+            extra_format = []
+        if extra_contents is None:
+            extra_contents = []
+        # Always begins with record version and OBME version - None here is on
+        # purpose, to differentiate from 0 which is almost always the record
+        # version in plugins using OBME
+        struct_contents = [('obme_record_version', None),
+                           'obme_version_beta', 'obme_version_minor',
+                           'obme_version_major']
+        # Then comes any extra info placed in the middle
+        struct_contents += extra_contents
+        # Always ends with a statically sized reserved byte array
+        struct_contents += [('obme_unused', null1 * reserved_byte_count)]
+        str_fmts = ['4B', *extra_format, f'{reserved_byte_count}s']
+        super().__init__(struct_sig, str_fmts, *struct_contents)
+
+#------------------------------------------------------------------------------
+# EFID/EFIT/etc. - Effects
+#------------------------------------------------------------------------------
+# Helpers ---------------------------------------------------------------------
+# TODO(inf) Do we really need to do this? It's an unused test spell
+class _MelEffectsScit(MelTruncatedStruct):
+    """The script fid for MS40TestSpell doesn't point to a valid script,
+    so this class drops it."""
+    def _pre_process_unpacked(self, unpacked_val):
+        if len(unpacked_val) == 1:
+            if unpacked_val[0] & 0xFF000000:
+                unpacked_val = (0,) # Discard bogus MS40TestSpell fid
+        return super()._pre_process_unpacked(unpacked_val)
+
+# API - TES3 ------------------------------------------------------------------
+class MelEffectsTes3(MelGroups):
+    """Handles the list of ENAM structs present on several records."""
+    def __init__(self):
+        super().__init__('effects',
+            MelStruct(b'ENAM', ['H', '2b', '5I'], 'effect_index',
+                'skill_affected', 'attribute_affected', 'ench_range',
+                'ench_area', 'ench_duration', 'ench_magnitude_min',
+                'ench_magnitude_max'),
+        )
+
+# API - TES4 ------------------------------------------------------------------
+##: Should we allow mixing regular effects and OBME ones? This implementation
+# assumes no, but xEdit's is broken right now, so...
+class MelEffectsTes4(MelSequential):
+    """Represents ingredient/potion/enchantment/spell effects. Supports OBME,
+    which is why it's so complex. The challenge is that we basically have to
+    redirect every procedure to one of two lists of elements, depending on
+    whether an 'OBME' subrecord exists or not."""
+    se_flags = Flags.from_names('hostile')
+
+    def __init__(self):
+        # Vanilla Elements ----------------------------------------------------
+        self._vanilla_elements = [
+            MelGroups('effects',
+                # REHE is Restore target's Health - EFID.effect_sig
+                # must be the same as EFIT.effect_sig
+                MelStruct(b'EFID', ['4s'], ('effect_sig', b'REHE')),
+                MelStruct(b'EFIT', ['4s', '4I', 'i'], ('effect_sig', b'REHE'),
+                    'magnitude', 'area', 'duration', 'recipient',
+                    'actorValue'),
+                MelGroup('scriptEffect',
+                    _MelEffectsScit(b'SCIT', ['2I', '4s', 'B', '3s'],
+                        (FID, 'script_fid'), 'school', 'visual',
+                        (self.se_flags, 'flags'), 'unused1',
+                        old_versions={'2I4s', 'I'}),
+                    MelFull(),
+                ),
+            ),
+        ]
+        # OBME Elements -------------------------------------------------------
+        self._obme_elements = [
+            MelGroups('effects',
+                MelObme(b'EFME', extra_format=['2B'],
+                    extra_contents=['efit_param_info', 'efix_param_info'],
+                    reserved_byte_count=10),
+                MelStruct(b'EFID', ['4s'], ('effect_sig', b'REHE')),
+                MelUnion({
+                    0: MelStruct(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
+                        'magnitude', 'area', 'duration', 'recipient',
+                        'efit_param'),
+                    ##: Test this! Does this actually work?
+                    (1, 3): MelStruct(b'EFIT', ['4s', '5I'], 'unused_name',
+                        'magnitude', 'area', 'duration', 'recipient',
+                        (FID, 'efit_param')),
+                    ##: This case needs looking at, OBME docs say this about
+                    # efit_param in case 2: 'If >= 0x80000000 lowest byte is
+                    # Mod Index, otherwise no resolution'
+                    2: MelStruct(b'EFIT', ['4s', '4I', '4s'], 'unused_name',
+                        'magnitude', 'area', 'duration', 'recipient',
+                        ('efit_param', b'REHE')),
+                }, decider=AttrValDecider('efit_param_info')),
+                _MelObmeScitGroup('scriptEffect',
+                    ##: Test! xEdit has all this in EFIX, but it also
+                    #  hard-crashes when I try to add EFIX subrecords... this
+                    #  is adapted from OBME's official docs, but those could be
+                    #  wrong. Also, same notes as above for case 2 and 3.
+                    MelUnion({
+                        0: MelStruct(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
+                            'efix_param', 'school', 'visual',
+                            se_fl := (self.se_flags, 'flags'), 'unused1'),
+                        1: MelStruct(b'SCIT', ['2I', '4s', 'B', '3s'],
+                            (FID, 'efix_param'), 'school', 'visual', se_fl,
+                            'unused1'),
+                        2: MelStruct(b'SCIT', ['4s', 'I', '4s', 'B', '3s'],
+                            ('efix_param', b'REHE'), 'school', 'visual', se_fl,
+                            'unused1'),
+                        3: MelStruct(b'SCIT', ['2I', '4s', 'B', '3s'],
+                            (FID, 'efit_param'), 'school', 'visual', se_fl,
+                            'unused1'),
+                    }, decider=AttrValDecider('efix_param_info')),
+                    MelFull(),
+                ),
+                MelString(b'EFII', 'obme_icon'),
+                ##: Again, FID here needs testing
+                MelOptStruct(b'EFIX', ['2I', 'f', 'i', '16s'],
+                    'efix_override_mask', 'efix_flags', 'efix_base_cost',
+                    (FID, 'resist_av'), 'efix_reserved'),
+            ),
+            MelBaseR(b'EFXX', 'effects_end_marker'),
+        ]
+        # Split everything by Vanilla/OBME
+        self._vanilla_loaders = {}
+        self._vanilla_form_elements = set()
+        self._obme_loaders = {}
+        self._obme_form_elements = set()
+        # Only for setting the possible signatures, redirected in load_mel etc.
+        super().__init__(*self._vanilla_elements, *self._obme_elements)
+
+    # Note that we only support creating vanilla effects, as our records system
+    # isn't expressive enough to pass more info along here
+    def getDefaulters(self, defaulters, base):
+        for element in self._vanilla_elements:
+            element.getDefaulters(defaulters, base)
+
+    def getLoaders(self, loaders):
+        # We need to collect all signatures and assign ourselves for them all
+        # to always gain control of load_mel so we can redirect it properly
+        for element in self._vanilla_elements:
+            element.getLoaders(self._vanilla_loaders)
+        for element in self._obme_elements:
+            element.getLoaders(self._obme_loaders)
+        for signature in chain(self._vanilla_loaders, self._obme_loaders):
+            loaders[signature] = self
+
+    def hasFids(self, formElements):
+        for element in self._vanilla_elements:
+            element.hasFids(self._vanilla_form_elements)
+        for element in self._obme_elements:
+            element.hasFids(self._obme_form_elements)
+        if self._vanilla_form_elements or self._obme_form_elements:
+            formElements.add(self)
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        target_loaders = (self._obme_loaders
+                          if record.obme_record_version is not None
+                          else self._vanilla_loaders)
+        target_loaders[sub_type].load_mel(record, ins, sub_type, size_, *debug_strs)
+
+    def dumpData(self, record, out):
+        target_elements = (self._obme_elements
+                           if record.obme_record_version is not None
+                           else self._vanilla_elements)
+        for element in target_elements:
+            element.dumpData(record, out)
+
+    def mapFids(self, record, function, save_fids=False):
+        target_form_elements = (self._obme_form_elements
+                                if record.obme_record_version is not None
+                                else self._vanilla_form_elements)
+        for form_element in target_form_elements:
+            form_element.mapFids(record, function, save_fids)
+
+class MelEffectsTes4ObmeFull(MelString):
+    """Hacky class for handling the extra FULL that OBME includes after the
+    effects for some reason. We can't just pack this one into MelEffects above
+    since otherwise we'd have duplicate signatures in the same load, and
+    MelDistributor would just distribute the load to the same MelGroups
+    backend, which would blindly use the last FULL. Did I ever mention that
+    OBME is an awfully hacky mess?"""
+    def __init__(self):
+        super().__init__(b'FULL', 'obme_full')
+
+# API - FO3 and FNV -----------------------------------------------------------
+class MelEffectsFo3(MelGroups):
+    """Represents effects in FO3 and FNV - combination of EFID, EFIT and
+    CTDA."""
+    def __init__(self):
+        super().__init__('effects',
+            MelFid(b'EFID', 'effect_formid'), # Base Effect
+            MelStruct(b'EFIT', ['4I', 'i'], 'magnitude', 'area', 'duration',
+                'recipient', 'actorValue'),
+            MelConditionsFo3(),
+        )
+
+# API - TES5 and onwards ------------------------------------------------------
 class MelEffects(MelGroups):
     """Represents effects in Skyrim and newer games - combination of EFID, EFIT
     and CTDA."""

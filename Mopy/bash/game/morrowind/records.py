@@ -30,11 +30,10 @@ from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
     MelOptStruct, MelCounter, MelRefScale, MelRef3D, \
-    MelIcons, MelFloat, MelSInt32, \
+    MelIcons, MelFloat, MelSInt32, MelEffectsTes3, \
     MelFixedString, FixedString, AutoFixedString, MreGmstBase, \
     MreLeveledListBase, MelUInt16, SizeDecider, MelLists, \
     MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags
-
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -125,17 +124,6 @@ class MelDestinations(MelGroups):
             MelStruct(b'DODT', [u'6f'], u'dest_pos_x', u'dest_pos_y',
                 u'dest_pos_z', u'dest_rot_x', u'dest_rot_y', u'dest_rot_z'),
             MelString(b'DNAM', u'dest_cell_name'),
-        )
-
-#------------------------------------------------------------------------------
-class MelEffects(MelGroups):
-    """Handles the list of ENAM structs present on several records."""
-    def __init__(self):
-        super(MelEffects, self).__init__(u'effects',
-            MelStruct(b'ENAM', [u'H', u'2b', u'5I'], u'effect_index', u'skill_affected',
-                u'attribute_affected', u'ench_range', u'ench_area',
-                u'ench_duration', u'ench_magnitude_min',
-                u'ench_magnitude_max'),
         )
 
 #------------------------------------------------------------------------------
@@ -300,7 +288,7 @@ class MreAlch(MelRecord):
         MelMWFull(),
         MelStruct(b'ALDT', [u'f', u'2I'], u'potion_weight', u'potion_value',
             u'potion_auto_calc'),
-        MelEffects(),
+        MelEffectsTes3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -594,7 +582,7 @@ class MreEnch(MelRecord):
         MelMWId(),
         MelStruct(b'ENDT', [u'4I'], u'ench_type', u'ench_cost', u'ench_charge',
             u'ench_auto_calc'),
-        MelEffects(),
+        MelEffectsTes3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1108,7 +1096,7 @@ class MreSpel(MelRecord):
         # Bad names to match other games (tweaks)
         MelStruct(b'SPDT', [u'3I'], u'spellType', u'cost',
             (_spell_flags, u'spell_flags')),
-        MelEffects(),
+        MelEffectsTes3(),
     )
     __slots__ = melSet.getSlotsUsed()
 

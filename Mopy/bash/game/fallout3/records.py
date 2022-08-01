@@ -46,7 +46,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
     MelSoundLooping, MelSoundActivation, MelWaterType, MelConditionsFo3, \
-    MelNodeIndex, MelAddnDnam
+    MelNodeIndex, MelAddnDnam, MelEffectsFo3
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -166,17 +166,6 @@ class MelDestructible(MelGroup):
                 MelModel(b'DMDL'),
                 MelBaseR(b'DSTF', 'dest_end_marker'),
             ),
-        )
-
-#------------------------------------------------------------------------------
-class MelEffects(MelGroups):
-    """Represents ingredient/potion/enchantment/spell effects."""
-    def __init__(self):
-        super(MelEffects, self).__init__(u'effects',
-            MelFid(b'EFID', u'baseEffect'),
-            MelStruct(b'EFIT', [u'4I', u'i'], u'magnitude', u'area', u'duration',
-                u'recipient', u'actorValue'),
-            MelConditionsFo3(),
         )
 
 #------------------------------------------------------------------------------
@@ -472,7 +461,7 @@ class MreAlch(MelRecord):
         MelStruct(b'ENIT', [u'i', u'B', u'3s', u'I', u'f', u'I'], u'value', (_flags, u'flags'),
                   u'unused1', (FID, u'withdrawalEffect'),
                   u'addictionChance', (FID, u'soundConsume')),
-        MelEffects(),
+        MelEffectsFo3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1215,7 +1204,7 @@ class MreEnch(MelRecord):
         MelFull(),
         MelStruct(b'ENIT', [u'3I', u'B', u'3s'],'itemType','chargeAmount','enchantCost',
                   (_flags, u'flags'),'unused1'),
-        MelEffects(),
+        MelEffectsFo3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1631,7 +1620,7 @@ class MreIngr(MelRecord):
         MelEquipmentTypeFo3(),
         MelWeight(),
         MelStruct(b'ENIT', [u'i', u'B', u'3s'],'value',(_flags, u'flags'),'unused1'),
-        MelEffects(),
+        MelEffectsFo3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2928,7 +2917,7 @@ class MreSpel(MelRecord):
         MelFull(),
         MelStruct(b'SPIT', [u'3I', u'B', u'3s'], 'spellType', 'cost', 'level',
                   (SpellFlags, 'spell_flags'), 'unused1'),
-        MelEffects(),
+        MelEffectsFo3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
