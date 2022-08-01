@@ -24,14 +24,14 @@
 from ...bolt import Flags
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, MelAttx, \
-    FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelCounter, \
-    MelArray, MreGmstBase, MelUInt8Flags, MelCoed, MelSorted, MelGroups, \
+    FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, \
+    MelArray, MreGmstBase, MelUInt8Flags, MelSorted, MelGroups, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
     MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
     AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
     AttrValDecider, MelSoundPickup, MelSoundDrop, MelEquipmentType, \
-    MelDescription, MelEffects
+    MelDescription, MelEffects, AMelLLItems
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -105,6 +105,14 @@ class MelFtyp(MelFid):
         super().__init__(b'FTYP', 'forced_loc_ref_type')
 
 #------------------------------------------------------------------------------
+class MelLLItems(AMelLLItems):
+    """Handles the LVLO and LLCT subrecords defining leveled list items"""
+    def __init__(self):
+        super().__init__([MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'],
+            'level', 'unused1', (FID, 'listId'), ('count', 1), 'chance_none',
+            'unused2')])
+
+#------------------------------------------------------------------------------
 class MelNativeTerminal(MelFid):
     """Handles the common NTRM (Native Terminal) subrecord."""
     def __init__(self):
@@ -146,30 +154,6 @@ class MelSoundCrafting(MelFid):
 class MelVmad(MelNull): # TODO(inf) Refactor Skyrim's MelVmad and remove this
     def __init__(self):
         super().__init__(b'VMAD')
-
-#------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase): ##: some duplication with skyrim
-    """Fallout 4 leveled list. Defines some common subrecords."""
-    __slots__ = []
-
-    class MelLlct(MelCounter):
-        def __init__(self):
-            super().__init__(MelUInt8(b'LLCT', 'entry_count'),
-                counts='entries')
-
-    class MelLvlo(MelSorted):
-        def __init__(self, with_coed=True):
-            lvl_elements = [
-                MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'], 'level',
-                    'unused1', (FID, 'listId'), ('count', 1), 'chance_none',
-                    'unused2'),
-            ]
-            lvl_sort_attrs = ('level', 'listId', 'count')
-            if with_coed:
-                lvl_elements.append(MelCoed())
-                lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
-            super().__init__(MelGroups('entries', *lvl_elements),
-                sort_by_attrs=lvl_sort_attrs)
 
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------
@@ -318,7 +302,7 @@ class MreGmst(MreGmstBase):
     __slots__ = ()
 
 #------------------------------------------------------------------------------
-class MreLvli(MreLeveledList):
+class MreLvli(MreLeveledListBase):
     """Leveled Item."""
     rec_sig = b'LVLI'
 
@@ -332,8 +316,7 @@ class MreLvli(MreLeveledList):
         MelUInt8(b'LVLM', 'maxCount'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
         MelFid(b'LVLG', 'glob'),
-        MreLeveledList.MelLlct(),
-        MreLeveledList.MelLvlo(),
+        MelLLItems(),
         MelArray('filterKeywordChances',
             MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
         ),
@@ -343,7 +326,7 @@ class MreLvli(MreLeveledList):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvln(MreLeveledList):
+class MreLvln(MreLeveledListBase):
     """Leveled NPC."""
     rec_sig = b'LVLN'
 
@@ -357,8 +340,7 @@ class MreLvln(MreLeveledList):
         MelUInt8(b'LVLM', 'maxCount'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
         MelFid(b'LVLG', 'glob'),
-        MreLeveledList.MelLlct(),
-        MreLeveledList.MelLvlo(),
+        MelLLItems(),
         MelArray('filterKeywordChances',
             MelStruct(b'LLKC', [u'2I'], (FID, u'keyword'), u'chance'),
         ),

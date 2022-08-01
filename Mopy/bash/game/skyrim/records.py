@@ -47,7 +47,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     MelValueWeight, int_unpacker, MelCoed, MelSoundLooping, MelWaterType, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
-    MelEffects
+    MelEffects, AMelLLItems
 from ...exception import ModError, ModSizeError, StateError
 
 _is_sse = bush.game.fsName in (
@@ -231,6 +231,15 @@ class MelLinkedReferences(MelSorted):
                 MelStruct(b'XLKR', [u'2I'], (FID, u'keyword_ref'),
                           (FID, u'linked_ref')),
             ), sort_by_attrs='keyword_ref')
+
+#------------------------------------------------------------------------------
+class MelLLItems(AMelLLItems):
+    """Handles the LVLO and LLCT subrecords defining leveled list items"""
+    def __init__(self, with_coed=True):
+        super().__init__([
+            MelStruct(b'LVLO', ['H', '2s', 'I', 'H', '2s'], 'level',
+                'unknown1', (FID, 'listId'), ('count', 1), 'unknown2')],
+            with_coed)
 
 #------------------------------------------------------------------------------
 class MelLocation(MelUnion):
@@ -1182,30 +1191,6 @@ class MelVmad(MelBase):
         if vmad.special_data and record._rec_sig in self._handler_map:
             self._get_special_handler(record._rec_sig).map_fids(
                 vmad.special_data, function, save_fids)
-
-#------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase):
-    """Skyrim Leveled item/creature/spell list. Defines some common
-    subrecords."""
-    __slots__ = []
-
-    class MelLlct(MelCounter):
-        def __init__(self):
-            super().__init__(MelUInt8(b'LLCT', 'entry_count'),
-                counts='entries')
-
-    class MelLvlo(MelSorted):
-        def __init__(self, with_coed=True):
-            lvl_elements = [
-                MelStruct(b'LVLO', ['H', '2s', 'I', 'H', '2s'], 'level',
-                    'unknown1', (FID, 'listId'), ('count', 1), 'unknown2'),
-            ]
-            lvl_sort_attrs = ('level', 'listId', 'count')
-            if with_coed:
-                lvl_elements.append(MelCoed())
-                lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
-            super().__init__(MelGroups('entries', *lvl_elements),
-                sort_by_attrs=lvl_sort_attrs)
 
 #------------------------------------------------------------------------------
 # Skyrim Records --------------------------------------------------------------
@@ -3031,7 +3016,7 @@ class MreLtex(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvli(MreLeveledList):
+class MreLvli(MreLeveledListBase):
     """Leveled Item."""
     rec_sig = b'LVLI'
     top_copy_attrs = ('chanceNone','glob',)
@@ -3042,13 +3027,12 @@ class MreLvli(MreLeveledList):
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
         MelFid(b'LVLG', 'glob'),
-        MreLeveledList.MelLlct(),
-        MreLeveledList.MelLvlo(),
+        MelLLItems(),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvln(MreLeveledList):
+class MreLvln(MreLeveledListBase):
     """Leveled NPC."""
     rec_sig = b'LVLN'
     top_copy_attrs = ('chanceNone','model','modt_p',)
@@ -3059,15 +3043,14 @@ class MreLvln(MreLeveledList):
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
         MelFid(b'LVLG', 'glob'),
-        MreLeveledList.MelLlct(),
-        MreLeveledList.MelLvlo(),
+        MelLLItems(),
         MelString(b'MODL','model'),
         MelBase(b'MODT','modt_p'),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvsp(MreLeveledList):
+class MreLvsp(MreLeveledListBase):
     """Leveled Spell."""
     rec_sig = b'LVSP'
 
@@ -3078,8 +3061,7 @@ class MreLvsp(MreLeveledList):
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MreLeveledList.MelLlct(),
-        MreLeveledList.MelLvlo(with_coed=False),
+        MelLLItems(with_coed=False),
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -36,6 +36,22 @@ from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
 from ..exception import ModError, ModSizeError
 
 #------------------------------------------------------------------------------
+class AMelLLItems(MelSequential):
+    """Base class for handling the LVLO and LLCT subrecords defining leveled
+    list items in Skyrim and newer games."""
+    def __init__(self, lvl_elements: list, with_coed=True):
+        final_elements = lvl_elements.copy()
+        final_sort_attrs = ('level', 'listId', 'count')
+        if with_coed:
+            final_elements.append(MelCoed())
+            final_sort_attrs += ('itemCondition', 'owner', 'glob')
+        super().__init__(
+            MelCounter(MelUInt8(b'LLCT', 'entry_count'), counts='entries'),
+            MelSorted(MelGroups('entries', *final_elements),
+                sort_by_attrs=final_sort_attrs),
+        )
+
+#------------------------------------------------------------------------------
 class MelActiFlags(MelUInt16Flags):
     """Handles the FNAM (Flags) subrecord in ACTI records."""
     _acti_flags = Flags.from_names(
