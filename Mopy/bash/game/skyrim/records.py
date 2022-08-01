@@ -223,30 +223,6 @@ class MelItemsCounter(MelCounter):
                                               counts='items')
 
 #------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase):
-    """Skyrim Leveled item/creature/spell list. Defines some common
-    subrecords."""
-    __slots__ = []
-
-    class MelLlct(MelCounter):
-        def __init__(self):
-            super().__init__(MelUInt8(b'LLCT', 'entry_count'),
-                counts='entries')
-
-    class MelLvlo(MelSorted):
-        def __init__(self, with_coed=True):
-            lvl_elements = [
-                MelStruct(b'LVLO', ['H', '2s', 'I', 'H', '2s'], 'level',
-                    'unknown1', (FID, 'listId'), ('count', 1), 'unknown2'),
-            ]
-            lvl_sort_attrs = ('level', 'listId', 'count')
-            if with_coed:
-                lvl_elements.append(MelCoed())
-                lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
-            super().__init__(MelGroups('entries', *lvl_elements),
-                sort_by_attrs=lvl_sort_attrs)
-
-#------------------------------------------------------------------------------
 class MelLinkedReferences(MelSorted):
     """The Linked References for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
@@ -1206,6 +1182,30 @@ class MelVmad(MelBase):
         if vmad.special_data and record._rec_sig in self._handler_map:
             self._get_special_handler(record._rec_sig).map_fids(
                 vmad.special_data, function, save_fids)
+
+#------------------------------------------------------------------------------
+class MreLeveledList(MreLeveledListBase):
+    """Skyrim Leveled item/creature/spell list. Defines some common
+    subrecords."""
+    __slots__ = []
+
+    class MelLlct(MelCounter):
+        def __init__(self):
+            super().__init__(MelUInt8(b'LLCT', 'entry_count'),
+                counts='entries')
+
+    class MelLvlo(MelSorted):
+        def __init__(self, with_coed=True):
+            lvl_elements = [
+                MelStruct(b'LVLO', ['H', '2s', 'I', 'H', '2s'], 'level',
+                    'unknown1', (FID, 'listId'), ('count', 1), 'unknown2'),
+            ]
+            lvl_sort_attrs = ('level', 'listId', 'count')
+            if with_coed:
+                lvl_elements.append(MelCoed())
+                lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
+            super().__init__(MelGroups('entries', *lvl_elements),
+                sort_by_attrs=lvl_sort_attrs)
 
 #------------------------------------------------------------------------------
 # Skyrim Records --------------------------------------------------------------

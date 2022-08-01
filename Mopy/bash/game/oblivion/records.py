@@ -145,26 +145,6 @@ class MelLevListLvlo(MelTruncatedStruct):
             unpacked_val = (unpacked_val[0], null2, unpacked_val[1])
         return super(MelLevListLvlo, self)._pre_process_unpacked(unpacked_val)
 
-class MreLeveledList(MreLeveledListBase):
-    """Leveled item/creature/spell list."""
-    top_copy_attrs = ('script_fid','template','chanceNone',)
-
-    melSet = MelSet(
-        MelEdid(),
-        MelLevListLvld(),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelScript(), # LVLC only
-        MelFid(b'TNAM','template'),
-        MelSorted(MelGroups('entries',
-            MelLevListLvlo(b'LVLO', [u'h', u'2s', u'I', u'h', u'2s'],
-                           u'level', u'unused1',
-                           (FID, u'listId'), (u'count', 1),
-                           u'unused2', old_versions={u'iI'}),
-        ), sort_by_attrs=('level', 'listId', 'count')),
-        MelNull(b'DATA'),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
 #------------------------------------------------------------------------------
 class MelOwnershipTes4(MelOwnership):
     """Handles XOWN, XRNK, and XGLB for cells and cell children."""
@@ -460,6 +440,27 @@ class MreHasEffects(object):
             if not is_effect_hostile:
                 return False
         return True
+
+#------------------------------------------------------------------------------
+class MreLeveledList(MreLeveledListBase):
+    """Leveled item/creature/spell list."""
+    top_copy_attrs = ('script_fid','template','chanceNone',)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelLevListLvld(),
+        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelScript(), # LVLC only
+        MelFid(b'TNAM','template'),
+        MelSorted(MelGroups('entries',
+            MelLevListLvlo(b'LVLO', [u'h', u'2s', u'I', u'h', u'2s'],
+                           u'level', u'unused1',
+                           (FID, u'listId'), (u'count', 1),
+                           u'unused2', old_versions={u'iI'}),
+        ), sort_by_attrs=('level', 'listId', 'count')),
+        MelNull(b'DATA'),
+    )
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------

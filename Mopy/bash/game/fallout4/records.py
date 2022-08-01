@@ -105,30 +105,6 @@ class MelFtyp(MelFid):
         super().__init__(b'FTYP', 'forced_loc_ref_type')
 
 #------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase): ##: some duplication with skyrim
-    """Fallout 4 leveled list. Defines some common subrecords."""
-    __slots__ = []
-
-    class MelLlct(MelCounter):
-        def __init__(self):
-            super().__init__(MelUInt8(b'LLCT', 'entry_count'),
-                counts='entries')
-
-    class MelLvlo(MelSorted):
-        def __init__(self, with_coed=True):
-            lvl_elements = [
-                MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'], 'level',
-                    'unused1', (FID, 'listId'), ('count', 1), 'chance_none',
-                    'unused2'),
-            ]
-            lvl_sort_attrs = ('level', 'listId', 'count')
-            if with_coed:
-                lvl_elements.append(MelCoed())
-                lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
-            super().__init__(MelGroups('entries', *lvl_elements),
-                sort_by_attrs=lvl_sort_attrs)
-
-#------------------------------------------------------------------------------
 class MelNativeTerminal(MelFid):
     """Handles the common NTRM (Native Terminal) subrecord."""
     def __init__(self):
@@ -170,6 +146,30 @@ class MelSoundCrafting(MelFid):
 class MelVmad(MelNull): # TODO(inf) Refactor Skyrim's MelVmad and remove this
     def __init__(self):
         super().__init__(b'VMAD')
+
+#------------------------------------------------------------------------------
+class MreLeveledList(MreLeveledListBase): ##: some duplication with skyrim
+    """Fallout 4 leveled list. Defines some common subrecords."""
+    __slots__ = []
+
+    class MelLlct(MelCounter):
+        def __init__(self):
+            super().__init__(MelUInt8(b'LLCT', 'entry_count'),
+                counts='entries')
+
+    class MelLvlo(MelSorted):
+        def __init__(self, with_coed=True):
+            lvl_elements = [
+                MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'], 'level',
+                    'unused1', (FID, 'listId'), ('count', 1), 'chance_none',
+                    'unused2'),
+            ]
+            lvl_sort_attrs = ('level', 'listId', 'count')
+            if with_coed:
+                lvl_elements.append(MelCoed())
+                lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
+            super().__init__(MelGroups('entries', *lvl_elements),
+                sort_by_attrs=lvl_sort_attrs)
 
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------

@@ -44,6 +44,12 @@ class MelModel(MelGroup):
         super().__init__('model', MelString(b'MODL', 'modPath'))
 
 #------------------------------------------------------------------------------
+class MelMWId(MelString): # needed everywhere, so put it early
+    """Wraps MelString to define a common NAME handler."""
+    def __init__(self):
+        super().__init__(b'NAME', 'mw_id')
+
+#------------------------------------------------------------------------------
 class MelAIData(MelStruct):
     """Handles the AIDT subrecord shared between CREA and NPC_."""
     _ai_flags = Flags.from_names(
@@ -127,43 +133,29 @@ class MelDestinations(MelGroups):
         )
 
 #------------------------------------------------------------------------------
+class MelEnchantmentTes3(MelString):
+    """Handles ENAM, Morrowind's version of EITM."""
+    def __init__(self):
+        super().__init__(b'ENAM', 'enchantment')
+
+#------------------------------------------------------------------------------
+class MelFullTes3(MelString):
+    """Handles FNAM, Morrowind's version of FULL."""
+    def __init__(self):
+        super().__init__(b'FNAM', 'full')
+
+#------------------------------------------------------------------------------
+class MelIconTes3(MelIcons):
+    """Handles ITEX, Morrowind's version of ICON."""
+    def __init__(self):
+        super().__init__(icon_sig=b'ITEX', mico_attr='')
+
+#------------------------------------------------------------------------------
 class MelItems(MelGroups):
     """Wraps MelGroups for the common task of defining a list of items."""
     def __init__(self):
         super(MelItems, self).__init__(u'items',
             MelStruct(b'NPCO', [u'I', u'32s'], u'count', (FixedString(32), u'item')),
-        )
-
-#------------------------------------------------------------------------------
-class MelMWEnchantment(MelString):
-    """Handles ENAM, Morrowind's version of EITM."""
-    def __init__(self):
-        super(MelMWEnchantment, self).__init__(b'ENAM', u'enchantment')
-
-#------------------------------------------------------------------------------
-class MelMWFull(MelString):
-    """Defines FNAM, Morrowind's version of FULL."""
-    def __init__(self):
-        super(MelMWFull, self).__init__(b'FNAM', u'full')
-
-#------------------------------------------------------------------------------
-class MelMWIcon(MelIcons):
-    """Handles the common ITEX record, Morrowind's version of ICON."""
-    def __init__(self):
-        super(MelMWIcon, self).__init__(icon_sig=b'ITEX', mico_attr=u'')
-
-#------------------------------------------------------------------------------
-class MelMWId(MelString):
-    """Wraps MelString to define a common NAME handler."""
-    def __init__(self):
-        super(MelMWId, self).__init__(b'NAME', u'mw_id')
-
-#------------------------------------------------------------------------------
-class MelMWSpells(MelGroups):
-    """Handles NPCS, Morrowind's version of SPLO."""
-    def __init__(self):
-        super(MelMWSpells, self).__init__(u'spells',
-            MelFixedString(b'NPCS', u'spell_id', 32),
         )
 
 #------------------------------------------------------------------------------
@@ -209,6 +201,14 @@ class MelScriptId(MelString):
     """Handles the common SCRI subrecord."""
     def __init__(self):
         super(MelScriptId, self).__init__(b'SCRI', u'script_id'),
+
+#------------------------------------------------------------------------------
+class MelSpellsTes3(MelGroups):
+    """Handles NPCS, Morrowind's version of SPLO."""
+    def __init__(self):
+        super().__init__('spells',
+            MelFixedString(b'NPCS', 'spell_id', 32),
+        )
 
 #------------------------------------------------------------------------------
 class MreLeveledList(MreLeveledListBase):
@@ -270,7 +270,7 @@ class MreActi(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelScriptId(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -285,7 +285,7 @@ class MreAlch(MelRecord):
         MelModel(),
         MelString(b'TEXT', u'inventory_icon'),
         MelScriptId(),
-        MelMWFull(),
+        MelFullTes3(),
         MelStruct(b'ALDT', [u'f', u'2I'], u'potion_weight', u'potion_value',
             u'potion_auto_calc'),
         MelEffectsTes3(),
@@ -300,11 +300,11 @@ class MreAppa(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelScriptId(),
         MelStruct(b'AADT', [u'I', u'2f', u'I'], u'appa_type', u'appa_quality',
             u'appa_weight', u'appa_value'),
-        MelMWIcon(),
+        MelIconTes3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -316,13 +316,13 @@ class MreArmo(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelScriptId(),
         MelStruct(b'AODT', [u'I', u'f', u'4I'], u'armo_type', u'armo_weight',
             u'armo_value', u'armo_health', u'enchant_points', u'armor_rating'),
-        MelMWIcon(),
+        MelIconTes3(),
         MelArmorData(),
-        MelMWEnchantment(),
+        MelEnchantmentTes3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -352,13 +352,13 @@ class MreBook(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelStruct(b'BKDT', [u'f', u'2I', u'i', u'I'], u'book_weight', u'book_value',
             (_scroll_flags, u'scroll_flags'), u'skill_id', u'enchant_points'),
         MelScriptId(),
-        MelMWIcon(),
+        MelIconTes3(),
         MelString(b'TEXT', u'book_text'),
-        MelMWEnchantment(),
+        MelEnchantmentTes3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -369,8 +369,8 @@ class MreBsgn(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelMWFull(),
-        MelMWSpells(),
+        MelFullTes3(),
+        MelSpellsTes3(),
         MelString(b'TNAM', u'texture_filename'),
         MelDescription(),
     )
@@ -452,7 +452,7 @@ class MreClas(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelMWFull(),
+        MelFullTes3(),
         ##: UESP says 'alternating minor/major' skills - not sure what exactly
         # it means, check with real data
         MelStruct(b'CLDT', [u'15I'], u'primary1', u'primary2',
@@ -471,13 +471,13 @@ class MreClot(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelStruct(b'CTDT', [u'I', u'f', u'2H'], u'clot_type', u'clot_weight',
             u'clot_value', u'enchant_points'),
         MelScriptId(),
-        MelMWIcon(),
+        MelIconTes3(),
         MelArmorData(),
-        MelMWEnchantment(),
+        MelEnchantmentTes3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -495,7 +495,7 @@ class MreCont(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelFloat(b'CNDT', u'cont_weight'),
         MelUInt32Flags(b'FLAG', u'cont_flags', _cont_flags),
         MelItems(),
@@ -525,7 +525,7 @@ class MreCrea(MelRecord):
         MelMWId(),
         MelModel(),
         MelString(b'CNAM', u'sound_gen_creature'),
-        MelMWFull(),
+        MelFullTes3(),
         MelScriptId(),
         MelStruct(b'NPDT', [u'24I'], u'crea_type', u'crea_level',
             u'crea_strength', u'crea_intelligence', u'crea_willpower',
@@ -540,7 +540,7 @@ class MreCrea(MelRecord):
             'blood_type'),
         MelRefScale(),
         MelItems(),
-        MelMWSpells(),
+        MelSpellsTes3(),
         MelAIData(),
         MelDestinations(),
         MelAIPackages(),
@@ -566,7 +566,7 @@ class MreDoor(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelScriptId(),
         MelString(b'SNAM', u'sound_open'),
         MelString(b'ANAM', u'sound_close'),
@@ -593,7 +593,7 @@ class MreFact(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelMWFull(),
+        MelFullTes3(),
         MelGroups(u'ranks', # always 10
             MelString(b'RNAM', u'rank_name'),
         ),
@@ -709,14 +709,14 @@ class MreIngr(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelStruct(b'IRDT', [u'f', u'I', u'12i'], u'ingr_weight', u'ingr_value',
             u'effect_index_1', u'effect_index_2', u'effect_index_3',
             u'effect_index_4', u'skill_id_1', u'skill_id_2', u'skill_id_3',
             u'skill_id_4', u'attribute_id_1', u'attribute_id_2',
             u'attribute_id_3', u'attribute_id_4'),
         MelScriptId(),
-        MelMWIcon(),
+        MelIconTes3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -776,8 +776,8 @@ class MreLigh(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
-        MelMWIcon(),
+        MelFullTes3(),
+        MelIconTes3(),
         MelStruct(b'LHDT', [u'f', u'I', u'i', u'I', u'4B', u'I'], u'light_weight', u'light_value',
                   u'light_time', u'light_radius', u'light_red', u'light_green',
                   u'light_blue', u'unused_alpha', (_light_flags, u'flags')),
@@ -794,11 +794,11 @@ class MreLock(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelStruct(b'LKDT', [u'f', u'I', u'f', u'I'], u'lock_weight', u'lock_value',
             u'lock_quality', u'lock_uses'),
         MelScriptId(),
-        MelMWIcon(),
+        MelIconTes3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -835,7 +835,7 @@ class MreMgef(MelRecord):
         MelStruct(b'MEDT', [u'I', u'f', u'4I', u'3f'], u'school', u'base_cost',
             (_mgef_flags, u'flags'), u'mgef_red', u'mgef_green', u'mgef_blue',
             u'speed_x', u'size_x', u'size_cap'),
-        MelMWIcon(),
+        MelIconTes3(),
         MelString(b'PTEX', u'particle_texture'),
         MelString(b'BSND', u'boltSound'),
         MelString(b'CSND', u'castingSound'),
@@ -857,11 +857,11 @@ class MreMisc(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelStruct(b'MCDT', [u'f', u'I', u'4s'], u'misc_weight', u'misc_value',
             u'unknown1'),
         MelScriptId(),
-        MelMWIcon(),
+        MelIconTes3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -900,7 +900,7 @@ class MreNpc(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelString(b'RNAM', u'race_name'),
         MelString(b'CNAM', u'class_name'),
         MelString(b'ANAM', u'faction_name'),
@@ -920,7 +920,7 @@ class MreNpc(MelRecord):
         MelStruct(b'FLAG', ['B', '3s'], ('npc_flags', _npc_flags),
             'blood_type'),
         MelItems(),
-        MelMWSpells(),
+        MelSpellsTes3(),
         MelAIData(),
         MelDestinations(),
         MelAIPackages(),
@@ -950,10 +950,10 @@ class MreProb(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelStruct(b'PBDT', [u'f', u'I', u'f', u'I'], u'probe_weight', u'probe_value',
             u'probe_quality', u'probe_uses'),
-        MelMWIcon(),
+        MelIconTes3(),
         MelScriptId(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -967,7 +967,7 @@ class MreRace(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelMWFull(),
+        MelFullTes3(),
         # Bad names to match other games (race patcher)
         MelStruct(b'RADT', [u'14i', u'16I', u'4f', u'I'], u'skill1', u'skill1Boost', u'skill2',
             u'skill2Boost', u'skill3', u'skill3Boost', u'skill4',
@@ -979,7 +979,7 @@ class MreRace(MelRecord):
             u'femaleEndurance', u'malePersonality', u'femalePersonality',
             u'maleLuck', u'femaleLuck', u'maleHeight', u'femaleHeight',
             u'maleWeight', u'femaleWeight', (_race_flags, u'race_flags')),
-        MelMWSpells(),
+        MelSpellsTes3(),
         MelDescription(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -991,7 +991,7 @@ class MreRegn(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelMWFull(),
+        MelFullTes3(),
         MelTruncatedStruct(b'WEAT', [u'10B'], u'chance_clear', u'chance_cloudy',
             u'chance_foggy', u'chance_overcast', u'chance_rain',
             u'chance_thunder', u'chance_ash', u'chance_blight',
@@ -1013,10 +1013,10 @@ class MreRepa(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelStruct(b'RIDT', [u'f', u'2I', u'f'], u'repa_weight', u'repa_value',
             u'repa_uses', u'repa_quality'),
-        MelMWIcon(),
+        MelIconTes3(),
         MelScriptId(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1092,7 +1092,7 @@ class MreSpel(MelRecord):
 
     melSet = MelSet(
         MelMWId(),
-        MelMWFull(),
+        MelFullTes3(),
         # Bad names to match other games (tweaks)
         MelStruct(b'SPDT', [u'3I'], u'spellType', u'cost',
             (_spell_flags, u'spell_flags')),
@@ -1133,14 +1133,14 @@ class MreWeap(MelRecord):
     melSet = MelSet(
         MelMWId(),
         MelModel(),
-        MelMWFull(),
+        MelFullTes3(),
         MelStruct(b'WPDT', [u'f', u'I', u'2H', u'2f', u'H', u'6B', u'I'], u'weapon_weight', u'weapon_value',
             u'weapon_type', u'weapon_health', u'weapon_speed', u'weapon_reach',
             u'enchant_points', u'chop_minimum', u'chop_maximum',
             u'slash_minimum', u'slash_maximum', u'thrust_minimum',
             u'thrust_maximum', (_weapon_flags, u'weapon_flags')),
-        MelMWIcon(),
-        MelMWEnchantment(),
+        MelIconTes3(),
+        MelEnchantmentTes3(),
         MelScriptId(),
     )
     __slots__ = melSet.getSlotsUsed()

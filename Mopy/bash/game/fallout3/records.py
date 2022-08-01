@@ -114,6 +114,12 @@ class MelModel(MelGroup):
         super().__init__(attr, *model_elements)
 
 #------------------------------------------------------------------------------
+class MelActivationPrompt(MelString):
+    """Handles the common XATO subrecord, introduced in FNV."""
+    def __init__(self):
+        super().__init__(b'XATO', 'activation_prompt')
+
+#------------------------------------------------------------------------------
 class MreActor(MreActorBase):
     """Creatures and NPCs."""
     TemplateFlags = Flags.from_names(
@@ -218,48 +224,30 @@ class MelItems(MelSorted):
         ), sort_by_attrs=('item', 'count', 'condition', 'owner', 'glob'))
 
 #------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase):
-    """Leveled item/creature/spell list.."""
-    top_copy_attrs = (u'chanceNone', u'glob')
-    entry_copy_attrs = (u'listId', u'level', u'count', u'owner', u'condition')
+class MelLevListLvld(MelUInt8):
+    """Subclass to support alternate format."""
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super().load_mel(record, ins, sub_type, size_, *debug_strs)
+        if record.chanceNone > 127:
+            record.flags.calcFromAllLevels = True
+            record.chanceNone &= 127
 
-    class MelLevListLvld(MelUInt8):
-        """Subclass to support alternate format."""
-        def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-            super(MreLeveledList.MelLevListLvld, self).load_mel(record, ins,
-                                                                sub_type,
-                                                                size_, *debug_strs)
-            if record.chanceNone > 127:
-                record.flags.calcFromAllLevels = True
-                record.chanceNone &= 127
+##: Old format might be h2sI instead, which would retire this whole class
+class MelLevListLvlo(MelTruncatedStruct):
+    """Older format skips unused1, which is in the middle of the record."""
+    def _pre_process_unpacked(self, unpacked_val):
+        if len(unpacked_val) == 2:
+            # Pad it in the middle, then let our parent deal with the rest
+            unpacked_val = (unpacked_val[0], null2, unpacked_val[1])
+        return super()._pre_process_unpacked(unpacked_val)
 
-    ##: Old format might be h2sI instead, which would retire this whole class
-    class MelLevListLvlo(MelTruncatedStruct):
-        """Older format skips unused1, which is in the middle of the record."""
-        def _pre_process_unpacked(self, unpacked_val):
-            if len(unpacked_val) == 2:
-                # Pad it in the middle, then let our parent deal with the rest
-                unpacked_val = (unpacked_val[0], null2, unpacked_val[1])
-            return super(MreLeveledList.MelLevListLvlo,
-                self)._pre_process_unpacked(unpacked_val)
-
-    melSet = MelSet(
-        MelEdid(),
-        MelBounds(),
-        MelLevListLvld(b'LVLD', u'chanceNone'),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelFid(b'LVLG', u'glob'),
-        MelSorted(MelGroups(u'entries',
-            MelLevListLvlo(b'LVLO', [u'h', u'2s', u'I', u'h', u'2s'], u'level',
-                           u'unused1', (FID, u'listId'), (u'count', 1),
-                           u'unused2', old_versions={u'iI'}),
-            MelOptStruct(b'COED', [u'2I', u'f'], (FID, u'owner'), (FID, u'glob'),
-                         (u'condition', 1.0)),
-        ), sort_by_attrs=('level', 'listId', 'count', 'condition', 'owner',
-                          'glob')),
-        MelModel(),
-    )
-    __slots__ = melSet.getSlotsUsed()
+#------------------------------------------------------------------------------
+class MelLinkedDecals(MelSorted):
+    """Linked Decals for a reference record (REFR, ACHR, etc.)."""
+    def __init__(self):
+        super().__init__(MelGroups('linkedDecals',
+            MelStruct(b'XDCR', ['2I'], (FID, 'reference'), 'unknown'),
+        ), sort_by_attrs='reference')
 
 #------------------------------------------------------------------------------
 class MelRaceHeadPart(MelGroup):
@@ -294,17 +282,28 @@ class MelRaceHeadPart(MelGroup):
         super(MelRaceHeadPart, self).dumpData(record, out)
 
 #------------------------------------------------------------------------------
-class MelLinkedDecals(MelSorted):
-    """Linked Decals for a reference record (REFR, ACHR, etc.)."""
-    def __init__(self):
-        super(MelLinkedDecals, self).__init__(MelGroups(u'linkedDecals',
-            MelStruct(b'XDCR', [u'2I'], (FID, u'reference'), u'unknown'),
-        ), sort_by_attrs=u'reference')
+class MreLeveledList(MreLeveledListBase):
+    """Leveled item/creature/spell list.."""
+    top_copy_attrs = (u'chanceNone', u'glob')
+    entry_copy_attrs = (u'listId', u'level', u'count', u'owner', u'condition')
 
-class MelActivationPrompt(MelString):
-    """Handles the common XATO subrecord, introduced in FNV."""
-    def __init__(self):
-        super().__init__(b'XATO', 'activation_prompt')
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelLevListLvld(b'LVLD', u'chanceNone'),
+        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelFid(b'LVLG', u'glob'),
+        MelSorted(MelGroups(u'entries',
+            MelLevListLvlo(b'LVLO', [u'h', u'2s', u'I', u'h', u'2s'], u'level',
+                           u'unused1', (FID, u'listId'), (u'count', 1),
+                           u'unused2', old_versions={u'iI'}),
+            MelOptStruct(b'COED', [u'2I', u'f'], (FID, u'owner'), (FID, u'glob'),
+                         (u'condition', 1.0)),
+        ), sort_by_attrs=('level', 'listId', 'count', 'condition', 'owner',
+                          'glob')),
+        MelModel(),
+    )
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 # Fallout3 Records ------------------------------------------------------------
