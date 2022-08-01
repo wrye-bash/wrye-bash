@@ -29,7 +29,7 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
     MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
-    AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam
+    AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, AttrValDecider
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -254,9 +254,35 @@ class MreAddn(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreAech(MelRecord):
+    """Audio Effect Chain."""
+    rec_sig = b'AECH'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelGroups('chain_effects',
+            MelUInt32(b'KNAM', 'ae_type'),
+            MelUnion({
+                # BSOverdrive - 'Overdrive'
+                0x864804BE: MelStruct(b'DNAM', ['I', '4f'], 'ae_enabled',
+                    'od_input_gain', 'od_output_gain', 'od_upper_threshold',
+                    'od_lower_threshold'),
+                # BSStateVariableFilter - 'State Variable Filter'
+                0xEF575F7F: MelStruct(b'DNAM', ['I', '2f', 'I'], 'ae_enabled',
+                    'svf_center_freq', 'svf_q_value', 'svf_filter_mode'),
+                # BSDelayEffect - 'Delay Effect'
+                0x18837B4F: MelStruct(b'DNAM', ['I', '2f', 'I'], 'ae_enabled',
+                    'de_feedback_pct', 'de_wet_mix_pct', 'de_delay_ms'),
+            }, decider=AttrValDecider('ae_type')),
+        ),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):

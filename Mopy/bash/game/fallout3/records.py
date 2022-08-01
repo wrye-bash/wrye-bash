@@ -1309,6 +1309,7 @@ class MreFurn(MelRecord):
 class MreGmst(MreGmstBase):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreGras(MelRecord):

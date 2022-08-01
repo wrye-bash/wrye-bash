@@ -1225,6 +1225,7 @@ class MreFurn(MelRecord):
 
 class MreGmst(MreGmstBase):
     """Game Setting."""
+    __slots__ = ()
 
 class MreGras(MelRecord):
     """Grass."""
