@@ -231,7 +231,7 @@ condition_function_data = {
     402:  (u'IsBribedbyPlayer', 0, 0),
     403:  (u'GetRelationshipRank', 2, 0),
     # We set the second to 'unused' here to receive it as 4 bytes, which we
-    # then handle inside MelCtdaFo3.
+    # then handle inside _MelCtdaFo3.
     407:  (u'GetVATSValue', 1, 0),
     408:  (u'IsKiller', 2, 0),
     409:  (u'IsKillerObject', 2, 0),
@@ -487,17 +487,17 @@ statsTypes = {
 #------------------------------------------------------------------------------
 soundsTypes = {
     b'ACTI': (u'soundLooping', u'soundActivation'),
-    b'ADDN': (u'ambientSound',),
+    b'ADDN': ('soundLooping',),
     b'ALCH': (u'dropSound', u'pickupSound', u'soundConsume'),
     b'AMMO': (u'pickupSound', u'dropSound'),
     b'APPA': (u'pickupSound', u'dropSound'),
     b'ARMA': (u'footstepSound',),
     b'ARMO': (u'pickupSound', u'dropSound'),
-    b'ASPC': (u'ambientSound', u'regionData', u'reverb'),
+    b'ASPC': ('soundLooping', 'regionData', 'reverb'),
     b'BOOK': (u'pickupSound', u'dropSound'),
     b'CONT': (u'soundOpen', u'soundClose'),
     b'DOOR': (u'soundOpen', u'soundClose', u'soundLoop'),
-    b'EFSH': (u'ambientSound',),
+    b'EFSH': (u'ambientSound',), ##: This is also in graphicsTypes!
     b'EXPL': (u'sound1', u'sound2'),
     b'FLOR': (u'harvestSound',),
     b'HAZD': (u'sound',),

@@ -214,7 +214,7 @@ condition_function_data = {
     399:  (u'IsWeaponInList', 2, 0),
     403:  (u'HasFriendDisposition', 0, 0),
     # We set the second to 'unused' here to receive it as 4 bytes, which we
-    # then handle inside MelCtdaFo3.
+    # then handle inside _MelCtdaFo3.
     408:  (u'GetVATSValue', 1, 0),
     409:  (u'IsKiller', 2, 0),
     410:  (u'IsKillerObject', 2, 0),
@@ -337,7 +337,7 @@ statsTypes = {
 #------------------------------------------------------------------------------
 soundsTypes = {
     b'ACTI': (u'soundLooping', u'soundActivation'),
-    b'ADDN': (u'ambientSound',),
+    b'ADDN': ('soundLooping',),
     b'ALCH': (u'dropSound', u'pickupSound', u'soundConsume'),
     b'ARMO': (u'pickupSound', u'dropSound'),
     b'ASPC': (u'soundLooping', u'useSoundFromRegion'),

@@ -27,7 +27,7 @@ from ...bolt import Flags, struct_pack, structs_cache, unpack_str16, \
     TrimmedFlags
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelSimpleArray, \
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelSimpleArray, MelWeight, \
     MreGmstBase, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
@@ -45,8 +45,9 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     vmad_qust_fragments_key, vmad_fragments_key, vmad_script_key, \
     vmad_qust_aliases_key, MelReflectedRefractedBy, perk_effect_key, \
     MelValueWeight, int_unpacker, MelCoed, MelSoundLooping, MelWaterType, \
-    MelSoundActivation, MelInteractionKeyword, MelConditionList, \
-    MelConditions, ANvnmContext
+    MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
+    MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
+    MelEffects, AMelLLItems, MelUnloadEvent, MelShortName
 from ...exception import ModError, ModSizeError, StateError
 
 _is_sse = bush.game.fsName in (
@@ -184,22 +185,6 @@ class MelDestructible(MelGroup):
         )
 
 #------------------------------------------------------------------------------
-class MelEffects(MelGroups):
-    """Represents ingredient/potion/enchantment/spell effects."""
-    def __init__(self):
-        MelGroups.__init__(self, u'effects',
-            MelFid(b'EFID', u'effect_formid'), # baseEffect
-            MelStruct(b'EFIT', [u'f', u'2I'], u'magnitude', u'area', u'duration'),
-            MelConditionList(),
-        )
-
-#------------------------------------------------------------------------------
-class MelEquipmentType(MelFid):
-    """Handles the common ETYP subrecord."""
-    def __init__(self):
-        super(MelEquipmentType, self).__init__(b'ETYP', u'equipment_type')
-
-#------------------------------------------------------------------------------
 class MelIdleHandler(MelGroup):
     """Occurs three times in PACK, so moved here to deduplicate the
     definition a bit."""
@@ -238,30 +223,6 @@ class MelItemsCounter(MelCounter):
                                               counts='items')
 
 #------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase):
-    """Skyrim Leveled item/creature/spell list. Defines some common
-    subrecords."""
-    __slots__ = []
-
-    class MelLlct(MelCounter):
-        def __init__(self):
-            super().__init__(MelUInt8(b'LLCT', 'entry_count'),
-                counts='entries')
-
-    class MelLvlo(MelSorted):
-        def __init__(self, with_coed=True):
-            lvl_elements = [
-                MelStruct(b'LVLO', ['H', '2s', 'I', 'H', '2s'], 'level',
-                    'unknown1', (FID, 'listId'), ('count', 1), 'unknown2'),
-            ]
-            lvl_sort_attrs = ('level', 'listId', 'count')
-            if with_coed:
-                lvl_elements.append(MelCoed())
-                lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
-            super().__init__(MelGroups('entries', *lvl_elements),
-                sort_by_attrs=lvl_sort_attrs)
-
-#------------------------------------------------------------------------------
 class MelLinkedReferences(MelSorted):
     """The Linked References for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
@@ -270,6 +231,15 @@ class MelLinkedReferences(MelSorted):
                 MelStruct(b'XLKR', [u'2I'], (FID, u'keyword_ref'),
                           (FID, u'linked_ref')),
             ), sort_by_attrs='keyword_ref')
+
+#------------------------------------------------------------------------------
+class MelLLItems(AMelLLItems):
+    """Handles the LVLO and LLCT subrecords defining leveled list items"""
+    def __init__(self, with_coed=True):
+        super().__init__([
+            MelStruct(b'LVLO', ['H', '2s', 'I', 'H', '2s'], 'level',
+                'unknown1', (FID, 'listId'), ('count', 1), 'unknown2')],
+            with_coed)
 
 #------------------------------------------------------------------------------
 class MelLocation(MelUnion):
@@ -1333,16 +1303,13 @@ class MreAddn(MelRecord):
     """Addon Node."""
     rec_sig = b'ADDN'
 
-    _AddnFlags = Flags.from_names((1, 'alwaysLoaded'))
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelSInt32(b'DATA', 'node_index'),
-        MelFid(b'SNAM', 'ambientSound'),
-        MelStruct(b'DNAM', [u'2H'], 'master_particle_system_cap',
-                  (_AddnFlags, 'addon_flags')),
+        MelNodeIndex(),
+        MelSoundLooping(),
+        MelAddnDnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1350,13 +1317,6 @@ class MreAddn(MelRecord):
 class MreAlch(MelRecord):
     """Ingestible."""
     rec_sig = b'ALCH'
-
-    IngestibleFlags = Flags.from_names(
-        (0, 'noAutoCalc'),
-        (1, 'isFood'),
-        (16, 'medicine'),
-        (17, 'poison'),
-    )
 
     melSet = MelSet(
         MelEdid(),
@@ -1370,10 +1330,8 @@ class MreAlch(MelRecord):
         MelSoundPickup(),
         MelSoundDrop(),
         MelEquipmentType(),
-        MelFloat(b'DATA', 'weight'),
-        MelStruct(b'ENIT', [u'i', u'2I', u'f', u'I'], u'value', (IngestibleFlags, u'flags'),
-                  (FID, u'addiction'), u'addictionChance',
-                  (FID, u'soundConsume')),
+        MelWeight(),
+        MelAlchEnit(),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1404,6 +1362,8 @@ class MreAmmo(MelRecord):
                 (FID, 'projectile'), (AmmoTypeFlags, 'flags'),
                 'damage', 'value', 'weight', old_versions={'2IfI'}),
         ),
+        # Skyrim has strings but this one isn't localized, so we can't use
+        # MelShortName here unfortunately
         MelString(b'ONAM', 'short_name'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1412,10 +1372,11 @@ class MreAmmo(MelRecord):
 class MreAnio(MelRecord):
     """Animated Object."""
     rec_sig = b'ANIO'
+
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelString(b'BNAM', 'unload_event'),
+        MelUnloadEvent(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1526,7 +1487,7 @@ class MreAspc(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelFid(b'SNAM', 'ambientSound'),
+        MelSoundLooping(),
         MelFid(b'RDAT', 'regionData'),
         MelFid(b'BNAM', 'reverb'),
     )
@@ -2444,6 +2405,7 @@ class MreFurn(MelRecord):
 class MreGmst(MreGmstBase):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreGras(MelRecord):
@@ -3057,7 +3019,7 @@ class MreLtex(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvli(MreLeveledList):
+class MreLvli(MreLeveledListBase):
     """Leveled Item."""
     rec_sig = b'LVLI'
     top_copy_attrs = ('chanceNone','glob',)
@@ -3068,13 +3030,12 @@ class MreLvli(MreLeveledList):
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
         MelFid(b'LVLG', 'glob'),
-        MreLeveledList.MelLlct(),
-        MreLeveledList.MelLvlo(),
+        MelLLItems(),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvln(MreLeveledList):
+class MreLvln(MreLeveledListBase):
     """Leveled NPC."""
     rec_sig = b'LVLN'
     top_copy_attrs = ('chanceNone','model','modt_p',)
@@ -3085,15 +3046,14 @@ class MreLvln(MreLeveledList):
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
         MelFid(b'LVLG', 'glob'),
-        MreLeveledList.MelLlct(),
-        MreLeveledList.MelLvlo(),
+        MelLLItems(),
         MelString(b'MODL','model'),
         MelBase(b'MODT','modt_p'),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvsp(MreLeveledList):
+class MreLvsp(MreLeveledListBase):
     """Leveled Spell."""
     rec_sig = b'LVSP'
 
@@ -3104,8 +3064,7 @@ class MreLvsp(MreLeveledList):
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MreLeveledList.MelLlct(),
-        MreLeveledList.MelLvlo(with_coed=False),
+        MelLLItems(with_coed=False),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3472,7 +3431,7 @@ class MreNpc(MreActorBase):
         MelKeywords(),
         MelFid(b'CNAM', 'iclass'),
         MelFull(),
-        MelLString(b'SHRT', 'short_name'),
+        MelShortName(b'SHRT'),
         MelBase(b'DATA', 'marker'),
         MelStruct(b'DNAM', [u'36B', u'H', u'H', u'H', u'2s', u'f', u'B', u'3s'],
             'oneHandedSV','twoHandedSV','marksmanSV','blockSV','smithingSV',

@@ -33,19 +33,20 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelReferences, MelColorInterpolator, MelValueInterpolator, MelAnimations, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelPartialCounter, MelRaceParts, MelRelations, MelActorSounds, \
+    MelPartialCounter, MelRaceParts, MelRelations, MelActorSounds, MelWeight, \
     MelRaceVoices, MelBounds, null1, null2, MelScriptVars, MelSorted, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelSkipInterior, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
-    MelCtdaFo3, MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
+    MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelLists, MelSoundPickup, MelSoundDrop, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
-    MelSoundLooping, MelSoundActivation, MelWaterType
+    MelSoundLooping, MelSoundActivation, MelWaterType, MelConditionsFo3, \
+    MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -113,6 +114,12 @@ class MelModel(MelGroup):
         super().__init__(attr, *model_elements)
 
 #------------------------------------------------------------------------------
+class MelActivationPrompt(MelString):
+    """Handles the common XATO subrecord, introduced in FNV."""
+    def __init__(self):
+        super().__init__(b'XATO', 'activation_prompt')
+
+#------------------------------------------------------------------------------
 class MreActor(MreActorBase):
     """Creatures and NPCs."""
     TemplateFlags = Flags.from_names(
@@ -146,14 +153,6 @@ class MelBipedData(MelStruct):
             (self._general_flags, u'generalFlags'), u'biped_unused')
 
 #------------------------------------------------------------------------------
-class MelConditionsFo3(MelGroups):
-    """A list of conditions."""
-    def __init__(self):
-        # Note that reference can be a fid - handled in MelCtdaFo3.mapFids
-        super().__init__('conditions', MelCtdaFo3(suffix_fmt=['2I'],
-            suffix_elements=['runOn', 'reference'], old_suffix_fmts={'I', ''}))
-
-#------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
     """Represents a collection of destruction-related subrecords."""
     _dest_header_flags = TrimmedFlags.from_names('vats_targetable')
@@ -176,17 +175,6 @@ class MelDestructible(MelGroup):
         )
 
 #------------------------------------------------------------------------------
-class MelEffects(MelGroups):
-    """Represents ingredient/potion/enchantment/spell effects."""
-    def __init__(self):
-        super(MelEffects, self).__init__(u'effects',
-            MelFid(b'EFID', u'baseEffect'),
-            MelStruct(b'EFIT', [u'4I', u'i'], u'magnitude', u'area', u'duration',
-                u'recipient', u'actorValue'),
-            MelConditionsFo3(),
-        )
-
-#------------------------------------------------------------------------------
 class MelEmbeddedScript(MelSequential):
     """Handles an embedded script, a SCHR/SCDA/SCTX/SLSD/SCVR/SCRO/SCRV
     subrecord combo."""
@@ -205,7 +193,7 @@ class MelEmbeddedScript(MelSequential):
         )
 
 #------------------------------------------------------------------------------
-class MelEquipmentType(MelSInt32):
+class MelEquipmentTypeFo3(MelSInt32):
     """Handles the common ETYP subrecord."""
     def __init__(self):
         ##: On py3, we really need enums for records. This is a prime candidate
@@ -223,7 +211,7 @@ class MelEquipmentType(MelSInt32):
         # 11: 'Stimpak',
         # 12: 'Food',
         # 13: 'Alcohol'
-        super(MelEquipmentType, self).__init__(b'ETYP', u'equipment_type', -1)
+        super().__init__(b'ETYP', 'equipment_type', -1)
 
 #------------------------------------------------------------------------------
 class MelItems(MelSorted):
@@ -236,48 +224,30 @@ class MelItems(MelSorted):
         ), sort_by_attrs=('item', 'count', 'condition', 'owner', 'glob'))
 
 #------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase):
-    """Leveled item/creature/spell list.."""
-    top_copy_attrs = (u'chanceNone', u'glob')
-    entry_copy_attrs = (u'listId', u'level', u'count', u'owner', u'condition')
+class MelLevListLvld(MelUInt8):
+    """Subclass to support alternate format."""
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super().load_mel(record, ins, sub_type, size_, *debug_strs)
+        if record.chanceNone > 127:
+            record.flags.calcFromAllLevels = True
+            record.chanceNone &= 127
 
-    class MelLevListLvld(MelUInt8):
-        """Subclass to support alternate format."""
-        def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-            super(MreLeveledList.MelLevListLvld, self).load_mel(record, ins,
-                                                                sub_type,
-                                                                size_, *debug_strs)
-            if record.chanceNone > 127:
-                record.flags.calcFromAllLevels = True
-                record.chanceNone &= 127
+##: Old format might be h2sI instead, which would retire this whole class
+class MelLevListLvlo(MelTruncatedStruct):
+    """Older format skips unused1, which is in the middle of the record."""
+    def _pre_process_unpacked(self, unpacked_val):
+        if len(unpacked_val) == 2:
+            # Pad it in the middle, then let our parent deal with the rest
+            unpacked_val = (unpacked_val[0], null2, unpacked_val[1])
+        return super()._pre_process_unpacked(unpacked_val)
 
-    ##: Old format might be h2sI instead, which would retire this whole class
-    class MelLevListLvlo(MelTruncatedStruct):
-        """Older format skips unused1, which is in the middle of the record."""
-        def _pre_process_unpacked(self, unpacked_val):
-            if len(unpacked_val) == 2:
-                # Pad it in the middle, then let our parent deal with the rest
-                unpacked_val = (unpacked_val[0], null2, unpacked_val[1])
-            return super(MreLeveledList.MelLevListLvlo,
-                self)._pre_process_unpacked(unpacked_val)
-
-    melSet = MelSet(
-        MelEdid(),
-        MelBounds(),
-        MelLevListLvld(b'LVLD', u'chanceNone'),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
-        MelFid(b'LVLG', u'glob'),
-        MelSorted(MelGroups(u'entries',
-            MelLevListLvlo(b'LVLO', [u'h', u'2s', u'I', u'h', u'2s'], u'level',
-                           u'unused1', (FID, u'listId'), (u'count', 1),
-                           u'unused2', old_versions={u'iI'}),
-            MelOptStruct(b'COED', [u'2I', u'f'], (FID, u'owner'), (FID, u'glob'),
-                         (u'condition', 1.0)),
-        ), sort_by_attrs=('level', 'listId', 'count', 'condition', 'owner',
-                          'glob')),
-        MelModel(),
-    )
-    __slots__ = melSet.getSlotsUsed()
+#------------------------------------------------------------------------------
+class MelLinkedDecals(MelSorted):
+    """Linked Decals for a reference record (REFR, ACHR, etc.)."""
+    def __init__(self):
+        super().__init__(MelGroups('linkedDecals',
+            MelStruct(b'XDCR', ['2I'], (FID, 'reference'), 'unknown'),
+        ), sort_by_attrs='reference')
 
 #------------------------------------------------------------------------------
 class MelRaceHeadPart(MelGroup):
@@ -312,17 +282,28 @@ class MelRaceHeadPart(MelGroup):
         super(MelRaceHeadPart, self).dumpData(record, out)
 
 #------------------------------------------------------------------------------
-class MelLinkedDecals(MelSorted):
-    """Linked Decals for a reference record (REFR, ACHR, etc.)."""
-    def __init__(self):
-        super(MelLinkedDecals, self).__init__(MelGroups(u'linkedDecals',
-            MelStruct(b'XDCR', [u'2I'], (FID, u'reference'), u'unknown'),
-        ), sort_by_attrs=u'reference')
+class MreLeveledList(MreLeveledListBase):
+    """Leveled item/creature/spell list.."""
+    top_copy_attrs = (u'chanceNone', u'glob')
+    entry_copy_attrs = (u'listId', u'level', u'count', u'owner', u'condition')
 
-class MelActivationPrompt(MelString):
-    """Handles the common XATO subrecord, introduced in FNV."""
-    def __init__(self):
-        super().__init__(b'XATO', 'activation_prompt')
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelLevListLvld(b'LVLD', u'chanceNone'),
+        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelFid(b'LVLG', u'glob'),
+        MelSorted(MelGroups(u'entries',
+            MelLevListLvlo(b'LVLO', [u'h', u'2s', u'I', u'h', u'2s'], u'level',
+                           u'unused1', (FID, u'listId'), (u'count', 1),
+                           u'unused2', old_versions={u'iI'}),
+            MelOptStruct(b'COED', [u'2I', u'f'], (FID, u'owner'), (FID, u'glob'),
+                         (u'condition', 1.0)),
+        ), sort_by_attrs=('level', 'listId', 'count', 'condition', 'owner',
+                          'glob')),
+        MelModel(),
+    )
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 # Fallout3 Records ------------------------------------------------------------
@@ -451,9 +432,9 @@ class MreAddn(MelRecord):
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelSInt32(b'DATA', 'nodeIndex'),
-        MelFid(b'SNAM', u'ambientSound'),
-        MelStruct(b'DNAM', [u'H', u'2s'],'mastPartSysCap','unknown',),
+        MelNodeIndex(),
+        MelSoundLooping(),
+        MelAddnDnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -474,12 +455,12 @@ class MreAlch(MelRecord):
         MelDestructible(),
         MelSoundPickup(),
         MelSoundDrop(),
-        MelEquipmentType(),
-        MelFloat(b'DATA', 'weight'),
+        MelEquipmentTypeFo3(),
+        MelWeight(),
         MelStruct(b'ENIT', [u'i', u'B', u'3s', u'I', u'f', u'I'], u'value', (_flags, u'flags'),
                   u'unused1', (FID, u'withdrawalEffect'),
                   u'addictionChance', (FID, u'soundConsume')),
-        MelEffects(),
+        MelEffectsFo3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -506,7 +487,7 @@ class MreAmmo(MelRecord):
             b'DAT2', [u'2I', u'f', u'I', u'f'], 'projPerShot',
             (FID, u'projectile'), 'weight', (FID, 'consumedAmmo'),
             'consumedPercentage', old_versions={'2If'})),
-        MelString(b'ONAM', 'short_name'),
+        MelShortName(),
         fnv_only(MelString(b'QNAM', 'abbreviation')),
         fnv_only(MelFids('effects', MelFid(b'RCIL'))),
     )
@@ -543,7 +524,7 @@ class MreArma(MelRecord):
         MelModel(b'MOD3', 'femaleBody'),
         MelModel(b'MOD4', 'femaleWorld'),
         MelIcons2(),
-        MelEquipmentType(),
+        MelEquipmentTypeFo3(),
         MelStruct(b'DATA', [u'I', u'I', u'f'],'value','health','weight'),
         if_fnv(
             fo3_version=MelStruct(
@@ -580,7 +561,7 @@ class MreArmo(MelRecord):
         MelDestructible(),
         MelFid(b'REPL','repairList'),
         MelFid(b'BIPL','bipedModelList'),
-        MelEquipmentType(),
+        MelEquipmentTypeFo3(),
         MelSoundPickup(),
         MelSoundDrop(),
         MelStruct(b'DATA', [u'2i', u'f'],'value','health','weight'),
@@ -634,7 +615,7 @@ class MreAvif(MelRecord):
         MelFull(),
         MelDescription(),
         MelIcons(),
-        MelString(b'ANAM', 'short_name'),
+        MelShortName(b'ANAM'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1222,7 +1203,7 @@ class MreEnch(MelRecord):
         MelFull(),
         MelStruct(b'ENIT', [u'3I', u'B', u'3s'],'itemType','chargeAmount','enchantCost',
                   (_flags, u'flags'),'unused1'),
-        MelEffects(),
+        MelEffectsFo3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1316,6 +1297,7 @@ class MreFurn(MelRecord):
 class MreGmst(MreGmstBase):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreGras(MelRecord):
@@ -1634,10 +1616,10 @@ class MreIngr(MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelEquipmentType(),
-        MelFloat(b'DATA', 'weight'),
+        MelEquipmentTypeFo3(),
+        MelWeight(),
         MelStruct(b'ENIT', [u'i', u'B', u'3s'],'value',(_flags, u'flags'),'unused1'),
-        MelEffects(),
+        MelEffectsFo3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2934,7 +2916,7 @@ class MreSpel(MelRecord):
         MelFull(),
         MelStruct(b'SPIT', [u'3I', u'B', u'3s'], 'spellType', 'cost', 'level',
                   (SpellFlags, 'spell_flags'), 'unused1'),
-        MelEffects(),
+        MelEffectsFo3(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3196,7 +3178,7 @@ class MreWeap(MelRecord):
         MelFid(b'NAM0','ammo'),
         MelDestructible(),
         MelFid(b'REPL','repairList'),
-        MelEquipmentType(),
+        MelEquipmentTypeFo3(),
         MelFid(b'BIPL','bipedModelList'),
         MelSoundPickup(),
         MelSoundDrop(),
