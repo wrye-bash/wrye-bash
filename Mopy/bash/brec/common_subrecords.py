@@ -100,6 +100,21 @@ class MelAddnDnam(MelStruct):
             'addon_flags') # not really flags, behaves more like an enum
 
 #------------------------------------------------------------------------------
+class MelAlchEnit(MelStruct):
+    """Handles the ALCH subrecord ENIT (Effect Data)."""
+    _enit_flags = Flags.from_names(
+        (0,  'noAutoCalc'),
+        (1,  'isFood'),
+        (16, 'medicine'),
+        (17, 'poison'),
+    )
+
+    def __init__(self):
+        super().__init__(b'ENIT', ['i', '2I', 'f', 'I'], 'value',
+            (self._enit_flags, 'flags'), (FID, 'addiction'), 'addictionChance',
+            (FID, 'soundConsume'))
+
+#------------------------------------------------------------------------------
 class MelAnimations(MelSorted): ##: case insensitive
     """Handles the common KFFZ (Animations) subrecord."""
     def __init__(self):
@@ -231,6 +246,12 @@ class MelEnchantment(MelFid):
     """Represents the common enchantment/object effect subrecord."""
     def __init__(self, ench_sig=b'EITM'):
         super().__init__(ench_sig, 'enchantment')
+
+#------------------------------------------------------------------------------
+class MelEquipmentType(MelFid):
+    """Handles the common ETYP (Equipment Type) subrecord."""
+    def __init__(self):
+        super().__init__(b'ETYP', 'equipment_type')
 
 #------------------------------------------------------------------------------
 class MelFactionRanks(MelSorted):
@@ -688,6 +709,13 @@ class MelWeatherTypes(MelSorted):
         super().__init__(MelArray('weather_types',
             MelStruct(b'WLST', weather_fmt, *weather_elements),
         ), sort_by_attrs='weather')
+
+#------------------------------------------------------------------------------
+class MelWeight(MelFloat):
+    """Handles a common variant of the DATA subrecord that consists of a single
+    float denoting the record's weight."""
+    def __init__(self):
+        super().__init__(b'DATA', 'weight')
 
 #------------------------------------------------------------------------------
 class MelWorldBounds(MelSequential):

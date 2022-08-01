@@ -33,7 +33,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelReferences, MelColorInterpolator, MelValueInterpolator, MelAnimations, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelPartialCounter, MelRaceParts, MelRelations, MelActorSounds, \
+    MelPartialCounter, MelRaceParts, MelRelations, MelActorSounds, MelWeight, \
     MelRaceVoices, MelBounds, null1, null2, MelScriptVars, MelSorted, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelSkipInterior, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
@@ -198,7 +198,7 @@ class MelEmbeddedScript(MelSequential):
         )
 
 #------------------------------------------------------------------------------
-class MelEquipmentType(MelSInt32):
+class MelEquipmentTypeFo3(MelSInt32):
     """Handles the common ETYP subrecord."""
     def __init__(self):
         ##: On py3, we really need enums for records. This is a prime candidate
@@ -216,7 +216,7 @@ class MelEquipmentType(MelSInt32):
         # 11: 'Stimpak',
         # 12: 'Food',
         # 13: 'Alcohol'
-        super(MelEquipmentType, self).__init__(b'ETYP', u'equipment_type', -1)
+        super().__init__(b'ETYP', 'equipment_type', -1)
 
 #------------------------------------------------------------------------------
 class MelItems(MelSorted):
@@ -467,8 +467,8 @@ class MreAlch(MelRecord):
         MelDestructible(),
         MelSoundPickup(),
         MelSoundDrop(),
-        MelEquipmentType(),
-        MelFloat(b'DATA', 'weight'),
+        MelEquipmentTypeFo3(),
+        MelWeight(),
         MelStruct(b'ENIT', [u'i', u'B', u'3s', u'I', u'f', u'I'], u'value', (_flags, u'flags'),
                   u'unused1', (FID, u'withdrawalEffect'),
                   u'addictionChance', (FID, u'soundConsume')),
@@ -536,7 +536,7 @@ class MreArma(MelRecord):
         MelModel(b'MOD3', 'femaleBody'),
         MelModel(b'MOD4', 'femaleWorld'),
         MelIcons2(),
-        MelEquipmentType(),
+        MelEquipmentTypeFo3(),
         MelStruct(b'DATA', [u'I', u'I', u'f'],'value','health','weight'),
         if_fnv(
             fo3_version=MelStruct(
@@ -573,7 +573,7 @@ class MreArmo(MelRecord):
         MelDestructible(),
         MelFid(b'REPL','repairList'),
         MelFid(b'BIPL','bipedModelList'),
-        MelEquipmentType(),
+        MelEquipmentTypeFo3(),
         MelSoundPickup(),
         MelSoundDrop(),
         MelStruct(b'DATA', [u'2i', u'f'],'value','health','weight'),
@@ -1628,8 +1628,8 @@ class MreIngr(MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelEquipmentType(),
-        MelFloat(b'DATA', 'weight'),
+        MelEquipmentTypeFo3(),
+        MelWeight(),
         MelStruct(b'ENIT', [u'i', u'B', u'3s'],'value',(_flags, u'flags'),'unused1'),
         MelEffects(),
     )
@@ -3190,7 +3190,7 @@ class MreWeap(MelRecord):
         MelFid(b'NAM0','ammo'),
         MelDestructible(),
         MelFid(b'REPL','repairList'),
-        MelEquipmentType(),
+        MelEquipmentTypeFo3(),
         MelFid(b'BIPL','bipedModelList'),
         MelSoundPickup(),
         MelSoundDrop(),

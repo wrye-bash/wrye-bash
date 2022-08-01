@@ -27,9 +27,11 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelCounter, \
     MelArray, MreGmstBase, MelUInt8Flags, MelCoed, MelSorted, MelGroups, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
-    MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, \
+    MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
-    AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, AttrValDecider
+    AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
+    AttrValDecider, MelSoundPickup, MelSoundDrop, MelEquipmentType, \
+    MelDescription, MelEffects
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -159,6 +161,12 @@ class MelProperties(MelSorted):
         ))
 
 #------------------------------------------------------------------------------
+class MelSoundCrafting(MelFid):
+    """Handles the common CUSD (Sound - Crafting) subrecord."""
+    def __init__(self):
+        super().__init__(b'CUSD', 'sound_crafting')
+
+#------------------------------------------------------------------------------
 class MelVmad(MelNull): # TODO(inf) Refactor Skyrim's MelVmad and remove this
     def __init__(self):
         super().__init__(b'VMAD')
@@ -275,6 +283,31 @@ class MreAech(MelRecord):
                     'de_feedback_pct', 'de_wet_mix_pct', 'de_delay_ms'),
             }, decider=AttrValDecider('ae_type')),
         ),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAlch(MelRecord):
+    """Ingestible."""
+    rec_sig = b'ALCH'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelKeywords(),
+        MelModel(),
+        MelIcons(),
+        MelSoundPickup(),
+        MelSoundDrop(),
+        MelEquipmentType(),
+        MelSoundCrafting(),
+        MelDestructible(),
+        MelDescription(),
+        MelAlchEnit(),
+        MelLString(b'DNAM', 'addiction_name'),
+        MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
 

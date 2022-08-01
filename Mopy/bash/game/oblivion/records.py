@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelConditionsTes4, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
-    MelSoundLooping
+    MelSoundLooping, MelWeight
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -739,7 +739,7 @@ class MreAlch(MreHasEffects, MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelFloat(b'DATA', 'weight'),
+        MelWeight(),
         MelStruct(b'ENIT', [u'i', u'B', u'3s'],'value',(_flags, u'flags'),'unused1'),
         MelEffects(),
         MelEffectsObmeFull(),
@@ -1313,7 +1313,7 @@ class MreIngr(MreHasEffects, MelRecord):
         MelModel(),
         MelIcon(),
         MelScript(),
-        MelFloat(b'DATA', 'weight'),
+        MelWeight(),
         MelStruct(b'ENIT', [u'i', u'B', u'3s'],'value',(_flags, u'flags'),'unused1'),
         MelEffects(),
         MelEffectsObmeFull(),

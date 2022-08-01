@@ -31,7 +31,7 @@ from typing import Type
 from .advanced_elements import MelUnion, PartialLoadDecider, AttrValDecider, \
     MelTruncatedStruct, SignatureDecider, MelCounter
 from .basic_elements import MelBase, MelStruct, MelGroups, MelReadOnly, \
-    MelString, MelSequential, MelUInt32
+    MelString, MelSequential, MelUInt32, MelFid
 from .utils_constants import get_structs, FID
 from ..bolt import pack_int, pack_byte, attrgetter_cache, Flags, struct_pack, \
     struct_unpack
@@ -267,6 +267,16 @@ class MelConditions(MelSequential):
         super().__init__(
             MelCounter(MelUInt32(b'CITC', 'conditionCount'),
                 counts='conditions'),
+            MelConditionList(),
+        )
+
+class MelEffects(MelGroups):
+    """Represents effects in Skyrim and newer games - combination of EFID, EFIT
+    and CTDA."""
+    def __init__(self):
+        super().__init__('effects',
+            MelFid(b'EFID', 'effect_formid'), # Base Effect
+            MelStruct(b'EFIT', ['f', '2I'], 'magnitude', 'area', 'duration'),
             MelConditionList(),
         )
 

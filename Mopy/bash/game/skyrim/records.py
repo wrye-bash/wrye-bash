@@ -27,7 +27,7 @@ from ...bolt import Flags, struct_pack, structs_cache, unpack_str16, \
     TrimmedFlags
 from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelSimpleArray, \
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelSimpleArray, MelWeight, \
     MreGmstBase, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
@@ -46,7 +46,8 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     vmad_qust_aliases_key, MelReflectedRefractedBy, perk_effect_key, \
     MelValueWeight, int_unpacker, MelCoed, MelSoundLooping, MelWaterType, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
-    MelConditions, ANvnmContext, MelNodeIndex
+    MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
+    MelEffects
 from ...exception import ModError, ModSizeError, StateError
 
 _is_sse = bush.game.fsName in (
@@ -182,22 +183,6 @@ class MelDestructible(MelGroup):
                 MelBaseR(b'DSTF', 'dest_end_marker'),
             ),
         )
-
-#------------------------------------------------------------------------------
-class MelEffects(MelGroups):
-    """Represents ingredient/potion/enchantment/spell effects."""
-    def __init__(self):
-        MelGroups.__init__(self, u'effects',
-            MelFid(b'EFID', u'effect_formid'), # baseEffect
-            MelStruct(b'EFIT', [u'f', u'2I'], u'magnitude', u'area', u'duration'),
-            MelConditionList(),
-        )
-
-#------------------------------------------------------------------------------
-class MelEquipmentType(MelFid):
-    """Handles the common ETYP subrecord."""
-    def __init__(self):
-        super(MelEquipmentType, self).__init__(b'ETYP', u'equipment_type')
 
 #------------------------------------------------------------------------------
 class MelIdleHandler(MelGroup):
@@ -1348,13 +1333,6 @@ class MreAlch(MelRecord):
     """Ingestible."""
     rec_sig = b'ALCH'
 
-    IngestibleFlags = Flags.from_names(
-        (0, 'noAutoCalc'),
-        (1, 'isFood'),
-        (16, 'medicine'),
-        (17, 'poison'),
-    )
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -1367,10 +1345,8 @@ class MreAlch(MelRecord):
         MelSoundPickup(),
         MelSoundDrop(),
         MelEquipmentType(),
-        MelFloat(b'DATA', 'weight'),
-        MelStruct(b'ENIT', [u'i', u'2I', u'f', u'I'], u'value', (IngestibleFlags, u'flags'),
-                  (FID, u'addiction'), u'addictionChance',
-                  (FID, u'soundConsume')),
+        MelWeight(),
+        MelAlchEnit(),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
