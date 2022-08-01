@@ -444,6 +444,18 @@ class ImportActorsSpellsPatcher(ImportPatcher):
         # long_fid -> rec_sig
         self._spel_type = {}
 
+    def _index_spells(self, modFile):
+        """Helper method for indexing SPEL and LVSP types during initData."""
+        if bush.game.Esp.sort_lvsp_after_spel:
+            spel_type = self._spel_type
+            for spel_top_sig in self._spel_sigs:
+                if spel_top_sig not in modFile.tops: continue
+                for record in modFile.tops[spel_top_sig].getActiveRecords():
+                    # Don't worry about overwriting - record type collisions
+                    # are going to cause far worse problems than some
+                    # mis-sorted spells in the BP :)
+                    spel_type[record.fid] = record._rec_sig
+
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
@@ -458,6 +470,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
             if srcMod not in minfs: continue
             srcInfo = minfs[srcMod]
             srcFile = self._mod_file_read(srcInfo)
+            self._index_spells(srcFile)
             force_add = 'Actors.SpellsForceAdd' in srcInfo.getBashTags()
             for rsig in actor_sigs:
                 if rsig not in srcFile.tops: continue
@@ -470,6 +483,7 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                 else:
                     masterInfo = minfs[master]
                     masterFile = self._mod_file_read(masterInfo)
+                    self._index_spells(masterFile)
                     cachedMasters[master] = masterFile
                 for rsig in actor_sigs:
                     if rsig not in srcFile.tops or rsig not in masterFile.tops:
@@ -557,12 +571,9 @@ class ImportActorsSpellsPatcher(ImportPatcher):
                 if (fid in merged_deleted and
                         record.spells != merged_deleted[fid]['merged']):
                     patch_set(record.getTypeCopy())
-        if bush.game.Esp.sort_lvsp_after_spel:
-            # Track the record signatures of every LSVP/SPEL
-            spel_type = self._spel_type
-            for spel_top_sig in self._spel_sigs:
-                for record in modFile.tops[spel_top_sig].getActiveRecords():
-                    spel_type[record.fid] = record._rec_sig
+        # This plugin may override a record we're interested in and add spells
+        # we then need to sort, so we have to index them here
+        self._index_spells(modFile)
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
