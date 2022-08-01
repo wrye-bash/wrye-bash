@@ -217,10 +217,12 @@ class Fallout4GameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from .records import MreAact, MreActi, MreAddn, MreAech, MreGmst, \
-            MreLvli, MreLvln, MreTes4
+        from .records import MreAact, MreActi, MreAddn, MreAech, MreAmdl, \
+            MreAnio, MreAoru, \
+            MreGmst, MreLvli, MreLvln, MreTes4
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
-            MreAact, MreActi, MreAddn, MreAech, MreGmst, MreLvli, MreLvln,
+            MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
+            MreGmst, MreLvli, MreLvln,
         )}
         # Setting RecordHeader class variables --------------------------------
         header_type = brec.RecordHeader
@@ -251,8 +253,8 @@ class Fallout4GameInfo(PatchGame):
              b'DIAL', b'INFO'})
         header_type.plugin_form_version = 131
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreAact, MreActi, MreAddn, MreAech, MreGmst, MreLvli, MreLvln,
-            MreTes4,
+            MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
+            MreGmst, MreLvli, MreLvln, MreTes4,
         )}
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES4'})

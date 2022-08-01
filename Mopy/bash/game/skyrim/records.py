@@ -47,7 +47,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     MelValueWeight, int_unpacker, MelCoed, MelSoundLooping, MelWaterType, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
-    MelEffects, AMelLLItems
+    MelEffects, AMelLLItems, MelUnloadEvent
 from ...exception import ModError, ModSizeError, StateError
 
 _is_sse = bush.game.fsName in (
@@ -1370,10 +1370,11 @@ class MreAmmo(MelRecord):
 class MreAnio(MelRecord):
     """Animated Object."""
     rec_sig = b'ANIO'
+
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelString(b'BNAM', 'unload_event'),
+        MelUnloadEvent(),
     )
     __slots__ = melSet.getSlotsUsed()
 

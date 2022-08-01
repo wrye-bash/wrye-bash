@@ -690,6 +690,12 @@ class MelSpells(MelSorted):
         super().__init__(MelFids('spells', MelFid(b'SPLO')))
 
 #------------------------------------------------------------------------------
+class MelUnloadEvent(MelString):
+    """Handles the ANIO subrecord BNAM (Unload Event)."""
+    def __init__(self):
+        super().__init__(b'BNAM', 'unload_event')
+
+#------------------------------------------------------------------------------
 # xEdit calls this 'time interpolator', but that name doesn't really make sense
 # Both this class and the color interpolator above interpolate over time
 class MelValueInterpolator(MelArray):

@@ -24,7 +24,7 @@
 from ...bolt import Flags
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, MelAttx, \
-    FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, \
+    FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelUnloadEvent, \
     MelArray, MreGmstBase, MelUInt8Flags, MelSorted, MelGroups, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
     MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, MelAlchEnit, \
@@ -292,6 +292,48 @@ class MreAlch(MelRecord):
         MelAlchEnit(),
         MelLString(b'DNAM', 'addiction_name'),
         MelEffects(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAmdl(MelRecord):
+    """Aim Model."""
+    rec_sig = b'AMDL'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'DNAM', ['4f', 'I', '6f', 'I', '4f'], 'cof_min_angle',
+            'cof_max_angle', 'cof_increase_per_shot', 'cof_decrease_per_shot',
+            'cof_decrease_delay_ms', 'cof_sneak_mult',
+            'recoil_diminish_spring_force', 'recoil_diminish_sights_mult',
+            'recoil_max_per_shot', 'recoil_min_per_shot', 'recoil_hip_mult',
+            'runaway_recoil_shots', 'recoil_arc', 'recoil_arc_rotate',
+            'cof_iron_sights_mult', 'base_stability'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAnio(MelRecord):
+    """Animated Object."""
+    rec_sig = b'ANIO'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelModel(),
+        MelUnloadEvent(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAoru(MelRecord):
+    """Attraction Rule."""
+    rec_sig = b'AORU'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'AOR2', ['3f', '2B', '2s'], 'attraction_radius',
+            'attraction_min_delay', 'attraction_max_delay',
+            'requires_line_of_sight', 'combat_target', 'unused_aor2'),
     )
     __slots__ = melSet.getSlotsUsed()
 
