@@ -629,7 +629,7 @@ text_replacer_rpaths = {
     b'SPEL': ('full', 'effects[i].scriptEffect?.full'),
     b'WEAP': ('full',),
 }
-gold_attrs = lambda _self_ignore, _gm_master: {
+gold_attrs = lambda _self_ignore: {
     'eid': 'Gold001',
     'model.modPath': r'Clutter\goldCoin01.NIF',
     'model.modb': 1.0,

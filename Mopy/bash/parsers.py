@@ -40,8 +40,8 @@ from .balt import Progress
 from .bass import dirs, inisettings
 from .bolt import FName, deprint, setattr_deep, attrgetter_cache, \
     str_or_none, int_or_none, sig_to_str, str_to_sig, dict_sort, DefaultFNDict
-from .brec import MreRecord, MelObject, genFid, RecHeader, attr_csv_struct, \
-    null3
+from .brec import MreRecord, MelObject, RecHeader, attr_csv_struct, null3, \
+    FormId
 from .exception import AbstractError
 from .mod_files import ModFile, LoadFactory
 
@@ -73,7 +73,8 @@ def _key_sort(di, keys_dex=(), values_key='', by_value=False):
     for k in sorted(di, key=key_f):
         yield k, di[k]
 
-def _fid_str(fid_tuple): return '"%s","0x%06X"' % fid_tuple
+def _fid_str(fid_tuple):
+    return f'"{fid_tuple.mod_id}","0x{fid_tuple.object_dex:06X}"'
 
 #------------------------------------------------------------------------------
 class _TextParser(object):
@@ -86,7 +87,8 @@ class _TextParser(object):
         in the form 0x123abc."""
         if not hex_fid.startswith(u'0x'):
             raise ValueError
-        return FName(modname), int(hex_fid, 16) # Starts with 0x, must be hex
+        # We checked that hex_fid starts with 0x, so this must be hex
+        return FormId.from_tuple((FName(modname), int(hex_fid, 16)))
 
     def write_text_file(self, textPath):
         """Export ____ to specified text file. You must override _write_rows.
@@ -234,8 +236,7 @@ class _HandleAliases(CsvParser):
 
     def _coerce_fid(self, modname, hex_fid):
         """Version of _coerce_fid that also checks for aliases of modname."""
-        modname, hex_fid = super()._coerce_fid(modname, hex_fid)
-        return (self.aliases.get(modname), hex_fid)
+        return super()._coerce_fid(self.aliases.get(modname, modname), hex_fid)
 
     def _parse_line(self, csv_fields):
         key1 = self._key1(csv_fields)
@@ -1081,10 +1082,11 @@ class ScriptText(_TextParser):
         if self.makeNew and self.eid_data:
             for eid, (new_lines, _longid) in self.eid_data.items():
                 ##: #480 - Maybe move create_record to ModFile and use it?
-                scriptFid = genFid(
+                scriptFid = FormId.from_object_id(
                     modFile.tes4.num_masters, modFile.tes4.getNextObject())
                 newScript = MreRecord.type_class[b'SCPT'](
-                    RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0))
+                    RecHeader(b'SCPT', 0, 0x40000, scriptFid, 0,
+                              _entering_context=True))
                 newScript.eid = eid
                 newScript.script_source = '\r\n'.join(new_lines)
                 newScript.setChanged()

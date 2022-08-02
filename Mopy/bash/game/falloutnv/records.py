@@ -37,6 +37,7 @@ from ...exception import ModSizeError
 class MreTes4(MreHeaderBase):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
+    _post_masters_sigs = {b'ONAM', b'SCRN'}
 
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], ('version', 1.34), 'numRecords',

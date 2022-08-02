@@ -98,8 +98,8 @@ class IndexingTweak(MultiTweakItem):
 
     def prepare_for_tweaking(self, patch_file):
         pf_minfs = patch_file.p_file_minfos
-        for pl_path in patch_file.merged_or_loaded_ord: ##: all_plugins?
-            index_plugin = self._mod_file_read(pf_minfs[pl_path])
+        for fn_plugin in patch_file.merged_or_loaded_ord: ##: all_plugins?
+            index_plugin = self._mod_file_read(pf_minfs[fn_plugin])
             for index_sig in self._index_sigs:
                 id_dict = self._indexed_records[index_sig]
                 for record in index_plugin.tops[index_sig].getActiveRecords():
@@ -186,7 +186,7 @@ class MultiTweaker(AMultiTweaker,Patcher):
                                     traceback=True)
                             continue
                         keep(record.fid)
-                        tweak_counter[p_tweak][record.fid[0]] += 1
+                        tweak_counter[p_tweak][record.fid.mod_id] += 1
         # We're done with all tweaks, give them a chance to clean up and do any
         # finishing touches (e.g. creating records for GMST tweaks), then log
         for tweak in self.enabled_tweaks:
@@ -357,14 +357,14 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
             for record in cellBlock.temp_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
-                    count[cfid[0]] += 1
+                    count[cfid.mod_id] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
             for record in cellBlock.persistent_refs:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
-                    count[cfid[0]] += 1
+                    count[cfid.mod_id] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
@@ -375,7 +375,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                 for record in cellBlock.temp_refs:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
-                        count[cfid[0]] += 1
+                        count[cfid.mod_id] += 1
 ##                        record.mapFids(swapper,True)
                         record.setChanged()
                         keep(record.fid)
@@ -383,7 +383,7 @@ class ReplaceFormIDsPatcher(FidReplacer, ListPatcher):
                 for record in cellBlock.persistent_refs:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
-                        count[cfid[0]] += 1
+                        count[cfid.mod_id] += 1
 ##                        record.mapFids(swapper,True)
                         record.setChanged()
                         keep(record.fid)

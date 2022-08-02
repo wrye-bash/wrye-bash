@@ -23,25 +23,27 @@
 """Builds on the rest of brec to provide full definitions and base classes for
 some commonly needed records."""
 
-
 from operator import attrgetter
 
+from . import utils_constants
 from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
     MelUnion, MelSorted
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
     MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString, \
-    MelUnicode
+    MelUnicode, unpackSubHeader
 from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
-from .utils_constants import FID
+from .utils_constants import FID, FormId
 from .. import bolt, exception
-from ..bolt import decoder, FName, struct_pack, structs_cache, \
-    remove_newlines, to_unix_newlines
-from ..exception import StateError
+from ..bolt import decoder, FName, struct_pack, structs_cache, remove_newlines, \
+    to_unix_newlines, sig_to_str
 
 #------------------------------------------------------------------------------
 class MreHeaderBase(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
+    # Subrecords that can appear after the masters block - must be set per game
+    _post_masters_sigs: set[bytes]
+
     class MelMasterNames(MelBase):
         """Handles both MAST and DATA, but turns them into two separate lists.
         This is done to make updating the master list much easier."""
@@ -106,7 +108,41 @@ class MreHeaderBase(MelRecord):
         self.author_pstr = new_author
 
     def loadData(self, ins, endPos, *, file_offset=0):
-        super().loadData(ins, endPos, file_offset=file_offset)
+        """Loads data from input stream - copy pasted from parent cause we need
+        to grab the masters as soon as possible due to ONAM needing FID
+        wrapping."""
+        loaders = self.__class__.melSet.loaders
+        # Load each subrecord
+        ins_at_end = ins.atEnd
+        masters_loaded = False
+        while not ins_at_end(endPos, self._rec_sig):
+            sub_type, sub_size = unpackSubHeader(ins, self._rec_sig,
+                                                 file_offset=file_offset)
+            if not masters_loaded and sub_type in self._post_masters_sigs:
+                masters_loaded = True
+                utils_constants.FORM_ID = FormId.from_masters(
+                    (*self.masters, ins.inName))
+            try:
+                loader = loaders[sub_type]
+                try:
+                    loader.load_mel(self, ins, sub_type, sub_size,
+                                    self._rec_sig, sub_type) # *debug_strs
+                    continue
+                except Exception as er:
+                    error = er
+            except KeyError: # loaders[sub_type]
+                # Wrap this error to make it more understandable
+                error = f'Unexpected subrecord: {self.rec_str}.' \
+                        f'{sig_to_str(sub_type)}'
+            file_offset += ins.tell()
+            bolt.deprint(self.error_string('loading', file_offset, sub_size,
+                                           sub_type))
+            if isinstance(error, str):
+                raise exception.ModError(ins.inName, error)
+            raise exception.ModError(ins.inName, f'{error!r}') from error
+        if not masters_loaded:
+            augmented_masters = (*self.masters, ins.inName)
+            utils_constants.FORM_ID = FormId.from_masters(augmented_masters)
         self._truncate_masters()
 
     def _truncate_masters(self):
@@ -153,14 +189,12 @@ class MreFlst(MelRecord):
         self.re_records = None # unused, needed by patcher
 
     def mergeFilter(self, modSet):
-        if not self.longFids: raise StateError(u'Fids not in long format')
-        self.formIDInList = [f for f in self.formIDInList if f[0] in modSet]
+        self.formIDInList = [f for f in self.formIDInList if
+                             f.mod_id in modSet]
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
         Requires that: self.items, other.de_records be defined."""
-        if not self.longFids or not other.longFids:
-            raise StateError(u'Fids not in long format')
         #--Remove items based on other.removes
         if other.de_records:
             removeItems = self.items & other.de_records
@@ -293,15 +327,13 @@ class MreLeveledListBase(MelRecord):
         self.re_records = None #--Set of items relevelled by list (Relev mods)
 
     def mergeFilter(self,modSet):
-        if not self.longFids: raise StateError(u'Fids not in long format')
-        self.entries = [entry for entry in self.entries if entry.listId[0] in modSet]
+        self.entries = [entry for entry in self.entries if
+                        entry.listId.mod_id in modSet]
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
         Requires that self.items, other.de_records and other.re_records be
         defined."""
-        if not self.longFids or not other.longFids:
-            raise exception.StateError(u'Fids not in long format')
         #--Relevel or not?
         if other.re_records:
             for attr in self.__class__.top_copy_attrs:
@@ -383,8 +415,7 @@ class MreWithItems(MelRecord):
     __slots__ = []
 
     def mergeFilter(self, modSet):
-        if not self.longFids: raise StateError(u'Fids not in long format')
-        self.items = [i for i in self.items if i.item[0] in modSet]
+        self.items = [i for i in self.items if i.item.mod_id in modSet]
 
 #------------------------------------------------------------------------------
 class MreActorBase(MreWithItems):
@@ -393,5 +424,5 @@ class MreActorBase(MreWithItems):
 
     def mergeFilter(self, modSet):
         super(MreActorBase, self).mergeFilter(modSet)
-        self.spells = [x for x in self.spells if x[0] in modSet]
-        self.factions = [x for x in self.factions if x.faction[0] in modSet]
+        self.spells = [x for x in self.spells if x.mod_id in modSet]
+        self.factions = [x for x in self.factions if x.faction.mod_id in modSet]

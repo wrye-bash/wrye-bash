@@ -165,7 +165,7 @@ class Mod_CreateDummyMasters(OneItemLink, _LoadLink):
             newInfo = bosh.ModInfo(self._selected_info.info_dir.join(master))
             to_refresh.append((master, newInfo, previous_master))
             previous_master = master
-            newFile = ModFile(newInfo, self._load_fact())
+            newFile = ModFile(newInfo, self._load_fact()) ###
             newFile.tes4.author = u'BASHED DUMMY'
             # Add the appropriate flags based on extension. This is obviously
             # just a guess - you can have a .esm file without an ESM flag in
@@ -607,7 +607,7 @@ class Mod_Details(OneItemLink):
                 records = [(f, e) for f, (_h, e) in group_records.items()]
                 records.sort(key=lambda r: r[1].lower())
                 for f, e in records:
-                    buff.append(f'  {f:08X} {e}')
+                    buff.append(f'  {f} {e}')
                 buff.append(u'') # an empty line
             self._showLog('\n'.join(buff), title=self._selected_item,
                           fixedFont=True)
@@ -1240,14 +1240,14 @@ class Mod_ScanDirty(ItemLink):
         log(_(u'This is a report of deleted records that were found in the '
               u'selected plugin(s).') + u'\n')
         # Change a FID to something more useful for displaying
-        def strFid(form_id):
-            mod_masters = modInfo.masterNames
-            modName = mod_masters[min(form_id >> 24, len(mod_masters) - 1)]
-            return u'%08X (from master %s)' % (form_id, modName)
         def log_fids(del_title, del_fids):
             nonlocal full_dirty_msg
+            mod_masters = modInfo.masterNames
+            len_mas = len(mod_masters)
             full_dirty_msg += '\n'.join([f'  * {del_title}: {len(del_fids)}',
-                *(f'    * {strFid(d_fid)}' for d_fid in sorted(del_fids))])
+                *(f'    * {d_fid.short_fid:08X} (from master '
+                  f'{mod_masters[min(d_fid.mod_dex, len_mas - 1)]})'
+                  for d_fid in sorted(del_fids))])
         dirty_plugins = []
         clean_plugins = []
         skipped_plugins = []
@@ -1445,7 +1445,7 @@ class Mod_DecompileAll(_NotObLink, _LoadLink):
                         for rfid, r in masterFile.tops[b'SCPT'].iter_present_records():
                             id_text[rfid] = r.script_source
                     newRecords = []
-                    generic_lore_fid = (bush.game.master_file, 0x025811)
+                    generic_lore_fid = bush.game.master_fid(0x025811)
                     for rfid, record in scpt_grp.iter_present_records():
                         #--Special handling for genericLoreScript
                         if (rfid in id_text and rfid == generic_lore_fid and

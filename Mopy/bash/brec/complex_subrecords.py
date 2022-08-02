@@ -35,7 +35,7 @@ from .basic_elements import MelBase, MelStruct, MelGroups, MelReadOnly, \
     MelString, MelSequential, MelUInt32, MelFid, MelGroup, MelObject, \
     MelOptStruct, MelBaseR
 from .common_subrecords import MelFull
-from .utils_constants import get_structs, FID, null1
+from .utils_constants import get_structs, FID, null1, ZERO_FID
 from ..bolt import pack_int, pack_byte, attrgetter_cache, Flags, struct_pack, \
     struct_unpack
 from ..exception import AbstractError, ModError
@@ -137,6 +137,8 @@ class _MelCtda(MelUnion):
         # See _build_struct comments above for an explanation of this
         record.compValue = struct_unpack('fI'[record.operFlag.use_global],
                                          record.compValue)[0]
+        if record.operFlag.use_global:
+            record.compValue = FID(record.compValue)
 
     def mapFids(self, record, function, save_fids=False):
         super().mapFids(record, function, save_fids)
@@ -146,8 +148,10 @@ class _MelCtda(MelUnion):
 
     def dumpData(self, record, out):
         # See _build_struct comments above for an explanation of this
+        if record.operFlag.use_global:
+            record.compValue = record.compValue.dump()
         record.compValue = struct_pack('fI'[record.operFlag.use_global],
-                                       record.compValue)
+            record.compValue)
         super().dumpData(record, out)
 
     # Some small speed hacks --------------------------------------------------
@@ -198,9 +202,14 @@ class _MelCtdaFo3(_MelCtda):
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         super().load_mel(record, ins, sub_type, size_, *debug_strs)
+        if record.runOn == 2 and record.ifunc not in self._ignore_ifuncs:
+            record.reference = FID(record.reference)
         if record.ifunc == self._getvatsvalue_ifunc:
-            record.param2 = struct_unpack(self._vats_param2_fmt[record.param1],
-                                          record.param2)[0]
+            p2_unpacked = struct_unpack(
+                self._vats_param2_fmt[record.param1], record.param2)[0]
+            if record.param1 in self._vats_param2_fid:
+                p2_unpacked = FID(p2_unpacked)
+            record.param2 = p2_unpacked
 
     def mapFids(self, record, function, save_fids=False):
         super().mapFids(record, function, save_fids)
@@ -213,9 +222,13 @@ class _MelCtdaFo3(_MelCtda):
             if save_fids: record.param2 = new_param2
 
     def dumpData(self, record, out):
+        if record.runOn == 2 and record.ifunc not in self._ignore_ifuncs:
+            record.reference = record.reference.dump()
         if record.ifunc == self._getvatsvalue_ifunc:
-            record.param2 = struct_pack(self._vats_param2_fmt[record.param1],
-                                        record.param2)
+            if record.param1 in self._vats_param2_fid:
+                record.param2 = record.param2.dump()
+            record.param2 = struct_pack(
+                self._vats_param2_fmt[record.param1], record.param2)
         super().dumpData(record, out)
 
 # API - TES4 ------------------------------------------------------------------
@@ -256,7 +269,7 @@ class MelConditionList(MelGroups):
         super().__init__(conditions_attr,
             MelGroups('condition_list',
                 _MelCtdaFo3(suffix_fmt=['2I', 'i'],
-                    suffix_elements=['runOn', (FID, 'reference'), 'param3'],
+                    suffix_elements=['runOn', 'reference', 'param3'],
                     old_suffix_fmts={'2I', 'I', ''}),
             ),
             MelString(b'CIS1', 'param_cis1'),
@@ -676,28 +689,27 @@ class _NvnmCrc(_AMelNvnmComponent):
 class _NvnmPathingCell(_AMelNvnmComponent):
     """The navmesh geometry's pathing cell. Holds basic context information
     about where this navmesh geometry is located."""
-    __slots__ = ('parent_worldspace', 'parent_cell',
-                 'cell_coord_x', 'cell_coord_y')
+    __slots__ = ('parent_worldspace', 'parent_cell', 'cell_coord_x',
+                 'cell_coord_y')
 
     def load_comp(self, ins, nvnm_ctx: ANvnmContext, *debug_strs):
-        self.parent_worldspace = _nvnm_unpack_int(ins, *debug_strs)
-        if self.parent_worldspace:
+        self.parent_worldspace = FID(_nvnm_unpack_int(ins, *debug_strs))
+        if self.parent_worldspace != ZERO_FID:
             self.parent_cell = None
             # The Y coordinate comes first!
             self.cell_coord_y, self.cell_coord_x = _nvnm_unpack_2shorts(
                 ins, *debug_strs)
         else:
-            self.parent_cell = _nvnm_unpack_int(ins, *debug_strs)
+            self.parent_cell = FID(_nvnm_unpack_int(ins, *debug_strs))
             self.cell_coord_y = None
             self.cell_coord_x = None
 
     def dump_comp(self, out, nvnm_ctx: ANvnmContext):
-        pack_int(out, self.parent_worldspace)
-        # FIXME Test to make sure we have short FormIDs at this point
-        if self.parent_worldspace:
+        pack_int(out, self.parent_worldspace.dump())
+        if self.parent_worldspace != ZERO_FID:
             _nvnm_pack_2shorts(out, self.cell_coord_y, self.cell_coord_x)
         else:
-            pack_int(out, self.parent_cell)
+            pack_int(out, self.parent_cell.dump())
 
     def map_fids(self, map_function, save_fids=False):
         result_pw = map_function(self.parent_worldspace)
@@ -772,6 +784,7 @@ class _NvnmEdgeLinks(_AMelNvnmListComponentFids):
         def load_comp(self, ins, nvnm_ctx: ANvnmContext, *debug_strs):
             self.edge_link_type, self.edge_link_mesh, \
             self.triangle_index = _nvnm_unpack_edge_link(ins, *debug_strs)
+            self.edge_link_mesh = FID(self.edge_link_mesh)
             # Form version 127 (introduced in FO4) added another byte
             if nvnm_ctx.form_ver > 127:
                 self.edge_index = _nvnm_unpack_byte(ins, *debug_strs)
@@ -779,8 +792,8 @@ class _NvnmEdgeLinks(_AMelNvnmListComponentFids):
                 self.edge_index = 0
 
         def dump_comp(self, out, nvnm_ctx: ANvnmContext):
-            _nvnm_pack_edge_link(out, self.edge_link_type, self.edge_link_mesh,
-                self.triangle_index)
+            _nvnm_pack_edge_link(out, self.edge_link_type,
+                self.edge_link_mesh.dump(), self.triangle_index)
             if nvnm_ctx.form_ver > 127:
                 pack_byte(out, self.edge_index)
 
@@ -802,13 +815,17 @@ class _NvnmDoorTriangles(_AMelNvnmListComponentFids):
         def load_comp(self, ins, nvnm_ctx: ANvnmContext, *debug_strs):
             self.triangle_before_door, self.door_type, \
             self.door_fid = _nvnm_unpack_door_triangle(ins, *debug_strs)
+            # door_fid is only a FormID if door_type != 0
+            if self.door_type:
+                self.door_fid = FID(self.door_fid)
 
         def dump_comp(self, out, nvnm_ctx: ANvnmContext):
+            door_fid_short = (self.door_fid.dump() if self.door_type else
+                              self.door_fid)
             _nvnm_pack_door_triangle(out, self.triangle_before_door,
-                self.door_type, self.door_fid)
+                self.door_type, door_fid_short)
 
         def map_fids(self, map_function, save_fids=False):
-            # door_fid is only a FormID if door_type != 0
             if self.door_type:
                 result_door = map_function(self.door_fid)
                 if save_fids:

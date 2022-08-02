@@ -223,9 +223,8 @@ class PatchGame(GameInfo):
     ##: This is a pretty ugly hack. We need to be able to create FormIDs in
     # these for newer games than Oblivion, but master_file is only defined in
     # here and importing it in the patcher files is probably a huge headache.
-    # The first parameter is required since Python automatically passes it when
-    # called: bush.game.gold_attrs(x) -> _gm_master == x
-    gold_attrs = lambda _self_ignore, _gm_master: {}
+    # The first (self) parameter is automatically passed by Python when called
+    gold_attrs = lambda _self: {}
 
     #--------------------------------------------------------------------------
     # Tweak Settings

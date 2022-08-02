@@ -140,6 +140,21 @@ class GameInfo(object):
         self.gamePath = gamePath # absolute bolt Path to the game directory
         self.has_esl = u'.esl' in self.espm_extensions
 
+    # Master esm form ids factory
+    __master_fids = {}
+    def master_fid(self, object_id):
+        """Create a FormId subclass representing a particular master record."""
+        try:
+            return self.__master_fids[object_id]
+        except KeyError:
+            return self.__master_fids.setdefault(object_id,
+                brec.FormId.from_tuple((self.master_file, object_id)))
+
+    @bolt.fast_cached_property
+    def null_fid(self):
+        """The fid corresponding to (master_esm, 0)"""
+        return self.master_fid(0)
+
     class Ws(object):
         """Information about this game on the Windows Store."""
         # A list of directory names for different language versions that ship

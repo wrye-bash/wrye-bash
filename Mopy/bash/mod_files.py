@@ -28,21 +28,22 @@ from itertools import chain
 from zlib import decompress as zlib_decompress, error as zlib_error
 
 from . import bolt, bush, env, load_order
-from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str, \
-    str_to_sig
+from .bolt import deprint, SubProgress, struct_error, decoder, sig_to_str
 from .brec import MreRecord, ModReader, RecordHeader, RecHeader, null1, \
     TopGrupHeader, MobBase, MobDials, MobICells, MobObjects, MobWorlds, \
-    unpack_header, FastModReader, Subrecord, int_unpacker
+    unpack_header, FastModReader, Subrecord, int_unpacker, FormIdReadContext, \
+    FormIdWriteContext, ZERO_FID
 from .exception import MasterMapError, ModError, StateError, ModReadError
 
 class MasterSet(set):
     """Set of master names."""
     def add(self,element):
-        """Add an element it's not empty. Special handling for tuple."""
-        if isinstance(element,tuple):
-            set.add(self,element[0])
-        elif element:
-            set.add(self,element)
+        """Add a long fid's mod index."""
+        try:
+            super().add(element.mod_id)
+        except AttributeError:
+            if element is not None:
+                raise
 
     def getOrdered(self):
         """Returns masters in proper load order."""
@@ -189,24 +190,22 @@ class ModFile(object):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True) ##: trace
         #--Variables to load
-        self.tes4 = bush.game.plugin_header_class(RecHeader())
+        self.tes4 = bush.game.plugin_header_class(RecHeader(arg2=ZERO_FID,
+                _entering_context=True))
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
         self.tops = _RecGroupDict(self) #--Top groups.
         self.topsSkipped = set() #--Types skipped
-        self.longFids = False
 
     def load(self, do_unpack=False, progress=None, loadStrings=True,
-             catch_errors=True, do_map_fids=True): # TODO: let it blow?
+             catch_errors=True): # TODO: let it blow?
         """Load file."""
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
-        with ModReader(self.fileInfo.fn_key, self.fileInfo.getPath().open(
-                u'rb')) as ins:
+        with FormIdReadContext(self.fileInfo.fn_key,
+                               self.fileInfo.getPath().open('rb')) as ins:
             insRecHeader = ins.unpackRecHeader
-            # Main header of the mod file - generally has 'TES4' signature
-            header = insRecHeader()
-            self.tes4 = bush.game.plugin_header_class(header,ins,do_unpack=True)
+            self.tes4 = ins.plugin_header
             subProgress = self.__load_strs(do_unpack, ins, loadStrings,
                                            progress)
             #--Raw data read
@@ -254,8 +253,10 @@ class ModFile(object):
                         # e.g. Mod_FullLoad
                         raise
                 subProgress(insTell())
-        # Done reading - convert to long FormIDs at the IO boundary
-        if do_map_fids: self._convert_fids(to_long=True)
+        # Done reading - mark all records as changed so we'll write out any
+        # changes we make to them
+        for target_top in self.tops.values():
+            target_top.set_records_changed()
 
     def __load_strs(self, do_unpack, ins, loadStrings, progress):
         # Check if we need to handle strings
@@ -297,8 +298,8 @@ class ModFile(object):
         outPath -- Path of the output file to write to. Defaults to original file path."""
         if not self.loadFactory.keepAll:
             raise StateError('Insufficient data to write file.')
-        # Convert back to short FormIDs at the IO boundary
-        self._convert_fids(to_long=False)
+        for target_top in self.tops.values():
+            target_top.set_records_changed()
         # Too many masters is fatal and results in cryptic struct errors, so
         # loudly complain about it here
         if self.tes4.num_masters > bush.game.Esp.master_limit:
@@ -306,7 +307,8 @@ class ModFile(object):
                            f'Attempting to write a file with too many '
                            f'masters (>{bush.game.Esp.master_limit}).')
         outPath = outPath or self.fileInfo.getPath()
-        with outPath.open(u'wb') as out:
+        with FormIdWriteContext(outPath, self.augmented_masters(),
+                                self.tes4) as out:
             #--Mod Record
             self.tes4.setChanged()
             self.tes4.numRecords = sum(block.getNumRecords()
@@ -319,58 +321,12 @@ class ModFile(object):
                 if rsig in selfTops:
                     selfTops[rsig].dump(out)
 
-    def getLongMapper(self):
-        """Returns a mapping function to map short fids to long fids."""
-        masters_list = self.augmented_masters()
-        max_masters = len(masters_list) - 1
-        def mapper(short_fid):
-            # Return unchanged for None (== unset) and fids that are already
-            # in long format
-            ##: Drop long check in the future?
-            if short_fid is None or isinstance(short_fid, tuple):
-                return short_fid
-            # Clamp HITMEs by using at most max_masters for master index
-            return (masters_list[min(short_fid >> 24, max_masters)],
-                    short_fid & 0xFFFFFF)
-        return mapper
-
     def augmented_masters(self):
         """List of plugin masters with the plugin's own name appended."""
         return [*self.tes4.masters, self.fileInfo.fn_key]
 
-    def getShortMapper(self):
-        """Returns a mapping function to map long fids to short fids."""
-        masters_list = self.augmented_masters()
-        indexes = {mname: index for index, mname in enumerate(masters_list)}
-        has_expanded_range = bush.game.Esp.expanded_plugin_range
-        if (has_expanded_range and len(masters_list) > 1
-                and self.tes4.version >= 1.0):
-            # Plugin has at least one master, it may freely use the
-            # expanded (0x000-0x800) range
-            def _master_index(m_name, _obj_id):
-                return indexes[m_name]
-        else:
-            # 0x000-0x800 are reserved for hardcoded (engine) records
-            def _master_index(m_name, obj_id):
-                return indexes[m_name] if obj_id >= 0x800 else 0
-        def mapper(long_fid):
-            if long_fid is None: return None
-            if isinstance(long_fid, int): return long_fid
-            modName, object_id = long_fid
-            return (_master_index(modName, object_id) << 24) | object_id
-        return mapper
-
-    def _convert_fids(self, to_long):
-        """Convert fids to the specified format - long FormIDs if to_long is
-        True, short FormIDs otherwise."""
-        mapper = self.getLongMapper() if to_long else self.getShortMapper()
-        for target_top in self.tops.values():
-            target_top.convertFids(mapper, to_long)
-        self.longFids = to_long
-
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""
-        if not self.longFids: raise StateError(u"ModFile fids not in long form.")
         masters_set = MasterSet([bush.game.master_file])
         for block in self.tops.values():
             block.updateMasters(masters_set.add)
@@ -455,8 +411,8 @@ class ModHeaderReader(object):
                     header_rec_sig = header.recType
                     if header_rec_sig != b'GRUP':
                         header_fid = header.fid
-                        if (header_fid >> 24 >= num_masters and
-                                (header_fid & 0xFFFFFF) > 0xFFF):
+                        if (header_fid.mod_dex >= num_masters and
+                                header_fid.object_dex > 0xFFF):
                             return False # FormID out of range
                         header.skip_blob(ins)
             except (OSError, struct_error) as e:

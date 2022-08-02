@@ -24,24 +24,30 @@
 FO4VR."""
 
 from ...brec import MreHeaderBase, MelSet, MelStruct, MelBase, MelFid, \
-    MelSimpleArray
+    MelSimpleArray, MelNull, MelGroups, MelUInt32
 
 # Only difference from FO4 is the default version, but this seems less hacky
 # than adding a game var just for this and dynamically importing it in FO4
 class MreTes4(MreHeaderBase):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
+    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
 
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 0.95), u'numRecords',
                   (u'nextObject', 0x800)),
-        MelBase(b'TNAM', u'tnam_p'),
+        MelNull(b'OFST'), # obsolete
+        MelNull(b'DELE'), # obsolete
         MreHeaderBase.MelAuthor(),
         MreHeaderBase.MelDescription(),
         MreHeaderBase.MelMasterNames(),
         MelSimpleArray('overrides', MelFid(b'ONAM')),
-        MelBase(b'SCRN', u'screenshot'),
-        MelBase(b'INTV', u'unknownINTV'),
-        MelBase(b'INCC', u'unknownINCC'),
+        MelBase(b'SCRN', 'screenshot'),
+        MelGroups('transient_types',
+            MelSimpleArray('unknownTNAM', MelFid(b'TNAM'),
+                prelude=MelUInt32(b'TNAM', 'form_type')),
+        ),
+        MelUInt32(b'INTV', 'unknownINTV'),
+        MelUInt32(b'INCC', 'internal_cell_count'),
     )
     __slots__ = melSet.getSlotsUsed()

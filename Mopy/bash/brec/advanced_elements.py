@@ -34,6 +34,7 @@ from itertools import chain
 
 from .basic_elements import MelBase, MelNull, MelObject, MelStruct, \
     MelSequential, MelNum
+from .utils_constants import FID, FormId
 from .. import exception
 from ..bolt import structs_cache, attrgetter_cache, deprint
 
@@ -499,9 +500,12 @@ class MelTruncatedStruct(MelStruct):
         unpacked_val = self._pre_process_unpacked(unpacked_val)
         # Apply any actions and then set the attributes according to the values
         # we just unpacked
-        for attr, value, action in zip(self.attrs, unpacked_val,
-                                        self.actions):
-            if action is not None: value = action(value)
+        for attr, value, action in zip(self.attrs, unpacked_val, self.actions):
+            try:
+                if action is not None: value = action(value)
+            except TypeError: # trying to FID a FormId
+                if action is not FID or not isinstance(value, FormId):
+                    raise
             setattr(record, attr, value)
 
     def _pre_process_unpacked(self, unpacked_val):
@@ -523,6 +527,14 @@ class MelTruncatedStruct(MelStruct):
             else:
                 return None
         return super(MelTruncatedStruct, self).pack_subrecord_data(record)
+
+    def mapFids(self, record, function, save_fids=False):
+        """Don't map if we won't be dumped - this incidentally means that
+        all fids are also on default so not loaded."""
+        if not self._is_optional or any((rec_val := getattr(record, at)
+                ) is not None and rec_val != dflt
+                for at, dflt in zip(self.attrs, self.defaults)):
+            super().mapFids(record, function, save_fids)
 
     @property
     def static_size(self):
@@ -627,7 +639,7 @@ class FidNotNullDecider(ACommonDecider):
         ##: Wasteful, but bush imports brec which uses this decider, so we
         # can't import bush in __init__...
         from .. import bush
-        return getattr(record, self._target_attr) != (bush.game.master_file, 0)
+        return getattr(record, self._target_attr) != bush.game.null_fid
 
 class AttrValDecider(ACommonDecider):
     """Decider that returns an attribute value (may optionally apply a function
@@ -903,10 +915,10 @@ class MelUnion(MelBase):
         for element in self.element_mapping.values():
             element.setDefault(record)
         if self.fallback: self.fallback.setDefault(record)
-        # This is somewhat hacky. We let all FormID elements set their defaults
-        # afterwards so that records have integers if possible, otherwise
-        # mapFids will blow up on unions that haven't been loaded, but contain
-        # FormIDs and other types in other union alternatives
+        # This is somewhat hacky. We let all FormID elements set their
+        # defaults  afterwards so that records have integers if possible,
+        # otherwise mapFids will blow up on unions that haven't been loaded,
+        # but contain FormIDs and other types in other union alternatives
         for element in self.fid_elements:
             element.setDefault(record)
 

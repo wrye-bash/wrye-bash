@@ -37,7 +37,7 @@ import re
 import sys
 import traceback
 from collections import OrderedDict
-from functools import wraps, partial
+from functools import wraps
 from typing import Iterable, Optional, Type
 #--Local
 from . import cosaves
@@ -49,9 +49,9 @@ from .. import bass, bolt, balt, bush, env, load_order, initialization, \
     archives
 from ..bass import dirs, inisettings
 from ..bolt import GPath, DataDict, deprint, Path, decoder, AFile, \
-    struct_error, dict_sort, top_level_files, os_name, sig_to_str, FName, \
-    FNDict, forward_compat_path_to_fn_list, forward_compat_path_to_fn
-from ..brec import ModReader, RecordHeader
+    struct_error, dict_sort, top_level_files, os_name, FName, FNDict, \
+    forward_compat_path_to_fn_list, forward_compat_path_to_fn
+from ..brec import RecordHeader, FormIdReadContext, RemapWriteContext
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
     SaveHeaderError, SkipError, StateError
@@ -765,55 +765,45 @@ class ModInfo(FileInfo):
         self.set_table_prop(u'autoBashTags', auto_tagged)
 
     #--Header Editing ---------------------------------------------------------
-    def _read_tes4_record(self, ins):
-        tes4_rec_header = ins.unpackRecHeader()
-        if (rs := tes4_rec_header.recType) != (
-                hs := bush.game.Esp.plugin_header_sig):
-            raise ModError(self.fn_key, f'Expected {sig_to_str(hs)}, but got '
-                                        f'{sig_to_str(rs)}')
-        return tes4_rec_header
-
     def readHeader(self):
         """Read header from file and set self.header attribute."""
-        with ModReader(self.fn_key, self.abs_path.open(u'rb')) as ins:
-            try:
-                tes4_rec_header = self._read_tes4_record(ins)
-                self.header = bush.game.plugin_header_class(tes4_rec_header,
-                                                            ins, do_unpack=True)
-            except struct_error as rex:
-                raise ModError(self.fn_key,u'Struct.error: %s' % rex)
+        try:
+            with FormIdReadContext(self.fn_key,
+                                   self.abs_path.open('rb')) as ins:
+                self.header = ins.plugin_header
+        except struct_error as rex:
+            raise ModError(self.fn_key, f'Struct.error: {rex}')
         if bush.game.Esp.warn_older_form_versions:
-            if tes4_rec_header.form_version != \
-                    RecordHeader.plugin_form_version:
+            if self.header.header.form_version != RecordHeader.plugin_form_version:
                 modInfos.older_form_versions.add(self.fn_key)
         self._reset_masters()
 
-    def writeHeader(self):
+    def writeHeader(self, old_masters: list[FName] | None = None):
         """Write Header. Actually have to rewrite entire file."""
-        filePath = self.getPath()
-        with filePath.open(u'rb') as ins:
-            with filePath.temp.open(u'wb') as out:
+        with FormIdReadContext(self.fn_key, self.abs_path.open('rb')) as ins:
+            # If we need to remap masters, construct a proper write context.
+            # Otherwise, we can get away with a simple output stream
+            if old_masters is not None:
+                write_ctx = RemapWriteContext(old_masters,
+                    [*self.header.masters, self.fn_key], self.abs_path.temp)
+            else:
+                write_ctx = self.abs_path.temp.open('wb')
+            with write_ctx as out:
                 try:
-                    #--Open original and skip over header
-                    reader = ModReader(self.fn_key, ins)
-                    tes4_rec_header = self._read_tes4_record(reader)
-                    tes4_rec_header.skip_blob(reader)
-                    #--Write new header
+                    # We already read the file header (in FormIdReadContext),
+                    # so just write out the new one and copy the rest over
                     self.header.getSize()
                     self.header.dump(out)
-                    #--Write remainder
-                    outWrite = out.write
-                    for block in iter(partial(ins.read, 0x5000000), b''):
-                        outWrite(block)
+                    out.write(ins.read(ins.size - ins.tell()))
                 except struct_error as rex:
                     raise ModError(self.fn_key, f'Struct.error: {rex}')
         #--Remove original and replace with temp
-        filePath.untemp()
+        self.abs_path.untemp()
         self.setmtime(crc_changed=True)
         #--Merge info
         merge_size, canMerge = self.get_table_prop(u'mergeInfo', (None, None))
         if merge_size is not None:
-            self.set_table_prop(u'mergeInfo', (filePath.psize, canMerge))
+            self.set_table_prop(u'mergeInfo', (self.abs_path.psize, canMerge))
 
     def writeDescription(self, new_desc):
         """Sets description to specified text and then writes hedr."""
@@ -1749,7 +1739,8 @@ class FileInfos(TableFileInfos):
             except FileError as e: # old still corrupted, or new(ly) corrupted
                 if not new in self.corrupted \
                         or self.corrupted[new] != e.message:
-                    deprint(u'Failed to load %s: %s' % (new, e.message)) #, traceback=True)
+                    deprint(u'Failed to load %s: %s' % (new, e.message),
+                        traceback=True)
                     self.corrupted[new] = e.message
                 self.pop(new, None)
         _deleted_ = oldNames - set(newNames)

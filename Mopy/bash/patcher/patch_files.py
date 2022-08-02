@@ -29,7 +29,7 @@ from .. import bolt # for type hints
 from .. import bush # for game etc
 from .. import load_order, bass
 from ..bolt import SubProgress, deprint, Progress, dict_sort, readme_url, FName
-from ..brec import MreRecord, RecHeader
+from ..brec import MreRecord, RecHeader, FormId
 from ..exception import BoltError, CancelError, ModError
 from ..localize import format_date
 from ..mod_files import ModFile, LoadFactory
@@ -143,7 +143,6 @@ class PatchFile(ModFile):
         ModFile.__init__(self,modInfo,None)
         self.tes4.author = u'BASHED PATCH'
         self.tes4.masters = [bush.game.master_file]
-        self.longFids = True
         self.keepIds = set()
         # Aliases from one mod name to another. Used by text file patchers.
         self.pfile_aliases = {}
@@ -174,16 +173,16 @@ class PatchFile(ModFile):
         """Returns a function to add fids to self.keepIds."""
         return self.keepIds.add
 
-    def create_record(self, new_rec_sig: bytes, new_rec_fid: tuple = None):
+    def create_record(self, new_rec_sig: bytes, new_rec_fid: FormId = None):
         """Creates a new record with the specified record signature (and
         optionally the specified FormID - if it's not given, it will become a
         new record inside the BP's FormID space), adds it to this patch and
         returns it."""
         if new_rec_fid is None:
-            new_rec_fid = (self.fileInfo.fn_key, self.tes4.getNextObject())
-        new_rec = MreRecord.type_class[new_rec_sig](RecHeader(new_rec_sig))
-        new_rec.longFids = True
-        new_rec.fid = new_rec_fid
+            new_rec_fid = FormId.from_tuple(
+                (self.fileInfo.fn_key, self.tes4.getNextObject()))
+        new_rec = MreRecord.type_class[new_rec_sig](
+            RecHeader(new_rec_sig, arg2=new_rec_fid, _entering_context=True))
         self.keepIds.add(new_rec_fid)
         self.tops[new_rec_sig].setRecord(new_rec)
         return new_rec

@@ -161,6 +161,7 @@ class MelVmad(MelNull): # TODO(inf) Refactor Skyrim's MelVmad and remove this
 class MreTes4(MreHeaderBase):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
+    _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
 
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',

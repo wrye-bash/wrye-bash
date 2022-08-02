@@ -33,7 +33,7 @@ from .base import is_templated
 from ..base import Patcher, ModLoader
 from ... import bush, bolt
 from ...bolt import FName, deprint, dict_sort, sig_to_str
-from ...brec import strFid
+from ...brec import FormId
 from ...mod_files import LoadFactory
 
 class ContentsCheckerPatcher(Patcher):
@@ -146,11 +146,10 @@ class ContentsCheckerPatcher(Patcher):
                     for contId in sorted(id_removed):
                         log(u'* ' + id_eid[contId])
                         for removedId in sorted(id_removed[contId]):
-                            log(u'  . %s: %06X' % (removedId[0],
-                                                   removedId[1]))
+                            log(f'  . {removedId.mod_id}: '
+                                f'{removedId.object_dex:06X}')
 
 #------------------------------------------------------------------------------
-_main_master = bush.game.master_file
 class EyeCheckerPatcher(Patcher):
     patcher_group = u'Special'
     patcher_order = 29 # Run before Tweak Races
@@ -196,17 +195,17 @@ class EyeCheckerPatcher(Patcher):
         #--Eye Mesh filtering
         eye_mesh = self.eye_mesh
         try:
-            blueEyeMesh = eye_mesh[(_main_master, 0x27308)]
+            blueEyeMesh = eye_mesh[bush.game.master_fid(0x27308)]
         except KeyError:
             deprint(u'error getting blue eye mesh:')
             deprint(u'eye meshes:', eye_mesh)
             raise
-        argonianEyeMesh = eye_mesh[(_main_master, 0x3e91e)]
+        argonianEyeMesh = eye_mesh[bush.game.master_fid(0x3e91e)]
         for eye in (
-            (_main_master, 0x1a), #--Reanimate
-            (_main_master, 0x54bb9), #--Dark Seducer
-            (_main_master, 0x54bba), #--Golden Saint
-            (_main_master, 0x5fa43), #--Ordered
+            bush.game.master_fid(0x1a), #--Reanimate
+            bush.game.master_fid(0x54bb9), #--Dark Seducer
+            bush.game.master_fid(0x54bba), #--Golden Saint
+            bush.game.master_fid(0x5fa43), #--Ordered
             ):
             eye_mesh.setdefault(eye,blueEyeMesh)
         def setRaceEyeMesh(race,rightPath,leftPath):
@@ -221,10 +220,8 @@ class EyeCheckerPatcher(Patcher):
             mesh_eye = {}
             for eye in race.eyes:
                 if eye not in eye_mesh:
-                    deprint(
-                        _(u'Mesh undefined for eye %s in race %s, eye removed '
-                          u'from race list.') % (
-                            strFid(eye), race.eid,))
+                    deprint(f'Mesh undefined for eye {eye} in race '
+                            f'{race.eid}, eye removed from race list.')
                     continue
                 mesh = eye_mesh[eye]
                 if mesh not in mesh_eye:
@@ -242,8 +239,9 @@ class EyeCheckerPatcher(Patcher):
                 setRaceEyeMesh(race,*maxEyesMesh)
                 raceChanged = True
             #--Multiple eye meshes (and playable)?
-            if len(mesh_eye) > 1 and (race.flags.playable or race.fid == (
-                    _main_master, 0x038010)):
+            if len(mesh_eye) > 1 and (
+                    race.flags.playable or race.fid == bush.game.master_fid(
+                0x038010)):
                 #--If blueEyeMesh (mesh used for vanilla eyes) is present,
                 # use that.
                 if blueEyeMesh in mesh_eye and currentMesh != argonianEyeMesh:
@@ -300,8 +298,8 @@ class RaceCheckerPatcher(Patcher):
         eyeNames = {x.fid: x.full for x in patchFile.tops[b'EYES'].records}
         hairNames = {x.fid: x.full for x in patchFile.tops[b'HAIR'].records}
         for race in patchFile.tops[b'RACE'].records:
-            if (race.flags.playable or race.fid == (
-                    _main_master, 0x038010)) and race.eyes:
+            if (race.flags.playable or race.fid == bush.game.master_fid(
+                    0x038010)) and race.eyes:
                 prev_hairs = race.hairs[:]
                 race.hairs.sort(key=lambda x: hairNames.get(x) or '')
                 prev_eyes = race.eyes[:]
@@ -324,8 +322,8 @@ def _find_vanilla_eyes():
     def _conv_fid(rc_fid):
         rc_file, rc_obj = rc_fid
         if rc_file is None: # special case: None = game master
-            rc_file = bush.game.master_file
-        return FName(rc_file), rc_obj
+            return bush.game.master_fid(rc_obj)
+        return FormId.from_tuple((FName(rc_file), rc_obj))
     ret = {}
     for race_fid, race_eyes in bush.game.default_eyes.items():
         new_key = _conv_fid(race_fid)
@@ -372,8 +370,8 @@ class NpcCheckerPatcher(Patcher):
         femaleHairs = {x.fid for x in patchFile.tops[b'HAIR'].records
                        if not x.flags.notFemale}
         for race in patchFile.tops[b'RACE'].records:
-            if (race.flags.playable or race.fid == (
-                    _main_master, 0x038010)) and race.eyes:
+            if (race.flags.playable or race.fid == bush.game.master_fid(
+                    0x038010)) and race.eyes:
                 final_eyes[race.fid] = [x for x in
                                         self.vanilla_eyes.get(race.fid, [])
                                         if x in race.eyes]
@@ -386,15 +384,14 @@ class NpcCheckerPatcher(Patcher):
         #--Npcs with unassigned eyes/hair
         for npc in patchFile.tops[b'NPC_'].records:
             npc_fid = npc.fid
-            if npc_fid == (_main_master, 0x000007): continue # skip player
-            if npc.full is not None and npc.race == (
-                    _main_master, 0x038010) and not reProcess.search(
-                    npc.full): continue
+            if npc_fid == bush.game.master_fid(0x000007): continue # skip player
+            if npc.full is not None and npc.race == bush.game.master_fid(
+                    0x038010) and not reProcess.search(npc.full): continue
             if is_templated(npc, u'useModelAnimation'):
                 continue # Changing templated actors wouldn't do anything
             raceEyes = final_eyes.get(npc.race)
-            npc_src_plugin, npc_obj_id = npc_fid
-            random.seed(npc_obj_id) # make it deterministic
+            npc_src_plugin = npc_fid.mod_id
+            random.seed(npc_fid.object_dex)  # make it deterministic
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
                 mod_npcsFixed[npc_src_plugin] += 1
@@ -478,7 +475,7 @@ class TimescaleCheckerPatcher(ModLoader):
         wp_multiplier = def_timescale / final_timescale
         for grass_fid, grass_rec in self.patchFile.tops[b'GRAS'].iter_present_records():
             grass_rec.wave_period *= wp_multiplier
-            grasses_changed[grass_fid[0]] += 1
+            grasses_changed[grass_fid.mod_id] += 1
             keep(grass_fid)
         log.setHeader(u'= ' + self._patcher_name)
         if grasses_changed:

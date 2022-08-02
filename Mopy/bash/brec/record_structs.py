@@ -28,9 +28,10 @@ import io
 import zlib
 from collections import defaultdict
 
+from . import utils_constants
 from .basic_elements import SubrecordBlob, unpackSubHeader
 from .mod_io import ModReader
-from .utils_constants import strFid, int_unpacker
+from .utils_constants import int_unpacker
 from .. import bolt, exception
 from ..bolt import decoder, struct_pack, sig_to_str
 from ..bolt import float_or_none, int_or_zero, str_or_none
@@ -200,7 +201,7 @@ class MelSet(object):
                 bolt.deprint(u'Occurred while dumping '
                              u'<%(eid)s[%(signature)s:%(fid)s]>' % {
                     u'signature': record.rec_str,
-                    u'fid': strFid(record.fid),
+                    u'fid': f'{record.fid}',
                     u'eid': (record.eid + u' ') if getattr(record, u'eid',
                                                            None) else u'',
                 })
@@ -214,16 +215,6 @@ class MelSet(object):
         """Maps fids of subelements."""
         for element in self.formElements:
             element.mapFids(record, mapper, save_fids)
-
-    def convertFids(self,record, mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        if record.longFids == toLong: return
-        record.fid = mapper(record.fid)
-        for element in self.formElements:
-            element.mapFids(record, mapper, True)
-        record.longFids = toLong
-        record.setChanged()
 
     def with_distributor(self, distributor_config):
         # type: (dict) -> MelSet
@@ -349,7 +340,7 @@ class MreRecord(object):
         (31,'multiBound'), # {0x80000000}
     )
     __slots__ = [u'header', u'_rec_sig', u'fid', u'flags1', u'size', u'flags2',
-                 u'changed', u'data', u'inName', u'longFids']
+                 u'changed', u'data', u'inName']
     isKeyedByEid = False
     #--Set at end of class data definitions.
     type_class = {}
@@ -361,16 +352,16 @@ class MreRecord(object):
     def __init__(self, header, ins=None, *, do_unpack=False):
         self.header = header
         self._rec_sig = header.recType
-        self.fid = header.fid
+        self.fid = header.fid # type: utils_constants.FormId
         self.flags1 = MreRecord.flags1_(header.flags1)
         self.size = header.size
         self.flags2 = header.flags2
-        self.longFids = False #--False: Short (numeric); True: Long (espname,objectindex)
         self.changed = False
         self.data = None
         self.inName = ins and ins.inName
         if ins: # Load data from ins stream
             file_offset = ins.tell()
+            ##: Couldn't we toss this data if we unpacked it? (memory!)
             self.data = ins.read(self.size, self._rec_sig,
                                  file_offset=file_offset)
             if not do_unpack: return  #--Read, but don't analyze.
@@ -387,7 +378,7 @@ class MreRecord(object):
 
     def __repr__(self):
         reid = (self.eid + ' ') if getattr(self, 'eid', None) else ''
-        return f'<{reid}[{self.rec_str}:{strFid(self.fid)}]>'
+        return f'<{reid}[{self.rec_str}:{self.fid}]>'
 
     def getTypeCopy(self):
         """Return a copy of self - MreRecord base class will find and return an
@@ -442,11 +433,6 @@ class MreRecord(object):
                 if not mel_sigs or subrec.mel_sig in mel_sigs:
                     yield subrec
 
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        self.fid = mapper(self.fid)
-
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
         raise exception.AbstractError(
@@ -459,8 +445,6 @@ class MreRecord(object):
     def getSize(self):
         """Return size of self.data, after, if necessary, packing it."""
         if not self.changed: return self.size
-        if self.longFids: raise exception.StateError(
-            f'Packing Error: {self.rec_str} {self.fid}: Fids in long format.')
         #--Pack data and return size.
         out = io.BytesIO()
         self.dumpData(out)
@@ -477,9 +461,8 @@ class MreRecord(object):
         """Dumps state into data. Called by getSize(). This default version
         just calls subrecords to dump to out."""
         if self.data is None:
-            raise exception.StateError(
-                f'Dumping empty record. [{self.inName}: {self.rec_str} '
-                f'{self.fid:08X}]')
+            raise exception.StateError(f'Dumping empty record. [{self.inName}:'
+                                       f' {self.rec_str} {self.fid}]')
         for subrecord in self.iterate_subrecords():
             subrecord.packSub(out, subrecord.mel_data)
 
@@ -494,7 +477,7 @@ class MreRecord(object):
             raise exception.StateError(f'Data changed: {self.rec_str}')
         if not self.data and not self.flags1.deleted and self.size > 0:
             raise exception.StateError(
-                f'Data undefined: {self.rec_str} {hex(self.fid)}')
+                f'Data undefined: {self.rec_str} {self.fid}')
         #--Update the header so it 'packs' correctly
         self.header.size = self.size
         if self._rec_sig != b'GRUP':
@@ -600,7 +583,7 @@ class MelRecord(MreRecord):
         """Return a human-readable description of this record to use in error
         messages."""
         msg = f'Error {op} {self.rec_str} record and/or subrecord: ' \
-              f'{strFid(self.fid)}\n  eid = {getattr(self, "eid", "<<NO EID>>")!r}'
+              f'{self.fid}\n  eid = {getattr(self, "eid", "<<NO EID>>")}'
         if file_offset is None:
             return msg
         li = [msg, f'subrecord = {sig_to_str(sub_type)}',
@@ -615,15 +598,8 @@ class MelRecord(MreRecord):
         """Applies mapper to fids of sub-elements. Will replace fid with mapped value if save == True."""
         self.__class__.melSet.mapFids(self, mapper, save_fids)
 
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        self.__class__.melSet.convertFids(self,mapper,toLong)
-
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
-        if not self.longFids:
-            raise exception.StateError('Fids not in long format')
         masterset_add(self.fid)
         for element in self.__class__.melSet.formElements:
             element.mapFids(self, masterset_add)

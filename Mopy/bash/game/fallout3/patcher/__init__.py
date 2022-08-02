@@ -661,7 +661,7 @@ names_tweaks = {
     'NamesTweak_RenameCaps',
 }
 body_part_codes = (u'HAGPBFE', u'HBGPEFE')
-gold_attrs = lambda _self_ignore, gm_master: {
+gold_attrs = lambda self: {
     'eid': 'Caps001',
     'bounds.boundX1': -2,
     'bounds.boundY1': -2,
@@ -675,8 +675,8 @@ gold_attrs = lambda _self_ignore, gm_master: {
     'model.alternateTextures': None,
     'model.facegen_model_flags': None,
     'iconPath': r'Interface\Icons\PipboyImages\Items\items_nuka_cola_cap.dds',
-    'pickupSound': (gm_master, 0x0864D8), # ITMBottlecapsUp
-    'dropSound': (gm_master, 0x0864D7), # ITMBottlecapsDown
+    'pickupSound': self.master_fid(0x0864D8), # ITMBottlecapsUp
+    'dropSound': self.master_fid(0x0864D7), # ITMBottlecapsDown
     'value': 1,
     'weight': 0.0,
 }

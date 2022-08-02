@@ -316,7 +316,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
             if self.wants_record(cell):
                 self.tweak_record(cell)
                 keep(cfid)
-                count[cfid[0]] += 1
+                count[cfid.mod_id] += 1
 
 #------------------------------------------------------------------------------
 class AssortedTweak_NoLightFlicker(MultiTweakItem):
@@ -476,12 +476,11 @@ class AssortedTweak_ScriptEffectSilencer(MultiTweakItem):
     tweak_choices = [(u'0', 0)]
     tweak_log_msg = _(u'Script Effect Silenced.')
     default_enabled = True
-    _null_ref = (bush.game.master_file, 0)
-    _silent_attrs = {u'model': None, u'projectileSpeed': 9999,
-                     u'light': _null_ref, u'effectShader': _null_ref,
-                     u'enchantEffect': _null_ref, u'castingSound': _null_ref,
-                     u'boltSound': _null_ref, u'hitSound': _null_ref,
-                     u'areaSound': _null_ref}
+    _silent_attrs = dict.fromkeys(
+        ['areaSound', 'boltSound', 'castingSound', 'effectShader',
+         'enchantEffect', 'hitSound', 'light'], bush.game.null_fid)
+    _silent_attrs['model'] = None
+    _silent_attrs['projectileSpeed'] = 9999
 
     def wants_record(self, record):
         # u'' here is on purpose! We're checking the EDID, which gets decoded
@@ -700,7 +699,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
                 else: # Default icon, probably a token or somesuch
                     d_icons = d_icons[6]
             elif curr_sig == b'KEYM':
-                random.seed(record.fid[1]) # make it deterministic
+                random.seed(record.fid.object_dex) # make it deterministic
                 d_icons = d_icons[random.randint(0, 1)]
             elif curr_sig == b'WEAP':
                 # Choose based on weapon type:
@@ -710,7 +709,7 @@ class AssortedTweak_DefaultIcons(MultiTweakItem):
                     d_icons = d_icons[0]
         elif curr_sig in (b'BOOK', b'BSGN', b'CLAS'):
             # Just a random book icon - for class/birthsign as well.
-            random.seed(record.fid[1]) # make it deterministic
+            random.seed(record.fid.object_dex) # make it deterministic
             d_icons %= random.randint(1, 13)
         self._assign_icons(record, d_icons)
 

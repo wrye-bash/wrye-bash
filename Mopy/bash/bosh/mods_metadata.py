@@ -303,7 +303,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                                     add_deleted_ref(r_fid)
                                 else:
                                     add_deleted_rec(r_fid)
-                        r_mod_index = r_fid >> 24
+                        r_mod_index = r_fid.mod_dex
                         # p_masters includes self, so >=
                         is_hitme = r_mod_index >= p_num_masters
                         if is_hitme:
@@ -312,7 +312,7 @@ def checkMods(mc_parent, modInfos, showModList=False, showCRC=False,
                             # Convert into a load order FormID - ugly but fast,
                             # inlined and hand-optimized from various methods.
                             # Calling them would be way too slow.
-                            lo_fid = (r_fid & 0xFFFFFF | plugin_to_acti_index[
+                            lo_fid = (r_fid.object_dex | plugin_to_acti_index[
                                 p_masters[p_num_masters - 1 if is_hitme else
                                 r_mod_index]] << 24)
                             all_record_versions[lo_fid].append(

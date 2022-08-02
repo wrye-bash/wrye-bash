@@ -905,7 +905,7 @@ text_replacer_rpaths = {
     b'WEAP': ('full', 'description'),
     b'WOOP': ('full',),
 }
-gold_attrs = lambda _self_ignore, gm_master: {
+gold_attrs = lambda self: {
     'eid': 'Gold001',
     'bounds.boundX1': -2,
     'bounds.boundY1': -2,
@@ -916,9 +916,9 @@ gold_attrs = lambda _self_ignore, gm_master: {
     'model.modPath': r'Clutter\Coin01.nif',
     'model.alternateTextures': None,
     'iconPath': r'Clutter\Coin01.dds',
-    'pickupSound': (gm_master, 0x03E952), # ITMGoldUpSD
-    'dropSound': (gm_master, 0x03E955), # ITMGoldDownSD
-    'keywords': [(gm_master, 0x0914E9)], # VendorItemClutter
+    'pickupSound': self.master_fid(0x03E952), # ITMGoldUpSD
+    'dropSound': self.master_fid(0x03E955), # ITMGoldDownSD
+    'keywords': [self.master_fid(0x0914E9)], # VendorItemClutter
     'value': 1,
     'weight': 0.0,
 }

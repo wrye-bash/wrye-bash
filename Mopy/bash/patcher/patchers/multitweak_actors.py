@@ -46,7 +46,7 @@ class _AActorTweak(MultiTweakItem):
 class _ANpcTweak(_AActorTweak):
     """Base for all NPC_ tweaks."""
     tweak_read_classes = b'NPC_',
-    _player_fid = (bush.game.master_file, 0x000007)
+    _player_fid = bush.game.master_fid(0x000007)
 
 class _ACreatureTweak(_AActorTweak):
     """Base for all CREA tweaks."""
@@ -146,11 +146,11 @@ class VORB_NPCSkeletonPatcher(_ASkeletonTweak):
         skeleton_list, skeleton_specials = self._get_skeleton_collections()
         if not skeleton_list:
             return self._get_skeleton_path(record) # leave unchanged
-        special_skel_mesh = u'skel_special_%X.nif' % record.fid[1]
+        special_skel_mesh = f'skel_special_{record.fid.object_dex:X}.nif'
         if special_skel_mesh in skeleton_specials:
             return f'{self._skeleton_dir}\\{special_skel_mesh}'
         else:
-            random.seed(record.fid[1]) # make it deterministic
+            random.seed(record.fid.object_dex) # make it deterministic
             return f'{self._skeleton_dir}\\{random.choice(skeleton_list)}'
 
 #------------------------------------------------------------------------------
@@ -183,7 +183,7 @@ class RedguardNPCPatcher(_ANpcTweak):
     tweak_key = u'RedguardFGTSPatcher'
     tweak_log_msg = _(u'Redguard NPCs Tweaked: %(total_changed)d')
     tweak_choices = [(u'1.0', u'1.0')]
-    _redguard_fid = (bush.game.master_file, 0x000D43)
+    _redguard_fid = bush.game.master_fid(0x000D43)
 
     def wants_record(self, record):
         # Only affect NPCs with the redguard race
@@ -227,7 +227,7 @@ class AsIntendedImpsPatcher(_ACreatureTweak):
     tweak_log_msg = _(u'Imps Tweaked: %(total_changed)d')
     _imp_mod_path = re.compile(r'(imp(?!erial)|gargoyle)\\.', re.I | re.U)
     _imp_part  = re.compile(u'(imp(?!erial)|gargoyle)', re.I | re.U)
-    _imp_spell = (bush.game.master_file, 0x02B53F)
+    _imp_spell = bush.game.master_fid(0x02B53F)
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)
@@ -255,7 +255,7 @@ class AsIntendedBoarsPatcher(_ACreatureTweak):
     tweak_log_msg = _(u'Boars Tweaked: %(total_changed)d')
     _boar_mod_path = re.compile(r'(boar)\\.', re.I | re.U)
     _boar_part  = re.compile(u'(boar)', re.I | re.U)
-    _boar_spell = (bush.game.master_file, 0x02B54E)
+    _boar_spell = bush.game.master_fid(0x02B54E)
 
     def wants_record(self, record):
         old_mod_path = self._get_skeleton_path(record)

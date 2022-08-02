@@ -83,7 +83,7 @@ class ImportRoadsPatcher(ImportPatcher, ExSpecial):
                 worldBlock.road = newRoad
                 keep(worldId)
                 keep(newRoad.fid)
-                worldsPatched.add((worldId[0], worldBlock.world.eid))
+                worldsPatched.add((worldId.mod_id, worldBlock.world.eid))
         self.world_road.clear()
         self._patchLog(log,worldsPatched)
 
@@ -189,7 +189,7 @@ class CoblExhaustionPatcher(_ExSpecialList):
             effect.scriptEffect = scriptEffect
             record.effects.append(effect)
             keep(rec_fid)
-            count[rec_fid[0]] += 1
+            count[rec_fid.mod_id] += 1
         #--Log
         self._pLog(log, count)
 
@@ -283,7 +283,7 @@ class MorphFactionsPatcher(_ExSpecialList):
                                 # if rank_level was not present it will be None
                                 (rank.rank_level or 0))
                 keep(rec_fid)
-                changed[rec_fid[0]] += 1
+                changed[rec_fid.mod_id] += 1
         #--MFact record
         record = modFile.tops[b'FACT'].getRecord(mFactLong)
         if record:

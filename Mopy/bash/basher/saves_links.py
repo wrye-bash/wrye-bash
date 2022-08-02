@@ -35,6 +35,7 @@ from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, UIList_Rename
 from ..bolt import GPath, SubProgress, Path, FName
 from ..bosh import faces, _saves
+from ..brec import ShortFidWriteContext
 from ..exception import ArgumentError, BoltError, ModError, AbstractError
 from ..gui import BusyCursor, ImageWrapper, FileSave
 from ..mod_files import LoadFactory, MasterMap, ModFile
@@ -413,18 +414,19 @@ class Save_EditCreatedData(balt.ListEditorData):
         name_nameRecords = self.name_nameRecords = {}
         self.enchantments = {}
         #--Parse records and get into name_nameRecords
-        for rfid, record in saveFile.created.items():
-            if record._rec_sig == b'ENCH':
-                self.enchantments[record.fid] = record.getTypeCopy()
-            elif record._rec_sig in types_set:
-                record = record.getTypeCopy()
-                if not record.full: continue
-                record.getSize() #--Since type copy makes it changed.
-                saveFile.created[rfid] = record
-                record_full = record.full
-                if record_full not in name_nameRecords:
-                    name_nameRecords[record_full] = (record_full, [])
-                name_nameRecords[record_full][1].append(record)
+        with ShortFidWriteContext(): # needed for the getSize below
+            for rfid, record in saveFile.created.items():
+                if record._rec_sig == b'ENCH':
+                    self.enchantments[record.fid] = record.getTypeCopy()
+                elif record._rec_sig in types_set:
+                    record = record.getTypeCopy()
+                    if not record.full: continue
+                    record.getSize() #--Since type copy makes it changed.
+                    saveFile.created[rfid] = record
+                    record_full = record.full
+                    if record_full not in name_nameRecords:
+                        name_nameRecords[record_full] = (record_full, [])
+                    name_nameRecords[record_full][1].append(record)
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showRename = True
@@ -491,13 +493,14 @@ class Save_EditCreatedData(balt.ListEditorData):
         else:
             self.changed = False #--Allows graceful effort if close fails.
             count = 0
-            for newName,(oldName,records) in self.name_nameRecords.items():
-                if newName == oldName: continue
-                for record in records:
-                    record.full = newName
-                    record.setChanged()
-                    record.getSize()
-                count += 1
+            with ShortFidWriteContext(): # needed for the getSize below
+                for newName,(oldName,records) in self.name_nameRecords.items():
+                    if newName == oldName: continue
+                    for record in records:
+                        record.full = newName
+                        record.setChanged()
+                        record.getSize()
+                    count += 1
             self.saveFile.safeSave()
             balt.showOk(self.parent, _(u'Names modified: %d.') % count,
                         self.saveFile.fileInfo.fn_key)
@@ -899,11 +902,10 @@ class Save_UpdateNPCLevels(EnabledLink):
                     modErrors.append(f'{x}')
                     continue
                 if b'NPC_' not in modFile.tops: continue
-                short_mapper = modFile.getShortMapper()
                 #--Loop over mod NPCs
                 mapToOrdered = MasterMap(modFile.augmented_masters(), ordered)
                 for npc in modFile.tops[b'NPC_'].getActiveRecords():
-                    fid = mapToOrdered(short_mapper(npc.fid), None)
+                    fid = mapToOrdered(npc.fid.short_fid, None)
                     if not fid: continue
                     npc_info[fid] = (npc.eid, npc.level_offset, npc.calcMin,
                                      npc.calcMax, npc.flags.pcLevelOffset)

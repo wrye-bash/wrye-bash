@@ -103,7 +103,7 @@ class CoblCatalogsPatcher(Patcher, ExSpecial):
         def getBook(object_id, full):
             """Helper method for grabbing a BOOK record by object ID and making
             it ready for editing."""
-            book_fid = (cobl_main, object_id)
+            book_fid = (cobl_main, object_id) ##: TODO: test () in dict[FormId..]
             if book_fid not in patch_books.id_records:
                 return None # This shouldn't happen, but just in case...
             book = patch_books.id_records[book_fid]

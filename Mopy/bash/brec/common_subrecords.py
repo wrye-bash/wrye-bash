@@ -30,7 +30,7 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelNull, MelSequential, MelString, MelStruct, MelUInt32, MelOptStruct, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
     MelStrings, MelUInt8, MelUInt16Flags
-from .utils_constants import int_unpacker, FID, null1
+from .utils_constants import int_unpacker, FID, null1, ZERO_FID
 from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
     dict_sort, TrimmedFlags, structs_cache
 from ..exception import ModError, ModSizeError
@@ -483,11 +483,12 @@ class MelRaceData(MelTruncatedStruct):
 
     def pack_subrecord_data(self, record):
         values = list(record.skills)
-        values.extend(
-            action(value).dump() if action is not None else value
-            for value, action in zip(
-                (getattr(record, a) for a in self.attrs[1:]),
-                self.actions[1:]))
+        for value, action in zip((getattr(record, a) for a in self.attrs[1:]),
+                                 self.actions[1:]):
+            try:
+                values.append(value.dump() if action is not None else value)
+            except AttributeError:
+                values.append(action(value).dump())
         return self._packer(*values)
 
 #------------------------------------------------------------------------------
@@ -555,11 +556,11 @@ class MelRaceParts(MelNull):
 class MelRaceVoices(MelStruct):
     """Set voices to zero, if equal race fid. If both are zero, then skip
     dumping."""
-    def pack_subrecord_data(self, record):
-        if record.maleVoice == record.fid: record.maleVoice = 0
-        if record.femaleVoice == record.fid: record.femaleVoice = 0
-        if (record.maleVoice, record.femaleVoice) != (0, 0):
-            return super().pack_subrecord_data(record)
+    def pack_subrecord_data(self, record, *, __zero_fid=ZERO_FID):
+        if record.maleVoice == record.fid: record.maleVoice = __zero_fid
+        if record.femaleVoice == record.fid: record.femaleVoice = __zero_fid
+        if (record.maleVoice, record.femaleVoice) != (__zero_fid, __zero_fid):
+            return super(MelRaceVoices, self).pack_subrecord_data(record)
         return None
 
 #------------------------------------------------------------------------------

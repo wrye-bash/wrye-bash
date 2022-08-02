@@ -239,6 +239,7 @@ class MreLeveledList(MreLeveledListBase):
 class MreTes3(MreHeaderBase):
     """TES3 Record. File header."""
     rec_sig = b'TES3'
+    _post_masters_sigs = {b'GMDT', b'SCRD', b'SCRS'}
 
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'I', u'32s', u'256s', u'I'], (u'version', 1.3), u'esp_flags',

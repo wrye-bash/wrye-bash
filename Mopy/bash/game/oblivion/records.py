@@ -468,6 +468,7 @@ class MreLeveledList(MreLeveledListBase):
 class MreTes4(MreHeaderBase):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
+    _post_masters_sigs = set()
 
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], (u'version', 1.0), u'numRecords',
@@ -1629,26 +1630,27 @@ class MrePack(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelTruncatedStruct(b'PKDT', [u'I', u'B', u'3s'], (_flags, 'flags'), 'aiType',
-                           'unused1', old_versions={'HBs'}),
+        MelTruncatedStruct(b'PKDT', [u'I', u'B', u'3s'], (_flags, 'flags'),
+            'aiType', 'unused1', old_versions={'HBs'}),
         MelUnion({
-            (0, 1, 2, 3, 4): MelStruct(b'PLDT', [u'i', u'I', u'i'], u'locType',
-                (FID, u'locId'), u'locRadius'),
-            5: MelStruct(b'PLDT', [u'i', u'I', u'i'], u'locType', u'locId', u'locRadius'),
+            (0, 1, 2, 3, 4): MelOptStruct(b'PLDT', ['i', 'I', 'i'], 'locType',
+                (FID, 'locId'), 'locRadius'),
+            5: MelOptStruct(b'PLDT', ['i', 'I', 'i'], 'locType', 'locId',
+                'locRadius'),
         }, decider=PartialLoadDecider(
-            loader=MelSInt32(b'PLDT', u'locType'),
-            decider=AttrValDecider(u'locType'),
+            loader=MelSInt32(b'PLDT', 'locType'),
+            decider=AttrValDecider('locType'),
         )),
-        MelStruct(b'PSDT', [u'2b', u'B', u'b', u'i'], u'month', u'day', u'date', u'time',
-            u'duration'),
+        MelStruct(b'PSDT', ['2b', 'B', 'b', 'i'], 'month', 'day', 'date',
+            'time', 'duration'),
         MelUnion({
-            (0, 1): MelOptStruct(b'PTDT', [u'i', u'I', u'i'], u'targetType',
-                (FID, u'targetId'), u'targetCount'),
-            2: MelOptStruct(b'PTDT', [u'i', u'I', u'i'], u'targetType', u'targetId',
-                u'targetCount'),
+            (0, 1): MelOptStruct(b'PTDT', ['i', 'I', 'i'], 'targetType',
+                (FID, 'targetId'), 'targetCount'),
+            2: MelOptStruct(b'PTDT', ['i', 'I', 'i'], 'targetType', 'targetId',
+                'targetCount'),
         }, decider=PartialLoadDecider(
-            loader=MelSInt32(b'PTDT', u'targetType'),
-            decider=AttrValDecider(u'targetType'),
+            loader=MelSInt32(b'PTDT', 'targetType'),
+            decider=AttrValDecider('targetType'),
         )),
         MelConditionsTes4(),
     )

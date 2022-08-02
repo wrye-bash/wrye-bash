@@ -48,7 +48,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
     MelEffects, AMelLLItems, MelUnloadEvent, MelShortName
-from ...exception import ModError, ModSizeError, StateError
+from ...exception import ModError, ModSizeError
 
 _is_sse = bush.game.fsName in (
     'Skyrim Special Edition', 'Skyrim VR', 'Enderal Special Edition',
@@ -564,13 +564,13 @@ class ObjectRef(object):
 
     def __init__(self, aid, fid):
         self.aid = aid # The AliasID
-        self.fid = fid # The FormID
+        self.fid = FID(fid) # The FormID
 
     def dump_out(self, __packer=structs_cache[u'HhI'].pack):
         """Returns the dumped version of this ObjectRef, ready for writing onto
         an output stream."""
         # Write only object format v2
-        return __packer(0, self.aid, self.fid)
+        return __packer(0, self.aid, self.fid.dump())
 
     def map_fids(self, map_function, save_fids=False):
         """Maps the specified function onto this ObjectRef's fid. If save is
@@ -1198,6 +1198,7 @@ class MelVmad(MelBase):
 class MreTes4(MreHeaderBase):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
+    _post_masters_sigs = {b'SCRN', b'INTV', b'INCC', b'ONAM'}
 
     melSet = MelSet(
         MelStruct(b'HEDR', [u'f', u'2I'], ('version', 1.7), 'numRecords',
@@ -2910,7 +2911,7 @@ class MreLgtm(MelRecord):
                     unpacked_val[19] + null4 * 2, *unpacked_val[20:])
                 for attr, value, action in zip(self.attrs, unpacked_val,
                                                self.actions):
-                    if action is not None: value = action(value)
+                    if action is not None: value = action(value) ##: fids?
                     setattr(record, attr, value)
             else:
                 raise ModSizeError(ins.inName, debug_strs, (92, 84), size_)
@@ -3489,8 +3490,7 @@ class MreOtft(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
     def mergeFilter(self, modSet):
-        if not self.longFids: raise StateError(u'Fids not in long format')
-        self.items = [i for i in self.items if i[0] in modSet]
+        self.items = [i for i in self.items if i.mod_id in modSet]
 
 #------------------------------------------------------------------------------
 class MrePack(MelRecord):

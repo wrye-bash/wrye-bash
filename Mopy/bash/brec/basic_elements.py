@@ -24,7 +24,9 @@
 higher-level building blocks can be found in common_subrecords.py."""
 from typing import BinaryIO
 
-from .utils_constants import FID, null1, FixedString, int_unpacker, get_structs
+from . import utils_constants
+from .utils_constants import FID, null1, FixedString, int_unpacker, \
+    get_structs, ZERO_FID
 from .. import bolt, exception
 from ..bolt import decoder, encode, structs_cache, struct_calcsize, Rounder, \
     sig_to_str, attrgetter_cache, struct_error
@@ -591,10 +593,10 @@ class MelStruct(MelBase):
         if self.formAttrs: formElements.add(self)
 
     def setDefault(self,record):
-        for attr, value, action in zip(self.attrs, self.defaults,
-                                        self.actions):
-            if action is not None: value = action(value)
-            setattr(record, attr, value)
+        for att, value, action in zip(self.attrs, self.defaults, self.actions):
+            if action is not None and action is not FID:
+                value = action(value)
+            setattr(record, att, value)
 
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         unpacked = ins.unpack(self._unpacker, size_, *debug_strs)
@@ -623,7 +625,7 @@ class MelStruct(MelBase):
     def static_size(self):
         return self._static_size
 
-    def _parseElements(self, struct_formats, *elements):
+    def _parseElements(self, struct_formats, *elements, __zero_fid=ZERO_FID):
         formAttrs = set()
         lenEls = len(elements)
         attrs, defaults, actions = [0] * lenEls, [0] * lenEls, [None] * lenEls
@@ -639,10 +641,10 @@ class MelStruct(MelBase):
             else:
                 el_0 = element[0]
                 attrIndex = el_0 == 0
-                if el_0 == FID:
-                    formAttrs.add(element[1])
-                    attrIndex = 1
-                elif callable(el_0):
+                if callable(el_0):
+                    if el_0 is FID:
+                        formAttrs.add(element[1])
+                        defaults[index] = __zero_fid
                     actions[index] = el_0
                     attrIndex = 1
                     self._action_dexes.add(index)
@@ -765,6 +767,13 @@ class MelFid(MelUInt32):
     def __init__(self, mel_sig, element=u'FID_'):
         super(MelFid, self).__init__(mel_sig, element)
 
+    def load_bytes(self, ins, size_, *debug_strs):
+        return FID(super().load_bytes(ins, size_, *debug_strs))
+
+    def packer(self, form_id):
+        return super(MelFid, self.__class__).packer(
+            utils_constants.short_mapper(form_id))
+
     def hasFids(self,formElements):
         formElements.add(self)
 
@@ -785,9 +794,16 @@ class MelOptStruct(MelStruct):
     def pack_subrecord_data(self, record):
         # TODO: Unfortunately, checking if the attribute is None is not
         # really effective.  Checking it to be 0,empty,etc isn't effective either.
-        # It really just needs to check it against the default.
+        # It really just needs to check it against the default. - make all defaults None?
         for attr, default in zip(self.attrs, self.defaults):
             oldValue = getattr(record, attr)
             if oldValue is not None and oldValue != default:
                 return super(MelOptStruct, self).pack_subrecord_data(record)
         return None
+
+    def mapFids(self, record, function, save_fids=False):
+        """Don't map if we won't be dumped - this incidentally means that
+        all fids are also on default so not loaded."""
+        if any((rec_val := getattr(record, at)) is not None and
+            rec_val != dflt for at, dflt in zip(self.attrs, self.defaults)):
+            super().mapFids(record, function, save_fids)

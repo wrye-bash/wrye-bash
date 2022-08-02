@@ -260,7 +260,7 @@ class _AEffectsTweak_Tes5(IndexingTweak, _AEffectsTweak):
     def _get_spell_level(self, record):
         hc_perk = record.halfCostPerk
         if hc_perk:
-            return _perk_to_level[hc_perk[1]]
+            return _perk_to_level[hc_perk.object_dex]
         return 0 # default to 0 (novice)
 
     def wants_record(self, record):
@@ -785,10 +785,10 @@ class _ANamesTweak_RenameF(CustomChoiceTweak):
     """Base class for Rename Gold/Caps tweaks."""
     tweak_read_classes = b'MISC',
     tweak_key = 'rename_gold'
-    _gold_fid = (bush.game.master_file, 0x00000F)
+    _gold_fid = bush.game.master_fid(0x00000F)
     # Only interested in one specific record, see finish_tweaking below
     _found_gold = False
-    _gold_attrs = bush.game.gold_attrs(bush.game.master_file)
+    _gold_attrs = bush.game.gold_attrs()
 
     def wants_record(self, record):
         return record.fid == self._gold_fid

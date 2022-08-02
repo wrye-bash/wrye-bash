@@ -1730,9 +1730,10 @@ class ModDetails(_ModsSavesDetails):
         if changeHedr or changeMasters:
             modInfo.header.author = self.authorStr.strip()
             modInfo.header.description = bolt.winNewLines(self.descriptionStr.strip())
+            old_mi_masters = modInfo.header.masters
             modInfo.header.masters = self.uilist.GetNewMasters()
             modInfo.header.changed = True
-            modInfo.writeHeader()
+            modInfo.writeHeader(old_mi_masters)
         #--Change date?
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed

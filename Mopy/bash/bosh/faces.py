@@ -28,8 +28,7 @@ from ._saves import SreNPC, SaveFile
 from .. import bush
 from ..bolt import Flags, encode, Path, struct_pack, struct_unpack, pack_int, \
     pack_byte, structs_cache
-from ..brec import getModIndex, MreRecord, genFid, RecHeader, null2, \
-    int_unpacker
+from ..brec import MreRecord, RecHeader, null2, int_unpacker, FormId
 from ..exception import SaveFileError, StateError
 from ..mod_files import LoadFactory, MasterMap, ModFile
 
@@ -213,7 +212,7 @@ class PCFaces(object):
         for save_rec_fid in (face.race, face.eye, face.hair):
             if not save_rec_fid: continue
             maxMaster = len(face.face_masters) - 1
-            mod = getModIndex(save_rec_fid)
+            mod = save_rec_fid >> 24
             master = face.face_masters[min(mod, maxMaster)]
             saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
@@ -262,11 +261,10 @@ class PCFaces(object):
         """Write a pcFace to a save file."""
         pcf_flags = PCFaces.pcf_flags(pcf_flags)
         #--Update masters
+        maxMaster = len(face.face_masters) - 1
         for fid in (face.race, face.eye, face.hair, face.iclass):
             if not fid: continue
-            maxMaster = len(face.face_masters) - 1
-            mod = getModIndex(fid)
-            master = face.face_masters[min(mod, maxMaster)]
+            master = face.face_masters[min(fid >> 24, maxMaster)]
             saveFile.addMaster(master) # won't add it if it's there
         masterMap = MasterMap(face.face_masters, saveFile._masters)
         #--Player ACHR
@@ -388,7 +386,6 @@ class PCFaces(object):
         """Returns an array of PCFaces from a mod file."""
         #--Mod File
         modFile = PCFaces._mod_load_fact(modInfo, by_sig=[b'NPC_'])
-        short_mapper = modFile.getShortMapper()
         faces = {}
         for npc in modFile.tops[b'NPC_'].getActiveRecords():
             face = PCFaces.PCFace()
@@ -398,8 +395,8 @@ class PCFaces(object):
                       'fgts_p', 'level_offset', 'skills', 'health', 'unused2',
                       'baseSpell', 'fatigue', 'attributes', 'iclass'):
                 npc_val = getattr(npc, a)
-                if isinstance(npc_val, tuple): # Hacky check for FormIDs
-                    npc_val = short_mapper(npc_val)
+                if isinstance(npc_val, FormId):
+                    npc_val = npc_val.short_fid # saves code uses the ints...
                 setattr(face, a, npc_val)
             face.gender = npc.flags.female
             face.pcName = npc.full
@@ -444,9 +441,9 @@ class PCFaces(object):
             count += 1
             eid = eidForm % count
         #--NPC
-        npcid = genFid(tes4.num_masters, tes4.getNextObject())
+        npcid = FormId.from_object_id(tes4.num_masters, tes4.getNextObject())
         npc = MreRecord.type_class[b'NPC_'](
-            RecHeader(b'NPC_', 0, 0x40000, npcid, 0))
+            RecHeader(b'NPC_', 0, 0x40000, npcid, 0, _entering_context=True))
         npc.eid = eid
         npc.full = face.pcName
         npc.flags.female = face.gender

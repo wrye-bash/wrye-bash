@@ -29,8 +29,10 @@ from itertools import chain
 from operator import itemgetter, attrgetter
 
 # Wrye Bash imports
-from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader
-from .utils_constants import group_types, fid_key, strFid
+from . import utils_constants
+from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader, \
+    ExteriorGrupHeader, ChildrenGrupHeader
+from .utils_constants import group_types, fid_key, DUMMY_FID
 from ..bolt import pack_int, structs_cache, attrgetter_cache, deprint, \
     sig_to_str, dict_sort
 from ..exception import AbstractError, ModError, ModFidMismatchError
@@ -81,6 +83,15 @@ class MobBase(object):
     def setChanged(self,value=True):
         """Sets changed attribute to value. [Default = True.]"""
         self.changed = value
+
+    ##: This should be dropped later once we ensure we correctly call
+    # setChanged() on all non-BP uses of ModFile where we modify records and
+    # make the BP call setChanged() during its record trimming phase on all
+    # keepIds - hard right now due to having to trace ModFile.load() calls.
+    def set_records_changed(self):
+        """Mark all records in this record group as changed."""
+        for r in self.iter_records():
+            r.setChanged()
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
@@ -141,12 +152,6 @@ class MobBase(object):
         """Returns a set of all signatures contained in this block."""
         raise AbstractError(u'get_all_signatures not implemented')
 
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if
-        converting to short format. Base implementation does nothing as its
-        records are not unpacked."""
-
     def indexRecords(self):
         """Indexes records by fid."""
         raise AbstractError(u'indexRecords not implemented')
@@ -202,10 +207,10 @@ class MobObjects(MobBase):
         self.records = []
         self.id_records = {}
         from .. import bush
-        self._null_fid = (bush.game.master_file, 0)
+        self._null_fid = bush.game.null_fid
         # DarkPCB record
-        self._bad_form = bush.game.displayName == u'Oblivion' and (
-            bush.game.master_file, 0xA31D) or None
+        self._bad_form = bush.game.displayName == 'Oblivion' and \
+            bush.game.master_fid(0xA31D) or None
         super(MobObjects, self).__init__(header, loadFactory, ins, do_unpack)
 
     def get_all_signatures(self):
@@ -272,14 +277,6 @@ class MobObjects(MobBase):
         """Updates set of master names according to masters actually used."""
         for record in self.records:
             record.updateMasters(masterset_add)
-
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if
-        converting to short format."""
-        for record in self.records:
-            record.convertFids(mapper,toLong)
-        self.id_records.clear()
 
     def indexRecords(self):
         """Indexes records by fid."""
@@ -453,7 +450,7 @@ class MobDial(MobObjects):
             infos_size = hsize + sum(hsize + i.getSize() for i in self.records)
             # Write out a GRUP header (needed in order to know the number of
             # bytes to read for all the INFOs), then dump all the INFOs
-            out.write(GrupHeader(infos_size, self.dial.fid, 7, self.stamp,
+            out.write(ChildrenGrupHeader(infos_size, self.dial.fid, 7, self.stamp,
                 self.stamp2).pack_head())
             self._sort_group()
             for info in self.records:
@@ -461,10 +458,6 @@ class MobDial(MobObjects):
 
     def get_all_signatures(self):
         return {self.dial._rec_sig} | {i._rec_sig for i in self.records}
-
-    def convertFids(self, mapper, toLong):
-        self.dial.convertFids(mapper, toLong)
-        super(MobDial, self).convertFids(mapper, toLong)
 
     def iter_records(self):
         return chain([self.dial], self.records)
@@ -663,10 +656,6 @@ class MobDials(MobBase):
             for dialogue in self.dialogues:
                 dialogue.dump(out)
 
-    def convertFids(self, mapper, toLong):
-        for dialogue in self.dialogues:
-            dialogue.convertFids(mapper, toLong)
-
     def get_all_signatures(self):
         return set(chain.from_iterable(d.get_all_signatures()
                                        for d in self.dialogues))
@@ -745,8 +734,8 @@ class MobDials(MobBase):
         if dial_fid in self.id_dialogues:
             self.id_dialogues[dial_fid].dial = dialogue
         else:
-            dial_block = MobDial(GrupHeader(0, 0, 7, self.stamp),
-                self.loadFactory, dialogue)
+            children_head = ChildrenGrupHeader(0, DUMMY_FID, 7, self.stamp)
+            dial_block = MobDial(children_head, self.loadFactory, dialogue)
             dial_block.setChanged()
             self.dialogues.append(dial_block)
             self.id_dialogues[dial_fid] = dial_block
@@ -889,7 +878,7 @@ class MobCell(MobBase):
         cell = self.cell
         #--Interior cell
         if cell.flags.isInterior:
-            baseFid = cell.fid & 0x00FFFFFF
+            baseFid = cell.fid.short_fid & 0x00FFFFFF
             return baseFid % 10, baseFid % 100 // 10
         #--Exterior cell
         else:
@@ -926,26 +915,10 @@ class MobCell(MobBase):
                 record.dump(out)
 
     def _write_group_header(self, out, group_size, group_type):
-        out.write(GrupHeader(group_size, self.cell.fid, group_type,
-                             self.stamp).pack_head()) # FIXME was TESIV only - self.extra??
+        out.write(ChildrenGrupHeader(group_size, self.cell.fid, group_type,
+            self.stamp).pack_head()) # FIXME was TESIV only - self.extra??
 
-    #--Fid manipulation, record filtering ----------------------------------
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if
-        converting to short format."""
-        self.cell.convertFids(mapper,toLong)
-        for record in self.temp_refs:
-            record.convertFids(mapper,toLong)
-        for record in self.persistent_refs:
-            record.convertFids(mapper,toLong)
-        for record in self.distant_refs:
-            record.convertFids(mapper,toLong)
-        if self.land:
-            self.land.convertFids(mapper,toLong)
-        if self.pgrd:
-            self.pgrd.convertFids(mapper,toLong)
-
+    #--Record filtering ----------------------------------
     def get_all_signatures(self):
         cell_sigs = {self.cell._rec_sig}
         cell_sigs.update(r._rec_sig for r in self.temp_refs)
@@ -1092,7 +1065,8 @@ class MobCells(MobBase):
     are tuples of grid tuples."""
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
-        self.id_cellBlock = {} #--Each cellBlock is a cell and its related records.
+        #--Each cellBlock is a cell and its related records.
+        self.id_cellBlock: dict[utils_constants.FormId, MobCell] = {}
         super(MobCells, self).__init__(header, loadFactory, ins, do_unpack)
 
     def setCell(self,cell):
@@ -1102,8 +1076,8 @@ class MobCells(MobBase):
         if cfid in self.id_cellBlock:
             self.id_cellBlock[cfid].cell = cell_copy
         else:
-            cellBlock = MobCell(GrupHeader(0, 0, 6, self.stamp), ##: Note label is 0 here - specialized GrupHeader subclass?
-                                self.loadFactory, cell_copy)
+            grup_header = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
+            cellBlock = MobCell(grup_header, self.loadFactory, cell_copy)
             cellBlock.setChanged()
             self.id_cellBlock[cfid] = cellBlock
 
@@ -1147,16 +1121,23 @@ class MobCells(MobBase):
         curSubblock = None
         stamp = self.stamp
         outWrite = out.write
+        if (blockGroupType, subBlockGroupType) == (2, 3):
+            grup_htype = GrupHeader
+        elif (blockGroupType, subBlockGroupType) == (4, 5):
+            grup_htype = ExteriorGrupHeader
+        else:
+            raise ValueError(f'{(blockGroupType, subBlockGroupType)} is '
+                             f'invalid')
         for bsb,cellBlock in bsbCellBlocks:
             (block,subblock) = bsb
             bsb0 = (block,None)
             if block != curBlock:
                 curBlock,curSubblock = bsb0
-                outWrite(GrupHeader(bsb_size[bsb0], block, blockGroupType, ##: Here come the tuples - specialized GrupHeader subclass?
+                outWrite(grup_htype(bsb_size[bsb0], block, blockGroupType,
                                     stamp).pack_head())
             if subblock != curSubblock:
                 curSubblock = subblock
-                outWrite(GrupHeader(bsb_size[bsb], subblock, subBlockGroupType, ##: Here come the tuples - specialized GrupHeader subclass?
+                outWrite(grup_htype(bsb_size[bsb], subblock, subBlockGroupType,
                                     stamp).pack_head())
             cellBlock.dump(out)
 
@@ -1228,14 +1209,6 @@ class MobCells(MobBase):
         # Apply any merge filtering we've done above to the record block
         block.id_cellBlock = filtered_cell_blocks
 
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if
-        converting to short format."""
-        for cellBlock in self.id_cellBlock.values():
-            cellBlock.convertFids(mapper,toLong)
-        self.id_cellBlock = {mapper(k): v for k, v in self.id_cellBlock.items()}
-
     def updateRecords(self, srcBlock, mergeIds):
         """Updates any records in 'self' that exist in 'srcBlock'."""
         id_Get = self.id_cellBlock.get
@@ -1292,18 +1265,19 @@ class MobICells(MobCells):
                                    f'Interior cell <{cell.fid:X}> {cell.eid} '
                                    f'outside of block or subblock.')
             elif _rsig == b'GRUP':
-                groupFid,groupType = header.label, header.groupType
+                groupType = header.groupType
                 delta = header.blob_size()
                 if groupType == 2: # Block number
                     endBlockPos = insTell() + delta
                 elif groupType == 3: # Sub-block number
                     endSubblockPos = insTell() + delta
                 elif groupType == 6: # Cell Children
+                    groupFid: utils_constants.FormId = header.label
                     if cell:
                         if groupFid != cell.fid:
                             raise ModError(self.inName,
-                                f'Cell subgroup ({groupFid:X}) does not match '
-                                f'CELL <{cell.fid:X}> {cell.eid}.')
+                                f'Cell subgroup ({groupFid}) does not match '
+                                f'CELL <{cell.fid}> {cell.eid}.')
                         build_cell_block(unpack_block=unpackCellBlocks,
                                          skip_delta=True)
                         cell = None
@@ -1404,8 +1378,7 @@ class MobWorld(MobCells):
             elif _rsig == b'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
-                    block = __unpacker(__packer(groupFid))
-                    block = (block[1],block[0])
+                    block: (int, int) = groupFid # Grid (Y, X) - used only as bool(block)
                     endBlockPos = insTell() + header.blob_size()
                 elif groupType == 5: # Exterior Cell Sub-Block
                     # we don't actually care what the sub-block is, since
@@ -1418,7 +1391,7 @@ class MobWorld(MobCells):
                     if cell:
                         if groupFid != cell.fid:
                             raise ModError(self.inName,
-                                           f'Cell subgroup ({hex(groupFid)}) '
+                                           f'Cell subgroup ({groupFid}) '
                                            f'does not match CELL {cell!r}.')
                         build_cell_block(unpack_block=unpackCellBlocks,
                                          skip_delta=True)
@@ -1489,8 +1462,8 @@ class MobWorld(MobCells):
         if self.worldCellBlock:
             self.worldCellBlock.cell = cell_copy
         else:
-            new_pers_block = MobCell(GrupHeader(0, 0, 6, self.stamp), ##: Note label is 0 here - specialized GrupHeader subclass?
-                                     self.loadFactory, cell_copy)
+            grup_header = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
+            new_pers_block = MobCell(grup_header, self.loadFactory, cell_copy)
             new_pers_block.setChanged()
             self.worldCellBlock = new_pers_block
 
@@ -1502,17 +1475,6 @@ class MobWorld(MobCells):
         if self.worldCellBlock:
             all_sigs |= self.worldCellBlock.get_all_signatures()
         return all_sigs
-
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if
-        converting to short format."""
-        self.world.convertFids(mapper,toLong)
-        if self.road:
-            self.road.convertFids(mapper,toLong)
-        if self.worldCellBlock:
-            self.worldCellBlock.convertFids(mapper,toLong)
-        super(MobWorld, self).convertFids(mapper, toLong)
 
     def updateMasters(self, masterset_add):
         """Updates set of master names according to masters actually used."""
@@ -1533,7 +1495,7 @@ class MobWorld(MobCells):
                 ##: This may be wrong, check if ROAD behaves like PGRD/LAND
                 if myRecord.fid != src_rec_fid:
                     raise ModFidMismatchError(self.inName, myRecord.rec_str,
-                        strFid(myRecord.fid), strFid(src_rec_fid))
+                                              myRecord.fid, src_rec_fid)
                 if not record.flags1.ignored:
                     record = record.getTypeCopy()
                     setattr(self, attr, record)
@@ -1583,7 +1545,7 @@ class MobWorld(MobCells):
                 ##: This may be wrong, check if ROAD behaves like PGRD/LAND
                 if dest_rec and dest_rec.fid != src_rec.fid:
                     raise ModFidMismatchError(self.inName, dest_rec.rec_str,
-                        strFid(dest_rec.fid), strFid(src_rec.fid))
+                                              dest_rec.fid, src_rec.fid)
                 # We're past all hurdles - stick a copy of this record into
                 # ourselves and mark it as merged
                 mergeIdsAdd(src_rec.fid)
@@ -1593,8 +1555,9 @@ class MobWorld(MobCells):
             # If we don't have a world cell block yet, make a new one to merge
             # the source's world cell block into
             if not self.worldCellBlock:
-                self.worldCellBlock = MobCell(GrupHeader(0, 0, 6, self.stamp),
-                    self.loadFactory, None) # cell will be set in merge_records
+                grup_header = ChildrenGrupHeader(0, DUMMY_FID, 6, self.stamp)
+                self.worldCellBlock = MobCell(grup_header, self.loadFactory,
+                    None) # cell will be set in merge_records
                 was_newly_added = True
             # Delegate merging to the (potentially newly added) block
             self.worldCellBlock.merge_records(block.worldCellBlock, loadSet,
@@ -1720,15 +1683,6 @@ class MobWorlds(MobBase):
         count = sum(x.getNumRecords(includeGroups) for x in self.id_worldBlocks.values())
         return count + includeGroups * bool(count)
 
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if
-        converting to short format."""
-        for worldBlock in self.id_worldBlocks.values():
-            worldBlock.convertFids(mapper,toLong)
-        self.id_worldBlocks = {mapper(k): v for k, v in
-                               self.id_worldBlocks.items()}
-
     def get_all_signatures(self):
         return set(chain.from_iterable(w.get_all_signatures()
                                        for w in self.id_worldBlocks.values()))
@@ -1757,8 +1711,8 @@ class MobWorlds(MobBase):
         if wfid in self.id_worldBlocks:
             self.id_worldBlocks[wfid].world = world_copy
         else:
-            worldBlock = MobWorld(GrupHeader(0, 0, 1, self.stamp), ##: groupType = 1
-                                  self.loadFactory, world_copy)
+            grup_header = ChildrenGrupHeader(0, DUMMY_FID, 1, self.stamp)
+            worldBlock = MobWorld(grup_header, self.loadFactory, world_copy)
             worldBlock.setChanged()
             self.id_worldBlocks[wfid] = worldBlock
 

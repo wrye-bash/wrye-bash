@@ -34,8 +34,8 @@ from .. import bolt, bush
 from ..bolt import Flags, deprint, encode, SubProgress, unpack_many, \
     unpack_int, unpack_short, struct_unpack, pack_int, pack_short, pack_byte, \
     structs_cache, unpack_str8, dict_sort, sig_to_str
-from ..brec import ModReader, MreRecord, getObjectIndex, getFormIndices, \
-    unpack_header, int_unpacker
+from ..brec import ModReader, MreRecord, unpack_header, int_unpacker, \
+    utils_constants, FormId, ShortFidWriteContext
 from ..exception import ModError, StateError, AbstractError
 from ..mod_files import ModFile, LoadFactory
 
@@ -322,7 +322,7 @@ class SaveFile(object):
         if not self.canSave:
             raise StateError('Insufficient data to write file.')
         outPath = outPath or self.fileInfo.getPath()
-        with outPath.open(u'wb') as out:
+        with ShortFidWriteContext(outPath) as out:
             def _pack(fmt, *args):
                 out.write(structs_cache[fmt].pack(*args))
             #--Progress
@@ -636,7 +636,8 @@ class SaveSpells(_SaveData):
 
     def __init__(self, saveInfo):
         super().__init__(saveInfo)
-        self.allSpells = {} #--spells[(modName,objectIndex)] = (name,type)
+        #--spells[(modName,objectIndex)] = (name,type)
+        self.allSpells: dict[utils_constants.FormId, (str, int)] = {}
 
     def load_data(self, progress, modInfos):
         """Load savegame and extract created spells from it and its masters."""
@@ -654,13 +655,15 @@ class SaveSpells(_SaveData):
         progress(progress.full - 1, saveName)
         for rfid, record in self.saveFile.created.items():
             if record._rec_sig == b'SPEL':
-                allSpells[(saveName,getObjectIndex(rfid))] = record.getTypeCopy()
+                save_fid = FormId.from_tuple((saveName, rfid.object_dex))
+                allSpells[save_fid] = record.getTypeCopy()
 
     def importMod(self,modInfo):
         """Imports spell info from specified mod."""
         #--Spell list already extracted?
         if 'bash.spellList' in modInfo.extras:
-            self.allSpells.update(modInfo.extras['bash.spellList'])
+            self.allSpells.update((FormId.from_tuple(k), v) for k, v in
+                                  modInfo.extras['bash.spellList'].items())
             return
         #--Else extract spell list
         loadFactory = LoadFactory(False, by_sig=[b'SPEL'])
@@ -669,11 +672,13 @@ class SaveSpells(_SaveData):
         except ModError as err:
             deprint(f'skipped mod due to read error ({err})')
             return
-        spells = modInfo.extras['bash.spellList'] = {record.fid: record for
-            record in modFile.tops[b'SPEL'].getActiveRecords()}
+        spells = {record.fid: record for record in
+                  modFile.tops[b'SPEL'].getActiveRecords()}
+        modInfo.extras['bash.spellList'] = {k.long_fid: v for k, v in
+                                            spells.items()}
         self.allSpells.update(spells)
 
-    def getPlayerSpells(self):
+    def getPlayerSpells(self): ##: could be refactored to use FormId machinery
         """Returns players spell list from savegame. (Returns ONLY spells. I.e., not abilities, etc.)"""
         saveFile = self.saveFile
         npc, _version = saveFile.get_npc()
@@ -690,7 +695,7 @@ class SaveSpells(_SaveData):
                 fid = iref
             else:
                 fid = saveFile.fids[iref]
-            modIndex,objectIndex = getFormIndices(fid)
+            modIndex, objectIndex = fid >> 24, fid & 0x00FFFFFF
             if modIndex == 255:
                 master = self.saveInfo.fn_key
             elif modIndex <= maxMasters:
