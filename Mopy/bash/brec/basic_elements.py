@@ -536,6 +536,10 @@ class MelStrings(MelString):
             return
         str_data = null1.join( # TODO use encode_complex_string?
             encode(x, firstEncoding=bolt.pluginEncoding) for x in strings)
+        if not str_data:
+            # Similarly, don't dump out a pointless terminator just because the
+            # plugin we read it from had a pointless terminator
+            return
         # MelStrings need an extra null separator or Oblivion will CTD. This
         # adds the null separator for the last string, then we...
         str_data += null1
