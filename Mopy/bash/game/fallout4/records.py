@@ -30,8 +30,8 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
     AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
-    AttrValDecider, MelSoundPickup, MelSoundDrop, MelEquipmentType, \
-    MelDescription, MelEffects, AMelLLItems, MelValueWeight
+    AttrValDecider, MelSoundPickup, MelSoundDrop, MelEquipmentType, AMelVmad, \
+    MelDescription, MelEffects, AMelLLItems, MelValueWeight, AVmadContext
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -151,9 +151,12 @@ class MelSoundCrafting(MelFid):
         super().__init__(b'CUSD', 'sound_crafting')
 
 #------------------------------------------------------------------------------
-class MelVmad(MelNull): # TODO(inf) Refactor Skyrim's MelVmad and remove this
-    def __init__(self):
-        super().__init__(b'VMAD')
+class MelVmad(AMelVmad):
+    class _VmadContextFo4(AVmadContext):
+        """Provides VMAD context for Fallout 4."""
+        max_vmad_ver = 6
+
+    _vmad_context_class = _VmadContextFo4
 
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------

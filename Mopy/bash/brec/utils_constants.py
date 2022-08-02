@@ -231,7 +231,7 @@ ZERO_FID = _Tes4Fid(0)
 # Global FormId class used to wrap all formids of currently loading mod. It
 # must be set by the mod reader context manager based on the currently loading
 # plugin
-FORM_ID: None | Type[FormId] = None
+FORM_ID: Type[FormId] | None = None
 
 # Global short mapper function. It must be set by the mod output context
 # manager for mapping the fids based on the masters of the currently dumped plugin
@@ -315,13 +315,6 @@ def perk_effect_key(e):
         return e.rank, e.priority, perk_effect_type, extra_vals or sys.maxsize
     else:
         return e.rank, e.priority, perk_effect_type, *extra_vals
-
-vmad_fragments_key = attrgetter_cache[u'fragment_index']
-vmad_properties_key = attrgetter_cache[u'prop_name']
-vmad_qust_aliases_key = attrgetter_cache[u'alias_ref_obj']
-vmad_qust_fragments_key = attrgetter_cache[(u'quest_stage',
-                                            u'quest_stage_index')]
-vmad_script_key = attrgetter_cache[u'script_name']
 
 # Constants -------------------------------------------------------------------
 

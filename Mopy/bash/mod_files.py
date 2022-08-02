@@ -233,14 +233,16 @@ class ModFile(object):
                             # to not loading it fully. Log and replace the
                             # existing one
                             deprint(f'{self.fileInfo}: Duplicate top-level '
-                                f'{top_grup_sig} group loaded as MobBase, replacing')
+                                    f'{sig_to_str(top_grup_sig)} group loaded '
+                                    f'as MobBase, replacing')
                             self.tops[top_grup_sig] = new_top
                         else:
                             # Duplicate top-level group and we can merge
                             deprint(f'{self.fileInfo}: Duplicate top-level '
-                                    f'{top_grup_sig} group, merging')
-                            self.tops[top_grup_sig].merge_records(new_top, set(),
-                                set(), False, False)
+                                    f'{sig_to_str(top_grup_sig)} group, '
+                                    f'merging')
+                            self.tops[top_grup_sig].merge_records(new_top,
+                                set(), set(), False, False)
                     else:
                         self.topsSkipped.add(top_grup_sig)
                         header.skip_blob(ins)
