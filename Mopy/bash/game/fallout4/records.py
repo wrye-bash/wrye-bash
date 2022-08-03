@@ -27,7 +27,7 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelUnloadEvent, \
     MelArray, MreGmstBase, MelUInt8Flags, MelSorted, MelGroups, MelShortName, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
-    MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, MelAlchEnit, \
+    MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
     AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
     AttrValDecider, MelSoundPickup, MelSoundDrop, MelEquipmentType, \
@@ -216,7 +216,7 @@ class MreActi(MelRecord):
         MelNativeTerminal(),
         MelFtyp(),
         MelColor(b'PNAM'),
-        MelSoundLooping(),
+        MelSound(),
         MelSoundActivation(),
         MelWaterType(),
         MelAttx(),
@@ -240,7 +240,7 @@ class MreAddn(MelRecord):
         MelBounds(),
         MelModel(),
         MelNodeIndex(),
-        MelSoundLooping(),
+        MelSound(),
         MelFid(b'LNAM', 'addon_light'),
         MelAddnDnam(),
     )

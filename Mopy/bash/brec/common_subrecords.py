@@ -679,10 +679,10 @@ class MelSoundDrop(MelFid):
         super().__init__(b'ZNAM', 'dropSound')
 
 #------------------------------------------------------------------------------
-class MelSoundLooping(MelFid):
-    """Handles the common SNAM (Sound - Looping) subrecord."""
+class MelSound(MelFid):
+    """Handles the common SNAM (Sound) subrecord."""
     def __init__(self):
-        super().__init__(b'SNAM', 'soundLooping')
+        super().__init__(b'SNAM', 'sound')
 
 #------------------------------------------------------------------------------
 class MelSoundPickup(MelFid):

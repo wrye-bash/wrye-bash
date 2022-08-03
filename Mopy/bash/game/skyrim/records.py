@@ -44,7 +44,7 @@ from ...brec import MelRecord, MelObject, MelGroups, MelStruct, FID, MelAttx, \
     MelActorSounds, MelFactionRanks, MelSorted, vmad_properties_key, \
     vmad_qust_fragments_key, vmad_fragments_key, vmad_script_key, \
     vmad_qust_aliases_key, MelReflectedRefractedBy, perk_effect_key, \
-    MelValueWeight, int_unpacker, MelCoed, MelSoundLooping, MelWaterType, \
+    MelValueWeight, int_unpacker, MelCoed, MelSound, MelWaterType, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
     MelEffects, AMelLLItems, MelUnloadEvent, MelShortName
@@ -1290,7 +1290,7 @@ class MreActi(MelRecord):
         MelDestructible(),
         MelKeywords(),
         MelColor(b'PNAM'),
-        MelSoundLooping(),
+        MelSound(),
         MelSoundActivation(),
         MelWaterType(),
         MelAttx(b'RNAM'),
@@ -1309,7 +1309,7 @@ class MreAddn(MelRecord):
         MelBounds(),
         MelModel(),
         MelNodeIndex(),
-        MelSoundLooping(),
+        MelSound(),
         MelAddnDnam(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1488,7 +1488,7 @@ class MreAspc(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelSoundLooping(),
+        MelSound(),
         MelFid(b'RDAT', 'regionData'),
         MelFid(b'BNAM', 'reverb'),
     )
@@ -1848,7 +1848,7 @@ class MreCont(MreWithItems):
         MelItems(),
         MelDestructible(),
         MelStruct(b'DATA', [u'B', u'f'],(ContTypeFlags, u'flags'),'weight'),
-        MelFid(b'SNAM','soundOpen'),
+        MelSound(),
         MelFid(b'QNAM','soundClose'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2016,7 +2016,7 @@ class MreDoor(MelRecord):
         MelFull(),
         MelModel(),
         MelDestructible(),
-        MelFid(b'SNAM','soundOpen'),
+        MelSound(),
         MelFid(b'ANAM','soundClose'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', DoorTypeFlags),
@@ -2294,7 +2294,7 @@ class MreFlor(MelRecord):
         MelAttx(b'RNAM'),
         MelBase(b'FNAM','unknown02'),
         MelFid(b'PFIG','ingredient'),
-        MelFid(b'SNAM','harvestSound'),
+        MelSound(),
         MelStruct(b'PFPC', [u'4B'],'spring','summer','fall','winter',),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2754,7 +2754,7 @@ class MreIpct(MelRecord):
         MelDecalData(),
         MelFid(b'DNAM','textureSet'),
         MelFid(b'ENAM','secondarytextureSet'),
-        MelFid(b'SNAM','sound1'),
+        MelSound(),
         MelFid(b'NAM1','sound2'),
         MelFid(b'NAM2','hazard'),
     )
@@ -2978,7 +2978,7 @@ class MreLigh(MelRecord):
                   'fePeriod', 'feIntensityAmplitude', 'feMovementAmplitude',
                   'value', 'weight'),
         MelFloat(b'FNAM', u'fade'),
-        MelFid(b'SNAM','sound'),
+        MelSound(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3255,7 +3255,7 @@ class MreMstt(MelRecord):
         MelModel(),
         MelDestructible(),
         MelUInt8Flags(b'DATA', u'flags', MsttTypeFlags),
-        MelFid(b'SNAM','sound'),
+        MelSound(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4723,20 +4723,20 @@ class MreSndr(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelBase(b'CNAM','cnam_p'),
-        MelFid(b'GNAM','category',),
-        MelFid(b'SNAM','altSoundFor',),
-        MelGroups('sounds',
+        MelBase(b'CNAM', 'descriptor_type'),
+        MelFid(b'GNAM', 'descriptor_category'),
+        MelSound(),
+        MelGroups('sound_files',
             MelString(b'ANAM', 'sound_file_name',),
         ),
-        MelFid(b'ONAM','outputModel',),
-        MelLString(b'FNAM','string'),
+        MelFid(b'ONAM', 'output_model'),
+        MelLString(b'FNAM', 'descriptor_string'),
         MelConditionList(),
-        MelStruct(b'LNAM', [u's', u'B', u's', u'B'],'unkSndr1','looping',
-                  'unkSndr2','rumbleSendValue',),
-        MelStruct(b'BNAM', [u'2b', u'2B', u'H'], u'pctFrequencyShift',
-            u'pctFrequencyVariance', u'priority', u'dbVariance',
-            u'staticAtten'),
+        MelStruct(b'LNAM', ['s', 'B', 's', 'B'], 'unknown1', 'looping_type',
+            'unknown2', 'rumble_send_value'),
+        MelStruct(b'BNAM', ['2b', '2B', 'H'], 'pct_frequency_shift',
+            'pct_frequency_variance', 'descriptor_priority', 'db_variance',
+            'staticAtten'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4858,7 +4858,7 @@ class MreTact(MelRecord):
         MelDestructible(),
         MelKeywords(),
         MelBase(b'PNAM','pnam_p'),
-        MelFid(b'SNAM', 'soundLoop'),
+        MelSound(),
         MelBase(b'FNAM','fnam_p'),
         MelFid(b'VNAM', 'voiceType'),
     )
@@ -4875,7 +4875,7 @@ class MreTree(MelRecord):
         MelBounds(),
         MelModel(),
         MelFid(b'PFIG','harvestIngredient'),
-        MelFid(b'SNAM','harvestSound'),
+        MelSound(),
         MelStruct(b'PFPC', [u'4B'],'spring','summer','fall','wsinter',),
         MelFull(),
         MelStruct(b'CNAM', [u'12f'], u'trunk_flexibility', u'branch_flexibility',
@@ -4988,7 +4988,7 @@ class MreWatr(MelRecord):
         MelUInt8Flags(b'FNAM', u'flags', WatrTypeFlags),
         MelBase(b'MNAM','unused1'),
         MelFid(b'TNAM','material',),
-        MelFid(b'SNAM','openSound',),
+        MelSound(),
         MelFid(b'XNAM','spell',),
         MelFid(b'INAM','imageSpace',),
         MelUInt16(b'DATA', 'damagePerSecond'),
@@ -5087,7 +5087,7 @@ class MreWeap(MelRecord):
         MelBase(b'NNAM','unused1'),
         MelFid(b'INAM','impactDataSet',),
         MelFid(b'WNAM','firstPersonModelObject',),
-        MelFid(b'SNAM','attackSound',),
+        MelSound(),
         MelFid(b'XNAM','attackSound2D',),
         MelFid(b'NAM7','attackLoopSound',),
         MelFid(b'TNAM','attackFailSound',),

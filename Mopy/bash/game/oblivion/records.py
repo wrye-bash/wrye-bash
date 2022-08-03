@@ -42,7 +42,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelConditionsTes4, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
-    MelSoundLooping, MelWeight, MelEffectsTes4ObmeFull
+    MelSound, MelWeight, MelEffectsTes4ObmeFull
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -525,7 +525,7 @@ class MreActi(MelRecord):
         MelFull(),
         MelModel(),
         MelScript(),
-        MelSoundLooping(),
+        MelSound(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -759,7 +759,7 @@ class MreCont(MreWithItems):
         MelScript(),
         MelItems(),
         MelStruct(b'DATA', [u'B', u'f'],(_flags, u'flags'),'weight'),
-        MelFid(b'SNAM','soundOpen'),
+        MelSound(),
         MelFid(b'QNAM','soundClose'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -899,7 +899,7 @@ class MreDoor(MelRecord):
         MelFull(),
         MelModel(),
         MelScript(),
-        MelFid(b'SNAM','soundOpen'),
+        MelSound(),
         MelFid(b'ANAM','soundClose'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', _flags),
@@ -1157,7 +1157,7 @@ class MreLigh(MelRecord):
             (_flags, u'flags'), 'falloff', 'fov', 'value', 'weight',
             old_versions={'iI3BsI2f'}),
         MelFloat(b'FNAM', u'fade'),
-        MelFid(b'SNAM','sound'),
+        MelSound(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2141,7 +2141,7 @@ class MreWatr(MelRecord):
         MelUInt8(b'ANAM', 'opacity'),
         MelUInt8Flags(b'FNAM', u'flags', _flags),
         MelString(b'MNAM','material'),
-        MelFid(b'SNAM','sound'),
+        MelSound(),
         MelWatrData(b'DATA',
             [u'11f', u'3B', u's', u'3B', u's', u'3B', u's', u'B', u'3s',
              u'10f', u'H'], ('windVelocity', 0.100),
@@ -2200,7 +2200,7 @@ class MreWrld(MelRecord):
                   u'SECellX', u'SECellY'),
         MelUInt8Flags(b'DATA', u'flags', _flags),
         MelWorldBounds(),
-        MelUInt32(b'SNAM', 'sound'),
+        MelUInt32(b'SNAM', 'music_type'),
         MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
     )
     __slots__ = melSet.getSlotsUsed()

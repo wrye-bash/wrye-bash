@@ -45,7 +45,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
-    MelSoundLooping, MelSoundActivation, MelWaterType, MelConditionsFo3, \
+    MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName
 from ...exception import ModSizeError
 
@@ -415,7 +415,7 @@ class MreActi(MelRecord):
         MelModel(),
         MelScript(),
         MelDestructible(),
-        MelSoundLooping(),
+        MelSound(),
         MelSoundActivation(),
         fnv_only(MelFid(b'INAM', 'radioTemplate')),
         MelFid(b'RNAM', u'radioStation'),
@@ -434,7 +434,7 @@ class MreAddn(MelRecord):
         MelBounds(),
         MelModel(),
         MelNodeIndex(),
-        MelSoundLooping(),
+        MelSound(),
         MelAddnDnam(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -594,10 +594,10 @@ class MreAspc(MelRecord):
         MelEdid(),
         MelBounds(),
         if_fnv(
-            fo3_version=MelSoundLooping(),
+            fo3_version=MelSound(),
             # Technically five subrecords with the same signature, but it's
             # easier to load them like this than with a distributor
-            fnv_version=MelFids('soundLooping', MelFid(b'SNAM')),
+            fnv_version=MelFids('sound', MelFid(b'SNAM')),
         ),
         fnv_only(MelUInt32(b'WNAM', 'wallaTrigerCount')),
         MelFid(b'RDAT','useSoundFromRegion'),
@@ -879,7 +879,7 @@ class MreCont(MreWithItems):
         MelItems(),
         MelDestructible(),
         MelStruct(b'DATA', [u'B', u'f'],(_flags, u'flags'),'weight'),
-        MelFid(b'SNAM','soundOpen'),
+        MelSound(),
         MelFid(b'QNAM','soundClose'),
         fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
     )
@@ -1108,7 +1108,7 @@ class MreDoor(MelRecord):
         MelModel(),
         MelScript(),
         MelDestructible(),
-        MelFid(b'SNAM','soundOpen'),
+        MelSound(),
         MelFid(b'ANAM','soundClose'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', _flags),
@@ -1636,7 +1636,7 @@ class MreIpct(MelRecord):
                   'angleThreshold','placementRadius','soundLevel','flags'),
         MelDecalData(),
         MelFid(b'DNAM','textureSet'),
-        MelFid(b'SNAM','sound1'),
+        MelSound(),
         MelFid(b'NAM1','sound2'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1714,7 +1714,7 @@ class MreLigh(MelRecord):
                   'unused1',(_flags, u'flags'),'falloff','fov','value',
                   'weight'),
         MelFloat(b'FNAM', u'fade'),
-        MelFid(b'SNAM','sound'),
+        MelSound(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1894,7 +1894,7 @@ class MreMstt(MelRecord):
         MelModel(),
         MelDestructible(),
         MelBase(b'DATA','data_p'),
-        MelFid(b'SNAM','sound'),
+        MelSound(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1977,7 +1977,7 @@ class MreNote(MelRecord):
             3: MelFid(b'TNAM', u'textTopic'),
         }, decider=AttrValDecider(u'dataType'),
             fallback=MelString(b'TNAM', u'textTopic')),
-        MelFid(b'SNAM', 'soundNpc'),
+        MelSound(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2947,7 +2947,7 @@ class MreTact(MelRecord):
         MelModel(),
         MelScript(),
         MelDestructible(),
-        MelFid(b'SNAM','sound'),
+        MelSound(),
         MelFid(b'VNAM','voiceType'),
         fnv_only(MelFid(b'INAM', 'radioTemplate')),
     )
@@ -2970,7 +2970,7 @@ class MreTerm(MelRecord):
         MelScript(),
         MelDestructible(),
         MelDescription(),
-        MelSoundLooping(), ##: Why aren't we patching this in Import Sounds?
+        MelSound(), ##: Why aren't we patching this in Import Sounds?
         MelFid(b'PNAM','passwordNote'),
         MelTruncatedStruct(b'DNAM', [u'3B', u's'], 'baseHackingDifficulty',
                            (_flags,'flags'), 'serverType', 'unused1',
@@ -3106,7 +3106,7 @@ class MreWatr(MelRecord):
         MelUInt8(b'ANAM', 'opacity'),
         MelUInt8Flags(b'FNAM', u'flags', _flags),
         MelString(b'MNAM','material'),
-        MelFid(b'SNAM','sound',),
+        MelSound(),
         MelFid(b'XNAM','effect'),
         MelWatrData(b'DATA', _fmts + [u'32f', u'H'], *(_els + ['damage'])),
         MelWatrDnam(b'DNAM', _fmts + [u'35f'], *(
@@ -3215,8 +3215,8 @@ class MreWeap(MelRecord):
             MelFid(b'WMI3', 'mod3'),
         )),
         if_fnv(
-            fo3_version=MelFid(b'SNAM', 'soundGunShot3D'),
-            fnv_version=MelFids('soundGunShot3D', MelFid(b'SNAM')),
+            fo3_version=MelSound(),
+            fnv_version=MelFids('sound', MelFid(b'SNAM')),
         ),
         MelFid(b'XNAM','soundGunShot2D'),
         MelFid(b'NAM7','soundGunShot3DLooping'),
