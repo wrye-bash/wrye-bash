@@ -412,12 +412,12 @@ class FormIdWriteContext:
             # Plugin has at least one master, it may freely use the
             # expanded (0x000-0x800) range
             def _short_mapper(formid):
-                return (indices[formid.mod_id] << 24) | formid.object_dex
+                return (indices[formid.mod_fn] << 24) | formid.object_dex
         else:
             # 0x000-0x800 are reserved for hardcoded (engine) records
             def _short_mapper(formid):
                 return ((object_id := formid.object_dex) >= 0x800 and indices[
-                    formid.mod_id] << 24) | object_id
+                    formid.mod_fn] << 24) | object_id
         return _short_mapper
 
     def __enter__(self, __head_unpack=unpack_header):

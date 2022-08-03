@@ -778,12 +778,12 @@ class MelUnion(MelBase):
     in the element_mapping dict passed in. For example, consider this MelUnion,
     which showcases most features:
         MelUnion({
-            u'b': MelUInt32(b'DATA', u'value'), # actually a bool
-            u'f': MelFloat(b'DATA', u'value'),
-            u's': MelLString(b'DATA', u'value'),
+            'b': MelUInt32(b'DATA', 'value'), # actually a bool
+            'f': MelFloat(b'DATA', 'value'),
+            's': MelLString(b'DATA', 'value'),
         }, decider=AttrValDecider(
-            u'eid', transformer=lambda e: e[0] if e else u'i'),
-            fallback=MelSInt32(b'DATA', u'value')
+            'eid', transformer=lambda e: e[0] if e else 'i'),
+            fallback=MelSInt32(b'DATA', 'value')
         ),
     When a DATA subrecord is encountered, the union is asked to load it. It
     queries its decider, which in this case reads the 'eid' attribute (i.e. the

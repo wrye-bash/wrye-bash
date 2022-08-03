@@ -146,7 +146,7 @@ class ContentsCheckerPatcher(Patcher):
                     for contId in sorted(id_removed):
                         log(u'* ' + id_eid[contId])
                         for removedId in sorted(id_removed[contId]):
-                            log(f'  . {removedId.mod_id}: '
+                            log(f'  . {removedId.mod_fn}: '
                                 f'{removedId.object_dex:06X}')
 
 #------------------------------------------------------------------------------
@@ -390,7 +390,7 @@ class NpcCheckerPatcher(Patcher):
             if is_templated(npc, u'useModelAnimation'):
                 continue # Changing templated actors wouldn't do anything
             raceEyes = final_eyes.get(npc.race)
-            npc_src_plugin = npc_fid.mod_id
+            npc_src_plugin = npc_fid.mod_fn
             random.seed(npc_fid.object_dex)  # make it deterministic
             if not npc.eye and raceEyes:
                 npc.eye = random.choice(raceEyes)
@@ -475,7 +475,7 @@ class TimescaleCheckerPatcher(ModLoader):
         wp_multiplier = def_timescale / final_timescale
         for grass_fid, grass_rec in self.patchFile.tops[b'GRAS'].iter_present_records():
             grass_rec.wave_period *= wp_multiplier
-            grasses_changed[grass_fid.mod_id] += 1
+            grasses_changed[grass_fid.mod_fn] += 1
             keep(grass_fid)
         log.setHeader(u'= ' + self._patcher_name)
         if grasses_changed:

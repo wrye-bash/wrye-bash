@@ -48,7 +48,7 @@ class AMreWithItems(MelRecord):
     __slots__ = ()
 
     def mergeFilter(self, modSet):
-        self.items = [i for i in self.items if i.item.mod_id in modSet]
+        self.items = [i for i in self.items if i.item.mod_fn in modSet]
 
 #------------------------------------------------------------------------------
 class AMreActor(AMreWithItems):
@@ -57,8 +57,8 @@ class AMreActor(AMreWithItems):
 
     def mergeFilter(self, modSet):
         super().mergeFilter(modSet)
-        self.spells = [x for x in self.spells if x.mod_id in modSet]
-        self.factions = [x for x in self.factions if x.faction.mod_id in modSet]
+        self.spells = [x for x in self.spells if x.mod_fn in modSet]
+        self.factions = [x for x in self.factions if x.faction.mod_fn in modSet]
 
 #------------------------------------------------------------------------------
 class AMreFlst(MelRecord):
@@ -78,7 +78,7 @@ class AMreFlst(MelRecord):
 
     def mergeFilter(self, modSet):
         self.formIDInList = [f for f in self.formIDInList if
-                             f.mod_id in modSet]
+                             f.mod_fn in modSet]
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
@@ -281,7 +281,7 @@ class AMreLeveledList(MelRecord):
 
     def mergeFilter(self, modSet):
         self.entries = [entry for entry in self.entries if
-                        entry.listId.mod_id in modSet]
+                        entry.listId.mod_fn in modSet]
 
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.

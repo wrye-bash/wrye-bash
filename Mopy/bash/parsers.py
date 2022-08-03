@@ -74,7 +74,7 @@ def _key_sort(di, keys_dex=(), values_key='', by_value=False):
         yield k, di[k]
 
 def _fid_str(fid_tuple):
-    return f'"{fid_tuple.mod_id}","0x{fid_tuple.object_dex:06X}"'
+    return f'"{fid_tuple.mod_fn}","0x{fid_tuple.object_dex:06X}"'
 
 #------------------------------------------------------------------------------
 class _TextParser(object):

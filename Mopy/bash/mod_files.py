@@ -40,7 +40,7 @@ class MasterSet(set):
     def add(self,element):
         """Add a long fid's mod index."""
         try:
-            super().add(element.mod_id)
+            super().add(element.mod_fn)
         except AttributeError:
             if element is not None:
                 raise

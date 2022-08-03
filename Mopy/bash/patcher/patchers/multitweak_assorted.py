@@ -316,7 +316,7 @@ class AssortedTweak_FogFix(MultiTweakItem):
             if self.wants_record(cell):
                 self.tweak_record(cell)
                 keep(cfid)
-                count[cfid.mod_id] += 1
+                count[cfid.mod_fn] += 1
 
 #------------------------------------------------------------------------------
 class AssortedTweak_NoLightFlicker(MultiTweakItem):

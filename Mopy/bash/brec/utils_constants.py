@@ -111,7 +111,7 @@ class FormId:
         return self.short_fid >> 24
 
     @property # ~0.03s on a 60s BP - no need to cache
-    def mod_id(self):
+    def mod_fn(self):
         """Return the mod id - will raise if long_fid is not a tuple."""
         try:
             return self.long_fid[0]
