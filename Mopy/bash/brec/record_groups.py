@@ -23,7 +23,6 @@
 """Houses classes for reading, manipulating and writing groups of records."""
 
 # Python imports
-import io
 from collections import deque, defaultdict
 from itertools import chain
 from operator import itemgetter, attrgetter
@@ -31,8 +30,8 @@ from operator import itemgetter, attrgetter
 # Wrye Bash imports
 from . import utils_constants
 from .mod_io import GrupHeader, ModReader, RecordHeader, TopGrupHeader, \
-    ExteriorGrupHeader, ChildrenGrupHeader
-from .utils_constants import group_types, fid_key, DUMMY_FID
+    ExteriorGrupHeader, ChildrenGrupHeader, FastModReader, unpack_header
+from .utils_constants import fid_key, DUMMY_FID
 from ..bolt import pack_int, structs_cache, attrgetter_cache, deprint, \
     sig_to_str, dict_sort
 from ..exception import AbstractError, ModError, ModFidMismatchError
@@ -63,7 +62,7 @@ class MobBase(object):
         self.inName = ins and ins.inName
         if ins: self.load_rec_group(ins, do_unpack)
 
-    def load_rec_group(self, ins=None, do_unpack=False):
+    def load_rec_group(self, ins: ModReader, do_unpack=False):
         """Load data from ins stream or internal data buffer."""
         #--Read, but don't analyze.
         if not do_unpack:
@@ -71,10 +70,6 @@ class MobBase(object):
         #--Analyze ins.
         elif ins is not None:
             self._load_rec_group(ins, ins.tell() + self.header.blob_size())
-        #--Analyze internal buffer.
-        else:
-            with self.getReader() as reader:
-                self._load_rec_group(reader, reader.size)
         #--Discard raw data?
         if do_unpack:
             self.data = None
@@ -111,16 +106,15 @@ class MobBase(object):
         else:
             numSubRecords = 0
             num_groups = 1 # the top level grup itself - not included in data
-            reader = self.getReader()
-            errLabel = group_types[self.groupType]
-            readerAtEnd = reader.atEnd
-            readerRecHeader = reader.unpackRecHeader
-            while not readerAtEnd(reader.size, errLabel):
-                header = readerRecHeader()
-                if header.recType != b'GRUP':
-                    header.skip_blob(reader)
-                    numSubRecords += 1
-                else: num_groups += 1
+            with FastModReader(self.inName, self.data) as ins:
+                ins_tell = ins.tell
+                ins_size = ins.size
+                while ins_tell() != ins_size:
+                    header = unpack_header(ins)
+                    if header.recType != b'GRUP':
+                        header.skip_blob(ins)
+                        numSubRecords += 1
+                    else: num_groups += 1
             self.numRecords = numSubRecords + includeGroups * num_groups
             return self.numRecords
 
@@ -134,10 +128,6 @@ class MobBase(object):
             self.header.size = self.size
             out.write(self.header.pack_head())
             out.write(self.data)
-
-    def getReader(self):
-        """Returns a ModReader wrapped around self.data."""
-        return ModReader(self.inName, io.BytesIO(self.data), len(self.data))
 
     def iter_present_records(self, include_ignored=False, rec_key='fid',
                              __attrgetters=attrgetter_cache):
@@ -221,12 +211,11 @@ class MobObjects(MobBase):
         expType = self.label
         recClass = self.loadFactory.getRecClass(expType)
         insAtEnd = ins.atEnd
-        insRecHeader = ins.unpackRecHeader
         recordsAppend = self.records.append
         errLabel = f'{(exp_str := sig_to_str(expType))} Top Block'
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
-            header = insRecHeader()
+            header = unpack_header(ins)
             if header.recType != expType:
                 header_str = sig_to_str(header.recType)
                 msg = f'Unexpected {header_str} record in {exp_str} group.'
@@ -404,11 +393,10 @@ class MobDial(MobObjects):
         info_class = self.loadFactory.getRecClass(b'INFO')
         if not info_class:
             self.header.skip_blob(ins) # DIAL already read, skip all INFOs
-        read_header = ins.unpackRecHeader
         ins_at_end = ins.atEnd
         append_info = self.records.append
         while not ins_at_end(endPos, u'DIAL Block'):
-            header = read_header()
+            header = unpack_header(ins)
             if header.recType == b'INFO':
                 append_info(info_class(header, ins, do_unpack=True))
             elif header.recType == b'DIAL':
@@ -590,13 +578,12 @@ class MobDials(MobBase):
         if not dial_class: ins_seek(endPos) # skip the whole group
         expType = self.label
         insAtEnd = ins.atEnd
-        insRecHeader = ins.unpackRecHeader
         append_dialogue = self.dialogues.append
         loadFactory = self.loadFactory
         while not insAtEnd(endPos,
                            errLabel := f'{sig_to_str(expType)} Top Block'):
             #--Get record info and handle it
-            dial_header = insRecHeader()
+            dial_header = unpack_header(ins)
             if dial_header.recType == expType:
                 # Read the full DIAL record now
                 dial = dial_class(dial_header, ins, do_unpack=True)
@@ -605,7 +592,7 @@ class MobDials(MobBase):
                     self.set_dialogue(dial)
                 else:
                     # Otherwise, we need to investigate the next header
-                    next_header = insRecHeader()
+                    next_header = unpack_header(ins)
                     if (next_header.recType == b'GRUP' and
                             next_header.groupType == 7):
                         # This is a regular DIAL record with children
@@ -781,7 +768,6 @@ class MobCell(MobBase):
         """Loads data from input stream. Called by load()."""
         cellType_class = self.loadFactory.getCellTypeClass()
         insAtEnd = ins.atEnd
-        insRecHeader = ins.unpackRecHeader
         cellGet = cellType_class.get
         persistentAppend = self.persistent_refs.append
         tempAppend = self.temp_refs.append
@@ -789,7 +775,7 @@ class MobCell(MobBase):
         subgroupLoaded = [False, False, False]
         groupType = None # guaranteed to compare False to any of them
         while not insAtEnd(endPos, u'Cell Block'):
-            header = insRecHeader()
+            header = unpack_header(ins)
             _rsig = header.recType
             recClass = cellGet(_rsig)
             if _rsig == b'GRUP':
@@ -1239,7 +1225,6 @@ class MobICells(MobCells):
         endBlockPos = endSubblockPos = 0
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks(b'CELL')
         insAtEnd = ins.atEnd
-        insRecHeader = ins.unpackRecHeader
         selfLoadFactory = self.loadFactory
         insTell = ins.tell
         def build_cell_block(unpack_block=False, skip_delta=False):
@@ -1253,7 +1238,7 @@ class MobICells(MobCells):
                     insSeek(delta, 1)
             self.id_cellBlock[cell.fid] = cellBlock
         while not insAtEnd(endPos, f'{sig_to_str(expType)} Top Block'):
-            header = insRecHeader()
+            header = unpack_header(ins)
             _rsig = header.recType
             if _rsig == expType:
                 if cell:
@@ -1329,7 +1314,6 @@ class MobWorld(MobCells):
         endBlockPos = endSubblockPos = 0
         unpackCellBlocks = self.loadFactory.getUnpackCellBlocks(b'WRLD')
         insAtEnd = ins.atEnd
-        insRecHeader = ins.unpackRecHeader
         cellGet = cellType_class.get
         insTell = ins.tell
         selfLoadFactory = self.loadFactory
@@ -1359,7 +1343,7 @@ class MobWorld(MobCells):
             if curPos >= endSubblockPos:
                 pass # subblock = None # unused var
             #--Get record info and handle it
-            header = insRecHeader()
+            header = unpack_header(ins)
             _rsig = header.recType
             recClass = cellGet(_rsig)
             if _rsig == b'ROAD':
@@ -1605,7 +1589,6 @@ class MobWorlds(MobBase):
         if not recWrldClass: insSeek(endPos) # skip the whole group
         world = None
         insAtEnd = ins.atEnd
-        insRecHeader = ins.unpackRecHeader
         selfLoadFactory = self.loadFactory
         from .. import bush
         isFallout = bush.game.fsName != u'Oblivion'
@@ -1614,7 +1597,7 @@ class MobWorlds(MobBase):
         while not insAtEnd(endPos, f'{sig_to_str(expType)} Top Block'):
             #--Get record info and handle it
             prev_header = header
-            header = insRecHeader()
+            header = unpack_header(ins)
             _rsig = header.recType
             if _rsig == expType:
                 # FIXME(inf) The getattr here has to go

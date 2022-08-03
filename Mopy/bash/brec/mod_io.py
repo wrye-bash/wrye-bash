@@ -360,9 +360,6 @@ class ModReader(object):
             raise ModReadError(self.inName, debug_strs, endPos, self.size)
         return struct_unpacker(self.ins.read(size))
 
-    def unpackRecHeader(self, __head_unpack=unpack_header):
-        return __head_unpack(self)
-
     def __repr__(self):
         return f'{type(self).__name__}({self.inName})'
 
@@ -469,11 +466,13 @@ class FastModReader(BytesIO):
         self.ins = self
 
     def __enter__(self):
-        utils_constants.FORM_ID = FormId
+        self.form_id_type = utils_constants.FORM_ID
+        if self.form_id_type is None: # else we are called in the context of another reader (DUH)
+            utils_constants.FORM_ID = FormId # keep fids in short format
         return super().__enter__()
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        utils_constants.FORM_ID = None
+        utils_constants.FORM_ID = self.form_id_type
         super().__exit__(exc_type, exc_value, exc_traceback)
 
     def unpack(self, struct_unpacker, size, *debug_strs):

@@ -203,7 +203,6 @@ class ModFile(object):
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
         with FormIdReadContext.from_info(self.fileInfo) as ins:
-            insRecHeader = ins.unpackRecHeader
             self.tes4 = ins.plugin_header
             subProgress = self.__load_strs(do_unpack, ins, loadStrings,
                                            progress)
@@ -213,7 +212,7 @@ class ModFile(object):
             insTell = ins.tell
             while not insAtEnd():
                 #--Get record info and handle it
-                header = insRecHeader()
+                header = unpack_header(ins)
                 if not header.is_top_group_header:
                     raise ModError(self.fileInfo.fn_key, u'Improperly grouped file.')
                 top_grup_sig = header.label
@@ -404,10 +403,9 @@ class ModHeaderReader(object):
         num_masters = len(mod_info.masterNames)
         with ModReader.from_info(mod_info) as ins:
             ins_at_end = ins.atEnd
-            ins_unpack_rec_header = ins.unpackRecHeader
             try:
                 while not ins_at_end():
-                    header = ins_unpack_rec_header()
+                    header = unpack_header(ins)
                     # Skip GRUPs themselves, only process their records
                     header_rec_sig = header.recType
                     if header_rec_sig != b'GRUP':
@@ -554,10 +552,9 @@ class ModHeaderReader(object):
         tops_to_skip = interested_sigs | {bush.game.Esp.plugin_header_sig}
         with ModReader.from_info(mod_info) as ins:
             ins_at_end = ins.atEnd
-            ins_unpack_rec_header = ins.unpackRecHeader
             try:
                 while not ins_at_end():
-                    header = ins_unpack_rec_header()
+                    header = unpack_header(ins)
                     header_rec_sig = header.recType
                     if header_rec_sig == b'GRUP':
                         header_group_type = header.groupType
