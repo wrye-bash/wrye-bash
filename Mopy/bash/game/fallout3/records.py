@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelSkipInterior, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
-    MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, \
+    MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, MelPerkData, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelLists, MelSoundPickup, MelSoundDrop, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
@@ -46,7 +46,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
     MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
-    MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName
+    MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
+    MelPerkParamsGroups
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -2234,7 +2235,7 @@ class MrePerk(MelRecord):
     """Perk."""
     rec_sig = b'PERK'
 
-    _PerkScriptFlags = Flags.from_names('runImmediately')
+    _script_flags = Flags.from_names('run_immediately')
 
     melSet = MelSet(
         MelEdid(),
@@ -2242,55 +2243,49 @@ class MrePerk(MelRecord):
         MelDescription(),
         MelIcons(),
         MelConditionsFo3(),
-        MelTruncatedStruct(b'DATA', ['5B'], 'trait', 'minLevel',
-                           'ranks', 'playable', 'hidden', old_versions={'4B'}),
-        MelSorted(MelGroups('effects',
-            MelStruct(b'PRKE', ['3B'], 'type', 'rank', 'priority'),
+        MelPerkData(),
+        MelSorted(MelGroups('perk_effects',
+            MelStruct(b'PRKE', ['3B'], 'pe_type', 'pe_rank', 'pe_priority'),
             MelUnion({
-                0: MelStruct(b'DATA', ['I', 'B', '3s'], (FID, 'quest'),
-                             'quest_stage', 'unused_data'),
-                1: MelFid(b'DATA', 'ability'),
-                2: MelStruct(b'DATA', ['3B'], 'entry_point', 'function',
-                             'perk_conditions_tab_count'),
-            }, decider=AttrValDecider('type')),
-            MelSorted(MelGroups('effectConditions',
-                MelSInt8(b'PRKC', 'runOn'),
+                0: MelStruct(b'DATA', ['I', 'B', '3s'], (FID, 'pe_quest'),
+                    'pe_quest_stage', 'pe_unused'),
+                1: MelFid(b'DATA', 'pe_ability'),
+                2: MelStruct(b'DATA', ['3B'], 'pe_entry_point', 'pe_function',
+                    'pe_perk_conditions_tab_count'),
+            }, decider=AttrValDecider('pe_type')),
+            MelSorted(MelGroups('pe_conditions',
+                MelSInt8(b'PRKC', 'pe_run_on'),
                 MelConditionsFo3(),
-            ), sort_by_attrs='runOn'),
-            MelGroups('effectParams',
+            ), sort_by_attrs='pe_run_on'),
+            MelPerkParamsGroups(
                 # EPFT has the following meanings:
                 #  0: Unknown
                 #  1: EPFD=float
                 #  2: EPFD=float, float
                 #  3: EPFD=fid (LVLI)
                 #  4: EPFD=Null (Script)
-                # TODO(inf) there is a special case: If EPFT is 2 and
-                #  DATA/function is 5, then:
-                #  EPFD=uint32, float
-                #  See commented out skeleton below - needs '../' syntax
-                MelUInt8(b'EPFT', 'function_parameter_type'),
+                # There is a special case: if EPFT is 2 and the pe_function
+                # (see DATA above) is 5, then EPFD=int, float - we use a return
+                # value of 8 for this.
+                MelUInt8(b'EPFT', 'pp_param_type'),
                 MelUnion({
-                    (0, 4): MelBase(b'EPFD', 'param1'),
-                    1: MelFloat(b'EPFD', 'param1'),
-                    2: MelStruct(b'EPFD', ['I', 'f'], 'param1', 'param2'),
-                    # 2: MelUnion({
-                    #     5: MelStruct(b'EPFD', ['I', 'f'], 'param1', 'param2'),
-                    # }, decider=AttrValDecider('../function',
-                    #     assign_missing=-1),
-                    #     fallback=MelStruct(b'EPFD', ['2f'], 'param1',
-                    #         'param2')),
-                    3: MelFid(b'EPFD', 'param1'),
-                }, decider=AttrValDecider('function_parameter_type')),
-                MelString(b'EPF2','buttonLabel'),
-                MelUInt16Flags(b'EPF3', 'script_flags', _PerkScriptFlags),
+                    (0, 4): MelBase(b'EPFD', 'pp_param1'),
+                    1: MelFloat(b'EPFD', 'pp_param1'),
+                    2: MelStruct(b'EPFD', ['2f'], 'pp_param1', 'pp_param2'),
+                    3: MelFid(b'EPFD', 'pp_param1'),
+                    8: MelStruct(b'EPFD', ['I', 'f'], 'pp_param1',
+                        'pp_param2'),
+                }, decider=PerkEpdfDecider({5})),
+                MelString(b'EPF2', 'pp_button_label'),
+                MelUInt16Flags(b'EPF3', 'pp_script_flags', _script_flags),
                 MelEmbeddedScript(),
             ),
-            MelBase(b'PRKF','footer'),
+            MelBaseR(b'PRKF', 'pe_end_marker'),
         ), sort_special=perk_effect_key),
     ).with_distributor({
         b'DESC': {
             b'CTDA|CIS1|CIS2': 'conditions',
-            b'DATA': 'trait',
+            b'DATA': 'perk_trait',
         },
         b'PRKE': {
             b'CTDA|CIS1|CIS2|DATA': 'effects',

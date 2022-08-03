@@ -31,7 +31,9 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
     AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
     AttrValDecider, MelSoundPickup, MelSoundDrop, MelEquipmentType, AMelVmad, \
-    MelDescription, MelEffects, AMelLLItems, MelValueWeight, AVmadContext
+    MelDescription, MelEffects, AMelLLItems, MelValueWeight, AVmadContext, \
+    MelIcon, MelConditionList, MelPerkData, MelNextPerk, MelSInt8, MelUInt16, \
+    MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -419,4 +421,77 @@ class MreLvln(MreLeveledListBase):
         MelString(b'MODL','model'),
         MelBase(b'MODT','modt_p'),
     )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MrePerk(MelRecord):
+    """Perk."""
+    rec_sig = b'PERK'
+
+    _script_flags = Flags.from_names('run_immediately', 'replace_default')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelFull(),
+        MelDescription(),
+        MelIcon(),
+        MelConditionList(),
+        MelPerkData(),
+        MelSound(),
+        MelNextPerk(),
+        MelString(b'FNAM', 'perk_swf'),
+        MelSorted(MelGroups('perk_effects',
+            MelStruct(b'PRKE', ['3B'], 'pe_type', 'pe_rank', 'pe_priority'),
+            MelUnion({
+                0: MelStruct(b'DATA', ['I', 'H'], (FID, 'pe_quest'),
+                    'pe_quest_stage'),
+                1: MelFid(b'DATA', 'pe_ability'),
+                2: MelStruct(b'DATA', ['3B'], 'pe_entry_point', 'pe_function',
+                    'pe_perk_conditions_tab_count'),
+            }, decider=AttrValDecider('pe_type')),
+            MelSorted(MelGroups('pe_conditions',
+                MelSInt8(b'PRKC', 'pe_run_on'),
+                MelConditionList(),
+            ), sort_by_attrs='pe_run_on'),
+            MelPerkParamsGroups(
+                # EPFT has the following meanings:
+                #  0: Unknown
+                #  1: EPFD=float
+                #  2: EPFD=float, float
+                #  3: EPFD=fid (LVLI)
+                #  4: EPFD=fid (SPEL), EPF2 and EPF3 are used
+                #  5: EPFD=fid (SPEL)
+                #  6: EPFD=string
+                #  7: EPFD=lstring
+                #  8: EPFD=fid (AVIF), float
+                # There is a special case: if EPFT is 2 and the pe_function
+                # (see DATA above) is one of 5, 12, 13 or 14, then
+                # EPFD=fid (AVIF), float - same as in the 8 case above.
+                MelUInt8(b'EPFT', 'pp_param_type'),
+                MelUInt16(b'EPFB', 'pp_perk_entry_id'),
+                MelLString(b'EPF2', 'pp_button_label'),
+                MelUInt16Flags(b'EPF3', 'pp_script_flags', _script_flags),
+                MelUnion({
+                    0: MelBase(b'EPFD', 'pp_param1'),
+                    1: MelFloat(b'EPFD', 'pp_param1'),
+                    2: MelStruct(b'EPFD', ['2f'], 'pp_param1', 'pp_param2'),
+                    (3, 4, 5): MelFid(b'EPFD', 'pp_param1'),
+                    6: MelString(b'EPFD', 'pp_param1'),
+                    7: MelLString(b'EPFD', 'pp_param1'),
+                    8: MelStruct(b'EPFD', ['I', 'f'], (FID, 'pp_param1'),
+                        'pp_param2'),
+                }, decider=PerkEpdfDecider({5, 12, 13, 14})),
+            ),
+            MelBaseR(b'PRKF', 'pe_end_marker'),
+        ), sort_special=perk_effect_key),
+    ).with_distributor({
+        b'DESC': {
+            b'CTDA|CIS1|CIS2': 'conditions',
+            b'DATA': 'perk_trait',
+        },
+        b'PRKE': {
+            b'CTDA|CIS1|CIS2|DATA': 'perk_effects',
+        },
+    })
     __slots__ = melSet.getSlotsUsed()

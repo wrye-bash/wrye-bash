@@ -325,7 +325,7 @@ class MelConditions(MelSequential):
 # Helpers ---------------------------------------------------------------------
 class _MelObmeScitGroup(MelGroup):
     """Fun HACK for the whole family. We need to carry efix_param_info into
-    this group, since '../' syntax is not yet supported (see MrePerk in Skyrim
+    this group, since '../' syntax is not yet supported (see MelPerkParamsGroups
     for another part of the code that's suffering from this). And we can't
     simply not put this in a group, because a bunch of code relies on a group
     called 'scriptEffect' existing..."""

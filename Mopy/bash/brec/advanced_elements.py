@@ -625,22 +625,6 @@ class ACommonDecider(ADecider):
         """Performs the actual decisions for both loading and dumping."""
         raise exception.AbstractError()
 
-class FidNotNullDecider(ACommonDecider):
-    """Decider that returns True if the FormID attribute with the specified
-    name is not NULL."""
-    def __init__(self, target_attr):
-        """Creates a new FidNotNullDecider with the specified attribute.
-
-        :param target_attr: The name of the attribute to check.
-        :type target_attr: str"""
-        self._target_attr = target_attr
-
-    def _decide_common(self, record):
-        ##: Wasteful, but bush imports brec which uses this decider, so we
-        # can't import bush in __init__...
-        from .. import bush
-        return getattr(record, self._target_attr) != bush.game.null_fid
-
 class AttrValDecider(ACommonDecider):
     """Decider that returns an attribute value (may optionally apply a function
     to it first)."""
@@ -676,6 +660,22 @@ class AttrValDecider(ACommonDecider):
         if self.transformer:
             ret_val = self.transformer(ret_val)
         return ret_val
+
+class FidNotNullDecider(ACommonDecider):
+    """Decider that returns True if the FormID attribute with the specified
+    name is not NULL."""
+    def __init__(self, target_attr):
+        """Creates a new FidNotNullDecider with the specified attribute.
+
+        :param target_attr: The name of the attribute to check.
+        :type target_attr: str"""
+        self._target_attr = target_attr
+
+    def _decide_common(self, record):
+        ##: Wasteful, but bush imports brec which uses this decider, so we
+        # can't import bush in __init__...
+        from .. import bush
+        return getattr(record, self._target_attr) != bush.game.null_fid
 
 class FlagDecider(ACommonDecider):
     """Decider that checks if certain flags are set."""
@@ -731,6 +731,19 @@ class PartialLoadDecider(ADecider):
         # We can simply delegate here without doing anything else, since the
         # record has to have been loaded since then
         return self._decider.decide_dump(record)
+
+class PerkEpdfDecider(ACommonDecider):
+    """Decider for PERK's EPFD subrecord. Mostly just an AttrValDecider, except
+    if the pp_param_type is 2 and the pe_function is one of several possible
+    values, the result changes."""
+    def __init__(self, int_functions: set[int]):
+        self._int_functions = int_functions
+
+    def _decide_common(self, record):
+        pp_type = record.pp_param_type
+        if pp_type == 2 and record.pe_function in self._int_functions:
+            return 8
+        return pp_type
 
 class SaveDecider(ADecider):
     """Decider that returns True if the input file is a save."""

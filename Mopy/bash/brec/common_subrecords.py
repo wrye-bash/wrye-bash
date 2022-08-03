@@ -425,6 +425,12 @@ class MelMODS(MelBase):
             if save_fids: setattr(record, attr, mods_data)
 
 #------------------------------------------------------------------------------
+class MelNextPerk(MelFid):
+    """Handles the PERK subrecord NNAM (Next Perk)."""
+    def __init__(self):
+        super().__init__(b'NNAM', 'next_perk')
+
+#------------------------------------------------------------------------------
 class MelNodeIndex(MelSInt32):
     """Handles the ADDN subrecord DATA (Node Index)."""
     def __init__(self):
@@ -443,6 +449,27 @@ class MelOwnership(MelGroup):
     def dumpData(self,record,out): ##: use pack_subrecord_data ?
         if record.ownership and record.ownership.owner:
             MelGroup.dumpData(self,record,out)
+
+#------------------------------------------------------------------------------
+class MelPerkData(MelTruncatedStruct):
+    """Handles the PERK subrecord DATA (Data)."""
+    def __init__(self):
+        super().__init__(b'DATA', ['5B'], 'perk_trait', 'perk_level',
+            'perk_num_ranks', 'perk_playable', 'perk_hidden',
+            old_versions={'4B', '3B'})
+
+#------------------------------------------------------------------------------
+class MelPerkParamsGroups(MelGroups):
+    """Hack to make pe_function available to the group elements so that their
+    deciders can use it."""
+    def __init__(self, *elements):
+        super().__init__('pe_params', *elements)
+
+    def _new_object(self, record):
+        target = super()._new_object(record)
+        pe_fn = record.pe_function
+        target.pe_function = pe_fn if pe_fn is not None else -1
+        return target
 
 #------------------------------------------------------------------------------
 ##: This is a strange fusion of MelLists, MelStruct and MelTruncatedStruct
