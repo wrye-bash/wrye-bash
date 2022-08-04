@@ -987,7 +987,7 @@ class _MelWrapper(MelBase):
         self._wrapped_mel.dumpData(record, out)
 
     def pack_subrecord_data(self, record):
-        self._wrapped_mel.pack_subrecord_data(record)
+        return self._wrapped_mel.pack_subrecord_data(record)
 
     def mapFids(self, record, function, save_fids=False):
         self._wrapped_mel.mapFids(record, function, save_fids)
@@ -1007,10 +1007,8 @@ class MelCounter(_MelWrapper):
     updated to the len() of another element's value, e.g. a MelGroups instance.
     Additionally, dumping is skipped if the counter is falsy after updating.
 
-    Does not support anything that seems at odds with that goal, in particular
-    fids and defaulters. See also MelPartialCounter, which targets mixed
-    structs."""
-    def __init__(self, counter_mel, counts):
+    See also MelPartialCounter, which targets mixed structs."""
+    def __init__(self, counter_mel, *, counts):
         """Creates a new MelCounter.
 
         :param counter_mel: The element that stores the counter's value.
@@ -1031,7 +1029,7 @@ class MelPartialCounter(MelCounter):
     """Extends MelCounter to work for MelStruct's that contain more than just a
     counter. This means adding behavior for mapping fids, but dropping the
     conditional dumping behavior."""
-    def __init__(self, counter_mel, counter, counts):
+    def __init__(self, counter_mel, *, counter, counts):
         """Creates a new MelPartialCounter.
 
         :param counter_mel: The element that stores the counter's value.
@@ -1040,7 +1038,7 @@ class MelPartialCounter(MelCounter):
         :type counter: str
         :param counts: The attribute name that this counter counts.
         :type counts: str"""
-        super(MelPartialCounter, self).__init__(counter_mel, counts)
+        super(MelPartialCounter, self).__init__(counter_mel, counts=counts)
         self.counter_attr = counter
 
     def dumpData(self, record, out):

@@ -191,6 +191,18 @@ class MelAttx(MelLString):
         super().__init__(mel_sig, 'activate_text_override')
 
 #------------------------------------------------------------------------------
+class MelBamt(MelFid):
+    """Handles the common BAMT (Alternate Block Material) subrecord."""
+    def __init__(self):
+        super().__init__(b'BAMT', 'alternate_block_material')
+
+#------------------------------------------------------------------------------
+class MelBids(MelFid):
+    """Handles the common BIDS (Block Bash Impact Data Set) subrecord."""
+    def __init__(self):
+        super().__init__(b'BIDS', 'block_bash_impact_data_set')
+
+#------------------------------------------------------------------------------
 class MelBodyParts(MelSorted):
     """Handles the common NIFZ (Body Parts) subrecord."""
     def __init__(self): ##: case insensitive
@@ -781,6 +793,12 @@ class MelSpells(MelSorted):
     """Handles the common SPLO subrecord."""
     def __init__(self):
         super().__init__(MelFids('spells', MelFid(b'SPLO')))
+
+#------------------------------------------------------------------------------
+class MelTemplateArmor(MelFid):
+    """Handles the ARMO subrecord TNAM (Template Armor)."""
+    def __init__(self):
+        super().__init__(b'TNAM', 'template_armor')
 
 #------------------------------------------------------------------------------
 class MelUnloadEvent(MelString):

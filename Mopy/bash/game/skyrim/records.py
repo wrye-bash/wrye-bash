@@ -44,9 +44,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
     MelEffects, AMelLLItems, MelUnloadEvent, MelShortName, AVmadContext, \
-    MelPerkData, MelNextPerk, PerkEpdfDecider, MelPerkParamsGroups, \
-    MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, \
-    MelFootstepSound, MelArtObject
+    MelPerkData, MelNextPerk, PerkEpdfDecider, MelPerkParamsGroups, MelBids, \
+    MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, MelBamt, \
+    MelFootstepSound, MelArtObject, MelTemplateArmor
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -570,9 +570,9 @@ class MreArmo(MelRecord):
         MelFull(),
         MelEnchantment(),
         MelSInt16(b'EAMT', 'enchantmentAmount'),
-        MelModel(b'MOD2', 'model2'),
-        MelIcons(u'maleIconPath', u'maleSmallIconPath'),
-        MelModel(b'MOD4', 'model4'),
+        MelModel(b'MOD2', 'maleWorld'),
+        MelIcons('maleIconPath', 'maleSmallIconPath'),
+        MelModel(b'MOD4', 'femaleWorld'),
         MelIcons2(),
         MelBodtBod2(),
         MelDestructible(),
@@ -580,15 +580,15 @@ class MreArmo(MelRecord):
         MelSoundDrop(),
         MelString(b'BMCT', 'ragdollTemplatePath'), #Ragdoll Constraint Template
         MelEquipmentType(),
-        MelFid(b'BIDS', 'bashImpact'),
-        MelFid(b'BAMT', 'material'),
+        MelBids(),
+        MelBamt(),
         MelRace(),
         MelKeywords(),
         MelDescription(),
         MelFids('addons', MelFid(b'MODL')),
         MelValueWeight(),
         MelSInt32(b'DNAM', 'armorRating'),
-        MelFid(b'TNAM','templateArmor'),
+        MelTemplateArmor(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4191,14 +4191,14 @@ class MreWeap(MelRecord):
         MelVmad(),
         MelBounds(),
         MelFull(),
-        MelModel(b'MODL', 'model1'),
+        MelModel(),
         MelIcons(),
         MelEnchantment(),
         MelUInt16(b'EAMT', 'enchantPoints'),
         MelDestructible(),
         MelEquipmentType(),
-        MelFid(b'BIDS','blockBashImpactDataSet',),
-        MelFid(b'BAMT','alternateBlockMaterial',),
+        MelBids(),
+        MelBamt(),
         MelSoundPickup(),
         MelSoundDrop(),
         MelKeywords(),

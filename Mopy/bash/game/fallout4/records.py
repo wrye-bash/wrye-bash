@@ -35,7 +35,8 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelIcon, MelConditionList, MelPerkData, MelNextPerk, MelSInt8, MelUInt16, \
     MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider, \
     MelUInt32Flags, BipedFlags, MelArmaDnam, MelArmaModels, MelArmaSkins, \
-    MelAdditionalRaces, MelFootstepSound, MelArtObject
+    MelAdditionalRaces, MelFootstepSound, MelArtObject, MelEnchantment, \
+    MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -84,6 +85,12 @@ class MelAnimationSound(MelFid):
         super().__init__(b'STCP', 'animation_sound')
 
 #------------------------------------------------------------------------------
+class MelAppr(MelSimpleArray):
+    """Handles the common APPR (Attach Parent Slots) subrecord."""
+    def __init__(self):
+        super().__init__('attach_parent_slots', MelFid(b'APPR'))
+
+#------------------------------------------------------------------------------
 class MelBod2(MelUInt32Flags):
     """Handles the BOD2 (Biped Body Template) subrecord."""
     _bp_flags = BipedFlags.from_names()
@@ -125,10 +132,7 @@ class MelDestructible(MelGroup):
             MelStruct(b'DEST', ['i', '2B', '2s'], 'health', 'count',
                 (MelDestructible._dest_header_flags, 'dest_flags'),
                 'dest_unknown'),
-            MelSorted(MelArray('resistances',
-                MelStruct(b'DAMC', ['2I'], (FID, 'damage_type'),
-                    'resistance_value'),
-            ), sort_by_attrs='damage_type'),
+            MelResistances(b'DAMC'),
             MelGroups('stages',
                 MelStruct(b'DSTD', ['4B', 'i', '2I', 'i'], 'health', 'index',
                           'damage_stage',
@@ -186,6 +190,15 @@ class MelProperties(MelSorted):
             MelStruct(b'PRPS', ['I', 'f'], (FID, 'prop_actor_value'),
                 'prop_value'),
         ))
+
+#------------------------------------------------------------------------------
+class MelResistances(MelSorted):
+    """Handles a sorted array of resistances. Signatures vary."""
+    def __init__(self, res_sig):
+        super().__init__(MelArray('resistances',
+            MelStruct(res_sig, ['2I'], (FID, 'damage_type'),
+                'resistance_value'),
+        ), sort_by_attrs='damage_type')
 
 #------------------------------------------------------------------------------
 class MelSoundCrafting(MelFid):
@@ -427,6 +440,52 @@ class MreArma(MelRecord):
         MelArtObject(),
         MelBoneData(),
     )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArmo(MelRecord):
+    """Armor."""
+    rec_sig = b'ARMO'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelEnchantment(),
+        MelModel(b'MOD2', 'maleWorld', always_use_modc=True, skip_5=True),
+        MelIcons('maleIconPath', 'maleSmallIconPath'),
+        MelModel(b'MOD4', 'femaleWorld', always_use_modc=True, skip_5=True),
+        MelIcons2(),
+        MelBod2(),
+        MelDestructible(),
+        MelSoundPickup(),
+        MelSoundDrop(),
+        MelEquipmentType(),
+        MelBids(),
+        MelBamt(),
+        MelRace(),
+        MelKeywords(),
+        MelDescription(),
+        MelFid(b'INRD', 'instance_naming'),
+        MelGroups('addons',
+            MelUInt16(b'INDX', 'addon_index'),
+            MelFid(b'MODL', 'addon_fid'),
+        ),
+        MelStruct(b'DATA', ['i', 'f', 'I'], 'value', 'weight', 'health'),
+        MelStruct(b'FNAM', ['2H', 'B', '3s'], 'armorRating',
+            'base_addon_index', 'stagger_rating', 'unknown_fnam'),
+        MelResistances(b'DAMA'),
+        MelTemplateArmor(),
+        MelAppr(),
+        MelObjectTemplate(),
+    ).with_distributor({
+        b'FULL': 'full',
+        b'OBTE': {
+            b'FULL': 'ot_combinations',
+        },
+    })
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------

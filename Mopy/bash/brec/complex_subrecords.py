@@ -31,10 +31,10 @@ from itertools import chain
 from typing import Type
 
 from .advanced_elements import MelUnion, PartialLoadDecider, AttrValDecider, \
-    MelTruncatedStruct, SignatureDecider, MelCounter
+    MelTruncatedStruct, SignatureDecider, MelCounter, MelPartialCounter
 from .basic_elements import MelBase, MelStruct, MelGroups, MelReadOnly, \
     MelString, MelSequential, MelUInt32, MelFid, MelGroup, MelObject, \
-    MelOptStruct, MelBaseR
+    MelOptStruct, MelBaseR, MelUnorderedGroups
 from .common_subrecords import MelFull
 from .utils_constants import get_structs, FID, null1, ZERO_FID
 from .. import bolt
@@ -61,6 +61,7 @@ def _mk_unpacker(struct_fmt, only_one=False):
 
 _unpack_byte = _mk_unpacker('B', only_one=True)
 _unpack_int = _mk_unpacker('I', only_one=True)
+_unpack_float = _mk_unpacker('f', only_one=True)
 _unpack_2shorts_signed = _mk_unpacker('2h')
 
 def _mk_packer(struct_fmt):
@@ -956,6 +957,191 @@ class AMelNvnm(MelBase):
             record.navmesh_geometry.map_fids(function, save_fids)
 
 #------------------------------------------------------------------------------
+# Object Templates
+#------------------------------------------------------------------------------
+# Helpers ---------------------------------------------------------------------
+_obts_unpack_include = _mk_unpacker('I3B')
+_obts_unpack_property_header = _mk_unpacker('B3sB3sH2s')
+
+_obts_pack_include = _mk_packer('I3B')
+_obts_pack_property_header = _mk_packer('B3sB3sH2s')
+
+##: A lot of this will apparently be useful for the OMOD record type too
+class _MelObtsInclude(MelObject):
+    """Helper class for OBTS includes."""
+    __slots__ = ('oi_mod', 'oi_attach_point_index', 'oi_optional',
+                 'oi_dont_use_all')
+
+    def load_include(self, ins, *debug_strs):
+        """Load this include from the specified input stream."""
+        self.oi_mod, self.oi_attach_point_index, self.oi_optional, \
+        self.oi_dont_use_all = _obts_unpack_include(ins, *debug_strs)
+        self.oi_mod = FID(self.oi_mod)
+
+    def dump_include(self, out):
+        """Dump this include to the specified output stream."""
+        _obts_pack_include(out, self.oi_mod.dump(), self.oi_attach_point_index,
+            self.oi_optional, self.oi_dont_use_all)
+
+    def map_include_fids(self, map_function, save_fids=False):
+        """Map the OMOD FormID inside this include."""
+        result_oi_mod = map_function(self.oi_mod)
+        if save_fids: self.oi_mod = result_oi_mod
+
+class _MelObtsProperty(MelObject):
+    """Helper class for OBTS properties."""
+    __slots__ = ('op_value_type', 'op_unused1', 'op_function_type',
+                 'op_unused2', 'op_property', 'op_unused3', 'op_value_1',
+                 'op_value_2', 'op_step')
+
+    def load_property(self, ins, *debug_strs):
+        """Load this property from the specified input stream."""
+        # First unpack the part that can't change its data types
+        self.op_value_type, self.op_unused1, self.op_function_type, \
+        self.op_unused2, self.op_property, \
+        self.op_unused3 = _obts_unpack_property_header(ins, *debug_strs)
+        # We're now ready to load the first value...
+        op_val_ty = self.op_value_type
+        if op_val_ty == 0: # uint32
+            self.op_value_1 = _unpack_int(ins, *debug_strs)
+        elif op_val_ty == 1: # float
+            self.op_value_1 = _unpack_float(ins, *debug_strs)
+        elif op_val_ty == 2: # bool (stored as uint32)
+            self.op_value_1 = _unpack_int(ins, *debug_strs) != 0
+        elif op_val_ty in (4, 6): # fid
+            self.op_value_1 = FID(_unpack_int(ins, *debug_strs))
+        elif op_val_ty == 5: # enum (stored as uint32)
+            self.op_value_1 = _unpack_int(ins, *debug_strs)
+        else: # unknown
+            self.op_value_1 = ins.read(4, *debug_strs)
+        # ...and the second value
+        if op_val_ty in (0, 4): # uint32
+            self.op_value_2 = _unpack_int(ins, *debug_strs)
+        elif op_val_ty in (1, 6): # float
+            self.op_value_2 = _unpack_float(ins, *debug_strs)
+        elif op_val_ty == 2: # bool (stored as uint32)
+            self.op_value_2 = _unpack_int(ins, *debug_strs) != 0
+        else: # unused
+            self.op_value_2 = ins.read(4, *debug_strs)
+        # Can't forget the final float
+        self.op_step = _unpack_float(ins, *debug_strs)
+
+    def dump_property(self, out):
+        """Dump this property to the specified output stream."""
+        _obts_pack_property_header(out, self.op_value_type, self.op_unused1,
+            self.op_function_type, self.op_unused2, self.op_property,
+            self.op_unused3)
+        op_val_ty = self.op_value_type
+        op_val_dt1 = self.op_value_1
+        if op_val_ty == 0: # uint32
+            pack_int(out, op_val_dt1)
+        elif op_val_ty == 1: # float
+            pack_float(out, op_val_dt1)
+        elif op_val_ty == 2: # bool (stored as uint32)
+            pack_int(out, 1 if op_val_dt1 else 0)
+        elif op_val_ty in (4, 6): # fid
+            pack_int(out, op_val_dt1.dump())
+        elif op_val_ty == 5: # enum (stored as uint32)
+            pack_int(out, op_val_dt1)
+        else: # unknown
+            out.write(op_val_dt1)
+        op_val_dt2 = self.op_value_2
+        if op_val_ty in (0, 4): # uint32
+            pack_int(out, op_val_dt2)
+        elif op_val_ty in (1, 6): # float
+            pack_float(out, op_val_dt2)
+        elif op_val_ty == 2: # bool (stored as uint32)
+            pack_int(out, 1 if op_val_dt2 else 0)
+        else: # unused
+            out.write(op_val_dt2)
+        pack_float(out, self.op_step)
+
+    def map_property_fids(self, map_function, save_fids=False):
+        """Map the potential FormID inside this property."""
+        if self.op_value_type in (4, 6):
+            result_val1 = map_function(self.op_value_1)
+            if save_fids: self.op_value_1 = result_val1
+
+class _MelObts(MelPartialCounter):
+    """Handles the OBTS subrecord. Very complex, contains three arrays (two
+    with substructure) and data-sensitive loading that can contain FormIDs."""
+    def __init__(self):
+        super().__init__(MelStruct(b'OBTS', ['2I', 'B', 's', 'B', 's', 'h',
+                                             '2B'], 'obts_include_count',
+            'obts_property_count', 'obts_level_min', 'obts_unused1',
+            'obts_level_max', 'obts_unused2', 'obts_addon_index',
+            'obts_default', 'obts_keyword_count'),
+            counter='obts_keyword_count', counts='obts_keywords')
+
+    def getSlotsUsed(self):
+        return ('obts_keywords', 'obts_min_level_for_ranks',
+                'obts_alt_levels_per_tier', 'obts_includes',
+                'obts_properties', *super().getSlotsUsed())
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        # Unpack the static portion using MelStruct
+        super().load_mel(record, ins, sub_type, self.static_size, *debug_strs)
+        # Load the keywords - the counter was loaded just now by the struct
+        record.obts_keywords = [FID(_unpack_int(ins, *debug_strs))
+                                for _x in range(record.obts_keyword_count)]
+        record.obts_min_level_for_ranks = _unpack_byte(ins, *debug_strs)
+        record.obts_alt_levels_per_tier = _unpack_byte(ins, *debug_strs)
+        # Load the includes - The include count was loaded way back at the
+        # start of the struct
+        record.obts_includes = []
+        append_include = record.obts_includes.append
+        for _x in range(record.obts_include_count):
+            obts_include = _MelObtsInclude()
+            obts_include.load_include(ins, *debug_strs)
+            append_include(obts_include)
+        # Load the properties - this count was right after the include count
+        record.obts_properties = []
+        append_property = record.obts_properties.append
+        for _x in range(record.obts_property_count):
+            obts_property = _MelObtsProperty()
+            obts_property.load_property(ins, *debug_strs)
+            append_property(obts_property)
+
+    def dumpData(self, record, out):
+        # Need to update the counters for includes and properties, since
+        # MelPartialCounter is not equipped to deal with *three* counters in
+        # the same subrecord
+        record.obts_include_count = len(record.obts_includes)
+        record.obts_property_count = len(record.obts_properties)
+        super().dumpData(record, out)
+        for obts_kwd in record.obts_keywords:
+            pack_int(out, obts_kwd.dump())
+        pack_byte(out, record.obts_min_level_for_ranks)
+        pack_byte(out, record.obts_alt_levels_per_tier)
+        for obts_include in record.obts_includes:
+            obts_include.dump_include(out)
+        for obts_property in record.obts_properties:
+            obts_property.dump_property(out)
+
+    def mapFids(self, record, function, save_fids=False):
+        super().mapFids(record, function, save_fids)
+        result_kwds = [function(obts_kwd) for obts_kwd in record.obts_keywords]
+        if save_fids: record.obts_keywords = result_kwds
+        for obts_include in record.obts_includes:
+            obts_include.map_include_fids(function, save_fids)
+        for obts_property in record.obts_properties:
+            obts_property.map_property_fids(function, save_fids)
+
+# API -------------------------------------------------------------------------
+class MelObjectTemplate(MelSequential):
+    def __init__(self):
+        super().__init__(
+            MelCounter(MelUInt32(b'OBTE', 'ot_combination_count'),
+                counts='ot_combinations'),
+            MelUnorderedGroups('ot_combinations',
+                MelBase(b'OBTF', 'editor_only'),
+                MelFull(),
+                _MelObts(),
+            ),
+            MelBaseR(b'STOP', 'ot_combinations_end_marker')
+        )
+
+#------------------------------------------------------------------------------
 # VMAD - Virtual Machine Adapter
 #------------------------------------------------------------------------------
 # Helpers ---------------------------------------------------------------------
@@ -969,7 +1155,6 @@ _vmad_key_script = attrgetter_cache['script_name']
 _vmad_unpack_byte_signed = _mk_unpacker('b', only_one=True)
 _vmad_unpack_short = _mk_unpacker('H', only_one=True)
 _vmad_unpack_int_signed = _mk_unpacker('i', only_one=True)
-_vmad_unpack_float = _mk_unpacker('f', only_one=True)
 _vmad_unpack_objref_v1 = _mk_unpacker('IhH')
 _vmad_unpack_objref_v2 = _mk_unpacker('HhI')
 
@@ -1639,7 +1824,7 @@ class _AValueComponent(_AVmadComponent):
         elif val_ty == 3: # sint32
             record.val_data = _vmad_unpack_int_signed(ins, *debug_strs)
         elif val_ty == 4: # float
-            record.val_data = _vmad_unpack_float(ins, *debug_strs)
+            record.val_data = _unpack_float(ins, *debug_strs)
         elif val_ty == 5: # bool (stored as uint8)
             # Faster than bool() and other, similar checks
             record.val_data = _unpack_byte(ins, *debug_strs) != 0

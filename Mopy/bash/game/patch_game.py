@@ -151,7 +151,7 @@ class PatchGame(GameInfo):
     #--------------------------------------------------------------------------
     graphicsTypes = {}
     graphicsFidTypes = {}
-    graphicsModelAttrs = ()
+    graphicsModelAttrs = set()
 
     #--------------------------------------------------------------------------
     # Import Inventory

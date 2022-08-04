@@ -390,7 +390,9 @@ graphicsTypes = {
 graphicsFidTypes = {
     b'MGEF': (u'light', u'effectShader', u'enchantEffect')
 }
-graphicsModelAttrs = (u'model', u'maleBody', u'maleWorld', u'femaleBody', u'femaleWorld')
+graphicsModelAttrs = {'model', 'maleBody', 'maleWorld', 'femaleBody',
+                      'femaleWorld'}
+
 #------------------------------------------------------------------------------
 # Import Inventory
 #------------------------------------------------------------------------------

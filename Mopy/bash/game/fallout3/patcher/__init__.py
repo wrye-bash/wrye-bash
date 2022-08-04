@@ -490,9 +490,8 @@ graphicsFidTypes = {
     b'PROJ': (u'light', u'muzzleFlash', u'explosion'),
     b'WEAP': ('scopeEffect', 'impactDataset', 'firstPersonModel'),
 }
-graphicsModelAttrs = (u'model', u'shellCasingModel', u'scopeModel',
-                      u'worldModel', u'maleBody', u'maleWorld', u'femaleBody',
-                      u'femaleWorld')
+graphicsModelAttrs = {'model', 'shellCasingModel', 'scopeModel', 'worldModel',
+                      'maleBody', 'maleWorld', 'femaleBody', 'femaleWorld'}
 
 #------------------------------------------------------------------------------
 # Import Inventory

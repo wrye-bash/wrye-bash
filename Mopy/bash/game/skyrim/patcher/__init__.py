@@ -586,8 +586,8 @@ graphicsTypes = {
     b'APPA': (u'iconPath', u'model'),
     b'ARMA': (u'male_model', u'female_model', u'male_model_1st',
               u'female_model_1st', u'biped_flags'),
-    b'ARMO': (u'model2', u'maleIconPath', u'model4', u'femaleIconPath',
-              u'addons', u'biped_flags'),
+    b'ARMO': ('maleWorld', 'maleIconPath', 'femaleWorld', 'femaleIconPath',
+              'addons', 'biped_flags'),
     b'BOOK': (u'iconPath', u'model'),
     b'CLAS': (u'iconPath',),
     b'CONT': (u'model',),
@@ -648,7 +648,7 @@ graphicsTypes = {
     b'SLGM': (u'iconPath', u'model'),
     b'STAT': (u'model',),
     b'TREE': (u'model',),
-    b'WEAP': (u'model1', u'model2', u'iconPath'),
+    b'WEAP': ('model', 'model2', 'iconPath'),
     b'WTHR': (u'wthrAmbientColors',),
 }
 graphicsFidTypes = {
@@ -664,8 +664,9 @@ graphicsFidTypes = {
     b'SPEL': (u'menu_display_object',),
     b'WEAP': (u'firstPersonModelObject',),
 }
-graphicsModelAttrs = (u'model', u'model1', u'model2', u'model4', u'male_model',
-                      u'female_model', u'male_model_1st', u'female_model_1st')
+graphicsModelAttrs = {'model', 'model2', 'male_model', 'female_model',
+                      'male_model_1st', 'female_model_1st', 'maleWorld',
+                      'femaleWorld'}
 
 #------------------------------------------------------------------------------
 # Import Inventory
