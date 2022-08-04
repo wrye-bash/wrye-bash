@@ -89,58 +89,35 @@ class MelModel(MelGroup):
         )
 
 #------------------------------------------------------------------------------
-##: See what we can do with MelUnion & MelTruncatedStruct here
-class MelBipedObjectData(MelStruct):
-    """Handler for BODT/BOD2 subrecords.  Reads both types, writes only BOD2"""
-    _bp_flags = BipedFlags.from_names()
+class _MelBodt(MelTruncatedStruct):
+    """Handler for BODT subrecords. Upgrades the legacy non-playable flag."""
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        super().load_mel(record, ins, sub_type, size_, *debug_strs)
+        # Carry forward the one usable legacy flag - but don't overwrite
+        # the non-playable status if it's already set at the record level
+        record.flags1.isNotPlayable |= record.legacy_flags.non_playable
 
-    # Legacy Flags, (For BODT subrecords) - #4 is the only one not discarded.
-    LegacyFlags = TrimmedFlags.from_names( ##: TrimmedFlags mirrors xEdit, though it doesn't make sense
-        u'modulates_voice', # From ARMA
-        u'unknown_2',
-        u'unknown_3',
-        u'unknown_4',
-        u'non_playable', # From ARMO
-        u'unknown_6',
-        u'unknown_7',
-        u'unknown_8')
+class MelBodtBod2(MelSequential):
+    """Handler for BODT and BOD2 subrecords. Reads both types, but writes only
+    BOD2."""
+    _bp_flags = BipedFlags.from_names()
+    # Used when loading BODT subrecords - #4 is the only one we care about
+    _legacy_flags = TrimmedFlags.from_names(
+        (0, 'modulates_voice'), # From ARMA
+        (4, 'non_playable'), # From ARMO
+    )
 
     def __init__(self):
         ##: armor_type is an enum, see wbArmorTypeEnum in xEdit and its usage
         # in multitweak_names
-        super().__init__(b'BOD2', [u'2I'],
-            (MelBipedObjectData._bp_flags, u'biped_flags'), 'armor_type')
-
-    def getLoaders(self,loaders):
-        # Loads either old style BODT or new style BOD2 records
-        loaders[b'BOD2'] = self
-        loaders[b'BODT'] = self
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs,
-                 __unpacker2=structs_cache['IB3s'].unpack,
-                 __unpacker3=structs_cache['IB3sI'].unpack):
-        if sub_type == b'BODT':
-            # Old record type, use alternate loading routine
-            if size_ == 8:
-                # Version 20 of this subrecord is only 8 bytes (armorType
-                # omitted)
-                bp_flags, legacyFlags, _bp_unused = ins.unpack(
-                    __unpacker2, size_, *debug_strs)
-                armor_type = 0
-            elif size_ != 12:
-                raise ModSizeError(ins.inName, debug_strs, (12, 8), size_)
-            else:
-                bp_flags, legacyFlags, _bp_unused, armor_type = ins.unpack(
-                    __unpacker3, size_, *debug_strs)
-            # legacyData is discarded except for non-playable status
-            record.biped_flags = MelBipedObjectData._bp_flags(bp_flags)
-            record.flags1.isNotPlayable = MelBipedObjectData.LegacyFlags(
-                legacyFlags)[4]
-            record.armor_type = armor_type
-        else:
-            # BOD2 - new style, MelStruct can handle it
-            super(MelBipedObjectData, self).load_mel(record, ins, sub_type,
-                                                     size_, *debug_strs)
+        super().__init__(
+            MelReadOnly(_MelBodt(b'BODT', ['I', 'B', '3s', 'I'],
+                (self._bp_flags, 'biped_flags'),
+                (self._legacy_flags, 'legacy_flags'), 'bp_unused',
+                'armor_type', old_versions={'IB3s'})),
+            MelStruct(b'BOD2', ['2I'], (self._bp_flags, 'biped_flags'),
+                'armor_type'),
+        )
 
 #------------------------------------------------------------------------------
 class MelAttacks(MelSorted):
@@ -570,7 +547,7 @@ class MreArma(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelBipedObjectData(),
+        MelBodtBod2(),
         MelFid(b'RNAM','race'),
         MelStruct(b'DNAM', [u'4B', u'2s', u'B', u's', u'f'],'malePriority','femalePriority',
                   (WeightSliderFlags, u'maleFlags'),
@@ -606,7 +583,7 @@ class MreArmo(MelRecord):
         MelIcons(u'maleIconPath', u'maleSmallIconPath'),
         MelModel(b'MOD4', 'model4'),
         MelIcons2(),
-        MelBipedObjectData(),
+        MelBodtBod2(),
         MelDestructible(),
         MelSoundPickup(),
         MelSoundDrop(),
@@ -3157,7 +3134,7 @@ class MreRace(MelRecord):
         MelSpellCounter(),
         MelSpells(),
         MelFid(b'WNAM', u'race_skin'),
-        MelBipedObjectData(), # required
+        MelBodtBod2(), # required
         MelKeywords(),
         MelRaceData(b'DATA', # required
             [u'14b', u'2s', u'4f', u'I', u'7f', u'I', u'2i', u'f', u'i', u'5f',

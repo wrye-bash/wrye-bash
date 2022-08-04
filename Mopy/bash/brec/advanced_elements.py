@@ -460,27 +460,21 @@ class MelSimpleArray(MelArray):
 class MelTruncatedStruct(MelStruct):
     """Works like a MelStruct, but automatically upgrades certain older,
     truncated struct formats."""
-    def __init__(self, sub_sig, sub_fmt, *elements, **kwargs):
+    def __init__(self, sub_sig, sub_fmt, *elements, old_versions,
+            is_optional=False):
         """Creates a new MelTruncatedStruct with the specified parameters.
 
         :param sub_sig: The subrecord signature of this struct.
         :param sub_fmt: The format of this struct.
         :param elements: The element syntax of this struct.
-        :param kwargs: Must contain an old_versions keyword argument, which
-            specifies the older formats that are supported by this struct. The
-            keyword argument is_optional can be supplied, which determines
-            whether this struct should behave like MelOptStruct. May also
-            contain any keyword arguments that MelStruct supports."""
-        try:
-            old_versions = kwargs.pop('old_versions')
-        except KeyError:
-            raise SyntaxError(u'MelTruncatedStruct requires an old_versions '
-                              u'keyword argument')
+        :param old_versions: The older formats that are supported by this
+            struct.
+        :param is_optional: Whether or not this struct should behave like
+            MelOptStruct."""
         if not isinstance(old_versions, set):
-            raise SyntaxError(u'MelTruncatedStruct: old_versions must be a '
-                              u'set')
-        self._is_optional = kwargs.pop('is_optional', False)
-        super(MelTruncatedStruct, self).__init__(sub_sig, sub_fmt, *elements)
+            raise SyntaxError('MelTruncatedStruct: old_versions must be a set')
+        super().__init__(sub_sig, sub_fmt, *elements)
+        self._is_optional = is_optional
         self._all_unpackers = {
             structs_cache[alt_fmt].size: structs_cache[alt_fmt].unpack for
             alt_fmt in old_versions}
