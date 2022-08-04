@@ -48,7 +48,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, MelBamt, \
     MelFootstepSound, MelArtObject, MelTemplateArmor, MelArtType, \
     MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, MelBookText, \
-    MelBookDescription, MelInventoryArt
+    MelBookDescription, MelInventoryArt, MelUnorderedGroups
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -68,7 +68,7 @@ def sse_only(sse_obj):
     return if_sse(le_version=None, se_version=sse_obj)
 
 #------------------------------------------------------------------------------
-# Record Elements    ----------------------------------------------------------
+# Record Elements -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model subrecord."""
@@ -704,38 +704,44 @@ class MreBptd(MelRecord):
     """Body Part Data."""
     rec_sig = b'BPTD'
 
-    _flags = Flags.from_names('severable','ikData','ikBipedData',
-        'explodable','ikIsHead','ikHeadtracking','toHitChanceAbsolute')
+    _bpnd_flags = Flags.from_names('severable', 'ik_data', 'ik_biped_data',
+        'explodable', 'ik_is_head','ik_headtracking',' to_hit_chance_absolute')
 
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelSorted(MelGroups('bodyParts',
-            MelLString(b'BPTN', u'partName'),
-            MelString(b'PNAM','poseMatching'),
-            MelString(b'BPNN', 'nodeName'),
-            MelString(b'BPNT','vatsTarget'),
-            MelString(b'BPNI','ikDataStartNode'),
-            MelStruct(b'BPND', [u'f', u'3B', u'b', u'2B', u'H', u'2I', u'2f', u'i', u'2I', u'7f', u'2I', u'2B', u'2s', u'f'],'damageMult',
-                      (_flags,'flags'),'partType','healthPercent','actorValue',
-                      'toHitChance','explodableChancePercent',
-                      'explodableDebrisCount',(FID, u'explodableDebris'),
-                      (FID, u'explodableExplosion'),'trackingMaxAngle',
-                      'explodableDebrisScale','severableDebrisCount',
-                      (FID, u'severableDebris'),(FID, u'severableExplosion'),
-                      'severableDebrisScale','goreEffectPosTransX',
-                      'goreEffectPosTransY','goreEffectPosTransZ',
-                      'goreEffectPosRotX','goreEffectPosRotY','goreEffectPosRotZ',
-                      (FID, u'severableImpactDataSet'),
-                      (FID, u'explodableImpactDataSet'),'severableDecalCount',
-                      'explodableDecalCount','unused',
-                      'limbReplacementScale'),
-            MelString(b'NAM1','limbReplacementModel'),
-            MelString(b'NAM4','goreEffectsTargetBone'),
+        MelSorted(MelUnorderedGroups('body_part_list',
+            MelLString(b'BPTN', 'part_name'),
+            MelString(b'PNAM', 'pose_matching'),
+            MelString(b'BPNN', 'part_node'),
+            MelString(b'BPNT', 'vats_target'),
+            MelString(b'BPNI', 'ik_data_start_node'),
+            MelStruct(b'BPND',
+                ['f', '3B', 'b', '2B', 'H', '2I', '2f', 'i', '2I', '7f', '2I',
+                 '2B', '2s', 'f'], 'bpnd_damage_mult',
+                (_bpnd_flags, 'bpnd_flags'), 'bpnd_part_type',
+                'bpnd_health_percent', 'bpnd_actor_value',
+                'bpnd_to_hit_chance', 'bpnd_explodable_chance_percent',
+                'bpnd_explodable_debris_count',
+                (FID, 'bpnd_explodable_debris'),
+                (FID, 'bpnd_explodable_explosion'), 'bpnd_tracking_max_angle',
+                'bpnd_explodable_debris_scale', 'bpnd_severable_debris_count',
+                (FID, 'bpnd_severable_debris'),
+                (FID, 'bpnd_severable_explosion'),
+                'bpnd_severable_debris_scale', 'bpnd_gore_effect_pos_trans_x',
+                'bpnd_gore_effect_pos_trans_y', 'bpnd_gore_effect_pos_trans_z',
+                'bpnd_gore_effect_pos_rot_x', 'bpnd_gore_effect_pos_rot_y',
+                'bpnd_gore_effect_pos_rot_z',
+                (FID, 'bpnd_severable_impact_data_set'),
+                (FID, 'bpnd_explodable_impact_data_set'),
+                'bpnd_severable_decal_count', 'bpnd_explodable_decal_count',
+                'bpnd_unused', 'bpnd_limb_replacement_scale'),
+            MelString(b'NAM1', 'limb_replacement_model'),
+            MelString(b'NAM4', 'gore_effects_target_bone'),
             # Ignore texture hashes - they're only an optimization, plenty of
             # records in Skyrim.esm are missing them
             MelNull(b'NAM5'),
-        ), sort_by_attrs='nodeName'),
+        ), sort_by_attrs='part_node'),
     )
     __slots__ = melSet.getSlotsUsed()
 

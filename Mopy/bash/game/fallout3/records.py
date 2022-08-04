@@ -47,7 +47,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
     MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
-    MelPerkParamsGroups, MelAspcRdat
+    MelPerkParamsGroups, MelAspcRdat, MelUnorderedGroups
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -82,7 +82,7 @@ aiService = Flags.from_names(
 )
 
 #------------------------------------------------------------------------------
-# Record Elements    ----------------------------------------------------------
+# Record Elements -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model subrecord."""
@@ -640,80 +640,46 @@ class MreBook(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MelBptdParts(MelGroups):
-    """Handles the 'body parts' subrecords in BPTD. BPNN can either start a new
-    body part or belong to an existing one, depending on whether or not we hit
-    a BPTN before it."""
-    _bpnd_flags = Flags.from_names(u'severable', u'ikData', u'ikBipedData',
-        u'explodable', u'ikIsHead', u'ikHeadtracking', u'toHitChanceAbsolute')
-
-    def __init__(self):
-        super(MelBptdParts, self).__init__(u'bodyParts',
-            MelString(b'BPTN', u'partName'),
-            MelString(b'BPNN', u'nodeName'),
-            MelString(b'BPNT', u'vatsTarget'),
-            MelString(b'BPNI', u'ikDataStartNode'),
-            MelStruct(b'BPND', [u'f', u'3B', u'b', u'2B', u'H', u'2I', u'2f', u'i', u'2I', u'7f', u'2I', u'2B', u'2s', u'f'], u'damageMult',
-                (self._bpnd_flags, u'flags'), u'partType',
-                u'healthPercent', u'actorValue', u'toHitChance',
-                u'explodableChancePercent', u'explodableDebrisCount',
-                (FID, u'explodableDebris'), (FID, u'explodableExplosion'),
-                u'trackingMaxAngle', u'explodableDebrisScale',
-                u'severableDebrisCount', (FID, u'severableDebris'),
-                (FID, u'severableExplosion'), u'severableDebrisScale',
-                u'goreEffectPosTransX', u'goreEffectPosTransY',
-                u'goreEffectPosTransZ', u'goreEffectPosRotX',
-                u'goreEffectPosRotY', u'goreEffectPosRotZ',
-                (FID, u'severableImpactDataSet'),
-                (FID, u'explodableImpactDataSet'), u'severableDecalCount',
-                u'explodableDecalCount', u'unused',
-                u'limbReplacementScale'),
-            MelString(b'NAM1', u'limbReplacementModel'),
-            MelString(b'NAM4', u'goreEffectsTargetBone'),
-            MelBase(b'NAM5', u'texture_hashes'),
-        )
-
-    def setDefault(self, record):
-        super(MelBptdParts, self).setDefault(record)
-        record._had_bptn = False
-
-    def getSlotsUsed(self):
-        return (u'_had_bptn',) + super(MelBptdParts, self).getSlotsUsed()
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        if sub_type == b'BPTN':
-            # We hit a BPTN, this is a new body part
-            record._had_bptn = True
-        elif sub_type == b'BPNN':
-            if record._had_bptn:
-                # We hit a BPNN, but had a BPTN before it. This BPNN is
-                # part of the current body part
-                record._had_bptn = False
-            else:
-                # We hit a BPNN, but there was no BPTN before it. This BPNN
-                # starts a new unnamed body part
-                self._new_object(record)
-        # Finally, delegate to the correct subrecord loader
-        super(MelBptdParts, self).load_mel(record, ins, sub_type, size_,
-                                           *debug_strs)
-
-    def dumpData(self, record, out):
-        for bp_target in getattr(record, self.attr):
-            for bp_element in self.elements:
-                if bp_element.mel_sig == b'BPTN' and getattr(
-                        bp_target, bp_element.attr) is None:
-                    continue # unnamed body part, skip
-                bp_element.dumpData(bp_target, out)
-
 class MreBptd(MelRecord):
     """Body Part Data."""
     rec_sig = b'BPTD'
 
+    _bpnd_flags = Flags.from_names('severable', 'ik_data', 'ik_biped_data',
+        'explodable', 'ik_is_head','ik_headtracking',' to_hit_chance_absolute')
+
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelBptdParts(),
-        MelFid(b'RAGA', u'ragdoll'),
+        MelUnorderedGroups('body_part_list',
+            MelString(b'BPTN', 'part_name'),
+            MelString(b'BPNN', 'part_node'),
+            MelString(b'BPNT', 'vats_target'),
+            MelString(b'BPNI', 'ik_data_start_node'),
+            MelStruct(b'BPND',
+                ['f', '3B', 'b', '2B', 'H', '2I', '2f', 'i', '2I', '7f', '2I',
+                 '2B', '2s', 'f'], 'bpnd_damage_mult',
+                (_bpnd_flags, 'bpnd_flags'), 'bpnd_part_type',
+                'bpnd_health_percent', 'bpnd_actor_value',
+                'bpnd_to_hit_chance', 'bpnd_explodable_chance_percent',
+                'bpnd_explodable_debris_count',
+                (FID, 'bpnd_explodable_debris'),
+                (FID, 'bpnd_explodable_explosion'), 'bpnd_tracking_max_angle',
+                'bpnd_explodable_debris_scale', 'bpnd_severable_debris_count',
+                (FID, 'bpnd_severable_debris'),
+                (FID, 'bpnd_severable_explosion'),
+                'bpnd_severable_debris_scale', 'bpnd_gore_effect_pos_trans_x',
+                'bpnd_gore_effect_pos_trans_y', 'bpnd_gore_effect_pos_trans_z',
+                'bpnd_gore_effect_pos_rot_x', 'bpnd_gore_effect_pos_rot_y',
+                'bpnd_gore_effect_pos_rot_z',
+                (FID, 'bpnd_severable_impact_data_set'),
+                (FID, 'bpnd_explodable_impact_data_set'),
+                'bpnd_severable_decal_count', 'bpnd_explodable_decal_count',
+                'bpnd_unused', 'bpnd_limb_replacement_scale'),
+            MelString(b'NAM1', 'limb_replacement_model'),
+            MelString(b'NAM4', 'gore_effects_target_bone'),
+            MelBase(b'NAM5', 'texture_hashes'),
+        ),
+        MelFid(b'RAGA', 'ragdoll'),
     )
     __slots__ = melSet.getSlotsUsed()
 

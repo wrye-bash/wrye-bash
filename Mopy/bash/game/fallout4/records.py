@@ -38,10 +38,12 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelAdditionalRaces, MelFootstepSound, MelArtObject, MelEnchantment, \
     MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
     MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, \
-    MelBookText, MelBookDescription, MelInventoryArt
+    MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups
 
+##: What about texture hashes? I carried discarding them forward from Skyrim,
+# but that was due to the 43-44 problems. See also #620.
 #------------------------------------------------------------------------------
-# Record Elements    ----------------------------------------------------------
+# Record Elements -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model subrecord."""
@@ -610,6 +612,65 @@ class MreBook(MelRecord):
             (FID,'book_teaches'), 'text_offset_x', 'text_offset_y'),
         MelBookDescription(),
         MelInventoryArt(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreBptd(MelRecord):
+    """Body Part Data."""
+    rec_sig = b'BPTD'
+
+    _bpnd_flags = Flags.from_names('severable', 'hit_reaction',
+        'hit_reaction_default', 'explodable', 'cut_meat_cap_sever',
+        'on_cripple', 'explodable_absolute_chance', 'show_cripple_geometry')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelModel(),
+        MelSorted(MelUnorderedGroups('body_part_list',
+            MelLString(b'BPTN', 'part_name'),
+            MelString(b'BPNN', 'part_node'),
+            MelString(b'BPNT', 'vats_target'),
+            MelStruct(b'BPND',
+                ['f', '2I', 'f', '2I', '7f', '2I', 'f', '3B', 'I', '8B', '4I',
+                 'f', '2B'], 'bpnd_damage_mult',
+                (FID, 'bpnd_explodable_debris'),
+                (FID, 'bpnd_explodable_explosion'),
+                'bpnd_explodable_debris_scale', (FID, 'bpnd_severable_debris'),
+                (FID, 'bpnd_severable_explosion'),
+                'bpnd_severable_debris_scale', 'bpnd_cut_min', 'bpnd_cut_max',
+                'bpnd_cut_radius', 'bpnd_gore_effects_local_rotate_x',
+                'bpnd_gore_effects_local_rotate_y', 'bpnd_cut_tesselation',
+                (FID, 'bpnd_severable_impact_data_set'),
+                (FID, 'bpnd_explodable_impact_data_set'),
+                'bpnd_explodable_limb_replacement_scale',
+                (_bpnd_flags, 'bpnd_flags'), 'bpnd_part_type',
+                'bpnd_health_percent', 'bpnd_actor_value',
+                'bpnd_to_hit_chance', 'bpnd_explodable_explosion_chance_pct',
+                'bpnd_non_lethal_dismemberment_chance',
+                'bpnd_severable_debris_count', 'bpnd_explodable_debris_count',
+                'bpnd_severable_decal_count', 'bpnd_explodable_decal_count',
+                'bpnd_geometry_segment_index',
+                (FID, 'bpnd_on_cripple_art_object'),
+                (FID, 'bpnd_on_cripple_debris'),
+                (FID, 'bpnd_on_cripple_explosion'),
+                (FID, 'bpnd_on_cripple_impact_data_set'),
+                'bpnd_on_cripple_debris_scale', 'bpnd_on_cripple_debris_count',
+                'bpnd_on_cripple_decal_count'),
+            MelString(b'NAM1', 'limb_replacement_model'),
+            MelString(b'NAM4', 'gore_effects_target_bone'),
+            # Ignore texture hashes - they're only an optimization, plenty of
+            # records in Skyrim.esm are missing them
+            MelNull(b'NAM5'),
+            MelString(b'ENAM', 'hit_reaction_start'),
+            MelString(b'FNAM', 'hit_reaction_end'),
+            MelFid(b'BNAM', 'gore_effects_dismember_blood_art'),
+            MelFid(b'INAM', 'gore_effects_blood_impact_material_type'),
+            MelFid(b'JNAM', 'on_cripple_blood_impact_material_type'),
+            MelFid(b'CNAM', 'meat_cap_texture_set'),
+            MelFid(b'NAM2', 'collar_texture_set'),
+            MelString(b'DNAM', 'twist_variable_prefix'),
+        ), sort_by_attrs='part_node'),
     )
     __slots__ = melSet.getSlotsUsed()
 
