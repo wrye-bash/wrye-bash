@@ -47,7 +47,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
     MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
-    MelPerkParamsGroups
+    MelPerkParamsGroups, MelAspcRdat
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -499,7 +499,6 @@ class MreAmmo(MelRecord):
 #------------------------------------------------------------------------------
 class MreAnio(MelRecord):
     """Animation Object."""
-
     rec_sig = b'ANIO'
 
     melSet = MelSet(
@@ -601,10 +600,10 @@ class MreAspc(MelRecord):
             # easier to load them like this than with a distributor
             fnv_version=MelFids('sound', MelFid(b'SNAM')),
         ),
-        fnv_only(MelUInt32(b'WNAM', 'wallaTrigerCount')),
-        MelFid(b'RDAT','useSoundFromRegion'),
-        MelUInt32(b'ANAM', 'environmentType'),
-        fnv_only(MelUInt32(b'INAM', 'isInterior')),
+        fnv_only(MelUInt32(b'WNAM', 'walla_trigger_count')),
+        MelAspcRdat(),
+        MelUInt32(b'ANAM', 'environment_type'),
+        fnv_only(MelUInt32(b'INAM', 'aspc_is_interior')),
     )
     __slots__ = melSet.getSlotsUsed()
 

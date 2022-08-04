@@ -184,6 +184,43 @@ class MelArtObject(MelFid):
         super().__init__(b'ONAM', 'art_object')
 
 #------------------------------------------------------------------------------
+class MelArtType(MelUInt32):
+    """Handles the ARTO subrecord DNAM (Art Type)."""
+    def __init__(self):
+        super().__init__(b'DNAM', 'art_type')
+
+#------------------------------------------------------------------------------
+class MelAspcBnam(MelFid):
+    """Handles the ASPC subrecord BNAM (Environment Type (reverb))."""
+    def __init__(self):
+        super().__init__(b'BNAM', 'environment_type')
+
+#------------------------------------------------------------------------------
+class MelAspcRdat(MelFid):
+    """Handles the ASPC subrecord RDAT (Use Sound From Region (Interiors
+    Only))."""
+    def __init__(self):
+        super().__init__(b'RDAT', 'use_sound_from_region')
+
+#------------------------------------------------------------------------------
+class MelAstpData(MelUInt32):
+    """Handles the ASTP subrecord DATA. Called 'Flags' in xEdit, but is really
+    a boolean enum."""
+    def __init__(self):
+        super().__init__(b'DATA', 'family_association')
+
+#------------------------------------------------------------------------------
+class MelAstpTitles(MelSequential):
+    """Handles the ASTP subrecords MPRT, FPRT, MCHT and FCHT."""
+    def __init__(self):
+        super().__init__(
+            MelString(b'MPRT', 'male_parent_title'),
+            MelString(b'FPRT', 'female_parent_title'),
+            MelString(b'MCHT', 'male_child_title'),
+            MelString(b'FCHT', 'female_child_title'),
+        )
+
+#------------------------------------------------------------------------------
 class MelAttx(MelLString):
     """Handles the common ATTX (Activate Text Override) subrecord. Skyrim uses
     an RNAM signature instead."""

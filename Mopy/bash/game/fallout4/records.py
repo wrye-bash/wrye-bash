@@ -36,7 +36,8 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider, \
     MelUInt32Flags, BipedFlags, MelArmaDnam, MelArmaModels, MelArmaSkins, \
     MelAdditionalRaces, MelFootstepSound, MelArtObject, MelEnchantment, \
-    MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate
+    MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
+    MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -486,6 +487,49 @@ class MreArmo(MelRecord):
             b'FULL': 'ot_combinations',
         },
     })
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArto(MelRecord):
+    """Art Object."""
+    rec_sig = b'ARTO'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelKeywords(),
+        MelModel(),
+        MelArtType(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAspc(MelRecord):
+    """Acoustic Space."""
+    rec_sig = b'ASPC'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelSound(),
+        MelAspcRdat(),
+        MelAspcBnam(),
+        MelUInt8(b'XTRI', 'aspc_is_interior'),
+        MelUInt16(b'WNAM', 'weather_attenuation'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAstp(MelRecord):
+    """Association Type."""
+    rec_sig = b'ASTP'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelAstpTitles(),
+        MelAstpData(),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------

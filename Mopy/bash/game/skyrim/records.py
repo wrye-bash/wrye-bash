@@ -46,7 +46,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelEffects, AMelLLItems, MelUnloadEvent, MelShortName, AVmadContext, \
     MelPerkData, MelNextPerk, PerkEpdfDecider, MelPerkParamsGroups, MelBids, \
     MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, MelBamt, \
-    MelFootstepSound, MelArtObject, MelTemplateArmor
+    MelFootstepSound, MelArtObject, MelTemplateArmor, MelArtType, \
+    MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -594,17 +595,14 @@ class MreArmo(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreArto(MelRecord):
-    """Art Effect Object."""
+    """Art Object."""
     rec_sig = b'ARTO'
-
-    ArtoTypeFlags = Flags.from_names('magic_casting', 'magic_hit_effect',
-                                     'enchantment_effect')
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelUInt32Flags(b'DNAM', u'flags', ArtoTypeFlags),
+        MelArtType(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -612,12 +610,13 @@ class MreArto(MelRecord):
 class MreAspc(MelRecord):
     """Acoustic Space."""
     rec_sig = b'ASPC'
+
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelSound(),
-        MelFid(b'RDAT', 'regionData'),
-        MelFid(b'BNAM', 'reverb'),
+        MelAspcRdat(),
+        MelAspcBnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -626,15 +625,10 @@ class MreAstp(MelRecord):
     """Association Type."""
     rec_sig = b'ASTP'
 
-    _astp_flags = Flags.from_names('family_association')
-
     melSet = MelSet(
         MelEdid(),
-        MelString(b'MPRT', 'male_parent_title'),
-        MelString(b'FPRT', 'female_parent_title'),
-        MelString(b'MCHT', 'male_child_title'),
-        MelString(b'FCHT', 'female_child_title'),
-        MelUInt32Flags(b'DATA', 'association_type_flags', _astp_flags),
+        MelAstpTitles(),
+        MelAstpData(),
     )
     __slots__ = melSet.getSlotsUsed()
 

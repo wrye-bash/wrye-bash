@@ -493,7 +493,7 @@ soundsTypes = {
     b'APPA': (u'pickupSound', u'dropSound'),
     b'ARMA': ('footstep_sound',),
     b'ARMO': (u'pickupSound', u'dropSound'),
-    b'ASPC': ('sound', 'regionData', 'reverb'),
+    b'ASPC': ('sound', 'use_sound_from_region', 'aspc_reverb'),
     b'BOOK': (u'pickupSound', u'dropSound'),
     b'CONT': ('sound', 'soundClose'),
     b'DOOR': ('sound', 'soundClose', 'soundLoop'),
