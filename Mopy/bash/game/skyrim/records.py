@@ -23,7 +23,7 @@
 """This module contains the skyrim record classes."""
 from ... import bush
 from ...bolt import Flags, structs_cache, TrimmedFlags
-from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, \
+from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelSimpleArray, MelWeight, \
     MreGmstBase, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
@@ -44,7 +44,9 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
     MelEffects, AMelLLItems, MelUnloadEvent, MelShortName, AVmadContext, \
-    MelPerkData, MelNextPerk, PerkEpdfDecider, MelPerkParamsGroups
+    MelPerkData, MelNextPerk, PerkEpdfDecider, MelPerkParamsGroups, \
+    MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, \
+    MelFootstepSound, MelArtObject
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -543,27 +545,16 @@ class MreArma(MelRecord):
     """Armor Addon."""
     rec_sig = b'ARMA'
 
-    WeightSliderFlags = Flags.from_names('unknown0', 'enabled')
-
     melSet = MelSet(
         MelEdid(),
         MelBodtBod2(),
-        MelFid(b'RNAM','race'),
-        MelStruct(b'DNAM', [u'4B', u'2s', u'B', u's', u'f'],'malePriority','femalePriority',
-                  (WeightSliderFlags, u'maleFlags'),
-                  (WeightSliderFlags, u'femaleFlags'),
-                  'unknown','detectionSoundValue','unknown1','weaponAdjust',),
-        MelModel(b'MOD2', 'male_model'),
-        MelModel(b'MOD3', 'female_model'),
-        MelModel(b'MOD4', 'male_model_1st'),
-        MelModel(b'MOD5', 'female_model_1st'),
-        MelFid(b'NAM0', 'skin0'),
-        MelFid(b'NAM1', 'skin1'),
-        MelFid(b'NAM2', 'skin2'),
-        MelFid(b'NAM3', 'skin3'),
-        MelSorted(MelFids('additional_races', MelFid(b'MODL'))),
-        MelFid(b'SNDD', 'footstepSound'),
-        MelFid(b'ONAM', 'art_object'),
+        MelRace(),
+        MelArmaDnam(),
+        MelArmaModels(MelModel),
+        MelArmaSkins(),
+        MelAdditionalRaces(),
+        MelFootstepSound(),
+        MelArtObject(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -591,7 +582,7 @@ class MreArmo(MelRecord):
         MelEquipmentType(),
         MelFid(b'BIDS', 'bashImpact'),
         MelFid(b'BAMT', 'material'),
-        MelFid(b'RNAM', 'race'),
+        MelRace(),
         MelKeywords(),
         MelDescription(),
         MelFids('addons', MelFid(b'MODL')),
@@ -2542,7 +2533,7 @@ class MreNpc(MreActorBase):
         MelFid(b'INAM', 'deathItem'),
         MelFid(b'VTCK', 'voice'),
         MelFid(b'TPLT', 'template'),
-        MelFid(b'RNAM','race'),
+        MelRace(),
         MelSpellCounter(),
         MelSpells(),
         MelDestructible(),
@@ -3299,7 +3290,7 @@ class MreRace(MelRecord):
         _MelTintMasks(u'female_tint_masks'),
         MelModel(b'MODL', 'female_head_model'),
         MelFid(b'NAM8', u'morph_race'),
-        MelFid(b'RNAM', u'armor_race'),
+        MelRace(),
     ).with_distributor({
         b'DATA': {
             b'MNAM': (u'male_marker', {

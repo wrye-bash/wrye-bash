@@ -26,14 +26,16 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, MelAttx, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelUnloadEvent, \
     MelArray, MreGmstBase, MelUInt8Flags, MelSorted, MelGroups, MelShortName, \
-    MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
+    MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, MelRace, \
     MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
     AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
     AttrValDecider, MelSoundPickup, MelSoundDrop, MelEquipmentType, AMelVmad, \
     MelDescription, MelEffects, AMelLLItems, MelValueWeight, AVmadContext, \
     MelIcon, MelConditionList, MelPerkData, MelNextPerk, MelSInt8, MelUInt16, \
-    MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider
+    MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider, \
+    MelUInt32Flags, BipedFlags, MelArmaDnam, MelArmaModels, MelArmaSkins, \
+    MelAdditionalRaces, MelFootstepSound, MelArtObject
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -43,32 +45,71 @@ class MelModel(MelGroup):
     # MODB and MODD are no longer used by TES5Edit
     typeSets = {
         b'MODL': (b'MODL', b'MODT', b'MODC', b'MODS', b'MODF'),
-        b'MOD2': (b'MOD2', b'MODT', b'MO2C', b'MO2S', b'MO2F'),
-        b'MOD3': (b'MOD3', b'MODT', b'MO3C', b'MO3S', b'MO3F'),
-        b'MOD4': (b'MOD4', b'MODT', b'MO4C', b'MO4S', b'MO4F'),
-        b'MOD5': (b'MOD5', b'MODT', b'MO5C', b'MO5S', b'MO5F'),
+        b'MOD2': (b'MOD2', b'MO2T', b'MO2C', b'MO2S', b'MO2F'),
+        b'MOD3': (b'MOD3', b'MO3T', b'MO3C', b'MO3S', b'MO3F'),
+        b'MOD4': (b'MOD4', b'MO4T', b'MO4C', b'MO4S', b'MO4F'),
+        b'MOD5': (b'MOD5', b'MO5T', b'MO5C', b'MO5S', b'MO5F'),
         b'DMDL': (b'DMDL', b'DMDT', b'DMDC', b'DMDS'),
     }
 
-    def __init__(self, mel_sig=b'MODL', attr='model'):
+    def __init__(self, mel_sig=b'MODL', attr='model', *, swap_3_4=False,
+            always_use_modc=False, skip_5=False):
+        """Fallout 4 has a whole lot of model nonsense:
+
+        :param swap_3_4: If True, swaps the third (*C) and fourth (*S)
+            elements.
+        :param always_use_modc: If True, use MODC for the third (*C) element,
+            regardless of what mel_sig is.
+        :param skip_5: If True, skip the fifth (*F) element."""
         types = self.__class__.typeSets[mel_sig]
-        model_elements = [
+        mdl_elements = [
             MelString(types[0], 'modPath'),
             # Ignore texture hashes - they're only an optimization, plenty
             # of records in Skyrim.esm are missing them
             MelNull(types[1]),
-            MelFloat(types[2], 'color_remapping_index'),
+            MelFloat(b'MODC' if always_use_modc else types[2],
+                'color_remapping_index'),
             MelFid(types[3], 'material_swap'),
         ]
-        if len(types) == 5:
-            model_elements.append(MelBase(types[4], 'unknownMODF'))
-        super().__init__(attr, *model_elements)
+        if swap_3_4:
+            mdl_elements[2], mdl_elements[3] = mdl_elements[3], mdl_elements[2]
+        if len(types) == 5 and not skip_5:
+            mdl_elements.append(MelBase(types[4], 'unknown_modf'))
+        super().__init__(attr, *mdl_elements)
 
 #------------------------------------------------------------------------------
 class MelAnimationSound(MelFid):
     """Handles the common STCP (Animation Sound) subrecord."""
     def __init__(self):
         super().__init__(b'STCP', 'animation_sound')
+
+#------------------------------------------------------------------------------
+class MelBod2(MelUInt32Flags):
+    """Handles the BOD2 (Biped Body Template) subrecord."""
+    _bp_flags = BipedFlags.from_names()
+
+    def __init__(self):
+        super().__init__(b'BOD2', 'biped_flags', self._bp_flags)
+
+#------------------------------------------------------------------------------
+class MelBoneData(MelGroups):
+    """Handles the bone data subrecord complex."""
+    def __init__(self):
+        super().__init__('bone_data',
+            MelUInt32(b'BSMP', 'bone_scale_gender'),
+            MelGroups('bone_weight_scales',
+                MelString(b'BSMB', 'bone_name'),
+                # In the latest version of xEdit's source code, the decoding
+                # for this particular part is much more complex - would
+                # probably have to require custom code to handle (custom
+                # handler for duplicate signatures inside a single MelGroups,
+                # plus conditional loading to read one subrecord ahead and
+                # check its size). This works fine and is *way* simpler, so not
+                # going to bother.
+                MelSimpleArray('weight_scale_values', MelFloat(b'BSMS')),
+                MelUInt32(b'BMMP', 'bone_modifies_gender'),
+            ),
+        )
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
@@ -366,6 +407,25 @@ class MreAoru(MelRecord):
         MelStruct(b'AOR2', ['3f', '2B', '2s'], 'attraction_radius',
             'attraction_min_delay', 'attraction_max_delay',
             'requires_line_of_sight', 'combat_target', 'unused_aor2'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArma(MelRecord):
+    """Armor Addon."""
+    rec_sig = b'ARMA'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBod2(),
+        MelRace(),
+        MelArmaDnam(),
+        MelArmaModels(MelModel),
+        MelArmaSkins(),
+        MelAdditionalRaces(),
+        MelFootstepSound(),
+        MelArtObject(),
+        MelBoneData(),
     )
     __slots__ = melSet.getSlotsUsed()
 

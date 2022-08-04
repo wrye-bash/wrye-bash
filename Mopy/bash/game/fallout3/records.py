@@ -28,7 +28,7 @@ from collections import OrderedDict
 from ... import bush
 from ...bolt import Flags, structs_cache, TrimmedFlags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
-    MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, \
+    MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, MelRace, \
     MelBase, MelSimpleArray, MreGmstBase, MelBodyParts, MelMODS, MelFactions, \
     MelReferences, MelColorInterpolator, MelValueInterpolator, MelAnimations, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
@@ -99,20 +99,20 @@ class MelModel(MelGroup):
 
     def __init__(self, mel_sig=b'MODL', attr='model', with_facegen_flags=True):
         types = self.__class__.typeSets[mel_sig]
-        model_elements = [MelString(types[0], 'modPath')]
+        mdl_elements = [MelString(types[0], 'modPath')]
         if mel_sig != b'DMDL':
-            model_elements.extend([
+            mdl_elements.extend([
                 MelBase(types[1], 'modb_p'),
                 MelBase(types[2], 'modt_p'), # Texture File Hashes
                 MelMODS(types[3], 'alternateTextures'),
             ])
         else: # DMDL skips the '*B' subrecord
-            model_elements.append(MelBase(types[1], 'modt_p'))
+            mdl_elements.append(MelBase(types[1], 'modt_p'))
         # No MODD/MOSD equivalent for MOD2 and MOD4
         if len(types) == 5 and with_facegen_flags:
-            model_elements.append(MelUInt8Flags(types[4],
-                'facegen_model_flags', self.__class__._facegen_model_flags))
-        super().__init__(attr, *model_elements)
+            mdl_elements.append(MelUInt8Flags(types[4], 'facegen_model_flags',
+                self.__class__._facegen_model_flags))
+        super().__init__(attr, *mdl_elements)
 
 #------------------------------------------------------------------------------
 class MelActivationPrompt(MelString):
@@ -140,18 +140,19 @@ class MreActor(MreActorBase):
 #------------------------------------------------------------------------------
 class MelBipedData(MelStruct):
     """Handles the common BMDT (Biped Data) subrecord."""
-    _biped_flags = BipedFlags.from_names()
+    _bp_flags = BipedFlags.from_names()
     _general_flags = TrimmedFlags.from_names(
-        fnv_only((2, u'hasBackpack')),
-        fnv_only((3, u'medium_armor')),
-        (5, u'power_armor'),
-        (6, u'notPlayable'),
-        (7, u'heavy_armor'))
+        fnv_only((2, 'hasBackpack')),
+        fnv_only((3, 'medium_armor')),
+        (5, 'power_armor'),
+        (6, 'notPlayable'),
+        (7, 'heavy_armor'),
+    )
 
     def __init__(self):
-        super(MelBipedData, self).__init__(b'BMDT', [u'I', u'B', u'3s'],
-            (self._biped_flags, u'biped_flags'),
-            (self._general_flags, u'generalFlags'), u'biped_unused')
+        super().__init__(b'BMDT', ['I', 'B', '3s'],
+            (self._bp_flags, 'biped_flags'),
+            (self._general_flags, 'generalFlags'), 'bp_unused')
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
@@ -513,7 +514,7 @@ class MreArma(MelRecord):
     """Armor Addon."""
     rec_sig = b'ARMA'
 
-    _dnamFlags = Flags.from_names(u'modulatesVoice')
+    _dnamFlags = Flags.from_names('modulates_voice')
 
     melSet = MelSet(
         MelEdid(),
@@ -544,7 +545,7 @@ class MreArmo(MelRecord):
     """Armor."""
     rec_sig = b'ARMO'
 
-    _dnamFlags = Flags.from_names(u'modulatesVoice')
+    _dnamFlags = Flags.from_names('modulates_voice')
 
     melSet = MelSet(
         MelEdid(),
@@ -2038,7 +2039,7 @@ class MreNpc(MreActor):
         MelFid(b'INAM','deathItem'),
         MelFid(b'VTCK','voice'),
         MelFid(b'TPLT','template'),
-        MelFid(b'RNAM','race'),
+        MelRace(),
         MelEnchantment(),
         MelUInt16(b'EAMT', 'unarmedAttackAnimation'),
         MelDestructible(),

@@ -23,6 +23,7 @@
 """Builds on the basic elements defined in base_elements.py to provide
 definitions for some commonly needed subrecords."""
 from itertools import chain
+from typing import Type
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, FlagDecider, MelSorted, MelSimpleArray, MelCounter
@@ -107,6 +108,12 @@ class MelActorSounds(MelSorted):
         ), sort_by_attrs='type')
 
 #------------------------------------------------------------------------------
+class MelAdditionalRaces(MelSorted):
+    """Handle the ARMA subrecord MODL (Additional Races)."""
+    def __init__(self):
+        super().__init__(MelFids('additional_races', MelFid(b'MODL')))
+
+#------------------------------------------------------------------------------
 class MelAddnDnam(MelStruct):
     """Handles the ADDN subrecord DNAM (Data)."""
     def __init__(self):
@@ -135,6 +142,46 @@ class MelAnimations(MelSorted): ##: case insensitive
     """Handles the common KFFZ (Animations) subrecord."""
     def __init__(self):
         super().__init__(MelStrings(b'KFFZ', 'animations'))
+
+#------------------------------------------------------------------------------
+class MelArmaDnam(MelStruct):
+    """Handles the ARMA subrecord DNAM (Data)."""
+    _weigth_slider_flags = Flags.from_names((1, 'slider_enabled'))
+
+    def __init__(self):
+        super().__init__(b'DNAM', ['4B', '2s', 'B', 's', 'f'], 'male_priority',
+            'female_priority', (self._weigth_slider_flags, 'slider_flags_m'),
+            (self._weigth_slider_flags, 'slider_flags_f'), 'unknown_dnam1',
+            'detection_sound_value', 'unknown_dnam2', 'weapon_adjust')
+
+#------------------------------------------------------------------------------
+class MelArmaModels(MelSequential):
+    """Handles the ARMA MOD2-MOD5 subrecords. Note that you have to pass the
+    game's MelModel class in as a parameter."""
+    def __init__(self, mel_model: Type[MelBase]):
+        super().__init__(
+            mel_model(b'MOD2', 'male_model'),
+            mel_model(b'MOD3', 'female_model'),
+            mel_model(b'MOD4', 'male_model_1st'),
+            mel_model(b'MOD5', 'female_model_1st'),
+        )
+
+#------------------------------------------------------------------------------
+class MelArmaSkins(MelSequential):
+    """Handles the ARMA NAM0-NAM3 subrecords."""
+    def __init__(self):
+        super().__init__(
+            MelFid(b'NAM0', 'skin0'),
+            MelFid(b'NAM1', 'skin1'),
+            MelFid(b'NAM2', 'skin2'),
+            MelFid(b'NAM3', 'skin3'),
+        )
+
+#------------------------------------------------------------------------------
+class MelArtObject(MelFid):
+    """Handles the ARMA subrecord ONAM (Art Object)."""
+    def __init__(self):
+        super().__init__(b'ONAM', 'art_object')
 
 #------------------------------------------------------------------------------
 class MelAttx(MelLString):
@@ -288,6 +335,12 @@ class MelFactions(MelSorted):
             MelStruct(b'SNAM', ['I', 'B', '3s'], (FID, 'faction'), 'rank',
                 ('unused1', b'ODB')),
         ), sort_by_attrs='faction')
+
+#------------------------------------------------------------------------------
+class MelFootstepSound(MelFid):
+    """Handles the ARMA subrecord SNDD (Footstep Sound)."""
+    def __init__(self):
+        super().__init__(b'SNDD', 'footstep_sound')
 
 #------------------------------------------------------------------------------
 class MelFull(MelLString):
@@ -470,6 +523,12 @@ class MelPerkParamsGroups(MelGroups):
         pe_fn = record.pe_function
         target.pe_function = pe_fn if pe_fn is not None else -1
         return target
+
+#------------------------------------------------------------------------------
+class MelRace(MelFid):
+    """Handles the common RNAM (Race) subrecord."""
+    def __init__(self):
+        super().__init__(b'RNAM', 'race')
 
 #------------------------------------------------------------------------------
 ##: This is a strange fusion of MelLists, MelStruct and MelTruncatedStruct

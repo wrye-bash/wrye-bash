@@ -491,7 +491,7 @@ soundsTypes = {
     b'ALCH': (u'dropSound', u'pickupSound', u'soundConsume'),
     b'AMMO': (u'pickupSound', u'dropSound'),
     b'APPA': (u'pickupSound', u'dropSound'),
-    b'ARMA': (u'footstepSound',),
+    b'ARMA': ('footstep_sound',),
     b'ARMO': (u'pickupSound', u'dropSound'),
     b'ASPC': ('sound', 'regionData', 'reverb'),
     b'BOOK': (u'pickupSound', u'dropSound'),

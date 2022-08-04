@@ -32,7 +32,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreHeaderBase, MelBase, MelSimpleArray, MelBodyParts, MelAnimations, \
     MreGmstBase, MelReferences, MelRegnEntrySubrecord, MelSorted, MelRegions, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelRaceParts, MelRaceVoices, null2, MelScriptVars, MelRelations, \
+    MelRaceParts, MelRaceVoices, null2, MelScriptVars, MelRelations, MelRace, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
     MelTruncatedStruct, MelSkipInterior, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MelEffectsTes4, MreActorBase, MreWithItems, \
@@ -1562,7 +1562,7 @@ class MreNpc(MreActorBase):
             ('level_offset',1),'calcMin','calcMax'),
         MelFactions(),
         MelFid(b'INAM','deathItem'),
-        MelFid(b'RNAM','race'),
+        MelRace(),
         MelSpellsTes4(),
         MelScript(),
         MelItems(),

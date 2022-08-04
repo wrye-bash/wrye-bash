@@ -246,9 +246,15 @@ class MelBaseR(MelBase):
 
 # Simple static Fields --------------------------------------------------------
 class MelNum(MelBase):
-    """A simple static subrecord representing a number."""
+    """A simple static subrecord representing a number. Note attr defaults to
+    _unused for usage in MelSimpleArray and similar tools where the attribute
+    name does not matter. For everything else, you absolutely have to specify
+    an attribute name."""
     _unpacker, packer, static_size = get_structs(u'I')
     __slots__ = ()
+
+    def __init__(self, mel_sig, attr='_unused'):
+        super().__init__(mel_sig, attr)
 
     def load_bytes(self, ins, size_, *debug_strs):
         return ins.unpack(self._unpacker, size_, *debug_strs)[0]
@@ -763,10 +769,6 @@ class MelXXXX(MelUInt32):
 #------------------------------------------------------------------------------
 class MelFid(MelUInt32):
     """Represents a mod record fid element."""
-
-    def __init__(self, mel_sig, element=u'FID_'):
-        super(MelFid, self).__init__(mel_sig, element)
-
     def load_bytes(self, ins, size_, *debug_strs):
         return FID(super().load_bytes(ins, size_, *debug_strs))
 
