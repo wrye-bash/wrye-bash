@@ -1071,7 +1071,9 @@ class _MelObts(MelPartialCounter):
             'obts_property_count', 'obts_level_min', 'obts_unused1',
             'obts_level_max', 'obts_unused2', 'obts_addon_index',
             'obts_default', 'obts_keyword_count'),
-            counter='obts_keyword_count', counts='obts_keywords')
+            counters={'obts_include_count': 'obts_includes',
+                      'obts_property_count': 'obts_properties',
+                      'obts_keyword_count': 'obts_keywords'})
 
     def getSlotsUsed(self):
         return ('obts_keywords', 'obts_min_level_for_ranks',
@@ -1103,11 +1105,6 @@ class _MelObts(MelPartialCounter):
             append_property(obts_property)
 
     def dumpData(self, record, out):
-        # Need to update the counters for includes and properties, since
-        # MelPartialCounter is not equipped to deal with *three* counters in
-        # the same subrecord
-        record.obts_include_count = len(record.obts_includes)
-        record.obts_property_count = len(record.obts_properties)
         super().dumpData(record, out)
         for obts_kwd in record.obts_keywords:
             pack_int(out, obts_kwd.dump())

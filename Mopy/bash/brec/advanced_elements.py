@@ -1025,27 +1025,24 @@ class MelCounter(_MelWrapper):
         if val_len:
             super(MelCounter, self).dumpData(record, out)
 
-class MelPartialCounter(MelCounter):
-    """Extends MelCounter to work for MelStruct's that contain more than just a
-    counter. This means adding behavior for mapping fids, but dropping the
-    conditional dumping behavior."""
-    def __init__(self, counter_mel, *, counter, counts):
+class MelPartialCounter(_MelWrapper):
+    """Similar to MelCounter, but works for MelStructs that contain more than
+    just a counter (including multiple counters). This means adding behavior
+    for mapping fids, but dropping the conditional dumping behavior."""
+    def __init__(self, counter_mel: MelStruct, *, counters: dict[str, str]):
         """Creates a new MelPartialCounter.
 
         :param counter_mel: The element that stores the counter's value.
-        :type counter_mel: MelStruct
-        :param counter: The attribute name of the counter.
-        :type counter: str
-        :param counts: The attribute name that this counter counts.
-        :type counts: str"""
-        super(MelPartialCounter, self).__init__(counter_mel, counts=counts)
-        self.counter_attr = counter
+        :param counters: A dict mapping counter attribute names to the
+            names of the attributes those counters count."""
+        super().__init__(counter_mel)
+        self._counters = counters
 
     def dumpData(self, record, out):
-        # Count the counted type, then update and dump unconditionally
-        setattr(record, self.counter_attr,
-                len(getattr(record, self.counted_attr, [])))
-        super(MelCounter, self).dumpData(record, out) # skip MelCounter!
+        for counter_attr, counted_attr in self._counters.items():
+            setattr(record, counter_attr,
+                len(getattr(record, counted_attr, [])))
+        super().dumpData(record, out)
 
 #------------------------------------------------------------------------------
 class MelSorted(_MelWrapper):
