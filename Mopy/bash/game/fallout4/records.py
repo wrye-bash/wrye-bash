@@ -533,6 +533,59 @@ class MreAstp(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreAvif(MelRecord):
+    """Actor Value Information."""
+    rec_sig = b'AVIF'
+
+    _avif_flags = Flags.from_names(
+        (1,  'af_skill'),
+        (2,  'af_uses_enum'),
+        (3,  'af_dont_allow_script_edits'),
+        (4,  'af_is_full_av_cached'),
+        (5,  'af_is_permanent_av_cached'),
+        (10, 'af_default_to_0'),
+        (11, 'af_default_to_1'),
+        (12, 'af_default_to_100'),
+        (15, 'af_contains_list'),
+        (19, 'af_value_less_than_1'),
+        (20, 'af_minimum_1'),
+        (21, 'af_maximum_10'),
+        (22, 'af_maximum_100'),
+        (23, 'af_multiply_by_100'),
+        (24, 'af_percentage'),
+        (26, 'af_damage_is_positive'),
+        (27, 'af_god_mode_immune'),
+        (28, 'af_harcoded'),
+    )
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelDescription(),
+        MelLString(b'ANAM', 'abbreviation'),
+        MelFloat(b'NAM0', 'avif_default_value'),
+        MelUInt32Flags(b'AVFL', 'avif_flags', _avif_flags),
+        MelUInt32(b'NAM1', 'avif_type'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreBnds(MelRecord):
+    """Bendable Spline."""
+    rec_sig = b'BNDS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelStruct(b'DNAM', ['f', '2H', '5f'],'default_num_tiles',
+            'default_num_slices', 'default_num_tiles_relative_to_length',
+            'default_red', 'default_green', 'default_blue', 'wind_sensibility',
+            'wind_flexibility'),
+        MelFid(b'TNAM', 'spline_texture'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
