@@ -246,6 +246,19 @@ class MelBodyParts(MelSorted):
         super().__init__(MelStrings(b'NIFZ', 'bodyParts'))
 
 #------------------------------------------------------------------------------
+class MelBookDescription(MelLString):
+    """Handles the BOOK subrecord CNAM (Description)."""
+    def __init__(self):
+        super().__init__(b'CNAM', 'description')
+
+#------------------------------------------------------------------------------
+class MelBookText(MelLString):
+    """Handles the BOOK subrecord DESC (Book Text), except in Morrowind, where
+    TEXT is used."""
+    def __init__(self, txt_sig=b'DESC'):
+        super().__init__(txt_sig, 'book_text')
+
+#------------------------------------------------------------------------------
 class MelBounds(MelGroup):
     """Wrapper around MelGroup for the common task of defining OBND - Object
     Bounds. Uses MelGroup to avoid merging them when importing."""
@@ -332,9 +345,9 @@ class MelDecalData(MelOptStruct):
 
 #------------------------------------------------------------------------------
 class MelDescription(MelLString):
-    """Handles a description (DESC) subrecord."""
-    def __init__(self, desc_attr='description'):
-        super().__init__(b'DESC', desc_attr)
+    """Handles the description (DESC) subrecord."""
+    def __init__(self):
+        super().__init__(b'DESC', 'description')
 
 #------------------------------------------------------------------------------
 class MelEdid(MelString):
@@ -437,6 +450,12 @@ class MelInteractionKeyword(MelFid):
     """Handles the KNAM (Interaction Keyword) subrecord of ACTI records."""
     def __init__(self):
         super().__init__(b'KNAM', 'interaction_keyword')
+
+#------------------------------------------------------------------------------
+class MelInventoryArt(MelFid):
+    """Handles the BOOK subrecord INAM (Inventory Art)."""
+    def __init__(self):
+        super().__init__(b'INAM', 'inventory_art')
 
 #------------------------------------------------------------------------------
 class MelKeywords(MelSequential):
@@ -808,22 +827,20 @@ class MelSoundActivation(MelFid):
         super().__init__(b'VNAM', 'soundActivation')
 
 #------------------------------------------------------------------------------
-class MelSoundDrop(MelFid):
-    """Handles the common ZNAM (Drop Sound) subrecord."""
-    def __init__(self):
-        super().__init__(b'ZNAM', 'dropSound')
-
-#------------------------------------------------------------------------------
 class MelSound(MelFid):
     """Handles the common SNAM (Sound) subrecord."""
     def __init__(self):
         super().__init__(b'SNAM', 'sound')
 
 #------------------------------------------------------------------------------
-class MelSoundPickup(MelFid):
-    """Handles the common YNAM (Pickup Sound) subrecord."""
+class MelSoundPickupDrop(MelSequential):
+    """Handles the common YNAM (Pickup Sound) and ZNAM (Drop Sound) subrecords.
+    They always occur together."""
     def __init__(self):
-        super().__init__(b'YNAM', 'pickupSound')
+        super().__init__(
+            MelFid(b'YNAM', 'pickupSound'),
+            MelFid(b'ZNAM', 'dropSound'),
+        )
 
 #------------------------------------------------------------------------------
 class MelSpells(MelSorted):

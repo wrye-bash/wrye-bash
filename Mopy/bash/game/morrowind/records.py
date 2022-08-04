@@ -29,7 +29,7 @@ from ...bolt import Flags
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
     MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
-    MelOptStruct, MelCounter, MelRefScale, MelRef3D, \
+    MelOptStruct, MelCounter, MelRefScale, MelRef3D, MelBookText, \
     MelIcons, MelFloat, MelSInt32, MelEffectsTes3, \
     MelFixedString, FixedString, AutoFixedString, MreGmstBase, \
     MreLeveledListBase, MelUInt16, SizeDecider, MelLists, \
@@ -358,7 +358,7 @@ class MreBook(MelRecord):
             (_scroll_flags, u'scroll_flags'), u'skill_id', u'enchant_points'),
         MelScriptId(),
         MelIconTes3(),
-        MelString(b'TEXT', u'book_text'),
+        MelBookText(b'TEXT'),
         MelEnchantmentTes3(),
     )
     __slots__ = melSet.getSlotsUsed()

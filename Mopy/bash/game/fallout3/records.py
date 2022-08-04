@@ -40,7 +40,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
     MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, MelPerkData, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
-    MelDecalData, MelDescription, MelLists, MelSoundPickup, MelSoundDrop, \
+    MelDecalData, MelDescription, MelLists, MelSoundPickupDrop, MelBookText, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
@@ -456,8 +456,7 @@ class MreAlch(MelRecord):
         MelIcons(),
         MelScript(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelEquipmentTypeFo3(),
         MelWeight(),
         MelStruct(b'ENIT', [u'i', u'B', u'3s', u'I', u'f', u'I'], u'value', (_flags, u'flags'),
@@ -482,8 +481,7 @@ class MreAmmo(MelRecord):
         MelIcons(),
         fnv_only(MelScript()),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelStruct(b'DATA', [u'f', u'B', u'3s', u'i', u'B'],'speed',(_flags, u'flags'),'ammoData1',
                   'value','clipRounds'),
         fnv_only(MelTruncatedStruct(
@@ -564,8 +562,7 @@ class MreArmo(MelRecord):
         MelFid(b'REPL','repairList'),
         MelFid(b'BIPL','bipedModelList'),
         MelEquipmentTypeFo3(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelStruct(b'DATA', [u'2i', u'f'],'value','health','weight'),
         if_fnv(
             fo3_version=MelStruct(
@@ -635,13 +632,12 @@ class MreBook(MelRecord):
         MelModel(),
         MelIcons(),
         MelScript(),
-        MelDescription(u'book_text'),
+        MelBookText(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelStruct(b'DATA', [u'B', u'b', u'I', u'f'],(_flags, u'flags'),('teaches',-1),'value','weight'),
     )
-    __slots__ = [*melSet.getSlotsUsed(), 'modb']
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MelBptdParts(MelGroups):
@@ -858,8 +854,7 @@ class MreCobj(MelRecord):
         MelModel(),
         MelIcons(),
         MelScript(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -1671,8 +1666,7 @@ class MreKeym(MelRecord):
         MelIcons(),
         MelScript(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelValueWeight(),
         fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
     )
@@ -1876,8 +1870,7 @@ class MreMisc(MelRecord):
         MelIcons(),
         MelScript(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelValueWeight(),
         fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
     )
@@ -1969,8 +1962,7 @@ class MreNote(MelRecord):
         MelFull(),
         MelModel(),
         MelIcons(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelUInt8(b'DATA', 'dataType'),
         MelSorted(MelSimpleArray('quests', MelFid(b'ONAM'))),
         MelString(b'XNAM','texture'),
@@ -3176,8 +3168,7 @@ class MreWeap(MelRecord):
         MelFid(b'REPL','repairList'),
         MelEquipmentTypeFo3(),
         MelFid(b'BIPL','bipedModelList'),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelModel(b'MOD2', 'shellCasingModel'),
         MelModel(b'MOD3', 'scopeModel', with_facegen_flags=False),
         MelFid(b'EFSD','scopeEffect'),

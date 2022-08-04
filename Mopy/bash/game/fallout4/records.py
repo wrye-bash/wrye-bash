@@ -30,14 +30,15 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
     AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
-    AttrValDecider, MelSoundPickup, MelSoundDrop, MelEquipmentType, AMelVmad, \
+    AttrValDecider, MelSoundPickupDrop, MelEquipmentType, AMelVmad, \
     MelDescription, MelEffects, AMelLLItems, MelValueWeight, AVmadContext, \
     MelIcon, MelConditionList, MelPerkData, MelNextPerk, MelSInt8, MelUInt16, \
     MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider, \
     MelUInt32Flags, BipedFlags, MelArmaDnam, MelArmaModels, MelArmaSkins, \
     MelAdditionalRaces, MelFootstepSound, MelArtObject, MelEnchantment, \
     MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
-    MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData
+    MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, \
+    MelBookText, MelBookDescription, MelInventoryArt
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -344,8 +345,7 @@ class MreAlch(MelRecord):
         MelKeywords(),
         MelModel(),
         MelIcons(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelEquipmentType(),
         MelSoundCrafting(),
         MelDestructible(),
@@ -388,8 +388,7 @@ class MreAmmo(MelRecord):
         MelFull(),
         MelModel(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelDescription(),
         MelKeywords(),
         MelValueWeight(),
@@ -461,8 +460,7 @@ class MreArmo(MelRecord):
         MelIcons2(),
         MelBod2(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelEquipmentType(),
         MelBids(),
         MelBamt(),
@@ -582,6 +580,36 @@ class MreBnds(MelRecord):
             'default_red', 'default_green', 'default_blue', 'wind_sensibility',
             'wind_flexibility'),
         MelFid(b'TNAM', 'spline_texture'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreBook(MelRecord):
+    """Book."""
+    rec_sig = b'BOOK'
+
+    _book_type_flags = Flags.from_names('advance_actor_value', 'cant_be_taken',
+        'add_spell', 'add_perk')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelIcons(),
+        MelBookText(),
+        MelSoundPickupDrop(),
+        MelKeywords(),
+        MelFid(b'FIMD', 'featured_item_message'),
+        MelValueWeight(),
+        # The book_flags determine what kind of FormID is acceptable for
+        # book_teaches, but we don't care about that - only that it is a FormID
+        MelStruct(b'DNAM', ['B', '3I'], (_book_type_flags, 'book_flags'),
+            (FID,'book_teaches'), 'text_offset_x', 'text_offset_y'),
+        MelBookDescription(),
+        MelInventoryArt(),
     )
     __slots__ = melSet.getSlotsUsed()
 

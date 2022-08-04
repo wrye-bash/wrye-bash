@@ -36,7 +36,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MreActorBase, MreWithItems, MelRef3D, MelXlod, MelActiFlags, AMelNvnm, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
-    MelSoundPickup, MelSoundDrop, MelActivateParents, BipedFlags, MelColor, \
+    MelSoundPickupDrop, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelWeatherTypes, AMelVmad, \
     MelActorSounds, MelFactionRanks, MelSorted, MelReflectedRefractedBy, \
@@ -47,7 +47,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelPerkData, MelNextPerk, PerkEpdfDecider, MelPerkParamsGroups, MelBids, \
     MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, MelBamt, \
     MelFootstepSound, MelArtObject, MelTemplateArmor, MelArtType, \
-    MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData
+    MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, MelBookText, \
+    MelBookDescription, MelInventoryArt
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -467,8 +468,7 @@ class MreAlch(MelRecord):
         MelModel(),
         MelDestructible(),
         MelIcons(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelEquipmentType(),
         MelWeight(),
         MelAlchEnit(),
@@ -491,8 +491,7 @@ class MreAmmo(MelRecord):
         MelModel(),
         MelIcons(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelDescription(),
         MelKeywords(),
         if_sse(
@@ -533,8 +532,7 @@ class MreAppa(MelRecord):
         MelModel(),
         MelIcons(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelUInt32(b'QUAL', 'quality'),
         MelDescription(),
         MelValueWeight(),
@@ -577,8 +575,7 @@ class MreArmo(MelRecord):
         MelIcons2(),
         MelBodtBod2(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelString(b'BMCT', 'ragdollTemplatePath'), #Ragdoll Constraint Template
         MelEquipmentType(),
         MelBids(),
@@ -681,27 +678,26 @@ class MreBook(MelRecord):
         MelFull(),
         MelModel(),
         MelIcons(),
-        MelDescription(u'book_text'),
+        MelBookText(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelKeywords(),
         MelUnion({
-            False: MelStruct(b'DATA', [u'2B', u'2s', u'i', u'I', u'f'],
-                (_book_type_flags, u'book_flags'), u'book_type',
-                u'unused1', u'book_skill', u'value', u'weight'),
-            True: MelStruct(b'DATA', [u'2B', u'2s', u'2I', u'f'],
-                (_book_type_flags, u'book_flags'), u'book_type',
-                u'unused1', (FID, u'book_spell'), u'value',
-                u'weight'),
+            False: MelStruct(b'DATA', ['2B', '2s', 'i', 'I', 'f'],
+                (_book_type_flags, 'book_flags'), 'book_type',
+                'unused1', 'book_skill', 'value', 'weight'),
+            True: MelStruct(b'DATA', ['2B', '2s', '2I', 'f'],
+                (_book_type_flags, 'book_flags'), 'book_type',
+                'unused1', (FID, 'book_spell'), 'value',
+                'weight'),
         }, decider=PartialLoadDecider(
-            loader=MelUInt8Flags(b'DATA', u'book_flags', _book_type_flags),
-            decider=FlagDecider(u'book_flags', [u'teaches_spell']),
+            loader=MelUInt8Flags(b'DATA', 'book_flags', _book_type_flags),
+            decider=FlagDecider('book_flags', ['teaches_spell']),
         )),
-        MelFid(b'INAM','inventoryArt'),
-        MelLString(b'CNAM','description'),
+        MelInventoryArt(),
+        MelBookDescription(),
     )
-    __slots__ = [*melSet.getSlotsUsed(), 'modb']
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreBptd(MelRecord):
@@ -1849,8 +1845,7 @@ class MreIngr(MelRecord):
         MelModel(),
         MelIcons(),
         MelEquipmentType(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelValueWeight(),
         MelStruct(b'ENIT', [u'i', u'I'],'ingrValue',(IngrTypeFlags, u'flags'),),
         MelEffects(),
@@ -1907,8 +1902,7 @@ class MreKeym(MelRecord):
         MelModel(),
         MelIcons(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelKeywords(),
         MelValueWeight(),
     )
@@ -2339,8 +2333,7 @@ class MreMisc(MelRecord):
         MelModel(),
         MelIcons(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelKeywords(),
         MelValueWeight(),
     )
@@ -3712,8 +3705,7 @@ class MreScrl(MelRecord):
         MelDescription(),
         MelModel(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelStruct(b'DATA', [u'I', u'f'], u'itemValue', u'itemWeight'),
         MelSpit(),
         MelEffects(),
@@ -3749,8 +3741,7 @@ class MreSlgm(MelRecord):
         MelModel(),
         MelIcons(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelKeywords(),
         MelValueWeight(),
         MelUInt8(b'SOUL', u'soul'),
@@ -4193,8 +4184,7 @@ class MreWeap(MelRecord):
         MelEquipmentType(),
         MelBids(),
         MelBamt(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelKeywords(),
         MelDescription(),
         MelModel(b'MOD3', 'model2'),

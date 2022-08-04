@@ -652,7 +652,7 @@ graphicsTypes = {
     b'WTHR': (u'wthrAmbientColors',),
 }
 graphicsFidTypes = {
-    b'BOOK': (u'inventoryArt',),
+    b'BOOK': ('inventory_art',),
     b'EFSH': (u'addonModels',),
     b'MGEF': (u'menu_display_object', u'light', u'hit_shader',
               u'enchant_shader', u'projectile', u'explosion', u'casting_art',

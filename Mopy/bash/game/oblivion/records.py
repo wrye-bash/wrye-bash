@@ -42,7 +42,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelConditionsTes4, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
-    MelSound, MelWeight, MelEffectsTes4ObmeFull
+    MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -628,14 +628,14 @@ class MreBook(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelDescription(u'book_text'),
+        MelBookText(),
         MelScript(),
         MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelStruct(b'DATA', [u'B', u'b', u'I', u'f'], (_flags, u'flags'), ('teaches', -1),
                   'value', 'weight'),
     )
-    __slots__ = [*melSet.getSlotsUsed(), 'modb']
+    __slots__ = melSet.getSlotsUsed()
 
 class MreBsgn(MelRecord):
     """Birthsign."""
