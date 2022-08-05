@@ -44,7 +44,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
     MelWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
-    MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, \
+    MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, MelExtra, \
     MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
     MelPerkParamsGroups, MelAspcRdat, MelUnorderedGroups
@@ -1875,12 +1875,14 @@ class MreNavi(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelUInt32(b'NVER', u'version', 11),
-        MelGroups('nav_map_infos',
-            # Contains fids, but we probably won't ever be able to merge NAVI,
-            # so leaving this as MelBase for now
-            MelBase(b'NVMI', 'nav_map_info'),
+        MelUInt32(b'NVER', 'navi_version'),
+        MelGroups('navigation_map_infos',
+            # Rest of this subrecord is not yet decoded
+            MelExtra(MelStruct(b'NVMI', ['4s', '2I', '2h'], 'nvmi_unknown1',
+                (FID, 'nvmi_navmesh'), (FID, 'nvmi_location'), 'nvmi_grid_x',
+                'nvmi_grid_y'), extra_attr='nvmi_unknown2'),
         ),
+        ##: This isn't right, but would need custom code to handle
         MelSimpleArray('unknownDoors', MelFid(b'NVCI')),
     )
     __slots__ = melSet.getSlotsUsed()

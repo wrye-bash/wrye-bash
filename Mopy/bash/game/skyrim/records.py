@@ -48,7 +48,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, MelBamt, \
     MelFootstepSound, MelArtObject, MelTemplateArmor, MelArtType, \
     MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, MelBookText, \
-    MelBookDescription, MelInventoryArt, MelUnorderedGroups
+    MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1085,37 +1085,16 @@ class MreDlvw(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MelDobjDnam(MelSorted):
-    """This DNAM can have < 8 bytes of noise at the end, so store those
-    in a variable and dump them out again when writing."""
-    def __init__(self):
-        super(MelDobjDnam, self).__init__(MelArray('objects',
-            MelStruct(b'DNAM', [u'2I'], 'objectUse', (FID, 'objectID')),
-        ), sort_by_attrs='objectUse')
-
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
-        # Load everything but the noise
-        start_pos = ins.tell()
-        super(MelDobjDnam, self).load_mel(record, ins, sub_type, size_,
-                                          *debug_strs)
-        # Now, read the remainder of the subrecord and store it
-        read_size = ins.tell() - start_pos
-        record.unknownDNAM = ins.read(size_ - read_size)
-
-    def pack_subrecord_data(self, record):
-        return super(MelDobjDnam, self).pack_subrecord_data(
-            record) + record.unknownDNAM
-
-    def getSlotsUsed(self):
-        return super(MelDobjDnam, self).getSlotsUsed() + ('unknownDNAM',)
-
 class MreDobj(MelRecord):
     """Default Object Manager."""
     rec_sig = b'DOBJ'
 
     melSet = MelSet(
         MelEdid(),
-        MelDobjDnam(),
+        # This subrecord can have <=7 bytes of noise at the end
+        MelExtra(MelSorted(MelArray('objects',
+            MelStruct(b'DNAM', ['2I'], 'object_use', (FID, 'object_fid')),
+        ), sort_by_attrs='object_use'), extra_attr='unknown_dnam'),
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -956,7 +956,7 @@ class MelUnion(MelBase):
 class _MelWrapper(MelBase):
     """Base class for classes like MelCounter and MelSorted that wrap another
     element."""
-    def __init__(self, wrapped_mel):
+    def __init__(self, wrapped_mel: MelBase):
         self._wrapped_mel = wrapped_mel
 
     def getSlotsUsed(self):
@@ -1043,6 +1043,31 @@ class MelPartialCounter(_MelWrapper):
             setattr(record, counter_attr,
                 len(getattr(record, counted_attr, [])))
         super().dumpData(record, out)
+
+#------------------------------------------------------------------------------
+class MelExtra(_MelWrapper):
+    """Used to wrap another element that has additional unknown/junk data of
+    varying length after it."""
+    def __init__(self, wrapped_mel: MelBase, *, extra_attr: str):
+        super().__init__(wrapped_mel)
+        self._extra_attr = extra_attr
+
+    def getSlotsUsed(self):
+        return self._extra_attr, *super().getSlotsUsed()
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        # Load everything but the unknown/junk data
+        start_pos = ins.tell()
+        super().load_mel(record, ins, sub_type, size_, *debug_strs)
+        # Now, read the remainder of the subrecord and store it
+        read_size = ins.tell() - start_pos
+        setattr(record, self._extra_attr, ins.read(size_ - read_size))
+
+    def dumpData(self, record, out):
+        super().dumpData(record, out)
+        extra_data = getattr(record, self._extra_attr)
+        if extra_data is not None:
+            out.write(extra_data)
 
 #------------------------------------------------------------------------------
 class MelSorted(_MelWrapper):
