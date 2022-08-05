@@ -142,6 +142,19 @@ class MelAttacks(MelSorted):
         ), sort_by_attrs='attack_chance')
 
 #------------------------------------------------------------------------------
+class MelDalc(MelTruncatedStruct):
+    """Handles the common DALC subrecord."""
+    def __init__(self):
+        super().__init__(b'DALC', ['28B', 'f'], 'redXplus', 'greenXplus',
+            'blueXplus', 'unknownXplus', 'redXminus', 'greenXminus',
+            'blueXminus', 'unknownXminus', 'redYplus', 'greenYplus',
+            'blueYplus', 'unknownYplus', 'redYminus', 'greenYminus',
+            'blueYminus', 'unknownYminus', 'redZplus', 'greenZplus',
+            'blueZplus', 'unknownZplus', 'redZminus', 'greenZminus',
+            'blueZminus', 'unknownZminus', 'redSpec', 'greenSpec', 'blueSpec',
+            'unknownSpec', 'fresnelPower', old_versions={'28B'})
+
+#------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
     """Represents a collection of destruction-related subrecords."""
     _dest_stage_flags = Flags.from_names('cap_damage', 'disable', 'destroy',
@@ -2028,16 +2041,7 @@ class MreLgtm(MelRecord):
             'redFogFar', 'greenFogFar', 'blueFogFar', 'unknownFogFar',
             'fogMax', 'lightFaceStart', 'lightFadeEnd',
             'unknownData2'),
-        MelTruncatedStruct(
-            b'DALC', [u'4B', u'4B', u'4B', u'4B', u'4B', u'4B', u'4B', u'f'],
-            'redXplus', 'greenXplus', 'blueXplus',
-            'unknownXplus', 'redXminus', 'greenXminus', 'blueXminus',
-            'unknownXminus', 'redYplus', 'greenYplus', 'blueYplus',
-            'unknownYplus', 'redYminus', 'greenYminus', 'blueYminus',
-            'unknownYminus', 'redZplus', 'greenZplus', 'blueZplus',
-            'unknownZplus', 'redZminus', 'greenZminus', 'blueZminus',
-            'unknownZminus', 'redSpec', 'greenSpec', 'blueSpec',
-            'unknownSpec', 'fresnelPower', old_versions={'4B4B4B4B4B4B'}),
+        MelDalc(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4427,17 +4431,7 @@ class MreWthr(MelRecord):
             (FID, 'volumetricLightingDay'), (FID, 'volumetricLightingSunset'),
             (FID, 'volumetricLightingNight'))),
         MelGroups('wthrAmbientColors',
-            MelTruncatedStruct(b'DALC',
-                [u'4B', u'4B', u'4B', u'4B', u'4B', u'4B', u'4B', u'f'],
-                'redXplus', 'greenXplus',
-                'blueXplus', 'unknownXplus', 'redXminus', 'greenXminus',
-                'blueXminus', 'unknownXminus', 'redYplus', 'greenYplus',
-                'blueYplus', 'unknownYplus', 'redYminus', 'greenYminus',
-                'blueYminus', 'unknownYminus', 'redZplus', 'greenZplus',
-                'blueZplus', 'unknownZplus', 'redZminus', 'greenZminus',
-                'blueZminus', 'unknownZminus', 'redSpec', 'greenSpec',
-                'blueSpec', 'unknownSpec', 'fresnelPower',
-                old_versions={'4B4B4B4B4B4B'}),
+            MelDalc(),
         ),
         MelBase(b'NAM2', 'unused6'),
         MelBase(b'NAM3', 'unused7'),

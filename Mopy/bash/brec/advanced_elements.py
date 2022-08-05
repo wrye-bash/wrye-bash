@@ -42,132 +42,125 @@ from ..bolt import structs_cache, attrgetter_cache, deprint
 class _MelDistributor(MelNull):
     """Implements a distributor that can handle duplicate record signatures.
     See the wiki page '[dev] Plugin Format: Distributors' for a detailed
-    overview of this class and the semi-DSL it implements.
-
-    :type _attr_to_loader: dict[str, MelBase]
-    :type _sig_to_loader: dict[bytes, MelBase]
-    :type _target_sigs: set[bytes]"""
-    def __init__(self, distributor_config): # type: (dict) -> None
+    overview of this class and the semi-DSL it implements."""
+    def __init__(self, distributor_config: dict):
         # Maps attribute name to loader
-        self._attr_to_loader = {}
+        self._attr_to_loader: dict[str, MelBase] = {}
         # Maps subrecord signature to loader
-        self._sig_to_loader = {}
+        self._sig_to_loader: dict[bytes, MelBase] = {}
         # All signatures that this distributor targets
-        self._target_sigs = set()
-        self.distributor_config = distributor_config
+        self._target_sigs: set[bytes] = set()
+        self._distributor_config = distributor_config
         # Validate that the distributor config we were given has valid syntax
         # and resolve any shortcuts (e.g. the A|B syntax)
         self._pre_process()
 
     def _raise_syntax_error(self, error_msg):
+        """Small helper for raising distributor config syntax errors."""
         raise SyntaxError(f'Invalid distributor syntax: {error_msg}')
 
-    ##: Needs to change to only accept unicode strings as attributes, but keep
-    # accepting only bytestrings as signatures
     def _pre_process(self):
         """Ensures that the distributor config defined above has correct syntax
         and resolves shortcuts (e.g. A|B syntax)."""
-        if not isinstance(self.distributor_config, dict):
-            self._raise_syntax_error(f'distributor_config must be a dict '
-                f'(actual type: {type(self.distributor_config)})')
-        mappings_to_iterate = [self.distributor_config] # TODO(inf) Proper name for dicts / mappings (scopes?)
-        while mappings_to_iterate:
-            mapping = mappings_to_iterate.pop()
-            for signature_str in list(mapping):
+        if not isinstance(self._distributor_config, dict):
+            self._raise_syntax_error(
+                f'distributor_config must be a dict (actual type: '
+                f'{type(self._distributor_config)})')
+        scopes_to_iterate = [self._distributor_config]
+        while scopes_to_iterate:
+            scope = scopes_to_iterate.pop()
+            for signature_str in list(scope):
                 if not isinstance(signature_str, bytes):
                     self._raise_syntax_error(
                         f'All keys must be signature bytestrings (offending '
                         f'key: {signature_str!r})')
                 # Resolve 'A|B' syntax
                 split_sigs = signature_str.split(b'|')
-                resolved_entry = mapping[signature_str]
+                resolved_entry = scope[signature_str]
                 if not resolved_entry:
                     self._raise_syntax_error(f'Mapped values may not be empty '
                         f'(offending value: {resolved_entry})')
                 # Delete the 'A|B' entry, not needed anymore
-                del mapping[signature_str]
+                del scope[signature_str]
                 for signature in split_sigs:
                     if len(signature) != 4:
                         self._raise_syntax_error(
                             f'Signature strings must have length 4 (offending '
                             f'string: {signature})')
-                    if signature in mapping:
+                    if signature in scope:
                         self._raise_syntax_error(
                             f'Duplicate signature string (offending string: '
                             f'{signature})')
                     # For each option in A|B|..|Z, make a new entry
-                    mapping[signature] = resolved_entry
+                    scope[signature] = resolved_entry
                 re_type = type(resolved_entry)
                 if re_type == dict:
-                    # If the signature maps to a dict, recurse into it
-                    mappings_to_iterate.append(resolved_entry)
+                    # If this is a simple scope, recurse into it
+                    scopes_to_iterate.append(resolved_entry)
                 elif re_type == tuple:
-                    # TODO(inf) Proper name for tuple values
+                    # If this is a mixed scope, validate its syntax and recurse
+                    # into it
                     if (len(resolved_entry) != 2
                             or not isinstance(resolved_entry[0], str)
                             or not isinstance(resolved_entry[1], dict)):
                         self._raise_syntax_error(
-                            f'Tuples used as values must always have two '
-                            f'elements - an attribute string and a dict '
-                            f'(offending tuple: {resolved_entry!r})')
-                    # If the signature maps to a tuple, recurse into the
-                    # dict stored in its second element
-                    mappings_to_iterate.append(resolved_entry[1])
+                            f'Mixed scopes must always have two elements - an '
+                            f'attribute string and a dict (offending mixed '
+                            f'scope: {resolved_entry!r})')
+                    scopes_to_iterate.append(resolved_entry[1])
                 elif re_type == list:
-                    # If the signature maps to a list, ensure that each entry
-                    # is correct
+                    # If this is a sequence, ensure that each entry has valid
+                    # syntax
                     for seq_entry in resolved_entry:
                         if isinstance(seq_entry, tuple):
-                            # Ensure that the tuple is correctly formatted
                             if (len(seq_entry) != 2
                                     or not isinstance(seq_entry[0], bytes)
                                     or not isinstance(seq_entry[1], str)):
                                 self._raise_syntax_error(
-                                    f'Sequential tuples must always have two '
+                                    f'Sequence tuples must always have two '
                                     f'elements, a bytestring and a string '
                                     f'(offending sequential entry: '
                                     f'{seq_entry!r})')
                         elif not isinstance(seq_entry, bytes):
                             self._raise_syntax_error(
-                                f'Sequential entries must either be tuples '
-                                f'or bytestrings (actual type: '
+                                f'Sequence entries must either be tuples or '
+                                f'bytestrings (actual type: '
                                 f'{type(seq_entry)})')
                 elif re_type != str:
+                    # This isn't a simple scope, mixed scope, sequence or
+                    # target, so it's something invaliud
                     self._raise_syntax_error(
-                        f'Only dicts, lists, strings and tuples may occur as '
-                        f'values (offending type: {re_type})')
+                        f'Only simple scopes, mixed scopes, sequences and '
+                        f'targets may occur as values (offending type: '
+                        f'{re_type})')
 
     def getLoaders(self, loaders):
-        # We need a copy of the unmodified signature-to-loader dictionary
+        # We need a copy of the unmodified signature-to-loader dictionary for
+        # looking up signatures at runtime
         self._sig_to_loader = loaders.copy()
-        # We need to recursively descend into the distributor config to find
-        # all relevant subrecord types
+        # Recursively descend into the distributor config to find all relevant
+        # subrecord signatures, then register ourselves
         self._target_sigs = set()
-        mappings_to_iterate = [self.distributor_config]
-        while mappings_to_iterate:
-            mapping = mappings_to_iterate.pop()
+        scopes_to_iterate = [self._distributor_config]
+        while scopes_to_iterate:
+            scope = scopes_to_iterate.pop()
             # The keys are always subrecord signatures
-            for signature in list(mapping):
+            for signature_str in list(scope):
                 # We will definitely need this signature
-                self._target_sigs.add(signature)
-                resolved_entry = mapping[signature]
+                self._target_sigs.add(signature_str)
+                resolved_entry = scope[signature_str]
                 re_type = type(resolved_entry)
                 if re_type == dict:
-                    # If the signature maps to a dict, recurse into it
-                    mappings_to_iterate.append(resolved_entry)
+                    # If this is a simple scope, recurse into it
+                    scopes_to_iterate.append(resolved_entry)
                 elif re_type == tuple:
-                    # If the signature maps to a tuple, recurse into the
-                    # dict stored in its second element
-                    mappings_to_iterate.append(resolved_entry[1])
+                    # If this is a mixed scope, recurse into it
+                    scopes_to_iterate.append(resolved_entry[1])
                 elif re_type == list:
-                    # If the signature maps to a list, record the signatures of
-                    # each entry (bytes or tuple[bytes, str])
-                    self._target_sigs.update([t[0] if isinstance(t, tuple) else t
-                                              for t in resolved_entry])
-                # If it's not a dict, list or tuple, then this is a leaf node,
-                # which means we've already recorded its type
-        # Register ourselves for every type in the hierarchy, overriding
-        # previous loaders when doing so
+                    # If this is a sequence, record the signatures of each
+                    # entry (bytes or tuple[bytes, str])
+                    self._target_sigs.update([t[0] if isinstance(t, tuple)
+                                              else t for t in resolved_entry])
         for subrecord_type in self._target_sigs:
             loaders[subrecord_type] = self
 
@@ -177,7 +170,7 @@ class _MelDistributor(MelNull):
         # subrecords we've visited.
         # _seq_index is only used when processing a sequential and marks
         # the index where we left off in the last load_mel
-        return u'_loader_state', u'_seq_index'
+        return '_loader_state', '_seq_index'
 
     def setDefault(self, record):
         record._loader_state = []
@@ -190,7 +183,7 @@ class _MelDistributor(MelNull):
         for element in mel_set.elements:
             # Underscore means internal usage only - e.g. distributor state
             el_attrs = [s for s in element.getSlotsUsed()
-                        if not s.startswith(u'_')]
+                        if not s.startswith('_')]
             for el_attr in el_attrs:
                 self._attr_to_loader[el_attr] = element
 
@@ -222,21 +215,21 @@ class _MelDistributor(MelNull):
         signature."""
         el_type = type(mapped_el)
         if el_type == dict:
-            # Simple Scopes -----------------------------------------------
+            # Simple Scopes ---------------------------------------------------
             # A simple scope - add the signature to the load state and
             # distribute the load by signature. That way we will descend
             # into this scope on the next load_mel call.
             record._loader_state.append(signature)
             self._distribute_load(signature, record, ins, size_, *debug_strs)
         elif el_type == tuple:
-            # Mixed Scopes ------------------------------------------------
+            # Mixed Scopes ----------------------------------------------------
             # A mixed scope - implement it like a simple scope, but
             # distribute the load by attribute name.
             record._loader_state.append(signature)
             self._distribute_load((signature, mapped_el[0]), record, ins,
                                   size_, *debug_strs)
         elif el_type == list:
-            # Sequences, Pt. 2 --------------------------------------------
+            # Sequences -------------------------------------------------------
             # A sequence - add the signature to the load state, set the
             # sequence index to 1, and distribute the load to the element
             # specified by the first sequence entry.
@@ -245,7 +238,7 @@ class _MelDistributor(MelNull):
             self._distribute_load(mapped_el[0], record, ins, size_,
                                   *debug_strs)
         else: # el_type == str, verified in _pre_process
-            # Targets -----------------------------------------------------
+            # Targets ---------------------------------------------------------
             # A target - don't add the signature to the load state and
             # distribute the load by attribute name.
             self._distribute_load((signature, mapped_el), record, ins,
@@ -254,23 +247,23 @@ class _MelDistributor(MelNull):
     def load_mel(self, record, ins, sub_type, size_, *debug_strs):
         loader_state = record._loader_state
         seq_index = record._seq_index
-        # First, descend as far as possible into the mapping. However, also
+        # First, descend as far as possible into the scopes. However, also
         # build up a tracker we can use to backtrack later on.
         descent_tracker = []
-        current_mapping = self.distributor_config
+        current_scope = self._distributor_config
         # Scopes --------------------------------------------------------------
         for signature in loader_state:
-            current_mapping = current_mapping[signature]
-            if isinstance(current_mapping, tuple): # handle mixed scopes
-                current_mapping = current_mapping[1]
-            descent_tracker.append((signature, current_mapping))
+            current_scope = current_scope[signature]
+            if isinstance(current_scope, tuple): # handle mixed scopes
+                current_scope = current_scope[1]
+            descent_tracker.append((signature, current_scope))
         # Sequences -----------------------------------------------------------
         # Then, check if we're in the middle of a sequence. If so,
-        # current_mapping will actually be a list, namely the sequence we're
+        # current_scope will actually be a list, namely the sequence we're
         # iterating over.
         if seq_index is not None:
-            if seq_index < len(current_mapping):
-                dist_specifier = current_mapping[seq_index]
+            if seq_index < len(current_scope):
+                dist_specifier = current_scope[seq_index]
                 if self._accepts_signature(dist_specifier, sub_type):
                     # We're good to go, call the next loader in the sequence
                     # and increment the sequence index
@@ -281,26 +274,26 @@ class _MelDistributor(MelNull):
             # The sequence is either over or we prematurely hit a non-matching
             # type - either way, stop distributing loads to it.
             record._seq_index = None
-        # Next, check if the current mapping depth contains a specifier that
+        # Next, check if the current scope depth contains a specifier that
         # accepts our signature. If so, use that one to track and distribute.
         # If not, we have to backtrack.
         while descent_tracker:
-            prev_sig, prev_mapping = descent_tracker.pop()
-            # For each previous layer, check if it contains a specifier that
+            prev_sig, prev_scope = descent_tracker.pop()
+            # For each previous scope, check if it contains a specifier that
             # accepts our signature and use it if so.
-            if sub_type in prev_mapping:
+            if sub_type in prev_scope:
                 # Calculate the new loader state - contains signatures for all
                 # remaining scopes we haven't backtracked through yet plus the
                 # one we just backtrackd into
                 record._loader_state = [x[0] for x
                                         in descent_tracker] + [prev_sig]
-                self._apply_mapping(prev_mapping[sub_type], record, ins,
+                self._apply_mapping(prev_scope[sub_type], record, ins,
                                     sub_type, size_, *debug_strs)
                 return
         # We didn't find anything during backtracking, so it must be in the top
         # scope. Wipe the loader state first and then apply the mapping.
         record._loader_state = []
-        self._apply_mapping(self.distributor_config[sub_type], record, ins,
+        self._apply_mapping(self._distributor_config[sub_type], record, ins,
                             sub_type, size_, *debug_strs)
 
     @property
