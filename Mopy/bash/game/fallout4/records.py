@@ -38,7 +38,8 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelAdditionalRaces, MelFootstepSound, MelArtObject, MelEnchantment, \
     MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
     MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, \
-    MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups
+    MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
+    MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -671,6 +672,77 @@ class MreBptd(MelRecord):
             MelFid(b'NAM2', 'collar_texture_set'),
             MelString(b'DNAM', 'twist_variable_prefix'),
         ), sort_by_attrs='part_node'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCams(MelRecord):
+    """Camera Shot."""
+    rec_sig = b'CAMS'
+
+    _cams_flags = Flags.from_names('position_follows_location',
+        'rotation_follows_target', 'dont_follow_bone', 'first_person_camera',
+        'no_tracer', 'start_at_time_zero', 'dont_reset_location_spring',
+        'dont_reset_target_spring')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelModel(),
+        MelConditionList(),
+        MelTruncatedStruct(b'DATA', ['4I', '12f'], 'cams_action',
+            'cams_location', 'cams_target', (_cams_flags, 'cams_flags'),
+            'time_mult_player', 'time_mult_target', 'time_mult_global',
+            'cams_max_time', 'cams_min_time', 'target_pct_between_actors',
+            'near_target_distance', 'location_spring', 'target_spring',
+            'rotation_offset_x', 'rotation_offset_y', 'rotation_offset_z',
+            old_versions={'4I9f', '4I7f'}),
+        MelImageSpaceMod(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreClas(MelRecord):
+    """Class."""
+    rec_sig = b'CLAS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelDescription(),
+        MelIcon(),
+        MelProperties(),
+        MelStruct(b'DATA', ['4s', 'f'], 'unknown1', 'bleedout_default'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreClfm(MelRecord):
+    """Color."""
+    rec_sig = b'CLFM'
+
+    _clfm_flags = Flags.from_names('playable', 'remapping_index',
+        'extended_lut')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelUInt32(b'CNAM', 'color_or_index'),
+        MelUInt32Flags(b'FNAM', 'clfm_flags', _clfm_flags),
+        MelConditionList(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreClmt(MelRecord):
+    """Climate."""
+    rec_sig = b'CLMT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelClmtWeatherTypes(),
+        MelClmtTextures(),
+        MelModel(),
+        MelClmtTiming(),
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -269,6 +269,35 @@ class MelBounds(MelGroup):
         )
 
 #------------------------------------------------------------------------------
+class MelClmtTiming(MelStruct):
+    """Handles the CLMT subrecord TNAM (Timing)."""
+    def __init__(self):
+        super().__init__(b'TNAM', ['6B'], 'rise_begin', 'rise_end',
+            'set_begin', 'set_end', 'volatility', 'phase_length')
+
+#------------------------------------------------------------------------------
+class MelClmtTextures(MelSequential):
+    """Handles the CLMT subrecords FNAM and GNAM."""
+    def __init__(self):
+        super().__init__(
+            MelString(b'FNAM', 'sun_texture'),
+            MelString(b'GNAM', 'sun_glare_texture'),
+        )
+
+#------------------------------------------------------------------------------
+class MelClmtWeatherTypes(MelSorted):
+    """Handles the CLMT subrecord WLST (Weather Types)."""
+    def __init__(self, with_global=True):
+        weather_fmt = ['I', 'i']
+        weather_elements = [(FID, 'weather'), 'chance']
+        if with_global:
+            weather_fmt.append('I')
+            weather_elements.append((FID, 'global'))
+        super().__init__(MelArray('weather_types',
+            MelStruct(b'WLST', weather_fmt, *weather_elements),
+        ), sort_by_attrs='weather')
+
+#------------------------------------------------------------------------------
 class MelCoed(MelOptStruct):
     """Handles the COED (Owner Data) subrecord used for inventory items and
     leveled lists since Skyrim."""
@@ -444,6 +473,12 @@ class MelIco2(MelIcons2):
     """Handles a standalone ICO2 subrecord, i.e. without any MIC2 subrecord."""
     def __init__(self, ico2_attr):
         super().__init__(ico2_attr=ico2_attr, mic2_attr='')
+
+#------------------------------------------------------------------------------
+class MelImageSpaceMod(MelFid):
+    """Handles the common MNAM (Image Space Modifer) subrecord."""
+    def __init__(self):
+        super().__init__(b'MNAM', 'image_space_modifier')
 
 #------------------------------------------------------------------------------
 class MelInteractionKeyword(MelFid):
@@ -883,19 +918,6 @@ class MelWaterType(MelFid):
     """Handles the common WNAM (Water Type) subrecord."""
     def __init__(self):
         super().__init__(b'WNAM', 'water_type')
-
-#------------------------------------------------------------------------------
-class MelWeatherTypes(MelSorted):
-    """Handles the CLMT subrecord WLST (Weather Types)."""
-    def __init__(self, with_global=True):
-        weather_fmt = ['I', 'i']
-        weather_elements = [(FID, 'weather'), 'chance']
-        if with_global:
-            weather_fmt.append('I')
-            weather_elements.append((FID, 'global'))
-        super().__init__(MelArray('weather_types',
-            MelStruct(b'WLST', weather_fmt, *weather_elements),
-        ), sort_by_attrs='weather')
 
 #------------------------------------------------------------------------------
 class MelWeight(MelFloat):

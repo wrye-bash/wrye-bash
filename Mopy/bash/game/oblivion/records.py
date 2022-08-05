@@ -40,9 +40,10 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
     MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, MelLists, \
     MelConditionsTes4, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
-    MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
+    MelClmtWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
-    MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText
+    MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
+    MelClmtTextures
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -713,12 +714,10 @@ class MreClmt(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelWeatherTypes(with_global=False),
-        MelString(b'FNAM','sunPath'),
-        MelString(b'GNAM','glarePath'),
+        MelClmtWeatherTypes(with_global=False),
+        MelClmtTextures(),
         MelModel(),
-        MelStruct(b'TNAM', [u'6B'], 'riseBegin', 'riseEnd', 'setBegin', 'setEnd',
-                  'volatility', 'phaseLength'),
+        MelClmtTiming(),
     )
     __slots__ = melSet.getSlotsUsed()
 

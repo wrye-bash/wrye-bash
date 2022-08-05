@@ -480,7 +480,7 @@ graphicsTypes = {
 graphicsFidTypes = {
     b'CREA': ('bodyPartData',),
     b'EFSH': (u'addonModels',),
-    b'EXPL': ('imageSpaceModifier', 'light', 'impactDataset',
+    b'EXPL': ('image_space_modifier', 'light', 'impactDataset',
               'placedImpactObject'),
     b'IPCT': (u'textureSet',),
     b'IPDS': (u'stone', u'dirt', u'grass', u'metal', u'wood', u'organic',

@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelSoundPickupDrop, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOwnership, MelDebrData, MelWeatherTypes, AMelVmad, \
+    MelUInt32Flags, MelOwnership, MelDebrData, MelClmtWeatherTypes, AMelVmad, \
     MelActorSounds, MelFactionRanks, MelSorted, MelReflectedRefractedBy, \
     perk_effect_key, MelValueWeight, MelCoed, MelSound, MelWaterType, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
@@ -48,7 +48,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, MelBamt, \
     MelFootstepSound, MelArtObject, MelTemplateArmor, MelArtType, \
     MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, MelBookText, \
-    MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra
+    MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
+    MelImageSpaceMod, MelClmtTiming, MelClmtTextures
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -763,24 +764,19 @@ class MreCams(MelRecord):
     """Camera Shot."""
     rec_sig = b'CAMS'
 
-    CamsFlagsFlags = Flags.from_names(
-        (0, 'positionFollowsLocation'),
-        (1, 'rotationFollowsTarget'),
-        (2, 'dontFollowBone'),
-        (3, 'firstPersonCamera'),
-        (4, 'noTracer'),
-        (5, 'startAtTimeZero'),
-    )
+    _cams_flags = Flags.from_names('position_follows_location',
+        'rotation_follows_target', 'dont_follow_bone', 'first_person_camera',
+        'no_tracer', 'start_at_time_zero')
 
     melSet = MelSet(
         MelEdid(),
         MelModel(),
-        MelTruncatedStruct(b'DATA', [u'4I', u'7f'], 'action', 'location', 'target',
-                           (CamsFlagsFlags, u'flags'), 'timeMultPlayer',
-                           'timeMultTarget', 'timeMultGlobal', 'maxTime',
-                           'minTime', 'targetPctBetweenActors',
-                           'nearTargetDistance', old_versions={'4I6f'}),
-        MelFid(b'MNAM','imageSpaceModifier',),
+        MelTruncatedStruct(b'DATA', ['4I', '7f'], 'cams_action',
+            'cams_location', 'cams_target', (_cams_flags, 'cams_flags'),
+            'time_mult_player', 'time_mult_target', 'time_mult_global',
+            'cams_max_time', 'cams_min_time', 'target_pct_between_actors',
+            'near_target_distance', old_versions={'4I6f'}),
+        MelImageSpaceMod(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -921,11 +917,10 @@ class MreClmt(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelWeatherTypes(),
-        MelString(b'FNAM','sunPath',),
-        MelString(b'GNAM','glarePath',),
+        MelClmtWeatherTypes(),
+        MelClmtTextures(),
         MelModel(),
-        MelStruct(b'TNAM', [u'6B'],'riseBegin','riseEnd','setBegin','setEnd','volatility','phaseLength',),
+        MelClmtTiming(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1314,7 +1309,7 @@ class MreExpl(MelRecord):
         MelFull(),
         MelModel(),
         MelEnchantment(),
-        MelFid(b'MNAM','imageSpaceModifier'),
+        MelImageSpaceMod(),
         MelTruncatedStruct(
             b'DATA', [u'6I', u'5f', u'2I'], (FID, u'light'), (FID, u'sound1'),
             (FID, u'sound2'), (FID, u'impactDataset'),
@@ -1561,7 +1556,7 @@ class MreHazd(MelRecord):
         MelBounds(),
         MelFull(),
         MelModel(),
-        MelFid(b'MNAM','imageSpaceModifier'),
+        MelImageSpaceMod(),
         MelStruct(b'DATA', [u'I', u'4f', u'5I'],'limit','radius','lifetime',
                   'imageSpaceRadius','targetInterval',(HazdTypeFlags, u'flags'),
                   (FID,'spell'),(FID,'light'),(FID,'impactDataSet'),(FID,'sound'),),
