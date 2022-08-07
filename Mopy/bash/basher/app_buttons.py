@@ -32,10 +32,10 @@ from ..env import getJava, get_game_version_fallback
 from ..exception import AbstractError
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down
 
-__all__ = [u'Obse_Button', u'LAA_Button', u'AutoQuit_Button', u'Game_Button',
-           u'TESCS_Button', u'App_Tes4View', u'App_BOSS', u'App_Help',
-           u'App_DocBrowser', u'App_PluginChecker', u'App_Settings',
-           u'App_Restart', u'app_button_factory']
+__all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
+           'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help',
+           'App_DocBrowser', 'App_PluginChecker', 'App_Settings',
+           'App_Restart', 'app_button_factory']
 
 #------------------------------------------------------------------------------
 # StatusBar Links--------------------------------------------------------------
@@ -329,59 +329,55 @@ def app_button_factory(exePathArgs, *args, **kwargs):
 #------------------------------------------------------------------------------
 class _Mods_xEditExpert(BoolLink):
     """Toggle xEdit expert mode (when launched via Bash)."""
-    _text = _(u'Expert Mode')
-    _help = _(u'Launch %s in expert mode.') % bush.game.Xe.full_name
-    _bl_key = bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing'
+    _text = _('Expert Mode')
+    _help = _('Launch %(xedit_name)s in expert mode.') % {
+        'xedit_name': bush.game.Xe.full_name}
+    _bl_key = bush.game.Xe.xe_key_prefix + '.iKnowWhatImDoing'
 
 class _Mods_xEditSkipBSAs(BoolLink):
     """Toggle xEdit skip bsa mode (when launched via Bash)."""
-    _text = _(u'Skip BSAs')
-    _help = _(u'Skip loading BSAs when opening %s. Will disable some of its '
-              u'functions.') % bush.game.Xe.full_name
-    _bl_key = bush.game.Xe.xe_key_prefix + u'.skip_bsas'
+    _text = _('Skip BSAs')
+    _help = _('Skip loading BSAs when opening %(xedit_name)s. Will disable '
+              'some of its functions.') % {
+        'xedit_name': bush.game.Xe.full_name}
+    _bl_key = bush.game.Xe.xe_key_prefix + '.skip_bsas'
 
-class App_Tes4View(_ExeButton):
-    """Allow some extra args for Tes4View."""
+class _AMods_xEditLaunch(ItemLink):
+    """Base class for launching xEdit via link."""
+    _custom_arg: str
 
-# arguments
-# -fixup (wbAllowInternalEdit true default)
-# -nofixup (wbAllowInternalEdit false)
-# -showfixup (wbShowInternalEdit true default)
-# -hidefixup (wbShowInternalEdit false)
-# -skipbsa (wbLoadBSAs false)
-# -forcebsa (wbLoadBSAs true default)
-# -fixuppgrd
-# -IKnowWhatImDoing
-# -FNV
-#  or name begins with FNV
-# -FO3
-#  or name begins with FO3
-# -TES4
-#  or name begins with TES4
-# -TES5
-#  or name begins with TES5
-# -lodgen
-#  or name ends with LODGen.exe
-#  (requires TES4 mode)
-# -masterupdate
-#  or name ends with MasterUpdate.exe
-#  (requires FO3 or FNV)
-#  -filteronam
-#  -FixPersistence
-#  -NoFixPersistence
-# -masterrestore
-#  or name ends with MasterRestore.exe
-#  (requires FO3 or FNV)
-# -edit
-#  or name ends with Edit.exe
-# -translate
-#  or name ends with Trans.exe
+    def __init__(self, parent_link):
+        super().__init__()
+        self._xedit_link = parent_link
+
+    def Execute(self):
+        self._xedit_link.launch_with_args(custom_args=(self._custom_arg,))
+
+class _Mods_xEditQAC(_AMods_xEditLaunch):
+    """Launch xEdit in QAC mode."""
+    _text = _('Quick Auto Clean')
+    _help = _('Launch %(xedit_name)s in QAC mode to clean a single '
+              'plugin.') % {'xedit_name': bush.game.Xe.full_name}
+    _custom_arg = '-qac'
+
+class _Mods_xEditVQSC(_AMods_xEditLaunch):
+    """Launch xEdit in VQSC mode."""
+    _text = _('Very Quick Show Conflicts')
+    _help = _('Launch %(xedit_name)s in VQSC mode to detect '
+              'conflicts.') % {'xedit_name': bush.game.Xe.full_name}
+    _custom_arg = '-vqsc'
+
+class App_xEdit(_ExeButton):
+    """Launch xEdit, potentially with some extra args."""
     def __init__(self, *args, **kwdargs):
         exePath, exeArgs = _parse_button_arguments(args[0])
-        super(App_Tes4View, self).__init__(exePath, exeArgs, *args[1:], **kwdargs)
+        super().__init__(exePath, exeArgs, *args[1:], **kwdargs)
         if bush.game.Xe.xe_key_prefix:
             self.mainMenu.append(_Mods_xEditExpert())
             self.mainMenu.append(_Mods_xEditSkipBSAs())
+            self.mainMenu.append(SeparatorLink())
+            self.mainMenu.append(_Mods_xEditQAC(self))
+            self.mainMenu.append(_Mods_xEditVQSC(self))
 
     def IsPresent(self): # FIXME(inf) What on earth is this? What's the point?? --> check C:\not\a\valid\path.exe in default.ini
         if not super().IsPresent():
@@ -393,18 +389,25 @@ class App_Tes4View(_ExeButton):
         return True
 
     def Execute(self):
+        self.launch_with_args(custom_args=())
+
+    def launch_with_args(self, custom_args: tuple[str, ...]):
+        """Computes arguments based on checked links and INI settings, then
+        appends the specified custom arguments only for this launch."""
         is_expert = bush.game.Xe.xe_key_prefix and bass.settings[
-            bush.game.Xe.xe_key_prefix + u'.iKnowWhatImDoing']
+            bush.game.Xe.xe_key_prefix + '.iKnowWhatImDoing']
         skip_bsas = bush.game.Xe.xe_key_prefix and bass.settings[
-            bush.game.Xe.xe_key_prefix + u'.skip_bsas']
+            bush.game.Xe.xe_key_prefix + '.skip_bsas']
         extraArgs = bass.inisettings[
-            u'xEditCommandLineArguments'].split() if is_expert else []
+            'xEditCommandLineArguments'].split() if is_expert else []
         if is_expert:
-            extraArgs.append(u'-IKnowWhatImDoing')
+            extraArgs.append('-IKnowWhatImDoing')
         if skip_bsas:
-            extraArgs.append(u'-skipbsa')
-        self.extraArgs = tuple(extraArgs)
-        super(App_Tes4View, self).Execute()
+            extraArgs.append('-skipbsa')
+        self.extraArgs = old_args = tuple(extraArgs)
+        self.extraArgs += custom_args
+        super().Execute()
+        self.extraArgs = old_args
 
 #------------------------------------------------------------------------------
 class _Mods_BOSSDisableLockTimes(BoolLink):

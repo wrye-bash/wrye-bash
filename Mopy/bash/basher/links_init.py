@@ -98,16 +98,14 @@ def InitStatusBar():
     for tb2 in _init_tool_buttons():
         BashStatusBar.buttons.append(app_button_factory(*tb2[:-1], **tb2[-1]))
     BashStatusBar.buttons.append( #Tes4View
-        App_Tes4View(
-            (bass.tooldirs[u'Tes4ViewPath'], u'-TES4'), #no cmd argument to force view mode
-            imageList(u'tools/tes4view%s.png'),
-            _(u'Launch TES4View'),
-            uid=u'TES4View'))
+        App_xEdit((bass.tooldirs['Tes4ViewPath'], '-TES4 -view'),
+            imageList('tools/tes4view%s.png'), _('Launch TES4View'),
+            uid='TES4View'))
     for game_class in PatchGame.supported_games(): # TODO(ut): don't save those for all games!
         xe_name = game_class.Xe.full_name
-        BashStatusBar.buttons.append(App_Tes4View(
-            (bass.tooldirs[xe_name + u'Path'],
-             u'-%s -edit' % xe_name[:-4]), # chop off edit
+        BashStatusBar.buttons.append(App_xEdit(
+            (bass.tooldirs[f'{xe_name}Path'],
+             '-%s -edit' % xe_name[:-4]), # chop off edit
             imageList(u'tools/tes4edit%s.png'), _(u'Launch %s') % xe_name,
             uid=xe_name))
     BashStatusBar.buttons.append(  #TesVGecko
@@ -115,13 +113,13 @@ def InitStatusBar():
                            imageList(u'tools/tesvgecko%s.png'),
                            _(u"Launch TesVGecko"), uid=u'TesVGecko'))
     BashStatusBar.buttons.append(  #Tes4Trans
-        App_Tes4View((bass.tooldirs[u'Tes4TransPath'], u'-TES4 -translate'),
-                     imageList(u'tools/tes4trans%s.png'),
-                     _(u"Launch TES4Trans"), uid=u'TES4Trans'))
+        App_xEdit((bass.tooldirs['Tes4TransPath'], '-TES4 -translate'),
+            imageList('tools/tes4trans%s.png'), _('Launch TES4Trans'),
+            uid='TES4Trans'))
     BashStatusBar.buttons.append(  #Tes4LODGen
-        App_Tes4View((bass.tooldirs[u'Tes4LodGenPath'], u'-TES4 -lodgen'),
-                     imageList(u'tools/tes4lodgen%s.png'),
-                     _(u"Launch Tes4LODGen"), uid=u'TES4LODGen'))
+        App_xEdit((bass.tooldirs['Tes4LodGenPath'], '-TES4 -lodgen'),
+            imageList('tools/tes4lodgen%s.png'), _('Launch Tes4LODGen'),
+            uid='TES4LODGen'))
     if bush.game.boss_game_name:
         BashStatusBar.buttons.append( #BOSS
             App_BOSS((bass.tooldirs[u'boss']), imageList(u'boss%s.png'),

@@ -1527,14 +1527,28 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     </tbody>
 </table>
 <h3 id="launchers-utils">Game-Specific Utilities <a class="back2top" href="#contents">Back to top</a></h3>
-<p>xEdit, xTrans and xView are just different modes of xEdit and will be available if the appropriate xEdit executable (e.g. Tes4Edit.exe) is available.
-   The xEdit launchers have extra options:</p>
+<p>xEdit, xTrans and xView are just different modes of xEdit and will be
+    available if the appropriate xEdit executable (e.g. Tes4Edit.exe) is
+    available. The xEdit launchers have extra options:</p>
 <ul>
-    <li>Expert Mode - If checked, this option runs xEdit with the <code>-IKnowWhatImDoing</code> argument,
-        activating more advanced functionality whenever xEdit is run from its launcher in the status bar.</li>
-    <li>Skip BSAs - If checked, this option runs xEdit with the <code>-skipbsa</code> argument, which
-        skips loading BSAs. Faster, but some functionality in xEdit will be disabled when it's run like
+    <li><q>Expert Mode</q> - if enabled, this option runs xEdit with the
+        <code>-IKnowWhatImDoing</code> argument, activating more advanced
+        functionality whenever xEdit is run from its launcher in the status
+        bar.</li>
+    <li><q>Skip BSAs</q> - if enabled, this option runs xEdit with the
+        <code>-skipbsa</code> argument, which skips loading BSAs. Faster, but
+        some functionality in xEdit will be disabled when it's run like
         this.</li>
+    <li><q>Quick Auto Clean</q> - when clicked, immediately launches xEdit in
+        QAC (Quick Auto Clean) mode. xEdit will let you select a single plugin,
+        which will then be cleaned using the QAC procedure. This obsoletes
+        manual cleaning via the old 'Apply Filter for Cleaning', etc.
+        method.</li>
+    <li><q>Very Quick Show Conflicts</q> - when clicked, immediately launches
+        xEdit in VQSC (Very Quick Show Conflicts) mode. xEdit will
+        automatically load your entire load order, apply all valid mod groups
+        and 'Apply Filter to Show Conflicts' in an optimized and therefore
+        faster way.</li>
 </ul>
 <p>Tes4Gecko &amp; Oblivion Book Creator will be available if the windows path variable <code>JAVA_HOME</code> points to a valid
    Java install (or the javaw.exe is present in Windows\System32) and their .jar file is present in Oblivion install directory
