@@ -97,6 +97,9 @@ class GameInfo(object):
     # The name of the directory that LOOT writes its masterlist into, relative
     # to '%LocalAppData%\LOOT'
     loot_dir = u''
+    # The name that this game has on the LOOT command line. If empty, indicates
+    # that LOOT does not support this game
+    loot_game_name = ''
     # The name that this game has on the BOSS command line. If empty, indicates
     # that BOSS does not support this game
     boss_game_name = u''

@@ -122,8 +122,12 @@ def InitStatusBar():
             uid='TES4LODGen'))
     if bush.game.boss_game_name:
         BashStatusBar.buttons.append( #BOSS
-            App_BOSS((bass.tooldirs[u'boss']), imageList(u'boss%s.png'),
-                     _(u'Launch BOSS'), uid=u'BOSS'))
+            App_BOSS(bass.tooldirs['boss'], imageList('boss%s.png'),
+                _('Launch BOSS'), uid='BOSS'))
+    if bush.game.loot_game_name:
+        BashStatusBar.buttons.append( #LOOT
+            App_LOOT(bass.tooldirs['LOOT'], imageList('loot%s.png'),
+                _('Launch LOOT'), uid='LOOT'))
     if bass.inisettings[u'ShowModelingToolLaunchers']:
         from .constants import modeling_tools_buttons
         for mb in modeling_tools_buttons:

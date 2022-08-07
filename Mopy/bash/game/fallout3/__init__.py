@@ -44,6 +44,7 @@ class Fallout3GameInfo(PatchGame):
     master_file = bolt.FName(u'Fallout3.esm')
     taglist_dir = u'Fallout3'
     loot_dir = u'Fallout3'
+    loot_game_name = 'Fallout3'
     boss_game_name = u'Fallout3'
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout3/'

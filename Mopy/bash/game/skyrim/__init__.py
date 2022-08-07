@@ -44,6 +44,7 @@ class SkyrimGameInfo(PatchGame):
     master_file = bolt.FName(u'Skyrim.esm')
     taglist_dir = u'Skyrim'
     loot_dir = u'Skyrim'
+    loot_game_name = 'Skyrim'
     boss_game_name = u'Skyrim'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/skyrim/'

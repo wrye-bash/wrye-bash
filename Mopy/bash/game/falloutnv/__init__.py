@@ -41,6 +41,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     master_file = bolt.FName(u'FalloutNV.esm')
     taglist_dir = u'FalloutNV'
     loot_dir = u'FalloutNV'
+    loot_game_name = 'FalloutNV'
     boss_game_name = u'FalloutNV'
     regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/newvegas/'

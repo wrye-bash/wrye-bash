@@ -43,6 +43,7 @@ class EnderalGameInfo(SkyrimGameInfo):
     version_detect_file = u'Enderal Launcher.exe'
     taglist_dir = u'Enderal'
     loot_dir = u'Enderal'
+    loot_game_name = 'Enderal'
     boss_game_name = u'' # BOSS does not support Enderal
     regInstallKeys = (u'SureAI\\Enderal', u'Install_Path')
     nexusUrl = u'https://www.nexusmods.com/enderal/'

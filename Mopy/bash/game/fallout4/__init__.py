@@ -44,6 +44,7 @@ class Fallout4GameInfo(PatchGame):
     master_file = bolt.FName(u'Fallout4.esm')
     taglist_dir = u'Fallout4'
     loot_dir = u'Fallout4'
+    loot_game_name = 'Fallout4'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'

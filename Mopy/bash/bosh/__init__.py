@@ -3582,19 +3582,23 @@ def initTooldirs():
     pf = [GPath(u'C:\\Program Files'),GPath(u'C:\\Program Files (x86)')]
     def pathlist(*args): return [x.join(*args) for x in pf]
     tooldirs = bass.tooldirs = bolt.LowerDict() ##: Yak! needed for case insensitive keys
-    # BOSS can be in any number of places.
-    # Detect locally installed (into game folder) BOSS
-    if dirs[u'app'].join(u'BOSS', u'BOSS.exe').exists():
-        tooldirs[u'boss'] = dirs[u'app'].join(u'BOSS').join(u'BOSS.exe')
-    else:
-        tooldirs[u'boss'] = GPath(u'C:\\**DNE**')
-        # Detect globally installed (into Program Files) BOSS
-        path_in_registry = env.get_registry_path(
-            u'Boss', u'Installed Path', lambda p: p.join(u'BOSS.exe').is_file())
-        if path_in_registry:
-            if path_in_registry.is_dir():
-                path_in_registry = path_in_registry.join(u'BOSS.exe')
-            tooldirs[u'boss'] = path_in_registry
+    def _get_boss_loot(registry_key, game_folder, exe_name):
+        """Helper for determing correct BOSS/LOOT path."""
+        # Check game folder for a copy first
+        if dirs['app'].join(game_folder, exe_name).is_file():
+            ret_path = dirs['app'].join(game_folder, exe_name)
+        else:
+            ret_path = GPath('C:\\**DNE**')
+            # Detect globally installed program (into Program Files)
+            path_in_registry = env.get_registry_path(*registry_key,
+                lambda p: p.join(exe_name).is_file())
+            if path_in_registry:
+                ret_path = path_in_registry.join(exe_name)
+        return ret_path
+    tooldirs['boss'] = _get_boss_loot(
+        ('Boss', 'Installed Path'), 'BOSS', 'BOSS.exe')
+    tooldirs['LOOT'] = _get_boss_loot(
+        ('LOOT', 'Installed Path'), 'LOOT', 'LOOT.exe')
     tooldirs[u'TES3EditPath'] = dirs[u'app'].join(u'TES3Edit.exe')
     tooldirs[u'Tes4FilesPath'] = dirs[u'app'].join(u'Tools', u'TES4Files.exe')
     tooldirs[u'Tes4EditPath'] = dirs[u'app'].join(u'TES4Edit.exe')

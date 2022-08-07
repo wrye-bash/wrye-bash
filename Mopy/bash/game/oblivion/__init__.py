@@ -49,6 +49,7 @@ class OblivionGameInfo(PatchGame):
     master_file = bolt.FName(u'Oblivion.esm')
     taglist_dir = u'Oblivion'
     loot_dir = u'Oblivion'
+    loot_game_name = 'Oblivion'
     boss_game_name = u'Oblivion'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/oblivion/'

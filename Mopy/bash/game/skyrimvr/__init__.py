@@ -41,6 +41,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     version_detect_file = u'SkyrimVR.exe'
     taglist_dir = 'SkyrimVR'
     loot_dir = u'Skyrim VR'
+    loot_game_name = 'Skyrim VR'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim VR', u'Installed Path')
 
     espm_extensions = SkyrimSEGameInfo.espm_extensions - {u'.esl'}

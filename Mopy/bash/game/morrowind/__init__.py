@@ -44,6 +44,7 @@ class MorrowindGameInfo(PatchGame):
     mods_dir = u'Data Files'
     taglist_dir = u'Morrowind'
     loot_dir = u'Morrowind'
+    loot_game_name = 'Morrowind'
     # This is according to xEdit's sources, but it doesn't make that key for me
     regInstallKeys = (u'Bethesda Softworks\\Morrowind', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/morrowind/'

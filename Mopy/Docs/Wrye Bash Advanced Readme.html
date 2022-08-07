@@ -1354,8 +1354,8 @@ tab. The directories skipped are:
                     <p>Note that if either of the new or old sides of a row are empty, the row will be skipped. Also, the new object does not have to be of the same type as the old object, but they should be compatible.
                     <li>Save the new CSV file so that its filename ends with <q>Formids.csv</q>.
                 </ol>
-                <p>If you've completely swapped from one base plugin to another, you may wish to remove the old dependency. This can be done using TES4Edit's <q>Clean Masters</q> command or TES4Gecko's <q>Edit Master List</q> command. The former only removes totally unused masters while the latter can remove used masters with the appropriate cleanup, and is not an automated procedure.</p>
-                <strong>Note:</strong> You can also use TES4Edit to change the Form IDs using its <q>Batch Change Referencing Records</q> command together with the CSV file created. TES4Edit will also change the definition of a Form ID, rather than just any references to it, unlike Wrye Bash.
+                <p>If you've completely swapped from one base plugin to another, you may wish to remove the old dependency. This can be done using xEdit's <q>Clean Masters</q> command or TES4Gecko's <q>Edit Master List</q> command. The former only removes totally unused masters while the latter can remove used masters with the appropriate cleanup, and is not an automated procedure.</p>
+                <strong>Note:</strong> You can also use xEdit to change the Form IDs using its <q>Batch Change Referencing Records</q> command together with the CSV file created. xEdit will also change the definition of a Form ID, rather than just any references to it, unlike Wrye Bash.
             <tr><td rowspan="4">Mod Cleaning<td>Don't check against LOOT's dirty mod list<td>Overrides the setting in the column header context menu for the specific plugin(s) selected.
             <tr>
                 <td>Scan for Deleted Records</td>
@@ -1396,7 +1396,7 @@ tab. The directories skipped are:
                 since the modification time won't change they will revert back to their original positions for modification time based load orders.
                 Be sure to backup your load order for Skyrim and newer games.
             <tr><td colspan="2" id="modsCreateDummyMasters">Create Dummy Masters...</td><td>Creates an empty plugin for each missing master a mod has.
-                This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters. These dummy
+                This is useful for allowing xEdit to open a 'Filter' patch without having all of the required masters. These dummy
                 plugins can later be removed using the <a href="#modsRemoveDummyMasters">Remove Dummy Masters</a> command.</td></tr>
             <tr><td colspan="2" id="modsDecompileAll">Decompile All</td><td><em>Oblivion only.</em> Undoes the effect of a <q>Compile All</q> performed in the Construction Set. It will not do anything to the game's master file.</td></tr>
             <tr><td colspan="2" id="modsVersion0.8">Version 0.8</td><td><em>Oblivion only.</em> Resets the file version number of the selected plugin so that it can be edited in an older version of the Construction Set, which is required when making certain changes due to bugs in the latest Construction Set.<br><br><strong>Warning:</strong> It is possible that this may cause data loss.</td></tr>
@@ -1477,7 +1477,7 @@ tab. The directories skipped are:
 <h2 id="patch">Advanced Bashed Patch <a class="back2top" href="#contents">Back to top</a></h2>
 <p>You can have multiple Bashed Patches, though one is generally enough per <a href="#saves-profiles">save profile</a> or character. The only requirement for Wrye Bash recognising a plugin as a Bashed Patch is that its <q>Author</q> field is set to <q>BASHED PATCH</q>, so you can name a Bashed Patch whatever you want.
 <h3 id="patch-view">Viewing &amp; Editing The Bashed Patch <a class="back2top" href="#contents">Back to top</a></h3>
-<p>As the Bashed Patch commonly has .esp files as masters, viewing and editing it can be more complicated than for the average plugin. If you wish to view its contents, it is easiest to use <a href="https://www.nexusmods.com/oblivion/mods/11536">TES4Edit</a>, which can also be used to edit most types of data in plugins. To edit it using the Construction Set or Creation Kit (required when editing scripts), you'll need to first use the <a href="#modsEsmifyMasters">Add ESM Flag To Masters</a> command on it. Be sure to use <q>Remove ESM Flag From Masters</q> before attempting to play the game.
+<p>As the Bashed Patch commonly has .esp files as masters, viewing and editing it can be more complicated than for the average plugin. If you wish to view its contents, it is easiest to use <a href="https://www.nexusmods.com/oblivion/mods/11536">xEdit</a>, which can also be used to edit most types of data in plugins. To edit it using the Construction Set or Creation Kit (required when editing scripts), you'll need to first use the <a href="#modsEsmifyMasters">Add ESM Flag To Masters</a> command on it. Be sure to use <q>Remove ESM Flag From Masters</q> before attempting to play the game.
 
 <h3 id="patch-tags">Bash Tags <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Wrye Bash uses a tagging system to determine what mods can and should have which records available for importing into the Bashed Patch. These Bash Tags are specified by mod authors in the header descriptions of their plugins, are applied using data from LOOT's masterlist and userlist files, and are read from text files in the <code>[GAME]\Data\BashTags</code> folder.

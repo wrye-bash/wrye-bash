@@ -409,10 +409,10 @@ settingDefaults = { # keep current naming format till refactored
     },
     u'bash.screens.jpgQuality': 95,
     u'bash.screens.jpgCustomQuality': 75,
-    #--BOSS:
+    #--BOSS/LOOT:
     u'BOSS.ClearLockTimes': True,
-    u'BOSS.AlwaysUpdate': True,
     u'BOSS.UseGUI': False,
+    'LOOT.AutoSort': False,
 }
 
 # No need to store defaults for all the xEdits for all games

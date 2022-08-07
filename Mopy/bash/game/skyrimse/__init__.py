@@ -44,6 +44,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     version_detect_file = u'SkyrimSE.exe'
     taglist_dir = u'SkyrimSE'
     loot_dir = u'Skyrim Special Edition'
+    loot_game_name = 'Skyrim Special Edition'
     boss_game_name = u'' # BOSS does not support SSE
     regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition',
                       u'Installed Path')

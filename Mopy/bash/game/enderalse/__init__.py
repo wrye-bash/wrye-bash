@@ -42,6 +42,7 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     # SE has SkyrimSE.exe, but no Enderal Launcher.exe
     game_detect_includes = [u'Enderal Launcher.exe', u'SkyrimSE.exe']
     loot_dir = u'Enderal Special Edition'
+    loot_game_name = 'Enderal Special Edition'
     # This is in HKCU. There's also one in HKLM that uses 'SureAI\Enderal SE'
     # for some reason
     regInstallKeys = (u'SureAI\\EnderalSE', u'Install_Path')

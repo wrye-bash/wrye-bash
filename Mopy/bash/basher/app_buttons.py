@@ -33,7 +33,7 @@ from ..exception import AbstractError
 from ..gui import ClickableImage, EventResult, get_key_down, get_shift_down
 
 __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
-           'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help',
+           'TESCS_Button', 'App_xEdit', 'App_BOSS', 'App_Help', 'App_LOOT',
            'App_DocBrowser', 'App_PluginChecker', 'App_Settings',
            'App_Restart', 'app_button_factory']
 
@@ -242,7 +242,14 @@ class _ExeButton(_App_Button):
         try:
             popen = subprocess.Popen(exe_args, close_fds=True)
             if self.wait:
-                popen.wait()
+                with balt.Progress(_('Waiting for %(other_process)s...') % {
+                    'other_process': exe_path.stail}) as progress:
+                    progress(0, bolt.text_wrap(
+                        _('Wrye Bash will be paused until you have completed '
+                          'your work in %(other_process)s and closed '
+                          'it.') % {'other_process': exe_path.stail}, 50))
+                    progress.setFull(1)
+                    popen.wait()
         except UnicodeError:
             self._showUnicodeError()
         except WindowsError as werr:
@@ -410,60 +417,92 @@ class App_xEdit(_ExeButton):
         self.extraArgs = old_args
 
 #------------------------------------------------------------------------------
-class _Mods_BOSSDisableLockTimes(BoolLink):
-    """Toggle Lock Load Order disabling when launching BOSS through Bash."""
-    _text = _(u'BOSS Disable Lock Load Order')
-    _bl_key = u'BOSS.ClearLockTimes'
-    _help = _(u"If selected, will temporarily disable Bash's Lock Load Order "
-              u'when running BOSS through Bash.')
+class _Mods_SuspendLockLO(BoolLink):
+    """Toggle Lock Load Order disabling when launching BOSS/LOOT through WB."""
+    _text = _('Suspend Lock Load Order')
+    _bl_key = 'BOSS.ClearLockTimes'
+    _help = _("If enabled, will temporarily disable 'Lock Load Order' "
+              "when running this program through Wrye Bash.")
 
-#------------------------------------------------------------------------------
-class _Mods_BOSSLaunchGUI(BoolLink):
-    """If BOSS.exe is available then boss_gui.exe should be too."""
-    _text, _bl_key, _help = _(u'Launch using GUI'), u'BOSS.UseGUI', \
-                            _(u"If selected, Bash will run BOSS's GUI.")
-
-class App_BOSS(_ExeButton):
-    """loads BOSS"""
-    def __init__(self, *args, **kwdargs):
-        exePath, exeArgs = _parse_button_arguments(args[0])
-        super(App_BOSS, self).__init__(exePath, exeArgs, *args[1:], **kwdargs)
-        self.boss_path = self.exePath
-        self.mainMenu.append(_Mods_BOSSLaunchGUI())
-        self.mainMenu.append(_Mods_BOSSDisableLockTimes())
+class _AApp_LOManager(_ExeButton):
+    """Base class for load order managers like BOSS and LOOT."""
+    def __init__(self, lom_path, *args, **kwargs):
+        super().__init__(lom_path, (), *args, **kwargs)
+        self.mainMenu.append(_Mods_SuspendLockLO())
 
     def Execute(self):
-        if bass.settings[u'BOSS.UseGUI']:
-            self.exePath = self.boss_path.head.join(u'boss_gui.exe')
-        else:
-            self.exePath = self.boss_path
-        self.wait = bool(bass.settings[u'BOSS.ClearLockTimes'])
-        extraArgs = []
-        ##: These should become right click options instead
-        if get_key_down(u'R'):
-            if get_shift_down():
-                extraArgs.append(u'-r 2') # Revert level 2 - BOSS version 1.6+
-            else:
-                extraArgs.append(u'-r 1') # Revert level 1 - BOSS version 1.6+
-        if get_key_down(u'S'):
-            extraArgs.append(u'-s') # Silent Mode - BOSS version 1.6+
-        if get_key_down(u'C'): # Print crc calculations in BOSS log.
-            extraArgs.append(u'-c')
-        if bass.tooldirs[u'boss'].version >= (2, 0, 0, 0):
-            # After version 2.0, need to pass in the -g argument
-            extraArgs.append(u'-g%s' % bush.game.boss_game_name)
-        self.extraArgs = tuple(extraArgs)
-        super(App_BOSS, self).Execute()
-        if bass.settings[u'BOSS.ClearLockTimes']:
+        self.wait = bool(bass.settings['BOSS.ClearLockTimes'])
+        if bass.settings['BOSS.ClearLockTimes']:
             # Clear the saved times from before
             with load_order.Unlock():
-                # Refresh to get the new load order that BOSS specified. If
-                # on timestamp method scan the data dir, if not loadorder.txt
-                # should have changed, refreshLoadOrder should detect that
+                super().Execute()
+                # Refresh to get the new load order that the manager specified.
+                # If on timestamp method scan the data dir, if not
+                # loadorder.txt should have changed, refreshLoadOrder should
+                # detect that
                 bosh.modInfos.refresh(
                     refresh_infos=not bush.game.using_txt_file)
             # Refresh UI, so WB is made aware of the changes to load order
             BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
+        else:
+            super().Execute()
+
+#------------------------------------------------------------------------------
+class _Mods_BOSSLaunchGUI(BoolLink):
+    """If BOSS.exe is available then boss_gui.exe should be too."""
+    _text = _('Launch using GUI')
+    _bl_key = 'BOSS.UseGUI'
+    _help = _("If enabled, Bash will run BOSS's GUI.")
+
+class App_BOSS(_AApp_LOManager):
+    """Runs BOSS if it's present."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.boss_path = self.exePath
+        self.mainMenu.append(_Mods_BOSSLaunchGUI())
+
+    def Execute(self):
+        if bass.settings['BOSS.UseGUI']:
+            self.exePath = self.boss_path.head.join('boss_gui.exe')
+        else:
+            self.exePath = self.boss_path
+        curr_args = []
+        ##: These should become right click options instead
+        if get_key_down('R'):
+            if get_shift_down():
+                curr_args.append('-r 2') # Revert level 2 - BOSS version 1.6+
+            else:
+                curr_args.append('-r 1') # Revert level 1 - BOSS version 1.6+
+        if get_key_down('S'):
+            curr_args.append('-s') # Silent Mode - BOSS version 1.6+
+        if get_key_down('C'): # Print crc calculations in BOSS log.
+            curr_args.append('-c')
+        if bass.tooldirs['boss'].version >= (2, 0, 0, 0):
+            # After version 2.0, need to pass in the -g argument
+            curr_args.append('-g%s' % bush.game.boss_game_name)
+        self.extraArgs = tuple(curr_args)
+        super().Execute()
+
+#------------------------------------------------------------------------------
+class _Mods_LOOTAutoSort(BoolLink):
+    _text = _('Auto-Sort')
+    _bl_key = 'LOOT.AutoSort'
+    _help = _('If enabled, LOOT will automatically sort the load order for '
+              'the current game, then apply the result and quit.')
+
+class App_LOOT(_AApp_LOManager):
+    """Runs LOOT if it's present."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mainMenu.append(_Mods_LOOTAutoSort())
+
+    def Execute(self):
+        curr_args = []
+        curr_args.append(f'--game={bush.game.loot_game_name}')
+        if bass.settings['LOOT.AutoSort']:
+            curr_args.append('--auto-sort')
+        self.extraArgs = tuple(curr_args)
+        super().Execute()
 
 #------------------------------------------------------------------------------
 class Game_Button(_ExeButton):

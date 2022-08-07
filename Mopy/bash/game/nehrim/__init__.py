@@ -35,6 +35,7 @@ class NehrimGameInfo(OblivionGameInfo):
     game_detect_includes = [u'NehrimLauncher.exe']
     master_file = bolt.FName(u'Nehrim.esm')
     loot_dir = u'Nehrim'
+    loot_game_name = 'Nehrim'
     boss_game_name = u'Nehrim'
     nexusUrl = u'https://www.nexusmods.com/nehrim/'
     nexusName = u'Nehrim Nexus'
