@@ -374,8 +374,8 @@ class InstallerConverter(object):
                 self.convertedFiles):
             srcDir, srcFile = srcDir_File
             #--srcDir is either 'BCF-Missing', or crc read from 7z l -slt
-            srcFile = tempJoin(
-                srcDir if type(srcDir) is str else f'{srcDir:08X}', srcFile)
+            srcFile = tempJoin((f'{srcDir:08X}' if isinstance(srcDir, int)
+                                else srcDir), srcFile)
             destFile = destJoin(destFile)
             if not srcFile.exists():
                 raise StateError(
@@ -449,7 +449,9 @@ class InstallerConverter(object):
                 for root_dir, y, files in fpath.walk(): ##: replace with os walk!!
                     for file in files:
                         file = root_dir.join(file)
-                        archivedFiles[file.crc] = (crc, file.s[len(fpath)+1:]) # +1 for '/'
+                        # crc is an FName, but we want to store strings
+                        archivedFiles[file.crc] = (
+                            str(crc), file.s[len(fpath)+1:]) # +1 for '/'
             #--Add the extracted files to the source files list
             srcFiles.update(archivedFiles)
             bass.rmTempDir()
@@ -486,10 +488,10 @@ class InstallerConverter(object):
         sProgress(0, f'{BCFArchive}\n' + _(u'Mapping files...'))
         sProgress.setFull(1 + len(destFiles))
         #--Map the files
+        sprog_msg = f'{BCFArchive}\n' + _('Mapping files...') + '\n'
         for index, (fileCRC, fileName) in enumerate(destFiles):
             convertedFileAppend((fileCRC, srcFiles.get(fileCRC), fileName))
-            sProgress(index, f'{BCFArchive}\n' + _(
-                u'Mapping files...') + u'\n' + fileName)
+            sProgress(index, sprog_msg + fileName)
         #--Build the BCF
         if len(self.bcf_missing_files):
             tempDir2 = bass.newTempDir().join(bcf_missing)
