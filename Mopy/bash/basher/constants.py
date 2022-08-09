@@ -308,6 +308,7 @@ settingDefaults = { # keep current naming format till refactored
     u'bash.installers.skipLandscapeLODTextures': False,
     u'bash.installers.skipLandscapeLODNormals': False,
     u'bash.installers.skipTESVBsl': True,
+    'bash.installers.skipPDBs': False,
     u'bash.installers.allowOBSEPlugins': True,
     u'bash.installers.renameStrings': True,
     u'bash.installers.redirect_scripts': True,

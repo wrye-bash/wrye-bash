@@ -578,6 +578,11 @@ class _Installers_SkipBsl(AppendableLink, _Installers_Skip):
     _text, _bl_key = _(u'Skip BSL Files'), u'bash.installers.skipTESVBsl'
     def _append(self, window): return bush.game.Bsa.has_bsl
 
+class _Installers_SkipPdb(AppendableLink, _Installers_Skip):
+    """Toggle skipPDBs setting and update."""
+    _text, _bl_key = _('Skip PDB Files'), 'bash.installers.skipPDBs'
+    def _append(self, window): return bool(bush.game.Se.se_abbrev)
+
 class Installers_GlobalSkips(balt.MenuLink):
     """Global Skips submenu."""
     _text = _(u'Global Skips')
@@ -595,6 +600,7 @@ class Installers_GlobalSkips(balt.MenuLink):
         self.append(_Installers_SkipLandscapeLODTextures())
         self.append(_Installers_SkipLandscapeLODNormals())
         self.append(_Installers_SkipBsl())
+        self.append(_Installers_SkipPdb())
 
 #------------------------------------------------------------------------------
 # Redirection/Rename Links ----------------------------------------------------

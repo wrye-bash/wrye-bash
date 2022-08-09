@@ -440,6 +440,8 @@ class Installer(ListInfo):
         if bass.settings[u'bash.installers.skipScriptSources']:
             Installer._global_skip_extensions.update(
                 bush.game.Psc.source_extensions)
+        if bass.settings['bash.installers.skipPDBs']:
+            Installer._global_skip_extensions.add('.pdb')
         # skips files starting with...
         if bass.settings[u'bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')

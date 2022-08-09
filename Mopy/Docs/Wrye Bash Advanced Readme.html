@@ -299,55 +299,213 @@
 tab. The directories skipped are:
 
 <table>
-    <thead><tr><th>Skipped Data subdirectories<th colspan="2">Notes
-    <tbody>
-        <tr><td>Bash<td colspan="2"><code>Data/Bash</code> directory that may contain Bash related data
-        <tr><td>--<td colspan="2">If you create a <code>Data/--</code> directory it will be ignored by Bash - dump your cruft there
-        <tr><td>distantlod<td colspan="2">If <a href="#bainSkipDistantLOD">Skip DistantLOD</a> is checked
-        <tr><td>meshes\landscape\lod<td colspan="2">If <a href="#bainSkipLODMeshes">Skip LOD Meshes</a> is checked
-        <tr><td>textures\landscapelod\generated<td colspan="2">If <a href="#bainSkipLODTextures">Skip LOD Textures</a> <strong>and</strong>
-            <a href="#bainSkipLODNormals">Skip LOD Normals</a> are <strong>both</strong> checked
-        <tr><td>docs<td colspan="2">If <a href="#bainSkipDocs">Skip Docs</a>  <strong>and</strong> <a href="#bainSkipImages">Skip Images</a> are
-            <strong>both</strong> checked
-        <tr><td>Script extender<td colspan="2">If <a href="#bainSkipSEPlugins">Skip **SE Plugins</a> is checked (see game specific below)
+    <thead>
         <tr>
-            <td>screenshots</td>
-            <td colspan="2">If <a href="#bainSkipScreenshots">Skip Screenshots</a> is checked</td>
+            <th>Skipped Data subdirectories</th>
+            <th colspan="2">Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Bash</td>
+            <td colspan="2"><code>Data/Bash</code> directory that may contain
+                Bash related data</td>
         </tr>
         <tr>
-            <td>screens</td>
-            <td colspan="2">See <q>screenshots</q> above</td>
+            <td>--</td>
+            <td colspan="2">If you create a <code>Data/--</code> directory it
+                will be ignored by Bash - dump your cruft there</td>
         </tr>
         <tr>
-            <td>ss</td>
-            <td colspan="2">See <q>screenshots</q> above</td>
+            <td>docs</td>
+            <td colspan="2">If <a href="#bainSkipDocs">Skip Docs</a>
+                <strong>and</strong> <a href="#bainSkipImages">Skip Images</a>
+                are <strong>both</strong> checked - see those links for more
+                information</td>
         </tr>
-        <tr class="tabttl"><th colspan="3">Skipped file extensions
-    <tbody>
-    <tr><td colspan="3">.001, .7z, .7z.001, .ace, .bz2, .ckm, .db, .exe, .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar, .tb2, .tgz, .zip
-    <tr class="tabttl"><th colspan="3">Per game skipped Data subdirectories
-    <tr class="tabttl"><th>Game<th>Skipped Data subdirectories<th>Script extender(s) directories
-    <tbody>
-        <tr><td>Oblivion &amp; Nehrim&colon; At Fate's Edge<td>tes4edit backups, tes4edit cache, bgsee, conscribe logs<td>OBSE
-        <tr><td>Fallout 3<td>fo3edit backups, fo3edit cache<td>FOSE
-        <tr><td>Fallout&colon; New Vegas<td>fnvedit backups, fnvedit cache<td>NVSE
-        <tr><td>Skyrim<td>tes5edit backups, tes5edit cache<td>SKSE, SkyProc Patchers, Script Dragon
-        <tr><td>Enderal&colon; Forgotten Stories</td><td>enderaledit backups, enderaledit cache</td><td>SKSE, SkyProc Patchers, Script Dragon</td></tr>
-        <tr><td>Fallout 4<td>fo4edit backups, fo4edit cache<td>F4SE
-        <tr><td>Skyrim&colon; Special Edition<td>sseedit backups, sseedit cache<td>SKSE, SkyProc Patchers
-    <tr class="tabttl"><th colspan="3">Per game skipped file extensions</th></tr>
-    <tr class="tabttl"><th>Skipped file extension</th><th>Games</th><th>Notes</th></tr>
-    <tbody>
-      <tr>
-        <td>.bsl</td>
-        <td>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon; Special Edition</td>
-        <td>If <a href="#bainSkipBSLFiles">Skip BSL Files</a> is checked</td>
-      </tr>
-      <tr>
-        <td>.psc</td>
-        <td>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon; Special Edition, Fallout 4</td>
-        <td>If <a href="#bainSkipScriptSources">Skip Script Sources</a> is checked</td>
-      </tr>
+        <tr>
+            <td>screenshots, screens, ss</td>
+            <td colspan="2">If <a href="#bainSkipScreenshots">Skip Screenshots</a>
+                is checked</td>
+        </tr>
+        <tr class="tabttl">
+            <th colspan="2">Skipped file extensions</th>
+            <th>Notes</th>
+        </tr>
+        <tr>
+            <td colspan="2">.001, .7z, .7z.001, .ace, .bz2, .ckm, .db, .exe,
+                .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar,
+                .tb2, .tgz, .zip</td>
+            <td>N/A</td>
+        </tr>
+        <tr>
+            <td colspan="2">.pdb</td>
+            <td>If <a href="#bainSkipPDBs">Skip PDB Files</a> is checked.</td>
+        </tr>
+        <tr class="tabttl">
+            <th colspan="3">Per game skipped Data subdirectories</th>
+        </tr>
+        <tr class="tabttl">
+            <th>Skipped Data subdirectories</th>
+            <th>Games</th>
+            <th>Notes</th>
+        </tr>
+        <tr>
+            <td>tes4edit backups, tes4edit cache, bgsee, conscribe logs</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+            <td>N/A</td>
+        </tr>
+        <tr>
+            <td>textures\landscapelod\generated</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+            <td>If <a href="#bainSkipLODTextures">Skip LOD Textures</a> is
+                checked.<br>
+                <br>
+                Does not skip LOD normals, see below.</td>
+        </tr>
+        <tr>
+            <td>textures\landscapelod\generated\*_fn.dds</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+            <td>If <a href="#bainSkipLODNormals">Skip LOD Normals</a> is
+                checked.</td>
+        </tr>
+        <tr>
+            <td>obse</td>
+            <td>Oblivion &amp; Nehrim&colon; At Fate's Edge</td>
+            <td>If <a href="#bainSkipSEPlugins">Skip OBSE Plugins</a> is
+                checked.</td>
+        </tr>
+        <tr>
+            <td>fo3edit backups, fo3edit cache</td>
+            <td>Fallout 3</td>
+            <td>N/A</td>
+        </tr>
+        <tr>
+            <td>fose</td>
+            <td>Fallout 3</td>
+            <td>If <a href="#bainSkipSEPlugins">Skip FOSE Plugins</a> is
+                checked.</td>
+        </tr>
+        <tr>
+            <td>fnvedit backups, fnvedit cache</td>
+            <td>Fallout&colon; New Vegas</td>
+            <td>N/A</td>
+        </tr>
+        <tr>
+            <td>nvse</td>
+            <td>Fallout&colon; New Vegas</td>
+            <td>If <a href="#bainSkipSEPlugins">Skip NVSE Plugins</a> is
+                checked.</td>
+        </tr>
+        <tr>
+            <td>textures\landscape\lod</td>
+            <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
+            <td>If <a href="#bainSkipLODTextures">Skip LOD Textures</a> is
+                checked.<br>
+                <br>
+                Does not skip LOD normals, see below.</td>
+        </tr>
+        <tr>
+            <td>textures\landscape\lod\*\normals\*.dds</td>
+            <td>Fallout 3 &amp; Fallout&colon; New Vegas</td>
+            <td>If <a href="#bainSkipLODNormals">Skip LOD Normals</a> is
+                checked.</td>
+        </tr>
+        <tr>
+            <td>distantlod</td>
+            <td>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas</td>
+            <td colspan="2">If <a href="#bainSkipDistantLOD">Skip DistantLOD</a>
+                is checked.</td>
+        </tr>
+        <tr>
+            <td>meshes\landscape\lod</td>
+            <td>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas</td>
+            <td colspan="2">If <a href="#bainSkipLODMeshes">Skip LOD Meshes</a>
+                is checked.</td>
+        </tr>
+        <tr>
+            <td>tes5edit backups, tes5edit cache</td>
+            <td>Skyrim</td>
+            <td>N/A</td>
+        </tr>
+        <tr>
+            <td>enderaledit backups, enderaledit cache</td>
+            <td>Enderal&colon; Forgotten Stories</td>
+            <td>N/A</td>
+        </tr>
+        <tr>
+            <td>asi, skse</td>
+            <td>Skyrim &amp; Enderal&colon; Forgotten Stories</td>
+            <td>If <a href="#bainSkipSEPlugins">Skip SKSE/Script Dragon Plugins</a>
+                is checked.</td>
+        </tr>
+        <tr>
+            <td>fo4edit backups, fo4edit cache</td>
+            <td>Fallout 4</td>
+            <td>N/A</td>
+        </tr>
+        <tr>
+            <td>f4se</td>
+            <td>Fallout 4</td>
+            <td>If <a href="#bainSkipSEPlugins">Skip F4SE Plugins</a> is
+                checked.</td>
+        </tr>
+        <tr>
+            <td>sseedit backups, sseedit cache</td>
+            <td>Skyrim&colon; Special Edition</td>
+            <td>N/A</td>
+        </tr>
+        <tr>
+            <td>skse</td>
+            <td>Skyrim&colon; Special Edition</td>
+            <td>If <a href="#bainSkipSEPlugins">Skip SKSE64 Plugins</a> is
+                checked.</td>
+        </tr>
+        <tr>
+            <td>meshes\lod</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon; Special
+                Edition &amp; Fallout 4</td>
+            <td>If <a href="#bainSkipLODMeshes">Skip LOD Meshes</a> is
+                checked.</td>
+        </tr>
+        <tr>
+            <td>textures\lod</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon; Special
+                Edition &amp; Fallout 4</td>
+            <td>If <a href="#bainSkipLODTextures">Skip LOD Textures</a> is
+                checked.<br>
+                <br>
+                Does not skip LOD normals, see below.</td>
+        </tr>
+        <tr>
+            <td>textures\lod\*_n.dds</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon; Special
+                Edition &amp; Fallout 4</td>
+            <td>If <a href="#bainSkipLODNormals">Skip LOD Normals</a> is
+                checked.</td>
+        </tr>
+        <tr class="tabttl">
+            <th colspan="3">Per game skipped file extensions</th>
+        </tr>
+        <tr class="tabttl">
+            <th>Skipped file extension</th>
+            <th>Games</th>
+            <th>Notes</th>
+        </tr>
+        <tr>
+            <td>.bsl</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special
+                Edition</td>
+            <td>If <a href="#bainSkipBSLFiles">Skip BSL Files</a> is
+                checked.</td>
+        </tr>
+        <tr>
+            <td>.psc</td>
+            <td>Skyrim, Enderal&colon; Forgotten Stories, Skyrim&colon; Special Edition
+                &amp; Fallout 4</td>
+            <td>If <a href="#bainSkipScriptSources">Skip Script Sources</a> is
+                checked.</td>
+        </tr>
     </tbody>
 </table>
 
@@ -629,7 +787,7 @@ tab. The directories skipped are:
                 grain of salt
             </ul>
         <tr><td colspan="2" id="bainWizardIconOverlay">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.</tr>
-        <tr><td rowspan="12" id="bainGlobalSkips">Global Skips</td>
+        <tr><td rowspan="13" id="bainGlobalSkips">Global Skips</td>
         <tr><td id="bainSkipSEPlugins">Skip **SE Plugins</td><td><em>Non-Skyrim only.</em> If this is checked, files to go in the <code>Data\[**SE]\Plugins</code> folder will not be installed.</td></tr>
         <tr><td>Skip SKSE/Script Dragon Plugins</td><td><em>Skyrim and Enderal&colon; Forgotten Stories only.</em> If this is checked, files to go in the <code>Data\SKSE\Plugins</code> or <code>Data\asi</code> folder will not be installed.</td></tr>
         <tr>
@@ -648,56 +806,40 @@ tab. The directories skipped are:
             <td><em>Oblivion, Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
                 Fallout&colon; New Vegas only.</em> If checked, then
                 <code>DistantLOD</code> files in packages will be ignored.
-                Useful if you're using Tes4LodGen to generate DistantLOD
+                Useful if you're using xLodGen to generate DistantLOD
                 files.</td>
         </tr>
         <tr>
             <td id="bainSkipLODMeshes">Skip LOD Meshes</td>
-            <td>If checked, landscape LOD meshes will be skipped. This refers
-                to all files installed into the following folders:
-                <ul>
-                    <li><code>meshes\landscape\lod</code> &mdash; <em>Oblivion,
-                        Nehrim&colon; At Fate's Edge, Fallout 3 &amp;
-                        Fallout&colon; New Vegas</em></li>
-                    <li><code>meshes\lod</code> &mdash; <em>Skyrim,
-                        Enderal&colon; Forgotten Stories, Skyrim&colon; Special
-                        Edition &amp; Fallout 4</em></li>
-                </ul>
-            </td>
+            <td>If checked, landscape LOD meshes will be skipped. See
+                <a href="#bain-data-dir-skipped">Skipped Data subdirectories</a>
+                for more information.</td>
         </tr>
         <tr>
             <td id="bainSkipLODTextures">Skip LOD Textures</td>
-            <td>If checked, landscape LOD textures will be skipped. This refers
-                to <code>.dds</code> files (except normals, see below)
-                installed into the following folders:
-                <ul>
-                    <li><code>textures\landscapelod\generated</code> &mdash;
-                        <em>Oblivion, Nehrim&colon; At Fate's Edge</em></li>
-                    <li><code>textures\landscape\lod</code> &mdash;
-                        <em>Fallout 3 &amp; Fallout&colon; New Vegas</em></li>
-                    <li><code>textures\lod</code> &mdash; <em>Skyrim,
-                        Enderal&colon; Forgotten Stories, Skyrim&colon; Special
-                        Edition &amp; Fallout 4</em></li>
-                </ul>
-            </td>
+            <td>If checked, landscape LOD textures will be skipped. See
+                <a href="#bain-data-dir-skipped">Skipped Data subdirectories</a>
+                for more information.</td>
         <tr>
             <td id="bainSkipLODNormals">Skip LOD Normals</td>
-            <td>If checked, landscape LOD normals will be skipped. This refers
-                to the following files installed into the following folders:
-                <ul>
-                    <li><code>textures\landscapelod\generated\*_fn.dds</code>
-                        &mdash; <em>Oblivion, Nehrim&colon; At Fate's Edge</em>
-                    </li>
-                    <li><code>textures\landscape\lod\*\normals\*.dds</code>
-                        &mdash; <em>Fallout 3 &amp; Fallout&colon; New
-                            Vegas</em></li>
-                    <li><code>textures\lod\*_n.dds</code> &mdash; <em>Skyrim,
-                        Enderal&colon; Forgotten Stories, Skyrim&colon; Special
-                        Edition &amp; Fallout 4</em></li>
-                </ul>
-            </td>
+            <td>If checked, landscape LOD normals will be skipped. See
+                <a href="#bain-data-dir-skipped">Skipped Data subdirectories</a>
+                for more information.</td>
         </tr>
-        <tr><td id="bainSkipBSLFiles">Skip BSL Files</td><td><em>Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon; Special Edition only.</em> If checked, BSL Files will be skipped.</td></tr>
+        <tr>
+            <td id="bainSkipBSLFiles">Skip BSL Files</td>
+            <td><em>Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon;
+                Special Edition only.</em> If checked, BSL files will be
+                skipped. BSL files are only needed when viewing BSA files in
+                the Creation Kit's <code>archive.exe</code>.</td>
+        </tr>
+        <tr>
+            <td id="bainSkipPDBs">Skip PDB Files</td>
+            <td>If checked, PDB files will be skipped. They contain debug
+                information that can help plugin developers find and fix issues
+                with their xSE plugins. You can skip them here if you
+                want.</td>
+        </tr>
         <tr><td rowspan="3">Global Redirects</td></tr>
         <tr>
             <td id="bainRenameStringTranslationFiles">Rename String Translation Files</td>
