@@ -409,19 +409,28 @@ tab. The directories skipped are:
 <h4>Example usage scenarios</h4>
 
 <ul>
-    <li><strong>Creation Kit/GECK monitoring</strong>
-- When creating or managing content in the Creation Kit or GECK, Wrye Bash can capture any output from the CK/GECK in a BAIN package. This
-        is useful for example when capturing FaceGen data as NPCs are managed, and it will also capture any loose files, ESP, or BSA created in the
-    editor.
-    <li><strong>BodySlide</strong>
-- BodySlide is a utility used to create custom bodies and armor to fit these bodies, as well as from armors by third-parties to a
-    custom body. Wrye Bash can capture all output from BodySlide and package it into a BAIN for easy management. These files can then be
-    packaged and distributed, backed up, or used to build another mod.
-    <li><strong>Nexus Mod Manager / Other Mod Managers</strong>
-- Since Wrye Bash does not currently support the Nexus Mod Manager FOMOD XML installer format, sometimes it is necessary to use the Nexus
-    Mod Manager to install poorly packaged mods that cannot be installed via the usual "click the checkbox" BAIN methods. The monitor
-    external installation feature watches as NMM installs files and captures any changes to the content of Data, which can then be
-    uninstalled by NMM and reinstalled cleanly from the newly created BAIN with Wrye Bash instead.
+    <li><strong>Creation Kit/GECK</strong> - When creating or managing content
+        in the Creation Kit or GECK, Wrye Bash can capture any
+        output from the CK/GECK in a BAIN package. This is useful, for example,
+        when capturing FaceGen data as NPCs are managed, and it will also
+        capture any loose files, ESPs, or BSAs created in the editor.</li>
+    <li><strong>BodySlide</strong> - BodySlide is a utility used to create
+        custom bodies and armor to fit these bodies, as well as from armors by
+        third-parties to a custom body. Wrye Bash can capture all output from
+        BodySlide and package it into a BAIN for easy management. These files
+        can then be packaged and distributed, backed up, or used to build
+        another mod.</li>
+    <li><strong>FNIS</strong> - FNIS is a tool for adding custom animations to
+        Skyrim. Wrye Bash can capture its output and manage it via BAIN.</li>
+    <li><strong>Installer Executables</strong> - If you want to install certain
+        mods (e.g. <a href="https://www.nexusmods.com/newvegas/mods/45138">Fallout - New California</a>),
+        it may only be possible to do so via running an executable. In this
+        situation, Wrye Bash can capture the installer's output, which you can
+        then manage like any other package via BAIN.</li>
+    <li><strong>Other Mod Managers</strong> - While Wrye Bash supports the
+        FOMOD XML format since 307, there are still some badly packaged mods it
+        cannot handle. In such situations, you may have to use other mod
+        managers to install them.</li>
 </ul>
 
 <h4>How to use the "Monitor External Installation" feature</h4>
