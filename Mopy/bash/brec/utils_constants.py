@@ -270,7 +270,7 @@ class FixedString(str):
 
     def __call__(self, new_str):
         # 0 is the default, so replace it with whatever we currently have
-        return FixedString(self.str_length, new_str or str(self))
+        return self.__class__(self.str_length, new_str or str(self))
 
     def dump(self):
         return bolt.encode_complex_string(self, max_size=self.str_length,

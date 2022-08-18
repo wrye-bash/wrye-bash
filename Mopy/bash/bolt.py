@@ -179,8 +179,9 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
         else: return goodEncoding[0]
     raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
 
-def encode_complex_string(string_val, max_size=None, min_size=None,
-                          preferred_encoding=None):
+def encode_complex_string(string_val: str, max_size: int | None = None,
+        min_size: int | None = None,
+        preferred_encoding: str | None = None) -> bytes:
     """Handles encoding of a string that must satisfy certain conditions. Any
     of the keyword arguments may be omitted, in which case they will simply not
     apply.
@@ -196,7 +197,7 @@ def encode_complex_string(string_val, max_size=None, min_size=None,
     :return: The encoded string."""
     preferred_encoding = preferred_encoding or pluginEncoding
     if max_size:
-        string_val = winNewLines(string_val.rstrip())
+        string_val = to_win_newlines(string_val.rstrip())
         truncated_size = min(max_size, len(string_val))
         test, tested_encoding = encode(string_val,
                                        firstEncoding=preferred_encoding,
@@ -239,9 +240,13 @@ class Tee:
         return self._stream_b.write(s)
 
 def to_unix_newlines(s): # type: (str) -> str
-    """Replaces non-UNIX newlines in the specified string with Unix newlines.
+    """Replaces non-Unix newlines in the specified string with Unix newlines.
     Handles both CR-LF (Windows) and pure CR (macOS)."""
     return s.replace(u'\r\n', u'\n').replace(u'\r', u'\n')
+
+def to_win_newlines(s):
+    """Converts LF (Unix) newlines to CR-LF (Windows) newlines."""
+    return reUnixNewLine.sub('\r\n',s)
 
 def remove_newlines(s): # type: (str) -> str
     """Removes all newlines (whether they are in LF, CR-LF or CR form) from the
@@ -2123,10 +2128,6 @@ def getMatch(reMatch,group=0):
     if reMatch: return reMatch.group(group)
     else: return u''
 
-def winNewLines(inString):
-    """Converts unix newlines to windows newlines."""
-    return reUnixNewLine.sub(u'\r\n',inString)
-
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Log(object):
@@ -2771,7 +2772,7 @@ class WryeText(object):
         anchorHeaders = True
         #--Read source file --------------------------------------------------
         for line in ins:
-            line = line.replace(u'\r\n',u'\n')
+            line = to_unix_newlines(line)
             #--Codebox -----------------------------------
             if codebox:
                 if codeboxLines is not None:

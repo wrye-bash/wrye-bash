@@ -1235,7 +1235,7 @@ class Installer(ListInfo):
         log(u'[spoiler]\n', False)
         self._list_package(self.abs_path, log)
         log(u'[/spoiler]')
-        return bolt.winNewLines(log.out.getvalue())
+        return bolt.to_win_newlines(log.out.getvalue())
 
     @staticmethod
     def _list_package(apath, log): raise AbstractError
@@ -3031,7 +3031,7 @@ class InstallersData(DataStore):
         for inst in self.sorted_values():
             inst.log_package(log, showInactive)
         log(u'[/spoiler]')
-        return bolt.winNewLines(log.out.getvalue())
+        return bolt.to_win_newlines(log.out.getvalue())
 
     def filterInstallables(self, installerKeys):
         """Return a sublist of installerKeys that can be installed -

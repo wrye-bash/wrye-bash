@@ -104,6 +104,8 @@ class MorrowindGameInfo(PatchGame):
 
     class Esp(GameInfo.Esp):
         check_master_sizes = True
+        max_author_length = 32 # Does not have to have a null terminator
+        max_desc_length = 256 # Does not have to have a null terminator
         max_lvl_list_size = 2 ** 32 - 1
         plugin_header_sig = b'TES3'
         stringsFiles = []

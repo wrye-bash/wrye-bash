@@ -684,15 +684,13 @@ class PartialLoadDecider(ADecider):
     """Partially loads a subrecord using a given loader, then rewinds the
     input stream and delegates to a given decider. Can decide at dump-time
     iff the given decider can as well."""
-    def __init__(self, loader, decider):
+    def __init__(self, loader: MelBase, decider: ADecider):
         """Constructs a new PartialLoadDecider with the specified loader and
         decider.
 
         :param loader: The MelBase instance to use for loading. Must have a
             static size.
-        :type loader: MelBase
-        :param decider: The decider to use after loading.
-        :type decider: ADecider"""
+        :param decider: The decider to use after loading."""
         self._loader = loader
         self._load_size = loader.static_size
         self._decider = decider

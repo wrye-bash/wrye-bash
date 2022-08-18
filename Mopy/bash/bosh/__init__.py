@@ -1301,7 +1301,7 @@ class INIInfo(IniFile):
         log = bolt.LogFile(io.StringIO())
         for line in errors:
             log(line)
-        return bolt.winNewLines(log.out.getvalue())
+        return bolt.to_win_newlines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
 class SaveInfo(FileInfo):
@@ -2652,7 +2652,7 @@ class ModInfos(FileInfos):
                         1] == master2:
                         log(sDelinquent + master2)
         if not wtxt: log(u'[/spoiler]')
-        return bolt.winNewLines(log.out.getvalue())
+        return bolt.to_win_newlines(log.out.getvalue())
 
     @staticmethod
     def _tagsies(modInfo, tagList):

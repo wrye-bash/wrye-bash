@@ -242,9 +242,9 @@ class MreTes3(MreHeaderBase):
     _post_masters_sigs = {b'GMDT', b'SCRD', b'SCRS'}
 
     melSet = MelSet(
-        MelStruct(b'HEDR', [u'f', u'I', u'32s', u'256s', u'I'], (u'version', 1.3), u'esp_flags',
-            (AutoFixedString(32), u'author_pstr'),
-            (AutoFixedString(256), u'description_pstr'), u'numRecords'),
+        MelStruct(b'HEDR', ['f', 'I', '32s', '256s', 'I'], ('version', 1.3),
+            'esp_flags', (AutoFixedString(32), 'author_pstr'),
+            (AutoFixedString(256), 'description_pstr'), 'numRecords'),
         MreHeaderBase.MelMasterNames(),
         MelSavesOnly(
             # Wrye Mash calls unknown1 'day', but that seems incorrect?

@@ -132,19 +132,18 @@ class Fallout3GameInfo(PatchGame):
         wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
+        biped_flag_names = (
+            'head', 'hair', 'upperBody', 'leftHand', 'rightHand', 'weapon',
+            'pipboy', 'backpack', 'necklace', 'headband', 'hat', 'eyeGlasses',
+            'noseRing', 'earrings', 'mask', 'choker', 'mouthObject',
+            'bodyAddOn1', 'bodyAddOn2', 'bodyAddOn3')
         canBash = True
         canEditHeader = True
-        validHeaderVersions = (0.85, 0.94)
-        stringsFiles = []
         generate_temp_child_onam = True
-        biped_flag_names = (u'head', u'hair', u'upperBody', u'leftHand',
-                            u'rightHand', u'weapon', u'pipboy', u'backpack',
-                            u'necklace', u'headband', u'hat', u'eyeGlasses',
-                            u'noseRing', u'earrings', u'mask', u'choker',
-                            u'mouthObject', u'bodyAddOn1', u'bodyAddOn2',
-                            u'bodyAddOn3')
         reference_types = {b'ACHR', b'ACRE', b'PBEA', b'PGRE', b'PMIS',
                            b'REFR'}
+        stringsFiles = []
+        validHeaderVersions = (0.85, 0.94)
 
     allTags = PatchGame.allTags | {u'NoMerge'}
 

@@ -66,8 +66,8 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         skip_bain_refresh = {u'fo4vredit backups', u'fo4vredit cache'}
 
     class Esp(Fallout4GameInfo.Esp):
-        validHeaderVersions = (0.95,)
         expanded_plugin_range = False
+        validHeaderVersions = (0.95,)
 
     allTags = Fallout4GameInfo.allTags | {u'NoMerge'}
     patchers = Fallout4GameInfo.patchers | {u'MergePatches'}

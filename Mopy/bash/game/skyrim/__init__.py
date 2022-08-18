@@ -160,22 +160,21 @@ class SkyrimGameInfo(PatchGame):
         skip_bain_refresh = {u'tes5edit backups', u'tes5edit cache'}
 
     class Esp(GameInfo.Esp):
+        biped_flag_names = (
+            'head', 'hair', 'body', 'hands', 'forearms', 'amulet', 'ring',
+            'feet', 'calves', 'shield', 'addon_tail', 'long_hair', 'circlet',
+            'addon_ears','dragon_head', 'dragon_lwing', 'dragon_rwing',
+            'dragon_body', 'bodyaddon7', 'bodyaddon8', 'decapitate_head',
+            'decapitate', 'bodyaddon9', 'bodyaddon10', 'bodyaddon11',
+            'bodyaddon12', 'bodyaddon13', 'bodyaddon14', 'bodyaddon15',
+            'bodyaddon16', 'bodyaddon17', 'fx01')
         canBash = True
         canEditHeader = True
-        validHeaderVersions = (0.94, 1.70,)
         generate_temp_child_onam = True
         max_lvl_list_size = 255
-        biped_flag_names = (
-            u'head', u'hair', u'body', u'hands', u'forearms', u'amulet',
-            u'ring', u'feet', u'calves', u'shield', u'addon_tail',
-            u'long_hair', u'circlet', u'addon_ears', u'dragon_head',
-            u'dragon_lwing', u'dragon_rwing', u'dragon_body', u'bodyaddon7',
-            u'bodyaddon8', u'decapitate_head', u'decapitate', u'bodyaddon9',
-            u'bodyaddon10', u'bodyaddon11', u'bodyaddon12', u'bodyaddon13',
-            u'bodyaddon14', u'bodyaddon15', u'bodyaddon16', u'bodyaddon17',
-            u'fx01')
         reference_types = {b'ACHR', b'PARW', b'PBAR', b'PBEA', b'PCON',
                            b'PFLA', b'PGRE', b'PHZD', b'PMIS', b'REFR'}
+        validHeaderVersions = (0.94, 1.70)
 
     allTags = PatchGame.allTags | {u'NoMerge'}
 

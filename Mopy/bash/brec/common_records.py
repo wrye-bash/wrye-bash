@@ -35,8 +35,8 @@ from .common_subrecords import MelEdid
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId
 from .. import bolt, exception
-from ..bolt import decoder, FName, struct_pack, structs_cache, remove_newlines, \
-    to_unix_newlines, sig_to_str
+from ..bolt import decoder, FName, struct_pack, structs_cache, \
+    remove_newlines, to_unix_newlines, sig_to_str, to_win_newlines
 
 #------------------------------------------------------------------------------
 class MreHeaderBase(MelRecord):
@@ -86,26 +86,28 @@ class MreHeaderBase(MelRecord):
 
     class MelAuthor(MelUnicode):
         def __init__(self):
-            super(MreHeaderBase.MelAuthor, self).__init__(b'CNAM',
-                u'author_pstr', u'', 511)
+            from .. import bush
+            super().__init__(b'CNAM', 'author_pstr', '',
+                bush.game.Esp.max_author_length)
 
     class MelDescription(MelUnicode):
         def __init__(self):
-            super(MreHeaderBase.MelDescription, self).__init__(b'SNAM',
-                u'description_pstr', u'', 511)
+            from .. import bush
+            super().__init__(b'SNAM', 'description_pstr', '',
+                bush.game.Esp.max_desc_length)
 
     @property
     def description(self):
         return to_unix_newlines(self.description_pstr or u'')
     @description.setter
     def description(self, new_desc):
-        self.description_pstr = new_desc
+        self.description_pstr = to_win_newlines(new_desc)
     @property
     def author(self):
         return remove_newlines(self.author_pstr or u'')
     @author.setter
     def author(self, new_author):
-        self.author_pstr = new_author
+        self.author_pstr = remove_newlines(new_author)
 
     def loadData(self, ins, endPos, *, file_offset=0):
         """Loads data from input stream - copy pasted from parent cause we need

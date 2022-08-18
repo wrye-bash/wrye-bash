@@ -160,16 +160,16 @@ class OblivionGameInfo(PatchGame):
         wrye_bash_data_files = {'archiveinvalidationinvalidated!.bsa'}
 
     class Esp(GameInfo.Esp):
+        biped_flag_names = (
+            'head', 'hair', 'upperBody', 'lowerBody', 'hand', 'foot',
+            'rightRing', 'leftRing', 'amulet', 'weapon', 'backWeapon',
+            'sideWeapon', 'quiver', 'shield', 'torch', 'tail')
         canBash = True
         canEditHeader = True
-        validHeaderVersions = (0.8,1.0)
-        stringsFiles = []
-        biped_flag_names = (u'head', u'hair', u'upperBody', u'lowerBody',
-                            u'hand', u'foot', u'rightRing', u'leftRing',
-                            u'amulet', u'weapon', u'backWeapon', u'sideWeapon',
-                            u'quiver', u'shield', u'torch', u'tail')
         reference_types = {b'ACHR', b'ACRE', b'REFR'}
         sort_lvsp_after_spel = True
+        stringsFiles = []
+        validHeaderVersions = (0.8, 1.0)
 
     allTags = PatchGame.allTags | {u'IIM', u'NoMerge'}
 

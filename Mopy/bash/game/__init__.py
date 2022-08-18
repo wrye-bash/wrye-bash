@@ -416,52 +416,55 @@ class GameInfo(object):
 
     # Plugin format stuff
     class Esp(object):
-        # Wrye Bash capabilities
-        # Can create Bashed Patches
+        # A tuple containing all biped flag names (in order) for this game
+        biped_flag_names = ()
+        # WB can create Bashed Patches
         canBash = False
-        # Can edit basic info in the main header record - generally has
+        # WB can edit basic info in the main header record - generally has
         # signature b'TES4'
         canEditHeader = False
-        # Valid ESM/ESP header versions. These are the valid 'version' numbers
-        # for the game file headers
-        validHeaderVersions = tuple()
+        # If True, check if the main header's DATA subrecords match the on-disk
+        # master sizes and highlight the corresponding masters with a light
+        # background color if that is the case. Needs meaningful information in
+        # the DATA subrecords.
+        check_master_sizes = False
+        # If True, then plugins with at least one master can use the
+        # 0x000-0x800 range for their own records.
+        # If False, that range is reserved for hardcoded engine records.
+        expanded_plugin_range = False
+        # If True, generate ONAM by reading each temp CELL child when adding
+        # the ESM flag to plugins and discard it when removing the ESM flag.
+        generate_temp_child_onam = False
+        # The maximum number of masters that a plugin can have for this game.
+        master_limit = 255 # 256 - 1 for the plugin itself
+        # Maximum length of the Author string in the plugin header
+        max_author_length = 511 # 512 - 1 for the null terminator
+        # Maximum length of the Description string in the plugin header
+        max_desc_length = 511 # 512 - 1 for the null terminator
+        # The maximum number of entries inside a leveled list for this game.
+        # Zero means no limit.
+        max_lvl_list_size = 0
+        # Signature of the main plugin header record type
+        plugin_header_sig = b'TES4'
+        # All 'reference' types, i.e. record types that occur in CELL/WLRD
+        # groups and place some sort of thing into the cell (e.g. ACHR, REFR,
+        # PMIS, etc.)
+        reference_types = set()
+        # Whether to sort LVSPs after SPELs in actors (CREA/NPC_)
+        ##: Workaround, see MelSpellsTes4 for the proper solution
+        sort_lvsp_after_spel = False
         # used to locate string translation files
         stringsFiles = [
             u'%(body)s_%(language)s.STRINGS',
             u'%(body)s_%(language)s.DLSTRINGS',
             u'%(body)s_%(language)s.ILSTRINGS',
         ]
-        # Signature of the main plugin header record type
-        plugin_header_sig = b'TES4'
-        # If True, then plugins with at least one master can use the
-        # 0x000-0x800 range for their own records.
-        # If False, that range is reserved for hardcoded engine records.
-        expanded_plugin_range = False
-        # If True, check if the main header's DATA subrecords match the on-disk
-        # master sizes and highlight the corresponding masters with a light
-        # background color if that is the case. Needs meaningful information in
-        # the DATA subrecords.
-        check_master_sizes = False
-        # If True, generate ONAM by reading each temp CELL child when adding
-        # the ESM flag to plugins and discard it when removing the ESM flag.
-        generate_temp_child_onam = False
-        # The maximum number of entries inside a leveled list for this game.
-        # Zero means no limit.
-        max_lvl_list_size = 0
-        # A tuple containing all biped flag names (in order) for this game
-        biped_flag_names = ()
-        # The maximum number of masters that a plugin can have for this game.
-        master_limit = 255 # 256 - 1 for the plugin itself
-        # All 'reference' types, i.e. record types that occur in CELL/WLRD
-        # groups and place some sort of thing into the cell (e.g. ACHR, REFR,
-        # PMIS, etc.)
-        reference_types = set()
+        # Valid ESM/ESP header versions. These are the valid 'version' numbers
+        # for the game file headers
+        validHeaderVersions = tuple()
         # Whether to warn about plugins with header form
         # versions < RecordHeader.plugin_form_version
         warn_older_form_versions = False
-        # Whether to sort LVSPs after SPELs in actors (CREA/NPC_)
-        ##: Workaround, see MelSpellsTes4 for the proper solution
-        sort_lvsp_after_spel = False
 
     # Class attributes moved to constants module, set dynamically at init
     #--Game ESM/ESP/BSA files

@@ -68,7 +68,8 @@ import wx
 from .. import bush, bosh, bolt, bass, env, load_order, archives, \
     initialization
 from ..bolt import GPath, SubProgress, deprint, round_size, dict_sort, \
-    top_level_items, os_name, str_to_sig, FName, forward_compat_path_to_fn
+    top_level_items, os_name, str_to_sig, FName, forward_compat_path_to_fn, \
+    to_unix_newlines, to_win_newlines
 from ..bosh import omods, ModInfo
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError, UnknownListener
@@ -1531,20 +1532,27 @@ class ModDetails(_ModsSavesDetails):
         #--Version
         self.version = Label(top, u'v0.00')
         #--Author
-        # TODO(inf) de-wx! all the size usages below
-        self.gAuthor = TextField(top, max_length=511) # size=(textWidth,-1))
-        self.gAuthor.on_focus_lost.subscribe(self.OnEditAuthor)
-        self.gAuthor.on_text_changed.subscribe(self.OnAuthorEdit)
+        self._max_author_len = bush.game.Esp.max_author_length
+        # Note: max_length here is not enough - unicode characters may take up
+        # >1 byte, so we show a warning via label and truncate when writing
+        self.gAuthor = TextField(top, max_length=self._max_author_len)
+        self.gAuthor.on_text_changed.subscribe(self._on_author_typed)
+        self.gAuthor.on_focus_lost.subscribe(self._on_author_finished)
+        self._author_label = Label(top, '')
+        self._set_author_label('')
         #--Modified
         self.modified_txt = TextField(top, max_length=32)
-        self.modified_txt.on_focus_lost.subscribe(self.OnEditModified)
-        self.modified_txt.on_text_changed.subscribe(self.OnModifiedEdit)
-        # size=(textWidth, -1),
+        self.modified_txt.on_text_changed.subscribe(self._on_modified_typed)
+        self.modified_txt.on_focus_lost.subscribe(self._on_modified_finished)
         #--Description
-        self._desc_area = TextArea(top, auto_tooltip=False, max_length=511)
-            # size=(textWidth, 128),
-        self._desc_area.on_focus_lost.subscribe(self.OnEditDescription)
-        self._desc_area.on_text_changed.subscribe(self.OnDescrEdit)
+        self._max_desc_len = bush.game.Esp.max_desc_length
+        # Same note about max_length applies here too
+        self._desc_area = TextArea(top, max_length=self._max_desc_len,
+            auto_tooltip=False)
+        self._desc_area.on_text_changed.subscribe(self._on_desc_typed)
+        self._desc_area.on_focus_lost.subscribe(self._on_desc_finished)
+        self._desc_label = Label(top, '')
+        self._set_desc_label('')
         #--Bash tags
         ##: Come up with a better solution for this
         class _ExClickableImage(WithMouseEvents, ClickableImage):
@@ -1564,9 +1572,11 @@ class ModDetails(_ModsSavesDetails):
         VLayout(spacing=4, item_expand=True, items=[
             HLayout(items=[Label(top, _(u'File:')), Stretch(), self.version]),
             self._fname_ctrl,
-            Label(top, _(u'Author:')), self.gAuthor,
-            Label(top, _(u'Modified:')), self.modified_txt,
-            Label(top, _(u'Description:')),
+            self._author_label,
+            self.gAuthor,
+            Label(top, _(u'Modified:')),
+            self.modified_txt,
+            self._desc_label,
             (self._desc_area, LayoutOptions(expand=True, weight=1))
         ]).apply_to(top)
         VLayout(spacing=4, item_expand=True, items=[
@@ -1616,26 +1626,55 @@ class ModDetails(_ModsSavesDetails):
         else:
             self.gTags.set_background_color(self.get_background_color())
 
-    def _OnTextEdit(self, old_text, new_text):
+    def _set_author_label(self, new_author_str):
+        """Helper method for setting the right count etc. in the Author
+        label."""
+        curr_author_len = len(bolt.encode(new_author_str)) # auto-encoding
+        self._author_label.label_text = _(
+            'Author - [%(curr_bytes)d/%(max_bytes)d bytes]:') % {
+            'curr_bytes': curr_author_len, 'max_bytes': self._max_author_len}
+        if curr_author_len > self._max_author_len:
+            self._author_label.set_foreground_color(colors['default.warn'])
+        else:
+            self._author_label.reset_foreground_color()
+
+    def _set_desc_label(self, new_desc_str):
+        """Helper method for setting the right count etc. in the Description
+        label."""
+        curr_desc_len = len(bolt.encode(new_desc_str)) # auto-encoding
+        self._desc_label.label_text = _(
+            'Description - [%(curr_bytes)d/%(max_bytes)d bytes]:') % {
+            'curr_bytes': curr_desc_len, 'max_bytes': self._max_desc_len}
+        if curr_desc_len > self._max_desc_len:
+            self._desc_label.set_foreground_color(colors['default.warn'])
+        else:
+            self._desc_label.reset_foreground_color()
+
+    def _on_text_typed(self, old_text, new_text):
         if not self.modInfo: return
         if not self.edited and old_text != new_text: self.SetEdited()
 
-    def OnAuthorEdit(self, new_text):
-        self._OnTextEdit(self.authorStr, new_text)
-    def OnModifiedEdit(self, new_text):
-        self._OnTextEdit(self.modifiedStr, new_text)
-    def OnDescrEdit(self, new_text):
-        self._OnTextEdit(self.descriptionStr.replace(
-            u'\r\n', u'\n').replace(u'\r', u'\n'), new_text)
+    def _on_author_typed(self, new_text):
+        self._on_text_typed(self.authorStr, new_text)
+        self._set_author_label(new_text)
 
-    def OnEditAuthor(self):
+    def _on_modified_typed(self, new_text):
+        self._on_text_typed(self.modifiedStr, new_text)
+
+    def _on_desc_typed(self, new_text):
+        self._on_text_typed(self.descriptionStr, to_unix_newlines(new_text))
+        # Use Windows newlines here since those are what we'll actually be
+        # writing out
+        self._set_desc_label(to_win_newlines(new_text))
+
+    def _on_author_finished(self):
         if not self.modInfo: return
         authorStr = self.gAuthor.text_content
         if authorStr != self.authorStr:
             self.authorStr = authorStr
             self.SetEdited()
 
-    def OnEditModified(self):
+    def _on_modified_finished(self):
         if not self.modInfo: return
         modifiedStr = self.modified_txt.text_content
         if modifiedStr == self.modifiedStr: return
@@ -1652,11 +1691,11 @@ class ModDetails(_ModsSavesDetails):
         self.modified_txt.text_content = modifiedStr #--Normalize format
         self.SetEdited()
 
-    def OnEditDescription(self):
+    def _on_desc_finished(self):
         if not self.modInfo: return
-        if self._desc_area.text_content != self.descriptionStr.replace(u'\r\n',
-                u'\n').replace(u'\r', u'\n'):
-            self.descriptionStr = self._desc_area.text_content ##: .replace(u'\n', u'r\n')
+        new_desc = to_unix_newlines(self._desc_area.text_content)
+        if new_desc != self.descriptionStr:
+            self.descriptionStr = new_desc
             self.SetEdited()
 
     bsaAndBlocking = _(
@@ -1729,7 +1768,7 @@ class ModDetails(_ModsSavesDetails):
         #--Change hedr/masters?
         if changeHedr or changeMasters:
             modInfo.header.author = self.authorStr.strip()
-            modInfo.header.description = bolt.winNewLines(self.descriptionStr.strip())
+            modInfo.header.description = self.descriptionStr.strip()
             old_mi_masters = modInfo.header.masters
             modInfo.header.masters = self.uilist.GetNewMasters()
             modInfo.header.changed = True

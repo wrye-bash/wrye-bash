@@ -723,7 +723,8 @@ class WryeParser(ScriptParser.Parser):
         try:
             with file_path.open(u'r', encoding=u'utf-8-sig') as wiz_script:
                 # Ensure \n line endings for the script parser
-                self.lines = [x.replace(u'\r\n', u'\n') for x in wiz_script.readlines()]
+                self.lines = [bolt.to_unix_newlines(x)
+                              for x in wiz_script.readlines()]
             return None
         except UnicodeError:
             return _(u'Could not read the wizard file.  Please ensure it is '

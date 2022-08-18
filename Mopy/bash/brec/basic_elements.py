@@ -22,6 +22,8 @@
 # =============================================================================
 """Houses basic building blocks for creating record definitions. Somewhat
 higher-level building blocks can be found in common_subrecords.py."""
+from __future__ import annotations
+
 from typing import BinaryIO
 
 from . import utils_constants
@@ -160,7 +162,7 @@ class MelBase(Subrecord):
     elements."""
     __slots__ = (u'attr', u'default')
 
-    def __init__(self, mel_sig, attr, default=None):
+    def __init__(self, mel_sig: bytes, attr: str, default=None):
         self.mel_sig, self.attr, self.default = mel_sig, attr, default
 
     def getSlotsUsed(self):
@@ -219,21 +221,17 @@ class MelBase(Subrecord):
             f'{sorted(self.signatures)})')
 
     @property
-    def signatures(self):
+    def signatures(self) -> set[bytes]:
         """Returns a set containing all the signatures (aka mel_sigs) that
         could belong to this element. For most elements, this is just a single
-        one, but groups and unions return multiple here.
-
-        :rtype: set[bytes]"""
+        one, but groups and unions return multiple here."""
         return {self.mel_sig}
 
     @property
-    def static_size(self):
+    def static_size(self) -> int:
         """Returns an integer denoting the number of bytes this element is
         going to take. Raises an AbstractError if the element can't know this
-        (e.g. MelBase or MelNull).
-
-        :rtype: int"""
+        (e.g. MelBase or MelNull)."""
         raise exception.AbstractError()
 
 # -----------------------------------------------------------------------------
@@ -532,12 +530,13 @@ class MelFids(MelGroups):
 #------------------------------------------------------------------------------
 class MelString(MelBase):
     """Represents a mod record string element."""
+    encoding: str | None = None # None -> default to bolt.pluginEncoding
 
-    def __init__(self, mel_sig, attr, default=None, maxSize=0, minSize=0):
+    def __init__(self, mel_sig, attr, default=None, maxSize: int | None = None,
+            minSize: int | None = None):
         super(MelString, self).__init__(mel_sig, attr, default)
         self.maxSize = maxSize
         self.minSize = minSize
-        self.encoding = None # will default to bolt.pluginEncoding
 
     def load_bytes(self, ins, size_, *debug_strs):
         return ins.readString(size_, *debug_strs)
