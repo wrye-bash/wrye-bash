@@ -35,7 +35,7 @@ _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
 
 _FidList = list[tuple[Path, int]]
 _FacePartDict = defaultdict[str, _FidList]
-# PY3.10: Union -> |, can't do this here with __future__ annotations
+# PY3.11: Union -> |, can't do this here with __future__ annotations
 ##: Also, we really need a less hacky solution than this 'mixed dict'
 _MixedDict = dict[Union[bytes, str], Union[_FidList, dict[str, _FidList]]]
 

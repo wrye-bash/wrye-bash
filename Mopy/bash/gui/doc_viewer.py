@@ -36,18 +36,6 @@ except ImportError:
     _wx_html2 = _browser_backend = None
 # Try to import the PDF viewer, may not be available everywhere
 try:
-    ##: HACK until wxPython is updated to account for PyMuPDF 1.19+ renames
-    # See https://github.com/wxWidgets/Phoenix/issues/2204
-    import fitz
-    class _BackwardsCompatDocument(fitz.Document):
-        @property
-        def pageCount(self):
-            return self.page_count
-        def loadPage(self, page_id):
-            ret_page = self.load_page(page_id)
-            ret_page.getPixmap = ret_page.get_pixmap
-            return ret_page
-    fitz.open = _BackwardsCompatDocument
     # wx.lib.pdfviewer uses a raw print statment, UGH!
     from ..bolt import redirect_stdout_to_deprint
     with redirect_stdout_to_deprint():

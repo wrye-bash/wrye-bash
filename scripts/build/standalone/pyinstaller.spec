@@ -82,6 +82,7 @@ excluded_binaries = {
     'api-ms-win-core-datetime-l1-1-0.dll',
     'api-ms-win-core-debug-l1-1-0.dll',
     'api-ms-win-core-errorhandling-l1-1-0.dll',
+    'api-ms-win-core-fibers-l1-1-0.dll',
     'api-ms-win-core-file-l1-1-0.dll',
     'api-ms-win-core-file-l1-2-0.dll',
     'api-ms-win-core-file-l2-1-0.dll',

@@ -562,9 +562,9 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
         # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
         # russian game format: '0д.0ч.9м.0 д.0 ч.9 мин'
         # So handle it by concatenating digits until we hit a non-digit char
-        def parse_int(gd_bytes):
+        def parse_int(gd_bytes: bytes):
             int_data = b''
-            ##: PY3.10: Use iterbytes (PEP 467)
+            ##: PY3.11: Use iterbytes (PEP 467)
             for i in gd_bytes:
                 c = i.to_bytes(1, sys.byteorder)
                 if c.isdigit():

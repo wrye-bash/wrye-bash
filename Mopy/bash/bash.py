@@ -752,27 +752,27 @@ def _select_game_popup(game_infos):
 def _rightWxVersion(wxver):
     """Shows a warning if the wrong wxPython version is installed. Must only be
     called after _import_wx, setup_locale and balt is imported."""
-    if not wxver.startswith(u'4.1'):
+    if not wxver.startswith('4.2'):
         from . import balt
         return balt.askYes(
-            None, _(u'Warning: you appear to be using a non-supported version '
-                    u'of wxPython (%s). This will cause problems! It is '
-                    u'highly recommended you use a 4.1.x version. Do you '
-                    u'still want to run Wrye Bash?') % wxver,
-                    _(u'Warning: Non-Supported wxPython detected'))
+            None, _('Warning: you appear to be using a non-supported version '
+                    'of wxPython (%s). This will cause problems! It is '
+                    'highly recommended you use a %s version. Do you '
+                    'still want to run Wrye Bash?') % (wxver, '4.2.x'),
+            title=_('Warning: Non-Supported wxPython detected'))
     return True
 
 def _rightPythonVersion():
     """Shows an error if the wrong Python version is installed. Must only be
     called after _import_wx, setup_locale and balt is imported."""
     sysVersion = sys.version_info[:3]
-    if sysVersion < (3, 9) or sysVersion >= (4,):
+    if sysVersion < (3, 10) or sysVersion >= (4,):
         from . import balt
         balt.showError(
-            None, _(u'Only Python 3.9 and newer is supported (%s.%s.%s '
-                    u"detected). If you know what you're doing, install the "
-                    u'Python version of Wrye Bash and edit this warning out. '
-                    u'Wrye Bash will now exit.') % sysVersion,
-            title=_(u'Incompatible Python version detected'))
+            None, _("Only Python %s and newer is supported (%s detected). If "
+                    "you know what you're doing, install the Python version of "
+                    "Wrye Bash and edit this warning out. Wrye Bash will now "
+                    "exit.") % ('3.10', sysVersion),
+            title=_('Incompatible Python version detected'))
         return False
     return True

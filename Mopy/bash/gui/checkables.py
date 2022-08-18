@@ -43,7 +43,7 @@ class _ACheckable(_AComponent):
       - on_hovered(hovered: _ACheckable): Posted when the user hovers over this
         component. The parameter is the instance of _ACheckable that was
         hovered over."""
-    ##: PY3.10: Check if we can use '|' here now (in py3.9 doing it with
+    ##: PY3.11: Check if we can use '|' here now (in py3.10 doing it with
     # from __future__ import annotations breaks typing.get_type_hints)
     _native_widget: Union[_wx.CheckBox, _wx.RadioButton]
 
