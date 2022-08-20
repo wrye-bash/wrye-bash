@@ -669,7 +669,8 @@ class BSA(ABsa):
             start = len(_filenames)
             for list_index in range(start, start + folder_record.files_count):
                 try:
-                    # Inlined from _decode_path for startup performance
+                    # Inlined from _decode_path for startup performance - no
+                    # need to replace slashes though since these are file names
                     filename = str(file_names[list_index],
                                    encoding=_bsa_encoding)
                 except UnicodeDecodeError:
@@ -703,10 +704,16 @@ class BSA(ABsa):
                 # have been intended to be used though?
                 #folder_path = u'?%d' % folder_record.record_hash # hack - untested
                 name_size = unpack_byte(bsa_file)
-                folder_path = _decode_path(
-                    unpack_string(bsa_file, name_size - 1), my_bsa_name)
-                total_names_length += name_size
-                bsa_seek(1, 1) # discard null terminator
+                if not name_size:
+                    # Files sit at root level - read nothing
+                    folder_path = ''
+                    # Size is summed as strlen() + 1, so use +1 for root
+                    total_names_length += 1
+                else:
+                    folder_path = _decode_path(
+                        unpack_string(bsa_file, name_size - 1), my_bsa_name)
+                    bsa_seek(1, 1) # discard null terminator
+                    total_names_length += name_size
                 read_file_records(bsa_file, folder_path, folder_record)
             if total_names_length != self.bsa_header.total_folder_name_length:
                 deprint(u'%s reports wrong folder names length %d'
