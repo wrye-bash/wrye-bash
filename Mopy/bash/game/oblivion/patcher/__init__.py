@@ -501,16 +501,18 @@ scripts_types = {b'ACTI', b'ALCH', b'APPA', b'ARMO', b'BOOK', b'CLOT', b'CONT',
 #------------------------------------------------------------------------------
 actor_importer_attrs = {
     b'CREA': {
-        u'Actors.ACBS': (u'barterGold', u'baseSpell', u'calcMax', u'calcMin',
-                         u'fatigue', u'flags.biped', u'flags.essential',
-                         u'flags.flies', u'flags.noBloodDecal',
-                         u'flags.noBloodSpray', u'flags.noCombatInWater',
-                         u'flags.noCorpseCheck', u'flags.noHead',
-                         u'flags.noLeftArm', u'flags.noLowLevel',
-                         u'flags.noRightArm', u'flags.noShadow',
-                         u'flags.pcLevelOffset', u'flags.respawn',
-                         u'flags.swims', u'flags.walks',
-                         u'flags.weaponAndShield', u'level_offset'),
+        'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
+                        'fatigue', 'flags.biped', 'flags.essential',
+                        'flags.flies', 'flags.noBloodDecal',
+                        'flags.noBloodSpray', 'flags.noCombatInWater',
+                        'flags.noCorpseCheck', 'flags.noHead',
+                        'flags.noLeftArm', 'flags.noLowLevel',
+                        'flags.noRightArm', 'flags.noShadow', 'flags.respawn',
+                        'flags.swims', 'flags.walks', 'flags.weaponAndShield',
+                        # This flag directly impacts how the level_offset is
+                        # calculated, so use a fused attribute to always carry
+                        # them forward together
+                        ('flags.pcLevelOffset', 'level_offset')),
         u'Actors.AIData': (u'aggression', u'confidence', u'energyLevel',
                            u'responsibility', u'services', u'trainLevel',
                            u'trainSkill'),
@@ -529,13 +531,12 @@ actor_importer_attrs = {
         u'NPC.Race': (),
     },
     b'NPC_': {
-        u'Actors.ACBS': (u'barterGold', u'baseSpell', u'calcMax', u'calcMin',
-                         u'fatigue', u'flags.autoCalc',
-                         u'flags.canCorpseCheck', u'flags.essential',
-                         u'flags.female', u'flags.noLowLevel',
-                         u'flags.noPersuasion', u'flags.noRumors',
-                         u'flags.pcLevelOffset', u'flags.respawn',
-                         u'flags.summonable', u'level_offset',),
+        'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
+                        'fatigue', 'flags.autoCalc', 'flags.canCorpseCheck',
+                        'flags.essential', 'flags.female', 'flags.noLowLevel',
+                        'flags.noPersuasion', 'flags.noRumors',
+                        'flags.respawn', 'flags.summonable',
+                        ('flags.pcLevelOffset', 'level_offset')), # See above
         u'Actors.AIData': (u'aggression', u'confidence', u'energyLevel',
                            u'responsibility', u'services', u'trainSkill',
                            u'trainLevel'),

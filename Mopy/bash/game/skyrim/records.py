@@ -2467,7 +2467,7 @@ class MreNpc(MreActorBase):
         (4, 'autoCalc'),
         (5, 'unique'),
         (6, 'doesNotAffectStealth'),
-        (7, 'pcLevelMult'),
+        (7, 'pcLevelOffset'),
         (8, 'useTemplate'),
         (9, 'unknown9'),
         (10, 'unknown10'),

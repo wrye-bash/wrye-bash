@@ -309,14 +309,7 @@ destructible_types |= {b'CHIP', b'IMOD'}
 #------------------------------------------------------------------------------
 # Import Actors
 #------------------------------------------------------------------------------
-actor_importer_attrs[b'NPC_'][u'Actors.ACBS'] = ( # FO3 + flags.autocalcService
-    u'barterGold', u'calcMax', u'calcMin', u'dispositionBase', u'fatigue',
-    u'flags.autoCalc', u'flags.autocalcService', u'flags.canBeAllRaces',
-    u'flags.essential', u'flags.female', u'flags.isChargenFacePreset',
-    u'flags.noBloodDecal', u'flags.noBloodSpray', u'flags.noKnockDown',
-    u'flags.noLowLevel', u'flags.noRotatingHeadTrack', u'flags.notPushable',
-    u'flags.noVATSMelee', u'flags.pcLevelOffset', u'flags.respawn', u'karma',
-    u'level_offset', u'speedMultiplier')
+actor_importer_attrs[b'NPC_']['Actors.ACBS'] += ('flags.autocalcService',)
 
 #------------------------------------------------------------------------------
 # Tweak Assorted

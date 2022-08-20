@@ -23,6 +23,7 @@
 """This module houses preservers. A preserver is an import patcher that simply
 carries forward changes from the last tagged plugin. The goal is to eventually
 absorb all of them under the _APreserver base class."""
+from __future__ import annotations
 
 from collections import defaultdict, Counter
 from itertools import chain
@@ -38,10 +39,18 @@ from ...exception import ModSigMismatchError
 #------------------------------------------------------------------------------
 class APreserver(ImportPatcher):
     """Fairly mature base class for preservers. Some parts could (read should)
-    be moved to ImportPatcher and used to eliminate duplication with _AMerger.
-
-    :type rec_attrs: dict[bytes, tuple] | dict[bytes, dict[str, tuple]]"""
-    rec_attrs = {}
+    be moved to ImportPatcher and used to eliminate duplication with
+    _AMerger."""
+    # The record attributes to patch. Can be either a straight
+    # signature-to-tuple mapping or a more complex mapping for multi-tag
+    # importers (see _multi_tag below). Each of the tuples may contain
+    # regular attributes (represented as strings), which get carried forward
+    # one by one, and fused attributes (represented as tuples of strings),
+    # which get carried forward as a 'block' - if one of the attributes in a
+    # fused attribute differs, then all attributes in that 'block' get carried
+    # forward, even if the others are unchanged. See for example the handling
+    # of level_offset and pcLevelOffset
+    rec_attrs: dict[bytes, tuple] | dict[bytes, dict[str, tuple]] = {}
     # Record attributes that are FormIDs. These will be checked to see if their
     # FormID is valid before being imported
     ##: set for more patchers?
@@ -121,22 +130,38 @@ class APreserver(ImportPatcher):
     def _read_sigs(self):
         return self.srcs_sigs
 
-    # noinspection PyDefaultArgument
     def _init_data_loop(self, top_grup_sig, srcFile, srcMod, mod_id_data,
                         mod_tags, loaded_mods, __attrgetters=attrgetter_cache):
-        recAttrs = self.rec_type_attrs[top_grup_sig]
+        rec_attrs = self.rec_type_attrs[top_grup_sig]
         fid_attrs = self._fid_rec_attrs_class[top_grup_sig]
         if self._multi_tag:
             # For multi-tag importers, we need to look up the applied bash tags
             # and use those to find all applicable attributes
-            recAttrs = set(chain.from_iterable(
-                attrs for t, attrs in recAttrs.items() if t in mod_tags))
-            fid_attrs = set(chain.from_iterable(
-                attrs for t, attrs in fid_attrs.items() if t in mod_tags))
-        for rfid, record in srcFile.tops[top_grup_sig].iter_present_records():
-            # If we have FormID attributes, check those before importing
-            if fid_attrs:
-                fid_attr_values = [__attrgetters[a](record) for a in fid_attrs]
+            def _merge_attrs(to_merge):
+                """Helper to concatenate all applicable tags' attributes into a
+                final list while preserving order."""
+                merged_attrs = []
+                merged_attrs_set = set()
+                for t, m_attrs in to_merge.items():
+                    if t in mod_tags:
+                        for a in m_attrs:
+                            if a not in merged_attrs_set:
+                                merged_attrs_set.add(a)
+                                merged_attrs.append(a)
+                return merged_attrs
+            rec_attrs = _merge_attrs(rec_attrs)
+            fid_attrs = _merge_attrs(fid_attrs)
+        # Faster than a dict since we save the items() call in the (very hot)
+        # loop below
+        ra_getters = [(a, __attrgetters[a]) for a in rec_attrs]
+        fa_getters = [__attrgetters[a] for a in fid_attrs]
+        src_top = srcFile.tops[top_grup_sig]
+        # If we have FormID attributes, check those before importing - since
+        # this is constant for the entire loop, duplicate the loop to save the
+        # overhead in the no-FormIDs case
+        if fa_getters:
+            for rfid, record in src_top.iter_present_records():
+                fid_attr_values = [getter(record) for getter in fa_getters]
                 if any(f and (f.mod_id not in loaded_mods) for f in
                        fid_attr_values):
                     # Ignore the record. Another option would be to just ignore
@@ -144,10 +169,13 @@ class APreserver(ImportPatcher):
                     self.patchFile.patcher_mod_skipcount[
                         self._patcher_name][srcMod] += 1
                     continue
-            mod_id_data[rfid] = {attr: __attrgetters[attr](record) for attr in
-                                 recAttrs}
+                mod_id_data[rfid] = {attr: getter(record) for attr, getter in
+                                     ra_getters}
+        else:
+            for rfid, record in src_top.iter_present_records():
+                mod_id_data[rfid] = {attr: getter(record) for attr, getter in
+                                     ra_getters}
 
-    # noinspection PyDefaultArgument
     def initData(self, progress, __attrgetters=attrgetter_cache):
         if not self.isActive: return
         id_data = self.id_data
@@ -199,7 +227,6 @@ class APreserver(ImportPatcher):
             self._parse_csv_sources(progress)
         self.isActive = bool(self.srcs_sigs)
 
-    # noinspection PyDefaultArgument
     def scanModFile(self, modFile, progress, __attrgetters=attrgetter_cache):
         id_data = self.id_data
         for rsig in self.srcs_sigs:
@@ -217,7 +244,6 @@ class APreserver(ImportPatcher):
                         patchBlock.setRecord(record.getTypeCopy())
                         break
 
-    # noinspection PyDefaultArgument
     def _inner_loop(self, keep, records, top_mod_rec, type_count,
                     __attrgetters=attrgetter_cache):
         loop_setattr = setattr_deep if self._deep_attrs else setattr
@@ -228,7 +254,14 @@ class APreserver(ImportPatcher):
                 if __attrgetters[attr](record) != val: break
             else: continue
             for attr, val in id_data[rfid].items():
-                loop_setattr(record, attr, val)
+                if isinstance(attr, tuple):
+                    # This is a fused attribute, so unpack the attrs and assign
+                    # each value to each matching attr
+                    for f_a, f_v in zip(attr, val):
+                        loop_setattr(record, f_a, f_v)
+                else:
+                    # This is a regular attribute, so we just need to assign it
+                    loop_setattr(record, attr, val)
             keep(rfid)
             type_count[top_mod_rec] += 1
 
