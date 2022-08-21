@@ -39,7 +39,8 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
     MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, \
     MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
-    MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures
+    MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
+    MelCobjOutput
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -745,6 +746,51 @@ class MreClmt(MelRecord):
         MelClmtTiming(),
     )
     __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCmpo(MelRecord):
+    """Component."""
+    rec_sig = b'CMPO'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelFull(),
+        MelSoundCrafting(),
+        MelUInt32(b'DATA', 'auto_calc_value'),
+        MelFid(b'MNAM', 'scrap_item'),
+        MelFid(b'GNAM', 'mod_scrap_scalar'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCobj(MelRecord):
+    """Constructible Object."""
+    rec_sig = b'COBJ'
+    ##: What about isKeyedByEid?
+
+    melSet = MelSet(
+        MelEdid(),
+        MelSoundPickupDrop(),
+        MelSorted(MelArray('cobj_components',
+            MelStruct(b'FVPA', ['2I'], 'component_fid', 'component_count'),
+        ), sort_by_attrs='component_fid'),
+        MelDescription(),
+        MelConditionList(),
+        MelCobjOutput(),
+        MelBase(b'NAM1', 'unused1'),
+        MelBase(b'NAM2', 'unused2'),
+        MelBase(b'NAM3', 'unused3'),
+        MelFid(b'ANAM', 'menu_art_object'),
+        MelSorted(MelSimpleArray('category_keywords', MelFid(b'FNAM'))),
+        MelTruncatedStruct(b'INTV', ['2H'], 'created_object_count',
+            'cobj_priority', old_versions={'H'}),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+    def mergeFilter(self, modSet):
+        self.cobj_components = [c for c in self.cobj_components
+                                if c.component_fid.mod_id in modSet]
 
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):

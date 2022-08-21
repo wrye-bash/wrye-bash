@@ -49,7 +49,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelFootstepSound, MelArtObject, MelTemplateArmor, MelArtType, \
     MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, MelBookText, \
     MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
-    MelImageSpaceMod, MelClmtTiming, MelClmtTextures
+    MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -926,7 +926,7 @@ class MreClmt(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreCobj(MreWithItems):
-    """Constructible Object (Recipes)."""
+    """Constructible Object."""
     rec_sig = b'COBJ'
     isKeyedByEid = True # NULL fids are acceptable
 
@@ -935,9 +935,8 @@ class MreCobj(MreWithItems):
         MelItemsCounter(),
         MelItems(),
         MelConditionList(),
-        MelFid(b'CNAM','resultingItem'),
-        MelFid(b'BNAM','craftingStation'),
-        MelUInt16(b'NAM1', 'resultingQuantity'),
+        MelCobjOutput(),
+        MelUInt16(b'NAM1', 'created_object_count'),
     )
     __slots__ = melSet.getSlotsUsed()
 

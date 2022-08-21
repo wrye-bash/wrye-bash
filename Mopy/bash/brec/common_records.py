@@ -328,7 +328,7 @@ class MreLeveledListBase(MelRecord):
         self.de_records = None #--Set of items deleted by list (Delev and Relev mods)
         self.re_records = None #--Set of items relevelled by list (Relev mods)
 
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, modSet):
         self.entries = [entry for entry in self.entries if
                         entry.listId.mod_id in modSet]
 
@@ -425,6 +425,6 @@ class MreActorBase(MreWithItems):
     __slots__ = []
 
     def mergeFilter(self, modSet):
-        super(MreActorBase, self).mergeFilter(modSet)
+        super().mergeFilter(modSet)
         self.spells = [x for x in self.spells if x.mod_id in modSet]
         self.factions = [x for x in self.factions if x.faction.mod_id in modSet]

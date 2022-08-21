@@ -585,7 +585,6 @@ class MreArmo(MelRecord):
 class MreAspc(MelRecord):
     """Acoustic Space."""
     rec_sig = b'ASPC'
-
     isKeyedByEid = True # NULL fids are acceptable
 
     melSet = MelSet(
@@ -805,7 +804,7 @@ class MreClmt(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreCobj(MelRecord):
-    """Constructible Object (Recipes)."""
+    """Constructible Object."""
     rec_sig = b'COBJ'
 
     melSet = MelSet(

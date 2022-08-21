@@ -392,7 +392,7 @@ class MreRecord(object):
         myCopy.data = None
         return myCopy
 
-    def mergeFilter(self,modSet):
+    def mergeFilter(self, modSet):
         """This method is called by the bashed patch mod merger. The
         intention is to allow a record to be filtered according to the
         specified modSet. E.g. for a list record, items coming from mods not

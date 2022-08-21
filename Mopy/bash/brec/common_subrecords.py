@@ -298,6 +298,15 @@ class MelClmtWeatherTypes(MelSorted):
         ), sort_by_attrs='weather')
 
 #------------------------------------------------------------------------------
+class MelCobjOutput(MelSequential):
+    """Handles the COBJ subrecords CNAM and BNAM."""
+    def __init__(self):
+        super().__init__(
+            MelFid(b'CNAM', 'created_object'),
+            MelFid(b'BNAM', 'workbench_keyword'),
+        )
+
+#------------------------------------------------------------------------------
 class MelCoed(MelOptStruct):
     """Handles the COED (Owner Data) subrecord used for inventory items and
     leveled lists since Skyrim."""
