@@ -50,7 +50,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, MelBookText, \
     MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
-    MelSoundClose, AMelItems, MelContData
+    MelSoundClose, AMelItems, MelContData, MelCpthShared
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -955,9 +955,7 @@ class MreCpth(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelConditionList(),
-        MelSimpleArray('relatedCameraPaths', MelFid(b'ANAM')),
-        MelUInt8(b'DATA', 'cameraZoom'),
-        MelFids('cameraShots', MelFid(b'SNAM')),
+        MelCpthShared(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -966,23 +964,37 @@ class MreCsty(MelRecord):
     """Combat Style."""
     rec_sig = b'CSTY'
 
-    CstyTypeFlags = Flags.from_names('dueling', 'flanking',
-                                     'allowDualWielding')
+    _csty_flags = Flags.from_names('dueling', 'flanking',
+        'allow_dual_wielding')
 
     melSet = MelSet(
         MelEdid(),
-        # esm = Equipment Score Mult
-        MelStruct(b'CSGD', [u'10f'],'offensiveMult','defensiveMult','groupOffensiveMult',
-        'esmMelee','esmMagic','esmRanged','esmShout','esmUnarmed','esmStaff',
-        'avoidThreatChance',),
-        MelBase(b'CSMD','unknownValue'),
-        MelStruct(b'CSME', [u'8f'],'atkStaggeredMult','powerAtkStaggeredMult','powerAtkBlockingMult',
-        'bashMult','bashRecoilMult','bashAttackMult','bashPowerAtkMult','specialAtkMult',),
-        MelStruct(b'CSCR', [u'4f'],'circleMult','fallbackMult','flankDistance','stalkTime',),
-        MelFloat(b'CSLR', 'strafeMult'),
-        MelStruct(b'CSFL', [u'8f'],'hoverChance','diveBombChance','groundAttackChance','hoverTime',
-        'groundAttackTime','perchAttackChance','perchAttackTime','flyingAttackChance',),
-        MelUInt32Flags(b'DATA', u'flags', CstyTypeFlags),
+        MelStruct(b'CSGD', ['10f'], 'general_offensive_mult',
+            'general_defensive_mult', 'general_group_offensive_mult',
+            'general_equipment_score_mult_melee',
+            'general_equipment_score_mult_magic',
+            'general_equipment_score_mult_ranged',
+            'general_equipment_score_mult_shout',
+            'general_equipment_score_mult_unarmed',
+            'general_equipment_score_mult_staff',
+            'general_avoid_threat_chance'),
+        MelBase(b'CSMD', 'unknown1'),
+        MelStruct(b'CSME', ['8f'], 'melee_attack_staggered_mult',
+            'melee_power_attack_staggered_mult',
+            'melee_power_attack_blocking_mult',
+            'melee_bash_mult', 'melee_bash_recoil_mult',
+            'melee_bash_attack_mult', 'melee_bash_power_attack_mult',
+            'melee_special_attack_mult'),
+        MelStruct(b'CSCR', ['4f'], 'close_range_circle_mult',
+            'close_range_fallback_mult', 'close_range_flank_distance',
+            'close_range_stalk_time'),
+        MelFloat(b'CSLR', 'long_range_strafe_mult'),
+        MelStruct(b'CSFL', ['8f'], 'flight_hover_chance',
+            'flight_dive_bomb_chance', 'flight_ground_attack_chance',
+            'flight_hover_time', 'flight_ground_attack_time',
+            'flight_perch_attack_chance', 'flight_perch_attack_time',
+            'flight_flying_attack_chance'),
+        MelUInt32Flags(b'DATA', 'csty_flags', _csty_flags),
     )
     __slots__ = melSet.getSlotsUsed()
 

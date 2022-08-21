@@ -48,7 +48,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
-    MelSoundClose, AMelItems, AMelLLItems, MelContData
+    MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -852,9 +852,7 @@ class MreCpth(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelConditionsFo3(),
-        MelSimpleArray('relatedCameraPaths', MelFid(b'ANAM')),
-        MelUInt8(b'DATA', 'cameraZoom'),
-        MelFids('cameraShots', MelFid(b'SNAM')),
+        MelCpthShared(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -946,40 +944,45 @@ class MreCsty(MelRecord):
     """Combat Style."""
     rec_sig = b'CSTY'
 
-    _flagsA = Flags.from_names(
-        (0, 'advanced'),
-        (1, 'useChanceForAttack'),
-        (2, 'ignoreAllies'),
-        (3, 'willYield'),
-        (4, 'rejectsYields'),
-        (5, 'fleeingDisabled'),
-        (6, 'prefersRanged'),
-        (7, 'meleeAlertOK'),
+    _csty_flags = Flags.from_names(
+        'advanced',
+        'use_chance_for_attack',
+        'ignore_allies',
+        'will_yield',
+        'rejects_yields',
+        'fleeing_disabled',
+        'prefers_ranged',
+        'melee_alert_ok',
     )
 
     melSet = MelSet(
         MelEdid(),
-        MelOptStruct(b'CSTD', [u'2B', u'2s', u'8f', u'2B', u'2s', u'3f', u'B', u'3s', u'2f', u'5B', u'3s', u'2f', u'H', u'2s', u'2B', u'2s', u'f'],'dodgeChance',
-                    'lrChance','unused1','lrTimerMin','lrTimerMax',
-                    'forTimerMin','forTimerMax','backTimerMin','backTimerMax',
-                    'idleTimerMin','idleTimerMax','blkChance','atkChance',
-                    'unused2','atkBRecoil','atkBunc','atkBh2h',
-                    'pAtkChance','unused3','pAtkBRecoil','pAtkBUnc',
-                    'pAtkNormal','pAtkFor','pAtkBack','pAtkL','pAtkR',
-                    'unused4','holdTimerMin','holdTimerMax',
-                    (_flagsA,'flagsA'),'unused5','acroDodge',
-                    ('rushChance',25),'unused6',('rushMult',1.0)),
-        MelOptStruct(b'CSAD', [u'21f'], 'dodgeFMult', 'dodgeFBase', 'encSBase', 'encSMult',
-                     'dodgeAtkMult', 'dodgeNAtkMult', 'dodgeBAtkMult', 'dodgeBNAtkMult',
-                     'dodgeFAtkMult', 'dodgeFNAtkMult', 'blockMult', 'blockBase',
-                     'blockAtkMult', 'blockNAtkMult', 'atkMult','atkBase', 'atkAtkMult',
-                     'atkNAtkMult', 'atkBlockMult', 'pAtkFBase', 'pAtkFMult'),
-        MelOptStruct(b'CSSD', [u'9f', u'4s', u'I', u'5f'], 'coverSearchRadius', 'takeCoverChance',
-                     'waitTimerMin', 'waitTimerMax', 'waitToFireTimerMin',
-                     'waitToFireTimerMax', 'fireTimerMin', 'fireTimerMax',
-                     'rangedWeaponRangeMultMin','unknown1','weaponRestrictions',
-                     'rangedWeaponRangeMultMax','maxTargetingFov','combatRadius',
-                     'semiAutomaticFireDelayMultMin','semiAutomaticFireDelayMultMax'),
+        MelOptStruct(b'CSTD',
+            ['2B', '2s', '8f', '2B', '2s', '3f', 'B', '3s', '2f', '5B', '3s',
+             '2f', 'H', '2s', '2B', '2s', 'f'], 'dodge_chance', 'lr_chance',
+            'unused1', 'lr_timer_min', 'lr_timer_max', 'for_timer_min',
+            'for_timer_max', 'back_timer_min', 'back_timer_max',
+            'idle_timer_min', 'idle_timer_max', 'blk_chance', 'atk_chance',
+            'unused2', 'atk_brecoil', 'atk_bunc', 'atk_bh_2_h', 'p_atk_chance',
+            'unused3', 'p_atk_brecoil', 'p_atk_bunc', 'p_atk_normal',
+            'p_atk_for', 'p_atk_back', 'p_atk_l', 'p_atk_r', 'unused4',
+            'hold_timer_min', 'hold_timer_max', (_csty_flags, 'csty_flags'),
+            'unused5', 'acro_dodge', ('rush_chance', 25), 'unused6',
+            ('rush_mult', 1.0)),
+        MelOptStruct(b'CSAD', ['21f'], 'dodge_fmult', 'dodge_fbase',
+            'enc_sbase', 'enc_smult', 'dodge_atk_mult', 'dodge_natk_mult',
+            'dodge_batk_mult', 'dodge_bnatk_mult', 'dodge_fatk_mult',
+            'dodge_fnatk_mult', 'block_mult', 'block_base', 'block_atk_mult',
+            'block_natk_mult', 'atk_mult', 'atk_base', 'atk_atk_mult',
+            'atk_natk_mult', 'atk_block_mult', 'p_atk_fbase', 'p_atk_fmult'),
+        MelOptStruct(b'CSSD', ['9f', '4s', 'I', '5f'], 'cover_search_radius',
+            'take_cover_chance', 'wait_timer_min', 'wait_timer_max',
+            'wait_to_fire_timer_min', 'wait_to_fire_timer_max',
+            'fire_timer_min', 'fire_timer_max', 'ranged_weapon_range_mult_min',
+            'unknown1', 'weapon_restrictions', 'ranged_weapon_range_mult_max',
+            'max_targeting_fov', 'combat_radius',
+            'semi_automatic_fire_delay_mult_min',
+            'semi_automatic_fire_delay_mult_max'),
     )
     __slots__ = melSet.getSlotsUsed()
 

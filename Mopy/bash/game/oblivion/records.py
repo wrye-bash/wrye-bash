@@ -843,49 +843,48 @@ class MreCrea(AMreActor):
 class MreCsty(MelRecord):
     """Combat Style."""
     rec_sig = b'CSTY'
-    _flagsA = Flags.from_names(
-        ( 0,'advanced'),
-        ( 1,'useChanceForAttack'),
-        ( 2,'ignoreAllies'),
-        ( 3,'willYield'),
-        ( 4,'rejectsYields'),
-        ( 5,'fleeingDisabled'),
-        ( 6,'prefersRanged'),
-        ( 7,'meleeAlertOK'),
+
+    _csty_flags1 = Flags.from_names(
+        'advanced',
+        'use_chance_for_attack',
+        'ignore_allies',
+        'will_yield',
+        'rejects_yields',
+        'fleeing_disabled',
+        'prefers_ranged',
+        'melee_alert_ok',
     )
-    _flagsB = Flags.from_names('doNotAcquire')
+    _csty_flags2 = Flags.from_names('do_not_acquire')
 
     melSet = MelSet(
         MelEdid(),
         MelTruncatedStruct(b'CSTD',
-            [u'2B', u'2s', u'8f', u'2B', u'2s', u'3f', u'B', u'3s', u'2f',
-             u'5B', u'3s', u'2f', u'2B', u'2s', u'7f', u'B', u'3s', u'f',
-             u'I'], 'dodgeChance',
-            'lrChance', 'unused1', 'lrTimerMin', 'lrTimerMax',
-            'forTimerMin', 'forTimerMax', 'backTimerMin', 'backTimerMax',
-            'idleTimerMin', 'idleTimerMax', 'blkChance', 'atkChance',
-            'unused2', 'atkBRecoil', 'atkBunc', 'atkBh2h',
-            'pAtkChance', 'unused3', 'pAtkBRecoil', 'pAtkBUnc',
-            'pAtkNormal', 'pAtkFor', 'pAtkBack', 'pAtkL', 'pAtkR',
-            'unused4', 'holdTimerMin', 'holdTimerMax',
-            (_flagsA, 'flagsA'), 'acroDodge', 'unused5',
-            ('rMultOpt', 1.0), ('rMultMax', 1.0), ('mDistance', 250.0),
-            ('rDistance', 1000.0), ('buffStand', 325.0), ('rStand', 500.0),
-            ('groupStand', 325.0), ('rushChance', 25), 'unused6',
-            ('rushMult', 1.0), (_flagsB, 'flagsB'), old_versions={
+            ['2B', '2s', '8f', '2B', '2s', '3f', 'B', '3s', '2f', '5B', '3s',
+             '2f', '2B', '2s', '7f', 'B', '3s', 'f', 'I'], 'dodge_chance',
+            'lr_chance', 'unused1', 'lr_timer_min', 'lr_timer_max',
+            'for_timer_min', 'for_timer_max', 'back_timer_min',
+            'back_timer_max', 'idle_timer_min', 'idle_timer_max', 'blk_chance',
+            'atk_chance', 'unused2', 'atk_brecoil', 'atk_bunc', 'atk_bh_2_h',
+            'p_atk_chance', 'unused3', 'p_atk_brecoil', 'p_atk_bunc',
+            'p_atk_normal', 'p_atk_for', 'p_atk_back', 'p_atk_l', 'p_atk_r',
+            'unused4', 'hold_timer_min', 'hold_timer_max',
+            (_csty_flags1, 'csty_flags1'), 'acro_dodge', 'unused5',
+            ('r_mult_opt', 1.0), ('r_mult_max', 1.0), ('m_distance', 250.0),
+            ('r_distance', 1000.0), ('buff_stand', 325.0), ('r_stand', 500.0),
+            ('group_stand', 325.0), ('rush_chance', 25), 'unused6',
+            ('rush_mult', 1.0), (_csty_flags2, 'csty_flags2'), old_versions={
                 '2B2s8f2B2s3fB3s2f5B3s2f2B2s7fB3sf',
                 '2B2s8f2B2s3fB3s2f5B3s2f2B2s7f',
                 '2B2s8f2B2s3fB3s2f5B3s2f2B2s5f',
                 '2B2s8f2B2s3fB3s2f5B3s2f2B2s2f',
                 '2B2s8f2B2s3fB3s2f5B3s2f2B2s',
             }),
-        MelOptStruct(b'CSAD', [u'21f'], 'dodgeFMult', 'dodgeFBase', 'encSBase',
-                     'encSMult', 'dodgeAtkMult', 'dodgeNAtkMult',
-                     'dodgeBAtkMult', 'dodgeBNAtkMult', 'dodgeFAtkMult',
-                     'dodgeFNAtkMult', 'blockMult', 'blockBase',
-                     'blockAtkMult', 'blockNAtkMult', 'atkMult', 'atkBase',
-                     'atkAtkMult', 'atkNAtkMult', 'atkBlockMult', 'pAtkFBase',
-                     'pAtkFMult'),
+        MelOptStruct(b'CSAD', ['21f'], 'dodge_fmult', 'dodge_fbase',
+            'enc_sbase', 'enc_smult', 'dodge_atk_mult', 'dodge_natk_mult',
+            'dodge_batk_mult', 'dodge_bnatk_mult', 'dodge_fatk_mult',
+            'dodge_fnatk_mult', 'block_mult', 'block_base', 'block_atk_mult',
+            'block_natk_mult', 'atk_mult', 'atk_base', 'atk_atk_mult',
+            'atk_natk_mult', 'atk_block_mult', 'p_atk_fbase', 'p_atk_fmult'),
         )
     __slots__ = melSet.getSlotsUsed()
 

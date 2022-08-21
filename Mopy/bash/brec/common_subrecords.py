@@ -373,6 +373,17 @@ class MelContData(MelStruct):
             'cont_weight')
 
 #------------------------------------------------------------------------------
+class MelCpthShared(MelSequential):
+    """Handles the CPTH subrecords ANAM, DATA and SNAM. Identical between all
+    games' CPTH records."""
+    def __init__(self):
+        super().__init__(
+            MelSimpleArray('related_camera_paths', MelFid(b'ANAM')),
+            MelUInt8(b'DATA', 'camera_zoom'),
+            MelFids('camera_shots', MelFid(b'SNAM')),
+        ),
+
+#------------------------------------------------------------------------------
 class MelDebrData(MelStruct):
     def __init__(self):
         # Format doesn't matter, struct.Struct('') works! ##: MelStructured

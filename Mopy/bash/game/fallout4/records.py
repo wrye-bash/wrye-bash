@@ -40,7 +40,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, \
     MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
     MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
-    MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose
+    MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose, \
+    MelCpthShared
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -819,6 +820,71 @@ class MreCont(AMreWithItems):
         MelSoundClose(),
         MelFid(b'TNAM', 'sound_take_all'),
         MelFid(b'ONAM', 'cont_filter_list'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCpth(MelRecord):
+    """Camera Path."""
+    rec_sig = b'CPTH'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelConditionList(),
+        MelCpthShared(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCsty(MelRecord):
+    rec_sig = b'CSTY'
+
+    _csty_flags = Flags.from_names('dueling', 'flanking',
+        'allow_dual_wielding', 'charging', 'retarget_any_nearby_melee_target')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'CSGD', ['12f'], 'general_offensive_mult',
+            'general_defensive_mult', 'general_group_offensive_mult',
+            'general_equipment_score_mult_melee',
+            'general_equipment_score_mult_magic',
+            'general_equipment_score_mult_ranged',
+            'general_equipment_score_mult_shout',
+            'general_equipment_score_mult_unarmed',
+            'general_equipment_score_mult_staff',
+            'general_avoid_threat_chance', 'general_dodge_threat_chance',
+            'general_evade_threat_chance'),
+        MelBase(b'CSMD', 'unknown1'),
+        MelTruncatedStruct(b'CSME', ['10f'], 'melee_attack_staggered_mult',
+            'melee_power_attack_staggered_mult',
+            'melee_power_attack_blocking_mult',
+            'melee_bash_mult', 'melee_bash_recoil_mult',
+            'melee_bash_attack_mult', 'melee_bash_power_attack_mult',
+            'melee_special_attack_mult', 'melee_block_when_staggered_mult',
+            'melee_attack_when_staggered_mult', old_versions={'9f'}),
+        MelFloat(b'CSRA', 'ranged_accuracy_mult'),
+        MelStruct(b'CSCR', ['9f', 'I', 'f'], 'close_range_dueling_circle_mult',
+            'close_range_dueling_fallback_mult',
+            'close_range_flanking_flank_distance',
+            'close_range_flanking_stalk_time',
+            'close_range_charging_charge_distance',
+            'close_range_charging_throw_probability',
+            'close_range_charging_sprint_fast_probability',
+            'close_range_charging_sideswipe_probability',
+            'close_range_charging_disengage_probability',
+            'close_range_charging_throw_max_targets',
+            'close_range_flanking_flank_variance'),
+        MelTruncatedStruct(b'CSLR', ['5f'], 'long_range_strafe_mult',
+            'long_range_adjust_range_mult', 'long_range_crouch_mult',
+            'long_range_wait_mult', 'long_range_range_mult',
+            old_versions={'4f', '3f'}),
+        MelFloat(b'CSCV', 'cover_search_distance_mult'),
+        MelStruct(b'CSFL', ['8f'], 'flight_hover_chance',
+            'flight_dive_bomb_chance', 'flight_ground_attack_chance',
+            'flight_hover_time', 'flight_ground_attack_time',
+            'flight_perch_attack_chance', 'flight_perch_attack_time',
+            'flight_flying_attack_chance'),
+        MelUInt32Flags(b'DATA', 'csty_flags', _csty_flags),
     )
     __slots__ = melSet.getSlotsUsed()
 
