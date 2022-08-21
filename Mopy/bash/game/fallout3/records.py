@@ -47,7 +47,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, MelExtra, \
     MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
-    MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat
+    MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
+    MelSoundClose, AMelItems, AMelLLItems, MelContData
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -216,14 +217,10 @@ class MelEquipmentTypeFo3(MelSInt32):
         super().__init__(b'ETYP', 'equipment_type', -1)
 
 #------------------------------------------------------------------------------
-class MelItems(MelSorted):
-    """Wraps MelGroups for the common task of defining a list of items."""
+class MelItems(AMelItems):
+    """Handles the CNTO/COED subrecords defining items."""
     def __init__(self):
-        super(MelItems, self).__init__(MelGroups(u'items',
-            MelStruct(b'CNTO', [u'I', u'i'], (FID, u'item'), (u'count', 1)),
-            MelOptStruct(b'COED', [u'2I', u'f'], (FID, u'owner'), (FID, u'glob'),
-                         (u'condition', 1.0)),
-        ), sort_by_attrs=('item', 'count', 'condition', 'owner', 'glob'))
+        super().__init__(with_counter=False)
 
 #------------------------------------------------------------------------------
 class MelLevListLvld(MelUInt8):
@@ -250,6 +247,14 @@ class MelLinkedDecals(MelSorted):
         super().__init__(MelGroups('linkedDecals',
             MelStruct(b'XDCR', ['2I'], (FID, 'reference'), 'unknown'),
         ), sort_by_attrs='reference')
+
+#------------------------------------------------------------------------------
+class MelLLItems(AMelLLItems):
+    """Handles the LVLO/COED subrecords defining leveled list entries."""
+    def __init__(self):
+        super().__init__(MelLevListLvlo(b'LVLO', ['h', '2s', 'I', 'h', '2s'],
+            'level', 'unused1', (FID, 'listId'), ('count', 1), 'unused2',
+            old_versions={'iI'}), with_counter=False)
 
 #------------------------------------------------------------------------------
 class MelRaceHeadPart(MelGroup):
@@ -284,6 +289,13 @@ class MelRaceHeadPart(MelGroup):
         super(MelRaceHeadPart, self).dumpData(record, out)
 
 #------------------------------------------------------------------------------
+class MelSoundRandomLooping(MelFid):
+    """Handles the common RNAM (Sound - Random/Looping) subrecord introduced in
+    FNV."""
+    def __init__(self):
+        super().__init__(b'RNAM', 'sound_random_looping')
+
+#------------------------------------------------------------------------------
 class MreLeveledList(AMreLeveledList):
     """Leveled item/creature/spell list.."""
     top_copy_attrs = (u'chanceNone', u'glob')
@@ -295,14 +307,7 @@ class MreLeveledList(AMreLeveledList):
         MelLevListLvld(b'LVLD', u'chanceNone'),
         MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', u'glob'),
-        MelSorted(MelGroups(u'entries',
-            MelLevListLvlo(b'LVLO', [u'h', u'2s', u'I', u'h', u'2s'], u'level',
-                           u'unused1', (FID, u'listId'), (u'count', 1),
-                           u'unused2', old_versions={u'iI'}),
-            MelOptStruct(b'COED', [u'2I', u'f'], (FID, u'owner'), (FID, u'glob'),
-                         (u'condition', 1.0)),
-        ), sort_by_attrs=('level', 'listId', 'count', 'condition', 'owner',
-                          'glob')),
+        MelLLItems(),
         MelModel(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -824,8 +829,6 @@ class MreCont(AMreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
-    _flags = Flags.from_names(None, 'respawns')
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -834,10 +837,10 @@ class MreCont(AMreWithItems):
         MelScript(),
         MelItems(),
         MelDestructible(),
-        MelStruct(b'DATA', [u'B', u'f'],(_flags, u'flags'),'weight'),
+        MelContData(),
         MelSound(),
-        MelFid(b'QNAM','soundClose'),
-        fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
+        MelSoundClose(),
+        fnv_only(MelSoundRandomLooping()),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1065,7 +1068,7 @@ class MreDoor(MelRecord):
         MelScript(),
         MelDestructible(),
         MelSound(),
-        MelFid(b'ANAM','soundClose'),
+        MelSoundClose(b'ANAM'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', _flags),
     )
@@ -1627,7 +1630,7 @@ class MreKeym(MelRecord):
         MelDestructible(),
         MelSoundPickupDrop(),
         MelValueWeight(),
-        fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
+        fnv_only(MelSoundRandomLooping()),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1830,7 +1833,7 @@ class MreMisc(MelRecord):
         MelDestructible(),
         MelSoundPickupDrop(),
         MelValueWeight(),
-        fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
+        fnv_only(MelSoundRandomLooping()),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2878,7 +2881,7 @@ class MreStat(MelRecord):
         MelBounds(),
         MelModel(),
         fnv_only(MelSInt8(b'BRUS', 'passthroughSound', -1)),
-        fnv_only(MelFid(b'RNAM', 'soundRandomLooping')),
+        fnv_only(MelSoundRandomLooping()),
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -42,7 +42,8 @@ from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, \
 # Base classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class AMreWithItems(MelRecord):
-    """Base class for record types that contain a list of items (MelItems)."""
+    """Base class for record types that contain a list of items (see
+    common_subrecords.AMelItems)."""
     __slots__ = []
 
     def mergeFilter(self, modSet):

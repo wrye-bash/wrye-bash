@@ -40,7 +40,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, \
     MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
     MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
-    MelCobjOutput
+    MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -158,12 +158,16 @@ class MelFtyp(MelFid):
         super().__init__(b'FTYP', 'forced_loc_ref_type')
 
 #------------------------------------------------------------------------------
+class MelItems(AMelItems):
+    """Handles the COCT/CNTO/COED subrecords defining items."""
+
+#------------------------------------------------------------------------------
 class MelLLItems(AMelLLItems):
-    """Handles the LVLO and LLCT subrecords defining leveled list items"""
+    """Handles the LLCT/LVLO/COED subrecords defining leveled list entries."""
     def __init__(self):
-        super().__init__([MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'],
+        super().__init__(MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'],
             'level', 'unused1', (FID, 'listId'), ('count', 1), 'chance_none',
-            'unused2')])
+            'unused2'))
 
 #------------------------------------------------------------------------------
 class MelNativeTerminal(MelFid):
@@ -791,6 +795,32 @@ class MreCobj(MelRecord):
     def mergeFilter(self, modSet):
         self.cobj_components = [c for c in self.cobj_components
                                 if c.component_fid.mod_id in modSet]
+
+#------------------------------------------------------------------------------
+class MreCont(AMreWithItems):
+    """Container."""
+    rec_sig = b'CONT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelItems(),
+        MelDestructible(),
+        MelContData(),
+        MelKeywords(),
+        MelFtyp(),
+        MelProperties(),
+        MelNativeTerminal(),
+        MelSound(),
+        MelSoundClose(),
+        MelFid(b'TNAM', 'sound_take_all'),
+        MelFid(b'ONAM', 'cont_filter_list'),
+    )
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreGmst(AMreGmst):

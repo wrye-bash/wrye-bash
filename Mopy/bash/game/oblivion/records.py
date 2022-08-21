@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelClmtWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
-    MelClmtTextures
+    MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -117,12 +117,10 @@ class MelEmbeddedScript(MelSequential):
         super(MelEmbeddedScript, self).__init__(*seq_elements)
 
 #------------------------------------------------------------------------------
-class MelItems(MelSorted):
-    """Wraps MelGroups for the common task of defining a list of items."""
+class MelItems(AMelItems):
+    """Handles the CNTO subrecords defining items."""
     def __init__(self):
-        super(MelItems, self).__init__(MelGroups(u'items',
-            MelStruct(b'CNTO', [u'I', u'i'], (FID, u'item'), u'count'),
-        ), sort_by_attrs='item')
+        super().__init__(with_coed=False, with_counter=False)
 
 #------------------------------------------------------------------------------
 class MelLevListLvld(MelUInt8):
@@ -145,6 +143,14 @@ class MelLevListLvlo(MelTruncatedStruct):
             # Pad it in the middle, then let our parent deal with the rest
             unpacked_val = (unpacked_val[0], null2, unpacked_val[1])
         return super(MelLevListLvlo, self)._pre_process_unpacked(unpacked_val)
+
+#------------------------------------------------------------------------------
+class MelLLItems(AMelLLItems):
+    """Handles the LVLO subrecords defining leveled list entries."""
+    def __init__(self):
+        super().__init__(MelLevListLvlo(b'LVLO', ['h', '2s', 'I', 'h', '2s'],
+            'level', 'unused1', (FID, 'listId'), ('count', 1), 'unused2',
+            old_versions={'iI'}), with_coed=False, with_counter=False)
 
 #------------------------------------------------------------------------------
 class MelOwnershipTes4(MelOwnership):
@@ -453,12 +459,7 @@ class MreLeveledList(AMreLeveledList):
         MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelScript(), # LVLC only
         MelFid(b'TNAM','template'),
-        MelSorted(MelGroups('entries',
-            MelLevListLvlo(b'LVLO', [u'h', u'2s', u'I', u'h', u'2s'],
-                           u'level', u'unused1',
-                           (FID, u'listId'), (u'count', 1),
-                           u'unused2', old_versions={u'iI'}),
-        ), sort_by_attrs=('level', 'listId', 'count')),
+        MelLLItems(),
         MelNull(b'DATA'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -764,17 +765,15 @@ class MreCont(AMreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
-    _flags = Flags.from_names(None,'respawns')
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelModel(),
         MelScript(),
         MelItems(),
-        MelStruct(b'DATA', [u'B', u'f'],(_flags, u'flags'),'weight'),
+        MelContData(),
         MelSound(),
-        MelFid(b'QNAM','soundClose'),
+        MelSoundClose(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -918,7 +917,7 @@ class MreDoor(MelRecord):
         MelModel(),
         MelScript(),
         MelSound(),
-        MelFid(b'ANAM','soundClose'),
+        MelSoundClose(b'ANAM'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', _flags),
         MelSorted(MelFids('destinations', MelFid(b'TNAM'))),

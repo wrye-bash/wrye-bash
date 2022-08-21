@@ -40,7 +40,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelDebrData, MelClmtWeatherTypes, AMelVmad, \
     MelActorSounds, MelFactionRanks, MelSorted, MelReflectedRefractedBy, \
-    perk_effect_key, MelValueWeight, MelCoed, MelSound, MelWaterType, \
+    perk_effect_key, MelValueWeight, MelSound, MelWaterType, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
     MelEffects, AMelLLItems, MelUnloadEvent, MelShortName, AVmadContext, \
@@ -49,7 +49,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelFootstepSound, MelArtObject, MelTemplateArmor, MelArtType, \
     MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, MelBookText, \
     MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
-    MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput
+    MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
+    MelSoundClose, AMelItems, MelContData
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -200,19 +201,8 @@ class MelIdleHandler(MelGroup):
         )
 
 #------------------------------------------------------------------------------
-class MelItems(MelSorted):
-    """Wraps MelGroups for the common task of defining a list of items."""
-    def __init__(self):
-        super(MelItems, self).__init__(MelGroups('items',
-            MelStruct(b'CNTO', [u'I', u'i'], (FID, u'item'), u'count'),
-            MelCoed(),
-        ), sort_by_attrs=('item', 'count', 'itemCondition', 'owner', 'glob'))
-
-class MelItemsCounter(MelCounter):
-    """Wraps MelCounter for the common task of defining an items counter."""
-    def __init__(self):
-        super(MelItemsCounter, self).__init__(MelUInt32(b'COCT', 'item_count'),
-                                              counts='items')
+class MelItems(AMelItems):
+    """Handles the COCT/CNTO/COED subrecords defining items."""
 
 #------------------------------------------------------------------------------
 class MelLinkedReferences(MelSorted):
@@ -226,12 +216,11 @@ class MelLinkedReferences(MelSorted):
 
 #------------------------------------------------------------------------------
 class MelLLItems(AMelLLItems):
-    """Handles the LVLO and LLCT subrecords defining leveled list items"""
+    """Handles the LLCT/LVLO/COED subrecords defining leveled list entries."""
     def __init__(self, with_coed=True):
-        super().__init__([
-            MelStruct(b'LVLO', ['H', '2s', 'I', 'H', '2s'], 'level',
-                'unknown1', (FID, 'listId'), ('count', 1), 'unknown2')],
-            with_coed)
+        super().__init__(MelStruct(b'LVLO', ['H', '2s', 'I', 'H', '2s'],
+            'level', 'unknown1', (FID, 'listId'), ('count', 1), 'unknown2'),
+            with_coed=with_coed)
 
 #------------------------------------------------------------------------------
 class MelLocation(MelUnion):
@@ -932,7 +921,6 @@ class MreCobj(AMreWithItems):
 
     melSet = MelSet(
         MelEdid(),
-        MelItemsCounter(),
         MelItems(),
         MelConditionList(),
         MelCobjOutput(),
@@ -945,21 +933,17 @@ class MreCont(AMreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
-    ContTypeFlags = Flags.from_names('allowSoundsWhenAnimation', 'respawns',
-                                     'showOwner')
-
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
         MelBounds(),
         MelFull(),
         MelModel(),
-        MelItemsCounter(),
         MelItems(),
         MelDestructible(),
-        MelStruct(b'DATA', [u'B', u'f'],(ContTypeFlags, u'flags'),'weight'),
+        MelContData(),
         MelSound(),
-        MelFid(b'QNAM','soundClose'),
+        MelSoundClose(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1106,7 +1090,7 @@ class MreDoor(MelRecord):
         MelModel(),
         MelDestructible(),
         MelSound(),
-        MelFid(b'ANAM','soundClose'),
+        MelSoundClose(b'ANAM'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', DoorTypeFlags),
         MelSorted(MelFids('random_teleports', MelFid(b'TNAM'))),
@@ -2498,7 +2482,6 @@ class MreNpc(AMreActor):
         MelSorted(MelGroups('perks',
             MelOptStruct(b'PRKR', [u'I', u'B', u'3s'],(FID, 'perk'),'rank','prkrUnused'),
         ), sort_by_attrs='perk'),
-        MelItemsCounter(),
         MelItems(),
         MelStruct(b'AIDT', [u'B', u'B', u'B', u'B', u'B', u'B', u'B', u'B', u'I', u'I', u'I'], 'aggression', 'confidence',
                   'energyLevel', 'responsibility', 'mood', 'assistance',
@@ -2969,7 +2952,6 @@ class MreQust(MelRecord):
             ),
             MelConditionList(),
             MelKeywords(),
-            MelItemsCounter(),
             MelItems(),
             MelFid(b'SPOR','spectatorOverridePackageList'),
             MelFid(b'OCOR','observeDeadBodyOverridePackageList'),

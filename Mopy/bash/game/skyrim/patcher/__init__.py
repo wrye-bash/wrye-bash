@@ -495,8 +495,8 @@ soundsTypes = {
     b'ARMO': (u'pickupSound', u'dropSound'),
     b'ASPC': ('sound', 'use_sound_from_region', 'aspc_reverb'),
     b'BOOK': (u'pickupSound', u'dropSound'),
-    b'CONT': ('sound', 'soundClose'),
-    b'DOOR': ('sound', 'soundClose', 'soundLoop'),
+    b'CONT': ('sound', 'sound_close'),
+    b'DOOR': ('sound', 'sound_close', 'soundLoop'),
     b'EFSH': (u'ambientSound',), ##: This is also in graphicsTypes!
     b'EXPL': (u'sound1', u'sound2'),
     b'FLOR': ('sound',),
