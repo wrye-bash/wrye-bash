@@ -28,8 +28,8 @@ from collections import OrderedDict
 from ... import bush
 from ...bolt import Flags, structs_cache, TrimmedFlags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
-    MelString, MelSet, MelFid, MelOptStruct, MelFids, MreHeaderBase, MelRace, \
-    MelBase, MelSimpleArray, MreGmstBase, MelBodyParts, MelMODS, MelFactions, \
+    MelString, MelSet, MelFid, MelOptStruct, MelFids, AMreHeader, MelRace, \
+    MelBase, MelSimpleArray, AMreGmst, MelBodyParts, MelMODS, MelFactions, \
     MelReferences, MelColorInterpolator, MelValueInterpolator, MelAnimations, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
@@ -37,7 +37,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRaceVoices, MelBounds, null1, null2, MelScriptVars, MelSorted, \
     MelSequential, MelTruncatedStruct, PartialLoadDecider, MelReadOnly, \
     MelSkipInterior, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, MelFull, \
-    MelArray, MelWthrColors, MreLeveledListBase, MreActorBase, MreWithItems, \
+    MelArray, MelWthrColors, AMreLeveledList, AMreActor, AMreWithItems, \
     MelRef3D, MelXlod, MelNull, MelWorldBounds, MelEnableParent, MelPerkData, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelLists, MelSoundPickupDrop, MelBookText, \
@@ -47,7 +47,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, MelExtra, \
     MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
-    MelPerkParamsGroups, MelAspcRdat, MelUnorderedGroups, MelImageSpaceMod
+    MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -121,7 +121,7 @@ class MelActivationPrompt(MelString):
         super().__init__(b'XATO', 'activation_prompt')
 
 #------------------------------------------------------------------------------
-class MreActor(MreActorBase):
+class MreActor(AMreActor):
     """Creatures and NPCs."""
     TemplateFlags = Flags.from_names(
         'useTraits',
@@ -284,7 +284,7 @@ class MelRaceHeadPart(MelGroup):
         super(MelRaceHeadPart, self).dumpData(record, out)
 
 #------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase):
+class MreLeveledList(AMreLeveledList):
     """Leveled item/creature/spell list.."""
     top_copy_attrs = (u'chanceNone', u'glob')
     entry_copy_attrs = (u'listId', u'level', u'count', u'owner', u'condition')
@@ -293,7 +293,7 @@ class MreLeveledList(MreLeveledListBase):
         MelEdid(),
         MelBounds(),
         MelLevListLvld(b'LVLD', u'chanceNone'),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', u'glob'),
         MelSorted(MelGroups(u'entries',
             MelLevListLvlo(b'LVLO', [u'h', u'2s', u'I', u'h', u'2s'], u'level',
@@ -310,7 +310,7 @@ class MreLeveledList(MreLeveledListBase):
 #------------------------------------------------------------------------------
 # Fallout3 Records ------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreTes4(MreHeaderBase):
+class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'ONAM', b'SCRN'}
@@ -320,9 +320,9 @@ class MreTes4(MreHeaderBase):
                   ('nextObject', 0x800)),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
-        MreHeaderBase.MelAuthor(),
-        MreHeaderBase.MelDescription(),
-        MreHeaderBase.MelMasterNames(),
+        AMreHeader.MelAuthor(),
+        AMreHeader.MelDescription(),
+        AMreHeader.MelMasterNames(),
         MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
     )
@@ -820,7 +820,7 @@ class MreCobj(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreCont(MreWithItems):
+class MreCont(AMreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
@@ -1251,7 +1251,7 @@ class MreFurn(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreGmst(MreGmstBase):
+class MreGmst(AMreGmst):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
     __slots__ = ()

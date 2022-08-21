@@ -22,10 +22,10 @@
 # =============================================================================
 """This module contains the Fallout 4 record classes."""
 from ...bolt import Flags
-from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
-    MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, MelAttx, \
+from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
+    MelStruct, MelNull, MelSimpleArray, AMreLeveledList, MelFid, MelAttx, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelUnloadEvent, \
-    MelArray, MreGmstBase, MelUInt8Flags, MelSorted, MelGroups, MelShortName, \
+    MelArray, AMreGmst, MelUInt8Flags, MelSorted, MelGroups, MelShortName, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, MelRace, \
     MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
@@ -223,7 +223,7 @@ class MelVmad(AMelVmad):
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreTes4(MreHeaderBase):
+class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
@@ -233,9 +233,9 @@ class MreTes4(MreHeaderBase):
             (u'nextObject', 0x001)),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
-        MreHeaderBase.MelAuthor(),
-        MreHeaderBase.MelDescription(),
-        MreHeaderBase.MelMasterNames(),
+        AMreHeader.MelAuthor(),
+        AMreHeader.MelDescription(),
+        AMreHeader.MelMasterNames(),
         MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelGroups('transient_types',
@@ -793,13 +793,13 @@ class MreCobj(MelRecord):
                                 if c.component_fid.mod_id in modSet]
 
 #------------------------------------------------------------------------------
-class MreGmst(MreGmstBase):
+class MreGmst(AMreGmst):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
     __slots__ = ()
 
 #------------------------------------------------------------------------------
-class MreLvli(MreLeveledListBase):
+class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
 
@@ -811,7 +811,7 @@ class MreLvli(MreLeveledListBase):
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8(b'LVLM', 'maxCount'),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
         MelArray('filterKeywordChances',
@@ -823,7 +823,7 @@ class MreLvli(MreLeveledListBase):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvln(MreLeveledListBase):
+class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
 
@@ -835,7 +835,7 @@ class MreLvln(MreLeveledListBase):
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8(b'LVLM', 'maxCount'),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
         MelArray('filterKeywordChances',

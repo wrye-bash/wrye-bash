@@ -41,7 +41,7 @@ from ..bolt import decoder, FName, struct_pack, structs_cache, Flags, \
 #------------------------------------------------------------------------------
 # Base classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreWithItems(MelRecord):
+class AMreWithItems(MelRecord):
     """Base class for record types that contain a list of items (MelItems)."""
     __slots__ = []
 
@@ -49,7 +49,7 @@ class MreWithItems(MelRecord):
         self.items = [i for i in self.items if i.item.mod_id in modSet]
 
 #------------------------------------------------------------------------------
-class MreActorBase(MreWithItems):
+class AMreActor(AMreWithItems):
     """Base class for Creatures and NPCs."""
     __slots__ = []
 
@@ -58,7 +58,8 @@ class MreActorBase(MreWithItems):
         self.spells = [x for x in self.spells if x.mod_id in modSet]
         self.factions = [x for x in self.factions if x.faction.mod_id in modSet]
 
-class MreGmstBase(MelRecord):
+#------------------------------------------------------------------------------
+class AMreGmst(MelRecord):
     """Game Setting record.  Base class, each game should derive from this
     class."""
     Ids = None
@@ -78,7 +79,7 @@ class MreGmstBase(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreHeaderBase(MelRecord):
+class AMreHeader(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
     # Subrecords that can appear after the masters block - must be set per game
     _post_masters_sigs: set[bytes]
@@ -207,7 +208,7 @@ class MreHeaderBase(MelRecord):
     __slots__ = []
 
 #------------------------------------------------------------------------------
-class MreLeveledListBase(MelRecord):
+class AMreLeveledList(MelRecord):
     """Base type for leveled item/creature/npc/spells.
        it requires the base class to use the following:
        classAttributes:

@@ -24,16 +24,16 @@
 from ... import bush
 from ...bolt import Flags, structs_cache, TrimmedFlags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
-    MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
-    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelSimpleArray, MelWeight, \
-    MreGmstBase, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
+    MelGroup, MelString, AMreLeveledList, MelSet, MelFid, MelNull, \
+    MelOptStruct, MelFids, AMreHeader, MelBase, MelSimpleArray, MelWeight, \
+    AMreGmst, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt16, MelUInt32, MelActionFlags, MelCounter, MelRaceData, MelBaseR, \
     MelPartialCounter, MelBounds, null3, null4, MelSequential, MelKeywords, \
     MelTruncatedStruct, MelIcons, MelIcons2, MelIcon, MelIco2, MelEdid, \
     MelFull, MelArray, MelWthrColors, MelFactions, MelReadOnly, MelRelations, \
-    MreActorBase, MreWithItems, MelRef3D, MelXlod, MelActiFlags, AMelNvnm, \
+    AMreActor, AMreWithItems, MelRef3D, MelXlod, MelActiFlags, AMelNvnm, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelSoundPickupDrop, MelActivateParents, BipedFlags, MelColor, \
@@ -349,7 +349,7 @@ class MelWaterVelocities(MelSequential):
 #------------------------------------------------------------------------------
 # Skyrim Records --------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreTes4(MreHeaderBase):
+class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'SCRN', b'INTV', b'INCC', b'ONAM'}
@@ -359,9 +359,9 @@ class MreTes4(MreHeaderBase):
                   ('nextObject', 0x800)),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
-        MreHeaderBase.MelAuthor(),
-        MreHeaderBase.MelDescription(),
-        MreHeaderBase.MelMasterNames(),
+        AMreHeader.MelAuthor(),
+        AMreHeader.MelDescription(),
+        AMreHeader.MelMasterNames(),
         MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelBase(b'INTV', 'unknownINTV'),
@@ -925,7 +925,7 @@ class MreClmt(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreCobj(MreWithItems):
+class MreCobj(AMreWithItems):
     """Constructible Object."""
     rec_sig = b'COBJ'
     isKeyedByEid = True # NULL fids are acceptable
@@ -941,7 +941,7 @@ class MreCobj(MreWithItems):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreCont(MreWithItems):
+class MreCont(AMreWithItems):
     """Container."""
     rec_sig = b'CONT'
 
@@ -1492,7 +1492,7 @@ class MreFurn(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreGmst(MreGmstBase):
+class MreGmst(AMreGmst):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
     __slots__ = ()
@@ -2098,7 +2098,7 @@ class MreLtex(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvli(MreLeveledListBase):
+class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
     top_copy_attrs = ('chanceNone','glob',)
@@ -2107,14 +2107,14 @@ class MreLvli(MreLeveledListBase):
         MelEdid(),
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
     )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvln(MreLeveledListBase):
+class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
     top_copy_attrs = ('chanceNone','model','modt_p',)
@@ -2123,7 +2123,7 @@ class MreLvln(MreLeveledListBase):
         MelEdid(),
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
         MelString(b'MODL','model'),
@@ -2132,7 +2132,7 @@ class MreLvln(MreLeveledListBase):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvsp(MreLeveledListBase):
+class MreLvsp(AMreLeveledList):
     """Leveled Spell."""
     rec_sig = b'LVSP'
 
@@ -2142,7 +2142,7 @@ class MreLvsp(MreLeveledListBase):
         MelEdid(),
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelLLItems(with_coed=False),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2413,7 +2413,7 @@ class MreNavm(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreNpc(MreActorBase):
+class MreNpc(AMreActor):
     """Non-Player Character."""
     rec_sig = b'NPC_'
 

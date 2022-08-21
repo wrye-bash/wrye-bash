@@ -27,13 +27,13 @@ from collections import OrderedDict
 
 from ...bolt import Flags
 from ...brec import MelBase, MelSet, MelString, MelStruct, MelArray, \
-    MreHeaderBase, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
+    AMreHeader, MelUnion, SaveDecider, MelNull, MelSequential, MelRecord, \
     MelGroup, MelGroups, MelUInt8, MelDescription, MelUInt32, MelColorO,\
     MelOptStruct, MelCounter, MelRefScale, MelRef3D, MelBookText, \
-    MelIcons, MelFloat, MelSInt32, MelEffectsTes3, \
-    MelFixedString, FixedString, AutoFixedString, MreGmstBase, \
-    MreLeveledListBase, MelUInt16, SizeDecider, MelLists, \
-    MelTruncatedStruct, MelColor, MelStrings, MelUInt32Flags
+    MelIcons, MelFloat, MelSInt32, MelEffectsTes3, MelFixedString, \
+    FixedString, AutoFixedString, AMreGmst, AMreLeveledList, MelUInt16, \
+    SizeDecider, MelLists, MelTruncatedStruct, MelColor, MelStrings, \
+    MelUInt32Flags
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -211,7 +211,7 @@ class MelSpellsTes3(MelGroups):
         )
 
 #------------------------------------------------------------------------------
-class MreLeveledList(MreLeveledListBase):
+class MreLeveledList(AMreLeveledList):
     """Base class for LEVC and LEVI."""
     _lvl_flags = Flags.from_names(
         u'calcFromAllLevels',
@@ -220,7 +220,7 @@ class MreLeveledList(MreLeveledListBase):
     top_copy_attrs = (u'chanceNone',)
     entry_copy_attrs = (u'listId', u'level') # no count
 
-    # Bad names to mirror the other games (needed by MreLeveledListBase)
+    # Bad names to mirror the other games (needed by AMreLeveledList)
     melSet = MelSet(
         MelMWId(),
         MelUInt32Flags(b'DATA', u'flags', _lvl_flags),
@@ -236,7 +236,7 @@ class MreLeveledList(MreLeveledListBase):
 #------------------------------------------------------------------------------
 # Shared (plugins + saves) record classes -------------------------------------
 #------------------------------------------------------------------------------
-class MreTes3(MreHeaderBase):
+class MreTes3(AMreHeader):
     """TES3 Record. File header."""
     rec_sig = b'TES3'
     _post_masters_sigs = {b'GMDT', b'SCRD', b'SCRS'}
@@ -245,7 +245,7 @@ class MreTes3(MreHeaderBase):
         MelStruct(b'HEDR', ['f', 'I', '32s', '256s', 'I'], ('version', 1.3),
             'esp_flags', (AutoFixedString(32), 'author_pstr'),
             (AutoFixedString(256), 'description_pstr'), 'numRecords'),
-        MreHeaderBase.MelMasterNames(),
+        AMreHeader.MelMasterNames(),
         MelSavesOnly(
             # Wrye Mash calls unknown1 'day', but that seems incorrect?
             MelStruct(b'GMDT', [u'6f', u'64s', u'f', u'32s'], u'pc_curr_health',
@@ -658,7 +658,7 @@ class MelGmstUnion(MelUnion):
             return self._get_element(self._fmt_mapping[format_char])
         return super(MelGmstUnion, self)._get_element_from_record(record)
 
-class MreGmst(MreGmstBase):
+class MreGmst(AMreGmst):
     """Game Setting."""
     melSet = MelSet(
         MelMWId(),
