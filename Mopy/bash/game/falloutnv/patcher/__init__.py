@@ -238,12 +238,11 @@ statsTypes.update({
 # Import Sounds
 #------------------------------------------------------------------------------
 soundsTypes.update({
-    b'CONT': (u'soundOpen', u'soundClose', u'soundRandomLooping'),
-    b'WEAP': (u'pickupSound', u'dropSound', u'soundGunShot3D',
-              u'soundGunShot2D', u'soundGunShot3DLooping',
-              u'soundMeleeSwingGunNoAmmo', u'soundBlock', u'idleSound',
-              u'equipSound', u'unequipSound', u'soundMod1Shoot3Ds',
-              u'soundMod1Shoot2D', u'soundLevel'),
+    b'CONT': ('sound', 'soundClose', 'soundRandomLooping'),
+    b'WEAP': ('pickupSound', 'dropSound', 'sound', 'soundGunShot2D',
+              'soundGunShot3DLooping', 'soundMeleeSwingGunNoAmmo',
+              'soundBlock', 'idleSound', 'equipSound', 'unequipSound',
+              'soundMod1Shoot3Ds', 'soundMod1Shoot2D', 'soundLevel'),
 })
 
 #------------------------------------------------------------------------------

@@ -231,7 +231,7 @@ ZERO_FID = _Tes4Fid(0)
 # Global FormId class used to wrap all formids of currently loading mod. It
 # must be set by the mod reader context manager based on the currently loading
 # plugin
-FORM_ID: None | Type[FormId] = None
+FORM_ID: Type[FormId] | None = None
 
 # Global short mapper function. It must be set by the mod output context
 # manager for mapping the fids based on the masters of the currently dumped plugin
@@ -297,31 +297,26 @@ class BipedFlags(Flags):
 fid_key = attrgetter_cache[u'fid']
 
 _perk_type_to_attrs = {
-    0: attrgetter_cache[('quest', 'quest_stage')],
-    1: attrgetter_cache['ability'],
-    2: attrgetter_cache[('entry_point', 'function')],
+    0: attrgetter_cache[('pe_quest', 'pe_quest_stage')],
+    1: attrgetter_cache['pe_ability'],
+    2: attrgetter_cache[('pe_entry_point', 'pe_function')],
 }
 
 def perk_effect_key(e):
     """Special sort key for PERK effects."""
-    perk_effect_type = e.type
+    perk_effect_type = e.pe_type
     # The first three are always present, the others depend on the perk
     # effect's type
     extra_vals = _perk_type_to_attrs[perk_effect_type](e)
     if not isinstance(extra_vals, tuple):
-        # Second case from above, only a single attribute returned
-        # DATA subrecords sometimes are absent after the PRKE subrecord leading
-        # to a None for ability - sort those last (valid ids shouldn't be 0)
-        return e.rank, e.priority, perk_effect_type, extra_vals or sys.maxsize
+        # Second case from above, only a single attribute returned.
+        # DATA subrecords are sometimes absent after the PRKE subrecord,
+        # leading to a None for pe_ability - sort those last (valid IDs
+        # shouldn't be 0)
+        return (e.pe_rank, e.pe_priority, perk_effect_type,
+                extra_vals or sys.maxsize)
     else:
-        return e.rank, e.priority, perk_effect_type, *extra_vals
-
-vmad_fragments_key = attrgetter_cache[u'fragment_index']
-vmad_properties_key = attrgetter_cache[u'prop_name']
-vmad_qust_aliases_key = attrgetter_cache[u'alias_ref_obj']
-vmad_qust_fragments_key = attrgetter_cache[(u'quest_stage',
-                                            u'quest_stage_index')]
-vmad_script_key = attrgetter_cache[u'script_name']
+        return e.pe_rank, e.pe_priority, perk_effect_type, *extra_vals
 
 # Constants -------------------------------------------------------------------
 

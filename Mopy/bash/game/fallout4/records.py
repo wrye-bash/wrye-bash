@@ -26,47 +26,101 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, MelAttx, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelUnloadEvent, \
     MelArray, MreGmstBase, MelUInt8Flags, MelSorted, MelGroups, MelShortName, \
-    MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, \
-    MelColor, MelSoundLooping, MelSoundActivation, MelWaterType, MelAlchEnit, \
+    MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, MelRace, \
+    MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
     AMelNvnm, ANvnmContext, MelNodeIndex, MelAddnDnam, MelUnion, MelIcons, \
-    AttrValDecider, MelSoundPickup, MelSoundDrop, MelEquipmentType, \
-    MelDescription, MelEffects, AMelLLItems, MelValueWeight
+    AttrValDecider, MelSoundPickupDrop, MelEquipmentType, AMelVmad, \
+    MelDescription, MelEffects, AMelLLItems, MelValueWeight, AVmadContext, \
+    MelIcon, MelConditionList, MelPerkData, MelNextPerk, MelSInt8, MelUInt16, \
+    MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider, \
+    MelUInt32Flags, BipedFlags, MelArmaDnam, MelArmaModels, MelArmaSkins, \
+    MelAdditionalRaces, MelFootstepSound, MelArtObject, MelEnchantment, \
+    MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
+    MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, \
+    MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups
 
+##: What about texture hashes? I carried discarding them forward from Skyrim,
+# but that was due to the 43-44 problems. See also #620.
 #------------------------------------------------------------------------------
-# Record Elements    ----------------------------------------------------------
+# Record Elements -------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MelModel(MelGroup):
     """Represents a model subrecord."""
     # MODB and MODD are no longer used by TES5Edit
     typeSets = {
         b'MODL': (b'MODL', b'MODT', b'MODC', b'MODS', b'MODF'),
-        b'MOD2': (b'MOD2', b'MODT', b'MO2C', b'MO2S', b'MO2F'),
-        b'MOD3': (b'MOD3', b'MODT', b'MO3C', b'MO3S', b'MO3F'),
-        b'MOD4': (b'MOD4', b'MODT', b'MO4C', b'MO4S', b'MO4F'),
-        b'MOD5': (b'MOD5', b'MODT', b'MO5C', b'MO5S', b'MO5F'),
+        b'MOD2': (b'MOD2', b'MO2T', b'MO2C', b'MO2S', b'MO2F'),
+        b'MOD3': (b'MOD3', b'MO3T', b'MO3C', b'MO3S', b'MO3F'),
+        b'MOD4': (b'MOD4', b'MO4T', b'MO4C', b'MO4S', b'MO4F'),
+        b'MOD5': (b'MOD5', b'MO5T', b'MO5C', b'MO5S', b'MO5F'),
         b'DMDL': (b'DMDL', b'DMDT', b'DMDC', b'DMDS'),
     }
 
-    def __init__(self, mel_sig=b'MODL', attr='model'):
+    def __init__(self, mel_sig=b'MODL', attr='model', *, swap_3_4=False,
+            always_use_modc=False, skip_5=False):
+        """Fallout 4 has a whole lot of model nonsense:
+
+        :param swap_3_4: If True, swaps the third (*C) and fourth (*S)
+            elements.
+        :param always_use_modc: If True, use MODC for the third (*C) element,
+            regardless of what mel_sig is.
+        :param skip_5: If True, skip the fifth (*F) element."""
         types = self.__class__.typeSets[mel_sig]
-        model_elements = [
+        mdl_elements = [
             MelString(types[0], 'modPath'),
             # Ignore texture hashes - they're only an optimization, plenty
             # of records in Skyrim.esm are missing them
             MelNull(types[1]),
-            MelFloat(types[2], 'color_remapping_index'),
+            MelFloat(b'MODC' if always_use_modc else types[2],
+                'color_remapping_index'),
             MelFid(types[3], 'material_swap'),
         ]
-        if len(types) == 5:
-            model_elements.append(MelBase(types[4], 'unknownMODF'))
-        super().__init__(attr, *model_elements)
+        if swap_3_4:
+            mdl_elements[2], mdl_elements[3] = mdl_elements[3], mdl_elements[2]
+        if len(types) == 5 and not skip_5:
+            mdl_elements.append(MelBase(types[4], 'unknown_modf'))
+        super().__init__(attr, *mdl_elements)
 
 #------------------------------------------------------------------------------
 class MelAnimationSound(MelFid):
     """Handles the common STCP (Animation Sound) subrecord."""
     def __init__(self):
         super().__init__(b'STCP', 'animation_sound')
+
+#------------------------------------------------------------------------------
+class MelAppr(MelSimpleArray):
+    """Handles the common APPR (Attach Parent Slots) subrecord."""
+    def __init__(self):
+        super().__init__('attach_parent_slots', MelFid(b'APPR'))
+
+#------------------------------------------------------------------------------
+class MelBod2(MelUInt32Flags):
+    """Handles the BOD2 (Biped Body Template) subrecord."""
+    _bp_flags = BipedFlags.from_names()
+
+    def __init__(self):
+        super().__init__(b'BOD2', 'biped_flags', self._bp_flags)
+
+#------------------------------------------------------------------------------
+class MelBoneData(MelGroups):
+    """Handles the bone data subrecord complex."""
+    def __init__(self):
+        super().__init__('bone_data',
+            MelUInt32(b'BSMP', 'bone_scale_gender'),
+            MelGroups('bone_weight_scales',
+                MelString(b'BSMB', 'bone_name'),
+                # In the latest version of xEdit's source code, the decoding
+                # for this particular part is much more complex - would
+                # probably have to require custom code to handle (custom
+                # handler for duplicate signatures inside a single MelGroups,
+                # plus conditional loading to read one subrecord ahead and
+                # check its size). This works fine and is *way* simpler, so not
+                # going to bother.
+                MelSimpleArray('weight_scale_values', MelFloat(b'BSMS')),
+                MelUInt32(b'BMMP', 'bone_modifies_gender'),
+            ),
+        )
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
@@ -82,10 +136,7 @@ class MelDestructible(MelGroup):
             MelStruct(b'DEST', ['i', '2B', '2s'], 'health', 'count',
                 (MelDestructible._dest_header_flags, 'dest_flags'),
                 'dest_unknown'),
-            MelSorted(MelArray('resistances',
-                MelStruct(b'DAMC', ['2I'], (FID, 'damage_type'),
-                    'resistance_value'),
-            ), sort_by_attrs='damage_type'),
+            MelResistances(b'DAMC'),
             MelGroups('stages',
                 MelStruct(b'DSTD', ['4B', 'i', '2I', 'i'], 'health', 'index',
                           'damage_stage',
@@ -145,15 +196,27 @@ class MelProperties(MelSorted):
         ))
 
 #------------------------------------------------------------------------------
+class MelResistances(MelSorted):
+    """Handles a sorted array of resistances. Signatures vary."""
+    def __init__(self, res_sig):
+        super().__init__(MelArray('resistances',
+            MelStruct(res_sig, ['2I'], (FID, 'damage_type'),
+                'resistance_value'),
+        ), sort_by_attrs='damage_type')
+
+#------------------------------------------------------------------------------
 class MelSoundCrafting(MelFid):
     """Handles the common CUSD (Sound - Crafting) subrecord."""
     def __init__(self):
         super().__init__(b'CUSD', 'sound_crafting')
 
 #------------------------------------------------------------------------------
-class MelVmad(MelNull): # TODO(inf) Refactor Skyrim's MelVmad and remove this
-    def __init__(self):
-        super().__init__(b'VMAD')
+class MelVmad(AMelVmad):
+    class _VmadContextFo4(AVmadContext):
+        """Provides VMAD context for Fallout 4."""
+        max_vmad_ver = 6
+
+    _vmad_context_class = _VmadContextFo4
 
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------
@@ -216,7 +279,7 @@ class MreActi(MelRecord):
         MelNativeTerminal(),
         MelFtyp(),
         MelColor(b'PNAM'),
-        MelSoundLooping(),
+        MelSound(),
         MelSoundActivation(),
         MelWaterType(),
         MelAttx(),
@@ -240,7 +303,7 @@ class MreAddn(MelRecord):
         MelBounds(),
         MelModel(),
         MelNodeIndex(),
-        MelSoundLooping(),
+        MelSound(),
         MelFid(b'LNAM', 'addon_light'),
         MelAddnDnam(),
     )
@@ -284,8 +347,7 @@ class MreAlch(MelRecord):
         MelKeywords(),
         MelModel(),
         MelIcons(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelEquipmentType(),
         MelSoundCrafting(),
         MelDestructible(),
@@ -328,8 +390,7 @@ class MreAmmo(MelRecord):
         MelFull(),
         MelModel(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelDescription(),
         MelKeywords(),
         MelValueWeight(),
@@ -361,6 +422,255 @@ class MreAoru(MelRecord):
         MelStruct(b'AOR2', ['3f', '2B', '2s'], 'attraction_radius',
             'attraction_min_delay', 'attraction_max_delay',
             'requires_line_of_sight', 'combat_target', 'unused_aor2'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArma(MelRecord):
+    """Armor Addon."""
+    rec_sig = b'ARMA'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBod2(),
+        MelRace(),
+        MelArmaDnam(),
+        MelArmaModels(MelModel),
+        MelArmaSkins(),
+        MelAdditionalRaces(),
+        MelFootstepSound(),
+        MelArtObject(),
+        MelBoneData(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArmo(MelRecord):
+    """Armor."""
+    rec_sig = b'ARMO'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelEnchantment(),
+        MelModel(b'MOD2', 'maleWorld', always_use_modc=True, skip_5=True),
+        MelIcons('maleIconPath', 'maleSmallIconPath'),
+        MelModel(b'MOD4', 'femaleWorld', always_use_modc=True, skip_5=True),
+        MelIcons2(),
+        MelBod2(),
+        MelDestructible(),
+        MelSoundPickupDrop(),
+        MelEquipmentType(),
+        MelBids(),
+        MelBamt(),
+        MelRace(),
+        MelKeywords(),
+        MelDescription(),
+        MelFid(b'INRD', 'instance_naming'),
+        MelGroups('addons',
+            MelUInt16(b'INDX', 'addon_index'),
+            MelFid(b'MODL', 'addon_fid'),
+        ),
+        MelStruct(b'DATA', ['i', 'f', 'I'], 'value', 'weight', 'health'),
+        MelStruct(b'FNAM', ['2H', 'B', '3s'], 'armorRating',
+            'base_addon_index', 'stagger_rating', 'unknown_fnam'),
+        MelResistances(b'DAMA'),
+        MelTemplateArmor(),
+        MelAppr(),
+        MelObjectTemplate(),
+    ).with_distributor({
+        b'FULL': 'full',
+        b'OBTE': {
+            b'FULL': 'ot_combinations',
+        },
+    })
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreArto(MelRecord):
+    """Art Object."""
+    rec_sig = b'ARTO'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelKeywords(),
+        MelModel(),
+        MelArtType(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAspc(MelRecord):
+    """Acoustic Space."""
+    rec_sig = b'ASPC'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelSound(),
+        MelAspcRdat(),
+        MelAspcBnam(),
+        MelUInt8(b'XTRI', 'aspc_is_interior'),
+        MelUInt16(b'WNAM', 'weather_attenuation'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAstp(MelRecord):
+    """Association Type."""
+    rec_sig = b'ASTP'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelAstpTitles(),
+        MelAstpData(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreAvif(MelRecord):
+    """Actor Value Information."""
+    rec_sig = b'AVIF'
+
+    _avif_flags = Flags.from_names(
+        (1,  'af_skill'),
+        (2,  'af_uses_enum'),
+        (3,  'af_dont_allow_script_edits'),
+        (4,  'af_is_full_av_cached'),
+        (5,  'af_is_permanent_av_cached'),
+        (10, 'af_default_to_0'),
+        (11, 'af_default_to_1'),
+        (12, 'af_default_to_100'),
+        (15, 'af_contains_list'),
+        (19, 'af_value_less_than_1'),
+        (20, 'af_minimum_1'),
+        (21, 'af_maximum_10'),
+        (22, 'af_maximum_100'),
+        (23, 'af_multiply_by_100'),
+        (24, 'af_percentage'),
+        (26, 'af_damage_is_positive'),
+        (27, 'af_god_mode_immune'),
+        (28, 'af_harcoded'),
+    )
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelDescription(),
+        MelLString(b'ANAM', 'abbreviation'),
+        MelFloat(b'NAM0', 'avif_default_value'),
+        MelUInt32Flags(b'AVFL', 'avif_flags', _avif_flags),
+        MelUInt32(b'NAM1', 'avif_type'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreBnds(MelRecord):
+    """Bendable Spline."""
+    rec_sig = b'BNDS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelStruct(b'DNAM', ['f', '2H', '5f'],'default_num_tiles',
+            'default_num_slices', 'default_num_tiles_relative_to_length',
+            'default_red', 'default_green', 'default_blue', 'wind_sensibility',
+            'wind_flexibility'),
+        MelFid(b'TNAM', 'spline_texture'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreBook(MelRecord):
+    """Book."""
+    rec_sig = b'BOOK'
+
+    _book_type_flags = Flags.from_names('advance_actor_value', 'cant_be_taken',
+        'add_spell', 'add_perk')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelIcons(),
+        MelBookText(),
+        MelSoundPickupDrop(),
+        MelKeywords(),
+        MelFid(b'FIMD', 'featured_item_message'),
+        MelValueWeight(),
+        # The book_flags determine what kind of FormID is acceptable for
+        # book_teaches, but we don't care about that - only that it is a FormID
+        MelStruct(b'DNAM', ['B', '3I'], (_book_type_flags, 'book_flags'),
+            (FID,'book_teaches'), 'text_offset_x', 'text_offset_y'),
+        MelBookDescription(),
+        MelInventoryArt(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreBptd(MelRecord):
+    """Body Part Data."""
+    rec_sig = b'BPTD'
+
+    _bpnd_flags = Flags.from_names('severable', 'hit_reaction',
+        'hit_reaction_default', 'explodable', 'cut_meat_cap_sever',
+        'on_cripple', 'explodable_absolute_chance', 'show_cripple_geometry')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelModel(),
+        MelSorted(MelUnorderedGroups('body_part_list',
+            MelLString(b'BPTN', 'part_name'),
+            MelString(b'BPNN', 'part_node'),
+            MelString(b'BPNT', 'vats_target'),
+            MelStruct(b'BPND',
+                ['f', '2I', 'f', '2I', '7f', '2I', 'f', '3B', 'I', '8B', '4I',
+                 'f', '2B'], 'bpnd_damage_mult',
+                (FID, 'bpnd_explodable_debris'),
+                (FID, 'bpnd_explodable_explosion'),
+                'bpnd_explodable_debris_scale', (FID, 'bpnd_severable_debris'),
+                (FID, 'bpnd_severable_explosion'),
+                'bpnd_severable_debris_scale', 'bpnd_cut_min', 'bpnd_cut_max',
+                'bpnd_cut_radius', 'bpnd_gore_effects_local_rotate_x',
+                'bpnd_gore_effects_local_rotate_y', 'bpnd_cut_tesselation',
+                (FID, 'bpnd_severable_impact_data_set'),
+                (FID, 'bpnd_explodable_impact_data_set'),
+                'bpnd_explodable_limb_replacement_scale',
+                (_bpnd_flags, 'bpnd_flags'), 'bpnd_part_type',
+                'bpnd_health_percent', 'bpnd_actor_value',
+                'bpnd_to_hit_chance', 'bpnd_explodable_explosion_chance_pct',
+                'bpnd_non_lethal_dismemberment_chance',
+                'bpnd_severable_debris_count', 'bpnd_explodable_debris_count',
+                'bpnd_severable_decal_count', 'bpnd_explodable_decal_count',
+                'bpnd_geometry_segment_index',
+                (FID, 'bpnd_on_cripple_art_object'),
+                (FID, 'bpnd_on_cripple_debris'),
+                (FID, 'bpnd_on_cripple_explosion'),
+                (FID, 'bpnd_on_cripple_impact_data_set'),
+                'bpnd_on_cripple_debris_scale', 'bpnd_on_cripple_debris_count',
+                'bpnd_on_cripple_decal_count'),
+            MelString(b'NAM1', 'limb_replacement_model'),
+            MelString(b'NAM4', 'gore_effects_target_bone'),
+            # Ignore texture hashes - they're only an optimization, plenty of
+            # records in Skyrim.esm are missing them
+            MelNull(b'NAM5'),
+            MelString(b'ENAM', 'hit_reaction_start'),
+            MelString(b'FNAM', 'hit_reaction_end'),
+            MelFid(b'BNAM', 'gore_effects_dismember_blood_art'),
+            MelFid(b'INAM', 'gore_effects_blood_impact_material_type'),
+            MelFid(b'JNAM', 'on_cripple_blood_impact_material_type'),
+            MelFid(b'CNAM', 'meat_cap_texture_set'),
+            MelFid(b'NAM2', 'collar_texture_set'),
+            MelString(b'DNAM', 'twist_variable_prefix'),
+        ), sort_by_attrs='part_node'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -416,4 +726,77 @@ class MreLvln(MreLeveledListBase):
         MelString(b'MODL','model'),
         MelBase(b'MODT','modt_p'),
     )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MrePerk(MelRecord):
+    """Perk."""
+    rec_sig = b'PERK'
+
+    _script_flags = Flags.from_names('run_immediately', 'replace_default')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelFull(),
+        MelDescription(),
+        MelIcon(),
+        MelConditionList(),
+        MelPerkData(),
+        MelSound(),
+        MelNextPerk(),
+        MelString(b'FNAM', 'perk_swf'),
+        MelSorted(MelGroups('perk_effects',
+            MelStruct(b'PRKE', ['3B'], 'pe_type', 'pe_rank', 'pe_priority'),
+            MelUnion({
+                0: MelStruct(b'DATA', ['I', 'H'], (FID, 'pe_quest'),
+                    'pe_quest_stage'),
+                1: MelFid(b'DATA', 'pe_ability'),
+                2: MelStruct(b'DATA', ['3B'], 'pe_entry_point', 'pe_function',
+                    'pe_perk_conditions_tab_count'),
+            }, decider=AttrValDecider('pe_type')),
+            MelSorted(MelGroups('pe_conditions',
+                MelSInt8(b'PRKC', 'pe_run_on'),
+                MelConditionList(),
+            ), sort_by_attrs='pe_run_on'),
+            MelPerkParamsGroups(
+                # EPFT has the following meanings:
+                #  0: Unknown
+                #  1: EPFD=float
+                #  2: EPFD=float, float
+                #  3: EPFD=fid (LVLI)
+                #  4: EPFD=fid (SPEL), EPF2 and EPF3 are used
+                #  5: EPFD=fid (SPEL)
+                #  6: EPFD=string
+                #  7: EPFD=lstring
+                #  8: EPFD=fid (AVIF), float
+                # There is a special case: if EPFT is 2 and the pe_function
+                # (see DATA above) is one of 5, 12, 13 or 14, then
+                # EPFD=fid (AVIF), float - same as in the 8 case above.
+                MelUInt8(b'EPFT', 'pp_param_type'),
+                MelUInt16(b'EPFB', 'pp_perk_entry_id'),
+                MelLString(b'EPF2', 'pp_button_label'),
+                MelUInt16Flags(b'EPF3', 'pp_script_flags', _script_flags),
+                MelUnion({
+                    0: MelBase(b'EPFD', 'pp_param1'),
+                    1: MelFloat(b'EPFD', 'pp_param1'),
+                    2: MelStruct(b'EPFD', ['2f'], 'pp_param1', 'pp_param2'),
+                    (3, 4, 5): MelFid(b'EPFD', 'pp_param1'),
+                    6: MelString(b'EPFD', 'pp_param1'),
+                    7: MelLString(b'EPFD', 'pp_param1'),
+                    8: MelStruct(b'EPFD', ['I', 'f'], (FID, 'pp_param1'),
+                        'pp_param2'),
+                }, decider=PerkEpdfDecider({5, 12, 13, 14})),
+            ),
+            MelBaseR(b'PRKF', 'pe_end_marker'),
+        ), sort_special=perk_effect_key),
+    ).with_distributor({
+        b'DESC': {
+            b'CTDA|CIS1|CIS2': 'conditions',
+            b'DATA': 'perk_trait',
+        },
+        b'PRKE': {
+            b'CTDA|CIS1|CIS2|DATA': 'perk_effects',
+        },
+    })
     __slots__ = melSet.getSlotsUsed()

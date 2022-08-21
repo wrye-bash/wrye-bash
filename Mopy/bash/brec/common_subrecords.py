@@ -23,6 +23,7 @@
 """Builds on the basic elements defined in base_elements.py to provide
 definitions for some commonly needed subrecords."""
 from itertools import chain
+from typing import Type
 
 from .advanced_elements import AttrValDecider, MelArray, MelTruncatedStruct, \
     MelUnion, FlagDecider, MelSorted, MelSimpleArray, MelCounter
@@ -107,6 +108,12 @@ class MelActorSounds(MelSorted):
         ), sort_by_attrs='type')
 
 #------------------------------------------------------------------------------
+class MelAdditionalRaces(MelSorted):
+    """Handle the ARMA subrecord MODL (Additional Races)."""
+    def __init__(self):
+        super().__init__(MelFids('additional_races', MelFid(b'MODL')))
+
+#------------------------------------------------------------------------------
 class MelAddnDnam(MelStruct):
     """Handles the ADDN subrecord DNAM (Data)."""
     def __init__(self):
@@ -137,6 +144,83 @@ class MelAnimations(MelSorted): ##: case insensitive
         super().__init__(MelStrings(b'KFFZ', 'animations'))
 
 #------------------------------------------------------------------------------
+class MelArmaDnam(MelStruct):
+    """Handles the ARMA subrecord DNAM (Data)."""
+    _weigth_slider_flags = Flags.from_names((1, 'slider_enabled'))
+
+    def __init__(self):
+        super().__init__(b'DNAM', ['4B', '2s', 'B', 's', 'f'], 'male_priority',
+            'female_priority', (self._weigth_slider_flags, 'slider_flags_m'),
+            (self._weigth_slider_flags, 'slider_flags_f'), 'unknown_dnam1',
+            'detection_sound_value', 'unknown_dnam2', 'weapon_adjust')
+
+#------------------------------------------------------------------------------
+class MelArmaModels(MelSequential):
+    """Handles the ARMA MOD2-MOD5 subrecords. Note that you have to pass the
+    game's MelModel class in as a parameter."""
+    def __init__(self, mel_model: Type[MelBase]):
+        super().__init__(
+            mel_model(b'MOD2', 'male_model'),
+            mel_model(b'MOD3', 'female_model'),
+            mel_model(b'MOD4', 'male_model_1st'),
+            mel_model(b'MOD5', 'female_model_1st'),
+        )
+
+#------------------------------------------------------------------------------
+class MelArmaSkins(MelSequential):
+    """Handles the ARMA NAM0-NAM3 subrecords."""
+    def __init__(self):
+        super().__init__(
+            MelFid(b'NAM0', 'skin0'),
+            MelFid(b'NAM1', 'skin1'),
+            MelFid(b'NAM2', 'skin2'),
+            MelFid(b'NAM3', 'skin3'),
+        )
+
+#------------------------------------------------------------------------------
+class MelArtObject(MelFid):
+    """Handles the ARMA subrecord ONAM (Art Object)."""
+    def __init__(self):
+        super().__init__(b'ONAM', 'art_object')
+
+#------------------------------------------------------------------------------
+class MelArtType(MelUInt32):
+    """Handles the ARTO subrecord DNAM (Art Type)."""
+    def __init__(self):
+        super().__init__(b'DNAM', 'art_type')
+
+#------------------------------------------------------------------------------
+class MelAspcBnam(MelFid):
+    """Handles the ASPC subrecord BNAM (Environment Type (reverb))."""
+    def __init__(self):
+        super().__init__(b'BNAM', 'environment_type')
+
+#------------------------------------------------------------------------------
+class MelAspcRdat(MelFid):
+    """Handles the ASPC subrecord RDAT (Use Sound From Region (Interiors
+    Only))."""
+    def __init__(self):
+        super().__init__(b'RDAT', 'use_sound_from_region')
+
+#------------------------------------------------------------------------------
+class MelAstpData(MelUInt32):
+    """Handles the ASTP subrecord DATA. Called 'Flags' in xEdit, but is really
+    a boolean enum."""
+    def __init__(self):
+        super().__init__(b'DATA', 'family_association')
+
+#------------------------------------------------------------------------------
+class MelAstpTitles(MelSequential):
+    """Handles the ASTP subrecords MPRT, FPRT, MCHT and FCHT."""
+    def __init__(self):
+        super().__init__(
+            MelString(b'MPRT', 'male_parent_title'),
+            MelString(b'FPRT', 'female_parent_title'),
+            MelString(b'MCHT', 'male_child_title'),
+            MelString(b'FCHT', 'female_child_title'),
+        )
+
+#------------------------------------------------------------------------------
 class MelAttx(MelLString):
     """Handles the common ATTX (Activate Text Override) subrecord. Skyrim uses
     an RNAM signature instead."""
@@ -144,10 +228,35 @@ class MelAttx(MelLString):
         super().__init__(mel_sig, 'activate_text_override')
 
 #------------------------------------------------------------------------------
+class MelBamt(MelFid):
+    """Handles the common BAMT (Alternate Block Material) subrecord."""
+    def __init__(self):
+        super().__init__(b'BAMT', 'alternate_block_material')
+
+#------------------------------------------------------------------------------
+class MelBids(MelFid):
+    """Handles the common BIDS (Block Bash Impact Data Set) subrecord."""
+    def __init__(self):
+        super().__init__(b'BIDS', 'block_bash_impact_data_set')
+
+#------------------------------------------------------------------------------
 class MelBodyParts(MelSorted):
     """Handles the common NIFZ (Body Parts) subrecord."""
     def __init__(self): ##: case insensitive
         super().__init__(MelStrings(b'NIFZ', 'bodyParts'))
+
+#------------------------------------------------------------------------------
+class MelBookDescription(MelLString):
+    """Handles the BOOK subrecord CNAM (Description)."""
+    def __init__(self):
+        super().__init__(b'CNAM', 'description')
+
+#------------------------------------------------------------------------------
+class MelBookText(MelLString):
+    """Handles the BOOK subrecord DESC (Book Text), except in Morrowind, where
+    TEXT is used."""
+    def __init__(self, txt_sig=b'DESC'):
+        super().__init__(txt_sig, 'book_text')
 
 #------------------------------------------------------------------------------
 class MelBounds(MelGroup):
@@ -236,9 +345,9 @@ class MelDecalData(MelOptStruct):
 
 #------------------------------------------------------------------------------
 class MelDescription(MelLString):
-    """Handles a description (DESC) subrecord."""
-    def __init__(self, desc_attr='description'):
-        super().__init__(b'DESC', desc_attr)
+    """Handles the description (DESC) subrecord."""
+    def __init__(self):
+        super().__init__(b'DESC', 'description')
 
 #------------------------------------------------------------------------------
 class MelEdid(MelString):
@@ -290,6 +399,12 @@ class MelFactions(MelSorted):
         ), sort_by_attrs='faction')
 
 #------------------------------------------------------------------------------
+class MelFootstepSound(MelFid):
+    """Handles the ARMA subrecord SNDD (Footstep Sound)."""
+    def __init__(self):
+        super().__init__(b'SNDD', 'footstep_sound')
+
+#------------------------------------------------------------------------------
 class MelFull(MelLString):
     """Handles a name (FULL) subrecord."""
     def __init__(self):
@@ -335,6 +450,12 @@ class MelInteractionKeyword(MelFid):
     """Handles the KNAM (Interaction Keyword) subrecord of ACTI records."""
     def __init__(self):
         super().__init__(b'KNAM', 'interaction_keyword')
+
+#------------------------------------------------------------------------------
+class MelInventoryArt(MelFid):
+    """Handles the BOOK subrecord INAM (Inventory Art)."""
+    def __init__(self):
+        super().__init__(b'INAM', 'inventory_art')
 
 #------------------------------------------------------------------------------
 class MelKeywords(MelSequential):
@@ -425,6 +546,12 @@ class MelMODS(MelBase):
             if save_fids: setattr(record, attr, mods_data)
 
 #------------------------------------------------------------------------------
+class MelNextPerk(MelFid):
+    """Handles the PERK subrecord NNAM (Next Perk)."""
+    def __init__(self):
+        super().__init__(b'NNAM', 'next_perk')
+
+#------------------------------------------------------------------------------
 class MelNodeIndex(MelSInt32):
     """Handles the ADDN subrecord DATA (Node Index)."""
     def __init__(self):
@@ -443,6 +570,33 @@ class MelOwnership(MelGroup):
     def dumpData(self,record,out): ##: use pack_subrecord_data ?
         if record.ownership and record.ownership.owner:
             MelGroup.dumpData(self,record,out)
+
+#------------------------------------------------------------------------------
+class MelPerkData(MelTruncatedStruct):
+    """Handles the PERK subrecord DATA (Data)."""
+    def __init__(self):
+        super().__init__(b'DATA', ['5B'], 'perk_trait', 'perk_level',
+            'perk_num_ranks', 'perk_playable', 'perk_hidden',
+            old_versions={'4B', '3B'})
+
+#------------------------------------------------------------------------------
+class MelPerkParamsGroups(MelGroups):
+    """Hack to make pe_function available to the group elements so that their
+    deciders can use it."""
+    def __init__(self, *elements):
+        super().__init__('pe_params', *elements)
+
+    def _new_object(self, record):
+        target = super()._new_object(record)
+        pe_fn = record.pe_function
+        target.pe_function = pe_fn if pe_fn is not None else -1
+        return target
+
+#------------------------------------------------------------------------------
+class MelRace(MelFid):
+    """Handles the common RNAM (Race) subrecord."""
+    def __init__(self):
+        super().__init__(b'RNAM', 'race')
 
 #------------------------------------------------------------------------------
 ##: This is a strange fusion of MelLists, MelStruct and MelTruncatedStruct
@@ -673,28 +827,32 @@ class MelSoundActivation(MelFid):
         super().__init__(b'VNAM', 'soundActivation')
 
 #------------------------------------------------------------------------------
-class MelSoundDrop(MelFid):
-    """Handles the common ZNAM (Drop Sound) subrecord."""
+class MelSound(MelFid):
+    """Handles the common SNAM (Sound) subrecord."""
     def __init__(self):
-        super().__init__(b'ZNAM', 'dropSound')
+        super().__init__(b'SNAM', 'sound')
 
 #------------------------------------------------------------------------------
-class MelSoundLooping(MelFid):
-    """Handles the common SNAM (Sound - Looping) subrecord."""
+class MelSoundPickupDrop(MelSequential):
+    """Handles the common YNAM (Pickup Sound) and ZNAM (Drop Sound) subrecords.
+    They always occur together."""
     def __init__(self):
-        super().__init__(b'SNAM', 'soundLooping')
-
-#------------------------------------------------------------------------------
-class MelSoundPickup(MelFid):
-    """Handles the common YNAM (Pickup Sound) subrecord."""
-    def __init__(self):
-        super().__init__(b'YNAM', 'pickupSound')
+        super().__init__(
+            MelFid(b'YNAM', 'pickupSound'),
+            MelFid(b'ZNAM', 'dropSound'),
+        )
 
 #------------------------------------------------------------------------------
 class MelSpells(MelSorted):
     """Handles the common SPLO subrecord."""
     def __init__(self):
         super().__init__(MelFids('spells', MelFid(b'SPLO')))
+
+#------------------------------------------------------------------------------
+class MelTemplateArmor(MelFid):
+    """Handles the ARMO subrecord TNAM (Template Armor)."""
+    def __init__(self):
+        super().__init__(b'TNAM', 'template_armor')
 
 #------------------------------------------------------------------------------
 class MelUnloadEvent(MelString):

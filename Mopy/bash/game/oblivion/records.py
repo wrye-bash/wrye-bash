@@ -32,7 +32,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreHeaderBase, MelBase, MelSimpleArray, MelBodyParts, MelAnimations, \
     MreGmstBase, MelReferences, MelRegnEntrySubrecord, MelSorted, MelRegions, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
-    MelRaceParts, MelRaceVoices, null2, MelScriptVars, MelRelations, \
+    MelRaceParts, MelRaceVoices, null2, MelScriptVars, MelRelations, MelRace, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
     MelTruncatedStruct, MelSkipInterior, MelIcon, MelIco2, MelEdid, MelFull, \
     MelArray, MelWthrColors, MelEffectsTes4, MreActorBase, MreWithItems, \
@@ -42,7 +42,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelConditionsTes4, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
     MelWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
-    MelSoundLooping, MelWeight, MelEffectsTes4ObmeFull
+    MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -525,7 +525,7 @@ class MreActi(MelRecord):
         MelFull(),
         MelModel(),
         MelScript(),
-        MelSoundLooping(),
+        MelSound(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -628,14 +628,14 @@ class MreBook(MelRecord):
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelDescription(u'book_text'),
+        MelBookText(),
         MelScript(),
         MelEnchantment(b'ENAM'),
         MelUInt16(b'ANAM', 'enchantPoints'),
         MelStruct(b'DATA', [u'B', u'b', u'I', u'f'], (_flags, u'flags'), ('teaches', -1),
                   'value', 'weight'),
     )
-    __slots__ = [*melSet.getSlotsUsed(), 'modb']
+    __slots__ = melSet.getSlotsUsed()
 
 class MreBsgn(MelRecord):
     """Birthsign."""
@@ -759,7 +759,7 @@ class MreCont(MreWithItems):
         MelScript(),
         MelItems(),
         MelStruct(b'DATA', [u'B', u'f'],(_flags, u'flags'),'weight'),
-        MelFid(b'SNAM','soundOpen'),
+        MelSound(),
         MelFid(b'QNAM','soundClose'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -899,7 +899,7 @@ class MreDoor(MelRecord):
         MelFull(),
         MelModel(),
         MelScript(),
-        MelFid(b'SNAM','soundOpen'),
+        MelSound(),
         MelFid(b'ANAM','soundClose'),
         MelFid(b'BNAM','soundLoop'),
         MelUInt8Flags(b'FNAM', u'flags', _flags),
@@ -1157,7 +1157,7 @@ class MreLigh(MelRecord):
             (_flags, u'flags'), 'falloff', 'fov', 'value', 'weight',
             old_versions={'iI3BsI2f'}),
         MelFloat(b'FNAM', u'fade'),
-        MelFid(b'SNAM','sound'),
+        MelSound(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1498,15 +1498,14 @@ class MreMgef(MelRecord):
         MelIcon(),
         MelModel(),
         MelPartialCounter(MelTruncatedStruct(b'DATA',
-            [u'I', u'f', u'I', u'i', u'i', u'H', u'2s', u'I', u'f', u'6I',
-             u'2f'], (_flags, u'flags'), u'base_cost',
-            (FID, u'associated_item'), u'school', u'resist_value',
-            u'counter_effect_count', u'unused1',
-            (FID, u'light'), u'projectileSpeed', (FID, u'effectShader'),
-            (FID, u'enchantEffect'), (FID, u'castingSound'),
-            (FID, u'boltSound'), (FID, u'hitSound'), (FID, u'areaSound'),
-            u'cef_enchantment', u'cef_barter', old_versions={u'IfIiiH2sIfI'}),
-            counter=u'counter_effect_count', counts=u'counter_effects'),
+            ['I', 'f', 'I', 'i', 'i', 'H', '2s', 'I', 'f', '6I',
+             '2f'], (_flags, 'flags'), 'base_cost', (FID, 'associated_item'),
+            'school', 'resist_value', 'counter_effect_count', 'unused1',
+            (FID, 'light'), 'projectileSpeed', (FID, 'effectShader'),
+            (FID, 'enchantEffect'), (FID, 'castingSound'), (FID, 'boltSound'),
+            (FID, 'hitSound'), (FID, 'areaSound'), 'cef_enchantment',
+            'cef_barter', old_versions={'IfIiiH2sIfI'}),
+            counters={'counter_effect_count': 'counter_effects'}),
         MelSorted(MelArray(u'counter_effects',
             MelStruct(b'ESCE', [u'4s'], u'counter_effect_code'),
         ), sort_by_attrs='counter_effect_code'),
@@ -1562,7 +1561,7 @@ class MreNpc(MreActorBase):
             ('level_offset',1),'calcMin','calcMax'),
         MelFactions(),
         MelFid(b'INAM','deathItem'),
-        MelFid(b'RNAM','race'),
+        MelRace(),
         MelSpellsTes4(),
         MelScript(),
         MelItems(),
@@ -2141,7 +2140,7 @@ class MreWatr(MelRecord):
         MelUInt8(b'ANAM', 'opacity'),
         MelUInt8Flags(b'FNAM', u'flags', _flags),
         MelString(b'MNAM','material'),
-        MelFid(b'SNAM','sound'),
+        MelSound(),
         MelWatrData(b'DATA',
             [u'11f', u'3B', u's', u'3B', u's', u'3B', u's', u'B', u'3s',
              u'10f', u'H'], ('windVelocity', 0.100),
@@ -2200,7 +2199,7 @@ class MreWrld(MelRecord):
                   u'SECellX', u'SECellY'),
         MelUInt8Flags(b'DATA', u'flags', _flags),
         MelWorldBounds(),
-        MelUInt32(b'SNAM', 'sound'),
+        MelUInt32(b'SNAM', 'music_type'),
         MelNull(b'OFST'), # Not even CK/xEdit can recalculate these right now
     )
     __slots__ = melSet.getSlotsUsed()

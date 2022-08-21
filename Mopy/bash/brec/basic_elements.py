@@ -246,9 +246,15 @@ class MelBaseR(MelBase):
 
 # Simple static Fields --------------------------------------------------------
 class MelNum(MelBase):
-    """A simple static subrecord representing a number."""
+    """A simple static subrecord representing a number. Note attr defaults to
+    _unused for usage in MelSimpleArray and similar tools where the attribute
+    name does not matter. For everything else, you absolutely have to specify
+    an attribute name."""
     _unpacker, packer, static_size = get_structs(u'I')
     __slots__ = ()
+
+    def __init__(self, mel_sig, attr='_unused', default=None):
+        super().__init__(mel_sig, attr, default)
 
     def load_bytes(self, ins, size_, *debug_strs):
         return ins.unpack(self._unpacker, size_, *debug_strs)[0]
@@ -436,6 +442,61 @@ class MelGroups(MelGroup):
     @property
     def static_size(self):
         raise exception.AbstractError()
+
+#------------------------------------------------------------------------------
+class MelUnorderedGroups(MelGroups):
+    """A verion of MelGroups that does not use the usual 'initial sigs'
+    mechanism. Instead any element in the group can start a new object if it's
+    already been encountered while loading the current object. As an example,
+    consider these two subrecord definitions:
+
+        MelGroups('subs',
+            MelUInt32(b'SUB1', 'sub1'),
+            MelFloat(b'SUB2', 'sub2'),
+        )
+
+        MelUnorderedGroups('subs',
+            MelFloat(b'SUB1', 'sub1'),
+            MelFloat(b'SUB2', 'sub2'),
+        )
+
+    Along with this series of subrecords (where the '()' notation is supposed
+    to denote that the subrecord contains that data):
+
+        SUB1(1), SUB2(1.0), SUB2(2.0), SUB1(2), SUB1(3)
+
+    The result would look like this for the MelGroups one:
+
+        <subs: [<sub1: 1, sub2: 2.0>, <sub1: 2, sub2: 0.0>,
+                <sub1: 3, sub2: 0.0>]>
+
+    But it would look like this for the MelUnorderedGroups one:
+
+        <subs: [<sub1: 1, sub2: 1.0>, <sub1: 2, sub2: 2.0>,
+                <sub1: 3, sub2: 0.0>]>
+
+    With MelGroups, the second SUB2 overwrote the first one. With
+    MelUnorderedGroups, the second SUB2 started a new object instead."""
+    def getSlotsUsed(self):
+        return '_found_sigs', *super().getSlotsUsed()
+
+    def setDefault(self, record):
+        super().setDefault(record)
+        record._found_sigs = set()
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        if not record._found_sigs or sub_type in record._found_sigs:
+            # We just started loading or we hit this signature before. Either
+            # way, we need an object and we need to reset the found signatures
+            # to contain only this one
+            target = self._new_object(record)
+            record._found_sigs = {sub_type}
+        else:
+            # We haven't hit this signature yet, so add to the existing object
+            target = getattr(record, self.attr)[-1]
+            record._found_sigs.add(sub_type)
+        self.loaders[sub_type].load_mel(target, ins, sub_type, size_,
+            *debug_strs)
 
 #------------------------------------------------------------------------------
 class MelFids(MelGroups):
@@ -763,10 +824,6 @@ class MelXXXX(MelUInt32):
 #------------------------------------------------------------------------------
 class MelFid(MelUInt32):
     """Represents a mod record fid element."""
-
-    def __init__(self, mel_sig, element=u'FID_'):
-        super(MelFid, self).__init__(mel_sig, element)
-
     def load_bytes(self, ins, size_, *debug_strs):
         return FID(super().load_bytes(ins, size_, *debug_strs))
 

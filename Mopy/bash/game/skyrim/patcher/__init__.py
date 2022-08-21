@@ -486,23 +486,23 @@ statsTypes = {
 # Import Sounds
 #------------------------------------------------------------------------------
 soundsTypes = {
-    b'ACTI': (u'soundLooping', u'soundActivation'),
-    b'ADDN': ('soundLooping',),
+    b'ACTI': ('sound', 'soundActivation'),
+    b'ADDN': ('sound',),
     b'ALCH': (u'dropSound', u'pickupSound', u'soundConsume'),
     b'AMMO': (u'pickupSound', u'dropSound'),
     b'APPA': (u'pickupSound', u'dropSound'),
-    b'ARMA': (u'footstepSound',),
+    b'ARMA': ('footstep_sound',),
     b'ARMO': (u'pickupSound', u'dropSound'),
-    b'ASPC': ('soundLooping', 'regionData', 'reverb'),
+    b'ASPC': ('sound', 'use_sound_from_region', 'aspc_reverb'),
     b'BOOK': (u'pickupSound', u'dropSound'),
-    b'CONT': (u'soundOpen', u'soundClose'),
-    b'DOOR': (u'soundOpen', u'soundClose', u'soundLoop'),
+    b'CONT': ('sound', 'soundClose'),
+    b'DOOR': ('sound', 'soundClose', 'soundLoop'),
     b'EFSH': (u'ambientSound',), ##: This is also in graphicsTypes!
     b'EXPL': (u'sound1', u'sound2'),
-    b'FLOR': (u'harvestSound',),
+    b'FLOR': ('sound',),
     b'HAZD': (u'sound',),
     b'INGR': (u'pickupSound', u'dropSound'),
-    b'IPCT': (u'sound1', u'sound2'),
+    b'IPCT': ('sound', 'sound2'),
     b'KEYM': (u'pickupSound', u'dropSound'),
     b'LIGH': (u'sound',),
     #Needs to loop over all the sounds
@@ -515,10 +515,10 @@ soundsTypes = {
     b'SLGM': (u'pickupSound', u'dropSound'),
     b'SNCT': (u'parent', u'staticVolumeMultiplier'),
     # Sounds does not need to loop here
-    b'SNDR': (u'category', u'outputModel', u'sounds', u'looping',
-              u'rumbleSendValue', u'pctFrequencyShift',
-              u'pctFrequencyVariance', u'priority', u'dbVariance',
-              u'staticAtten'),
+    b'SNDR': ('descriptor_category', 'output_model', 'sound_files',
+              'looping_type', 'rumble_send_value', 'pct_frequency_shift',
+              'pct_frequency_variance', 'descriptor_priority', 'db_variance',
+              'staticAtten'),
     b'SOPM': (u'reverbSendpct', u'outputType', u'ch0_l', u'ch0_r', u'ch0_c',
               u'ch0_lFE', u'ch0_rL', u'ch0_rR', u'ch0_bL', u'ch0_bR', u'ch1_l',
               u'ch1_r', u'ch1_c', u'ch1_lFE', u'ch1_rL', u'ch1_rR', u'ch1_bL',
@@ -526,12 +526,12 @@ soundsTypes = {
               u'ch2_rR', u'ch2_bL', u'ch2_bR', u'minDistance', u'maxDistance',
               u'curve1', u'curve2', u'curve3', u'curve4', u'curve5'),
     b'SOUN': (u'soundDescriptor',),
-    b'TACT': (u'soundLoop',),
-    b'TREE': (u'harvestSound',),
-    b'WATR': (u'openSound',),
-    b'WEAP': (u'pickupSound', u'dropSound', u'attackSound', u'attackSound2D',
-              u'attackLoopSound', u'attackFailSound', u'idleSound',
-              u'equipSound', u'unequipSound', u'detectionSoundLevel'),
+    b'TACT': ('sound',),
+    b'TREE': ('sound',),
+    b'WATR': ('sound',),
+    b'WEAP': ('pickupSound', 'dropSound', 'sound', 'attackSound2D',
+              'attackLoopSound', 'attackFailSound', 'idleSound', 'equipSound',
+              'unequipSound', 'detectionSoundLevel'),
     #Needs to loop over all the sounds
     b'WTHR': (u'sounds',),
 }
@@ -586,8 +586,8 @@ graphicsTypes = {
     b'APPA': (u'iconPath', u'model'),
     b'ARMA': (u'male_model', u'female_model', u'male_model_1st',
               u'female_model_1st', u'biped_flags'),
-    b'ARMO': (u'model2', u'maleIconPath', u'model4', u'femaleIconPath',
-              u'addons', u'biped_flags'),
+    b'ARMO': ('maleWorld', 'maleIconPath', 'femaleWorld', 'femaleIconPath',
+              'addons', 'biped_flags'),
     b'BOOK': (u'iconPath', u'model'),
     b'CLAS': (u'iconPath',),
     b'CONT': (u'model',),
@@ -648,11 +648,11 @@ graphicsTypes = {
     b'SLGM': (u'iconPath', u'model'),
     b'STAT': (u'model',),
     b'TREE': (u'model',),
-    b'WEAP': (u'model1', u'model2', u'iconPath'),
+    b'WEAP': ('model', 'model2', 'iconPath'),
     b'WTHR': (u'wthrAmbientColors',),
 }
 graphicsFidTypes = {
-    b'BOOK': (u'inventoryArt',),
+    b'BOOK': ('inventory_art',),
     b'EFSH': (u'addonModels',),
     b'MGEF': (u'menu_display_object', u'light', u'hit_shader',
               u'enchant_shader', u'projectile', u'explosion', u'casting_art',
@@ -664,8 +664,9 @@ graphicsFidTypes = {
     b'SPEL': (u'menu_display_object',),
     b'WEAP': (u'firstPersonModelObject',),
 }
-graphicsModelAttrs = (u'model', u'model1', u'model2', u'model4', u'male_model',
-                      u'female_model', u'male_model_1st', u'female_model_1st')
+graphicsModelAttrs = {'model', 'model2', 'male_model', 'female_model',
+                      'male_model_1st', 'female_model_1st', 'maleWorld',
+                      'femaleWorld'}
 
 #------------------------------------------------------------------------------
 # Import Inventory

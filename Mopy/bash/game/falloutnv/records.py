@@ -27,7 +27,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelString, MelSet, \
     MelFid, MelFids, MelBase, MelSimpleArray, MreHeaderBase, MelFloat, \
     MelUInt32, MelBounds, null1, MelTruncatedStruct, MelIcons, MelIcon, \
     MelIco2, MelEdid, MelFull, MelArray, MelObject, MelNull, MelScript, \
-    MelDescription, MelSoundPickup, MelSoundDrop, MelUInt8Flags, MelSInt32, \
+    MelDescription, MelSoundPickupDrop, MelUInt8Flags, MelSInt32, \
     MelSorted, MelValueWeight, MelConditionsFo3, MelUInt8
 from ...exception import ModSizeError
 
@@ -102,8 +102,7 @@ class MreCcrd(MelRecord):
         MelModel(),
         MelIcons(),
         MelScript(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelString(b'TX00','textureFace'),
         MelString(b'TX01','textureBack'),
         MelUInt32(b'INTV', 'card_suit'),
@@ -159,8 +158,7 @@ class MreChip(MelRecord):
         MelModel(),
         MelIcons(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -175,8 +173,7 @@ class MreCmny(MelRecord):
         MelFull(),
         MelModel(),
         MelIcons(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelUInt32(b'DATA', 'absoluteValue'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -280,8 +277,7 @@ class MreImod(MelRecord):
         MelScript(),
         MelDescription(),
         MelDestructible(),
-        MelSoundPickup(),
-        MelSoundDrop(),
+        MelSoundPickupDrop(),
         MelValueWeight(),
     )
     __slots__ = melSet.getSlotsUsed()
