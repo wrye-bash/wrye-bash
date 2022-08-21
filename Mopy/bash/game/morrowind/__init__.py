@@ -25,7 +25,7 @@ import struct as _struct
 
 from ..patch_game import GameInfo, PatchGame
 from .. import WS_COMMON
-from ... import brec, bolt
+from ... import bolt
 
 class MorrowindGameInfo(PatchGame):
     displayName = u'Morrowind'
@@ -136,6 +136,7 @@ class MorrowindGameInfo(PatchGame):
             MreRepa, MreScpt, MreSkil, MreSndg, MreSoun, MreSpel, MreSscr, \
             MreStat, MreTes3, MreWeap
         # Setting RecordHeader class variables - Morrowind is special
+        from ... import brec
         header_type = brec.RecordHeader
         header_type.rec_header_size = 16
         header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I']

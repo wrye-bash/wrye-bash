@@ -941,26 +941,6 @@ class MreCobj(MreWithItems):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreColl(MelRecord):
-    """Collision Layer."""
-    rec_sig = b'COLL'
-
-    CollisionLayerFlags = Flags.from_names('triggerVolume', 'sensor',
-                                           'navmeshObstacle')
-
-    melSet = MelSet(
-        MelEdid(),
-        MelDescription(),
-        MelUInt32(b'BNAM', 'layerID'),
-        MelColor(b'FNAM'),
-        MelUInt32Flags(b'GNAM', u'flags', CollisionLayerFlags,),
-        MelString(b'MNAM', u'col_layer_name',),
-        MelUInt32(b'INTV', 'interactablesCount'),
-        MelSorted(MelSimpleArray('collidesWith', MelFid(b'CNAM'))),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreCont(MreWithItems):
     """Container."""
     rec_sig = b'CONT'

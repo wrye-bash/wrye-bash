@@ -20,12 +20,9 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """GameInfo override for TES V: Skyrim VR."""
 
 from ..skyrimse import SkyrimSEGameInfo
-from ... import brec
-from ...brec import MreFlst, MreGlob
 
 class SkyrimVRGameInfo(SkyrimSEGameInfo):
     displayName = u'Skyrim VR'
@@ -77,13 +74,12 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        # First import from skyrimse.records file
+        from ...brec import MreColl, MreFlst, MreGlob
         from ..skyrimse.records import MreVoli, MreLens
-        # then import rest of records from skyrim.records
         from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
             MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \
             MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreCell, MreClas, \
-            MreClfm, MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty, \
+            MreClfm, MreClmt, MreCobj, MreNavm, MreCont, MreCpth, MreCsty, \
             MreDebr, MreDial, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, \
             MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, \
             MreFlor, MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MrePack, \
@@ -96,7 +92,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
             MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
             MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
-            MreRace, MreNavm
+            MreRace
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
@@ -117,6 +113,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MrePack, MreFact, MreRace,
         )}
         # Setting RecordHeader class variables --------------------------------
+        from ... import brec
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
             b'GMST', b'KYWD', b'LCRT', b'AACT', b'TXST', b'GLOB', b'CLAS',

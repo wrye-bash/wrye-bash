@@ -23,8 +23,7 @@
 """GameInfo override for Fallout NV."""
 
 from ..fallout3 import Fallout3GameInfo
-from ... import brec, bolt
-from ...brec import MreFlst, MreGlob
+from ... import bolt
 
 class FalloutNVGameInfo(Fallout3GameInfo):
     displayName = u'Fallout New Vegas'
@@ -141,12 +140,11 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        # First import from our records file
+        from ...brec import MreFlst, MreGlob
         from .records import MreTes4, MreAloc, MreAmef, MreCcrd, MreCdck, \
             MreChal, MreChip, MreCmny, MreCsno, MreDehy, MreDial, MreHung, \
             MreImod, MreLsct, MreMset, MreRcct, MreRcpe, MreRepu, MreSlpd, \
             MreWthr
-        # Then from fallout3.records
         from ..fallout3.records import MreCpth, MreIdle, MreMesg, MrePack, \
             MrePerk, MreQust, MreSpel, MreTerm, MreNpc, MreAddn, MreAnio, \
             MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt, MreCobj, \
@@ -177,6 +175,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr, MreGmst,
         )}
         # Setting RecordHeader class variables --------------------------------
+        from ... import brec
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
             b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT',

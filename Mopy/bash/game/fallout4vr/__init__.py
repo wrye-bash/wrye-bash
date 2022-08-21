@@ -24,7 +24,7 @@
 necessary."""
 
 from ..fallout4 import Fallout4GameInfo
-from ... import brec, bolt
+from ... import bolt
 
 class Fallout4VRGameInfo(Fallout4GameInfo):
     displayName = u'Fallout 4 VR'
@@ -88,14 +88,13 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        # First import FO4VR-specific record classes
         from .records import MreTes4
-        # Then import from fallout4.records file
         from ..fallout4.records import MreGmst, MreLvli, MreLvln
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreGmst, MreLvli, MreLvln
         )}
         # Setting RecordHeader class variables --------------------------------
+        from ... import brec
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
             b'GMST', b'KYWD', b'LCRT', b'AACT', b'TRNS', b'CMPO', b'TXST',

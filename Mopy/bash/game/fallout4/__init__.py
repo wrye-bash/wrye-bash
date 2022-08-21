@@ -26,7 +26,7 @@ from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
 from .. import WS_COMMON
-from ... import brec, bolt
+from ... import bolt
 
 class Fallout4GameInfo(PatchGame):
     displayName = u'Fallout 4'
@@ -218,6 +218,7 @@ class Fallout4GameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
+        from ...brec import MreColl
         from .records import MreAact, MreActi, MreAddn, MreAech, MreAmdl, \
             MreAnio, MreAoru, MreArma, MreArmo, MreArto, MreAstp, MreAvif, \
             MreBnds, MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, \
@@ -227,9 +228,11 @@ class Fallout4GameInfo(PatchGame):
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
             MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
+            MreColl,
             MreGmst, MreLvli, MreLvln, MrePerk,
         )}
         # Setting RecordHeader class variables --------------------------------
+        from ... import brec
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
             b'GMST', b'KYWD', b'LCRT', b'AACT', b'TRNS', b'CMPO', b'TXST',
@@ -261,6 +264,7 @@ class Fallout4GameInfo(PatchGame):
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
             MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
+            MreColl,
             MreGmst, MreLvli, MreLvln, MrePerk, MreTes4,
         )}
         brec.MreRecord.simpleTypes = (

@@ -25,8 +25,7 @@
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
-from ... import brec, bolt
-from ...brec import MreFlst, MreGlob
+from ... import bolt
 
 class Fallout3GameInfo(PatchGame):
     displayName = u'Fallout 3'
@@ -296,6 +295,7 @@ class Fallout3GameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
+        from ...brec import MreFlst, MreGlob
         from .records import MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, \
             MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams, \
             MreClas, MreClmt, MreCobj, MreCont, MreCpth, MreCrea, MreCsty, \
@@ -325,6 +325,7 @@ class Fallout3GameInfo(PatchGame):
             MreWeap, MreWthr, MreGmst,
         )}
         # Setting RecordHeader class variables --------------------------------
+        from ... import brec
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
             b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT',
