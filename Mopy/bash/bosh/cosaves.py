@@ -34,12 +34,11 @@ import string
 from typing import Type, get_type_hints
 from zlib import crc32
 
-from ..bolt import decoder, encode, struct_unpack, unpack_string, \
-    unpack_int, unpack_short, unpack_4s, unpack_byte, unpack_str16, \
-    unpack_float, unpack_double, unpack_int_signed, unpack_str32, AFile, \
-    unpack_spaced_string, pack_int, pack_short, pack_double, pack_byte, \
-    pack_int_signed, pack_float, pack_4s, struct_error, GPath, struct_pack, \
-    deprint, Path
+from ..bolt import decoder, encode, struct_unpack, unpack_int, unpack_short, \
+    unpack_4s, unpack_byte, unpack_str16, unpack_float, unpack_double, \
+    unpack_int_signed, unpack_str32, AFile, unpack_spaced_string, pack_int, \
+    pack_short, pack_double, pack_byte, pack_int_signed, pack_float, pack_4s, \
+    struct_error, GPath, struct_pack, deprint, Path
 from ..exception import AbstractError, BoltError, CosaveError, \
     InvalidCosaveError, UnsupportedCosaveError
 
@@ -132,7 +131,7 @@ class _AHeader(_Dumpable):
 
         :param ins: The input stream to read from.
         :param cosave_name: The filename of the cosave for error messages."""
-        actual_tag = _cosave_decode(unpack_string(ins, len(self.savefile_tag)))
+        actual_tag = _cosave_decode(ins.read(len(self.savefile_tag)))
         if actual_tag != self.savefile_tag:
             raise InvalidCosaveError(cosave_name,
                                      f'Header tag wrong: got {actual_tag}, '

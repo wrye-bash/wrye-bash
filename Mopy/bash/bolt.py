@@ -1850,11 +1850,6 @@ def pack_bzstr8(out, val: bytes, __pack=structs_cache[u'=B'].pack):
     pack_byte(out, len(val) + 1)
     out.write(val)
     out.write(b'\x00')
-def unpack_string(ins, string_len) -> bytes:
-    return struct_unpack(f'{string_len}s', ins.read(string_len))[0]
-def pack_string(out, val: bytes):
-    out.write(val)
-
 def pack_byte_signed(out, value: int, __pack=structs_cache[u'b'].pack):
     out.write(__pack(value))
 

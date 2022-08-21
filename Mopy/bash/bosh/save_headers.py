@@ -39,18 +39,22 @@ from functools import partial
 import lz4.block
 
 from .. import bolt
-from ..bolt import decoder, cstrip, unpack_string, unpack_int, unpack_str8, \
-    unpack_short, unpack_float, unpack_str16, unpack_byte, \
-    unpack_str_int_delim, unpack_str16_delim, unpack_str_byte_delim, \
-    unpack_many, encode, struct_unpack, pack_int, pack_byte, pack_short, \
-    pack_float, pack_string, pack_str8, pack_bzstr8, structs_cache, \
-    struct_error, remove_newlines, deprint, FName
+from ..bolt import decoder, cstrip, unpack_int, unpack_str8, unpack_short, \
+    unpack_float, unpack_str16, unpack_byte, unpack_str_int_delim, \
+    unpack_str16_delim, unpack_str_byte_delim, unpack_many, encode, \
+    struct_unpack, pack_int, pack_byte, pack_short, pack_float, pack_str8, \
+    pack_bzstr8, structs_cache, struct_error, remove_newlines, deprint, FName
 from ..exception import SaveHeaderError, AbstractError
 
 # Utilities -------------------------------------------------------------------
-def _pack_c(out, value, __pack=structs_cache[u'=c'].pack):
+def _unpack_fstr8(ins) -> bytes:
+    return ins.read(8)
+def _unpack_fstr16(ins) -> bytes:
+    return ins.read(16)
+def _pack_c(out, value, __pack=structs_cache['=c'].pack):
     out.write(__pack(value))
-unpack_fstr16 = partial(unpack_string, string_len=16)
+def _pack_string(out, val: bytes):
+    out.write(val)
 
 class SaveFileHeader(object):
     save_magic = b'OVERRIDE'
@@ -84,7 +88,7 @@ class SaveFileHeader(object):
             raise SaveHeaderError(err_msg) from e
 
     def load_header(self, ins, load_image=False):
-        save_magic = unpack_string(ins, len(self.__class__.save_magic))
+        save_magic = ins.read(len(self.__class__.save_magic))
         if save_magic != self.__class__.save_magic:
             raise SaveHeaderError(f'Magic wrong: {save_magic!r} (expected '
                                   f'{self.__class__.save_magic!r})')
@@ -201,21 +205,21 @@ class OblivionSaveHeader(SaveFileHeader):
     ##: exe_time and gameTime are SYSTEMTIME structs, as described here:
     # https://docs.microsoft.com/en-us/windows/win32/api/minwinbase/ns-minwinbase-systemtime
     unpackers = OrderedDict([
-        (u'major_version',  (pack_byte, unpack_byte)),
-        (u'minor_version',  (pack_byte, unpack_byte)),
-        (u'exe_time',       (pack_string, unpack_fstr16)),
-        (u'header_version', (pack_int, unpack_int)),
-        (u'header_size',    (pack_int, unpack_int)),
-        (u'saveNum',        (pack_int, unpack_int)),
-        (u'pcName',         (_pack_str8_1, unpack_str8)),
-        (u'pcLevel',        (pack_short, unpack_short)),
-        (u'pcLocation',     (_pack_str8_1, unpack_str8)),
-        (u'gameDays',       (pack_float, unpack_float)),
-        (u'gameTicks',      (pack_int, unpack_int)),
-        (u'gameTime',       (pack_string, unpack_fstr16)),
-        (u'ssSize',         (pack_int, unpack_int)),
-        (u'ssWidth',        (pack_int, unpack_int)),
-        (u'ssHeight',       (pack_int, unpack_int)),
+        ('major_version',  (pack_byte, unpack_byte)),
+        ('minor_version',  (pack_byte, unpack_byte)),
+        ('exe_time',       (_pack_string, _unpack_fstr16)),
+        ('header_version', (pack_int, unpack_int)),
+        ('header_size',    (pack_int, unpack_int)),
+        ('saveNum',        (pack_int, unpack_int)),
+        ('pcName',         (_pack_str8_1, unpack_str8)),
+        ('pcLevel',        (pack_short, unpack_short)),
+        ('pcLocation',     (_pack_str8_1, unpack_str8)),
+        ('gameDays',       (pack_float, unpack_float)),
+        ('gameTicks',      (pack_int, unpack_int)),
+        ('gameTime',       (_pack_string, _unpack_fstr16)),
+        ('ssSize',         (pack_int, unpack_int)),
+        ('ssWidth',        (pack_int, unpack_int)),
+        ('ssHeight',       (pack_int, unpack_int)),
     ])
 
     def _write_masters(self, ins, out):
@@ -269,20 +273,20 @@ class SkyrimSaveHeader(SaveFileHeader):
                  'masters_regular', 'masters_esl')
 
     unpackers = OrderedDict([
-        (u'header_size', (00, unpack_int)),
-        (u'version',     (00, unpack_int)),
-        (u'saveNumber',  (00, unpack_int)),
-        (u'pcName',      (00, unpack_str16)),
-        (u'pcLevel',     (00, unpack_int)),
-        (u'pcLocation',  (00, unpack_str16)),
-        (u'gameDate',    (00, unpack_str16)),
-        (u'raceEid',     (00, unpack_str16)), # pcRace
-        (u'pcSex',       (00, unpack_short)),
-        (u'pcExp',       (00, unpack_float)),
-        (u'pcLvlExp',    (00, unpack_float)),
-        (u'filetime',    (00, lambda ins: unpack_string(ins, 8))),
-        (u'ssWidth',     (00, unpack_int)),
-        (u'ssHeight',    (00, unpack_int)),
+        ('header_size', (00, unpack_int)),
+        ('version',     (00, unpack_int)),
+        ('saveNumber',  (00, unpack_int)),
+        ('pcName',      (00, unpack_str16)),
+        ('pcLevel',     (00, unpack_int)),
+        ('pcLocation',  (00, unpack_str16)),
+        ('gameDate',    (00, unpack_str16)),
+        ('raceEid',     (00, unpack_str16)), # pcRace
+        ('pcSex',       (00, unpack_short)),
+        ('pcExp',       (00, unpack_float)),
+        ('pcLvlExp',    (00, unpack_float)),
+        ('filetime',    (00, _unpack_fstr8)),
+        ('ssWidth',     (00, unpack_int)),
+        ('ssHeight',    (00, unpack_int)),
     ])
 
     def __is_sse(self): return self.version == 12

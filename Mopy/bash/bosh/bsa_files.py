@@ -41,9 +41,8 @@ from struct import unpack_from as _unpack_from
 import lz4.frame
 
 from .dds_files import DDSFile, mk_dxgi_fmt
-from ..bolt import deprint, Progress, struct_unpack, unpack_byte, \
-    unpack_string, unpack_int, Flags, AFile, structs_cache, struct_calcsize, \
-    struct_error
+from ..bolt import deprint, Progress, struct_unpack, unpack_byte, unpack_int, \
+    Flags, AFile, structs_cache, struct_calcsize, struct_error
 from ..env import convert_separators
 from ..exception import AbstractError, BSAError, BSADecodingError, \
     BSAFlagError, BSACompressionError, BSADecompressionError, \
@@ -689,6 +688,7 @@ class BSA(ABsa):
         my_bsa_name = self.bsa_name
         with open(self.abs_path, u'rb') as bsa_file:
             bsa_seek = bsa_file.seek
+            bsa_read = bsa_file.read
             # load the header from input stream
             self.bsa_header.load_header(bsa_file, my_bsa_name)
             # load the folder records from input stream
@@ -710,8 +710,8 @@ class BSA(ABsa):
                     # Size is summed as strlen() + 1, so use +1 for root
                     total_names_length += 1
                 else:
-                    folder_path = _decode_path(
-                        unpack_string(bsa_file, name_size - 1), my_bsa_name)
+                    folder_path = _decode_path(bsa_read(name_size - 1),
+                        my_bsa_name)
                     bsa_seek(1, 1) # discard null terminator
                     total_names_length += name_size
                 read_file_records(bsa_file, folder_path, folder_record)
@@ -721,7 +721,7 @@ class BSA(ABsa):
                     self.abs_path, self.bsa_header.total_folder_name_length,
                     total_names_length, self.bsa_header.folder_count))
             self.total_names_length = total_names_length
-            file_names = bsa_file.read( # has an empty string at the end
+            file_names = bsa_read( # has an empty string at the end
                 self.bsa_header.total_file_name_length).split(b'\00')
             # close the file
         return file_names
