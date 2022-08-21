@@ -99,13 +99,13 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreColl, MreFlst, MreGlob
+        from ...brec import MreColl, MreDebr, MreFlst, MreGlob
         from ..skyrimse.records import MreVoli, MreLens
         from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
             MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \
             MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreCell, MreClas, \
             MreClfm, MreClmt, MreCobj, MreNavm, MreCont, MreCpth, MreCsty, \
-            MreDebr, MreDial, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, \
+            MreRace, MreDial, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, \
             MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, \
             MreFlor, MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MrePack, \
             MreHazd, MreHdpt, MreTes4, MreIdle, MreIdlm, MreImad, MreImgs, \
@@ -116,8 +116,7 @@ class EnderalSEGameInfo(EnderalGameInfo, SkyrimSEGameInfo):
             MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
             MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
-            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
-            MreRace
+            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,

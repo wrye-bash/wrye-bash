@@ -31,7 +31,7 @@ from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
     MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString, \
     MelUnicode, unpackSubHeader, MelUInt32Flags, MelString
-from .common_subrecords import MelEdid, MelDescription, MelColor
+from .common_subrecords import MelEdid, MelDescription, MelColor, MelDebrData
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId
 from .. import bolt, exception
@@ -344,6 +344,22 @@ class MreColl(MelRecord):
         MelString(b'MNAM', 'layer_name'),
         MelUInt32(b'INTV', 'interactables_count'),
         MelSorted(MelSimpleArray('collides_with', MelFid(b'CNAM'))),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDebr(MelRecord):
+    """Debris."""
+    rec_sig = b'DEBR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelGroups('debr_models',
+            MelDebrData(),
+            # Ignore texture hashes - they're only an optimization, plenty
+            # of records in Skyrim.esm are missing them
+            MelNull(b'MODT'),
+        ),
     )
     __slots__ = melSet.getSlotsUsed()
 

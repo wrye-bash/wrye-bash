@@ -999,22 +999,6 @@ class MreCsty(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDebr(MelRecord):
-    """Debris."""
-    rec_sig = b'DEBR'
-
-    dataFlags = Flags.from_names('hasCollissionData')
-
-    melSet = MelSet(
-        MelEdid(),
-        MelGroups('models',
-            MelDebrData(),
-            MelBase(b'MODT','modt_p'),
-        ),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreDial(MelRecord):
     """Dialogue."""
     rec_sig = b'DIAL'

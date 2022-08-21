@@ -385,27 +385,31 @@ class MelCpthShared(MelSequential):
 
 #------------------------------------------------------------------------------
 class MelDebrData(MelStruct):
+    """Handles the DEBR subrecord DATA (Data)."""
+    _debr_flags = Flags.from_names('has_collision_data', 'collision')
+
     def __init__(self):
         # Format doesn't matter, struct.Struct('') works! ##: MelStructured
-        super().__init__(b'DATA', [], 'percentage', ('modPath', null1),
-            'flags')
+        super().__init__(b'DATA', [], 'debr_percentage', ('modPath', null1),
+            (self._debr_flags, 'debr_flags'))
 
     @staticmethod
     def _expand_formats(elements, struct_formats):
         return [0] * len(elements)
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs,
+            __unpack_byte=structs_cache['B'].unpack):
         byte_data = ins.read(size_, *debug_strs)
-        record.percentage = unpack_byte(ins, byte_data[0:1])[0]
+        record.debr_percentage = __unpack_byte(byte_data[0:1])[0]
         record.modPath = byte_data[1:-2]
-        if byte_data[-2] != null1:
+        if byte_data[-2:-1] != null1:
             raise ModError(ins.inName, f'Unexpected subrecord: {debug_strs}')
-        record.flags = struct_unpack('B', byte_data[-1])[0]
+        record.debr_flags = self._debr_flags(__unpack_byte(byte_data[-1:])[0])
 
     def pack_subrecord_data(self, record):
         return b''.join(
-            [struct_pack('B', record.percentage), record.modPath, null1,
-             struct_pack('B', record.flags)])
+            [struct_pack('B', record.debr_percentage), record.modPath, null1,
+             struct_pack('B', record.debr_flags.dump())])
 
 #------------------------------------------------------------------------------
 class MelDecalData(MelOptStruct):
