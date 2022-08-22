@@ -44,7 +44,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
     MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose, \
     MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
-    MelRandomTeleports, MelDualData
+    MelRandomTeleports, MelDualData, MelIco2
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -911,7 +911,7 @@ class MreDmgt(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelUnion({
-            True:  MelArray('damage_types',
+            True: MelArray('damage_types',
                 MelStruct(b'DNAM', ['2I'], (FID, 'dt_actor_value'),
                     (FID, 'dt_spell')),
             ),
@@ -986,6 +986,127 @@ class MreEczn(MelRecord):
             (FID, 'eczn_owner'), (FID, 'eczn_location'), 'eczn_rank',
             'eczn_minimum_level', (_eczn_flags, 'eczn_flags'),
             'eczn_max_level'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+##: Check if this record needs adding to skip_form_version_upgrade
+class MreEfsh(MelRecord):
+    """Effect Shader."""
+    rec_sig = b'EFSH'
+
+    _efsh_flags = Flags.from_names(
+        (0,  'no_membrane_shader'),
+        (1,  'membrane_grayscale_color'),
+        (2,  'membrane_grayscale_alpha'),
+        (3,  'no_particle_shader'),
+        (4,  'ee_inverse'),
+        (5,  'affect_skin_only'),
+        (6,  'te_ignore_alpha'),
+        (7,  'te_project_uvs'),
+        (8,  'ignore_base_geometry_alpha'),
+        (9,  'te_lighting'),
+        (10, 'te_no_weapons'),
+        (11, 'use_alpha_sorting'),
+        (12, 'prefer_dismembered_limbs'),
+        (15, 'particle_animated'),
+        (16, 'particle_grayscale_color'),
+        (17, 'particle_grayscale_alpha'),
+        (24, 'use_blood_geometry'),
+    )
+
+    melSet = MelSet(
+        MelEdid(),
+        MelIcon('fill_texture'),
+        MelIco2('particle_texture'),
+        MelString(b'NAM7', 'holes_texture'),
+        MelString(b'NAM8', 'membrane_palette_texture'),
+        MelString(b'NAM9', 'particle_palette_texture'),
+        MelBase(b'DATA', 'unknown_data'),
+        MelUnion({
+            True: MelStruct(b'DNAM',
+                ['3I', '3B', 's', '9f', '3B', 's', '8f', 'I', '4f', 'I', '3B',
+                 's', '3B', 's', 's', '6f', 'I', '2f'], 'ms_source_blend_mode',
+                'ms_blend_operation', 'ms_z_test_function', 'fill_color1_red',
+                'fill_color1_green', 'fill_color1_blue', 'unused1',
+                'fill_alpha_fade_in_time', 'fill_full_alpha_time',
+                'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
+                'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
+                'fill_texture_animation_speed_u',
+                'fill_texture_animation_speed_v', 'ee_fall_off',
+                'ee_color_red', 'ee_color_green', 'ee_color_blue', 'unused2',
+                'ee_alpha_fade_in_time', 'ee_full_alpha_time',
+                'ee_alpha_fade_out_time', 'ee_persistent_alpha_ratio',
+                'ee_alpha_pulse_amplitude', 'ee_alpha_pulse_frequency',
+                'fill_full_alpha_ratio', 'ee_full_alpha_ratio',
+                'ms_dest_blend_mode', 'holes_start_time', 'holes_end_time',
+                'holes_start_value', 'holes_end_value', (FID, 'sound_ambient'),
+                'fill_color2_red', 'fill_color2_green', 'fill_color2_blue',
+                'unused7', 'fill_color3_red', 'fill_color3_green',
+                'fill_color3_blue', 'unused8', 'unknown1', 'fill_color1_scale',
+                'fill_color2_scale', 'fill_color3_scale', 'fill_color1_time',
+                'fill_color2_time', 'fill_color3_time',
+                (_efsh_flags, 'efsh_flags'), 'fill_texture_scale_u',
+                'fill_texture_scale_v'),
+            False: MelStruct(b'DNAM',
+                ['s', '3I', '3B', 's', '9f', '3B', 's', '8f', '5I', '19f',
+                 '3B', 's', '3B', 's', '3B', 's', '11f', 'I', '5f', '3B', 's',
+                 'f', '2I', '6f', 'I', '3B', 's', '3B', 's', '9f', '8I', '2f',
+                 '2s'], 'unknown1', 'ms_source_blend_mode',
+                'ms_blend_operation', 'ms_z_test_function', 'fill_color1_red',
+                'fill_color1_green', 'fill_color1_blue', 'unused1',
+                'fill_alpha_fade_in_time', 'fill_full_alpha_time',
+                'fill_alpha_fade_out_time', 'fill_persistent_alpha_ratio',
+                'fill_alpha_pulse_amplitude', 'fill_alpha_pulse_frequency',
+                'fill_texture_animation_speed_u',
+                'fill_texture_animation_speed_v', 'ee_fall_off',
+                'ee_color_red', 'ee_color_green', 'ee_color_blue', 'unused2',
+                'ee_alpha_fade_in_time', 'ee_full_alpha_time',
+                'ee_alpha_fade_out_time', 'ee_persistent_alpha_ratio',
+                'ee_alpha_pulse_amplitude', 'ee_alpha_pulse_frequency',
+                'fill_full_alpha_ratio', 'ee_full_alpha_ratio',
+                'ms_dest_blend_mode', 'ps_source_blend_mode',
+                'ps_blend_operation', 'ps_z_test_function',
+                'ps_dest_blend_mode', 'ps_particle_birth_ramp_up_time',
+                'ps_full_particle_birth_time',
+                'ps_particle_birth_ramp_down_time',
+                'ps_full_particle_birth_ratio', 'ps_persistent_particle_count',
+                'ps_particle_lifetime', 'ps_particle_lifetime_delta',
+                'ps_initial_speed_along_normal',
+                'ps_acceleration_along_normal', 'ps_initial_velocity1',
+                'ps_initial_velocity2', 'ps_initial_velocity3',
+                'ps_acceleration1', 'ps_acceleration2', 'ps_acceleration3',
+                'ps_scale_key1', 'ps_scale_key2', 'ps_scale_key1_time',
+                'ps_scale_key2_time', 'color_key1_red', 'color_key1_green',
+                'color_key1_blue', 'unused3', 'color_key2_red',
+                'color_key2_green', 'color_key2_blue', 'unused4',
+                'color_key3_red', 'color_key3_green', 'color_key3_blue',
+                'unused5', 'color_key1_alpha', 'color_key2_alpha',
+                'color_key3_alpha', 'color_key1_time', 'color_key2_time',
+                'color_key3_time', 'ps_initial_speed_along_normal_delta',
+                'ps_initial_rotation', 'ps_initial_rotation_delta',
+                'ps_rotation_speed', 'ps_rotation_speed_delta',
+                (FID, 'addon_models'), 'holes_start_time', 'holes_end_time',
+                'holes_start_value', 'holes_end_value', 'ee_width',
+                'edge_color_red', 'edge_color_green', 'edge_color_blue',
+                'unused6', 'explosion_wind_speed', 'texture_count_u',
+                'texture_count_v', 'addon_models_fade_in_time',
+                'addon_models_fade_out_time', 'addon_models_scale_start',
+                'addon_models_scale_end', 'addon_models_scale_in_time',
+                'addon_models_scale_out_time', (FID, 'sound_ambient'),
+                'fill_color2_red', 'fill_color2_green', 'fill_color2_blue',
+                'unused7', 'fill_color3_red', 'fill_color3_green',
+                'fill_color3_blue', 'unused8', 'fill_color1_scale',
+                'fill_color2_scale', 'fill_color3_scale', 'fill_color1_time',
+                'fill_color2_time', 'fill_color3_time', 'color_scale',
+                'birth_position_offset', 'birth_position_offset_range_delta',
+                'psa_start_frame', 'psa_start_frame_variation',
+                'psa_end_frame', 'psa_loop_start_frame',
+                'psa_loop_start_variation', 'psa_frame_count',
+                'psa_frame_count_variation', (_efsh_flags, 'efsh_flags'),
+                'fill_texture_scale_u', 'fill_texture_scale_v', 'unused9'),
+        }, decider=FormVersionDecider(operator.ge, 106)),
+        MelModel(),
     )
     __slots__ = melSet.getSlotsUsed()
 

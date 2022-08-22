@@ -223,14 +223,14 @@ class Fallout4GameInfo(PatchGame):
             MreAnio, MreAoru, MreArma, MreArmo, MreArto, MreAstp, MreAvif, \
             MreBnds, MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, \
             MreCmpo, MreCobj, MreCont, MreCpth, MreCsty, MreDfob, MreDmgt, \
-            MreDobj, MreDoor, MreDual, MreEczn, \
+            MreDobj, MreDoor, MreDual, MreEczn, MreEfsh, \
             MreGmst, MreLvli, MreLvln, MrePerk, MreTes4
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
             MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
-            MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn,
+            MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
             MreGmst, MreLvli, MreLvln, MrePerk,
         )}
         # Setting RecordHeader class variables --------------------------------
@@ -271,7 +271,7 @@ class Fallout4GameInfo(PatchGame):
             MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
-            MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn,
+            MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
             MreGmst, MreLvli, MreLvln, MrePerk, MreTes4,
         )}
         brec.MreRecord.simpleTypes = (
