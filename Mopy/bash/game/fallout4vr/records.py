@@ -23,12 +23,12 @@
 """This module contains only the overrides of record classes needed for
 FO4VR."""
 
-from ...brec import MreHeaderBase, MelSet, MelStruct, MelBase, MelFid, \
+from ...brec import AMreHeader, MelSet, MelStruct, MelBase, MelFid, \
     MelSimpleArray, MelNull, MelGroups, MelUInt32
 
 # Only difference from FO4 is the default version, but this seems less hacky
 # than adding a game var just for this and dynamically importing it in FO4
-class MreTes4(MreHeaderBase):
+class MreTes4(AMreHeader):
     """TES4 Record. File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
@@ -38,9 +38,9 @@ class MreTes4(MreHeaderBase):
                   (u'nextObject', 0x800)),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
-        MreHeaderBase.MelAuthor(),
-        MreHeaderBase.MelDescription(),
-        MreHeaderBase.MelMasterNames(),
+        AMreHeader.MelAuthor(),
+        AMreHeader.MelDescription(),
+        AMreHeader.MelMasterNames(),
         MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelGroups('transient_types',

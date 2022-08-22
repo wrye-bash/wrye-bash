@@ -25,8 +25,7 @@
 from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
-from ... import brec, bolt
-from ...brec import MreFlst, MreGlob
+from ... import bolt
 
 class Fallout3GameInfo(PatchGame):
     displayName = u'Fallout 3'
@@ -296,10 +295,11 @@ class Fallout3GameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
+        from ...brec import MreDebr, MreFlst, MreGlob
         from .records import MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, \
             MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams, \
             MreClas, MreClmt, MreCobj, MreCont, MreCpth, MreCrea, MreCsty, \
-            MreDebr, MreDobj, MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl, \
+            MreWrld, MreDobj, MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl, \
             MreEyes, MreFact, MreFurn, MreGras, MreHair, MreHdpt, MreTes4, \
             MreIdle, MreIdlm, MreImad, MreImgs, MreIngr, MreIpct, MreIpds, \
             MreKeym, MreLgtm, MreLigh, MreLscr, MreLtex, MreLvlc, MreLvli, \
@@ -308,8 +308,7 @@ class Fallout3GameInfo(PatchGame):
             MreRace, MreRads, MreRegn, MreRgdl, MreScol, MreScpt, MreSoun, \
             MreSpel, MreStat, MreTact, MreTerm, MreTree, MreTxst, MreVtyp, \
             MreWatr, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, \
-            MreGmst, MreInfo, MreNavi, MreNavm, MrePgre, MrePmis, MreRefr, \
-            MreWrld
+            MreGmst, MreInfo, MreNavi, MreNavm, MrePgre, MrePmis, MreRefr
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreArma, MreArmo,
             MreAspc, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt,
@@ -325,6 +324,7 @@ class Fallout3GameInfo(PatchGame):
             MreWeap, MreWthr, MreGmst,
         )}
         # Setting RecordHeader class variables --------------------------------
+        from ... import brec
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
             b'GMST', b'TXST', b'MICN', b'GLOB', b'CLAS', b'FACT', b'HDPT',

@@ -21,11 +21,13 @@
 #
 # =============================================================================
 """This module contains the Fallout 4 record classes."""
+import operator
+
 from ...bolt import Flags
-from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
-    MelStruct, MelNull, MelSimpleArray, MreLeveledListBase, MelFid, MelAttx, \
+from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
+    MelStruct, MelNull, MelSimpleArray, AMreLeveledList, MelFid, MelAttx, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelUnloadEvent, \
-    MelArray, MreGmstBase, MelUInt8Flags, MelSorted, MelGroups, MelShortName, \
+    MelArray, AMreGmst, MelUInt8Flags, MelSorted, MelGroups, MelShortName, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, MelRace, \
     MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
@@ -38,7 +40,11 @@ from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelAdditionalRaces, MelFootstepSound, MelArtObject, MelEnchantment, \
     MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
     MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, \
-    MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups
+    MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
+    MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
+    MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose, \
+    MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
+    MelRandomTeleports, MelDualData
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -134,13 +140,13 @@ class MelDestructible(MelGroup):
     def __init__(self):
         super().__init__('destructible',
             MelStruct(b'DEST', ['i', '2B', '2s'], 'health', 'count',
-                (MelDestructible._dest_header_flags, 'dest_flags'),
+                (self._dest_header_flags, 'dest_flags'),
                 'dest_unknown'),
             MelResistances(b'DAMC'),
             MelGroups('stages',
                 MelStruct(b'DSTD', ['4B', 'i', '2I', 'i'], 'health', 'index',
                           'damage_stage',
-                          (MelDestructible._dest_stage_flags, 'stage_flags'),
+                          (self._dest_stage_flags, 'stage_flags'),
                           'self_damage_per_second', (FID, 'explosion'),
                           (FID, 'debris'), 'debris_count'),
                 MelString(b'DSTA', 'sequence_name'),
@@ -156,12 +162,16 @@ class MelFtyp(MelFid):
         super().__init__(b'FTYP', 'forced_loc_ref_type')
 
 #------------------------------------------------------------------------------
+class MelItems(AMelItems):
+    """Handles the COCT/CNTO/COED subrecords defining items."""
+
+#------------------------------------------------------------------------------
 class MelLLItems(AMelLLItems):
-    """Handles the LVLO and LLCT subrecords defining leveled list items"""
+    """Handles the LLCT/LVLO/COED subrecords defining leveled list entries."""
     def __init__(self):
-        super().__init__([MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'],
+        super().__init__(MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'],
             'level', 'unused1', (FID, 'listId'), ('count', 1), 'chance_none',
-            'unused2')])
+            'unused2'))
 
 #------------------------------------------------------------------------------
 class MelNativeTerminal(MelFid):
@@ -221,7 +231,7 @@ class MelVmad(AMelVmad):
 #------------------------------------------------------------------------------
 # Fallout 4 Records -----------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreTes4(MreHeaderBase):
+class MreTes4(AMreHeader):
     """TES4 Record.  File header."""
     rec_sig = b'TES4'
     _post_masters_sigs = {b'ONAM', b'SCRN', b'TNAM', b'INTV', b'INCC'}
@@ -231,9 +241,9 @@ class MreTes4(MreHeaderBase):
             (u'nextObject', 0x001)),
         MelNull(b'OFST'), # obsolete
         MelNull(b'DELE'), # obsolete
-        MreHeaderBase.MelAuthor(),
-        MreHeaderBase.MelDescription(),
-        MreHeaderBase.MelMasterNames(),
+        AMreHeader.MelAuthor(),
+        AMreHeader.MelDescription(),
+        AMreHeader.MelMasterNames(),
         MelSimpleArray('overrides', MelFid(b'ONAM')),
         MelBase(b'SCRN', 'screenshot'),
         MelGroups('transient_types',
@@ -675,13 +685,301 @@ class MreBptd(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreGmst(MreGmstBase):
+class MreCams(MelRecord):
+    """Camera Shot."""
+    rec_sig = b'CAMS'
+
+    _cams_flags = Flags.from_names('position_follows_location',
+        'rotation_follows_target', 'dont_follow_bone', 'first_person_camera',
+        'no_tracer', 'start_at_time_zero', 'dont_reset_location_spring',
+        'dont_reset_target_spring')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelModel(),
+        MelConditionList(),
+        MelTruncatedStruct(b'DATA', ['4I', '12f'], 'cams_action',
+            'cams_location', 'cams_target', (_cams_flags, 'cams_flags'),
+            'time_mult_player', 'time_mult_target', 'time_mult_global',
+            'cams_max_time', 'cams_min_time', 'target_pct_between_actors',
+            'near_target_distance', 'location_spring', 'target_spring',
+            'rotation_offset_x', 'rotation_offset_y', 'rotation_offset_z',
+            old_versions={'4I9f', '4I7f'}),
+        MelImageSpaceMod(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreClas(MelRecord):
+    """Class."""
+    rec_sig = b'CLAS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelDescription(),
+        MelIcon(),
+        MelProperties(),
+        MelStruct(b'DATA', ['4s', 'f'], 'unknown1', 'bleedout_default'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreClfm(MelRecord):
+    """Color."""
+    rec_sig = b'CLFM'
+
+    _clfm_flags = Flags.from_names('playable', 'remapping_index',
+        'extended_lut')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelUInt32(b'CNAM', 'color_or_index'),
+        MelUInt32Flags(b'FNAM', 'clfm_flags', _clfm_flags),
+        MelConditionList(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreClmt(MelRecord):
+    """Climate."""
+    rec_sig = b'CLMT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelClmtWeatherTypes(),
+        MelClmtTextures(),
+        MelModel(),
+        MelClmtTiming(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCmpo(MelRecord):
+    """Component."""
+    rec_sig = b'CMPO'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelFull(),
+        MelSoundCrafting(),
+        MelUInt32(b'DATA', 'auto_calc_value'),
+        MelFid(b'MNAM', 'scrap_item'),
+        MelFid(b'GNAM', 'mod_scrap_scalar'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCobj(MelRecord):
+    """Constructible Object."""
+    rec_sig = b'COBJ'
+    ##: What about isKeyedByEid?
+
+    melSet = MelSet(
+        MelEdid(),
+        MelSoundPickupDrop(),
+        MelSorted(MelArray('cobj_components',
+            MelStruct(b'FVPA', ['2I'], (FID, 'component_fid'),
+                'component_count'),
+        ), sort_by_attrs='component_fid'),
+        MelDescription(),
+        MelConditionList(),
+        MelCobjOutput(),
+        MelBase(b'NAM1', 'unused1'),
+        MelBase(b'NAM2', 'unused2'),
+        MelBase(b'NAM3', 'unused3'),
+        MelFid(b'ANAM', 'menu_art_object'),
+        MelSorted(MelSimpleArray('category_keywords', MelFid(b'FNAM'))),
+        MelTruncatedStruct(b'INTV', ['2H'], 'created_object_count',
+            'cobj_priority', old_versions={'H'}),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+    def mergeFilter(self, modSet):
+        self.cobj_components = [c for c in self.cobj_components
+                                if c.component_fid.mod_id in modSet]
+
+#------------------------------------------------------------------------------
+class MreCont(AMreWithItems):
+    """Container."""
+    rec_sig = b'CONT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelItems(),
+        MelDestructible(),
+        MelContData(),
+        MelKeywords(),
+        MelFtyp(),
+        MelProperties(),
+        MelNativeTerminal(),
+        MelSound(),
+        MelSoundClose(),
+        MelFid(b'TNAM', 'sound_take_all'),
+        MelFid(b'ONAM', 'cont_filter_list'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCpth(MelRecord):
+    """Camera Path."""
+    rec_sig = b'CPTH'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelConditionList(),
+        MelCpthShared(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreCsty(MelRecord):
+    rec_sig = b'CSTY'
+
+    _csty_flags = Flags.from_names('dueling', 'flanking',
+        'allow_dual_wielding', 'charging', 'retarget_any_nearby_melee_target')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'CSGD', ['12f'], 'general_offensive_mult',
+            'general_defensive_mult', 'general_group_offensive_mult',
+            'general_equipment_score_mult_melee',
+            'general_equipment_score_mult_magic',
+            'general_equipment_score_mult_ranged',
+            'general_equipment_score_mult_shout',
+            'general_equipment_score_mult_unarmed',
+            'general_equipment_score_mult_staff',
+            'general_avoid_threat_chance', 'general_dodge_threat_chance',
+            'general_evade_threat_chance'),
+        MelBase(b'CSMD', 'unknown1'),
+        MelTruncatedStruct(b'CSME', ['10f'], 'melee_attack_staggered_mult',
+            'melee_power_attack_staggered_mult',
+            'melee_power_attack_blocking_mult',
+            'melee_bash_mult', 'melee_bash_recoil_mult',
+            'melee_bash_attack_mult', 'melee_bash_power_attack_mult',
+            'melee_special_attack_mult', 'melee_block_when_staggered_mult',
+            'melee_attack_when_staggered_mult', old_versions={'9f'}),
+        MelFloat(b'CSRA', 'ranged_accuracy_mult'),
+        MelStruct(b'CSCR', ['9f', 'I', 'f'], 'close_range_dueling_circle_mult',
+            'close_range_dueling_fallback_mult',
+            'close_range_flanking_flank_distance',
+            'close_range_flanking_stalk_time',
+            'close_range_charging_charge_distance',
+            'close_range_charging_throw_probability',
+            'close_range_charging_sprint_fast_probability',
+            'close_range_charging_sideswipe_probability',
+            'close_range_charging_disengage_probability',
+            'close_range_charging_throw_max_targets',
+            'close_range_flanking_flank_variance'),
+        MelTruncatedStruct(b'CSLR', ['5f'], 'long_range_strafe_mult',
+            'long_range_adjust_range_mult', 'long_range_crouch_mult',
+            'long_range_wait_mult', 'long_range_range_mult',
+            old_versions={'4f', '3f'}),
+        MelFloat(b'CSCV', 'cover_search_distance_mult'),
+        MelStruct(b'CSFL', ['8f'], 'flight_hover_chance',
+            'flight_dive_bomb_chance', 'flight_ground_attack_chance',
+            'flight_hover_time', 'flight_ground_attack_time',
+            'flight_perch_attack_chance', 'flight_perch_attack_time',
+            'flight_flying_attack_chance'),
+        MelUInt32Flags(b'DATA', 'csty_flags', _csty_flags),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDfob(MelRecord):
+    """Default Object."""
+    rec_sig = b'DFOB'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'DATA', 'default_object'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDmgt(MelRecord):
+    """Damage Type."""
+    rec_sig = b'DMGT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelUnion({
+            True:  MelArray('damage_types',
+                MelStruct(b'DNAM', ['2I'], (FID, 'dt_actor_value'),
+                    (FID, 'dt_spell')),
+            ),
+            False: MelSimpleArray('damage_types', MelUInt32(b'DNAM')),
+        }, decider=FormVersionDecider(operator.ge, 78)),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDobj(MelRecord):
+    """Default Object Manager."""
+    rec_sig = b'DOBJ'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelSorted(MelArray('default_objects',
+            MelStruct(b'DNAM', ['2I'], 'default_object_use',
+                (FID, 'default_object_fid')),
+        ), sort_by_attrs='default_object_use'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDoor(MelRecord):
+    """Door."""
+    rec_sig = b'DOOR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelDestructible(),
+        MelKeywords(),
+        MelNativeTerminal(),
+        MelSound(),
+        MelSoundClose(b'ANAM'),
+        MelSoundLooping(),
+        MelDoorFlags(),
+        MelLString(b'ONAM', 'alternate_text_open'),
+        MelLString(b'CNAM', 'alternate_text_close'),
+        MelRandomTeleports(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+# Not present in Fallout4.esm, but can be created in CK
+class MreDual(MelRecord):
+    """Dual Cast Data."""
+    rec_sig = b'DUAL'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelDualData(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreGmst(AMreGmst):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
     __slots__ = ()
 
 #------------------------------------------------------------------------------
-class MreLvli(MreLeveledListBase):
+class MreLvli(AMreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
 
@@ -693,7 +991,7 @@ class MreLvli(MreLeveledListBase):
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8(b'LVLM', 'maxCount'),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
         MelArray('filterKeywordChances',
@@ -705,7 +1003,7 @@ class MreLvli(MreLeveledListBase):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreLvln(MreLeveledListBase):
+class MreLvln(AMreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
 
@@ -717,7 +1015,7 @@ class MreLvln(MreLeveledListBase):
         MelBounds(),
         MelUInt8(b'LVLD', 'chanceNone'),
         MelUInt8(b'LVLM', 'maxCount'),
-        MelUInt8Flags(b'LVLF', u'flags', MreLeveledListBase._flags),
+        MelUInt8Flags(b'LVLF', u'flags', AMreLeveledList._flags),
         MelFid(b'LVLG', 'glob'),
         MelLLItems(),
         MelArray('filterKeywordChances',

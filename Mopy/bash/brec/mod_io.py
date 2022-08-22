@@ -60,6 +60,9 @@ class RecordHeader(object):
     valid_header_sigs = set()
     #--Plugin form version, we must pack this in the TES4 header
     plugin_form_version = 0
+    # A set of record types for which to skip upgrading to the latest Form
+    # Version, usually because it's impossible
+    skip_form_version_upgrade = set()
     is_top_group_header = False
     __slots__ = (u'recType', u'size', u'extra')
 
@@ -98,11 +101,13 @@ class RecHeader(RecordHeader):
         pack_args = [__rh.rec_pack_format_str, self.recType, self.size,
                      self.flags1, self.fid.dump(), self.flags2]
         if __rh.plugin_form_version:
-            extra1, extra2 = struct_unpack(u'=2h',
-                                           struct_pack(u'=I', self.extra))
-            extra1 = __rh.plugin_form_version
-            self.extra = \
-                struct_unpack(u'=I', struct_pack(u'=2h', extra1, extra2))[0]
+            # Upgrade to latest form version unless we were told to skip that
+            if self.recType not in __rh.skip_form_version_upgrade:
+                extra1, extra2 = struct_unpack('=2h', struct_pack(
+                    '=I', self.extra))
+                extra1 = __rh.plugin_form_version
+                self.extra = struct_unpack('=I', struct_pack(
+                    '=2h', extra1, extra2))[0]
             pack_args.append(self.extra)
         return struct_pack(*pack_args)
 

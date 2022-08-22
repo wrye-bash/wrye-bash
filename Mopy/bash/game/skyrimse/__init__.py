@@ -24,8 +24,6 @@
 
 from ..skyrim import SkyrimGameInfo
 from .. import WS_COMMON
-from ... import brec
-from ...brec import MreFlst, MreGlob
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
@@ -273,14 +271,14 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        # First import from skyrimse.records file
+        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw, MreFlst, \
+            MreGlob
         from .records import MreVoli, MreLens
-        # then import rest of records from skyrim.records
         from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
             MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \
             MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreCell, MreClas, \
-            MreClfm, MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty, \
-            MreDebr, MreDial, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, \
+            MreClfm, MreClmt, MreCobj, MreNavm, MreCont, MreCpth, MreCsty, \
+            MreRace, MreDial, MreWthr, MreWeap, MreDobj, MreDoor, MreDual, \
             MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, \
             MreFlor, MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MrePack, \
             MreHazd, MreHdpt, MreTes4, MreIdle, MreIdlm, MreImad, MreImgs, \
@@ -291,8 +289,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
             MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
-            MreAmmo, MreLtex, MreMato, MreStat, MreWatr, MreWeap, MreWthr, \
-            MreRace, MreNavm
+            MreAmmo, MreLtex, MreMato, MreStat, MreWatr
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
@@ -313,6 +310,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MrePack, MreFact, MreRace,
         )}
         # Setting RecordHeader class variables --------------------------------
+        from ... import brec
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
             b'GMST', b'KYWD', b'LCRT', b'AACT', b'TXST', b'GLOB', b'CLAS',

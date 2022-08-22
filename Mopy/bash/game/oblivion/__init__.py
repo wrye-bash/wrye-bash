@@ -26,8 +26,7 @@ from os.path import join as _j
 
 from ..patch_game import GameInfo, PatchGame
 from .. import WS_COMMON
-from ... import brec, bolt
-from ...brec import MreGlob, MreLand
+from ... import bolt
 
 class OblivionGameInfo(PatchGame):
     displayName = u'Oblivion'
@@ -301,6 +300,7 @@ class OblivionGameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
+        from ...brec import MreGlob, MreLand
         from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, \
             MreArmo, MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, \
             MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor, MreFurn, \
@@ -325,6 +325,7 @@ class OblivionGameInfo(PatchGame):
         cls.readClasses = (b'MGEF', b'SCPT')
         cls.writeClasses = (b'MGEF',)
         # Setting RecordHeader class variables - Oblivion is special
+        from ... import brec
         header_type = brec.RecordHeader
         header_type.rec_header_size = 20
         header_type.rec_pack_format = [u'=4s', u'I', u'I', u'I', u'I']

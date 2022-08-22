@@ -32,25 +32,56 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
     MelStrings, MelUInt8, MelUInt16Flags
 from .utils_constants import int_unpacker, FID, null1, ZERO_FID
-from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
-    dict_sort, TrimmedFlags, structs_cache
+from ..bolt import Flags, encode, struct_pack, dict_sort, TrimmedFlags, \
+    structs_cache
 from ..exception import ModError, ModSizeError
 
 #------------------------------------------------------------------------------
-class AMelLLItems(MelSequential):
-    """Base class for handling the LVLO and LLCT subrecords defining leveled
-    list items in Skyrim and newer games."""
-    def __init__(self, lvl_elements: list, with_coed=True):
-        final_elements = lvl_elements.copy()
-        final_sort_attrs = ('level', 'listId', 'count')
+class _MelCoed(MelOptStruct):
+    """Handles the COED (Owner Data) subrecord used for inventory items and
+    leveled lists since FO3."""
+    ##: Needs custom unpacker to look at FormID type of owner.  If owner is an
+    # NPC then it is followed by a FormID.  If owner is a faction then it is
+    # followed by an signed integer or '=Iif' instead of '=IIf' - see #282
+    def __init__(self):
+        super().__init__(b'COED', ['2I', 'f'], (FID, 'owner'),
+            (FID, 'glob'), 'itemCondition')
+
+#------------------------------------------------------------------------------
+class AMelItems(MelSequential):
+    """Base class for handling the CNTO (Items) subrecords defining items. Can
+    handle all games since Oblivion via the two kwargs."""
+    def __init__(self, *, with_coed=True, with_counter=True):
+        items_elements = [MelStruct(b'CNTO', ['I', 'i'], (FID, 'item'),
+            'count')]
+        items_sort_attrs = ('item', 'count')
         if with_coed:
-            final_elements.append(MelCoed())
-            final_sort_attrs += ('itemCondition', 'owner', 'glob')
-        super().__init__(
-            MelCounter(MelUInt8(b'LLCT', 'entry_count'), counts='entries'),
-            MelSorted(MelGroups('entries', *final_elements),
-                sort_by_attrs=final_sort_attrs),
-        )
+            items_elements.append(_MelCoed())
+            items_sort_attrs += ('itemCondition', 'owner', 'glob')
+        final_elements = [MelSorted(MelGroups('items', *items_elements),
+            sort_by_attrs=items_sort_attrs)]
+        if with_counter:
+            final_elements.insert(0, MelCounter(
+                MelUInt32(b'COCT', 'item_count'), counts='items'))
+        super().__init__(*final_elements)
+
+#------------------------------------------------------------------------------
+class AMelLLItems(MelSequential):
+    """Base class for handling the LVLO (and LLCT) subrecords defining leveled
+    list items. Can handle all games since Oblivion via the two kwargs."""
+    def __init__(self, lvl_element: MelBase, *, with_coed=True,
+            with_counter=True):
+        lvl_elements = [lvl_element]
+        lvl_sort_attrs = ('level', 'listId', 'count')
+        if with_coed:
+            lvl_elements.append(_MelCoed())
+            lvl_sort_attrs += ('itemCondition', 'owner', 'glob')
+        final_elements = [MelSorted(MelGroups('entries', *lvl_elements),
+            sort_by_attrs=lvl_sort_attrs)]
+        if with_counter:
+            final_elements.insert(0, MelCounter(
+                MelUInt8(b'LLCT', 'entry_count'), counts='entries'))
+        super().__init__(*final_elements)
 
 #------------------------------------------------------------------------------
 class MelActiFlags(MelUInt16Flags):
@@ -269,15 +300,42 @@ class MelBounds(MelGroup):
         )
 
 #------------------------------------------------------------------------------
-class MelCoed(MelOptStruct):
-    """Handles the COED (Owner Data) subrecord used for inventory items and
-    leveled lists since Skyrim."""
-    ##: Needs custom unpacker to look at FormID type of owner.  If owner is an
-    # NPC then it is followed by a FormID.  If owner is a faction then it is
-    # followed by an signed integer or '=Iif' instead of '=IIf' - see #282
+class MelClmtTiming(MelStruct):
+    """Handles the CLMT subrecord TNAM (Timing)."""
     def __init__(self):
-        super().__init__(b'COED', ['I', 'I', 'f'], (FID, 'owner'),
-            (FID, 'glob'), 'itemCondition')
+        super().__init__(b'TNAM', ['6B'], 'rise_begin', 'rise_end',
+            'set_begin', 'set_end', 'volatility', 'phase_length')
+
+#------------------------------------------------------------------------------
+class MelClmtTextures(MelSequential):
+    """Handles the CLMT subrecords FNAM and GNAM."""
+    def __init__(self):
+        super().__init__(
+            MelString(b'FNAM', 'sun_texture'),
+            MelString(b'GNAM', 'sun_glare_texture'),
+        )
+
+#------------------------------------------------------------------------------
+class MelClmtWeatherTypes(MelSorted):
+    """Handles the CLMT subrecord WLST (Weather Types)."""
+    def __init__(self, with_global=True):
+        weather_fmt = ['I', 'i']
+        weather_elements = [(FID, 'weather'), 'chance']
+        if with_global:
+            weather_fmt.append('I')
+            weather_elements.append((FID, 'global'))
+        super().__init__(MelArray('weather_types',
+            MelStruct(b'WLST', weather_fmt, *weather_elements),
+        ), sort_by_attrs='weather')
+
+#------------------------------------------------------------------------------
+class MelCobjOutput(MelSequential):
+    """Handles the COBJ subrecords CNAM and BNAM."""
+    def __init__(self):
+        super().__init__(
+            MelFid(b'CNAM', 'created_object'),
+            MelFid(b'BNAM', 'workbench_keyword'),
+        )
 
 #------------------------------------------------------------------------------
 class MelColor(MelStruct):
@@ -304,28 +362,54 @@ class MelColorO(MelOptStruct):
             'unused_alpha')
 
 #------------------------------------------------------------------------------
+class MelContData(MelStruct):
+    """Handles the CONT subrecord DATA (Data)."""
+    # Flags 1 & 3 introduced in Skyrim, treat as unknown for earlier games
+    _cont_flags = Flags.from_names('allow_sounds_when_animation',
+        'cont_respawns', 'show_owner')
+
+    def __init__(self):
+        super().__init__(b'DATA', ['B', 'f'], (self._cont_flags, 'cont_flags'),
+            'cont_weight')
+
+#------------------------------------------------------------------------------
+class MelCpthShared(MelSequential):
+    """Handles the CPTH subrecords ANAM, DATA and SNAM. Identical between all
+    games' CPTH records."""
+    def __init__(self):
+        super().__init__(
+            MelSimpleArray('related_camera_paths', MelFid(b'ANAM')),
+            MelUInt8(b'DATA', 'camera_zoom'),
+            MelFids('camera_shots', MelFid(b'SNAM')),
+        ),
+
+#------------------------------------------------------------------------------
 class MelDebrData(MelStruct):
+    """Handles the DEBR subrecord DATA (Data)."""
+    _debr_flags = Flags.from_names('has_collision_data', 'collision')
+
     def __init__(self):
         # Format doesn't matter, struct.Struct('') works! ##: MelStructured
-        super().__init__(b'DATA', [], 'percentage', ('modPath', null1),
-            'flags')
+        super().__init__(b'DATA', [], 'debr_percentage', ('modPath', null1),
+            (self._debr_flags, 'debr_flags'))
 
     @staticmethod
     def _expand_formats(elements, struct_formats):
         return [0] * len(elements)
 
-    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs,
+            __unpack_byte=structs_cache['B'].unpack):
         byte_data = ins.read(size_, *debug_strs)
-        record.percentage = unpack_byte(ins, byte_data[0:1])[0]
+        record.debr_percentage = __unpack_byte(byte_data[0:1])[0]
         record.modPath = byte_data[1:-2]
-        if byte_data[-2] != null1:
+        if byte_data[-2:-1] != null1:
             raise ModError(ins.inName, f'Unexpected subrecord: {debug_strs}')
-        record.flags = struct_unpack('B', byte_data[-1])[0]
+        record.debr_flags = self._debr_flags(__unpack_byte(byte_data[-1:])[0])
 
     def pack_subrecord_data(self, record):
         return b''.join(
-            [struct_pack('B', record.percentage), record.modPath, null1,
-             struct_pack('B', record.flags)])
+            [struct_pack('B', record.debr_percentage), record.modPath, null1,
+             struct_pack('B', record.debr_flags.dump())])
 
 #------------------------------------------------------------------------------
 class MelDecalData(MelOptStruct):
@@ -348,6 +432,33 @@ class MelDescription(MelLString):
     """Handles the description (DESC) subrecord."""
     def __init__(self):
         super().__init__(b'DESC', 'description')
+
+#------------------------------------------------------------------------------
+class MelDoorFlags(MelUInt8Flags):
+    _door_flags = Flags.from_names(
+        'oblivion_gate' # Oblivion only
+        'automatic',
+        'hidden',
+        'minimal_use',
+        'sliding_door', # since FO3
+        'do_not_open_in_combat_search', # since Skyrim
+        'no_to_text', # since FO4
+    )
+
+    def __init__(self):
+        super().__init__(b'FNAM', 'door_flags', self._door_flags)
+
+#------------------------------------------------------------------------------
+class MelDualData(MelStruct):
+    """Handles the DUAL subrecord DATA (Data)."""
+    _inherit_scale_flags = Flags.from_names('hit_effect_art_scale',
+        'projectile_scale', 'explosion_scale')
+
+    def __init__(self):
+        super().__init__(b'DATA', ['6I'], (FID, 'projectile'),
+            (FID, 'explosion'), (FID, 'effect_shader'),
+            (FID, 'hit_effect_art'), (FID, 'impact_data_set'),
+            (self._inherit_scale_flags, 'inherit_scale_flags')),
 
 #------------------------------------------------------------------------------
 class MelEdid(MelString):
@@ -446,6 +557,12 @@ class MelIco2(MelIcons2):
         super().__init__(ico2_attr=ico2_attr, mic2_attr='')
 
 #------------------------------------------------------------------------------
+class MelImageSpaceMod(MelFid):
+    """Handles the common MNAM (Image Space Modifer) subrecord."""
+    def __init__(self):
+        super().__init__(b'MNAM', 'image_space_modifier')
+
+#------------------------------------------------------------------------------
 class MelInteractionKeyword(MelFid):
     """Handles the KNAM (Interaction Keyword) subrecord of ACTI records."""
     def __init__(self):
@@ -459,8 +576,7 @@ class MelInventoryArt(MelFid):
 
 #------------------------------------------------------------------------------
 class MelKeywords(MelSequential):
-    """Wraps MelSequential for the common task of defining a list of keywords
-    and a corresponding counter."""
+    """Handles the KSIZ/KWDA (Keywords) subrecords."""
     def __init__(self):
         super().__init__(
             MelCounter(MelUInt32(b'KSIZ', 'keyword_count'), counts='keywords'),
@@ -718,6 +834,12 @@ class MelRaceVoices(MelStruct):
         return None
 
 #------------------------------------------------------------------------------
+class MelRandomTeleports(MelSorted):
+    """Handles the DOOR subrecord TNAM (Random Teleport Destinations)."""
+    def __init__(self):
+        super().__init__(MelFids('random_teleports', MelFid(b'TNAM')))
+
+#------------------------------------------------------------------------------
 class MelRef3D(MelOptStruct):
     """3D position and rotation for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
@@ -821,16 +943,28 @@ class MelSkipInterior(MelUnion):
         }, decider=FlagDecider('flags', ['isInterior']))
 
 #------------------------------------------------------------------------------
-class MelSoundActivation(MelFid):
-    """Handles the VNAM (Sound - Activation) subrecord in ACTI records."""
-    def __init__(self):
-        super().__init__(b'VNAM', 'soundActivation')
-
-#------------------------------------------------------------------------------
 class MelSound(MelFid):
     """Handles the common SNAM (Sound) subrecord."""
     def __init__(self):
         super().__init__(b'SNAM', 'sound')
+
+#------------------------------------------------------------------------------
+class MelSoundActivation(MelFid):
+    """Handles the ACTI subrecord VNAM (Sound - Activation)."""
+    def __init__(self):
+        super().__init__(b'VNAM', 'soundActivation')
+
+#------------------------------------------------------------------------------
+class MelSoundClose(MelFid):
+    """Handles the CONT/DOOR subrecord QNAM/ANAM (Sound - Close)."""
+    def __init__(self, sc_sig=b'QNAM'):
+        super().__init__(sc_sig, 'sound_close')
+
+#------------------------------------------------------------------------------
+class MelSoundLooping(MelFid):
+    """Handles the DOOR subrecord BNAM (Sound - Looping)."""
+    def __init__(self):
+        super().__init__(b'BNAM', 'sound_looping')
 
 #------------------------------------------------------------------------------
 class MelSoundPickupDrop(MelSequential):
@@ -883,19 +1017,6 @@ class MelWaterType(MelFid):
     """Handles the common WNAM (Water Type) subrecord."""
     def __init__(self):
         super().__init__(b'WNAM', 'water_type')
-
-#------------------------------------------------------------------------------
-class MelWeatherTypes(MelSorted):
-    """Handles the CLMT subrecord WLST (Weather Types)."""
-    def __init__(self, with_global=True):
-        weather_fmt = ['I', 'i']
-        weather_elements = [(FID, 'weather'), 'chance']
-        if with_global:
-            weather_fmt.append('I')
-            weather_elements.append((FID, 'global'))
-        super().__init__(MelArray('weather_types',
-            MelStruct(b'WLST', weather_fmt, *weather_elements),
-        ), sort_by_attrs='weather')
 
 #------------------------------------------------------------------------------
 class MelWeight(MelFloat):

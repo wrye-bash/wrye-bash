@@ -297,9 +297,9 @@ statsTypes = {
 #------------------------------------------------------------------------------
 soundsTypes = {
     b'ACTI': ('sound',),
-    b'CONT': ('sound', 'soundClose'),
+    b'CONT': ('sound', 'sound_close'),
     b'CREA': (u'footWeight', u'inheritsSoundsFrom', u'sounds'),
-    b'DOOR': ('sound', 'soundClose', 'soundLoop'),
+    b'DOOR': ('sound', 'sound_close', 'sound_looping'),
     b'LIGH': (u'sound',),
     b'MGEF': (u'castingSound', u'boltSound', u'hitSound', u'areaSound'),
 #    b'REGN': ('entries.sounds',),
