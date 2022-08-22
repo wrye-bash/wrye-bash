@@ -29,6 +29,7 @@ MelStruct."""
 __author__ = u'Infernio'
 
 import copy
+import operator
 from collections import OrderedDict
 from itertools import chain
 
@@ -679,6 +680,25 @@ class FlagDecider(ACommonDecider):
         flags_val = getattr(record, self._flags_attr)
         return all(getattr(flags_val, flag_name)
                    for flag_name in self._required_flags)
+
+class FormVersionDecider(ACommonDecider):
+    """Decider that checks if the record's form version against a target form
+    version."""
+    def __init__(self, comp_op, target_form_ver: int):
+        """Creates a new SinceFormVersionDecider with the specified target form
+        version.
+
+        :param comp_op: A callable that takes two integers. The first will be
+            the record's form version and the second will be target_form_ver.
+            The return value of this callable will be what's returned by the
+            decider. operator.ge is an example of a valid callable here.
+        :param target_form_ver: The form version in which the change was
+            introduced."""
+        self._comp_op = comp_op
+        self._target_form_ver = target_form_ver
+
+    def _decide_common(self, record):
+        return self._comp_op(record.header.form_version, self._target_form_ver)
 
 class PartialLoadDecider(ADecider):
     """Partially loads a subrecord using a given loader, then rewinds the

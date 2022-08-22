@@ -21,6 +21,8 @@
 #
 # =============================================================================
 """This module contains the Fallout 4 record classes."""
+import operator
+
 from ...bolt import Flags
 from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelStruct, MelNull, MelSimpleArray, AMreLeveledList, MelFid, MelAttx, \
@@ -41,7 +43,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
     MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
     MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose, \
-    MelCpthShared
+    MelCpthShared, FormVersionDecider
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -137,13 +139,13 @@ class MelDestructible(MelGroup):
     def __init__(self):
         super().__init__('destructible',
             MelStruct(b'DEST', ['i', '2B', '2s'], 'health', 'count',
-                (MelDestructible._dest_header_flags, 'dest_flags'),
+                (self._dest_header_flags, 'dest_flags'),
                 'dest_unknown'),
             MelResistances(b'DAMC'),
             MelGroups('stages',
                 MelStruct(b'DSTD', ['4B', 'i', '2I', 'i'], 'health', 'index',
                           'damage_stage',
-                          (MelDestructible._dest_stage_flags, 'stage_flags'),
+                          (self._dest_stage_flags, 'stage_flags'),
                           'self_damage_per_second', (FID, 'explosion'),
                           (FID, 'debris'), 'debris_count'),
                 MelString(b'DSTA', 'sequence_name'),
@@ -778,7 +780,8 @@ class MreCobj(MelRecord):
         MelEdid(),
         MelSoundPickupDrop(),
         MelSorted(MelArray('cobj_components',
-            MelStruct(b'FVPA', ['2I'], 'component_fid', 'component_count'),
+            MelStruct(b'FVPA', ['2I'], (FID, 'component_fid'),
+                'component_count'),
         ), sort_by_attrs='component_fid'),
         MelDescription(),
         MelConditionList(),
@@ -896,6 +899,23 @@ class MreDfob(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelFid(b'DATA', 'default_object'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDmgt(MelRecord):
+    """Damage Type."""
+    rec_sig = b'DMGT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelUnion({
+            True:  MelArray('damage_types',
+                MelStruct(b'DNAM', ['2I'], (FID, 'dt_actor_value'),
+                    (FID, 'dt_spell')),
+            ),
+            False: MelSimpleArray('damage_types', MelUInt32(b'DNAM')),
+        }, decider=FormVersionDecider(operator.ge, 78)),
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -222,14 +222,14 @@ class Fallout4GameInfo(PatchGame):
         from .records import MreAact, MreActi, MreAddn, MreAech, MreAmdl, \
             MreAnio, MreAoru, MreArma, MreArmo, MreArto, MreAstp, MreAvif, \
             MreBnds, MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, \
-            MreCmpo, MreCobj, MreCont, MreCpth, MreCsty, MreDfob, \
+            MreCmpo, MreCobj, MreCont, MreCpth, MreCsty, MreDfob, MreDmgt, \
             MreGmst, MreLvli, MreLvln, MrePerk, MreTes4
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
             MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
-            MreDlvw,
+            MreDlvw, MreDmgt,
             MreGmst, MreLvli, MreLvln, MrePerk,
         )}
         # Setting RecordHeader class variables --------------------------------
@@ -261,12 +261,16 @@ class Fallout4GameInfo(PatchGame):
              b'PBEA', b'PFLA', b'PCON', b'PBAR', b'PHZD', b'LAND', b'NAVM',
              b'DIAL', b'INFO'})
         header_type.plugin_form_version = 131
+        # DMGT\DNAM changed completely in Form Version 78 and it's not possible
+        # to upgrade it (unless someone reverse engineers what the game does to
+        # it when loading)
+        header_type.skip_form_version_upgrade = {b'DMGT'}
         brec.MreRecord.type_class = {x.rec_sig: x for x in (
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
             MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
-            MreDlvw,
+            MreDlvw, MreDmgt,
             MreGmst, MreLvli, MreLvln, MrePerk, MreTes4,
         )}
         brec.MreRecord.simpleTypes = (
