@@ -190,7 +190,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     game_ini_path = dirs[u'saveBase'].join(first_ini_name)
     dirs[u'mods'] = dirs[u'app'].join(game_info.mods_dir)
     if data_oblivion_ini.is_file():
-        oblivionIni = ConfigParser(allow_no_value=True) ##: use GameIni here
+        ##: use GameIni here
+        oblivionIni = ConfigParser(allow_no_value=True, strict=False)
         try:
             try:
                 # Try UTF-8 first, will also work for ASCII-encoded files

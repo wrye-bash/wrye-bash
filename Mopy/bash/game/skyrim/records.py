@@ -156,7 +156,7 @@ class MelDalc(MelTruncatedStruct):
             'blueYminus', 'unknownYminus', 'redZplus', 'greenZplus',
             'blueZplus', 'unknownZplus', 'redZminus', 'greenZminus',
             'blueZminus', 'unknownZminus', 'redSpec', 'greenSpec', 'blueSpec',
-            'unknownSpec', 'fresnelPower', old_versions={'28B'})
+            'unknownSpec', 'fresnelPower', old_versions={'24B'})
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
