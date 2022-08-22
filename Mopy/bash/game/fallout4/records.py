@@ -889,6 +889,17 @@ class MreCsty(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreDfob(MelRecord):
+    """Default Object."""
+    rec_sig = b'DFOB'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'DATA', 'default_object'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreGmst(AMreGmst):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.
