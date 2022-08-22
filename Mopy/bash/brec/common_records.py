@@ -364,6 +364,22 @@ class MreDebr(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreDlbr(MelRecord):
+    """Dialog Branch."""
+    rec_sig = b'DLBR'
+
+    _dlbr_flags = Flags.from_names('top_level', 'blocking', 'exclusive')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'QNAM', 'dlbr_quest'),
+        MelUInt32(b'TNAM', 'dlbr_category'),
+        MelUInt32Flags(b'DNAM', 'dlbr_flags', _dlbr_flags),
+        MelFid(b'SNAM', 'starting_topic'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreFlst(MelRecord):
     """FormID List."""
     rec_sig = b'FLST'

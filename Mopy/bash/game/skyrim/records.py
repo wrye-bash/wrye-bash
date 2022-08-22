@@ -1019,22 +1019,6 @@ class MreDial(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDlbr(MelRecord):
-    """Dialog Branch."""
-    rec_sig = b'DLBR'
-
-    DialogBranchFlags = Flags.from_names('topLevel', 'blocking', 'exclusive')
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFid(b'QNAM','quest',),
-        MelUInt32(b'TNAM', u'category'),
-        MelUInt32Flags(b'DNAM', u'flags', DialogBranchFlags),
-        MelFid(b'SNAM','startingTopic',),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreDlvw(MelRecord):
     """Dialog View"""
     rec_sig = b'DLVW'
