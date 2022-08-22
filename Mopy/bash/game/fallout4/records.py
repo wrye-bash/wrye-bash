@@ -973,6 +973,23 @@ class MreDual(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreEczn(MelRecord):
+    """Encounter Zone."""
+    rec_sig = b'ECZN'
+
+    _eczn_flags = Flags.from_names('never_resets',
+        'match_pc_below_minimum_level', 'disable_combat_boundary', 'workshop')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'DATA', ['2I', '2b', 'B', 'b'],
+            (FID, 'eczn_owner'), (FID, 'eczn_location'), 'eczn_rank',
+            'eczn_minimum_level', (_eczn_flags, 'eczn_flags'),
+            'eczn_max_level'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreGmst(AMreGmst):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.

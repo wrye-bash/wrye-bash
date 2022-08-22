@@ -1060,12 +1060,14 @@ class MreEczn(MelRecord):
     """Encounter Zone."""
     rec_sig = b'ECZN'
 
-    _flags = Flags.from_names('neverResets', 'matchPCBelowMinimumLevel')
+    _eczn_flags = Flags.from_names('never_resets',
+        'match_pc_below_minimum_level')
 
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DATA', [u'I', u'2b', u'B', u's'], (FID, u'owner'), u'rank', u'minimumLevel',
-                  (_flags, u'flags'), u'unused1'),
+        MelStruct(b'DATA', ['I', '2b', 'B', 's'], (FID, 'eczn_owner'),
+            'eczn_rank', 'eczn_minimum_level', (_eczn_flags, 'eczn_flags'),
+            'eczn_unused'),
     )
     __slots__ = melSet.getSlotsUsed()
 
