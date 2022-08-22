@@ -42,13 +42,14 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelRefScale, MelMapMarker, MelActionFlags, MelEnchantment, MelScript, \
     MelDecalData, MelDescription, MelLists, MelSoundPickupDrop, MelBookText, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOwnership, MelDebrData, MelRaceData, MelRegions, \
+    MelUInt32Flags, MelOwnership, MelRaceData, MelRegions, MelDoorFlags, \
     MelClmtWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, MelExtra, \
     MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
-    MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared
+    MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
+    MelSoundLooping
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1040,13 +1041,6 @@ class MreDoor(MelRecord):
     """Door."""
     rec_sig = b'DOOR'
 
-    _flags = Flags.from_names(
-        (1, 'automatic'),
-        (2, 'hidden'),
-        (3, 'minimalUse'),
-        (4, 'slidingDoor'),
-    )
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -1056,8 +1050,8 @@ class MreDoor(MelRecord):
         MelDestructible(),
         MelSound(),
         MelSoundClose(b'ANAM'),
-        MelFid(b'BNAM','soundLoop'),
-        MelUInt8Flags(b'FNAM', u'flags', _flags),
+        MelSoundLooping(),
+        MelDoorFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 

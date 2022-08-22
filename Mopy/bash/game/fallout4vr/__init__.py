@@ -98,11 +98,11 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         header_type = brec.RecordHeader
         header_type.top_grup_sigs = [
             b'GMST', b'KYWD', b'LCRT', b'AACT', b'TRNS', b'CMPO', b'TXST',
-            b'GLOB', b'DMGT', b'CLAS', b'FACT', b'HDPT', b'RACE', b'SOUN',
-            b'ASPC', b'MGEF', b'LTEX', b'ENCH', b'SPEL', b'ACTI', b'TACT',
-            b'ARMO', b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH', b'MISC',
-            b'STAT', b'SCOL', b'MSTT', b'GRAS', b'TREE', b'FLOR', b'FURN',
-            b'WEAP', b'AMMO', b'NPC_', b'PLYR', b'LVLN', b'KEYM', b'ALCH',
+            b'GLOB', b'DMGT', b'CLAS', b'FACT', b'HDPT', b'EYES', b'RACE',
+            b'SOUN', b'ASPC', b'MGEF', b'LTEX', b'ENCH', b'SPEL', b'ACTI',
+            b'TACT', b'ARMO', b'BOOK', b'CONT', b'DOOR', b'INGR', b'LIGH',
+            b'MISC', b'STAT', b'SCOL', b'MSTT', b'GRAS', b'TREE', b'FLOR',
+            b'FURN', b'WEAP', b'AMMO', b'NPC_', b'LVLN', b'KEYM', b'ALCH',
             b'IDLM', b'NOTE', b'PROJ', b'HAZD', b'BNDS', b'TERM', b'LVLI',
             b'WTHR', b'CLMT', b'SPGD', b'RFCT', b'REGN', b'NAVI', b'CELL',
             b'WRLD', b'QUST', b'IDLE', b'PACK', b'CSTY', b'LSCR', b'LVSP',
@@ -112,10 +112,10 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
             b'MESG', b'DOBJ', b'DFOB', b'LGTM', b'MUSC', b'FSTP', b'FSTS',
             b'SMBN', b'SMQN', b'SMEN', b'DLBR', b'MUST', b'DLVW', b'EQUP',
             b'RELA', b'SCEN', b'ASTP', b'OTFT', b'ARTO', b'MATO', b'MOVT',
-            b'SNDR', b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB', b'PKIN',
-            b'RFGP', b'AMDL', b'LAYR', b'COBJ', b'OMOD', b'MSWP', b'ZOOM',
-            b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN', b'STAG',
-            b'NOCM', b'LENS', b'GDRY', b'OVIS',
+            b'SNDR', b'DUAL', b'SNCT', b'SOPM', b'COLL', b'CLFM', b'REVB',
+            b'PKIN', b'RFGP', b'AMDL', b'LAYR', b'COBJ', b'OMOD', b'MSWP',
+            b'ZOOM', b'INNR', b'KSSM', b'AECH', b'SCCO', b'AORU', b'SCSN',
+            b'STAG', b'NOCM', b'LENS', b'GDRY', b'OVIS',
         ]
         header_type.valid_header_sigs = (set(header_type.top_grup_sigs) |
             {b'GRUP', b'TES4', b'REFR', b'ACHR', b'PMIS', b'PARW', b'PGRE',

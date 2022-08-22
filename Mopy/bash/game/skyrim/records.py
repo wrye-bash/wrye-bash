@@ -38,7 +38,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelSoundPickupDrop, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
-    MelUInt32Flags, MelOwnership, MelDebrData, MelClmtWeatherTypes, AMelVmad, \
+    MelUInt32Flags, MelOwnership, MelClmtWeatherTypes, AMelVmad, \
     MelActorSounds, MelFactionRanks, MelSorted, MelReflectedRefractedBy, \
     perk_effect_key, MelValueWeight, MelSound, MelWaterType, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
@@ -50,7 +50,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, MelBookText, \
     MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
-    MelSoundClose, AMelItems, MelContData, MelCpthShared
+    MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
+    MelRandomTeleports, MelSoundLooping, MelDualData
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1026,9 +1027,10 @@ class MreDobj(MelRecord):
     melSet = MelSet(
         MelEdid(),
         # This subrecord can have <=7 bytes of noise at the end
-        MelExtra(MelSorted(MelArray('objects',
-            MelStruct(b'DNAM', ['2I'], 'object_use', (FID, 'object_fid')),
-        ), sort_by_attrs='object_use'), extra_attr='unknown_dnam'),
+        MelExtra(MelSorted(MelArray('default_objects',
+            MelStruct(b'DNAM', ['2I'], 'default_object_use',
+                (FID, 'default_object_fid')),
+        ), sort_by_attrs='default_object_use'), extra_attr='unknown_dnam'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1036,14 +1038,6 @@ class MreDobj(MelRecord):
 class MreDoor(MelRecord):
     """Door."""
     rec_sig = b'DOOR'
-
-    DoorTypeFlags = Flags.from_names(
-        (1, 'automatic'),
-        (2, 'hidden'),
-        (3, 'minimalUse'),
-        (4, 'slidingDoor'),
-        (5, 'doNotOpenInCombatSearch'),
-    )
 
     melSet = MelSet(
         MelEdid(),
@@ -1054,9 +1048,9 @@ class MreDoor(MelRecord):
         MelDestructible(),
         MelSound(),
         MelSoundClose(b'ANAM'),
-        MelFid(b'BNAM','soundLoop'),
-        MelUInt8Flags(b'FNAM', u'flags', DoorTypeFlags),
-        MelSorted(MelFids('random_teleports', MelFid(b'TNAM'))),
+        MelSoundLooping(),
+        MelDoorFlags(),
+        MelRandomTeleports(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1065,14 +1059,10 @@ class MreDual(MelRecord):
     """Dual Cast Data."""
     rec_sig = b'DUAL'
 
-    DualCastDataFlags = Flags.from_names('hitEffectArt', 'projectile',
-                                         'explosion')
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
-        MelStruct(b'DATA', [u'6I'],(FID,'projectile'),(FID,'explosion'),(FID,'effectShader'),
-                  (FID,'hitEffectArt'),(FID,'impactDataSet'),(DualCastDataFlags, u'flags'),),
+        MelDualData(),
     )
     __slots__ = melSet.getSlotsUsed()
 

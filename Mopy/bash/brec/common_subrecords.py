@@ -32,8 +32,8 @@ from .basic_elements import MelBase, MelFid, MelGroup, MelGroups, MelLString, \
     MelFloat, MelReadOnly, MelFids, MelUInt32Flags, MelUInt8Flags, MelSInt32, \
     MelStrings, MelUInt8, MelUInt16Flags
 from .utils_constants import int_unpacker, FID, null1, ZERO_FID
-from ..bolt import Flags, encode, struct_pack, struct_unpack, unpack_byte, \
-    dict_sort, TrimmedFlags, structs_cache
+from ..bolt import Flags, encode, struct_pack, dict_sort, TrimmedFlags, \
+    structs_cache
 from ..exception import ModError, ModSizeError
 
 #------------------------------------------------------------------------------
@@ -434,6 +434,33 @@ class MelDescription(MelLString):
         super().__init__(b'DESC', 'description')
 
 #------------------------------------------------------------------------------
+class MelDoorFlags(MelUInt8Flags):
+    _door_flags = Flags.from_names(
+        'oblivion_gate' # Oblivion only
+        'automatic',
+        'hidden',
+        'minimal_use',
+        'sliding_door', # since FO3
+        'do_not_open_in_combat_search', # since Skyrim
+        'no_to_text', # since FO4
+    )
+
+    def __init__(self):
+        super().__init__(b'FNAM', 'door_flags', self._door_flags)
+
+#------------------------------------------------------------------------------
+class MelDualData(MelStruct):
+    """Handles the DUAL subrecord DATA (Data)."""
+    _inherit_scale_flags = Flags.from_names('hit_effect_art_scale',
+        'projectile_scale', 'explosion_scale')
+
+    def __init__(self):
+        super().__init__(b'DATA', ['6I'], (FID, 'projectile'),
+            (FID, 'explosion'), (FID, 'effect_shader'),
+            (FID, 'hit_effect_art'), (FID, 'impact_data_set'),
+            (self._inherit_scale_flags, 'inherit_scale_flags')),
+
+#------------------------------------------------------------------------------
 class MelEdid(MelString):
     """Handles an Editor ID (EDID) subrecord."""
     def __init__(self):
@@ -807,6 +834,12 @@ class MelRaceVoices(MelStruct):
         return None
 
 #------------------------------------------------------------------------------
+class MelRandomTeleports(MelSorted):
+    """Handles the DOOR subrecord TNAM (Random Teleport Destinations)."""
+    def __init__(self):
+        super().__init__(MelFids('random_teleports', MelFid(b'TNAM')))
+
+#------------------------------------------------------------------------------
 class MelRef3D(MelOptStruct):
     """3D position and rotation for a reference record (REFR, ACHR, etc.)."""
     def __init__(self):
@@ -926,6 +959,12 @@ class MelSoundClose(MelFid):
     """Handles the CONT/DOOR subrecord QNAM/ANAM (Sound - Close)."""
     def __init__(self, sc_sig=b'QNAM'):
         super().__init__(sc_sig, 'sound_close')
+
+#------------------------------------------------------------------------------
+class MelSoundLooping(MelFid):
+    """Handles the DOOR subrecord BNAM (Sound - Looping)."""
+    def __init__(self):
+        super().__init__(b'BNAM', 'sound_looping')
 
 #------------------------------------------------------------------------------
 class MelSoundPickupDrop(MelSequential):

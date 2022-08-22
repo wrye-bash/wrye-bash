@@ -344,7 +344,7 @@ soundsTypes = {
     b'COBJ': (u'pickupSound', u'dropSound'),
     b'CONT': ('sound', 'sound_close'),
     b'CREA': (u'footWeight', u'inheritsSoundsFrom', u'sounds'),
-    b'DOOR': ('sound', 'sound_close', 'soundLoop'),
+    b'DOOR': ('sound', 'sound_close', 'sound_looping'),
     b'EXPL': (u'soundLevel', u'sound1', u'sound2'),
     b'IPCT': ('soundLevel', 'sound', 'sound2'),
     b'LIGH': (u'sound',),

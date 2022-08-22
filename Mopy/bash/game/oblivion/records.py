@@ -43,7 +43,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelClmtWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
-    MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData
+    MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
+    MelDoorFlags, MelSoundLooping, MelRandomTeleports
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -907,9 +908,6 @@ class MreDoor(MelRecord):
     """Door."""
     rec_sig = b'DOOR'
 
-    _flags = Flags.from_names('oblivionGate', 'automatic', 'hidden',
-                              'minimalUse')
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
@@ -917,9 +915,9 @@ class MreDoor(MelRecord):
         MelScript(),
         MelSound(),
         MelSoundClose(b'ANAM'),
-        MelFid(b'BNAM','soundLoop'),
-        MelUInt8Flags(b'FNAM', u'flags', _flags),
-        MelSorted(MelFids('destinations', MelFid(b'TNAM'))),
+        MelSoundLooping(),
+        MelDoorFlags(),
+        MelRandomTeleports(),
     )
     __slots__ = melSet.getSlotsUsed()
 

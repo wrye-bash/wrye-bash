@@ -43,7 +43,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
     MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
     MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose, \
-    MelCpthShared, FormVersionDecider
+    MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
+    MelRandomTeleports, MelDualData
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -916,6 +917,58 @@ class MreDmgt(MelRecord):
             ),
             False: MelSimpleArray('damage_types', MelUInt32(b'DNAM')),
         }, decider=FormVersionDecider(operator.ge, 78)),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDobj(MelRecord):
+    """Default Object Manager."""
+    rec_sig = b'DOBJ'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelSorted(MelArray('default_objects',
+            MelStruct(b'DNAM', ['2I'], 'default_object_use',
+                (FID, 'default_object_fid')),
+        ), sort_by_attrs='default_object_use'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDoor(MelRecord):
+    """Door."""
+    rec_sig = b'DOOR'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelDestructible(),
+        MelKeywords(),
+        MelNativeTerminal(),
+        MelSound(),
+        MelSoundClose(b'ANAM'),
+        MelSoundLooping(),
+        MelDoorFlags(),
+        MelLString(b'ONAM', 'alternate_text_open'),
+        MelLString(b'CNAM', 'alternate_text_close'),
+        MelRandomTeleports(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+# Not present in Fallout4.esm, but can be created in CK
+class MreDual(MelRecord):
+    """Dual Cast Data."""
+    rec_sig = b'DUAL'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelDualData(),
     )
     __slots__ = melSet.getSlotsUsed()
 
