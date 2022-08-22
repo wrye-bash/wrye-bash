@@ -380,6 +380,23 @@ class MreDlbr(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreDlvw(MelRecord):
+    """Dialog View"""
+    rec_sig = b'DLVW'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFid(b'QNAM', 'dlvw_quest'),
+        MelFids('dlvw_branches', MelFid(b'BNAM')),
+        MelGroups('unknown_tnam',
+            MelBase(b'TNAM', 'unknown1'),
+        ),
+        MelBase(b'ENAM', 'unknown_enam'),
+        MelBase(b'DNAM', 'unknown_dnam'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreFlst(MelRecord):
     """FormID List."""
     rec_sig = b'FLST'

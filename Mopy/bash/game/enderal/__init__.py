@@ -120,7 +120,8 @@ class EnderalGameInfo(SkyrimGameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreColl, MreDebr, MreDlbr, MreFlst, MreGlob
+        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw, MreFlst, \
+            MreGlob
         from ..skyrim.records import MreCell, MreWrld, MreFact, MreAchr, \
             MreInfo, MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, \
             MreLvsp, MreEnch, MreProj, MreRace, MreRfct, MreMisc, MreActi, \
@@ -133,10 +134,10 @@ class EnderalGameInfo(SkyrimGameInfo):
             MreKeym, MreTxst, MreHdpt, MreTes4, MreAlch, MreBook, MreSpgd, \
             MreSndr, MreImgs, MreScrl, MreMust, MreFstp, MreFsts, MreMgef, \
             MreLgtm, MreMusc, MreClas, MreLctn, MreTact, MreBptd, MreDobj, \
-            MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
+            MreLscr, MrePerk, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MrePerk
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (# MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,

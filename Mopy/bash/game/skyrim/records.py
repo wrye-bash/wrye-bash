@@ -1019,23 +1019,6 @@ class MreDial(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDlvw(MelRecord):
-    """Dialog View"""
-    rec_sig = b'DLVW'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFid(b'QNAM','quest',),
-        MelFids('branches', MelFid(b'BNAM')),
-        MelGroups('unknownTNAM',
-            MelBase(b'TNAM','unknown',),
-        ),
-        MelBase(b'ENAM','unknownENAM'),
-        MelBase(b'DNAM','unknownDNAM'),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreDobj(MelRecord):
     """Default Object Manager."""
     rec_sig = b'DOBJ'

@@ -218,7 +218,7 @@ class Fallout4GameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreColl, MreDebr, MreDlbr
+        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw
         from .records import MreAact, MreActi, MreAddn, MreAech, MreAmdl, \
             MreAnio, MreAoru, MreArma, MreArmo, MreArto, MreAstp, MreAvif, \
             MreBnds, MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, \
@@ -229,6 +229,7 @@ class Fallout4GameInfo(PatchGame):
             MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
+            MreDlvw,
             MreGmst, MreLvli, MreLvln, MrePerk,
         )}
         # Setting RecordHeader class variables --------------------------------
@@ -265,6 +266,7 @@ class Fallout4GameInfo(PatchGame):
             MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
+            MreDlvw,
             MreGmst, MreLvli, MreLvln, MrePerk, MreTes4,
         )}
         brec.MreRecord.simpleTypes = (
