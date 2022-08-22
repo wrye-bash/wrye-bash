@@ -118,6 +118,10 @@ class FormId:
         except TypeError:
             raise StateError(f'{self!r} not in long format')
 
+    def is_null(self):
+        """Return True if we are a round 0."""
+        return self.short_fid == 0
+
     # Hash and comparisons
     def __hash__(self):
         return hash(self.long_fid)
@@ -223,7 +227,7 @@ class _Tes4Fid(FormId):
     @bolt.fast_cached_property
     def long_fid(self):
         from .. import bush
-        return bush.game.null_fid.long_fid
+        return bush.game.master_fid(0).long_fid
 
 # cache an instance of Tes4 and export that to the rest of Bash
 ZERO_FID = _Tes4Fid(0)

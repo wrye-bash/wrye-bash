@@ -660,10 +660,7 @@ class FidNotNullDecider(ACommonDecider):
         self._target_attr = target_attr
 
     def _decide_common(self, record):
-        ##: Wasteful, but bush imports brec which uses this decider, so we
-        # can't import bush in __init__...
-        from .. import bush
-        return getattr(record, self._target_attr) != bush.game.null_fid
+        return not getattr(record, self._target_attr).is_null()
 
 class FlagDecider(ACommonDecider):
     """Decider that checks if certain flags are set."""

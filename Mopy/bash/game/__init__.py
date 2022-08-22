@@ -153,11 +153,6 @@ class GameInfo(object):
             return self.__master_fids.setdefault(object_id,
                 brec.FormId.from_tuple((self.master_file, object_id)))
 
-    @bolt.fast_cached_property
-    def null_fid(self):
-        """The fid corresponding to (master_esm, 0)"""
-        return self.master_fid(0)
-
     class Ws(object):
         """Information about this game on the Windows Store."""
         # A list of directory names for different language versions that ship

@@ -197,7 +197,6 @@ class MobObjects(MobBase):
         self.records = []
         self.id_records = {}
         from .. import bush
-        self._null_fid = bush.game.null_fid
         # DarkPCB record
         self._bad_form = bush.game.displayName == 'Oblivion' and \
             bush.game.master_fid(0xA31D) or None
@@ -286,7 +285,7 @@ class MobObjects(MobBase):
         if self_recs and not self.id_records:
             self.indexRecords()
         record_id = record.fid
-        if record.isKeyedByEid and record_id == self._null_fid:
+        if record.isKeyedByEid and record_id.is_null():
             record_id = record.eid
         self_id_recs = self.id_records
         # This check fails fairly often, so do this instead of try/except
@@ -313,7 +312,7 @@ class MobObjects(MobBase):
     def keepRecords(self, p_keep_ids):
         """Keeps records with fid in set p_keep_ids. Discards the rest."""
         self.records = [record for record in self.records if (
-                record.isKeyedByEid and record.fid == self._null_fid
+                record.isKeyedByEid and record.fid.is_null()
                 and record.eid in p_keep_ids) or record.fid in p_keep_ids]
         self.id_records.clear()
         self.setChanged()
@@ -339,8 +338,8 @@ class MobObjects(MobBase):
         mergeIdsAdd = mergeIds.add
         copy_to_self = self.setRecord
         for record in block.getActiveRecords():
-            fid = record.fid
-            if fid == self._bad_form: continue
+            rfid = record.fid
+            if rfid == self._bad_form: continue
             #--Include this record?
             if doFilter:
                 # If we're Filter-tagged, perform merge filtering. Then, check
@@ -359,10 +358,10 @@ class MobObjects(MobBase):
             if iiSkipMerge: continue
             # We're past all hurdles - stick a copy of this record into
             # ourselves and mark it as merged
-            if record.isKeyedByEid and fid == self._null_fid:
+            if record.isKeyedByEid and rfid.is_null():
                 mergeIdsAdd(record.eid)
             else:
-                mergeIdsAdd(fid)
+                mergeIdsAdd(rfid)
             copy_to_self(record.getTypeCopy())
         # Apply any merge filtering we've done above to the record block in
         # question. That way, patchers won't see the records that have been
