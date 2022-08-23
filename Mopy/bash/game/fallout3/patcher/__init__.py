@@ -340,7 +340,7 @@ soundsTypes = {
     b'ADDN': ('sound',),
     b'ALCH': (u'dropSound', u'pickupSound', u'soundConsume'),
     b'ARMO': (u'pickupSound', u'dropSound'),
-    b'ASPC': ('sound', 'use_sound_from_region'),
+    b'ASPC': ('sound', 'use_sound_from_region', 'environment_type'),
     b'COBJ': (u'pickupSound', u'dropSound'),
     b'CONT': ('sound', 'sound_close'),
     b'CREA': (u'footWeight', u'inheritsSoundsFrom', u'sounds'),

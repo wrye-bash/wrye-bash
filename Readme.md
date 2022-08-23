@@ -131,7 +131,7 @@ bleeding edge branch. Commits land here for testing.
   [5]: https://www.nexusmods.com/skyrim/mods/1840
   [6]: https://www.nexusmods.com/fallout4/mods/20032
   [7]: https://www.nexusmods.com/skyrimspecialedition/mods/6837
-  [8]: https://github.com/wrye-bash/wrye-bash/releases/latest
+  [8]: https://github.com/wrye-bash/wrye-bash/releases
   [9]: http://wrye-bash.github.io/
   [10]: http://wrye-bash.github.io/docs/Wrye%20Bash%20General%20Readme.html#install
   [11]: http://wrye-bash.github.io/docs/Wrye%20Bash%20Advanced%20Readme.html#install
