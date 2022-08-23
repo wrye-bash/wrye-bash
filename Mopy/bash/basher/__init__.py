@@ -3985,7 +3985,10 @@ class BashStatusBar(DnDStatusBar):
         :param refresh_icon_size: Whether or not to update icon sizes too."""
         txt_len = 280 if bush.game.has_esl else 130
         self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, txt_len])
-        if refresh_icon_size: self.SetSize((-1, self.iconsSize))
+        if refresh_icon_size:
+            ##: Why - 12? I just tried values until it looked good, why does
+            # this one work best?
+            self.SetMinHeight(self.iconsSize - 12)
         # Causes the status bar to fill half the screen on wxGTK
         ##: See if removing this call entirely causes problems on Windows
         if wx.Platform != u'__WXGTK__': self.SendSizeEventToParent()

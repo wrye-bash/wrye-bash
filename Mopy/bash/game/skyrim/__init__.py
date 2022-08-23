@@ -152,6 +152,7 @@ class SkyrimGameInfo(PatchGame):
             u'keyboard_german.txt',
             u'keyboard_spanish.txt',
             u'keyboard_italian.txt',
+            'enginefixes_preload.txt', # 3P: SSE Engine Fixes
         )
         no_skip_dirs = GameInfo.Bain.no_skip_dirs | {
             # This rule is to allow mods with string translation enabled.

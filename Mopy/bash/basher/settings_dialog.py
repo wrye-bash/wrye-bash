@@ -676,9 +676,6 @@ class StatusBarPage(_AScrollablePage):
                                              u'the selected size in pixels.')
         self._icon_size_dropdown.on_combo_select.subscribe(
             self._handle_icon_size)
-        # FIXME(inf) Disabled for now because it doesn't work correctly.
-        #  Supposedly crashes too, but for me it just glitches the status bar
-        self._icon_size_dropdown.enabled = False
         ##: Create a variant of DoubleListBox that can actually show the icons
         self._icon_lists = DoubleListBox(self,
             left_label=_(u'Visible Buttons'), right_label=_(u'Hidden Buttons'),
@@ -695,8 +692,6 @@ class StatusBarPage(_AScrollablePage):
                     HLayout(spacing=6, items=[
                         Label(self, _(u'Icon Size:')),
                         self._icon_size_dropdown,
-                        Label(self, _(u'(currently disabled due to unsolved '
-                                      u'glitches and crashes)'))
                     ]),
             ]),
             (HBoxedLayout(self, item_expand=True,
