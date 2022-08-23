@@ -155,7 +155,7 @@ class MelAddnDnam(MelStruct):
 
 #------------------------------------------------------------------------------
 class MelAlchEnit(MelStruct):
-    """Handles the ALCH subrecord ENIT (Effect Data)."""
+    """Handles the ALCH subrecord ENIT (Effect Data) since Skyrim."""
     _enit_flags = Flags.from_names(
         (0,  'noAutoCalc'),
         (1,  'isFood'),

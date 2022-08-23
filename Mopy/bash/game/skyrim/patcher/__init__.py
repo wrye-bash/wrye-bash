@@ -818,9 +818,9 @@ spell_types = (b'LVSP', b'SPEL')
 #------------------------------------------------------------------------------
 # Import Spell Stats
 #------------------------------------------------------------------------------
-spell_stats_attrs = (u'eid', u'cost', u'spellType', u'chargeTime', u'castType',
-                     u'targetType', u'castDuration', u'range', u'halfCostPerk',
-                     u'dataFlags')
+spell_stats_attrs = ('eid', u'cost', 'spellType', 'charge_time', 'cast_type',
+                     'spell_target_type', 'castDuration', 'range',
+                     'halfCostPerk', 'dataFlags')
 spell_stats_types = {b'SCRL', b'SPEL'}
 
 #------------------------------------------------------------------------------
@@ -1035,9 +1035,10 @@ relations_attrs = (u'faction', u'mod', u'group_combat_reaction')
 #------------------------------------------------------------------------------
 # Import Enchantment Stats
 #------------------------------------------------------------------------------
-ench_stats_attrs = (u'enchantmentCost', u'generalFlags', u'castType',
-                    u'enchantmentAmount', u'targetType', u'enchantType',
-                    u'chargeTime', u'baseEnchantment', u'wornRestrictions')
+ench_stats_attrs = ('enchantment_cost', 'enit_flags', 'cast_type',
+                    'enchantment_amount', 'enchantment_target_type',
+                    'enchantment_type', 'charge_time', 'base_enchantment',
+                    'worn_restrictions')
 
 #------------------------------------------------------------------------------
 # Import Effect Stats

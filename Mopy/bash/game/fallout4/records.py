@@ -1111,6 +1111,29 @@ class MreEfsh(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreEnch(MelRecord):
+    """Object Effect."""
+    rec_sig = b'ENCH'
+
+    _enit_flags = Flags.from_names(
+        (0, 'ench_no_auto_calc'),
+        (2, 'extend_duration_on_recast'),
+    )
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelFull(),
+        MelStruct(b'ENIT', ['i', '2I', 'i', '2I', 'f', '2I'],
+            'enchantment_cost', (_enit_flags, 'enit_flags'), 'cast_type',
+            'enchantment_amount', 'enchantment_target_type',
+            'enchantment_type', 'charge_time', (FID, 'base_enchantment'),
+            (FID, 'worn_restrictions')),
+        MelEffects(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreGmst(AMreGmst):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.

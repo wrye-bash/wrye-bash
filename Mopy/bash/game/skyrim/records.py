@@ -292,8 +292,8 @@ class MelSpit(MelStruct):
 
     def __init__(self):
         super().__init__(b'SPIT', ['3I', 'f', '2I', '2f', 'I'], 'cost',
-            (self.spit_flags, 'dataFlags'), 'spellType', 'chargeTime',
-            'castType', 'targetType', 'castDuration', 'range',
+            (self.spit_flags, 'dataFlags'), 'spellType', 'charge_time',
+            'cast_type', 'spell_target_type', 'castDuration', 'range',
             (FID, 'halfCostPerk'))
 
 #------------------------------------------------------------------------------
@@ -572,7 +572,7 @@ class MreArmo(MelRecord):
         MelBounds(),
         MelFull(),
         MelEnchantment(),
-        MelSInt16(b'EAMT', 'enchantmentAmount'),
+        MelSInt16(b'EAMT', 'enchantment_amount'),
         MelModel(b'MOD2', 'maleWorld'),
         MelIcons('maleIconPath', 'maleSmallIconPath'),
         MelModel(b'MOD4', 'femaleWorld'),
@@ -1179,19 +1179,20 @@ class MreEnch(MelRecord):
     """Object Effect."""
     rec_sig = b'ENCH'
 
-    EnchGeneralFlags = Flags.from_names('noAutoCalc', 'unknownTwo',
-                                        'extendDurationOnRecast')
+    _enit_flags = Flags.from_names(
+        (0, 'ench_no_auto_calc'),
+        (2, 'extend_duration_on_recast'),
+    )
 
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelFull(),
-        MelTruncatedStruct(b'ENIT', [u'i', u'2I', u'i', u'2I', u'f', u'2I'], 'enchantmentCost',
-                           (EnchGeneralFlags, u'generalFlags'), 'castType',
-                           'enchantmentAmount', 'targetType', 'enchantType',
-                           'chargeTime', (FID, 'baseEnchantment'),
-                           (FID, 'wornRestrictions'),
-                           old_versions={'i2Ii2IfI'}),
+        MelTruncatedStruct(b'ENIT', ['i', '2I', 'i', '2I', 'f', '2I'],
+            'enchantment_cost', (_enit_flags, 'enit_flags'), 'cast_type',
+            'enchantment_amount', 'enchantment_target_type',
+            'enchantment_type', 'charge_time', (FID, 'base_enchantment'),
+            (FID, 'worn_restrictions'), old_versions={'i2Ii2IfI'}),
         MelEffects(),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -2559,13 +2560,13 @@ class MrePack(MelRecord):
     melSet = MelSet(
         MelEdid(),
         MelVmad(),
-        MelStruct(b'PKDT', [u'I', u'3B', u's', u'H', u'2s'], (_GeneralFlags, u'generalFlags'),
-                  'package_type', 'interruptOverride', 'preferredSpeed',
-                  'unknown1', (_InterruptFlags, u'interruptFlags'),
-                  'unknown2'),
-        MelStruct(b'PSDT', [u'2b', u'B', u'2b', u'3s', u'i'], 'schedule_month', 'schedule_day',
-                  'schedule_date', 'schedule_hour', 'schedule_minute',
-                  'unused1', 'schedule_duration'),
+        MelStruct(b'PKDT', ['I', '3B', 's', 'H', '2s'],
+            (_GeneralFlags, 'pack_flags'), 'package_type',
+            'interruptOverride', 'preferredSpeed', 'unknown1',
+            (_InterruptFlags, 'interruptFlags'), 'unknown2'),
+        MelStruct(b'PSDT', ['2b', 'B', '2b', '3s', 'i'], 'schedule_month',
+            'schedule_day', 'schedule_date', 'schedule_hour',
+            'schedule_minute', 'unused1', 'schedule_duration'),
         MelConditionList(),
         MelGroup('idleAnimations',
             MelUInt8(b'IDLF', u'animation_flags'),

@@ -773,7 +773,8 @@ relations_attrs = (u'faction', u'mod', u'group_combat_reaction')
 #------------------------------------------------------------------------------
 # Import Enchantment Stats
 #------------------------------------------------------------------------------
-ench_stats_attrs = (u'itemType', u'chargeAmount', u'enchantCost', u'flags')
+ench_stats_attrs = ('item_type', 'charge_amount', 'enchantment_cost',
+                    'enit_flags')
 
 #------------------------------------------------------------------------------
 # Import Effect Stats

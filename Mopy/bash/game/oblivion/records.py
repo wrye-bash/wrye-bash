@@ -980,14 +980,14 @@ class MreEnch(MreHasEffects, MelRecord):
     """Enchantment."""
     rec_sig = b'ENCH'
 
-    _flags = Flags.from_names('noAutoCalc')
+    _enit_flags = Flags.from_names('ench_no_auto_calc')
 
     melSet = MelSet(
         MelEdid(),
         MelObme(),
         MelFull(), #--At least one mod has this. Odd.
-        MelStruct(b'ENIT', [u'3I', u'B', u'3s'], 'itemType', 'chargeAmount', 'enchantCost',
-                  (_flags, u'flags'), 'unused1'),
+        MelStruct(b'ENIT', ['3I', 'B', '3s'], 'item_type', 'charge_amount',
+            'enchantment_cost', (_enit_flags, 'enit_flags'), 'unused1'),
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
     ).with_distributor(_effects_distributor)

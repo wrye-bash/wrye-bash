@@ -517,11 +517,11 @@ class Save_EditCreated(OneItemLink):
     _help = _(u'Allow user to rename custom items (spells, enchantments, etc)')
 
     def __init__(self, save_rec_type):
-        if save_rec_type not in Save_EditCreated.menuNames:
+        if save_rec_type not in self.menuNames:
             raise ArgumentError
-        super(Save_EditCreated, self).__init__()
+        super().__init__()
         self.save_rec_type = save_rec_type
-        self._text = Save_EditCreated.menuNames[self.save_rec_type]
+        self._text = self.menuNames[self.save_rec_type]
 
     def Execute(self):
         #--Get SaveFile

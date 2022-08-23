@@ -575,21 +575,21 @@ class AssortedTweak_SetCastWhenUsedEnchantmentCosts(CustomChoiceTweak):
     tweak_log_msg = _(u'Enchantments Set: %(total_changed)d')
 
     def wants_record(self, record):
-        if record.itemType not in (1, 2): return False
+        if record.item_type not in (1, 2): return False
         new_cost, new_amount = self._calc_cost_and_amount(record)
-        return (record.enchantCost != new_cost or
-                record.chargeAmount != new_amount)
+        return (record.enchantment_cost != new_cost or
+                record.charge_amount != new_amount)
 
     def tweak_record(self, record):
         new_cost, new_amount = self._calc_cost_and_amount(record)
-        record.enchantCost = new_cost
-        record.chargeAmount = new_amount
+        record.enchantment_cost = new_cost
+        record.charge_amount = new_amount
 
     def _calc_cost_and_amount(self, record):
         """Calculates the new enchantment cost and charge amount for the
         specified record based on the number of uses the user chose."""
         chosen_uses = self.choiceValues[self.chosen][0]
-        final_cost = (max(record.chargeAmount // chosen_uses, 1)
+        final_cost = (max(record.charge_amount // chosen_uses, 1)
                       if chosen_uses != 0 else 0)
         return final_cost, final_cost * chosen_uses
 

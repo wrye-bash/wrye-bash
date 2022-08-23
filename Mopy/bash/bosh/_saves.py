@@ -744,11 +744,11 @@ class SaveEnchantments(_SaveData):
         enchant cost)."""
         count = 0
         for record in self.createdEnchantments:
-            if record.itemType in [1,2]:
+            if record.item_type in (1, 2):
                 charge_over_uses = 0 if uses == 0 else max(
-                    record.chargeAmount // uses, 1)
-                if record.enchantCost == charge_over_uses: continue
-                record.enchantCost = charge_over_uses
+                    record.charge_amount // uses, 1)
+                if record.enchantment_cost == charge_over_uses: continue
+                record.enchantment_cost = charge_over_uses
                 record.setChanged()
                 record.getSize()
                 count += 1
