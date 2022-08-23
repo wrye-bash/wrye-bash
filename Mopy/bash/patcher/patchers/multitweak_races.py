@@ -25,8 +25,9 @@
 from collections import defaultdict
 from typing import Union, Optional
 
-from .base import MultiTweakItem, MultiTweaker
-from ... import bush
+from .base import MultiTweakItem, MultiTweaker, IndexingTweak, \
+    CustomChoiceTweak
+from ... import bush, load_order
 from ...bolt import attrgetter_cache, Path
 
 _vanilla_races = [u'argonian', u'breton', u'dremora', u'dark elf',
@@ -216,14 +217,70 @@ class _ARUnblockTweak(_ARaceTweak):
         setattr(record, race_attr, self.tweak_races_data[race_sig])
 
 # -----------------------------------------------------------------------------
-class RaceTweak_AllHairs(_ARUnblockTweak):
+class RaceTweak_AllHairs(_ARaceTweak):
     """Gives all races ALL hairs."""
     tweak_read_classes = b'HAIR', b'RACE',
-    tweak_name = _(u'Races Have All Hairs')
-    tweak_tip = _(u'Gives all races every available hair.')
-    tweak_key = u'hairyraces'
-    tweak_choices = [(u'get down tonight', 1)]
-    _sig_and_attr = (b'HAIR', u'hairs')
+    tweak_name = _('Races Have All Hairs')
+    tweak_tip = _('Gives all races every available hair.')
+    tweak_key = 'hairyraces'
+    tweak_choices = [('get down tonight', 1)]
+    _sig_and_attr = (b'HAIR', 'hairs')
+
+class RaceTweak_AllHeadParts(IndexingTweak, CustomChoiceTweak):
+    ##: We *only* need FLST here for the create_record call down below
+    tweak_read_classes = b'FLST', b'HDPT',
+    tweak_name = _('Races Have All Head Parts')
+    tweak_tip = _('Gives all races every available head part.')
+    tweak_key = 'all_head_parts'
+    tweak_choices = [(_('Hair Only'), '3'),
+                     (_('Eyes Only'), '2'),
+                     (_('Eyes and Hair Only'), '23'),
+                     (_('All Parts'), '0123456')]
+    tweak_log_msg = _('Head Parts Tweaked: %(total_changed)d')
+    tweak_order = 11 # After playable tweaks
+    _index_sigs = [b'FLST', b'RACE']
+    _import_from_master = [bush.game.master_fid(f) for f in (
+        0x0A803F, # HeadPartsAllRacesMinusBeast
+        0x0A8039, # HeadPartsArgonianandVampire
+        0x0A8036, # HeadPartsKhajiitandVampire
+    )]
+
+    def validate_values(self, chosen_values: tuple) -> str | None:
+        for c in chosen_values[0]:
+            if c not in '0123456':
+                return _('Only numbers from 0-6 are allowed.')
+        if len(set(chosen_values[0])) != len(chosen_values[0]):
+            return _('Contains duplicate numbers.')
+
+    @property
+    def _chosen_parts(self):
+        return self.choiceValues[self.chosen][0]
+
+    def prepare_for_tweaking(self, patch_file):
+        super().prepare_for_tweaking(patch_file)
+        pr_flst = patch_file.create_record(b'FLST')
+        pr_flst.eid = 'BP_HeadPartsAllRaces'
+        self._playable_races_flst_fid = pr_flst.fid
+        all_race_fids = set()
+        # Start out with the ones from Skyrim.esm
+        for flst_fid in self._import_from_master:
+            flst_rec = self._indexed_records[b'FLST'][flst_fid]
+            all_race_fids |= set(flst_rec.formIDInList)
+        # Then merge in mod-added playable races
+        for race_fid, race_rec in self._indexed_records[b'RACE'].items():
+            if not race_rec.data_flags_1.playable: continue
+            all_race_fids.add(race_fid)
+        # Sort the result by final load order
+        pr_flst.formIDInList = sorted(all_race_fids,
+            key=lambda r: (load_order.cached_lo_index(r.mod_fn), r.object_dex))
+
+    def wants_record(self, record):
+        return (record._rec_sig == b'HDPT' and
+                record.flags.playable and
+                str(record.hdpt_type) in self._chosen_parts)
+
+    def tweak_record(self, record):
+        record.validRaces = self._playable_races_flst_fid
 
 # -----------------------------------------------------------------------------
 class RaceTweak_AllEyes(_ARUnblockTweak):

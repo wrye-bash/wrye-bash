@@ -819,14 +819,14 @@ enchantment_types = {b'ARMO', b'CREA', b'EXPL', b'NPC_', b'WEAP'}
 # Tweak Races
 #------------------------------------------------------------------------------
 race_tweaks = {
-    u'RaceTweak_PlayableHeadParts',
-    u'RaceTweak_MergeSimilarRaceHairs',
-    u'RaceTweak_MergeSimilarRaceEyes',
-    u'RaceTweak_PlayableEyes',
-    u'RaceTweak_PlayableHairs',
-    u'RaceTweak_GenderlessHairs',
-    u'RaceTweak_AllEyes',
-    u'RaceTweak_AllHairs',
+    'RaceTweak_PlayableHeadParts',
+    'RaceTweak_MergeSimilarRaceHairs',
+    'RaceTweak_MergeSimilarRaceEyes',
+    'RaceTweak_PlayableEyes',
+    'RaceTweak_PlayableHairs',
+    'RaceTweak_GenderlessHairs',
+    'RaceTweak_AllEyes',
+    'RaceTweak_AllHairs',
 }
 race_tweaks_need_collection = True
 

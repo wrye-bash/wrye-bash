@@ -1081,10 +1081,11 @@ enchantment_types = {b'ARMO', b'EXPL', b'WEAP'}
 # Tweak Races
 #------------------------------------------------------------------------------
 race_tweaks = {
-    u'RaceTweak_PlayableHeadParts',
-    u'RaceTweak_GenderlessHeadParts',
-    u'RaceTweak_ForceBehaviorGraphGender_Female',
-    u'RaceTweak_ForceBehaviorGraphGender_Male',
+    'RaceTweak_PlayableHeadParts',
+    'RaceTweak_GenderlessHeadParts',
+    'RaceTweak_ForceBehaviorGraphGender_Female',
+    'RaceTweak_ForceBehaviorGraphGender_Male',
+    'RaceTweak_AllHeadParts',
 }
 
 #------------------------------------------------------------------------------

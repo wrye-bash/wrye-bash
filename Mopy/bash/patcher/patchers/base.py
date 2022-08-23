@@ -84,7 +84,7 @@ class MultiTweakItem(AMultiTweakItem):
 # a patcher/tweak wants it to index all records for certain record types in
 # some central place (and NOT by forwarding all records into the BP!)
 class IndexingTweak(MultiTweakItem):
-    _index_sigs = []
+    _index_sigs: list[bytes]
 
     def __init__(self):
         super(IndexingTweak, self).__init__()
