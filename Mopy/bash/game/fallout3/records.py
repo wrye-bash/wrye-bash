@@ -43,7 +43,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelDecalData, MelDescription, MelLists, MelSoundPickupDrop, MelBookText, \
     MelActivateParents, BipedFlags, MelSpells, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelRaceData, MelRegions, MelDoorFlags, \
-    MelClmtWeatherTypes, MelFactionRanks, perk_effect_key, MelLscrLocations, \
+    MelClmtWeatherTypes, MelFactRanks, perk_effect_key, MelLscrLocations, \
     MelReflectedRefractedBy, MelValueWeight, SpellFlags, MelBaseR, MelExtra, \
     MelSound, MelSoundActivation, MelWaterType, MelConditionsFo3, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
@@ -1214,20 +1214,19 @@ class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
 
-    _general_flags = Flags.from_names('hidden_from_pc','evil','special_combat')
-    _general_flags_2 = Flags.from_names(u'track_crime', u'allow_sell')
+    _fact_flags1 = Flags.from_names('hidden_from_pc', 'evil', 'special_combat')
+    _fact_flags2 = Flags.from_names('track_crime', 'allow_sell')
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelRelations(),
-        MelTruncatedStruct(b'DATA', [u'2B', u'2s'],
-                           (_general_flags, u'general_flags'),
-                           (_general_flags_2, u'general_flags_2'),
-                           u'unused1', old_versions={u'2B', u'B'}),
-        MelFloat(b'CNAM', u'cnam_unused'), # leftover from Oblivion
-        MelFactionRanks(),
-        fnv_only(MelFid(b'WMI1', u'reputation')),
+        MelTruncatedStruct(b'DATA', ['2B', '2s'],
+            (_fact_flags1, 'fact_flags1'), (_fact_flags2, 'fact_flags2'),
+            'unused1', old_versions={'2B', 'B'}),
+        MelFloat(b'CNAM', 'cnam_unused'), # leftover from Oblivion
+        MelFactRanks(),
+        fnv_only(MelFid(b'WMI1', 'reputation')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1807,6 +1806,7 @@ class MreMgef(MelRecord):
 class MreMicn(MelRecord):
     """Menu Icon."""
     rec_sig = b'MICN'
+
     melSet = MelSet(
         MelEdid(),
         MelIcons(),
@@ -2575,6 +2575,7 @@ class MreRace(MelRecord):
 class MreRads(MelRecord):
     """Radiation Stage."""
     rec_sig = b'RADS'
+
     melSet = MelSet(
         MelEdid(),
         MelStruct(b'DATA', [u'2I'],'trigerThreshold',(FID,'actorEffect')),

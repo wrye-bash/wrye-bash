@@ -44,7 +44,9 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
     MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose, \
     MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
-    MelRandomTeleports, MelDualData, MelIco2, MelEqupPnam, MelEyesFlags
+    MelRandomTeleports, MelDualData, MelIco2, MelEqupPnam, MelEyesFlags, \
+    MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
+    PartialLoadDecider, MelFactFids, MelFactVendorInfo
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -172,6 +174,28 @@ class MelLLItems(AMelLLItems):
         super().__init__(MelStruct(b'LVLO', ['H', '2s', 'I', 'H', 'B', 's'],
             'level', 'unused1', (FID, 'listId'), ('count', 1), 'chance_none',
             'unused2'))
+
+#------------------------------------------------------------------------------
+class MelLocation(MelUnion):
+    """A PLDT/PLVD (Location) subrecord. Occurs in PACK and FACT."""
+    def __init__(self, sub_sig):
+        super().__init__({
+            (0, 1, 4, 6): MelOptStruct(sub_sig, ['i', 'I', 'i', 'I'],
+                'location_type', (FID, 'location_value'), 'location_radius',
+                'location_collection_index'),
+            (2, 3, 7, 12, 13): MelOptStruct(sub_sig, ['i', '4s', 'i', 'I'],
+                'location_type', 'location_value', 'location_radius',
+                'location_collection_index'),
+            (5, 10, 11): MelOptStruct(sub_sig, ['i', 'I', 'i', 'I'],
+                'location_type', 'location_value', 'location_radius',
+                'location_collection_index'),
+            (8, 9, 14): MelOptStruct(sub_sig, ['3i', 'I'],
+                'location_type', 'location_value', 'location_radius',
+                'location_collection_index'),
+            }, decider=PartialLoadDecider(
+                loader=MelSInt32(sub_sig, 'location_type'),
+                decider=AttrValDecider('location_type'))
+        )
 
 #------------------------------------------------------------------------------
 class MelNativeTerminal(MelFid):
@@ -1208,6 +1232,30 @@ class MreEyes(MelRecord):
         MelFull(),
         MelIcon(),
         MelEyesFlags(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreFact(MelRecord):
+    """Faction."""
+    rec_sig = b'FACT'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelRelations(),
+        MelFactFlags(),
+        MelFactFids(),
+        # 'cv_arrest' and 'cv_attack_on_sight' are actually bools, cv means
+        # 'crime value' (which is what this struct is about)
+        MelStruct(b'CRVA', ['2B', '5H', 'f', '2H'], 'cv_arrest',
+            'cv_attack_on_sight', 'cv_murder', 'cv_assault', 'cv_trespass',
+            'cv_pickpocket', 'cv_unknown', 'cv_steal_multiplier', 'cv_escape',
+            'cv_werewolf'),
+        MelFactRanks(),
+        MelFactVendorInfo(),
+        MelLocation(b'PLVD'),
+        MelConditions(),
     )
     __slots__ = melSet.getSlotsUsed()
 

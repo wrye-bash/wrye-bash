@@ -265,7 +265,7 @@ class MorphFactionsPatcher(_ExSpecialList):
             # mFactLong
             if not any(mFactLong == relation.faction for relation in
                        record.relations):
-                record.general_flags.hidden_from_pc = False
+                record.fact_flags.hidden_from_pc = False
                 relation = record.getDefault(u'relations')
                 relation.faction = mFactLong
                 relation.mod = 10

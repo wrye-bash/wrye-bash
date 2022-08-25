@@ -505,15 +505,66 @@ class MelEyesFlags(MelUInt8Flags):
         super().__init__(b'DATA', 'flags', self._eyes_flags)
 
 #------------------------------------------------------------------------------
-class MelFactionRanks(MelSorted):
-    """Handles the FACT RNAM/MNAM/FNAM/INAM subrecords."""
+class MelFactFlags(MelUInt32Flags):
+    """Handles the FACT subrecord DATA (Flags) since Skyrim."""
+    _fact_flags = Flags.from_names(
+        ( 0, 'hidden_from_pc'),
+        ( 1, 'special_combat'),
+        ( 6, 'track_crime'),
+        ( 7, 'ignore_crimes_murder'),
+        ( 8, 'ignore_crimes_assault'),
+        ( 9, 'ignore_crimes_stealing'),
+        (10, 'ignore_crimes_trespass'),
+        (11, 'do_not_report_crimes_against_members'),
+        (12, 'crime_gold_use_defaults'),
+        (13, 'ignore_crimes_pickpocket'),
+        (14, 'allow_sell'), # also called 'vendor'
+        (15, 'can_be_owner'),
+        (16, 'ignore_crimes_werewolf'),
+    )
+
+    def __init__(self):
+        super().__init__(b'DATA', 'fact_flags', self._fact_flags),
+
+#------------------------------------------------------------------------------
+class MelFactFids(MelSequential):
+    """Handles the FACT subrecords JAIL, WAIT, STOL, PCLN, CRGR and JOUT."""
+    def __init__(self):
+        super().__init__(
+            MelFid(b'JAIL', 'exterior_jail_marker'),
+            MelFid(b'WAIT', 'follower_wait_marker'),
+            MelFid(b'STOL', 'stolen_goods_container'),
+            MelFid(b'PLCN', 'player_inventory_container'),
+            MelFid(b'CRGR', 'shared_crime_faction_list'),
+            MelFid(b'JOUT', 'jail_outfit'),
+        )
+
+#------------------------------------------------------------------------------
+class MelFactRanks(MelSorted):
+    """Handles the FACT subrecords RNAM, MNAM, FNAM and INAM."""
     def __init__(self):
         super().__init__(MelGroups('ranks',
+            # Unsigned since Skyrim, but no one's going to use ranks >2 billion
             MelSInt32(b'RNAM', 'rank_level'),
             MelLString(b'MNAM', 'male_title'),
             MelLString(b'FNAM', 'female_title'),
             MelString(b'INAM', 'insignia_path'),
         ), sort_by_attrs='rank_level')
+
+#------------------------------------------------------------------------------
+class MelFactVendorInfo(MelSequential):
+    """Handles the FACT subrecords VEND, VENC and VENV."""
+    def __init__(self):
+        super().__init__(
+            MelFid(b'VEND', 'vendor_buy_sell_list'),
+            MelFid(b'VENC', 'merchant_container'),
+            # 'vv_only_buys_stolen_items' and 'vv_not_sell_buy' are actually
+            # bools, vv means 'vendor value' (which is what this struct is
+            # about)
+            MelStruct(b'VENV', ['3H', '2s', '2B', '2s'], 'vv_start_hour',
+                'vv_end_hour', 'vv_radius', 'vv_unknown1',
+                'vv_only_buys_stolen_items', 'vv_not_sell_buy', 'vv_unknown2'),
+        )
 
 #------------------------------------------------------------------------------
 class MelFactions(MelSorted):

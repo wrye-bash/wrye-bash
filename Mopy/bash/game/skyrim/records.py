@@ -39,7 +39,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelSoundPickupDrop, MelActivateParents, BipedFlags, MelColor, \
     MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
     MelUInt32Flags, MelOwnership, MelClmtWeatherTypes, AMelVmad, \
-    MelActorSounds, MelFactionRanks, MelSorted, MelReflectedRefractedBy, \
+    MelActorSounds, MelFactRanks, MelSorted, MelReflectedRefractedBy, \
     perk_effect_key, MelValueWeight, MelSound, MelWaterType, \
     MelSoundActivation, MelInteractionKeyword, MelConditionList, MelAddnDnam, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
@@ -52,7 +52,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
     MelRandomTeleports, MelSoundLooping, MelDualData, MelEqupPnam, \
-    MelEyesFlags
+    MelEyesFlags, MelFactFlags, MelFactFids, MelFactVendorInfo
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -228,18 +228,18 @@ class MelLLItems(AMelLLItems):
 class MelLocation(MelUnion):
     """A PLDT/PLVD (Location) subrecord. Occurs in PACK and FACT."""
     def __init__(self, sub_sig):
-        super(MelLocation, self).__init__({
-            (0, 1, 4, 6): MelOptStruct(sub_sig, [u'i', u'I', u'i'], u'location_type',
-                (FID, u'location_value'), u'location_radius'),
-            (2, 3, 7, 10, 11, 12): MelOptStruct(sub_sig, [u'i', u'4s', u'i'],
-                u'location_type', u'location_value', u'location_radius'),
-            5: MelOptStruct(sub_sig, [u'i', u'I', u'i'], u'location_type',
-                u'location_value', u'location_radius'),
-            (8, 9): MelOptStruct(sub_sig, [u'3i'], u'location_type',
-                u'location_value', u'location_radius'),
+        super().__init__({
+            (0, 1, 4, 6): MelOptStruct(sub_sig, ['i', 'I', 'i'],
+                'location_type', (FID, 'location_value'), 'location_radius'),
+            (2, 3, 7, 10, 11, 12): MelOptStruct(sub_sig, ['i', '4s', 'i'],
+                'location_type', 'location_value', 'location_radius'),
+            5: MelOptStruct(sub_sig, ['i', 'I', 'i'], 'location_type',
+                'location_value', 'location_radius'),
+            (8, 9): MelOptStruct(sub_sig, ['3i'], 'location_type',
+                'location_value', 'location_radius'),
             }, decider=PartialLoadDecider(
-                loader=MelSInt32(sub_sig, u'location_type'),
-                decider=AttrValDecider(u'location_type'))
+                loader=MelSInt32(sub_sig, 'location_type'),
+                decider=AttrValDecider('location_type'))
         )
 
 #------------------------------------------------------------------------------
@@ -364,6 +364,7 @@ class MreTes4(AMreHeader):
 class MreAact(MelRecord):
     """Action."""
     rec_sig = b'AACT'
+
     melSet = MelSet(
         MelEdid(),
         MelColorO(),
@@ -1261,48 +1262,20 @@ class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
 
-    _general_flags = Flags.from_names(
-        ( 0, u'hidden_from_pc'),
-        ( 1, u'special_combat'),
-        ( 6, u'track_crime'),
-        ( 7, u'ignore_crimes_murder'),
-        ( 8, u'ignore_crimes_assault'),
-        ( 9, u'ignore_crimes_stealing'),
-        (10, u'ignore_crimes_trespass'),
-        (11, u'do_not_report_crimes_against_members'),
-        (12, u'crime_gold_use_defaults'),
-        (13, u'ignore_crimes_pickpocket'),
-        (14, u'allow_sell'), # vendor
-        (15, u'can_be_owner'),
-        (16, u'ignore_crimes_werewolf'),
-    )
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelRelations(),
-        MelUInt32Flags(b'DATA', u'general_flags', _general_flags),
-        MelFid(b'JAIL', u'exterior_jail_marker'),
-        MelFid(b'WAIT', u'follower_wait_marker'),
-        MelFid(b'STOL', u'stolen_goods_container'),
-        MelFid(b'PLCN', u'player_inventory_container'),
-        MelFid(b'CRGR', u'shared_crime_faction_list'),
-        MelFid(b'JOUT', u'jail_outfit'),
+        MelFactFlags(),
+        MelFactFids(),
         # 'cv_arrest' and 'cv_attack_on_sight' are actually bools, cv means
         # 'crime value' (which is what this struct is about)
-        MelTruncatedStruct(b'CRVA', [u'2B', u'5H', u'f', u'2H'], u'cv_arrest',
-                           u'cv_attack_on_sight', u'cv_murder', u'cv_assault',
-                           u'cv_trespass', u'cv_pickpocket',
-                           u'cv_unknown', u'cv_steal_multiplier', u'cv_escape',
-                           u'cv_werewolf', old_versions={u'2B5Hf', u'2B5H'}),
-        MelFactionRanks(),
-        MelFid(b'VEND', u'vendor_buy_sell_list'),
-        MelFid(b'VENC', u'merchant_container'),
-        # 'vv_only_buys_stolen_items' and 'vv_not_sell_buy' are actually bools,
-        # vv means 'vendor value' (which is what this struct is about)
-        MelStruct(b'VENV', [u'3H', u'2s', u'2B', u'2s'], u'vv_start_hour', u'vv_end_hour',
-                  u'vv_radius', u'vv_unknown1', u'vv_only_buys_stolen_items',
-                  u'vv_not_sell_buy', u'vv_unknown2'),
+        MelTruncatedStruct(b'CRVA', ['2B', '5H', 'f', '2H'], 'cv_arrest',
+            'cv_attack_on_sight', 'cv_murder', 'cv_assault', 'cv_trespass',
+            'cv_pickpocket', 'cv_unknown', 'cv_steal_multiplier', 'cv_escape',
+            'cv_werewolf', old_versions={'2B5Hf', '2B5H'}),
+        MelFactRanks(),
+        MelFactVendorInfo(),
         MelLocation(b'PLVD'),
         MelConditions(),
     )

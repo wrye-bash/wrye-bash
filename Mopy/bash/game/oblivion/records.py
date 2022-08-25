@@ -40,7 +40,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelRefScale, MelMapMarker, MelActionFlags, MelPartialCounter, MelScript, \
     MelDescription, BipedFlags, MelUInt8Flags, MelUInt32Flags, MelLists, \
     MelConditionsTes4, MelRaceData, MelFactions, MelActorSounds, MelBaseR, \
-    MelClmtWeatherTypes, MelFactionRanks, MelLscrLocations, attr_csv_struct, \
+    MelClmtWeatherTypes, MelFactRanks, MelLscrLocations, attr_csv_struct, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
@@ -1012,16 +1012,15 @@ class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
 
-    _general_flags = Flags.from_names(u'hidden_from_pc', u'evil',
-                                      u'special_combat')
+    _fact_flags = Flags.from_names('hidden_from_pc', 'evil', 'special_combat')
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelRelations(with_gcr=False),
-        MelUInt8Flags(b'DATA', u'general_flags', _general_flags),
-        MelFloat(b'CNAM', u'crime_gold_multiplier'),
-        MelFactionRanks(),
+        MelUInt8Flags(b'DATA', 'fact_flags', _fact_flags),
+        MelFloat(b'CNAM', 'crime_gold_multiplier'),
+        MelFactRanks(),
     )
     __slots__ = melSet.getSlotsUsed()
 
