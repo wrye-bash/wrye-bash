@@ -46,7 +46,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
     MelRandomTeleports, MelDualData, MelIco2, MelEqupPnam, MelEyesFlags, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
-    PartialLoadDecider, MelFactFids, MelFactVendorInfo
+    PartialLoadDecider, MelFactFids, MelFactVendorInfo, MelReadOnly, \
+    MelSeasons, MelIngredient
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1256,6 +1257,33 @@ class MreFact(MelRecord):
         MelFactVendorInfo(),
         MelLocation(b'PLVD'),
         MelConditions(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreFlor(MelRecord):
+    """Flora."""
+    rec_sig = b'FLOR'
+    _has_duplicate_attrs = True # RNAM is an older version of ATTX
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelDestructible(),
+        MelKeywords(),
+        MelProperties(),
+        MelBase(b'PNAM', 'unknown_pnam'),
+        MelAttx(),
+        # Older format - read, but only dump ATTX
+        MelReadOnly(MelAttx(b'RNAM')),
+        MelBase(b'FNAM', 'unknown_fnam'),
+        MelIngredient(),
+        MelSound(),
+        MelSeasons(),
     )
     __slots__ = melSet.getSlotsUsed()
 

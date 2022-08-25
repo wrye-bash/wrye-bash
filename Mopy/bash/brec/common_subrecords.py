@@ -638,6 +638,12 @@ class MelImageSpaceMod(MelFid):
         super().__init__(b'MNAM', 'image_space_modifier')
 
 #------------------------------------------------------------------------------
+class MelIngredient(MelFid):
+    """Handles the common PFIG (Ingredient) subrecord."""
+    def __init__(self):
+        super().__init__(b'PFIG', 'ingredient')
+
+#------------------------------------------------------------------------------
 class MelInteractionKeyword(MelFid):
     """Handles the KNAM (Interaction Keyword) subrecord of ACTI records."""
     def __init__(self):
@@ -1001,6 +1007,13 @@ class MelScriptVars(MelSorted):
                 'var_type', 'unused2'),
             MelString(b'SCVR', 'var_name'),
         ), sort_by_attrs='var_index')
+
+#------------------------------------------------------------------------------
+class MelSeasons(MelStruct):
+    """Handles the common PFPC (Seasonal Ingredient Production) subrecord."""
+    def __init__(self):
+        super().__init__(b'PFPC', ['4B'], 'sip_spring', 'sip_summer',
+            'sip_fall', 'sip_winter'),
 
 #------------------------------------------------------------------------------
 class MelShortName(MelLString):

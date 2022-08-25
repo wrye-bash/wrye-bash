@@ -52,7 +52,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
     MelRandomTeleports, MelSoundLooping, MelDualData, MelEqupPnam, \
-    MelEyesFlags, MelFactFlags, MelFactFids, MelFactVendorInfo
+    MelEyesFlags, MelFactFlags, MelFactFids, MelFactVendorInfo, MelSeasons, \
+    MelIngredient
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1294,12 +1295,12 @@ class MreFlor(MelRecord):
         MelModel(),
         MelDestructible(),
         MelKeywords(),
-        MelBase(b'PNAM','unknown01'),
+        MelBase(b'PNAM', 'unknown_pnam'),
         MelAttx(b'RNAM'),
-        MelBase(b'FNAM','unknown02'),
-        MelFid(b'PFIG','ingredient'),
+        MelBase(b'FNAM', 'unknown_fnam'),
+        MelIngredient(),
         MelSound(),
-        MelStruct(b'PFPC', [u'4B'],'spring','summer','fall','winter',),
+        MelSeasons(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3854,9 +3855,9 @@ class MreTree(MelRecord):
         MelVmad(),
         MelBounds(),
         MelModel(),
-        MelFid(b'PFIG','harvestIngredient'),
+        MelIngredient(),
         MelSound(),
-        MelStruct(b'PFPC', [u'4B'],'spring','summer','fall','wsinter',),
+        MelSeasons(),
         MelFull(),
         MelStruct(b'CNAM', [u'12f'], u'trunk_flexibility', u'branch_flexibility',
                   u'trunk_amplitude', u'front_amplitude', u'back_amplitude',

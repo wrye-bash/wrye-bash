@@ -508,7 +508,7 @@ class AssortedTweak_HarvestChance(CustomChoiceTweak):
                      (u'50%', 50), (u'60%', 60), (u'70%', 70), (u'80%', 80),
                      (u'90%', 90), (u'100%', 100)]
     tweak_log_msg = _(u'Harvest Chances Changed: %(total_changed)d')
-    _season_attrs = (u'spring', u'summer', u'fall', u'winter')
+    _season_attrs = ('sip_spring', 'sip_summer', 'sip_fall', 'sip_winter')
 
     @property
     def chosen_chance(self):

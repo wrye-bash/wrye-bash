@@ -45,7 +45,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
     MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelEyesFlags, \
-    MelHairFlags
+    MelHairFlags, MelSeasons, MelIngredient
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -1034,8 +1034,8 @@ class MreFlor(MelRecord):
         MelFull(),
         MelModel(),
         MelScript(),
-        MelFid(b'PFIG','ingredient'),
-        MelStruct(b'PFPC', [u'4B'],'spring','summer','fall','winter'),
+        MelIngredient(),
+        MelSeasons(),
     )
     __slots__ = melSet.getSlotsUsed()
 
