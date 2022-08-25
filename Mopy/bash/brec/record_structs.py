@@ -339,8 +339,8 @@ class MreRecord(object):
         # MultiBound
         (31,'multiBound'), # {0x80000000}
     )
-    __slots__ = [u'header', u'_rec_sig', u'fid', u'flags1', u'size', u'flags2',
-                 u'changed', u'data', u'inName']
+    __slots__ = ('header', '_rec_sig', 'fid', 'flags1', 'size', 'flags2',
+                 'changed', 'data', 'inName')
     isKeyedByEid = False
     #--Set at end of class data definitions.
     type_class = {}
@@ -523,7 +523,7 @@ class MelRecord(MreRecord):
     # If set to False, skip the check for duplicate attributes for this
     # subrecord. See MelSet.check_duplicate_attrs for more information.
     _has_duplicate_attrs = False
-    __slots__ = []
+    __slots__ = ()
 
     def __init__(self, header, ins=None, *, do_unpack=False):
         if self.__class__.rec_sig != header.recType:

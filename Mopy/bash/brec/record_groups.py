@@ -41,9 +41,9 @@ class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not
     support unpacking, but can report its number of records and be written."""
 
-    __slots__ = ['header', 'size', 'label', 'groupType', 'stamp',
+    __slots__ = ('header', 'size', 'label', 'groupType', 'stamp',
                  'data', 'changed', 'numRecords', 'loadFactory',
-                 'inName'] ##: nice collection of forbidden names, including header -> grup_header
+                 'inName') ##: nice collection of forbidden names, including header -> grup_header
 
     def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         self.header = header
@@ -393,7 +393,7 @@ class MobObjects(MobBase):
 # MobCells and MobWorlds
 class MobDial(MobObjects):
     """A single DIAL with INFO children."""
-    __slots__ = [u'dial', u'stamp2']
+    __slots__ = ('dial', 'stamp2')
 
     def __init__(self, header, loadFactory, dial, ins=None, do_unpack=True):
         self.dial = dial
@@ -765,8 +765,8 @@ class MobDials(MobBase):
 class MobCell(MobBase):
     """Represents cell block structure -- including the cell and all
     subrecords."""
-    __slots__ = [u'cell', u'persistent_refs', u'distant_refs', u'temp_refs',
-                 u'land', u'pgrd']
+    __slots__ = ('cell', 'persistent_refs', 'distant_refs', 'temp_refs',
+                 'land', 'pgrd')
 
     def __init__(self, header, loadFactory, cell, ins=None, do_unpack=False):
         self.cell = cell

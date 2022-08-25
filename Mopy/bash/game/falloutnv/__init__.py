@@ -140,7 +140,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreDebr, MreFlst, MreGlob
+        from ...brec import MreDebr, MreGlob, MreGmst
         from .records import MreTes4, MreAloc, MreAmef, MreCcrd, MreCdck, \
             MreChal, MreChip, MreCmny, MreCsno, MreDehy, MreDial, MreHung, \
             MreImod, MreLsct, MreMset, MreRcct, MreRcpe, MreRepu, MreSlpd, \
@@ -155,7 +155,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MreRgdl, MreScol, MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, \
             MreWrld, MreAlch, MreActi, MreAmmo, MreArma, MreArmo, MreAspc, \
             MreCont, MreAchr, MreAcre, MreCell, MreCsty, MreDobj, MreEnch, \
-            MreFact, MreGmst, MreHdpt, MreImad, MreInfo, MreIpct, MreKeym, \
+            MreFact, MreFlst, MreHdpt, MreImad, MreInfo, MreIpct, MreKeym, \
             MreLigh, MreLscr, MreMisc, MreMusc, MrePgre, MrePmis, MreProj, \
             MreRefr, MreRegn, MreSoun, MreStat, MreTact
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (

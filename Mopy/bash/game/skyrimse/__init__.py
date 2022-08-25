@@ -271,8 +271,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw, MreFlst, \
-            MreGlob
+        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw, MreGlob, \
+            MreGmst
         from .records import MreVoli, MreLens
         from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
             MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \
@@ -280,7 +280,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreClfm, MreClmt, MreCobj, MreNavm, MreCont, MreCpth, MreCsty, \
             MreRace, MreDial, MreWthr, MreWeap, MreDobj, MreDoor, MreDual, \
             MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, \
-            MreFlor, MreFstp, MreFsts, MreFurn, MreGmst, MreGras, MrePack, \
+            MreFlor, MreFstp, MreFsts, MreFurn, MreFlst, MreGras, MrePack, \
             MreHazd, MreHdpt, MreTes4, MreIdle, MreIdlm, MreImad, MreImgs, \
             MreInfo, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, \
             MreLctn, MreLgtm, MreLigh, MreLscr, MreLvli, MreLvln, MreLvsp, \

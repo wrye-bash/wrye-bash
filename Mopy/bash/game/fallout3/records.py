@@ -29,7 +29,7 @@ from ... import bush
 from ...bolt import Flags, structs_cache, TrimmedFlags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, AMreHeader, MelRace, \
-    MelBase, MelSimpleArray, AMreGmst, MelBodyParts, MelMODS, MelFactions, \
+    MelBase, MelSimpleArray, AMreFlst, MelBodyParts, MelMODS, MelFactions, \
     MelReferences, MelColorInterpolator, MelValueInterpolator, MelAnimations, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
@@ -49,7 +49,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
-    MelSoundLooping, MelEyesFlags, MelHairFlags
+    MelSoundLooping, MelEyesFlags, MelHairFlags, MelFlstFids
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -137,7 +137,7 @@ class MreActor(AMreActor):
         'useInventory',
         'useScript',
     )
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MelBipedData(MelStruct):
@@ -1231,6 +1231,15 @@ class MreFact(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreFlst(AMreFlst):
+    """FormID List."""
+    melSet = MelSet(
+        MelEdid(),
+        MelFlstFids(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreFurn(MelRecord):
     """Furniture."""
     rec_sig = b'FURN'
@@ -1248,12 +1257,6 @@ class MreFurn(MelRecord):
         MelUInt32Flags(b'MNAM', u'activeMarkers', _flags),
     )
     __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreGmst(AMreGmst):
-    """Game Setting."""
-    isKeyedByEid = True # NULL fids are acceptable.
-    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreGras(MelRecord):
@@ -1704,19 +1707,19 @@ class MreLtex(MelRecord):
 class MreLvlc(MreLeveledList):
     """Leveled Creature."""
     rec_sig = b'LVLC'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreLvln(MreLeveledList):
     """Leveled NPC."""
     rec_sig = b'LVLN'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreMesg(MelRecord):

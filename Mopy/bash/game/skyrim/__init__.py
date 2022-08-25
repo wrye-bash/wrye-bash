@@ -280,14 +280,14 @@ class SkyrimGameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw, MreFlst, \
-            MreGlob
+        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw, MreGlob, \
+            MreGmst
         from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, \
             MreInfo, MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, \
             MreLvsp, MreEnch, MreProj, MrePerk, MreRfct, MreMisc, MreActi, \
             MreEqup, MreCpth, MreDoor, MreAnio, MreHazd, MreIdlm, MreEczn, \
             MreIdle, MreLtex, MreQust, MreMstt, MreNpc, MreIpds, MrePack, \
-            MreGmst, MreRevb, MreClmt, MreRace, MreSmbn, MreLvli, MreSpel, \
+            MreFlst, MreRevb, MreClmt, MreRace, MreSmbn, MreLvli, MreSpel, \
             MreKywd, MreLvln, MreAact, MreSlgm, MreRegn, MreFurn, MreGras, \
             MreAstp, MreWoop, MreMovt, MreCobj, MreShou, MreSmen, MreNavm, \
             MreArto, MreAddn, MreSopm, MreCsty, MreAppa, MreArma, MreArmo, \

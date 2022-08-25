@@ -218,21 +218,21 @@ class Fallout4GameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw
+        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw, MreGmst
         from .records import MreAact, MreActi, MreAddn, MreAech, MreAmdl, \
             MreAnio, MreAoru, MreArma, MreArmo, MreArto, MreAstp, MreAvif, \
             MreBnds, MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, \
             MreCmpo, MreCobj, MreCont, MreCpth, MreCsty, MreDfob, MreDmgt, \
             MreDobj, MreDoor, MreDual, MreEczn, MreEfsh, MreEnch, MreEqup, \
-            MreExpl, MreEyes, MreFact, MreFlor, \
-            MreGmst, MreLvli, MreLvln, MrePerk, MreTes4
+            MreExpl, MreEyes, MreFact, MreFlor, MreFlst, \
+            MreLvli, MreLvln, MrePerk, MreTes4
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
             MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
             MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
-            MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor,
+            MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
             MreGmst, MreLvli, MreLvln, MrePerk,
         )}
         # Setting RecordHeader class variables --------------------------------
@@ -274,7 +274,7 @@ class Fallout4GameInfo(PatchGame):
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
             MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
-            MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor,
+            MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
             MreGmst, MreLvli, MreLvln, MrePerk, MreTes4,
         )}
         brec.MreRecord.simpleTypes = (

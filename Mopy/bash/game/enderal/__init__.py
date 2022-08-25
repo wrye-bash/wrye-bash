@@ -120,14 +120,14 @@ class EnderalGameInfo(SkyrimGameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw, MreFlst, \
-            MreGlob
+        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw, MreGlob, \
+            MreGmst
         from ..skyrim.records import MreCell, MreWrld, MreFact, MreAchr, \
             MreInfo, MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, \
             MreLvsp, MreEnch, MreProj, MreRace, MreRfct, MreMisc, MreActi, \
             MreEqup, MreCpth, MreDoor, MreAnio, MreHazd, MreIdlm, MreEczn, \
             MreIdle, MreLtex, MreQust, MreMstt, MreNpc, MreIpds, MrePack, \
-            MreGmst, MreRevb, MreClmt, MreDial, MreSmbn, MreLvli, MreSpel, \
+            MreFlst, MreRevb, MreClmt, MreDial, MreSmbn, MreLvli, MreSpel, \
             MreKywd, MreLvln, MreAact, MreSlgm, MreRegn, MreFurn, MreGras, \
             MreAstp, MreWoop, MreMovt, MreCobj, MreShou, MreSmen, MreNavm, \
             MreArto, MreAddn, MreSopm, MreCsty, MreAppa, MreArma, MreArmo, \

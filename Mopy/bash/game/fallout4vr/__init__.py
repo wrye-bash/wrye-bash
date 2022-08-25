@@ -88,8 +88,9 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
+        from ...brec import MreGmst
         from .records import MreTes4
-        from ..fallout4.records import MreGmst, MreLvli, MreLvln
+        from ..fallout4.records import MreLvli, MreLvln
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreGmst, MreLvli, MreLvln
         )}

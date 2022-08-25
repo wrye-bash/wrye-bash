@@ -26,7 +26,7 @@ from ...bolt import Flags, structs_cache, TrimmedFlags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelGroup, MelString, AMreLeveledList, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, AMreHeader, MelBase, MelSimpleArray, MelWeight, \
-    AMreGmst, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
+    AMreFlst, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
     MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt16, MelUInt32, MelActionFlags, MelCounter, MelRaceData, MelBaseR, \
@@ -53,7 +53,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
     MelRandomTeleports, MelSoundLooping, MelDualData, MelEqupPnam, \
     MelEyesFlags, MelFactFlags, MelFactFids, MelFactVendorInfo, MelSeasons, \
-    MelIngredient
+    MelIngredient, MelFlstFids
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1305,6 +1305,15 @@ class MreFlor(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreFlst(AMreFlst):
+    """FormID List."""
+    melSet = MelSet(
+        MelEdid(),
+        MelFlstFids(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreFstp(MelRecord):
     """Footstep."""
     rec_sig = b'FSTP'
@@ -1406,12 +1415,6 @@ class MreFurn(MelRecord):
         MelString(b'XMRK','modelFilename'),
     )
     __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreGmst(AMreGmst):
-    """Game Setting."""
-    isKeyedByEid = True # NULL fids are acceptable.
-    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreGras(MelRecord):
@@ -2947,7 +2950,7 @@ class _MelTintMasks(MelGroups):
 
 class _RaceDataFlags1(TrimmedFlags):
     """The Overlay/Override Head Part List flags are mutually exclusive."""
-    __slots__ = []
+    __slots__ = ()
     def _clean_flags(self):
         if self.overlay_head_part_list and self.override_head_part_list:
             self.overlay_head_part_list = False

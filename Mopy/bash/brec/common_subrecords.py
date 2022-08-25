@@ -576,6 +576,12 @@ class MelFactions(MelSorted):
         ), sort_by_attrs='faction')
 
 #------------------------------------------------------------------------------
+class MelFlstFids(MelFids):
+    """Handles the FLST subrecord LNAM (FormIDs)."""
+    def __init__(self):
+        super().__init__('formIDInList', MelFid(b'LNAM')) # Do *not* sort!
+
+#------------------------------------------------------------------------------
 class MelFootstepSound(MelFid):
     """Handles the ARMA subrecord SNDD (Footstep Sound)."""
     def __init__(self):
@@ -1143,7 +1149,7 @@ class MelXlod(MelOptStruct):
 #------------------------------------------------------------------------------
 class _SpellFlags(Flags):
     """For SpellFlags, immuneToSilence activates bits 1 AND 3."""
-    __slots__ = []
+    __slots__ = ()
 
     def __setitem__(self, index, value):
         setter = Flags.__setitem__

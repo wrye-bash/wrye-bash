@@ -27,7 +27,7 @@ from ...bolt import Flags
 from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelStruct, MelNull, MelSimpleArray, AMreLeveledList, MelFid, MelAttx, \
     FID, MelLString, MelUInt8, MelFloat, MelBounds, MelEdid, MelUnloadEvent, \
-    MelArray, AMreGmst, MelUInt8Flags, MelSorted, MelGroups, MelShortName, \
+    MelArray, AMreFlst, MelUInt8Flags, MelSorted, MelGroups, MelShortName, \
     MelUInt32, MelRecord, MelColorO, MelFull, MelBaseR, MelKeywords, MelRace, \
     MelColor, MelSound, MelSoundActivation, MelWaterType, MelAlchEnit, \
     MelActiFlags, MelInteractionKeyword, MelConditions, MelTruncatedStruct, \
@@ -47,7 +47,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelRandomTeleports, MelDualData, MelIco2, MelEqupPnam, MelEyesFlags, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
     PartialLoadDecider, MelFactFids, MelFactVendorInfo, MelReadOnly, \
-    MelSeasons, MelIngredient
+    MelSeasons, MelIngredient, MelFlstFids
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1288,10 +1288,16 @@ class MreFlor(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreGmst(AMreGmst):
-    """Game Setting."""
-    isKeyedByEid = True # NULL fids are acceptable.
-    __slots__ = ()
+class MreFlst(AMreFlst):
+    """FormID List."""
+    rec_sig = b'FLST'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelFlstFids(),
+    )
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLvli(AMreLeveledList):

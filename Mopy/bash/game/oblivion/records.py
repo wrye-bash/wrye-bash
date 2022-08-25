@@ -30,7 +30,7 @@ from ...bolt import Flags, int_or_zero, structs_cache, str_or_none, \
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     AMreLeveledList, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     AMreHeader, MelBase, MelSimpleArray, MelBodyParts, MelAnimations, \
-    AMreGmst, MelReferences, MelRegnEntrySubrecord, MelSorted, MelRegions, \
+    MelReferences, MelRegnEntrySubrecord, MelSorted, MelRegions, \
     MelFloat, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelRaceParts, MelRaceVoices, null2, MelScriptVars, MelRelations, MelRace, \
     MelSequential, MelUnion, FlagDecider, AttrValDecider, PartialLoadDecider, \
@@ -257,7 +257,7 @@ actor_values = [ # Human-readable names for each actor value
 
 class MreHasEffects(object):
     """Mixin class for magic items."""
-    __slots__ = []
+    __slots__ = ()
     _recipient_number_name = {None: 'NONE', 0: 'Self', 1: 'Touch', 2: 'Target'}
     _recipient_name_number = {y.lower(): x for x, y in
                               _recipient_number_name.items() if x is not None}
@@ -1058,11 +1058,6 @@ class MreFurn(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreGmst(AMreGmst):
-    """Game Setting."""
-    __slots__ = ()
-
-#------------------------------------------------------------------------------
 class MreGras(MelRecord):
     """Grass."""
     rec_sig = b'GRAS'
@@ -1248,19 +1243,19 @@ class MreLtex(MelRecord):
 class MreLvlc(MreLeveledList):
     """Leveled Creature."""
     rec_sig = b'LVLC'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
     """Leveled Item."""
     rec_sig = b'LVLI'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreLvsp(MreLeveledList):
     """Leveled Spell."""
     rec_sig = b'LVSP'
-    __slots__ = []
+    __slots__ = ()
 
 #------------------------------------------------------------------------------
 class MreMgef(MelRecord):
