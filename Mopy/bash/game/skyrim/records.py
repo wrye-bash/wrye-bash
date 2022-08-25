@@ -51,7 +51,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
-    MelRandomTeleports, MelSoundLooping, MelDualData
+    MelRandomTeleports, MelSoundLooping, MelDualData, MelEqupPnam
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1201,10 +1201,11 @@ class MreEnch(MelRecord):
 class MreEqup(MelRecord):
     """Equip Type."""
     rec_sig = b'EQUP'
+
     melSet = MelSet(
         MelEdid(),
-        MelSimpleArray('canBeEquipped', MelFid(b'PNAM')),
-        MelUInt32(b'DATA', 'useAllParents'), # actually a bool
+        MelEqupPnam(),
+        MelUInt32(b'DATA', 'use_all_parents'), # actually a bool
     )
     __slots__ = melSet.getSlotsUsed()
 

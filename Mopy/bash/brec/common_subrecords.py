@@ -490,6 +490,12 @@ class MelEquipmentType(MelFid):
         super().__init__(b'ETYP', 'equipment_type')
 
 #------------------------------------------------------------------------------
+class MelEqupPnam(MelSimpleArray):
+    """Handles the EQUP subrecord PNAM (Slot Parents)."""
+    def __init__(self):
+        super().__init__('slot_parents', MelFid(b'PNAM'))
+
+#------------------------------------------------------------------------------
 class MelFactionRanks(MelSorted):
     """Handles the FACT RNAM/MNAM/FNAM/INAM subrecords."""
     def __init__(self):

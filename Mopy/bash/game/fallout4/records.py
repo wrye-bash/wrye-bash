@@ -44,7 +44,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
     MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose, \
     MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
-    MelRandomTeleports, MelDualData, MelIco2
+    MelRandomTeleports, MelDualData, MelIco2, MelEqupPnam
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1130,6 +1130,22 @@ class MreEnch(MelRecord):
             'enchantment_type', 'charge_time', (FID, 'base_enchantment'),
             (FID, 'worn_restrictions')),
         MelEffects(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreEqup(MelRecord):
+    """Equip Type."""
+    rec_sig = b'EQUP'
+
+    _equp_flags = Flags.from_names('use_all_parents', 'parents_optional',
+        'item_slot')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelEqupPnam(),
+        MelUInt32Flags(b'DATA', 'equp_flags', _equp_flags),
+        MelFid(b'ANAM', 'condition_actor_value'),
     )
     __slots__ = melSet.getSlotsUsed()
 
