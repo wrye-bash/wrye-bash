@@ -44,7 +44,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
-    MelDoorFlags, MelSoundLooping, MelRandomTeleports
+    MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelEyesFlags, \
+    MelHairFlags
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -998,13 +999,11 @@ class MreEyes(MelRecord):
     """Eyes."""
     rec_sig = b'EYES'
 
-    _flags = Flags.from_names('playable')
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelIcon(),
-        MelUInt8Flags(b'DATA', u'flags', _flags),
+        MelEyesFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1086,14 +1085,12 @@ class MreHair(MelRecord):
     """Hair."""
     rec_sig = b'HAIR'
 
-    _flags = Flags.from_names('playable', 'notMale', 'notFemale', 'fixed')
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelUInt8Flags(b'DATA', u'flags', _flags),
+        MelHairFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 

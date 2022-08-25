@@ -49,7 +49,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
-    MelSoundLooping
+    MelSoundLooping, MelEyesFlags, MelHairFlags
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1201,13 +1201,11 @@ class MreEyes(MelRecord):
     """Eyes."""
     rec_sig = b'EYES'
 
-    _flags = Flags.from_names('playable', 'notMale', 'notFemale')
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelIcon(),
-        MelUInt8Flags(b'DATA', u'flags', _flags),
+        MelEyesFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1281,14 +1279,12 @@ class MreHair(MelRecord):
     """Hair."""
     rec_sig = b'HAIR'
 
-    _flags = Flags.from_names('playable', 'notMale', 'notFemale', 'fixed')
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelModel(),
         MelIcon(),
-        MelUInt8Flags(b'DATA', u'flags', _flags),
+        MelHairFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 

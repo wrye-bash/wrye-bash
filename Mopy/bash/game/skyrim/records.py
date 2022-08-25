@@ -51,7 +51,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
-    MelRandomTeleports, MelSoundLooping, MelDualData, MelEqupPnam
+    MelRandomTeleports, MelSoundLooping, MelDualData, MelEqupPnam, \
+    MelEyesFlags
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1247,13 +1248,11 @@ class MreEyes(MelRecord):
     """Eyes."""
     rec_sig = b'EYES'
 
-    EyesTypeFlags = Flags.from_names('playable', 'notMale', 'notFemale')
-
     melSet = MelSet(
         MelEdid(),
         MelFull(),
-        MelIcons(),
-        MelUInt8Flags(b'DATA', u'flags', EyesTypeFlags),
+        MelIcon(),
+        MelEyesFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1492,10 +1491,10 @@ class MreHdpt(MelRecord):
 
     HdptTypeFlags = Flags.from_names(
         (0, 'playable'),
-        (1, 'notFemale'),
-        (2, 'notMale'),
-        (3, 'isExtraPart'),
-        (4, 'useSolidTint'),
+        (1, 'not_female'),
+        (2, 'not_male'),
+        (3, 'is_extra_part'),
+        (4, 'use_solid_tint'),
     )
 
     melSet = MelSet(

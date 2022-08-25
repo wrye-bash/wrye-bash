@@ -44,7 +44,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
     MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose, \
     MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
-    MelRandomTeleports, MelDualData, MelIco2, MelEqupPnam
+    MelRandomTeleports, MelDualData, MelIco2, MelEqupPnam, MelEyesFlags
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -841,6 +841,7 @@ class MreCpth(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreCsty(MelRecord):
+    """Combat Style."""
     rec_sig = b'CSTY'
 
     _csty_flags = Flags.from_names('dueling', 'flanking',
@@ -1194,6 +1195,19 @@ class MreExpl(MelRecord):
             'expl_spawn_y', 'expl_spawn_z', 'expl_spawn_spread_degrees',
             'expl_spawn_count', old_versions={'6I5f2I', '6I5f2If', '6I5f2IfI',
                                               '6I6f2IfI'}),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreEyes(MelRecord):
+    """Eyes."""
+    rec_sig = b'EYES'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelIcon(),
+        MelEyesFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 

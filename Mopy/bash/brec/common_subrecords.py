@@ -496,6 +496,15 @@ class MelEqupPnam(MelSimpleArray):
         super().__init__('slot_parents', MelFid(b'PNAM'))
 
 #------------------------------------------------------------------------------
+class MelEyesFlags(MelUInt8Flags):
+    """Handles the EYES subrecord DATA (Flags)."""
+    # not_male and not_female exist since FO3
+    _eyes_flags = Flags.from_names('playable', 'not_male', 'not_female')
+
+    def __init__(self):
+        super().__init__(b'DATA', 'flags', self._eyes_flags)
+
+#------------------------------------------------------------------------------
 class MelFactionRanks(MelSorted):
     """Handles the FACT RNAM/MNAM/FNAM/INAM subrecords."""
     def __init__(self):
@@ -526,6 +535,15 @@ class MelFull(MelLString):
     """Handles a name (FULL) subrecord."""
     def __init__(self):
         super().__init__(b'FULL', 'full')
+
+#------------------------------------------------------------------------------
+class MelHairFlags(MelUInt8Flags):
+    """Handles the HAIR subrecord DATA (Flags)."""
+    _hair_flags = Flags.from_names('playable', 'not_male', 'not_female',
+        'hair_fixed')
+
+    def __init__(self):
+        super().__init__(b'DATA', 'flags', self._hair_flags)
 
 #------------------------------------------------------------------------------
 class MelIcons(MelSequential):
