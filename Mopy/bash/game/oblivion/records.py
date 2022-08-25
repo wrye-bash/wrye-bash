@@ -143,7 +143,7 @@ class MelLevListLvlo(MelTruncatedStruct):
         if len(unpacked_val) == 2:
             # Pad it in the middle, then let our parent deal with the rest
             unpacked_val = (unpacked_val[0], null2, unpacked_val[1])
-        return super(MelLevListLvlo, self)._pre_process_unpacked(unpacked_val)
+        return super()._pre_process_unpacked(unpacked_val)
 
 #------------------------------------------------------------------------------
 class MelLLItems(AMelLLItems):
@@ -1881,9 +1881,8 @@ class MreRefr(MelRecord):
         """Skips unused2, in the middle of the struct."""
         def _pre_process_unpacked(self, unpacked_val):
             if len(unpacked_val) == 5:
-                unpacked_val = (unpacked_val[:-2]
-                                + self.defaults[len(unpacked_val) - 2:-2]
-                                + unpacked_val[-2:])
+                unpacked_val = (unpacked_val[:3] + self.defaults[3:4] +
+                                unpacked_val[3:])
             return unpacked_val
 
     melSet = MelSet(
@@ -2191,7 +2190,7 @@ class MelWatrData(MelTruncatedStruct):
     def _pre_process_unpacked(self, unpacked_val):
         if len(unpacked_val) != 36:
             unpacked_val = unpacked_val[:-1]
-        return super(MelWatrData, self)._pre_process_unpacked(unpacked_val)
+        return super()._pre_process_unpacked(unpacked_val)
 
 #------------------------------------------------------------------------------
 class MreWatr(MelRecord):

@@ -1214,15 +1214,15 @@ class MreExpl(MelRecord):
     """Explosion."""
     rec_sig = b'EXPL'
 
-    ExplTypeFlags = Flags.from_names(
-        (1, 'alwaysUsesWorldOrientation'),
-        (2, 'knockDownAlways'),
-        (3, 'knockDownByFormular'),
-        (4, 'ignoreLosCheck'),
-        (5, 'pushExplosionSourceRefOnly'),
-        (6, 'ignoreImageSpaceSwap'),
-        (7, 'chain'),
-        (8, 'noControllerVibration'),
+    _expl_flags = Flags.from_names(
+        (1, 'always_uses_world_orientation'),
+        (2, 'knock_down_always'),
+        (3, 'knock_down_by_formula'),
+        (4, 'ignore_los_check'),
+        (5, 'push_explosion_source_ref_only'),
+        (6, 'ignore_image_space_swap'),
+        (7, 'explosion_chain'),
+        (8, 'no_controller_vibration'),
     )
 
     melSet = MelSet(
@@ -1232,13 +1232,13 @@ class MreExpl(MelRecord):
         MelModel(),
         MelEnchantment(),
         MelImageSpaceMod(),
-        MelTruncatedStruct(
-            b'DATA', [u'6I', u'5f', u'2I'], (FID, u'light'), (FID, u'sound1'),
-            (FID, u'sound2'), (FID, u'impactDataset'),
-            (FID, u'placedObject'), (FID, u'spawnProjectile'),
-            u'force', u'damage', u'radius', u'isRadius', u'verticalOffsetMult',
-            (ExplTypeFlags, u'flags'), u'soundLevel',
-            old_versions={u'6I5fI', u'6I5f', u'6I4f'}),
+        MelTruncatedStruct(b'DATA', ['6I', '5f', '2I'], (FID, 'expl_light'),
+            (FID, 'expl_sound1'), (FID, 'expl_sound2'),
+            (FID, 'expl_impact_dataset'), (FID, 'placed_object'),
+            (FID, 'spawn_projectile'), 'expl_force', 'expl_damage',
+            'expl_radius', 'is_radius', 'vertical_offset_mult',
+            (_expl_flags, 'expl_flags'), 'expl_sound_level',
+            old_versions={'6I5fI', '6I5f', '6I4f'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -4072,7 +4072,7 @@ class MreWeap(MelRecord):
                 ##: Why use null3 instead of crit_unknown2?
                 unpacked_val = (crit_damage, crit_unknown1, crit_mult,
                                 crit_flags, null3, null4, crit_effect, null4)
-            return MelTruncatedStruct._pre_process_unpacked(self, unpacked_val)
+            return super()._pre_process_unpacked(unpacked_val)
 
     melSet = MelSet(
         MelEdid(),

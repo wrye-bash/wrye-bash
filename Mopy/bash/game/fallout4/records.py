@@ -1150,6 +1150,54 @@ class MreEqup(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreExpl(MelRecord):
+    """Explosion."""
+    rec_sig = b'EXPL'
+
+    _expl_flags = Flags.from_names(
+        (1,  'always_uses_world_orientation'),
+        (2,  'knock_down_always'),
+        (3,  'knock_down_by_formula'),
+        (4,  'ignore_los_check'),
+        (5,  'push_explosion_source_ref_only'),
+        (6,  'ignore_image_space_swap'),
+        (7,  'explosion_chain'),
+        (8,  'no_controller_vibration'),
+        (9,  'placed_object_persists'),
+        (10, 'skip_underwater_tests'),
+    )
+
+    class MelExplData(MelTruncatedStruct):
+        """Handles the EXPL subrecord DATA, which requires special handling."""
+        def _pre_process_unpacked(self, unpacked_val):
+            if len(unpacked_val) in (13, 14, 15):
+                # Form Version 97 added the inner_radius float right before the
+                # outer_radius float
+                unpacked_val = (unpacked_val[:8] + self.defaults[8:9] +
+                                unpacked_val[8:])
+            return super()._pre_process_unpacked(unpacked_val)
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelFull(),
+        MelModel(),
+        MelEnchantment(),
+        MelImageSpaceMod(),
+        MelExplData(b'DATA', ['6I', '6f', '2I', 'f', 'I', '4f', 'I'],
+            (FID, 'expl_light'), (FID, 'expl_sound1'), (FID, 'expl_sound2'),
+            (FID, 'expl_impact_data_set'), (FID, 'placed_object'),
+            (FID, 'spawn_object'), 'expl_force', 'expl_damage', 'inner_radius',
+            'outer_radius', 'is_radius', 'vertical_offset_mult',
+            (_expl_flags, 'expl_flags'), 'expl_sound_level',
+            'placed_object_autofade_delay', 'expl_stagger', 'expl_spawn_x',
+            'expl_spawn_y', 'expl_spawn_z', 'expl_spawn_spread_degrees',
+            'expl_spawn_count', old_versions={'6I5f2I', '6I5f2If', '6I5f2IfI',
+                                              '6I6f2IfI'}),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreGmst(AMreGmst):
     """Game Setting."""
     isKeyedByEid = True # NULL fids are acceptable.

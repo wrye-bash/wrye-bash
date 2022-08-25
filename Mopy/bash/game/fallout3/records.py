@@ -1170,13 +1170,13 @@ class MreExpl(MelRecord):
     """Explosion."""
     rec_sig = b'EXPL'
 
-    _flags = Flags.from_names(
-        (1, 'alwaysUsesWorldOrientation'),
-        (2, 'knockDownAlways'),
-        (3, 'knockDownByFormular'),
-        (4, 'ignoreLosCheck'),
-        (5, 'pushExplosionSourceRefOnly'),
-        (6, 'ignoreImageSpaceSwap'),
+    _expl_flags = Flags.from_names(
+        (1, 'always_uses_world_orientation'),
+        (2, 'knock_down_always'),
+        (3, 'knock_down_by_formula'),
+        (4, 'ignore_los_check'),
+        (5, 'push_explosion_source_ref_only'),
+        (6, 'ignore_image_space_swap'),
     )
 
     melSet = MelSet(
@@ -1186,12 +1186,13 @@ class MreExpl(MelRecord):
         MelModel(),
         MelEnchantment(),
         MelImageSpaceMod(),
-        MelStruct(b'DATA', [u'3f', u'3I', u'f', u'2I', u'3f', u'I'], u'force', u'damage', u'radius',
-                  (FID, u'light'), (FID, u'sound1'), (_flags, u'flags'),
-                  u'isRadius', (FID, u'impactDataset'), (FID, u'sound2'),
-                  u'radiationLevel', u'radiationTime', u'radiationRadius',
-                  u'soundLevel'),
-        MelFid(b'INAM','placedImpactObject'),
+        MelStruct(b'DATA', ['3f', '3I', 'f', '2I', '3f', 'I'], 'expl_force',
+            'expl_damage', 'expl_radius', (FID, 'expl_light'),
+            (FID, 'expl_sound1'), (_expl_flags, 'expl_flags'), 'is_radius',
+            (FID, 'expl_impact_dataset'), (FID, 'expl_sound2'),
+            'radiation_level', 'radiation_time', 'radiation_radius',
+            'expl_sound_level'),
+        MelFid(b'INAM', 'placed_impact_object'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3020,8 +3021,7 @@ class MreWatr(MelRecord):
         def _pre_process_unpacked(self, unpacked_val):
             if len(unpacked_val) == 55:
                 unpacked_val = unpacked_val[:-1]
-            return super(MreWatr.MelWatrDnam, self)._pre_process_unpacked(
-                unpacked_val)
+            return super()._pre_process_unpacked(unpacked_val)
 
     _els = [('windVelocity', 0.1), ('windDirection', 90), ('waveAmp', 0.5),
         ('waveFreq', 1), ('sunPower', 50), ('reflectAmt', 0.5),
