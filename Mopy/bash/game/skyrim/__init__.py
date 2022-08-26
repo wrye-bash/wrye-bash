@@ -297,7 +297,8 @@ class SkyrimGameInfo(PatchGame):
             MreLscr, MreOtft, MreTree, MreWatr, MreFlor, MreEfsh, MreWeap, \
             MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
             MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont
-        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (# MreAchr, MreDial, MreInfo,
+        cls.mergeable_sigs = {x.rec_sig: x for x in (
+            # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
             MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
@@ -343,25 +344,9 @@ class SkyrimGameInfo(PatchGame):
                                          b'PARW', b'PBAR', b'PBEA', b'PCON',
                                          b'PFLA', b'PGRE', b'PHZD', b'PMIS'])
         header_type.plugin_form_version = 43
-        brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,
-            MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc,
-            MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClfm,
-            MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty, MreDebr,
-            MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
-            MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
-            MreFstp, MreFsts, MreFurn, MreGlob, MreGmst, MreGras, MreHazd,
-            MreHdpt, MreIdle, MreIdlm, MreImad, MreImgs, MreIngr, MreIpct,
-            MreIpds, MreKeym, MreKywd, MreLcrt, MreLctn, MreLgtm, MreLigh,
-            MreLscr, MreLtex, MreLvli, MreLvln, MreLvsp, MreMato, MreMatt,
-            MreMesg, MreMgef, MreMisc, MreMovt, MreMstt, MreMusc, MreMust,
-            MreNpc, MreOtft, MrePerk, MreProj, MreRegn, MreRela, MreRevb,
-            MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn,
-            MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
-            MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-            MreWthr, MreCell, MreWrld, MreQust, MreTes4, MrePack, MreRace,
-            MreNavm, # MreNavi
-        )}
+        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
+            (MreAchr, MreCell, MreDial, MreInfo, MreNavm, MreTes4, MreWrld))}
+        brec.MreRecord.type_class.update(cls.mergeable_sigs)
         brec.MreRecord.simpleTypes = (
                 set(brec.MreRecord.type_class) - {b'TES4', b'ACHR', b'CELL',
                                                   b'DIAL', b'INFO', b'NAVM',

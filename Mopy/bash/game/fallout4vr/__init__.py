@@ -91,8 +91,8 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
         from ...brec import MreGmst
         from .records import MreTes4
         from ..fallout4.records import MreLvli, MreLvln
-        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
-            MreGmst, MreLvli, MreLvln
+        cls.mergeable_sigs = {x.rec_sig: x for x in (
+            MreGmst, MreLvli, MreLvln,
         )}
         # Setting RecordHeader class variables --------------------------------
         from ... import brec
@@ -123,9 +123,9 @@ class Fallout4VRGameInfo(Fallout4GameInfo):
              b'PBEA', b'PFLA', b'PCON', b'PBAR', b'PHZD', b'LAND', b'NAVM',
              b'DIAL', b'INFO'})
         header_type.plugin_form_version = 131
-        brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreTes4, MreGmst, MreLvli, MreLvln,
-        )}
+        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
+            (MreTes4,))}
+        brec.MreRecord.type_class.update(cls.mergeable_sigs)
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES4'})
         cls._validate_records()

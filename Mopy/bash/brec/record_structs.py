@@ -344,6 +344,8 @@ class MreRecord(object):
     isKeyedByEid = False
     #--Set at end of class data definitions.
     type_class = {}
+    # Record types that have a complex child structure (e.g. CELL), are part of
+    # such a complex structure (e.g. REFR) or are the file header (TES3/TES4)
     simpleTypes = set()
     # Maps subrecord signatures to a set of record signatures that can contain
     # those subrecords

@@ -310,7 +310,7 @@ class OblivionGameInfo(PatchGame):
             MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, \
             MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
             MreRefr, MreRoad, MreTes4, MreWrld, MreDial, MreInfo
-        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
+        cls.mergeable_sigs = {x.rec_sig: x for x in (
             MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
             MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,
             MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGlob, MreGras,
@@ -351,17 +351,9 @@ class OblivionGameInfo(PatchGame):
             header_type.top_grup_sigs + [b'GRUP', b'TES4', b'ROAD', b'REFR',
                                          b'ACHR', b'ACRE', b'PGRD', b'LAND',
                                          b'INFO'])
-        brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa,
-            MreArmo, MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont,
-            MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor,
-            MreFurn, MreGlob, MreGmst, MreGras, MreHair, MreIngr, MreKeym,
-            MreLigh, MreLscr, MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc,
-            MreNpc, MrePack, MreQust, MreRace, MreRefr, MreRoad, MreScpt,
-            MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
-            MreTes4, MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty,
-            MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo, MreLand,
-            MrePgrd)}
+        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
+            (MreTes4,))}
+        brec.MreRecord.type_class.update(cls.mergeable_sigs)
         brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
             b'TES4', b'ACHR', b'ACRE', b'REFR', b'CELL', b'PGRD', b'ROAD',
             b'LAND', b'WRLD', b'INFO', b'DIAL'})

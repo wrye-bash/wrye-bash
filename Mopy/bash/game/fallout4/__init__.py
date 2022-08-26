@@ -227,7 +227,7 @@ class Fallout4GameInfo(PatchGame):
             MreDoor, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreFact, \
             MreFlor, MreFlst, \
             MreLvli, MreLvln, MrePerk, MreTes4
-        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
+        cls.mergeable_sigs = {x.rec_sig: x for x in (
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
             MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
             MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
@@ -270,16 +270,9 @@ class Fallout4GameInfo(PatchGame):
         # to upgrade it (unless someone reverse engineers what the game does to
         # it when loading)
         header_type.skip_form_version_upgrade = {b'DMGT'}
-        brec.MreRecord.type_class = {x.rec_sig: x for x in (
-            MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
-            MreArma, MreArmo, MreArto, MreAstp, MreAvif, MreBnds, MreBook,
-            MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, MreCobj,
-            MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
-            MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
-            MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
-            MreFstp, MreFsts,
-            MreGmst, MreLvli, MreLvln, MrePerk, MreTes4,
-        )}
+        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
+             (MreTes4,))}
+        brec.MreRecord.type_class.update(cls.mergeable_sigs)
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {b'TES4'})
         cls._validate_records()

@@ -157,7 +157,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
             MreFact, MreFlst, MreHdpt, MreImad, MreInfo, MreIpct, MreKeym, \
             MreLigh, MreLscr, MreMisc, MreMusc, MrePgre, MrePmis, MreProj, \
             MreRefr, MreRegn, MreSoun, MreStat, MreWthr
-        cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
+        cls.mergeable_sigs = {x.rec_sig: x for x in (
             MreActi, MreAddn, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio,
             MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams,
             MreCcrd, MreCdck, MreChal, MreChip, MreClas, MreClmt, MreCmny,
@@ -198,7 +198,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
                                          b'INFO', b'LAND', b'NAVM', b'PGRE',
                                          b'PMIS', b'REFR'])
         header_type.plugin_form_version = 15
-        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not Mergeable
+        brec.MreRecord.type_class = {x.rec_sig: x for x in ( # Not mergeable
             (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi, MreNavm,
              MrePgre, MrePmis, MreRefr, MreWrld, MreTes4,))}
         brec.MreRecord.type_class.update(cls.mergeable_sigs)
