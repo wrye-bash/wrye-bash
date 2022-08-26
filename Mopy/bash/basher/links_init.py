@@ -157,7 +157,7 @@ def InitStatusBar():
     badIcons = [ImageWrapper(
         bass.dirs[u'images'].join(u'error_cross_16.png'))] * 3
     def iconList(fileName):
-        return [ImageWrapper(fileName, ImageWrapper.typesDict[u'ico'], x) for x
+        return [ImageWrapper(fileName, ImageWrapper.img_types['.ico'], x) for x
                 in (16, 24, 32)]
     for pth, icon, shortcut_descr in init_app_links(dirApps, badIcons, iconList):
             BashStatusBar.buttons.append(
@@ -843,11 +843,11 @@ def InitScreenLinks():
         file_menu.links.append(balt.UIList_Delete())
         ScreensList.context_links.append(file_menu)
     if True: #--Convert
-        convertMenu = MenuLink(_(u'Convert'))
-        convertMenu.links.append(Screen_ConvertTo('jpg'))
-        convertMenu.links.append(Screen_ConvertTo('png'))
-        convertMenu.links.append(Screen_ConvertTo('bmp'))
-        convertMenu.links.append(Screen_ConvertTo('tif'))
+        convertMenu = MenuLink(_('Convert'))
+        convertMenu.links.append(Screen_ConvertTo('.jpg'))
+        convertMenu.links.append(Screen_ConvertTo('.png'))
+        convertMenu.links.append(Screen_ConvertTo('.bmp'))
+        convertMenu.links.append(Screen_ConvertTo('.tif'))
         ScreensList.context_links.append(convertMenu)
     # ScreensList: Global Links
     # File Menu

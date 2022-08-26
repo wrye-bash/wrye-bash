@@ -35,7 +35,7 @@ from itertools import groupby, chain
 from operator import itemgetter, attrgetter
 from zlib import crc32
 
-from . import imageExts, DataStore, BestIniFile, InstallerConverter, \
+from . import bain_image_exts, DataStore, BestIniFile, InstallerConverter, \
     ModInfos, ListInfo
 from .. import balt, gui # YAK!
 from .. import bush, bass, bolt, env, archives
@@ -76,7 +76,7 @@ class Installer(ListInfo):
     dataDirsMinus = {u'bash', u'--'}
     docExts = {'.txt', '.rtf', '.htm', '.html', '.doc', '.docx', '.odt',
                '.mht', '.pdf', '.css', '.xls', '.xlsx', '.ods', '.odp',
-               '.ppt', '.pptx', '.md', '.rst'}
+               '.ppt', '.pptx', '.md', '.rst', '.url'}
     reReadMe = re.compile(
         f'^.*?([^{_os_sep_re}]*)(read[ _]?me|lisez[ _]?moi)([^{_os_sep_re}]*)'
         '(' + '|'.join((f'\\{e}' for e in docExts)) + ')$', re.I)
@@ -487,7 +487,7 @@ class Installer(ListInfo):
                 bush.game.Se.plugin_dir.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
         if bass.settings[u'bash.installers.skipImages']:
-            Installer._global_skip_extensions |= imageExts
+            Installer._global_skip_extensions |= bain_image_exts
         Installer._init_executables_skips()
 
     @staticmethod
@@ -520,31 +520,34 @@ class Installer(ListInfo):
                 # probably a readme
                 self.hasReadme = full
             if not self.overrideSkips and bass.settings[
-                u'bash.installers.skipDocs'] and not (
-                        lower_fname in bush.game.Bain.no_skip) and not (
-                        fileExt in bush.game.Bain.no_skip_dirs.get(
+                'bash.installers.skipDocs'] and not (
+                    lower_fname in bush.game.Bain.no_skip) and not (
+                    fileExt in bush.game.Bain.no_skip_dirs.get(
                 lower_parent, [])):
                 return None # skip
             dest = file_relative
-            dest_start = (parent_dir + os_sep) if parent_dir else ''
-            # Rename docs with common names that will otherwise easily
-            # conflict to more unique names (by including the package
-            # name's root)
-            if not parent_dir or lower_parent == 'docs':
-                ma_cd = re_common_docs_match(lower_root)
-                if ma_cd and not (ma_cd.group(1) or ma_cd.group(2)):
-                    dest = dest_start + package_root + ' ' + fname
-                elif maReadMe and not (maReadMe.group(1) or maReadMe.group(3)):
-                    dest = dest_start + package_root + fileExt
-            # Move top-level docs to the Docs folder
+            if bass.settings['bash.installers.rename_docs']:
+                dest_start = (parent_dir + os_sep) if parent_dir else ''
+                # Rename docs with common names that will otherwise easily
+                # conflict to more unique names (by including the package
+                # name's root)
+                if not parent_dir or lower_parent == 'docs':
+                    ma_cd = re_common_docs_match(lower_root)
+                    if ma_cd and not (ma_cd.group(1) or ma_cd.group(2)):
+                        dest = dest_start + package_root + ' ' + fname
+                    elif maReadMe and not (maReadMe.group(1) or
+                                           maReadMe.group(3)):
+                        dest = dest_start + package_root + fileExt
             if not parent_dir:
-                dest = docs_ + dest
-                if fileLower in ignore_doclike:
-                    self.skipDirFiles.add(full)
-                    return None # we dont want to install those files
-                elif fileLower == 'package.txt':
+                if fileLower == 'package.txt':
                     dest = docs_ + package_root + '.package.txt'
                     self.packageDoc = dest
+                elif fileLower in ignore_doclike:
+                    self.skipDirFiles.add(full)
+                    return None # we don't want to install those files
+                elif bass.settings['bash.installers.redirect_docs']:
+                    # Move top-level docs to the Docs folder
+                    dest = docs_ + dest
             return dest
         for ext in Installer.docExts:
             Installer._attributes_process[ext] = _process_docs
@@ -982,8 +985,8 @@ class Installer(ListInfo):
             if fileLower == u'package.jpg':
                 dest = self.packagePic = u''.join(
                     (u'Docs' + os_sep, archiveRoot, u'.package.jpg'))
-            elif fileExt in imageExts:
-                dest = os_sep.join((u'Docs', file_relative))
+            elif fileExt in bain_image_exts:
+                dest = os_sep.join(('Docs', file_relative))
         return dest
 
     def refreshBasic(self, progress, recalculate_project_crc=True):

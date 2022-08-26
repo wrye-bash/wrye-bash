@@ -324,7 +324,7 @@ class Save_ExportScreenshot(OneItemLink):
         # TODO(inf) de-wx! All the image stuff is still way too close to wx
         image = ImageWrapper.bmp_from_bitstream(
             *self._selected_info.header.image_parameters).ConvertToImage()
-        image.SaveFile(imagePath.s, ImageWrapper.typesDict[u'jpg'])
+        image.SaveFile(imagePath.s, ImageWrapper.img_types['.jpg'])
 
 #------------------------------------------------------------------------------
 ##: Split in two, one OneItemLink diffing against active plugins and one link

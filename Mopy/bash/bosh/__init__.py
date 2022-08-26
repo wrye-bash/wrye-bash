@@ -89,7 +89,10 @@ reTesNexus = re.compile(r'(.*?)-(\d+)(?:-\w*)*(?:-\d+)?' + __exts, re.I)
 reTESA = re.compile(r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?' + __exts,
                     re.I)
 del __exts
-imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
+# Image extensions for BAIN and for the Screnshots tab
+_common_image_exts = {'.bmp', '.gif', '.jpg', '.jpeg', '.png', '.tif'}
+bain_image_exts = _common_image_exts | {'.webp'}
+ss_image_exts = _common_image_exts | {'.tga'}
 
 #--Typing
 _CosaveDict = dict[Type[cosaves.ACosave], cosaves.ACosave]
@@ -1497,7 +1500,8 @@ class SaveInfo(FileInfo):
 class ScreenInfo(FileInfo):
     """Cached screenshot, stores a bitmap and refreshes it when its cache is
     invalidated."""
-    _valid_exts_re = r'(\.(?:' + u'|'.join(ext[1:] for ext in imageExts) + '))'
+    _valid_exts_re = r'(\.(?:' + '|'.join(
+        ext[1:] for ext in ss_image_exts) + '))'
     _has_digits = True
 
     def __init__(self, fullpath, load_cache=False, itsa_ghost=None):
@@ -3542,7 +3546,7 @@ class ScreenInfos(FileInfos):
     def __init__(self):
         self._orig_store_dir = dirs[u'app'] # type: bolt.Path
         self.__class__.file_pattern = re.compile(
-            r'\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')$',
+            r'\.(' + '|'.join(ext[1:] for ext in ss_image_exts) + ')$',
             re.I | re.U)
         super(ScreenInfos, self).__init__(self._orig_store_dir,
                                           factory=ScreenInfo)

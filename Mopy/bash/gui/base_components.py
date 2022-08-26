@@ -447,15 +447,20 @@ class ImageWrapper(object):
     """Wrapper for images, allowing access in various formats/classes.
 
     Allows image to be specified before wx.App is initialized."""
-
-    typesDict = {u'png': _wx.BITMAP_TYPE_PNG, u'jpg': _wx.BITMAP_TYPE_JPEG,
-                 u'jpeg': _wx.BITMAP_TYPE_JPEG, u'ico': _wx.BITMAP_TYPE_ICO,
-                 u'bmp': _wx.BITMAP_TYPE_BMP, u'tif': _wx.BITMAP_TYPE_TIF}
+    img_types = {
+        '.bmp': _wx.BITMAP_TYPE_BMP,
+        '.ico': _wx.BITMAP_TYPE_ICO,
+        '.jpeg': _wx.BITMAP_TYPE_JPEG,
+        '.jpg': _wx.BITMAP_TYPE_JPEG,
+        '.png': _wx.BITMAP_TYPE_PNG,
+        '.tif': _wx.BITMAP_TYPE_TIF,
+        '.tga': _wx.BITMAP_TYPE_TGA,
+    }
 
     def __init__(self, filename, imageType=None, iconSize=16):
         self._img_path = filename.s # must be a bolt.Path
         try:
-            self._img_type = imageType or self.typesDict[filename.cext[1:]]
+            self._img_type = imageType or self.img_types[filename.cext]
         except KeyError:
             deprint(f'Unknown image extension {filename.cext}')
             self._img_type = _wx.BITMAP_TYPE_ANY

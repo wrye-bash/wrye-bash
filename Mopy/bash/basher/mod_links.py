@@ -1718,7 +1718,7 @@ class Mod_Face_Import(OneItemLink):
             image = ImageWrapper.bmp_from_bitstream(
                 *srcInfo.header.image_parameters).ConvertToImage()
             imagePath.head.makedirs()
-            image.SaveFile(imagePath.s, ImageWrapper.typesDict[u'jpg'])
+            image.SaveFile(imagePath.s, ImageWrapper.img_types['.jpg'])
         self.window.RefreshUI(refreshSaves=False) # import save to esp
         self._showOk(_(u'Imported face to: %s') % npc.eid, self._selected_item)
 

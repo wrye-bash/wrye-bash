@@ -85,13 +85,13 @@ class Screens_NextScreenShot(EnabledLink):
 #------------------------------------------------------------------------------
 class Screen_ConvertTo(EnabledLink):
     """Converts selected images to another type."""
-    _help = _(u'Convert selected images to another format')
+    _help = _('Converts selected images to another format.')
 
     def __init__(self, ext):
-        super(Screen_ConvertTo, self).__init__()
-        self._ext = f'.{ext}'
-        self.imageType = ImageWrapper.typesDict[ext]
-        self._text = _('Convert to %s') % ext
+        super().__init__()
+        self._ext = ext
+        self.imageType = ImageWrapper.img_types[ext]
+        self._text = _('Convert to %(img_ext)s') % {'img_ext': ext}
 
     def _enable(self):
         self.convertable = [s for s in self.selected if s.fn_ext != self._ext]

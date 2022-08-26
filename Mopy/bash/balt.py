@@ -95,7 +95,7 @@ class ImageBundle(object):
             self.iconBundle = wx.IconBundle()
             for img_path in self._image_paths:
                 self.iconBundle.AddIcon(
-                    img_path.s, ImageWrapper.typesDict[img_path.cext[1:]])
+                    img_path.s, ImageWrapper.img_types[img_path.cext])
         return self.iconBundle
 
 #------------------------------------------------------------------------------
@@ -138,7 +138,8 @@ class ColorChecks(ImageList):
                 shortKey = f'{status}.{state}'
                 image_key = f'checkbox.{shortKey}'
                 img = im_dir.join(f'checkbox_{status}_{state}.png')
-                image = images[image_key] = ImageWrapper(img, ImageWrapper.typesDict[u'png'])
+                image = images[image_key] = ImageWrapper(img,
+                    ImageWrapper.img_types['.png'])
                 self.images.append((shortKey, image))
 
     def Get(self,status,on):
