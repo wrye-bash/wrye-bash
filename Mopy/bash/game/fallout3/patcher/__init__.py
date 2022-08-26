@@ -501,7 +501,7 @@ graphicsFidTypes = {
               u'organicGlow'),
     b'MGEF': (u'light', u'effectShader', u'enchantEffect'),
     b'PROJ': (u'light', u'muzzleFlash', u'explosion'),
-    b'WEAP': ('scopeEffect', 'impactDataset', 'firstPersonModel'),
+    b'WEAP': ('scopeEffect', 'impact_dataset', 'firstPersonModel'),
 }
 graphicsModelAttrs = {'model', 'shellCasingModel', 'scopeModel', 'worldModel',
                       'maleBody', 'maleWorld', 'femaleBody', 'femaleWorld'}
@@ -613,7 +613,7 @@ actor_importer_attrs = {
                           u'magicSkill', u'perception', u'stealthSkill',
                           u'strength'),
         u'Actors.Voice': (u'voice',),
-        u'Creatures.Blood': (u'impactDataset',),
+        'Creatures.Blood': ('impact_dataset',),
         u'Creatures.Type': (u'creatureType',),
         u'NPC.Class': (),
         u'NPC.Race': (),

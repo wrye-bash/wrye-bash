@@ -268,7 +268,7 @@ class MelBamt(MelFid):
 class MelBids(MelFid):
     """Handles the common BIDS (Block Bash Impact Data Set) subrecord."""
     def __init__(self):
-        super().__init__(b'BIDS', 'block_bash_impact_data_set')
+        super().__init__(b'BIDS', 'block_bash_impact_dataset')
 
 #------------------------------------------------------------------------------
 class MelBodyParts(MelSorted):
@@ -457,7 +457,7 @@ class MelDualData(MelStruct):
     def __init__(self):
         super().__init__(b'DATA', ['6I'], (FID, 'projectile'),
             (FID, 'explosion'), (FID, 'effect_shader'),
-            (FID, 'hit_effect_art'), (FID, 'impact_data_set'),
+            (FID, 'hit_effect_art'), (FID, 'dual_impact_dataset'),
             (self._inherit_scale_flags, 'inherit_scale_flags')),
 
 #------------------------------------------------------------------------------
@@ -588,6 +588,12 @@ class MelFootstepSound(MelFid):
         super().__init__(b'SNDD', 'footstep_sound')
 
 #------------------------------------------------------------------------------
+class MelFstpAnam(MelString):
+    """Handles the FSTP subrecord ANAM (Tag)."""
+    def __init__(self):
+        super().__init__(b'ANAM', 'fstp_tag')
+
+#------------------------------------------------------------------------------
 class MelFull(MelLString):
     """Handles a name (FULL) subrecord."""
     def __init__(self):
@@ -642,6 +648,12 @@ class MelImageSpaceMod(MelFid):
     """Handles the common MNAM (Image Space Modifer) subrecord."""
     def __init__(self):
         super().__init__(b'MNAM', 'image_space_modifier')
+
+#------------------------------------------------------------------------------
+class MelImpactDataset(MelFid):
+    """Handles various common Impact Dataset subrecords."""
+    def __init__(self, ids_sig: bytes):
+        super().__init__(ids_sig, 'impact_dataset')
 
 #------------------------------------------------------------------------------
 class MelIngredient(MelFid):

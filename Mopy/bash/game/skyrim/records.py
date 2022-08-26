@@ -53,7 +53,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
     MelRandomTeleports, MelSoundLooping, MelDualData, MelEqupPnam, \
     MelEyesFlags, MelFactFlags, MelFactFids, MelFactVendorInfo, MelSeasons, \
-    MelIngredient, MelFlstFids
+    MelIngredient, MelFlstFids, MelImpactDataset, MelFstpAnam
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -739,8 +739,8 @@ class MreBptd(MelRecord):
                 'bpnd_gore_effect_pos_trans_y', 'bpnd_gore_effect_pos_trans_z',
                 'bpnd_gore_effect_pos_rot_x', 'bpnd_gore_effect_pos_rot_y',
                 'bpnd_gore_effect_pos_rot_z',
-                (FID, 'bpnd_severable_impact_data_set'),
-                (FID, 'bpnd_explodable_impact_data_set'),
+                (FID, 'bpnd_severable_impact_dataset'),
+                (FID, 'bpnd_explodable_impact_dataset'),
                 'bpnd_severable_decal_count', 'bpnd_explodable_decal_count',
                 'bpnd_unused', 'bpnd_limb_replacement_scale'),
             MelString(b'NAM1', 'limb_replacement_model'),
@@ -1320,8 +1320,8 @@ class MreFstp(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFid(b'DATA','impactSet'),
-        MelString(b'ANAM','tag'),
+        MelImpactDataset(b'DATA'),
+        MelFstpAnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1441,13 +1441,9 @@ class MreHazd(MelRecord):
     """Hazard."""
     rec_sig = b'HAZD'
 
-    HazdTypeFlags = Flags.from_names(
-        (0, 'affectsPlayerOnly'),
-        (1, 'inheritDurationFromSpawnSpell'),
-        (2, 'alignToImpactNormal'),
-        (3, 'inheritRadiusFromSpawnSpell'),
-        (4, 'dropToGround'),
-    )
+    _hazd_flags = Flags.from_names('affects_player_only',
+        'inherit_duration_from_spawn_spell', 'align_to_impact_normal',
+        'inherit_radius_from_spawn_spell', 'drop_to_ground')
 
     melSet = MelSet(
         MelEdid(),
@@ -1455,9 +1451,11 @@ class MreHazd(MelRecord):
         MelFull(),
         MelModel(),
         MelImageSpaceMod(),
-        MelStruct(b'DATA', [u'I', u'4f', u'5I'],'limit','radius','lifetime',
-                  'imageSpaceRadius','targetInterval',(HazdTypeFlags, u'flags'),
-                  (FID,'spell'),(FID,'light'),(FID,'impactDataSet'),(FID,'sound'),),
+        MelStruct(b'DATA', ['I', '4f', '5I'], 'hazd_limit', 'hazd_radius',
+            'hazd_lifetime', 'image_space_radius', 'target_interval',
+            (_hazd_flags, 'hazd_flags'), (FID, 'hazd_spell'),
+            (FID, 'hazd_light'), (FID, 'hazd_impact_dataset'),
+            (FID, 'hazd_sound')),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2113,7 +2111,7 @@ class MreMatt(MelRecord):
         MelStruct(b'CNAM', [u'3f'], 'red', 'green', 'blue'),
         MelFloat(b'BNAM', 'buoyancy'),
         MelUInt32Flags(b'FNAM', u'flags', MattTypeFlags),
-        MelFid(b'HNAM', 'havokImpactDataSet',),
+        MelImpactDataset(b'HNAM'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3060,7 +3058,7 @@ class MreRace(MelRecord):
         MelBaseR(b'FNAM', 'female_graph_marker'), # required
         MelModel(b'MODL', 'female_behavior_graph'),
         MelFid(b'NAM4', u'material_type'),
-        MelFid(b'NAM5', u'impact_data_set'),
+        MelImpactDataset(b'NAM5'),
         MelFid(b'NAM7', u'decapitation_fx'),
         MelFid(b'ONAM', u'open_loot_sound'),
         MelFid(b'LNAM', u'close_loot_sound'),
@@ -4068,7 +4066,7 @@ class MreWeap(MelRecord):
         MelDescription(),
         MelModel(b'MOD3', 'model2'),
         MelBase(b'NNAM','unused1'),
-        MelFid(b'INAM','impactDataSet',),
+        MelImpactDataset(b'INAM'),
         MelFid(b'WNAM','firstPersonModelObject',),
         MelSound(),
         MelFid(b'XNAM','attackSound2D',),

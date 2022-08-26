@@ -49,7 +49,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
-    MelSoundLooping, MelEyesFlags, MelHairFlags, MelFlstFids
+    MelSoundLooping, MelEyesFlags, MelHairFlags, MelImpactDataset, \
+    MelFlstFids
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -676,8 +677,8 @@ class MreBptd(MelRecord):
                 'bpnd_gore_effect_pos_trans_y', 'bpnd_gore_effect_pos_trans_z',
                 'bpnd_gore_effect_pos_rot_x', 'bpnd_gore_effect_pos_rot_y',
                 'bpnd_gore_effect_pos_rot_z',
-                (FID, 'bpnd_severable_impact_data_set'),
-                (FID, 'bpnd_explodable_impact_data_set'),
+                (FID, 'bpnd_severable_impact_dataset'),
+                (FID, 'bpnd_explodable_impact_dataset'),
                 'bpnd_severable_decal_count', 'bpnd_explodable_decal_count',
                 'bpnd_unused', 'bpnd_limb_replacement_scale'),
             MelString(b'NAM1', 'limb_replacement_model'),
@@ -935,7 +936,7 @@ class MreCrea(MreActor):
         MelUInt32(b'NAM5', u'soundLevel'),
         MelFid(b'CSCR','inheritsSoundsFrom'),
         MelActorSounds(),
-        MelFid(b'CNAM','impactDataset'),
+        MelImpactDataset(b'CNAM'),
         MelFid(b'LNAM','meleeWeaponList'),
     )
     __slots__ = melSet.getSlotsUsed()
@@ -3145,7 +3146,7 @@ class MreWeap(MelRecord):
         )),
         fnv_only(MelString(b'VANM', 'vatsAttackName')),
         MelString(b'NNAM','embeddedWeaponNode'),
-        MelFid(b'INAM','impactDataset'),
+        MelImpactDataset(b'INAM'),
         MelFid(b'WNAM','firstPersonModel'),
         fnv_only(MelGroup('firstPersonModelWithMods',
             MelFid(b'WNM1', 'mod1Path'),

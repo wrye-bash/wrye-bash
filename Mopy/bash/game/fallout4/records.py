@@ -47,7 +47,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelRandomTeleports, MelDualData, MelIco2, MelEqupPnam, MelEyesFlags, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
     PartialLoadDecider, MelFactFids, MelFactVendorInfo, MelReadOnly, \
-    MelSeasons, MelIngredient, MelFlstFids
+    MelSeasons, MelIngredient, MelFlstFids, MelImpactDataset, MelFstpAnam
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -676,8 +676,8 @@ class MreBptd(MelRecord):
                 'bpnd_severable_debris_scale', 'bpnd_cut_min', 'bpnd_cut_max',
                 'bpnd_cut_radius', 'bpnd_gore_effects_local_rotate_x',
                 'bpnd_gore_effects_local_rotate_y', 'bpnd_cut_tesselation',
-                (FID, 'bpnd_severable_impact_data_set'),
-                (FID, 'bpnd_explodable_impact_data_set'),
+                (FID, 'bpnd_severable_impact_dataset'),
+                (FID, 'bpnd_explodable_impact_dataset'),
                 'bpnd_explodable_limb_replacement_scale',
                 (_bpnd_flags, 'bpnd_flags'), 'bpnd_part_type',
                 'bpnd_health_percent', 'bpnd_actor_value',
@@ -689,7 +689,7 @@ class MreBptd(MelRecord):
                 (FID, 'bpnd_on_cripple_art_object'),
                 (FID, 'bpnd_on_cripple_debris'),
                 (FID, 'bpnd_on_cripple_explosion'),
-                (FID, 'bpnd_on_cripple_impact_data_set'),
+                (FID, 'bpnd_on_cripple_impact_dataset'),
                 'bpnd_on_cripple_debris_scale', 'bpnd_on_cripple_debris_count',
                 'bpnd_on_cripple_decal_count'),
             MelString(b'NAM1', 'limb_replacement_model'),
@@ -1212,7 +1212,7 @@ class MreExpl(MelRecord):
         MelImageSpaceMod(),
         MelExplData(b'DATA', ['6I', '6f', '2I', 'f', 'I', '4f', 'I'],
             (FID, 'expl_light'), (FID, 'expl_sound1'), (FID, 'expl_sound2'),
-            (FID, 'expl_impact_data_set'), (FID, 'placed_object'),
+            (FID, 'expl_impact_dataset'), (FID, 'placed_object'),
             (FID, 'spawn_object'), 'expl_force', 'expl_damage', 'inner_radius',
             'outer_radius', 'is_radius', 'vertical_offset_mult',
             (_expl_flags, 'expl_flags'), 'expl_sound_level',
@@ -1296,6 +1296,18 @@ class MreFlst(AMreFlst):
         MelEdid(),
         MelFull(),
         MelFlstFids(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreFstp(MelRecord):
+    """Footstep."""
+    rec_sig = b'FSTP'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelImpactDataset(b'DATA'),
+        MelFstpAnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 

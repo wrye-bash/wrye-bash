@@ -500,7 +500,7 @@ soundsTypes = {
     b'EFSH': ('sound_ambient',),
     b'EXPL': ('expl_sound_level', 'expl_sound1', 'expl_sound2'),
     b'FLOR': ('sound',),
-    b'HAZD': (u'sound',),
+    b'HAZD': ('hazd_sound',),
     b'INGR': (u'pickupSound', u'dropSound'),
     b'IPCT': ('sound', 'sound2'),
     b'KEYM': (u'pickupSound', u'dropSound'),
