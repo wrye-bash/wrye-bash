@@ -1237,11 +1237,11 @@ class MreFlor(MelRecord):
         MelDestructible(),
         MelKeywords(),
         MelProperties(),
-        MelBase(b'PNAM', 'unknown_pnam'),
+        MelColor(b'PNAM'),
         MelAttx(),
         # Older format - read, but only dump ATTX
         MelReadOnly(MelAttx(b'RNAM')),
-        MelBase(b'FNAM', 'unknown_fnam'),
+        MelActiFlags(),
         MelIngredient(),
         MelSound(),
         MelSeasons(),

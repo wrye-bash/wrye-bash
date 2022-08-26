@@ -85,7 +85,8 @@ class AMelLLItems(MelSequential):
 
 #------------------------------------------------------------------------------
 class MelActiFlags(MelUInt16Flags):
-    """Handles the FNAM (Flags) subrecord in ACTI records."""
+    """Handles the ACTI subrecord FNAM (Flags). Note that this subrecord is
+    inherited by a couple other records too."""
     _acti_flags = Flags.from_names(
         (0, 'no_displacement'),
         (1, 'ignored_by_sandbox'),

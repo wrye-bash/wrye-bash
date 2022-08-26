@@ -1257,9 +1257,9 @@ class MreFlor(MelRecord):
         MelModel(),
         MelDestructible(),
         MelKeywords(),
-        MelBase(b'PNAM', 'unknown_pnam'),
+        MelColor(b'PNAM'),
         MelAttx(b'RNAM'),
-        MelBase(b'FNAM', 'unknown_fnam'),
+        MelActiFlags(),
         MelIngredient(),
         MelSound(),
         MelSeasons(),
@@ -1279,8 +1279,6 @@ class MreFlst(AMreFlst):
 class MreFurn(MelRecord):
     """Furniture."""
     rec_sig = b'FURN'
-
-    FurnGeneralFlags = Flags.from_names((1, 'ignoredBySandbox'))
 
     FurnActiveMarkerFlags = Flags.from_names(
         (0, 'sit0'),
@@ -1333,8 +1331,8 @@ class MreFurn(MelRecord):
         MelModel(),
         MelDestructible(),
         MelKeywords(),
-        MelBase(b'PNAM','pnam_p'),
-        MelUInt16Flags(b'FNAM', u'general_f', FurnGeneralFlags),
+        MelColor(b'PNAM'),
+        MelActiFlags(),
         MelFid(b'KNAM','interactionKeyword'),
         MelUInt32Flags(b'MNAM', u'activeMarkers', FurnActiveMarkerFlags),
         MelStruct(b'WBDT', [u'B', u'b'],'benchType','usesSkill',),
@@ -3762,7 +3760,6 @@ class MreStat(MelRecord):
     )
     __slots__ = melSet.getSlotsUsed()
 
-# MNAM Should use a custom unpacker if needed for the patcher otherwise MelBase
 #------------------------------------------------------------------------------
 class MreTact(MelRecord):
     """Talking Activator."""
@@ -3776,9 +3773,9 @@ class MreTact(MelRecord):
         MelModel(),
         MelDestructible(),
         MelKeywords(),
-        MelBase(b'PNAM','pnam_p'),
+        MelColor(b'PNAM'),
         MelSound(),
-        MelBase(b'FNAM','fnam_p'),
+        MelActiFlags(),
         MelFid(b'VNAM', 'voiceType'),
     )
     __slots__ = melSet.getSlotsUsed()
