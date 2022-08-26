@@ -75,7 +75,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
     def init(cls):
         cls._dynamic_import_modules(__name__)
         from ...brec import MreAstp, MreColl, MreDebr, MreDlbr, MreDlvw, \
-            MreDual, MreEyes, MreFstp, MreGlob, MreGmst
+            MreDual, MreEyes, MreFstp, MreFsts, MreGlob, MreGmst
         from ..skyrimse.records import MreVoli, MreLens
         from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
             MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \
@@ -83,7 +83,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreClfm, MreClmt, MreCobj, MreNavm, MreCont, MreCpth, MreCsty, \
             MreRace, MreDial, MreWthr, MreWeap, MreDobj, MreDoor, MreMato, \
             MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreStat, MreFact, \
-            MreFlor, MreWatr, MreFsts, MreFurn, MreFlst, MreGras, MrePack, \
+            MreFlor, MreWatr, MreAmmo, MreFurn, MreFlst, MreGras, MrePack, \
             MreHazd, MreHdpt, MreTes4, MreIdle, MreIdlm, MreImad, MreImgs, \
             MreInfo, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, \
             MreLctn, MreLgtm, MreLigh, MreLscr, MreLvli, MreLvln, MreLvsp, \
@@ -91,8 +91,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreMust, MreNpc, MreOtft, MrePerk, MreProj, MreQust, MreRegn, \
             MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
-            MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
-            MreAmmo
+            MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             # MreAchr, MreDial, MreInfo,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,

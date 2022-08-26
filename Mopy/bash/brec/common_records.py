@@ -495,6 +495,19 @@ class MreFstp(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MreFsts(MelRecord):
+    """Footstep Set."""
+    rec_sig = b'FSTS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'XCNT', ['5I'], 'count_walking', 'count_running',
+            'count_sprinting', 'count_sneaking', 'count_swimming'),
+        MelSimpleArray('footstep_sets', MelFid(b'DATA')),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreGlob(MelRecord):
     """Global."""
     rec_sig = b'GLOB'

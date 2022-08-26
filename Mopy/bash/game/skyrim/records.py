@@ -1276,19 +1276,6 @@ class MreFlst(AMreFlst):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreFsts(MelRecord):
-    """Footstep Set."""
-    rec_sig = b'FSTS'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelStruct(b'XCNT', [u'5I'],'walkForward','runForward','walkForwardAlt',
-                  'runForwardAlt','walkForwardAlternate2',),
-        MelSimpleArray('footstepSets', MelFid(b'DATA')),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreFurn(MelRecord):
     """Furniture."""
     rec_sig = b'FURN'
