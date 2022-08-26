@@ -187,7 +187,7 @@ class MelArmaDnam(MelStruct):
 
 #------------------------------------------------------------------------------
 class MelArmaModels(MelSequential):
-    """Handles the ARMA MOD2-MOD5 subrecords. Note that you have to pass the
+    """Handles the ARMA subrecords MOD2-MOD5. Note that you have to pass the
     game's MelModel class in as a parameter."""
     def __init__(self, mel_model: Type[MelBase]):
         super().__init__(
@@ -199,7 +199,7 @@ class MelArmaModels(MelSequential):
 
 #------------------------------------------------------------------------------
 class MelArmaSkins(MelSequential):
-    """Handles the ARMA NAM0-NAM3 subrecords."""
+    """Handles the ARMA subrecords NAM0-NAM3."""
     def __init__(self):
         super().__init__(
             MelFid(b'NAM0', 'skin0'),
@@ -232,24 +232,6 @@ class MelAspcRdat(MelFid):
     Only))."""
     def __init__(self):
         super().__init__(b'RDAT', 'use_sound_from_region')
-
-#------------------------------------------------------------------------------
-class MelAstpData(MelUInt32):
-    """Handles the ASTP subrecord DATA. Called 'Flags' in xEdit, but is really
-    a boolean enum."""
-    def __init__(self):
-        super().__init__(b'DATA', 'family_association')
-
-#------------------------------------------------------------------------------
-class MelAstpTitles(MelSequential):
-    """Handles the ASTP subrecords MPRT, FPRT, MCHT and FCHT."""
-    def __init__(self):
-        super().__init__(
-            MelString(b'MPRT', 'male_parent_title'),
-            MelString(b'FPRT', 'female_parent_title'),
-            MelString(b'MCHT', 'male_child_title'),
-            MelString(b'FCHT', 'female_child_title'),
-        )
 
 #------------------------------------------------------------------------------
 class MelAttx(MelLString):
@@ -449,18 +431,6 @@ class MelDoorFlags(MelUInt8Flags):
         super().__init__(b'FNAM', 'door_flags', self._door_flags)
 
 #------------------------------------------------------------------------------
-class MelDualData(MelStruct):
-    """Handles the DUAL subrecord DATA (Data)."""
-    _inherit_scale_flags = Flags.from_names('hit_effect_art_scale',
-        'projectile_scale', 'explosion_scale')
-
-    def __init__(self):
-        super().__init__(b'DATA', ['6I'], (FID, 'projectile'),
-            (FID, 'explosion'), (FID, 'effect_shader'),
-            (FID, 'hit_effect_art'), (FID, 'dual_impact_dataset'),
-            (self._inherit_scale_flags, 'inherit_scale_flags')),
-
-#------------------------------------------------------------------------------
 class MelEdid(MelString):
     """Handles an Editor ID (EDID) subrecord."""
     def __init__(self):
@@ -494,15 +464,6 @@ class MelEqupPnam(MelSimpleArray):
     """Handles the EQUP subrecord PNAM (Slot Parents)."""
     def __init__(self):
         super().__init__('slot_parents', MelFid(b'PNAM'))
-
-#------------------------------------------------------------------------------
-class MelEyesFlags(MelUInt8Flags):
-    """Handles the EYES subrecord DATA (Flags)."""
-    # not_male and not_female exist since FO3
-    _eyes_flags = Flags.from_names('playable', 'not_male', 'not_female')
-
-    def __init__(self):
-        super().__init__(b'DATA', 'flags', self._eyes_flags)
 
 #------------------------------------------------------------------------------
 class MelFactFlags(MelUInt32Flags):
@@ -586,12 +547,6 @@ class MelFootstepSound(MelFid):
     """Handles the ARMA subrecord SNDD (Footstep Sound)."""
     def __init__(self):
         super().__init__(b'SNDD', 'footstep_sound')
-
-#------------------------------------------------------------------------------
-class MelFstpAnam(MelString):
-    """Handles the FSTP subrecord ANAM (Tag)."""
-    def __init__(self):
-        super().__init__(b'ANAM', 'fstp_tag')
 
 #------------------------------------------------------------------------------
 class MelFull(MelLString):

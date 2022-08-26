@@ -44,8 +44,8 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MelEnchantment, MelValueWeight, null4, SpellFlags, MelOwnership, \
     MelSound, MelWeight, MelEffectsTes4ObmeFull, MelBookText, MelClmtTiming, \
     MelClmtTextures, MelSoundClose, AMelItems, AMelLLItems, MelContData, \
-    MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelEyesFlags, \
-    MelHairFlags, MelSeasons, MelIngredient
+    MelDoorFlags, MelSoundLooping, MelRandomTeleports, MelHairFlags, \
+    MelSeasons, MelIngredient
 
 #------------------------------------------------------------------------------
 # Record Elements -------------------------------------------------------------
@@ -992,19 +992,6 @@ class MreEnch(MreHasEffects, MelRecord):
         MelEffectsTes4(),
         MelEffectsTes4ObmeFull(),
     ).with_distributor(_effects_distributor)
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreEyes(MelRecord):
-    """Eyes."""
-    rec_sig = b'EYES'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFull(),
-        MelIcon(),
-        MelEyesFlags(),
-    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------

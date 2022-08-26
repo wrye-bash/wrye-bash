@@ -39,15 +39,14 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelUInt32Flags, BipedFlags, MelArmaDnam, MelArmaModels, MelArmaSkins, \
     MelAdditionalRaces, MelFootstepSound, MelArtObject, MelEnchantment, \
     MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
-    MelArtType, MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, \
+    MelArtType, MelAspcRdat, MelAspcBnam, PartialLoadDecider, MelSeasons, \
     MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
     MelImageSpaceMod, MelClmtWeatherTypes, MelClmtTiming, MelClmtTextures, \
     MelCobjOutput, AMreWithItems, AMelItems, MelContData, MelSoundClose, \
     MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
-    MelRandomTeleports, MelDualData, MelIco2, MelEqupPnam, MelEyesFlags, \
+    MelRandomTeleports, MelIco2, MelEqupPnam, MelFlstFids, MelIngredient, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
-    PartialLoadDecider, MelFactFids, MelFactVendorInfo, MelReadOnly, \
-    MelSeasons, MelIngredient, MelFlstFids, MelImpactDataset, MelFstpAnam
+    MelFactFids, MelFactVendorInfo, MelReadOnly
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -556,18 +555,6 @@ class MreAspc(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreAstp(MelRecord):
-    """Association Type."""
-    rec_sig = b'ASTP'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelAstpTitles(),
-        MelAstpData(),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreAvif(MelRecord):
     """Actor Value Information."""
     rec_sig = b'AVIF'
@@ -986,19 +973,6 @@ class MreDoor(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-# Not present in Fallout4.esm, but can be created in CK
-class MreDual(MelRecord):
-    """Dual Cast Data."""
-    rec_sig = b'DUAL'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelBounds(),
-        MelDualData(),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreEczn(MelRecord):
     """Encounter Zone."""
     rec_sig = b'ECZN'
@@ -1194,7 +1168,7 @@ class MreExpl(MelRecord):
     )
 
     class MelExplData(MelTruncatedStruct):
-        """Handles the EXPL subrecord DATA, which requires special handling."""
+        """Handles the EXPL subrecord DATA, which requires special code."""
         def _pre_process_unpacked(self, unpacked_val):
             if len(unpacked_val) in (13, 14, 15):
                 # Form Version 97 added the inner_radius float right before the
@@ -1220,19 +1194,6 @@ class MreExpl(MelRecord):
             'expl_spawn_y', 'expl_spawn_z', 'expl_spawn_spread_degrees',
             'expl_spawn_count', old_versions={'6I5f2I', '6I5f2If', '6I5f2IfI',
                                               '6I6f2IfI'}),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreEyes(MelRecord):
-    """Eyes."""
-    rec_sig = b'EYES'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFull(),
-        MelIcon(),
-        MelEyesFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1296,18 +1257,6 @@ class MreFlst(AMreFlst):
         MelEdid(),
         MelFull(),
         MelFlstFids(),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreFstp(MelRecord):
-    """Footstep."""
-    rec_sig = b'FSTP'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelImpactDataset(b'DATA'),
-        MelFstpAnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 

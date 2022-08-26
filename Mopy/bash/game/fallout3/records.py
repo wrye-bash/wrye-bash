@@ -26,7 +26,7 @@ file must be imported till then."""
 from collections import OrderedDict
 
 from ... import bush
-from ...bolt import Flags, structs_cache, TrimmedFlags
+from ...bolt import Flags, structs_cache, TrimmedFlags, struct_calcsize
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, AMreHeader, MelRace, \
     MelBase, MelSimpleArray, AMreFlst, MelBodyParts, MelMODS, MelFactions, \
@@ -49,8 +49,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelNodeIndex, MelAddnDnam, MelEffectsFo3, MelShortName, PerkEpdfDecider, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
-    MelSoundLooping, MelEyesFlags, MelHairFlags, MelImpactDataset, \
-    MelFlstFids
+    MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1194,19 +1193,6 @@ class MreExpl(MelRecord):
             'radiation_level', 'radiation_time', 'radiation_radius',
             'expl_sound_level'),
         MelFid(b'INAM', 'placed_impact_object'),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreEyes(MelRecord):
-    """Eyes."""
-    rec_sig = b'EYES'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFull(),
-        MelIcon(),
-        MelEyesFlags(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -3263,6 +3249,57 @@ class MreWrld(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MelWthrColorsFnv(MelArray):
+    """Used twice in WTHR for PNAM and NAM0. Needs to handle older versions
+    as well. Can't simply use MelArray because MelTruncatedStruct does not
+    have a static_size."""
+    # TODO(inf) Rework MelArray - instead of static_size, have a
+    #  get_entry_size that receives the total size_ of load_mel.
+    #  MelTruncatedStruct could override that and make a guess based on its
+    #  sizes. If that guess doesn't work, a small override class can be
+    #  created by hand
+    _new_sizes = {b'PNAM': 96, b'NAM0': 240}
+    _old_sizes = {b'PNAM': 64, b'NAM0': 160}
+
+    def __init__(self, wthr_sub_sig, wthr_attr):
+        struct_definition = [
+            [u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's', u'3B', u's',
+             u'3B', u's'], u'riseRed', u'riseGreen', u'riseBlue',
+            u'unused1', u'dayRed', u'dayGreen', u'dayBlue',
+            u'unused2', u'setRed', u'setGreen', u'setBlue',
+            u'unused3', u'nightRed', u'nightGreen', u'nightBlue',
+            u'unused4', u'noonRed', u'noonGreen', u'noonBlue',
+            u'unused5', u'midnightRed', u'midnightGreen',
+            u'midnightBlue', u'unused6'
+        ]
+        super(MelWthrColorsFnv, self).__init__(wthr_attr,
+            MelStruct(wthr_sub_sig, *struct_definition),
+        )
+        self._element_old = MelTruncatedStruct(
+            wthr_sub_sig, *struct_definition,
+            old_versions={u'3Bs3Bs3Bs3Bs'})
+
+    def load_mel(self, record, ins, sub_type, size_, *debug_strs):
+        if size_ == self._new_sizes[sub_type]:
+            super(MelWthrColorsFnv, self).load_mel(record, ins, sub_type,
+                                                   size_, *debug_strs)
+        elif size_ == self._old_sizes[sub_type]:
+            # Copied and adjusted from MelArray. Yuck. See comment below
+            # docstring for some ideas for getting rid of this
+            append_entry = getattr(record, self.attr).append
+            entry_slots = self._element_old.attrs
+            entry_size = struct_calcsize(u'3Bs3Bs3Bs3Bs')
+            load_entry = self._element_old.load_mel
+            for x in range(size_ // entry_size):
+                arr_entry = MelObject()
+                append_entry(arr_entry)
+                arr_entry.__slots__ = entry_slots
+                load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
+        else:
+            _expected_sizes = (self._new_sizes[sub_type],
+                               self._old_sizes[sub_type])
+            raise ModSizeError(ins.inName, debug_strs, _expected_sizes, size_)
+
 class MreWthr(MelRecord):
     """Weather."""
     rec_sig = b'WTHR'
@@ -3273,6 +3310,8 @@ class MreWthr(MelRecord):
         MelFid(b'\x01IAD', 'dayImageSpaceModifier'),
         MelFid(b'\x02IAD', 'sunsetImageSpaceModifier'),
         MelFid(b'\x03IAD', 'nightImageSpaceModifier'),
+        fnv_only(MelFid(b'\x04IAD', 'unknown1ImageSpaceModifier')),
+        fnv_only(MelFid(b'\x05IAD', 'unknown2ImageSpaceModifier')),
         MelString(b'DNAM','upperLayer'),
         MelString(b'CNAM','lowerLayer'),
         MelString(b'ANAM','layer2'),
@@ -3280,12 +3319,12 @@ class MreWthr(MelRecord):
         MelModel(),
         MelBase(b'LNAM','unknown1'),
         MelStruct(b'ONAM', [u'4B'],'cloudSpeed0','cloudSpeed1','cloudSpeed3','cloudSpeed4'),
-        MelArray('cloudColors',
+        if_fnv(fo3_version=MelArray('cloudColors',
             MelWthrColors(b'PNAM'),
-        ),
-        MelArray('daytimeColors',
+        ), fnv_version=MelWthrColorsFnv(b'PNAM', 'cloudColors')),
+        if_fnv(fo3_version=MelArray('daytimeColors',
             MelWthrColors(b'NAM0'),
-        ),
+        ), fnv_version=MelWthrColorsFnv(b'NAM0', 'daytimeColors')),
         MelStruct(b'FNAM', [u'6f'],'fogDayNear','fogDayFar','fogNightNear','fogNightFar','fogDayPower','fogNightPower'),
         MelBase(b'INAM', 'unused1', null1 * 304),
         MelStruct(b'DATA', [u'15B'],

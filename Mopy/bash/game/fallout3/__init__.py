@@ -295,12 +295,12 @@ class Fallout3GameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreDebr, MreGlob, MreGmst
+        from ...brec import MreDebr, MreEyes, MreGlob, MreGmst
         from .records import MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, \
             MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreCams, \
             MreClas, MreClmt, MreCobj, MreCont, MreCpth, MreCrea, MreCsty, \
             MreWrld, MreDobj, MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl, \
-            MreEyes, MreFact, MreFurn, MreGras, MreHair, MreHdpt, MreTes4, \
+            MreRefr, MreFact, MreFurn, MreGras, MreHair, MreHdpt, MreTes4, \
             MreIdle, MreIdlm, MreImad, MreImgs, MreIngr, MreIpct, MreIpds, \
             MreKeym, MreLgtm, MreLigh, MreLscr, MreLtex, MreLvlc, MreLvli, \
             MreLvln, MreMesg, MreMgef, MreMicn, MreMisc, MreMstt, MreMusc, \
@@ -308,7 +308,7 @@ class Fallout3GameInfo(PatchGame):
             MreRace, MreRads, MreRegn, MreRgdl, MreScol, MreScpt, MreSoun, \
             MreSpel, MreStat, MreTact, MreTerm, MreTree, MreTxst, MreVtyp, \
             MreWatr, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, \
-            MreFlst, MreInfo, MreNavi, MreNavm, MrePgre, MrePmis, MreRefr
+            MreFlst, MreInfo, MreNavi, MreNavm, MrePgre, MrePmis
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreArma, MreArmo,
             MreAspc, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt,

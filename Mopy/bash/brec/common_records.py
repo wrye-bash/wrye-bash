@@ -30,8 +30,9 @@ from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
     MelUnion, MelSorted, MelSimpleArray
 from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
     MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString, \
-    MelUnicode, unpackSubHeader, MelUInt32Flags, MelString
-from .common_subrecords import MelEdid, MelDescription, MelColor, MelDebrData
+    MelUnicode, unpackSubHeader, MelUInt32Flags, MelString, MelUInt8Flags
+from .common_subrecords import MelEdid, MelDescription, MelImpactDataset, \
+    MelColor, MelDebrData, MelFull, MelIcon, MelBounds
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId
 from .. import bolt, exception
@@ -364,6 +365,21 @@ class AMreLeveledList(MelRecord):
 #------------------------------------------------------------------------------
 # Full classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
+class MreAstp(MelRecord):
+    """Association Type."""
+    rec_sig = b'ASTP'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelString(b'MPRT', 'male_parent_title'),
+        MelString(b'FPRT', 'female_parent_title'),
+        MelString(b'MCHT', 'male_child_title'),
+        MelString(b'FCHT', 'female_child_title'),
+        MelUInt32(b'DATA', 'family_association'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreColl(MelRecord):
     """Collision Layer."""
     rec_sig = b'COLL'
@@ -429,6 +445,52 @@ class MreDlvw(MelRecord):
         ),
         MelBase(b'ENAM', 'unknown_enam'),
         MelBase(b'DNAM', 'unknown_dnam'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreDual(MelRecord):
+    """Dual Cast Data."""
+    rec_sig = b'DUAL'
+
+    _inherit_scale_flags = Flags.from_names('hit_effect_art_scale',
+        'projectile_scale', 'explosion_scale')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelStruct(b'DATA', ['6I'], (FID, 'dual_projectile'),
+            (FID, 'dual_explosion'), (FID, 'effect_shader'),
+            (FID, 'dual_hit_effect_art'), (FID, 'dual_impact_dataset'),
+            (_inherit_scale_flags, 'inherit_scale_flags')),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreEyes(MelRecord):
+    """Eyes."""
+    rec_sig = b'EYES'
+
+    # not_male and not_female exist since FO3
+    _eyes_flags = Flags.from_names('playable', 'not_male', 'not_female')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelFull(),
+        MelIcon(),
+        MelUInt8Flags(b'DATA', 'flags', _eyes_flags),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreFstp(MelRecord):
+    """Footstep."""
+    rec_sig = b'FSTP'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelImpactDataset(b'DATA'),
+        MelString(b'ANAM', 'fstp_tag'),
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -47,13 +47,12 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelPerkData, MelNextPerk, PerkEpdfDecider, MelPerkParamsGroups, MelBids, \
     MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, MelBamt, \
     MelFootstepSound, MelArtObject, MelTemplateArmor, MelArtType, \
-    MelAspcRdat, MelAspcBnam, MelAstpTitles, MelAstpData, MelBookText, \
+    MelAspcRdat, MelAspcBnam, MelBookText, MelImpactDataset, MelFlstFids, \
     MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
-    MelRandomTeleports, MelSoundLooping, MelDualData, MelEqupPnam, \
-    MelEyesFlags, MelFactFlags, MelFactFids, MelFactVendorInfo, MelSeasons, \
-    MelIngredient, MelFlstFids, MelImpactDataset, MelFstpAnam
+    MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
+    MelFactFlags, MelFactFids, MelSeasons, MelIngredient
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -625,18 +624,6 @@ class MreAspc(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreAstp(MelRecord):
-    """Association Type."""
-    rec_sig = b'ASTP'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelAstpTitles(),
-        MelAstpData(),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreAvif(MelRecord):
     """Actor Value Information."""
     rec_sig = b'AVIF'
@@ -953,7 +940,7 @@ class MreCont(AMreWithItems):
 
 #------------------------------------------------------------------------------
 class MreCpth(MelRecord):
-    """Camera Path"""
+    """Camera Path."""
     rec_sig = b'CPTH'
 
     melSet = MelSet(
@@ -1054,18 +1041,6 @@ class MreDoor(MelRecord):
         MelSoundLooping(),
         MelDoorFlags(),
         MelRandomTeleports(),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreDual(MelRecord):
-    """Dual Cast Data."""
-    rec_sig = b'DUAL'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelBounds(),
-        MelDualData(),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1246,19 +1221,6 @@ class MreExpl(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreEyes(MelRecord):
-    """Eyes."""
-    rec_sig = b'EYES'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelFull(),
-        MelIcon(),
-        MelEyesFlags(),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreFact(MelRecord):
     """Faction."""
     rec_sig = b'FACT'
@@ -1310,18 +1272,6 @@ class MreFlst(AMreFlst):
     melSet = MelSet(
         MelEdid(),
         MelFlstFids(),
-    )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreFstp(MelRecord):
-    """Footstep."""
-    rec_sig = b'FSTP'
-
-    melSet = MelSet(
-        MelEdid(),
-        MelImpactDataset(b'DATA'),
-        MelFstpAnam(),
     )
     __slots__ = melSet.getSlotsUsed()
 

@@ -218,13 +218,14 @@ class Fallout4GameInfo(PatchGame):
     @classmethod
     def init(cls):
         cls._dynamic_import_modules(__name__)
-        from ...brec import MreColl, MreDebr, MreDlbr, MreDlvw, MreGmst
+        from ...brec import MreAstp, MreColl, MreDebr, MreDlbr, MreDlvw, \
+            MreDual, MreEyes, MreFstp, MreGmst
         from .records import MreAact, MreActi, MreAddn, MreAech, MreAmdl, \
-            MreAnio, MreAoru, MreArma, MreArmo, MreArto, MreAstp, MreAvif, \
-            MreBnds, MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, \
-            MreCmpo, MreCobj, MreCont, MreCpth, MreCsty, MreDfob, MreDmgt, \
-            MreDobj, MreDoor, MreDual, MreEczn, MreEfsh, MreEnch, MreEqup, \
-            MreExpl, MreEyes, MreFact, MreFlor, MreFlst, MreFstp, \
+            MreAnio, MreAoru, MreArma, MreArmo, MreArto, MreAvif, MreBnds, \
+            MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, \
+            MreCobj, MreCont, MreCpth, MreCsty, MreDfob, MreDmgt, MreDobj, \
+            MreDoor, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreFact, \
+            MreFlor, MreFlst, \
             MreLvli, MreLvln, MrePerk, MreTes4
         cls.mergeable_sigs = {clazz.rec_sig: clazz for clazz in (
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
