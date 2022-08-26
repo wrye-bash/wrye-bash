@@ -225,7 +225,7 @@ class Fallout4GameInfo(PatchGame):
             MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, \
             MreCobj, MreCont, MreCpth, MreCsty, MreDfob, MreDmgt, MreDobj, \
             MreDoor, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreFact, \
-            MreFlor, MreFlst, \
+            MreFlor, MreFlst, MreFurn, \
             MreLvli, MreLvln, MrePerk, MreTes4
         cls.mergeable_sigs = {x.rec_sig: x for x in (
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
@@ -234,7 +234,7 @@ class Fallout4GameInfo(PatchGame):
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
             MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
             MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
-            MreFstp, MreFsts,
+            MreFstp, MreFsts, MreFurn,
             MreGmst, MreLvli, MreLvln, MrePerk,
         )}
         # Setting RecordHeader class variables --------------------------------

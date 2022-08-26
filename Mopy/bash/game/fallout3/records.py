@@ -1231,9 +1231,6 @@ class MreFurn(MelRecord):
     """Furniture."""
     rec_sig = b'FURN'
 
-    _flags = Flags #--Governs type of furniture and which anims are available
-    #--E.g., whether it's a bed, and which of the bed entry/exit animations are available
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
@@ -1241,7 +1238,7 @@ class MreFurn(MelRecord):
         MelModel(),
         MelScript(),
         MelDestructible(),
-        MelUInt32Flags(b'MNAM', u'activeMarkers', _flags),
+        MelBase(b'MNAM', 'active_markers_flags'), # not decoded in xEdit
     )
     __slots__ = melSet.getSlotsUsed()
 

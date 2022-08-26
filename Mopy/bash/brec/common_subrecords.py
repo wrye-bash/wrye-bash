@@ -556,6 +556,31 @@ class MelFull(MelLString):
         super().__init__(b'FULL', 'full')
 
 #------------------------------------------------------------------------------
+class MelFurnMarkerData(MelSequential):
+    """Handles the FURN subrecords ENAM, NAM0, FNMK (Skyrim only), FNPR and
+    XMRK."""
+    _entry_points = Flags.from_names('entry_point_front', 'entry_point_behind',
+        'entry_point_right', 'entry_point_left', 'entry_point_up')
+
+    def __init__(self, *, with_marker_keyword=False):
+        marker_elements = [
+            # Unsigned in Skyrim, but no one's going to use >2 billion indices
+            MelSInt32(b'ENAM', 'furn_marker_index'),
+            MelStruct(b'NAM0', ['2s', 'H'], 'furn_marker_unknown',
+                (self._entry_points, 'furn_marker_disabled_entry_points')),
+        ]
+        if with_marker_keyword:
+            marker_elements.append(MelFid(b'FNMK', 'furn_marker_keyword'))
+        super().__init__(
+            MelGroups('furn_markers', *marker_elements),
+            MelGroups('marker_entry_points',
+                MelStruct(b'FNPR', ['2H'], 'furn_marker_type',
+                    (self._entry_points, 'furn_marker_entry_points')),
+            ),
+            MelString(b'XMRK', 'marker_model'),
+        )
+
+#------------------------------------------------------------------------------
 class MelHairFlags(MelUInt8Flags):
     """Handles the HAIR subrecord DATA (Flags)."""
     _hair_flags = Flags.from_names('playable', 'not_male', 'not_female',
@@ -619,7 +644,7 @@ class MelIngredient(MelFid):
 
 #------------------------------------------------------------------------------
 class MelInteractionKeyword(MelFid):
-    """Handles the KNAM (Interaction Keyword) subrecord of ACTI records."""
+    """Handles the common KNAM (Interaction Keyword) subrecord."""
     def __init__(self):
         super().__init__(b'KNAM', 'interaction_keyword')
 

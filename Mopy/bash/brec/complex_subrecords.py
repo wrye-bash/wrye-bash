@@ -1126,6 +1126,9 @@ class _MelObts(MelPartialCounter):
 
 # API -------------------------------------------------------------------------
 class MelObjectTemplate(MelSequential):
+    """Handles an object template, which is a complex subrecord structure
+    containing the OBTS subrecord. Note that this also contains a FULL
+    subrecord, so you will probably have to use a distributor."""
     def __init__(self):
         super().__init__(
             MelCounter(MelUInt32(b'OBTE', 'ot_combination_count'),

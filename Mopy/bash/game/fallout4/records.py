@@ -46,7 +46,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
     MelRandomTeleports, MelIco2, MelEqupPnam, MelFlstFids, MelIngredient, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
-    MelFactFids, MelFactVendorInfo, MelReadOnly
+    MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, MelObject
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -89,6 +89,16 @@ class MelModel(MelGroup):
         if len(types) == 5 and not skip_5:
             mdl_elements.append(MelBase(types[4], 'unknown_modf'))
         super().__init__(attr, *mdl_elements)
+
+#------------------------------------------------------------------------------
+# A distributor config for use with MelObjectTemplate, since MelObjectTemplate
+# also contains a FULL subrecord
+_object_template_distributor = {
+    b'FULL': 'full',
+    b'OBTE': {
+        b'FULL': 'ot_combinations',
+    },
+}
 
 #------------------------------------------------------------------------------
 class MelAnimationSound(MelFid):
@@ -515,12 +525,7 @@ class MreArmo(MelRecord):
         MelTemplateArmor(),
         MelAppr(),
         MelObjectTemplate(),
-    ).with_distributor({
-        b'FULL': 'full',
-        b'OBTE': {
-            b'FULL': 'ot_combinations',
-        },
-    })
+    ).with_distributor(_object_template_distributor)
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
@@ -1192,8 +1197,8 @@ class MreExpl(MelRecord):
             (_expl_flags, 'expl_flags'), 'expl_sound_level',
             'placed_object_autofade_delay', 'expl_stagger', 'expl_spawn_x',
             'expl_spawn_y', 'expl_spawn_z', 'expl_spawn_spread_degrees',
-            'expl_spawn_count', old_versions={'6I5f2I', '6I5f2If', '6I5f2IfI',
-                                              '6I6f2IfI'}),
+            'expl_spawn_count', old_versions={'6I6f2IfI', '6I5f2IfI',
+                                              '6I5f2If', '6I5f2I'}),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1258,6 +1263,111 @@ class MreFlst(AMreFlst):
         MelFull(),
         MelFlstFids(),
     )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+##: It should be possible to absorb this in MelArray, see MelWthrColorsFnv for
+# a plan of attack. But note that if we have form version info, we should be
+# able to pass that in too, since the other algorithm is ambigous once a
+# subrecord of size lcm(new, old) is reached - MelFVDArray (form version
+# dependent)?
+class MelFurnMarkerParams(MelArray):
+    """Handles the FURN subrecord SNAM (Furniture Marker Parameters), which
+    requires special code."""
+    _param_entry_types = Flags.from_names('entry_type_front',
+        'entry_type_rear', 'entry_type_right', 'entry_type_left',
+        'entry_type_other', 'entry_type_unused1', 'entry_type_unused2',
+        'entry_type_unused3')
+
+    def __init__(self):
+        struct_args = (b'SNAM', ['4f', 'I', 'B', '3s'], 'param_offset_x',
+                       'param_offset_y', 'param_offset_z', 'param_rotation_z',
+                       (FID, 'param_keyword'),
+                       (self._param_entry_types, 'param_entry_types'),
+                       'param_unknown')
+        # Trick MelArray into thinking we have a static-sized element
+        super().__init__('furn_marker_parameters', MelStruct(*struct_args))
+        self._real_loader = MelTruncatedStruct(*struct_args,
+            old_versions={'4fI'})
+
+    def _load_array(self, record, ins, sub_type, size_, *debug_strs):
+        append_entry = getattr(record, self.attr).append
+        entry_slots = self.array_element_attrs
+        # Form version 125 added the entry types to the end
+        entry_size = 24 if record.header.form_version >= 125 else 20
+        load_entry = self._real_loader.load_mel
+        for x in range(size_ // entry_size):
+            arr_entry = MelObject()
+            append_entry(arr_entry)
+            arr_entry.__slots__ = entry_slots
+            load_entry(arr_entry, ins, sub_type, entry_size, *debug_strs)
+
+class MreFurn(AMreWithItems):
+    """Furniture."""
+    rec_sig = b'FURN'
+
+    _active_markers_flags = Flags.from_names(
+        (0,  'interaction_point_0'),
+        (1,  'interaction_point_1'),
+        (2,  'interaction_point_2'),
+        (3,  'interaction_point_3'),
+        (4,  'interaction_point_4'),
+        (5,  'interaction_point_5'),
+        (6,  'interaction_point_6'),
+        (7,  'interaction_point_7'),
+        (8,  'interaction_point_8'),
+        (9,  'interaction_point_9'),
+        (10, 'interaction_point_10'),
+        (11, 'interaction_point_11'),
+        (12, 'interaction_point_12'),
+        (13, 'interaction_point_13'),
+        (14, 'interaction_point_14'),
+        (15, 'interaction_point_15'),
+        (16, 'interaction_point_16'),
+        (17, 'interaction_point_17'),
+        (18, 'interaction_point_18'),
+        (19, 'interaction_point_19'),
+        (20, 'interaction_point_20'),
+        (21, 'interaction_point_21'),
+        (22, 'allow_awake_sound'),
+        (23, 'enter_with_weapon_drawn'),
+        (24, 'play_anim_when_full'),
+        (25, 'disables_activation'),
+        (26, 'is_perch'),
+        (27, 'must_exit_to_talk'),
+        (28, 'use_static_to_avoid_node'),
+        (30, 'has_model'),
+        (31, 'is_sleep_furniture'),
+    )
+
+    melSet = MelSet(
+        MelEdid(),
+        MelVmad(),
+        MelBounds(),
+        MelPreviewTransform(),
+        MelFull(),
+        MelModel(),
+        MelDestructible(),
+        MelKeywords(),
+        MelProperties(),
+        MelNativeTerminal(),
+        MelFtyp(),
+        MelColor(b'PNAM'),
+        MelFid(b'WNAM', 'drinking_water_type'),
+        MelAttx(),
+        MelActiFlags(),
+        MelConditions(),
+        MelItems(),
+        MelUInt32Flags(b'MNAM', 'active_markers_flags', _active_markers_flags),
+        MelTruncatedStruct(b'WBDT', ['B', 'b'], 'bench_type', 'uses_skill',
+            old_versions={'B'}),
+        MelFid(b'NAM1', 'associated_form'),
+        MelFurnMarkerData(),
+        MelFurnMarkerParams(),
+        MelAppr(),
+        MelObjectTemplate(),
+        MelNvnm(),
+    ).with_distributor(_object_template_distributor)
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------

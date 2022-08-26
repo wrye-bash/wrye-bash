@@ -52,7 +52,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
     MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
-    MelFactFlags, MelFactFids, MelSeasons, MelIngredient
+    MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1280,47 +1280,34 @@ class MreFurn(MelRecord):
     """Furniture."""
     rec_sig = b'FURN'
 
-    FurnActiveMarkerFlags = Flags.from_names(
-        (0, 'sit0'),
-        (1, 'sit1'),
-        (2, 'sit2'),
-        (3, 'sit3'),
-        (4, 'sit4'),
-        (5, 'sit5'),
-        (6, 'sit6'),
-        (7, 'sit7'),
-        (8, 'sit8'),
-        (9, 'sit9'),
-        (10, 'sit10'),
-        (11, 'sit11'),
-        (12, 'sit12'),
-        (13, 'sit13'),
-        (14, 'sit14'),
-        (15, 'sit15'),
-        (16, 'sit16'),
-        (17, 'sit17'),
-        (18, 'sit18'),
-        (19, 'sit19'),
-        (20, 'sit20'),
-        (21, 'Sit21'),
-        (22, 'Sit22'),
-        (23, 'sit23'),
-        (24, 'unknown25'),
-        (25, 'disablesActivation'),
-        (26, 'isPerch'),
-        (27, 'mustExittoTalk'),
-        (28, 'unknown29'),
-        (29, 'unknown30'),
-        (30, 'unknown31'),
-        (31, 'unknown32'),
-    )
-
-    MarkerEntryPointFlags = Flags.from_names(
-        (0, 'front'),
-        (1, 'behind'),
-        (2, 'right'),
-        (3, 'left'),
-        (4, 'up'),
+    _active_markers_flags = Flags.from_names(
+        (0,  'sit_0'),
+        (1,  'sit_1'),
+        (2,  'sit_2'),
+        (3,  'sit_3'),
+        (4,  'sit_4'),
+        (5,  'sit_5'),
+        (6,  'sit_6'),
+        (7,  'sit_7'),
+        (8,  'sit_8'),
+        (9,  'sit_9'),
+        (10, 'sit_10'),
+        (11, 'sit_11'),
+        (12, 'sit_12'),
+        (13, 'sit_13'),
+        (14, 'sit_14'),
+        (15, 'sit_15'),
+        (16, 'sit_16'),
+        (17, 'sit_17'),
+        (18, 'sit_18'),
+        (19, 'sit_19'),
+        (20, 'sit_20'),
+        (21, 'sit_21'),
+        (22, 'sit_22'),
+        (23, 'sit_23'),
+        (25, 'disables_activation'),
+        (26, 'is_perch'),
+        (27, 'must_exit_to_talk'),
     )
 
     melSet = MelSet(
@@ -1333,21 +1320,11 @@ class MreFurn(MelRecord):
         MelKeywords(),
         MelColor(b'PNAM'),
         MelActiFlags(),
-        MelFid(b'KNAM','interactionKeyword'),
-        MelUInt32Flags(b'MNAM', u'activeMarkers', FurnActiveMarkerFlags),
-        MelStruct(b'WBDT', [u'B', u'b'],'benchType','usesSkill',),
-        MelFid(b'NAM1','associatedSpell'),
-        MelGroups('markers',
-            MelUInt32(b'ENAM', 'markerIndex',),
-            MelStruct(b'NAM0', [u'2s', u'H'], u'unknown1',
-                      (MarkerEntryPointFlags, u'disabledPoints_f')),
-            MelFid(b'FNMK','markerKeyword',),
-        ),
-        MelGroups('entryPoints',
-            MelStruct(b'FNPR', [u'2H'], u'markerType',
-                      (MarkerEntryPointFlags, u'entryPointsFlags')),
-        ),
-        MelString(b'XMRK','modelFilename'),
+        MelInteractionKeyword(),
+        MelUInt32Flags(b'MNAM', 'active_markers_flags', _active_markers_flags),
+        MelStruct(b'WBDT', ['B', 'b'], 'bench_type', 'uses_skill'),
+        MelFid(b'NAM1', 'associated_spell'),
+        MelFurnMarkerData(with_marker_keyword=True),
     )
     __slots__ = melSet.getSlotsUsed()
 
