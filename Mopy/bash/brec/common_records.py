@@ -514,11 +514,11 @@ class MreGlob(MelRecord):
 
     melSet = MelSet(
         MelEdid(),
-        MelFixedString(b'FNAM', u'global_format', 1, u's'),
+        MelFixedString(b'FNAM', 'global_format', 1, 's'),
         # Rather stupidly all values, despite their designation (short, long,
-        # float), are stored as floats -- which means that very large integers
-        # lose precision
-        MelFloat(b'FLTV', u'global_value'),
+        # float, bool (FO4)), are stored as floats - which means that very
+        # large integers lose precision
+        MelFloat(b'FLTV', 'global_value'),
     )
     __slots__ = melSet.getSlotsUsed()
 

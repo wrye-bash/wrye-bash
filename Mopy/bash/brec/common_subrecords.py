@@ -583,6 +583,20 @@ class MelFurnMarkerData(MelSequential):
         )
 
 #------------------------------------------------------------------------------
+class MelGrasData(MelStruct):
+    """Handles the GRAS subrecord DATA (Data)."""
+    _gras_flags = Flags.from_names('vertex_lighting', 'uniform_scaling',
+        'fit_to_slope')
+
+    def __init__(self):
+        super().__init__(b'DATA', ['3B', 's', 'H', '2s', 'I', '4f', 'B', '3s'],
+            'gras_density', 'gras_min_slope', 'gras_max_slope',
+            'gras_unknown1', 'units_from_water', 'gras_unknown2',
+            'units_from_water_type', 'position_range', 'height_range',
+            'color_range', 'wave_period', (self._gras_flags, 'gras_flags'),
+            'gras_unknown3')
+
+#------------------------------------------------------------------------------
 class MelHairFlags(MelUInt8Flags):
     """Handles the HAIR subrecord DATA (Flags)."""
     _hair_flags = Flags.from_names('playable', 'not_male', 'not_female',

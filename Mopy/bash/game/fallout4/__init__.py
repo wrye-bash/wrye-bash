@@ -219,13 +219,13 @@ class Fallout4GameInfo(PatchGame):
     def init(cls):
         cls._dynamic_import_modules(__name__)
         from ...brec import MreAstp, MreColl, MreDebr, MreDlbr, MreDlvw, \
-            MreDual, MreEyes, MreFstp, MreFsts, MreGmst
+            MreDual, MreEyes, MreFstp, MreFsts, MreGlob, MreGmst
         from .records import MreAact, MreActi, MreAddn, MreAech, MreAmdl, \
             MreAnio, MreAoru, MreArma, MreArmo, MreArto, MreAvif, MreBnds, \
             MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCmpo, \
             MreCobj, MreCont, MreCpth, MreCsty, MreDfob, MreDmgt, MreDobj, \
             MreDoor, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreFact, \
-            MreFlor, MreFlst, MreFurn, \
+            MreFlor, MreFlst, MreFurn, MreGdry, MreGras, MreHazd, \
             MreLvli, MreLvln, MrePerk, MreTes4
         cls.mergeable_sigs = {x.rec_sig: x for x in (
             MreAact, MreActi, MreAddn, MreAech, MreAmdl, MreAnio, MreAoru,
@@ -234,7 +234,7 @@ class Fallout4GameInfo(PatchGame):
             MreColl, MreCont, MreCpth, MreCsty, MreDebr, MreDfob, MreDlbr,
             MreDlvw, MreDmgt, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
             MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
-            MreFstp, MreFsts, MreFurn,
+            MreFstp, MreFsts, MreFurn, MreGdry, MreGlob, MreGras, MreHazd,
             MreGmst, MreLvli, MreLvln, MrePerk,
         )}
         # Setting RecordHeader class variables --------------------------------

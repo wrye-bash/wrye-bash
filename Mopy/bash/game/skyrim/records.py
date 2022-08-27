@@ -53,7 +53,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
     MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
     MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData, \
-    MelTxstFlags
+    MelTxstFlags, MelGrasData
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1334,18 +1334,11 @@ class MreGras(MelRecord):
     """Grass."""
     rec_sig = b'GRAS'
 
-    GrasTypeFlags = Flags.from_names('vertexLighting', 'uniformScaling',
-                                     'fitToSlope')
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelStruct(b'DATA', [u'3B', u's', u'H', u'2s', u'I', u'4f', u'B', u'3s'],'density','minSlope','maxSlope',
-                  'unkGras1','unitsFromWater','unkGras2',
-                  'unitsFromWaterType','positionRange','heightRange',
-                  'colorRange', 'wave_period', (GrasTypeFlags, u'flags'),
-                  'unkGras3',),
+        MelGrasData(),
     )
     __slots__ = melSet.getSlotsUsed()
 

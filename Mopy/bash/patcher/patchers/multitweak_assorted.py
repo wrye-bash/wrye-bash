@@ -551,10 +551,10 @@ class AssortedTweak_UniformGroundcover(MultiTweakItem):
     tweak_log_msg = _(u'Grasses Normalized: %(total_changed)d')
 
     def wants_record(self, record):
-        return record.heightRange != 0.0 # type: bolt.Rounder
+        return record.height_range != 0.0 # type: bolt.Rounder
 
     def tweak_record(self, record):
-        record.heightRange = 0.0
+        record.height_range = 0.0
 
 #------------------------------------------------------------------------------
 class AssortedTweak_SetCastWhenUsedEnchantmentCosts(CustomChoiceTweak):

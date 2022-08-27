@@ -50,7 +50,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
-    MelTxstFlags
+    MelTxstFlags, MelGrasData
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1248,16 +1248,11 @@ class MreGras(MelRecord):
     """Grass."""
     rec_sig = b'GRAS'
 
-    _flags = Flags.from_names('vLighting', 'uScaling', 'fitSlope')
-
     melSet = MelSet(
         MelEdid(),
         MelBounds(),
         MelModel(),
-        MelStruct(b'DATA', [u'3B', u's', u'H', u'2s', u'I', u'4f', u'B', u'3s'],'density','minSlope',
-                  'maxSlope','unused1','waterDistance','unused2',
-                  'waterOp','posRange','heightRange','colorRange',
-                  'wave_period', (_flags, 'flags'), 'unused3'),
+        MelGrasData(),
     )
     __slots__ = melSet.getSlotsUsed()
 

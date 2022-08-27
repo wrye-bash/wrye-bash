@@ -46,7 +46,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelCpthShared, FormVersionDecider, MelSoundLooping, MelDoorFlags, \
     MelRandomTeleports, MelIco2, MelEqupPnam, MelFlstFids, MelIngredient, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
-    MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, MelObject
+    MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, \
+    MelObject, MelGrasData
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1368,6 +1369,60 @@ class MreFurn(AMreWithItems):
         MelObjectTemplate(),
         MelNvnm(),
     ).with_distributor(_object_template_distributor)
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreGdry(MelRecord):
+    """God Rays."""
+    rec_sig = b'GDRY'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelStruct(b'DATA', ['15f'], 'back_color_red', 'back_color_green',
+            'back_color_blue', 'forward_color_red', 'forward_color_green',
+            'forward_color_blue', 'godray_intensity', 'air_color_scale',
+            'back_color_scale', 'forward_color_scale', 'back_phase',
+            'air_color_red', 'air_color_green', 'air_color_blue',
+            'forward_phase'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreGras(MelRecord):
+    """Grass."""
+    rec_sig = b'GRAS'
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelModel(),
+        MelGrasData(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+class MreHazd(MelRecord):
+    """Hazard."""
+    rec_sig = b'HAZD'
+
+    _hazd_flags = Flags.from_names('affects_player_only',
+        'inherit_duration_from_spawn_spell', 'align_to_impact_normal',
+        'inherit_radius_from_spawn_spell', 'drop_to_ground',
+        'taper_effectiveness_by_proximity')
+
+    melSet = MelSet(
+        MelEdid(),
+        MelBounds(),
+        MelFull(),
+        MelModel(),
+        MelImageSpaceMod(),
+        MelStruct(b'DNAM', ['I', '4f', '5I', '3f'], 'hazd_limit',
+            'hazd_radius', 'hazd_lifetime', 'image_space_radius',
+            'target_interval', (_hazd_flags, 'hazd_flags'),
+            (FID, 'hazd_effect'), (FID, 'hazd_light'),
+            (FID, 'hazd_impact_dataset'), (FID, 'hazd_sound'),
+            'taper_full_effect_radius', 'taper_weight', 'taper_curse'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
