@@ -140,12 +140,6 @@ class MelActorSounds(MelSorted):
         ), sort_by_attrs='type')
 
 #------------------------------------------------------------------------------
-class MelAdditionalRaces(MelSorted):
-    """Handle the ARMA subrecord MODL (Additional Races)."""
-    def __init__(self):
-        super().__init__(MelFids('additional_races', MelFid(b'MODL')))
-
-#------------------------------------------------------------------------------
 class MelAddnDnam(MelStruct):
     """Handles the ADDN subrecord DNAM (Data)."""
     def __init__(self):
@@ -176,44 +170,30 @@ class MelAnimations(MelSorted): ##: case insensitive
         super().__init__(MelStrings(b'KFFZ', 'animations'))
 
 #------------------------------------------------------------------------------
-class MelArmaDnam(MelStruct):
-    """Handles the ARMA subrecord DNAM (Data)."""
+class MelArmaShared(MelSequential):
+    """Handles the ARMA subrecords DNAM, MOD2-MOD5, NAM0-NAM3, MODL, SNDD and
+    ONAM."""
     _weigth_slider_flags = Flags.from_names((1, 'slider_enabled'))
 
-    def __init__(self):
-        super().__init__(b'DNAM', ['4B', '2s', 'B', 's', 'f'], 'male_priority',
-            'female_priority', (self._weigth_slider_flags, 'slider_flags_m'),
-            (self._weigth_slider_flags, 'slider_flags_f'), 'unknown_dnam1',
-            'detection_sound_value', 'unknown_dnam2', 'weapon_adjust')
-
-#------------------------------------------------------------------------------
-class MelArmaModels(MelSequential):
-    """Handles the ARMA subrecords MOD2-MOD5. Note that you have to pass the
-    game's MelModel class in as a parameter."""
     def __init__(self, mel_model: Type[MelBase]):
         super().__init__(
+            MelStruct(b'DNAM', ['4B', '2s', 'B', 's', 'f'],
+                'male_priority', 'female_priority',
+                (self._weigth_slider_flags, 'slider_flags_m'),
+                (self._weigth_slider_flags, 'slider_flags_f'), 'unknown_dnam1',
+                'detection_sound_value', 'unknown_dnam2', 'weapon_adjust'),
             mel_model(b'MOD2', 'male_model'),
             mel_model(b'MOD3', 'female_model'),
             mel_model(b'MOD4', 'male_model_1st'),
             mel_model(b'MOD5', 'female_model_1st'),
-        )
-
-#------------------------------------------------------------------------------
-class MelArmaSkins(MelSequential):
-    """Handles the ARMA subrecords NAM0-NAM3."""
-    def __init__(self):
-        super().__init__(
             MelFid(b'NAM0', 'skin0'),
             MelFid(b'NAM1', 'skin1'),
             MelFid(b'NAM2', 'skin2'),
             MelFid(b'NAM3', 'skin3'),
+            MelSorted(MelFids('additional_races', MelFid(b'MODL'))),
+            MelFid(b'SNDD', 'footstep_sound'),
+            MelFid(b'ONAM', 'art_object'),
         )
-
-#------------------------------------------------------------------------------
-class MelArtObject(MelFid):
-    """Handles the ARMA subrecord ONAM (Art Object)."""
-    def __init__(self):
-        super().__init__(b'ONAM', 'art_object')
 
 #------------------------------------------------------------------------------
 class MelArtType(MelUInt32):
@@ -544,12 +524,6 @@ class MelFlstFids(MelFids):
     """Handles the FLST subrecord LNAM (FormIDs)."""
     def __init__(self):
         super().__init__('formIDInList', MelFid(b'LNAM')) # Do *not* sort!
-
-#------------------------------------------------------------------------------
-class MelFootstepSound(MelFid):
-    """Handles the ARMA subrecord SNDD (Footstep Sound)."""
-    def __init__(self):
-        super().__init__(b'SNDD', 'footstep_sound')
 
 #------------------------------------------------------------------------------
 class MelFull(MelLString):

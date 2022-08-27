@@ -37,7 +37,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelWorldBounds, MelEnableParent, MelRefScale, MelMapMarker, MelMdob, \
     MelEnchantment, MelDecalData, MelDescription, MelSInt16, MelSkipInterior, \
     MelSoundPickupDrop, MelActivateParents, BipedFlags, MelColor, \
-    MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelUInt16Flags, \
+    MelColorO, MelSpells, MelFixedString, MelUInt8Flags, MelTxstFlags, \
     MelUInt32Flags, MelOwnership, MelClmtWeatherTypes, AMelVmad, \
     MelActorSounds, MelFactRanks, MelSorted, MelReflectedRefractedBy, \
     perk_effect_key, MelValueWeight, MelSound, MelWaterType, \
@@ -45,15 +45,13 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelConditions, ANvnmContext, MelNodeIndex, MelEquipmentType, MelAlchEnit, \
     MelEffects, AMelLLItems, MelUnloadEvent, MelShortName, AVmadContext, \
     MelPerkData, MelNextPerk, PerkEpdfDecider, MelPerkParamsGroups, MelBids, \
-    MelArmaDnam, MelArmaModels, MelArmaSkins, MelAdditionalRaces, MelBamt, \
-    MelFootstepSound, MelArtObject, MelTemplateArmor, MelArtType, \
+    MelArmaShared, MelBamt, MelTemplateArmor, MelArtType, MelGrasData, \
     MelAspcRdat, MelAspcBnam, MelBookText, MelImpactDataset, MelFlstFids, \
     MelBookDescription, MelInventoryArt, MelUnorderedGroups, MelExtra, \
     MelImageSpaceMod, MelClmtTiming, MelClmtTextures, MelCobjOutput, \
     MelSoundClose, AMelItems, MelContData, MelCpthShared, MelDoorFlags, \
     MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
-    MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData, \
-    MelTxstFlags, MelGrasData
+    MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -555,12 +553,7 @@ class MreArma(MelRecord):
         MelEdid(),
         MelBodtBod2(),
         MelRace(),
-        MelArmaDnam(),
-        MelArmaModels(MelModel),
-        MelArmaSkins(),
-        MelAdditionalRaces(),
-        MelFootstepSound(),
-        MelArtObject(),
+        MelArmaShared(MelModel),
     )
     __slots__ = melSet.getSlotsUsed()
 

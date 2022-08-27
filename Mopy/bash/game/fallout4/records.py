@@ -36,8 +36,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelDescription, MelEffects, AMelLLItems, MelValueWeight, AVmadContext, \
     MelIcon, MelConditionList, MelPerkData, MelNextPerk, MelSInt8, MelUInt16, \
     MelUInt16Flags, perk_effect_key, MelPerkParamsGroups, PerkEpdfDecider, \
-    MelUInt32Flags, BipedFlags, MelArmaDnam, MelArmaModels, MelArmaSkins, \
-    MelAdditionalRaces, MelFootstepSound, MelArtObject, MelEnchantment, \
+    MelUInt32Flags, BipedFlags, MelArmaShared, MelEnchantment, MelObject, \
     MelIcons2, MelBids, MelBamt, MelTemplateArmor, MelObjectTemplate, \
     MelArtType, MelAspcRdat, MelAspcBnam, PartialLoadDecider, MelSeasons, \
     MelBookText, MelBookDescription, MelInventoryArt, MelUnorderedGroups, \
@@ -47,7 +46,7 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelRandomTeleports, MelIco2, MelEqupPnam, MelFlstFids, MelIngredient, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
     MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, \
-    MelObject, MelGrasData
+    MelGrasData
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -479,12 +478,7 @@ class MreArma(MelRecord):
         MelEdid(),
         MelBod2(),
         MelRace(),
-        MelArmaDnam(),
-        MelArmaModels(MelModel),
-        MelArmaSkins(),
-        MelAdditionalRaces(),
-        MelFootstepSound(),
-        MelArtObject(),
+        MelArmaShared(MelModel),
         MelBoneData(),
     )
     __slots__ = melSet.getSlotsUsed()
