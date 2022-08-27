@@ -706,8 +706,8 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
 
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
-    _text = _(u'Move To...')
-    _help = _(u'Move the selected installer(s) to a position of your choice.')
+    _text = _('Move to...')
+    _help = _('Move the selected installer(s) to a position of your choice.')
 
     @balt.conversation
     def Execute(self):

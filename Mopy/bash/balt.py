@@ -1823,7 +1823,7 @@ class MenuLink(Link):
 
     def __init__(self, menu_name=None, oneDatumOnly=False):
         """Initialize. Submenu items should append themselves to self.links."""
-        super(MenuLink, self).__init__()
+        super().__init__()
         self._text = menu_name or self.__class__._text
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
@@ -1834,7 +1834,7 @@ class MenuLink(Link):
 
     def AppendToMenu(self, menu, window, selection):
         """Append self as submenu (along with submenu items) to menu."""
-        super(MenuLink, self).AppendToMenu(menu, window, selection)
+        super().AppendToMenu(menu, window, selection)
         subMenu = wx.Menu()
         appended_menu = menu.AppendSubMenu(subMenu, self._text)
         if not self._enable():

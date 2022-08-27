@@ -198,7 +198,7 @@ def InitInstallerLinks():
     InstallersList.column_links.append(SeparatorLink())
     # Files Menu
     if True:
-        files_menu = MenuLink(_(u'Files..'))
+        files_menu = MenuLink(_('Files..'))
         files_menu.links.append(UIList_OpenStore())
         files_menu.links.append(Files_Unhide(_('Unhides hidden installers.')))
         files_menu.links.append(SeparatorLink())
@@ -243,7 +243,7 @@ def InitInstallerLinks():
     InstallersList.column_links.append(Installers_GlobalRedirects())
     #--Item links
     if True: #--File Menu
-        file_menu = MenuLink(_(u'File..'))
+        file_menu = MenuLink(_('File..'))
         file_menu.links.append(Installer_Open())
         file_menu.links.append(Installer_Rename())
         file_menu.links.append(Installer_Duplicate())
@@ -251,7 +251,7 @@ def InitInstallerLinks():
         file_menu.links.append(balt.UIList_Delete())
         InstallersList.context_links.append(file_menu)
     if True: #--Open At...
-        openAtMenu = MenuLink(_(u'Open at..'), oneDatumOnly=True)
+        openAtMenu = MenuLink(_('Open at..'), oneDatumOnly=True)
         openAtMenu.links.append(Installer_OpenSearch())
         openAtMenu.links.append(Installer_OpenNexus())
         openAtMenu.links.append(Installer_OpenTESA())
@@ -267,10 +267,10 @@ def InitInstallerLinks():
     InstallersList.context_links.append(SeparatorLink())
     InstallersList.context_links.append(Installer_InstallSmart())
     if True: # Advanced Installation Menu
-        installMenu = MenuLink(_(u'Advanced Installation..'))
+        installMenu = MenuLink(_('Advanced Installation..'))
         installMenu.links.append(Installer_Install())
-        installMenu.links.append(Installer_Install(u'MISSING'))
-        installMenu.links.append(Installer_Install(u'LAST'))
+        installMenu.links.append(Installer_Install('MISSING'))
+        installMenu.links.append(Installer_Install('LAST'))
         if True: #--FOMODs
             fomod_menu = MenuLink(_('FOMOD Installer..'))
             fomod_menu.links.append(Installer_RunFomod())
@@ -279,7 +279,7 @@ def InitInstallerLinks():
             fomod_menu.links.append(Installer_EditFomod())
             installMenu.links.append(fomod_menu)
         if bEnableWizard: #--Wizards
-            wizardMenu = MenuLink(_(u'Wizard Installer..'))
+            wizardMenu = MenuLink(_('Wizard Installer..'))
             wizardMenu.links.append(Installer_Wizard(auto_wizard=False))
             wizardMenu.links.append(Installer_Wizard(auto_wizard=True))
             wizardMenu.links.append(SeparatorLink())
@@ -289,7 +289,7 @@ def InitInstallerLinks():
     InstallersList.context_links.append(Installer_Uninstall())
     InstallersList.context_links.append(SeparatorLink())
     if True: # Package Menu - always visible
-        package_menu = MenuLink(_(u'Package..'))
+        package_menu = MenuLink(_('Package..'))
         package_menu.links.append(Installer_Refresh())
         if bush.game.has_achlist:
             package_menu.links.append(Installer_ExportAchlist())
@@ -335,14 +335,14 @@ def InitInstallerLinks():
     InstallersPanel.subsMenu.append(Installer_Subs_ListSubPackages())
     # InstallersList: Global Links
     # File Menu
-    file_menu = InstallersList.global_links[_(u'File')]
+    file_menu = InstallersList.global_links[_('File')]
     file_menu.append(UIList_OpenStore())
     file_menu.append(Files_Unhide(_('Unhides hidden installers.')))
     file_menu.append(SeparatorLink())
     file_menu.append(Installers_CreateNewProject())
     file_menu.append(Installers_AddMarker())
     # Edit Menu
-    edit_menu = InstallersList.global_links[_(u'Edit')]
+    edit_menu = InstallersList.global_links[_('Edit')]
     edit_menu.append(Installers_MonitorExternalInstallation())
     edit_menu.append(Installers_ApplyEmbeddedBCFs())
     edit_menu.append(SeparatorLink())
@@ -353,7 +353,7 @@ def InitInstallerLinks():
     edit_menu.append(Installers_RefreshData())
     edit_menu.append(Installers_FullRefresh())
     # View Menu
-    view_menu = InstallersList.global_links[_(u'View')]
+    view_menu = InstallersList.global_links[_('View')]
     view_menu.append(SortByMenu(
         sort_options=[Installers_SortActive(), # Installers_SortStructure(),
                       Installers_SortProjects()]))
@@ -362,7 +362,7 @@ def InitInstallerLinks():
     view_menu.append(Installers_ListPackages())
     view_menu.append(Installers_WizardOverlay())
     # Settings Menu
-    settings_menu = InstallersList.global_links[_(u'Settings')]
+    settings_menu = InstallersList.global_links[_('Settings')]
     settings_menu.append(Installers_Enabled())
     settings_menu.append(Installers_AvoidOnStart())
     settings_menu.append(SeparatorLink())
@@ -396,7 +396,7 @@ def InitINILinks():
     INIList.column_links.append(SeparatorLink())
     # Files Menu
     if True:
-        files_menu = MenuLink(_(u'Files..'))
+        files_menu = MenuLink(_('Files..'))
         files_menu.links.append(UIList_OpenStore())
         INIList.column_links.append(files_menu)
     INIList.column_links.append(SeparatorLink())
@@ -411,15 +411,15 @@ def InitINILinks():
     INIList.context_links.append(INI_Delete())
     # INIList: Global Links
     # File Menu
-    INIList.global_links[_(u'File')].append(UIList_OpenStore())
+    INIList.global_links[_('File')].append(UIList_OpenStore())
     # View Menu
-    view_menu = INIList.global_links[_(u'View')]
+    view_menu = INIList.global_links[_('View')]
     view_menu.append(SortByMenu(sort_options=[INI_SortValid()]))
     view_menu.append(ColumnsMenu())
     view_menu.append(SeparatorLink())
     view_menu.append(INI_ListINIs())
     # Settings Menu
-    settings_menu = INIList.global_links[_(u'Settings')]
+    settings_menu = INIList.global_links[_('Settings')]
     settings_menu.append(INI_AllowNewLines())
     settings_menu.append(SeparatorLink())
     settings_menu.append(Misc_SettingsDialog())
@@ -435,7 +435,7 @@ def InitModLinks():
     ModList.column_links.append(SeparatorLink())
     # Files Menu
     if True:
-        files_menu = MenuLink(_(u'Files..'))
+        files_menu = MenuLink(_('Files..'))
         files_menu.links.append(UIList_OpenStore())
         files_menu.links.append(Files_Unhide(_('Unhides hidden plugins.')))
         if bush.game.Esp.canBash:
@@ -447,17 +447,17 @@ def InitModLinks():
         ModList.column_links.append(files_menu)
     ModList.column_links.append(SeparatorLink())
     if True: #--Load
-        loadMenu = MenuLink(_(u'Active Mods'))
+        loadMenu = MenuLink(_('Active Plugins..'))
         loadMenu.links.append(Mods_LoadList())
         ModList.column_links.append(loadMenu)
     ModList.column_links.append(SeparatorLink())
-    if bush.game.displayName == u'Oblivion': #--Versions
-        versionsMenu = MenuLink(u'Oblivion.esm')
-        versionsMenu.links.append(Mods_OblivionVersion(u'1.1'))
-        versionsMenu.links.append(Mods_OblivionVersion(u'1.1b'))
-        versionsMenu.links.append(Mods_OblivionVersion(u'GOTY non-SI'))
-        versionsMenu.links.append(Mods_OblivionVersion(u'SI'))
-        versionsMenu.links.append(Mods_OblivionVersion(u'GBR SI'))
+    if bush.game.displayName == 'Oblivion': #--Versions
+        versionsMenu = MenuLink('Oblivion.esm..')
+        versionsMenu.links.append(Mods_OblivionVersion('1.1'))
+        versionsMenu.links.append(Mods_OblivionVersion('1.1b'))
+        versionsMenu.links.append(Mods_OblivionVersion('GOTY non-SI'))
+        versionsMenu.links.append(Mods_OblivionVersion('SI'))
+        versionsMenu.links.append(Mods_OblivionVersion('GBR SI'))
         ModList.column_links.append(versionsMenu)
         ModList.column_links.append(SeparatorLink())
     ModList.column_links.append(Mods_ListMods())
@@ -478,11 +478,11 @@ def InitModLinks():
     ModList.column_links.append(Mods_CrcRefresh())
     ModList.column_links.append(Mods_PluginChecker())
     #--ModList: Item Links
-    if bass.inisettings[u'ShowDevTools'] and bush.game.Esp.canBash:
+    if bass.inisettings['ShowDevTools'] and bush.game.Esp.canBash:
         ModList.context_links.append(Mod_FullLoad())
         ModList.context_links.append(Mod_RecalcRecordCounts())
     if True: #--File
-        file_menu = MenuLink(_(u'File..'))
+        file_menu = MenuLink(_('File..'))
         file_menu.links.append(File_Duplicate())
         file_menu.links.append(UIList_Hide())
         file_menu.links.append(Mod_Redate())
@@ -495,11 +495,11 @@ def InitModLinks():
         file_menu.links.append(File_RevertToSnapshot())
         ModList.context_links.append(file_menu)
     if True: #--Groups
-        groupMenu = MenuLink(_(u'Groups'))
+        groupMenu = MenuLink(_('Groups..'))
         groupMenu.links.append(Mod_Groups())
         ModList.context_links.append(groupMenu)
     if True: #--Ratings
-        ratingMenu = MenuLink(_(u'Rating'))
+        ratingMenu = MenuLink(_('Rating..'))
         ratingMenu.links.append(Mod_Ratings())
         ModList.context_links.append(ratingMenu)
     #--------------------------------------------
@@ -530,14 +530,14 @@ def InitModLinks():
         #--Advanced
         ModList.context_links.append(SeparatorLink())
         if True: #--Export
-            exportMenu = MenuLink(_(u'Export'))
+            exportMenu = MenuLink(_('Export..'))
             exportMenu.links.append(Mod_EditorIds_Export())
             exportMenu.links.append(Mod_Factions_Export())
             exportMenu.links.append(Mod_FactionRelations_Export())
-            if bush.game.fsName in (u'Enderal', u'Skyrim'):
+            if bush.game.fsName in ('Enderal', 'Skyrim'):
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_Prices_Export())
-            elif bush.game.fsName in (u'Fallout3', u'FalloutNV'):
+            elif bush.game.fsName in ('Fallout3', 'FalloutNV'):
                 # TODO(inf) Commented out lines were only in FNV branch
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_Prices_Export())
@@ -545,7 +545,7 @@ def InitModLinks():
                 # exportMenu.links.append(Mod_Scripts_Export())
                 # exportMenu.links.append(Mod_SpellRecords_Export())
                 exportMenu.links.append(Mod_Stats_Export())
-            elif bush.game.fsName == u'Oblivion':
+            elif bush.game.fsName == 'Oblivion':
                 exportMenu.links.append(Mod_IngredientDetails_Export())
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_ActorLevels_Export())
@@ -556,14 +556,14 @@ def InitModLinks():
                 exportMenu.links.append(Mod_Stats_Export())
             ModList.context_links.append(exportMenu)
         if True: #--Import
-            importMenu = MenuLink(_(u'Import'))
+            importMenu = MenuLink(_('Import..'))
             importMenu.links.append(Mod_EditorIds_Import())
             importMenu.links.append(Mod_Factions_Import())
             importMenu.links.append(Mod_FactionRelations_Import())
-            if bush.game.fsName in (u'Enderal', u'Skyrim'):
+            if bush.game.fsName in ('Enderal', 'Skyrim'):
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())
-            elif bush.game.fsName in (u'Fallout3', u'FalloutNV'):
+            elif bush.game.fsName in ('Fallout3', 'FalloutNV'):
                 # TODO(inf) Commented out lines were only in FNV branch
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())
@@ -573,7 +573,7 @@ def InitModLinks():
                 # importMenu.links.append(SeparatorLink())
                 # importMenu.links.append(Mod_Face_Import())
                 # importMenu.links.append(Mod_Fids_Replace())
-            elif bush.game.fsName == u'Oblivion':
+            elif bush.game.fsName == 'Oblivion':
                 importMenu.links.append(Mod_IngredientDetails_Import())
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_ActorLevels_Import())
@@ -587,12 +587,12 @@ def InitModLinks():
                 importMenu.links.append(Mod_Fids_Replace())
             ModList.context_links.append(importMenu)
         if True: #--Cleaning
-            cleanMenu = MenuLink(_(u'Mod Cleaning'))
+            cleanMenu = MenuLink(_('Mod Cleaning..'))
             cleanMenu.links.append(Mod_SkipDirtyCheck())
             cleanMenu.links.append(SeparatorLink())
             cleanMenu.links.append(Mod_ScanDirty())
             cleanMenu.links.append(Mod_RemoveWorldOrphans())
-            if bush.game.fsName == u'Oblivion':
+            if bush.game.fsName == 'Oblivion':
                 cleanMenu.links.append(Mod_FogFixer())
             ModList.context_links.append(cleanMenu)
         ModList.context_links.append(Mod_CopyToMenu())
@@ -601,12 +601,12 @@ def InitModLinks():
             ModList.context_links.append(Mod_FlipEsl())
         ModList.context_links.append(Mod_FlipMasters())
         ModList.context_links.append(Mod_CreateDummyMasters())
-        if bush.game.fsName == u'Oblivion':
+        if bush.game.fsName == 'Oblivion':
             ModList.context_links.append(Mod_DecompileAll())
             ModList.context_links.append(Mod_SetVersion())
     # ModList: Global Links
     # File Menu
-    file_menu = ModList.global_links[_(u'File')]
+    file_menu = ModList.global_links[_('File')]
     file_menu.append(UIList_OpenStore())
     file_menu.append(Files_Unhide(_('Unhides hidden plugins.')))
     if bush.game.Esp.canBash:
@@ -616,18 +616,18 @@ def InitModLinks():
     file_menu.append(SeparatorLink())
     file_menu.append(Mods_OpenLOFileMenu())
     # Edit Menu
-    edit_menu = ModList.global_links[_(u'Edit')]
-    am_submenu = MenuLink(_(u'Active Mods'))
+    edit_menu = ModList.global_links[_('Edit')]
+    am_submenu = MenuLink(_('Active Plugins..'))
     am_submenu.append(Mods_LoadList())
     edit_menu.append(am_submenu)
-    if bush.game.fsName == u'Oblivion':
+    if bush.game.fsName == 'Oblivion':
         edit_menu.append(SeparatorLink())
-        versions_menu = MenuLink(u'Oblivion.esm')
-        versions_menu.links.append(Mods_OblivionVersion(u'1.1'))
-        versions_menu.links.append(Mods_OblivionVersion(u'1.1b'))
-        versions_menu.links.append(Mods_OblivionVersion(u'GOTY non-SI'))
-        versions_menu.links.append(Mods_OblivionVersion(u'SI'))
-        versions_menu.links.append(Mods_OblivionVersion(u'GBR SI'))
+        versions_menu = MenuLink('Oblivion.esm..')
+        versions_menu.links.append(Mods_OblivionVersion('1.1'))
+        versions_menu.links.append(Mods_OblivionVersion('1.1b'))
+        versions_menu.links.append(Mods_OblivionVersion('GOTY non-SI'))
+        versions_menu.links.append(Mods_OblivionVersion('SI'))
+        versions_menu.links.append(Mods_OblivionVersion('GBR SI'))
         edit_menu.append(versions_menu)
     if bush.game.allTags:
         edit_menu.append(SeparatorLink())
@@ -638,7 +638,7 @@ def InitModLinks():
     edit_menu.append(Mods_CleanDummyMasters())
     edit_menu.append(Mods_CrcRefresh())
     # View Menu
-    view_menu = ModList.global_links[_(u'View')]
+    view_menu = ModList.global_links[_('View')]
     view_menu.append(SortByMenu(
         sort_options=[Mods_EsmsFirst(), Mods_SelectedFirst()]))
     view_menu.append(ColumnsMenu())
@@ -648,7 +648,7 @@ def InitModLinks():
         view_menu.append(Mods_ListBashTags())
     view_menu.append(Mods_PluginChecker())
     # Settings Menu
-    settings_menu = ModList.global_links[_(u'Settings')]
+    settings_menu = ModList.global_links[_('Settings')]
     settings_menu.append(Mods_AutoGhost())
     if bush.game.has_esl:
         settings_menu.append(Mods_AutoESLFlagBP())
@@ -668,32 +668,32 @@ def InitSaveLinks():
     SaveList.column_links.append(SeparatorLink())
     # Files Menu
     if True:
-        files_menu = MenuLink(_(u'Files..'))
+        files_menu = MenuLink(_('Files..'))
         files_menu.links.append(UIList_OpenStore())
         files_menu.links.append(Files_Unhide(_('Unhides hidden saves.')))
     SaveList.column_links.append(files_menu)
     SaveList.column_links.append(SeparatorLink())
     if True: #--Save Profiles
-        subDirMenu = MenuLink(_(u"Profile"))
+        subDirMenu = MenuLink(_('Profile..'))
         subDirMenu.links.append(Saves_Profiles())
         SaveList.column_links.append(subDirMenu)
-    if bush.game.displayName == u'Oblivion': #--Versions
+    if bush.game.displayName == 'Oblivion': #--Versions
         SaveList.column_links.append(SeparatorLink())
-        versionsMenu = MenuLink(u"Oblivion.esm")
-        versionsMenu.links.append(Mods_OblivionVersion(u'1.1',
+        versionsMenu = MenuLink('Oblivion.esm..')
+        versionsMenu.links.append(Mods_OblivionVersion('1.1',
             setProfile=True))
-        versionsMenu.links.append(Mods_OblivionVersion(u'1.1b',
+        versionsMenu.links.append(Mods_OblivionVersion('1.1b',
             setProfile=True))
-        versionsMenu.links.append(Mods_OblivionVersion(u'GOTY non-SI',
+        versionsMenu.links.append(Mods_OblivionVersion('GOTY non-SI',
             setProfile=True))
-        versionsMenu.links.append(Mods_OblivionVersion(u'SI',
+        versionsMenu.links.append(Mods_OblivionVersion('SI',
             setProfile=True))
-        versionsMenu.links.append(Mods_OblivionVersion(u'GBR SI',
+        versionsMenu.links.append(Mods_OblivionVersion('GBR SI',
             setProfile=True))
         SaveList.column_links.append(versionsMenu)
     #--SaveList: Item Links
     if True: #--File
-        file_menu = MenuLink(_(u'File..'))
+        file_menu = MenuLink(_('File..'))
         file_menu.links.append(Save_Rename())
         file_menu.links.append(File_Duplicate())
         file_menu.links.append(UIList_Hide())
@@ -703,11 +703,11 @@ def InitSaveLinks():
         file_menu.links.append(File_RevertToBackup())
         SaveList.context_links.append(file_menu)
     if True: #--Move to Profile
-        moveMenu = MenuLink(_(u'Move To'))
+        moveMenu = MenuLink(_('Move to..'))
         moveMenu.links.append(Save_Move())
         SaveList.context_links.append(moveMenu)
     if True: #--Copy to Profile
-        copyMenu = MenuLink(_(u'Copy To'))
+        copyMenu = MenuLink(_('Copy to..'))
         copyMenu.links.append(Save_Move(True))
         SaveList.context_links.append(copyMenu)
     #--------------------------------------------
@@ -744,33 +744,33 @@ def InitSaveLinks():
         SaveList.context_links.append(Save_RepairHair())
     # SaveList: Global Links
     # File Menu
-    file_Menu = SaveList.global_links[_(u'File')]
+    file_Menu = SaveList.global_links[_('File')]
     file_Menu.append(UIList_OpenStore())
     file_Menu.append(Files_Unhide(_('Unhides hidden saves.')))
     # Edit Menu
-    edit_menu = SaveList.global_links[_(u'Edit')]
-    if bush.game.fsName == u'Oblivion':
-        versions_menu = MenuLink(u'Oblivion.esm')
-        versions_menu.links.append(Mods_OblivionVersion(u'1.1',
+    edit_menu = SaveList.global_links[_('Edit')]
+    if bush.game.fsName == 'Oblivion':
+        versions_menu = MenuLink('Oblivion.esm..')
+        versions_menu.links.append(Mods_OblivionVersion('1.1',
             setProfile=True))
-        versions_menu.links.append(Mods_OblivionVersion(u'1.1b',
+        versions_menu.links.append(Mods_OblivionVersion('1.1b',
             setProfile=True))
-        versions_menu.links.append(Mods_OblivionVersion(u'GOTY non-SI',
+        versions_menu.links.append(Mods_OblivionVersion('GOTY non-SI',
             setProfile=True))
-        versions_menu.links.append(Mods_OblivionVersion(u'SI',
+        versions_menu.links.append(Mods_OblivionVersion('SI',
             setProfile=True))
-        versions_menu.links.append(Mods_OblivionVersion(u'GBR SI',
+        versions_menu.links.append(Mods_OblivionVersion('GBR SI',
             setProfile=True))
         edit_menu.append(versions_menu)
-    profile_menu = MenuLink(_(u'Profile'))
+    profile_menu = MenuLink(_('Profile..'))
     profile_menu.append(Saves_Profiles())
     edit_menu.append(profile_menu)
     # View Menu
-    view_menu = SaveList.global_links[_(u'View')]
+    view_menu = SaveList.global_links[_('View')]
     view_menu.append(SortByMenu())
     view_menu.append(ColumnsMenu())
     # Settings Menu
-    SaveList.global_links[_(u'Settings')].append(Misc_SettingsDialog())
+    SaveList.global_links[_('Settings')].append(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitBSALinks():
@@ -782,14 +782,14 @@ def InitBSALinks():
     BSAList.column_links.append(SeparatorLink())
     # Files Menu
     if True:
-        files_menu = MenuLink(_(u'Files..'))
+        files_menu = MenuLink(_('Files..'))
         files_menu.links.append(UIList_OpenStore())
         files_menu.links.append(Files_Unhide(_('Unhides hidden BSAs.')))
     BSAList.column_links.append(files_menu)
     BSAList.column_links.append(SeparatorLink())
     #--BSAList: Item Links
     if True: #--File
-        file_menu = MenuLink(_(u'File..'))
+        file_menu = MenuLink(_('File..'))
         file_menu.links.append(File_Duplicate())
         file_menu.links.append(UIList_Hide())
         file_menu.links.append(File_Redate())
@@ -802,15 +802,15 @@ def InitBSALinks():
     BSAList.context_links.append(BSA_ListContents())
     # BSAList: Global Links
     # File Menu
-    file_menu = BSAList.global_links[_(u'File')]
+    file_menu = BSAList.global_links[_('File')]
     file_menu.append(UIList_OpenStore())
     file_menu.append(Files_Unhide(_('Unhides hidden BSAs.')))
     # View Menu
-    view_menu = BSAList.global_links[_(u'View')]
+    view_menu = BSAList.global_links[_('View')]
     view_menu.append(SortByMenu())
     view_menu.append(ColumnsMenu())
     # Settings Menu
-    BSAList.global_links[_(u'Settings')].append(Misc_SettingsDialog())
+    BSAList.global_links[_('Settings')].append(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitScreenLinks():
@@ -821,14 +821,14 @@ def InitScreenLinks():
     ScreensList.column_links.append(ColumnsMenu())
     ScreensList.column_links.append(SeparatorLink())
     if True:
-        files_menu = MenuLink(_(u'Files..'))
+        files_menu = MenuLink(_('Files..'))
         files_menu.links.append(UIList_OpenStore())
         ScreensList.column_links.append(files_menu)
     ScreensList.column_links.append(SeparatorLink())
     ScreensList.column_links.append(Screens_NextScreenShot())
     #--JPEG Quality
     if True:
-        qualityMenu = MenuLink(_(u'JPEG Quality'))
+        qualityMenu = MenuLink(_('JPEG Quality..'))
         for i in range(100, 80, -5):
             qualityMenu.links.append(Screens_JpgQuality(i))
         qualityMenu.links.append(Screens_JpgQualityCustom())
@@ -836,14 +836,14 @@ def InitScreenLinks():
         ScreensList.column_links.append(qualityMenu)
     #--ScreensList: Item Links
     if True: #--File
-        file_menu = MenuLink(_(u'File..'))
+        file_menu = MenuLink(_('File..'))
         file_menu.links.append(UIList_OpenItems())
         file_menu.links.append(Screen_Rename())
         file_menu.links.append(File_Duplicate())
         file_menu.links.append(balt.UIList_Delete())
         ScreensList.context_links.append(file_menu)
     if True: #--Convert
-        convertMenu = MenuLink(_('Convert'))
+        convertMenu = MenuLink(_('Convert..'))
         convertMenu.links.append(Screen_ConvertTo('.jpg'))
         convertMenu.links.append(Screen_ConvertTo('.png'))
         convertMenu.links.append(Screen_ConvertTo('.bmp'))
@@ -851,21 +851,21 @@ def InitScreenLinks():
         ScreensList.context_links.append(convertMenu)
     # ScreensList: Global Links
     # File Menu
-    ScreensList.global_links[_(u'File')].append(UIList_OpenStore())
+    ScreensList.global_links[_('File')].append(UIList_OpenStore())
     # View Menu
-    view_menu = ScreensList.global_links[_(u'View')]
+    view_menu = ScreensList.global_links[_('View')]
     view_menu.append(SortByMenu())
     view_menu.append(ColumnsMenu())
     # Settings Menu
-    settings_menu = ScreensList.global_links[_(u'Settings')]
+    settings_menu = ScreensList.global_links[_('Settings')]
     settings_menu.append(Screens_NextScreenShot())
-    jpeg_quality_menu = MenuLink(_(u'JPEG Quality'))
+    jpeg_quality_menu = MenuLink(_('JPEG Quality..'))
     for i in range(100, 80, -5):
         jpeg_quality_menu.links.append(Screens_JpgQuality(i))
     jpeg_quality_menu.links.append(Screens_JpgQualityCustom())
     settings_menu.append(qualityMenu)
     settings_menu.append(SeparatorLink())
-    ScreensList.global_links[_(u'Settings')].append(Misc_SettingsDialog())
+    ScreensList.global_links[_('Settings')].append(Misc_SettingsDialog())
 
 #------------------------------------------------------------------------------
 def InitLinks():

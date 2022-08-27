@@ -280,7 +280,7 @@ class _Column(CheckLink, EnabledLink):
 
 class ColumnsMenu(ChoiceMenuLink):
     """Customize visible columns."""
-    _text = _(u'Columns')
+    _text = _('Columns..')
     choiceLinkType = _Column
 
     class _AutoWidth(RadioLink):
@@ -326,7 +326,7 @@ class _SortBy(RadioLink):
 
 class SortByMenu(ChoiceMenuLink):
     """Link-based interface to decide what to sort the list by."""
-    _text = _(u'Sort by')
+    _text = _('Sort by..')
     choiceLinkType = _SortBy
 
     def __init__(self, sort_options=None):

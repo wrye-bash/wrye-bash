@@ -49,6 +49,6 @@ the program to do and what it did instead.
 1. If the steps require activating certain Bashed Patch options, include
    information on your BP settings and mod tags. You can do this on the Mods
    tab as follows:
-     * Your Load Order: 'View' > 'List Mods...'
+     * Your Load Order: 'View' > 'List Plugins...'
      * Your Bashed Tags: 'View' > 'List Bash Tags...'
      * Your Bashed Patch config: Right click on the Bashed Patch > 'List Patch Config...'

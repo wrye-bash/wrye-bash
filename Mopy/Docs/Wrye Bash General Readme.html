@@ -255,12 +255,13 @@
 The first time the Installers tab is opened, a dialog will appear asking if BAIN should be initialized.
 If you click <q>Yes</q>, BAIN will be initialised, which can take some time.
 After that, the information refresh performed when the Installers tab is opened is much faster.</p>
-<p>BAIN's primary function is to install mod packages. <strong>BAIN
-    Packages</strong> can be compressed archives (<code>.zip</code>,
-    <code>.7z</code>, <code>.rar</code>, <code>.001</code>, <code>.tar</code>) or uncompressed
-directories. Uncompressed directories are called <strong>projects</strong>.
-When we refer to projects and archives together we will also be using the
-collective term <strong>packages</strong> or <strong>installers</strong>.</p>
+<p>BAIN's primary function is to install mod packages.
+    <strong>BAIN Packages</strong> can be compressed <strong>archives</strong>
+    (<code>.zip</code>, <code>.7z</code>, <code>.rar</code>, <code>.001</code>
+    or <code>.tar</code>) or uncompressed directories called
+    <strong>projects</strong>. When we refer to projects and archives together
+    we will also be using the collective term <strong>packages</strong> or
+    <strong>installers</strong>.</p>
 <p>If BAIN is disabled, ie. if you clicked <q>No</q> on the dialog that was displayed the first time you selected the Installers tab, it can be re-enabled by right clicking on a column header in the Installers tab and selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainEnabled">Enabled</a>.
 
 <p>Packages need to be placed in the <code>Bash Installers</code> directory which is created the first time Bash runs inside the <code>"Game" Mods</code> directory. This directory is by default
@@ -429,55 +430,81 @@ will be skipped (and their content listed in Skipped tab). There are also some d
     which will automatically use wizards and FOMODs if they are present, and fall back to manual configuration
     if they are not. If you want to learn more about each type of package and how to install and configure
     their options manually, read on.</p>
-<p>If a package contains a Wizard (ie. there is <img alt="a wand icon" src="../bash/images/wizard.png"/> overlaid on its checkbox):
+<p>If a package contains a BAIN wizard (i.e. there is
+    <img alt="a wand icon" src="../bash/images/wizard.png"/> overlaid on its
+    checkbox):</p>
 <ol>
-    <li>Right-click the package and select <a href="#bainWizard">Manual Wizard</a>. You can also choose to install using the Wizard's default options by selecting <a href="#bainAutoWizard">Auto Wizard</a>.
-    <li>If you chose <a href="#bainWizard">Manual Wizard</a>, navigate through the steps of the Wizard to install the package. Otherwise, you will be skipped to the Wizard finish screen.
-    <li>At the Wizard's finish screen, click the <q>Finish</q> button to apply its selections.</li>
+    <li>Right-click the package and select
+        <a href="#bainInstall">Install...</a>. Alternatively, select Advanced
+        Installation.. &gt; Wizard Installer.. &gt; Manual Wizard.... You can
+        also choose to install using the Wizard's default options by selecting
+        Auto Wizard....</li>
+    <li>Navigate through the steps of the wizard to install the package.
+        If you picked Auto Wizard..., you will instead be skipped to the wizard
+        finish screen.</li>
+    <li>At the wizard's finish screen, click the <q>Finish</q> button to apply
+        its selections.</li>
 </ol>
 <p>If a package has an FOMOD wizard (i.e. there is an FOMOD radio button):</p>
 <ol>
-    <li>Right-click the package and select <a href="#bainFomod">Run FOMOD...</a>.</li>
+    <li>Right-click the package and select
+        <a href="#bainInstall">Install...</a>. Alternatively, select Advanced
+        Installation.. &gt; FOMOD Installer.. &gt; Run FOMOD.... Note that
+        <a href="#bainInstall">Install...</a> will prefer BAIN wizards over
+        FOMOD wizards, so you may have to use this alternative method from time
+        to time, e.g. if a BAIN wizard turns out not to work.</li>
     <li>Navigate through the steps and choose options.</li>
-    <li>At the wizard's finish screen, click the <q>Finish</q> button to apply its selections.</li>
+    <li>At the wizard's finish screen, click the <q>Finish</q> button to apply
+        its selections.</li>
 </ol>
-<p>If a package has a Simple or a Complex/Simple structure:
+<p>If a package has a Simple or a Complex/Simple structure:</p>
 <ol>
-    <li>Select the package in the package list.
-    <li>Choose which plugins to install from it using the <q>Plugin Filter</q> box to the far right of the package list. Checked plugins will be installed, while unchecked plugins will be skipped.
-    <li>Right-click the package and select <a href="#bainInstall">Install...</a>.
+    <li>Select the package in the package list.</li>
+    <li>Choose which plugins to install from it using the <q>Plugin Filter</q>
+        box to the far right of the package list. Checked plugins will be
+        installed, while unchecked plugins will be skipped.</li>
+    <li>Right-click the package and select
+        <a href="#bainInstall">Install...</a>.</li>
 </ol>
-<p>If a package has a Complex structure:
+<p>If a package has a Complex structure:</p>
 <ol>
-    <li>Select the package in the package list.
-    <li>Choose which sub-packages to install from the <q>Sub-Package</q> box to the right of the package list. Checked sub-packages will be installed, while unchecked sub-packages will be skipped.
-    <li>Choose which plugins to install from it using the <q>Plugin Filter</q> box to the far right of the package list. Checked plugins will be installed, while unchecked plugins will be skipped.
-    <li>Right-click the package and select <a href="#bainInstall">Install...</a>.
+    <li>Select the package in the package list.</li>
+    <li>Choose which sub-packages to install from the <q>Sub-Package</q> box to
+        the right of the package list. Checked sub-packages will be installed,
+        while unchecked sub-packages will be skipped.</li>
+    <li>Choose which plugins to install from it using the <q>Plugin Filter</q>
+        box to the far right of the package list. Checked plugins will be
+        installed, while unchecked plugins will be skipped.</li>
+    <li>Right-click the package and select
+        <a href="#bainInstall">Install...</a>.</li>
 </ol>
 <p>If you install a package then later change the sub-packages or plugin files selected, you can apply these changed by right-clicking the package in the list and selecting <a href="#bainAnneal">Anneal</a>. A Wizard provides a scripted installation method that can be useful for more complex mods with many options.
 <p>When a package is installed, BAIN installs any files that appear to be documentation into the <code>Data\Docs</code> folder. Any files that are simply named <q>readme</q> (eg. readme.txt, readme.html, readme.doc) will be renamed according to the package name to prevent packages overwriting each other's readmes.
-<p>To uninstall any package from the Installers tab select the package
-and right click on it, then select <a href="#bainUninstall">Uninstall</a>.
-This will uninstall
-all Matched files. However, BAIN will not uninstall Mismatched files.
-A Mismatched file is a file that has been altered after it was
-installed. The reason BAIN does not uninstall Mismatched files is BAIN
- has no way of tracking the source of the alteration if it was not
-done through BAIN. For example, if the file was altered because it was
- replaced by another mod that was installed manually,
-then uninstallation of the Mismatched file may not be desirable. On
-the other hand, if the file was altered because it was cleaned or
-edited with TESxEdit, or because it was an ini file that was edited
-with a text editor, then it may be desired to uninstall the Mismatched
- file along with the package that it came from. Such files could be
-deleted from the data folder manually, but there is an easy way to do
-this through BAIN. Before uninstalling the mod, first select the
-package and right click on it, then select
-<a href="#bainInstallConfigured">Install Configured</a>. This will overwrite any
-Mismatched files with the version of the file contained in the package, making
-them Matched. Now select <a href="#bainUninstall">Uninstall</a> and BAIN
-will uninstall all installed files associated with this package.
-You can also uninstall packages that BAIN hasn't installed, which will
+<p>To uninstall any package from the Installers tab select the package and
+    right click on it, then select <a href="#bainUninstall">Uninstall</a>.
+    This will uninstall all Matched files. However, BAIN will not uninstall
+    mismatched files.</p>
+<p>A mismatched file is a file that has been altered after it was installed.
+    The reason BAIN does not uninstall mismatched files is BAIN has no way of
+    tracking the source of the alteration if it was not done through BAIN. For
+    example, if the file was altered because it was replaced by another mod
+    that was installed manually, then uninstallation of the mismatched file may
+    not be desirable. On the other hand, if the file was altered because it was
+    cleaned or edited with TESxEdit, or because it was an ini file that was
+    edited with a text editor, then it may be desired to uninstall the
+    mismatched file along with the package that it came from.</p>
+<p>Such files could be deleted from the data folder manually, but there is an
+    easy way to do this through BAIN. Before uninstalling the mod, first select
+    the package and right click on it, then select Advanced Installation &gt;
+    Install Configured. This will overwrite any mismatched files with the
+    version of the file contained in the package, making them Matched. Now
+    select <a href="#bainUninstall">Uninstall</a> and BAIN will uninstall all
+    installed files associated with this package.</p>
+<p>An alternative, if you want to keep the mismatched file in the
+    to-be-uninstalled package, is to use
+    <a href="bainSyncFromData">Sync From Data...</a>.</p>
+<p>You can also uninstall packages
+that BAIN hasn't installed, which will
  remove any installed files that match the ones in the package. This
 is useful for cleaning out mods that were manually installed. Of course you
     need to add the packages to BAIN first.
@@ -501,10 +528,14 @@ from other packages previously overridden by the uninstalled package's
 <p>Package conflicts are detailed in the <q>Conflicts</q> tab to the right of the package list when you select a package. This tab tells you
     which packages have which files that conflict with files in your currently-selected package. It gives this information for packages in
     the Install Order both earlier and later than the selected package in the package list.
-<p>BAIN allows you to easily adjust the conflict status of packages by moving their order around. This can be done by dragging and dropping
-    packages within the list, or by right-clicking packages and selecting the <a href="#bainMoveTo">Move To...</a> option. You can also
-    select multiple packages and move them, in which case they will be moved as a group, retaining their order relative to one another in
-    their new location. A third option is to select the package(s) and use Ctrl-Up or Ctrl-Down to move them up or down respectively.</p>
+<p>BAIN allows you to easily adjust the conflict status of packages by moving
+    their order around. This can be done by dragging and dropping packages
+    within the list, or by right-clicking packages and selecting the
+    <a href="#bainMoveTo">Move to...</a> option. You can also select multiple
+    packages and move them, in which case they will be moved as a group,
+    retaining their order relative to one another in their new location. A
+    third option is to select the package(s) and use Ctrl-Up or Ctrl-Down to
+    move them up or down respectively.</p>
 
 <h3 id="bain-symbols">What Symbols &amp; Colours Mean <a class="back2top" href="#contents">Back to top</a></h3>
 <p>BAIN uses the colours of packages in the package list and the state of their checkboxes to convey information about their status to the user. A checkbox state may be combined with any checkbox or text colour, and the possible states and colours are described in the tables below.
@@ -532,7 +563,7 @@ from other packages previously overridden by the uninstalled package's
         <tr><td class="bain-symbols-grytxt">Grey<td>BAIN does not recognise the structure of this package so cannot install it.
         <tr><td class="bain-symbols-orgbg">Orange Background<td>The install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
         <tr><td class="bain-symbols-ylwbg">Yellow Background<td>The package has "underrides" i.e. some of its installed files <em>should</em> be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
-        <tr><td class="bain-symbols-grybg">Grey Background<td>Some files present in the package will <em><strong>not</strong></em> be installed. This can be due to having a complex structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package <a href="#bainHasExtraDirectories">Has Extra Directories</a> by ticking that option in the right-click menu.
+        <tr><td class="bain-symbols-grybg">Grey Background<td>Some files present in the package will <em><strong>not</strong></em> be installed. This can be due to having a complex structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package has extra directories by selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainHasExtraDirectories"></a> in the right-click menu.
 </table>
 
 <h3 id="bain-commands">Useful Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
@@ -574,78 +605,104 @@ from other packages previously overridden by the uninstalled package's
             was run.</td></tr>
         <tr><td colspan="2" id="bainAnnealAll">Anneal All</td><td>Installs any missing files
             for active installers and corrects all install order errors.</td></tr>
-        <tr><td rowspan="2">Global Skips</td>
-            <td>Skip **SE Plugins</td><td><em>All but Skyrim and Enderal&colon;
-                Forgotten Stories.</em> If this is checked, files in the script extender
-                plugins folder (e.g. <code>Data\OBSE\Plugins</code> for OBSE,
-                <code>Data\SKSE\Plugins</code> for SKSE, etc.) will not be
-                installed.</td></tr>
-            <tr><td>Skip SKSE/Script Dragon Plugins</td><td><em>Skyrim and
-                Enderal&colon; Forgotten Stories only.</em> If this is checked, files in
-                the <code>Data\SKSE\Plugins</code> or <code>Data\asi</code> folder will
-                not be installed.</td></tr>
     </tbody>
 </table>
 <table>
     <thead>
-        <tr><th colspan="4">Package Context Menu</th></tr>
-        <tr><th colspan="3">Command</th><th>Description</th></tr>
+        <tr>
+            <th colspan="3">Package Context Menu</th>
+        </tr>
+        <tr>
+            <th colspan="2">Command</th>
+            <th>Description</th>
+        </tr>
     </thead>
     <tbody>
-        <tr><td rowspan="5">File..</td>
-            <td colspan="2">Open...</td><td>Opens the selected package(s) in the file system.</td></tr>
-            <tr><td colspan="2">Rename...</td><td>Renames the selected package or marker.</td></tr>
-            <tr><td colspan="2">Duplicate...</td><td>Makes a duplicate of the selected package(s).</td></tr>
-            <tr><td colspan="2">Hide...</td><td>Hides the selected package in the list, and moves it to the
-                <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.</td></tr>
-            <tr><td colspan="2">Delete</td><td>Deletes the selected package(s). Deleted packages are
-                sent to the Recycling Bin, not permanently deleted.</td></tr>
-        <tr><td colspan="3">Open at</td><td>Attempts to open the selected package's page on
-            the selected site. If Google is selected, performs a Google search for the package name.
-            For the other three sites, this command assumes that the trailing digits in a package's
-            name is the package ID at the sites. If this assumption is wrong, a random page, or an
-            error page, will be opened.</td></tr>
-        <tr><td colspan="3">Open Readme</td><td>If BAIN detects a readme in the package, it will be opened.</td></tr>
-        <tr><td colspan="3" id="bainAnneal">Anneal</td><td>Installs missing files and corrects install
-            order errors according to the package configuration.</td></tr>
-        <tr><td colspan="3" id="bainInstall">Install...</td><td>Installs the selected package, preferring a
-            BAIN or FOMOD wizard if those are available (see options below).</td></tr>
-        <tr><td rowspan="4">Advanced Installation..</td>
-            <td colspan="2" id="bainInstallConfigured">Install Configured</td> <td>Fully installs the package as configured
-            except for files that would be overridden by later packages.</td></tr>
-            <tr><td rowspan="2">Wizard Installer..</td>
-                <td id="bainWizard">Manual Wizard...</td><td>Runs the Wizard for the package, if it has
-                    one.</td></tr>
-            <tr><td id="bainAutoWizard">Auto Wizard...</td><td>Runs the Wizard for the package, if
-                it has one, selecting the default options.</td></tr>
-            <tr>
-                <td rowspan="1">FOMOD Installer..</td>
-                <td id="bainFomod">Run FOMOD...</td>
-                <td>Runs the FOMOD for the package, if it has one.</td>
-            </tr>
-        <tr><td colspan="3" id="bainUninstall">Uninstall<td>Uninstalls the package. If
-            <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a> is active
-            (the default) then files from earlier packages that were previously overridden will be
-            installed as required.</td></tr>
-        <tr><td colspan="3">Quick Refresh</td><td>Refreshes all info for the selected package(s). Since
-            BAIN refreshes package information whenever Wrye Bash regains focus after losing it (ie.
-            you select another program's window, then switch back to Wrye Bash), this is only useful
-            if a package has been changed and it has
-            <a href="Wrye%20Bash%20Advanced%20Readme.html#bainDontRefresh">Don't Refresh</a> selected,
-            or the <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoRefreshProjects">Auto-Refresh
-                Projects</a> option is disabled. Note that scanning a project for changes takes much
-            longer than scanning an archive for changes.</td></tr>
-        <tr><td rowspan="2">Package..</td>
-            <td colspan="2" id="bainMoveTo">Move To...</td><td>Moves the selected package(s) to the specified
-                position.</td></tr>
-            <tr><td colspan="2">List Structure...</td><td>Generates a list of the files and directories in a
-                package. Useful for posting package structure on forums, eg. when troubleshooting an
-                install.</td></tr>
-        <tr><td colspan="3" id="bainHasExtraDirectories">Has Extra Directories</td><td>BAIN only recognises a
-            limited set of subdirectories of the Data folder, and skips any unrecognised subdirectories.
-            Checking this option will cause BAIN to install unrecognised subdirectories.</td></tr>
-        <tr><td colspan="2" id="bainApply">BAIN Conversions</td>
-            <td>Apply</td><td>Applies a BAIN Conversion File.</td></tr>
+        <tr>
+            <td rowspan="5">File..</td>
+            <td>Open...</td>
+            <td>Opens the selected package(s) in the file system.</td>
+        </tr>
+        <tr>
+            <td>Rename...</td>
+            <td>Renames the selected package or marker.</td>
+        </tr>
+        <tr>
+            <td>Duplicate...</td>
+            <td>Creates a copy of the selected package(s).</td>
+        </tr>
+        <tr>
+            <td>Hide...</td>
+            <td>Hides the selected package in the list, and moves it to the
+            <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.</td>
+        </tr>
+        <tr>
+            <td>Delete</td>
+            <td>Deletes the selected package(s). Deleted packages are sent to
+                the Recycling Bin, not permanently deleted.</td>
+        </tr>
+        <tr>
+            <td colspan="2">Open at..</td>
+            <td>Attempts to open the selected package's page on the selected
+                site. If Google is selected, performs a Google search for the
+                package name. For the other two sites, this command assumes
+                that the trailing digits in a package's name is the package ID
+                at the sites. If this assumption is wrong, a random page, or an
+                error page, will be opened.</td>
+        </tr>
+        <tr>
+            <td colspan="2">Open Readme</td>
+            <td>If BAIN detects a readme in the package, it will be
+                opened.</td></tr>
+        <tr>
+            <td colspan="2">Quick Refresh</td>
+            <td>Refreshes all info for the selected package(s). Since BAIN
+                refreshes package information whenever Wrye Bash regains focus
+                after losing it (i.e. you select another program's window, then
+                switch back to Wrye Bash), this is only useful if a package has
+                been changed and it has
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#bainDontRefresh">Don't Refresh</a>
+                selected, or the
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoRefreshProjects">Auto-Refresh Projects</a>
+                option is disabled. Note that scanning a project for changes
+                takes much longer than scanning an archive for
+                changes.</td></tr>
+        <tr>
+            <td colspan="2" id="bainMoveTo">Move to...</td>
+            <td>Moves the selected package(s) to the specified position.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainSyncFromData">Sync From Data...</td>
+            <td>Copies files from the Data folder into this package that are
+                also in the package, but whose contents differ. Useful if you
+                altered a file from this package, e.g. by cleaning it in xEdit,
+                and now want to update the package contents to match.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainAnneal">Anneal</td>
+            <td>Installs missing files and corrects install order errors
+                according to the package configuration.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainInstall">Install...</td>
+            <td>Installs the selected package, preferring a BAIN or FOMOD
+                wizard if those are available (see options below).</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainUninstall">Uninstall</td>
+            <td>Uninstalls the package. If
+                <a href="Wrye%20Bash%20Advanced%20Readme.html#bainAutoAnneal">Auto-Anneal</a>
+                is active (the default) then files from earlier packages that
+                were previously overridden will be installed as
+                required.</td>
+        </tr>
+        <tr>
+            <td>Package..</td>
+            <td>List Structure...</td>
+            <td>Generates a list of the files and directories in a package.
+                Useful for posting package structure on forums, e.g. when
+                troubleshooting an install.</td>
+        </tr>
     </tbody>
 </table>
 
@@ -779,7 +836,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             Patch</a> plugin. Useful if you accidentally delete your current one or wish to
             have more than one.</td></tr>
         <tr>
-            <td colspan="2" id="modsListMods">List Mods</td>
+            <td colspan="2" id="modsListPlugins">List Plugins</td>
             <td>This lists the load order, including version information,
                 activation status and major load order errors. It can be useful
                 for debugging a broken load order. If the Shift key is held
@@ -1358,11 +1415,17 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
             <tr><th colspan="2">Command</th><th>Description</th></tr>
         </thead>
         <tbody>
-            <tr><td colspan="2">Sort By</td><td>This submenu allows you to choose by which
-                column the INI list is sorted. This is equivalent to clicking on a column
-                header.</td></tr>
-            <tr><td colspan="2">Columns</td><td>This submenu allows you to choose which
-                columns are visible in the INI list.</td></tr>
+            <tr>
+                <td colspan="2">Sort by..</td>
+                <td>This submenu allows you to choose by which column the INI
+                    list is sorted. This is equivalent to clicking on a column
+                    header.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Columns..</td>
+                <td>This submenu allows you to choose which columns are visible
+                    in the INI list.</td>
+            </tr>
             <tr><td>Files..</td>
                 <td>Open Folder...</td><td>Opens the <code>Data/INI Tweaks</code> folder.</td></tr>
             <tr><td colspan="2" id="allowTweaksWithNewSettings">Allow Tweaks with New
@@ -1866,7 +1929,7 @@ Just like the game's masters, this load order is hardcoded, and so it cannot be 
     <li>If you're having an issue with the Standalone version, make sure to uninstall any Python components on your computer and try again, as they can sometimes interfere.
     <li>If the issue is related to the <a href="#patch">Bashed Patch</a>, please include the following:
     <ul>
-        <li>Your load order. Get this by right clicking on a column header in the Mods tab, and selecting <a href="#modsListMods">List Mods...</a>.
+        <li>Your load order. Get this by right clicking on a column header in the Mods tab, and selecting <a href="#modsListPlugins">List Plugins...</a>.
         <li>Your Bash Tags. Get this by right clicking on a column header in the Mods tab, and selecting <a href="#modsListBashTags">List Bash Tags...</a>.
         <li>Your <a href="#patch">Bashed Patch</a> config. Get this by right clicking on the <a href="#patch">Bashed Patch</a> and selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#modsListPatchConfig">List Patch Config...</a>.
     </ul>

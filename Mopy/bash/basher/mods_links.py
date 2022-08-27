@@ -93,46 +93,48 @@ class Mods_LoadList(ChoiceLink):
                 self._refresh()
                 if errorMessage: self._showError(errorMessage, self._text)
         class _All(__Activate):
-            _text = _(u'Activate All')
-            _help = _(u'Activate all mods')
+            _text = _('Activate All')
+            _help = _('Activate all plugins.')
             def Execute(self):
                 """Select all mods."""
                 try:
                     bosh.modInfos.lo_activate_all()
                 except exception.PluginsFullError:
-                    self._showError(
-                        _(u'Mod list is full, so some mods were skipped'),
-                        _(u'Select All'))
+                    self._showError(_('Plugin list is full, so some plugins '
+                                      'were skipped.'),
+                        title=_('Select All - Too Many Plugins'))
                 except exception.BoltError as e:
-                    self._showError(u'%s' % e, _(u'Select All'))
+                    self._showError(f'{e}', _('Select All'))
                 self._refresh()
         class _None(__Activate):
-            _text = _(u'De-activate All')
-            _help = _(u'De-activate all mods')
+            _text = _('De-activate All')
+            _help = _('De-activate all plugins.')
             def Execute(self): self._selectExact([])
         class _Selected(__Activate):
-            _text = _(u'Activate Selected')
-            _help = _(u'Activate only the mods selected in the UI')
+            _text = _('Activate Selected')
+            _help = _('Activate only the currently selected plugins.')
             def Execute(self):
                 self._selectExact(self.window.GetSelected())
         class _Edit(ItemLink):
-            _text = _(u'Edit Active Mods Lists...')
-            _help = _(u'Display a dialog to rename/remove active mods lists')
+            _text = _('Edit Active Plugins Lists...')
+            _help = _('Display a dialog to rename/remove active plugins '
+                      'lists.')
             def Execute(self):
                 editorData = _Mods_LoadListData(self.window, _self.load_lists)
                 balt.ListEditor.display_dialog(
-                    self.window, _(u'Active Mods Lists'), editorData)
+                    self.window, _('Active Plugins Lists'), editorData)
         class _SaveLink(EnabledLink):
-            _text = _(u'Save Active Mods List')
-            _help = _(u'Save the currently active mods to a new active mods list')
+            _text = _('Save Active Plugins List')
+            _help = _('Save the currently active plugin to a new active '
+                      'plugins list.')
             def _enable(self): return bool(load_order.cached_active_tuple())
             def Execute(self):
-                newItem = self._askText(
-                    _(u'Save currently active mods list as:'))
+                newItem = self._askText(_('Save currently active plugins list '
+                                          'as:'))
                 if not newItem: return
                 if len(newItem) > 64:
-                    message = _(u'Active Mods list name must be between '
-                                u'1 and 64 characters long.')
+                    message = _('Active plugins list name must be between '
+                                '1 and 64 characters long.')
                     return self._showError(message)
                 _self.load_lists[newItem] = list(
                     load_order.cached_active_tuple())
@@ -146,8 +148,8 @@ class Mods_LoadList(ChoiceLink):
                 self._selectExact(mods)
             @property
             def link_help(self):
-                return _(u'Activate mods in the %(list_name)s list.') % {
-                    u'list_name': self._text}
+                return _('Activate plugins in the %(list_name)s list.') % {
+                    'list_name': self._text}
         self.__class__.choiceLinkType = _LoListLink
 
     @property
@@ -183,8 +185,8 @@ class Mods_EsmsFirst(CheckLink, EnabledLink):
 
 class Mods_SelectedFirst(CheckLink):
     """Sort loaded mods to the top."""
-    _help = _(u'Sort loaded mods to the top')
-    _text = _(u'Selection')
+    _text = _('Loaded')
+    _help = _('Sort active, merged and imported plugins to the top.')
 
     def _check(self): return self.window.selectedFirst
 
@@ -240,8 +242,8 @@ class Mods_CreateBlank(ItemLink):
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):
     """Copies list of mod files to clipboard."""
-    _text = _(u'List Mods...')
-    _help = _(u'Copies list of active plugins to clipboard.')
+    _text = _('List Plugins...')
+    _help = _('Copies list of active plugins to clipboard.')
 
     def Execute(self):
         #--Get masters list

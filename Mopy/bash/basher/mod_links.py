@@ -224,9 +224,9 @@ class Mod_OrderByName(EnabledLink):
 #------------------------------------------------------------------------------
 class Mod_Move(EnabledLink):
     """Moves selected mod(s) to a different LO position."""
-    _text = _(u'Move To...')
-    _help = _(u'Move the selected plugin(s) to a position of your choice. '
-              u'Only works if the selected plugin(s) may be reordered.')
+    _text = _('Move to...')
+    _help = _('Move the selected plugin(s) to a position of your choice. '
+              'Only works if the selected plugin(s) may be reordered.')
 
     def _enable(self):
         # Can't be used if at least one of the selected mods is pinned
@@ -491,8 +491,8 @@ class _Mod_Groups_Export(_CsvExport_Link):
     """Export mod groups to text file."""
     askTitle = _(u'Export groups to:')
     csvFile = u'_Groups.csv'
-    _text = _(u'Export Groups')
-    _help = _(u'Export groups of selected mods to a csv file')
+    _text = _('Export Groups...')
+    _help = _('Export groups of selected mods to a .csv file.')
 
     def Execute(self):
         textName = u'My' + self.__class__.csvFile
@@ -506,9 +506,9 @@ class _Mod_Groups_Export(_CsvExport_Link):
 
 class _Mod_Groups_Import(ItemLink):
     """Import mod groups from text file."""
-    _text = _(u'Import Groups')
-    _help = _(u'Import groups for selected mods from a csv file (filename must'
-             u' end in _Groups.csv)')
+    _text = _('Import Groups...')
+    _help = _('Import groups for selected mods from a .csv file (filename '
+              'must end in _Groups.csv).')
 
     def Execute(self):
         message = _(
@@ -869,7 +869,7 @@ class Mod_AllowGhosting(TransLink):
                 def _check(self): return not self.getAllow(self.selected[0])
             return _CheckLink()
         else:
-            subMenu = balt.MenuLink(_(u'Ghosting'))
+            subMenu = balt.MenuLink(_('Ghosting..'))
             subMenu.links.append(_Mod_AllowGhosting_All())
             subMenu.links.append(_Mod_DisallowGhosting_All())
             subMenu.links.append(_Mod_AllowGhostingInvert_All())
@@ -1136,29 +1136,28 @@ class _DirtyLink(ItemLink):
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
 
 class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
-    _help = _(u"Set whether to check or not the selected mod(s) against LOOT's "
-             u'dirty mod list')
+    _help = _("Set whether to check or not the selected plugins against "
+              "LOOT's dirty plugins list.")
 
     def __init__(self, bSkip):
         super(_Mod_SkipDirtyCheckAll, self).__init__()
         self.skip = bSkip
-        self._text = _(
-            u"Don't check against LOOT's dirty mod list") if self.skip else _(
-            u"Check against LOOT's dirty mod list")
+        self._text = (_("Don't Check Against LOOT's Masterlist") if self.skip
+                      else _("Check Against LOOT's Masterlist"))
 
     def _check(self):
-        return all(finf.get_table_prop(u'ignoreDirty', self.skip) == self.skip
+        return all(finf.get_table_prop('ignoreDirty', False) == self.skip
                    for finf in self.iselected_infos())
 
     def _ignoreDirty(self, fileInfo): return self.skip
 
 class _Mod_SkipDirtyCheckInvert(_DirtyLink, ItemLink):
-    _text = _(u"Invert checking against LOOT's dirty mod list")
-    _help = _(
-        u"Invert checking against LOOT's dirty mod list for selected mod(s)")
+    _text = _("Invert Checking Against LOOT's Masterlist")
+    _help = _("Invert checking against LOOT's dirty plugins list for selected "
+              "plugins.")
 
     def _ignoreDirty(self, fileInfo):
-        return not fileInfo.get_table_prop(u'ignoreDirty', False)
+        return not fileInfo.get_table_prop('ignoreDirty', False)
 
 class Mod_SkipDirtyCheck(TransLink):
     """Toggles scanning for dirty mods on a per-mod basis."""
@@ -1166,8 +1165,9 @@ class Mod_SkipDirtyCheck(TransLink):
     def _decide(self, window, selection):
         if len(selection) == 1:
             class _CheckLink(_DirtyLink, CheckLink):
-                _text = _(u"Don't check against LOOT's dirty mod list")
-                _help = _(u'Toggles scanning for dirty mods on a per-mod basis')
+                _text = _("Don't Check Against LOOT's Masterlist")
+                _help = _("Toggles scanning for dirty plugins against LOOT's "
+                          "masterlist on a per-plugin basis.")
 
                 def _check(self): return next(self.iselected_infos()
                     ).get_table_prop(u'ignoreDirty', False)
@@ -1175,7 +1175,7 @@ class Mod_SkipDirtyCheck(TransLink):
 
             return _CheckLink()
         else:
-            subMenu = balt.MenuLink(_(u'Dirty edit scanning'))
+            subMenu = balt.MenuLink(_('Dirty Edit Scanning..'))
             subMenu.links.append(_Mod_SkipDirtyCheckAll(True))
             subMenu.links.append(_Mod_SkipDirtyCheckAll(False))
             subMenu.links.append(_Mod_SkipDirtyCheckInvert())
@@ -1406,7 +1406,7 @@ class _CopyToLink(EnabledLink):
 
 class Mod_CopyToMenu(MenuLink):
     """Makes copies of the selected plugin(s) with changed extension."""
-    _text = _(u'Copy To')
+    _text = _('Copy to..')
 
     def __init__(self):
         super(Mod_CopyToMenu, self).__init__()

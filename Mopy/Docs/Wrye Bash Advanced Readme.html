@@ -653,32 +653,69 @@ tab. The directories skipped are:
         <tr><th colspan="3">Column Header Context Menu
         <tr><th colspan="2">Command<th>Description
     <tbody>
-        <tr><td rowspan="7" id="bainSortBy">Sort By<td>Sort By Active<td>Active installers will be sorted to the top.
-        <tr><td>Projects First<td>If this is checked, then project packages will be sorted to the top of the list.
-        <tr><td>Package<td>Sort packages by package name.
-        <tr><td>Order<td>Sort packages by install order.
-        <tr><td>Modified<td>Sort packages by date modified.
-        <tr><td>Size<td>Sort packages by size.
-        <tr><td>Files<td>Sort packages by number of files they contain.
-    </tr>
-    <tr>
-        <td rowspan="8">Columns</td>
-        <td>Manual</td>
-        <td>Manually customize column width.</td>
-    </tr>
-    <tr>
-        <td>Fit Contents</td>
-        <td>Columns automatically adjust width to fit their contents.</td>
-    </tr>
-    <tr>
-        <td>Fit Header</td>
-        <td>Columns automatically adjust width to fit all columns in view.</td>
-    </tr>
-        <tr><td>Package<td>Display the Package (name) column.
-        <tr><td>Order<td>Display the Order column.
-        <tr><td>Modified<td>Display the (date) Modified column.
-        <tr><td>Size<td>Display the Size column.
-        <tr><td>Files<td>Display the (number of) Files column.
+        <tr>
+            <td rowspan="7" id="bainSortBy">Sort by..</td>
+            <td>Sort By Active</td>
+            <td>Active installers will be sorted to the top.</td>
+        </tr>
+        <tr>
+            <td>Projects First</td>
+            <td>If this is checked, then project packages will be sorted to the
+                top of the list.</td>
+        </tr>
+        <tr>
+            <td>Package</td>
+            <td>Sort packages by package name.</td>
+        </tr>
+        <tr>
+            <td>Order</td>
+            <td>Sort packages by install order.</td>
+        </tr>
+        <tr>
+            <td>Modified</td>
+            <td>Sort packages by date modified.</td>
+        </tr>
+        <tr>
+            <td>Size</td>
+            <td>Sort packages by size.</td>
+        </tr>
+        <tr>
+            <td>Files</td>
+            <td>Sort packages by number of files they contain.</td>
+        </tr>
+        <tr>
+            <td rowspan="8">Columns..</td>
+            <td>Manual</td>
+            <td>Manually customize column width.</td>
+        </tr>
+        <tr>
+            <td>Fit Contents</td>
+            <td>Columns automatically adjust width to fit their contents.</td>
+        </tr>
+        <tr>
+            <td>Fit Header</td>
+            <td>Columns automatically adjust width to fit all columns in view.</td>
+        </tr>
+        <tr>
+            <td>Package</td>
+            <td>Display the Package (name) column.</td>
+        </tr>
+        <tr>
+            <td>Order</td>
+            <td>Display the Order column.</td>
+        </tr>
+        <tr>
+            <td>Modified</td>
+            <td>Display the (date) Modified column.</td>
+        </tr>
+        <tr>
+            <td>Size</td>
+            <td>Display the Size column.</td>
+        </tr>
+        <tr>
+            <td>Files</td>
+            <td>Display the (number of) Files column.</td>
+        </tr>
         <tr><td rowspan="4">Files..</td>
             <td id="bainOpenDir">Open Folder...</td><td>Opens the Installers directory in Windows
                 Explorer.</td></tr>
@@ -938,7 +975,7 @@ tab. The directories skipped are:
                 the Recycling Bin.</td>
         </tr>
         <tr>
-            <td colspan="2" rowspan="4" id="bainOpenAt">Open at</td>
+            <td colspan="2" rowspan="4" id="bainOpenAt">Open at..</td>
             <td>Google...</td>
             <td>Attempts to perform a Google search for the selected package's name.</td>
         </tr>
@@ -976,7 +1013,7 @@ tab. The directories skipped are:
             </td>
         </tr>
         <tr>
-            <td colspan="3" id="bainMoveTo">Move To...</td>
+            <td colspan="3" id="bainMoveTo">Move to...</td>
             <td>Moves the selected package(s) to the specified position.</td>
         </tr>
         <tr>
@@ -1069,7 +1106,7 @@ tab. The directories skipped are:
             <td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.</td>
         </tr>
         <tr>
-            <td id="bainSyncFromData">Sync From Data</td>
+            <td>Sync From Data...</td>
             <td>Synchronize the package with files from the Data directory.
                 This is essentially the reverse of
                 <a href="#bainInstall">Install...</a> since it copies from the
@@ -1087,12 +1124,13 @@ tab. The directories skipped are:
                 <a href="#bainShowLowerConflicts">Show Lower Conflicts</a> options were selected. Useful for comparing conflicting resources.</td>
         </tr>
         <tr>
-            <td colspan="2" rowspan="2" id="bainConversion">BAIN Conversions</td>
+            <td colspan="2" rowspan="2" id="bainConversion">BAIN
+                Conversions..</td>
             <td>Create...</td>
             <td>Archives only. Creates a new Bain Conversion File.</td>
         </tr>
         <tr>
-            <td>Apply&rarr;[BCF]</td>
+            <td>Apply.. &gt; [BCF]</td>
             <td>[BCF] is the name of a Bain Conversion File listed in the Apply submenu. Selecting a BCF applies it to the selected package.</td>
         </tr>
         <tr>
@@ -1280,8 +1318,21 @@ tab. The directories skipped are:
             <tr><th colspan="2">Command<th>Description
         </thead>
         <tbody>
-            <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the plugin list is sorted. This is equivalent to clicking on a column header. You can also choose to sort by <q>Type</q>, which will place .esms before .esps regardless of the sorting criteria, or by <q>Selection</q>, which places selected plugins before unselected plugins regardless of criteria.
-            <tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the mod list.
+            <tr>
+                <td colspan="2">Sort by..</td>
+                <td>This submenu allows you to choose by which column the
+                    plugin list is sorted. This is equivalent to clicking on a
+                    column header. You can also choose to sort by <q>Type</q>,
+                    which will place masters before non-masters regardless of
+                    the sorting criteria, or by <q>Loaded</q>, which places
+                    active, merged and imported plugins before inactive plugins
+                    regardless of criteria.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Columns..</td>
+                <td>This submenu allows you to choose which columns are visible
+                    in the plugin list.</td>
+            </tr>
             <tr><td rowspan="5">Files..</td>
                 <td>Open Folder...</td><td>Opens the Data folder in Windows Explorer.</td></tr>
                 <tr><td>Unhide...</td><td>Opens a dialogue window allowing you to select which hidden plugins to unhide.</td></tr>
@@ -1303,20 +1354,51 @@ tab. The directories skipped are:
                         the game for controlling plugin load order in your
                         default text editor.</td>
                 </tr>
-            <tr><td rowspan="6">Active Mods</td>
-                <td id="modsLoadAll">Activate All</td><td>Activates all the plugins in the mod list. If more than 255 mods are
-                    present Bash will activate all it can from the bashed patches, then non mergeable and then mergeable mods then will display an
-                    error message. Bash will try to activate mods in their load order.</td></tr>
-                <tr><td>De-activate All</td><td>Deactivates all the plugins in the mod list. Some plugins will not be deactivated (for instance Fallout 4
-                    DLCs) as the game force loads them when present.</td></tr>
-                <tr><td>Activate Selected</td><td>Activate only the mods selected in the mod list interface - warning: their masters won't be activated !</td></tr>
-                <tr><td>Save Active Mods List</td><td>Saves the currently active mods to a new list.</td></tr>
-                <tr><td>Edit Active Mods Lists...</td><td>Allows the deletion and renaming of active mods lists.</td></tr>
-                <tr><td>[Active Mods List]</td><td>[Active Mods List] items are listed below the separator in the Active Mods submenu. Clicking a
-                    list name will apply the list, trying to activate exactly the plugins that are listed in it.</td></tr>
-            <tr><td colspan="2">Oblivion.esm</td><td><em>Oblivion only.</em> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.</td></tr>
             <tr>
-                <td colspan="2" id="modsListMods">List Mods</td>
+                <td rowspan="6">Active Plugins..</td>
+                <td id="modsActivateAll">Activate All</td>
+                <td>Activates all the plugins in the plugin list. If more than
+                    255 plugins (254 for games with ESL support) are present,
+                    Wrye Bash will activate all it can from the Bashed Patches,
+                    then non mergeable and then mergeable plugins, then it will
+                    display an error message. Wrye Bash will try to activate
+                    plugins in their load order.</td>
+            </tr>
+            <tr>
+                <td>De-activate All</td>
+                <td>Deactivates all the plugins in the plugin list. Some
+                    plugins will not be deactivated (for instance Fallout 4
+                    DLCs) as the game force-loads them when present.</td>
+            </tr>
+            <tr>
+                <td>Activate Selected</td>
+                <td>Activate only the currently selected plugins.
+                    <strong>Warning: their masters won't be
+                        activated!</strong></td>
+            </tr>
+            <tr>
+                <td>Save Active Plugins List</td>
+                <td>Saves the currently active plugins to a new list.</td>
+            </tr>
+            <tr>
+                <td>Edit Active Plugins Lists...</td>
+                <td>Allows the deletion and renaming of active plugins
+                    lists.</td>
+            </tr>
+            <tr>
+                <td>[Active Plugins List]</td>
+                <td>[Active Plugins List] items are listed below the separator
+                    in the <q>Active Plugins..</q> submenu. Clicking a list
+                    name will apply the list, trying to activate exactly the
+                    plugins that are listed in it.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Oblivion.esm..</td>
+                <td><em>Oblivion only.</em> This submenu relates to
+                    <a href="#tools-swapping">Oblivion.esm Swapping</a>.</td>
+            </tr>
+            <tr>
+                <td colspan="2" id="modsListPlugins">List Plugins...</td>
                 <td>This outputs a BBCode-formatted load order, including
                     version information, activation status and major load order
                     errors. It can be useful for debugging a broken load order.
@@ -1411,30 +1493,87 @@ tab. The directories skipped are:
                     taken. Additionally, if there is a version line in the plugin's description field, then the snapshot number will be
                     appended to the version number in the same manner.</td></tr>
                 <tr><td>Revert To Snapshot...</td><td>Reverts the selected plugin to a selected snapshot.</td></tr>
-            <tr><td rowspan="9">Groups</td>
-                <td>Export Group</td><td>Exports the selected plugin's groups to a CSV file as plugin name/groups pairs.</td></tr>
-                <tr><td>Import Group</td><td>This will set the groups for selected mods as specified in a csv file (as created by the Export Groups command).
-                    If selected mods are not assigned a group in the file nothing happens.</td></tr>
-                <tr><td rowspan="6">Edit Groups...</td>
-                    <td>Add: add a new group to existing groups. Group names can be in Unicode.</td></tr>
-                    <tr><td>Rename: rename selected group. Mods that belong to it will have the group renamed.</td></tr>
-                    <tr><td>Remove: delete selected group. Deleting a group removes it from mods that belong to it.</td></tr>
-                    <tr><td>Refresh: pick up assigned groups and add them to the existing ones. Use it after importing groups from a file to update available
-                        groups.</td></tr>
-                    <tr><td>Sync: sync the list of available groups to the assigned ones - in other words delete unassigned groups.</td></tr>
-                    <tr><td>Default: reset the list of available groups to the default ones. This won't delete non default assigned groups. It's a feature.
-                        Use Refresh to pick up your groups and add them to the defaults.</td></tr>
-                <tr><td>Groups Menu</td><td>Set a group for the selected plugin(s). Groups that are assigned to the selected plugins appear checked.
-                    They provide no automatic functionality, other than to place hidden plugins in group folders provided those folders already
-                    exist. Use them to group plugins together so you can disable or enable them at once, etc. Note to old timers:
-                    <abbr title="Bash Auto Load Ordering">BALO</abbr> has been removed taking BALO groups for the ride - those of you who remember
-                    them, shed a tear goodbye.</td></tr>
-            <tr><td colspan="2">Rating<td>A purely cosmetic feature, this allows you to assign different rating values to plugins.
-            <tr><td colspan="2">Move To...</td><td>Moves the selected plugin(s) to the specified position. Note that the way this works with
-                inactive plugins may seem a bit counter-intuitive. Since inactive plugins do not have indices, it will be moved to occupy
-                the selected position, but since it's inactive, <em>the next active plugin after it</em> is the one that actually receives
-                the position. In practical terms, this means you will often end up moving an inactive plugin to one spot before the one you
-                wanted and adjusting its position via drag and drop or via <code>Ctrl+Arrow Keys</code> will be necessary.</td></tr>
+            <tr>
+                <td rowspan="9" id="modsGroups">Groups..</td>
+                <td id="modsExportGroups">Export Groups...</td>
+                <td>Exports the selected plugins' groups to a CSV file as
+                    plugin name/groups pairs. To be used with
+                    <a href="#modsImportGroups">Import Grups...</a>.</td>
+            </tr>
+            <tr>
+                <td id="modsImportGroups">Import Groups...</td>
+                <td>This will set the groups for selected plugins as specified
+                    in a CSV file (created by the
+                    <a href="#modsExportGroups">Export Groups...</a> command).
+                    If the selected plugins are not assigned a group in the
+                    file, nothing happens.</td>
+            </tr>
+            <tr>
+                <td rowspan="6">Edit Groups...</td>
+                <td>Add: creates a new group.</td>
+            </tr>
+            <tr>
+                <td>Rename: renames the selected group. Plugins that belong to
+                    it will have the group renamed.</td>
+            </tr>
+            <tr>
+                <td>Remove: deletes the selected group. Deleting a group
+                    removes it from plugins that belong to it.</td>
+            </tr>
+            <tr>
+                <td>Refresh: picks up assigned groups and adds them to the
+                    existing ones. Use this after importing groups using
+                    <a href="#modsImportGroups">Import Groups...</a> to update
+                    available groups.</td>
+            </tr>
+            <tr>
+                <td>Sync: synchronizes the list of available groups to the
+                    assigned ones - in other words, deletes unassigned
+                    groups.</td>
+            </tr>
+            <tr>
+                <td>Default: resets the list of available groups to the default
+                    ones. This won't delete non-default assigned groups, it's
+                    meant for bringing back default groups that you
+                    accidentally deleted. Use Refresh to pick up your groups
+                    and add them to the defaults.</td>
+            </tr>
+            <tr>
+                <td>[Group]</td>
+                <td>[Group] is the name of a group. They occur after the
+                    separator. Clicking one sets a group for the selected
+                    plugin(s). Groups that are assigned to the selected plugins
+                    appear checked. They provide no automatic functionality,
+                    other than to place hidden plugins in group folders
+                    provided those folders already exist. Use them to group
+                    plugins together so you can disable or enable them at once,
+                    etc. The special <q>None</q> group means that the plugin is
+                    not assigned to any group right now.<br>
+                    <br>
+                    Note to old timers:
+                    <abbr title="Bash Auto Load Ordering">BALO</abbr> has been
+                    removed, taking BALO groups for the ride - those of you who
+                    remember them, shed a tear goodbye.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Rating..</td>
+                <td>A purely cosmetic feature, this allows you to assign
+                    different rating values to plugins. Behaves very similarly
+                    to <a href="modsGroups">Groups..</a>.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Move to...</td>
+                <td>Moves the selected plugin(s) to the specified position.
+                    Note that the way this works with inactive plugins may seem
+                    a bit counter-intuitive. Since inactive plugins do not have
+                    indices, it will be moved to occupy the selected position,
+                    but since it's inactive, <em>the next active plugin after
+                        it</em> is the one that actually receives the position.
+                    In practical terms, this means you will often end up moving
+                    an inactive plugin to one spot before the one you wanted
+                    and adjusting its position via drag and drop or via
+                    <code>Ctrl+Arrow Keys</code> will be necessary.</td>
+            </tr>
             <tr><td colspan="2">Order By Name</td><td>Set the load order of the selected plugins starting at the lowest ordered mod, sorting them alphabetically.</td></tr>
             <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
             <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
@@ -1545,7 +1684,13 @@ tab. The directories skipped are:
                 </ol>
                 <p>If you've completely swapped from one base plugin to another, you may wish to remove the old dependency. This can be done using xEdit's <q>Clean Masters</q> command or TES4Gecko's <q>Edit Master List</q> command. The former only removes totally unused masters while the latter can remove used masters with the appropriate cleanup, and is not an automated procedure.</p>
                 <strong>Note:</strong> You can also use xEdit to change the Form IDs using its <q>Batch Change Referencing Records</q> command together with the CSV file created. xEdit will also change the definition of a Form ID, rather than just any references to it, unlike Wrye Bash.
-            <tr><td rowspan="4">Mod Cleaning<td>Don't check against LOOT's dirty mod list<td>Overrides the setting in the column header context menu for the specific plugin(s) selected.
+            <tr>
+                <td rowspan="4">Mod Cleaning..</td>
+                <td>Don't Check Against LOOT's Masterlist</td>
+                <td>Skips checking the selected plugins against LOOT's
+                    masterlist to determine whether or not they are dirty and
+                    need to be cleaned via xEdit.</td>
+            </tr>
             <tr>
                 <td>Scan for Deleted Records</td>
                 <td>Scans the selected plugin(s) for deleted records (i.e.
@@ -1557,7 +1702,13 @@ tab. The directories skipped are:
                     use deleted records on purpose to mark a record existing in
                     one version of the plugin but not in the other one.</td>
             </tr>
-            <tr><td id="modsRemoveWorldOrphans">Remove World Orphans<td>Some plugins have a mild form of corruption where exterior cells of new worldspaces in an esp master of the plugin are included in the plugin even if they are not edited, but the parent worldspace is not included, creating "orphaned" cells. This command removes these "orphans".
+            <tr>
+                <td id="modsRemoveWorldOrphans">Remove World Orphans</td>
+                <td>Some plugins have a mild form of corruption where exterior
+                    cells of new worldspaces in a .esp master of the plugin are
+                    included in the plugin even if they are not edited, but the
+                    parent worldspace is not included, creating "orphaned"
+                    cells. This command removes these "orphans".</td>
             <tr>
                 <td id="modsNvidiaFogFix">Nvidia Fog Fix</td>
                 <td><em>Oblivion &amp; Nehrim&colon; At Fate's Edge only.</em>
@@ -1606,7 +1757,7 @@ tab. The directories skipped are:
     </thead>
     <tbody>
         <tr>
-            <td colspan="2">Sort By</td>
+            <td colspan="2">Sort by..</td>
             <td>This submenu allows you to choose by which column the masters
                 list is sorted. This is equivalent to clicking on a column
                 header.</td>
@@ -8702,10 +8853,19 @@ noted in the description of the tweak.</p>
 
 <h3 id="saves-profiles">Save Profiles <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Save profiles are like player accounts, in that they consist of a load order plus a set of save files. They can be used to allow safe and easy switching between different characters than may use different combinations of mods, or between different stages of the same character's life (where different mods have been used in each stage). They can also associate different versions of Oblivion.esm with different save profiles, using <a href="#tools-swapping">Oblivion.esm Swapping</a>.
-<p>To create or modify save profiles, use the <a href="#savesEditProfiles">Edit Profiles...</a> command in the <q>Profile</q> submenu of the column header context menu. You can create a new save profile using <q>Add</q>, delete the selected existing save profile using <q>Remove</q> and rename the selected save profile using <q>Rename</q>. The central text field can be used to store notes on the selected save profile.
-<p>To select a save profile, select it from the list visible in the <q>Profile</q> submenu of the column header context menu.
-<p>To assign save files to a save profile, use the <a href="#savesMoveTo">Move To</a> or <a href="#savesCopyTo">Copy To</a> submenus in the save file context menu. This will also assign any related cosave files.
-
+<p>To create or modify save profiles, use the
+    <a href="#savesEditProfiles">Edit Profiles...</a> command in the
+    <q>Profile..</q> submenu of the column header context menu. You can create
+    a new save profile using <q>Add</q>, delete the selected existing save
+    profile using <q>Remove</q> and rename the selected save profile using
+    <q>Rename</q>. The central text field can be used to store notes on the
+    selected save profile.</p>
+<p>To select a save profile, select it from the list visible in the
+    <q>Profile..</q> submenu of the column header context menu.</p>
+<p>To assign save files to a save profile, use the
+    <a href="#savesMoveTo">Move to..</a> or
+    <a href="#savesCopyTo">Copy to..</a> submenus in the save file context
+    menu. This will also assign any related cosave files.</p>
 
 <h3 id="saves-face">Face Import <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Faces may be imported from saves to saves or plugins, or from plugins to saves. This allows you to preserve a character's appearance should you wish to restart a character, to roleplay as a particular character, or to turn your character into an NPC that may be encountered during playing, among other uses.
@@ -8762,23 +8922,38 @@ noted in the description of the tweak.</p>
             <tr><th colspan="2">Command</th><th>Description</th></tr>
         </thead>
         <tbody>
-            <tr><td colspan="2">Sort By</td><td>This submenu allows you to choose by which column the
-                save list is sorted. This is equivalent to clicking on a column header.</td></tr>
-            <tr><td colspan="2">Columns</td><td>This submenu allows you to choose which columns are
-                visible in the save list.</td></tr>
+            <tr>
+                <td colspan="2">Sort by..</td>
+                <td>This submenu allows you to choose by which column the save
+                    list is sorted. This is equivalent to clicking on a column
+                    header.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Columns..</td>
+                <td>This submenu allows you to choose which columns are visible
+                    in the save list.</td>
+            </tr>
             <tr><td rowspan="2">Files..</td>
                 <td>Open Folder...</td><td>Opens the saves folder in Windows Explorer.</td></tr>
                 <tr><td>Unhide...</td><td>Opens a dialogue window allowing you to select which hidden
                     save files to unhide.</td></tr>
-            <tr><td rowspan="2">Profile</td>
-                <td>Edit Profiles...</td><td>This submenu allows the creation, editing and removal of
-                    <a href="#saves-profiles">save profiles</a>.</td></tr>
-                <tr><td>[Profile]<td>[Profile] is the name of a save profile, which are listed below
-                    the separator in the Profile submenu. Clicking a save profile will activate
-                    it.</td></tr>
-            <tr><td colspan="2">Oblivion.esm</td><td><em>Oblivion only.</em> This submenu relates to
-                <a href="#tools-swapping">Oblivion.esm Swapping</a>. It allows you to swap the active
-                version of Oblivion.esm.</td></tr>
+            <tr>
+                <td rowspan="2">Profile..</td>
+                <td>Edit Profiles...</td>
+                <td>This submenu allows the creation, editing and removal of
+                    <a href="#saves-profiles">save profiles</a>.</td>
+            </tr>
+            <tr>
+                <td>[Profile]</td>
+                <td>[Profile] is the name of a save profile, which are listed
+                    below the separator in the Profile submenu. Clicking a save
+                    profile will activate it.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Oblivion.esm..</td><td><em>Oblivion only.</em>
+                This submenu relates to
+                <a href="#tools-swapping">Oblivion.esm Swapping</a>.</td>
+            </tr>
         </tbody>
     </table>
 </div>
@@ -8840,7 +9015,7 @@ noted in the description of the tweak.</p>
                     it.</td>
             </tr>
             <tr>
-                <td colspan="2" id="savesMoveTo">Move To</td>
+                <td colspan="2" id="savesMoveTo">Move to..</td>
                 <td>This submenu allows you to specify a save profile to move
                     the selected save(s) to from the active save profile.</td>
             </tr>
@@ -9085,7 +9260,7 @@ noted in the description of the tweak.</p>
     </thead>
     <tbody>
         <tr>
-            <td colspan="2">Sort By</td>
+            <td colspan="2">Sort by..</td>
             <td>This submenu allows you to choose by which column the masters
                 list is sorted. This is equivalent to clicking on a column
                 header.</td>
@@ -9215,17 +9390,25 @@ noted in the description of the tweak.</p>
             <tr><th colspan="2">Command<th>Description</th></tr>
         </thead>
         <tbody>
-            <tr><td colspan="2">Sort By</td><td>This submenu allows you to choose by which
-                column the screenshot list is sorted. This is equivalent to clicking on a
-                column header.</td></tr>
-            <tr><td colspan="2">Columns</td><td>This submenu allows you to choose which
-                columns are visible in the screenshot list.</td></tr>
+            <tr>
+                <td colspan="2">Sort by..</td>
+                <td>This submenu allows you to choose by which column the
+                    screenshot list is sorted. This is equivalent to clicking
+                    on a column header.</td>
+            </tr>
+            <tr>
+                <td colspan="2">Columns..</td>
+                <td>This submenu allows you to choose which columns are visible
+                    in the screenshot list.</td>
+            </tr>
             <tr><td>Files..</td>
                 <td>Open<td>Open the screenshot directory in Windows Explorer.</td></tr>
             <tr><td colspan="2">Next Shot<td>Set any or all of the base name and number of
                 the next screenshot as well as the screenshot directory.</td></tr>
-            <tr><td colspan="2">JPEG Quality<td>Set the quality of JPEGs created during
-                conversion.</td></tr>
+            <tr>
+                <td colspan="2">JPEG Quality..</td>
+                <td>Set the quality of JPEGs created during conversion.</td>
+            </tr>
         </tbody>
     </table>
 </div>
@@ -9254,10 +9437,14 @@ noted in the description of the tweak.</p>
                     <td>Deletes the selected screenshot(s). Deleted screenshots
                         are sent to the Recycling Bin.</td>
                 </tr>
-            <tr><td colspan="2">Convert</td><td>Converts the selected files to one of the following
-                formats: JPEG, PNG, BMP, TIFF. If a file of the conversion format already exists with
-                the same name as a file to be converted, the conversion will not take place for that
-                file.</td></tr>
+            <tr>
+                <td colspan="2">Convert..</td>
+                <td>Converts the selected files to one of the following
+                    formats: JPEG, PNG, BMP, TIFF. If a file of the conversion
+                    format already exists with the same name as a file to be
+                    converted, the conversion will not take place for that
+                    file.</td>
+            </tr>
         </tbody>
     </table>
 </div>

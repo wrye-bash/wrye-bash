@@ -612,10 +612,10 @@ class _Installers_SkipPdb(AppendableLink, _Installers_Skip):
 
 class Installers_GlobalSkips(balt.MenuLink):
     """Global Skips submenu."""
-    _text = _('Global Skips')
+    _text = _('Global Skips..')
 
     def __init__(self):
-        super(Installers_GlobalSkips, self).__init__()
+        super().__init__()
         self.append(_Installers_SkipOBSEPlugins())
         self.append(_Installers_SkipScreenshots())
         self.append(_Installers_SkipScriptSources())
@@ -680,10 +680,10 @@ class _Installers_RenameDocs(_AInstallers_NoSkipDocs):
 
 class Installers_GlobalRedirects(balt.MenuLink):
     """Global Redirects menu."""
-    _text = _('Global Redirects')
+    _text = _('Global Redirects..')
 
     def __init__(self):
-        super(Installers_GlobalRedirects, self).__init__()
+        super().__init__()
         self.append(_Installers_RedirectDocs())
         self.append(_Installers_RedirectScriptSources())
         self.append(_Installers_RenameDocs())
