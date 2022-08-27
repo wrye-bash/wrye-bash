@@ -23,7 +23,10 @@
 """Builds on the rest of brec to provide full definitions and base classes for
 some commonly needed records."""
 
+from collections import defaultdict
+from itertools import chain
 from operator import attrgetter
+from typing import Type
 
 from . import utils_constants
 from .advanced_elements import FidNotNullDecider, AttrValDecider, MelArray, \
@@ -32,7 +35,8 @@ from .basic_elements import MelBase, MelFid, MelFids, MelFloat, MelGroups, \
     MelLString, MelNull, MelStruct, MelUInt32, MelSInt32, MelFixedString, \
     MelUnicode, unpackSubHeader, MelUInt32Flags, MelString, MelUInt8Flags
 from .common_subrecords import MelEdid, MelDescription, MelImpactDataset, \
-    MelColor, MelDebrData, MelFull, MelIcon, MelBounds
+    MelColor, MelDebrData, MelFull, MelIcon, MelBounds, MelColorInterpolator, \
+    MelValueInterpolator
 from .record_structs import MelRecord, MelSet
 from .utils_constants import FID, FormId
 from .. import bolt, exception
@@ -62,7 +66,7 @@ class AMreActor(AMreWithItems):
 
 #------------------------------------------------------------------------------
 class AMreFlst(MelRecord):
-    """FormID List."""
+    """Base class for FormID List."""
     rec_sig = b'FLST'
     __slots__ = ('mergeOverLast', 'mergeSources', 'items', 'de_records',
                  're_records')
@@ -246,22 +250,129 @@ class AMreHeader(MelRecord):
     __slots__ = ()
 
 #------------------------------------------------------------------------------
+class AMreImad(MelRecord):
+    """Base class for Image Space Adapters. This is perhaps the weirdest record
+    implementation in our codebase. There is a ton of duplication and it's
+    really ugly to implement, so we generate most of the subrecords and
+    counters programmatically."""
+    rec_sig = b'IMAD'
+
+    imad_dof_flags = Flags.from_names(
+        'mode_front',
+        'mode_back',
+        'no_sky',
+        'blur_radius_bit_2',
+        'blur_radius_bit_1',
+        'blur_radius_bit_0',
+    )
+
+    dnam_attrs1 = (
+        'eye_adapt_speed_mult', 'eye_adapt_speed_add',
+        'bloom_blur_radius_mult', 'bloom_blur_radius_add',
+        'bloom_threshold_mult', 'bloom_threshold_add', 'bloom_scale_mult',
+        'bloom_scale_add', 'target_lum_min_mult', 'target_lum_min_add',
+        'target_lum_max_mult', 'target_lum_max_add', 'sunlight_scale_mult',
+        'sunlight_scale_add', 'sky_scale_mult', 'sky_scale_add',
+        'unknown_08_mult', 'unknown_48_add', 'unknown_09_mult',
+        'unknown_49_add', 'unknown_0a_mult', 'unknown_4a_add',
+        'unknown_0b_mult', 'unknown_4b_add', 'unknown_0c_mult',
+        'unknown_4c_add', 'unknown_0d_mult', 'unknown_4d_add',
+        'unknown_0e_mult', 'unknown_4e_add', 'unknown_0f_mult',
+        'unknown_4f_add', 'unknown_10_mult', 'unknown_50_add',
+        'saturation_mult', 'saturation_add', 'brightness_mult',
+        'brightness_add', 'contrast_mult', 'contrast_add', 'unknown_14_mult',
+        'unknown_54_add', 'tint_color', 'blur_radius',
+        'double_vision_strength', 'radial_blur_strength',
+        'radial_blur_ramp_up', 'radial_blur_start')
+    dnam_counters1 = tuple(f'{x}_count' for x in dnam_attrs1)
+    dnam_attrs2 = ('dof_strength', 'dof_distance', 'dof_range')
+    dnam_counters2 = tuple(f'{x}_count' for x in dnam_attrs2)
+    dnam_attrs3 = ('radial_blur_ramp_down', 'radial_blur_down_start',
+                   'fade_color', 'motion_blur_strength')
+    dnam_counters3 = tuple(f'{x}_count' for x in dnam_attrs3)
+    dnam_counter_mapping = dict(zip(chain(dnam_counters1, dnam_counters2,
+        dnam_counters3), chain(dnam_attrs1, dnam_attrs2, dnam_attrs3)))
+    imad_sig_attr = [
+        (b'BNAM', 'blur_radius'),
+        (b'VNAM', 'double_vision_strength'),
+        (b'TNAM', 'tint_color'),
+        (b'NAM3', 'fade_color'),
+        (b'RNAM', 'radial_blur_strength'),
+        (b'SNAM', 'radial_blur_ramp_up'),
+        (b'UNAM', 'radial_blur_start'),
+        (b'NAM1', 'radial_blur_ramp_down'),
+        (b'NAM2', 'radial_blur_down_start'),
+        (b'WNAM', 'dof_strength'),
+        (b'XNAM', 'dof_distance'),
+        (b'YNAM', 'dof_range'),
+        (b'NAM4', 'motion_blur_strength'),
+        (b'\x00IAD', 'eye_adapt_speed_mult'),
+        (b'\x40IAD', 'eye_adapt_speed_add'),
+        (b'\x01IAD', 'bloom_blur_radius_mult'),
+        (b'\x41IAD', 'bloom_blur_radius_add'),
+        (b'\x02IAD', 'bloom_threshold_mult'),
+        (b'\x42IAD', 'bloom_threshold_add'),
+        (b'\x03IAD', 'bloom_scale_mult'),
+        (b'\x43IAD', 'bloom_scale_add'),
+        (b'\x04IAD', 'target_lum_min_mult'),
+        (b'\x44IAD', 'target_lum_min_add'),
+        (b'\x05IAD', 'target_lum_max_mult'),
+        (b'\x45IAD', 'target_lum_max_add'),
+        (b'\x06IAD', 'sunlight_scale_mult'),
+        (b'\x46IAD', 'sunlight_scale_add'),
+        (b'\x07IAD', 'sky_scale_mult'),
+        (b'\x47IAD', 'sky_scale_add'),
+        (b'\x08IAD', 'unknown_08_mult'),
+        (b'\x48IAD', 'unknown_48_add'),
+        (b'\x09IAD', 'unknown_09_mult'),
+        (b'\x49IAD', 'unknown_49_add'),
+        (b'\x0AIAD', 'unknown_0a_mult'),
+        (b'\x4AIAD', 'unknown_4a_add'),
+        (b'\x0BIAD', 'unknown_0b_mult'),
+        (b'\x4BIAD', 'unknown_4b_add'),
+        (b'\x0CIAD', 'unknown_0c_mult'),
+        (b'\x4CIAD', 'unknown_4c_add'),
+        (b'\x0DIAD', 'unknown_0d_mult'),
+        (b'\x4DIAD', 'unknown_4d_add'),
+        (b'\x0EIAD', 'unknown_0e_mult'),
+        (b'\x4EIAD', 'unknown_4e_add'),
+        (b'\x0FIAD', 'unknown_0f_mult'),
+        (b'\x4FIAD', 'unknown_4f_add'),
+        (b'\x10IAD', 'unknown_10_mult'),
+        (b'\x50IAD', 'unknown_50_add'),
+        (b'\x11IAD', 'saturation_mult'),
+        (b'\x51IAD', 'saturation_add'),
+        (b'\x12IAD', 'brightness_mult'),
+        (b'\x52IAD', 'brightness_add'),
+        (b'\x13IAD', 'contrast_mult'),
+        (b'\x53IAD', 'contrast_add'),
+        (b'\x14IAD', 'unknown_14_mult'),
+        (b'\x54IAD', 'unknown_54_add'),
+    ]
+    special_impls: defaultdict[bytes, Type[MelBase]] = defaultdict(
+        lambda: MelValueInterpolator)
+    # Doing it this way avoids PyCharm complaining about type mismatch
+    special_impls[b'TNAM'] = MelColorInterpolator
+    special_impls[b'NAM3'] = MelColorInterpolator
+
+    __slots__ = ()
+
+#------------------------------------------------------------------------------
 class AMreLeveledList(MelRecord):
-    """Base type for leveled item/creature/npc/spells.
-       it requires the base class to use the following:
-       classAttributes:
-          top_copy_attrs -> List of attributes to modify by copying when
-                            merging
-          entry_copy_attrs -> List of attributes to modify by copying for each
-                              list entry when merging
-       instanceAttributes:
-          entries -> List of items, with the following attributes:
-              listId
-              level
-              count
-          chanceNone
-          flags
-    """
+    """Base class for leveled item/creature/npc/spells.
+
+    It uses the following attributes:
+    Class attributes:
+        top_copy_attrs -> List of attributes to modify by copying when merging
+        entry_copy_attrs -> List of attributes to modify by copying for each
+                            list entry when merging
+    Instance attributes:
+        entries -> List of items, with the following attributes:
+            listId
+            level
+            count
+            chanceNone
+            flags"""
     _flags = bolt.Flags.from_names(u'calcFromAllLevels', u'calcForEachItem',
                                    u'useAllSpells', u'specialLoot')
     top_copy_attrs = ()

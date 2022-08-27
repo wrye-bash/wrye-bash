@@ -105,17 +105,16 @@ class ModReadError(ModError):
 
 class ModSizeError(ModError):
     """Mod Error: Record/subrecord has wrong size."""
-    def __init__(self, in_name, debug_str, expected_sizes, actual_size):
+    def __init__(self, in_name,
+            debug_str: str | bytes | tuple[str | bytes, ...],
+            expected_sizes: tuple[int, ...], actual_size: int):
         """Indicates that a record or subrecord has the wrong size.
 
-        :type in_name: bolt.FName
-        :type debug_str: str|bytes|tuple[str|bytes]
-        :type expected_sizes: tuple[int]
-        :type actual_size: int"""
+        :type in_name: bolt.FName"""
         debug_str = _join_sigs(debug_str)
-        message_form = f'{debug_str}: Expected one of sizes ' \
-                       f'{expected_sizes}, but got {actual_size}'
-        super(ModSizeError, self).__init__(in_name, message_form)
+        message_form = (f'{debug_str}: Expected one of sizes '
+                        f'{sorted(expected_sizes)}, but got {actual_size}')
+        super().__init__(in_name, message_form)
 
 class ModFidMismatchError(ModError):
     """Mod Error: Two FormIDs that should be equal are not."""

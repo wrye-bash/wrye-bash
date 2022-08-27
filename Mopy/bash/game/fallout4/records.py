@@ -47,7 +47,8 @@ from ...brec import MelBase, MelGroup, AMreHeader, MelSet, MelString, \
     MelRelations, MelFactFlags, MelFactRanks, MelOptStruct, MelSInt32, \
     MelFactFids, MelFactVendorInfo, MelReadOnly, MelFurnMarkerData, \
     MelGrasData, MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, \
-    MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla
+    MelIdleData, MelCounter, MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla, \
+    AMreImad, MelPartialCounter
 
 ##: What about texture hashes? I carried discarding them forward from Skyrim,
 # but that was due to the 43-44 problems. See also #620.
@@ -1466,6 +1467,32 @@ class MreIdlm(MelRecord):
         MelIdlmIdla(),
         MelFid(b'QNAM', 'unknown_qnam'),
         MelModel(),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
+_dnam_attrs4 = ('dof_vignette_radius', 'dof_vignette_strength')
+_dnam_counters4 = tuple(f'{x}_count' for x in _dnam_attrs4)
+_dnam_counter_mapping = AMreImad.dnam_counter_mapping | dict(
+    zip(_dnam_attrs4, _dnam_counters4))
+_imad_sig_attr = AMreImad.imad_sig_attr.copy()
+_imad_sig_attr.insert(12, (b'NAM5', 'dof_vignette_radius'))
+_imad_sig_attr.insert(13, (b'NAM6', 'dof_vignette_strength'))
+
+class MreImad(AMreImad): # see AMreImad for details
+    """Image Space Adapter."""
+    melSet = MelSet(
+        MelEdid(),
+        MelPartialCounter(MelTruncatedStruct(b'DNAM',
+            ['I', 'f', '49I', '2f', '3I', '2B', '2s', '6I'], 'imad_animatable',
+            'imad_duration', *AMreImad.dnam_counters1,
+            'radial_blur_use_target', 'radial_blur_center_x',
+            'radial_blur_center_y', *AMreImad.dnam_counters2,
+            'dof_use_target', (AMreImad.imad_dof_flags, 'dof_flags'),
+            'unused1', *AMreImad.dnam_counters3, *_dnam_counters4,
+            old_versions={'If49I2f3I2B2s4I'}),
+            counters=AMreImad.dnam_counter_mapping),
+        *[AMreImad.special_impls[s](s, a) for s, a in _imad_sig_attr],
     )
     __slots__ = melSet.getSlotsUsed()
 

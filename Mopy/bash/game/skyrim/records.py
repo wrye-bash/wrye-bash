@@ -26,8 +26,8 @@ from ...bolt import Flags, structs_cache, TrimmedFlags
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelGroup, MelString, AMreLeveledList, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, AMreHeader, MelBase, MelSimpleArray, MelWeight, \
-    AMreFlst, MelLString, MelMODS, MelColorInterpolator, MelRegions, \
-    MelValueInterpolator, MelUnion, AttrValDecider, MelRegnEntrySubrecord, \
+    AMreFlst, MelLString, MelMODS, AMreImad, MelRegions, MelIdlmIdla, \
+    MelUnion, AttrValDecider, MelRegnEntrySubrecord, MelIdleTimerSetting, \
     PartialLoadDecider, FlagDecider, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt16, MelUInt32, MelActionFlags, MelCounter, MelRaceData, MelBaseR, \
     MelPartialCounter, MelBounds, null3, null4, MelSequential, MelKeywords, \
@@ -53,7 +53,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelAttx, MelRace, \
     MelRandomTeleports, MelSoundLooping, MelEqupPnam, MelFactVendorInfo, \
     MelFactFlags, MelFactFids, MelSeasons, MelIngredient, MelFurnMarkerData, \
     MelHdptShared, MelIdleEnam, MelIdleRelatedAnims, MelIdleData, \
-    MelIdleTimerSetting, MelIdlmFlags, MelIdlmIdla
+    MelIdlmFlags
 from ...exception import ModSizeError
 
 _is_sse = bush.game.fsName in (
@@ -1467,103 +1467,19 @@ class MreInfo(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreImad(MelRecord):
+class MreImad(AMreImad): # see AMreImad for details
     """Image Space Adapter."""
-    rec_sig = b'IMAD'
-
-    _imad_dof_flags = Flags.from_names(
-        'mode_front',
-        'mode_back',
-        'no_sky',
-        'blur_radius_bit_2',
-        'blur_radius_bit_1',
-        'blur_radius_bit_0',
-    )
-    _ImadRadialBlurFlags = Flags.from_names('useTarget')
-
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DNAM', ['I', 'f', '49I', '2f', '3I', '2B', '2s', '4I'],
-                  'animatable', 'duration',
-                  u'eyeAdaptSpeedMult', u'eyeAdaptSpeedAdd',
-                  u'bloomBlurRadiusMult', u'bloomBlurRadiusAdd',
-                  u'bloomThresholdMult', u'bloomThresholdAdd',
-                  u'bloomScaleMult', u'bloomScaleAdd', u'targetLumMinMult',
-                  u'targetLumMinAdd', u'targetLumMaxMult', u'targetLumMaxAdd',
-                  u'sunlightScaleMult', u'sunlightScaleAdd', u'skyScaleMult',
-                  u'skyScaleAdd', u'unknown08Mult', u'unknown48Add',
-                  u'unknown09Mult', u'unknown49Add', u'unknown0AMult',
-                  u'unknown4AAdd', u'unknown0BMult', u'unknown4BAdd',
-                  u'unknown0CMult', u'unknown4CAdd', u'unknown0DMult',
-                  u'unknown4DAdd', u'unknown0EMult', u'unknown4EAdd',
-                  u'unknown0FMult', u'unknown4FAdd', u'unknown10Mult',
-                  u'unknown50Add', u'saturationMult', u'saturationAdd',
-                  u'brightnessMult', u'brightnessAdd', u'contrastMult',
-                  u'contrastAdd', u'unknown14Mult', u'unknown54Add',
-                  u'tintColor', u'blurRadius', u'doubleVisionStrength',
-                  u'radialBlurStrength', u'radialBlurRampUp',
-                  u'radialBlurStart',
-                  (_ImadRadialBlurFlags, u'radialBlurFlags'),
-                  u'radialBlurCenterX', u'radialBlurCenterY', u'dofStrength',
-                  u'dofDistance', u'dofRange', 'dof_use_target',
-                  (_imad_dof_flags, 'dof_flags'), 'unused1',
-                  u'radialBlurRampDown', u'radialBlurDownStart', u'fadeColor',
-                  u'motionBlurStrength'),
-        MelValueInterpolator(b'BNAM', 'blurRadiusInterp'),
-        MelValueInterpolator(b'VNAM', 'doubleVisionStrengthInterp'),
-        MelColorInterpolator(b'TNAM', 'tintColorInterp'),
-        MelColorInterpolator(b'NAM3', 'fadeColorInterp'),
-        MelValueInterpolator(b'RNAM', 'radialBlurStrengthInterp'),
-        MelValueInterpolator(b'SNAM', 'radialBlurRampUpInterp'),
-        MelValueInterpolator(b'UNAM', 'radialBlurStartInterp'),
-        MelValueInterpolator(b'NAM1', 'radialBlurRampDownInterp'),
-        MelValueInterpolator(b'NAM2', 'radialBlurDownStartInterp'),
-        MelValueInterpolator(b'WNAM', 'dofStrengthInterp'),
-        MelValueInterpolator(b'XNAM', 'dofDistanceInterp'),
-        MelValueInterpolator(b'YNAM', 'dofRangeInterp'),
-        MelValueInterpolator(b'NAM4', 'motionBlurStrengthInterp'),
-        MelValueInterpolator(b'\x00IAD', 'eyeAdaptSpeedMultInterp'),
-        MelValueInterpolator(b'\x40IAD', 'eyeAdaptSpeedAddInterp'),
-        MelValueInterpolator(b'\x01IAD', 'bloomBlurRadiusMultInterp'),
-        MelValueInterpolator(b'\x41IAD', 'bloomBlurRadiusAddInterp'),
-        MelValueInterpolator(b'\x02IAD', 'bloomThresholdMultInterp'),
-        MelValueInterpolator(b'\x42IAD', 'bloomThresholdAddInterp'),
-        MelValueInterpolator(b'\x03IAD', 'bloomScaleMultInterp'),
-        MelValueInterpolator(b'\x43IAD', 'bloomScaleAddInterp'),
-        MelValueInterpolator(b'\x04IAD', 'targetLumMinMultInterp'),
-        MelValueInterpolator(b'\x44IAD', 'targetLumMinAddInterp'),
-        MelValueInterpolator(b'\x05IAD', 'targetLumMaxMultInterp'),
-        MelValueInterpolator(b'\x45IAD', 'targetLumMaxAddInterp'),
-        MelValueInterpolator(b'\x06IAD', 'sunlightScaleMultInterp'),
-        MelValueInterpolator(b'\x46IAD', 'sunlightScaleAddInterp'),
-        MelValueInterpolator(b'\x07IAD', 'skyScaleMultInterp'),
-        MelValueInterpolator(b'\x47IAD', 'skyScaleAddInterp'),
-        MelBase(b'\x08IAD', 'unknown08IAD'),
-        MelBase(b'\x48IAD', 'unknown48IAD'),
-        MelBase(b'\x09IAD', 'unknown09IAD'),
-        MelBase(b'\x49IAD', 'unknown49IAD'),
-        MelBase(b'\x0AIAD', 'unknown0aIAD'),
-        MelBase(b'\x4AIAD', 'unknown4aIAD'),
-        MelBase(b'\x0BIAD', 'unknown0bIAD'),
-        MelBase(b'\x4BIAD', 'unknown4bIAD'),
-        MelBase(b'\x0CIAD', 'unknown0cIAD'),
-        MelBase(b'\x4CIAD', 'unknown4cIAD'),
-        MelBase(b'\x0DIAD', 'unknown0dIAD'),
-        MelBase(b'\x4DIAD', 'unknown4dIAD'),
-        MelBase(b'\x0EIAD', 'unknown0eIAD'),
-        MelBase(b'\x4EIAD', 'unknown4eIAD'),
-        MelBase(b'\x0FIAD', 'unknown0fIAD'),
-        MelBase(b'\x4FIAD', 'unknown4fIAD'),
-        MelBase(b'\x10IAD', 'unknown10IAD'),
-        MelBase(b'\x50IAD', 'unknown50IAD'),
-        MelValueInterpolator(b'\x11IAD', 'saturationMultInterp'),
-        MelValueInterpolator(b'\x51IAD', 'saturationAddInterp'),
-        MelValueInterpolator(b'\x12IAD', 'brightnessMultInterp'),
-        MelValueInterpolator(b'\x52IAD', 'brightnessAddInterp'),
-        MelValueInterpolator(b'\x13IAD', 'contrastMultInterp'),
-        MelValueInterpolator(b'\x53IAD', 'contrastAddInterp'),
-        MelBase(b'\x14IAD', 'unknown14IAD'),
-        MelBase(b'\x54IAD', 'unknown54IAD'),
+        MelPartialCounter(MelStruct(b'DNAM',
+            ['I', 'f', '49I', '2f', '3I', '2B', '2s', '4I'], 'imad_animatable',
+            'imad_duration', *AMreImad.dnam_counters1,
+            'radial_blur_use_target', 'radial_blur_center_x',
+            'radial_blur_center_y', *AMreImad.dnam_counters2,
+            'dof_use_target', (AMreImad.imad_dof_flags, 'dof_flags'),
+            'unused1', *AMreImad.dnam_counters3),
+            counters=AMreImad.dnam_counter_mapping),
+        *[AMreImad.special_impls[s](s, a) for s, a in AMreImad.imad_sig_attr],
     )
     __slots__ = melSet.getSlotsUsed()
 

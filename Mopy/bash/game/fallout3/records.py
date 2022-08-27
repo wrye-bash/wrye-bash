@@ -30,7 +30,7 @@ from ...bolt import Flags, structs_cache, TrimmedFlags, struct_calcsize
 from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelString, MelSet, MelFid, MelOptStruct, MelFids, AMreHeader, MelRace, \
     MelBase, MelSimpleArray, AMreFlst, MelBodyParts, MelMODS, MelFactions, \
-    MelReferences, MelColorInterpolator, MelValueInterpolator, MelAnimations, \
+    MelReferences, MelIdleTimerSetting, MelIdleRelatedAnims, MelAnimations, \
     MelUnion, AttrValDecider, MelRegnEntrySubrecord, SizeDecider, MelFloat, \
     MelSInt8, MelSInt16, MelSInt32, MelUInt8, MelUInt16, MelUInt32, \
     MelPartialCounter, MelRaceParts, MelRelations, MelActorSounds, MelWeight, \
@@ -50,8 +50,7 @@ from ...brec import MelRecord, MelGroups, MelStruct, FID, MelGroup, \
     MelPerkParamsGroups, MelUnorderedGroups, MelImageSpaceMod, MelAspcRdat, \
     MelSoundClose, AMelItems, AMelLLItems, MelContData, MelCpthShared, \
     MelSoundLooping, MelHairFlags, MelImpactDataset, MelFlstFids, MelObject, \
-    MelTxstFlags, MelGrasData, MelIdleRelatedAnims, MelIdlmFlags, \
-    MelIdleTimerSetting, MelIdlmIdla
+    MelTxstFlags, MelGrasData, MelIdlmFlags, MelIdlmIdla, AMreImad
 from ...exception import ModSizeError
 
 _is_fnv = bush.game.fsName == u'FalloutNV'
@@ -1324,117 +1323,21 @@ class MreIdlm(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreImad(MelRecord):
+class MreImad(AMreImad): # see AMreImad for details
     """Image Space Adapter."""
-    rec_sig = b'IMAD'
-
-    _ImadAnimatableFlags = Flags.from_names('animatable')
-    _ImadRadialBlurFlags = Flags.from_names('useTarget')
-
     melSet = MelSet(
         MelEdid(),
-        MelStruct(b'DNAM', ['I', 'f', '49I', '2f', '3I', 'B', '3s', '4I'],
-                  (_ImadAnimatableFlags, 'aniFlags'),
-                  'duration', 'eyeAdaptSpeedMult', 'eyeAdaptSpeedAdd',
-                  'bloomBlurRadiusMult', 'bloomBlurRadiusAdd',
-                  'bloomThresholdMult', 'bloomThresholdAdd', 'bloomScaleMult',
-                  'bloomScaleAdd', 'targetLumMinMult', 'targetLumMinAdd',
-                  'targetLumMaxMult', 'targetLumMaxAdd', 'sunlightScaleMult',
-                  'sunlightScaleAdd', 'skyScaleMult', 'skyScaleAdd',
-                  'unknown08Mult', 'unknown48Add', 'unknown09Mult',
-                  'unknown49Add', 'unknown0AMult', 'unknown4AAdd',
-                  'unknown0BMult', 'unknown4BAdd', 'unknown0CMult',
-                  'unknown4CAdd', 'unknown0DMult', 'unknown4DAdd',
-                  'unknown0EMult', 'unknown4EAdd', 'unknown0FMult',
-                  'unknown4FAdd', 'unknown10Mult', 'unknown50Add',
-                  'saturationMult', 'saturationAdd', 'brightnessMult',
-                  'brightnessAdd', 'contrastMult', 'contrastAdd',
-                  'unknown14Mult', 'unknown54Add',
-                  'tintColor', 'blurRadius', 'doubleVisionStrength',
-                  'radialBlurStrength', 'radialBlurRampUp', 'radialBlurStart',
-                  (_ImadRadialBlurFlags, u'radialBlurFlags'),
-                  'radialBlurCenterX', 'radialBlurCenterY', 'dofStrength',
-                  'dofDistance', 'dofRange', 'dof_use_target', 'unused1',
-                  'radialBlurRampDown', 'radialBlurDownStart', 'fadeColor',
-                  'motionBlurStrength'),
-        MelValueInterpolator(b'BNAM', 'blurRadiusInterp'),
-        MelValueInterpolator(b'VNAM', 'doubleVisionStrengthInterp'),
-        MelColorInterpolator(b'TNAM', 'tintColorInterp'),
-        MelColorInterpolator(b'NAM3', 'fadeColorInterp'),
-        MelValueInterpolator(b'RNAM', 'radialBlurStrengthInterp'),
-        MelValueInterpolator(b'SNAM', 'radialBlurRampUpInterp'),
-        MelValueInterpolator(b'UNAM', 'radialBlurStartInterp'),
-        MelValueInterpolator(b'NAM1', 'radialBlurRampDownInterp'),
-        MelValueInterpolator(b'NAM2', 'radialBlurDownStartInterp'),
-        MelValueInterpolator(b'WNAM', 'dofStrengthInterp'),
-        MelValueInterpolator(b'XNAM', 'dofDistanceInterp'),
-        MelValueInterpolator(b'YNAM', 'dofRangeInterp'),
-        MelValueInterpolator(b'NAM4', 'motionBlurStrengthInterp'),
-        MelValueInterpolator(b'\x00IAD', 'eyeAdaptSpeedMultInterp'),
-        MelValueInterpolator(b'\x40IAD', 'eyeAdaptSpeedAddInterp'),
-        MelValueInterpolator(b'\x01IAD', 'bloomBlurRadiusMultInterp'),
-        MelValueInterpolator(b'\x41IAD', 'bloomBlurRadiusAddInterp'),
-        MelValueInterpolator(b'\x02IAD', 'bloomThresholdMultInterp'),
-        MelValueInterpolator(b'\x42IAD', 'bloomThresholdAddInterp'),
-        MelValueInterpolator(b'\x03IAD', 'bloomScaleMultInterp'),
-        MelValueInterpolator(b'\x43IAD', 'bloomScaleAddInterp'),
-        MelValueInterpolator(b'\x04IAD', 'targetLumMinMultInterp'),
-        MelValueInterpolator(b'\x44IAD', 'targetLumMinAddInterp'),
-        MelValueInterpolator(b'\x05IAD', 'targetLumMaxMultInterp'),
-        MelValueInterpolator(b'\x45IAD', 'targetLumMaxAddInterp'),
-        MelValueInterpolator(b'\x06IAD', 'sunlightScaleMultInterp'),
-        MelValueInterpolator(b'\x46IAD', 'sunlightScaleAddInterp'),
-        MelValueInterpolator(b'\x07IAD', 'skyScaleMultInterp'),
-        MelValueInterpolator(b'\x47IAD', 'skyScaleAddInterp'),
-        # FIXME(inf) Test! From here until saturationMultInterp were marked as
-        #  MelBase and unknown in FO3
-        MelValueInterpolator(b'\x08IAD', 'lumRampNoTexMultInterp'),
-        MelValueInterpolator(b'\x48IAD', 'lumRampNoTexAddInterp'),
-        MelValueInterpolator(b'\x09IAD', 'lumRampMinMultInterp'),
-        MelValueInterpolator(b'\x49IAD', 'lumRampMinAddInterp'),
-        MelValueInterpolator(b'\x0AIAD', 'lumRampMaxMultInterp'),
-        MelValueInterpolator(b'\x4AIAD', 'lumRampMaxAddInterp'),
-        MelValueInterpolator(b'\x0BIAD', 'sunlightDimmerMultInterp'),
-        MelValueInterpolator(b'\x4BIAD', 'sunlightDimmerAddInterp'),
-        MelValueInterpolator(b'\x0CIAD', 'grassDimmerMultInterp'),
-        MelValueInterpolator(b'\x4CIAD', 'grassDimmerAddInterp'),
-        MelValueInterpolator(b'\x0DIAD', 'treeDimmerMultInterp'),
-        MelValueInterpolator(b'\x4DIAD', 'treeDimmerAddInterp'),
-        MelValueInterpolator(b'\x0EIAD', 'blurRadiusMultInterp'),
-        MelValueInterpolator(b'\x4EIAD', 'blurRadiusAddInterp'),
-        MelValueInterpolator(b'\x0FIAD', 'alphaMultInteriorMultInterp'),
-        MelValueInterpolator(b'\x4FIAD', 'alphaMultInteriorAddInterp'),
-        MelValueInterpolator(b'\x10IAD', 'alphaMultExteriorMultInterp'),
-        MelValueInterpolator(b'\x50IAD', 'alphaMultExteriorAddInterp'),
-        MelValueInterpolator(b'\x11IAD', 'saturationMultInterp'),
-        MelValueInterpolator(b'\x51IAD', 'saturationAddInterp'),
-        MelValueInterpolator(b'\x12IAD', if_fnv(
-            fo3_version='brightnessMultInterp',
-            fnv_version='contrastMultInterp',
-        )),
-        MelValueInterpolator(b'\x52IAD', if_fnv(
-            fo3_version='brightnessAddInterp',
-            fnv_version='contrastAddInterp',
-        )),
-        MelValueInterpolator(b'\x13IAD', if_fnv(
-            fo3_version='contrastMultInterp',
-            fnv_version='contrastAvgMultInterp',
-        )),
-        MelValueInterpolator(b'\x53IAD', if_fnv(
-            fo3_version='contrastAddInterp',
-            fnv_version='contrastAvgAddInterp',
-        )),
-        # FIXME(inf) Test! These two were MelBase in FO3
-        MelValueInterpolator(b'\x14IAD', if_fnv(
-            fo3_version='unknown14IAD',
-            fnv_version='brightnessMultInterp',
-        )),
-        MelValueInterpolator(b'\x54IAD', if_fnv(
-            fo3_version='unknown54IAD',
-            fnv_version='brightnessAddInterp'
-        )),
-        fnv_only(MelFid(b'RDSD', 'soundIntro')),
-        fnv_only(MelFid(b'RDSI', 'soundOutro')),
+        MelPartialCounter(MelTruncatedStruct(b'DNAM',
+            ['I', 'f', '49I', '2f', '3I', 'B', '3s', '4I'], 'imad_animatable',
+            'imad_duration', *AMreImad.dnam_counters1,
+            'radial_blur_use_target', 'radial_blur_center_x',
+            'radial_blur_center_y', *AMreImad.dnam_counters2,
+            'dof_use_target', 'unused1', *AMreImad.dnam_counters3,
+            old_versions={'If49I2f3IB3s3I', 'If49I2f3IB3s2I', 'If45I'}),
+            counters=AMreImad.dnam_counter_mapping),
+        *[AMreImad.special_impls[s](s, a) for s, a in AMreImad.imad_sig_attr],
+        fnv_only(MelFid(b'RDSD', 'sound_intro')),
+        fnv_only(MelFid(b'RDSI', 'sound_outro')),
     )
     __slots__ = melSet.getSlotsUsed()
 
